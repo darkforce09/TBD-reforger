@@ -41,11 +41,17 @@ verify = [
     "Harness asserts BASH side went red before believing a diff.",
     "A green run alone is not evidence T-556 anti-vacuity.",
 ]
+acceptance = [
+    "Deleted verify-t456 and verify-t468 bash scripts; verify t456 and verify t468 xtask gates replaced both.",
+    "Mutually pinned slice shipped together; Makefile ci.yml and wave.sh repointed with cargo task pins.",
+    "Port matched bash stdout stderr and rc on clean tree and deliberately broken trees.",
+]
 citations = [
     "T-853 shell->xtask waves",
     "t853_shell_to_xtask_waves.md",
     "T-556 anti-vacuity",
     "crates/tbd-gate",
+    "95e4c1e6 t456 t468 atomic port",
 ]
 shipped_at = "95e4c1e6"
 created_at = "2026-08-12T08:35:53Z"

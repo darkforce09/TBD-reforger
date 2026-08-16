@@ -41,11 +41,17 @@ verify = [
     "Diff port against bash on clean tree and two deliberately broken trees.",
     "A passing run alone is NOT evidence T-556 anti-vacuity.",
 ]
+acceptance = [
+    "Deleted fetch-vanilla-api.sh; fetch vanilla-api xtask gate replaced vanilla API doc fetch and make target.",
+    "Inventory entries removed; Makefile and leftover doc callers repointed to xtask.",
+    "index_miss_exits_1 made PATH-race-proof; port matched bash on clean and broken trees.",
+]
 citations = [
     "T-853 shell->xtask waves",
     "t853_shell_to_xtask_waves.md",
     "T-556 anti-vacuity",
     "crates/tbd-gate",
+    "0e6759d5 fetch vanilla-api port",
 ]
 shipped_at = "0e6759d5"
 created_at = "2026-08-12T05:36:32Z"

@@ -41,11 +41,17 @@ verify = [
     "Diff port against bash on clean tree and two deliberately broken trees.",
     "A passing run alone is NOT evidence T-556 anti-vacuity.",
 ]
+acceptance = [
+    "Deleted test-mission.sh; mod test-mission xtask gate replaced golden mission id extraction and Workbench profile switch.",
+    "Four python3 sites became in-process serde_json; script dropped from python and shell inventories.",
+    "Port matched bash stdout stderr and rc on clean tree and deliberately broken trees.",
+]
 citations = [
     "T-853 shell->xtask waves",
     "t853_shell_to_xtask_waves.md",
     "T-556 anti-vacuity",
     "crates/tbd-gate",
+    "5965e9f9 test-mission port",
 ]
 shipped_at = "f053d376"
 created_at = "2026-08-12T05:00:51Z"

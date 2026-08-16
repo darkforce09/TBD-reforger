@@ -42,11 +42,17 @@ verify = [
     "Port diff matches clean tree byte-for-byte.",
     "Port diff matches at least two deliberately broken trees.",
 ]
+acceptance = [
+    "Deleted bootstrap-staging-server.sh; mod bootstrap-staging xtask gate replaced staging server bootstrap.",
+    "Inventory entries removed; mod docs and STAGING-SERVER callers repointed to xtask.",
+    "Port matched bash stdout stderr and rc on clean tree and deliberately broken trees.",
+]
 citations = [
     "T-853 shell->xtask program",
     "T-556 anti-vacuity",
     "t853_shell_to_xtask_waves.md",
     "crates/tbd-gate",
+    "86b30bcf bootstrap-staging port",
 ]
 shipped_at = "45e57cbb"
 created_at = "2026-08-12T06:11:06Z"

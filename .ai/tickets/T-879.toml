@@ -42,11 +42,17 @@ verify = [
     "Diff port against bash on clean tree and two deliberately broken trees.",
     "A passing run alone is NOT evidence T-556 anti-vacuity.",
 ]
+acceptance = [
+    "Deleted mcpd-bin.sh and xtask-run.sh once mcp-daemon port removed their last script consumers.",
+    "Deleted paths.sh after deploy-staging port; scripts/mod/lib/ shims and inventory lines gone.",
+    "gate_debug_direct_join stale do-not-delete park comment corrected; xtask mirrors constants only.",
+]
 citations = [
     "T-853 shell->xtask waves",
     "t853_shell_to_xtask_waves.md",
     "T-556 anti-vacuity",
     "crates/tbd-gate",
+    "896982af mod lib shims gone",
 ]
 shipped_at = "896982af"
 created_at = "2026-08-12T14:20:35Z"

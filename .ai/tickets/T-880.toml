@@ -42,11 +42,17 @@ verify = [
     "Diff port against bash on clean tree and two deliberately broken trees.",
     "A passing run alone is NOT evidence T-556 anti-vacuity.",
 ]
+acceptance = [
+    "Deleted gate-grep.sh once deploy-staging port removed the last shell consumer.",
+    "crates/tbd-gate replaced gate-grep; shell inventory line dropped with no remaining sourcers.",
+    "Pure delete slice; unblocked after verify-no-python port dropped gate-grep dependency.",
+]
 citations = [
     "T-853 shell->xtask waves",
     "t853_shell_to_xtask_waves.md",
     "T-556 anti-vacuity",
     "crates/tbd-gate",
+    "dee5f3b6 gate-grep delete",
 ]
 shipped_at = "896982af"
 created_at = "2026-08-12T02:25:36Z"

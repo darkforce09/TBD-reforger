@@ -42,11 +42,16 @@ verify = [
     "Diff on clean tree AND >=2 deliberately broken trees.",
     "Harness asserts BASH side went red; green run alone not evidence T-556.",
 ]
+acceptance = [
+    "Deleted scripts/ticket shim; Makefile, wave.sh, and preflight invoke cargo xtask ticket directly.",
+    "Shell inventory line removed; ticket docs were not updated in this ship.",
+]
 citations = [
     "T-853 shell->xtask program",
     "T-556 anti-vacuity",
     "t853_shell_to_xtask_waves.md",
     "crates/tbd-gate",
+    "f47430ce ticket shim delete",
 ]
 shipped_at = "f47430ce"
 created_at = "2026-08-12T08:49:11Z"

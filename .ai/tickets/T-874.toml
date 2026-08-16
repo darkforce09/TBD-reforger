@@ -42,11 +42,17 @@ verify = [
     "Diff port against bash on clean tree and two deliberately broken trees.",
     "A passing run alone is NOT evidence T-556 anti-vacuity.",
 ]
+acceptance = [
+    "Deleted test-phase1-api.sh; mod test-phase1-api xtask gate replaced phase-1 API smoke.",
+    "Inventory line removed; apps/mod README caller repointed.",
+    "Port matched bash stdout stderr and rc on clean tree and deliberately broken trees.",
+]
 citations = [
     "T-853 shell->xtask waves",
     "t853_shell_to_xtask_waves.md",
     "T-556 anti-vacuity",
     "crates/tbd-gate",
+    "773eb1a1 test-phase1-api port",
 ]
 shipped_at = "d38dedb7"
 created_at = "2026-08-12T06:55:44Z"

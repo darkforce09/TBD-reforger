@@ -42,11 +42,17 @@ verify = [
     "Port diff matches clean tree byte-for-byte.",
     "Port diff matches at least two deliberately broken trees.",
 ]
+acceptance = [
+    "Deleted export-terrain.sh; map export-terrain xtask gate replaced terrain export orchestrator and make map-export.",
+    "Inventory entries removed; Makefile and world aux.rs caller repointed to xtask.",
+    "Port matched bash stdout stderr and rc on clean tree and deliberately broken trees.",
+]
 citations = [
     "T-853 shell->xtask program",
     "T-556 anti-vacuity",
     "t853_shell_to_xtask_waves.md",
     "crates/tbd-gate",
+    "d25e9023 map export-terrain port",
 ]
 shipped_at = "d25e9023"
 created_at = "2026-08-12T06:13:35Z"

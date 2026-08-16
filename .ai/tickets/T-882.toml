@@ -42,12 +42,18 @@ verify = [
     "Diff on clean tree AND >=2 deliberately broken trees.",
     "Harness asserts BASH side went red; green run alone not evidence T-556.",
 ]
+acceptance = [
+    "Deleted verify-no-python.sh; verify no-python xtask gate replaced LANG-2 Python ban enforcement.",
+    "Still read python-inventory.txt as ratchet; fail-closed over missing rg unlike pre-T-620 bash.",
+    "Makefile and wave.sh callers repointed; gate-grep dependency removed enabling T-880 delete.",
+]
 citations = [
     "T-853 shell->xtask program",
     "T-620 fail-closed rg lesson",
     "T-880 gate-grep blocker",
     "T-556 anti-vacuity",
     "t853_shell_to_xtask_waves.md",
+    "e9df35cf verify no-python port",
 ]
 shipped_at = "e9df35cf"
 created_at = "2026-08-12T08:53:27Z"
