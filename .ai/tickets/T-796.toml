@@ -43,12 +43,17 @@ verify = [
     "Placed comment pixel signature not selection amber not marker glyph.",
     "Click selects T-784 regression; drag moves stored x/y one undo restores.",
 ]
+acceptance = [
+    "Comments wired into drag-move path through pick preview and one-transaction move_comment commit.",
+    "Pick precedence ring unit comment marquee proven at boundaries; one undo per move; T-784 click-select regression green.",
+]
 citations = [
     "editor_hostile_ux_review O-6",
     "T-784 comment click-select",
     "T-748 comment family",
     "F-26 one-txn move lesson",
     "move_comment ~1554",
+    "efbfb07c comment drag move",
 ]
 shipped_at = "efbfb07c"
 created_at = "2026-08-10T19:15:16Z"

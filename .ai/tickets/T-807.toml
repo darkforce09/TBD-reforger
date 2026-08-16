@@ -45,11 +45,16 @@ verify = [
     "'1 slots' impossible; DEM hint string gone; hero absent or DRAFT chip.",
     "Fresh mission zero yrs-persist refusals; disabled rows non-empty title; chip reads SNAP.",
 ]
+acceptance = [
+    "Attribute fields rounded to three decimals with metre units; stale DEM hint and one-slots plural removed.",
+    "Library hero gated on live status; yrs-persist quiet on empty missions; disabled context rows gained why-tooltips; SNAP chip relabeled.",
+]
 citations = [
     "editor_hostile_ux_review S3 batch",
     "Eden frame 170422 axis glyphs",
     "T-797 menu label trap",
     "T-798 error contrast trap",
+    "b2af39bc copy consistency sweep",
 ]
 shipped_at = "b2af39bc"
 created_at = "2026-08-09T18:30:38Z"

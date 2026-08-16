@@ -42,11 +42,16 @@ verify = [
     "Visible label k screen_x within 2px of k·1000 line.",
     "Adjacent labels exactly 1000/m_per_px apart; continuous pan updates each frame.",
 ]
+acceptance = [
+    "Edge grid labels derived from live camera each frame via position-quantised keys fixing stale DOM reuse.",
+    "Adjacent kilometre labels held 250px spacing; 240m pan oracle matched CUR readout within 0.00px.",
+]
 citations = [
     "editor_hostile_ux_review O-2",
     "eden_toolbelt edge labels 203",
     "eden_toolbelt render 792",
     "CUR unproject oracle",
+    "2ad1ad41 live camera labels",
 ]
 shipped_at = "2ad1ad41"
 created_at = "2026-08-09T18:39:22Z"

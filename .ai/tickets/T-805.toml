@@ -44,11 +44,16 @@ verify = [
     "mission_maker admin unchanged; Save Version present.",
     "Draft-provenance investigation section with reproduce-or-refute verdict.",
 ]
+acceptance = [
+    "Client route guard redirected enlisted sessions away from mission editor with role toast.",
+    "mission_maker and admin deep-links loaded editor unchanged; eight-object draft leak refuted as sync stay-local.",
+]
 citations = [
     "editor_hostile_ux_review F-33",
     "router.rs auth 90-96",
     "RequireMinRole client semantics",
     "yrs_persist scoped_key investigation",
+    "f8353eab editor auth guard",
 ]
 shipped_at = "f8353eab"
 created_at = "2026-08-11T02:00:25Z"

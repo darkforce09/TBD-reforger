@@ -44,12 +44,17 @@ verify = [
     "After release committed line matches preview position.",
     "FPS rf delta during 9-slot drag <= 1ms median vs baseline.",
 ]
+acceptance = [
+    "pack_squad_link_drag_preview bound affected tether endpoints into the drag preview; commit path unchanged.",
+    "Class-R packer pins held perturbation; live 4px CDP and rf were left to eye-pass.",
+]
 citations = [
     "editor_hostile_ux_review O-7 mechanism",
     "select_tool GPU preview repack",
     "slot_line squad_links commit only",
     "T-057 preview per-frame budget",
     "multi-select both endpoints preview",
+    "bd5ca071 tether preview drag",
 ]
 shipped_at = "a45b8567"
 created_at = "2026-08-11T01:58:26Z"

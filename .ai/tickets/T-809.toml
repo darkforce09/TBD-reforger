@@ -45,11 +45,16 @@ verify = [
     "Placing asset at head recently-placed; class prefix search filters; Favourites star works.",
     "Placed vehicles listed left outliner selectable same affordances as slot rows.",
 ]
+acceptance = [
+    "Factions tree gained per-faction vehicle leaves drag-placing under NATO with class-prefix search intact.",
+    "Recently-placed rail recorded composition stamps and ORBAT Add Vehicle; placed vehicles listed in left outliner.",
+]
 citations = [
     "editor_hostile_ux_review F-22",
     "Eden frame 165952 F1 Objects",
     "T-146 absorption note",
     "T-818 crew editor stopgap",
+    "87e1ff94 faction tree history",
 ]
 shipped_at = "87e1ff94"
 created_at = "2026-08-10T00:12:13Z"

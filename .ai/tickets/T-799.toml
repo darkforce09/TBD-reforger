@@ -44,12 +44,17 @@ verify = [
     "After retitle both payloads carry new title and identical maxPlayers gameMode version.",
     "Compiled export still ajv-validates clean.",
 ]
+acceptance = [
+    "Compiled export deduplicated to one createObjectURL and anchor click per gesture via timestamp latch.",
+    "JSON and compiled exports carried aligned title maxPlayers and gameMode; compiled payload stayed ajv-2020-12 clean.",
+]
 citations = [
     "editor_hostile_ux_review F-28 F-34",
     "blob intercept double activation",
     "RowMirror gap eden_top_strip",
     "ajv 2020-12 zero errors baseline",
     "T-192 T-746 RowMirror parents",
+    "f9e72d96e single export fire",
 ]
 shipped_at = "44eb1412"
 created_at = "2026-08-10T16:29:04Z"

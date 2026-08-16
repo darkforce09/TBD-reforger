@@ -44,11 +44,16 @@ verify = [
     "Idle 30s recency counts up; reload restores; flush bridge works.",
     "No chip on mission never edited.",
 ]
+acceptance = [
+    "Draft-saved chip beside dirty dot showed flush recency fed by yrs_persist timestamp signal.",
+    "Chip tooltip explained local draft versus Save Version; error branch could not stamp false success.",
+]
 citations = [
     "editor_hostile_ux_review F-24",
     "Eden frame 163916 autosave",
     "__missionPersist flush bridge",
     "T-789 save-story pair",
+    "aab595fd draft saved chip",
 ]
 shipped_at = "aab595fd"
 created_at = "2026-08-10T19:19:58Z"

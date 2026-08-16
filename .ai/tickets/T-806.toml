@@ -44,11 +44,16 @@ verify = [
     "No two rows differ only by case; each glyph differs from generic pin.",
     "Pick Attack stores canonical slug; map shows attack glyph.",
 ]
+acceptance = [
+    "Marker picker collapsed to eleven canonical rows each rendering distinct glyph from T-790 mapping.",
+    "Picking Attack stored canonical slug rendered triangle-up on map at three zooms; alias search worked.",
+]
 citations = [
     "editor_hostile_ux_review F-08",
     "T-790 canonical glyph table",
     "Eden frame 170028 glyphs",
     "MARKER_GLYPH_COUNT compile tie",
+    "c67688aa canonical marker picker",
 ]
 shipped_at = "c67688aa"
 created_at = "2026-08-10T16:20:17Z"

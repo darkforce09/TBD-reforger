@@ -44,11 +44,16 @@ verify = [
     "One Ctrl+Z removes all three stamped entities.",
     "Re-arm Esc click: OBJ unchanged hint gone console clean.",
 ]
+acceptance = [
+    "Armed composition map click stamped three members as one transaction; single Ctrl+Z removed all three.",
+    "Live armed-state hint and panel block surfaced the arm; Esc cleared arm without placing; stored Z offset survived.",
+]
 citations = [
     "editor_hostile_ux_review F-30",
     "editor_ops Pending Composition 76-95",
     "eden_dock_right 62-97",
     "COMP-PLACE-001 T-078",
+    "47555784 composition arm hint",
 ]
 shipped_at = "47555784"
 created_at = "2026-08-09T18:32:05Z"

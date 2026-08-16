@@ -46,12 +46,17 @@ verify = [
     "Add Vehicle on empty catalog shows the explainer.",
     "After new seed Add Vehicle inserts vehicle row Vehicles 1.",
 ]
+acceptance = [
+    "Catalog Failed arms named no-modpack versus request-failed cause with Retry; grammar chips hidden while failed.",
+    "Add Vehicle on empty catalog showed inline explainer; four idempotent vehicle rows seeded into registry_dev.",
+]
 citations = [
     "editor_hostile_ux_review F-05 F-21",
     "Favourites Retry arm pattern",
     "registry_dev zero vehicle rows",
     "orbat_manager Add Vehicle no-op",
     "T-809 T-810 asset_catalog later",
+    "4ce95f907 catalog retry seed",
 ]
 shipped_at = "c4b7e0e6"
 created_at = "2026-08-09T20:44:44Z"

@@ -43,11 +43,16 @@ verify = [
     "Probe: max delta <8px context menu Mission Settings Save ORBAT.",
     "duration <=150ms computed; reduced-motion yields 0px translation.",
 ]
+acceptance = [
+    "Dialog and menu entrance travel reduced to zero pixels at 120ms using opacity-only keyframes.",
+    "prefers-reduced-motion enforced zero translation; MutationObserver probe measured under eight pixels travel.",
+]
 citations = [
     "editor_hostile_ux_review O-4",
     "aegis.css animate-dialog-in",
     "MutationObserver first-paint probe",
     "prefers-reduced-motion media query",
+    "bb03516a zero entrance travel",
 ]
 shipped_at = "bb03516a"
 created_at = "2026-08-10T21:52:25Z"

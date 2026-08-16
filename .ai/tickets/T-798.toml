@@ -47,12 +47,17 @@ verify = [
     "Contrast calc on the chip >=4.5:1.",
     "V1 copy string unchanged.",
 ]
+acceptance = [
+    "Validation moved to top-bar error chip evaluating V1 player-spawn truth from editor load at hydrate.",
+    "Backspace chrome hide removed all non-map UI including chip dropdown; error plate contrast reached 4.5:1 minimum.",
+]
 citations = [
     "editor_hostile_ux_review F-11 F-35",
     "validation_panel mount eval doc_tick",
     "operator decision 3 top-bar chip",
     "WCAG red count 3.9:1 failure",
     "T-786 stack Esc dismiss semantics",
+    "fcec12e7 validation chip load",
 ]
 shipped_at = "fcec12e7"
 created_at = "2026-08-10T04:58:48Z"

@@ -44,11 +44,16 @@ verify = [
     "Polygon after two vertices same; trigger circle same.",
     "Marker Esc-disarm regression stays green.",
 ]
+acceptance = [
+    "Esc during in-progress circle, polygon, or trigger draw cancelled pending geometry and cleared rim or vertex prompts.",
+    "Zone count stayed unchanged after Esc then click elsewhere; marker and composition Esc-disarm regressions remained green.",
+]
 citations = [
     "editor_hostile_ux_review F-31",
     "mission_editor.rs Esc ~3656",
     "editor_ops cancel ~4254",
     "eden_zones panel ~37-42",
+    "8717e7fd zone draw cancel",
 ]
 shipped_at = "8717e7fd"
 created_at = "2026-08-10T00:28:03Z"

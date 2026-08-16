@@ -45,11 +45,16 @@ verify = [
     "Screenshot 1.0 and 4.0 m/px medic rifleman leader pairwise distinct signatures.",
     "Marker unit comment shapes pairwise distinct; selected unit ring plus heading.",
 ]
+acceptance = [
+    "Slots rendered side-coloured role knockouts with facing-point heading; vehicles drew per-kind top-down silhouettes.",
+    "Marker glyphs rebuilt from picker SVGs; headings 181-359 wrap fixed; unit marker comment shapes pairwise distinct.",
+]
 citations = [
     "editor_hostile_ux_review F-10",
     "Eden frame 170028 entity glyphs",
     "T-790 lane format extension",
     "T-796 comment bubble shape",
+    "3e19524f1 role symbology feeders",
 ]
 shipped_at = "c6b875de"
 created_at = "2026-08-10T15:50:25Z"

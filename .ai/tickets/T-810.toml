@@ -45,11 +45,16 @@ verify = [
     "Revert restores pre-open values across edited fields readback equality.",
     "Axis labels three distinct colours computed styles; empty catalog cause retry not empty list.",
 ]
+acceptance = [
+    "TYPE field became searchable catalog picker writing canonical assetId and clearing ASSET-RESOLVES live.",
+    "Snapshot-on-open Revert restored pre-panel values including differing-multi selection; X Y Z axis labels gained Eden colours.",
+]
 citations = [
     "editor_hostile_ux_review F-23",
     "Eden frame 163121 Object Type",
     "T-785 text_field dependency",
     "T-800 empty catalog surface",
+    "3692a76e TYPE picker revert",
 ]
 shipped_at = "3692a76e"
 created_at = "2026-08-09T04:19:06Z"

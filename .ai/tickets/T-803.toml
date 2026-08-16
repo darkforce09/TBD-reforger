@@ -43,11 +43,16 @@ verify = [
     "Click layer B: row differs from siblings; on-screen text names B.",
     "Place unit lands under B; create C highlights C; Alt-click selects subtree.",
 ]
+acceptance = [
+    "Active drop-target row gained distinct ROW_DROP_TARGET styling plus my_location chip separate from selection.",
+    "Placing-into layer header named target honestly including rows.first fallback; Alt-click subtree selection survived.",
+]
 citations = [
     "editor_hostile_ux_review O-9",
     "editor_ops active_layer 2902",
     "eden_dock_left row click 108",
     "state-vocabulary two treatments",
+    "2318dcf8 drop-target row visual",
 ]
 shipped_at = "b008bfc8"
 created_at = "2026-08-10T04:20:02Z"
