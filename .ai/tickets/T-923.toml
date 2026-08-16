@@ -3,7 +3,7 @@ kind = "work"
 title = "wave close writes the marker commit itself"
 summary = "platform wave close writes the marker commit itself: subject self-checked against wave_close_subject_ok and oracle 1 before committing, then wave repack and an auto-committed lock refresh. Dirty tree refuses; --dry-run prints the subject and stops."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 6030
 spec = "docs/platform/t912_wave_lockfile.md"
 plan = "docs/plans/t-923_plan.md"
@@ -36,6 +36,7 @@ acceptance = [
     "--dry-run prints the exact subject and changes nothing (git status --porcelain empty)",
 ]
 created_at = "2026-08-16T03:15:16Z"
+completed_at = "2026-08-16T03:45:51Z"
 estimated = ["scope"]
 owns = [
     "xtask/src/wave",

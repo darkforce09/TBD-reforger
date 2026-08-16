@@ -11,13 +11,6 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md",
       "branch": "ticket/T-090"
-    },
-    {
-      "id": "T-923",
-      "title": "wave close writes the marker commit itself",
-      "status": "ready",
-      "spec": "docs/platform/t912_wave_lockfile.md",
-      "branch": "ticket/T-923"
     }
   ]
 }
