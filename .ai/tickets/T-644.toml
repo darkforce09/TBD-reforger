@@ -41,6 +41,11 @@ verify = [
     "Viewshed shades visible and hidden terrain from chosen observer point.",
     "Wash palette readable alongside T-640 contours and landcover layers.",
 ]
+acceptance = [
+    "Viewshed wash shaded visible and hidden terrain from chosen observer via los_tool second mode.",
+    "Palette prototype kept wash readable alongside T-640 contours and landcover on shared surface.",
+    "encoder_flips_rows fix corrected north-south mirrored viewshed raster emission.",
+]
 citations = [
     "T-643 proves DEM sampling path",
     "T-640 contours share map surface",

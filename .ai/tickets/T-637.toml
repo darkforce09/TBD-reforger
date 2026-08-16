@@ -38,6 +38,11 @@ verify = [
     "Both docks 240px; six F-key glyph cells fit without MANAGE clipping.",
     "Decoration strip_btn row deleted; tree pitch densified from ROW_H 24.",
 ]
+acceptance = [
+    "Left and right docks equalised to shared two-hundred-forty pixel DOCK_PX constant.",
+    "Right dock word tabs became glyph cells; five visual-only decoration strip buttons deleted.",
+    "virtual_tree row pitch densified sixteen pixels; MANAGE tab clipping symptom resolved.",
+]
 citations = [
     "editor_chrome_direction 240 Eden",
     "T-632 absorbed dock width symptom",

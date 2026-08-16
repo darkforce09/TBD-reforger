@@ -29,6 +29,15 @@ current_state = [
     "Removing disabled without working tool worse than honest stub.",
 ]
 approach = ["Click-chain points; per-leg distance bearing plus running total until dismiss."]
+verify = [
+    "cargo test -p website-frontend ruler_button_is_enabled_and_toggles_tool_mode",
+    "cargo test -p website-frontend escape_dismisses_the_ruler",
+]
+acceptance = [
+    "straighten toolbelt button enabled with TOOL_ACTIVE; disabled stub lie removed.",
+    "Click-chain ruler persisted polyline on map until Esc or tool switch dismissed it.",
+    "Per-leg distance bearing slope and running totals committed in ruler_tool.rs native tests.",
+]
 citations = [
     "T-643 LoS stub collision",
     "select_tool LeftGesture PendingLeft",

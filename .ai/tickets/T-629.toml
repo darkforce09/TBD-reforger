@@ -17,7 +17,22 @@ requirement = [
     "Distinguish 429 in RangeOutcome; bounded backoff on fetch_range_resilient.",
     "Failed full load reports preview placeholder is what landed.",
 ]
+current_state = [
+    "Full basemap Range spans hit global twenty-per-second burst-forty limiter after DEM draw.",
+    "Measured forty-eight 429 and one 206 on forty-nine everon spans at concurrency four.",
+    "Failed load abandoned basemap; eight-hundred preview mip stayed on screen silently.",
+]
+approach = [
+    "Removed unwrap_or(8192) texture fallback; require measured engine maxTextureDimension2D.",
+    "RangeOutcome distinguishes 429; fetch_range_resilient retries with bounded backoff ladder.",
+    "Failed full load reports preview placeholder loud failure path to operator.",
+]
 verify = ["Measured: 49 spans complete level 0 after 15×429 retries."]
+acceptance = [
+    "Forty-nine Range spans completed level-zero basemap after fifteen 429 retries absorbed.",
+    "Full twelve-thousand-eight-hundred basemap replaced eight-hundred preview placeholder on success.",
+    "429 Retry-After was parsed and logged; throttled spans retried on a fixed 100/250/600/1200 ms backoff ladder.",
+]
 citations = [
     "commit af3f8c39 satellite rate limiter",
     "T-625 T-626 per-client limiter",

@@ -40,6 +40,11 @@ verify = [
     "Pattern apply Circular Line Grid Fill Area transforms live selection.",
     "Bulk placement confirms and undo restores prior selection state.",
 ]
+acceptance = [
+    "Circular Line Grid and Fill Area patterns applied live to current selection via place_helpers.",
+    "Six align three space-equally and six orient commands batched through editor_ops mutators.",
+    "Garrison kernel computed OBB perimeter firing positions; live drag-to-garrison wiring did not ship.",
+]
 citations = [
     "3den Enhanced placement catalogue borrow",
     "editor_ops.rs batched mutators",

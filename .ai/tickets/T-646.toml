@@ -40,6 +40,11 @@ verify = [
     "Class-prefix query filters catalog nodes via filter_catalog.",
     "Side chips filter catalog; crew toggle places vehicle with or without crew.",
 ]
+acceptance = [
+    "class: operator filtered catalog by classname or resource_name prefix via filter_catalog.",
+    "BLUFOR OPFOR INDFOR Objects Eden chips filtered DockRight catalogue by active_side.",
+    "Place-with-crew checkbox threaded begin_place_vehicle to crewed vehiclesById stamping.",
+]
 citations = [
     "RIGHT-SEARCH-002 class prefix gap",
     "T-074 cancelled submode id",

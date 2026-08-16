@@ -30,6 +30,11 @@ current_state = [
 ]
 approach = ["Replace zoom ladder with m/pix targeting 14-19px rendered contour spacing."]
 verify = ["Measure rendered spacing at >=4 zoom levels; assert each lands in band."]
+acceptance = [
+    "contour_interval_for_zoom switched to metres-per-pixel targeting Eden fourteen-to-nineteen pixel band.",
+    "Native tests derived spacing from interval, DEM slope, and m/pix at five zooms; they did not render contours.",
+    "Screen-space ladder replaced t090_render_lod_contract N3 deckZoom rungs without renaming the mod.rs re-export.",
+]
 citations = [
     "t090_render_lod_contract §N3 ladder",
     "Eden 14-19px spacing band",

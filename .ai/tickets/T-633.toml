@@ -38,6 +38,11 @@ verify = [
     "Top strip uses Aegis Slider and Select not raw browser controls.",
     "RowMirror debounce intact with on:change-only wiring.",
 ]
+acceptance = [
+    "Slider and Select primitives landed in ui.rs for suite-wide reuse.",
+    "Top-strip time scrubber and weather select replaced raw browser controls with Aegis styling.",
+    "on:change-only wiring preserved RowMirror thirty-hertz debounce on scrubber.",
+]
 citations = [
     "eden_chrome raw range scrubber",
     "ui.rs shared primitives slot",

@@ -37,6 +37,11 @@ verify = [
     "HUD no longer shares pixel space with toolbelt CUR OBJ readouts.",
     "Editor keydown creates telemetry toggle; no missing Ctrl+Alt+D reuse.",
 ]
+acceptance = [
+    "Debug HUD relocated to own slot; no longer overlapped toolbelt CUR OBJ SEL SZ readouts.",
+    "Ctrl+Alt+D telemetry toggle created; FpsCounter binding died with React at T-159.29.3.",
+    "Telemetry gating pattern kept separate from mission-correctness validation diagnostics.",
+]
 citations = [
     "mission_editor debug_hud overlap",
     "framework_synthesis D.4 telemetry",

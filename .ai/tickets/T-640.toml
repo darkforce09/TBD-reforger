@@ -26,6 +26,12 @@ requirement = [
 ]
 current_state = ["contour_segments flat Vec at contours.rs:164; single RGBA compose at dem_vectors.rs:120."]
 approach = ["Blend CONTOUR_RGBA as fixed-alpha tint; per-peak highest closed ring emphasis."]
+verify = ["cargo test -p map-engine-core --lib per_peak_selects_one_highest_closed_ring_each"]
+acceptance = [
+    "Contour hairlines rendered as fixed-alpha tint instead of saturated full-alpha brown.",
+    "compose_two_tone_contours coloured summit rings darker; compose_contour_hairlines stayed single-tone for forest outline.",
+    "contour_rings carried closure identity; summit_ring_indices picked the highest closed ring per peak.",
+]
 citations = [
     "T-175 A3 contour retune",
     "Reference tbd_map_contours_2x.png",

@@ -38,6 +38,11 @@ approach = [
     "Rotation snapped positions commit attrs_update_position editor_ops.rs:667.",
 ]
 verify = ["verifier wave110.md records shipped slice evidence."]
+acceptance = [
+    "Shift-drag rotated selection to face cursor via attrs_update_position rotation commit path.",
+    "Translation and rotation snap rungs quantised beside the drag_delta quantiser; no area rung shipped.",
+    "Transform widget cycled translate and rotate on keys one and two; Space stayed flyTo.",
+]
 citations = [
     "T-073 T-075 superseded cancelled",
     "XFORM-SHIFT-001 Shift drag rotate",

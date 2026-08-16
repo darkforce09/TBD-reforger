@@ -35,6 +35,11 @@ approach = [
     "Guard rAF engine borrow against re-entrant panic during unwind.",
 ]
 verify = ["Inject engine-init failure; assert overlay reaches error state with reason."]
+acceptance = [
+    "BootPhase::Failed carried failing segment and original engine-init reason on overlay.",
+    "Engine-init error reached retry and continue-without-map instead of indefinite fifty-percent stall.",
+    "Failed sticky across concurrent hydrate; rAF loop no longer double-panics on unwind.",
+]
 citations = [
     "T-628 BootSeg byte-metered bar",
     "mission_editor BootPhase enum",

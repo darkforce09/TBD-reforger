@@ -41,6 +41,11 @@ verify = [
     "Clear/blocked result and terrain profile between observer and target clicks.",
     "Segment sampler walks loaded DEM elevation along the ray path.",
 ]
+acceptance = [
+    "visibility toolbelt button enabled; two-click observer-target capture wired in mission_editor.",
+    "Point-to-point ray reported clear or blocked plus terrain profile along segment sampler path.",
+    "dem/sample.rs segment sampler walked distances monotonically for T-644 viewshed reuse.",
+]
 citations = [
     "T-642 adjacent dead button stub",
     "eden_chrome.rs:3715 LoS stub",

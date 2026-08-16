@@ -38,6 +38,11 @@ approach = [
     "Reallocate device buffer on reflow not stretch; camera hold still open.",
 ]
 verify = ["Collapse dock: canvas width gains 480px; chevron toggles expanded stub."]
+acceptance = [
+    "Twenty-four pixel chevron toggled each dock between expanded panel and corner stub overlay.",
+    "Collapsed dock reflowed the map pane into the freed width; full-bleed canvas dimensions stayed unchanged.",
+    "E and R plus edge chevrons collapsed docks; Backspace hide-interface was unchanged. View Interface menu stayed unwired residue.",
+]
 citations = [
     "Eden 24x24 chevron collapse",
     "T-662 frees Backspace key",

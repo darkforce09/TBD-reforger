@@ -29,6 +29,12 @@ current_state = [
     "declutter_height_labels uses height_label_min_sep_m deck_zoom at peaks.rs:184.",
 ]
 approach = ["Audit running editor before scoping; convert declutter to screen-space culling."]
+verify = ["cargo test -p map-engine-core --lib screen_space_density_holds_across_zoom"]
+acceptance = [
+    "Height-label declutter switched from world-space eighty-metre separation to screen-space density.",
+    "Roughly one label per one-hundred-fifty-by-one-hundred-fifty screen pixels held across zoom in native tests.",
+    "Named hilltop triangles and dot integers rendered horizontally without contour-line labels.",
+]
 citations = [
     "parity README height annotation correction",
     "Height labels world_layer_prefs toggle",

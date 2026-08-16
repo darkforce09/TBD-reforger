@@ -38,6 +38,11 @@ verify = [
     "Strip stays 48px two rows; one primary Save Version visible.",
     "Exports demoted; undo redo history glyphs brighter than before.",
 ]
+acceptance = [
+    "TopCommandStrip split menus row one and icon toolbar row two inside forty-eight pixel height.",
+    "Save Version became sole primary; Export JSON and Compiled demoted behind secondary trigger.",
+    "Undo redo history glyphs brightened; settings gear repositioned beside environment controls.",
+]
 citations = [
     "editor_chrome_direction two-row Eden",
     "TopCommandStrip eden_top_strip.rs",

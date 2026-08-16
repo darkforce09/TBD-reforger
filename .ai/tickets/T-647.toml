@@ -42,6 +42,11 @@ verify = [
     "Ctrl multi-place keeps pending across release; Alt places empty vehicle.",
     "Double-click opens Attributes for vehicles objects zones not slots only.",
 ]
+acceptance = [
+    "Ctrl multi-place kept pending placement armed across canvas release without clearing arm.",
+    "Alt modifier placed empty vehicles through place_at crewed-false flag path.",
+    "PLACE-001 click-then-click pinned; ATTR-OPEN-001 swapped dblclick to pick_slot_or_vehicle.",
+]
 citations = [
     "T-072 T-077 cancelled superseded",
     "PLACE-001 click-then-click gap",

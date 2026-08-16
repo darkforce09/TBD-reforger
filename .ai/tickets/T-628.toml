@@ -17,7 +17,22 @@ requirement = [
     "Weight segments by declared byte budgets; high-water mark prevents rewind.",
     "Terrain via fetch_bytes_streamed against content-length; world declares 634 files upfront.",
 ]
+current_state = [
+    "T-627 left hydrate, terrain, and world on indeterminate sweeps; only satellite was determinate.",
+    "Hydrate terrain and world bars reset between stages; satellite fill did not.",
+    "Operator saw one or ninety-nine percent with no byte meaning.",
+]
+approach = [
+    "Four BootSeg segments weighted by bytes; world used approximate weight plus exact file counts.",
+    "High-water mark on BootProgress::raw prevents bar rewind on overlapping fetches.",
+    "Inline boot_progress mod in mission_editor.rs drives overlay from completed bytes.",
+]
 verify = ["the_bar_can_never_exceed_one_hundred BootProgress unit tests."]
+acceptance = [
+    "One monotonic zero-to-one-hundred bar spanned mission GET DEM satellite and world file loads.",
+    "BootSeg byte weights and high-water mark kept the bar from resetting between segments.",
+    "BootProgress unit tests pinned the bar never exceeding one hundred percent.",
+]
 citations = [
     "commit 646a54de unified boot bar",
     "T-627 indeterminate satellite step",

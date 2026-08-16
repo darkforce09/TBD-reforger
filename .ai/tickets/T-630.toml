@@ -17,7 +17,22 @@ requirement = [
     "Keep STRICT_PREFIXES byte-identical; uploads and auth still limited.",
     "Leave T-629 client retry ladder as outage safety net.",
 ]
+current_state = [
+    "Global twenty-per-second limiter applied to every route including map-assets ServeDir.",
+    "Cold boot peaked two-thousand-one-hundred-fifteen map-asset requests per second.",
+    "Measured one-hundred-forty-five-thousand-eight-hundred-fifty-eight map-asset refusals; zero auth ingest.",
+]
+approach = [
+    "Mount map-assets ServeDir after rate_limit layer so limiter never sees static tiles.",
+    "Keep STRICT_PREFIXES byte-identical; uploads and auth routes still limited.",
+    "Leave T-629 client retry ladder as outage safety net unchanged.",
+]
 verify = ["t630_map_assets_exempt: burst served; auth uploads still refused."]
+acceptance = [
+    "Map-assets burst served without 429; auth uploads and global tier still refused under limit.",
+    "Exemption held with no database; Range requests over exempt mount all served.",
+    "SPA fallback mount remained limited with isolation headers unchanged.",
+]
 citations = [
     "commit 2e7526c2 map assets exempt",
     "T-629 client backoff ladder",

@@ -38,6 +38,11 @@ verify = [
     "Tools and readouts separated into distinct chrome regions at viewport bottom.",
     "Status bar spans viewport width instead of centred floating pill.",
 ]
+acceptance = [
+    "BottomToolbelt split into mode toolbar and full-width viewport-spanning status bar.",
+    "CUR OBJ SEL SZ readouts moved off centred floating pill into stretched bottom telemetry band.",
+    "TOOLBELT_BAND_PX stayed 96; wgpu canvas stayed full-bleed and was not a band reader.",
+]
 citations = [
     "editor_chrome_direction full-width bar",
     "BottomToolbelt eden_toolbelt TOOLBELT",
