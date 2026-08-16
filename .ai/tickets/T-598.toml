@@ -60,6 +60,11 @@ verify = [
     "Class-R at server_control.rs:788 passes with new message.",
     "t270 tests green after string and pin update.",
 ]
+acceptance = [
+    "rcon_accepted_message branched on delivered and state instead of claiming transport pending T-269 after T-595 shipped.",
+    "RconAccepted required delivered, state, and detail fields without serde defaults so missing agent fields failed parse.",
+    "post_rcon success toast and Class-R pin gated on rcon_reports_success, not merely a 2xx response code.",
+]
 citations = [
     "T-579 RCON toast audit",
     "T-289 host agent transport",

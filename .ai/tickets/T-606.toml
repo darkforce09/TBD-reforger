@@ -61,6 +61,11 @@ verify = [
     "remote-log-grep exits zero on healthy server log.",
     "STAGING-SERVER grep strings match current build output.",
 ]
+acceptance = [
+    "remote-log-grep.sh matched stable tag prefixes instead of deleted sentences and could exit zero on a healthy boot log.",
+    "STAGING-SERVER.md and run-playtest-server.sh greps were reconciled to current [TBD][Loadout][Slot] and LOBBY stage output.",
+    "remote-log-grep gained --file and --selftest modes that proved the verdict could fail on inverted Mission loaded checks.",
+]
 citations = [
     "TBD_SpawnManager Loadout Slot tag",
     "remote-log-grep inverted check",

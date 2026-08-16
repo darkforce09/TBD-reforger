@@ -71,6 +71,11 @@ verify = [
     "make map-reclassify TERRAIN=everon exits 0 after WRITE=1 regenerate.",
     "I1 sum gate passes after vehicle added to INSTANCE_KINDS array.",
 ]
+acceptance = [
+    "map-object-type-inventory.schema.json and xtask INSTANCE_KINDS gained vehicle with a lockstep pin against world/mod.rs.",
+    "Everon catalogue regeneration reclasified sixteen prefabs; read-only map-reclassify then exited zero.",
+    "wave.sh wired checkrun map-reclassify TERRAIN=everon immediately after gate_schema in both gate halves.",
+]
 citations = [
     "T-583 map-reclassify unwired",
     "T-244 vehicle kind latent",

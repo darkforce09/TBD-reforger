@@ -59,6 +59,11 @@ approach = [
     "Correct mission_doc CLIENT_ID reasoning and map-engine-core lib.rs boundary comment.",
 ]
 verify = ["Makefile:304 still claims clippy plus centralized ApiError plus cargo fmt enforcement."]
+acceptance = [
+    "Makefile and CODING_STANDARDS cited verify-route-tags.sh for GO-7 and corrected the live handler count to 102.",
+    "Drifted content_golden.sql line citations were refreshed in events.rs tests, handlers, and mission_overview.rs.",
+    "mission_doc.rs and map-engine-core lib.rs comments no longer cited a fixed CLIENT_ID or the deleted map-engine-wasm shim.",
+]
 citations = [
     "wave 72 documentation drift",
     "Makefile GO-7 clippy lore",

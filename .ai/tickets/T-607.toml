@@ -121,6 +121,11 @@ verify = [
     "-config-only boot shows non-zero current-format TBD lines.",
     "Staging deploy joinable and runs local checkout not 1.0.1.",
 ]
+acceptance = [
+    "deploy-staging config mode passed both -addonsDir and -config; local boots proved the checkout won a joinable room.",
+    "Nothing was deployed to 192.168.0.140; --verify-boot plus fifteen-case selftest pinned the verdict locally.",
+    "TBD_SCENARIO default brace truncation was fixed and validate_server_config pinned the engine scenarioId regex before deploy.",
+]
 citations = [
     "Workshop B2C3D4E5F6A78901 stale",
     "T-604 playtest launcher shape",

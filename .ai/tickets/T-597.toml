@@ -72,6 +72,11 @@ verify = [
     "cargo test -p tbd-tools --lib corner_partition_identity passes after fix.",
     "Fix CI DB name before gate step or wave gate lands red.",
 ]
+acceptance = [
+    "ci.yml TEST_DATABASE_URL and POSTGRES_DB switched to allow-listed rust_it so website-api DB suites provisioned under CI again.",
+    "corner_partition_identity expected 1601 after the T-176 canopy grid migration instead of the stale 401 literal.",
+    "wave.sh gained unconditional test xtask+tbd-tools so eighty-one workspace tests ran locally, not only in CI.",
+]
 citations = [
     "T-534 is_safe_test_database_name",
     "T-594 found CI RED",

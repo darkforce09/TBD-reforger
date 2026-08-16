@@ -61,6 +61,11 @@ verify = [
     "LOADING clears for other clients when one slot degraded.",
     "Gate boots slot-loadout-coverage not zero-gear mission.",
 ]
+acceptance = [
+    "Fail() gained a blocking flag; spawn boundary and per-player deploy now read HasBlockingFailure instead of IsComplete.",
+    "Capacity shortfalls logged warnings and opened LOBBY while authored missing prefabs still refused the session.",
+    "bridgehead-at-levie golden gained four real loadouts so world-boot exercised degraded cargo, not zero-gear trivial path.",
+]
 citations = [
     "TBD_LoadoutEquipHelper IsComplete gate",
     "T-504 unworn container warn",

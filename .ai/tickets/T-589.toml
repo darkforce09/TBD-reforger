@@ -51,6 +51,10 @@ approach = [
     "Exclude shared target/ and target-gate-* set from sweep.",
 ]
 verify = ["target-T-454 invisible to reclaim; printed reclaimed 0 MB beside 2.7 GB orphan."]
+acceptance = [
+    "cmd_reclaim swept MAIN_ROOT target-<SLICE> and target-<slice>-api dirs by default, sparing shared target/ and live worktrees.",
+    "Reclaim refused the sweep when git worktree list could not answer, rather than treating unknown slices as orphaned.",
+]
 citations = [
     "wave.sh cmd_reclaim sweep",
     "target-T-454 2.7 GB orphan",

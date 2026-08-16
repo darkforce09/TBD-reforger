@@ -69,6 +69,11 @@ verify = [
     "wave gate with wrong base refuses or warns before PASS.",
     "Re-run gate 2f0167b9 base runs trunk build; 27/27 PASS.",
 ]
+acceptance = [
+    "cmd_gate derived its base from the newest wave CLOSED commit when omitted, replacing the HEAD~1 default that skipped slices.",
+    "gate_base_covers_wave refused bases that started after the wave opened or sat off HEAD history.",
+    "cmd_wave_close called cmd_gate with no argument; stale comment counts were corrected in arsenal.rs, ci.yml, and wave.sh.",
+]
 citations = [
     "wave.sh gate base trap",
     "wave 75 verifier F5 F6 F7",

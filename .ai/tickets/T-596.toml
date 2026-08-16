@@ -78,6 +78,11 @@ verify = [
     "mkdir target-zz newline b; wave.sh reclaim no unbound variable.",
     "Renumber role_id silently misroutes upload without literal imports.",
 ]
+acceptance = [
+    "Eight hand-copied ROLE u32 literals in four frontend files imported map_engine_render::draw_order::role_id constants.",
+    "set_lane_opacity routed through tex_lane_role_from_u32 so unknown texture role ids no-oped instead of silently selecting Hillshade.",
+    "draw_order module doc corrected that wasm-bindgen dist glue hits are passthrough parameters, not hardcoded role ids.",
+]
 citations = [
     "wave 73 adversarial verifier",
     "T-592 role_id module",

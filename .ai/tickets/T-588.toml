@@ -65,6 +65,11 @@ verify = [
     "systemd-analyze verify --user scripts/deploy/tbd-website-backup.service -> rc=1 today.",
     "Rendered units verify clean; all four confirmed.",
 ]
+acceptance = [
+    "Backup unit templates used an absolute WorkingDirectory placeholder so committed files passed systemd-analyze verify.",
+    "tbd_verify_dump rejected dumps whose archive dbname did not match the source, or whose TOC lacked _sqlx_migrations.",
+    "Mortar hydrated_for became a per-operation set so switching back no longer overwrote unsaved in-progress edits.",
+]
 citations = [
     "wave 71 adversarial verifier",
     "TBD_REPO_DIR_PLACEHOLDER WorkingDirectory",

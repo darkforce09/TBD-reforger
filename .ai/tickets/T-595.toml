@@ -70,6 +70,11 @@ verify = [
     "server_control.rs Ok arm and rcon_accepted_message reachable after wire.",
     "TBD_INSTALL_AGENT=1 required before end-to-end exercise on live host.",
 ]
+acceptance = [
+    "services/game_agent.rs spoke JSON over GAME_AGENT_SOCKET UnixStream with a timeout exceeding the agent dwell.",
+    "send_rcon mapped Accepted, Rejected, and Unreachable to 202, 409, and 503 instead of unconditional RCON_NO_TRANSPORT.",
+    "Audit rows recorded the agent outcome after the reply; GAME_AGENT_SOCKET was documented in api .env.example.",
+]
 citations = [
     "T-289 deploy-staging agent spec",
     "T-269 RCON_NO_TRANSPORT stub",

@@ -66,6 +66,10 @@ verify = [
     "Push range with only non-LFS map-assets changes succeeds.",
     "Push range with genuine LFS files still refused.",
 ]
+acceptance = [
+    "wave.sh push guard consulted git check-attr filter and refused only files genuinely marked LFS, naming each offender.",
+    "Non-LFS map-assets changes such as regenerated prefabs.json.gz no longer tripped a path-based false positive.",
+]
 citations = [
     "wave.sh LFS path guard",
     "git check-attr filter authority",

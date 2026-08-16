@@ -56,6 +56,11 @@ verify = [
     "SPA refuses at 32 MiB; legitimate 32-256 MB export refused client-side.",
     "GET /missions/:id/versions still 405; no list route.",
 ]
+acceptance = [
+    "api_post_raw routed raw String bodies through the existing single-flight request helper with shared refresh retry semantics.",
+    "Body::Raw used Rc<String> so a 401 retry reused one buffer instead of cloning the upload payload again.",
+    "The helper returned Ok(()) deliberately, avoiding a fourth parsed Value tree from the echoed 201 json_payload.",
+]
 citations = [
     "T-117 upload UI scope",
     "UPLOAD_MAX_BYTES 32 MiB cap",

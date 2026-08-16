@@ -106,6 +106,11 @@ verify = [
     "the_upload_panel_is_wired_to_versions_route pin holds on shared builder.",
     "64 MiB new path measures ~572 MiB vs 1357 MiB shipping api_post today.",
 ]
+acceptance = [
+    "create_version streamed version_body_to_writer into api_post_raw, collapsing four simultaneous Value trees to one serialized body.",
+    "UPLOAD_MAX_BYTES rose from 32 MiB to 64 MiB with measured wasm peak under half the prior 32 MiB path.",
+    "Shared VersionBody struct pinned wire keys; byte-equality tests covered 36 adversarial input pairs across both doors.",
+]
 citations = [
     "T-591 api_post_raw dead code",
     "T-591 parse amplification measured",

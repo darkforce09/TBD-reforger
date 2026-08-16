@@ -52,6 +52,10 @@ verify = [
     "cargo clippy -p xtask -p tbd-tools --all-targets -D warnings clean.",
     "wave gate runs new clippy step on both crates.",
 ]
+acceptance = [
+    "Fourteen clippy errors were fixed: ten in tbd-tools and four in xtask, then both crates linted under -D warnings.",
+    "wave.sh added clippy -p xtask -p tbd-tools alongside the existing unconditional test step for those crates.",
+]
 citations = [
     "wave 75 verifier F8 clippy",
     "T-597 xtask test gap",

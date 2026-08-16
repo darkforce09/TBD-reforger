@@ -58,6 +58,11 @@ verify = [
     "Restored fire mission shows persisted TOF and charge, not fabricated zero.",
     "T-285 captured-live-response test pins SavedFire until dto.rs migration.",
 ]
+acceptance = [
+    "Migration 0020 added numeric fp/tgt coordinates plus charge, azimuth_mils, and time_of_flight_s columns with grid-string backfill.",
+    "POST and list handlers bound all fifteen solution fields; restored rows showed persisted TOF instead of an honest dash.",
+    "t587_fire_mission_solution tests asserted the database row and list body, not only the 201 response.",
+]
 citations = [
     "T-285 grid string workaround",
     "fmt_grid parse_grid mortar.rs",

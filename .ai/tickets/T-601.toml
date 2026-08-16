@@ -82,6 +82,11 @@ verify = [
     "Pre-signature cfg decoy fails mission_title_prefer executing pin.",
     "Spaced cfg(any()) survives scrubber today; must strip after fix.",
 ]
+acceptance = [
+    "mission_title_prefer extractor refused pre-signature cfg decoys and cfg_attr shapes that previously beat item().",
+    "class_r_scrub parsed cfg predicates and constant-folded false conditions instead of matching seven literal spellings.",
+    "Hollow include_str contains pins across eight frontend modules were converted to execute-or-scrub Class-R checks.",
+]
 citations = [
     "wave 75 verifier F2 F3 F4",
     "mission_title_prefer execute pattern",

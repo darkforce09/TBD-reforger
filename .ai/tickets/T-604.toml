@@ -67,6 +67,11 @@ verify = [
     "Server registers backend room and loads local mod GUID.",
     "#tbd admin commands work after boot with -config.",
 ]
+acceptance = [
+    "run-playtest-server.sh launched with both -addonsDir and -config, staging profile, and backend room registration assertions.",
+    "The launcher failed when Workshop download won over the local addon and printed parsed join address and Direct Join code.",
+    "run-dev-server.sh and STAGING-SERVER.md documented the joinable mod-loaded admin-capable playtest path.",
+]
 citations = [
     "T-604 blocks T-181 T-068",
     "deploy-staging catch-22 modes",

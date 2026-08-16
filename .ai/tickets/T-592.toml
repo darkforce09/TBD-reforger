@@ -57,6 +57,11 @@ verify = [
     "Zone dock list and set_place_preview ghost ship; map canvas outline absent.",
     "Two-click circle closes r=0 hazard; polish item not defect.",
 ]
+acceptance = [
+    "LaneRole::MissionZones and vector-lane role id 10 were declared for closed zone ring LineList uploads.",
+    "role_id module centralized lane constants with exhaustive round-trip and ALL_LANES compile-time guards.",
+    "MissionZones lane order sat above Grid and below SquadLinks so rings enclosed units without occluding slot markers.",
+]
 citations = [
     "T-582 zone draw tool",
     "LaneRole roles 0-9 taken",
