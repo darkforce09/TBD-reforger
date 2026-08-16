@@ -37,6 +37,11 @@ current_state = [
 ]
 approach = ["Own compile.rs and mission_commands.rs; panel stays T-655 single claimant."]
 verify = ["Structured findings returned with bytes; six drop diagnostics emitted."]
+acceptance = [
+    "Compile lifts structured findings with severity, rule id, entity id, and message alongside export bytes.",
+    "Six T-216 flatten drop diagnostics emit until T-674 and T-675 land schema readers; registry rules stay off.",
+    "/compiled surfaces findings via two headers plus warn per finding; validation panel consumes the publish feed.",
+]
 citations = [
     "framework_synthesis.md C.2 U7",
     "fnf_v4.md 13.1 export hook",

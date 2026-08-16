@@ -62,6 +62,11 @@ verify = [
     "verifier wave120.md contract hardened hostile reading.",
     "Unread-fields test fails day reader lands forces comment removal.",
 ]
+acceptance = [
+    "mission.schema.json widened additively once for sixteen runtime halves with per-field ticket comments.",
+    "Unread-fields gate at fifty-three wire fields fails the day any 1.3 reader lands on mod tree.",
+    "No existing field changed shape; compile-boundary ledger records DeclaredPendingEmit for opened contracts.",
+]
 citations = [
     "mission.schema.json:72 entities warning",
     "sixteen runtime halves absorbed",

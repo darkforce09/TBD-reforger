@@ -24,6 +24,19 @@ requirement = [
     "Data in document; target navigator.clipboard.",
 ]
 current_state = ["Cheap win: data already in document."]
+approach = [
+    "Three clipboard exporters call format_grid_ref via eden_toolbelt::grid_ref_3digit — no second grid convention.",
+    "write_clipboard awaits navigator.clipboard and toasts success only on resolve arm.",
+]
+verify = [
+    "cargo test -p website-frontend the_exporter_grid_ref_is_the_map_furnitures_own_label_text",
+    "cargo test -p website-frontend class_r_write_clipboard_toasts_only_on_the_resolve_arm",
+]
+acceptance = [
+    "Grid position, classname, and selection summary exporters reuse T-667 grid_ref_3digit for every row.",
+    "Multi-selection emits one line per entity, never a centroid; clipboard write refuses insecure contexts with a message.",
+    "Success toast fires only on clipboard resolve; awaited write replaced fire-and-forget copy paths.",
+]
 citations = [
     "3den E5 clipboard exporters",
     "wog3_3den Log entries",

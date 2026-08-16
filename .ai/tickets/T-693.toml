@@ -27,6 +27,11 @@ requirement = [
 current_state = ["paste_slots primitive exists at store.rs 1442."]
 approach = ["Wire merge command through mission_commands.rs and doc store.rs."]
 verify = ["Ctrl+M merges template mission slots into open document."]
+acceptance = [
+    "merge_mission_payload mints collision-proof ids and lands alongside residents without overwrite.",
+    "merge_mission_now runs the after_local_edit tail so the merged template is one undoable document mutation.",
+    "Duplicate payload ids do not double-append; merge report formats counts and skips for the operator.",
+]
 citations = [
     "MENU-SCEN-011 Eden Ctrl+M",
     "store.rs paste_slots primitive",

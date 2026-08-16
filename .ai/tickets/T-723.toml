@@ -39,6 +39,10 @@ approach = [
     "Cover T-642 ruler and LoS stale gesture victims same seam.",
 ]
 verify = ["Event-sequence tests prove click-then-click and disarm paths."]
+acceptance = [
+    "Armed place consumed only button-0 pointerup and cleared left gesture state.",
+    "Click-then-click placement worked; Esc and RMB disarmed.",
+]
 citations = [
     "editor_verify/wave106.md MAJOR-1/2/3",
     "wave108.md MAJOR-1 tooltip",

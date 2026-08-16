@@ -24,6 +24,19 @@ requirement = [
     "NOT folded into T-646 search and submode tree filtering.",
 ]
 current_state = ["T-646 covers search and submode filtering over existing tree."]
+approach = [
+    "Persist starred assets in localStorage key tbd-mc-editor-favourites with versioned migrate chokepoint.",
+    "Resolve favourites by resource_name; stale entries kept and marked, never pruned.",
+]
+verify = [
+    "cargo test -p website-frontend favourites_key_is_namespaced_and_versioned",
+    "cargo test -p website-frontend stale_favourite_is_kept_and_marked_not_dropped",
+]
+acceptance = [
+    "Starred collection persists under tbd-mc-editor-favourites with version stamp and one migration chokepoint.",
+    "resolve_favourites is count-preserving; stale favourites stay marked when catalogue rows disappear.",
+    "Favourites tab arms place from live catalogue rows; identity is resource_name across modpack re-ingest.",
+]
 citations = [
     "NEW-F5 3den E3 3DEN-CTX-001",
     "Eden F7 favourites",

@@ -27,6 +27,19 @@ current_state = [
     "T-055 search over asset catalogue only.",
     "Nothing over placed entities; find-by-name not optional.",
 ]
+approach = [
+    "Reuse T-084 query grammar via private matcher projection; route matches_query through one call site.",
+    "DocKind::is_selectable gates selectable hits; non-selectable rows render inert with aria-disabled reason.",
+]
+verify = [
+    "cargo test -p website-frontend the_placed_document_is_searchable_by_text",
+    "cargo test -p website-frontend a_faction_only_hit_names_faction_not_the_first_text_attribute",
+]
+acceptance = [
+    "Document search covers eight placeable collections with T-084 grammar shared across dock layers.",
+    "Selection filter narrows by type or faction; non-selectable hits stay inert with stated reason per T-754 lesson.",
+    "T-696 matches_query routes through the same matcher so one query language spans layers, bookmarks, and search.",
+]
 citations = [
     "3den E4 3DEN-TOOL-011",
     "T-055 catalogue search",

@@ -25,6 +25,19 @@ requirement = [
     "Remove Everything strip verb only.",
 ]
 current_state = ["Nine per-category strip variants marked maybe deliberately excluded."]
+approach = [
+    "Copy buffers all selected loadouts; Apply draws uniformly with SplitMix64(seed, ordinal, len).",
+    "Accept/refuse gate runs over whole buffer before any draw; strip sends explicit cargo:[] to block reseed.",
+]
+verify = [
+    "cargo test -p website-frontend the_draw_is_uniform_independent_and_reproducible",
+    "cargo test -p website-frontend the_apply_gate_is_the_import_gate",
+]
+acceptance = [
+    "Copy, Apply, and Remove-Everything verbs buffer, write, and strip loadouts over the selection.",
+    "Random apply is deterministic from seed and ordinal; validation runs before any buffered draw.",
+    "Nine per-category strip variants and inheritance were absent by pin; N entities cost N undo steps.",
+]
 citations = [
     "3den E7 3DEN-LOAD-001",
     "random per entity apply",

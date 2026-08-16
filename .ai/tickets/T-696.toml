@@ -28,6 +28,19 @@ current_state = [
     "Nothing lets you list or fly to one.",
     "Eden has Locations tab beside Entities.",
 ]
+approach = [
+    "Locations tab reuses world_assets::named_locations parser; bookmarks store camera x/y/zoom in localStorage.",
+    "Fly-to calls set_view without mission_history or after_local_edit — not undoable document edits.",
+]
+verify = [
+    "cargo test -p website-frontend the_index_and_the_fly_to_reuse_the_shipped_paths",
+    "cargo test -p website-frontend bookmarks_and_fly_to_are_not_document_edits",
+]
+acceptance = [
+    "Locations tab lists named places from LabelHost towns via the same url and parser as boot.",
+    "Camera bookmarks persist under tbd-mc-editor-bookmarks; fly_to recenters without dirtying the document.",
+    "Left dock gained Locations and Bookmarks tabs beside Layers; bookmarks are not undoable document edits.",
+]
 citations = [
     "NEW-F7 3den E1",
     "world_assets labels.rs",

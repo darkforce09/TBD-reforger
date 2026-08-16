@@ -33,6 +33,11 @@ approach = [
     "Pairs T-692 invisible bindings collide silently.",
 ]
 verify = ["verifier wave119.md records shipped slice evidence."]
+acceptance = [
+    "Four extractor copies collapsed to one keymap_census module; census widened to ev.key listeners.",
+    "no_two_listeners_claim_the_same_chord fails on overlapping code and modifier predicate pairs.",
+    "Context menu ArrowUp, ArrowDown, and Enter surfaced as previously undocumented bindings in the census.",
+]
 citations = [
     "T-662 Backspace collision",
     "T-648 Space flyTo clash",

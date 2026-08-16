@@ -33,6 +33,15 @@ current_state = [
     "Inspector and validation rules must precede edges you cannot see.",
 ]
 approach = ["Reuse SquadLinks lane or add MissionConnections peer; menu in context_menu."]
+verify = [
+    "cargo test -p map-engine-core --features mission,doc the_connection_checker_fires_every_rule_and_stays_silent_on_a_clean_graph",
+    "cargo test -p map-engine-core --features mission,doc force_to_formation_anchors_the_leader_rotates_by_heading_and_is_one_undo_step",
+]
+acceptance = [
+    "Connection rows list in stable content order; five CONN rules fire on junk and stay silent on a clean graph.",
+    "Delete cascades before remove_slots; force_to_formation rotates offsets with one undo step per leader.",
+    "Connections remain editor-only and never reach mod wire per connections_never_reaches_the_mod_document pin.",
+]
 citations = [
     "CONN-START-001 CONN-SYNC-001 CONN-DEL-001",
     "LaneRole SquadLinks draw_order.rs:57",

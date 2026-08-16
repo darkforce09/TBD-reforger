@@ -31,6 +31,11 @@ current_state = [
 ]
 approach = ["Split editor preferences surface from mission attributes in settings UI."]
 verify = ["Editor preferences dialog separate from mission settings attributes."]
+acceptance = [
+    "Editor Preferences dialog owns basemap and twelve world-layer toggles under tbd-mc-editor-prefs localStorage.",
+    "Mission Settings keeps terrain, time, weather, flow durations, and JIP as document keys behind author_env.",
+    "Separation pins ban world_layer_prefs store calls from MissionSettingsDialog and author_env from prefs body.",
+]
 citations = [
     "3den E6 preferences store",
     "MENU-BAR-006 screenshot row",

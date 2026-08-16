@@ -33,6 +33,11 @@ approach = [
     "Bursts coalesce blur Enter commit not per-keypress undo.",
 ]
 verify = ["verifier wave119.md records shipped slice evidence."]
+acceptance = [
+    "PageUp/PageDown nudge uses finest-first modifier step scale with refusal before arithmetic on disagreeing multi-selection.",
+    "Shared SearchBox primitive landed in ui.rs beside T-633 Slider and Select; bursts coalesce through blur or Enter commit.",
+    "Ctrl+F binding and tree tooltips were blocked by sibling ownership and reported, not silently dropped.",
+]
 citations = [
     "3DEN-PLACE-013 numeric nudge",
     "T-633 Slider Select ui.rs",

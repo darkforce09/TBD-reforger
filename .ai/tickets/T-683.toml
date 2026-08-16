@@ -39,6 +39,11 @@ verify = [
     "Admin endpoint returns override fraction and histogram per configured key.",
     "Schema defaults read-only; no mission.schema.json widening in this ticket.",
 ]
+acceptance = [
+    "Admin GET /api/v1/admin/mission-default-overrides returns per-key override fraction and value histogram.",
+    "Aggregation reads schema defaults read-only beside the existing missions.rs jsonb query shape.",
+    "Non-admin callers receive 403; mission.schema.json carried no widening in this slice.",
+]
 citations = [
     "framework_synthesis B7 rank nine",
     "wog.md forty-three percent disable",

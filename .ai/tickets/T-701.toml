@@ -22,6 +22,11 @@ verify = [
     "materialize() sole enforcement site; editor_hidden tests red without filter.",
     "editorHidden absent from mission and editor-payload schemas.",
 ]
+acceptance = [
+    "editorHidden boolean on slot rows filters at materialize and never reaches compiled mission wire.",
+    "Batch hide and show_all each cost one undo step via set_slots_editor_hidden and clear_all_editor_hidden.",
+    "Wire schemas omit editorHidden; hide and batch hide share one transaction per editor_ops wrapper.",
+]
 citations = [
     "eden attributes Enable Visibility",
     "wave120.md T-701 verified",

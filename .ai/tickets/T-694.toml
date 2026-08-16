@@ -31,6 +31,11 @@ current_state = [
 ]
 approach = ["Edit multiplayer settings in eden_settings; show both counts unstated disagreement."]
 verify = ["Source-scan pin fails if clamp min max min_players appears in section."]
+acceptance = [
+    "game_mode select PATCHes the missions row after creation using the server enum table only.",
+    "Derived slot_count displays beside max_players with disagreement noted when the two figures differ.",
+    "dto.rs stayed comment-only; no min_players field, migration, or backend shape change shipped.",
+]
 citations = [
     "DLG-MP-001 multiplayer dialog",
     "create_mission_dialog.rs game_mode",

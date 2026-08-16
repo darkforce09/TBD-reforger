@@ -44,6 +44,11 @@ verify = [
     "Aggregation lists authored settings with schema default or honest absent.",
     "Diff-from-default filter excludes unmodified keys from filtered view.",
 ]
+acceptance = [
+    "Read-only aggregated list shows key, owner, authored value, and schema default or no-default-declared.",
+    "Diff-from-default filter hides rows matching schema defaults; view is not a second editing surface.",
+    "Click-through to owning entity remained undelivered for resolvable rows per wave115 MAJOR and T-754.",
+]
 citations = [
     "framework_synthesis U4 aggregation",
     "fnf_v4 scattered settings defect",

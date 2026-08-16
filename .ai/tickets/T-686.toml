@@ -41,6 +41,11 @@ verify = [
     "Invalid loadout document applies nothing with refusal message.",
     "Valid import applies picks in one undo step via set_loadout.",
 ]
+acceptance = [
+    "File picker ingests loadout-export.schema.json v2 via include_str and mirrors export refusal on fault.",
+    "validate_loadout and cargo capacity checks run before commit; successful import applies one set_loadout undo step.",
+    "Round-trip closes on golden export bytes; invalid documents apply nothing with a named refusal message.",
+]
 citations = [
     "framework_synthesis U2 loadout",
     "loadout-export.schema.json v2",

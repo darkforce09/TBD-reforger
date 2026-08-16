@@ -32,6 +32,11 @@ current_state = [
 ]
 approach = ["Extend pick in select_tool geometry; wire zones polygon hit test."]
 verify = ["Dblclick object or zone opens attributes not asset picker."]
+acceptance = [
+    "Wave-106 MAJOR-4 filed objects-and-zones ATTR-OPEN residue after T-647 limited dblclick Attributes to slots and vehicles.",
+    "Ticket captured pick entitiesById and point-in-zone hit routed to open_attributes with picker guarded to empty-ground misses.",
+    "No subject commit shipped this slice; estimate_note records shipped_at absent by design.",
+]
 citations = [
     "editor_verify/wave106.md MAJOR-4",
     "T-647 one-call-site swap",
