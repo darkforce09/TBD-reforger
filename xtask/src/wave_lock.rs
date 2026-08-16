@@ -17,6 +17,9 @@
 //! [[waves]]                    # n = 0 is the parking lot; open waves number wave_base+1 onward
 //! n = 0
 //! tickets = [...]
+//! [[emptied]]                  # T-925: fully-shipped former open waves pending close —
+//! n = 133                      # frozen {label, ticket set}; OMITTED entirely when none
+//! tickets = [...]
 //! [owns]                       # per-ticket snapshots, sorted maps
 //! [depends_on]
 //! ```
@@ -26,7 +29,8 @@
 //!
 //! ── NUMBERING — THE CLOSE-MARKER LEDGER (T-914) ──────────────────────────────────────────────
 //!
-//! Open waves are labeled `wave_base + 1` onward, where `wave_base` is the newest valid,
+//! Open waves are labeled `wave_base + 1` onward (T-925: past every pending emptied label too —
+//! see §EMPTIED WAVES), where `wave_base` is the newest valid,
 //! non-disavowed `wave N CLOSED` marker reachable from HEAD at repack time — HEAD included,
 //! because the repack that follows a close ceremony runs with the fresh marker at HEAD
 //! ([`crate::wave::base::newest_close_base`], which shares the gate's one subject authority).
@@ -41,6 +45,21 @@
 //! exists to refuse. It does NOT demand n-contiguity from the base — waves 1+ grouping AND
 //! labels stay the packer's recorded choice (see CHECK below), and raw-TOML stub locks with
 //! arbitrary n stay valid.
+//!
+//! ── EMPTIED WAVES (T-925) ────────────────────────────────────────────────────────────────────
+//!
+//! When every ticket of an open wave ships, the next repack parks them all in wave 0 and the
+//! wave's label silently dissolves — which left `wave --close` with no reachable target ever:
+//! `current_wave` names the first wave still holding UNSHIPPED work, and the finished wave it
+//! should have closed no longer exists by the time close runs. So the repack FREEZES the
+//! dissolving wave instead: its label and its exact ticket set become a pending `[[emptied]]`
+//! entry, carried from the previous lock exactly like the wave-0 baseline (same
+//! cannot-recompute-from-scratch class), and dropped the moment the ledger base reaches the
+//! label — i.e. by the post-close repack, once that label's `wave N CLOSED` marker landed.
+//! `wave --close` targets the OLDEST pending entry (the marker oracle accepts only base+1, so a
+//! queue drains in ledger order). Open waves number past every pending label
+//! (`max(wave_base, highest pending) + 1`), so a reserved label is never reissued while it
+//! waits. Partial ships record nothing — only a wave whose whole set landed empties.
 //!
 //! ── WAVE 0 ───────────────────────────────────────────────────────────────────────────────────
 //!
@@ -120,6 +139,16 @@ pub struct WaveLock {
     pub wave_base: u32,
     pub pack_last: Vec<String>,
     pub waves: Vec<LockWave>,
+    /// T-925 — pending EMPTIED waves (module header §EMPTIED WAVES): open waves of the
+    /// previous lock whose every ticket has shipped, frozen as {label, exact ticket set} by
+    /// the repack that dissolved them, held until `wave --close` lands each label's marker.
+    /// [`carry_emptied`] is the only producer. Serde-defaulted so pre-T-925 lock blobs (and
+    /// the raw-TOML stubs) keep parsing; SKIPPED from the render when empty — an
+    /// `emptied = []` root value after the `[[waves]]` tables would not even be valid TOML,
+    /// and the empty case must render byte-identically to the pre-T-925 shape. Nonempty it
+    /// renders as `[[emptied]]` tables between `[[waves]]` and `[owns]`, labels ascending.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub emptied: Vec<LockWave>,
     pub owns: BTreeMap<String, Vec<String>>,
     pub depends_on: BTreeMap<String, Vec<String>>,
 }
@@ -294,6 +323,55 @@ fn wave_zero(views: &[TicketView], baseline: &BTreeSet<String>) -> Vec<String> {
     set.into_iter().collect()
 }
 
+/// T-925 — the `[[emptied]]` carry: which pending close targets does the new lock hold?
+///
+/// Same previous-lock carry class as the wave-0 baseline ([`repack_quiet`] feeds the committed
+/// lock in; a lockless tree carries nothing):
+///
+///   * every pending entry of the previous lock survives UNTIL ITS MARKER LANDS — an entry
+///     whose label is at or below the fresh ledger base drops, because that label's
+///     `wave N CLOSED` marker is now in history (the post-close repack is exactly this call);
+///   * every previous OPEN wave above the base whose ticket set is now entirely
+///     shipped/cancelled EMPTIES: its label and its exact ticket set freeze into an entry.
+///     Shipped-or-cancelled mirrors `Registry::is_shipped` — the same "done" the close
+///     ceremony's all-shipped validation re-checks against the tree — so the repack can never
+///     record a target close would refuse on status grounds. A wave with any live ticket
+///     records NOTHING (partial ships leave no trace), and a listed id with no ticket file is
+///     not shipped — fail-closed, the wave stays un-emptied.
+///
+/// The frozen set is never recomputed or filtered afterwards: it is the ledger of what the
+/// wave WAS when it emptied, which is what its close marker will name. Labels ascend in the
+/// output; `check_as_errors` re-verifies that via the union numbering check.
+fn carry_emptied(prev: Option<&WaveLock>, views: &[TicketView], wave_base: u32) -> Vec<LockWave> {
+    let Some(prev) = prev else {
+        return Vec::new();
+    };
+    let by_id: BTreeMap<&str, &TicketView> = views.iter().map(|v| (v.id.as_str(), v)).collect();
+    let landed = |id: &String| {
+        by_id
+            .get(id.as_str())
+            .map(|v| matches!(v.status, StatusName::Shipped | StatusName::Cancelled))
+            .unwrap_or(false)
+    };
+    let mut out: Vec<LockWave> = prev
+        .emptied
+        .iter()
+        .filter(|e| e.n > wave_base)
+        .cloned()
+        .collect();
+    let pending: BTreeSet<u32> = out.iter().map(|e| e.n).collect();
+    for w in &prev.waves {
+        if w.n <= wave_base || pending.contains(&w.n) || w.tickets.is_empty() {
+            continue;
+        }
+        if w.tickets.iter().all(landed) {
+            out.push(w.clone());
+        }
+    }
+    out.sort_by_key(|e| e.n);
+    out
+}
+
 /// The live greedy over dispatchable candidates sorted by (`order`, id).
 ///
 /// Returns the packed waves (1..N by position). Dependency edges whose target cannot ever pack
@@ -413,6 +491,7 @@ fn assemble(
     open_waves: Vec<Vec<String>>,
     cap: usize,
     wave_base: u32,
+    emptied: Vec<LockWave>,
 ) -> WaveLock {
     let (owns, depends_on, pack_last) = snapshots(views);
     let mut waves = Vec::new();
@@ -423,11 +502,15 @@ fn assemble(
             tickets: zero,
         });
     }
-    // Open waves continue the close-marker ledger (module header §NUMBERING). Wave 0 is a
-    // LEDGER, not a schedule — its label never moves off 0.
+    // Open waves continue the close-marker ledger (module header §NUMBERING), numbering past
+    // every PENDING emptied label too (T-925): those labels are reserved for their close
+    // markers, so the first open wave is max(wave_base, highest pending) + 1 and a relabel
+    // can never collide with a wave that is waiting to close. Wave 0 is a LEDGER, not a
+    // schedule — its label never moves off 0.
+    let floor = emptied.iter().map(|e| e.n).fold(wave_base, u32::max);
     for (i, tickets) in open_waves.into_iter().enumerate() {
         waves.push(LockWave {
-            n: wave_base + 1 + i as u32,
+            n: floor + 1 + i as u32,
             tickets,
         });
     }
@@ -437,14 +520,21 @@ fn assemble(
         wave_base,
         pack_last,
         waves,
+        emptied,
         owns,
         depends_on,
     }
 }
 
 /// Compile the lock from the ticket tree: wave 0 on `baseline`, open waves from the greedy,
-/// labeled from the close-marker ledger.
-pub fn compile(root: &Path, baseline: &BTreeSet<String>) -> Result<WaveLock> {
+/// labeled from the close-marker ledger past every pending emptied label, and the emptied
+/// section carried from `prev` — the previous committed lock. `None` compiles a tree with no
+/// lock history and carries nothing (first-ever compile, migration, fixture trees).
+pub fn compile(
+    root: &Path,
+    baseline: &BTreeSet<String>,
+    prev: Option<&WaveLock>,
+) -> Result<WaveLock> {
     let views = load_views(root)?;
     let mut warnings = Vec::new();
     let cap = max_concurrent();
@@ -452,7 +542,9 @@ pub fn compile(root: &Path, baseline: &BTreeSet<String>) -> Result<WaveLock> {
     for w in &warnings {
         eprintln!("wave repack: warning: {w}");
     }
-    Ok(assemble(&views, baseline, open, cap, ledger_base(root)?))
+    let wave_base = ledger_base(root)?;
+    let emptied = carry_emptied(prev, &views, wave_base);
+    Ok(assemble(&views, baseline, open, cap, wave_base, emptied))
 }
 
 pub fn render(lock: &WaveLock) -> Result<String> {
@@ -500,11 +592,14 @@ pub fn repack_quiet(root: &Path) -> Result<WaveLock> {
     if crate::wave::legacy_plan::any_tsv_present(root) {
         return migrate_from_tsv(root);
     }
-    let baseline: BTreeSet<String> = match load(root) {
-        Ok(prev) => prev.tickets_in_wave(0).into_iter().collect(),
-        Err(_) => BTreeSet::new(), // first-ever compile on a lockless tree
-    };
-    let lock = compile(root, &baseline)?;
+    // The previous committed lock is BOTH carries: its wave 0 is the parked baseline, and its
+    // open waves + pending entries feed the emptied carry (T-925, [`carry_emptied`]).
+    let prev = load(root).ok(); // first-ever compile on a lockless tree carries nothing
+    let baseline: BTreeSet<String> = prev
+        .as_ref()
+        .map(|p| p.tickets_in_wave(0).into_iter().collect())
+        .unwrap_or_default();
+    let lock = compile(root, &baseline, prev.as_ref())?;
     write(root, &lock)?;
     Ok(lock)
 }
@@ -539,13 +634,15 @@ fn migrate_from_tsv(root: &Path) -> Result<WaveLock> {
     // T-914: the migration arm numbers from the ledger too. The T-912.2 cutover relabeled the
     // TSV groups 1..N, but that lock has already landed in real history — this arm is only
     // reachable on a hypothetical TSV-bearing tree, and numbering it off the ledger keeps the
-    // base check green there instead of red-on-arrival.
+    // base check green there instead of red-on-arrival. No emptied carry: the TSV era
+    // predates the section, and a TSV-bearing tree has no previous LOCK to carry from.
     let lock = assemble(
         &views,
         &wave0_tsv,
         open,
         max_concurrent(),
         ledger_base(root)?,
+        Vec::new(),
     );
     write(root, &lock)?;
     crate::wave::legacy_plan::delete_tsvs(root)?;
@@ -566,7 +663,13 @@ fn summary(lock: &WaveLock) -> String {
         .find(|w| w.n == 0)
         .map(|w| w.tickets.len())
         .unwrap_or(0);
-    format!("{open} open ticket(s) in {n_open} wave(s), {parked} parked at wave 0")
+    let base = format!("{open} open ticket(s) in {n_open} wave(s), {parked} parked at wave 0");
+    // T-925: a pending emptied wave is the thing `wave --close` acts on — say so whenever one
+    // exists; byte-identical summary when none does.
+    match lock.emptied.len() {
+        0 => base,
+        k => format!("{base}, {k} emptied wave(s) pending close"),
+    }
 }
 
 pub fn cmd_repack(root: &Path) -> Result<u8> {
@@ -604,7 +707,7 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
     // loop. Deliberately NOT a contiguity rule: beyond the strictly-increasing check below,
     // open-wave labels are the packer's recorded choice, and raw-TOML stubs with arbitrary n
     // (mod_wave_tests uses 99) must stay green.
-    match ledger_base(root) {
+    let derived_base = match ledger_base(root) {
         Ok(want_base) => {
             if lock.wave_base != want_base {
                 errors.push(format!(
@@ -612,18 +715,34 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
                     lock.wave_base
                 ));
             }
+            Some(want_base)
         }
-        Err(e) => errors.push(format!("wave.lock base derivation refused: {e}")),
-    }
+        Err(e) => {
+            errors.push(format!("wave.lock base derivation refused: {e}"));
+            None
+        }
+    };
 
-    // Wave numbering: strictly increasing, wave 0 first when present, no duplicate n.
-    let ns: Vec<u32> = lock.waves.iter().map(|w| w.n).collect();
+    // Wave numbering: strictly increasing, wave 0 first when present, no duplicate n —
+    // across the UNION of open-wave labels and pending emptied labels (T-925). Emptied
+    // labels are RESERVED numbers sitting between wave_base and the open waves (the packer
+    // numbers open waves past them), so the one legal ascending order is wave 0, then every
+    // pending emptied label, then every open wave; a collision or inversion anywhere in
+    // that union is red here.
+    let mut ns: Vec<u32> = lock
+        .waves
+        .iter()
+        .filter(|w| w.n == 0)
+        .map(|w| w.n)
+        .collect();
+    ns.extend(lock.emptied.iter().map(|e| e.n));
+    ns.extend(lock.waves.iter().filter(|w| w.n > 0).map(|w| w.n));
     let mut sorted = ns.clone();
     sorted.sort_unstable();
     sorted.dedup();
     if ns != sorted {
         errors.push(format!(
-            "wave.lock wave numbers are not strictly increasing: {ns:?}"
+            "wave.lock wave numbers (wave 0, pending emptied, open waves) are not strictly increasing: {ns:?}"
         ));
     }
 
@@ -741,6 +860,61 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
         }
     }
 
+    // ── T-925: the pending [[emptied]] section — repack-recorded close targets ──────────────
+    // Like the wave-0 baseline, entries CARRY from the previous lock at repack time (the
+    // frozen {label, ticket set} of an open wave whose every ticket had shipped) and CANNOT be
+    // recomputed from scratch here — at check time there is no previous lock to read, only the
+    // committed one. So this validates INVARIANTS, not a fresh derivation: every label above
+    // wave_base (at-or-below means its close marker landed and the repack must drop it), sets
+    // nonempty, every listed ticket shipped/cancelled in the current tree (the same "done" the
+    // close ceremony re-verifies before writing a marker), and the carry rule itself as a
+    // FIXPOINT — running the writer's own carry with this lock as its previous must reproduce
+    // the section (that drops landed labels and records any fully-shipped open wave a stale
+    // lock left behind). Ascending labels and emptied/open disjointness are already pinned by
+    // the union numbering check above. A hand-edit INSIDE a frozen set that stays nonempty and
+    // all-shipped is not detectable from the tree, exactly as a hand-edit to the file-less
+    // half of the wave-0 baseline is not — the lock is the only record of what the wave was.
+    for e in &lock.emptied {
+        if e.n <= lock.wave_base {
+            errors.push(format!(
+                "wave.lock emptied wave {} is at or below wave_base {} — its close marker landed: run `cargo xtask wave repack`",
+                e.n, lock.wave_base
+            ));
+        }
+        if e.tickets.is_empty() {
+            errors.push(format!(
+                "wave.lock emptied wave {} lists no tickets — an empty set can never be recorded: run `cargo xtask wave repack`",
+                e.n
+            ));
+        }
+        for t in &e.tickets {
+            let landed = by_id
+                .get(t.as_str())
+                .map(|v| matches!(v.status, StatusName::Shipped | StatusName::Cancelled))
+                .unwrap_or(false);
+            if !landed {
+                let what = by_id
+                    .get(t.as_str())
+                    .map(|v| v.status.as_str())
+                    .unwrap_or("no ticket file");
+                errors.push(format!(
+                    "wave.lock emptied wave {} lists {t} ({what}) — not shipped in the current tree",
+                    e.n
+                ));
+            }
+        }
+    }
+    if let Some(want_base) = derived_base {
+        let want = carry_emptied(Some(&lock), &views, want_base);
+        if want != lock.emptied {
+            errors.push(format!(
+                "wave.lock emptied section disagrees with the carry rule — pending labels {:?}, carry derives {:?}: run `cargo xtask wave repack`",
+                lock.emptied.iter().map(|e| e.n).collect::<Vec<_>>(),
+                want.iter().map(|e| e.n).collect::<Vec<_>>(),
+            ));
+        }
+    }
+
     errors
 }
 
@@ -808,7 +982,7 @@ mod tests {
                 ),
             ],
         );
-        let lock = compile(&dir, &BTreeSet::new()).unwrap();
+        let lock = compile(&dir, &BTreeSet::new(), None).unwrap();
         let open: Vec<&LockWave> = lock.waves.iter().filter(|w| w.n > 0).collect();
         assert_eq!(open.len(), 2, "colliding owns must split: {lock:?}");
         assert_eq!(open[0].tickets, vec!["T-1".to_string()]);
@@ -826,7 +1000,7 @@ mod tests {
                 ("T-9.toml", &work("T-9", 20, &["b.rs"], &[], "queued")),
             ],
         );
-        let lock = compile(&dir, &BTreeSet::new()).unwrap();
+        let lock = compile(&dir, &BTreeSet::new(), None).unwrap();
         let wave_of = |id: &str| {
             lock.waves
                 .iter()
@@ -852,7 +1026,7 @@ mod tests {
                 ("T-8.toml", &work("T-8", 20, &["c.rs"], &[], "queued")),
             ],
         );
-        let lock = compile(&dir, &BTreeSet::new()).unwrap();
+        let lock = compile(&dir, &BTreeSet::new(), None).unwrap();
         // One wave (disjoint, under cap) — candidate order is (order, id): T-9, T-10, T-8→ tie
         // on 20 broken by id: "T-10" < "T-8" lexicographically.
         assert_eq!(
@@ -872,8 +1046,8 @@ mod tests {
                 ("T-3.toml", &work("T-3", 30, &["c.rs"], &[], "shipped")),
             ],
         );
-        let a = compile(&dir, &BTreeSet::new()).unwrap();
-        let b = compile(&dir, &BTreeSet::new()).unwrap();
+        let a = compile(&dir, &BTreeSet::new(), None).unwrap();
+        let b = compile(&dir, &BTreeSet::new(), None).unwrap();
         assert_eq!(a, b);
         let ra = render(&a).unwrap();
         assert_eq!(
@@ -933,7 +1107,7 @@ mod tests {
                 ("T-2.toml", &work("T-2", 20, &["b.rs"], &["T-1"], "queued")),
             ],
         );
-        let lock = compile(&dir, &BTreeSet::new()).unwrap();
+        let lock = compile(&dir, &BTreeSet::new(), None).unwrap();
         write(&dir, &lock).unwrap();
         assert!(check_as_errors(&dir).is_empty(), "fresh lock must be green");
 
@@ -1231,5 +1405,257 @@ mod tests {
             render(&lock).unwrap().contains("\nwave_base = 0\n"),
             "the render emits wave_base even at 0"
         );
+    }
+
+    // ── T-925: the [[emptied]] section — pending close targets ──────────────────────────────
+
+    /// The lock text from `[[emptied]]` to the section after it — the proof-block slice.
+    fn emptied_slice(text: &str) -> &str {
+        let start = text.find("[[emptied]]").expect("emptied section present");
+        let end = text[start..]
+            .find("\n[owns]")
+            .map(|i| start + i)
+            .unwrap_or(text.len());
+        &text[start..end]
+    }
+
+    #[test]
+    fn full_ship_freezes_the_wave_into_emptied_and_open_waves_number_past_it() {
+        // Colliding owns split T-1/T-2 into waves 42 and 43 over ledger base 41.
+        let dir = scratch_git(
+            "emptied-full",
+            &[
+                ("T-1.toml", &work("T-1", 10, &["a.rs"], &[], "queued")),
+                ("T-2.toml", &work("T-2", 20, &["a.rs"], &[], "queued")),
+            ],
+            &["wave 41 CLOSED — test ledger"],
+        );
+        let before = repack_quiet(&dir).unwrap();
+        assert_eq!(before.tickets_in_wave(42), vec!["T-1".to_string()]);
+        assert!(before.emptied.is_empty(), "nothing emptied yet: {before:?}");
+
+        // Ship ALL of wave 42 (its whole set is T-1), then the ship-hook repack.
+        fs::write(
+            dir.join(".ai/tickets/T-1.toml"),
+            work("T-1", 10, &["a.rs"], &[], "shipped"),
+        )
+        .unwrap();
+        let lock = repack_quiet(&dir).unwrap();
+        assert_eq!(lock.wave_base, 41, "no marker landed — base unchanged");
+        assert_eq!(
+            lock.emptied,
+            vec![LockWave {
+                n: 42,
+                tickets: vec!["T-1".to_string()]
+            }],
+            "the dissolved wave froze: {lock:?}"
+        );
+        // Open waves number PAST the pending label: max(wave_base 41, pending 42) + 1.
+        let open: Vec<u32> = lock.waves.iter().filter(|w| w.n > 0).map(|w| w.n).collect();
+        assert_eq!(open, vec![43], "{lock:?}");
+        assert_eq!(lock.tickets_in_wave(43), vec!["T-2".to_string()]);
+        assert!(
+            check_as_errors(&dir).is_empty(),
+            "recorded state must be green"
+        );
+        let text = fs::read_to_string(lock_path(&dir)).unwrap();
+        println!("── [[emptied]] block after the full-ship repack ──");
+        println!("{}", emptied_slice(&text));
+        println!("── renumbered open wave ──");
+        for w in lock.waves.iter().filter(|w| w.n > 0) {
+            println!("wave {} = {:?}", w.n, w.tickets);
+        }
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn partial_ship_records_no_emptied_entry() {
+        // Disjoint owns → ONE wave holding both tickets. Shipping only half of it must leave
+        // no trace: an open wave records nothing until its WHOLE set has landed.
+        let dir = scratch_git(
+            "emptied-partial",
+            &[
+                ("T-1.toml", &work("T-1", 10, &["a.rs"], &[], "queued")),
+                ("T-2.toml", &work("T-2", 20, &["b.rs"], &[], "queued")),
+            ],
+            &["wave 41 CLOSED — test ledger"],
+        );
+        let before = repack_quiet(&dir).unwrap();
+        assert_eq!(
+            before.tickets_in_wave(42),
+            vec!["T-1".to_string(), "T-2".to_string()]
+        );
+        fs::write(
+            dir.join(".ai/tickets/T-1.toml"),
+            work("T-1", 10, &["a.rs"], &[], "shipped"),
+        )
+        .unwrap();
+        let lock = repack_quiet(&dir).unwrap();
+        assert!(
+            lock.emptied.is_empty(),
+            "partial ship froze a wave: {lock:?}"
+        );
+        assert_eq!(lock.tickets_in_wave(42), vec!["T-2".to_string()]);
+        assert!(check_as_errors(&dir).is_empty());
+        let text = fs::read_to_string(lock_path(&dir)).unwrap();
+        assert!(
+            !text.contains("emptied"),
+            "the empty section renders NOTHING: {text}"
+        );
+        println!(
+            "── grep emptied on the partial-ship lock ── {} match(es)",
+            text.matches("emptied").count()
+        );
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn two_emptied_waves_pend_ascending_and_open_waves_number_past_both() {
+        // Three colliding tickets → waves 42/43/44 over base 41. Ship 42's whole set, repack;
+        // ship 43's whole set, repack: two pending entries, ascending, and the surviving open
+        // wave keeps numbering past the HIGHEST pending label.
+        let dir = scratch_git(
+            "emptied-two",
+            &[
+                ("T-1.toml", &work("T-1", 10, &["a.rs"], &[], "queued")),
+                ("T-2.toml", &work("T-2", 20, &["a.rs"], &[], "queued")),
+                ("T-3.toml", &work("T-3", 30, &["a.rs"], &[], "queued")),
+            ],
+            &["wave 41 CLOSED — test ledger"],
+        );
+        let first = repack_quiet(&dir).unwrap();
+        assert_eq!(first.tickets_in_wave(42), vec!["T-1".to_string()]);
+        assert_eq!(first.tickets_in_wave(44), vec!["T-3".to_string()]);
+
+        fs::write(
+            dir.join(".ai/tickets/T-1.toml"),
+            work("T-1", 10, &["a.rs"], &[], "shipped"),
+        )
+        .unwrap();
+        let mid = repack_quiet(&dir).unwrap();
+        assert_eq!(mid.emptied.len(), 1);
+        assert_eq!(mid.emptied[0].n, 42);
+
+        fs::write(
+            dir.join(".ai/tickets/T-2.toml"),
+            work("T-2", 20, &["a.rs"], &[], "shipped"),
+        )
+        .unwrap();
+        let lock = repack_quiet(&dir).unwrap();
+        let pending: Vec<(u32, Vec<String>)> = lock
+            .emptied
+            .iter()
+            .map(|e| (e.n, e.tickets.clone()))
+            .collect();
+        assert_eq!(
+            pending,
+            vec![(42, vec!["T-1".to_string()]), (43, vec!["T-2".to_string()]),],
+            "entries pend ascending with their frozen sets: {lock:?}"
+        );
+        let open: Vec<u32> = lock.waves.iter().filter(|w| w.n > 0).map(|w| w.n).collect();
+        assert_eq!(open, vec![44], "numbering starts past pending 43: {lock:?}");
+        assert_eq!(lock.tickets_in_wave(44), vec!["T-3".to_string()]);
+        assert!(check_as_errors(&dir).is_empty());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn pre_t925_lock_without_emptied_parses_and_empty_section_renders_invisible() {
+        // Old-lock compat: the serde default reads every pre-T-925 blob, and an EMPTY section
+        // must not touch the render at all — `emptied = []` after the `[[waves]]` tables would
+        // not even be valid TOML, and the committed lock must repack byte-identically.
+        let text = "version = 1\nmax_concurrent = 8\npack_last = []\nwaves = []\n\n[owns]\n\n[depends_on]\n";
+        let lock = parse(text).unwrap();
+        assert!(lock.emptied.is_empty(), "absent section parses as empty");
+        let rendered = render(&lock).unwrap();
+        assert!(
+            !rendered.contains("emptied"),
+            "an empty section renders NOTHING: {rendered}"
+        );
+        // And a nonempty section round-trips losslessly.
+        let mut with = lock.clone();
+        with.emptied.push(LockWave {
+            n: 7,
+            tickets: vec!["T-9".to_string()],
+        });
+        let r2 = render(&with).unwrap();
+        assert!(r2.contains("[[emptied]]"), "{r2}");
+        assert_eq!(parse(&r2).unwrap(), with, "render → parse must be lossless");
+    }
+
+    #[test]
+    fn check_reds_on_a_perturbed_emptied_entry_until_restored() {
+        // The recorded single-pending state from the full-ship test, then three hand-edits to
+        // the committed section — each red NAMING the entry, each restored to green. The
+        // frozen SET is not recomputable from the tree (that is the point of freezing), so
+        // the catchable perturbations are the invariant ones: an emptied set, a set pointing
+        // at unshipped work, a label the ledger already closed.
+        let dir = scratch_git(
+            "emptied-perturb",
+            &[
+                ("T-1.toml", &work("T-1", 10, &["a.rs"], &[], "queued")),
+                ("T-2.toml", &work("T-2", 20, &["a.rs"], &[], "queued")),
+            ],
+            &["wave 41 CLOSED — test ledger"],
+        );
+        repack_quiet(&dir).unwrap();
+        fs::write(
+            dir.join(".ai/tickets/T-1.toml"),
+            work("T-1", 10, &["a.rs"], &[], "shipped"),
+        )
+        .unwrap();
+        repack_quiet(&dir).unwrap();
+        let good = fs::read_to_string(lock_path(&dir)).unwrap();
+        assert!(check_as_errors(&dir).is_empty(), "recorded state is green");
+        let block = "[[emptied]]\nn = 42\ntickets = [\"T-1\"]";
+        assert!(good.contains(block), "fixture block drifted: {good}");
+
+        // (a) drop the ticket from the frozen set → the set empties → red.
+        fs::write(
+            lock_path(&dir),
+            good.replace(block, "[[emptied]]\nn = 42\ntickets = []"),
+        )
+        .unwrap();
+        let errs = check_as_errors(&dir);
+        assert!(
+            errs.iter()
+                .any(|e| e.contains("emptied wave 42 lists no tickets")),
+            "an emptied-out set must be red: {errs:?}"
+        );
+        println!("── perturbed (set emptied) ── {}", errs.join(" | "));
+
+        // (b) point the set at an UNSHIPPED ticket → red naming ticket and status.
+        fs::write(
+            lock_path(&dir),
+            good.replace(block, "[[emptied]]\nn = 42\ntickets = [\"T-2\"]"),
+        )
+        .unwrap();
+        let errs = check_as_errors(&dir);
+        assert!(
+            errs.iter()
+                .any(|e| e.contains("emptied wave 42 lists T-2 (queued)")),
+            "an unshipped member must be red: {errs:?}"
+        );
+        println!("── perturbed (unshipped member) ── {}", errs.join(" | "));
+
+        // (c) pull the label to the ledger base → red: that marker already landed.
+        fs::write(
+            lock_path(&dir),
+            good.replace(block, "[[emptied]]\nn = 41\ntickets = [\"T-1\"]"),
+        )
+        .unwrap();
+        let errs = check_as_errors(&dir);
+        assert!(
+            errs.iter()
+                .any(|e| e.contains("emptied wave 41 is at or below wave_base 41")),
+            "a landed label must be red: {errs:?}"
+        );
+
+        // Restore the exact recorded bytes → green.
+        fs::write(lock_path(&dir), &good).unwrap();
+        let errs = check_as_errors(&dir);
+        assert!(errs.is_empty(), "restore must be green: {errs:?}");
+        println!("── restored ── check green ({} error(s))", errs.len());
+        let _ = fs::remove_dir_all(&dir);
     }
 }

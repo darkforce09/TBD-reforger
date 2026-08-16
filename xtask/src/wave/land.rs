@@ -400,6 +400,11 @@ pub fn cmd_verified(ctx: &Ctx, sha: &str) -> u8 {
 /// the refresh. `--summary <text>` feeds the subject; `--dry-run` prints the exact would-be
 /// subject and writes nothing. There is no mode that prints without committing except
 /// `--dry-run`.
+///
+/// T-925: the TARGET is the oldest pending `[[emptied]]` entry of the lock ([`close_target`]),
+/// not `current_wave` — which names the first wave still holding UNSHIPPED work and therefore
+/// could never name a closable one. Every validation below runs against the entry's FROZEN
+/// ticket set; the ceremony itself is unchanged.
 pub fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
     // ARGUMENTS ARE AN ALLOWLIST — land's signature lesson (see cmd_land), applied on arrival:
     // a ceremony that silently discarded a misspelled `--sumary` would commit the default
@@ -412,12 +417,10 @@ pub fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
         }
     };
 
-    let w = lock_or_refuse!(ledger::current_wave(ctx));
-    if w == "done" {
-        wprintln!("all waves shipped — nothing to close");
-        return 0;
-    }
-    let wave_ids = lock_or_refuse!(ledger::wave_tickets(ctx, &w));
+    let lock = lock_or_refuse!(ledger::load_lock(ctx));
+    let Some((w, wave_ids)) = close_target(&lock) else {
+        return 1; // refusal printed by close_target; nothing was read beyond the lock
+    };
     let open: Vec<String> = wave_ids
         .iter()
         .filter(|t| !ctx.registry_view.is_shipped(t))
@@ -516,6 +519,43 @@ fn parse_close_args(args: &[String]) -> Result<(Option<String>, bool), String> {
         }
     }
     Ok((summary, dry_run))
+}
+
+/// T-925 — the close TARGET: the oldest pending `[[emptied]]` entry of the committed lock,
+/// as `(label, frozen ticket set)`.
+///
+/// `current_wave` (the dispatch pointer, untouched) names the first open wave holding
+/// UNSHIPPED work — a wave that by definition can never pass the all-shipped validation, which
+/// is why close refused on every tree since the T-912.2 cutover: the moment a wave's last
+/// ticket shipped, the ship-hook repack dissolved its label into wave 0 and the pointer moved
+/// on. The repack now freezes that dissolving wave as a pending `[[emptied]]` entry (operator
+/// decision 2026-08-16), and close targets the OLDEST one: the marker-ledger oracle accepts
+/// only base+1, so a pending queue drains in ledger order — and with one entry pending (the
+/// steady state) the oldest IS the most recently emptied wave.
+///
+/// Entries are validated ascending by `wave check`, so `.first()` is the oldest. Nothing
+/// pending prints the honest refusal and returns `None` — the caller's rc-1 path, with zero
+/// writes by construction: this reads the lock struct and nothing else. Factored off
+/// [`cmd_wave_close`] for the same testability cut as [`close_ceremony`].
+fn close_target(lock: &crate::wave_lock::WaveLock) -> Option<(String, Vec<String>)> {
+    match lock.emptied.first() {
+        Some(e) => {
+            wprintln!(
+                "close target: wave {} — emptied ({} ticket(s), set frozen at repack)",
+                e.n,
+                e.tickets.len()
+            );
+            Some((e.n.to_string(), e.tickets.clone()))
+        }
+        None => {
+            wprintln!("REFUSED: no emptied wave pending — nothing to close.");
+            wprintln!(
+                "         (a pending entry appears when a repack sees an open wave whose every"
+            );
+            wprintln!("         ticket has shipped; partial ships record nothing)");
+            None
+        }
+    }
 }
 
 // ── T-923: THE CLOSE CEREMONY ───────────────────────────────────────────────────────────────────
@@ -1134,5 +1174,173 @@ mod tests {
         assert_eq!(porcelain, "", "porcelain unchanged and empty");
         assert_eq!(git(&dir, &["rev-parse", "HEAD"]), head, "nothing committed");
         let _ = std::fs::remove_dir_all(&dir); // never chdir'd into — safe to reclaim now
+    }
+
+    // ── T-925: close targets the oldest pending emptied label ───────────────────────────────
+
+    /// A fabricated PENDING-EMPTIED close state: `n` colliding tickets packed into singleton
+    /// waves 42..41+n over a `wave 41 CLOSED` ledger, lock committed, then the first `ship`
+    /// tickets shipped one at a time — each ship followed by the ship-hook repack, each pair
+    /// committed together (the T-917 lifecycle shape) — so the committed lock holds `ship`
+    /// pending `[[emptied]]` entries with frozen singleton sets, ascending, over a clean
+    /// tree. Same no-delete rule as [`close_scratch`]: cwd-guarded tests never reclaim their
+    /// dir; each rerun reclaims its own.
+    fn emptied_scratch(tag: &str, n: usize, ship: usize) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("t925-close-{tag}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let tickets = dir.join(".ai/tickets");
+        std::fs::create_dir_all(&tickets).unwrap();
+        std::fs::write(tickets.join("ROOT"), "# ticket-registry root marker\n").unwrap();
+        std::fs::write(tickets.join("scope-vocab.toml"), "[repo.xtask]\n").unwrap();
+        for i in 1..=n {
+            std::fs::write(
+                tickets.join(format!("T-{i}.toml")),
+                work_toml(&format!("T-{i}"), (i * 10) as i64, "a.rs", "queued"),
+            )
+            .unwrap();
+        }
+        git(&dir, &["init", "-q"]);
+        git(&dir, &["config", "user.email", "t925@test"]);
+        git(&dir, &["config", "user.name", "t925"]);
+        git(&dir, &["config", "commit.gpgsign", "false"]);
+        git(&dir, &["add", "--", ".ai"]);
+        git(&dir, &["commit", "-q", "-m", "seed tickets"]);
+        std::fs::write(dir.join("c0.txt"), "0\n").unwrap();
+        git(&dir, &["add", "--", "c0.txt"]);
+        git(&dir, &["commit", "-q", "-m", "wave 41 CLOSED — prior wave"]);
+        crate::wave_lock::repack_quiet(&dir).unwrap();
+        git(&dir, &["add", "--", crate::wave_lock::LOCK_REL]);
+        git(&dir, &["commit", "-q", "-m", "wave.lock: baseline"]);
+        for i in 1..=ship {
+            std::fs::write(
+                tickets.join(format!("T-{i}.toml")),
+                work_toml(&format!("T-{i}"), (i * 10) as i64, "a.rs", "shipped"),
+            )
+            .unwrap();
+            crate::wave_lock::repack_quiet(&dir).unwrap();
+            git(&dir, &["add", "--", ".ai"]);
+            git(&dir, &["commit", "-q", "-m", &format!("T-{i}: ship")]);
+        }
+        dir
+    }
+
+    #[test]
+    fn close_targets_the_recorded_emptied_label_end_to_end() {
+        let dir = emptied_scratch("e2e", 2, 1);
+        let cwd = testcwd::CwdGuard::enter(&dir);
+
+        let lock = crate::wave_lock::load(&dir).unwrap();
+        let (out, tgt) = capture_step(|| close_target(&lock));
+        println!("── close_target ──\n{out}");
+        let (w, ids) = tgt.expect("one pending entry");
+        assert_eq!(w, "42");
+        assert_eq!(
+            ids,
+            vec!["T-1".to_string()],
+            "the FROZEN set, not a recompute"
+        );
+
+        let (out, rc) = capture_step(|| close_ceremony(&dir, &w, &ids, None, false));
+        println!("── ceremony stdout ──\n{out}");
+        assert_eq!(rc, 0, "{out}");
+
+        let log3 = git(&dir, &["log", "--oneline", "-3"]);
+        println!("── git log --oneline -3 ──\n{log3}");
+        assert_eq!(
+            git(&dir, &["log", "-1", "--format=%s", "HEAD~1"]),
+            "wave 42 CLOSED — T-1",
+            "the marker closes exactly the recorded label, naming its frozen set"
+        );
+        let marker = git(&dir, &["rev-parse", "HEAD~1"]);
+        assert_eq!(super::super::base::wave_close_number(&marker), Some(42));
+
+        let lock = crate::wave_lock::load(&dir).unwrap();
+        println!(
+            "── lock after close ── wave_base = {}, emptied = {:?}",
+            lock.wave_base, lock.emptied
+        );
+        assert_eq!(lock.wave_base, 42, "base advanced to the closed label");
+        assert!(
+            lock.emptied.is_empty(),
+            "the post-close repack dropped the entry: {lock:?}"
+        );
+        assert_eq!(lock.tickets_in_wave(43), vec!["T-2".to_string()]);
+        let errs = crate::wave_lock::check_as_errors(&dir);
+        println!("── check_as_errors after ── {errs:?}");
+        assert!(errs.is_empty(), "{errs:?}");
+        assert_eq!(git(&dir, &["status", "--porcelain"]), "");
+        assert!(
+            out.contains("WAVE 42 CLOSED. Wave 43 may be dispatched."),
+            "{out}"
+        );
+        drop(cwd);
+    }
+
+    #[test]
+    fn two_pending_labels_drain_oldest_first() {
+        let dir = emptied_scratch("two", 3, 2);
+        let cwd = testcwd::CwdGuard::enter(&dir);
+
+        let lock = crate::wave_lock::load(&dir).unwrap();
+        let pend: Vec<u32> = lock.emptied.iter().map(|e| e.n).collect();
+        assert_eq!(pend, vec![42, 43], "entries pend ascending: {lock:?}");
+
+        // First close drains the OLDEST (42) — the only number the marker oracle accepts.
+        let (sel1, tgt) = capture_step(|| close_target(&lock));
+        let (w1, ids1) = tgt.expect("pending");
+        assert_eq!(w1, "42");
+        assert_eq!(ids1, vec!["T-1".to_string()]);
+        let (out1, rc1) = capture_step(|| close_ceremony(&dir, &w1, &ids1, None, false));
+        assert_eq!(rc1, 0, "{out1}");
+
+        // Second close targets the NEXT label — the queue drains in ledger order.
+        let lock = crate::wave_lock::load(&dir).unwrap();
+        let (sel2, tgt2) = capture_step(|| close_target(&lock));
+        let (w2, ids2) = tgt2.expect("still one pending");
+        assert_eq!(w2, "43");
+        assert_eq!(ids2, vec!["T-2".to_string()]);
+        let (out2, rc2) = capture_step(|| close_ceremony(&dir, &w2, &ids2, None, false));
+        assert_eq!(rc2, 0, "{out2}");
+        println!("── selections ──\n{sel1}{sel2}");
+
+        // Both markers landed, in oracle order (log lists newest first).
+        let closes = git(&dir, &["log", "--format=%s", "--grep=CLOSED", "HEAD"]);
+        println!("── close subjects (newest first) ──\n{closes}");
+        assert_eq!(
+            closes.lines().collect::<Vec<_>>(),
+            vec![
+                "wave 43 CLOSED — T-2",
+                "wave 42 CLOSED — T-1",
+                "wave 41 CLOSED — prior wave",
+            ]
+        );
+        let lock = crate::wave_lock::load(&dir).unwrap();
+        assert_eq!(lock.wave_base, 43);
+        assert!(lock.emptied.is_empty(), "queue drained: {lock:?}");
+        assert_eq!(lock.tickets_in_wave(44), vec!["T-3".to_string()]);
+        assert!(crate::wave_lock::check_as_errors(&dir).is_empty());
+        drop(cwd);
+    }
+
+    #[test]
+    fn nothing_pending_refuses_with_zero_writes() {
+        // close_scratch's lock has NO pending entry: T-1 was shipped before the first compile,
+        // so no open wave ever emptied — the state every tree is in right after a close.
+        let dir = close_scratch("no-pending");
+        let head = git(&dir, &["rev-parse", "HEAD"]);
+        let lock = crate::wave_lock::load(&dir).unwrap();
+        assert!(lock.emptied.is_empty());
+        let (out, tgt) = capture_step(|| close_target(&lock));
+        println!("── refusal ──\n{out}");
+        assert!(tgt.is_none(), "{out}");
+        assert!(
+            out.contains("REFUSED: no emptied wave pending — nothing to close"),
+            "{out}"
+        );
+        let porcelain = git(&dir, &["status", "--porcelain"]);
+        println!("── porcelain after refusal ── {porcelain:?}");
+        assert_eq!(porcelain, "", "zero writes");
+        assert_eq!(git(&dir, &["rev-parse", "HEAD"]), head, "no ref moved");
+        let _ = std::fs::remove_dir_all(&dir); // never chdir'd into — safe to reclaim
     }
 }
