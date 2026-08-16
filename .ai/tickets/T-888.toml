@@ -42,12 +42,18 @@ verify = [
     "Diff on clean tree AND >=2 deliberately broken trees.",
     "Harness asserts BASH side went red; green run alone not evidence T-556.",
 ]
+acceptance = [
+    "Deleted scripts/mod/mcp-daemon.sh; mcp daemon xtask wired existing mcpd for setsid socket lifecycle.",
+    "MCP call gates and dev-bootstrap repointed; shell inventory line removed.",
+    "Port matched bash stdout stderr and rc on clean tree and deliberately broken trees.",
+]
 citations = [
     "T-853 shell->xtask program",
     "T-879 unblock dependency",
     "T-556 anti-vacuity",
     "t853_shell_to_xtask_waves.md",
     "crates/tbd-gate",
+    "759b6926 mcp-daemon port",
 ]
 shipped_at = "759b6926"
 created_at = "2026-08-12T10:06:22Z"

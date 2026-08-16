@@ -40,12 +40,18 @@ verify = [
     "For every target make t and cargo xtask byte-identical stdout stderr rc clean tree.",
     "On deliberately broken tree harness asserts make side went red before diff T-556.",
 ]
+acceptance = [
+    "Added mk_build.rs absorbing rust-api leptos-gates wasm-ci and verify-cargo-target lane.",
+    "verify-cargo-target self-pin and git-common-dir CARGO_TARGET_DIR derivation moved into Rust.",
+    "Outputs matched after declared normalisation; port returns the child rc, make folds to 2.",
+]
 citations = [
     "T-853 Phase 3 program",
     "Makefile:16 CARGO_TARGET_DIR derivation",
     "T-253 T-322 worktree target sharing",
     "T-556 anti-vacuity",
     "t853_shell_to_xtask_waves.md",
+    "19e17299 mk_build lane port",
 ]
 shipped_at = "19e17299"
 created_at = "2026-08-12T20:57:02Z"

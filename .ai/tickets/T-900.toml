@@ -43,11 +43,17 @@ verify = [
     "A green run alone is not evidence T-556 anti-vacuity.",
     "cargo xtask platform wave gate PASS; sees cross-crate breakage.",
 ]
+acceptance = [
+    "Swept live docs removing make web Vite npm and deleted scripts/*.sh path references.",
+    "Historical SHIPPED_HISTORY TICKET_*.md and mk_*.rs port narratives left untouched.",
+    "apps/mod README CLAUDE HOME_SERVER and PLAYTEST runbook stale how-tos corrected.",
+]
 citations = [
     "T-159.29.3 React deletion",
     "T-556 anti-vacuity",
     "apps/mod/README.md:64 make web",
     "t853_shell_to_xtask_waves.md",
+    "b90225531 live doc sweep",
 ]
 shipped_at = "776c9522"
 created_at = "2026-08-12T23:47:51Z"

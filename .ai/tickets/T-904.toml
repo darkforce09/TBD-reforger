@@ -45,11 +45,17 @@ verify = [
     "A green run alone is not evidence T-556.",
     "Finish with full cargo xtask platform wave gate PASS.",
 ]
+acceptance = [
+    "Rewrote shell_free.rs to TrackedLanguageBan hard zero; deleted shell and python inventory files.",
+    "Banned shell python makefile extensions; folded LANG-2 zero tracked .py into one gate.",
+    "Banned lowercase makefile name so GNU make search-order cannot revive a Makefile.",
+]
 citations = [
     "t853_shell_to_xtask_waves.md",
     "T-556 anti-vacuity",
     "CODING_STANDARDS.md LANG-1/2/3",
     "TrackedLanguageBan hard zero gate",
+    "94593f724 hard zero ratchet",
 ]
 shipped_at = "63820ef6"
 created_at = "2026-08-12T23:25:32Z"

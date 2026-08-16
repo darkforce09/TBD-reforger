@@ -42,12 +42,18 @@ verify = [
     "Diff on clean tree AND >=2 deliberately broken trees.",
     "Harness asserts BASH side went red; green run alone not evidence T-556.",
 ]
+acceptance = [
+    "Deleted scripts/mod/wave.sh; mod wave xtask driver reads wave_plan.tsv and manages slice worktrees.",
+    "python and shell inventory lines removed; Makefile repointed without touching platform wave.sh.",
+    "Port matched bash stdout stderr and rc on clean tree and deliberately broken trees.",
+]
 citations = [
     "T-853 shell->xtask program",
     "T-181 mod program complete",
     "T-556 anti-vacuity",
     "t853_shell_to_xtask_waves.md",
     "crates/tbd-gate",
+    "29621118 mod wave port",
 ]
 shipped_at = "29621118"
 created_at = "2026-08-12T10:40:09Z"

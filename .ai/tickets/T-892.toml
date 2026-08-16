@@ -41,12 +41,18 @@ verify = [
     "Diff on clean tree AND >=2 deliberately broken trees.",
     "Harness asserts BASH side went red; green run alone not evidence T-556.",
 ]
+acceptance = [
+    "Deleted scripts/mod/world-boot.sh; mod world-boot xtask gate replaced headless game-mode boot validation.",
+    "ci.yml and mod-gates.yml repointed; python and shell inventory lines removed.",
+    "Port matched bash stdout stderr and rc; preserved 0/1/2/3 exit contract.",
+]
 citations = [
     "T-853 shell->xtask program",
     "compile.sh 0/1/2 exit contract",
     "T-556 anti-vacuity",
     "t853_shell_to_xtask_waves.md",
     "crates/tbd-gate",
+    "d0032321e world-boot port",
 ]
 shipped_at = "08dbe2a7"
 created_at = "2026-08-12T08:35:53Z"

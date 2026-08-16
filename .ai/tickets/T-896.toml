@@ -40,12 +40,18 @@ verify = [
     "For every target make t and cargo xtask byte-identical stdout stderr rc clean tree.",
     "On deliberately broken tree harness asserts make side went red before diff T-556.",
 ]
+acceptance = [
+    "Added mk_ci.rs absorbing ci-local schema-validate verify-editorconfig and map composite targets.",
+    "Composites became Rust functions sharing leaf tasks; xtask help lists task groups.",
+    "Make framing was normalised; flattened child rc differs from make folding every failure to 2.",
+]
 citations = [
     "T-853 Phase 3 program",
     "T-489 @true hollow composite defect",
     "xtask help task group discoverability",
     "T-556 anti-vacuity",
     "t853_shell_to_xtask_waves.md",
+    "e6119414a mk_ci lane port",
 ]
 shipped_at = "08dbe2a7"
 created_at = "2026-08-12T20:59:11Z"

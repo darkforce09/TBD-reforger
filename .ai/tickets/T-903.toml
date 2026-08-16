@@ -37,11 +37,17 @@ verify = [
     "A green run alone is not evidence T-556.",
     "Finish with full cargo xtask platform wave gate PASS.",
 ]
+acceptance = [
+    "Deleted scripts/lib/hostrun.sh; last tracked shell script removed from repository.",
+    "hostrun.rs Rust bridge already shared with playtest_server; SLICE and PLAYTEST docs repointed.",
+    "Deletion landed only after wave.sh retirement per ordered Phase 6 dependency.",
+]
 citations = [
     "t853_shell_to_xtask_waves.md",
     "T-556 anti-vacuity",
     "cargo xtask platform wave gate",
     "glibc 2.36 container wall bridge",
+    "35c15a6b hostrun deleted",
 ]
 shipped_at = "35c15a6b"
 created_at = "2026-08-13T01:45:56Z"

@@ -57,12 +57,18 @@ verify = [
     "Pre-existing oversize: schema_gates.rs 4044 cmds.rs 1330 smokes.rs 3852.",
     "main.rs grew past 1000 during Phase 3.",
 ]
+acceptance = [
+    "Measured verify file-length scanned zero legacy extensions; find returned 0 entire Rust era.",
+    "Filed SIZE-1 and SIZE-3 enforced by nothing; same vacuous-pass class as T-853 program.",
+    "Queued T-899 cure slice extending walk to Rust tree with fail-closed handling.",
+]
 citations = [
     "T-896 Makefile CI lane port",
     "T-145 Go->Rust cutover",
     "T-159 React->Leptos cutover",
     "node_free.rs:77 file-length walk",
     "node_free.rs:89 unwrap_or fail-open",
+    "fc7dca145 T-898 filed",
 ]
 created_at = "2026-08-12T00:00:00Z"
 completed_at = "2026-08-12T00:00:00Z"

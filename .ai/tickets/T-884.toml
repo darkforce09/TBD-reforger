@@ -42,12 +42,18 @@ verify = [
     "Diff on clean tree AND >=2 deliberately broken trees.",
     "Harness asserts BASH side went red; green run alone not evidence T-556.",
 ]
+acceptance = [
+    "Deleted scripts/deploy/lib/db-common.sh; deploy db lib xtask module replaced shared DB plumbing.",
+    "Shell inventory line removed; backup restore and drill callers repointed off bash library.",
+    "Port matched bash stdout stderr and rc on clean tree and deliberately broken trees.",
+]
 citations = [
     "T-853 shell->xtask program",
     "T-880 gate-grep blocker",
     "T-556 anti-vacuity",
     "t853_shell_to_xtask_waves.md",
     "crates/tbd-gate",
+    "a82d0c96 db-common port",
 ]
 shipped_at = "a82d0c96"
 created_at = "2026-08-12T09:29:51Z"

@@ -40,11 +40,17 @@ verify = [
     "For every target make t and cargo xtask byte-identical stdout stderr rc clean tree.",
     "On deliberately broken tree harness asserts make side went red before diff T-556.",
 ]
+acceptance = [
+    "Added mk_db.rs absorbing Makefile db-up seed rust-test-it and backup restore drill targets.",
+    "Makefile untouched; podman lifecycle seed appliers and psql reap loop ported with AB harness.",
+    "Outputs matched after declared normalisation; rc divergence is deliberate, make folds to 2.",
+]
 citations = [
     "T-853 Phase 3 program",
     "Makefile:209-212 rust-test-it loop",
     "T-556 anti-vacuity",
     "t853_shell_to_xtask_waves.md",
+    "4feb855f mk_db lane port",
 ]
 shipped_at = "4feb855f"
 created_at = "2026-08-12T20:48:13Z"
