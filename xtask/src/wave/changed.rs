@@ -456,13 +456,16 @@ mod tests {
         // `cargo test` sets the CWD to the PACKAGE root (`xtask/`), not the workspace root, so a
         // bare `Cargo.toml` here is xtask's own manifest and has no `[workspace]` at all. Walk up
         // for the real one; at runtime the driver has already `cd`-ed to the repo root.
-        let Some(root) = crate::root::find_repo_root().ok() else {
+        // T-923: the cwd is shared test state — resolve the root AND chdir under the one
+        // process-wide lock in [`crate::wave::testcwd`], or a concurrent scratch-repo test
+        // (whose tree carries `.ai/tickets/ROOT`) becomes the "repo root" this test reads.
+        let Some(cwd) =
+            crate::wave::testcwd::CwdGuard::enter_resolved(|| crate::root::find_repo_root().ok())
+        else {
             return;
         };
-        let prev = std::env::current_dir().expect("cwd");
-        std::env::set_current_dir(&root).expect("cd repo root");
         let members = workspace_members();
-        std::env::set_current_dir(prev).expect("cd back");
+        drop(cwd);
         assert!(
             !members.is_empty(),
             "parsed ZERO workspace members out of the root Cargo.toml"

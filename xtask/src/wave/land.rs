@@ -394,15 +394,34 @@ pub fn cmd_verified(ctx: &Ctx, sha: &str) -> u8 {
 /// green on merged main, and an adversarial verifier recorded against a sha at or after the last
 /// landing. That third condition is the one that was being skipped, so it is checked here rather
 /// than trusted.
-pub fn cmd_wave_close(ctx: &Ctx) -> u8 {
+///
+/// T-923: after the validations pass, this no longer PRINTS a marker for a human to type — it
+/// runs [`close_ceremony`], which writes the marker commit itself, repacks the lock and commits
+/// the refresh. `--summary <text>` feeds the subject; `--dry-run` prints the exact would-be
+/// subject and writes nothing. There is no mode that prints without committing except
+/// `--dry-run`.
+pub fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
+    // ARGUMENTS ARE AN ALLOWLIST — land's signature lesson (see cmd_land), applied on arrival:
+    // a ceremony that silently discarded a misspelled `--sumary` would commit the default
+    // subject instead of the one the operator wrote.
+    let (summary, dry_run) = match parse_close_args(args) {
+        Ok(v) => v,
+        Err(e) => {
+            werr!("{e}");
+            return 2;
+        }
+    };
+
     let w = lock_or_refuse!(ledger::current_wave(ctx));
     if w == "done" {
         wprintln!("all waves shipped — nothing to close");
         return 0;
     }
-    let open: Vec<String> = lock_or_refuse!(ledger::wave_tickets(ctx, &w))
-        .into_iter()
+    let wave_ids = lock_or_refuse!(ledger::wave_tickets(ctx, &w));
+    let open: Vec<String> = wave_ids
+        .iter()
         .filter(|t| !ctx.registry_view.is_shipped(t))
+        .cloned()
         .collect();
     if !open.is_empty() {
         // `"$open"` accumulated as `"$open $t"`, so the rendering carries a leading space.
@@ -467,20 +486,339 @@ pub fn cmd_wave_close(ctx: &Ctx) -> u8 {
         wprintln!("REFUSED: wave gate is red on main");
         return 1;
     }
-    wprintln!();
-    wprintln!(
-        "WAVE {w} CLOSED. Wave {} may be dispatched.",
-        w.parse::<i64>().unwrap_or(0) + 1
-    );
-    0
+
+    // T-923: every validation above passed — the ceremony replaces the print. The old behaviour
+    // ended here with `WAVE {w} CLOSED` on stdout and a human typing the marker; the ledger
+    // shows what that produced (231–235 prefixed non-markers, 218/233 disavowed).
+    close_ceremony(&ctx.root, &w, &wave_ids, summary.as_deref(), dry_run)
 }
 
-/// `Path` is used only through `ctx.root`; this keeps the import honest for the `run_at` call.
-const _: fn(&Path) = |_| {};
+/// The `wave --close` argument allowlist: `--summary <text>` and `--dry-run`, nothing else.
+/// A filter-shaped argument MUST filter or MUST refuse — same rule as `cmd_land`'s parser.
+fn parse_close_args(args: &[String]) -> Result<(Option<String>, bool), String> {
+    let mut summary: Option<String> = None;
+    let mut dry_run = false;
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "--summary" => match it.next() {
+                Some(v) => summary = Some(v.clone()),
+                None => return Err("wave --close: --summary needs a value".into()),
+            },
+            "--dry-run" => dry_run = true,
+            // `'')` — an empty positional is dropped, not refused (the cmd_land shape).
+            "" => {}
+            other => {
+                return Err(format!(
+                    "wave --close: refusing unknown argument '{other}' (expected --summary <text> and/or --dry-run)"
+                ));
+            }
+        }
+    }
+    Ok((summary, dry_run))
+}
+
+// ── T-923: THE CLOSE CEREMONY ───────────────────────────────────────────────────────────────────
+//
+// `wave --close` used to end at a PRINT, and a human typed the marker commit. The ledger records
+// what that produced: every hand-typed marker since wave 132 was malformed — waves 231–235 carry
+// prefixed subjects the anchored authority (T-613) rejects as non-markers, and 218/233 needed
+// disavow reverts. So the print is replaced by the ceremony itself: the ONLY writer of marker
+// commits is now the code that defines what a marker is.
+//
+// THE SELF-CHECK RUNS THE REAL AUTHORITY ON THE REAL OBJECT. A string-level re-implementation of
+// the oracle would drift from it — T-613's lesson in miniature — so the candidate marker is
+// created first as an UNREACHABLE commit object (`git commit-tree`: object store only, no ref
+// moves, `git log` unchanged), [`super::base::wave_close_number`] and
+// [`super::base::wave_close_is_newest_wave`] are run against that object, and only an accepted
+// candidate is fast-forwarded into the branch (`git update-ref` with the old-value guard). What
+// was validated IS what lands, by sha identity; a refused candidate never becomes reachable and
+// is garbage for `git gc`.
+
+/// Control characters (newlines included) become spaces, runs collapse, ends trim. The subject
+/// is one git subject line and the parser delimits on spaces — a summary must not be able to
+/// smuggle a second line (which would become a commit BODY, where disavowal evidence lives) or a
+/// character the terminal renders as something the ledger did not store.
+fn sanitize_summary(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
+    let mut last_space = true; // leading spaces drop
+    for c in raw.chars() {
+        let c = if c.is_control() { ' ' } else { c };
+        if c == ' ' {
+            if !last_space {
+                out.push(' ');
+            }
+            last_space = true;
+        } else {
+            out.push(c);
+            last_space = false;
+        }
+    }
+    while out.ends_with(' ') {
+        out.pop();
+    }
+    out
+}
+
+/// Build the close subject `wave {n} CLOSED — {summary}` and self-check it at the string level.
+///
+/// The default summary is the closed wave's ticket ids, space-joined — the marker then names the
+/// work it closes even when the operator says nothing. An empty (or sanitised-to-empty) summary
+/// falls back to the same default; a wave with no ids at all (not a reachable state, but this
+/// function refuses to build a trailing-garbage subject over "cannot happen") gets a fixed
+/// phrase.
+///
+/// Err is a refusal, never a fixup beyond the sanitiser: a summary carrying git's own revert
+/// trailer is REFUSED rather than reworded, because `This reverts commit <sha>.` in any commit
+/// message is the disavowal evidence [`super::base::wave_close_disavowed`] reads, and a close
+/// subject smuggling it could disavow an earlier marker.
+fn close_subject(n: i64, summary: Option<&str>, wave_ids: &[String]) -> Result<String, String> {
+    let mut clean = sanitize_summary(summary.unwrap_or_default());
+    if clean.is_empty() {
+        clean = sanitize_summary(&wave_ids.join(" "));
+    }
+    if clean.is_empty() {
+        clean = "all tickets shipped".to_string();
+    }
+    if clean.contains("This reverts commit ") {
+        return Err(
+            "summary contains a git-revert trailer (\"This reverts commit …\") — that phrase is \
+             the disavowal evidence the marker ledger reads, and a close subject carrying it \
+             could disavow an earlier marker. Reword the summary."
+                .to_string(),
+        );
+    }
+    let subject = format!("wave {n} CLOSED — {clean}");
+    // The same authority the gate derives from, on the exact bytes about to be committed. By
+    // construction the first token after `wave ` is `{n}`'s digits, so passing this check also
+    // pins the parsed number — and the object-level check in the ceremony re-proves it with
+    // wave_close_number before anything becomes reachable.
+    if !super::base::wave_close_subject_ok(&subject) {
+        return Err(format!(
+            "built subject fails wave_close_subject_ok — refusing to write a marker the anchored \
+             authority would reject: {subject:?}"
+        ));
+    }
+    Ok(subject)
+}
+
+/// Run git against `root`, output captured. The ceremony's own git calls are root-explicit so a
+/// misdirected caller can never mutate a repo it was not handed; `Err` carries git's stderr,
+/// because a refusal that hides the reason is a refusal the operator retries blind.
+fn git_at(root: &Path, args: &[&str]) -> Result<String, String> {
+    match std::process::Command::new("git")
+        .args(args)
+        .current_dir(root)
+        .output()
+    {
+        Ok(o) if o.status.success() => Ok(String::from_utf8_lossy(&o.stdout)
+            .trim_end_matches('\n')
+            .to_string()),
+        Ok(o) => Err(format!(
+            "git {args:?} failed: {}",
+            String::from_utf8_lossy(&o.stderr).trim()
+        )),
+        Err(e) => Err(format!("git {args:?} failed to spawn: {e}")),
+    }
+}
+
+/// T-923 — the marker commit, the repack and the lock-refresh commit, as ONE motion.
+///
+/// TESTABILITY CUT, stated plainly: `cmd_wave_close`'s validations (all-shipped, verifier
+/// recorded AND at HEAD, the full wave gate) need a live registry, a verifier marker file and a
+/// gateable tree — none of which a unit test can fabricate honestly. The ceremony is therefore
+/// this separate function, called by `cmd_wave_close` only after every validation has passed,
+/// and the fabricated-repo tests drive it directly.
+///
+/// CWD CONTRACT: the marker authority and oracle are cwd-bound by design ([`Ctx::enter`] chdirs
+/// to the root once, and the whole gate stack rides that), so the caller guarantees the process
+/// cwd is `root`. Every WRITE this function performs is root-explicit anyway ([`git_at`]): a
+/// misdirected caller can misread, but it can never commit into a repo it was not handed — and
+/// the misread ends in refusal, because the candidate object cannot resolve outside `root`.
+fn close_ceremony(
+    root: &Path,
+    w: &str,
+    wave_ids: &[String],
+    summary: Option<&str>,
+    dry_run: bool,
+) -> u8 {
+    // Fail-closed parse. The old print did `w.parse().unwrap_or(0)` — fine for prose, lethal for
+    // a ledger: a marker claiming wave 0 must be impossible to write, not merely unlikely.
+    let n: i64 = match w.parse() {
+        Ok(n) => n,
+        Err(_) => {
+            wprintln!("REFUSED: current wave '{w}' is not a number — no marker written.");
+            return 1;
+        }
+    };
+    let subject = match close_subject(n, summary, wave_ids) {
+        Ok(s) => s,
+        Err(e) => {
+            wprintln!("REFUSED: {e}");
+            wprintln!("         No marker written.");
+            return 1;
+        }
+    };
+
+    if dry_run {
+        // The one mode that prints without committing. String-level self-checks have passed;
+        // the object-level oracle run needs a candidate commit object, and --dry-run writes
+        // NOTHING — not even to the object store — so it stops here.
+        wprintln!("--dry-run: would commit wave-close marker subject:");
+        wprintln!("  {subject}");
+        wprintln!("(nothing written; working tree, ledger and lock untouched)");
+        return 0;
+    }
+
+    // DIRTY TREE = REFUSAL, before anything is created. The ceremony commits twice; starting it
+    // on top of unrelated changes either sweeps them into the lock commit or strands them behind
+    // a marker. Same LFS-neutral, fail-closed porcelain read as tree_state/git_porcelain_paths
+    // (T-401): a status that CANNOT run is never an empty status.
+    let mut porcelain: Vec<&str> = ledger::LFS_NEUTRAL.to_vec();
+    porcelain.extend_from_slice(&["status", "--porcelain"]);
+    let dirty = match git_at(root, &porcelain) {
+        Ok(s) => s,
+        Err(e) => {
+            wprintln!("REFUSED: cannot read the working tree state — no marker written.");
+            wprintln!("         {e}");
+            return 1;
+        }
+    };
+    let dirty_paths: Vec<&str> = dirty.lines().filter(|l| !l.trim().is_empty()).collect();
+    if !dirty_paths.is_empty() {
+        wprintln!(
+            "REFUSED: the working tree is dirty — the close ceremony writes commits, and it must"
+        );
+        wprintln!("         not sweep up or sit on top of unrelated changes. Clean these first:");
+        for p in dirty_paths.iter().take(10) {
+            wprintln!("           {p}");
+        }
+        if dirty_paths.len() > 10 {
+            wprintln!("           … and {} more", dirty_paths.len() - 10);
+        }
+        wprintln!("         No marker written.");
+        return 1;
+    }
+
+    let head = match git_at(root, &["rev-parse", "HEAD"]) {
+        Ok(s) => s,
+        Err(e) => {
+            wprintln!("REFUSED: cannot resolve HEAD — no marker written. {e}");
+            return 1;
+        }
+    };
+
+    // THE CANDIDATE. `commit-tree` writes a commit OBJECT and moves no ref: unreachable from
+    // everything, absent from `git log`, invisible to every `rev-list … HEAD` scan the ledger
+    // runs. Marker subjects are the ledger and the marker carries no diff, so the tree is
+    // HEAD's own — the `--allow-empty` shape, made first-class.
+    let cand = match git_at(
+        root,
+        &["commit-tree", "HEAD^{tree}", "-p", "HEAD", "-m", &subject],
+    ) {
+        Ok(s) => s,
+        Err(e) => {
+            wprintln!("REFUSED: could not create the candidate marker object — no marker written.");
+            wprintln!("         {e}");
+            return 1;
+        }
+    };
+
+    // SELF-CHECK, against the exact object, with the SAME functions the gate derives from —
+    // never a re-implementation. wave_close_number re-runs wave_close_subject_ok on the object's
+    // subject and must parse to exactly the wave being closed; wave_close_is_newest_wave is
+    // oracle 1's acceptance window verbatim (strictly above every non-disavowed marker, at most
+    // one above the highest claim any marker makes). The candidate is not reachable from HEAD,
+    // so the oracle compares it against the ledger without it — exactly the question being asked.
+    match super::base::wave_close_number(&cand) {
+        Some(got) if got == n => {}
+        got => {
+            wprintln!("REFUSED: candidate marker failed the authority self-check — no ref moved.");
+            wprintln!("         built subject: {subject:?}");
+            wprintln!("         wave_close_number parsed {got:?}, expected Some({n})");
+            return 1;
+        }
+    }
+    if super::base::wave_close_is_newest_wave(&cand) != 0 {
+        wprintln!(
+            "REFUSED: the marker-ledger oracle rejected the candidate subject (details above) —"
+        );
+        wprintln!("         no ref moved; the candidate object is unreachable garbage.");
+        return 1;
+    }
+    wprintln!("close subject self-check ✓ the authority parses {subject:?} as wave {n} and the");
+    wprintln!("                          marker-ledger oracle accepts it");
+
+    // PROMOTE. The validated object becomes the marker — same sha, so what the oracle approved
+    // is byte-for-byte what the ledger gains. The old-value guard makes this a compare-and-swap:
+    // a HEAD that moved since the dirty check refuses instead of overwriting.
+    if let Err(e) = git_at(
+        root,
+        &[
+            "update-ref",
+            "-m",
+            &format!("wave --close: {subject}"),
+            "HEAD",
+            &cand,
+            &head,
+        ],
+    ) {
+        wprintln!("REFUSED: could not advance HEAD to the validated marker — no ref moved.");
+        wprintln!("         {e}");
+        return 1;
+    }
+    wprintln!("marker committed: {} {subject}", short(&cand));
+
+    // REPACK — T-914's include-HEAD derivation exists exactly for this moment: the fresh marker
+    // sits AT HEAD, so the recompiled base becomes {n} and open waves renumber {n}+1 onward.
+    if let Err(e) = crate::wave_lock::repack_quiet(root) {
+        wprintln!("wave repack FAILED after the close marker: {e:#}");
+        wprintln!("  The marker IS committed. Fix the ticket tree, run `cargo xtask wave repack`,");
+        wprintln!("  commit the lock — the documented close → check-red → repack recovery loop.");
+        return 1;
+    }
+
+    // The lock-refresh commit, in the shape repack_after_land uses: explicit path, never -A. A
+    // byte-identical lock skips the commit (not a reachable state right after a fresh marker —
+    // the base just changed — but the guard costs nothing and lies about nothing).
+    let lock_dirty = git_at(
+        root,
+        &["status", "--porcelain", "--", crate::wave_lock::LOCK_REL],
+    )
+    .unwrap_or_default();
+    if !lock_dirty.trim().is_empty() {
+        let committed = git_at(root, &["add", "--", crate::wave_lock::LOCK_REL]).is_ok()
+            && git_at(root, &["commit", "-m", "wave.lock: repack after close"]).is_ok();
+        if !committed {
+            wprintln!("could not commit the wave.lock refresh — commit it by hand before pushing");
+            return 1;
+        }
+        wprintln!("wave.lock refreshed and committed (rides this close)");
+    }
+
+    // END-STATE PROOF, not a hope: the promise is "tree ends check-green with no manual step",
+    // so run the check that would have been red and say so.
+    let errs = crate::wave_lock::check_as_errors(root);
+    if !errs.is_empty() {
+        wprintln!("wave check is RED after the close ceremony — fix before pushing:");
+        for e in &errs {
+            wprintln!("  ERROR: {e}");
+        }
+        return 1;
+    }
+    wprintln!("wave check green (ledger base is now {n})");
+
+    wprintln!();
+    wprintln!("WAVE {n} CLOSED. Wave {} may be dispatched.", n + 1);
+    0
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
+
+    use crate::wave::{capture_step, testcwd};
 
     #[test]
     fn the_allowlist_refuses_anything_that_is_not_wave_or_a_ticket() {
@@ -491,5 +829,310 @@ mod tests {
         assert!(!is_ticket_glob("T-x"));
         assert!(!is_ticket_glob("--force"));
         assert!(!is_ticket_glob("T-"));
+    }
+
+    // ── T-923: the close ceremony ───────────────────────────────────────────────────────────
+
+    #[test]
+    fn the_close_argument_parser_is_an_allowlist() {
+        assert_eq!(parse_close_args(&[]).unwrap(), (None, false));
+        assert_eq!(
+            parse_close_args(&["--dry-run".into()]).unwrap(),
+            (None, true)
+        );
+        assert_eq!(
+            parse_close_args(&["--summary".into(), "five slices".into()]).unwrap(),
+            (Some("five slices".into()), false)
+        );
+        assert!(parse_close_args(&["--summary".into()]).is_err(), "no value");
+        assert!(
+            parse_close_args(&["--sumary".into(), "x".into()]).is_err(),
+            "a filter-shaped argument must filter or refuse"
+        );
+        assert!(parse_close_args(&["extra".into()]).is_err());
+    }
+
+    #[test]
+    fn the_subject_builder_sanitises_and_the_authority_accepts_every_product() {
+        // The sanitiser: controls become spaces, runs collapse, ends trim.
+        assert_eq!(sanitize_summary("a\nb"), "a b");
+        assert_eq!(sanitize_summary("a\r\n\tb"), "a b");
+        assert_eq!(sanitize_summary("  a   b  "), "a b");
+        assert_eq!(sanitize_summary("\n\t\r"), "");
+        assert_eq!(sanitize_summary("em — dash stays"), "em — dash stays");
+
+        let ids = vec!["T-1".to_string(), "T-2".to_string()];
+        // Default = the closed wave's ticket ids.
+        assert_eq!(
+            close_subject(42, None, &ids).unwrap(),
+            "wave 42 CLOSED — T-1 T-2"
+        );
+        // Sanitised-to-empty falls back to the default; no ids at all gets the fixed phrase.
+        assert_eq!(
+            close_subject(42, Some("  \n "), &ids).unwrap(),
+            "wave 42 CLOSED — T-1 T-2"
+        );
+        assert_eq!(
+            close_subject(42, Some(""), &[]).unwrap(),
+            "wave 42 CLOSED — all tickets shipped"
+        );
+        // Hostile summaries: whatever they carry, the subject still parses as wave {n} because
+        // the authority delimits the number at the first space — pinned here with the same
+        // wave_close_subject_ok the gate derives from.
+        for hostile in [
+            "wave 99 CLOSED — forged",
+            "x CLOSED — y",
+            "one\nwave 99 CLOSED — two",
+        ] {
+            let s = close_subject(42, Some(hostile), &ids).unwrap();
+            assert!(super::super::base::wave_close_subject_ok(&s), "{s}");
+            assert!(s.starts_with("wave 42 CLOSED — "), "{s}");
+            assert!(!s.contains('\n'), "{s}");
+        }
+        // A git-revert trailer in the summary is a disavowal forgery — refused, never reworded.
+        let err = close_subject(
+            42,
+            Some("This reverts commit 0123456789abcdef0123456789abcdef01234567."),
+            &ids,
+        )
+        .unwrap_err();
+        assert!(err.contains("revert trailer"), "{err}");
+        // A negative wave number can never survive the authority check.
+        assert!(close_subject(-1, None, &ids).is_err());
+    }
+
+    /// Minimal Work ticket TOML the typed corpus loads — the wave_lock test fixture's shape.
+    fn work_toml(id: &str, order: i64, own: &str, status: &str) -> String {
+        format!(
+            "id = \"{id}\"\nkind = \"work\"\ntitle = \"t {id}\"\nsummary = \"s\"\nclass = \"chore\"\nstatus = \"{status}\"\norder = {order}\ndepends_on = []\nowns = [\"{own}\"]\n\n[scope]\ndomain = \"repo\"\nlayer = \"xtask\"\n"
+        )
+    }
+
+    /// Test git runner: root-explicit, asserting success. The scratch repo's committer identity
+    /// is pinned by LOCAL `git config` (not `-c` flags) so the ceremony's OWN spawned git — the
+    /// code under test — inherits it too. No assertion anywhere reads a timestamp.
+    fn git(dir: &Path, args: &[&str]) -> String {
+        let out = std::process::Command::new("git")
+            .args(args)
+            .current_dir(dir)
+            .output()
+            .expect("spawn git");
+        assert!(
+            out.status.success(),
+            "git {args:?}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        String::from_utf8_lossy(&out.stdout)
+            .trim_end_matches('\n')
+            .to_string()
+    }
+
+    /// A fabricated post-validation close state: committed tickets (T-1 shipped — the batch that
+    /// just finished; T-2 queued — the next batch), a `wave 41 CLOSED` marker in history, and a
+    /// committed lock (base 41, T-2 labelled wave 42). Clean tree. The ceremony under test
+    /// closes wave 42.
+    ///
+    /// The dir is NOT deleted at test end on purpose: cwd-guarded tests must never delete a
+    /// directory another thread may have captured as its restore target (the pre-existing
+    /// chdir-test hazard this suite refuses to widen). Each rerun reclaims its own dir here.
+    fn close_scratch(tag: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("t923-close-{tag}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let tickets = dir.join(".ai/tickets");
+        std::fs::create_dir_all(&tickets).unwrap();
+        std::fs::write(tickets.join("ROOT"), "# ticket-registry root marker\n").unwrap();
+        std::fs::write(tickets.join("scope-vocab.toml"), "[repo.xtask]\n").unwrap();
+        std::fs::write(
+            tickets.join("T-1.toml"),
+            work_toml("T-1", 10, "a.rs", "shipped"),
+        )
+        .unwrap();
+        std::fs::write(
+            tickets.join("T-2.toml"),
+            work_toml("T-2", 20, "b.rs", "queued"),
+        )
+        .unwrap();
+        git(&dir, &["init", "-q"]);
+        git(&dir, &["config", "user.email", "t923@test"]);
+        git(&dir, &["config", "user.name", "t923"]);
+        git(&dir, &["config", "commit.gpgsign", "false"]);
+        git(&dir, &["add", "--", ".ai"]);
+        git(&dir, &["commit", "-q", "-m", "seed tickets"]);
+        std::fs::write(dir.join("c0.txt"), "0\n").unwrap();
+        git(&dir, &["add", "--", "c0.txt"]);
+        git(&dir, &["commit", "-q", "-m", "wave 41 CLOSED — prior wave"]);
+        crate::wave_lock::repack_quiet(&dir).unwrap();
+        git(&dir, &["add", "--", crate::wave_lock::LOCK_REL]);
+        git(&dir, &["commit", "-q", "-m", "wave.lock: baseline"]);
+        dir
+    }
+
+    #[test]
+    fn close_ceremony_commits_the_marker_and_the_lock_refresh_and_ends_check_green() {
+        let dir = close_scratch("e2e");
+        let cwd = testcwd::CwdGuard::enter(&dir);
+        let before: i64 = git(&dir, &["rev-list", "--count", "HEAD"]).parse().unwrap();
+
+        let (out, rc) =
+            capture_step(|| close_ceremony(&dir, "42", &["T-1".to_string()], None, false));
+        println!("── ceremony stdout ──\n{out}");
+        assert_eq!(rc, 0, "{out}");
+
+        // Exactly two commits: the marker, then the lock refresh riding it.
+        let after: i64 = git(&dir, &["rev-list", "--count", "HEAD"]).parse().unwrap();
+        assert_eq!(after, before + 2, "marker + lock refresh, nothing else");
+        let log3 = git(&dir, &["log", "--oneline", "-3"]);
+        println!("── git log --oneline -3 ──\n{log3}");
+        let marker = git(&dir, &["rev-parse", "HEAD~1"]);
+        let subject = git(&dir, &["log", "-1", "--format=%s", "HEAD~1"]);
+        println!("── accepted subject ── {subject}");
+        assert_eq!(subject, "wave 42 CLOSED — T-1");
+        assert_eq!(
+            git(&dir, &["log", "-1", "--format=%s", "HEAD"]),
+            "wave.lock: repack after close"
+        );
+
+        // The anchored authority accepts the committed marker with number 42 (cwd is the
+        // scratch repo, which is what these cwd-bound readers key on).
+        assert_eq!(super::super::base::wave_close_number(&marker), Some(42));
+        assert_eq!(super::super::base::wave_close_is_newest_wave(&marker), 0);
+        assert_eq!(
+            super::super::base::newest_close_base(&dir).unwrap(),
+            Some(42)
+        );
+
+        // Repack derived base 42 and renumbered the open wave to 43; check is green; the tree
+        // is clean — no manual step left.
+        let lock = crate::wave_lock::load(&dir).unwrap();
+        println!("── lock head ── wave_base = {}", lock.wave_base);
+        assert_eq!(lock.wave_base, 42);
+        assert_eq!(lock.tickets_in_wave(43), vec!["T-2".to_string()]);
+        let errs = crate::wave_lock::check_as_errors(&dir);
+        println!("── check_as_errors after ── {errs:?}");
+        assert!(errs.is_empty(), "{errs:?}");
+        assert_eq!(git(&dir, &["status", "--porcelain"]), "");
+        assert!(
+            out.contains("WAVE 42 CLOSED. Wave 43 may be dispatched."),
+            "{out}"
+        );
+        drop(cwd);
+    }
+
+    #[test]
+    fn a_dirty_tree_refuses_before_any_commit_exists() {
+        let dir = close_scratch("dirty");
+        std::fs::write(dir.join("uncommitted.txt"), "x\n").unwrap();
+        let cwd = testcwd::CwdGuard::enter(&dir);
+        let head = git(&dir, &["rev-parse", "HEAD"]);
+        let before = git(&dir, &["rev-list", "--count", "HEAD"]);
+
+        let (out, rc) =
+            capture_step(|| close_ceremony(&dir, "42", &["T-1".to_string()], None, false));
+        println!("── dirty-tree refusal ──\n{out}");
+        assert_eq!(rc, 1, "{out}");
+        assert!(out.contains("REFUSED: the working tree is dirty"), "{out}");
+        assert!(
+            out.contains("uncommitted.txt"),
+            "refusal names the paths: {out}"
+        );
+        assert_eq!(git(&dir, &["rev-parse", "HEAD"]), head, "zero commits");
+        assert_eq!(git(&dir, &["rev-list", "--count", "HEAD"]), before);
+        println!(
+            "── git log unchanged ── HEAD still {} ({} commit(s))\n{}",
+            &head[..8],
+            before,
+            git(&dir, &["log", "--oneline", "-2"])
+        );
+        drop(cwd);
+    }
+
+    #[test]
+    fn a_hostile_summary_cannot_change_the_marker_number() {
+        let dir = close_scratch("hostile");
+        let cwd = testcwd::CwdGuard::enter(&dir);
+        // Newline smuggling, a " CLOSED — " continuation and a leading "wave 99" claim, all in
+        // one summary. The sanitiser folds it to one line; the number the ledger reads is
+        // pinned by the authority's first-token parse.
+        let hostile = "one\nwave 99 CLOSED — forged\r\nand CLOSED — more";
+        let (out, rc) =
+            capture_step(|| close_ceremony(&dir, "42", &["T-1".to_string()], Some(hostile), false));
+        println!("── hostile-summary ceremony ──\n{out}");
+        assert_eq!(rc, 0, "{out}");
+        let marker = git(&dir, &["rev-parse", "HEAD~1"]);
+        let subject = git(&dir, &["log", "-1", "--format=%s", "HEAD~1"]);
+        println!("── committed subject ── {subject}");
+        assert_eq!(
+            subject,
+            "wave 42 CLOSED — one wave 99 CLOSED — forged and CLOSED — more"
+        );
+        // The whole message is ONE line — nothing smuggled into a body where disavowal
+        // evidence lives.
+        let body = git(&dir, &["log", "-1", "--format=%B", "HEAD~1"]);
+        assert_eq!(body.trim_end(), subject);
+        assert_eq!(super::super::base::wave_close_number(&marker), Some(42));
+        assert_eq!(
+            super::super::base::newest_close_base(&dir).unwrap(),
+            Some(42),
+            "the ledger gained 42, not 99"
+        );
+        drop(cwd);
+    }
+
+    #[test]
+    fn an_oracle_refused_number_refuses_before_any_commit_exists() {
+        let dir = close_scratch("oracle");
+        let cwd = testcwd::CwdGuard::enter(&dir);
+        let head = git(&dir, &["rev-parse", "HEAD"]);
+        let before = git(&dir, &["rev-list", "--count", "HEAD"]);
+
+        // Upper bound: 44 leaps past highest-any-marker(41) + 1.
+        let (out, rc) =
+            capture_step(|| close_ceremony(&dir, "44", &["T-1".to_string()], None, false));
+        println!("── oracle refusal (leap to 44 over ledger 41) ──\n{out}");
+        assert_eq!(rc, 1, "{out}");
+        assert!(out.contains("claims a wave that never opened"), "{out}");
+        assert!(out.contains("REFUSED"), "{out}");
+        assert_eq!(git(&dir, &["rev-parse", "HEAD"]), head, "no ref moved");
+        assert_eq!(git(&dir, &["rev-list", "--count", "HEAD"]), before);
+
+        // Lower bound: 41 replays a number the ledger already holds.
+        let (out2, rc2) =
+            capture_step(|| close_ceremony(&dir, "41", &["T-1".to_string()], None, false));
+        println!("── oracle refusal (replay of 41) ──\n{out2}");
+        assert_eq!(rc2, 1, "{out2}");
+        assert!(out2.contains("CONTRADICTED by the marker ledger"), "{out2}");
+        assert_eq!(git(&dir, &["rev-parse", "HEAD"]), head, "no ref moved");
+        assert_eq!(git(&dir, &["rev-list", "--count", "HEAD"]), before);
+        println!(
+            "── git log unchanged after both refusals ── HEAD still {} ({} commit(s))",
+            &head[..8],
+            before
+        );
+        drop(cwd);
+    }
+
+    #[test]
+    fn dry_run_prints_the_subject_and_writes_nothing() {
+        let dir = close_scratch("dry");
+        // No cwd guard on purpose: the dry-run path never touches git at all, and running it
+        // from a foreign cwd proves that.
+        let head = git(&dir, &["rev-parse", "HEAD"]);
+        let (out, rc) = capture_step(|| {
+            close_ceremony(
+                &dir,
+                "42",
+                &["T-1".to_string()],
+                Some("soak complete"),
+                true,
+            )
+        });
+        println!("── dry run ──\n{out}");
+        assert_eq!(rc, 0, "{out}");
+        assert!(out.contains("wave 42 CLOSED — soak complete"), "{out}");
+        let porcelain = git(&dir, &["status", "--porcelain"]);
+        println!("── porcelain after dry run ── {porcelain:?}");
+        assert_eq!(porcelain, "", "porcelain unchanged and empty");
+        assert_eq!(git(&dir, &["rev-parse", "HEAD"]), head, "nothing committed");
+        let _ = std::fs::remove_dir_all(&dir); // never chdir'd into — safe to reclaim now
     }
 }

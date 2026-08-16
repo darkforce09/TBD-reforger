@@ -496,7 +496,9 @@ pub fn run(args: &[String]) -> Result<u8> {
         },
         "wave" => {
             if rest.first().map(String::as_str) == Some("--close") {
-                land::cmd_wave_close(&ctx)
+                // T-923: everything after `--close` belongs to the close ceremony
+                // (`--summary <text>`, `--dry-run`) and is allowlist-parsed there.
+                land::cmd_wave_close(&ctx, &rest[1..])
             } else {
                 status::cmd_wave(&ctx)
             }
@@ -515,4 +517,53 @@ pub fn run(args: &[String]) -> Result<u8> {
     };
     flush();
     Ok(rc)
+}
+
+/// T-923 test support — PROCESS-GLOBAL cwd serialisation for tests that must chdir.
+///
+/// The close-ceremony tests run the marker authority ([`base::wave_close_number`],
+/// [`base::wave_close_is_newest_wave`]) against fabricated scratch repos, and those functions
+/// are cwd-bound by design (the driver chdirs once at [`Ctx::enter`]). `cargo test` is
+/// multi-threaded and the cwd is process state, so every test that moves it must hold ONE lock —
+/// otherwise a concurrent `find_repo_root()` (the scratch repos carry `.ai/tickets/ROOT`, which
+/// is exactly what that function looks for) resolves inside somebody's scratch tree and a test
+/// fails an assertion about a repo it was never meant to read.
+#[cfg(test)]
+pub(crate) mod testcwd {
+    use std::path::{Path, PathBuf};
+    use std::sync::{Mutex, MutexGuard};
+
+    static CWD_LOCK: Mutex<()> = Mutex::new(());
+
+    /// Holds the lock and the previous cwd; restores the cwd on drop (lock released after).
+    pub(crate) struct CwdGuard {
+        prev: PathBuf,
+        _g: MutexGuard<'static, ()>,
+    }
+
+    impl CwdGuard {
+        /// Take the lock, THEN resolve the target via `f`, then chdir. Resolution happens under
+        /// the lock on purpose: `find_repo_root()` reads the cwd, so resolving before locking
+        /// would race with whichever test currently owns it. `None` from `f` releases everything
+        /// and returns `None` — the caller's skip path.
+        pub(crate) fn enter_resolved(f: impl FnOnce() -> Option<PathBuf>) -> Option<CwdGuard> {
+            // Poisoning is ignored on purpose: a panicked sibling must not cascade into every
+            // later cwd test — the guard's Drop restored its cwd even on that panic.
+            let g = CWD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+            let dir = f()?;
+            let prev = std::env::current_dir().expect("cwd");
+            std::env::set_current_dir(&dir).expect("chdir");
+            Some(CwdGuard { prev, _g: g })
+        }
+
+        pub(crate) fn enter(dir: &Path) -> CwdGuard {
+            Self::enter_resolved(|| Some(dir.to_path_buf())).expect("enter with Some never skips")
+        }
+    }
+
+    impl Drop for CwdGuard {
+        fn drop(&mut self) {
+            let _ = std::env::set_current_dir(&self.prev);
+        }
+    }
 }
