@@ -59,12 +59,18 @@ approach = [
     "Copy null_tolerance.rs pattern: own actor, serialise DB tests with lock.",
     "Copy misc_integration.rs: mint via state.jwt.issue_access, writes nothing.",
 ]
+verify = [
+    "cargo test -p website-api t400_actor_is_not_shared_dev_login_user",
+    "cargo test -p website-api --test identity_link",
+]
+acceptance = ["identity_link, factions, and telemetry suites used private actors; shared-row collisions removed."]
 citations = [
     "T-334 narrowed scope",
     "T-372 admin lockout",
     "identity_link.rs:26",
     "auth_refresh.rs:100",
     "T-396 gate flock",
+    "commit fb96ecbc IT isolation",
 ]
 shipped_at = "fb96ecbc"
 created_at = "2026-07-27T07:19:08Z"

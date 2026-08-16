@@ -60,11 +60,17 @@ approach = [
     "NOT browser-verified: 409/403 toast strings; success-toast expired before first poll.",
     "Rough edge: OPEN SHEET still offers Submit for review until reopened — mirrors toggle_archive.",
 ]
+verify = [
+    "cargo test -p website-frontend mission_detail_rejected_carries_the_review_stamp",
+    "cargo test -p website-frontend missions_envelope_rejected_card_carries_its_reason",
+]
+acceptance = ["Authors submitted drafts, saw RETURNED with rejection reason; admin queue received pending_approval."]
 citations = [
     "T-234 submit endpoint",
     "T-313 rejection fields",
     "T-306 serde flatten",
     "missions.rs:833 button",
+    "commit abbc3b5b submit round-trip",
 ]
 shipped_at = "abbc3b5b"
 created_at = "2026-07-26T13:20:48Z"

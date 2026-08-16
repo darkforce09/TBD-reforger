@@ -36,15 +36,18 @@ requirement = [
     "Verify which env var trunk honours for staging in pinned version.",
 ]
 current_state = ["Private dist alone leaves staging collision intact — already tried and disproved."]
+approach = ["Isolate gate trunk with private CARGO_TARGET_DIR and dist."]
 verify = [
     "With make leptos running: 10x frontend gate, zero staging failures.",
     ":3000 stays up and serving throughout — anything less is not a cure.",
 ]
+acceptance = ["Ran frontend gate ten times with trunk serve live; zero staging failures and :3000 stayed up."]
 citations = [
     "wave.sh --dist gate",
     "touch_changed 18 files",
     "make leptos trunk serve",
     "CARGO_TARGET_DIR staging",
+    "commit 95c0265b trunk isolation",
 ]
 shipped_at = "95c0265b"
 created_at = "2026-07-26T13:54:01Z"

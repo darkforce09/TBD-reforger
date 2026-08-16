@@ -46,11 +46,15 @@ current_state = [
     "registry_import.rs:82 INSERT omits workshop_url column — unpopulated.",
     "Discord webhook consumer at cms.rs:64 also escapes Leptos-escaping argument.",
 ]
+approach = ["Add shared is_http_url in services/text.rs; reject non-http(s) at upsert_match write boundary."]
+verify = ["cargo test -p website-api --test telemetry_url_guard"]
+acceptance = ["aar_replay_url rejected at write boundary; adversarial scheme inputs stored nothing."]
 citations = [
     "T-239 security sweep",
     "deployments.rs:471 href",
     "telemetry.rs:659 writer",
     "audit.rs CSV injection",
+    "commit 09a0ebfdf is_http_url guard",
 ]
 shipped_at = "51924bf8"
 created_at = "2026-07-26T13:18:16Z"

@@ -43,11 +43,15 @@ current_state = [
     "Low severity: marker has zero readers (T-352 verified read_adopted and adopted_key return nothing).",
     "Residue cannot influence a decision — stale bytes under global key, not live leak.",
 ]
+approach = ["Call purge_legacy_markers on every editor boot in hydrate_from_server, before server fetch."]
+verify = ["Boot-path purge_legacy_markers in hydrate_from_server; no unit test added."]
+acceptance = ["Adoption-residue purge ran on first editor open, not only through mark_adopted."]
 citations = [
     "T-352 purge_legacy_markers",
     "T-370 write-site sequencing",
     "editor_session.rs:149",
     "mission_hydrate.rs:181",
+    "commit bce80aa1 boot purge",
 ]
 shipped_at = "bce80aa1"
 created_at = "2026-08-01T02:44:10Z"

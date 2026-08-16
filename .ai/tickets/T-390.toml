@@ -61,11 +61,14 @@ approach = [
     "CLOSED THE CAUSE: removes orphan build caches sparing dirs whose slice worktree still exists.",
     "Preflight now NAMES reclaimable space rather than only reporting shortfall.",
 ]
+verify = ["wave.sh gate_test_api and map-engine used target-gate-api and target-gate-mapengine."]
+acceptance = ["gate_test_api and map-engine test steps used private CARGO_TARGET_DIR; foreign binaries could not pass the gate."]
 citations = [
     "T-235 foreign binary",
     "T-193 T-195 frontend",
     "T-233 reverted slice",
     "gate_test_api hazard",
+    "commit c8ec848c8 private targets",
 ]
 shipped_at = "c07ca278"
 created_at = "2026-07-26T12:46:02Z"

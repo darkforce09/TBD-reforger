@@ -33,12 +33,16 @@ requirement = [
     "T-359 hazard: golden from DRAFT mission proves nothing about absent fields.",
 ]
 current_state = ["Same signature-defect family — gate reports success on structurally invisible loss."]
+approach = ["assert_golden adds structural deserialize round-trip alongside byte equality for flatten structs."]
+verify = ["cargo test -p website-frontend byte_equality_alone_cannot_see_a_dropped_field_under_flatten"]
+acceptance = ["assert_golden failed when a named field under serde flatten dropped despite identical JSON bytes."]
 citations = [
     "T-389 rejection_reason skip",
     "MissionCard flatten :132",
     "T-359 draft golden hazard",
     "T-306 signature defect",
     "handlers/missions.rs flatten",
+    "commit 96ddabf48 structural golden",
 ]
 shipped_at = "bca6bcc1"
 created_at = "2026-07-26T13:41:13Z"

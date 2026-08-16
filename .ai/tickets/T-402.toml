@@ -42,11 +42,18 @@ approach = [
     "deaths exclusion is deliberate — including it would 400 every production report.",
     "Golden bytes match BuildPayload/BuildPlayerRow; tripwire cannot reject mod sends.",
 ]
+verify = [
+    "cargo test -p website-api legacy_tripwire_includes_command_win",
+    "cargo test -p website-api legacy_tripwire_null_is_presence",
+    "cargo test -p website-api terrain_community_degrades_to_none",
+]
+acceptance = ["Legacy-counter tripwire included command_win and null; unknown terrain soft-failed without 400ing the report."]
 citations = [
     "T-393 contract split",
     "telemetry.rs:483 tripwire",
     "telemetry.rs:31 valid_terrain",
     "mission.schema.json terrain",
+    "commit 217c298e tripwire hygiene",
 ]
 shipped_at = "217c298e"
 created_at = "2026-07-27T07:46:08Z"

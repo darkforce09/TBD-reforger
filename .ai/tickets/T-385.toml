@@ -57,11 +57,17 @@ approach = [
     "Expose terrain on ServerIntelDto (:20) via JOIN.",
     "Fix v_str conflation T-306 split for status object.",
 ]
+verify = [
+    "cargo test -p website-api server_intel_joins_matches_terrain",
+    "cargo test -p website-api servers_golden_carries_terrain_from_match_join",
+]
+acceptance = ["Joined matches.terrain on GET /servers and restored Server Intel theater readout."]
 citations = [
     "T-359 theater tripwire",
     "T-306 status parse split",
     "handlers/servers.rs:29",
     "telemetry.rs:341 terrain",
+    "commit ca989a549 terrain join",
 ]
 shipped_at = "e9021d8c"
 created_at = "2026-07-27T12:13:57Z"

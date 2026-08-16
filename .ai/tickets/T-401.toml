@@ -45,11 +45,14 @@ current_state = [
     "PLATFORM_FACTORY.md records git push failure; add/status/diff not recorded.",
 ]
 approach = ["Second fix matters even with lfs — any future git failure indistinguishable from nothing changed."]
+verify = ["git status over LFS paths must fail loud in wasm_changed, not be swallowed."]
+acceptance = ["wave change detection stopped swallowing git status failures when git-lfs was absent."]
 citations = [
     "wave.sh:283 wasm_changed",
     "wave.sh:146-152 tree_state",
     "PLATFORM_FACTORY.md push",
     "everon-dem-16bit.png LFS",
+    "commit 8434fe64 LFS-safe porcelain",
 ]
 shipped_at = "8434fe64"
 created_at = "2026-07-27T06:24:53Z"

@@ -43,11 +43,14 @@ current_state = [
     "mods [] in four goldens is uninformative Vec<Value>, not dangerous like typed items.",
 ]
 approach = ["T-394 module header oversells — structural check covers only instantiated types."]
+verify = ["cargo test -p website-frontend event_hub"]
+acceptance = ["Recaptured Event Hub golden with armory rows; ArmoryFaction fields were structurally verified."]
 citations = [
     "T-394 assert_golden flatten",
     "T-359 draft-capture hazard",
     "GET__events armory golden",
     "dto.rs ArmoryFaction",
+    "commit a39389a9 armory golden",
 ]
 shipped_at = "a39389a9"
 created_at = "2026-07-27T06:24:53Z"

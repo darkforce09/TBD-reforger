@@ -26,10 +26,14 @@ requirement = [
     "Found by T-389, which reported filing it but did not.",
 ]
 current_state = ["Stat grid shows rejected lowercase below correct callout."]
+approach = ["Extract mission_status_label shared with visibility_badge; use in dossier STATUS cell."]
+verify = ["cargo test -p website-frontend the_dossier_status_cell_is_labelled_not_the_raw_enum"]
+acceptance = ["Mission dossier STATUS cell showed Returned, not raw lowercase rejected."]
 citations = [
     "T-389 badge mapper",
     "mission_overview.rs STATUS",
     "Rule 12 deferred",
+    "commit a189ac39 status label",
 ]
 shipped_at = "a189ac39"
 created_at = "2026-07-26T13:41:13Z"

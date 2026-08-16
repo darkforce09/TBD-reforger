@@ -35,6 +35,9 @@ current_state = [
     "Author clearing briefing gets fictional lore, not empty section.",
     "Same shape as T-373 — fallback cannot distinguish not authored yet from authored empty.",
 ]
+approach = ["Remove five PLACEHOLDER_* fallbacks; render empty briefing state like mission_overview."]
+verify = ["cargo test -p website-frontend a_cleared_briefing_renders_the_empty_state_and_never_the_invented_lore"]
+acceptance = ["Cleared event briefings rendered empty state, not fabricated PLACEHOLDER_LORE paragraphs."]
 citations = [
     "T-239 provenance sweep",
     "T-344 T-345 briefings",
@@ -42,6 +45,7 @@ citations = [
     "mission_overview.rs:930",
     "T-373 absent vs default",
     "frontend_data_provenance.md",
+    "commit 27b36af3f placeholder removal",
 ]
 shipped_at = "95c0265b"
 created_at = "2026-07-26T13:23:36Z"

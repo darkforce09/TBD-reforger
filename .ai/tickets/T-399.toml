@@ -51,6 +51,7 @@ approach = [
     "Ratchet guaranteed to recur in different suite without reset policy.",
 ]
 verify = ["psql count pending_approval > 20 then admin_approvals_cms_field fails."]
+acceptance = ["Approvals assertion no longer depended on page 1 of an unpruned queue."]
 citations = [
     "admin_field.rs:377",
     "approvals.rs:99-105",

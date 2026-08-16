@@ -57,11 +57,14 @@ approach = [
     "Compare wave gate DB suite with TEST_DATABASE_URL unset — 30 tests skipped PASS.",
     "Compare clippy without --features — compiled none of doc/mission/world.",
 ]
+verify = ["cargo test -p tbd-tools assert_js_ok_tests"]
+acceptance = ["render-check required explicit pass verdict; pass:false probes exited nonzero."]
 citations = [
     "T-320 persistence probe",
     "T-338 gate",
     "smokes.rs:3112 assert_ok",
     "T-352 T-359 probes",
+    "commit 0f51eb5fc assert_js contract",
 ]
 shipped_at = "4c627119"
 created_at = "2026-07-26T11:26:36Z"

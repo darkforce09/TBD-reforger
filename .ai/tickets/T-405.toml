@@ -59,11 +59,17 @@ approach = [
     "modpacks.workshop_url has no HTTP writer — confirmed latent not live issue.",
     "is_http_url disclaims SSRF, allowlist, path encoding — deliberate, pinned by tests.",
 ]
+verify = [
+    "cargo test -p website-frontend aar_cell_emits_an_href_only_for_http_urls",
+    "cargo test -p website-api backfill_matches_the_rust_guard_and_actually_moves_rows",
+]
+acceptance = ["Frontend href sink guarded; stored javascript: URLs backfilled."]
 citations = [
     "T-391 is_http_url guard",
     "deployments.rs:471 href sink",
     "upsert_match write boundary",
     "cms.rs thumbnail_url writer",
+    "commit b3f940a5a XSS sink closed",
 ]
 shipped_at = "96acafff"
 created_at = "2026-07-26T17:02:34Z"
