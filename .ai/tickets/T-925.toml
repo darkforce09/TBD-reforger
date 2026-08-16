@@ -1,15 +1,46 @@
 id = "T-925"
 kind = "work"
 title = "Close-selection semantics: the ceremony is unreachable live"
-summary = "current_wave names the first wave holding an unshipped ticket, so it always refuses to close, and a fully-shipped batch's label dissolves into wave 0 at the ship-hook repack. Decide what wave close selects."
+summary = "wave close targets the oldest pending emptied label: the ship-hook repack records a fully-shipped wave's label and frozen ticket set in the lock, close validates and closes exactly that set, and open waves number past pending labels."
 class = "feature"
-status = "idea"
+status = "ready"
+order = 6040
+spec = "docs/platform/t912_wave_lockfile.md"
+plan = "docs/plans/t-925_plan.md"
 executor = "claude-code"
-notes = "T-923 slice-agent discovery 2026-08-16: predates T-923 (the old print was equally unreachable). The T-923 ceremony itself is proven on fabricated post-validation states; what is missing is a live selection rule — e.g. close targets the most recently emptied label, or the final ship of a wave defers its repack until close. Blocks the first real post-cutover close (would be wave 133)."
+main_goal = "The close ceremony has a live target: the wave that just finished shipping can actually be closed, so the ledger can advance past 132 for the first time since the cutover."
+context = [
+    "current_wave names the first wave holding an unshipped ticket, so close always refuses; a fully-shipped batch's label dissolves into wave 0 at the ship-hook repack.",
+    "Operator decision 2026-08-16: close targets the most recently emptied label; the marker oracle only accepts base plus one, so pending labels drain oldest-first.",
+]
+requirement = [
+    "Repack records a previous-lock open wave whose tickets are now all shipped as a pending emptied entry: frozen label plus frozen ticket set, carried in the lock.",
+    "wave close targets the oldest pending entry, runs every existing validation against its frozen set, then the T-923 ceremony; the entry drops once the marker advances the base.",
+    "Open waves always number past both wave_base and every pending emptied label; partial ships record nothing.",
+]
+current_state = [
+    "T-923 ships the ceremony (self-checked marker plus repack plus lock refresh) but cmd_wave_close still selects via current_wave, which can never name a closable wave.",
+    "The lock carries wave_base and a wave-0 baseline as carry-forward state; emptied entries are the same class.",
+]
+approach = [
+    "WaveLock gains a repack-owned emptied section (serde default, additive); detection compares the previous lock's open waves against current ticket statuses inside repack.",
+    "cmd_wave_close retargets to the pending front; no pending entry refuses honestly; current_wave and dispatch semantics stay untouched.",
+]
+verify = [
+    "Fabricated-repo tests: full ship records the entry and renumbers past it; end-to-end close drains it and lands the marker; partial ship records nothing; two pending drain oldest-first; no-pending refuses.",
+    "cargo test -p xtask green; ticket check --strict prints check OK.",
+]
+acceptance = [
+    "Shipping every ticket of an open wave leaves a pending emptied entry with the frozen set, and open waves renumber past it",
+    "wave close on that tree closes exactly the recorded label end-to-end: marker accepted, base advances, entry dropped, tree check-green",
+    "Partial ships never record an entry; close with nothing pending refuses without writing; two pending labels close oldest-first",
+]
 created_at = "2026-08-16T03:46:18Z"
 estimated = ["scope"]
 owns = [
     "xtask/src/wave",
+    "xtask/src/wave_lock.rs",
+    "docs/plans/t-925_plan.md",
 ]
 
 [scope]
