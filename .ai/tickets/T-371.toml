@@ -53,6 +53,11 @@ approach = [
     "Make field-selection test meaningful using trim on is_empty not trim winner.",
     "Fold admin.rs duplicate into username() for coherent audit actor and target.",
 ]
+verify = [
+    "cargo test -p website-api whitespace_only_global_name_falls_through_to_username",
+    "admin warn path uses username() with discord_id fallback for blank target.",
+]
+acceptance = ["display_name selected on trim().is_empty(); whitespace global_name no longer stored verbatim on OAuth login."]
 citations = [
     "T-366 read-side fix",
     "T-319 username required",
@@ -60,6 +65,7 @@ citations = [
     "handlers/oauth.rs:117",
     "handlers/admin.rs:342-344",
     "handlers/mod.rs username",
+    "commit 697640333 display_name trim",
 ]
 shipped_at = "8dd553c1"
 created_at = "2026-07-27T11:43:44Z"

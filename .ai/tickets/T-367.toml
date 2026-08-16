@@ -63,6 +63,12 @@ approach = [
     "Test pins equivalence both directions over eleven measured shapes.",
     "Kept /compiled at 500 deliberately after precheck; detail now reaches log and body.",
 ]
+verify = [
+    "cargo test -p map-engine-core --features mission the_precheck_accepts_exactly_what_the_compiler_can_parse.",
+    "cargo test -p map-engine-core --features mission a_type_error_anywhere_in_the_graph_is_caught_not_just_in_a_briefing.",
+    "cargo test -p website-api time_of_day_accepts_the_clocks_the_platform_can_round_trip.",
+]
+acceptance = ["Mistyped briefing and slot fields returned 400 at save; 128 live payloads replayed 201; bad time_of_day no longer 500'd."]
 citations = [
     "T-202 FactionIn regression",
     "T-214 briefing-vs-briefings",
@@ -72,6 +78,7 @@ citations = [
     "compile.rs:150-161 doc",
     "T-348 cms status argument",
     "T-366 folded 25:00 case",
+    "commit 2e4d764de save precheck",
 ]
 shipped_at = "3a653fd5"
 created_at = "2026-07-26T10:40:43Z"

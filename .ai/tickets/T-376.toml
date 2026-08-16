@@ -44,11 +44,21 @@ current_state = [
     "IS DISTINCT FROM at :210-219 is the trigger — stored-non-NULL vs incoming-NULL counts as updated.",
     "import_items never reads env.registry_items_version; idempotency test re-imports same bytes.",
 ]
+approach = [
+    "COALESCE(EXCLUDED.col, registry_items.col) on ten Option columns matching icon_url precedent.",
+    "Trim display_name/category on bind; absent envelope means UNKNOWN not clear.",
+]
+verify = [
+    "cargo test -p website-api sparse_reimport_preserves_option_columns",
+    "Class-R row kept weight_kg and icon_url after sparse envelope re-import.",
+]
+acceptance = ["Registry re-import preserved populated Option columns; sparse envelope no longer NULLed ten fields."]
 citations = [
     "contract/generated/registry_items.rs",
     "handlers/registry.rs:82-94 serve",
     "tests/registry_compat.rs:387",
     "Arsenal capacity UI columns",
+    "commit 50b618d8a COALESCE import",
 ]
 shipped_at = "67456a65"
 created_at = "2026-07-27T08:33:48Z"

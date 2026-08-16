@@ -46,11 +46,17 @@ current_state = [
     "Prior version row survives in mission_versions — operator can fix with psql.",
 ]
 approach = ["Do not reach for minItems without checking T-357 measured impact."]
+verify = [
+    "cargo test -p website-api version_payload_vacuous_rejects_empty_keeps_editor_skeleton",
+    "cargo test -p website-api reject_vacuous_version_payload_is_bad_request",
+]
+acceptance = ["create_version rejected vacuous {} at write time; editor.slots [] skeleton still accepted."]
 citations = [
     "T-357 schema tightening",
     "missions.rs:587 create_version",
     "contract/validate.rs:151-156",
     "mission_versions psql recovery",
+    "commit 6763f79d1 vacuous payload gate",
 ]
 shipped_at = "680cc14e"
 created_at = "2026-07-27T11:43:44Z"

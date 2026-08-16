@@ -47,11 +47,18 @@ current_state = [
     "Also world/aux.rs, world/build.rs, map/labels.rs, map/sap.rs.",
 ]
 approach = ["None urgent alone; together they explain silent golden or registry corruption."]
+verify = [
+    "cargo test -p xtask set_status_refuses_empty_without_write",
+    "cargo test -p xtask set_status_refuses_invalid_enum_without_write",
+    "schema_gates flatten-orbat preserves loadout and uid keys from prior slots.",
+]
+acceptance = ["xtask refused empty status writes; sync marker block and flatten-orbat lossy transforms blocked."]
 citations = [
     "T-378 tooling cluster",
     "xtask/cmds.rs set-status",
     "schema_gates flatten-orbat",
     "inject_marker_block ROADMAP",
+    "commit efebd6121 refuse empty writes",
 ]
 shipped_at = "ee1070f5"
 created_at = "2026-07-27T12:38:26Z"

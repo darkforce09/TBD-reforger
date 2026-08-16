@@ -23,12 +23,22 @@ current_state = [
     "so a re-ingest after an UNLINK nulls a previously-populated discord_id.",
     "T-326 established that unlink SHOULD release the rows, so that is probably intended — but say so in a comment, because nothing currently does.",
 ]
+approach = [
+    "require_role_played mirrors T-316 outcome and T-347 source_match_id blank rejection.",
+    "Comment documents discord_id unlink nulling on re-ingest as intended per T-326.",
+]
+verify = [
+    "cargo test -p website-api blank_role_played_is_rejected",
+    "cargo test -p website-api non_blank_role_played_ok",
+]
+acceptance = ["Present-and-blank role_played returned 400; populated scorelines no longer overwritten on re-ingest UPSERT."]
 citations = [
     "telemetry.rs:461-470 ON CONFLICT",
     "T-316 outcome blank fix",
     "T-347 source_match_id fix",
     "T-326 unlink release rows",
     "migration 0009 NOT NULL",
+    "commit cb2df8952 role_played blank",
 ]
 shipped_at = "42f0eed0"
 created_at = "2026-07-27T08:53:20Z"

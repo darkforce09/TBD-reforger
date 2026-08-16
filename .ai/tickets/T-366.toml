@@ -61,12 +61,14 @@ verify = [
     "After fix all four admin actions yield actor_name = [000000000000000001].",
     "username = '' behaved correctly before AND after — whitespace was gap not design choice.",
 ]
+acceptance = ["Whitespace-only usernames fell through to discord_id in audit actor_name across role_change, ban, unban, and warn."]
 citations = [
     "T-349 live proof",
     "missions.rs:315 time_of_day",
     "handlers/mod.rs:101 username",
     "oauth.rs:117 login upsert",
     "events.rs:1735 faction key property",
+    "commit 80120c1d username trim",
 ]
 shipped_at = "1128c1e3"
 created_at = "2026-07-26T10:59:21Z"

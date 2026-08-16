@@ -62,11 +62,13 @@ verify = [
     "Four more tests added including 1300/1228 pair AND 72 mils difference.",
     "T-349 composite case: unknown AND out of range returns 400, not 422.",
 ]
+acceptance = ["Unknown weapons returned SolveError, not DEFAULT_MORTAR; ballistics table stayed bit-identical across four tubes."]
 citations = [
     "T-349 field_tools guard",
     "T-347 closed weapon drift",
     "services/mortar.rs:46-52",
     "website-frontend Cargo.toml",
+    "commit 60822cfeb mortar refuse",
 ]
 shipped_at = "c789ac0c"
 created_at = "2026-07-26T11:01:01Z"

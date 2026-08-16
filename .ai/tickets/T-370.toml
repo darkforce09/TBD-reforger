@@ -77,12 +77,18 @@ approach = [
     "Move purge to boot hook so it runs regardless of hydrate path.",
     "Ship purge move one release before deleting eight mark_adopted call sites.",
 ]
+verify = [
+    "rg mark_adopted apps/website/frontend/src — zero call sites after T-370 deletion.",
+    "purge_legacy_markers at mission_hydrate.rs:178 before is_uuid guard and fetch.",
+]
+acceptance = ["Eight dead mark_adopted call sites and shim deleted after purge moved to boot hook; T-388 skip paths closed."]
 citations = [
     "T-352 mark_adopted purge",
     "T-388 three skip paths",
     "mission_hydrate.rs:178 prologue",
     "mission_commands.rs:141 site",
     "editor_session purge_legacy_markers",
+    "commit 93c6e2edc mark_adopted deleted",
 ]
 shipped_at = "12e2d089"
 created_at = "2026-08-01T02:44:10Z"

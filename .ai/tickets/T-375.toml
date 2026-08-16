@@ -44,11 +44,17 @@ current_state = [
     "`items` root map cleared by hydrate and never emitted by compile_payload — latent same family.",
 ]
 approach = ["Mirroring probably right — row is what library and mod read."]
+verify = [
+    "cargo test -p map-engine-core --features mission compile_payload_includes_title_when_doc_has_one.",
+    "cargo test -p map-engine-core --features mission compile_payload_omits_blank_or_whitespace_title.",
+]
+acceptance = ["Authored meta.title emitted on compiled Save payload; reload no longer overwrote doc title with stale row."]
 citations = [
     "T-192 row mirror",
     "eden_chrome.rs:1038-1040 set_title",
     "compile_export:189-193 title",
     "store.rs:1101 items clear",
+    "commit 03224e77c title emit",
 ]
 shipped_at = "6c3e0619"
 created_at = "2026-07-27T08:27:44Z"

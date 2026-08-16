@@ -76,6 +76,12 @@ approach = [
     "Faction with zero slots not offered; malformed orbat falls through to editor graph.",
     "Keys on stored rows also offered marked in no ORBAT faction for wholesale PUT safety.",
 ]
+verify = [
+    "cargo test -p website-frontend derives_editor_faction_keys_verbatim",
+    "cargo test -p website-frontend key_storable_matches_the_server_guard",
+    "Headless round trip: Event Hub dossier BLUFOR itemCount 3, OPFOR itemCount 1 after armory save.",
+]
+acceptance = ["Mission Creator wired PUT /missions/:id/armory; orbat_faction_keys matched parse_orbat_template; padded faction keys refused."]
 citations = [
     "T-346 blast radius",
     "T-226 dead endpoint",
@@ -84,6 +90,7 @@ citations = [
     "T-356 derived picker",
     "mission/orbat.rs:35",
     "handlers missions can_edit",
+    "commit 0ee470e04 armory editor",
 ]
 shipped_at = "d92ea44d"
 created_at = "2026-07-26T11:09:37Z"

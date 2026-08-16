@@ -65,12 +65,14 @@ verify = [
     "8 click+Delete gestures: beforeSlots 8 -> afterSlots 0, guard fired, stored record unchanged at 1069 bytes.",
     "Decode cost: 19us at 8 slots, 35ms at 10k — too much for per-edit writer.",
 ]
+acceptance = ["Content-empty [0,0] encode rejected on write; eight Delete gestures left stored record at 1069 bytes."]
 citations = [
     "crates/map-engine-core has_content",
     "mission_hydrate.rs snapshot paths",
     "T-338 yrs_persist header",
     "T-221 purge_owner precedent",
     "T-386 assertValue readback",
+    "commit 5908058ba blob_has_content",
 ]
 shipped_at = "28e9fbb6"
 created_at = "2026-07-26T12:17:26Z"

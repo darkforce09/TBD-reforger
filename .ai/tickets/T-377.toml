@@ -28,12 +28,26 @@ requirement = [
     "last two).",
     """And `time_of_day: ""` binds `''::time`, a Postgres cast error, so it 500s rather than blanking — already relayed to T-367.""",
 ]
+current_state = [
+    "SHIPPED: dropped empty string from valid_weather clear arm; PATCH and CREATE now agree blank means not-authored.",
+    "Client eden_chrome guard still blocks empty PATCH from SPA; direct API callers protected server-side.",
+]
+approach = [
+    "Remove empty string from valid_weather Clear mapping in handlers/missions.rs:48-56.",
+    "Align CREATE and PATCH so compiler weather_preset(None) and row mirror stay consistent.",
+]
+verify = [
+    "cargo test -p website-api blank_weather_is_not_clear",
+    "cargo test -p website-api valid_weather_clear_arm_excludes_empty_string",
+]
+acceptance = ["Blank weather PATCH/CREATE returned 400; dense_fog row no longer silently rewritten to clear."]
 citations = [
     "T-192 weather fix halves",
     "handlers/missions.rs:48-56",
     "mission_compile.rs:127",
     "eden_chrome.rs:706 guard",
     "T-367 time_of_day relay",
+    "commit 121bba762 blank weather 400",
 ]
 shipped_at = "b9134fe3"
 created_at = "2026-07-27T09:07:51Z"

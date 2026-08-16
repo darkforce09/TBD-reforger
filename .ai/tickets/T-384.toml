@@ -47,11 +47,14 @@ current_state = [
     "No record of WHICH match marked registration attended — write not reversible.",
 ]
 approach = ["Recomputing probably right; matches T-326 deployments refusal to re-derive."]
+verify = ["cargo test -p website-api ingest_match_results_retracts_prior_attendance_on_repoint"]
+acceptance = ["Match re-point retracted prior event attended before marking new one; attendance_rate no longer inflated to 100%."]
 citations = [
     "T-369 re-point fix",
     "T-316 per-field rules",
     "T-326 deployments pattern",
     "telemetry.rs attendance",
+    "commit 65013d7a7 attendance retract",
 ]
 shipped_at = "ee5c42e0"
 created_at = "2026-07-27T13:17:00Z"

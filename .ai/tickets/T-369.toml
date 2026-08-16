@@ -57,6 +57,11 @@ approach = [
     "Moved started_at default down into INSERT so UPDATE cannot look right beside it.",
     "RETURNING event_id gives merged value fixing why correction did nothing.",
 ]
+verify = [
+    "cargo test -p website-api --test telemetry a_corrected_reingest_lands_the_event_and_marks_attendance.",
+    "119/119 T-316 decisions re-verified; attendance_rate 0.00→50.00 after corrected re-POST.",
+]
+acceptance = ["Corrected re-POST merged event_id, mission_id, terrain, and started_at; RETURNING event_id returned merged value; T-384 re-point filed."]
 citations = [
     "T-316 sibling field rule",
     "T-001 Updates carry-over",
@@ -64,6 +69,7 @@ citations = [
     "telemetry.rs:555-582 upsert",
     "telemetry.rs:489 event_id gate",
     "T-384 re-point inflation",
+    "commit 3f8f3d862 reingest merge",
 ]
 shipped_at = "80120c1d"
 created_at = "2026-07-26T10:40:43Z"

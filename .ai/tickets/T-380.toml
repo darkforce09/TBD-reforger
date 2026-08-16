@@ -73,12 +73,14 @@ verify = [
     "INCIDENTAL FINDING WORTH KEEPING: a restored fresh core re-encodes **24.98 MB -> 1.07 MB with every slot present** (yrs state compaction versus an appended update log).",
     "**Measure these records in slots, not bytes** — its own first assertion was wrong for exactly this reason before it corrected it.",
 ]
+acceptance = ["restore_settled gate blocked boot-time persist; 2008-slot record survived fixture edit during load stall."]
 citations = [
     "T-374 content-level guard",
     "T-175 restore_settled Cell",
     "mission_editor.rs:276 fixture",
     "mission_history.rs:374 persist",
     "yrs_persist.rs run_save",
+    "commit 428ef20c9 restore_settled gate",
 ]
 shipped_at = "28e9fbb6"
 created_at = "2026-07-26T12:26:21Z"
