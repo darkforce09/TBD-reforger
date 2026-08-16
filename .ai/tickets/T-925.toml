@@ -35,9 +35,13 @@ acceptance = [
     "wave close on that tree closes exactly the recorded label end-to-end: marker accepted, base advances, entry dropped, tree check-green",
     "Partial ships never record an entry; close with nothing pending refuses without writing; two pending labels close oldest-first",
 ]
+shipped_at = "36e419a0c"
 created_at = "2026-08-16T03:46:18Z"
 completed_at = "2026-08-16T05:36:11Z"
-estimated = ["scope"]
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = [
     "xtask/src/wave",
     "xtask/src/wave_lock.rs",
