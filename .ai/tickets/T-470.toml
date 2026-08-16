@@ -36,10 +36,12 @@ current_state = [
 ]
 approach = ["Seed only inside Ok arm AST or window; pin Retry not filtered out."]
 verify = ["Repro: move list_seeded.set(true) before Ok arm — still green."]
+acceptance = ["Hardened content_list_error Class-R with Ok-arm-only seed and reachable Retry pins."]
 citations = [
     "wave 26 adversarial MAJOR",
     "T-466 Class-R content list",
     "content_list_error needle-soft pin",
+    "Ok-arm seed Retry pin",
 ]
 shipped_at = "9fd41083"
 created_at = "2026-07-27T02:51:06Z"

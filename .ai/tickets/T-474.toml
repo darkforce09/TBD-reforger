@@ -32,10 +32,12 @@ current_state = [
 ]
 approach = ["Cure: structural body pins; broaden paraphrase ban; RED→GREEN perturbations."]
 verify = ["Repro: paraphrased entities[] never placed lie → verify PASS."]
+acceptance = ["Structural verify-t437 pins banned comment-only and paraphrased destroy inert lies."]
 citations = [
     "wave 27 adversarial BLOCKER",
     "verify-t437 destroy diagnostics",
     "TBD_ObjectiveRegistry.c inert",
+    "comment-stripped return arms",
 ]
 shipped_at = "4b0f7930"
 created_at = "2026-07-27T03:09:40Z"

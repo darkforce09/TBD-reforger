@@ -29,10 +29,12 @@ requirement = [
 current_state = ["Repro: hollow echo, -fake targets, comment-only → tripwire PASS."]
 approach = ["Cure: tighten regex to forbid echo/@true/#fake; require real schema-validate invoke."]
 verify = ["Repro: @echo MAKE schema-validate, -fake, @true comment → tripwire PASS."]
+acceptance = ["Hardened verify-t468 against echo, -fake targets, and comment-only smuggles."]
 citations = [
     "wave 27 adversarial BLOCKER",
     "verify-t468 recipe pin",
     "schema-validate Makefile recipe",
+    "echo fake comment smuggle ban",
 ]
 shipped_at = "1675be2d"
 created_at = "2026-07-27T03:09:40Z"

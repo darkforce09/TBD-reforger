@@ -33,10 +33,12 @@ current_state = [
 ]
 approach = ["Cure: assert status+LOCATION with actionable message."]
 verify = ["Repro: APP_ENV/dev-login without 302 or absent LOCATION header."]
+acceptance = ["admin_field dev_login asserts Location header; fails loud not IndexMap panic."]
 citations = [
     "wave 25 adversarial N4",
     "admin_field.rs:37 LOCATION",
     "cold-gate dev-login flake",
+    "dev_login Location assert",
 ]
 shipped_at = "1c726aa8"
 created_at = "2026-07-27T02:37:07Z"

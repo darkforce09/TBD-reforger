@@ -34,10 +34,12 @@ current_state = [
 ]
 approach = ["Cure: comment-strip before pins; pin live absolute_cms_upload_url call."]
 verify = ["Repro: commented FormData line or unpinned url → Class-R green."]
+acceptance = ["Comment-stripped FormData Cargo pin; pinned live absolute_cms_upload_url on upload path."]
 citations = [
     "wave 28 adversarial MAJOR T-446",
     "content.rs FormData Class-R",
     "absolute_cms_upload_url pin",
+    "T-446 comment-strip upload pin",
 ]
 shipped_at = "95898c06"
 created_at = "2026-07-27T03:52:19Z"

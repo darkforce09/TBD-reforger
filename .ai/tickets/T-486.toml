@@ -29,10 +29,12 @@ requirement = [
 current_state = ["Repro: replace verify-t468 recipe with @true → make verify-t468 rc=0."]
 approach = ["Extend verify-t468 to assert Makefile verify-t468 invokes real script."]
 verify = ["Repro: hollow verify-t468 recipe → make verify-t468 rc=0."]
+acceptance = ["Self-pinned verify-t468 recipe invokes the real bash script, not hollow @true."]
 citations = [
     "Wave 33 verifier NIT T-485",
     "hollow verify-t468 @true recipe",
     "wave.sh cold gate honest",
+    "verify-t468 self-pin recipe",
 ]
 shipped_at = "b850ebc0"
 created_at = "2026-07-27T05:18:24Z"

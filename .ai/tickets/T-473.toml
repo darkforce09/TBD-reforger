@@ -35,10 +35,12 @@ current_state = [
 ]
 approach = ["Cure: normalize whitespace; ban indirect set and unreachable Retry wrapper."]
 verify = ["Repro: early set( true ) plus Err arm set → Class-R PASS."]
+acceptance = ["Hardened list_seeded Class-R; Ok-only set; banned spaced Err seed and if-false Retry."]
 citations = [
     "wave 27 BLOCKER MAJOR",
     "content.rs list_seeded pin",
     "if false Retry wrapper",
+    "spaced Err seed ban",
 ]
 shipped_at = "451883cb"
 created_at = "2026-07-27T03:09:40Z"

@@ -33,10 +33,12 @@ current_state = [
 ]
 approach = ["Cure: Class-R or verify script pinning ci.yml schema job."]
 verify = ["Repro: ci.yml schema step back to schema validate only — CI green."]
+acceptance = ["Added verify-t468 tripwire pinning ci.yml schema job to ci-local-schema."]
 citations = [
     "wave 25 adversarial N3",
     "T-434 ci-local-schema alignment",
     "map-object-enums gate hole",
+    "schema job parity tripwire",
 ]
 shipped_at = "d4aa3d27"
 created_at = "2026-07-27T02:37:07Z"

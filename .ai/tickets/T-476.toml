@@ -29,10 +29,12 @@ requirement = [
 current_state = ["Hypothetical repro: @true verify-t438 recipe → make PASS, script never runs."]
 approach = ["Cure: extend verify-t468-style tripwire to t438/t456 recipes."]
 verify = ["Hypothetical: replace verify-t438 with @true → make PASS."]
+acceptance = ["Extended verify-t468 tripwire to assert verify-t438/t456 recipes invoke real bash."]
 citations = [
     "wave 28 adversarial NIT",
     "T-467 Makefile recipes",
     "verify-t468 recipe tripwire",
+    "t438 t456 hollow recipe pin",
 ]
 shipped_at = "c2e009a3"
 created_at = "2026-07-27T03:52:19Z"

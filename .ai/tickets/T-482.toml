@@ -35,10 +35,12 @@ current_state = [
 ]
 approach = ['Change verify-t180 pin to --features "doc mission".']
 verify = ["Repro: cargo test mission only → 0 passed; doc,mission → 1 passed."]
+acceptance = ["Aligned verify-t180 vehicle-floor test pin to doc+mission features matching flatten.rs gate."]
 citations = [
     "Wave 31 adversarial BLOCKER",
     "T-423 doc feature flatten.rs",
     "the_vehicle_row_still_has_the_shape",
+    "doc mission vehicle-floor pin",
 ]
 shipped_at = "fdf62697"
 created_at = "2026-07-27T04:55:22Z"

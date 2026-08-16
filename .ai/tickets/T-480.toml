@@ -32,10 +32,13 @@ current_state = [
     "Repro: Path=/api cookie passes contains Path=/ and Max-Age=0 soft checks.",
 ]
 approach = ["Cure: assert Set-Cookie equals OAUTH_STATE_CLEAR or parse Path=/ exact."]
+verify = ["cargo test -p website-api --test oauth_redirect"]
+acceptance = ["oauth_redirect assert_oauth_state_cleared uses byte equality to OAUTH_STATE_CLEAR constant."]
 citations = [
     "T-429 wave 30 verifier",
     "oauth_redirect.rs assert_oauth_state_cleared",
     "handlers/oauth.rs OAUTH_STATE_CLEAR",
+    "OAUTH_STATE_CLEAR byte equality IT",
 ]
 shipped_at = "4a79816f"
 created_at = "2026-07-27T04:43:56Z"

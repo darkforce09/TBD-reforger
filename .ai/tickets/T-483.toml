@@ -29,10 +29,12 @@ requirement = [
 current_state = ["Repro: soft check accepts oauth_state=; Path=/api; Max-Age=0; HttpOnly."]
 approach = ["Assert equality to OAUTH_STATE_CLEAR (or require Path=/ exact)."]
 verify = ["Repro: soft check accepts Path=/api clear cookie."]
+acceptance = ["Hardened clears_oauth_state unit helper to exact OAUTH_STATE_CLEAR byte equality."]
 citations = [
     "Wave 31 residual T-480",
     "OAUTH_STATE_CLEAR byte equality",
     "soft Path=/api clear cookie",
+    "clears_oauth_state exact equality",
 ]
 shipped_at = "9ddac8ac"
 created_at = "2026-07-27T04:59:13Z"

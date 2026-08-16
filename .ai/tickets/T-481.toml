@@ -33,10 +33,13 @@ current_state = [
     'Repro: discord_client_id=" " + env=production → validate() Ok.',
 ]
 approach = ["Cure: trim or reject if trim empty before Missing check; Class-R pin."]
+verify = ["cargo test -p website-api --lib production_rejects_whitespace_only_discord_client_id"]
+acceptance = ["Config::validate rejects whitespace-only DISCORD_CLIENT_ID in production via trim.is_empty."]
 citations = [
     "T-430 wave 30 verifier",
     "config.rs Config::validate",
     "discord_client_id is_empty guard",
+    "client_id trim production validate",
 ]
 shipped_at = "fc13ab2c"
 created_at = "2026-07-27T04:43:56Z"

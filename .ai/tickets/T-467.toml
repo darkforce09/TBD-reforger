@@ -34,10 +34,12 @@ current_state = [
 ]
 approach = ["Cure: add Makefile + CI steps mirroring wave.sh."]
 verify = ["Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh deleted."]
+acceptance = ["Wired verify-t438 and verify-t456 into ci-local and CI sibling targets."]
 citations = [
     "wave 25 adversarial N2",
     "T-463 verify-t438 verify-t456",
     "pre-T-452 verify pattern",
+    "ci-local sibling verify targets",
 ]
 shipped_at = "e209d501"
 created_at = "2026-07-27T03:21:43Z"

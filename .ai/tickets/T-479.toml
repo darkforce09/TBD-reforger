@@ -37,10 +37,13 @@ approach = [
     "Make seed_user idempotent on arma_id or unique per test worker.",
     "Assert no shared snowflake collision across parallel tests.",
 ]
+verify = ["cargo test -p website-api --test events"]
+acceptance = ["Fixed flaky events IT; per-call AtomicU64+UUID arma_ids via unique_arma; suite serialized."]
 citations = [
     "wave 29 cold re-gate",
     "event_orbat_registration_and_race IT",
     "common/mod.rs seed_user",
+    "duplicate arma_id flake fix",
 ]
 shipped_at = "1ba9fb2c"
 created_at = "2026-07-27T04:31:19Z"
