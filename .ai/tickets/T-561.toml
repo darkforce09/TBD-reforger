@@ -26,6 +26,10 @@ requirement = ["strip_rust_line_comments must not let /* */ or string literal de
 current_state = ["Both wires None plus /* opt(&row.briefing) */ or let _ string decoy still passes; // decoy red."]
 approach = ["Strip or reject block comments and string literals containing the briefing needle."]
 verify = ["hydrate_wires_row_briefing red with None wires and block-comment or string decoy."]
+acceptance = [
+    "Briefing Class-R stripped block comments and string literals before contains needle.",
+    "Block-comment and string decoy opt(&row.briefing) attacks went RED on the hydrate pin.",
+]
 citations = [
     "W64 verifier T-559",
     "strip_rust_line_comments",

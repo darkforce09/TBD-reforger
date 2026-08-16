@@ -83,6 +83,10 @@ verify = [
     "rpm -q ripgrep absent; bash -c command -v rg absent.",
     "Gate scripts exit 1 without agent shim.",
 ]
+acceptance = [
+    "gate-grep.sh replaced rg with grep -E four-outcome helpers in verify-t456 and verify-t437.",
+    "verify-t296 and verify-t452 fixed fail-open shape and wired into wave gate plus Makefile.",
+]
 citations = [
     "ripgrep absent container host",
     "T-216 grep -E pattern",

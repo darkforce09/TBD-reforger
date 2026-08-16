@@ -15,7 +15,14 @@ requirement = [
     "Route library hero featured card through trim-aware helper.",
     "Class-R source-ratchet so pre-T-548 !b.is_empty() filter cannot return.",
 ]
+current_state = ["Library hero used !b.is_empty() without trim for whitespace-only briefings."]
+approach = ["Added featured_briefing_text trim helper and Class-R source ratchet in missions.rs."]
 verify = ["Class-R ratchet bans pre-T-548 !b.is_empty() filter."]
+acceptance = [
+    "featured_briefing_text routed library hero briefings through trim-aware emptiness check.",
+    "Whitespace-only featured briefings took FEATURED_BRIEFING_FALLBACK instead of raw briefing text.",
+    "Class-R source ratchet banned pre-T-548 !b.is_empty() filter from missions.rs.",
+]
 citations = [
     "W56 verifier after T-494",
     "T-494 trim source-ratchet",

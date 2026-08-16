@@ -61,6 +61,11 @@ verify = [
     "make api against existing dev DB reproduces defect 1.",
     "Scratch populated DB reproduces defect 2.",
 ]
+acceptance = [
+    "Restored 0009 migration bytes so sqlx checksums matched already-applied databases.",
+    "0017 deduped duplicate assigned_to rows before CREATE UNIQUE INDEX enforcement.",
+    "gate_db_migrate_persist added populated-database migration gate with checksum audit.",
+]
 citations = [
     "ensure_gate_db forward only",
     "0009 checksum drift",

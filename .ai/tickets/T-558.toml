@@ -57,6 +57,12 @@ verify = [
     "t542_no_raw_test_database_url_reads_outside_common catches src/ TEST_DATABASE_URL reads.",
     "make test-it no longer leaves unpruned rust_it_<suite>_it databases.",
 ]
+acceptance = [
+    "t542 Class-R extended to scan src/ for raw TEST_DATABASE_URL reads.",
+    "registry_import consumer moved to require_test_database_url; sparse-reimport test relocated.",
+    "db_migrate and models_fromrow split to separate migrate test databases.",
+    "Makefile pruned rust_it_<suite>_it databases after make test-it.",
+]
 citations = [
     "T-534 test isolation",
     "T-542 Class-R guard",

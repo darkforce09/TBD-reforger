@@ -32,6 +32,10 @@ current_state = [
 ]
 approach = ["Pin must exercise live discord_id_for_role arms not comment decoys."]
 verify = ["Collapse to always DEV_USER_ID with commented arms; Class-R must RED."]
+acceptance = [
+    "t387_dev_login_roles Class-R pinned live role arms on comment-stripped dev.rs source.",
+    "Comment-arm collapse and DEV_USER_ID ignore-helper bypass shapes went RED.",
+]
 citations = [
     "W65 verifier after T-387",
     "t387_dev_login_roles distinct discord",

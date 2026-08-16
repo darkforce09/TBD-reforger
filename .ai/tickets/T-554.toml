@@ -34,6 +34,10 @@ current_state = [
 ]
 approach = ["Add website-frontend Class-R on hydrate briefing wiring."]
 verify = ["Replace opt row.briefing with None; FE Class-R must fail."]
+acceptance = [
+    "hydrate_wires_row_briefing_into_apply_row_meta Class-R required opt(&row.briefing) in adopt_payload and apply_row.",
+    "None mutation on both briefing wires failed the website-frontend hydrate pin.",
+]
 citations = [
     "W62 verifier T-418",
     "mission_hydrate briefing wire",

@@ -53,6 +53,10 @@ current_state = [
 ]
 approach = ["ON CONFLICT both indexes or drop fixed arma_id from INSERT."]
 verify = ["Postgres log shows idx_users_arma_id violation on concurrent cold login."]
+acceptance = [
+    "dev-login INSERT used NULL arma_id with COALESCE on first create via ON CONFLICT (discord_id).",
+    "T-534 Class-R updated to pin NULL-insert plus COALESCE UPDATE contract.",
+]
 citations = [
     "T-534 dev-login prime",
     "idx_users_arma_id race",

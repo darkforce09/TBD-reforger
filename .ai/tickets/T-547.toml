@@ -23,6 +23,10 @@ requirement = ["Gap 3 shares format_uptime for dashboard/server_intel/audit."]
 current_state = ["Docs overclaim server-control helper; page has private one."]
 approach = ["Fix doc comment or unify helper."]
 verify = ["rg format_uptime apps/website/frontend/src/"]
+acceptance = [
+    "datefmt format_uptime doc no longer claimed server-control shares the HH:MM:SS helper.",
+    "Comment documented server-control kept Nd HHh MMm / HHh MMm formatting instead.",
+]
 citations = [
     "W55 adversarial verifier",
     "Gap 3 format_uptime",

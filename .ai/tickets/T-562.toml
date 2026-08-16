@@ -25,6 +25,10 @@ requirement = ["contains needle must fail when only string or format! literal ca
 current_state = ["Comment strip works; string/format! decoy with needle passes while INSERT stays NULL."]
 approach = ["Reject string literal and format! decoys; keep // and bind attacks red."]
 verify = ["Class-R red with UPDATE removed and string or format! COALESCE decoy present."]
+acceptance = [
+    "dev-login Class-R required SET arma_id = COALESCE inside direct sqlx::query SQL payloads only.",
+    "String and format! COALESCE decoys no longer satisfied the dev-login prime pin.",
+]
 citations = [
     "W64 verifier T-560",
     "SET arma_id COALESCE",

@@ -25,6 +25,10 @@ requirement = ["No-arg flatten_to_mod_document still uses empty catalog."]
 current_state = ["get_compiled_mission calls no-arg path; over-capacity compiles until re-saved."]
 approach = ["Load cargo_phys_catalog; call flatten_to_mod_document_with_catalog."]
 verify = ["rg flatten_to_mod_document apps/website/api/src/handlers"]
+acceptance = [
+    "get_compiled_mission loaded load_cargo_phys_catalog then flatten_to_mod_document_with_catalog.",
+    "HTTP IT refused over-capacity tip on /compiled when registry phys table was loaded.",
+]
 citations = [
     "W58 verifier T-500",
     "flatten_to_mod_document_with_catalog",

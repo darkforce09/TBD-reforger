@@ -25,6 +25,7 @@ requirement = ["0015 claims two-seat deferred; obsolete after 0017."]
 current_state = ["content_golden fixed; 0015 still has stale lore."]
 approach = ["Past-tense 0015 comments or point at 0017."]
 verify = ["rg two-seat deferred migrations/0015"]
+acceptance = ["0015 migration comments retargeted obsolete two-seat deferral lore to 0017/T-511 past-tense."]
 citations = [
     "W60 verifier T-525",
     "migration 0015 two-seat",

@@ -25,6 +25,10 @@ requirement = ["/compiled now loads catalog; events roster still no-arg."]
 current_state = ["events.rs calls empty-catalog flatten; over-capacity compiles."]
 approach = ["Same wire as T-549: catalog then flatten_with_catalog."]
 verify = ["rg flatten_to_mod_document handlers/events.rs"]
+acceptance = [
+    "ingest_event_roster loaded load_cargo_phys_catalog and called flatten_to_mod_document_with_catalog.",
+    "Class-R pin in events.rs guarded catalog load on the roster compile path.",
+]
 citations = [
     "W59 verifier T-549",
     "load_cargo_phys_catalog",

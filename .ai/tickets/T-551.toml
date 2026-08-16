@@ -25,6 +25,10 @@ requirement = ["ingest_event_roster omits over-capacity; Class-R pin only."]
 current_state = ["No tests/events.rs IT for roster omit path."]
 approach = ["IT seeds over-capacity tip; assert roster omit or error."]
 verify = ["rg flatten_to_mod_document_with_catalog tests/events.rs"]
+acceptance = [
+    "HTTP IT seeded Save-bypass over-capacity tip and roster ingest returned 200.",
+    "Over-capacity mission seating omitted from roster assignments when catalog was loaded.",
+]
 citations = [
     "W60 adversarial verifier",
     "ingest_event_roster omit",

@@ -32,6 +32,10 @@ current_state = [
 ]
 approach = ["Tighten pin to require opt(&row.briefing) in live apply_row_meta calls."]
 verify = ["None both briefing args plus dead let; cargo test must RED."]
+acceptance = [
+    "Briefing Class-R required opt(&row.briefing) as live apply_row_meta argument in both wires.",
+    "Dead let _ = opt(&row.briefing) with None args went RED on hydrate_wires_row_briefing.",
+]
 citations = [
     "W65 verifier after T-561",
     "hydrate_wires_row_briefing apply_row_meta pin",

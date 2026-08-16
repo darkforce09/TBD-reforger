@@ -24,6 +24,7 @@ requirement = ["hydrate_wires_row_briefing_into_apply_row_meta must not pass on 
 current_state = ["None mutation fails correctly; comment containing opt(&row.briefing) in each fn still passes."]
 approach = ["Strengthen Class-R beyond body.contains; reject comment-only needle matches."]
 verify = ["cargo test -p website-frontend hydrate_wires_row_briefing with None wires and comment decoy fails."]
+acceptance = ["Briefing Class-R stripped // comments before contains needle; comment decoy no longer false-green."]
 citations = [
     "W63 verifier T-554",
     "hydrate_wires_row_briefing",

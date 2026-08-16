@@ -34,6 +34,7 @@ current_state = [
 ]
 approach = ["Update TBD_ZoneRegistry.c:39 comment to match live schema pin."]
 verify = ["rg additionalProperties: true TBD_ZoneRegistry.c expects no hit."]
+acceptance = ["TBD_ZoneRegistry penalty comment aligned with zoneRules additionalProperties false schema pin."]
 citations = [
     "W62 verifier T-419",
     "zoneRules additionalProperties false",

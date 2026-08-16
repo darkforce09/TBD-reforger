@@ -32,6 +32,10 @@ current_state = [
 ]
 approach = ["Restrict pin to executed UPDATE not arbitrary sqlx::query strings."]
 verify = ["Delete COALESCE UPDATE; add SELECT decoy; Class-R must RED."]
+acceptance = [
+    "dev-login Class-R pinned COALESCE needle in first-create UPDATE shape after SQL-comment strip.",
+    "Unrelated sqlx::query SELECT string carrying the COALESCE decoy went RED.",
+]
 citations = [
     "W65 verifier after T-562",
     "t534_dev_login_prime_literals handler",

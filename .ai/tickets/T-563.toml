@@ -32,6 +32,10 @@ current_state = [
 ]
 approach = ["Apply same loadout settle refuse check to admin SetStage(LOBBY) path."]
 verify = ["Refuse at spawn; admin #stage LOBBY; DeployPlayerInternal still DENIED."]
+acceptance = [
+    "Admin SetStage(LOBBY) gated on loadout delivery refuse via StageRefusalFor shared with TickRosterSettle.",
+    "Stage chrome no longer advanced when DeployPlayerInternal stayed DENIED on loadout refuse.",
+]
 citations = [
     "W64 verifier after T-541",
     "TickRosterSettle loadout refuse gate",

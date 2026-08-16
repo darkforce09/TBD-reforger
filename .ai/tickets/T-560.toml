@@ -30,6 +30,10 @@ current_state = [
 ]
 approach = ["Pin must require executable COALESCE UPDATE, not comment or bind-form substitutes."]
 verify = ["Class-R red when COALESCE UPDATE removed and comment or bind decoy left; barrier probe clean."]
+acceptance = [
+    "dev-login Class-R required live SET arma_id = COALESCE after comment strip.",
+    "Non-NULL INSERT arma_id values via bind or literal were banned by the pin.",
+]
 citations = [
     "W63 verifier T-557",
     "t534_dev_login_prime_literals",
