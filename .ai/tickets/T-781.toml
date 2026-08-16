@@ -44,11 +44,16 @@ verify = [
     "Select comment with entities compose place comment at right offset.",
     "Comment survives undo redo restore not in compiled mission output.",
 ]
+acceptance = [
+    "Comments joined composition capture as authoring metadata excluded from compiled mission output.",
+    "place_composition kept authored entity elevation from the capture snapshot; comments stayed two-horizontal x z.",
+]
 citations = [
     "PLACE-COMMENT-001",
     "T-748 wave 141 residue",
     "T-651 wave 114",
     "T-777 composition z rule",
+    "wave 144 composable comments",
 ]
 shipped_at = "ab805357"
 created_at = "2026-08-08T16:34:37Z"

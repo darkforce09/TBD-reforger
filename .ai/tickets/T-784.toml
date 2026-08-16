@@ -43,11 +43,16 @@ verify = [
     "Click outliner comment and map glyph selects comment for Delete.",
     "Compose comment with entities; affordance test sees selectable and inert rows.",
 ]
+acceptance = [
+    "Outliner comment rows became selectable; map glyph hit-test fed same document read as render lane.",
+    "Delete with comment selected removed comment only via mirror_selection reconcile path.",
+]
 citations = [
     "T-780 pick_connection precedent",
     "eden_tree ROW_STATIC 792",
     "editor_ops mirror_selection",
     "wave 142 F-1 reconcile trap",
+    "6422f2ffd map glyph pick",
 ]
 shipped_at = "97d9f9f4"
 created_at = "2026-08-08T21:30:19Z"

@@ -44,11 +44,16 @@ verify = [
     "Draw connection undo redo restore from IDB line survives each transition.",
     "Select line on map delete through same code path as panel Delete control.",
 ]
+acceptance = [
+    "Connection render lane fed from document bind surviving undo redo and IDB restore.",
+    "Map pick_connection selected connection lines; Delete on map matched panel Delete path.",
+]
 citations = [
     "CONN-DEL-001",
     "T-768 wave 140 gap",
     "T-760 marker lane recipe",
     "T-748 comments lane recipe",
+    "CONN-DEL-001 map reachable",
 ]
 shipped_at = "155aa46e"
 created_at = "2026-08-08T16:34:37Z"

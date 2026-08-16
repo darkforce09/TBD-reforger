@@ -44,11 +44,16 @@ verify = [
     "Multi-select banner accurate for pick rows and loadout-buffer verbs both.",
     "Pin at mission_editor 8745 matches live banner text after fix.",
 ]
+acceptance = [
+    "Multi-select loadout banner distinguished per-entity pick rows from whole-selection Copy Apply Remove verbs.",
+    "mission_editor.rs honesty pin matched amended attributes banner text so slice gate stayed green.",
+]
 citations = [
     "editor_verify/wave118 MINOR-2",
     "T-649 honesty banner",
     "T-699 loadout verbs",
     "mission_editor 8745 pin",
+    "7e08a281 banner pin",
 ]
 shipped_at = "6368d6e1"
 created_at = "2026-08-08T04:27:46Z"

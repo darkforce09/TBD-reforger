@@ -45,11 +45,17 @@ verify = [
     "Ctrl+A map-dblclick opens N slots selected multi-edit SEL unchanged.",
     "Panel open plus Ctrl+A header switches multi within one frame.",
 ]
+acceptance = [
+    "apply-to-all batched into one transaction; nine-slot uniform apply reverted with single Ctrl+Z.",
+    "Map and outliner dblclick inside selection opened multi-edit without collapsing SEL9 to SEL1.",
+    "Attributes panel header re-rendered on selection change within one frame after Ctrl+A.",
+]
 citations = [
     "editor_hostile_ux_review F-26",
     "editor_ops 1617 2466",
     "open_attrs_modal 1235-1258",
     "T-649 multi-edit inversion",
+    "8dbad948 attr batch txn",
 ]
 shipped_at = "8dbad948"
 created_at = "2026-08-09T20:41:43Z"

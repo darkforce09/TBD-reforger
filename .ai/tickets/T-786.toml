@@ -43,11 +43,16 @@ verify = [
     "ORBAT then OPEN ARSENAL: elementFromPoint hits arsenal surface.",
     "Help then Save Version: Help closed; Esc one layer per press.",
 ]
+acceptance = [
+    "Modal z-index derived from modal_stack open order so last-opened surface won paint.",
+    "Opening a dialog closed strip popovers and Help; Esc stayed mount-ordered, later T-814.",
+]
 citations = [
     "editor_hostile_ux_review O-3 O-5",
     "ui.rs modal_stack 407",
     "elementFromPoint arsenal centre",
     "shared-Esc topmost dismissal",
+    "cc93241e modal_stack z-order",
 ]
 shipped_at = "cc93241e"
 created_at = "2026-08-09T05:01:29Z"

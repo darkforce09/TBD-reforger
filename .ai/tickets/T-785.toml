@@ -43,11 +43,17 @@ verify = [
     "CDP probe: eleven-char string per field retains focus unchanged docks.",
     "ROTATION digit entry still works; number_field must not regress.",
 ]
+acceptance = [
+    "text_field adopted number_field focused-draft pattern committing on blur Enter not per keystroke.",
+    "Inline layer rename used its own NodeRef focus on mount, not the attributes text_field.",
+    "in_editable_field still reads live activeElement; chord bleed stopped because focus no longer dropped mid-keystroke.",
+]
 citations = [
     "editor_hostile_ux_review F-01",
     "attributes.rs text_field 746",
     "number_field pattern 609",
     "mission_history in_editable_field 545",
+    "bef0a071 blur Enter smoke",
 ]
 shipped_at = "bef0a071"
 created_at = "2026-08-09T04:19:06Z"

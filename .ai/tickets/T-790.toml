@@ -45,11 +45,17 @@ verify = [
     "Caption within 40px of marker OCR or pixel-diff vs empty control.",
     "Dock-vs-map position agreement stays exact.",
 ]
+acceptance = [
+    "Marker lane extended with glyph id mapping sixty-four canonical aliases plus screen-space caption text.",
+    "Three distinct glyph pixel signatures at three zooms; dock-vs-map centroid agreement stayed exact.",
+    "Captions packed beside markers; native pin required nearest ink within 40 px at bind zoom.",
+]
 citations = [
     "editor_hostile_ux_review F-03",
     "T-760 marker_lane_xy_tints",
     "store.rs 3831",
     "T-806 T-808 WRITE-HALF",
+    "3c1eab05 glyph caption lane",
 ]
 shipped_at = "3c1eab05"
 created_at = "2026-08-10T04:01:59Z"

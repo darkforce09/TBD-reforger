@@ -44,11 +44,16 @@ verify = [
     "Editor player figure matches derived slot_count not author cap.",
     "PLAYER_COUNT_DISAGREE_NOTE retired after editor half ships.",
 ]
+acceptance = [
+    "Editor player figure displayed derived slot_count replacing max_players disagree display.",
+    "PLAYER_COUNT_DISAGREE_NOTE retired after operator ruling settled slot_count as editor truth.",
+]
 citations = [
     "T-694 player-cap question",
     "eden_settings PLAYER_COUNT_DISAGREE_NOTE",
     "dto.rs max_players compiled_meta",
     "operator wave-113 derived slot count",
+    "2ad6e7143 derived slot count",
 ]
 shipped_at = "53380c03"
 created_at = "2026-08-08T18:24:00Z"

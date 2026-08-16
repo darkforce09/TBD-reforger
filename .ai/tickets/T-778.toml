@@ -46,11 +46,16 @@ verify = [
     "never-installed honest failure; remove cleanup reddens case one alone.",
     "remove ptr_eq guard reddens case two alone naive fix failure mode.",
 ]
+acceptance = [
+    "Five register-at-mount thread_local seams gained on_cleanup unregister behind Rc ptr_eq guard.",
+    "Stale seam hooks reported honest failure after unmount instead of silent disposed-signal writes.",
+]
 citations = [
     "wave 129 dac84b03",
     "eden_dock_right f6a2b687",
     "validation_panel SeamRegistration",
     "reactive_graph 0.2.14 silent noop",
+    "b6e84961 lifecycle seams",
 ]
 shipped_at = "b6e84961"
 created_at = "2026-08-08T16:47:53Z"

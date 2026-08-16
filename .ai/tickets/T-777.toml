@@ -44,11 +44,16 @@ verify = [
     "Pasted entity retains authored z not deck at 0.0 rooftop case.",
     "Composed placement retains source z not hardcoded zero landing.",
 ]
+acceptance = [
+    "paste_at_cursor carried source slot z from copied extras instead of hardcoded zero landing.",
+    "paste_keeps_authored_z test proved rooftop paste retained authored elevation not deck level.",
+]
 citations = [
     "editor_verify wave127",
     "T-743 PASTE_NUDGE",
     "wave-127 F-2 F-5 F-6",
     "store.rs update_slot_position",
+    "paste_keeps_authored_z test",
 ]
 shipped_at = "53380c03"
 created_at = "2026-08-08T18:26:17Z"

@@ -44,11 +44,16 @@ verify = [
     "Reopened dialog no Saved vX until save in-session.",
     "On open activeElement version input; eight Tabs stay in dialog.",
 ]
+acceptance = [
+    "Save Version dialog Portal teleported to document.body escaping backdrop-filter containing block.",
+    "Reopen cleared prior Saved status; VERSION input took initial focus with Tab trapped in the dialog.",
+]
 citations = [
     "editor_hostile_ux_review F-04",
     "eden_top_strip.rs 1480-1601",
     "T-786 modal stack wave 200",
     "Versions are immutable semver",
+    "save-dialog-rect smoke",
 ]
 shipped_at = "93dc7397"
 created_at = "2026-08-10T00:34:00Z"

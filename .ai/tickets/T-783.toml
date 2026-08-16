@@ -43,11 +43,16 @@ verify = [
     "Grep pin: one fn install_seam one fn unregister_seam crate-wide.",
     "Remount-guard test reddens alone when ptr_eq guard removed.",
 ]
+acceptance = [
+    "install_seam and unregister_seam lifted pub(crate) beside SeamRegistration as single crate definition.",
+    "ruler_tool duplicate six-line mechanism deleted; lifecycle tests stayed green including remount guard.",
+]
 citations = [
     "T-778 wave 142",
     "validation_panel SeamRegistration",
     "ruler_tool FOLLOW-UP mark",
     "wave 129 register-at-mount idiom",
+    "7705f8404 single install_seam",
 ]
 shipped_at = "ab805357"
 created_at = "2026-08-08T19:56:28Z"

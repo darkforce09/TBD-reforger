@@ -35,11 +35,16 @@ current_state = [
 ]
 approach = ["Add call-site padding on ControlsHint close at eden_help 244 only."]
 verify = ["ControlsHint close hit target comfortable; shared BTN_ICON unchanged for dock callers."]
+acceptance = [
+    "ControlsHint overlay close button regained comfortable dismiss hit target via call-site padding.",
+    "Shared eden_layout BTN_ICON dock-density recipe stayed p-0.5 for dense-row callers.",
+]
 citations = [
     "editor_verify/wave118 NIT-1",
     "T-637 BTN_ICON rebuild",
     "eden_help.rs 244 close",
     "dock density p-0.5 recipe",
+    "2af211f6 call-site padding",
 ]
 shipped_at = "2af211f6"
 created_at = "2026-08-08T07:35:24Z"

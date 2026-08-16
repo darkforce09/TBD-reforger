@@ -42,12 +42,17 @@ verify = [
     "Census scans thirteen listeners; header derived numbers match live editor.",
     "every_editor_surface_listener_is_censused includes both dialog files.",
 ]
+acceptance = [
+    "faction_manager and orbat_manager joined editor_surface census with one listener each totaling thirteen.",
+    "the_prose_census_numbers_are_derived pinned 34 bindings and twelve Escape claimants over thirteen listeners.",
+]
 citations = [
     "editor_verify wave119 MAJOR-1",
     "editor_verify wave119 MINOR-1",
     "faction_manager.rs 70 listener",
     "orbat_manager.rs 249 listener",
     "T-703 eleven listener fix",
+    "0d98a6e2 thirteen listeners",
 ]
 shipped_at = "0d98a6e2"
 created_at = "2026-08-07T23:14:39Z"

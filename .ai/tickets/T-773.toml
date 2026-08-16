@@ -41,11 +41,16 @@ verify = [
     "Blurred or insecure copy shows refusal not false success toast.",
     "Successful clipboard write still toasts Server address copied.",
 ]
+acceptance = [
+    "write_clipboard helper promoted and awaited navigator clipboard promise before success toast.",
+    "Server Intel Copy stopped claiming copied when insecure blur or denied permission rejected write.",
+]
 citations = [
     "editor_verify wave118 pre-existing",
     "T-698 write_clipboard helper",
     "server_intel.rs 215 write_text",
     "signature false success class",
+    "7ad4a6a9 unawaited clipboard",
 ]
 shipped_at = "7ad4a6a9"
 created_at = "2026-08-07T21:21:47Z"

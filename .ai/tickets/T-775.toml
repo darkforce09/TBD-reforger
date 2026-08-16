@@ -41,11 +41,16 @@ verify = [
     "Idle focus blur without edit does not change coordinate or mint undo.",
     "Nudge from fractional coordinate preserves precision not rounded seed.",
 ]
+acceptance = [
+    "number_field skipped on_commit when parsed draft equaled last settled coordinate value.",
+    "Idle display used the exact value to three decimals; fractional PageUp nudge preserved 412.37.",
+]
 citations = [
     "editor_verify wave119 MAJOR-2",
     "attributes.rs number_field 506",
     "editor_ops attrs_update_position",
     "T-700 PageUp nudge widen",
+    "61efc6a2 idle blur skip",
 ]
 shipped_at = "61efc6a2"
 created_at = "2026-08-07T21:24:14Z"
