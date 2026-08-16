@@ -47,11 +47,17 @@ approach = [
     "NOT THIS TICKET: T-409 covers false-red hard-fails from T-406.",
     "Same file, different defect — sequence them, do not merge.",
 ]
+verify = [
+    "bash scripts/platform/wave.sh gate",
+    "make ci-local-schema",
+]
+acceptance = ["Wave gate gained non-vacuous schema step covering green sub-gates; excluded reds were recorded."]
 citations = [
     "T-244 map-object-enums failure",
     "T-241 mission.schema.json",
     "T-409 false-red guards",
     "PLATFORM_FACTORY testimony rule",
+    "commit 4774b25ee schema gate step",
 ]
 shipped_at = "77214f04"
 created_at = "2026-07-26T19:10:02Z"

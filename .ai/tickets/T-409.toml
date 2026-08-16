@@ -59,11 +59,13 @@ verify = [
     "F2 REPRO: rm aar_replay_url_backfill.rs; fmt=1 touch=1 clippy=0.",
     "F3 REPRO: TBD_GATE_LOCK=/proc/1/nope/x; lock HELD=0 ensure=2.",
 ]
+acceptance = ["clippy resolved include! orphans; deletion-only slices passed fmt/touch; full gate honoured unserialised hatch."]
 citations = [
     "T-406 vacuity hardening",
     "T-405 is_http_url_cases.rs",
     "wave.sh clippy_changed",
     "wave.sh fmt_changed",
+    "commit 797dd6c09 false-red guards fixed",
 ]
 shipped_at = "f5cf4c90"
 created_at = "2026-07-26T21:30:13Z"

@@ -38,11 +38,17 @@ approach = [
     "Not exploitable alone — must own mission which required mission_maker to create.",
     "Decision on ownership vs role has been made by omission today.",
 ]
+verify = [
+    "cargo test -p website-api escape_csv_formula_prefixes_equals_plus_minus_at",
+    "cargo test -p website-api update_mission_requires_mission_maker_tier",
+]
+acceptance = ["Audit CSV export prefixed formula cells; demoted users could not PATCH owned missions."]
 citations = [
     "T-391 URL sink audit",
     "T-405 XSS remediation",
     "is_http_url CSV disclaimer",
     "cms.rs Discord webhook",
+    "commit 8afb78dc1 CSV and authz",
 ]
 shipped_at = "cbd5682d"
 created_at = "2026-07-27T07:23:41Z"

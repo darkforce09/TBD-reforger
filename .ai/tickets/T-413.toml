@@ -48,11 +48,17 @@ approach = [
     "CAUTION: is_http_url_cases.rs-only slice hard-fails clippy_changed — T-409 F1.",
     "Wave 3 verifier confirmed deployments guard fires in headless Chromium.",
 ]
+verify = [
+    "cargo test -p website-api --test missions_url_guard patch_refuses_a_non_http_thumbnail_and_leaves_the_stored_value_alone",
+    "cargo test -p website-api --test events_url_guard patch_refuses_a_non_http_banner_and_leaves_the_stored_value_alone",
+]
+acceptance = ["URL guard adopted on remaining banner, thumbnail writers and avatar img sinks."]
 citations = [
     "T-405 URL guard",
     "T-409 F1 clippy_changed",
     "is_http_url_cases.rs shared",
     "deployments.rs replay_href",
+    "commit f0f21b910 URL guard adoption",
 ]
 shipped_at = "0ee70fa8"
 created_at = "2026-07-27T07:39:31Z"

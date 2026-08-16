@@ -33,11 +33,14 @@ approach = [
     "Fix is trailing ', id ASC' on approvals ORDER BY.",
     "Tighter bound on paged walk — correct but slow to fail today.",
 ]
+verify = ["cargo test -p website-api list_approvals_sql_orders_by_id_after_submitted_at"]
+acceptance = ["Approvals ORDER BY gained id ASC tiebreaker; find_in_approvals capped at ten pages."]
 citations = [
     "T-399 approvals test",
     "handlers/approvals.rs paging",
     "null_tolerance.rs tied rows",
     "admin_field.rs find_in_approvals",
+    "commit f5b58057f approvals paging stable",
 ]
 shipped_at = "f5b58057"
 created_at = "2026-07-27T06:24:53Z"

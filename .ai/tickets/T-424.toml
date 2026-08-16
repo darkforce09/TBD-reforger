@@ -42,10 +42,12 @@ approach = [
     "Other two script defects FIXED in wave 5: --features doc, static rg bans.",
 ]
 verify = ["verify-t180: ALL PASS rc=0 end to end after wave 5 fixes."]
+acceptance = ["verify-t180 refused zero-match cargo test selectors; renamed pins no longer printed ALL PASS silently."]
 citations = [
     "T-216 verify-t180 restore",
     "wave 5 adversarial verifier",
     "verify-t180-coherency.sh selectors",
+    "commit 0ff46f451 zero-match selector guard",
 ]
 shipped_at = "0ff46f45"
 created_at = "2026-07-27T04:44:55Z"

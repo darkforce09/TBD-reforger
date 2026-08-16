@@ -50,11 +50,14 @@ approach = [
     "Enforce conditional required when consumer actually needs it, not before.",
     "Conditional requires likely to collide with T-201/T-211/T-212.",
 ]
+verify = ["Comment-only mod header alignment; no Enfusion compile invoked for T-419."]
+acceptance = ["Six zoneRules comments matched T-241 closed sixteen-key vocabulary; graceSeconds ceiling documented."]
 citations = [
     "T-241 zones vocabulary",
     "T-201 T-211 T-212",
     "T-275 graceSeconds ceiling",
     "slice-collisions dependency root",
+    "commit e5a42b69f zoneRules comments",
 ]
 shipped_at = "65b4a56c"
 created_at = "2026-07-27T15:13:37Z"

@@ -56,11 +56,14 @@ approach = [
     "T-396 complete-write-set held: gate builds only dist-gate-frontend and target-gate-trunk.",
     "UNVERIFIED: cold ~/.cache/trunk writes on Trunk.toml toolchain bump.",
 ]
+verify = ["Perturbation-tested take_gate_lock, fmt_changed, and BASH_SOURCE ROOT in wave.sh."]
+acceptance = ["wave.sh refused unsynchronised locks, deletion-skip fmt vacuity, and sourced ROOT lies."]
 citations = [
     "wave.sh:36 ROOT",
     "wave.sh:555 take_gate_lock",
     "wave.sh:283 wasm_changed",
     "T-396 gate write set",
+    "commit 2c946d59 wave.sh hardening",
 ]
 shipped_at = "96acafff"
 created_at = "2026-07-26T16:48:14Z"

@@ -42,11 +42,13 @@ approach = [
     "Planned future JS consumer is legitimate answer if crate kept.",
 ]
 verify = ["REPRO: export mission whose row has briefing; envelope briefing is empty."]
+acceptance = ["map-engine-wasm crate removed; missions.briefing threaded through hydrate into compile_export envelope."]
 citations = [
     "T-243 map-engine-wasm binding",
     "T-159.29.3 React deletion",
     "T-214 compile_export briefing",
     "mission_hydrate RowMeta",
+    "commit cd5b2860f wasm shim retired",
 ]
 shipped_at = "6664bb4f"
 created_at = "2026-07-27T15:13:37Z"

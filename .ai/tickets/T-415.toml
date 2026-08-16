@@ -47,11 +47,14 @@ approach = [
     "CargoBudget from Workbench export-time data mod never reads.",
     "Recursion confirmed NOT REACHABLE — CargoRow is three scalars.",
 ]
+verify = ["world-boot.sh TBD-ERROR; wave 53 GATE PASS verifier CLEAN."]
+acceptance = ["IsComplete consumed in ReportVerdict; cargo inserts gated with CanInsertItemInStorage precheck."]
 citations = [
     "T-240 client half",
     "TBD_LoadoutEquipHelper.c IsComplete",
     "TBD_RegistryScan.c CargoBudget",
     "arsenal_rules.rs CargoRow",
+    "commit 310ae72f2 loadout delivery verify",
 ]
 shipped_at = "a5c1040a"
 created_at = "2026-07-27T13:17:00Z"

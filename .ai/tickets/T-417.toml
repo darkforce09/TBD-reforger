@@ -59,11 +59,13 @@ verify = [
     "REPRO: open Arsenal, click + on cargo row, reload — qty persisted without save.",
     "REPRO: clear vest row, add magazine to vest cargo, export.",
 ]
+acceptance = ["Export Compiled shipped compact bytes matching GET /compiled; expired session no longer misdiagnosed as unsaved row."]
 citations = [
     "T-243 compiled export",
     "T-240 arsenal structural",
     "wave 4 adversarial verifier",
     "mission_commands ROW_META",
+    "commit 2d1e2727e compact export bytes",
 ]
 shipped_at = "8899912b"
 created_at = "2026-07-27T08:20:11Z"

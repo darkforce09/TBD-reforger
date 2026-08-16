@@ -44,11 +44,17 @@ approach = [
     "Mapping without table drops every vehicle — T-200 silent substitution.",
     "T-215 worktree could not be served; verifier browser tooling unavailable.",
 ]
+verify = [
+    "cargo test -p map-engine-core --features mission placed_vehicles_flatten_to_entity_rows_with_alias_inventory_faction",
+    "cargo test -p map-engine-core --features mission resolves_known_vehicles_and_refuses_unknown",
+]
+acceptance = ["veh alias table added; placed vehicles selectable, draggable, and flattened with faction and inventory."]
 citations = [
     "T-215 vehicle placement round trip",
     "kit-aliases.json kit shape",
     "place_orbat is_open_for_placement",
     "T-321 one-squad-per-click",
+    "commit 44cea4287 veh aliases flatten",
 ]
 shipped_at = "44cea428"
 created_at = "2026-07-27T05:38:02Z"

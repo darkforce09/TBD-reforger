@@ -53,11 +53,17 @@ approach = [
     "misc_integration boot_servers(tag) deletes only T235 {tag}%.",
     "Waves 3-5 passed only via fresh cold TBD_GATE_DB each time.",
 ]
+verify = [
+    "cargo test -p website-api --test dashboard_reads dashboard_leaderboards_deployments_loa_audit",
+    "cargo test -p website-api --test missions mission_submit_is_the_only_door_into_the_approvals_queue",
+]
+acceptance = ["Missions IT paginated LIMIT-20 queues; dashboard next_event asserted real event_id, name, and status."]
 citations = [
     "T-399 approvals ratchet",
     "T-411 per-wave DB names",
     "misc_integration boot_servers",
     "handlers/dashboard.rs next_event",
+    "commit 3cc1addcc ASC ratchets fixed",
 ]
 shipped_at = "facd5cd7"
 created_at = "2026-07-27T07:29:23Z"

@@ -67,11 +67,13 @@ verify = [
     "REPRO A: append unparseable Rust, touch -r original mtime; cargo check rc=0.",
     "REPRO B: sibling worktree marker in rmeta; main grep src returns 0.",
 ]
+acceptance = ["Check and clippy used target-gate-check; touch_workspace invalidated workspace mtimes first."]
 citations = [
     "T-193 T-195 clobbering",
     "T-420 gate_schema stamp",
     "T-422 incomplete model",
     "wave.sh touch_changed",
+    "commit a4206206e private check target",
 ]
 shipped_at = "570893ba"
 created_at = "2026-07-26T20:27:44Z"

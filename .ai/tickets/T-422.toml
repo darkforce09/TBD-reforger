@@ -57,11 +57,13 @@ approach = [
     "Do not copy GATE_SCHEMA_TARGET stamp as model for T-421.",
 ]
 verify = ["main: cargo xtask schema height-labels rc=0; terrain-alignment maxDeltaM=0.204."]
+acceptance = ["height-labels included per context; schema tripwire compared full Makefile set; stamp hashed path dependencies."]
 citations = [
     "T-420 schema step wave gate",
     "T-421 touch_workspace mtime",
     "make schema-validate nine sub-gates",
     "PLATFORM_FACTORY testimony rule",
+    "commit cf4bf5122 gate_schema defects",
 ]
 shipped_at = "2de6ca57"
 created_at = "2026-07-26T21:49:30Z"
