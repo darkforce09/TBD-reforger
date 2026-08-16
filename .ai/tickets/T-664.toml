@@ -42,6 +42,10 @@ verify = [
     "Context menu opens at pixel on ground and entity.",
     "PLACE-COMMENT-001 CREW-SEAT CONN-START unblocked.",
 ]
+acceptance = [
+    "context_menu.rs opened a floating menu at the event pixel on ground and entity.",
+    "Eden batch01 item lists wired; six dependent tickets unblocked.",
+]
 citations = [
     "batch01_context_menu Eden lists",
     "T-662 MMB prevent_default prerequisite",

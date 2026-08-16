@@ -36,6 +36,10 @@ verify = [
     "Fourteen hits gone except doc comments and not-authored test.",
     "gap_analysis ENV-SETTINGS-002 corrected.",
 ]
+acceptance = [
+    "MissionEnv view_distance and thermals removed from dto.rs and read_env parse.",
+    "keys_nothing_reads_are_not_authored test stayed green after removal.",
+]
 citations = [
     "T-193 removed controls not wiring",
     "gap_analysis ENV-SETTINGS-002 stale",

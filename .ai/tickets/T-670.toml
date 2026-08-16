@@ -31,6 +31,11 @@ current_state = [
 ]
 approach = ["Add signal in mission_editor mount; pass zoom to eden_toolbelt prop."]
 verify = ["Scale cell shows metres-per-pixel matching RenderEngine zoom."]
+acceptance = [
+    "Metres-per-pixel SCL readout cell landed in StatusBar OBJ/SEL/SZ group.",
+    "Zoom sampled from rAF but written only when the formatted string changed.",
+    "Shared m_per_px signal reconciled ScaleBar with the numeric readout.",
+]
 citations = [
     "STATUS-ZOOM-001 gap row",
     "BottomToolbelt eden_toolbelt :3672",

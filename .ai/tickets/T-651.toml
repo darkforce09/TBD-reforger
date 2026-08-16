@@ -40,6 +40,12 @@ approach = [
     "Place gesture mission_editor.rs menu item context_menu.rs T-664.",
 ]
 verify = ["verifier wave114.md; map glyph and composable clauses undisclosed gaps."]
+acceptance = [
+    "Editor-only comment entities lived in the outliner without compiling into the mission.",
+    "Place Comment reached empty ground through the context menu after T-664.",
+    "Never-compile rule was proven by a test routing comments through entities[].",
+    "New-mission template seeded comments; map glyph and composable stayed undisclosed.",
+]
 citations = [
     "PLACE-COMMENT-001 comment placement",
     "T-664 RMB Place Comment",

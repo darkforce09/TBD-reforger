@@ -36,6 +36,11 @@ current_state = [
 ]
 approach = ["Mount in full-width status bar not floating centred pill."]
 verify = ["Scale bar visible in status bar after T-636 lands."]
+acceptance = [
+    "Scale bar mounted in the status-bar furniture slot after T-636.",
+    "Edge grid reference labels mounted as a map-pane overlay, not in the status bar.",
+    "Arma three-digit grid formatter and scale picker table pinned in native tests.",
+]
 citations = [
     "T-636 status bar prerequisite",
     "T-641 second half split",

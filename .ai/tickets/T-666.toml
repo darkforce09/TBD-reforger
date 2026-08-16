@@ -39,6 +39,11 @@ verify = [
     "Layer create rename delete reparent commands reach store mutators.",
     "Folder click selects children plus descendants.",
 ]
+acceptance = [
+    "Layer create rename delete reparent commands wired to existing store mutators.",
+    "Plus button and root dropzone landed in DockLeft header.",
+    "Folder click selected children and descendants in the outliner.",
+]
 citations = [
     "attributes_sweep LYR-NAME correction",
     "store mutators zero callers verified",

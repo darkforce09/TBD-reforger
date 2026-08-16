@@ -37,6 +37,11 @@ current_state = [
 ]
 approach = ["Add ORBAT slot rules to validate.rs using typed fields not Eden strings."]
 verify = ["Slot rules fire on leaderless squads duplicate callsigns empty identity."]
+acceptance = [
+    "ORBAT slot rules collapsed MissionAnalyzer R3 R4 R5 into typed-field queries.",
+    "Leaderless squads, duplicate callsigns, and empty identity fields fired findings.",
+    "Commented D3-D8 coverage revived as one squad-template-parameterized rule.",
+]
 citations = [
     "orbat.rs typed slot fields",
     "FNF R3 R4 R5 collapse",

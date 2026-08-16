@@ -37,6 +37,11 @@ approach = [
     "If storage call made drop store.rs gain API handler models.",
 ]
 verify = ["verifier wave108.md documents shipped slice; click-then-click routed T-723."]
+acceptance = [
+    "Compositions palette mode landed with save, place, and edit flows.",
+    "Doc-side compositions map stored selection snapshots for reuse.",
+    "copy_selection and paste_at_cursor shapes reused for the place gesture.",
+]
 citations = [
     "T-078 merged cancelled row",
     "COMP-SAVE-001 save selection",

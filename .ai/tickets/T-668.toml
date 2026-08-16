@@ -34,6 +34,16 @@ current_state = [
     "Wave 10 earliest slot; T-636 T-638 T-667 land first need retrofit.",
 ]
 approach = ["Change classes not structure; vocabulary pass across owns files."]
+verify = [
+    "cargo test -p website-frontend hover_fill_is_a_solid_fill_no_border",
+    "cargo test -p website-frontend toggled_plate_is_plate_plus_dark_top_border",
+    "cargo test -p website-frontend hover_and_toggled_can_never_be_confused",
+]
+acceptance = [
+    "Hover, toggled, and disabled recipes landed across chrome modules; unavailable-verb split stayed residue.",
+    "Aegis palette kept; checkmark gutter reserved unconditionally.",
+    "Eden structural vocabulary applied without translucent panels over the scene.",
+]
 citations = [
     "editor_chrome_direction.md state vocabulary",
     "frame 164000 amber hover proof",

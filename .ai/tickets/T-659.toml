@@ -33,6 +33,10 @@ current_state = [
 ]
 approach = ["Add census counters to TopCommandStrip using ORBAT snapshot data."]
 verify = ["Header shows per-side counts and mission summary line."]
+acceptance = [
+    "Per-side WEST EAST IND TOTAL census badge landed in TopCommandStrip header.",
+    "Generated mission summary line composed from the ORBAT snapshot.",
+]
 citations = [
     "TopCommandStrip eden_top_strip",
     "BottomToolbelt OBJ counters pattern",

@@ -31,6 +31,10 @@ current_state = [
 ]
 approach = ["Symbol split eden_chrome.rs into ten owned modules per owns_and_waves 7.3."]
 verify = ["Ten modules exist; five stub mods declared; no behavior change."]
+acceptance = [
+    "eden_chrome.rs split into ten pure-move modules with tests preserved.",
+    "Five future module stubs pre-declared in main.rs, avoiding wave serialisation.",
+]
 citations = [
     "owns_and_waves section 7.3",
     "eden_chrome STRIP_TOP_PX constants",

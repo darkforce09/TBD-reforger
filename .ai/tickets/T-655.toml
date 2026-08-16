@@ -34,6 +34,11 @@ current_state = [
 ]
 approach = ["Implement validation_panel.rs overlay mount at MissionEditorPage overlay section."]
 verify = ["Panel shows rollup and click-select findings; validation runs without export gate."]
+acceptance = [
+    "Floating validation panel mounted with a persistent issue list and severity rollup.",
+    "Click-to-select routed findings instead of clipboard dumps.",
+    "Validation ran always-on without export or debug gating.",
+]
 citations = [
     "FNF validation HTML comment",
     "mission_editor overlay mounts",

@@ -34,6 +34,17 @@ approach = [
     "Extend eden_settings MissionSettingsDialog and create_mission_dialog POST.",
     "Wire debounced PATCH through RowMirror debounce machine.",
 ]
+verify = [
+    "cargo test -p website-frontend the_post_body_carries_the_authored_briefing",
+    "cargo test -p website-frontend presentation_reaches_the_missions_row_by_patch",
+    "cargo test -p website-frontend a_saved_briefing_reaches_the_documents_meta",
+]
+acceptance = [
+    "Briefing textarea and thumbnail field landed in MissionSettingsDialog.",
+    "create_mission_dialog POST carried the authored briefing.",
+    "mirror_briefing_into_document wired in-session edits to compile_export path.",
+    "Escape blur prevented silent discard of typed presentation text.",
+]
 citations = [
     "ATTR-FIELD-SCN-OVERVIEW-TEXT SCN-PICTURE",
     "RowMirror MIRROR_TIME MIRROR_WEATHER",

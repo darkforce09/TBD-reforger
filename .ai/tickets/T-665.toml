@@ -39,6 +39,11 @@ verify = [
     "Hidden layer slots absent from engine upload.",
     "Transform lock blocks move on locked layer.",
 ]
+acceptance = [
+    "Per-layer visibility and transform lock flags landed beside rename_editor_layer.",
+    "Hidden layer slots filtered before SoA materialize; transform lock refused moves.",
+    "Eye and lock glyphs rendered on Folder rows in eden_tree, not every outliner row.",
+]
 citations = [
     "ATTR-FIELD-LYR-ENABLE-VIS XFORM",
     "materialize editor_ops not engine.rs",

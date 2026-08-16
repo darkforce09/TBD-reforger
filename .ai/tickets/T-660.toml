@@ -35,6 +35,10 @@ current_state = [
 ]
 approach = ["Add cargo loadout rules to validate.rs extending wire_safety scanners."]
 verify = ["Rules fire on policy violations missing vest uniform map compass radio."]
+acceptance = [
+    "Six cargo and loadout policy rules landed in validate.rs as typed EvalContext checks.",
+    "CargoPhys gained PartialEq for EvalContext; wire_safety scanners stayed standalone.",
+]
 citations = [
     "MissionAnalyzer R9 fairness check",
     "wire_safety scan_cargo_capacity",

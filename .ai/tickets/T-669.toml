@@ -31,6 +31,10 @@ current_state = [
 ]
 approach = ["Wire KeyX and KeyV with shift in mission_editor keydown block."]
 verify = ["Ctrl+X cut and Ctrl+Shift+V wired in mission_editor keydown."]
+acceptance = [
+    "Ctrl+X cut wired as copy_selection short-circuiting delete_selection.",
+    "Ctrl+Shift+V paste-at-original passed None anchor to paste_at_cursor.",
+]
 citations = [
     "ACTION-CUT-001 ACTION-PASTE-ORIG-001",
     "editor_ops copy paste primitives",

@@ -37,6 +37,12 @@ approach = [
     "If operator prefers one ticket fold T-082 unchanged owns.",
 ]
 verify = ["verifier wave112.md records shipped slice evidence."]
+acceptance = [
+    "Ctrl+A selected on-screen entities through the marquee viewport rect query.",
+    "Suppress-on-multi guards removed; attributes modal opened over the whole selection.",
+    "Per-field Apply-to-all checkboxes gated differing multi-select fields into edit.",
+    "Arsenal tab showed an honesty banner; multi-slot fan-out stayed deferred.",
+]
 citations = [
     "SEL-ALL-001 viewport Select All",
     "ATTR-MULTI-001 multi-edit checkboxes",

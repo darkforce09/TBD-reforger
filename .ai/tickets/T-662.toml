@@ -33,6 +33,10 @@ current_state = [
 ]
 approach = ["Fix pointerdown branch; remove contextmenu prevent_default; add chrome_hidden."]
 verify = ["RMB opens context path; Backspace hides chrome not deletes selection."]
+acceptance = [
+    "RMB pan narrowed to MMB only; contextmenu kept prevent_default and did not stop_propagation.",
+    "Backspace bound hide-chrome instead of the Delete alias.",
+]
 citations = [
     "mission_editor onpointerdown pan",
     "oncontextmenu prevent_default comment",

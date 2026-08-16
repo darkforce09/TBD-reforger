@@ -33,6 +33,11 @@ current_state = [
 ]
 approach = ["Implement four primitives in core mission validate module."]
 verify = ["Each validation rule has failing test proving rule can fire."]
+acceptance = [
+    "validate.rs shipped four primitives V1 through V4 beside wire_safety scanners.",
+    "Every rule carried a fail-on-demand test proving it could fire.",
+    "API validate_payload path kept working without relocation.",
+]
 citations = [
     "wire_safety scan_editor_payload",
     "FNF AnalyzeSQM twenty-seven checks",

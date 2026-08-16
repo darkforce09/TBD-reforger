@@ -34,6 +34,10 @@ current_state = [
 ]
 approach = ["Add asset resolution rule to validate.rs using live registry session."]
 verify = ["Rule fires when placed asset missing from live catalogue."]
+acceptance = [
+    "D13 asset-resolution rule fired when a placed asset was missing from known_asset_ids.",
+    "EvalContext seam shipped in validate.rs; SPA registry_session wiring stayed T-655.",
+]
 citations = [
     "MissionAnalyzer D13 dead rule",
     "mission_editor registry_session cache",
