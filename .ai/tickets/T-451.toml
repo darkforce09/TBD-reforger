@@ -28,10 +28,13 @@ requirement = [
 ]
 current_state = ["Break required field; ticket check RED; set-status T-001 shipped still mutates."]
 approach = ["Gate mutators through require_check_ok or document escape hatch refused in CI."]
+verify = ["cargo test -p xtask set_status_refuses_invalid_registry_without_write"]
+acceptance = ["Gated cmd_set_status and mark_ready through require_check_ok; red registry no longer accepts status writes."]
 citations = [
     "T-237 wave 16 adversarial",
     "require_check_ok ship done gate",
     "cmd_set_status registry mutate",
+    "set_status_refuses_invalid test",
 ]
 shipped_at = "3b07de28"
 created_at = "2026-07-27T00:44:33Z"

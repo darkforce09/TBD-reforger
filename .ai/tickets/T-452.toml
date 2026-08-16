@@ -31,10 +31,13 @@ current_state = [
     "Repro: rg does not implement|T-181.35 in TBD_PlayerIdentity.c",
 ]
 approach = ["Rewrite TBD_PlayerIdentity.c header to match IdentityLink honesty."]
+verify = ["bash scripts/mod/verify-t452-player-identity-link-comments.sh"]
+acceptance = ["Rewrote TBD_PlayerIdentity header to reflect shipped IdentityLink; removed stale unimplemented link-confirm claim."]
 citations = [
     "T-296 wave 17 adversarial",
     "TBD_IdentityLink MissionLoader Arm",
     "TBD_PlayerIdentity.c:9 header",
+    "verify_t452 comment gate",
 ]
 shipped_at = "63e563d6"
 created_at = "2026-07-27T00:17:51Z"

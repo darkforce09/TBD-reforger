@@ -39,10 +39,16 @@ approach = [
     "Harden Class-R AdminUser and Effect docs.set mapped chain.",
     "RED→GREEN on verifier perturbations.",
 ]
+verify = [
+    "cargo test -p website-api --test cms_announcement_body cms_list_includes_draft_public_feed_excludes_non_admin_forbidden",
+    "cargo test -p website-frontend content_boots_from_cms_list_not_mock_docs",
+]
+acceptance = ["Hardened T-447 Class-R; IT proved draft on CMS list, excluded from public feed, 403 for non-admin."]
 citations = [
     "wave 25 adversarial",
     "T-447 CMS announcements",
     "Content LocalResource hydrate",
+    "cms_list_includes_draft IT",
 ]
 shipped_at = "a37e9073"
 created_at = "2026-07-27T02:27:02Z"

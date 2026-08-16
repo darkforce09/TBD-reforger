@@ -36,6 +36,12 @@ approach = [
     "Strip comments; reject apps/website/api/docker-compose.staging.yml.",
     "Pin/IT roster total_deployments equals seeded users.total_deployments.",
 ]
+verify = [
+    "bash scripts/mod/verify-t438-deploy-staging-compose-path.sh",
+    "cargo test -p website-api list_users_selects_bare_total_deployments_column",
+    "cargo test -p website-frontend dossier_deployments_binds_total_deployments_not_em_dash",
+]
+acceptance = ["Hardened compose-path and Deployments Class-R; rejected comment stubs, api compose path, and fake zero SELECT."]
 citations = [
     "wave 23 adversarial",
     "T-438 compose verify script",

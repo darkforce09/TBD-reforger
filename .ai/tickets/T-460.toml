@@ -38,11 +38,17 @@ approach = [
     "Strip // comments before order assert; require IsMissionBodyWithinCap before ParseMissionJson.",
     "Bind AdminGate Class-R to live if has_min_role_authed on user role.",
 ]
+verify = [
+    "bash scripts/mod/verify-t456-mission-rest-size-gate.sh",
+    "cargo test -p website-frontend admin_gate_uses_authed_reactive_role",
+]
+acceptance = ["Hardened T-456/T-458 Class-R pins; comment-only MISSION_FILE_MAX_BYTES and dead AdminGate auth paths now fail."]
 citations = [
     "wave 22 adversarial",
     "T-456 size gate script",
     "T-458 AdminGate pin",
     "W21 T-454 pin class",
+    "gate_t456 comment-strip pin",
 ]
 shipped_at = "d87698b5"
 created_at = "2026-07-27T01:23:57Z"

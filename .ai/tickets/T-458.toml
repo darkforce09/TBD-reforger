@@ -32,10 +32,13 @@ current_state = [
     "Repro: ui.rs:244-264 and auth.rs has_min_role.",
 ]
 approach = ["Cure: has_min_role_authed or equivalent None=>false in AdminGate."]
+verify = ["cargo test -p website-frontend admin_gate_uses_authed_reactive_role"]
+acceptance = ["AdminGate now gates via has_min_role_authed; browse-mode has_min_role None=>true no longer used."]
 citations = [
     "T-454 wave 21 NIT",
     "ui.rs AdminGate",
     "auth.rs has_min_role",
+    "admin_gate_uses_authed test",
 ]
 shipped_at = "d87698b5"
 created_at = "2026-07-27T01:10:49Z"

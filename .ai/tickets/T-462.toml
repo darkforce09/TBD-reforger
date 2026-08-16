@@ -42,11 +42,18 @@ approach = [
     "Wire verify-t439 into wave.sh gate or make verify target.",
     "Tighten hub_chip Class-R id find predicate.",
 ]
+verify = [
+    "bash scripts/mod/verify-t439-objects-registry-aliases.sh",
+    "bash scripts/mod/verify-t444-wiki-seed.sh",
+    "cargo test -p website-frontend hub_chip_prefers_event_modpack_id",
+]
+acceptance = ["Wired verify-t439/t444 into cold gate; pinned Makefile wiki seed and tightened hub_chip list+find predicate."]
 citations = [
     "wave 24 adversarial MAJOR",
     "T-444 wiki seed",
     "T-439 Objects aliases",
     "T-442 hub_chip Class-R",
+    "wiki_pages seed Class-R pin",
 ]
 shipped_at = "2e8673d2"
 created_at = "2026-07-27T02:02:38Z"

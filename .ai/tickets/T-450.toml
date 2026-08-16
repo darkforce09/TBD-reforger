@@ -28,10 +28,17 @@ requirement = [
 ]
 current_state = ["Schema-valid mission JSON over 8MB: CreateVersion OK; loader rejects ~836."]
 approach = ["Add size ceiling to mission.schema.json or document plus API preflight."]
+verify = [
+    "cargo xtask schema validate",
+    "oversized_mission_document_is_rejected_on_byte_ceiling",
+    "schema_x_tbd_mission_file_max_bytes_matches_mod_constant",
+]
+acceptance = ["Pinned x-tbd-missionFileMaxBytes at 8MB in mission.schema.json aligned with TBD_MissionLoader and validators."]
 citations = [
     "T-275 wave 16 residual",
     "TBD_MissionLoader.c MISSION_FILE_MAX_BYTES",
     "mission.schema.json size ceiling",
+    "schema_gates T-450 byte ceiling",
 ]
 shipped_at = "0ed61fdd"
 created_at = "2026-07-27T00:11:44Z"

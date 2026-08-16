@@ -28,10 +28,16 @@ requirement = [
 ]
 current_state = ["Repro: Publish announcement; reload /content — mock seed only."]
 approach = ["Add list route if missing; wire FE LocalResource GET /cms/announcements."]
+verify = [
+    "cargo test -p website-frontend content_boots_from_cms_list_not_mock_docs",
+    "cargo test -p website-frontend cms_paths_match_axum_routes",
+]
+acceptance = ["Registered GET /cms/announcements and replaced mock_docs seed with LocalResource CMS list hydrate."]
 citations = [
     "T-267 wave 14 adversarial NIT",
     "mock_docs CMS Content list",
     "GET /cms/announcements 405",
+    "content_boots_from_cms_list test",
 ]
 shipped_at = "a37e9073"
 created_at = "2026-07-27T02:06:43Z"

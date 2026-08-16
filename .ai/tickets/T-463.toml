@@ -36,10 +36,16 @@ approach = [
     "Wire verify-t438 into wave.sh gate_slice + cmd_gate.",
     "Wire verify-t456 next to T-439/T-444 steps (same pattern).",
 ]
+verify = [
+    "bash scripts/mod/verify-t438-deploy-staging-compose-path.sh",
+    "bash scripts/mod/verify-t456-mission-rest-size-gate.sh",
+]
+acceptance = ["Wired verify-t438 and verify-t456 into wave.sh cold gate beside existing t439/t444 steps."]
 citations = [
     "T-462 wave 24",
     "verify-t438 compose path",
     "verify-t456 REST size",
+    "wave.sh cold gate wiring",
 ]
 shipped_at = "3269faf5"
 created_at = "2026-07-27T02:06:43Z"

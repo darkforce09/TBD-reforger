@@ -28,10 +28,13 @@ requirement = [
 ]
 current_state = ["Repro: break required field; ticket check RED; ticket add still inserts row."]
 approach = ["Gate add/remove through require_check_ok before write."]
+verify = ["cargo test -p xtask add_refuses_invalid_registry_without_write"]
+acceptance = ["Gated ticket add and remove through require_check_ok before registry mutation when check is red."]
 citations = [
     "T-451 wave 20 adversarial",
     "require_check_ok gate pattern",
     "cmd_add cmd_remove registry",
+    "add_refuses_invalid test",
 ]
 shipped_at = "b041a765"
 created_at = "2026-07-27T00:50:04Z"

@@ -29,10 +29,13 @@ current_state = [
     "Repro: red in-memory registry → advance-slice still mutates.",
 ]
 approach = ['Call require_check_ok(root, registry, format!("advance-slice {id}")) before mutate.']
+verify = ["cargo test -p xtask advance_slice_refuses_invalid_registry_without_write"]
+acceptance = ["Preflighted cmd_advance_slice with require_check_ok; advance_slice_refuses_invalid test mirrors add gate."]
 citations = [
     "T-455 wave 21 NIT",
     "cmd_advance_slice preflight gap",
     "add_refuses_invalid mirror test",
+    "advance_slice_refuses_invalid test",
 ]
 shipped_at = "d87698b5"
 created_at = "2026-07-27T01:10:49Z"

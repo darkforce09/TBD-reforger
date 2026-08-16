@@ -35,9 +35,12 @@ approach = [
     "Replace .ok() fail-closed with error surface and retry.",
     "Withhold list_seeded on Err.",
 ]
+verify = ["cargo test -p website-frontend content_list_error_does_not_seed_as_empty_success"]
+acceptance = ["Surfaced CMS list fetch errors with Retry UI; list_seeded set only on Ok, not on failed GET."]
 citations = [
     "wave 25 adversarial N1",
     "Content LocalResource list",
+    "content_list_error_no_seed test",
 ]
 shipped_at = "cc79f890"
 created_at = "2026-07-27T02:35:46Z"

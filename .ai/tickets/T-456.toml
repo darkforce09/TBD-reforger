@@ -32,10 +32,13 @@ current_state = [
     "Repro: OnBackendFetchSuccess vs LoadFromProfileFile size gate.",
 ]
 approach = ["Apply MISSION_FILE_MAX_BYTES on REST success path before ParseMissionJson."]
+verify = ["bash scripts/mod/verify-t456-mission-rest-size-gate.sh"]
+acceptance = ["Applied MISSION_FILE_MAX_BYTES ceiling on OnBackendFetchSuccess REST path before ParseMissionJson."]
 citations = [
     "T-450 wave 20 adversarial",
     "MISSION_FILE_MAX_BYTES 8MiB pin",
     "TBD_MissionLoader OnBackendFetchSuccess",
+    "IsMissionBodyWithinCap REST gate",
 ]
 shipped_at = "3269faf5"
 created_at = "2026-07-27T01:10:49Z"

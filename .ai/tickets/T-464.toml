@@ -36,9 +36,12 @@ approach = [
     "route_sweep admin list drafts+published with Seed auth.",
     "Do not skip unless sweep is impossible.",
 ]
+verify = ["cargo test -p website-api --test null_tolerance"]
+acceptance = ["Added GET /cms/announcements to null_tolerance route_sweep with admin Seed auth; wave gate no longer fails."]
 citations = [
     "T-447 wave 25 cold gate",
     "null_tolerance route_sweep",
+    "route_sweep cms announcements",
 ]
 shipped_at = "2c830f50"
 created_at = "2026-07-27T02:15:23Z"

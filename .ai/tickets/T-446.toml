@@ -27,10 +27,13 @@ requirement = [
 ]
 current_state = ["Repro: CMS hero upload shows error toast; /cms/uploads never called."]
 approach = ["Enable FormData/File, multipart helper, POST /cms/uploads thumbnail_url."]
+verify = ["cargo test -p website-frontend hero_multipart_upload_is_wired_not_stubbed"]
+acceptance = ["Enabled web-sys FormData/File features and wired hero upload to POST /cms/uploads; thumbnail_url set on success."]
 citations = [
     "T-267 wave 14 residual",
     "POST /cms/uploads multipart",
     "web-sys FormData File features",
+    "hero_multipart_upload_is_wired test",
 ]
 shipped_at = "95898c06"
 created_at = "2026-07-26T23:52:34Z"

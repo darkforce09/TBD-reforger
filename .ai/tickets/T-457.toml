@@ -36,10 +36,16 @@ approach = [
     "Strip // comments or require non-comment production line for on_cleanup pin.",
     "Bind wiki/modpacks/event_hub Class-R to live Memo assignment at call sites.",
 ]
+verify = [
+    "cargo test -p website-frontend class_r_sse_abort_teardown_exists",
+    "cargo test -p website-frontend admin_affordance_uses_authed_reactive_role",
+]
+acceptance = ["Hardened Class-R pins stripping comment stubs; bound sse abort and admin affordance to live production lines."]
 citations = [
     "wave 21 adversarial MAJOR",
     "T-287 sse abort pin",
     "T-454 admin affordance pin",
+    "class_r_sse_abort_teardown test",
 ]
 shipped_at = "b041a765"
 created_at = "2026-07-27T01:07:35Z"

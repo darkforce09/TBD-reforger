@@ -33,10 +33,13 @@ current_state = [
     "Repro: rg has_min_role( in wiki/modpacks/event_hub.rs — browse-mode helper.",
 ]
 approach = ["Switch action gates to has_min_role_authed plus reactive Memo."]
+verify = ["cargo test -p website-frontend admin_affordance_uses_authed_reactive_role"]
+acceptance = ["Switched wiki, modpacks, and event_hub action gates to reactive has_min_role_authed Memo None=>false."]
 citations = [
     "T-286 wave 18 adversarial",
     "has_min_role_authed Mission Library",
     "wiki modpacks event_hub.rs",
+    "admin_affordance_uses_authed test",
 ]
 shipped_at = "b041a765"
 created_at = "2026-07-27T00:58:50Z"

@@ -27,10 +27,13 @@ requirement = [
 ]
 current_state = ["Repro: Personnel dossier Deployments always em-dash."]
 approach = ["Project deployment count in list_users; extend AdminUserRow dto; bind personnel.rs."]
+verify = ["cargo test -p website-frontend dossier_deployments_binds_total_deployments_not_em_dash"]
+acceptance = ["Projected users.total_deployments into AdminUserRow; Personnel dossier Deployments shows integer count including zero."]
 citations = [
     "T-268 wave 14 residual",
     "RosterRow AdminUserRow totals",
     "personnel.rs Deployments cell",
+    "list_users bare total_deployments",
 ]
 shipped_at = "3a66678d"
 created_at = "2026-07-27T01:26:29Z"

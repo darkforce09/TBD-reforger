@@ -32,10 +32,13 @@ current_state = [
     "Repro: format-break tools/tbd-tools/src/lib.rs; local RED; CI GREEN.",
 ]
 approach = ["Root/workspace fmt step in ci.yml or drop working-directory for fmt."]
+verify = ["make rust-fmt"]
+acceptance = ["CI rust-backend fmt now runs workspace cargo fmt --all --check matching local rust-fmt gate."]
 citations = [
     "T-297 wave 18 adversarial",
     "ci.yml rust-backend fmt",
     "wave.sh stale comment",
+    "ci.yml workspace rust-fmt step",
 ]
 shipped_at = "88f60bc6"
 created_at = "2026-07-27T00:28:43Z"
