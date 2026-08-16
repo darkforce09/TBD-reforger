@@ -28,6 +28,7 @@ approach = [
     "Or skip in IT / use private actors for asserts.",
 ]
 verify = ["POST /admin/roles/sync demotes shared users in IT suite."]
+acceptance = ["roles/sync IT wrapped snapshot→restore; shared IT users kept web roles after sync."]
 citations = [
     "Wave 38 residual T-400",
     "admin_field roles/sync demotes all",

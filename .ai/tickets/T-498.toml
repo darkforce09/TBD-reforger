@@ -31,6 +31,7 @@ approach = [
     "Or document Discord as non-spreadsheet sink with Class-R.",
 ]
 verify = ["User title into Discord embed without formula escape."]
+acceptance = ["Discord embed title/description sanitized for formula and control chars at webhook sink."]
 citations = [
     "Wave 38 residual T-408",
     "Discord embed not formula-safe",

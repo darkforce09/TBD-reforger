@@ -27,6 +27,8 @@ approach = [
     "adopt_payload/apply_row_meta prefer payload title (trim-aware).",
     "Mirror title to row on Save with non-blank guard.",
 ]
+verify = ["create_version_mirrors_authored_payload_title_onto_mission_row IT."]
+acceptance = ["Hydrate prefers payload title; create_version mirrored non-blank title onto missions row."]
 citations = [
     "Wave 41 residual CLEAN",
     "T-375 compile_payload meta.title",

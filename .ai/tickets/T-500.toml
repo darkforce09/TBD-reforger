@@ -27,6 +27,8 @@ approach = [
     "Pass CargoPhysCatalog into compile gate (same table as Save).",
     "Or document compile-as-trust-saved with Class-R mentioning Save refuse.",
 ]
+verify = ["compile_with_catalog_refuses_over_capacity_like_save unit."]
+acceptance = ["mission_compile wired scan_cargo_capacity with same CargoPhysCatalog as Save refuse."]
 citations = [
     "Wave 39 adversarial residual CLEAN",
     "T-416 load_cargo_phys_catalog Save",

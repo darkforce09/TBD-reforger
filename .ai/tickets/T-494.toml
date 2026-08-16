@@ -32,6 +32,7 @@ approach = [
     "Align schedule card trim with event_hub/mission_overview.",
 ]
 verify = ["Match-arm !b.is_empty() GREEN while behavioral trim test RED."]
+acceptance = ["Trim ratchet banned non-trim empty checks; schedule briefing aligned with event_hub."]
 citations = [
     "Wave 37 adversarial NIT T-407",
     "dossier trim ratchet bypass",

@@ -39,6 +39,7 @@ approach = [
     "Keep Makefile verify-t468 target for humans; update circularity comments.",
 ]
 verify = ["Repro: hollow verify-t468 recipe → make rc=0; bash script FAIL."]
+acceptance = ["ci.yml and ci-local invoke bash verify-t468 directly; hollow Makefile recipe no longer false-greens."]
 citations = [
     "Wave 34 adversarial MAJOR",
     "T-486 verify-t468 circular self-pin",

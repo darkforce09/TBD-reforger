@@ -31,6 +31,7 @@ approach = [
     "Or source ratchet helper always paginates.",
 ]
 verify = ["find_id page-1 limit=20 GREEN with 2 NULL updated_at rows."]
+acceptance = ["t496_library_bookmark lookup Class-R forces page-1 overflow without shared DB residue."]
 citations = [
     "Wave 38 adversarial NIT",
     "T-410 library page-1 weak",

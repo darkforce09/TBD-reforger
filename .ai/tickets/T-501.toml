@@ -15,7 +15,10 @@ requirement = [
     "POST match ingest with community terrain names returns two hundred.",
     "Assert terrain NULL and outcome, winner, ended_at, counters still stored.",
 ]
+current_state = ["parse_terrain_opt unit Class-R only; no route-level community terrain HTTP IT."]
+approach = ["HTTP IT POST kolguyev/anizay; assert 200, terrain NULL, outcome and counters stored."]
 verify = ["kolguyev ingest 200; terrain NULL; known-pin control lands."]
+acceptance = ["community_terrain_soft_fails_to_null proved kolguyev/anizay ingest 200 with terrain NULL."]
 citations = [
     "Wave 39 residual T-402",
     "42dda76c Class-R-only IT batch",

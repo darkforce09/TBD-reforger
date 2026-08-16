@@ -15,7 +15,10 @@ requirement = [
     "Match MissionMakerUser tier on delete, submit, create_version, set_armory.",
     "Class-R source pin must cover all four extractor sites.",
 ]
+current_state = ["Four mutators still AuthUser+can_edit while PATCH already required MissionMakerUser."]
+approach = ["Elevate delete/submit/create_version/set_armory to MissionMakerUser; Class-R pin signatures."]
 verify = ["Demotion blocks four mutators; Class-R pins all extractors."]
+acceptance = ["Four mission mutators require MissionMakerUser; demotion revoked all mutator paths."]
 citations = [
     "Wave 38 residual T-408",
     "4b11e770 MissionMakerUser mutators",

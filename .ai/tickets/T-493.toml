@@ -30,6 +30,7 @@ approach = [
     "Remove COALESCE(deaths,0) from aggregate.",
 ]
 verify = ["Poison MV sum(COALESCE(deaths,0)) → Class-R stayed GREEN (0+3=3)."]
+acceptance = ["leaderboard_kd_is_null_when_deaths_were_never_measured closed COALESCE aggregate blind spot."]
 citations = [
     "Wave 37 adversarial NIT",
     "leaderboard_mv COALESCE blind spot",

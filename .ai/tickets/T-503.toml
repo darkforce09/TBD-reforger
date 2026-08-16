@@ -15,7 +15,10 @@ requirement = [
     "State auto-persist contract in module doc and Arsenal panel UI.",
     "Pin via tests::t503 so a future staging Save introduction goes red.",
 ]
+current_state = ["Every cargo mutation calls set_loadout; SPA has no Save button."]
+approach = ["Document auto-persist in module header and data-arsenal-persist panel; pin tests::t503."]
 verify = ["data-arsenal-persist mirrors dirty flag; perturbations RED then GREEN."]
+acceptance = ["Arsenal auto-persist documented; tests::t503 pinned data-arsenal-persist contract line."]
 citations = [
     "Wave 40 residual T-417",
     "6ab8c74a auto-persist contract",

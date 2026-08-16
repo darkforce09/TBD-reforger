@@ -32,6 +32,7 @@ current_state = [
 ]
 approach = ["Add DELETE FROM discord_roles WHERE discord_role_id = placeholder before INSERT."]
 verify = ["Repro: placeholder row survives make seed without DELETE."]
+acceptance = ["discord_roles.sql DELETE removed orphan Squad Leader placeholder snowflake on re-seed."]
 citations = [
     "Wave 33 verifier NIT T-428",
     "discord_roles.sql placeholder orphan",

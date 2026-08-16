@@ -13,6 +13,10 @@ context = [
     ".env.example documented SERVER_STATUS and LEADERBOARD intervals only.",
 ]
 requirement = ["Add commented ROLE_RESYNC_INTERVAL_SECS=86400 next to sibling interval knobs."]
+current_state = [".env.example documented SERVER_STATUS/LEADERBOARD intervals only; ROLE_RESYNC unset."]
+approach = ["Add commented ROLE_RESYNC_INTERVAL_SECS=86400 beside sibling interval knobs."]
+verify = ["grep ROLE_RESYNC_INTERVAL_SECS apps/website/api/.env.example"]
+acceptance = ["Documented ROLE_RESYNC_INTERVAL_SECS=86400 in .env.example beside sibling knobs."]
 citations = [
     "Wave 33 residual T-428",
     "commit 318ad299 ROLE_RESYNC comment",

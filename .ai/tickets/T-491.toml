@@ -33,6 +33,7 @@ approach = [
     "Add Class-R tests on pick/marquee helpers; optional vehicle drag preview.",
 ]
 verify = ["Repro: mixed drag undo once restores only slots or only vehicles."]
+acceptance = ["Mixed slot+vehicle drag uses single atomic txn; pick/marquee helpers gained Class-R tests."]
 citations = [
     "Wave 35 adversarial MAJOR deferred",
     "mission_editor Move commit txn",

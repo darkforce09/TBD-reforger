@@ -28,6 +28,7 @@ approach = [
     "Or share wrapper that dies on rc≠0 like refuse_empty_range.",
 ]
 verify = ["Repro: changed_rs failure still yields SKIP in fmt/clippy helpers."]
+acceptance = ["fmt_changed and clippy_changed propagate changed_rs failure instead of silent SKIP."]
 citations = [
     "Wave 36 adversarial NIT",
     "T-401 git_porcelain_paths rc",

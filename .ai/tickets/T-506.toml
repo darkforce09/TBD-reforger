@@ -31,6 +31,7 @@ approach = [
     "HTTP IT for blank role_played → 400.",
 ]
 verify = ["Delete ingest call sites → helper tests still PASS."]
+acceptance = ["ingest_match_results_invokes_require_role_played_at_both_sites pinned both call sites."]
 citations = [
     "Wave 42 residual CLEAN MINOR",
     "T-379 require_role_played helper",

@@ -38,6 +38,7 @@ approach = [
     "Seed factory_pack_wave to 35; keep prune last-two and URL overrides.",
 ]
 verify = ["Repro: gate_wave_number returns 3 forever with wave-3 deferred residue."]
+acceptance = ["gate_wave_number prefers factory_pack_wave counter; default IT DB unstuck from wave 3."]
 citations = [
     "Wave 35 adversarial MAJOR",
     "gate_wave_number current_wave fallback",

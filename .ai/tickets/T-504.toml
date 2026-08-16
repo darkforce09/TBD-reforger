@@ -15,7 +15,10 @@ requirement = [
     "Surface authoring-time warning when cargo targets a container the loadout does not wear.",
     "Name nowhere known to go before export, not only in-game degrade.",
 ]
+current_state = ["Unworn-container cargo undeliverable; arsenal_rules silent; mod degrades at spawn."]
+approach = ["Add cargo_unworn_container_errors authoring warning when target container unworn."]
 verify = ["cargo_unworn_container_errors warns nowhere known to go."]
+acceptance = ["cargo_unworn_container_errors warned nowhere known to go at authoring time."]
 citations = [
     "commit 6ab8c74a cargo warning",
     "T-417 no-garment structural",

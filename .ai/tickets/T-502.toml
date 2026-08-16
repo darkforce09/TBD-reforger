@@ -15,7 +15,10 @@ requirement = [
     "Promote suite-private admin holding zero user_discord_roles rows.",
     "POST roles/sync; assert web role remains admin after sync.",
 ]
+current_state = ["Class-R pins empty snapshot→None; IT only asserted roles/sync HTTP 200."]
+approach = ["Cold IT admin with zero discord_roles; POST sync under T-499 snapshot isolation."]
 verify = ["Zero discord_roles admin survives roles/sync; T-499 snapshot wrap."]
+acceptance = ["empty_snapshot_admin_survives_roles_sync proved zero-role admin survives roles/sync."]
 citations = [
     "Wave 40 residual T-372",
     "918d6597 empty-snapshot IT",

@@ -15,7 +15,10 @@ requirement = [
     "Seed more than twenty members on a cold IT database.",
     "Assert offset=20 returns member index twenty and envelope fields.",
 ]
+current_state = ["GET /members IT only checked is_array despite LIMIT/OFFSET envelope handler."]
+approach = ["Seed 25 suite-private members; assert offset=20 returns index 20 with envelope."]
 verify = ["Offset=20 returns t495_user_20; envelope total twenty-five."]
+acceptance = ["members_list_honours_offset_pagination proved offset=20 returns t495_user_20 with envelope."]
 citations = [
     "Wave 37 residual T-412",
     "d8c6591b offset pagination IT",
