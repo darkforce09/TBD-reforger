@@ -1,0 +1,48 @@
+id = "T-923"
+kind = "work"
+title = "wave close writes the marker commit itself"
+summary = "platform wave close writes the marker commit itself: subject self-checked against wave_close_subject_ok and oracle 1 before committing, then wave repack and an auto-committed lock refresh. Dirty tree refuses; --dry-run prints the subject and stops."
+class = "feature"
+status = "ready"
+order = 6030
+spec = "docs/platform/t912_wave_lockfile.md"
+plan = "docs/plans/t-923_plan.md"
+executor = "claude-code"
+main_goal = "The close ceremony can no longer produce a malformed or oracle-refused marker, because the only writer of marker commits is the code that defines what a marker is."
+context = [
+    "Every close marker since wave 132 was human-typed and wrong: 231-235 carry prefixed non-marker subjects, 218/233 are disavowed floor-jump artifacts.",
+    "T-914 made repack derive wave_base from the newest valid marker including HEAD — built exactly for a close-then-repack ceremony that never existed as one motion.",
+]
+requirement = [
+    "After validations, close writes the marker commit itself; the subject passes wave_close_subject_ok and the oracle before any commit is created.",
+    "Close runs wave repack after the marker commit and auto-commits the lock refresh, so the tree ends check-green.",
+    "Dirty working tree refuses before any commit; --dry-run prints the would-be subject and writes nothing.",
+]
+current_state = [
+    "cmd_wave_close in xtask/src/wave/land.rs validates all-shipped, verifier-at-HEAD and gate, then only prints WAVE n CLOSED for a human to commit.",
+    "wave repack and the check red-until-repack loop from T-914 are live; the next close (133) would be the first hand-typed marker since the cutover.",
+]
+approach = [
+    "Build the subject wave {n} CLOSED — {summary} from --summary with newlines stripped; self-check via the same wave_close_subject_ok and oracle functions, never a re-implementation.",
+    "Marker commit --allow-empty, then repack_quiet and a follow-up lock-refresh commit in the shape land already uses.",
+]
+verify = [
+    "Fabricated-repo tests: accepted marker with number n; repack derives base n and renumbers n+1..; dirty-tree refusal; hostile summary still parses; --dry-run leaves porcelain empty.",
+    "cargo test -p xtask green; ticket check --strict prints check OK.",
+]
+acceptance = [
+    "Close on a clean validated tree produces a marker commit whose subject the anchored authority accepts with number n, plus a lock refresh commit, ending check-green with no manual repack",
+    "A dirty tree or an oracle-refused subject refuses before any commit exists",
+    "--dry-run prints the exact subject and changes nothing (git status --porcelain empty)",
+]
+created_at = "2026-08-16T03:15:16Z"
+estimated = ["scope"]
+owns = [
+    "xtask/src/wave",
+    "docs/plans/t-923_plan.md",
+]
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "wave"

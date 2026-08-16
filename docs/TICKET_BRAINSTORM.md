@@ -104,3 +104,4 @@ Either add mod readers or annotate them non-consumed so the next audit does not 
 - **T-311** (idea) — Leaderboard ORDER BY has no tie-breaker, so paging is unstable [] — Leaderboard ORDER BY has no tie-breaker, so paging is unstable
 - **T-653** (idea) — Preserve the three headless editor-screenshot findings [] — Preserve the three headless editor-screenshot findings
 - **T-704** (idea) — Command palette over every editor command [] — Command palette over every editor command
+- **T-924** (idea) — Gate verdict receipt required at land [] — platform wave gate writes a verdict file (HEAD sha plus verdict) and platform wave land refuses a landing ticket without a fresh one. Forward-only: future lands only, no backfill, existing tickets stay green untouched.

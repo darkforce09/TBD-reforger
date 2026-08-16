@@ -1,0 +1,18 @@
+id = "T-924"
+kind = "work"
+title = "Gate verdict receipt required at land"
+summary = "platform wave gate writes a verdict file (HEAD sha plus verdict) and platform wave land refuses a landing ticket without a fresh one. Forward-only: future lands only, no backfill, existing tickets stay green untouched."
+class = "chore"
+status = "idea"
+executor = "claude-code"
+notes = "Same refuse-without-receipt shape as the T-913.2 token receipt — closes the hole where nothing mechanical stops landing an ungated slice. Motivating incident 2026-08-14: a gate silently refused from the wrong cwd, exit masked by a pipe, slice merged before the miss was caught by hand. Operator parked this 2026-08-16 pending appetite; the no-backfill rule is what keeps adoption cheap."
+created_at = "2026-08-16T03:15:21Z"
+estimated = ["scope"]
+owns = [
+    "xtask/src/wave",
+]
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "wave"

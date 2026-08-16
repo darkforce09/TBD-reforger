@@ -9,6 +9,7 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-923** (6030) — wave close writes the marker commit itself [ready] — platform wave close writes the marker commit itself: subject self-checked against wave_close_subject_ok and oracle 1 before committing, then wave repack and an auto-committed lock refresh. Dirty tree refuses; --dry-run prints the subject and stops.
 
 ## Next queued (top 10)
 
