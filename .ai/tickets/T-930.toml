@@ -1,0 +1,48 @@
+id = "T-930"
+kind = "work"
+title = "Vehicle first-paint disc until moved"
+summary = "Vehicle first-paint disc until moved — W210 eye-pass"
+class = "bug"
+status = "queued"
+order = 5370
+executor = "claude-code"
+notes = """
+WAVE-210 OPERATOR EYE-PASS. Fresh-placed vehicles paint as a disc (tactical yellow placeholder) until the vehicle is moved; after move the correct glyph/sprite appears. First paint should match post-move appearance.
+
+ACCEPTANCE: place a vehicle from catalog — first frame shows the correct vehicle glyph (not stuck on yellow disc); moving is not required to fix appearance.
+"""
+main_goal = "Placed vehicles show correct glyph on first paint without requiring a move."
+context = [
+    "W210 eye-pass: vehicle first-paint disc until moved.",
+    "slots_gpu packs mission vehicle discs yellow distinct from slot rings.",
+]
+requirement = [
+    "First paint after place uses the correct vehicle glyph not a stuck disc.",
+    "Moving the vehicle is not required to refresh appearance.",
+]
+current_state = [
+    "Fresh place shows yellow disc until a move refreshes GPU/instance state.",
+]
+approach = [
+    "Trace place → pack_vehicle_instances path; ensure first upload includes real glyph state.",
+    "Fix missed invalidate/rebind on place if that is the root cause.",
+]
+verify = [
+    "Place vehicle from catalog: first paint is correct glyph not yellow disc.",
+    "Move still works; no regression on crewed-slot hide (T-819).",
+]
+citations = [
+    "wave210 operator eye-pass",
+    "slots_gpu vehicle discs",
+]
+estimated = ["scope"]
+owns = [
+    "crates/map-engine-core/src/slots_gpu.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

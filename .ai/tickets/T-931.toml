@@ -1,0 +1,40 @@
+id = "T-931"
+kind = "work"
+title = "Seat zoom viz deferred"
+summary = "Seat zoom viz (glyphs/numbers/crewed occupancy) — operator deferred not now"
+class = "feature"
+status = "deferred"
+order = 5380
+executor = "claude-code"
+notes = """
+WAVE-210 OPERATOR EYE-PASS — EXPLICIT DEFER. Operator: seat zoom visualization (zoom-in seat glyphs / numbers / crewed occupancy) is future work — "not now". Do not implement in wave 211.
+
+When revived: zoom-in should show seat glyphs, seat numbers, and crewed occupancy state on placed vehicles.
+"""
+main_goal = "Deferred: zoom-in seat glyphs numbers and crewed occupancy viz."
+context = [
+    "W210 eye-pass future ask: seat zoom viz.",
+    "Operator explicit defer not now (2026-08-19 wave 211 prep).",
+]
+requirement = [
+    "When un-deferred: zoom-in shows seat glyphs numbers and crewed occupancy.",
+]
+current_state = [
+    "No seat-zoom viz; T-819 hides crewed slots from map.",
+]
+approach = ["Parked until operator un-defers."]
+verify = ["N/A while deferred."]
+citations = [
+    "wave210 eye-pass",
+    "operator defer 2026-08-19",
+]
+estimated = ["scope"]
+owns = [
+    "crates/map-engine-core/src/slots_gpu.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

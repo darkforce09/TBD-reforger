@@ -771,7 +771,7 @@ Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
 | T-823 | 5050 | queued | work | OBJ readout must count vehicles or rename honestly | OBJ readout counts slots only — placed vehicles are invisible to it |
 | T-824 | 5060 | queued | work | Placed zones must render visibly at rest on map | Placed zones are not visible on the map — investigate and fix the render (repro-first) |
 | T-825 | 5070 | queued | work | Design session scopes universal outliner list Attributes edit rule | PROGRAM: everything placed is an outliner citizen; all editing is Attributes; the right dock only places |
-| T-826 | 5080 | queued | work | Markers store side without minting phantom factions | Markers stop declaring sides — placing a marker must not mint a faction |
+| T-826 | 5080 | shipped | work | Markers store side without minting phantom factions | Markers stop declaring sides — placing a marker must not mint a faction |
 | T-827 | 5090 | queued | work | Validation chip red under 4.5:1 live-effective | Validation chip red measures 4.0-4.3:1 over the live glass — passes only by plate-calc |
 | T-828 | 5100 | queued | work | Marker captions drift when zoom changes without rebind | Marker captions are world-frozen at bind-time zoom — drift past 40px until a rebind |
 | T-829 | 5110 | deferred | work | v5_orbatWindowed smoke fails under verifier harness | Gate smoke virtual-outliner v5_orbatWindowed fails deterministically under the verifier harness — config-sensitive smoke |
@@ -787,8 +787,8 @@ Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
 | T-839 | 5210 | queued | work | Retire floating Select/Ruler/LoS bottom-centre pill | The floating Select/Ruler/LoS pill still exists — decision 1 said it dies |
 | T-840 | 5220 | deferred | work | Draft chip saved just now on boot before edit | The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit |
 | T-841 | 5230 | queued | work | Type picker popover translucent; make opaque panel | The Type picker popover is translucent — text blurs over the map; make it an opaque panel |
-| T-842 | 5240 | queued | work | World glyph clamp-not-wrap breaks tree prop text rotation | The clamp-not-wrap heading defect is live on the world lanes too (trees/props/text) |
-| T-843 | 5250 | queued | work | Editor suite red; rect smokes never run automated | The editor smoke suite is red and nothing automated runs it — two rect smokes are dead guards |
+| T-842 | 5240 | shipped | work | World glyph clamp-not-wrap breaks tree prop text rotation | The clamp-not-wrap heading defect is live on the world lanes too (trees/props/text) |
+| T-843 | 5250 | shipped | work | Editor suite red; rect smokes never run automated | The editor smoke suite is red and nothing automated runs it — two rect smokes are dead guards |
 | T-844 | 5260 | deferred | work | Vehicle delete no-op; fold into T-837 | Delete does nothing to a selected vehicle — delete_selection partitions comments and slots only |
 | T-845 | 5270 | queued | work | A selected vehicle looks identical to an unselected one | A selected vehicle looks identical to an unselected one |
 | T-846 | 5280 | deferred | work | role_notice query is written on editor denial but never read | role_notice query is written on editor denial but never read |
@@ -800,11 +800,17 @@ Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
 | T-852 | 5340 | deferred | work | Attributes modal paint should use modal_stack::z_class instead of hard-coded z-50 | Attributes modal paint should use modal_stack::z_class instead of hard-coded z-50 |
 | T-853 | 5345 | shipped | work | Shell to xtask: delete Makefile, hard-zero gate | Kill the shell: port all tooling to xtask, delete make, hard-zero the gate |
 | T-854 | 5350 | shipped | work | T-853 port: verify-t437-destroy-inert-diagnostics -> verify t437 | T-853 port: verify-t437-destroy-inert-diagnostics -> verify t437 |
+| T-926 | 5350 | queued | work | Vehicle Attributes Transform/Position tab | Vehicle Attributes need Transform/Position parity (X/Y/Z + Heading at minimum); T-818 only shipped Heading/Cargo/Crew |
 | T-855 | 5360 | shipped | work | T-853 port: remote-log-grep -> mod remote-logs | T-853 port: remote-log-grep -> mod remote-logs |
+| T-927 | 5360 | queued | work | Editor chrome dblclick leak to map | Chrome docks/Attributes/top bar leak map dblclick — W210 eye-pass |
 | T-856 | 5370 | shipped | work | T-853 port: tbd-spawn-determinism -> mod spawn-determinism | T-853 port: tbd-spawn-determinism -> mod spawn-determinism |
+| T-930 | 5370 | queued | work | Vehicle first-paint disc until moved | Vehicle first-paint disc until moved — W210 eye-pass |
 | T-857 | 5380 | shipped | work | T-853 port: mcp-wb-logs -> mcp wb-logs | T-853 port: mcp-wb-logs -> mcp wb-logs |
+| T-931 | 5380 | deferred | work | Seat zoom viz deferred | Seat zoom viz (glyphs/numbers/crewed occupancy) — operator deferred not now |
 | T-858 | 5390 | shipped | work | T-853 port: deploy-website -> deploy website | T-853 port: deploy-website -> deploy website |
+| T-932 | 5390 | queued | work | Parked briefing markers survive server save/reload | T-826 parking: pendingBriefingMarkers drop on server JSON save/reload before first faction mint |
 | T-859 | 5400 | shipped | work | T-853 port: manual-test -> mod manual-test | T-853 port: manual-test -> mod manual-test |
+| T-933 | 5400 | queued | work | leptos-gates v-suite goldens break pre-close exit-0 | mk leptos-gates exits non-zero after editor-suite 20/20 because v-suite SPA goldens mass-fail |
 | T-860 | 5410 | shipped | work | T-853 port: mcp-call -> mcp call | T-853 port: mcp-call -> mcp call |
 | T-861 | 5420 | shipped | work | T-853 port: setup-server-profile -> setup server-profile | T-853 port: setup-server-profile -> setup server-profile |
 | T-862 | 5430 | shipped | work | T-853 port: fetch-vanilla-source -> fetch vanilla-source | T-853 port: fetch-vanilla-source -> fetch vanilla-source |

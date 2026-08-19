@@ -3,11 +3,13 @@ kind = "work"
 title = "Editor suite red; rect smokes never run automated"
 summary = "The editor smoke suite is red and nothing automated runs it — two rect smokes are dead guards"
 class = "bug"
-status = "queued"
+status = "shipped"
 order = 5250
 executor = "claude-code"
 notes = """
 wave207 verifier F1 + orchestrator ledger correction; the T-742/T-759 family — a guard that examines nothing
+
+⟡ WAVE-211 PREP DECISION (2026-08-19, operator-approved plan default): option (b) — keep chromium OUT of every `cargo xtask platform wave gate` run; make `cargo xtask mk leptos-gates` a **required editor-factory pre-close step**. Rect smokes (`save-dialog-rect`, `entrance-motion-rect`) are proven on that path (perturb → red → restore). Update `docs/platform/EDITOR_FACTORY_FOR_CURSOR.md` (and EDITOR_GATE_RUNBOOK if the recipe clause lives there) so the factory recipe names this path. Owns retargeted off deleted Makefile / scripts/platform/wave.sh onto live xtask + smokes surfaces (T-853/T-902 cutover).
 
 --- HEAD migration_legacy (verbatim) ---
 
@@ -23,26 +25,31 @@ main_goal = "Fix stale editor smoke expectations and wire rect smokes into autom
 context = [
     "gate editor-suite cannot run green on main smoke 4 cur stale 6400.000 vs m suffix T-793.",
     "Smoke 19 undo stale dock text T-637 T-696 suite dies before later smokes.",
-    "scripts/platform/wave.sh zero smoke occurrences wave gate runs no editor smokes.",
+    "Wave gate (cargo xtask platform wave gate) still runs no editor smokes — rect guards dead unless leptos-gates is required.",
 ]
 requirement = [
     "Update two stale expectations to shipped behaviour m suffix current dock text.",
-    "Decide record where rect smokes execute wave gate or leptos-gates factory recipe.",
+    "Record option (b): cargo xtask mk leptos-gates required editor pre-close; chromium stays out of every wave gate.",
     "Deliver T-829 absorption acceptance v5_orbatWindowed deterministic both harness configs.",
 ]
 current_state = [
     "save-dialog-rect smoke wave 203 entrance-motion-rect wave 207 dead guards.",
     "Features behind red smokes healthy cursor math exact docks fine expectation rot.",
-    "T-742 T-759 family guard nobody runs green hat.",
+    "Owns retargeted: Makefile and wave.sh deleted (T-853/T-902); live path is xtask mk leptos-gates + smokes.rs.",
 ]
 approach = [
     "Fix expectations so suite runs to completion first.",
-    "Add editor-suite step to wave gate or make leptos-gates required pre-close.",
+    "Wire factory recipe to require cargo xtask mk leptos-gates pre-close; do not add chromium to wave gate.",
 ]
 verify = [
-    "gate editor-suite exits 0 on main.",
-    "Both rect smokes execute prove perturb one chosen path goes red.",
-    "Factory recipe names path that runs rect smokes.",
+    "cargo xtask mk leptos-gates (gate editor-suite) exits 0 on main.",
+    "Both rect smokes execute prove perturb one leptos-gates path goes red then restore.",
+    "EDITOR_FACTORY_FOR_CURSOR.md names cargo xtask mk leptos-gates as required pre-close for rect smokes.",
+]
+acceptance = [
+    "gate editor-suite exits 0 on main including rect smokes and v5_orbatWindowed.",
+    "Factory recipe names cargo xtask mk leptos-gates / editor-suite as required editor pre-close; wave gate stays chromium-free.",
+    "Perturbing a rect smoke expectation turns the editor-suite path red; restore returns green.",
 ]
 citations = [
     "wave207 verifier F1",
@@ -51,11 +58,19 @@ citations = [
     "entrance-motion-rect wave 207",
     "T-829 absorption carrier",
 ]
-estimated = ["scope"]
+shipped_at = "33f715b11"
+created_at = "2026-08-19T17:00:00Z"
+completed_at = "2026-08-19T17:31:47Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = [
     "tools/tbd-tools/src/smokes.rs",
-    "scripts/platform/wave.sh",
-    "Makefile",
+    "xtask/src/mk_build.rs",
+    "xtask/src/wave/",
+    "docs/platform/EDITOR_FACTORY_FOR_CURSOR.md",
+    "docs/website/EDITOR_GATE_RUNBOOK.md",
 ]
 
 [scope]

@@ -3,7 +3,7 @@ kind = "work"
 title = "World glyph clamp-not-wrap breaks tree prop text rotation"
 summary = "The clamp-not-wrap heading defect is live on the world lanes too (trees/props/text)"
 class = "bug"
-status = "queued"
+status = "shipped"
 order = 5240
 executor = "claude-code"
 notes = """
@@ -40,6 +40,11 @@ verify = [
     "Full 0..360 sweep monotonic no plateau.",
     "yaw_encoders_agree full-domain byte parity between encoders.",
 ]
+acceptance = [
+    "World glyph yaw wraps into (-180,180]; rotation 270 encoding differs from 180.",
+    "Full 0..360 sweep is monotonic with no south plateau.",
+    "yaw_encoders_agree pins full-domain byte parity between world and slots encoders.",
+]
 citations = [
     "wave-207 completion C T-832",
     "glyph_math.rs 105 clamp",
@@ -47,7 +52,13 @@ citations = [
     "slots_gpu 0bc55dc5 fix shape",
     "yaw_encoders_agree divergence",
 ]
-estimated = ["scope"]
+shipped_at = "eb3fc965b"
+created_at = "2026-08-19T17:00:00Z"
+completed_at = "2026-08-19T17:31:17Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = ["crates/map-engine-core/src/world/glyph_math.rs"]
 
 [scope]

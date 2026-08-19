@@ -1,0 +1,44 @@
+id = "T-932"
+kind = "work"
+title = "Parked briefing markers survive server save/reload"
+summary = "T-826 parking: pendingBriefingMarkers drop on server JSON save/reload before first faction mint"
+class = "bug"
+status = "queued"
+order = 5390
+executor = "claude-code"
+created_at = "2026-08-19T17:29:07Z"
+notes = """
+WAVE-211 VERIFIER MAJOR F1 (wave211.md). T-826 parks pre-mint markers on meta.pendingBriefingMarkers and promotes on add_faction — acceptance holds for local yrs. compile_payload does not emit the pending key; hydrate clears it — Save→server→reload can drop parked markers before first slot/faction.
+
+ACCEPTANCE: marker-only mission round-trips through server JSON save/load with parked markers intact (or an explicit wire key); after reload, first faction/slot mint still promotes and V1 behaves as T-826.
+"""
+main_goal = "Parked briefing markers survive server JSON save and hydrate."
+context = [
+    "wave211 verifier F1 MAJOR confirms T-826 found_not_fixed.",
+    "pendingBriefingMarkers is session/meta; compile ignores; hydrate clears.",
+]
+requirement = [
+    "Server save/reload of marker-only mission keeps parked markers.",
+    "Lazy mint promote on first faction still works after reload.",
+]
+current_state = [
+    "Local yrs encode_state keeps pending; server JSON round-trip drops them.",
+]
+approach = [
+    "Emit pendingBriefingMarkers on compile/hydrate wire or equivalent durable park.",
+]
+verify = [
+    "Save and reload marker-only mission; parked markers still present.",
+    "First faction mint promotes markers; V1 path intact.",
+]
+citations = ["wave211.md F1", "T-826 parking"]
+estimated = ["scope"]
+owns = [
+    "crates/map-engine-core/src/doc/store.rs",
+    "crates/map-engine-core/src/mission/compile.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

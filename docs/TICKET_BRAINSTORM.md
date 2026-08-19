@@ -58,6 +58,7 @@
 - **T-847** (deferred) — push_drag_preview Class-R pins omit bind_squad_link_preview [] — push_drag_preview Class-R pins omit bind_squad_link_preview
 - **T-851** (deferred) — Delete orphaned placed_vehicles_panel after T-818 removed the Placed strip [] — Delete orphaned placed_vehicles_panel after T-818 removed the Placed strip
 - **T-852** (deferred) — Attributes modal paint should use modal_stack::z_class instead of hard-coded z-50 [] — Attributes modal paint should use modal_stack::z_class instead of hard-coded z-50
+- **T-931** (deferred) — Seat zoom viz deferred [] — Seat zoom viz (glyphs/numbers/crewed occupancy) — operator deferred not now
 - **T-893** (deferred) — T-853 wave 228: deploy db bash-port RED-arm harness [] — T-853 wave 228: commit bash↔port RED-arm harness for deploy db ports
 - **T-909** (deferred) — T-468 still regex-walks ci.yml run: — not T-901 serde_norway [] — T-468 still regex-walks ci.yml run: — not T-901 serde_norway
 - **T-910** (deferred) — Uppercase extensions bypass case-sensitive language ban [] — Language ban extension match is case-sensitive (.SH/.PY/.MK without shebang stay green)

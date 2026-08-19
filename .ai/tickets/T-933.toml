@@ -1,0 +1,45 @@
+id = "T-933"
+kind = "work"
+title = "leptos-gates v-suite goldens break pre-close exit-0"
+summary = "mk leptos-gates exits non-zero after editor-suite 20/20 because v-suite SPA goldens mass-fail"
+class = "bug"
+status = "queued"
+order = 5400
+executor = "claude-code"
+created_at = "2026-08-19T17:29:12Z"
+notes = """
+WAVE-211 VERIFIER MAJOR F2 (wave211.md). T-843 option (b) requires cargo xtask mk leptos-gates as editor pre-close. Live evidence: gate editor-suite exits 0 (20/20 incl. rect smokes + v5_orbatWindowed); then gate v-suite verify mass-fails SPA goldens (~4/25) so the composite mk leptos-gates exit is non-zero. Pre-close evidence for wave 211 close is editor-suite 20/20 (+ doctor), not composite exit-0.
+
+ACCEPTANCE: either v-suite goldens match live SPA so mk leptos-gates exits 0, or the factory recipe splits pre-close to `gate doctor` + `gate editor-suite` (rect path) and treats v-suite as a separate CI lane — with docs/xtask comments agreeing.
+"""
+main_goal = "Make editor pre-close exit-0 match the rect-smoke path without false-red v-suite."
+context = [
+    "wave211 F2 MAJOR; editor-suite green; v-suite SPA golden mass-fail.",
+    "T-843 recipe named full mk leptos-gates; composite exit lies about editor half.",
+]
+requirement = [
+    "Pre-close command the recipe names exits 0 when editor-suite is green.",
+    "Docs and xtask comments agree on editor vs v-suite lanes.",
+]
+current_state = [
+    "mk leptos-gates = doctor + editor-suite + v-suite verify; v-suite fails independently.",
+]
+approach = [
+    "Refresh SPA goldens or split leptos-gates recipe so rect pre-close is editor-suite-only.",
+]
+verify = [
+    "Named pre-close exits 0 on main when editor-suite 20/20.",
+    "EDITOR_FACTORY_FOR_CURSOR.md matches the live command.",
+]
+citations = ["wave211.md F2", "T-843 option b"]
+estimated = ["scope"]
+owns = [
+    "xtask/src/mk_build.rs",
+    "docs/platform/EDITOR_FACTORY_FOR_CURSOR.md",
+    "docs/website/EDITOR_GATE_RUNBOOK.md",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

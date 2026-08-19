@@ -609,3 +609,10 @@ gate's own error text recommends exactly this, and it is why editor waves 100–
   two .mjs onto tbd-tools' existing cdp.rs (same precedent as smokes.rs, itself a port of 19 Node
   drivers), absorb or inventory the two .sh, keep the README's KB-002 knowledge. Remediation
   commit lands inside wave 100's gate range so the re-run gate and the wave verifier cover it.
+
+## Wave 211 CLOSED (2026-08-19)
+
+Tickets: T-843 (editor-suite + leptos-gates recipe), T-842 (world glyph wrap), T-826 (markers no mint).
+Wave gate: PASS. Pre-close evidence: `gate editor-suite` 20/20 (rect smokes + T-829); composite `mk leptos-gates` still fails on v-suite goldens → T-933.
+Verifier: `.ai/artifacts/editor_verify/wave211.md` — Safe-line Yes; MAJORs T-932 (pending markers save/reload), T-933 (v-suite).
+W210 hold-list filed: T-926 Transform, T-927 dblclick, T-930 first-paint disc; T-931 seat-zoom deferred.
