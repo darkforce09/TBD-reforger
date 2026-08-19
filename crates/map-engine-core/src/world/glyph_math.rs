@@ -96,14 +96,39 @@ pub fn pack_rgba_u32(rgba: [u8; 4]) -> u32 {
         | (u32::from(rgba[3]) << 24)
 }
 
-/// Encode screen CCW degrees as snorm16 (`angle/180` clamped to [−1,1] × 32767).
+/// Fold any screen-CCW angle into the half-open turn `(-180, 180]` the `snorm16` lane can hold.
+///
+/// **This must never become a `clamp`.** A clamp is right for a magnitude and WRONG for an angle:
+/// clamping made every world rotation from 181° to 359° encode as the single saturated value, so the
+/// whole western half of the compass drew due south (same defect slots fixed at T-808 / 0bc55dc5 —
+/// `deck_angle_for_rotation_deg` feeds `-rotation`, so 270 arrives as −270 and saturates to −1.0,
+/// byte-identical to 180). Wrapping is not an approximation — −270° and +90° are the same rotation.
+///
+/// `-180` folds UP to `+180` (the interval is open at the bottom); both decode to the same drawn
+/// direction, and picking one keeps the encoding a function of the angle alone.
+fn wrap_deg_180(angle_deg: f64) -> f64 {
+    let w = angle_deg % 360.0; // truncated remainder → (-360, 360), so one step finishes the fold
+    if w > 180.0 {
+        w - 360.0
+    } else if w <= -180.0 {
+        w + 360.0
+    } else {
+        w
+    }
+}
+
+/// Encode screen-CCW degrees as the lane's `snorm16` (`angle/180` × 32767, the angle first wrapped
+/// into `(-180, 180]` by `wrap_deg_180` — see there for why this is NOT a clamp).
 #[must_use]
 pub fn yaw_to_snorm16(angle_deg: f64) -> i16 {
     if !angle_deg.is_finite() || angle_deg == 0.0 {
         return 0;
     }
-    let n = (angle_deg / 180.0).clamp(-1.0, 1.0);
-    (n * 32767.0).round() as i16
+    let n = wrap_deg_180(angle_deg) / 180.0;
+    #[allow(clippy::cast_possible_truncation)]
+    {
+        (n * 32767.0).round() as i16
+    }
 }
 
 /// Pack one 20 B icon instance (WORLD coords for pos) into `out`.
@@ -278,5 +303,88 @@ mod tests {
             Some("building-lighthouse")
         );
         assert_eq!(landmark_glyph_icon_key("castle"), Some("building-castle"));
+    }
+
+    /// T-842 — snorm WRAPS rather than clamping: −270° is +90°, so it encodes as +90° does.
+    #[test]
+    fn yaw_snorm16_wraps_not_clamps() {
+        assert_eq!(yaw_to_snorm16(-270.0), yaw_to_snorm16(90.0));
+        assert_eq!(yaw_to_snorm16(180.0), 32767);
+        assert_eq!(
+            yaw_to_snorm16(-180.0),
+            32767,
+            "-180 folds up into (-180, 180]"
+        );
+        assert_eq!(yaw_to_snorm16(540.0), yaw_to_snorm16(180.0));
+        assert_eq!(yaw_to_snorm16(-359.0), yaw_to_snorm16(1.0));
+    }
+
+    /// T-842 ACCEPTANCE — world object at rotation 270 renders visibly different from 180
+    /// (tip/extent bearing via the snorm→shader decode the world lanes share with slots).
+    #[test]
+    fn world_rotation_270_differs_from_180() {
+        let encode = |rotation: f64| yaw_to_snorm16(deck_angle_for_rotation_deg(rotation));
+        let drawn_bearing = |rotation: f64| {
+            let snorm = encode(rotation);
+            let screen_deg = f64::from(snorm) / 32767.0 * 180.0;
+            (-screen_deg).rem_euclid(360.0)
+        };
+        assert_ne!(
+            encode(270.0),
+            encode(180.0),
+            "270 and 180 share encoding — western half collapsed onto due south"
+        );
+        assert_eq!(
+            encode(270.0),
+            encode(-90.0),
+            "270 IS -90 after wrap, not the clamp floor"
+        );
+        let b180 = drawn_bearing(180.0);
+        let b270 = drawn_bearing(270.0);
+        let delta = (b270 - b180).rem_euclid(360.0);
+        assert!(
+            (delta - 90.0).abs() < 0.05,
+            "270 tip/extent bearing {b270} must differ from 180's {b180} by ~90°, got delta {delta}"
+        );
+    }
+
+    /// T-842 ACCEPTANCE — full 0..360 sweep monotonic with no plateau (plateau IS the defect).
+    #[test]
+    fn every_world_rotation_of_the_compass_gets_its_own_facing() {
+        let drawn_bearing = |rotation: f64| {
+            let snorm = yaw_to_snorm16(deck_angle_for_rotation_deg(rotation));
+            let screen_deg = f64::from(snorm) / 32767.0 * 180.0;
+            (-screen_deg).rem_euclid(360.0)
+        };
+        let encode = |rotation: f64| yaw_to_snorm16(deck_angle_for_rotation_deg(rotation));
+
+        let cardinals = [encode(0.0), encode(90.0), encode(180.0), encode(270.0)];
+        for (i, a) in cardinals.iter().enumerate() {
+            for (j, b) in cardinals.iter().enumerate() {
+                assert!(
+                    i == j || a != b,
+                    "cardinals {i} and {j} share encoding {a} — the compass has collapsed"
+                );
+            }
+        }
+
+        let mut prev = drawn_bearing(0.0);
+        for h in 1..=360 {
+            let cur = drawn_bearing(f64::from(h));
+            let step = (cur - prev).rem_euclid(360.0);
+            assert!(
+                step > 0.0,
+                "rotation {h} did not move the glyph — plateau at bearing {prev} (this is T-842)"
+            );
+            assert!(
+                step < 2.0,
+                "rotation {h} jumped {step}° — the fold is not continuous"
+            );
+            assert!(
+                (cur - f64::from(h % 360)).abs() < 0.02 || (cur - f64::from(h % 360)).abs() > 359.9,
+                "rotation {h} drew bearing {cur}"
+            );
+            prev = cur;
+        }
     }
 }
