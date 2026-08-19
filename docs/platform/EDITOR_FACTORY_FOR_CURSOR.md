@@ -40,9 +40,10 @@ They carry measured values, mechanism, traps and an `ACCEPTANCE:` clause. Read
 - **210** — the **vehicle wave**, mostly operator-found: T-818 (crew/heading/cargo editor moves into
   vehicle Attributes; the right-dock Placed strip dies), T-819 (crewed slots render inside the
   vehicle), T-836 (seeded vehicles can't compile — missing `veh:` aliases).
-- **211 — RUN THIS BEFORE THE REST.** T-843 (**the editor smoke suite is red and nothing automated
-  runs it** — see §5), T-842 (the clamp-not-wrap heading defect, third instance, on the world lanes),
-  T-826 (markers stop declaring factions — operator decision already recorded).
+- **211 — RUN THIS BEFORE THE REST.** T-843 (suite re-green + **`cargo xtask mk leptos-gates` required
+  editor pre-close**; wave gate stays chromium-free — see §5), T-842 (the clamp-not-wrap heading
+  defect, third instance, on the world lanes), T-826 (markers stop declaring factions — operator
+  decision already recorded).
 - **212** — T-838 (markers selectable on the map, listed in the outliner, edited in Attributes — the
   first real instalment of the operator's unification rule), T-841 (opaque Type picker), T-827 (chip
   contrast measured live, not on paper).
@@ -174,23 +175,28 @@ on merged main to close it. Used five times this band; wave 207 needed three. Co
 
 ---
 
-## 5. ⚠️ Read this before wave 211 — the guards that do not run
+## 5. Required editor pre-close — `cargo xtask mk leptos-gates` (T-843 option b)
 
-The wave-207 verifier proved two things the command center had gotten wrong:
+**Decision (wave 211, operator-approved):** keep chromium **OUT** of every
+`cargo xtask platform wave gate` run. The wave gate stays the cheap Class-R / verify lane.
+Editor CDP smokes — including the rect guards `save-dialog-rect` and `entrance-motion-rect` —
+run only through **`cargo xtask mk leptos-gates`** (`gate doctor` → `gate editor-suite` →
+`gate v-suite verify`).
 
-1. **The wave driver contains zero occurrences of `smoke` (`wave.sh` was deleted at T-902).** The wave gate runs **no
-   editor smokes**. `GATE PASS 30/30` is accurate for the 30 steps it does run, and never included
-   the editor suite.
-2. **`cargo xtask mk leptos-gates` → `gate editor-suite` cannot run green on main** — smoke `cur` fails on a
-   stale `"6400.000"` expectation vs the ` m` suffix that shipped 2026-08-09, and `undo` on stale
-   dock text from 08-07. The suite dies before reaching later smokes.
+**Required pre-close for every editor factory wave:** after the barrier merge and the wave gate
+PASS, and **before** `cargo xtask platform wave verified` / registry flip / CLOSE commit, run:
 
-Consequence: the `save-dialog-rect` smoke (wave 203) and `entrance-motion-rect` smoke (wave 207) —
-both real, both perturbation-proven, both built precisely so a regression could not go silent — are
-**dead guards nothing executes**. The wave-203 ledger row claimed "the gate now runs a 19th editor
-smoke"; that was false and is corrected in place. **T-843 (wave 211) fixes the expectations and makes
-you decide where these smokes actually run.** Until it lands, treat rect/geometry guarantees as
-unpinned.
+```bash
+cargo xtask mk leptos-gates   # trunk release → gate doctor → editor-suite (incl. rect smokes) → v-suite
+```
+
+A wave that skips this leaves the rect/geometry guards unexecuted — the wave-203/207 dead-guard
+class. Do **not** add `gate editor-suite` (or any chromium smoke) to `cargo xtask platform wave gate`
+to "fix" that; option (b) is deliberate cost control.
+
+T-843 also re-greened the suite: `cur` pins the Eden ` m` suffix (T-793), `undo` pins `Layers` /
+`Locations` + `[aria-label=Factions]` (T-637/T-696), and `virtual-outliner` `v5_orbatWindowed` is
+deterministic under gate and verifier harness configs (T-829 absorption).
 
 ---
 

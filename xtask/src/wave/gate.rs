@@ -4,6 +4,10 @@
 //! once per wave on merged main. `cargo xtask ci ci-local` is deliberately NOT used: it is 15-40 minutes, not
 //! the 22.7 s the docs still claim.
 //!
+//! T-843 option (b): **no chromium / editor-suite here.** Rect smokes and the rest of
+//! `gate editor-suite` run only via `cargo xtask mk leptos-gates`, which is a required
+//! editor-factory pre-close step (see `docs/platform/EDITOR_FACTORY_FOR_CURSOR.md` §5).
+//!
 //! Every step is one `run "<label>" <cmd>` line. The runner captures stdout+stderr, prints PASS or
 //! FAIL, shows `tail -15` indented six spaces on failure, and accumulates `fail` — the gate is NOT
 //! fail-fast, every step runs.
