@@ -900,6 +900,9 @@ impl MissionDocCore {
         f.insert(&mut txn, "key", key);
         f.insert(&mut txn, "name", name);
         f.insert(&mut txn, "squadIds", Any::Array(Vec::new().into()));
+        // T-826 — markers may have been authored against this side before any slot/squad mint.
+        // Promote parked rows onto the new faction's briefing so lazy mint does not drop them.
+        promote_pending_briefing_markers(&mut txn, &self.meta, &f, id);
     }
 
     /// Overwrite a faction's display `name` (T-180.8 Apply — library name onto `faction-{SIDE}`).
@@ -3430,6 +3433,9 @@ impl MissionDocCore {
         self.meta.remove(&mut txn, "map");
         self.meta.remove(&mut txn, "schemaVersion");
         self.meta.remove(&mut txn, "title");
+        // T-826 — pending pre-mint markers are session/doc state; a hydrate replaces the faction
+        // graph and must not leave parked rows from the previous document.
+        self.meta.remove(&mut txn, PENDING_BRIEFING_MARKERS);
 
         if let Some(env) = payload.get("environment") {
             self.meta.insert(&mut txn, "environment", env.clone());
@@ -3877,12 +3883,17 @@ impl MissionDocCore {
         label: &str,
     ) {
         let mut txn = self.begin();
+        let row = marker_any(marker_id, x, z, icon, label);
+        // T-826 — a briefing mark stores a SIDE, not a faction declaration. When the side's
+        // `faction-{SIDE}` row does not exist yet, park the marker on meta until the first
+        // slot/squad path calls [`Self::add_faction`] (lazy mint). Minting here would flip
+        // validate's `declares_players` gate and surface V1-PLAYER-SPAWN for a mark alone.
         let Some(Out::YMap(f)) = self.factions.get(&txn, faction_id) else {
+            upsert_pending_briefing_marker(&mut txn, &self.meta, faction_id, marker_id, row);
             return;
         };
         let mut briefing = read_any_map(&txn, &f, "briefing");
         let mut markers = briefing_markers(&briefing);
-        let row = marker_any(marker_id, x, z, icon, label);
         match markers
             .iter()
             .position(|m| marker_row_id(m) == Some(marker_id))
@@ -3909,18 +3920,19 @@ impl MissionDocCore {
     /// produced by a delete that deleted nothing.
     pub fn remove_faction_briefing_marker(&self, faction_id: &str, marker_id: &str) {
         let mut txn = self.begin();
-        let Some(Out::YMap(f)) = self.factions.get(&txn, faction_id) else {
-            return;
-        };
-        let mut briefing = read_any_map(&txn, &f, "briefing");
-        let mut markers = briefing_markers(&briefing);
-        let before = markers.len();
-        markers.retain(|m| marker_row_id(m) != Some(marker_id));
-        if markers.len() == before {
-            return;
+        if let Some(Out::YMap(f)) = self.factions.get(&txn, faction_id) {
+            let mut briefing = read_any_map(&txn, &f, "briefing");
+            let mut markers = briefing_markers(&briefing);
+            let before = markers.len();
+            markers.retain(|m| marker_row_id(m) != Some(marker_id));
+            if markers.len() != before {
+                briefing.insert("markers".to_string(), Any::Array(markers.into()));
+                f.insert(&mut txn, "briefing", Any::Map(Arc::new(briefing)));
+                return;
+            }
         }
-        briefing.insert("markers".to_string(), Any::Array(markers.into()));
-        f.insert(&mut txn, "briefing", Any::Map(Arc::new(briefing)));
+        // T-826 — also clear a parked pre-mint marker for this side.
+        remove_pending_briefing_marker(&mut txn, &self.meta, faction_id, marker_id);
     }
 
     /// T-069 — every authored briefing marker in the document, across every faction, as a JSON
@@ -3964,6 +3976,27 @@ impl MissionDocCore {
             let Out::YMap(f) = out else { continue };
             let briefing = read_any_map(&txn, &f, "briefing");
             for row in briefing_markers(&briefing) {
+                let Some(id) = marker_row_id(&row) else {
+                    continue;
+                };
+                let Any::Map(fields) = &row else { continue };
+                let text = |k: &str| match fields.get(k) {
+                    Some(Any::String(s)) => s.to_string(),
+                    _ => String::new(),
+                };
+                rows.push(serde_json::json!({
+                    "factionId": faction_id,
+                    "id": id,
+                    "x": fields.get("x").map_or(0.0, any_to_f64),
+                    "z": fields.get("z").map_or(0.0, any_to_f64),
+                    "icon": text("icon"),
+                    "label": text("label"),
+                }));
+            }
+        }
+        // T-826 — include markers parked for a side that has not minted a faction yet.
+        for (faction_id, markers) in pending_briefing_markers_map(&txn, &self.meta) {
+            for row in markers {
                 let Some(id) = marker_row_id(&row) else {
                     continue;
                 };
@@ -4129,6 +4162,8 @@ impl MissionDocCore {
             // unsaved work, and the conflict gate must not discard it as an empty document.
             || self.comments.len(&txn) > 0
             || markers.len(&txn) > 0
+            // T-826 — a pre-mint briefing marker is authored work even before a faction row exists.
+            || !pending_briefing_markers_map(&txn, &self.meta).is_empty()
     }
 
     // ── T-491 — pure pick / marquee math (host-shared; Class-R in this module) ───────────────────
@@ -6591,12 +6626,119 @@ fn read_composition_map<T: ReadTxn>(
     }
 }
 
+/// T-826 — meta key holding pre-mint briefing markers, keyed by the would-be `faction-{SIDE}` id.
+const PENDING_BRIEFING_MARKERS: &str = "pendingBriefingMarkers";
+
 /// `briefing.markers` as an owned vec; missing or non-array reads as empty (T-345).
 fn briefing_markers(briefing: &HashMap<String, Any>) -> Vec<Any> {
     match briefing.get("markers") {
         Some(Any::Array(arr)) => arr.iter().cloned().collect(),
         _ => Vec::new(),
     }
+}
+
+/// Read the T-826 pending-marker map from meta (`factionId` → marker row array).
+fn pending_briefing_markers_map<T: ReadTxn>(txn: &T, meta: &MapRef) -> HashMap<String, Vec<Any>> {
+    let Some(Out::Any(Any::Map(m))) = meta.get(txn, PENDING_BRIEFING_MARKERS) else {
+        return HashMap::new();
+    };
+    let mut out = HashMap::new();
+    for (faction_id, val) in m.iter() {
+        let Any::Array(arr) = val else { continue };
+        out.insert(faction_id.clone(), arr.iter().cloned().collect());
+    }
+    out
+}
+
+fn write_pending_briefing_markers_map(
+    txn: &mut yrs::TransactionMut<'_>,
+    meta: &MapRef,
+    pending: HashMap<String, Vec<Any>>,
+) {
+    if pending.is_empty() {
+        meta.remove(txn, PENDING_BRIEFING_MARKERS);
+        return;
+    }
+    let mut map = HashMap::new();
+    for (faction_id, markers) in pending {
+        map.insert(faction_id, Any::Array(markers.into()));
+    }
+    meta.insert(txn, PENDING_BRIEFING_MARKERS, Any::Map(Arc::new(map)));
+}
+
+fn upsert_pending_briefing_marker(
+    txn: &mut yrs::TransactionMut<'_>,
+    meta: &MapRef,
+    faction_id: &str,
+    marker_id: &str,
+    row: Any,
+) {
+    let mut pending = pending_briefing_markers_map(txn, meta);
+    let markers = pending.entry(faction_id.to_string()).or_default();
+    match markers
+        .iter()
+        .position(|m| marker_row_id(m) == Some(marker_id))
+    {
+        Some(i) => markers[i] = row,
+        None => markers.push(row),
+    }
+    write_pending_briefing_markers_map(txn, meta, pending);
+}
+
+fn remove_pending_briefing_marker(
+    txn: &mut yrs::TransactionMut<'_>,
+    meta: &MapRef,
+    faction_id: &str,
+    marker_id: &str,
+) {
+    let mut pending = pending_briefing_markers_map(txn, meta);
+    let Some(markers) = pending.get_mut(faction_id) else {
+        return;
+    };
+    let before = markers.len();
+    markers.retain(|m| marker_row_id(m) != Some(marker_id));
+    if markers.len() == before {
+        return;
+    }
+    if markers.is_empty() {
+        pending.remove(faction_id);
+    }
+    write_pending_briefing_markers_map(txn, meta, pending);
+}
+
+/// Move parked markers for `faction_id` onto the live faction briefing (T-826 lazy mint).
+fn promote_pending_briefing_markers(
+    txn: &mut yrs::TransactionMut<'_>,
+    meta: &MapRef,
+    faction: &MapRef,
+    faction_id: &str,
+) {
+    let mut pending = pending_briefing_markers_map(txn, meta);
+    let Some(parked) = pending.remove(faction_id) else {
+        return;
+    };
+    if parked.is_empty() {
+        write_pending_briefing_markers_map(txn, meta, pending);
+        return;
+    }
+    let mut briefing = read_any_map(txn, faction, "briefing");
+    let mut markers = briefing_markers(&briefing);
+    for row in parked {
+        let Some(id) = marker_row_id(&row).map(str::to_string) else {
+            markers.push(row);
+            continue;
+        };
+        match markers
+            .iter()
+            .position(|m| marker_row_id(m) == Some(id.as_str()))
+        {
+            Some(i) => markers[i] = row,
+            None => markers.push(row),
+        }
+    }
+    briefing.insert("markers".to_string(), Any::Array(markers.into()));
+    faction.insert(txn, "briefing", Any::Map(Arc::new(briefing)));
+    write_pending_briefing_markers_map(txn, meta, pending);
 }
 
 /// A marker row's doc-internal `id`, when it has a string one (T-345). `None` for a row written by
@@ -10134,6 +10276,75 @@ mod tests {
             .map(|r| r["id"].as_str().expect("id").to_string())
             .collect();
         assert_eq!(after, ids, "a move must not reorder the list");
+    }
+
+    /// T-826 — placing a marker on a fresh doc must NOT mint `faction-{SIDE}` (F-11 / option a).
+    /// The row is parked and listed; V1 stays silent because `editor.factions` stays empty.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn t826_marker_without_faction_parks_and_does_not_declare_players() {
+        let doc = MissionDocCore::new();
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-1", 10.0, 20.0, "objective", "OBJ");
+
+        assert!(
+            small_maps(&doc)["factionsById"]
+                .as_object()
+                .is_none_or(|m| m.is_empty()),
+            "marker place must not mint a faction: {:?}",
+            small_maps(&doc)["factionsById"]
+        );
+        let rows = marker_rows(&doc);
+        assert_eq!(rows.len(), 1, "{rows:?}");
+        assert_eq!(rows[0]["factionId"], serde_json::json!("faction-BLUFOR"));
+        assert_eq!(rows[0]["id"], serde_json::json!("mk-1"));
+
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let findings = crate::mission::validate::validate_editor_payload(&payload);
+        assert!(
+            findings.iter().all(|f| f.rule_id != "V1-PLAYER-SPAWN"),
+            "marker-only must not trip V1: {findings:?}"
+        );
+    }
+
+    /// T-826 — first real side authorship (add_faction / ensure_side_faction) promotes parked
+    /// markers and then V1 fires when slots are still empty.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn t826_lazy_mint_promotes_pending_markers_and_v1_fires_without_slots() {
+        let doc = MissionDocCore::new();
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-1", 10.0, 20.0, "objective", "OBJ");
+        doc.add_faction("faction-BLUFOR", "BLUFOR", "BLUFOR");
+
+        let rows = marker_rows(&doc);
+        assert_eq!(rows.len(), 1, "{rows:?}");
+        assert_eq!(
+            small_maps(&doc)["factionsById"]["faction-BLUFOR"]["briefing"]["markers"][0]["id"],
+            serde_json::json!("mk-1"),
+            "parked marker must promote onto the faction briefing"
+        );
+        // Pending map must be cleared after promote.
+        assert!(
+            small_maps(&doc)["meta"]
+                .get("pendingBriefingMarkers")
+                .is_none(),
+            "pending must clear on mint: {:?}",
+            small_maps(&doc)["meta"]
+        );
+
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let findings = crate::mission::validate::validate_editor_payload(&payload);
+        assert!(
+            findings.iter().any(|f| f.rule_id == "V1-PLAYER-SPAWN"),
+            "minted faction with no slots must trip V1: {findings:?}"
+        );
     }
 
     /// **T-069 — a marker in the `markers` ROOT map reaches nothing, and the reader does not offer

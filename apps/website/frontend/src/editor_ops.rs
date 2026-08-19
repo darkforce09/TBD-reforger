@@ -4280,7 +4280,7 @@ fn arm(pending: Pending) {
                 Pending::Composition(_) => true,
                 // T-069 — a marker arms from its OWN tab for the same reason a composition does: a
                 // marker is neither a BLUFOR thing nor an Objects thing. Its SIDE comes from the
-                // active chip at DROP time (`ensure_side_faction` in `place_at_impl`), not from the
+                // active chip at DROP time (`side_faction_id` / `ensure_side_faction` in `place_at_impl`), not from the
                 // Objects flag, so the Objects chip has nothing to say about whether it may arm.
                 Pending::Marker(_) => true,
                 // T-582 — zones are not a palette arm and do not route through here
@@ -4651,8 +4651,21 @@ fn slot_details(core: &MissionDocCore) -> Vec<OrbatSlotDetail> {
         .collect()
 }
 
+/// Canonical `faction-{SIDE}` id for an Eden side chip. Does **not** mint a faction row.
+///
+/// T-826 — markers bind to this id (and the store may park the row until a real mint) without
+/// calling [`ensure_side_faction`]. Slot / squad / vehicle / object authorship still mints.
+fn side_faction_id(side: &str) -> String {
+    format!("faction-{side}")
+}
+
+/// Ensure `faction-{SIDE}` exists in the doc (mint if missing).
+///
+/// Used by slot / squad / vehicle / object paths — authorship that declares players. **Markers
+/// must not call this** (T-826 / F-11): a briefing mark stores a side without minting a phantom
+/// faction that would flip validate's `declares_players` gate.
 fn ensure_side_faction(core: &MissionDocCore, side: &str) -> String {
-    let faction_id = format!("faction-{side}");
+    let faction_id = side_faction_id(side);
     let factions = faction_rows(core);
     if !factions.iter().any(|f| f.id == faction_id) {
         core.add_faction(&faction_id, side, side);
@@ -5820,7 +5833,10 @@ fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
                 // the marker list.
                 Pending::Marker(icon) => {
                     let _ = id;
-                    let faction_id = ensure_side_faction(core, &side);
+                    // T-826 — bind the active side chip WITHOUT minting `faction-{SIDE}`. The store
+                    // parks the marker until the first slot/squad path calls `ensure_side_faction`
+                    // (lazy mint via `add_faction` promote). Minting here was F-11: phantom V1.
+                    let faction_id = side_faction_id(&side);
                     let marker_id = mint_marker_id(&marker_rows_of(core));
                     // `y` here is the canvas's second WORLD axis, which is mission `z` — the same
                     // rename `advance_zone_draw(x, z)` makes one screen down. `$defs/marker` is
@@ -6819,9 +6835,10 @@ pub fn owner_line_world(selected_trigger: Option<&str>) -> Option<((f64, f64), (
 // a test instead of prose. **Author on the briefing, not the root.**
 //
 // The practical consequence for this surface: a marker is SIDE-SCOPED. It is placed under the
-// active Eden side chip through [`ensure_side_faction`] — the same faction resolution a character
-// place uses — because `bridgehead-at-levie` gives both sides different orders at the same
-// coordinates, and the mod looks a briefing up by the joining player's faction.
+// active Eden side chip through [`side_faction_id`] (T-826 — store side WITHOUT minting; lazy
+// mint at first slot/squad via [`ensure_side_faction`]) — because `bridgehead-at-levie` gives both
+// sides different orders at the same coordinates, and the mod looks a briefing up by the joining
+// player's faction.
 //
 // ## Scope: the four schema-carried fields, and not one more
 //
@@ -6865,8 +6882,9 @@ pub struct MarkerRow {
 
 impl MarkerRow {
     /// The side chip this marker belongs to (`BLUFOR` / `OPFOR` / `INDFOR`), derived from the
-    /// `faction-{SIDE}` id [`ensure_side_faction`] mints. Falls back to the whole id for a faction
-    /// that came from a library import under some other naming.
+    /// `faction-{SIDE}` id [`side_faction_id`] names (minted later by [`ensure_side_faction`] on
+    /// first slot/squad). Falls back to the whole id for a faction that came from a library import
+    /// under some other naming.
     #[must_use]
     pub fn side(&self) -> &str {
         self.faction_id
