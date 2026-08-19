@@ -145,11 +145,10 @@ fn wrap_deg_180(angle_deg: f64) -> f64 {
 /// into `(-180, 180]` by `wrap_deg_180` — see there for why this is NOT a clamp).
 ///
 /// Byte-for-byte the encoder `world::glyph_math::yaw_to_snorm16` already applies to the tree / prop /
-/// text lanes ON THE WRAPPED DOMAIN; it is re-stated here because `slots_gpu` is un-gated and `world`
-/// is behind a cargo feature, so slots may not depend on it. `yaw_encoders_agree` (a `--features
-/// world` test in this file) sweeps both over the same inputs so the copy cannot drift — it composes
-/// the wrap onto the `world` call, because `world`'s copy still clamps (the same latent defect, on
-/// lanes T-808 does not own).
+/// text lanes; it is re-stated here because `slots_gpu` is un-gated and `world` is behind a cargo
+/// feature, so slots may not depend on it. `yaw_encoders_agree` (a `--features world` test in this
+/// file) sweeps both over the same inputs so the copy cannot drift — both wrap (T-808 slots, T-842
+/// world).
 #[must_use]
 pub fn yaw_to_snorm16(angle_deg: f64) -> i16 {
     if !angle_deg.is_finite() || angle_deg == 0.0 {
@@ -1802,10 +1801,8 @@ mod tests {
     /// The yaw encoder copied into this file must agree with `world::glyph_math`'s, forever.
     /// Feature-gated because `world` is optional; `--all-features` (the gate) runs it.
     ///
-    /// T-808 narrowed the claim to the truth: this copy now WRAPS an out-of-range angle where
-    /// `world`'s still clamps, so the pin is that this encoder is exactly `world`'s composed with
-    /// [`wrap_deg_180`]. On the in-range domain (every angle the world lanes actually feed) the two
-    /// are still byte-identical, and any drift in `world`'s rounding still fails here.
+    /// T-842 re-pins full-domain byte parity: both encoders wrap into `(-180, 180]` (slots at T-808,
+    /// world here). Any drift in fold, rounding, or special-case zeros fails this sweep.
     #[cfg(feature = "world")]
     #[test]
     fn yaw_encoders_agree() {
@@ -1813,16 +1810,9 @@ mod tests {
             let deg = f64::from(i) * 0.9375; // sweeps well past ±180 to cover the fold
             assert_eq!(
                 yaw_to_snorm16(deg),
-                crate::world::yaw_to_snorm16(wrap_deg_180(deg)),
+                crate::world::yaw_to_snorm16(deg),
                 "yaw encoders diverged at {deg}"
             );
-            if deg.abs() < 180.0 {
-                assert_eq!(
-                    yaw_to_snorm16(deg),
-                    crate::world::yaw_to_snorm16(deg),
-                    "in-range yaw encoders diverged at {deg}"
-                );
-            }
         }
         for deg in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 0.0, -0.0] {
             assert_eq!(yaw_to_snorm16(deg), crate::world::yaw_to_snorm16(deg));
