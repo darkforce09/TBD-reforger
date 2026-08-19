@@ -600,17 +600,21 @@ async fn liveness_probe(dist: &str, env: Option<&Value>) -> Result<Liveness> {
     let budget = env
         .and_then(|e| e["limits"]["liveness_timeout_secs"].as_u64())
         .unwrap_or(15);
+    // T-843 / T-805 — liveness must enter the editor. Seed the same admin `tbd-auth` blob the
+    // smokes use, and do NOT proxy `/api` to :8080 here: a failed refresh against a live API
+    // clears the seeded session and the probe never sees `__editorCam` (measured).
     let srv = start_server(
         ServeConfig {
             dir: PathBuf::from(dist),
-            api_proxy: Some("http://127.0.0.1:8080".to_string()),
+            api_proxy: None,
             map_assets_dir: Some(PathBuf::from("packages/map-assets")),
         },
         5299,
     )
     .await?;
     let browser = cdp::launch(9399, &[]).await?;
-    let page = cdp::new_page(&browser, None, &[]).await?;
+    let auth_seed = crate::vsuite::seed_script()?;
+    let page = cdp::new_page(&browser, None, &[auth_seed.as_str()]).await?;
     let url = format!("http://localhost:{}{}", srv.port, EDIT_PATH);
 
     let probe = async {

@@ -10,8 +10,13 @@ Pins: [`tools/tbd-tools/gate-env.json`](../../tools/tbd-tools/gate-env.json).
 ```bash
 cargo xtask db up          # Postgres :5434 (hydrate/mutations smokes need the API)
 cargo xtask mk rust-api            # Axum API :8080 (migrates on boot)
-cargo xtask mk leptos-gates   # trunk release build → gate doctor → editor-suite (18 smokes) → v-suite verify
+cargo xtask mk leptos-gates   # trunk release build → gate doctor → editor-suite (20 smokes) → v-suite verify
 ```
+
+**Editor-factory pre-close (T-843 option b):** every editor factory wave must run
+`cargo xtask mk leptos-gates` after the wave gate PASS and before close. That is the path that
+executes the rect smokes (`save-dialog-rect`, `entrance-motion-rect`). Chromium stays **out** of
+`cargo xtask platform wave gate` — do not wire `editor-suite` into the wave gate to "save a step".
 
 `cargo xtask mk leptos-gates` runs **`gate doctor` first** (a prerequisite). The doctor validates the resolved
 chromium + toolchain against `gate-env.json`, checks free RAM + orphaned chrome, checks that

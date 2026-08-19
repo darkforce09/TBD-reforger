@@ -337,6 +337,9 @@ pub(crate) fn gate_doctor() -> Vec<Step> {
     v
 }
 pub(crate) fn leptos_gates() -> Vec<Step> {
+    // T-843 option (b): this is the **required editor-factory pre-close** path. It runs
+    // `gate editor-suite` (incl. save-dialog-rect / entrance-motion-rect). Chromium stays OUT of
+    // `cargo xtask platform wave gate` — see docs/platform/EDITOR_FACTORY_FOR_CURSOR.md §5.
     // `leptos-gates: leptos-build gate-doctor` and `gate-doctor: leptos-build`. make builds a
     // prerequisite ONCE per run, so `trunk build --release` appears once here, not twice —
     // reproducing that dedupe is part of the byte-for-byte contract.
