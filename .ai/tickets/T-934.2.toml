@@ -1,0 +1,25 @@
+id = "T-934.2"
+kind = "work"
+parent = "T-934"
+title = "Reorg A2 — pages/public/"
+summary = "Move dashboard, announcements, server_intel, wiki, vehicles, modpacks, mortar, settings, deployments, leaderboards to src/pages/public/."
+class = "chore"
+status = "queued"
+order = 6100
+spec = "docs/specs/website_reorg/plan.md"
+executor = "claude-code"
+depends_on = ["T-934.1"]
+main_goal = "Public pages move batch."
+requirement = [
+    "core/sse.rs guard repointed to ../pages/public/server_intel.rs.",
+    "server_intel fixture path gains ../../.",
+]
+verify = ["cargo xtask mk ci-local-leptos"]
+acceptance = ["Gate green; no stale crate:: paths."]
+estimated = ["scope"]
+owns = ["apps/website/frontend/src/pages/public/"]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "site_pages"

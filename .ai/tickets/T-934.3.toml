@@ -1,0 +1,26 @@
+id = "T-934.3"
+kind = "work"
+parent = "T-934"
+title = "Reorg A3 — pages/operations/ + pages/admin/"
+summary = "events→operations/event_schedule + event_hub/orbat_selection/orbat_manager/faction_manager; event_manager/approvals/server_control/personnel/content/audit → pages/admin/."
+class = "chore"
+status = "queued"
+order = 6100
+spec = "docs/specs/website_reorg/plan.md"
+executor = "claude-code"
+depends_on = ["T-934.1"]
+main_goal = "Operations + admin pages move batch."
+requirement = [
+    "events.rs rename implies self-guard edits.",
+    "orbat_manager guards to editor files become longer relatives.",
+    "personnel/content CARGO_MANIFEST_DIR includes of api/src/app.rs unaffected — verify.",
+]
+verify = ["cargo xtask mk ci-local-leptos"]
+acceptance = ["Gate green; no stale crate:: paths."]
+estimated = ["scope"]
+owns = ["apps/website/frontend/src/pages/"]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "site_pages"

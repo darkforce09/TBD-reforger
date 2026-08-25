@@ -1,0 +1,25 @@
+id = "T-934.9"
+kind = "work"
+parent = "T-934"
+title = "Reorg B3 — mission_editor test evacuation"
+summary = "Move ~7.9k LOC of #[cfg(test)] blocks to editor/mission_editor_tests/ via #[cfg(test)] #[path] mounts. Zero production change."
+class = "chore"
+status = "queued"
+order = 6100
+spec = "docs/specs/website_reorg/plan.md"
+executor = "claude-code"
+depends_on = ["T-934.6"]
+main_goal = "Cut mission_editor.rs from 15.4k to ~7.5k with zero behavioral risk (audit §4 Phase 1 item 1)."
+requirement = [
+    "House precedent: tbd_sat_pure #[path] remount.",
+    "Class S guards keep valid include_str targets (../mission_editor.rs from tests dir).",
+]
+verify = ["cargo xtask mk ci-local-leptos"]
+acceptance = ["Same test count green before/after; production section byte-identical."]
+estimated = ["scope"]
+owns = ["apps/website/frontend/src/editor/mission_editor_tests/"]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

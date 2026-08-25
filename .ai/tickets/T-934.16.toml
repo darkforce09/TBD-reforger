@@ -1,0 +1,26 @@
+id = "T-934.16"
+kind = "work"
+parent = "T-934"
+title = "Reorg C2 — program close-out"
+summary = "Full gate sweep, stale owns remap on queued tickets, wave repack, Cursor handoff note for doc-link sync."
+class = "chore"
+status = "queued"
+order = 6100
+spec = "docs/specs/website_reorg/plan.md"
+executor = "claude-code"
+depends_on = ["T-934.14", "T-934.15"]
+main_goal = "Verified program close: gates, registry hygiene, doc handoff."
+requirement = [
+    "Remap flat owns paths on queued tickets (e.g. T-926, T-930).",
+    "cargo xtask wave repack after owns remap.",
+    "Handoff note to Cursor: docs/website/frontend/pages/*.md links + CLAUDE.md §Status (Cursor owns doc writes).",
+]
+verify = ["cargo xtask ci ci-local", "cargo xtask mk leptos-gates", "cargo xtask ticket check --strict"]
+acceptance = ["All gates green on final layout; registry checks pass."]
+estimated = ["scope"]
+owns = [".ai/tickets/"]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -1,0 +1,25 @@
+id = "T-934.1"
+kind = "work"
+parent = "T-934"
+title = "Reorg A1 — core/ + shell/"
+summary = "Move auth, client, dto, sse, datefmt, toast, ui, url_guard, split_pane to src/core/; layout→shell/layout, nav→shell/nav_config. router/app_routes/main stay at root."
+class = "chore"
+status = "queued"
+order = 6100
+spec = "docs/specs/website_reorg/plan.md"
+executor = "claude-code"
+main_goal = "First mechanical move batch; content byte-identical, paths only."
+requirement = [
+    "Folder mod.rs files reproduce wasm32 cfg gates exactly.",
+    "dto R-api golden fixture include paths gain ../.",
+    "Cross-guards repointed: main→sse, content→client, ui→orbat_manager, sse→server_intel.",
+]
+verify = ["cargo xtask mk ci-local-leptos"]
+acceptance = ["All moved files byte-identical modulo path lines; gate green."]
+estimated = ["scope"]
+owns = ["apps/website/frontend/src/"]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "shell"

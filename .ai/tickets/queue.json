@@ -11,6 +11,13 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md",
       "branch": "ticket/T-090"
+    },
+    {
+      "id": "T-934",
+      "title": "Website reorganization \u2014 audit.md \u00a73/\u00a74",
+      "status": "ready",
+      "spec": "docs/specs/website_reorg/plan.md",
+      "branch": "ticket/T-934"
     }
   ]
 }

@@ -9,6 +9,7 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-934** (6100) — Website reorganization — audit.md §3/§4 [ready] — Restructure flat 73-file frontend into core/shell/pages/editor, decompose mission_editor/editor_ops/arsenal monoliths, extract gestures via EditorGestureContext, nest backend handlers by domain.
 
 ## Next queued (top 10)
 

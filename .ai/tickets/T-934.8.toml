@@ -1,0 +1,26 @@
+id = "T-934.8"
+kind = "work"
+parent = "T-934"
+title = "Reorg B2 — arsenal split"
+summary = "arsenal/mod.rs keeps ArsenalTab + class_r_scrub; pure loadout core → arsenal/loadout.rs; view fns → arsenal/panels.rs."
+class = "chore"
+status = "queued"
+order = 6100
+spec = "docs/specs/website_reorg/plan.md"
+executor = "claude-code"
+depends_on = ["T-934.6"]
+main_goal = "Split 6,988-LOC arsenal; class_r_scrub does NOT move (6+ external callers)."
+requirement = [
+    "loadout.rs: loadout_to_picks, picks_to_*, try_export/import, buffer_*, plan_*, commit_*, receipts (~lines 224-1250).",
+    "panels.rs: cargo_panel, doll_view, attachments_panel, compat_panel, paper_doll.",
+    "Tests move adjacent; self-guards repointed.",
+]
+verify = ["cargo xtask mk ci-local-leptos"]
+acceptance = ["Gate green; class_r_scrub callers unchanged."]
+estimated = ["scope"]
+owns = ["apps/website/frontend/src/editor/arsenal/"]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

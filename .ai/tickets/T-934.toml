@@ -1,0 +1,46 @@
+id = "T-934"
+kind = "program"
+title = "Website reorganization — audit.md §3/§4"
+summary = "Restructure flat 73-file frontend into core/shell/pages/editor, decompose mission_editor/editor_ops/arsenal monoliths, extract gestures via EditorGestureContext, nest backend handlers by domain."
+class = "audit"
+status = "ready"
+order = 6100
+spec = "docs/specs/website_reorg/plan.md"
+plan = "docs/plans/t-934_plan.md"
+executor = "claude-code"
+children = [
+    "T-934.1",
+    "T-934.2",
+    "T-934.3",
+    "T-934.4",
+    "T-934.5",
+    "T-934.6",
+    "T-934.7",
+    "T-934.8",
+    "T-934.9",
+    "T-934.10",
+    "T-934.11",
+    "T-934.12",
+    "T-934.13",
+    "T-934.14",
+    "T-934.15",
+    "T-934.16",
+]
+main_goal = "Land the audit §3 reorg + §4 MissionEditorPage resolution: mechanical moves first, then per-split verified decomposition, gestures last."
+context = [
+    "apps/website/audit.md §3 (reorg) + operator-added §4 (2-phase MissionEditorPage plan).",
+    "Operator locked: reorg only; land ASAP accepting in-flight conflicts; claude-code executes.",
+    "Ground-truth corrections vs audit recorded in spec §1 (test-code share, 439 include_str guards, backend §3.4 rejected as written).",
+]
+requirement = [
+    "One child per commit on main, tagged T-934.x; gates green per spec §6 matrix.",
+    "No silent drops: all 82 frontend files + 22 backend handlers mapped (spec §4).",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos per move/split child",
+    "cargo xtask mk leptos-gates at .6/.11/.12/.13/.14/.16",
+    "cargo xtask ci ci-local at .15/.16",
+]
+acceptance = ["See spec."]
+created_at = "2026-08-25T00:00:00Z"
+estimated = ["scope"]
