@@ -1,19 +1,44 @@
 id = "T-934.10"
 kind = "work"
-parent = "T-934"
 title = "Reorg B4 — pure helpers → canvas/render_sync.rs"
 summary = "Extract pure fns (~lines 2317-3338): connection_*, comment_*, hover_*, route_*, selectable_ids, crewed_slot_ids, map_render_*, filter_slot_soa_excluding, zone_centre, plain_paste_anchor."
 class = "chore"
-status = "queued"
+status = "shipped"
 order = 6100
 spec = "docs/specs/website_reorg/plan.md"
 executor = "claude-code"
-created_at = "2026-08-25T00:00:00Z"
+notes = """
+Cross-crate pin fix: map-engine-core store.rs (select_tool, mission_editor) and
+map-engine-render draw_order.rs (mission_history) include_str'd pre-T-934 flat paths —
+broken since the Phase A moves; frontend-only gates never compiled those test targets.
+Repointed; map-engine-core --all-features 668 green, map-engine-render green.
+Agent incident (disclosed): a chained `git stash pop` popped the operator's pre-existing
+stash mid-run; conflicted paths restored to HEAD, stash entry preserved in the list
+(verified post-run: both stashes present, tree clean outside program paths).
+"""
 depends_on = ["T-934.9"]
+parent = "T-934"
 main_goal = "Mechanical pure-fn extraction; tests follow their fns."
+context = ["Phase B: the pure render/pick/route helper belt leaves mission_editor.rs for canvas/render_sync.rs (audit §4 Phase 1 groundwork)."]
+requirement = [
+    "Call sites stay byte-identical (re-exports, no wildcard); Class-S needles keep matching.",
+    "Impure helpers stay in mission_editor.rs with the reason recorded.",
+]
+current_state = ["Was: connection/comment/marker/hover/routing/SoA helper belt embedded in the 7.9k-line page file; engine crates carried stale flat-path include_str pins from Phase A."]
+approach = [
+    "996-LOC render_sync.rs, bodies byte-verified; pub(crate) use re-export blocks keep every call-site spelling; three guard repoints (t784/t808/t802).",
+    "Impure candidates stayed (hover_hit/live_connection_segments read OPS_CTX; set_map_cursor writes web-sys) — audit named hover_*, purity rule kept them put.",
+    "Fixed Phase A regression found en route: store.rs/draw_order.rs include_str pins to pre-move flat paths (engine test targets were never compiled by the frontend-only gates).",
+]
 verify = ["cargo xtask mk ci-local-leptos"]
 acceptance = ["Gate green; pub(crate) visibility preserved."]
-estimated = ["scope"]
+shipped_at = "08f5708bf"
+created_at = "2026-08-25T00:00:00Z"
+completed_at = "2026-08-25T18:24:40Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = ["apps/website/frontend/src/editor/canvas/"]
 
 [scope]
