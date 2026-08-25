@@ -1,23 +1,41 @@
 id = "T-934.9"
 kind = "work"
-parent = "T-934"
 title = "Reorg B3 — mission_editor test evacuation"
 summary = "Move ~7.9k LOC of #[cfg(test)] blocks to editor/mission_editor_tests/ via #[cfg(test)] #[path] mounts. Zero production change."
 class = "chore"
-status = "queued"
+status = "shipped"
 order = 6100
 spec = "docs/specs/website_reorg/plan.md"
 executor = "claude-code"
-created_at = "2026-08-25T00:00:00Z"
+notes = """
+mission_editor.rs 15,452 → 7,939 lines. t648_transform::false_t159_22_comment_is_corrected
+was self-satisfying pre-evacuation (needle matched its own literal, not production); now pins
+the live comment. tbd_sat_pure remount stays in mission_editor.rs; children reach it via
+super:: as before.
+"""
 depends_on = ["T-934.6"]
+parent = "T-934"
 main_goal = "Cut mission_editor.rs from 15.4k to ~7.5k with zero behavioral risk (audit §4 Phase 1 item 1)."
+context = ["Phase B: audit §4 Phase 1 item 1 — half of mission_editor.rs is embedded test suites; evacuating them is the cheapest 50% of the decomposition."]
 requirement = [
     "House precedent: tbd_sat_pure #[path] remount.",
     "Class S guards keep valid include_str targets (../mission_editor.rs from tests dir).",
 ]
+current_state = ["Was: 15,452-line file; production ends at 7,522; 34 #[cfg(test)] mods trail it."]
+approach = [
+    "One file per test mod under mission_editor_tests/, mounted in place via #[cfg(test)] #[path]; 119 include paths gain one ../.",
+    "Production half byte-identical (diff-verified); test-name list byte-identical (1204).",
+    "One decoy self-match found: t648 needle existed only as its own string literal — re-pinned to the real production comment.",
+]
 verify = ["cargo xtask mk ci-local-leptos"]
 acceptance = ["Same test count green before/after; production section byte-identical."]
-estimated = ["scope"]
+shipped_at = "91b5993c5"
+created_at = "2026-08-25T00:00:00Z"
+completed_at = "2026-08-25T17:52:15Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = ["apps/website/frontend/src/editor/mission_editor_tests/"]
 
 [scope]
