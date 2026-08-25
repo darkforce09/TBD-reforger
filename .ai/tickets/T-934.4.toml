@@ -11,6 +11,15 @@ executor = "claude-code"
 created_at = "2026-08-25T00:00:00Z"
 depends_on = ["T-934.1"]
 main_goal = "Editor periphery move batch."
+context = [
+    "Phase A batch 4: the Mission Creator nest opens — library, map tools, and world assets move under src/editor/ before the eden chrome and state batches.",
+]
+current_state = [
+    "Was: missions/mission_overview/create_mission_dialog, four tool modules, world_assets/ (9 files), world_layer_prefs, mission_size all flat in src/.",
+]
+approach = [
+    "git mv + renames (missions→mission_library, create_mission_dialog→create_dialog) with self-guard repoints; select_tool guards in eden_layout/mission_editor and world_assets guards in mission_editor/eden_dock_left/eden_toolbelt repointed; #[path] tbd_sat remount fixed; T-739 arsenal citations refreshed to live editor_ops lines after fmt reflow.",
+]
 requirement = [
     "Fix #[path] remount of tbd_sat.rs and world_assets guards in still-flat mission_editor.rs.",
     "missions.rs ../Cargo.toml include gains ../; mission_overview cross-guard repointed to mission_library.rs.",
