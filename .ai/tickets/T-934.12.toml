@@ -1,19 +1,38 @@
 id = "T-934.12"
 kind = "work"
-parent = "T-934"
 title = "Reorg B6 — boot + RAF → canvas/{boot,viewport}.rs"
 summary = "BootProgress/BootEvent + DEM/sat/chunk loaders → boot.rs; start_raf, RenderDamage, HUD builders, device_size, register_* → viewport.rs. mission_editor.rs ≈ 4.1k after."
 class = "chore"
-status = "queued"
+status = "shipped"
 order = 6100
 spec = "docs/specs/website_reorg/plan.md"
 executor = "claude-code"
-created_at = "2026-08-25T00:00:00Z"
 depends_on = ["T-934.11"]
+parent = "T-934"
 main_goal = "Complete audit §4 Phase 1 (items 3-4); only MissionEditorPage body remains."
-verify = ["cargo xtask mk ci-local-leptos", "cargo xtask mk leptos-gates"]
+context = ["Phase B closer: boot progress machinery and the RAF/self-check/registry-session belt leave mission_editor.rs for canvas/{boot,viewport}.rs."]
+requirement = [
+    "Only top-level items move; MissionEditorPage-captured closures stay with reasons recorded.",
+    "External boot_progress paths preserved via re-export.",
+]
+current_state = ["Was: BootPhase/boot_progress + start_raf/register_* embedded in the page file; audit's RenderDamage does not exist in the crate; DEM/sat/chunk loaders already live in editor/world_assets/."]
+approach = [
+    "boot.rs 564 LOC + viewport.rs 364 LOC, bodies byte-identical; registry_session ordered last in viewport.rs so its cfg(test) sits at the scrub cut.",
+    "Re-export block preserves crate::editor::mission_editor::boot_progress paths (world_assets + hydrate consumers); two guard repoints (t750, t670 viewport_live).",
+    "Left in page with reasons: boot spawn_local tasks + overlay view (capture ~10 locals), cold-registry consts (t427/t573 anchors), debug_hud signals (t635/t670 page pins).",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+]
 acceptance = ["Browser gates green; editor boots, HUD rf <ms> intact."]
-estimated = ["scope"]
+shipped_at = "a579ab966"
+created_at = "2026-08-25T00:00:00Z"
+completed_at = "2026-08-25T19:06:23Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = ["apps/website/frontend/src/editor/canvas/"]
 
 [scope]
