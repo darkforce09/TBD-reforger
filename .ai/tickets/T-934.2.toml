@@ -8,6 +8,7 @@ status = "queued"
 order = 6100
 spec = "docs/specs/website_reorg/plan.md"
 executor = "claude-code"
+created_at = "2026-08-25T00:00:00Z"
 depends_on = ["T-934.1"]
 main_goal = "Public pages move batch."
 requirement = [

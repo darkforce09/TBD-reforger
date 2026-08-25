@@ -8,6 +8,7 @@ status = "queued"
 order = 6100
 spec = "docs/specs/website_reorg/plan.md"
 executor = "claude-code"
+created_at = "2026-08-25T00:00:00Z"
 depends_on = ["T-934.11"]
 main_goal = "Complete audit §4 Phase 1 (items 3-4); only MissionEditorPage body remains."
 verify = ["cargo xtask mk ci-local-leptos", "cargo xtask mk leptos-gates"]

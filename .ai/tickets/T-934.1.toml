@@ -1,22 +1,31 @@
 id = "T-934.1"
 kind = "work"
-parent = "T-934"
 title = "Reorg A1 — core/ + shell/"
 summary = "Move auth, client, dto, sse, datefmt, toast, ui, url_guard, split_pane to src/core/; layout→shell/layout, nav→shell/nav_config. router/app_routes/main stay at root."
 class = "chore"
-status = "queued"
+status = "shipped"
 order = 6100
 spec = "docs/specs/website_reorg/plan.md"
 executor = "claude-code"
+parent = "T-934"
 main_goal = "First mechanical move batch; content byte-identical, paths only."
+context = ["Phase A batch 1 of the T-934 reorg (audit.md §3.1): shared utilities move out of the flat src/ dir first because every later batch imports them."]
 requirement = [
     "Folder mod.rs files reproduce wasm32 cfg gates exactly.",
     "dto R-api golden fixture include paths gain ../.",
     "Cross-guards repointed: main→sse, content→client, ui→orbat_manager, sse→server_intel.",
 ]
+current_state = ["Was: 73 flat modules; auth/client/dto/ui/toast/sse sat beside page modules; layout/nav mixed into the same namespace."]
+approach = ["git mv + folder mod.rs (cfg gates preserved) + crate-wide crate:: rewrite (544 refs) + include_str/include! repoints; server_control T-601 pin preamble mirrors crate::core::*; two Class-R needles kept one-line via imports."]
 verify = ["cargo xtask mk ci-local-leptos"]
 acceptance = ["All moved files byte-identical modulo path lines; gate green."]
-estimated = ["scope"]
+shipped_at = "c8f3f2328"
+created_at = "2026-08-25T00:00:00Z"
+completed_at = "2026-08-25T15:43:22Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = ["apps/website/frontend/src/"]
 
 [scope]
