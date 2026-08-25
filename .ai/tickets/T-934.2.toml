@@ -1,23 +1,31 @@
 id = "T-934.2"
 kind = "work"
-parent = "T-934"
 title = "Reorg A2 — pages/public/"
 summary = "Move dashboard, announcements, server_intel, wiki, vehicles, modpacks, mortar, settings, deployments, leaderboards to src/pages/public/."
 class = "chore"
-status = "queued"
+status = "shipped"
 order = 6100
 spec = "docs/specs/website_reorg/plan.md"
 executor = "claude-code"
-created_at = "2026-08-25T00:00:00Z"
 depends_on = ["T-934.1"]
+parent = "T-934"
 main_goal = "Public pages move batch."
+context = ["Phase A batch 2 of the T-934 reorg: ten public/community pages leave the flat src/ dir after core/shell landed in .1."]
 requirement = [
     "core/sse.rs guard repointed to ../pages/public/server_intel.rs.",
     "server_intel fixture path gains ../../.",
 ]
+current_state = ["Was: dashboard/announcements/server_intel/wiki/vehicles/modpacks/mortar/settings/deployments/leaderboards flat in src/."]
+approach = ["git mv into pages/public/ + pages/mod.rs + crate:: rewrite; is_http_url_cases include! gains two ../; sse guard and GET__servers fixture repointed."]
 verify = ["cargo xtask mk ci-local-leptos"]
 acceptance = ["Gate green; no stale crate:: paths."]
-estimated = ["scope"]
+shipped_at = "5199d2fa1"
+created_at = "2026-08-25T00:00:00Z"
+completed_at = "2026-08-25T15:46:52Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = ["apps/website/frontend/src/pages/public/"]
 
 [scope]
