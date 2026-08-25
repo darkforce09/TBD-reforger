@@ -8167,8 +8167,13 @@ mod tests {
              comments/strings — the mixed marquee was forked or deleted"
         );
 
-        let editor = strip_rust_lexical_noise(include_str!(
-            "../../../../apps/website/frontend/src/editor/mission_editor.rs"
+        // T-934.13 moved the pointer-gesture closures (the LG::Move commit arm among them) from
+        // `mission_editor.rs` to `editor/canvas/gestures.rs`; sweep BOTH files so the one-arm
+        // invariant keeps holding over wherever the commit lives (a fork across the two files
+        // would show up as 2 arms here).
+        let editor = strip_rust_lexical_noise(concat!(
+            include_str!("../../../../apps/website/frontend/src/editor/mission_editor.rs"),
+            include_str!("../../../../apps/website/frontend/src/editor/canvas/gestures.rs")
         ));
         // Select the commit arm BY ITS ATOMIC CALL rather than by the destructure's exact
         // spelling: T-647 (wave 106) added `cam` to the pattern and rustfmt re-wrapped it, which

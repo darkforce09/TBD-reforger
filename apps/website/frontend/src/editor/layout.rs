@@ -543,8 +543,12 @@ mod t636_band_readers_agree {
             1,
             "scrub anchor must be unambiguous"
         );
-        let editor =
+        // T-934.13 — the palette-drop `on_canvas` gate rides the pointerup closure, which moved
+        // verbatim to `editor/canvas/gestures.rs`; append it (scrubbed separately) so the reader
+        // is still examined wherever it lives.
+        let mut editor =
             live_code(&raw_editor[raw_editor.find(anchor.as_str()).expect("anchor present")..]);
+        editor.push_str(&live_code(include_str!("canvas/gestures.rs")));
 
         assert!(
             sel.contains(band_read),

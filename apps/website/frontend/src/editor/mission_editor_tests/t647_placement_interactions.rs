@@ -3,7 +3,9 @@ use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 /// The editor page region (comments stripped, string literals blanked). The `#[cfg(wasm32)]`
 /// blocks the pointer/dblclick handlers live in are KEPT by the scrubber (it decides only
 /// provably-false cfgs, and `target_arch` reads as undecided under the default eval) — the same
-/// reason t662 can pin `chrome_hidden.set(` inside that block.
+/// reason t662 can pin `chrome_hidden.set(` inside that block. T-934.13 moved those closures to
+/// `canvas/gestures.rs`, so that file is appended (scrubbed separately) — the `only_body`
+/// anchors (`let onpointerup =`, `let ondblclick =`, `let oncontextmenu =`) resolve there.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     let raw = include_str!("../mission_editor.rs");
@@ -12,7 +14,9 @@ fn editor_live() -> String {
         1,
         "scrub anchor must be unambiguous"
     );
-    live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
+    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    src
 }
 
 /// `editor_ops.rs`, scrubbed to live code. It is wasm-only, so nothing in it runs — but its
@@ -253,21 +257,16 @@ fn ctrl_state_machine_multi_place_when_armed_regroup_when_not() {
     );
 
     // (4) The state machine is DOCUMENTED as one block (the ticket requires the comment). A
-    // comment is stripped by every scrubber, so pin it on the RAW file, sliced to the page's
-    // production body (page anchor → the first following test module) so this test module's own
-    // text cannot satisfy it. The needle is reassembled so this line is not itself the decoy.
-    let raw = include_str!("../mission_editor.rs");
-    let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let page_at = raw.find(anchor.as_str()).expect("page anchor present");
-    let boundary = format!("#[cfg{}", "(test)]");
-    let after = &raw[page_at..];
-    let prod = &after[..after
-        .find(boundary.as_str())
-        .expect("a test module follows the page")];
+    // comment is stripped by every scrubber, so pin it on the RAW file — since T-934.13 that is
+    // `canvas/gestures.rs`, where the pointerup closure (and its comment block) moved verbatim.
+    // The file carries no `#[cfg(test)]` module, so the whole of it is production text and no
+    // slice is needed. The needle is reassembled so this line is not itself the decoy.
+    let raw = include_str!("../canvas/gestures.rs");
     let phrase = format!("Ctrl is {}", "OVERLOADED");
     assert!(
-        prod.contains(phrase.as_str()),
-        "T-647: the Ctrl state machine must be documented in a comment block in the page body"
+        raw.contains(phrase.as_str()),
+        "T-647: the Ctrl state machine must be documented in a comment block beside the pointerup \
+         place branch (canvas/gestures.rs since T-934.13)"
     );
 }
 

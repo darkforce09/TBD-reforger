@@ -14,11 +14,15 @@ fn comments() -> String {
     .to_string()
 }
 
+/// Page-from-anchor + the T-934.13 gesture file (`canvas/gestures.rs`), where the pointerup
+/// click path this module pins moved verbatim. Each half scrubbed separately.
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     let raw = include_str!("../mission_editor.rs");
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
-    live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
+    let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
+    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    src
 }
 
 /// The T-784 glyph block, scrubbed — sliced from the RAW source at the struct anchor, exactly as

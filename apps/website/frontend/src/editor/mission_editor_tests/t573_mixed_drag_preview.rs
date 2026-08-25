@@ -50,7 +50,10 @@ fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
         "the scrub anchor must be unambiguous — 0 or 2+ means this pin is reading a region it \
          cannot identify"
     );
-    let editor = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
+    // T-934.13 — the pointermove/up/cancel closures the needles below sit in are split between
+    // the page (pointercancel) and `canvas/gestures.rs` (the moved drag closures); examine both.
+    let mut editor = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
+    editor.push_str(&live_code(include_str!("../canvas/gestures.rs")));
     assert!(
         editor.contains("pub fn MissionEditorPage"),
         "canary: the scrubbed region must still contain the editor page, or the anchor moved \

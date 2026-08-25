@@ -4,7 +4,9 @@ use crate::editor::arsenal::class_r_scrub::live_code;
 /// stronger for the census below (a note that MENTIONS `KeyA` can no longer read as a binding).
 use crate::editor::panels::help_modal::keymap_census::keydown_arms;
 
-/// Everything after the editor page's own signature — the live editor body.
+/// Everything after the editor page's own signature — the live editor body — plus the T-934.13
+/// gesture file (`canvas/gestures.rs`), where the pointer closures (the F-27 click arm among
+/// them) moved verbatim. Each half scrubbed separately.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     let raw = include_str!("../mission_editor.rs");
@@ -13,7 +15,9 @@ fn editor_live() -> String {
         1,
         "scrub anchor must be unambiguous"
     );
-    live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
+    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    src
 }
 
 /// All whitespace removed. `rustfmt` is free to break a Leptos `view!` expression across lines

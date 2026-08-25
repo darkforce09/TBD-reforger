@@ -4,6 +4,11 @@
 //! Phase B's third child; gestures land in T-934.13.
 
 pub mod boot;
+// T-934.13 — the pointer/wheel/dblclick/contextmenu gesture closures + `EditorGestureContext`.
+// Everything inside is wasm-only (web-sys events over the live engine/doc handles), so the module
+// is gated like `state/doc_host` rather than internally cfg-split.
+#[cfg(target_arch = "wasm32")]
+pub mod gestures;
 pub mod overlays;
 pub mod render_sync;
 pub mod viewport;

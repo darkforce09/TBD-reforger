@@ -1,10 +1,15 @@
 use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
+/// Page-from-anchor + the T-934.13 gesture file (`canvas/gestures.rs`), where the pointerup
+/// closure (the LMB complete arm) moved verbatim; `onpointercancel` stays page-side. Each half
+/// scrubbed separately.
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     let raw = include_str!("../mission_editor.rs");
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
-    live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
+    let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
+    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    src
 }
 
 fn pointerup_body() -> String {

@@ -1,5 +1,8 @@
 use crate::editor::arsenal::class_r_scrub::live_code;
 
+/// Page-from-anchor + the T-934.13 gesture file (`canvas/gestures.rs`) — the viewshed wiring spans
+/// the page body (signals, Esc arm, tool-switch Effect) and the moved pointerup commit arm. The
+/// t642 `editor_live` idiom; each half scrubbed separately.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     let raw = include_str!("../mission_editor.rs");
@@ -8,7 +11,9 @@ fn editor_live() -> String {
         1,
         "scrub anchor must be unambiguous"
     );
-    live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
+    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    src
 }
 
 /// (sub-mode signal threaded to the toolbar) The page owns a real `los_mode` `RwSignal` and hands

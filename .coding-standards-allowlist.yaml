@@ -338,3 +338,10 @@
   path: xtask/src/schema_gates.rs
   reason: T-853 xtask port; split follow-up
   expires: 2026-11-13
+
+# --- T-934.13 gesture extraction. The six closure bodies moved VERBATIM out of mission_editor.rs
+# and are pinned line-for-line by Class-S guards; splitting the file would re-open every pin. ---
+- rule: SIZE-3
+  path: apps/website/frontend/src/editor/canvas/gestures.rs
+  reason: T-934.13 verbatim gesture-closure move; Class-S pinned bodies, split follow-up
+  expires: 2026-11-13

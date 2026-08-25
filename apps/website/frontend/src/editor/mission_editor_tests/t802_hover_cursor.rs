@@ -34,12 +34,14 @@ fn hover_hit_body() -> String {
     only_body(&block, &["pub(crate) fn hover_", "hit("].concat()).to_string()
 }
 
-/// The live `pointermove` closure, scrubbed.
+/// The live `pointermove` closure, scrubbed. T-934.13 moved the gesture closures verbatim to
+/// `canvas/gestures.rs`, so the anchor resolves there now (the page keeps `onpointerleave` and
+/// the mount seed, which the mount/leave pin below still reads via `page()`).
 fn pointermove() -> String {
-    let page = page();
+    let src = live_code(include_str!("../canvas/gestures.rs"));
     let anchor = ["let onpointermove = ", "Closure::"].concat();
-    assert_eq!(page.matches(anchor.as_str()).count(), 1);
-    only_body(&page, &anchor).to_string()
+    assert_eq!(src.matches(anchor.as_str()).count(), 1);
+    only_body(&src, &anchor).to_string()
 }
 
 /* ── the state machine ─────────────────────────────────────────────────────────────────── */

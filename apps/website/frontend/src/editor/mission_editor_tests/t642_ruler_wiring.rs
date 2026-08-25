@@ -1,5 +1,9 @@
 use crate::editor::arsenal::class_r_scrub::live_code;
 
+/// The page from its component anchor PLUS the T-934.13 gesture file: the ruler wiring spans the
+/// page body (tool signals, keydown Esc, overlay mounts) and the pointer/dblclick closures, which
+/// moved verbatim to `canvas/gestures.rs`. Both halves are scrubbed separately (`live_code`
+/// truncates at the first `#[cfg(test)]`, and each file has its own tail).
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     let raw = include_str!("../mission_editor.rs");
@@ -8,7 +12,9 @@ fn editor_live() -> String {
         1,
         "scrub anchor must be unambiguous"
     );
-    live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
+    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    src
 }
 
 /// (tool-mode arbitration — how the third mode ENTERS `LeftGesture`) The LMB pointerdown chooses

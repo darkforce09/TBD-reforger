@@ -5,6 +5,9 @@ use crate::editor::mission_editor::transform::{
     WIDGET_RADIUS_PX,
 };
 
+/// Page-from-anchor + the T-934.13 gesture file (`canvas/gestures.rs`) — the transform wiring
+/// spans the page body (keydown arms, widget mounts) and the moved pointer closures (the ring
+/// promotion, the Shift-rotate arm, the Move commit). Each half scrubbed separately.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     let raw = include_str!("../mission_editor.rs");
@@ -13,7 +16,9 @@ fn editor_live() -> String {
         1,
         "scrub anchor must be unambiguous"
     );
-    live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
+    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    src
 }
 
 // ── QUANTISER: ladders ────────────────────────────────────────────────────────────────────
@@ -617,7 +622,12 @@ fn widget_and_readout_are_mounted() {
 /// claim and its correction are comments, which `live_code` strips.
 #[test]
 fn false_t159_22_comment_is_corrected() {
-    let raw = include_str!("../mission_editor.rs");
+    // T-934.13 moved the pointerup closure (whose comment this pins) to canvas/gestures.rs; the
+    // negative check keeps sweeping BOTH files so the false claim cannot re-enter either.
+    let raw = concat!(
+        include_str!("../mission_editor.rs"),
+        include_str!("../canvas/gestures.rs")
+    );
     // The false-claim needle is assembled from fragments so this test's OWN source (in this same
     // file, read via include_str!) is not a decoy match for it.
     let false_claim = format!(

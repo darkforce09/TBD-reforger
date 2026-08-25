@@ -3,7 +3,9 @@ use crate::editor::arsenal::class_r_scrub::live_code;
 /// The keydown region, comment- and dead-code-stripped. The file's first `#[cfg(test)]` is the
 /// `clear_for_test` helper near the top, so `live_code` on the whole file would cut everything
 /// below it (see the t425/t427 pins); hand it the region from the editor page onward, at a
-/// brace-0 boundary so the slice stays balanced.
+/// brace-0 boundary so the slice stays balanced. T-934.13 moved the pointer/wheel/contextmenu/
+/// dblclick closures to `canvas/gestures.rs`, so that file is appended (scrubbed separately) —
+/// the pan-button and contextmenu pins below read those bodies.
 fn editor_live() -> String {
     // Full signature (with `()`), so the other test's bare `"pub fn MissionEditorPage"` literal
     // is not a second match. Split so this anchor is not itself a duplicate occurrence.
@@ -14,7 +16,9 @@ fn editor_live() -> String {
         1,
         "scrub anchor must be unambiguous"
     );
-    live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
+    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    src
 }
 
 /// (2) Backspace hides chrome and does NOT delete; Delete still deletes. The two keys are split
