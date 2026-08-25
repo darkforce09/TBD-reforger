@@ -5478,7 +5478,7 @@ pub fn clear_crew_seat(vehicle_id: String, seat_id: String) -> bool {
 ///
 /// **Callers that CREATE (`Save as` → POST) may use this as-is** — a brand-new faction has no
 /// emblem and no labels to lose. **Callers that REPLACE (`Save` → PUT) must merge over the stored
-/// document first:** [`crate::orbat_manager::merge_faction_doc_from_side`].
+/// document first:** [`crate::pages::operations::orbat_manager::merge_faction_doc_from_side`].
 ///
 /// `None` when there is no live doc, or when the doc's own JSON will not parse — see
 /// [`faction_doc_from_side_core`].

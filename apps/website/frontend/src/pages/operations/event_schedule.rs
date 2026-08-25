@@ -30,7 +30,7 @@ use crate::core::datefmt::{countdown_label, format_local_datetime};
 use crate::core::dto::{EventHub, Paginated};
 use crate::core::split_pane::{SplitPane, SplitPaneEmpty};
 use crate::core::ui::{badge_class, cn, AuthGate, MaterialIcon};
-use crate::event_hub::event_hub_view;
+use crate::pages::operations::event_hub::event_hub_view;
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -324,7 +324,7 @@ mod tests {
     /// not revive the pre-T-353 non-trim briefing emptiness guard.
     #[test]
     fn schedule_briefing_empty_check_stays_trim_aligned() {
-        const SRC: &str = include_str!("events.rs");
+        const SRC: &str = include_str!("event_schedule.rs");
         assert!(
             SRC.contains("event_hub_view(ev, on_change)"),
             "schedule detail must render via event_hub_view so operation/mission briefing \

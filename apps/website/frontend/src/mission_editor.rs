@@ -6911,7 +6911,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 </div>
                 <div class="pointer-events-auto">
                     <crate::eden_chrome::MissionSettingsDialog open=settings_open doc_tick />
-                    <crate::faction_manager::FactionManagerDialog open=fm_open registry=registry_items />
+                    <crate::pages::operations::faction_manager::FactionManagerDialog open=fm_open registry=registry_items />
                     // T-177 B2 / T-071.0 — ORBAT Manager modal shell (browse/select the live ORBAT
                     // faction → squad → slot tree relocated from the left dock).
                     <crate::eden_chrome::OrbatManagerDialog

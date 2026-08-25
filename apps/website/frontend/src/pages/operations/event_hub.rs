@@ -1592,7 +1592,7 @@ mod tests {
     /// the backend omits the field when the column is empty — so the single recorded real
     /// response is itself a live instance of the defect, not a hypothetical one.
     const EVENT_HUB_GOLDEN: &str = include_str!(
-        "../tests/fixtures/api/GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json"
+        "../../../tests/fixtures/api/GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json"
     );
 
     fn golden_dossier() -> EventMissionDossier {
@@ -2014,7 +2014,7 @@ mod tests {
         );
     }
 
-    include!("../../shared/is_http_url_cases.rs");
+    include!("../../../../shared/is_http_url_cases.rs");
 
     #[test]
     fn member_picker_avatar_src_only_keeps_http_urls() {

@@ -1433,7 +1433,7 @@ mod tests {
     #[test]
     fn orbat_manager_overlay_derives_z_from_the_modal_stack() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let scrubbed = live_code(include_str!("../orbat_manager.rs"));
+        let scrubbed = live_code(include_str!("../pages/operations/orbat_manager.rs"));
         let body = only_body(&scrubbed, "pub fn OrbatManagerDialog(");
         assert!(
             body.contains("modal_stack::z_class(modal_id)"),

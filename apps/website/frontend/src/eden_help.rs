@@ -624,8 +624,16 @@ pub(crate) mod keymap_census {
             ("eden_top_strip.rs", include_str!("eden_top_strip.rs"), 1),
             ("context_menu.rs", include_str!("context_menu.rs"), 1),
             ("eden_settings.rs", include_str!("eden_settings.rs"), 3),
-            ("faction_manager.rs", include_str!("faction_manager.rs"), 1),
-            ("orbat_manager.rs", include_str!("orbat_manager.rs"), 1),
+            (
+                "faction_manager.rs",
+                include_str!("pages/operations/faction_manager.rs"),
+                1,
+            ),
+            (
+                "orbat_manager.rs",
+                include_str!("pages/operations/orbat_manager.rs"),
+                1,
+            ),
         ]
     }
 

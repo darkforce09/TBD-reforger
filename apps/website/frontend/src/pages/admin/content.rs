@@ -1394,7 +1394,7 @@ mod tests {
     #[test]
     fn hero_multipart_upload_is_wired_not_stubbed() {
         const CARGO: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml"));
-        const CLIENT: &str = include_str!("core/client.rs");
+        const CLIENT: &str = include_str!("../../core/client.rs");
         const SRC: &str = include_str!("content.rs");
         let prod = SRC
             .split("#[cfg(test)]")

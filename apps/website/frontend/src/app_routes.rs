@@ -3,11 +3,13 @@
 //! `<Routes fallback>`. The chrome (Sidebar/TopNav) lives in AppLayout OUTSIDE `<Routes>`, so it
 //! persists across navigation — `<Routes>` swaps only `<main>`. The path list mirrors router.rs
 //! `ROUTES` (the S-routes gate's source of truth).
-use crate::approvals::MissionApprovalsPage;
-use crate::audit::AuditLogsPage;
-use crate::content::ContentManagerPage;
-use crate::events::EventSchedulePage;
 use crate::missions::MissionLibraryPage;
+use crate::pages::admin::approvals::MissionApprovalsPage;
+use crate::pages::admin::audit::AuditLogsPage;
+use crate::pages::admin::content::ContentManagerPage;
+use crate::pages::admin::personnel::PersonnelRosterPage;
+use crate::pages::admin::server_control::ServerControlPage;
+use crate::pages::operations::event_schedule::EventSchedulePage;
 use crate::pages::public::announcements::AnnouncementsPage;
 use crate::pages::public::dashboard::DashboardPage;
 use crate::pages::public::deployments::DeploymentsPage;
@@ -17,8 +19,6 @@ use crate::pages::public::mortar::MortarCalculatorPage;
 use crate::pages::public::server_intel::ServerIntelPage;
 use crate::pages::public::settings::SettingsPage;
 use crate::pages::public::vehicles::VehicleDatabasePage;
-use crate::personnel::PersonnelRosterPage;
-use crate::server_control::ServerControlPage;
 use leptos::prelude::*;
 use leptos_router::components::{Route, Routes};
 use leptos_router::path;
@@ -91,10 +91,10 @@ pub fn AppRoutes() -> impl IntoView {
                 view=crate::mission_editor::MissionEditorPage
             />
             <Route path=path!("/events") view=EventSchedulePage />
-            <Route path=path!("/events/:id") view=crate::event_hub::EventHubPage />
+            <Route path=path!("/events/:id") view=crate::pages::operations::event_hub::EventHubPage />
             <Route
                 path=path!("/events/:id/missions/:emid/orbat")
-                view=crate::orbat_selection::OrbatSelectionPage
+                view=crate::pages::operations::orbat_selection::OrbatSelectionPage
             />
             <Route path=path!("/wiki") view=crate::pages::public::wiki::WikiPage />
             <Route path=path!("/wiki/:slug") view=crate::pages::public::wiki::WikiPage />
@@ -102,7 +102,7 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/modpacks") view=ModpacksPage />
             <Route path=path!("/tools/mortar") view=MortarCalculatorPage />
             <Route path=path!("/settings") view=SettingsPage />
-            <Route path=path!("/admin/events") view=crate::event_manager::EventManagerPage />
+            <Route path=path!("/admin/events") view=crate::pages::admin::event_manager::EventManagerPage />
             <Route path=path!("/admin/approvals") view=MissionApprovalsPage />
             <Route path=path!("/admin/server") view=ServerControlPage />
             <Route path=path!("/admin/personnel") view=PersonnelRosterPage />

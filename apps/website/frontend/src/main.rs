@@ -5,7 +5,6 @@
 //! (S/V/R/T), not just `cargo check`.
 
 mod app_routes;
-mod approvals;
 // T-159.22 — flat registry rows → the Factions palette tree (the T-068.3 `buildCatalogTree` port).
 // Pure data, no web-sys: ungated so its unit tests run on the native `cargo test` shell.
 mod asset_catalog;
@@ -15,8 +14,6 @@ mod attributes;
 mod arsenal;
 // T-167 — Smart-Arsenal domain core (arsenalRules.ts + arsenalDollModel.ts port; pure/native-tested).
 mod arsenal_rules;
-mod audit;
-mod content;
 // T-934.1 — core framework utilities (auth, client, dto, sse, datefmt, toast, ui,
 // url_guard, split_pane) and the app shell (layout, nav_config).
 mod core;
@@ -61,17 +58,10 @@ mod place_helpers;
 mod ruler_tool;
 // T-655 — mission validation panel.
 mod validation_panel;
-// T-167 — Faction Manager dialog (FactionManagerDialog.tsx / T-153 port; /factions CRUD).
-mod faction_manager;
-// T-180.7 — Stitch ORBAT Manager on live graph (thin re-export from eden_chrome).
-mod orbat_manager;
 // T-159.17 warm editor session — sessionStorage marker; wasm32-only (uses web-sys/js-sys), gated
 // like the doc host below.
 #[cfg(target_arch = "wasm32")]
 mod editor_session;
-mod event_hub;
-mod event_manager;
-mod events;
 // T-159.16 MissionDoc host — all content is wasm32-only (links map-engine-core `doc`), so gate the
 // module declaration like the engine block inside `mission_editor`.
 #[cfg(target_arch = "wasm32")]
@@ -104,18 +94,15 @@ mod mission_overview;
 // T-172 B9 — pure SZ payload estimator (missionSize.ts port), native-tested.
 mod mission_size;
 mod missions;
-mod orbat_selection;
 // T-159.22 — the left dock's Editor Layers tree (+ the "Unfiled" pseudo-root the seed forces). Owns
 // plain LayerRow/SlotRow rather than `SlotSoa`, because map-engine-core is wasm32-only — so this
 // stays ungated and its unit tests run on the native shell.
 mod outliner;
-mod personnel;
 mod router;
 // T-159.18 Select / LMB pick foundation — links map-engine-core `camera`+`spatial` and web-sys, so
 // wasm32-only, gated like the doc host + persist modules.
 #[cfg(target_arch = "wasm32")]
 mod select_tool;
-mod server_control;
 // T-173 P6 — per-user world-layer visibility prefs + basemap view (localStorage). Pure/native-
 // tested; the wasm host applies them to the residency + engine each settle.
 mod world_layer_prefs;

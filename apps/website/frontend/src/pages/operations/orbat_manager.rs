@@ -1646,7 +1646,7 @@ mod tests {
             ),
             "Add Vehicle must not stay disabled"
         );
-        let ops = include_str!("editor_ops.rs");
+        let ops = include_str!("../../editor_ops.rs");
         assert!(
             ops.contains("pub fn orbat_add_vehicle"),
             "ops mutator must exist"
@@ -1655,7 +1655,7 @@ mod tests {
             ops.contains("add_vehicle") && ops.contains("attach_vehicle"),
             "ops must call core add+attach"
         );
-        let hist = include_str!("mission_history.rs");
+        let hist = include_str!("../../mission_history.rs");
         assert!(
             hist.contains("vehicles_bind"),
             "map presence: vehicles_bind on doc change"
@@ -1699,7 +1699,7 @@ mod tests {
     /// I7 — OPEN ARSENAL opens Attributes on tab 3 (Arsenal), not Identity-only open_attributes.
     #[test]
     fn open_arsenal_selects_arsenal_tab() {
-        let ops = include_str!("editor_ops.rs");
+        let ops = include_str!("../../editor_ops.rs");
         assert!(
             ops.contains("pub fn open_arsenal"),
             "open_arsenal must exist"
@@ -1727,7 +1727,7 @@ mod tests {
             !window.contains("open_attributes"),
             "OPEN ARSENAL must not call open_attributes (Identity default)"
         );
-        let attrs = include_str!("attributes.rs");
+        let attrs = include_str!("../../attributes.rs");
         assert!(
             attrs.contains(r#"["Transform", "Identity", "States", "Arsenal"]"#),
             "TABS[3] must be Arsenal"
@@ -1970,7 +1970,7 @@ mod tests {
                 || src.contains("merge_faction_doc_from_side(&stored.doc"),
             "the Save button must PUT a merged body, never the raw derivation"
         );
-        let ops = include_str!("editor_ops.rs");
+        let ops = include_str!("../../editor_ops.rs");
         assert!(
             ops.contains("merge_faction_doc_from_side"),
             "faction_doc_from_side must name the merge callers have to use"

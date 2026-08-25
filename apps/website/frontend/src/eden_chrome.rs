@@ -35,8 +35,8 @@ pub use crate::eden_toolbelt::BottomToolbelt;
 pub use crate::eden_top_strip::TopCommandStrip;
 
 // T-180.7 — Stitch ORBAT Manager (near-fullscreen live graph). Implementation lives in
-// [`crate::orbat_manager`]; re-exported so `mission_editor`'s mount path stays stable.
-pub use crate::orbat_manager::OrbatManagerDialog;
+// [`crate::pages::operations::orbat_manager`]; re-exported so `mission_editor`'s mount path stays stable.
+pub use crate::pages::operations::orbat_manager::OrbatManagerDialog;
 
 // T-582 — the zone draw tool's PURE predicates. `editor_ops` (the wasm-only doc-mutating half) calls
 // these through `crate::eden_chrome`, so they stay re-exported here; they live in

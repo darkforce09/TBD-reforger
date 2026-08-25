@@ -7,7 +7,7 @@
 #![allow(dead_code)]
 use crate::core::dto::EventHub;
 use crate::core::ui::{AuthGate, MaterialIcon};
-use crate::event_hub::OrbatSelector;
+use crate::pages::operations::event_hub::OrbatSelector;
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 
