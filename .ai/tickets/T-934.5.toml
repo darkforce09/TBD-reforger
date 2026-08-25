@@ -1,24 +1,40 @@
 id = "T-934.5"
 kind = "work"
-parent = "T-934"
 title = "Reorg A5 — editor/panels/ (eden chrome)"
 summary = "12 eden_*/panel files renamed+moved to editor/panels/ (dock_left, dock_right, top_strip, toolbelt, outliner_tree, attributes_modal, validation_panel, zones_panel, vehicles_panel, settings_modal, help_modal, context_menu) + outliner, env; eden_layout→editor/layout; eden_chrome shim→editor/."
 class = "chore"
-status = "queued"
+status = "shipped"
 order = 6100
 spec = "docs/specs/website_reorg/plan.md"
 executor = "claude-code"
-created_at = "2026-08-25T00:00:00Z"
-depends_on = ["T-934.2", "T-934.3", "T-934.4"]
+depends_on = [
+    "T-934.2",
+    "T-934.3",
+    "T-934.4",
+]
+parent = "T-934"
 main_goal = "Heaviest guard batch (~120 self-guard renames); eden chrome moves under editor/panels/."
+context = ["Phase A batch 5: the T-661 eden_* split moves under editor/panels/ with audit-table renames; eden_layout and the eden_chrome shim land at editor/."]
 requirement = [
     "Renames imply self-include edits; cross-guards per spec §5.",
     "Update xtask/src/gate_t180.rs EDEN_CHROME const.",
     "zones_panel deep-relative includes (schema json, flatten.rs) gain ../.",
 ]
+current_state = ["Was: sixteen chrome/panel modules flat in src/ under eden_* names; layout consts and shim beside them."]
+approach = [
+    "git mv + renames with ~120 self-guard edits; cross-guards repointed per spec §5.",
+    "Seven census/needle pins refreshed to new names (t636/t637 layout consts, help keymap census, t688 schema embed depth, t754 zone seam, f5 seam census, t739 lines).",
+    "gate_t180 EDEN_CHROME const updated; deep schema/crate includes gain two ../.",
+]
 verify = ["cargo xtask mk ci-local-leptos"]
 acceptance = ["Gate green; gate_t180 still passes."]
-estimated = ["scope"]
+shipped_at = "5968776b8"
+created_at = "2026-08-25T00:00:00Z"
+completed_at = "2026-08-25T16:06:50Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = ["apps/website/frontend/src/editor/panels/"]
 
 [scope]
