@@ -764,7 +764,7 @@ mod lane_order_pins {
 /// `comments_bind` feed turns RED (lane-order pins never examine the feeder).
 #[cfg(test)]
 mod t748_comments_bind_feed {
-    const HIST: &str = include_str!("../../../apps/website/frontend/src/mission_history.rs");
+    const HIST: &str = include_str!("../../../apps/website/frontend/src/editor/state/history.rs");
 
     fn only_body(src: &str, sig: &str) -> String {
         let start = src

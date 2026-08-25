@@ -14,17 +14,23 @@ fn page() -> String {
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
 
-/// The T-802 primitives block, scrubbed — sliced the same way, from the first constant.
+/// The T-802 primitives block, scrubbed — sliced the same way, from the first constant. T-934.10
+/// moved the pure state machine to `canvas/render_sync.rs`, so the declarations are read there.
 fn hover_block() -> String {
     let anchor = format!("pub(crate) const HOVER_CURSOR_{}", "PICKABLE");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!("../canvas/render_sync.rs");
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
 
-/// The live body of `hover_hit`, scrubbed.
+/// The live body of `hover_hit`, scrubbed. `hover_hit` STAYED in `mission_editor.rs` at the
+/// T-934.10 split (it reads OPS_CTX through `editor_ops::vehicle_points`, so it is not pure),
+/// so this slices from its cache struct's anchor there.
 fn hover_hit_body() -> String {
-    let block = hover_block();
+    let anchor = format!("pub(crate) struct Hover{}", "Points");
+    let raw = include_str!("../mission_editor.rs");
+    assert_eq!(raw.matches(anchor.as_str()).count(), 1);
+    let block = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
     only_body(&block, &["pub(crate) fn hover_", "hit("].concat()).to_string()
 }
 

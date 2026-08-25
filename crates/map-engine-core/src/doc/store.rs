@@ -8154,7 +8154,7 @@ mod tests {
     #[test]
     fn mission_editor_move_commit_names_the_atomic_mix_api() {
         let select = strip_rust_lexical_noise(include_str!(
-            "../../../../apps/website/frontend/src/select_tool.rs"
+            "../../../../apps/website/frontend/src/editor/tools/select_tool.rs"
         ));
         assert!(
             select.contains("MissionDocCore::pick_slot_or_vehicle("),
@@ -8168,7 +8168,7 @@ mod tests {
         );
 
         let editor = strip_rust_lexical_noise(include_str!(
-            "../../../../apps/website/frontend/src/mission_editor.rs"
+            "../../../../apps/website/frontend/src/editor/mission_editor.rs"
         ));
         // Select the commit arm BY ITS ATOMIC CALL rather than by the destructure's exact
         // spelling: T-647 (wave 106) added `cam` to the pattern and rustfmt re-wrapped it, which

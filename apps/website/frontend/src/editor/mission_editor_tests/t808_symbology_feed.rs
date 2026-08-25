@@ -16,11 +16,11 @@ fn page() -> String {
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
 
-/// The comment glyph block of this file, scrubbed (see the T-784 pin's note on why the slice
-/// has to start from a raw anchor).
+/// The comment glyph block, scrubbed — read from `canvas/render_sync.rs` since T-934.10 moved
+/// the pure belt there (see the T-784 pin's note on why the slice starts from a raw anchor).
 fn glyph_block() -> String {
     let anchor = format!("pub(crate) struct Comment{}", "Point");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!("../canvas/render_sync.rs");
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }

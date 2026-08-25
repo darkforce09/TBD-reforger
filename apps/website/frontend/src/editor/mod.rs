@@ -5,6 +5,9 @@
 // T-159.27/T-167 — Arsenal nest: loadout tab (arsenal/mod.rs), rules core, asset
 // catalog, 3D doll.
 pub mod arsenal;
+// T-934.10 — canvas nest: the pure render-sync helper belt (`canvas/render_sync`), split out of
+// `mission_editor`; overlays/boot/viewport/gestures follow in the later Phase B children.
+pub mod canvas;
 // T-159.21 Eden chrome — the docked shell was split by T-661 into the panel modules under
 // `panels/`; `eden_chrome` stays the re-export shim so consumers' paths survive splits.
 pub mod eden_chrome;

@@ -21,12 +21,12 @@ fn page() -> String {
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
 
-/// The T-784 glyph block, scrubbed. Sliced from the RAW source first, exactly as [`page`] is:
-/// `live_code` truncates at the FIRST `#[cfg(test)]` and this file has one at module level
-/// (a `cfg`-gated dev item near the top), so scrubbing the whole file yields nothing at all.
+/// The T-784 glyph block, scrubbed — sliced from the RAW source at the struct anchor, exactly as
+/// [`page`] is. T-934.10 moved the pure belt to `canvas/render_sync.rs`, so the definitions are
+/// read from there; the CALL-form pins below still read `mission_editor.rs`, where the wiring is.
 fn glyph_block() -> String {
     let anchor = format!("pub(crate) struct Comment{}", "Point");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!("../canvas/render_sync.rs");
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
