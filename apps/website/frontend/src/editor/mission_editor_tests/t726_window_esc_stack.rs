@@ -8,12 +8,10 @@ fn gate_needles() -> (String, String, String) {
     )
 }
 
-/// Overlays live above the page; scrub from the cold-registry const (after the early
-/// registry_session cfg(test)) so cut_test_module keeps production and drops later tests.
+/// The overlay components live in `editor/canvas/overlays.rs` (T-934.11). That file carries no
+/// `#[cfg(test)]`, so `live_code` scrubs it whole.
 fn overlays_region() -> String {
-    let cold = format!("const REGISTRY_{}", "COLD_PAGE");
-    let raw = include_str!("../mission_editor.rs");
-    live_code(&raw[raw.find(cold.as_str()).expect("cold anchor present")..])
+    live_code(include_str!("../canvas/overlays.rs"))
 }
 
 /// Page body — hosts the shared measure-tool Escape arm.

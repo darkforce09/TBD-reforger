@@ -3,7 +3,7 @@
 //! MENU-HELP-001).
 //!
 //! **The defect this closes.** The Mission Creator binds twenty-two distinct `KeyboardEvent` codes
-//! across thirteen window-level keydown listeners in eight editor-surface modules and, before this
+//! across thirteen window-level keydown listeners in nine editor-surface modules and, before this
 //! ticket, documented **none** of them anywhere in the UI: no Help menu, no hint overlay, and
 //! `context_menu`'s `with_shortcut` builder had zero callers. An operator's only route to `G`, `[`,
 //! `]`, `1`, `2`, `3`, `E`, `R` or Backspace was reading the Rust source.
@@ -392,8 +392,9 @@ pub fn ControlsHint(open: RwSignal<bool>) -> impl IntoView {
 ///
 /// The old extractor scraped only the two `match ev.code().as_str()` blocks (`mission_editor`'s
 /// editor keydown and `mission_history`'s Ctrl+Z/Y one). The editor binds keys in **eleven more
-/// window-level listeners** it could not see, all through `ev.key()`: the asset picker, the comment
-/// editor and the connections panel (`mission_editor`), the Attributes modal (`attributes`), the
+/// window-level listeners** it could not see, all through `ev.key()`: the asset picker, the
+/// comment editor and the connections panel (`overlays`, since T-934.11), the Attributes modal
+/// (`attributes`), the
 /// menus / export dropdown / Save dialog / **Controls Hint** (`eden_top_strip` — T-692's own close
 /// path), the context menu's Escape/arrows/Enter (`context_menu`), three settings dialogs
 /// (`eden_settings`), and — added by T-774, which found the input itself short by two — the Faction
@@ -618,7 +619,10 @@ pub(crate) mod keymap_census {
     /// on the file that owns the listener. Grep for the LISTENER HEADS, not for the component.
     fn editor_surface() -> Vec<(&'static str, &'static str, usize)> {
         vec![
-            ("mission_editor.rs", include_str!("../mission_editor.rs"), 4),
+            ("mission_editor.rs", include_str!("../mission_editor.rs"), 1),
+            // T-934.11 — the asset picker / comment editor / connections panel (each installing
+            // one Escape listener) moved out of `mission_editor.rs` into the canvas overlays file.
+            ("overlays.rs", include_str!("../canvas/overlays.rs"), 3),
             ("mission_history.rs", include_str!("../state/history.rs"), 1),
             ("attributes.rs", include_str!("attributes_modal.rs"), 1),
             ("top_strip.rs", include_str!("top_strip.rs"), 1),
@@ -1516,8 +1520,8 @@ mod t692_help_covers_every_binding {
     #[test]
     fn known_escape_ev_key_sites_are_censused() {
         let required: &[(&str, &str)] = &[
-            // wave-112 MINOR-4
-            ("mission_editor.rs", "asset picker / comment / connections"),
+            // wave-112 MINOR-4 (the three overlays moved file at T-934.11)
+            ("overlays.rs", "asset picker / comment / connections"),
             ("attributes.rs", "Attributes modal"),
             ("top_strip.rs", "menus / Save / Controls Hint"),
             // already on the surface when T-703 widened; still a drop-from-scrape trap

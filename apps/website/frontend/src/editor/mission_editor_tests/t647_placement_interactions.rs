@@ -96,16 +96,11 @@ fn asset_picker_is_an_ungated_overlay_that_arms_a_place() {
         "PLACE-003: the picker must mount beside the ungated dialogs (no chrome_hidden gate \
          between the context menu and it)"
     );
-    // The picker component arms the same place a DockRight leaf does. It is defined ABOVE the
-    // page, so the page-anchored `editor_live` slice misses it AND a whole-file scrub is cut at
-    // the file's first `#[cfg(test)]` (the `registry_session` helper near the top). Anchor from
-    // the cold-registry page-size const (after that helper, before this component) — exactly as
-    // the t573 pin does, so `cut_test_module` next fires on the real test modules far below. The
-    // anchor is reassembled (not written whole) so this line is not a second occurrence of it,
-    // which t573's own "exactly one" count would otherwise trip.
-    let cold_anchor = format!("const REGISTRY_{}", "COLD_PAGE");
-    let raw = include_str!("../mission_editor.rs");
-    let region = live_code(&raw[raw.find(cold_anchor.as_str()).expect("cold anchor present")..]);
+    // The picker component arms the same place a DockRight leaf does. T-934.11 moved its
+    // definition to `editor/canvas/overlays.rs` (the page still mounts it bare through the
+    // `mission_editor` re-export, which is what the mount pins above ride). That file carries no
+    // `#[cfg(test)]`, so `live_code` scrubs it whole — no anchor gymnastics needed.
+    let region = live_code(include_str!("../canvas/overlays.rs"));
     let comp = only_body(&region, "fn AssetPickerOverlay(");
     assert!(
         comp.contains("editor_ops::begin_place(payload")
@@ -194,11 +189,9 @@ fn the_comment_editor_is_ungated_and_authors_every_comment_field() {
         mount > ctx_menu && !ed[ctx_menu..mount].contains("(!chrome_hidden.get()).then("),
         "T-651: the comment editor must mount beside the ungated dialogs"
     );
-    // The component is defined ABOVE the page, so scrub from the same cold-registry anchor the
-    // picker pin uses (reassembled so this line is not a second occurrence of it).
-    let cold_anchor = format!("const REGISTRY_{}", "COLD_PAGE");
-    let raw = include_str!("../mission_editor.rs");
-    let region = live_code(&raw[raw.find(cold_anchor.as_str()).expect("cold anchor present")..]);
+    // The component definition lives in `editor/canvas/overlays.rs` (T-934.11); scrub that file
+    // whole, exactly as the picker pin above does.
+    let region = live_code(include_str!("../canvas/overlays.rs"));
     let comp = only_body(&region, "fn CommentEditorOverlay(");
     for op in [
         "editor_ops::rename_comment(",      // ATTR-FIELD-CMT-TITLE
