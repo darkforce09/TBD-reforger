@@ -1,24 +1,41 @@
 id = "T-934.8"
 kind = "work"
-parent = "T-934"
 title = "Reorg B2 — arsenal split"
 summary = "arsenal/mod.rs keeps ArsenalTab + class_r_scrub; pure loadout core → arsenal/loadout.rs; view fns → arsenal/panels.rs."
 class = "chore"
-status = "queued"
+status = "shipped"
 order = 6100
 spec = "docs/specs/website_reorg/plan.md"
 executor = "claude-code"
-created_at = "2026-08-25T00:00:00Z"
+notes = """
+Latent guard defect found: class_r_scrub::cut_test_module truncates at the FIRST
+#[cfg(test)] in a haystack, so scrubbing a concatenation of files examines nothing after
+file one's test tail. Pre-split this was invisible. Fixed call sites scrub-then-concat;
+the helper itself unchanged (its single-file contract is correct).
+"""
 depends_on = ["T-934.6"]
+parent = "T-934"
 main_goal = "Split 6,988-LOC arsenal; class_r_scrub does NOT move (6+ external callers)."
+context = ["Phase B: arsenal/mod.rs (7k) splits into loadout core + view panels; the crate-wide class_r_scrub scrubber and ArsenalTab stay put so 20+ external paths survive."]
 requirement = [
     "loadout.rs: loadout_to_picks, picks_to_*, try_export/import, buffer_*, plan_*, commit_*, receipts (~lines 224-1250).",
     "panels.rs: cargo_panel, doll_view, attachments_panel, compat_panel, paper_doll.",
     "Tests move adjacent; self-guards repointed.",
 ]
+current_state = ["Was: one 7,042-line mod.rs mixing pure loadout logic, five view panels, the scrubber, and 58 tests."]
+approach = [
+    "loadout.rs (3,041) pure core + 44 adjacent tests; panels.rs (596) five view fns; mod.rs keeps tab/scrubber/wiring tests with pub use re-exports.",
+    "Production-source helpers now scrub each file separately then concatenate — raw concat silently truncated at the first cfg(test) attr (latent cut_test_module behaviour, documented in the helpers).",
+]
 verify = ["cargo xtask mk ci-local-leptos"]
 acceptance = ["Gate green; class_r_scrub callers unchanged."]
-estimated = ["scope"]
+shipped_at = "f720afb39"
+created_at = "2026-08-25T00:00:00Z"
+completed_at = "2026-08-25T17:41:30Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = ["apps/website/frontend/src/editor/arsenal/"]
 
 [scope]
