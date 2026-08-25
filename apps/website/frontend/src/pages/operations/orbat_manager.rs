@@ -21,7 +21,7 @@ use map_engine_core::slot_line::format_slot_line;
 
 use crate::core::dto::{FactionDoc, RegistryItem, UserFaction};
 use crate::core::ui::MaterialIcon;
-use crate::outliner::{
+use crate::editor::panels::outliner::{
     filter_orbat_squads_by_side_key, flatten_visible, FlatRow, NodeKind, OutlinerNode,
     ORBAT_MANAGER_DIALOG_CLASS, ORBAT_MANAGER_EMPTY, VIRTUAL_SLOT_THRESHOLD,
 };
@@ -794,8 +794,8 @@ struct SlotDetail {
 
 #[derive(Clone, Debug, Default)]
 struct Snap {
-    factions: Vec<crate::outliner::FactionRow>,
-    squads: Vec<crate::outliner::SquadRow>,
+    factions: Vec<crate::editor::panels::outliner::FactionRow>,
+    squads: Vec<crate::editor::panels::outliner::SquadRow>,
     slots: Vec<SlotDetail>,
 }
 
@@ -830,10 +830,10 @@ fn read_snapshot() -> Snap {
     }
 }
 
-fn slot_rows_from(snap: &Snap) -> Vec<crate::outliner::SlotRow> {
+fn slot_rows_from(snap: &Snap) -> Vec<crate::editor::panels::outliner::SlotRow> {
     snap.slots
         .iter()
-        .map(|s| crate::outliner::SlotRow {
+        .map(|s| crate::editor::panels::outliner::SlotRow {
             id: s.id.clone(),
             role: s.role.clone(),
         })
@@ -1727,7 +1727,7 @@ mod tests {
             !window.contains("open_attributes"),
             "OPEN ARSENAL must not call open_attributes (Identity default)"
         );
-        let attrs = include_str!("../../attributes.rs");
+        let attrs = include_str!("../../editor/panels/attributes_modal.rs");
         assert!(
             attrs.contains(r#"["Transform", "Identity", "States", "Arsenal"]"#),
             "TABS[3] must be Arsenal"

@@ -1,9 +1,9 @@
 //! T-661 — the Mission Settings dialog (environment + flow + render prefs), split from
 //! `eden_chrome.rs`.
 //!
-//! Terrain (readonly) + time/weather author through [`crate::eden_env::author_env`] (T-193 gate);
+//! Terrain (readonly) + time/weather author through [`crate::editor::panels::env::author_env`] (T-193 gate);
 //! [`render_flow_section`] is the T-224 mission-flow block. Time and weather additionally mirror to
-//! the `missions` row through [`crate::eden_top_strip::RowMirror`] (T-192). Renders no DOM while
+//! the `missions` row through [`crate::editor::panels::top_strip::RowMirror`] (T-192). Renders no DOM while
 //! closed; the doc-reading halves are wasm-only.
 //!
 //! **T-691 (Eden NEW-F2 + 3den E6) — editor preferences, separated from mission settings.** Eden
@@ -78,7 +78,7 @@
 use leptos::prelude::*;
 
 use crate::core::ui::MaterialIcon;
-use crate::eden_env::ENV_UNCARRIED_NOTE;
+use crate::editor::panels::env::ENV_UNCARRIED_NOTE;
 
 // T-691 — the Editor Preferences dialog's open flag, parked here from `MissionSettingsDialog`'s
 // setup so the pointer row (and any future in-owns caller) can arm it without threading a prop
@@ -553,7 +553,7 @@ impl ShapeMirror {
     /// reverted one.
     fn load(self, shape: RwSignal<Option<RowShape>>) {
         let id = self.mission_id.get_value();
-        if !crate::eden_top_strip::is_mission_row_id(&id) {
+        if !crate::editor::panels::top_strip::is_mission_row_id(&id) {
             shape.set(None);
             return;
         }
@@ -629,7 +629,7 @@ impl ShapeMirror {
         let Some(previous) = shape.get_untracked() else {
             return;
         };
-        if !crate::eden_top_strip::is_mission_row_id(&id)
+        if !crate::editor::panels::top_strip::is_mission_row_id(&id)
             || !is_known_game_mode(&next)
             || previous.game_mode == next
         {
@@ -689,7 +689,9 @@ impl ShapeMirror {
         let Some(previous) = shape.get_untracked() else {
             return;
         };
-        if !crate::eden_top_strip::is_mission_row_id(&id) || field.read(&previous) == next {
+        if !crate::editor::panels::top_strip::is_mission_row_id(&id)
+            || field.read(&previous) == next
+        {
             return;
         }
         if field == PresentationField::Thumbnail && !is_acceptable_thumbnail_url(&next) {
@@ -749,13 +751,13 @@ impl ShapeMirror {
 }
 
 #[cfg(target_arch = "wasm32")]
-use crate::eden_env::{
+use crate::editor::panels::env::{
     author_env, fmt_duration_secs, parse_flow_seconds, read_flow_jip, read_flow_seconds,
     FLOW_DEFAULT_BRIEFING_S, FLOW_DEFAULT_SAFESTART_S, FLOW_DEFAULT_TIMELIMIT_S, JIP_OPTIONS,
     SETTINGS_UNREAD_NOTE,
 };
 #[cfg(target_arch = "wasm32")]
-use crate::eden_top_strip::RowMirror;
+use crate::editor::panels::top_strip::RowMirror;
 
 /// Mission Settings dialog (MissionSettingsDialog.tsx — environment half). Terrain (readonly) +
 /// time / weather flow through [`author_env`] (one undo step each); the render-pref controls (map
@@ -1614,7 +1616,7 @@ fn render_editor_prefs_body() -> AnyView {
  *
  * (2) **ROWS CLICK THROUGH TO THE OWNING ENTITY** (wog.md 14.6 — a findings list that only prints is
  *     worse than one that selects). The click goes through T-655's SHIPPED router,
- *     [`crate::validation_panel::route_select_by_subject_id`], not a second selection path.
+ *     [`crate::editor::panels::validation_panel::route_select_by_subject_id`], not a second selection path.
  *
  *     **T-754 — and the affordance is TRUE, row by row.** The wave-115 verifier found this view
  *     styling every entity row `cursor-pointer` over a click that could only produce a toast: the
@@ -1660,10 +1662,10 @@ fn render_editor_prefs_body() -> AnyView {
 
 /// `mission.schema.json` — the ONE source of every default this view reports.
 ///
-/// T-757: read [`crate::eden_zones::MISSION_SCHEMA`] rather than a second `include_str!`. That const
+/// T-757: read [`crate::editor::panels::zones_panel::MISSION_SCHEMA`] rather than a second `include_str!`. That const
 /// carries the full argument (`$defs/zoneRules` is `additionalProperties: false` so consumers do not
 /// invent a copy). One embed, two readers; the schema path is named once.
-const MISSION_SCHEMA_JSON: &str = crate::eden_zones::MISSION_SCHEMA;
+const MISSION_SCHEMA_JSON: &str = crate::editor::panels::zones_panel::MISSION_SCHEMA;
 
 /// Where a row's default came from — and, for the two negative cases, why there isn't one.
 ///
@@ -2047,10 +2049,10 @@ pub const OWNER_UNRESOLVED_NOTE: &str = "That owner could not be selected — it
 /// **Wave 129 (F7) — it asks the REGISTERED PROBE, not the router directly.** T-754 shipped this
 /// function calling `mission_editor::route_target` over the small-maps root, which was a THIRD
 /// independent copy of "can this subject be clicked" — and it never got F6's narrowing. The click
-/// runs [`crate::validation_panel::route_select_by_subject_id`], whose router REFUSES a
+/// runs [`crate::editor::panels::validation_panel::route_select_by_subject_id`], whose router REFUSES a
 /// `RouteTarget::Zone` while the Zones panel is unmounted, so with the dock hidden (Backspace, which
 /// this dialog deliberately survives) a zone row still painted `cursor-pointer` over a click that
-/// did nothing. [`crate::validation_panel::subject_id_routes`] is an `Rc::clone` of the very
+/// did nothing. [`crate::editor::panels::validation_panel::subject_id_routes`] is an `Rc::clone` of the very
 /// resolver the click uses, so asking it makes the affordance and the click ONE decision — including
 /// the mount state neither `route_target` nor the document root can see.
 ///
@@ -2066,7 +2068,7 @@ pub const OWNER_UNRESOLVED_NOTE: &str = "That owner could not be selected — it
 pub fn owner_is_routable(owner: &SettingOwner) -> bool {
     owner
         .subject_id()
-        .is_some_and(crate::validation_panel::subject_id_routes)
+        .is_some_and(crate::editor::panels::validation_panel::subject_id_routes)
 }
 
 /// The row's cursor/hover classes — **the affordance itself, as a function of one boolean**, so
@@ -2205,13 +2207,13 @@ fn render_all_settings_body(only_diffs: RwSignal<bool>) -> AnyView {
         let toggle_class = if filtered {
             format!(
                 "rounded-md px-2.5 py-1.5 text-label-md {} {}",
-                crate::eden_layout::TOGGLED_PLATE,
-                crate::eden_layout::HOVER_FILL
+                crate::editor::layout::TOGGLED_PLATE,
+                crate::editor::layout::HOVER_FILL
             )
         } else {
             format!(
                 "rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface-variant {}",
-                crate::eden_layout::HOVER_FILL
+                crate::editor::layout::HOVER_FILL
             )
         };
 
@@ -2303,7 +2305,7 @@ fn setting_row_view(
     let owner_label = row.owner.label();
     let click_id = subject.clone().unwrap_or_default();
     let click_owner = owner_label.clone();
-    let key_label = crate::eden_zones::humanize_key(&row.key);
+    let key_label = crate::editor::panels::zones_panel::humanize_key(&row.key);
     let value_text = fmt_setting_value(&row.value);
     let default_text = fmt_setting_default(&row.default);
     // The pointer the default was READ FROM, on the row itself. An author who doubts a diff can go
@@ -2362,7 +2364,7 @@ fn setting_row_view(
                     // path. Only a row the router RESOLVES is clickable at all (T-754), so the toast is
                     // now the race — the entity went away between this list being built and the click —
                     // rather than the everyday outcome it used to be for every zone row.
-                    if !crate::validation_panel::route_select_by_subject_id(&click_id) {
+                    if !crate::editor::panels::validation_panel::route_select_by_subject_id(&click_id) {
                         toasts.message(format!("{click_owner} — {OWNER_UNRESOLVED_NOTE}"));
                     }
                 }
@@ -2417,7 +2419,7 @@ mod t691_editor_prefs_split {
     /// pasting back) the basemap buttons or the 12 layer toggles into Mission Settings.
     #[test]
     fn mission_settings_render_prefs_holds_no_world_layer_toggles() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let body = only_body(&src, &format!("fn render{}", "_prefs_section"));
         for needle in store_call_needles() {
             assert!(
@@ -2439,7 +2441,7 @@ mod t691_editor_prefs_split {
     /// the component rather than via the helper).
     #[test]
     fn mission_settings_dialog_body_holds_no_store_calls() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let body = only_body(&src, &format!("fn Mission{}", "SettingsDialog"));
         for needle in store_call_needles() {
             assert!(
@@ -2457,7 +2459,7 @@ mod t691_editor_prefs_split {
     /// `render_editor_prefs_body`, sliced out here.
     #[test]
     fn editor_preferences_dialog_writes_no_author_env() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let body = only_body(&src, &format!("fn render{}", "_editor_prefs_body"));
         let author = format!("author{}", "_env");
         assert!(
@@ -2480,7 +2482,7 @@ mod t691_editor_prefs_split {
     /// the pointer-row call.
     #[test]
     fn editor_preferences_opener_is_wired() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let opener = format!("open{}", "_editor_preferences");
         let mount = format!("Editor{}", "PreferencesDialog");
         let register = format!("set{}", "_prefs_signal");
@@ -2568,7 +2570,7 @@ mod t746_shape_flight {
     /// Production ShapeMirror must call the sequencer — not merely document it.
     #[test]
     fn shape_mirror_wires_the_sequencer() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         for (fn_name, needles) in [
             (
                 "fn load",
@@ -2629,7 +2631,7 @@ mod t694_mission_shape {
         PLAYER_COUNT_RULING_NOTE, SLOTS_PLACED_NOTE,
     };
     use crate::arsenal::class_r_scrub::{live_code, only_body};
-    use crate::eden_top_strip::is_mission_row_id;
+    use crate::editor::panels::top_strip::is_mission_row_id;
 
     /// The select's table is the server's enum. `handlers/missions.rs::valid_game_mode` maps exactly
     /// `pve_coop` / `pvp` / `zeus` and 400s the rest, so drift here ships a control that can only
@@ -2759,7 +2761,7 @@ mod t694_mission_shape {
     /// so `t782_player_count_ruling` pins the other half, that the sourced count is the one shown.
     #[test]
     fn player_count_comes_from_the_document_slot_count() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let body = only_body(&src, &format!("fn render{}", "_shape_section"));
         assert!(
             body.contains(&format!("slot{}", "_count")),
@@ -2777,7 +2779,7 @@ mod t694_mission_shape {
     /// control, or a `max(placed, declared)` that quietly picks a winner.
     #[test]
     fn shape_section_invents_no_player_limit() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let body = only_body(&src, &format!("fn render{}", "_shape_section"));
         for banned in [
             format!("min{}", "_players"),
@@ -2805,7 +2807,7 @@ mod t694_mission_shape {
     /// into the document (where nothing would read it) or dropping the mirror call entirely.
     #[test]
     fn game_mode_select_patches_the_missions_row() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let setter = format!("set{}", "_game_mode");
 
         // (a) the section's control calls the setter and offers the table's options.
@@ -2891,7 +2893,7 @@ mod t782_player_count_ruling {
     /// it is calling something that reaches the row on this function's behalf.
     #[test]
     fn the_seam_reads_the_document_count_and_nothing_else() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let seam = format!("fn player{}", "_figure");
         let body: String = only_body(&src, &seam).split_whitespace().collect();
         assert_eq!(
@@ -2907,7 +2909,7 @@ mod t782_player_count_ruling {
     /// house rule): a bypass moved into a neighbouring helper is still a bypass.
     #[test]
     fn the_displayed_players_figure_goes_through_the_seam() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let body = only_body(&src, &format!("fn render{}", "_shape_section"));
         assert!(
             body.contains(&format!("player{}()", "_figure")),
@@ -2925,7 +2927,7 @@ mod t782_player_count_ruling {
         // scrub: `live_code` blanks class strings and copy, so these needles are invisible to it.
         // (Stated positively — a negative needle here could not be whole-file, because the same
         // two-column grid is a legitimate layout for Time and Weather further up this file.)
-        let lit = live_source(include_str!("eden_settings.rs"));
+        let lit = live_source(include_str!("settings_modal.rs"));
         let lit_body = only_body(&lit, &format!("fn render{}", "_shape_section"));
         assert!(
             lit_body.contains(&format!("text-headline{}", "-sm")),
@@ -2946,7 +2948,7 @@ mod t782_player_count_ruling {
     /// a value the compiler still ships.
     #[test]
     fn the_declared_cap_is_kept_and_labelled() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         assert!(
             src.contains(&format!("max{}", "_players")),
             "T-782: `max_players` reaches the compiled mission — the display ruling must not delete it"
@@ -3023,17 +3025,17 @@ mod t688_aggregated_settings {
     /// T-757 — zones + settings share ONE `include_str!` of mission.schema.json.
     ///
     /// Perturbation this catches: restoring a second `include_str!` in this file, or dropping the
-    /// `crate::eden_zones::MISSION_SCHEMA` alias so the view re-embeds. Needle path is assembled so
+    /// `crate::editor::panels::zones_panel::MISSION_SCHEMA` alias so the view re-embeds. Needle path is assembled so
     /// this test cannot become its own haystack; `live_code` drops cfg(test) so the pin cannot match
     /// itself.
     #[test]
     fn zones_and_settings_share_one_mission_schema_embed() {
         // live_source keeps string literals (needed to see the include_str path); live_code would blank them.
-        let zones = live_source(include_str!("eden_zones.rs"));
-        let settings = live_source(include_str!("eden_settings.rs"));
+        let zones = live_source(include_str!("zones_panel.rs"));
+        let settings = live_source(include_str!("settings_modal.rs"));
         let path = format!(
             "{}{}{}",
-            "../../../../packages/tbd-schema/schema/", "mission", ".schema.json"
+            "../../../../../../packages/tbd-schema/schema/", "mission", ".schema.json"
         );
         let embed = format!("include_str!(\"{path}\")");
         assert_eq!(
@@ -3050,15 +3052,18 @@ mod t688_aggregated_settings {
             0,
             "T-757: eden_settings must not re-embed mission.schema.json"
         );
-        let shared = format!("{}{}{}", "crate::eden_zones::", "MISSION", "_SCHEMA");
+        let shared = format!(
+            "{}{}{}",
+            "crate::editor::panels::zones_panel::", "MISSION", "_SCHEMA"
+        );
         assert!(
             settings.contains(&shared),
-            "T-757: eden_settings must read crate::eden_zones::MISSION_SCHEMA"
+            "T-757: eden_settings must read crate::editor::panels::zones_panel::MISSION_SCHEMA"
         );
         // Stale size lore (~40 KB vs ~91 KB) — drop rather than restate a drifting number.
         // live_source blanks comments; the ticket defect was comment lore, so read the zones file
         // raw (wave-135 F2). Restoring `~40 KB` in a doc-comment must RED.
-        let zones_raw = include_str!("eden_zones.rs");
+        let zones_raw = include_str!("zones_panel.rs");
         let stale = format!("{}{}", "~40 ", "KB");
         assert!(
             !zones_raw.contains(&stale),
@@ -3209,7 +3214,7 @@ mod t688_aggregated_settings {
         // …and the constants themselves are named nowhere in the aggregation or its rendering.
         // T-755: also scan `from_schema_node` itself — the prior list stopped at five callers and
         // left the ONE value-carrying constructor free to substitute a FLOW_DEFAULT_*.
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let banned = format!("FLOW{}", "_DEFAULT_");
         for f in [
             format!("fn aggregate{}", "_settings"),
@@ -3236,7 +3241,7 @@ mod t688_aggregated_settings {
     /// needle missed (wave-115 MINOR-2 / T-755).
     #[test]
     fn a_default_value_is_built_in_exactly_one_place() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let self_ctor = format!("Self::{} {{", "Schema");
         assert_eq!(
             src.matches(&self_ctor).count(),
@@ -3261,7 +3266,7 @@ mod t688_aggregated_settings {
             "T-688/T-755/wave-134: exactly one `::Schema {{ value: … }}` constructor (Self:: in              from_schema_node) — a path- or alias-spelled second site is a second source of truth"
         );
         // …and that one site reads the schema's own `default` key rather than deciding anything.
-        let lit = live_source(include_str!("eden_settings.rs"));
+        let lit = live_source(include_str!("settings_modal.rs"));
         let body = only_body(&lit, &format!("fn from{}", "_schema_node"));
         assert!(
             body.contains("\"default\""),
@@ -3427,7 +3432,7 @@ mod t688_aggregated_settings {
     /// dropping an `<input>`/`<select>`/`<textarea>` into a row "just for the numbers".
     #[test]
     fn the_aggregated_view_is_not_a_second_editing_surface() {
-        let src = live_source(include_str!("eden_settings.rs"));
+        let src = live_source(include_str!("settings_modal.rs"));
         let editing_needles = [
             format!("author{}", "_env"),
             format!("update{}", "_environment"),
@@ -3463,7 +3468,7 @@ mod t688_aggregated_settings {
     /// and does nothing with it.
     #[test]
     fn rows_click_through_the_shipped_t655_router() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let body = only_body(&src, &format!("fn setting{}", "_row_view"));
         assert!(
             body.contains(&format!("route{}", "_select_by_subject_id")),
@@ -3554,7 +3559,7 @@ mod t688_aggregated_settings {
     /// is mounted as a sibling so it outlives that dialog being closed (the T-691 idiom).
     #[test]
     fn the_view_is_reachable_from_mission_settings() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let dialog = only_body(&src, "fn MissionSettingsDialog");
         assert!(
             dialog.contains(&format!("render{}", "_all_settings_pointer")),
@@ -3615,8 +3620,8 @@ mod t754_click_affordance {
         OWNER_UNRESOLVED_NOTE,
     };
     use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::panels::validation_panel::register_route_probe;
     use crate::mission_editor::{route_target, RouteTarget};
-    use crate::validation_panel::register_route_probe;
     use serde_json::json;
 
     /// Install the probe exactly as `mission_editor`'s mount installs it: the router's own
@@ -3845,7 +3850,7 @@ mod t754_click_affordance {
     /// un-narrowed copy of the decision that the click had already stopped agreeing with.
     #[test]
     fn the_affordance_asks_the_registered_probe_and_not_the_router_directly() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let routable = only_body(&src, &format!("fn owner{}", "_is_routable"));
         assert!(
             routable.contains(&format!("subject_id{}", "_routes")),
@@ -3888,7 +3893,7 @@ mod t754_click_affordance {
         );
         // Source side: the walk mints ONE `kind:`, so a second entity family cannot slip in without
         // this pin (and the slot predicate the probe is registered with) being revisited.
-        let src = live_source(include_str!("eden_settings.rs"));
+        let src = live_source(include_str!("settings_modal.rs"));
         let body = only_body(&src, &format!("fn aggregate{}", "_settings"));
         let kind_writes = body.matches(&format!("kind{}", ": \"")).count();
         assert_eq!(
@@ -3912,7 +3917,7 @@ mod t754_click_affordance {
     /// `the_affordance_asks_the_registered_probe_and_not_the_router_directly` owns that half.
     #[test]
     fn the_affordance_and_the_click_ask_the_same_question() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let row = only_body(&src, &format!("fn setting{}", "_row_view"));
         assert!(
             row.contains(&format!("row{}", "_cursor_class(")),
@@ -3932,7 +3937,7 @@ mod t754_click_affordance {
              selectable, and not a second resolution of the router either"
         );
         // Literals kept: the row must not hand-roll the affordance beside the function that owns it.
-        let lit = live_source(include_str!("eden_settings.rs"));
+        let lit = live_source(include_str!("settings_modal.rs"));
         let row_lit = only_body(&lit, &format!("fn setting{}", "_row_view"));
         assert!(
             !row_lit.contains(&format!("cursor{}", "-pointer")),
@@ -3968,7 +3973,7 @@ mod t754_click_affordance {
 mod t758_inert_row_a11y {
     use super::{inert_settings_row_reason, owner_is_routable, row_cursor_class, SettingOwner};
     use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
-    use crate::validation_panel::register_route_probe;
+    use crate::editor::panels::validation_panel::register_route_probe;
 
     /// Mission-owned rows name no entity: they are never routable, wear no pointer, and carry an
     /// explicit inert reason. Perturbation RED: make `inert_settings_row_reason(Mission)` return an
@@ -4025,7 +4030,7 @@ mod t758_inert_row_a11y {
     /// Literals kept (`live_source`): the claim is about the attributes/tags that ship.
     #[test]
     fn an_inert_row_is_not_a_focusable_button() {
-        let lit = live_source(include_str!("eden_settings.rs"));
+        let lit = live_source(include_str!("settings_modal.rs"));
         let row = only_body(&lit, &format!("fn setting{}", "_row_view"));
         assert!(
             row.contains("if selectable") || row.contains("if clickable"),
@@ -4061,7 +4066,7 @@ mod t758_inert_row_a11y {
     /// clicks on unroutable entities.
     #[test]
     fn inert_shape_still_asks_subject_id_routes_not_a_kind_list() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let routable = only_body(&src, &format!("fn owner{}", "_is_routable"));
         assert!(
             routable.contains(&format!("subject_id{}", "_routes")),
@@ -4233,7 +4238,7 @@ mod t671_mission_presentation {
     /// the setter call and leaving a control that repaints and saves nothing.
     #[test]
     fn presentation_reaches_the_missions_row_by_patch() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let setter = format!("set{}", "_presentation");
         let body = only_body(&src, &format!("fn render{}", "_presentation_section"));
         assert!(
@@ -4274,7 +4279,7 @@ mod t671_mission_presentation {
     /// Perturbation this catches: swapping either handler to `on:input`, with or without a debounce.
     #[test]
     fn the_presentation_controls_commit_on_settle() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let body = only_body(&src, &format!("fn render{}", "_presentation_section"));
         assert!(
             body.contains(&format!("on:{}", "change")),
@@ -4304,7 +4309,7 @@ mod t671_mission_presentation {
     /// (which would put a refused briefing into the export).
     #[test]
     fn a_saved_briefing_reaches_the_documents_meta() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let mirror = format!("mirror{}", "_briefing_into_document");
         assert!(
             only_body(&src, &format!("fn set{}", "_presentation")).contains(&format!("{mirror}(")),
@@ -4322,7 +4327,7 @@ mod t671_mission_presentation {
     /// case a writer-side check cannot cover.
     #[test]
     fn the_preview_checks_the_url_at_the_sink() {
-        let src = live_source(include_str!("eden_settings.rs"));
+        let src = live_source(include_str!("settings_modal.rs"));
         let body = only_body(&src, &format!("fn render{}", "_presentation_section"));
         let guard = format!("is{}", "_acceptable_thumbnail_url");
         let img = format!("<{}", "img");
@@ -4343,7 +4348,7 @@ mod t766_clear_briefing_mirror {
     /// The blank arm must call the clear mutator — early-return on empty was the wave-117 defect.
     #[test]
     fn clearing_a_briefing_calls_the_clear_mutator() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let mirror = format!("mirror{}", "_briefing_into_document");
         let body = only_body(&src, &format!("fn {mirror}"));
         let clear = format!("clear{}", "_meta_briefing");
@@ -4377,7 +4382,7 @@ mod t766_clear_briefing_mirror {
     /// text). Pin reachability: no trim-empty gate between `Briefing =>` and the call.
     #[test]
     fn blank_next_reaches_the_mirror_at_the_ok_briefing_arm() {
-        let src = live_code(include_str!("eden_settings.rs"));
+        let src = live_code(include_str!("settings_modal.rs"));
         let mirror = format!("mirror{}", "_briefing_into_document");
         let set = only_body(&src, &format!("fn set{}", "_presentation"));
         let call = format!("{mirror}(&next)");
@@ -4406,7 +4411,7 @@ mod t726_settings_esc_stack {
     use crate::arsenal::class_r_scrub::{live_code, only_body};
 
     fn prod() -> String {
-        live_code(include_str!("eden_settings.rs"))
+        live_code(include_str!("settings_modal.rs"))
     }
 
     fn gate_needles() -> (String, String, String) {

@@ -2,7 +2,13 @@
 //! program: library/tools/world_assets first, panels/state/arsenal/canvas in
 //! later batches.
 
+// T-159.21 Eden chrome — the docked shell was split by T-661 into the panel modules under
+// `panels/`; `eden_chrome` stays the re-export shim so consumers' paths survive splits.
+pub mod eden_chrome;
+// T-661 — layout consts feed `tools/select_tool` / `mission_editor`.
+pub mod layout;
 pub mod library;
+pub mod panels;
 // T-172 B9 — pure SZ payload estimator (missionSize.ts port), native-tested.
 pub mod mission_size;
 pub mod tools;

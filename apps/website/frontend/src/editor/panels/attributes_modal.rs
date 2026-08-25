@@ -1952,7 +1952,7 @@ mod tests {
     use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
     fn attrs_src() -> String {
-        live_code(include_str!("attributes.rs"))
+        live_code(include_str!("attributes_modal.rs"))
     }
 
     /// ATTR-FIELD-OBJ-TYPE + ATTR-FIELD-OBJ-ROLE-DESC — both fields exist in the Identity tab and
@@ -2010,7 +2010,7 @@ mod tests {
     /// about user-visible copy, which is the one thing `live_code` deliberately cannot see.
     #[test]
     fn the_two_new_fields_are_labelled_type_and_role_description() {
-        let src = live_source(include_str!("attributes.rs"));
+        let src = live_source(include_str!("attributes_modal.rs"));
         let body = only_body(&src, "fn identity_tab(");
         assert!(body.contains("\"Type\""), "the type field is labelled Type");
         assert!(
@@ -2073,7 +2073,7 @@ mod tests {
     /// column — not because the mutator was missing.
     #[test]
     fn read_attrs_reads_asset_id_and_description_from_the_raw_slot_rows() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("../../editor_ops.rs"));
         let body = only_body(&ops, "pub fn read_attrs(id: &str) -> Option<SlotAttrs>");
         assert!(
             body.contains("raw_slot_rows(core)"),
@@ -2097,7 +2097,7 @@ mod tests {
     /// drop the existence needle (proves the pin is about production, not this test module).
     #[test]
     fn read_attrs_gates_existence_on_raw_rows_not_soa_membership() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("../../editor_ops.rs"));
         let body = only_body(&ops, "pub fn read_attrs(id: &str) -> Option<SlotAttrs>");
         let raw_gate = "!rows.contains_key(id)";
         assert!(
@@ -2146,7 +2146,7 @@ mod tests {
     /// host (Esc listener + None arm). `live_code` blanks comments; `live_source` keeps call paths.
     #[test]
     fn attributes_modal_none_arm_still_closes_on_true_absence() {
-        let code = live_code(include_str!("attributes.rs"));
+        let code = live_code(include_str!("attributes_modal.rs"));
         let host = only_body(&code, "pub fn AttributesModal(");
         assert!(
             host.contains("read_attrs(&id)"),
@@ -2159,7 +2159,7 @@ mod tests {
 {host}",
             host.matches("close_attributes()").count()
         );
-        let src = live_source(include_str!("attributes.rs"));
+        let src = live_source(include_str!("attributes_modal.rs"));
         let host_src = only_body(&src, "pub fn AttributesModal(");
         assert!(
             host_src.contains("read_attrs(&id)")
@@ -2172,7 +2172,7 @@ mod tests {
     /// original columns are not dragged along by a commit that only touches a new one.
     #[test]
     fn attrs_update_slot_routes_the_new_fields_through_update_slot_object() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("../../editor_ops.rs"));
         let body = only_body(&ops, "pub fn attrs_update_slot(");
         assert!(
             body.contains("core.update_slot_object(id, asset_id, description)"),
@@ -2194,7 +2194,7 @@ mod tests {
     /// RED: strip `!raw_slot_rows(core).contains_key(id) → false`.
     #[test]
     fn attrs_update_slot_noops_when_all_none_or_id_missing() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("../../editor_ops.rs"));
         let body = only_body(&ops, "pub fn attrs_update_slot(");
 
         // (1) five-field all-None early `return` before `let did`
@@ -2411,7 +2411,7 @@ mod tests {
     /// arrows back to the browser, so both are asserted here.
     #[test]
     fn the_nudge_is_bound_to_the_page_and_arrow_keys_and_never_steps_on_a_grid() {
-        let src = live_source(include_str!("attributes.rs"));
+        let src = live_source(include_str!("attributes_modal.rs"));
         let field = only_body(&src, "fn number_field(");
         for key in ["\"PageUp\"", "\"PageDown\"", "\"ArrowUp\"", "\"ArrowDown\""] {
             assert!(field.contains(key), "number_field must bind {key}");
@@ -2512,7 +2512,7 @@ mod tests {
         );
         // `live_source` KEEPS literals: `format!("{value}")` is the assertion here, and `live_code`
         // blanks exactly the part that distinguishes it from a rounded format string.
-        let live_src = live_source(include_str!("attributes.rs"));
+        let live_src = live_source(include_str!("attributes_modal.rs"));
         let live = only_body(&live_src, "fn number_field(");
         assert!(
             live.contains("let exact = StoredValue::new(format!(\"{value}\"));"),
@@ -2636,7 +2636,7 @@ mod tests {
         // Enter commits by blurring — one seam shared with the blur path, never a second `on_change`.
         // The key is a string LITERAL, so it is read from the literal-kept half (`attrs_src` /
         // `live_code` blanks it); `.blur()` is code and survives either way.
-        let live_src = live_source(include_str!("attributes.rs"));
+        let live_src = live_source(include_str!("attributes_modal.rs"));
         let live_field = only_body(&live_src, "fn text_field(");
         assert!(
             live_field.contains("\"Enter\" =>") && field.contains(".blur()"),
@@ -2696,7 +2696,7 @@ mod tests {
             "text_field must stay disabled while the gate is locked — the 'Multiple values'              locked-state the review said must not regress"
         );
         // T-813 / wave200 F6 — field Escape must consume so the modal does not close on abandon.
-        let live = live_source(include_str!("attributes.rs"));
+        let live = live_source(include_str!("attributes_modal.rs"));
         let live_field = only_body(&live, "fn text_field(");
         assert!(
             live_field.contains("\"Escape\" =>") && live_field.contains("stop_propagation()"),
@@ -2722,7 +2722,7 @@ mod tests {
     /// same shape as the `editor_ops.rs` pins in this module.
     #[test]
     fn the_chord_guard_reads_active_element_tag_and_content_editable_directly() {
-        let mh = live_code(include_str!("mission_history.rs"));
+        let mh = live_code(include_str!("../../mission_history.rs"));
         let body = only_body(&mh, "pub fn in_editable_field() -> bool");
         // The source of truth is the LIVE focused node, fetched every call.
         assert!(
@@ -2758,7 +2758,7 @@ mod tests {
     /// A source pin because `editor_ops` is wasm32-only and `cargo test` cannot build it.
     #[test]
     fn an_attributes_x_or_y_commit_carries_the_slots_current_z_back_in() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("../../editor_ops.rs"));
         // Single-slot still goes through update_slot_position.
         {
             let f = "pub fn attrs_update_position(";
@@ -2817,7 +2817,7 @@ mod tests {
         // And the read is off the EXACT raw row, not the materialized SoA: the SoA's `zs` is f32 (a
         // round-trip would rewrite the authored value) and it OMITS slots on hidden layers (T-665),
         // where a failed read is a zeroed z.
-        let live_ops = live_source(include_str!("editor_ops.rs"));
+        let live_ops = live_source(include_str!("../../editor_ops.rs"));
         let read = only_body(&live_ops, "fn slot_z(");
         assert!(
             read.contains("\"position\"") && read.contains("\"z\""),
@@ -2843,7 +2843,7 @@ mod tests {
     /// test inside it is built by the native harness.
     #[test]
     fn a_placement_commit_carries_each_slots_current_z_back_in() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("../../editor_ops.rs"));
         let body = only_body(&ops, "fn commit_positions(");
         // The old zeroing write, verbatim: x and y set, z hard-coded absent.
         assert!(
@@ -2914,7 +2914,7 @@ mod tests {
     /// this one cannot see the document, that one cannot see which value the frontend chooses.
     #[test]
     fn a_paste_carries_each_copied_slots_authored_z_into_the_copy() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("../../editor_ops.rs"));
         // FILE-WIDE, not scoped to the paste body: the failure mode is the literal coming back, and
         // it does not have to come back in the function it was removed from.
         let flattening_push = ["zs.push(", "0.0)"].concat();
@@ -2927,7 +2927,7 @@ mod tests {
         // reader to restore the behaviour the operator just removed. Checked on RAW source because
         // `live_code` strips exactly the thing under test.
         assert!(
-            !include_str!("editor_ops.rs").contains("DEM not ready"),
+            !include_str!("../../editor_ops.rs").contains("DEM not ready"),
             "the paste's parity rationale was overruled on 2026-08-08 and must not be left standing"
         );
 
@@ -3079,7 +3079,7 @@ mod tests {
     /// `modal_view`.
     #[test]
     fn multi_edit_copy_names_slots_not_every_selected_entity() {
-        let src = live_source(include_str!("attributes.rs"));
+        let src = live_source(include_str!("attributes_modal.rs"));
         let body = only_body(&src, "fn modal_view(");
         assert!(
             body.contains("every selected slot"),
@@ -3098,7 +3098,7 @@ mod tests {
     /// `attrs_multi_ids` still filters to SoA slot ids — the subset the header is honest about.
     #[test]
     fn attrs_multi_ids_still_filters_selection_to_slot_soa() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("../../editor_ops.rs"));
         let body = only_body(&ops, "pub fn attrs_multi_ids(open_id: &str) -> Vec<String>");
         assert!(
             body.contains("soa.ids.iter().any(|r| r == s)"),
@@ -3119,7 +3119,7 @@ mod t726_attributes_esc_stack {
 
     #[test]
     fn attributes_modal_gates_escape_on_modal_stack() {
-        let code = live_code(include_str!("attributes.rs"));
+        let code = live_code(include_str!("attributes_modal.rs"));
         let body = only_body(&code, "pub fn AttributesModal(");
         let reg = ["modal_stack", "::", "register("].concat();
         let top = ["modal_stack", "::", "is_topmost_open(modal_id)"].concat();
@@ -3147,7 +3147,7 @@ mod t807_transform_tab_copy {
     /// The old promise must be gone from the whole live source.
     #[test]
     fn stale_dem_manual_hint_is_gone() {
-        let code = live_source(include_str!("attributes.rs"));
+        let code = live_source(include_str!("attributes_modal.rs"));
         // Concat so this test's own literal cannot self-match.
         let stale = ["Z is manual until terrain elevation ", "(DEM) ships"].concat();
         assert!(
@@ -3160,7 +3160,7 @@ mod t807_transform_tab_copy {
     /// Pinned to `transform_tab`'s body so it is the coordinate fields, not a stray literal.
     #[test]
     fn coordinate_fields_suffix_metres() {
-        let code = live_source(include_str!("attributes.rs"));
+        let code = live_source(include_str!("attributes_modal.rs"));
         let body = only_body(&code, "fn transform_tab(");
         // Three coordinate fields, each `Some("m")`; Rotation keeps its own `Some("°")`.
         let m_suffix = body.matches("Some(\"m\")").count();
@@ -3227,13 +3227,13 @@ mod t810_type_picker_revert_axes {
     /// `field_label`'s body: it must consult `axis_chip_class(label)` and mark the swatch aria-hidden.
     #[test]
     fn the_axis_chip_rides_the_label_and_is_aria_hidden() {
-        let code = live_code(include_str!("attributes.rs"));
+        let code = live_code(include_str!("attributes_modal.rs"));
         let body = only_body(&code, "fn field_label(");
         assert!(
             body.contains("axis_chip_class(label)"),
             "field_label must derive the chip from the label; body was:\n{body}"
         );
-        let src = live_source(include_str!("attributes.rs"));
+        let src = live_source(include_str!("attributes_modal.rs"));
         let body_src = only_body(&src, "fn field_label(");
         assert!(
             body_src.contains("aria-hidden"),
@@ -3248,7 +3248,7 @@ mod t810_type_picker_revert_axes {
     /// pins the exact `commit_slot(...)` shape; this pins that the ENTRY became the picker.)
     #[test]
     fn the_type_field_is_the_searchable_picker_not_a_freetext_field() {
-        let code = live_code(include_str!("attributes.rs"));
+        let code = live_code(include_str!("attributes_modal.rs"));
         let body = only_body(&code, "fn identity_tab(");
         assert!(
             body.contains("type_picker("),
@@ -3272,13 +3272,13 @@ mod t810_type_picker_revert_axes {
     /// `text_field` (the freetext half) and offer an "advanced" control.
     #[test]
     fn the_picker_keeps_a_freetext_advanced_escape_hatch() {
-        let code = live_code(include_str!("attributes.rs"));
+        let code = live_code(include_str!("attributes_modal.rs"));
         let body = only_body(&code, "fn type_picker(");
         assert!(
             body.contains("text_field("),
             "type_picker must keep the T-785 text_field for unlisted ids; body was:\n{body}"
         );
-        let src = live_source(include_str!("attributes.rs"));
+        let src = live_source(include_str!("attributes_modal.rs"));
         let body_src = only_body(&src, "fn type_picker(");
         assert!(
             body_src.to_lowercase().contains("advanced"),
@@ -3296,13 +3296,13 @@ mod t810_type_picker_revert_axes {
     /// `catalog_leaf_count == 0` and offers a retry.
     #[test]
     fn the_empty_catalog_shows_cause_and_retry_not_a_dead_list() {
-        let code = live_code(include_str!("attributes.rs"));
+        let code = live_code(include_str!("attributes_modal.rs"));
         let body = only_body(&code, "fn type_picker(");
         assert!(
             body.contains("catalog_leaf_count("),
             "the empty state must key on catalog_leaf_count, not render a bare list"
         );
-        let src = live_source(include_str!("attributes.rs"));
+        let src = live_source(include_str!("attributes_modal.rs"));
         let body_src = only_body(&src, "fn type_picker(");
         // The mirrored T-800 cause + a Retry control.
         assert!(
@@ -3320,7 +3320,7 @@ mod t810_type_picker_revert_axes {
     /// the same press. Layer order: picker → field (the advanced text_field's own Esc) → modal.
     #[test]
     fn the_picker_popover_consumes_its_own_escape_first() {
-        let code = live_code(include_str!("attributes.rs"));
+        let code = live_code(include_str!("attributes_modal.rs"));
         let body = only_body(&code, "fn type_picker(");
         // Find the popover's keydown handler and prove it stops propagation AND closes the popover.
         assert!(
@@ -3341,7 +3341,7 @@ mod t810_type_picker_revert_axes {
     /// `revert_to_snapshot` must walk the snapshot and call the SINGLE-slot commit ops per entry.
     #[test]
     fn revert_restores_per_slot_through_the_single_slot_commit_ops() {
-        let code = live_code(include_str!("attributes.rs"));
+        let code = live_code(include_str!("attributes_modal.rs"));
         let body = only_body(&code, "fn revert_to_snapshot(");
         assert!(
             body.contains("attrs_update_position(") && body.contains("attrs_update_slot("),
@@ -3364,14 +3364,14 @@ mod t810_type_picker_revert_axes {
     /// modal STATES the model in one line. Pin the host body.
     #[test]
     fn the_revert_snapshot_is_captured_on_open_and_the_model_is_stated() {
-        let code = live_code(include_str!("attributes.rs"));
+        let code = live_code(include_str!("attributes_modal.rs"));
         let host = only_body(&code, "pub fn AttributesModal(");
         // The capture reads read_attrs into the snapshot store, driven by the attrs_open effect.
         assert!(
             host.contains("snapshot.set_value("),
             "AttributesModal must capture the snapshot into its store on open"
         );
-        let src = live_source(include_str!("attributes.rs"));
+        let src = live_source(include_str!("attributes_modal.rs"));
         let modal = only_body(&src, "fn modal_view(");
         // The one-line model statement lives in the panel (per spec).
         assert!(
@@ -3392,7 +3392,7 @@ mod t810_type_picker_revert_axes {
     /// closing. A hollow rewrite that keeps `close_attributes` on every None path goes RED.
     #[test]
     fn attributes_modal_routes_vehicles_to_the_vehicle_editor() {
-        let code = live_code(include_str!("attributes.rs"));
+        let code = live_code(include_str!("attributes_modal.rs"));
         let host = only_body(&code, "pub fn AttributesModal(");
         assert!(
             host.contains("is_vehicle_id(&id)") && host.contains("vehicle_attrs_view("),
@@ -3408,7 +3408,7 @@ mod t810_type_picker_revert_axes {
     /// Heading commits through number_field (T-785), not a raw on:change input.
     #[test]
     fn vehicle_attrs_view_wires_heading_cargo_crew_through_existing_mutators() {
-        let code = live_code(include_str!("attributes.rs"));
+        let code = live_code(include_str!("attributes_modal.rs"));
         let body = only_body(&code, "fn vehicle_attrs_view(");
         for needle in [
             "set_vehicle_heading(",
@@ -3426,7 +3426,7 @@ mod t810_type_picker_revert_axes {
             );
         }
         // Operator-visible section labels survive on live_source (live_code blanks string literals).
-        let src = live_source(include_str!("attributes.rs"));
+        let src = live_source(include_str!("attributes_modal.rs"));
         let live = only_body(&src, "fn vehicle_attrs_view(");
         for label in ["\"Heading\"", "\"Add cargo\"", "\"Crew\"", "\"Cargo\""] {
             assert!(

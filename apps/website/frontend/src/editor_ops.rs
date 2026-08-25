@@ -34,9 +34,11 @@ use map_engine_core::doc::{
 
 use crate::asset_catalog::PlacePayload;
 use crate::core::dto::{FactionDoc, FactionRole, FactionVehicle};
+use crate::editor::panels::outliner::{
+    build_outliner_with_comments, CommentRow, LayerRow, OutlinerNode, SlotRow,
+};
 use crate::editor::tools::select_tool::{EngineHandle, SelectionHandle};
 use crate::mission_doc::DocHandle;
-use crate::outliner::{build_outliner_with_comments, CommentRow, LayerRow, OutlinerNode, SlotRow};
 
 /// The lazily-minted default layer (React's `ensureDefaultLayer`).
 const DEFAULT_LAYER_ID: &str = "layer-1";
@@ -200,7 +202,7 @@ use crate::mission_editor::AssetPickerState;
 
 thread_local! {
     /// T-647 PLACE-003 — the picker signal, installed once from `mission_editor::on_load` (the same
-    /// pattern as [`crate::context_menu::set_menu_signal`] and the Attributes `attrs_open`). Kept as
+    /// pattern as [`crate::editor::panels::context_menu::set_menu_signal`] and the Attributes `attrs_open`). Kept as
     /// a standalone registered signal rather than a 14th `set_ctx` argument: it is a self-contained
     /// overlay owned by the page, read by the picker component and written only here.
     static ASSET_PICKER: RefCell<Option<RwSignal<Option<AssetPickerState>>>> =
@@ -2735,7 +2737,7 @@ fn layer_rows(core: &MissionDocCore) -> Vec<LayerRow> {
 }
 
 /// T-168 — read `factionsById` from `small_maps_json()` into ORBAT faction rows.
-fn faction_rows(core: &MissionDocCore) -> Vec<crate::outliner::FactionRow> {
+fn faction_rows(core: &MissionDocCore) -> Vec<crate::editor::panels::outliner::FactionRow> {
     let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()) else {
         return Vec::new();
     };
@@ -2745,7 +2747,7 @@ fn faction_rows(core: &MissionDocCore) -> Vec<crate::outliner::FactionRow> {
     map.values()
         .filter_map(|v| {
             let o = v.as_object()?;
-            Some(crate::outliner::FactionRow {
+            Some(crate::editor::panels::outliner::FactionRow {
                 id: o.get("id")?.as_str()?.to_string(),
                 key: o
                     .get("key")
@@ -2764,7 +2766,7 @@ fn faction_rows(core: &MissionDocCore) -> Vec<crate::outliner::FactionRow> {
 }
 
 /// T-168 — read `squadsById` from `small_maps_json()` into ORBAT squad rows.
-fn squad_rows(core: &MissionDocCore) -> Vec<crate::outliner::SquadRow> {
+fn squad_rows(core: &MissionDocCore) -> Vec<crate::editor::panels::outliner::SquadRow> {
     let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()) else {
         return Vec::new();
     };
@@ -2774,7 +2776,7 @@ fn squad_rows(core: &MissionDocCore) -> Vec<crate::outliner::SquadRow> {
     map.values()
         .filter_map(|v| {
             let o = v.as_object()?;
-            Some(crate::outliner::SquadRow {
+            Some(crate::editor::panels::outliner::SquadRow {
                 id: o.get("id")?.as_str()?.to_string(),
                 name: o
                     .get("name")
@@ -2851,7 +2853,7 @@ pub fn refresh_docks() {
                             &slots,
                             &comment_rows(core),
                         ),
-                        crate::outliner::build_orbat(
+                        crate::editor::panels::outliner::build_orbat(
                             &faction_rows(core),
                             &squad_rows(core),
                             &slots,
@@ -3443,7 +3445,7 @@ pub fn refile_slot_to_layer(slot_id: &str, layer_id: &str) -> bool {
 // and OFCRA have no comment equivalent. It is not a four-way convergence and must not be sold as
 // one; the template seed is sized to the surviving evidence (two), not the peak (28).
 
-/// T-651 — one comment as the docks need it. Mirrors [`crate::outliner::CommentRow`] plus the world
+/// T-651 — one comment as the docks need it. Mirrors [`crate::editor::panels::outliner::CommentRow`] plus the world
 /// position the tree does not need but a drag/copy caller does.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CommentDetail {
@@ -3880,7 +3882,7 @@ pub fn arm_connect(kind: &str, from_id: &str) -> bool {
     // kind into the document. This check is about the ARM (a UI state, not a document one): see
     // `context_menu::ConnKind::parse`'s note for why the editor keeps its own copy and why the two
     // cannot diverge dangerously.
-    if from_id.is_empty() || crate::context_menu::ConnKind::parse(kind).is_none() {
+    if from_id.is_empty() || crate::editor::panels::context_menu::ConnKind::parse(kind).is_none() {
         return false;
     }
     PENDING_CONNECT.with(|p| {
@@ -4174,10 +4176,12 @@ pub fn select_layer_children(layer_id: &str) {
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        Some(crate::eden_tree::layer_direct_slot_children(
-            &layer_rows(core),
-            layer_id,
-        ))
+        Some(
+            crate::editor::panels::outliner_tree::layer_direct_slot_children(
+                &layer_rows(core),
+                layer_id,
+            ),
+        )
     });
     if let Some(ids) = ids {
         set_slot_selection(ids);
@@ -4191,10 +4195,12 @@ pub fn select_layer_descendants(layer_id: &str) {
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        Some(crate::eden_tree::layer_descendant_slots(
-            &layer_rows(core),
-            layer_id,
-        ))
+        Some(
+            crate::editor::panels::outliner_tree::layer_descendant_slots(
+                &layer_rows(core),
+                layer_id,
+            ),
+        )
     });
     if let Some(ids) = ids {
         set_slot_selection(ids);
@@ -4509,7 +4515,7 @@ fn ensure_layer(ctx: &OpsCtx, core: &MissionDocCore) -> String {
 }
 
 /// T-169 smoke hook — bulk-add `n` slots (each a new squad under BLUFOR), then refresh the docks,
-/// so the virtual-outliner gate can push a tree past [`crate::outliner::VIRTUAL_SLOT_THRESHOLD`]
+/// so the virtual-outliner gate can push a tree past [`crate::editor::panels::outliner::VIRTUAL_SLOT_THRESHOLD`]
 /// without 50 palette drags. Not on any UI path (the `__missionDoc` bridge exposes it for the gate).
 pub fn debug_seed_slots(n: u32) {
     OPS_CTX.with(|c| {
@@ -4552,8 +4558,8 @@ pub struct OrbatSlotDetail {
 /// Snapshot of squads/factions/slot details for the ORBAT Manager (one doc read).
 #[derive(Clone, Debug, Default)]
 pub struct OrbatManagerSnapshot {
-    pub factions: Vec<crate::outliner::FactionRow>,
-    pub squads: Vec<crate::outliner::SquadRow>,
+    pub factions: Vec<crate::editor::panels::outliner::FactionRow>,
+    pub squads: Vec<crate::editor::panels::outliner::SquadRow>,
     pub slots: Vec<OrbatSlotDetail>,
 }
 
@@ -4582,14 +4588,14 @@ pub fn orbat_manager_snapshot() -> OrbatManagerSnapshot {
 /// than re-deriving from the document — so the header badge and the ORBAT dock can never disagree
 /// about who is on which side. The third element is one `squadId` per slot (empty string when the
 /// slot carries none); its length is the total slot count, which is what makes the pure
-/// [`crate::eden_top_strip::census_from_rows`] buckets provably sum to the total. Vehicles are read
+/// [`crate::editor::panels::top_strip::census_from_rows`] buckets provably sum to the total. Vehicles are read
 /// by the sibling [`vehicle_rows`] and are deliberately NOT folded in here: the header is a *slot*
 /// (people) census, and mixing crewed vehicles into the same per-side integers would misreport the
 /// roster the community naming convention is built on.
 #[must_use]
 pub fn census_input() -> (
-    Vec<crate::outliner::FactionRow>,
-    Vec<crate::outliner::SquadRow>,
+    Vec<crate::editor::panels::outliner::FactionRow>,
+    Vec<crate::editor::panels::outliner::SquadRow>,
     Vec<String>,
 ) {
     let snap = orbat_manager_snapshot();
@@ -4815,7 +4821,7 @@ pub fn orbat_add_slot(squad_id: String, role: String) -> Option<String> {
 /// them is by definition another faction's.
 fn asset_id_for_role(
     core: &MissionDocCore,
-    sq: &crate::outliner::SquadRow,
+    sq: &crate::editor::panels::outliner::SquadRow,
     role: &str,
 ) -> Option<String> {
     let root = serde_json::from_str::<serde_json::Value>(&core.slots_json()).ok()?;
@@ -5056,7 +5062,10 @@ pub fn orbat_add_vehicle(squad_id: String, resource_name: String) -> Option<Stri
         // either path dedups to one entry). Recorded only on a real add, after the doc borrow closes;
         // the ops layer knows only the resourceName, so it doubles as the label. A no-op when the dock
         // is unmounted — not a dropped ack: the vehicle is already in the doc.
-        crate::eden_dock_right::record_placed(resource_name.clone(), resource_name.clone());
+        crate::editor::panels::dock_right::record_placed(
+            resource_name.clone(),
+            resource_name.clone(),
+        );
     }
     id
 }
@@ -5600,14 +5609,20 @@ fn slot_xy(root: &serde_json::Value, id: &str) -> Option<(f64, f64)> {
 /// centre, the exact world-origin symptom T-188 was written to stop. Walking leader → every live
 /// slot keeps the squad's own geometry as the anchor and reserves the constant for a squad that
 /// genuinely has no body left.
-fn squad_anchor_in(root: &serde_json::Value, sq: &crate::outliner::SquadRow) -> Option<(f64, f64)> {
+fn squad_anchor_in(
+    root: &serde_json::Value,
+    sq: &crate::editor::panels::outliner::SquadRow,
+) -> Option<(f64, f64)> {
     std::iter::once(sq.leader_slot_id.as_str())
         .chain(sq.slot_ids.iter().map(String::as_str))
         .filter(|id| !id.is_empty())
         .find_map(|id| slot_xy(root, id))
 }
 
-fn squad_anchor_xy(core: &MissionDocCore, sq: &crate::outliner::SquadRow) -> Option<(f64, f64)> {
+fn squad_anchor_xy(
+    core: &MissionDocCore,
+    sq: &crate::editor::panels::outliner::SquadRow,
+) -> Option<(f64, f64)> {
     let root = serde_json::from_str::<serde_json::Value>(&core.slots_json()).ok()?;
     squad_anchor_in(&root, sq)
 }
@@ -5621,7 +5636,10 @@ fn squad_anchor_xy(core: &MissionDocCore, sq: &crate::outliner::SquadRow) -> Opt
 /// after deleting the middle of three slots `len()` is 2 while a survivor still sits at
 /// `anchor + 30 m` — the next Add Role landed exactly on top of it, re-creating the stacking this
 /// ticket exists to fix. `max(x) + 15 m` is free by construction no matter which ids were removed.
-fn next_slot_xy(core: &MissionDocCore, sq: &crate::outliner::SquadRow) -> (f64, f64) {
+fn next_slot_xy(
+    core: &MissionDocCore,
+    sq: &crate::editor::panels::outliner::SquadRow,
+) -> (f64, f64) {
     let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.slots_json()) else {
         return (APPLY_ANCHOR_X, APPLY_ANCHOR_Y);
     };
@@ -5931,7 +5949,7 @@ fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
         // (composition arm only; `None` otherwise). No-ops when the dock is unmounted — not a dropped
         // ack: the stamp above already committed.
         if let Some((asset_id, label)) = recent_stamp {
-            crate::eden_dock_right::record_placed(asset_id, label);
+            crate::editor::panels::dock_right::record_placed(asset_id, label);
         }
     }
     placed
@@ -5970,12 +5988,12 @@ pub fn regroup_slot_onto(slot_id: &str, target_id: &str) -> bool {
 // that IS tested (`circle_from_clicks`, `polygon_is_committable`, `zone_types`), so the untestable
 // half stays as close to pure plumbing as it can be.
 
-use crate::eden_chrome::{
+use crate::editor::eden_chrome::{
     circle_from_clicks, polygon_flat, polygon_is_committable, zone_types, ZoneShape,
 };
 // T-079 — `DrawTarget` is imported straight from its home module (`eden_chrome` re-exports the other
 // zone-tool pure items, but this one is added here in a slice that does not own `eden_chrome`).
-use crate::eden_zones::DrawTarget;
+use crate::editor::panels::zones_panel::DrawTarget;
 
 /// One authored zone, read back for the dock list and the Attributes panel.
 #[derive(Clone, Debug, PartialEq)]
@@ -6861,7 +6879,7 @@ pub fn owner_line_world(selected_trigger: Option<&str>) -> Option<((f64, f64), (
 // `$defs/marker.icon` is a CLOSED enum of 64 aliases (the `TBD_MarkerIcons.EnsureAliases` register
 // keys). Before that enum existed a typo validated clean and then degraded at runtime to the
 // fallback DOT glyph. So the picker offers the schema's list and nothing else, and
-// [`crate::eden_dock_right::marker_icon_is_authorable`] — which reads the embedded schema, not a
+// [`crate::editor::panels::dock_right::marker_icon_is_authorable`] — which reads the embedded schema, not a
 // hand-typed copy — is the gate every write here passes through. An unknown alias is REFUSED at
 // this boundary rather than stored: the store's mutator takes an `&str` and asks no questions (it
 // must stay that way — its own tests author aliases this enum does not contain), so the product
@@ -6969,7 +6987,7 @@ pub fn marker_count() -> usize {
 /// Refuses an alias outside the closed `$defs/marker.icon` enum, so a bad vocabulary cannot even be
 /// armed, let alone stored.
 pub fn begin_place_marker(icon: String) {
-    if !crate::eden_dock_right::marker_icon_is_authorable(&icon) {
+    if !crate::editor::panels::dock_right::marker_icon_is_authorable(&icon) {
         return;
     }
     arm(Pending::Marker(icon));
@@ -7012,7 +7030,7 @@ fn mint_marker_id(rows: &[MarkerRow]) -> String {
 /// than a delete-and-append: array order is the order the mod renders in.
 #[must_use]
 pub fn set_marker_icon(faction_id: &str, marker_id: &str, icon: &str) -> bool {
-    if !crate::eden_dock_right::marker_icon_is_authorable(icon) {
+    if !crate::editor::panels::dock_right::marker_icon_is_authorable(icon) {
         return false;
     }
     upsert_marker_field(faction_id, marker_id, |row| row.icon = icon.to_string())
@@ -7141,7 +7159,7 @@ fn push_text(text: &mut Vec<(&'static str, String)>, field: &'static str, value:
 }
 
 /// T-697 — **every placed entity in the mission, with its text attributes.** The input to
-/// [`crate::eden_dock_left::search_document`].
+/// [`crate::editor::panels::dock_left::search_document`].
 ///
 /// The per-kind attribute sets are the fields an author actually types into and would search by —
 /// a slot's role/callsign/tag/rank/description, a marker's caption, a zone's label, a trigger's
@@ -7150,8 +7168,8 @@ fn push_text(text: &mut Vec<(&'static str, String)>, field: &'static str, value:
 /// and pasting it into the search box is a real workflow; the class tail is in it so a plain
 /// `UAZ` finds a vehicle whose only authored text is its `resourceName`.
 #[must_use]
-pub fn document_entities() -> Vec<crate::eden_dock_left::DocEntity> {
-    use crate::eden_dock_left::{DocEntity, DocKind};
+pub fn document_entities() -> Vec<crate::editor::panels::dock_left::DocEntity> {
+    use crate::editor::panels::dock_left::{DocEntity, DocKind};
 
     let mut out: Vec<DocEntity> = Vec::new();
 
@@ -7344,7 +7362,7 @@ pub fn document_entities() -> Vec<crate::eden_dock_left::DocEntity> {
 /// is not preserved (the document order is): the chips are counts and id sets, and nothing
 /// downstream reads a selection as a sequence.
 #[must_use]
-pub fn selection_entities() -> Vec<crate::eden_dock_left::DocEntity> {
+pub fn selection_entities() -> Vec<crate::editor::panels::dock_left::DocEntity> {
     let sel: Vec<String> = OPS_CTX.with(|c| {
         c.borrow()
             .as_ref()

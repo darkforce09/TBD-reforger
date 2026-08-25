@@ -9,7 +9,6 @@ mod app_routes;
 // Pure data, no web-sys: ungated so its unit tests run on the native `cargo test` shell.
 mod asset_catalog;
 // T-159.26 — Attributes modal (AttributesModal.tsx port; wasm-gated internals).
-mod attributes;
 // T-159.27 — Arsenal loadout tab (ArsenalTab.tsx port; dumb Forge).
 mod arsenal;
 // T-167 — Smart-Arsenal domain core (arsenalRules.ts + arsenalDollModel.ts port; pure/native-tested).
@@ -29,33 +28,19 @@ mod editor;
 mod editor_ops;
 // T-159.21 Eden chrome — the Mission Creator's docked shell (top strip / toolbelt / docks). T-661
 // split it by symbol into the ten `eden_*` modules below; `eden_chrome` is now a re-export shim so
-// consumers' `use crate::eden_chrome::*` paths stay stable. Ungated: they hold no wasm-only types
+// consumers' `use crate::editor::eden_chrome::*` paths stay stable. Ungated: they hold no wasm-only types
 // (the doc-driving on:click bodies are cfg-gated inside the closures), so the native view shell
 // compiles them too.
-mod eden_chrome;
 // T-661 — the ten modules `eden_chrome` was split into, plus T-692's `eden_help` (eleven). Layout
 // consts feed `select_tool` / `mission_editor`; the rest is the docked shell (strip / docks /
 // toolbelt / settings / the Help menu's Controls Hint) plus the zone tool's pure predicates.
-mod eden_dock_left;
-mod eden_dock_right;
-mod eden_env;
-mod eden_help;
-mod eden_layout;
-mod eden_settings;
-mod eden_toolbelt;
-mod eden_top_strip;
-mod eden_tree;
-mod eden_vehicles_panel;
-mod eden_zones;
 // T-661 — pre-declared `mod` stubs the later editor-program tickets fill (Rust has no implicit
 // module discovery, so main.rs must name them before their tickets land).
 // T-664 — right-click context menu.
-mod context_menu;
 // T-643 — line-of-sight tool.
 // T-645 — shared placement helpers.
 // T-642 — ruler / measure tool.
 // T-655 — mission validation panel.
-mod validation_panel;
 // T-159.17 warm editor session — sessionStorage marker; wasm32-only (uses web-sys/js-sys), gated
 // like the doc host below.
 #[cfg(target_arch = "wasm32")]
@@ -90,7 +75,6 @@ mod arsenal_doll;
 // T-159.22 — the left dock's Editor Layers tree (+ the "Unfiled" pseudo-root the seed forces). Owns
 // plain LayerRow/SlotRow rather than `SlotSoa`, because map-engine-core is wasm32-only — so this
 // stays ungated and its unit tests run on the native shell.
-mod outliner;
 mod router;
 // T-159.18 Select / LMB pick foundation — links map-engine-core `camera`+`spatial` and web-sys, so
 // wasm32-only, gated like the doc host + persist modules.

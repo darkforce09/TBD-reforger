@@ -89,23 +89,23 @@ pub const TOOLBELT_BAND_PX: f64 = 96.0;
 pub const STUB_PX: f64 = 24.0;
 
 /// T-787 — the dock wrappers' BOTTOM inset in CSS px: how far above the viewport bottom an expanded
-/// dock stops. It equals the status bar's painted height ([`crate::eden_toolbelt::STATUSBAR_H_PX`]),
+/// dock stops. It equals the status bar's painted height ([`crate::editor::panels::toolbelt::STATUSBAR_H_PX`]),
 /// so a dock's bottom edge lands exactly on the bar's top edge (`dock.bottom == bar.y`) instead of
 /// running to `bottom-0` and overlapping it.
 ///
 /// **The defect this closes (O-1).** Both docks are transparent `pointer-events` containers that ran
 /// `top-12 … bottom-0`, i.e. `y48 → viewportH`, while the status bar (`inset-x-0 bottom-0`, `h-9`)
-/// occupies the bottom [`crate::eden_toolbelt::STATUSBAR_H_PX`] px. The dock rectangles therefore
+/// occupies the bottom [`crate::editor::panels::toolbelt::STATUSBAR_H_PX`] px. The dock rectangles therefore
 /// covered the bar's full width and `elementFromPoint` at the bar's left/right ends resolved to a
 /// DOCK, not the bar — the containers ate clicks aimed at the readouts and the right-end controls.
 /// Insetting the wrappers by this much lifts their bottom edge off the bar.
 ///
 /// NOT [`TOOLBELT_BAND_PX`] (96 px): that is the *input-handling* band a pointer probe must clear to
-/// count as on-map (it clears the taller floating [`crate::eden_toolbelt::ModeToolbar`] and does not
+/// count as on-map (it clears the taller floating [`crate::editor::panels::toolbelt::ModeToolbar`] and does not
 /// shrink the full-bleed canvas). This is the *painted DOM* inset for the visible bar only — the two
 /// are different contracts and subtracting the full band here would leave a 60 px dead strip where a
 /// dock covers neither the bar nor the map. The DOM half of this number is the mounts' `bottom-9`.
-pub const DOCK_BOTTOM_PX: f64 = crate::eden_toolbelt::STATUSBAR_H_PX;
+pub const DOCK_BOTTOM_PX: f64 = crate::editor::panels::toolbelt::STATUSBAR_H_PX;
 
 // ── T-637 — the DOM half of the inset contract ───────────────────────────────────────────────────
 //
@@ -503,7 +503,7 @@ mod t636_band_readers_agree {
         // Exactly one definition per inset, in this file (raw — the literals are real code, not
         // prose). The expanded consts survive (the `eden_chrome` shim + `eden_toolbelt` grid-refs
         // read them by name as bare f64), so the band value is still pinned once.
-        let layout = include_str!("eden_layout.rs");
+        let layout = include_str!("layout.rs");
         let name = "TOOLBELT_BAND_PX";
         let def = format!("pub const {name}: f64 = 96.0;");
         assert!(
@@ -533,10 +533,10 @@ mod t636_band_readers_agree {
         // none, so its whole body scrubs. mission_editor's first `#[cfg(test)]` is a `clear_for_test`
         // helper near the TOP (above the band reader), so scrubbing the whole file would drop the
         // reader — slice from the page fn anchor first (the t662/t635 idiom), then scrub that.
-        let band_read = "eden_layout::toolbelt_band_px()";
-        let sel = live_code(include_str!("editor/tools/select_tool.rs"));
+        let band_read = "editor::layout::toolbelt_band_px()";
+        let sel = live_code(include_str!("tools/select_tool.rs"));
 
-        let raw_editor = include_str!("mission_editor.rs");
+        let raw_editor = include_str!("../mission_editor.rs");
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
         assert_eq!(
             raw_editor.matches(anchor.as_str()).count(),
@@ -561,10 +561,10 @@ mod t636_band_readers_agree {
         // collapse). eden_chrome + eden_toolbelt legitimately keep the const NAMES — they are not
         // this ticket's owns and read the expanded value as bare f64 — so they are excluded here.
         for acc in [
-            "eden_layout::dock_left_px()",
-            "eden_layout::dock_right_px()",
-            "eden_layout::strip_top_px()",
-            "eden_layout::toolbelt_band_px()",
+            "editor::layout::dock_left_px()",
+            "editor::layout::dock_right_px()",
+            "editor::layout::strip_top_px()",
+            "editor::layout::toolbelt_band_px()",
         ] {
             assert!(
                 sel.contains(acc),
@@ -735,7 +735,7 @@ mod t638_collapse {
     /// cannot satisfy them.
     #[test]
     fn keydown_binds_e_and_r_to_the_collapse_latches() {
-        let src = include_str!("mission_editor.rs");
+        let src = include_str!("../mission_editor.rs");
         let arm = |code: &str| format!("\"{code}\" if !modk");
         // E → left latch, R → right latch.
         assert!(
@@ -992,7 +992,7 @@ mod t637_dock_geometry {
         ROW_TOOLS, ROW_TOOLS_PX, STRIP_ROWS, STRIP_TOP_PX,
     };
     use crate::arsenal::class_r_scrub::live_code;
-    use crate::eden_toolbelt::STATUSBAR_H_PX;
+    use crate::editor::panels::toolbelt::STATUSBAR_H_PX;
     use map_engine_core::camera::OrthoCamera;
 
     /// Both collapse latches off and the chrome shown, so the accessors report the EXPANDED consts.
@@ -1200,14 +1200,14 @@ mod t637_dock_geometry {
     /// Exactly one use each: a second mount would be a second place the width could drift.
     #[test]
     fn mission_editor_mounts_the_docks_from_these_consts() {
-        let raw = include_str!("mission_editor.rs");
+        let raw = include_str!("../mission_editor.rs");
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
         let editor = live_code(&raw[raw.find(anchor.as_str()).expect("anchor present")..]);
         for name in [
-            "eden_layout::DOCK_LEFT_MOUNT",
-            "eden_layout::DOCK_LEFT_MOUNT_COLLAPSED",
-            "eden_layout::DOCK_RIGHT_MOUNT",
-            "eden_layout::DOCK_RIGHT_MOUNT_COLLAPSED",
+            "editor::layout::DOCK_LEFT_MOUNT",
+            "editor::layout::DOCK_LEFT_MOUNT_COLLAPSED",
+            "editor::layout::DOCK_RIGHT_MOUNT",
+            "editor::layout::DOCK_RIGHT_MOUNT_COLLAPSED",
         ] {
             assert!(
                 editor.contains(name),
@@ -1218,7 +1218,7 @@ mod t637_dock_geometry {
         // Exactly four `eden_layout::DOCK_*` reads in the page body: two per dock (expanded +
         // collapsed). A fifth is a second mount, i.e. a second place the geometry can drift.
         assert_eq!(
-            editor.matches("eden_layout::DOCK_").count(),
+            editor.matches("editor::layout::DOCK_").count(),
             4,
             "T-637: the docks mount in exactly two places, each reading its expanded/collapsed pair"
         );
@@ -1259,7 +1259,7 @@ mod t637_dock_geometry {
             "the tool row takes the REMAINDER — two stated heights could drift from STRIP_TOP_PX"
         );
         // The dead shell is gone. Needle assembled so this test's own source cannot satisfy it.
-        let layout = include_str!("eden_layout.rs");
+        let layout = include_str!("layout.rs");
         let dead = format!("{} STRIP:", "pub(crate) const");
         assert!(
             !layout.contains(&dead),
@@ -1305,7 +1305,7 @@ mod t637_dock_geometry {
              DISABLED_GLYPH), not from an ad-hoc pair baked into the geometry recipe"
         );
         // The local copy is gone from the strip. Needle assembled so this source cannot satisfy it.
-        let strip = include_str!("eden_top_strip.rs");
+        let strip = include_str!("panels/top_strip.rs");
         let copy = format!("{} TOOL_ICON", "const");
         assert!(
             !strip.contains(&copy),

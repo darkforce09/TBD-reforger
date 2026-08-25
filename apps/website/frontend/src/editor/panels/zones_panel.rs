@@ -12,7 +12,7 @@ use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use crate::core::ui::MaterialIcon;
 #[cfg(target_arch = "wasm32")]
-use crate::eden_tree::{ROW, ROW_ACTIVE};
+use crate::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
 
 /// T-582 — the Zones panel: draw controls, the authored-zone list, and the schema-driven
 /// Attributes panel.
@@ -626,7 +626,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
 /// Embedded once for the crate via this `pub(crate)` const (T-757); other modules read it
 /// rather than a second `include_str!`. Bundle size follows the schema file — do not restate it.
 pub(crate) const MISSION_SCHEMA: &str =
-    include_str!("../../../../packages/tbd-schema/schema/mission.schema.json");
+    include_str!("../../../../../../packages/tbd-schema/schema/mission.schema.json");
 
 /// One authored `rules` control, derived from one `$defs/zoneRules` property.
 #[derive(Clone, Debug, PartialEq)]
@@ -980,7 +980,8 @@ mod tests {
     /// copy of the same line.
     #[test]
     fn zone_quantisation_mirrors_flatten() {
-        let flatten = include_str!("../../../../crates/map-engine-core/src/mission/flatten.rs");
+        let flatten =
+            include_str!("../../../../../../crates/map-engine-core/src/mission/flatten.rs");
         let body = flatten
             .split("fn round_coord(v: f64) -> f64 {")
             .nth(1)
@@ -1187,7 +1188,7 @@ mod tests {
     /// not, and the alternative is no assertion at all.
     #[test]
     fn every_t211_mutator_has_a_caller() {
-        const OPS: &str = include_str!("editor_ops.rs");
+        const OPS: &str = include_str!("../../editor_ops.rs");
         // The eleven, verbatim from `doc/store.rs`'s T-211 block.
         for m in [
             "add_circle_zone",
@@ -1251,7 +1252,7 @@ mod tests {
     fn editor_live_from_page() -> String {
         use crate::arsenal::class_r_scrub::live_code;
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-        let raw = include_str!("mission_editor.rs");
+        let raw = include_str!("../../mission_editor.rs");
         assert_eq!(
             raw.matches(anchor.as_str()).count(),
             1,
@@ -1307,7 +1308,7 @@ mod tests {
     #[test]
     fn t792_cancel_zone_draw_bumps_the_dock_tick() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("../../editor_ops.rs"));
         let body = only_body(&ops, "pub fn cancel_zone_draw() -> bool");
         assert!(
             body.contains("bump_doc_tick()"),

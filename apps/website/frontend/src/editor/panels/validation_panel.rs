@@ -1090,7 +1090,7 @@ fn rule_group_view(group: RuleGroup) -> AnyView {
     .into_any()
 }
 
-/// Why an inert finding row is not a click target — peer of [`crate::eden_settings::inert_settings_row_reason`].
+/// Why an inert finding row is not a click target — peer of [`crate::editor::panels::settings_modal::inert_settings_row_reason`].
 /// Positional findings name nobody; named subjects the probe refuses would be dead clicks.
 #[must_use]
 fn inert_finding_row_reason(f: &PanelFinding) -> String {
@@ -2290,16 +2290,16 @@ mod f5_seam_lifecycle {
             }
             assert_eq!(
                 live_hits,
-                vec!["validation_panel.rs x1".to_string()],
+                vec!["editor/panels/validation_panel.rs x1".to_string()],
                 "T-783: `{needle}` must be defined exactly ONCE in live crate code, beside the \
                  SeamRegistration trait it depends on. Found: {live_hits:?}. Import it \
-                 (`crate::validation_panel::install_seam`, or the `ruler_tool` re-export the \
+                 (`crate::editor::panels::validation_panel::install_seam`, or the `ruler_tool` re-export the \
                  wasm-only seams already use) instead of writing a second copy — one identity check \
                  with two mechanisms is how the remount guard drifts out of one of them."
             );
             assert_eq!(
                 raw_hits,
-                vec!["validation_panel.rs x1".to_string()],
+                vec!["editor/panels/validation_panel.rs x1".to_string()],
                 "T-783: `{needle}` appears outside live code as well. Found: {raw_hits:?}. The raw \
                  count catches a copy the scrubber cannot see — it cuts from the first test-module \
                  attribute to end of file, so a definition parked below one would hide."

@@ -3384,7 +3384,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     // The sampler runs EVERY FRAME. It writes this signal only when `format_m_per_px` would change
     // (guard in `start_raf`), so a still or merely panning camera writes nothing and the status bar
     // never re-renders per frame — the regression the `rf <ms>` cell above exists to surface.
-    let scale_mpp = RwSignal::new(crate::eden_toolbelt::m_per_px(-2.0));
+    let scale_mpp = RwSignal::new(crate::editor::panels::toolbelt::m_per_px(-2.0));
     // T-642/T-643 — the active editor tool (Select ⇆ Ruler ⇆ LoS). The `ModeToolbar` buttons read +
     // set it (the active tool enters TOOL_ACTIVE state, Select returns); the wasm pointer handlers
     // branch on it to choose the point-capture gesture (Ruler AND LoS share `LG::Ruler`) vs the
@@ -3473,9 +3473,9 @@ pub fn MissionEditorPage() -> impl IntoView {
     // i.e. at every mutation site). `active_layer` is the drop target (React's `activeLayerId`);
     // `catalog` holds the `/registry` fetch state and never leaves `Loading` on the native shell,
     // where `api_get` doesn't exist.
-    let outliner_nodes = RwSignal::new(Vec::<crate::outliner::OutlinerNode>::new());
+    let outliner_nodes = RwSignal::new(Vec::<crate::editor::panels::outliner::OutlinerNode>::new());
     // T-168 — the ORBAT dock tree mirror (faction/squad/slot), rebuilt alongside `outliner_nodes`.
-    let orbat_nodes = RwSignal::new(Vec::<crate::outliner::OutlinerNode>::new());
+    let orbat_nodes = RwSignal::new(Vec::<crate::editor::panels::outliner::OutlinerNode>::new());
     let selected_ids = RwSignal::new(Vec::<String>::new());
     // T-648 — bump the transform-widget repaint tick whenever the selection changes (any source:
     // outliner click, keyboard, marquee), so the gizmo re-projects onto the new centroid even with a
@@ -3538,7 +3538,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     // `None` = closed (no DOM). The wasm `contextmenu` handler sets it via `context_menu::open`; the
     // overlay reads it. Mounted BESIDE the ungated dialogs below (not inside the chrome_hidden gate),
     // so a floating menu survives Backspace hide-chrome per the wave-101 verifier.
-    let context_menu = RwSignal::new(None::<crate::context_menu::MenuState>);
+    let context_menu = RwSignal::new(None::<crate::editor::panels::context_menu::MenuState>);
     // T-647 PLACE-003 — the empty-ground asset picker's open state: `Some(AssetPickerState)` = open
     // at that world/screen point, `None` = closed. The wasm `dblclick` handler sets it via
     // `editor_ops::open_asset_picker` (on a MISS); the picker overlay reads it. Mounted BESIDE the
@@ -4047,24 +4047,28 @@ pub fn MissionEditorPage() -> impl IntoView {
             // catalogue is `None`, the conservative default).
             {
                 let doc = doc.clone();
-                crate::validation_panel::register_payload_source(std::rc::Rc::new(move || {
-                    let d = doc.borrow();
-                    let core = d.as_ref()?;
-                    let payload = map_engine_core::mission::compile::compile_payload(
-                        &core.small_maps_json(),
-                        &core.slots_json(),
-                        false,
-                    );
-                    // Catalogue: the live registry rows if loaded, else `None` (rule skips). Built
-                    // from `resource_name`s + object prop:/comp: aliases — the ids the payload uses.
-                    let known_asset_ids = registry_items.get_untracked().map(|items| {
-                        crate::validation_panel::known_asset_ids_from_registry(&items)
-                    });
-                    Some(crate::validation_panel::PayloadSource {
-                        payload,
-                        known_asset_ids,
-                    })
-                }));
+                crate::editor::panels::validation_panel::register_payload_source(std::rc::Rc::new(
+                    move || {
+                        let d = doc.borrow();
+                        let core = d.as_ref()?;
+                        let payload = map_engine_core::mission::compile::compile_payload(
+                            &core.small_maps_json(),
+                            &core.slots_json(),
+                            false,
+                        );
+                        // Catalogue: the live registry rows if loaded, else `None` (rule skips). Built
+                        // from `resource_name`s + object prop:/comp: aliases — the ids the payload uses.
+                        let known_asset_ids = registry_items.get_untracked().map(|items| {
+                            crate::editor::panels::validation_panel::known_asset_ids_from_registry(
+                                &items,
+                            )
+                        });
+                        Some(crate::editor::panels::validation_panel::PayloadSource {
+                            payload,
+                            known_asset_ids,
+                        })
+                    },
+                ));
             }
 
             // T-655 — the validation panel's CLICK-TO-SELECT router. A finding click routes its
@@ -4174,11 +4178,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                 };
                 {
                     let probe = std::rc::Rc::clone(&available);
-                    crate::validation_panel::register_route_probe(std::rc::Rc::new(
-                        move |subject_id: &str| probe(subject_id).is_some(),
-                    ));
+                    crate::editor::panels::validation_panel::register_route_probe(
+                        std::rc::Rc::new(move |subject_id: &str| probe(subject_id).is_some()),
+                    );
                 }
-                crate::validation_panel::register_select_by_id(std::rc::Rc::new(
+                crate::editor::panels::validation_panel::register_select_by_id(std::rc::Rc::new(
                     move |subject_id: &str| {
                         let Some((target, cx, cy)) = available(subject_id) else {
                             return false;
@@ -4194,7 +4198,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // check stays because `route_select_zone` is the actor and its report
                             // is the ground truth; if it ever disagrees with the oracle the honest
                             // answer is still `false`, never a `true` over a no-op.
-                            if !crate::eden_dock_right::route_select_zone(subject_id) {
+                            if !crate::editor::panels::dock_right::route_select_zone(subject_id) {
                                 return false;
                             }
                         } else {
@@ -4261,7 +4265,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             );
             // T-664 — hand the context-menu signal to the module's thread_local so the wasm
             // `contextmenu` closure below (which has no reactive handle) can open the menu.
-            crate::context_menu::set_menu_signal(context_menu);
+            crate::editor::panels::context_menu::set_menu_signal(context_menu);
             // T-647 PLACE-003 — same handoff for the empty-ground asset picker: the wasm `dblclick`
             // closure opens it through `editor_ops::open_asset_picker`, which writes this signal.
             crate::editor_ops::set_asset_picker_signal(asset_picker);
@@ -4788,25 +4792,25 @@ pub fn MissionEditorPage() -> impl IntoView {
                     let right = dock_right_collapsed.get();
                     // The pre-mirror hidden state (the Cell still holds it) — used to gate the nudge so
                     // an un-hide (was_hidden → shown) also skips the slide.
-                    let was_hidden = crate::eden_layout::chrome_hidden();
+                    let was_hidden = crate::editor::layout::chrome_hidden();
 
                     let rect = container.get_bounding_client_rect();
                     let (w, h) = (rect.width(), rect.height());
                     if !(w > 0.0 && h > 0.0) {
                         // Still mirror the state so the accessors are correct before first layout.
-                        crate::eden_layout::set_chrome_hidden(hidden);
-                        crate::eden_layout::set_dock_left_collapsed(left);
-                        crate::eden_layout::set_dock_right_collapsed(right);
+                        crate::editor::layout::set_chrome_hidden(hidden);
+                        crate::editor::layout::set_dock_left_collapsed(left);
+                        crate::editor::layout::set_dock_right_collapsed(right);
                         return;
                     }
 
                     // Pane centre with the PREVIOUS insets (the Cells still hold the pre-toggle state).
-                    let before = crate::eden_layout::pane_center_px(w, h);
+                    let before = crate::editor::layout::pane_center_px(w, h);
                     // Commit the new inset state, then read the pane centre AFTER.
-                    crate::eden_layout::set_chrome_hidden(hidden);
-                    crate::eden_layout::set_dock_left_collapsed(left);
-                    crate::eden_layout::set_dock_right_collapsed(right);
-                    let after = crate::eden_layout::pane_center_px(w, h);
+                    crate::editor::layout::set_chrome_hidden(hidden);
+                    crate::editor::layout::set_dock_left_collapsed(left);
+                    crate::editor::layout::set_dock_right_collapsed(right);
+                    let after = crate::editor::layout::pane_center_px(w, h);
 
                     let dpr = web_sys::window()
                         .map(|win| win.device_pixel_ratio())
@@ -4821,7 +4825,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 || (before.1 - after.1).abs() > f64::EPSILON)
                         {
                             let scale = e.zoom().exp2();
-                            let (nx, ny) = crate::eden_layout::centre_hold_target(
+                            let (nx, ny) = crate::editor::layout::centre_hold_target(
                                 e.target_x(),
                                 e.target_y(),
                                 scale,
@@ -4928,7 +4932,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // T-761 — Export Compiled parks findings in a thread_local; client-side
                     // `/missions/:id/edit` remounts reuse the wasm instance, so clear on hydrate
                     // or mission B inherits A's build report (wave-116 finding 3).
-                    crate::validation_panel::clear_compile_findings();
+                    crate::editor::panels::validation_panel::clear_compile_findings();
                     // T-628 — the mission segment is over the instant the hydrate returns, on every
                     // one of its paths (adopted / trusted-local / conflict / 404 / offline). Closing
                     // it here rather than inside the hydrate is what stops a network failure from
@@ -5800,10 +5804,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 ev.client_y() as f64 - rect.top(),
                             );
                             // T-638 — the LIVE insets (dock collapse + chrome_hidden folded in).
-                            let on_canvas = px >= crate::eden_layout::dock_left_px()
-                                && px <= rect.width() - crate::eden_layout::dock_right_px()
-                                && py >= crate::eden_layout::strip_top_px()
-                                && py <= rect.height() - crate::eden_layout::toolbelt_band_px();
+                            let on_canvas = px >= crate::editor::layout::dock_left_px()
+                                && px <= rect.width() - crate::editor::layout::dock_right_px()
+                                && py >= crate::editor::layout::strip_top_px()
+                                && py <= rect.height() - crate::editor::layout::toolbelt_band_px();
                             let world = if on_canvas {
                                 let g = engine.borrow();
                                 g.as_ref().map(|e| {
@@ -6512,9 +6516,14 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // repaired the armed pointerup machine — button filter, left.take(), Esc/RMB
                     // disarm — but Place Comment still adds ZERO new state to LeftGesture.)
                     let world = cam.unproject_xy(px, py);
-                    let target = crate::context_menu::resolve_target(hit.as_deref(), &sel)
-                        .at_world(world[0], world[1]);
-                    crate::context_menu::open(ev.client_x() as f64, ev.client_y() as f64, target);
+                    let target =
+                        crate::editor::panels::context_menu::resolve_target(hit.as_deref(), &sel)
+                            .at_world(world[0], world[1]);
+                    crate::editor::panels::context_menu::open(
+                        ev.client_x() as f64,
+                        ev.client_y() as f64,
+                        target,
+                    );
                 }
             });
             // T-159.21 — pointer off the map ⇒ the CUR read-out shows the em-dash cells (React's
@@ -6808,7 +6817,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     let strip_title = mission_id.clone();
                     move || (!chrome_hidden.get()).then(|| view! {
                     <div class="absolute inset-x-0 top-0 z-30 h-12">
-                        <crate::eden_chrome::TopCommandStrip
+                        <crate::editor::eden_chrome::TopCommandStrip
                             title=strip_title.clone()
                             can_undo
                             can_redo
@@ -6835,11 +6844,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // back out of these consts and unprojects with it.
                 {move || (!chrome_hidden.get()).then(|| view! {
                     <div class=move || if dock_left_collapsed.get() {
-                        crate::eden_layout::DOCK_LEFT_MOUNT_COLLAPSED
+                        crate::editor::layout::DOCK_LEFT_MOUNT_COLLAPSED
                     } else {
-                        crate::eden_layout::DOCK_LEFT_MOUNT
+                        crate::editor::layout::DOCK_LEFT_MOUNT
                     }>
-                        <crate::eden_chrome::DockLeft
+                        <crate::editor::eden_chrome::DockLeft
                             nodes=outliner_nodes
                             selected=selected_ids
                             active_layer
@@ -6849,11 +6858,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                 })}
                 {move || (!chrome_hidden.get()).then(|| view! {
                     <div class=move || if dock_right_collapsed.get() {
-                        crate::eden_layout::DOCK_RIGHT_MOUNT_COLLAPSED
+                        crate::editor::layout::DOCK_RIGHT_MOUNT_COLLAPSED
                     } else {
-                        crate::eden_layout::DOCK_RIGHT_MOUNT
+                        crate::editor::layout::DOCK_RIGHT_MOUNT
                     }>
-                        <crate::eden_chrome::DockRight
+                        <crate::editor::eden_chrome::DockRight
                             catalog
                             vehicle_catalog
                             registry_items
@@ -6878,7 +6887,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // three buttons in the same pill, no longer sharing the strip with the readouts.
                 {move || (!chrome_hidden.get()).then(|| view! {
                 <div class="absolute bottom-11 left-1/2 -translate-x-1/2">
-                    <crate::eden_toolbelt::ModeToolbar tool_mode los_mode />
+                    <crate::editor::panels::toolbelt::ModeToolbar tool_mode los_mode />
                 </div>
                 })}
                 // (2) The full-width status bar — CUR/OBJ/SEL/SZ readouts, the T-667 map-furniture
@@ -6891,7 +6900,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // `hud_shown`) AND a non-empty sampler string (checked inside `StatusBar`).
                 {move || (!chrome_hidden.get()).then(|| view! {
                 <div class="absolute inset-x-0 bottom-0">
-                    <crate::eden_toolbelt::StatusBar
+                    <crate::editor::panels::toolbelt::StatusBar
                         cursor
                         sel_count
                         obj_count
@@ -6910,19 +6919,19 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // status-bar furniture slot; it reads the live camera + viewport itself and re-runs
                 // off the same `cursor`/`debug_hud` heartbeats (no new rAF loop). Gated by
                 // `chrome_hidden` like the other furniture so Backspace hides it too.
-                {move || (!chrome_hidden.get()).then(|| view! { <crate::eden_toolbelt::MapGridRefs cursor debug_hud=Some(debug_hud) /> })}
+                {move || (!chrome_hidden.get()).then(|| view! { <crate::editor::panels::toolbelt::MapGridRefs cursor debug_hud=Some(debug_hud) /> })}
                 // T-159.26 — Attributes modal (fixed overlay; no DOM while closed). Inside the
                 // chrome subtree so its pointerdowns never open a map gesture. NOT gated by T-662's
                 // `chrome_hidden` — a dialog the operator opened must survive a hide-interface toggle.
                 <div class="pointer-events-auto">
-                    <crate::attributes::AttributesModal attrs_open attrs_tab doc_tick registry_items compat />
+                    <crate::editor::panels::attributes_modal::AttributesModal attrs_open attrs_tab doc_tick registry_items compat />
                 </div>
                 <div class="pointer-events-auto">
-                    <crate::eden_chrome::MissionSettingsDialog open=settings_open doc_tick />
+                    <crate::editor::eden_chrome::MissionSettingsDialog open=settings_open doc_tick />
                     <crate::pages::operations::faction_manager::FactionManagerDialog open=fm_open registry=registry_items />
                     // T-177 B2 / T-071.0 — ORBAT Manager modal shell (browse/select the live ORBAT
                     // faction → squad → slot tree relocated from the left dock).
-                    <crate::eden_chrome::OrbatManagerDialog
+                    <crate::editor::eden_chrome::OrbatManagerDialog
                         open=orbat_open
                         orbat=orbat_nodes
                         selected=selected_ids
@@ -6943,7 +6952,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // chrome). Renders no DOM while `context_menu` is None; its own backdrop is
                 // `pointer-events-auto` so click-away dismissal works even over the map.
                 <div class="pointer-events-auto">
-                    <crate::context_menu::ContextMenuOverlay menu=context_menu />
+                    <crate::editor::panels::context_menu::ContextMenuOverlay menu=context_menu />
                 </div>
                 // T-647 PLACE-003 — the empty-ground asset picker. Ungated (survives hide-chrome)
                 // and self-contained: it reuses the SAME `registry_items` + `active_side` the
@@ -7009,7 +7018,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // readout, which ARE dock furniture and gated. Re-evaluates off `doc_tick` (the T-666
                 // channel) through its own 250 ms trailing debounce; the engine call is defensively
                 // wrapped so a rule panic can never take the editor down.
-                <crate::validation_panel::ValidationPanel doc_tick />
+                <crate::editor::panels::validation_panel::ValidationPanel doc_tick />
                 // T-648 — the snap-grid step readout (TOOLBAR-GRID-MOVE-001). GATED on `chrome_hidden`
                 // — it is status-bar furniture like the scale bar / grid refs, so Backspace hides it
                 // too (this is the SEVENTH chrome-gated mount; the count pin is updated to match).
@@ -7245,8 +7254,8 @@ fn start_raf(
             // The `m_per_px`/`format_m_per_px` pair is `eden_toolbelt`'s — the same conversion the
             // scale bar uses and the same `2^(−deckZoom)` convention T-639's contour ladder takes.
             {
-                let mpp = crate::eden_toolbelt::m_per_px(e.zoom());
-                let text = crate::eden_toolbelt::format_m_per_px(mpp);
+                let mpp = crate::editor::panels::toolbelt::m_per_px(e.zoom());
+                let text = crate::editor::panels::toolbelt::format_m_per_px(mpp);
                 if text != last_scale_text {
                     last_scale_text = text;
                     scale_mpp.set(mpp);
@@ -9366,7 +9375,7 @@ mod t635_debug_hud {
         // The StatusBar mount must be one of the `(!chrome_hidden.get()).then(` gated wrappers, so
         // hiding the chrome unmounts the HUD too (the chrome_hidden half of the T-635 gate stack).
         let belt = ed
-            .find("crate::eden_toolbelt::StatusBar")
+            .find("crate::editor::panels::toolbelt::StatusBar")
             .expect("StatusBar mount present");
         let gate = ed[..belt]
             .rfind("(!chrome_hidden.get()).then(")
@@ -9374,8 +9383,8 @@ mod t635_debug_hud {
         // Nothing but the wrapper div opens between the gate and the StatusBar mount — i.e. the gate
         // is the StatusBar's own wrapper, not an earlier mount's.
         assert!(
-            !ed[gate..belt].contains("crate::eden_toolbelt::ModeToolbar")
-                && !ed[gate..belt].contains("crate::eden_chrome::Dock"),
+            !ed[gate..belt].contains("crate::editor::panels::toolbelt::ModeToolbar")
+                && !ed[gate..belt].contains("crate::editor::eden_chrome::Dock"),
             "T-636: the chrome_hidden gate immediately preceding StatusBar must be its OWN wrapper"
         );
     }
@@ -9803,7 +9812,7 @@ mod t647_placement_interactions {
             "census: mission_editor's only positive alt_key keydown is the Ctrl+Alt+D HUD toggle"
         );
         // eden_tree: Alt-click is a DOCK-tree gesture (descendants selection), NOT the canvas.
-        let tree = live_code(include_str!("eden_tree.rs"));
+        let tree = live_code(include_str!("editor/panels/outliner_tree.rs"));
         assert!(
             tree.contains("ev.alt_key() || ev.shift_key()"),
             "census: eden_tree's Alt-click is a dock-tree gesture (no canvas collision)"
@@ -10341,7 +10350,7 @@ mod t644_los_button_submode {
     /// so the button never lies about which tool it selects.
     #[test]
     fn los_button_reclick_toggles_the_submode() {
-        let code = live_code(include_str!("eden_toolbelt.rs"));
+        let code = live_code(include_str!("editor/panels/toolbelt.rs"));
         let body = only_body(&code, &format!("pub fn {}", "ModeToolbar("));
         assert!(
             body.contains("los_mode.update(|m| *m = m.toggled())"),
@@ -10365,7 +10374,7 @@ mod t644_los_button_submode {
     /// the string-KEPT source (the title/label literals survive) so the needle is the real view text.
     #[test]
     fn los_button_reflects_the_active_submode() {
-        let src = live_source(include_str!("eden_toolbelt.rs"));
+        let src = live_source(include_str!("editor/panels/toolbelt.rs"));
         let body = only_body(&src, &format!("pub fn {}", "ModeToolbar("));
         // The button reads the sub-mode to pick its title/label.
         assert!(
@@ -10766,7 +10775,7 @@ mod t648_transform {
         // T-703/T-738: the slicer used to be a private copy right here — one of FOUR. It now lives
         // once, in `eden_help::keymap_census`, beside the structured (code, modifiers) census that
         // detects collisions; `there_is_exactly_one_extractor` keeps it from being copied again.
-        use crate::eden_help::keymap_census::keydown_arms;
+        use crate::editor::panels::help_modal::keymap_census::keydown_arms;
         let this_arms = keydown_arms(include_str!("mission_editor.rs"));
         let history_arms = keydown_arms(include_str!("mission_history.rs"));
         // Needles assembled so the LITERAL never appears verbatim in this test's own source.
@@ -11409,10 +11418,7 @@ mod t754_router_resolves_zones {
              same question before drawing a click affordance"
         );
         assert!(
-            ed.contains(&format!(
-                "eden_dock_right::route{}",
-                "_select_zone(subject_id)"
-            )),
+            ed.contains(&format!("dock_right::route{}", "_select_zone(subject_id)")),
             "T-754: a zone must be selected through the Zones panel's own selection seam"
         );
     }
@@ -11644,7 +11650,7 @@ mod t649_select_all_and_multi_edit {
     /// T-703/T-738 — THE keydown arm-list extractor, consumed rather than re-copied. This module
     /// carried the raw-text variant of it; the shared one scrubs comments, which is strictly
     /// stronger for the census below (a note that MENTIONS `KeyA` can no longer read as a binding).
-    use crate::eden_help::keymap_census::keydown_arms;
+    use crate::editor::panels::help_modal::keymap_census::keydown_arms;
 
     /// Everything after the editor page's own signature — the live editor body.
     fn editor_live() -> String {
@@ -11819,7 +11825,7 @@ mod t649_select_all_and_multi_edit {
     /// whose values DIFFER across the selection must now be blank, disabled, and behind one.
     #[test]
     fn differing_fields_are_locked_behind_a_per_field_checkbox() {
-        let raw_attrs = include_str!("attributes.rs");
+        let raw_attrs = include_str!("editor/panels/attributes_modal.rs");
         let attrs = live_code(raw_attrs);
         // The checkbox itself (string literal ⇒ pinned on the RAW source), assembled so this test's
         // own text is not the match.
@@ -11894,7 +11900,7 @@ mod t649_select_all_and_multi_edit {
     /// "must fire the history/persist tail OUTSIDE the fan-out loop".
     #[test]
     fn multi_edit_commits_fan_out_to_every_selected_id() {
-        let attrs = live_code(include_str!("attributes.rs"));
+        let attrs = live_code(include_str!("editor/panels/attributes_modal.rs"));
         for (seam, single, multi) in [
             (
                 "fn commit_position(",
@@ -12152,7 +12158,7 @@ mod t649_select_all_and_multi_edit {
     /// is false for those three verbs and must not return.
     #[test]
     fn the_arsenal_tab_discloses_one_entity_picks_and_whole_selection_buffer_verbs() {
-        let raw = include_str!("attributes.rs");
+        let raw = include_str!("editor/panels/attributes_modal.rs");
         let modal_raw = fn_source(raw, "fn modal_view(");
         let one = "Pick and cargo edits apply to this one entity";
         let whole = "Copy, Apply, and Remove Everything act on the whole selection";
@@ -12186,7 +12192,7 @@ mod t669_clipboard_completion {
     /// it now consumes the one in `eden_help::keymap_census`, which also carries the structured
     /// `(code, modifiers)` census that finally makes the Ctrl+V / Ctrl+Shift+V distinction this
     /// module's own pins had to hand-check.
-    use crate::eden_help::keymap_census::keydown_arms;
+    use crate::editor::panels::help_modal::keymap_census::keydown_arms;
     use std::collections::BTreeSet;
 
     /// Needles assembled so the arm LITERAL never appears verbatim in this test's own source.
@@ -12389,7 +12395,7 @@ mod t669_clipboard_completion {
     fn both_new_chords_are_documented_in_the_help_table() {
         // Raw source: the chords ARE string literals, so a scrub that blanks literals would blank
         // the thing under test.
-        let help = include_str!("eden_help.rs");
+        let help = include_str!("editor/panels/help_modal.rs");
         for chord in ["Ctrl/Cmd + X", "Ctrl/Cmd + Shift + V"] {
             assert!(
                 help.contains(chord),
@@ -12411,11 +12417,11 @@ mod t669_clipboard_completion {
     /// additionally holds `SHORTCUTS` to the same total, so the circle is closed from the outside.
     #[test]
     fn the_help_blurb_counts_the_bindings_correctly() {
-        let codes: BTreeSet<&str> = crate::eden_help::SHORTCUTS
+        let codes: BTreeSet<&str> = crate::editor::panels::help_modal::SHORTCUTS
             .iter()
             .flat_map(|s| s.codes.iter().copied())
             .collect();
-        let bound = crate::eden_help::keymap_census::all_bound_codes();
+        let bound = crate::editor::panels::help_modal::keymap_census::all_bound_codes();
         assert_eq!(
             codes.len(),
             bound.len(),
@@ -12427,7 +12433,7 @@ mod t669_clipboard_completion {
         let word = english(bound.len());
         let sentence = format!("binds {word} distinct `KeyboardEvent` codes");
         assert!(
-            include_str!("eden_help.rs").contains(&sentence),
+            include_str!("editor/panels/help_modal.rs").contains(&sentence),
             "T-669/T-740: the editor now binds {} distinct key codes ({bound:?}), so \
              `eden_help`'s opening paragraph must read \"{sentence}\"",
             bound.len()
@@ -12437,7 +12443,7 @@ mod t669_clipboard_completion {
     /// Small-integer spelling. T-703 folded the second copy of this into
     /// `keymap_census::spell`, beside the census the number is derived from.
     fn english(n: usize) -> String {
-        crate::eden_help::keymap_census::spell(n)
+        crate::editor::panels::help_modal::keymap_census::spell(n)
     }
 }
 
@@ -12469,14 +12475,14 @@ mod t670_scale_signal {
         let ed = editor_live();
         assert!(
             ed.contains(&format!(
-                "let scale_mpp = RwSignal::new(crate::eden_toolbelt::{}(-2.0))",
+                "let scale_mpp = RwSignal::new(crate::editor::panels::toolbelt::{}(-2.0))",
                 "m_per_px"
             )),
             "T-670: scale_mpp must be a real signal seeded from eden_toolbelt::m_per_px at the \
              editor's default deck zoom"
         );
         let belt = ed
-            .find("crate::eden_toolbelt::StatusBar")
+            .find("crate::editor::panels::toolbelt::StatusBar")
             .expect("StatusBar mount present");
         let close = ed[belt..]
             .find("/>")

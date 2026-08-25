@@ -5,7 +5,7 @@ use crate::core::auth::AuthStore;
 // their single source of truth, so a shared primitive that re-typed `hover:bg-white/10` here would
 // be a second definition of a rule the chrome files are pinned against. Nothing runtime crosses the
 // boundary — these are `&'static str` class recipes resolved at compile time.
-use crate::eden_layout::{DISABLED_GLYPH, HOVER_FILL};
+use crate::editor::layout::{DISABLED_GLYPH, HOVER_FILL};
 use crate::shell::nav_config::{has_min_role_authed, Role};
 use leptos::prelude::*;
 

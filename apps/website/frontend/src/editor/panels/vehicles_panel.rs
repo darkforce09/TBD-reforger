@@ -12,7 +12,7 @@ use std::collections::HashMap;
 #[cfg(target_arch = "wasm32")]
 use crate::core::ui::{cn, MaterialIcon};
 #[cfg(target_arch = "wasm32")]
-use crate::eden_layout::HOVER_FILL;
+use crate::editor::layout::HOVER_FILL;
 
 /// T-215 — registry kinds the vehicle cargo picker offers.
 ///
@@ -478,7 +478,7 @@ mod tests {
     #[test]
     fn header_row_uses_hover_fill_not_the_weak_ad_hoc_fill() {
         use crate::arsenal::class_r_scrub::live_code;
-        let code = live_code(include_str!("eden_vehicles_panel.rs"));
+        let code = live_code(include_str!("vehicles_panel.rs"));
         assert!(
             code.contains("HOVER_FILL"),
             "the header row must consume HOVER_FILL"

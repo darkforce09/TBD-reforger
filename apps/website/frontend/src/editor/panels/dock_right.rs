@@ -12,10 +12,10 @@ use serde::{Deserialize, Serialize};
 use crate::asset_catalog::{CatalogNode, CatalogPalette, CatalogState};
 use crate::core::dto::RegistryItem;
 use crate::core::ui::MaterialIcon;
-use crate::eden_dock_left::collapse_chevron;
-use crate::eden_layout::{DOCK_R, STUB_PX};
-use crate::eden_tree::{chevron_or_spacer, guide_spans, PALETTE_LEAF};
-use crate::eden_zones::zones_panel;
+use crate::editor::layout::{DOCK_R, STUB_PX};
+use crate::editor::panels::dock_left::collapse_chevron;
+use crate::editor::panels::outliner_tree::{chevron_or_spacer, guide_spans, PALETTE_LEAF};
+use crate::editor::panels::zones_panel::zones_panel;
 
 /// T-076 (RIGHT-CREW-001) — the "place vehicle with crew" toggle rendered beside the Vehicles
 /// search. A checkbox bound to `with_crew`: a change writes the [`crate::editor_ops`] placement
@@ -2275,7 +2275,7 @@ pub(crate) fn compositions_panel(
     doc_tick: RwSignal<u64>,
     editing: RwSignal<Option<String>>,
 ) -> AnyView {
-    use crate::eden_tree::{ROW, ROW_ACTIVE};
+    use crate::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
     use crate::editor_ops as ops;
 
     // The inline save form's open state + field buffers. Opening seeds no defaults; a blank title
@@ -2704,8 +2704,8 @@ pub(crate) fn triggers_panel(
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<String>>,
 ) -> AnyView {
-    use crate::eden_tree::{ROW, ROW_ACTIVE};
-    use crate::eden_zones::{humanize_token, DrawTarget, ZoneShape};
+    use crate::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
+    use crate::editor::panels::zones_panel::{humanize_token, DrawTarget, ZoneShape};
     use crate::editor_ops as ops;
 
     // The activation the NEXT draw will carry, seeded to the first of the three (presence).
@@ -2802,7 +2802,7 @@ pub(crate) fn triggers_panel(
             } else {
                 "Click the centre.".to_string()
             };
-            let can_close = is_poly && crate::eden_zones::polygon_is_committable(&d.verts);
+            let can_close = is_poly && crate::editor::panels::zones_panel::polygon_is_committable(&d.verts);
             view! {
                 <div class="mt-3 rounded-md border border-primary/40 bg-primary/10 p-2">
                     <p class="text-label-sm normal-case text-on-surface">
@@ -2945,7 +2945,7 @@ pub(crate) fn triggers_panel(
 }
 
 /// T-079 — the Attributes panel for one trigger: name, activation, the OWNER picker
-/// (CONN-TRG-OWNER-001), reshape, schema-driven rules, delete. The [`crate::eden_zones`]
+/// (CONN-TRG-OWNER-001), reshape, schema-driven rules, delete. The [`crate::editor::panels::zones_panel`]
 /// `zone_attributes` twin, with the owner picker + activation in place of zone label/faction/type.
 #[cfg(target_arch = "wasm32")]
 fn trigger_attributes(
@@ -2953,7 +2953,7 @@ fn trigger_attributes(
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<String>>,
 ) -> AnyView {
-    use crate::eden_zones::{humanize_token, DrawTarget, ZoneShape};
+    use crate::editor::panels::zones_panel::{humanize_token, DrawTarget, ZoneShape};
     use crate::editor_ops as ops;
 
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
@@ -3094,7 +3094,7 @@ fn trigger_attributes(
             <p class="mt-0.5 text-label-sm normal-case text-outline">
                 "Reuses the mission schema's zoneRules vocabulary — the same controls the Zones panel draws. Blank means the key is not authored and the mod's default applies."
             </p>
-            {crate::eden_zones::zone_rule_fields()
+            {crate::editor::panels::zones_panel::zone_rule_fields()
                 .into_iter()
                 .map(|f| trigger_rule_control(tid.clone(), f, rules.clone(), doc_tick))
                 .collect_view()}
@@ -3124,11 +3124,11 @@ fn trigger_attributes(
 #[cfg(target_arch = "wasm32")]
 fn trigger_rule_control(
     trigger_id: String,
-    f: crate::eden_zones::ZoneRuleField,
+    f: crate::editor::panels::zones_panel::ZoneRuleField,
     rules: serde_json::Value,
     doc_tick: RwSignal<u64>,
 ) -> AnyView {
-    use crate::eden_zones::{humanize_key, humanize_token, ZoneRuleKind};
+    use crate::editor::panels::zones_panel::{humanize_key, humanize_token, ZoneRuleKind};
     use crate::editor_ops as ops;
 
     let current = rules.get(&f.key).cloned();
@@ -3296,7 +3296,7 @@ fn trigger_rule_control(
 /// `overflow`/`backdrop-filter` clipping box and spans the viewport. (This slice owns neither
 /// `mission_editor` nor `ruler_tool`, so it cannot add a shared overlay mount there; the Portal keeps
 /// the whole line self-contained in an owned file.) The projection math is the pure, native-tested
-/// [`crate::eden_zones::project_owner_line`]. Nothing renders when no trigger is selected or the
+/// [`crate::editor::panels::zones_panel::project_owner_line`]. Nothing renders when no trigger is selected or the
 /// owner is dangling (`owner_line_world` returns `None`).
 #[cfg(target_arch = "wasm32")]
 #[component]
@@ -3349,7 +3349,7 @@ fn TriggerOwnerLine(selected: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
         on_cleanup(move || disposed.store(true, Ordering::Relaxed));
     }
 
-    let projected = move || -> Option<crate::eden_zones::ProjectedOwnerLine> {
+    let projected = move || -> Option<crate::editor::panels::zones_panel::ProjectedOwnerLine> {
         // Subscribe to selection, doc edits (owner assign / geometry / delete) and the pan heartbeat
         // (`tick`, bumped per rAF while selected). The camera is read live off the snapshot.
         let _ = doc_tick.get();
@@ -3370,7 +3370,7 @@ fn TriggerOwnerLine(selected: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
             let p = cam.project([x, y, 0.0]);
             (p[0], p[1])
         };
-        Some(crate::eden_zones::project_owner_line(
+        Some(crate::editor::panels::zones_panel::project_owner_line(
             world_a, world_b, project,
         ))
     };
@@ -3440,7 +3440,7 @@ pub(crate) fn triggers_panel(
 // STYLE and Eden's second Area-marker model. This panel authors none of them.
 
 /// `mission.schema.json` via the crate's single embed — the ONE source of the marker icon vocabulary.
-const MISSION_SCHEMA_JSON: &str = crate::eden_zones::MISSION_SCHEMA;
+const MISSION_SCHEMA_JSON: &str = crate::editor::panels::zones_panel::MISSION_SCHEMA;
 
 /// The closed `$defs/marker.icon` alias list, in schema order, parsed once.
 ///
@@ -3597,7 +3597,7 @@ struct CanonicalMarkerRow {
 /// alias substring-matches — so "Search icons" still matches slugs and names.
 #[cfg(target_arch = "wasm32")]
 fn canonical_marker_rows(filter: &str) -> Vec<CanonicalMarkerRow> {
-    use crate::eden_zones::humanize_token;
+    use crate::editor::panels::zones_panel::humanize_token;
     use map_engine_render::scene::{marker_glyph_for_alias, MarkerGlyph, MARKER_GLYPH_COUNT};
 
     // The mirrored count and the source-of-truth count must agree — a wasm build fails loudly here
@@ -3771,8 +3771,8 @@ pub(crate) fn markers_panel(
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<(String, String)>>,
 ) -> AnyView {
-    use crate::eden_tree::{ROW, ROW_ACTIVE};
-    use crate::eden_zones::humanize_token;
+    use crate::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
+    use crate::editor::panels::zones_panel::humanize_token;
     use crate::editor_ops as ops;
 
     let icon_search = RwSignal::new(String::new());
@@ -3975,7 +3975,7 @@ fn marker_attributes(
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<(String, String)>>,
 ) -> AnyView {
-    use crate::eden_zones::humanize_token;
+    use crate::editor::panels::zones_panel::humanize_token;
     use crate::editor_ops as ops;
 
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
@@ -4201,7 +4201,7 @@ mod tests {
     /// prose (which names the bare function) never contains.
     #[test]
     fn vehicles_tab_places_instead_of_promising() {
-        const SRC: &str = include_str!("eden_dock_right.rs");
+        const SRC: &str = include_str!("dock_right.rs");
         let stub = |what: &str, ticket: &str| format!("{what} placement {} {ticket}.", "lands in");
         let arm = |f: &str| format!("editor_ops::{f}{}", "(payload.clone())");
 
@@ -4228,7 +4228,7 @@ mod tests {
             "a Markers icon row must arm the marker place path"
         );
 
-        let ops = include_str!("editor_ops.rs");
+        let ops = include_str!("../../editor_ops.rs");
         assert!(
             ops.contains("pub fn begin_place_vehicle"),
             "editor_ops must expose the vehicle arm"
@@ -4252,7 +4252,7 @@ mod tests {
     /// Character/Object free to grow `.clone()` while this pin stayed green.
     #[test]
     fn favourites_place_arm_stays_clone_free() {
-        const SRC: &str = include_str!("eden_dock_right.rs");
+        const SRC: &str = include_str!("dock_right.rs");
         // Fragment the marker — a contiguous fn-name needle in this test would be a second hit.
         let marker = format!("{}{}", "fn arm_favourite_place", "(");
         let fav_arm = crate::arsenal::class_r_scrub::only_body(SRC, &marker);
@@ -4328,7 +4328,7 @@ mod tests {
     fn objects_chip_enables_mode_without_clobbering_side() {
         // T-254 — stub constant name must not remain (split so this assert's own source cannot
         // false-fail the contains check).
-        let src = include_str!("eden_dock_right.rs");
+        let src = include_str!("dock_right.rs");
         let stub_const = ["OBJECTS_", "COMING_", "SOON"].concat();
         assert!(
             !src.contains(&stub_const),
@@ -4366,9 +4366,10 @@ mod tests {
         use crate::asset_catalog::build_catalog_tree;
         use crate::core::dto::RegistryResponse;
 
-        let golden: RegistryResponse =
-            serde_json::from_str(include_str!("../tests/fixtures/api/GET__registry.json"))
-                .expect("golden");
+        let golden: RegistryResponse = serde_json::from_str(include_str!(
+            "../../../tests/fixtures/api/GET__registry.json"
+        ))
+        .expect("golden");
         let mut items = golden.data;
         items.push(
             serde_json::from_value(serde_json::json!({
@@ -4446,7 +4447,7 @@ mod tests {
         // presence check — the T-759 hollow-pin class. `live_source` blanks comments and KEEPS string
         // literals, which the `"Compositions"` / `ops::<fn>(` needles below need.
         use crate::arsenal::class_r_scrub::live_source;
-        let src = live_source(include_str!("eden_dock_right.rs"));
+        let src = live_source(include_str!("dock_right.rs"));
         let src = src.as_str();
         // The panel aliases `use crate::editor_ops as ops`, so the calls read `ops::<fn>(`.
         let call = |f: &str| format!("ops::{f}(");
@@ -4487,7 +4488,7 @@ mod tests {
         // The editor-ops seam actually exposes those functions AND the place reaches the core
         // one-undo-step mutator (the claim the store round-trip test rests on). Scrubbed the same
         // way (T-791): `editor_ops.rs` documents these `pub fn`s in prose right above them.
-        let ops = live_source(include_str!("editor_ops.rs"));
+        let ops = live_source(include_str!("../../editor_ops.rs"));
         assert!(
             ops.contains("pub fn save_composition")
                 && ops.contains("pub fn begin_place_composition"),
@@ -4518,7 +4519,7 @@ mod tests {
     fn a_composition_captures_comments_and_authored_elevation() {
         use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
-        const OPS: &str = include_str!("editor_ops.rs");
+        const OPS: &str = include_str!("../../editor_ops.rs");
         // The elevation key is a CONTRACT string crossing a crate boundary: both ends below are
         // checked against this one value, so a rename that touches only one side is red.
         let elevation_key = format!("{:?}", "elevation");
@@ -4560,7 +4561,7 @@ mod tests {
 
         // ── The PLACE half (`map-engine-core`) — the same two keys, read back ────────────────────
         let store = live_source(include_str!(
-            "../../../../crates/map-engine-core/src/doc/store.rs"
+            "../../../../../../crates/map-engine-core/src/doc/store.rs"
         ));
         let place = only_body(&store, &format!("fn {}(", "place_composition"));
         assert!(
@@ -4599,7 +4600,7 @@ mod tests {
     fn both_id_minters_prove_uniqueness_against_hidden_slots_too() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
 
-        let ops_code = live_code(include_str!("editor_ops.rs"));
+        let ops_code = live_code(include_str!("../../editor_ops.rs"));
         let helper_call = format!("{}(", "live_slot_ids");
         let helper_body = only_body(&ops_code, &format!("fn {helper_call}"));
 
@@ -4651,7 +4652,7 @@ mod tests {
     #[test]
     fn composition_arm_rides_the_shared_pending_machine() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("../../editor_ops.rs"));
         // The arm variant exists and the public arm fn routes through the shared `arm(…)`.
         assert!(
             ops.contains("Composition(String)"),
@@ -4714,7 +4715,7 @@ mod tests {
         // cannot contain this assertion's own text, only the real `ops::armed_composition_id()` call
         // in the panel. Whole-file (not `only_body`): `compositions_panel` has a wasm def AND a
         // native stub, which `only_body` rejects as a shadow pair by design.
-        let dock = live_code(include_str!("eden_dock_right.rs"));
+        let dock = live_code(include_str!("dock_right.rs"));
         let gated = format!("armed_{}_id()", "composition");
         assert!(
             dock.contains(&gated),
@@ -4743,7 +4744,7 @@ mod tests {
         // exists in the enum, not just the tab). Source-inspected because `PaletteKind` is a private
         // enum a native test cannot name without pulling the wasm-gated module graph. The needle is
         // assembled so this test's own text is not the thing that satisfies the check.
-        let src = include_str!("eden_dock_right.rs");
+        let src = include_str!("dock_right.rs");
         let variant = ["PaletteKind", "::", "Trigger"].concat();
         assert!(
             src.contains(&variant),
@@ -4760,7 +4761,7 @@ mod tests {
     /// the top of this file). Each needle is split and re-joined.
     #[test]
     fn triggers_tab_is_wired_not_stubbed() {
-        const SRC: &str = include_str!("eden_dock_right.rs");
+        const SRC: &str = include_str!("dock_right.rs");
         let call = |f: &str| format!("ops::{f}(");
 
         // The tab strip renders a Triggers tab at index 5.
@@ -4799,7 +4800,7 @@ mod tests {
 
         // The editor-ops seam actually exposes those functions AND the geometry reaches the core
         // trigger mutators (the claim the store round-trip rests on).
-        let ops = include_str!("editor_ops.rs");
+        let ops = include_str!("../../editor_ops.rs");
         for f in [
             "pub fn set_trigger_owner",
             "pub fn trigger_rows",
@@ -4824,9 +4825,9 @@ mod tests {
     ///     `zone_draw`/`zone_polygon` functions with the target flag.
     #[test]
     fn trigger_draw_is_second_consumer_of_the_zone_tool() {
-        const SRC: &str = include_str!("eden_dock_right.rs");
-        let zones_src = include_str!("eden_zones.rs");
-        let ops = include_str!("editor_ops.rs");
+        const SRC: &str = include_str!("dock_right.rs");
+        let zones_src = include_str!("zones_panel.rs");
+        let ops = include_str!("../../editor_ops.rs");
 
         // Assemble the target tokens so this test's own source cannot satisfy the checks by accident.
         let trigger_target = ["Draw", "Target", "::", "Trigger"].concat();
@@ -4878,7 +4879,7 @@ mod tests {
     /// native test (below) and the store's `owner_edge_assigns_clears_and_tolerates_dangling`.
     #[test]
     fn owner_line_uses_the_selection_overlay_idiom() {
-        const SRC: &str = include_str!("eden_dock_right.rs");
+        const SRC: &str = include_str!("dock_right.rs");
         // Every SRC needle assembled at run time — this test's own source is part of the haystack, so
         // a contiguous literal would make a presence check unpassable-by-code (satisfied by the test
         // itself). The overlay is the ruler idiom: a non-interactive SVG projected by the pure helper.
@@ -4916,7 +4917,7 @@ mod tests {
     /// in the store test; this proves the geometry the overlay draws when there IS a line.
     #[test]
     fn project_owner_line_maps_both_endpoints() {
-        use crate::eden_zones::project_owner_line;
+        use crate::editor::panels::zones_panel::project_owner_line;
         // Trigger centre (10,20) → owner (110,220), through a scale-2 + offset projector.
         let l = project_owner_line((10.0, 20.0), (110.0, 220.0), |x, y| {
             (x * 2.0 + 5.0, y * 2.0 + 7.0)
@@ -4939,7 +4940,7 @@ mod tests {
     /// hinge the whole "one shared draw tool" design turns on.
     #[test]
     fn draw_target_variants_are_distinct() {
-        use crate::eden_zones::DrawTarget;
+        use crate::editor::panels::zones_panel::DrawTarget;
         assert_ne!(DrawTarget::Zone, DrawTarget::Trigger);
         assert_eq!(DrawTarget::Trigger.noun(), "trigger");
         assert_eq!(DrawTarget::Zone.noun(), "zone");
@@ -5075,9 +5076,10 @@ mod tests {
         use crate::asset_catalog::CatalogPalette;
         use crate::core::dto::RegistryResponse;
 
-        let golden: RegistryResponse =
-            serde_json::from_str(include_str!("../tests/fixtures/api/GET__registry.json"))
-                .expect("golden");
+        let golden: RegistryResponse = serde_json::from_str(include_str!(
+            "../../../tests/fixtures/api/GET__registry.json"
+        ))
+        .expect("golden");
         let mut items = golden.data;
         let live = items
             .iter()
@@ -5185,7 +5187,7 @@ mod tests {
     /// presence check unfailable.
     #[test]
     fn favourites_tab_is_wired_not_stubbed() {
-        const SRC: &str = include_str!("eden_dock_right.rs");
+        const SRC: &str = include_str!("dock_right.rs");
 
         assert!(
             SRC.contains(&format!("tab_btn(6, {:?})", "Favourites")),
@@ -5244,7 +5246,7 @@ mod tests {
     #[test]
     fn favourites_panel_failure_arm_has_retry() {
         use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
-        let code = live_code(include_str!("eden_dock_right.rs"));
+        let code = live_code(include_str!("dock_right.rs"));
         let body = only_body(&code, "fn favourites_panel(");
         let failed_get = format!("{}{}", "registry_failed.", "get()");
         let bump = format!("{}{}", "registry_fetch_gen.", "update(");
@@ -5257,7 +5259,7 @@ mod tests {
             "T-750: the failure arm must bump registry_fetch_gen on Retry"
         );
         // User-visible copy: live_source keeps string literals; still cut test module.
-        let sourced = live_source(include_str!("eden_dock_right.rs"));
+        let sourced = live_source(include_str!("dock_right.rs"));
         let sourced_body = only_body(&sourced, "fn favourites_panel(");
         let retry = format!("{}{}", "\"", "Retry\"");
         assert!(
@@ -5282,7 +5284,7 @@ mod tests {
     #[test]
     fn catalog_failure_view_names_cause_and_offers_retry() {
         use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
-        let code = live_code(include_str!("eden_dock_right.rs"));
+        let code = live_code(include_str!("dock_right.rs"));
         let body = only_body(&code, "fn catalog_failure_view(");
         let cause_branch = format!("{}{}", "no_modpack.", "get()");
         let bump = format!("{}{}", "registry_fetch_gen.", "update(");
@@ -5295,7 +5297,7 @@ mod tests {
             "T-800: Retry must reuse the T-750 mechanism — bump registry_fetch_gen, not a fresh fetch"
         );
         // User-visible copy on live_source (literals kept, test module still cut).
-        let sourced = live_source(include_str!("eden_dock_right.rs"));
+        let sourced = live_source(include_str!("dock_right.rs"));
         let sourced_body = only_body(&sourced, "fn catalog_failure_view(");
         let retry = format!("{}{}", "\"", "Retry\"");
         let modpack_word = "No modpack is configured";
@@ -5323,7 +5325,7 @@ mod tests {
     #[test]
     fn both_catalog_failed_arms_use_the_named_failure_view() {
         use crate::arsenal::class_r_scrub::{live_source, only_body};
-        let sourced = live_source(include_str!("eden_dock_right.rs"));
+        let sourced = live_source(include_str!("dock_right.rs"));
         let dock = only_body(&sourced, "pub fn DockRight(");
         // Two call sites: character catalog + vehicle catalog, each naming its noun.
         let calls = dock.matches("catalog_failure_view(").count();
@@ -5353,7 +5355,7 @@ mod tests {
     #[test]
     fn grammar_hint_hides_while_the_tree_is_failed() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let code = live_code(include_str!("eden_dock_right.rs"));
+        let code = live_code(include_str!("dock_right.rs"));
         let dock = only_body(&code, "pub fn DockRight(");
         // Both tab bodies must gate the hint on a not-Failed check. `.then(search_grammar_hint)` is
         // the render, guarded by a `matches!(… CatalogState::Failed)` negation.
@@ -5411,7 +5413,7 @@ mod tests {
     #[test]
     fn factions_tab_draws_the_merged_tree() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let code = live_code(include_str!("eden_dock_right.rs"));
+        let code = live_code(include_str!("dock_right.rs"));
         let dock = only_body(&code, "pub fn DockRight(");
         assert!(
             dock.contains("build_faction_catalog_tree("),
@@ -5437,7 +5439,7 @@ mod tests {
     #[test]
     fn a_merged_leaf_press_feeds_recently_placed() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let code = live_code(include_str!("eden_dock_right.rs"));
+        let code = live_code(include_str!("dock_right.rs"));
         let rows = only_body(&code, "fn faction_palette_rows(");
         assert!(
             rows.contains("arm_favourite_place(") && rows.contains("record_recent("),
@@ -5462,7 +5464,7 @@ mod tests {
     #[test]
     fn off_dock_placements_feed_recently_placed_through_the_recorder_seam() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let dock = live_code(include_str!("eden_dock_right.rs"));
+        let dock = live_code(include_str!("dock_right.rs"));
 
         // The dock installs the recorder (register + on_cleanup unregister) at mount, and the closure
         // routes through the pure transform via `record_recent`. Extracted from `DockRight`'s body so
@@ -5488,7 +5490,7 @@ mod tests {
         );
 
         // Both off-dock placement sites in editor_ops call the invoke, on the scrubbed fn bodies.
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("../../editor_ops.rs"));
         let record_call = format!("record_{}(", "placed");
 
         // Composition STAMP: `place_at_impl` records ONE entry for the stamp (keyed on the composition
@@ -5515,7 +5517,7 @@ mod tests {
     #[test]
     fn favourites_and_history_share_one_tab() {
         use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
-        let code = live_code(include_str!("eden_dock_right.rs"));
+        let code = live_code(include_str!("dock_right.rs"));
         let dock = only_body(&code, "pub fn DockRight(");
         // Tab 6 calls BOTH panels behind the `history_open` toggle.
         assert!(
@@ -5527,7 +5529,7 @@ mod tests {
             "T-809: a subtab toggle selects Favourites vs History within the one tab"
         );
         // The subtab is user-visible copy (on live_source: literals kept, comments cut).
-        let sourced = live_source(include_str!("eden_dock_right.rs"));
+        let sourced = live_source(include_str!("dock_right.rs"));
         assert!(
             sourced.contains("\"Recently placed\""),
             "T-809: the History subtab must be labelled for the operator"
@@ -5539,14 +5541,14 @@ mod tests {
     #[test]
     fn vehicles_tab_is_catalog_only_without_the_placed_strip() {
         use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
-        let code = live_code(include_str!("eden_dock_right.rs"));
+        let code = live_code(include_str!("dock_right.rs"));
         let dock = only_body(&code, "pub fn DockRight(");
         assert!(
             !dock.contains("placed_vehicles_panel("),
             "T-818: the Vehicles tab must NOT host placed_vehicles_panel — strip deleted"
         );
         // live_source keeps string literals: the strip's visible "Placed" heading must be gone too.
-        let sourced = live_source(include_str!("eden_dock_right.rs"));
+        let sourced = live_source(include_str!("dock_right.rs"));
         let dock_src = only_body(&sourced, "pub fn DockRight(");
         assert!(
             !dock_src.contains("\"Placed\""),
@@ -5575,7 +5577,7 @@ mod tests {
     /// Delete the placeholder or the hint row and this goes red.
     #[test]
     fn every_asset_search_box_advertises_the_grammar() {
-        const FULL: &str = include_str!("eden_dock_right.rs");
+        const FULL: &str = include_str!("dock_right.rs");
         let marker = format!("{}{}", "#[cfg", "(test)]");
         let src = &FULL[..FULL.find(&marker).expect("the test module marker exists")];
         // Guard the guard: the truncation must actually have removed this module.
@@ -5764,7 +5766,7 @@ mod tests {
     /// and the case-collapse assertion fails.
     #[test]
     fn picker_has_one_row_per_canonical_icon() {
-        use crate::eden_zones::humanize_token;
+        use crate::editor::panels::zones_panel::humanize_token;
 
         // The documented row count — far below the 64 raw aliases (that shrink is the fix).
         assert_eq!(
@@ -5844,7 +5846,7 @@ mod tests {
     #[test]
     fn picker_rows_draw_glyph_svgs_and_arm_the_canonical_slug() {
         use crate::arsenal::class_r_scrub::only_body;
-        const SRC: &str = include_str!("eden_dock_right.rs");
+        const SRC: &str = include_str!("dock_right.rs");
 
         // `markers_panel` has two definitions (the wasm picker + the native shell), so it is not a
         // unique `only_body` anchor. The picker rows live in the ONE `<ul aria-label="Marker icons">`
@@ -5920,7 +5922,7 @@ mod tests {
     /// Every literal is split so this test's own source cannot satisfy the search it performs.
     #[test]
     fn marker_writes_go_to_the_briefing_not_the_root_map() {
-        const OPS: &str = include_str!("editor_ops.rs");
+        const OPS: &str = include_str!("../../editor_ops.rs");
 
         assert!(
             OPS.contains(&format!("core.{}_faction_briefing_marker(", "set")),
@@ -5973,7 +5975,7 @@ mod tests {
     /// fragment-assembled so this module is not its own haystack.
     #[test]
     fn marker_attributes_selects_by_faction_id_and_id() {
-        const SRC: &str = include_str!("eden_dock_right.rs");
+        const SRC: &str = include_str!("dock_right.rs");
         let production = SRC
             .split("#[cfg(test)]")
             .next()
@@ -6022,12 +6024,12 @@ mod tests {
 #[cfg(test)]
 mod t637_tab_strip_budget {
     use super::{TAB_CELL_OFF, TAB_CELL_ON, TAB_CELL_VERB, TAB_COUNT, TAB_GROUP, TAB_STRIP};
-    use crate::eden_layout::{tw_len_px, DOCK_PX, DOCK_R, STUB_PX};
+    use crate::editor::layout::{tw_len_px, DOCK_PX, DOCK_R, STUB_PX};
 
     /// The production half of this file — everything above the first test module, so a needle here
     /// cannot satisfy itself (the T-759 hollow-pin trap).
     fn production() -> &'static str {
-        include_str!("eden_dock_right.rs")
+        include_str!("dock_right.rs")
             .split("#[cfg(test)]")
             .next()
             .expect("the production half precedes the test modules")
@@ -6176,7 +6178,7 @@ mod t754_zone_selection_seam {
     /// The production half of this file — everything above the first test module, so a needle here
     /// cannot satisfy itself (the T-759 hollow-pin trap).
     fn production() -> &'static str {
-        include_str!("eden_dock_right.rs")
+        include_str!("dock_right.rs")
             .split("#[cfg(test)]")
             .next()
             .expect("the production half precedes the test modules")

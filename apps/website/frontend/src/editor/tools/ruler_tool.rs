@@ -585,7 +585,7 @@ thread_local! {
  * in `validation_panel::unregister_seam` — only the LOSING registration is cleared. Only the entry
  * point is re-exported; the guard is that function's private business and no caller here names it.
  */
-pub(crate) use crate::validation_panel::install_seam;
+pub(crate) use crate::editor::panels::validation_panel::install_seam;
 
 /// Register the host's leaked ruler chain so [`RulerOverlay`] can read it. Called once at mount by
 /// `mission_editor` (peer of `context_menu::set_menu_signal`).

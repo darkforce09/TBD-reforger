@@ -25,7 +25,7 @@ use leptos::prelude::*;
 use map_engine_core::camera::OrthoCamera;
 
 use crate::core::ui::{cn, MaterialIcon};
-use crate::eden_layout::{HOVER_FILL, TOGGLED_PLATE};
+use crate::editor::layout::{HOVER_FILL, TOGGLED_PLATE};
 
 // ── T-667 — map furniture: scale bar + edge grid references (pure geometry) ─────────────────────────
 //
@@ -346,23 +346,23 @@ const MODEBAR: &str = "pointer-events-auto rounded-xl border border-white/10 bg-
 /// The full-width status bar surface — the `overlayDocked` glass (same tokens as the docks/strip),
 /// stretched edge-to-edge across the bottom. `border-t` gives it the docked seam Eden's status bar
 /// has. It is docked `inset-x-0 bottom-0`, so its top edge sits [`STATUSBAR_H_PX`] px up from the
-/// viewport bottom; the (much taller) [`crate::eden_layout::TOOLBELT_BAND_PX`] is the *input* band a
+/// viewport bottom; the (much taller) [`crate::editor::layout::TOOLBELT_BAND_PX`] is the *input* band a
 /// pointer probe must clear, a separate contract from this bar's painted height.
 const STATUSBAR: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-9 w-full items-center gap-3 border-t border-white/10 px-3";
 
 /// T-787 — the status bar's rendered HEIGHT in CSS px (`h-9` in [`STATUSBAR`] → 36 px). This is the
 /// SOURCE OF TRUTH for how far the bar's top edge sits above the viewport bottom, exported so
-/// `eden_layout`'s [`crate::eden_layout::dock_bottom_px`] can inset the docks to STOP at that top
+/// `eden_layout`'s [`crate::editor::layout::dock_bottom_px`] can inset the docks to STOP at that top
 /// edge instead of overlapping it (the O-1 defect: the transparent dock containers ran to
 /// `bottom-0` and ate clicks aimed at the readouts + right-end controls). A test below pins this to
 /// the `h-*` token in [`STATUSBAR`] so the two can never drift. Distinct from
-/// [`crate::eden_layout::TOOLBELT_BAND_PX`], which is the input-handling band (clears the taller
+/// [`crate::editor::layout::TOOLBELT_BAND_PX`], which is the input-handling band (clears the taller
 /// floating [`ModeToolbar`]) and deliberately does not shrink the full-bleed canvas.
 pub const STATUSBAR_H_PX: f64 = 36.0;
 
 /// T-668 — the tool button's shared GEOMETRY (no state colour). The three states are composed from
 /// this base + the one state vocabulary: current mode = [`TOGGLED_PLATE`], a live-but-not-current
-/// mode = [`HOVER_FILL`], and a disabled stub would add `crate::eden_layout::DISABLED_GLYPH` (all
+/// mode = [`HOVER_FILL`], and a disabled stub would add `crate::editor::layout::DISABLED_GLYPH` (all
 /// three tools ship live today, so no button wears the disabled recipe here). Keeping the geometry in
 /// one const and the state in the recipes is what stops a fourth ad-hoc "active" tint creeping back.
 const TOOL_BASE: &str = "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-label-md";
@@ -822,7 +822,7 @@ pub fn MapGridRefs(
         }
         #[cfg(target_arch = "wasm32")]
         {
-            use crate::eden_layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
+            use crate::editor::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
             let Some((tx, ty, zoom)) = crate::editor::world_assets::camera_snapshot() else {
                 return (Vec::new(), Vec::new());
             };
@@ -878,7 +878,7 @@ pub fn MapGridRefs(
                         format!(
                             "left:{:.1}px;top:{:.1}px",
                             l.pos_px,
-                            crate::eden_layout::STRIP_TOP_PX + 2.0,
+                            crate::editor::layout::STRIP_TOP_PX + 2.0,
                         )
                     }
                 >
@@ -898,7 +898,7 @@ pub fn MapGridRefs(
                     style=move || {
                         format!(
                             "left:{:.1}px;top:{:.1}px",
-                            crate::eden_layout::DOCK_LEFT_PX + 2.0,
+                            crate::editor::layout::DOCK_LEFT_PX + 2.0,
                             l.pos_px,
                         )
                     }
@@ -911,7 +911,7 @@ pub fn MapGridRefs(
 }
 
 /// Back-compat shim for the pre-T-636 single-pill mount. `eden_chrome` re-exports this name (the
-/// stable `crate::eden_chrome::*` import surface the T-661 split promised not to break), so it stays
+/// stable `crate::editor::eden_chrome::*` import surface the T-661 split promised not to break), so it stays
 /// a real public component. It is NOT the mount `mission_editor` uses — the split put the tools
 /// ([`ModeToolbar`]) and the readouts ([`StatusBar`]) at two independent mount points, each behind
 /// its own `chrome_hidden` gate — but keeping the symbol lets the re-export shim compile without
@@ -958,14 +958,14 @@ mod t636_status_bar {
     /// This module's file, with comments blanked but string literals KEPT — so the Tailwind class
     /// strings and the readout labels survive as structural landmarks for ordering proofs.
     fn src_kept() -> String {
-        live_source(include_str!("eden_toolbelt.rs"))
+        live_source(include_str!("toolbelt.rs"))
     }
 
     /// (structure) The single conflated pill is split into TWO components — a tools mount and a
     /// readouts mount — which is what makes them two independent mount points in `mission_editor`.
     #[test]
     fn tools_and_readouts_are_two_separate_components() {
-        let src = live_code(include_str!("eden_toolbelt.rs"));
+        let src = live_code(include_str!("toolbelt.rs"));
         let mode_fn = format!("pub fn {}", "ModeToolbar(");
         let status_fn = format!("pub fn {}", "StatusBar(");
         assert!(
@@ -1046,7 +1046,7 @@ mod t636_status_bar {
     /// O-1 click-eating defect would return — this pin fails loudly instead.
     #[test]
     fn statusbar_height_const_tracks_the_h_token() {
-        let painted = crate::eden_layout::tw_len_px(super::STATUSBAR, "h-")
+        let painted = crate::editor::layout::tw_len_px(super::STATUSBAR, "h-")
             .expect("the STATUSBAR recipe must state an `h-*` height");
         assert!(
             (painted - super::STATUSBAR_H_PX).abs() < f64::EPSILON,
@@ -1106,7 +1106,7 @@ mod t636_status_bar {
     /// than a new rAF loop.
     #[test]
     fn t667_components_and_reactivity_channel() {
-        let code = live_code(include_str!("eden_toolbelt.rs"));
+        let code = live_code(include_str!("toolbelt.rs"));
         // Both public components exist.
         assert!(
             code.contains(&format!("pub fn {}", "ScaleBar("))
@@ -1150,7 +1150,7 @@ mod t636_status_bar {
     /// `key=` binding, not a mention in a comment or class string.
     #[test]
     fn grid_ref_for_is_keyed_by_position_not_text() {
-        let code = crate::arsenal::class_r_scrub::live_code(include_str!("eden_toolbelt.rs"));
+        let code = crate::arsenal::class_r_scrub::live_code(include_str!("toolbelt.rs"));
         let body =
             crate::arsenal::class_r_scrub::only_body(&code, &format!("pub fn {}", "MapGridRefs("));
         // The rows key on the position-derived identity…
@@ -1214,7 +1214,7 @@ mod t636_status_bar {
     /// go through `fmt_coord_eden`.
     #[test]
     fn status_bar_axis_readout_uses_the_eden_unit_formatter() {
-        let src = live_source(include_str!("eden_toolbelt.rs"));
+        let src = live_source(include_str!("toolbelt.rs"));
         let body =
             crate::arsenal::class_r_scrub::only_body(&src, &format!("pub fn {}", "StatusBar("));
         assert!(
@@ -1253,7 +1253,7 @@ mod t636_status_bar {
     #[test]
     fn hud_slot_is_gated_and_sits_before_open() {
         // Gate expression on scrubbed code (strings blanked) so it is the real gate, not a comment.
-        let code = live_code(include_str!("eden_toolbelt.rs"));
+        let code = live_code(include_str!("toolbelt.rs"));
         assert!(
             code.contains("on && !text.is_empty()"),
             "T-719: the HUD slot must render only when (hud_shown AND non-empty sampler string)"
@@ -1288,7 +1288,7 @@ mod t642_ruler {
 
     /// This file with comments blanked but strings KEPT (class strings + labels survive as landmarks).
     fn src_kept() -> String {
-        live_source(include_str!("eden_toolbelt.rs"))
+        live_source(include_str!("toolbelt.rs"))
     }
 
     /// (button enable) THE RULE: the Ruler button must NOT be a disabled stub any more — it drops
@@ -1361,7 +1361,7 @@ mod t642_ruler {
     /// not a comment.
     #[test]
     fn status_bar_renders_the_ruler_readout() {
-        let code = live_code(include_str!("eden_toolbelt.rs"));
+        let code = live_code(include_str!("toolbelt.rs"));
         // StatusBar accepts the ruler_status signal…
         assert!(
             code.contains("ruler_status"),
@@ -1392,7 +1392,7 @@ mod t642_ruler {
     /// pin + the compiler: `ruler_tool` never imports a doc mutator).
     #[test]
     fn readout_is_display_only_no_doc_writes() {
-        let code = live_code(include_str!("eden_toolbelt.rs"));
+        let code = live_code(include_str!("toolbelt.rs"));
         for banned in ["move_entities", "add_slot", "store.rs", "MissionDocCore"] {
             assert!(
                 !code.contains(banned),
@@ -1590,7 +1590,7 @@ mod t667_furniture_math {
             (1500.0, 900.0, -4.0), // near whole-terrain
         ];
         // Pane insets read by name from eden_layout (the real geometry).
-        use crate::eden_layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
+        use crate::editor::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
         for (w, h, z) in cases {
             let mut tx = 6400.0_f64;
             let mut ty = 6400.0_f64;
@@ -1662,7 +1662,7 @@ mod t667_furniture_math {
     /// no label claims that position.
     #[test]
     fn grid_refs_are_clipped_to_the_map_pane_not_the_viewport() {
-        use crate::eden_layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
+        use crate::editor::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
         let (w, h, z) = (1237.0, 843.0, 0.0); // 1 px ≈ 1 m
         let c = cam(w, h, 6400.0, 6400.0, z);
         let pane_right = w - DOCK_RIGHT_PX;
@@ -1706,7 +1706,7 @@ mod t667_furniture_math {
 #[cfg(test)]
 mod t793_grid_labels_live_camera {
     use super::*;
-    use crate::eden_layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
+    use crate::editor::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
 
     /// The editor's real camera build (`select_tool::frozen_camera`): Everon bounds `[0,0,12800,
     /// 12800]`, north-up, no rotation — so the projection the labels use is the one the GPU grid and
@@ -1897,7 +1897,7 @@ mod t668_state_vocabulary {
     /// HOVER_FILL for the rest. Proven on scrubbed code so the needle is the real `cn` call.
     #[test]
     fn tool_states_consume_the_vocabulary_recipes() {
-        let code = live_code(include_str!("eden_toolbelt.rs"));
+        let code = live_code(include_str!("toolbelt.rs"));
         let body = only_body(&code, &format!("pub fn {}", "ModeToolbar("));
         assert!(
             body.contains("TOGGLED_PLATE"),
@@ -1915,7 +1915,7 @@ mod t668_state_vocabulary {
     /// class literal in the mode toolbar. Checked on the string-kept source.
     #[test]
     fn no_ad_hoc_tool_state_classes_remain() {
-        let src = live_source(include_str!("eden_toolbelt.rs"));
+        let src = live_source(include_str!("toolbelt.rs"));
         let mode = only_body(&src, &format!("pub fn {}", "ModeToolbar("));
         // The weaker ad-hoc hover fill the inactive tool used to wear.
         let weak_hover = ["hover:bg-", "white/5"].concat();
@@ -1938,7 +1938,7 @@ mod t668_state_vocabulary {
     /// source where the title literals survive.
     #[test]
     fn tools_keep_their_tooltips() {
-        let src = live_source(include_str!("eden_toolbelt.rs"));
+        let src = live_source(include_str!("toolbelt.rs"));
         let mode = only_body(&src, &format!("pub fn {}", "ModeToolbar("));
         for tip in ["Select", "Ruler", "Line of sight"] {
             assert!(
@@ -2045,7 +2045,7 @@ mod t670_scale_readout {
     #[test]
     fn the_printed_scale_is_the_contour_ladders_own_scale() {
         // (1) OUR conversion — scrubbed body, not a test-local recomputation of the formula alone.
-        let ours = live_code(include_str!("eden_toolbelt.rs"));
+        let ours = live_code(include_str!("toolbelt.rs"));
         let our_mpp = only_body(&ours, &format!("pub fn {}", "m_per_px("));
         assert!(
             our_mpp.contains(&format!("2.0_f64.{}(-deck_zoom)", "powf")),
@@ -2055,7 +2055,7 @@ mod t670_scale_readout {
         // (2) THE LADDER's feed — frontend dem_vectors.rs (not crates/). Contiguous bind→call so an
         // adjustment line between them goes RED; no `let zoom` / `zoom =` rebind before the bind so
         // an upstream re-based zoom goes RED.
-        let dem = live_code(include_str!("editor/world_assets/dem_vectors.rs"));
+        let dem = live_code(include_str!("../world_assets/dem_vectors.rs"));
         let push = only_body(&dem, &format!("fn {}", "push_contours("));
         let bind = format!("let m_per_px = 2.0_f64.{}(-zoom);", "powf");
         let call = format!("{}(m_per_px)", "contour_interval_for_zoom");
@@ -2140,7 +2140,7 @@ mod t670_scale_readout {
     /// renders through the pure formatter above rather than an inline `format!`.
     #[test]
     fn the_scl_cell_sits_in_the_objselsz_group() {
-        let src = live_source(include_str!("eden_toolbelt.rs"));
+        let src = live_source(include_str!("toolbelt.rs"));
         let status = only_body(&src, &format!("pub fn {}", "StatusBar("));
         let hook = format!("data-status-{}", "scale");
         let at = status
@@ -2175,7 +2175,7 @@ mod t670_scale_readout {
         );
         // The rendered value goes through the pure formatter (proven on scrubbed CODE, so a
         // mention in a comment or a class string cannot satisfy it).
-        let code = live_code(include_str!("eden_toolbelt.rs"));
+        let code = live_code(include_str!("toolbelt.rs"));
         let status_code = only_body(&code, &format!("pub fn {}", "StatusBar("));
         assert!(
             status_code.contains(&format!("{}(", "format_m_per_px")),
@@ -2189,7 +2189,7 @@ mod t670_scale_readout {
     /// survives for native/compat callers.
     #[test]
     fn the_scale_bar_resolves_from_the_same_signal() {
-        let code = live_code(include_str!("eden_toolbelt.rs"));
+        let code = live_code(include_str!("toolbelt.rs"));
         let status = only_body(&code, &format!("pub fn {}", "StatusBar("));
         assert!(
             status.contains(&format!("{} cursor debug_hud scale_mpp", "<ScaleBar")),
@@ -2214,7 +2214,7 @@ mod t670_scale_readout {
         // Wave 133 F2 / T-756 NIT-3 — comment corrections (seed / camera_snapshot-dead notes).
         // Raw include_str keeps docs that live_code blanks; only_item scopes to ScaleBar so the
         // test module cannot hollow-self-match; needles are fragment-assembled.
-        let docs = include_str!("eden_toolbelt.rs");
+        let docs = include_str!("toolbelt.rs");
         let bar_docs = only_item(docs, &format!("pub fn {}", "ScaleBar("));
         let seeded = format!("{}{}", "seeded ", "4.0");
         let cam_dead = format!("{}{}", "dead on the only real ", "caller");

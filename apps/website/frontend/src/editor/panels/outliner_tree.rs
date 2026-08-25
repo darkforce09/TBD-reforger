@@ -9,7 +9,7 @@
 use leptos::prelude::*;
 
 use crate::core::ui::MaterialIcon;
-use crate::outliner::{
+use crate::editor::panels::outliner::{
     flatten_visible, FlatRow, LayerRow, NodeKind, OutlinerNode, VIRTUAL_SLOT_THRESHOLD,
 };
 
@@ -109,8 +109,8 @@ fn folders_holding_slots(nodes: &[OutlinerNode]) -> std::collections::HashSet<St
 }
 
 // T-668 — the tree rows speak the one state vocabulary (`eden_layout`): an idle row wears
-// [`crate::eden_layout::HOVER_FILL`] (`transition-colors hover:bg-white/10 hover:text-on-surface`),
-// a selected/active row wears [`crate::eden_layout::TOGGLED_PLATE`] (`bg-primary/20 text-primary
+// [`crate::editor::layout::HOVER_FILL`] (`transition-colors hover:bg-white/10 hover:text-on-surface`),
+// a selected/active row wears [`crate::editor::layout::TOGGLED_PLATE`] (`bg-primary/20 text-primary
 // border-t border-background/60`). These consts are the pre-merged literals of `base + recipe` — the
 // same "the recipe can't be `cn`'d into a `const`" idiom `eden_layout`'s STRIP/DOCK_* use — and
 // `t668_tree_rows_speak_the_vocabulary` pins that each literal still carries its recipe's tokens, so
@@ -141,10 +141,10 @@ fn folders_holding_slots(nodes: &[OutlinerNode]) -> std::collections::HashSet<St
 pub(crate) const ROW_GEOM: &str =
     "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm";
 
-/// A tree row's shared recipe (idle): [`ROW_GEOM`] + [`crate::eden_layout::HOVER_FILL`]. Depth
+/// A tree row's shared recipe (idle): [`ROW_GEOM`] + [`crate::editor::layout::HOVER_FILL`]. Depth
 /// renders as leading guide-line spans (see `guide_spans`).
 pub(crate) const ROW: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface";
-/// A tree row's SELECTED/active recipe: [`ROW_GEOM`] + [`crate::eden_layout::TOGGLED_PLATE`] (the
+/// A tree row's SELECTED/active recipe: [`ROW_GEOM`] + [`crate::editor::layout::TOGGLED_PLATE`] (the
 /// lighter primary plate PLUS the 1px dark top border that makes it distinct-by-construction from a
 /// hovered [`ROW`]). The border is inside the `h-4` box, so this row is not a pixel taller than [`ROW`].
 pub(crate) const ROW_ACTIVE: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm bg-primary/20 text-primary border-t border-background/60";
@@ -163,7 +163,7 @@ pub(crate) const ROW_DROP_TARGET: &str = "relative flex h-4 w-full items-center 
 /// T-177 A2 — the palette-leaf variant of [`ROW`]: adds `cursor-grab` (→ `cursor-grabbing` while
 /// pressed) so hovering a placeable role advertises the drag affordance. Folders keep `cursor-pointer`
 /// and outliner slots keep the plain [`ROW`] default (only palette leaves are drag-to-place). Same
-/// [`crate::eden_layout::HOVER_FILL`] as [`ROW`].
+/// [`crate::editor::layout::HOVER_FILL`] as [`ROW`].
 pub(crate) const PALETTE_LEAF: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface cursor-grab active:cursor-grabbing";
 /// T-637 — the non-interactive row kinds (Squad / Comment headers): [`ROW_GEOM`] at the muted rest
 /// weight. They are `<div>`s, not buttons, but they occupy the same 16 px pitch — a group header that
@@ -598,7 +598,8 @@ pub(crate) fn row_router_subject(kind: NodeKind, id: &str) -> Option<&str> {
 /// (the native shell, pre-mount) ⇒ `false`, and that is correct rather than pessimistic.
 #[must_use]
 pub(crate) fn row_routes(kind: NodeKind, id: &str) -> bool {
-    row_router_subject(kind, id).is_some_and(crate::validation_panel::subject_id_routes)
+    row_router_subject(kind, id)
+        .is_some_and(crate::editor::panels::validation_panel::subject_id_routes)
 }
 
 /// Why an unroutable row is inert, in words, rendered as its `title` — the answer available exactly
@@ -676,7 +677,7 @@ fn comment_row(
                 // finding row click, and the same resolution `row_routes` asked above. One decision,
                 // both ends of it; no second selection path was invented for this row.
                 on:click=move |_| {
-                    let _ = crate::validation_panel::route_select_by_subject_id(&id_click);
+                    let _ = crate::editor::panels::validation_panel::route_select_by_subject_id(&id_click);
                 }
                 on:dblclick=on_dbl
                 on:pointerdown=on_down
@@ -1443,7 +1444,7 @@ mod tests {
     //! inline rename, root dropzone, the unfiltered-doc selection source).
 
     use super::*;
-    use crate::outliner::{build_outliner, LayerRow, SlotRow};
+    use crate::editor::panels::outliner::{build_outliner, LayerRow, SlotRow};
 
     fn slot(id: &str) -> SlotRow {
         SlotRow {
@@ -1622,9 +1623,9 @@ mod tests {
         //! the controls are `#![cfg(target_arch = "wasm32")]` and cannot be exercised natively.
         //! A pin fails loudly if a rename drops a call the ticket requires.
 
-        const OPS: &str = include_str!("editor_ops.rs");
-        const TREE: &str = include_str!("eden_tree.rs");
-        const DOCK: &str = include_str!("eden_dock_left.rs");
+        const OPS: &str = include_str!("../../editor_ops.rs");
+        const TREE: &str = include_str!("outliner_tree.rs");
+        const DOCK: &str = include_str!("dock_left.rs");
 
         /// Every layer-authoring wrapper rides `after_local_edit()` — the tail that calls
         /// `refresh_docks()` (via `refresh_signals`). Pin the pairing so a wrapper can't ship
@@ -1899,7 +1900,7 @@ mod tests {
     /// `ROW_ACTIVE`'s dark top border: it is what makes a SELECTED row distinct-by-construction from a
     /// HOVERED one (before T-668 it had none, so the two differed only by tint).
     mod t668_vocabulary {
-        use crate::eden_layout::{HOVER_FILL, TOGGLED_PLATE};
+        use crate::editor::layout::{HOVER_FILL, TOGGLED_PLATE};
 
         /// The idle row carries the HOVER_FILL tokens (solid fill on hover, no border).
         #[test]
@@ -1985,7 +1986,7 @@ mod t637_one_dense_row_geometry {
         PALETTE_LEAF, ROW, ROW_ACTIVE, ROW_BADGE, ROW_FACTION, ROW_GEOM, ROW_H, ROW_STATIC,
         ROW_UNFILED,
     };
-    use crate::eden_layout::tw_len_px;
+    use crate::editor::layout::tw_len_px;
 
     /// Every recipe a tree row can wear is [`ROW_GEOM`] plus a paint, and the windowing constant is
     /// that geometry's stated height — not a number that merely happens to match it today.
@@ -2074,7 +2075,7 @@ mod t637_one_dense_row_geometry {
     #[test]
     fn the_windowed_scroller_is_measured_h_full_not_a_fixed_budget() {
         use crate::arsenal::class_r_scrub::{live_code, live_source};
-        let raw = include_str!("eden_tree.rs");
+        let raw = include_str!("outliner_tree.rs");
         let code = live_code(raw);
         let source = live_source(raw);
         assert!(
@@ -2108,7 +2109,7 @@ mod t637_one_dense_row_geometry {
     /// call site.
     #[test]
     fn no_row_glyph_carries_an_uncollapsed_line_box() {
-        let src = include_str!("eden_tree.rs");
+        let src = include_str!("outliner_tree.rs");
         let production = src
             .split("#[cfg(test)]")
             .next()
@@ -2141,8 +2142,8 @@ mod t637_one_dense_row_geometry {
 mod t784_comment_row_selects {
     use super::{inert_row_reason, row_router_subject, row_routes};
     use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
-    use crate::outliner::NodeKind;
-    use crate::validation_panel::{
+    use crate::editor::panels::outliner::NodeKind;
+    use crate::editor::panels::validation_panel::{
         register_route_probe, register_select_by_id, route_select_by_subject_id,
     };
 
@@ -2247,7 +2248,7 @@ mod t784_comment_row_selects {
             !row_routes(NodeKind::Comment, "cmt-1"),
             "T-784: a refusing probe must leave the comment row inert"
         );
-        let src = live_code(include_str!("eden_tree.rs"));
+        let src = live_code(include_str!("outliner_tree.rs"));
         let routes = only_body(&src, "pub(crate) fn row_routes(");
         assert!(
             routes.contains(&format!("subject_id{}", "_routes")),
@@ -2278,7 +2279,7 @@ mod t784_comment_row_selects {
     /// Literals kept (`live_source`): the claim is about the tags and attributes that ship.
     #[test]
     fn the_comment_row_branches_on_the_router_and_is_never_a_dead_button() {
-        let lit = live_source(include_str!("eden_tree.rs"));
+        let lit = live_source(include_str!("outliner_tree.rs"));
         let arm = only_body(&lit, &format!("fn comment{}", "_row("));
         assert!(
             arm.contains(&format!("row{}", "_routes(")),

@@ -113,7 +113,7 @@ thread_local! {
 /// deferred unregister rather than a live remount being clobbered. **Never a bare `usize` address** —
 /// the clone `install_seam` parks keeps these allocations alive precisely so a freed-then-reused
 /// address cannot impersonate them (ABA).
-impl crate::validation_panel::SeamRegistration for (EngineHandle, HostHandle) {
+impl crate::editor::panels::validation_panel::SeamRegistration for (EngineHandle, HostHandle) {
     fn is_same_registration(&self, live: &Self) -> bool {
         Rc::ptr_eq(&self.0, &live.0) && Rc::ptr_eq(&self.1, &live.1)
     }

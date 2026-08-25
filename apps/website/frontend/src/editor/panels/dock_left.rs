@@ -6,7 +6,7 @@
 //! T-638 — the dock COLLAPSES to a 24×24 stub in its outer (top-LEFT) corner, toggled by the tab-strip
 //! chevron or the `E` key ([`crate::mission_editor`]'s editor keydown). Collapsed is not a rail and
 //! not a vanish: the panel becomes exactly the stub, docked at the corner, overlaying the map, and the
-//! freed width reflows into the map pane (the inset accessors in [`crate::eden_layout`] carry it). The
+//! freed width reflows into the map pane (the inset accessors in [`crate::editor::layout`] carry it). The
 //! chevron glyph points OUTWARD when expanded (« left) and FLIPS when collapsed (» — "expand me"),
 //! occupying the same 24×24 box either way (Eden's mechanism, measured across the 75 screenshots).
 //!
@@ -19,7 +19,7 @@
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::eden_layout::{DOCK_L, STUB_PX};
+use crate::editor::layout::{DOCK_L, STUB_PX};
 
 // ── T-637 — the header row is a WIDTH BUDGET too ─────────────────────────────────────────────────
 //
@@ -48,15 +48,15 @@ const UPPERCASE_LABEL_ADVANCE_PX: f64 = 8.5;
 /// T-637 — a tab cell's horizontal padding (`px-1.5` ⇒ 6 px each side).
 const TAB_LABEL_PAD_PX: f64 = 12.0;
 use crate::core::ui::MaterialIcon;
-use crate::eden_tree::virtual_tree;
-use crate::outliner::OutlinerNode;
+use crate::editor::panels::outliner::OutlinerNode;
+use crate::editor::panels::outliner_tree::virtual_tree;
 
 /// T-638 — the collapse/expand chevron shared by both docks. `outward_icon` is the glyph shown while
 /// EXPANDED (points out of the dock — `chevron_left` for the left dock, `chevron_right` for the
 /// right); the collapsed state shows the OTHER chevron in the SAME 24×24 box (the "flip the glyph"
 /// rule). `at_start` places it at the row's start (left dock, outer corner = top-left) vs end (right
 /// dock, top-right). The button flips `collapsed`; `mission_editor` observes that signal to mirror the
-/// [`crate::eden_layout`] inset latch + run the reflow/centre-hold, so the chevron itself stays a pure
+/// [`crate::editor::layout`] inset latch + run the reflow/centre-hold, so the chevron itself stays a pure
 /// toggle.
 pub fn collapse_chevron(collapsed: RwSignal<bool>, expanded_is_left: bool) -> impl IntoView {
     let title = move || {
@@ -602,7 +602,7 @@ pub fn DockLeft(
                                         class="flex w-full cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-on-surface hover:bg-white/5"
                                         on:click=move |ev: web_sys::MouseEvent| {
                                             ev.stop_propagation();
-                                            crate::validation_panel::route_select_by_subject_id(
+                                            crate::editor::panels::validation_panel::route_select_by_subject_id(
                                                 &click_id,
                                             );
                                         }
@@ -1073,7 +1073,7 @@ fn keep_matching(node: &OutlinerNode, query: &str) -> Option<OutlinerNode> {
 #[must_use]
 pub fn find_layer_label(nodes: &[OutlinerNode], id: &str) -> Option<String> {
     for n in nodes {
-        if n.kind == crate::outliner::NodeKind::Folder && n.id == id {
+        if n.kind == crate::editor::panels::outliner::NodeKind::Folder && n.id == id {
             return Some(n.label.clone());
         }
         if let Some(found) = find_layer_label(&n.children, id) {
@@ -1091,7 +1091,7 @@ pub fn find_layer_label(nodes: &[OutlinerNode], id: &str) -> Option<String> {
 pub fn first_folder_label(nodes: &[OutlinerNode]) -> Option<String> {
     nodes
         .iter()
-        .find(|n| n.kind == crate::outliner::NodeKind::Folder)
+        .find(|n| n.kind == crate::editor::panels::outliner::NodeKind::Folder)
         .map(|n| n.label.clone())
 }
 
@@ -1447,7 +1447,7 @@ fn load_named_places() -> Vec<NamedPlace> {
 // asking the router can.
 //
 // **WHERE IT LIVES, AND WHY THERE IS NO THIRD TAB.** T-637 measured the header as a width budget and
-// `the_header_row_fits_the_dock` adds it up: at [`crate::eden_layout::DOCK_PX`] 240 with `p-2`
+// `the_header_row_fits_the_dock` adds it up: at [`crate::editor::layout::DOCK_PX`] 240 with `p-2`
 // gutters the row has 216 px and already spends 207.5 on the chevron, "Layers", "Locations" and the
 // trailing verb. A third tab is ~50 px against 8.5 px of headroom — it does not fit, and because the
 // tab group carries `min-w-0` it would not overflow, it would SQUEEZE and wrap silently. So document
@@ -1519,7 +1519,7 @@ impl DocKind {
 /// **WOULD A CLICK ON THIS HIT SELECT ANYTHING? — the T-754 rule, asked of the click's own router.**
 ///
 /// Wave 129 (RV-1), the peer of `validation_panel::finding_is_routable` and
-/// `eden_settings::owner_is_routable`. [`crate::validation_panel::subject_id_routes`] is the
+/// `eden_settings::owner_is_routable`. [`crate::editor::panels::validation_panel::subject_id_routes`] is the
 /// REGISTERED route probe — an `Rc` of the same resolution `route_select_by_subject_id` runs,
 /// narrowed by `mission_editor::route_availability` — so the affordance and the click cannot answer
 /// differently. Asking it per ROW rather than per KIND is the whole of the fix.
@@ -1532,7 +1532,7 @@ impl DocKind {
 /// probe is registered** — no probe means no router to click into, and `false` is the honest answer.
 #[must_use]
 pub fn hit_is_routable(hit: &DocHit) -> bool {
-    crate::validation_panel::subject_id_routes(&hit.entity.id)
+    crate::editor::panels::validation_panel::subject_id_routes(&hit.entity.id)
 }
 
 /// T-697 — why a hit row is inert, in words the author can act on. Rendered as the row's `title`
@@ -1797,7 +1797,7 @@ mod tests {
         Bookmarks, LeftTab, NamedPlace, BOOKMARKS_KEY, BOOKMARKS_VERSION,
     };
 
-    const SRC: &str = include_str!("eden_dock_left.rs");
+    const SRC: &str = include_str!("dock_left.rs");
 
     /// T-759 — **the haystack a POSITIVE source pin is allowed to read.** `SRC` is the WHOLE file,
     /// test module included, so a bare `SRC.contains(...)` is satisfied by the assertion that
@@ -2138,7 +2138,7 @@ mod tests {
     #[test]
     fn fly_to_and_named_locations_bodies_are_live() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let src = live_code(include_str!("editor/world_assets/mod.rs"));
+        let src = live_code(include_str!("../world_assets/mod.rs"));
         let fly = only_body(&src, "pub fn fly_to");
         let render = format!("{}{}", "RENDER", "_CTX");
         let set_view = format!("{}{}", "set_view", "(");
@@ -2205,13 +2205,13 @@ mod t637_density {
         filter_outliner, find_layer_label, first_folder_label, matches_query, TAB_LABEL_LAYERS,
         TAB_LABEL_PAD_PX, TAB_LABEL_PLACES, UPPERCASE_LABEL_ADVANCE_PX,
     };
-    use crate::eden_layout::{tw_len_px, DOCK_L, DOCK_PX, STUB_PX};
-    use crate::outliner::{NodeKind, OutlinerNode};
+    use crate::editor::layout::{tw_len_px, DOCK_L, DOCK_PX, STUB_PX};
+    use crate::editor::panels::outliner::{NodeKind, OutlinerNode};
 
     /// The file's production half — everything above the first test module. A needle checked against
     /// this cannot be satisfied by a test's own source.
     fn production() -> &'static str {
-        include_str!("eden_dock_left.rs")
+        include_str!("dock_left.rs")
             .split("#[cfg(test)]")
             .next()
             .expect("the production half precedes the test modules")
@@ -2348,7 +2348,7 @@ mod t637_density {
         );
     }
 
-    /// **The height goes to the tree.** The dock is a column ([`crate::eden_layout::DOCK_L`]); the
+    /// **The height goes to the tree.** The dock is a column ([`crate::editor::layout::DOCK_L`]); the
     /// tree region claims the remainder with `flex-1` and can shrink inside it with `min-h-0`. Both
     /// tokens are load-bearing: without `flex-1` the void comes straight back, and without `min-h-0`
     /// a flex child refuses to shrink below its content, so a long tree pushes the panel instead of
@@ -2539,21 +2539,21 @@ mod t697_document_search {
         LIST_SCROLLBAR_PX, MAX_DOC_HITS, UPPERCASE_LABEL_ADVANCE_PX,
     };
     use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
-    use crate::eden_layout::{tw_len_px, DOCK_L, DOCK_PX};
+    use crate::editor::layout::{tw_len_px, DOCK_L, DOCK_PX};
+    use crate::editor::panels::validation_panel::register_route_probe;
     use crate::mission_editor::route_target;
-    use crate::validation_panel::register_route_probe;
 
     /// The dock's own production text — comments, test modules and unreachable arms removed.
     fn dock_code() -> String {
-        live_code(include_str!("eden_dock_left.rs"))
+        live_code(include_str!("dock_left.rs"))
     }
     /// The same, with string literals KEPT: for pins about copy and `data-testid`s that ship.
     fn dock_source() -> String {
-        live_source(include_str!("eden_dock_left.rs"))
+        live_source(include_str!("dock_left.rs"))
     }
     /// The document index's production text (`editor_ops.rs` carries no test module of its own).
     fn ops_code() -> String {
-        live_code(include_str!("editor_ops.rs"))
+        live_code(include_str!("../../editor_ops.rs"))
     }
 
     fn entity(id: &str, kind: DocKind, label: &str, faction: &str) -> DocEntity {

@@ -89,7 +89,7 @@ use tbd_gate::{NotRun, Pattern, Verdict, gate};
 const EDITOR_OPS: &str = "apps/website/frontend/src/editor_ops.rs";
 const ORBAT_RS: &str = "crates/map-engine-core/src/mission/orbat.rs";
 const ORBAT_MGR: &str = "apps/website/frontend/src/pages/operations/orbat_manager.rs";
-const EDEN_CHROME: &str = "apps/website/frontend/src/eden_chrome.rs";
+const EDEN_CHROME: &str = "apps/website/frontend/src/editor/eden_chrome.rs";
 const SLOTS_GPU: &str = "crates/map-engine-core/src/slots_gpu.rs";
 
 /// One `ban`: message, ERE pattern, `-i`?, targets, and the `ok` line printed when it holds.

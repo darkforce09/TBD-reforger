@@ -59,10 +59,10 @@ use std::cell::Cell;
 use leptos::prelude::*;
 
 use crate::core::ui::{cn, MaterialIcon};
-use crate::eden_layout::HOVER_FILL;
+use crate::editor::layout::HOVER_FILL;
 
 /// T-772 — ControlsHint close-button geometry. Dense strip/dock rows keep
-/// [`crate::eden_layout::BTN_ICON`]'s `p-0.5`; this overlay dismiss is not in a dense row, so the
+/// [`crate::editor::layout::BTN_ICON`]'s `p-0.5`; this overlay dismiss is not in a dense row, so the
 /// comfortable `p-1.5` hit box lives at the call site rather than widening the shared recipe.
 /// Same bright rest + shrink/rounded shape as `BTN_ICON`, different padding only.
 const HINT_CLOSE_BTN: &str = "shrink-0 rounded p-1.5 text-on-surface";
@@ -618,20 +618,28 @@ pub(crate) mod keymap_census {
     /// on the file that owns the listener. Grep for the LISTENER HEADS, not for the component.
     fn editor_surface() -> Vec<(&'static str, &'static str, usize)> {
         vec![
-            ("mission_editor.rs", include_str!("mission_editor.rs"), 4),
-            ("mission_history.rs", include_str!("mission_history.rs"), 1),
-            ("attributes.rs", include_str!("attributes.rs"), 1),
-            ("eden_top_strip.rs", include_str!("eden_top_strip.rs"), 1),
+            (
+                "mission_editor.rs",
+                include_str!("../../mission_editor.rs"),
+                4,
+            ),
+            (
+                "mission_history.rs",
+                include_str!("../../mission_history.rs"),
+                1,
+            ),
+            ("attributes.rs", include_str!("attributes_modal.rs"), 1),
+            ("top_strip.rs", include_str!("top_strip.rs"), 1),
             ("context_menu.rs", include_str!("context_menu.rs"), 1),
-            ("eden_settings.rs", include_str!("eden_settings.rs"), 3),
+            ("settings_modal.rs", include_str!("settings_modal.rs"), 3),
             (
                 "faction_manager.rs",
-                include_str!("pages/operations/faction_manager.rs"),
+                include_str!("../../pages/operations/faction_manager.rs"),
                 1,
             ),
             (
                 "orbat_manager.rs",
-                include_str!("pages/operations/orbat_manager.rs"),
+                include_str!("../../pages/operations/orbat_manager.rs"),
                 1,
             ),
         ]
@@ -1157,7 +1165,7 @@ pub(crate) mod keymap_census {
         // gated on the measure tools having something to dismiss. `.escape()` returns false when a
         // tool is empty and the arm returns the OR, so an Escape with nothing placed falls through
         // untouched instead of swallowing the key from the dialogs above.
-        let arms = keydown_arms(include_str!("mission_editor.rs"));
+        let arms = keydown_arms(include_str!("../../mission_editor.rs"));
         let esc = arms
             .find(&format!("\"{}\" if !modk", "Escape"))
             .expect("the editor keydown's Escape arm");
@@ -1317,8 +1325,8 @@ pub(crate) mod keymap_census {
         copies.sort();
         assert_eq!(
             copies,
-            vec!["eden_help.rs ×1".to_string()],
-            "T-738/T-776: the keydown-arm extractor must be defined ONCE, in `keymap_census`.              Found: {copies:?}. Consume it (`use crate::eden_help::keymap_census::…`) and widen              it there — a second copy is a second answer to the same question."
+            vec!["help_modal.rs ×1".to_string()],
+            "T-738/T-776: the keydown-arm extractor must be defined ONCE, in `keymap_census`.              Found: {copies:?}. Consume it (`use crate::editor::panels::help_modal::keymap_census::…`) and widen              it there — a second copy is a second answer to the same question."
         );
     }
 
@@ -1334,7 +1342,7 @@ pub(crate) mod keymap_census {
     /// now.
     #[test]
     fn the_prose_census_numbers_are_derived() {
-        let raw = include_str!("eden_help.rs");
+        let raw = include_str!("help_modal.rs");
         // Doc prose is hard-wrapped at 100 columns, so a claim phrase routinely straddles a line
         // break and a naive `contains` then fails on prose that is perfectly correct. Flatten the
         // comment markers and collapse every whitespace run to one space, so what is matched is the
@@ -1519,10 +1527,10 @@ mod t692_help_covers_every_binding {
             // wave-112 MINOR-4
             ("mission_editor.rs", "asset picker / comment / connections"),
             ("attributes.rs", "Attributes modal"),
-            ("eden_top_strip.rs", "menus / Save / Controls Hint"),
+            ("top_strip.rs", "menus / Save / Controls Hint"),
             // already on the surface when T-703 widened; still a drop-from-scrape trap
             ("context_menu.rs", "context menu"),
-            ("eden_settings.rs", "settings dialogs"),
+            ("settings_modal.rs", "settings dialogs"),
             // T-774 — the two the eleven-listener census still missed
             ("faction_manager.rs", "Faction Manager"),
             ("orbat_manager.rs", "ORBAT Manager"),
@@ -1641,7 +1649,7 @@ mod t692_help_covers_every_binding {
     /// the rest of the chrome, and no second gate can drift away from the first.
     #[test]
     fn overlay_hides_with_the_rest_of_the_chrome() {
-        let strip = live_code(include_str!("eden_top_strip.rs"));
+        let strip = live_code(include_str!("top_strip.rs"));
         assert!(
             strip.contains("ControlsHint"),
             "the Controls Hint must be mounted from the top strip (that is what puts it behind the \
@@ -1651,7 +1659,7 @@ mod t692_help_covers_every_binding {
         // `#[cfg(target_arch = "wasm32")]` item, which the scrubber (correctly) treats as dead on
         // the native shell. Hand it the region from the page fn onward, at a brace-0 boundary —
         // the same `editor_live()` manoeuvre the T-662 pins use for the same reason.
-        let raw = include_str!("mission_editor.rs");
+        let raw = include_str!("../../mission_editor.rs");
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
         assert_eq!(
             raw.matches(anchor.as_str()).count(),
@@ -1686,15 +1694,15 @@ mod t772_controls_hint_close_hitbox {
 
     use super::HINT_CLOSE_BTN;
     use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
-    use crate::eden_layout::BTN_ICON;
+    use crate::editor::layout::BTN_ICON;
 
     fn hint_body_source() -> String {
-        let src = live_source(include_str!("eden_help.rs"));
+        let src = live_source(include_str!("help_modal.rs"));
         only_body(&src, "pub fn ControlsHint(").to_string()
     }
 
     fn hint_body_code() -> String {
-        let src = live_code(include_str!("eden_help.rs"));
+        let src = live_code(include_str!("help_modal.rs"));
         only_body(&src, "pub fn ControlsHint(").to_string()
     }
 

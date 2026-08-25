@@ -16,10 +16,10 @@ use std::collections::HashMap;
 
 // The inline scrubber/weather author through the same T-193 gate as the Mission Settings dialog.
 #[cfg(target_arch = "wasm32")]
-use crate::eden_env::author_env;
+use crate::editor::panels::env::author_env;
 // T-637 — `STRIP_ROWS` / `ROW_MENUS` / `ROW_TOOLS` and the icon recipe are `eden_layout`'s again
 // (the T-634 fold-back); this file renders them rather than redefining them.
-use crate::eden_layout::{
+use crate::editor::layout::{
     BTN_ICON, DISABLED_GLYPH, DIVIDER, HOVER_FILL, MENU_GUTTER, ROW_MENUS, ROW_TOOLS, STRIP_ROWS,
     TOGGLED_PLATE,
 };
@@ -965,10 +965,10 @@ pub fn TopCommandStrip(
     // hide/show cycle (`mission_editor` gates the strip on `chrome_hidden`); seeding from the
     // latch is what makes the card come back the way the operator left it, the way the debug HUD
     // does. Every writer below mirrors back into the latch.
-    let hint_open = RwSignal::new(crate::eden_help::hint_shown());
+    let hint_open = RwSignal::new(crate::editor::panels::help_modal::hint_shown());
     let set_hint = move |v: bool| {
         hint_open.set(v);
-        crate::eden_help::set_hint_shown(v);
+        crate::editor::panels::help_modal::set_hint_shown(v);
     };
     // T-786 O-5 — opening a dialog closes the strip's popovers/help surfaces (the open menu, the
     // export dropdown, and the Controls Hint), so a dialog and a reference card can no longer be up
@@ -1169,7 +1169,7 @@ pub fn TopCommandStrip(
         if let Some(t) = doc_tick {
             t.track();
         }
-        match crate::validation_panel::chip_findings() {
+        match crate::editor::panels::validation_panel::chip_findings() {
             Some(sig) => sig.get(),
             None => Vec::new(),
         }
@@ -1991,7 +1991,7 @@ pub fn TopCommandStrip(
                     title="Mission validation — click for the findings"
                     data-validation-chip
                     data-issue-total=move || {
-                        crate::validation_panel::Rollup::of(&validation_findings.get()).total()
+                        crate::editor::panels::validation_panel::Rollup::of(&validation_findings.get()).total()
                     }
                     class=move || {
                         if validation_open.get() {
@@ -2012,7 +2012,7 @@ pub fn TopCommandStrip(
                     // a clean mission — where the text is the quiet "No issues" (never a 0-badge, the
                     // ticket's empty-state call). `tabular-nums` so the count does not jitter width.
                     <span class=move || {
-                        let r = crate::validation_panel::Rollup::of(&validation_findings.get());
+                        let r = crate::editor::panels::validation_panel::Rollup::of(&validation_findings.get());
                         let accent = if r.has_blocking() {
                             "text-error-alert"
                         } else if r.total() > 0 {
@@ -2023,7 +2023,7 @@ pub fn TopCommandStrip(
                         cn(&["text-xs font-medium tabular-nums", accent])
                     }>
                         {move || {
-                            let r = crate::validation_panel::Rollup::of(&validation_findings.get());
+                            let r = crate::editor::panels::validation_panel::Rollup::of(&validation_findings.get());
                             if r.is_empty() { "No issues".to_string() } else { r.chip_text() }
                         }}
                     </span>
@@ -2042,7 +2042,7 @@ pub fn TopCommandStrip(
                             // wide list never spills off the viewport's right side.
                             view! {
                                 <div class=cn(&[MENU_PANEL, "right-0 w-80"])>
-                                    {crate::validation_panel::findings_dropdown(
+                                    {crate::editor::panels::validation_panel::findings_dropdown(
                                         validation_findings.get(),
                                     )}
                                 </div>
@@ -2166,7 +2166,7 @@ pub fn TopCommandStrip(
             // T-634 moved it out of row 1 and up to the shell — it is `fixed inset-0`, so it never
             // belonged to a row, and a `fixed` child of a 24 px flex row is a trap for the next
             // edit. The subtree — which is what the gate is — is unchanged.
-            <crate::eden_help::ControlsHint open=hint_open />
+            <crate::editor::panels::help_modal::ControlsHint open=hint_open />
             // Click-away scrim for an open dropdown (below the dropdowns' z-50). T-634 — it now
             // covers the export menu too, so both dropdowns dismiss the same way. T-798 — the
             // validation dropdown joins it: one scrim, every strip popover dismisses on an outside
@@ -2469,8 +2469,8 @@ impl SlotCensus {
 /// Pure + total (no panics, no I/O): the whole reason it lives here and not behind the wasm gate.
 #[must_use]
 pub fn census_from_rows(
-    factions: &[crate::outliner::FactionRow],
-    squads: &[crate::outliner::SquadRow],
+    factions: &[crate::editor::panels::outliner::FactionRow],
+    squads: &[crate::editor::panels::outliner::SquadRow],
     slot_squad_ids: &[String],
 ) -> SlotCensus {
     // squadId → side key, resolved once so the per-slot loop is O(1) per slot rather than O(squads).
@@ -2575,7 +2575,7 @@ mod tests {
         is_mission_row_id, minutes_to_hhmm, mirror_failure_message, normalize_clock, summary_line,
         MirrorState, SlotCensus, CENSUS_SIDES, MIRROR_DEBOUNCE_MS, MIRROR_TIME, MIRROR_WEATHER,
     };
-    use crate::outliner::{FactionRow, SquadRow};
+    use crate::editor::panels::outliner::{FactionRow, SquadRow};
 
     // ── T-659 census/summary fixtures ────────────────────────────────────────────────────────────
 
@@ -2679,7 +2679,7 @@ mod tests {
     #[test]
     fn t746_row_id_predicate_is_crate_visible() {
         use crate::arsenal::class_r_scrub::live_code;
-        let src = live_code(include_str!("eden_top_strip.rs"));
+        let src = live_code(include_str!("top_strip.rs"));
         assert!(
             src.contains("pub(crate) fn is_mission_row_id"),
             "T-746: is_mission_row_id must be pub(crate), not a private twin in eden_settings"
@@ -3152,7 +3152,7 @@ mod t668_state_vocabulary {
     /// This file with comments blanked but class STRINGS kept, so the Tailwind literals survive as
     /// the structural landmarks the class pins read.
     fn src_kept() -> String {
-        live_source(include_str!("eden_top_strip.rs"))
+        live_source(include_str!("top_strip.rs"))
     }
 
     /// The open menu-bar button consumes TOGGLED_PLATE (via `cn`), and the closed one HOVER_FILL —
@@ -3161,7 +3161,7 @@ mod t668_state_vocabulary {
     /// so the needle is the real `cn(&[…, TOGGLED_PLATE])` call, not a mention.
     #[test]
     fn open_menu_wears_the_toggled_plate_not_the_hover_fill() {
-        let code = live_code(include_str!("eden_top_strip.rs"));
+        let code = live_code(include_str!("top_strip.rs"));
         assert!(
             code.contains("TOGGLED_PLATE"),
             "the open menu must consume TOGGLED_PLATE (plate + 1px dark top border)"
@@ -3210,7 +3210,7 @@ mod t668_state_vocabulary {
     /// the disabled (future-command) row branches lead with a `MENU_GUTTER` cell.
     #[test]
     fn menu_rows_reserve_the_checkmark_gutter() {
-        let code = live_code(include_str!("eden_top_strip.rs"));
+        let code = live_code(include_str!("top_strip.rs"));
         assert!(
             code.contains("MENU_GUTTER"),
             "menu rows must reserve MENU_GUTTER (the always-present checkmark cell)"
@@ -3265,7 +3265,7 @@ mod t668_state_vocabulary {
             "wave-202: every Edit row is a live command now — none may be `action: None`"
         );
         // The dispatch reaches the editor's registered bridge (the write path, wasm-gated).
-        let src = live_code(include_str!("eden_top_strip.rs"));
+        let src = live_code(include_str!("top_strip.rs"));
         assert!(
             src.contains("with_editor_toolbar_dispatch"),
             "wave-202: the widget/snap/select-all actions must route through the editor bridge"
@@ -3294,7 +3294,7 @@ mod t668_state_vocabulary {
     /// byte-offset ordering of two real calls, which no comment or literal can forge.
     #[test]
     fn plates_subscribe_to_dispatch_generation_before_reading_it() {
-        let code = live_code(include_str!("eden_top_strip.rs"));
+        let code = live_code(include_str!("top_strip.rs"));
         let gen_read = "toolbar_dispatch_generation";
         let dispatch_read = "with_editor_toolbar_dispatch";
         // Markers carry NO trailing `{` on purpose: `only_body` splits at the FIRST `{` after the
@@ -3396,7 +3396,7 @@ mod t692_help_surface {
     /// mount string exists somewhere after the open tag.
     #[test]
     fn the_toggle_is_checked_in_the_gutter_and_mounted_here() {
-        let code = crate::arsenal::class_r_scrub::live_code(include_str!("eden_top_strip.rs"));
+        let code = crate::arsenal::class_r_scrub::live_code(include_str!("top_strip.rs"));
         let body = crate::arsenal::class_r_scrub::only_body(&code, "pub fn TopCommandStrip(");
         let mount = format!("{} open=hint_open", "ControlsHint");
         let mount_at = body.find(&mount).expect(
@@ -3470,7 +3470,7 @@ mod t633_aegis_controls {
     /// where the defect lived.
     #[test]
     fn no_raw_browser_control_remains_in_the_strip() {
-        let src = live_source(include_str!("eden_top_strip.rs"));
+        let src = live_source(include_str!("top_strip.rs"));
         let raw_range = [r#"type=""#, r#"range""#].concat();
         assert!(
             !src.contains(&raw_range),
@@ -3494,7 +3494,7 @@ mod t633_aegis_controls {
     /// satisfied by deleting the controls, which is not the fix.
     #[test]
     fn the_strip_renders_the_aegis_primitives() {
-        let code = live_code(include_str!("eden_top_strip.rs"));
+        let code = live_code(include_str!("top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
         for needle in ["<Slider", "<Select", "options=WEATHER_OPTIONS"] {
             assert!(
@@ -3518,7 +3518,7 @@ mod t633_aegis_controls {
     /// `ui.rs` already pins the Slider primitive itself).
     #[test]
     fn the_scrubber_settle_commit_path() {
-        let code = live_code(include_str!("eden_top_strip.rs"));
+        let code = live_code(include_str!("top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
         assert!(
             body.contains("on_change=Callback::new(move |mins: i32|"),
@@ -3575,7 +3575,7 @@ mod t634_two_rows_and_a_hierarchy {
     // T-637 — the row recipes moved to `eden_layout` (the T-634 fold-back) and the dead one-row
     // `STRIP` is deleted. `DOCK_L` stands in for it below: "the strip is the same glass as the docks
     // it sits above" is what comparing the two shells always meant.
-    use crate::eden_layout::{
+    use crate::editor::layout::{
         BTN_ICON, DOCK_L, ROW_MENUS, ROW_MENUS_PX, ROW_TOOLS, ROW_TOOLS_PX, STRIP_ROWS,
         STRIP_TOP_PX,
     };
@@ -3583,7 +3583,7 @@ mod t634_two_rows_and_a_hierarchy {
     /// The strip's own view body, with comments blanked and class/aria literals kept — the literals
     /// ARE the structure these pins read.
     fn body() -> String {
-        let src = live_source(include_str!("eden_top_strip.rs"));
+        let src = live_source(include_str!("top_strip.rs"));
         only_body(&src, "pub fn TopCommandStrip(").to_string()
     }
 
@@ -3876,7 +3876,7 @@ mod t726_top_strip_esc_stack {
     #[test]
     fn top_command_strip_escape_yields_when_modal_stack_consumed_escape() {
         // live_source (not live_code): Escape is a string literal; live_code blanks literals.
-        let code = live_source(include_str!("eden_top_strip.rs"));
+        let code = live_source(include_str!("top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
         let esc = ["if ev.key() == \"", "Escape\""].concat();
         let esc_at = body
@@ -3917,7 +3917,7 @@ mod t726_top_strip_esc_stack {
 
     #[test]
     fn top_strip_escape_consumed_guard_is_load_bearing() {
-        let code = live_source(include_str!("eden_top_strip.rs"));
+        let code = live_source(include_str!("top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
         let guard = ["modal_stack", "::", "escape_consumed()"].concat();
         assert!(
@@ -3933,7 +3933,7 @@ mod t726_top_strip_esc_stack {
 
     #[test]
     fn top_strip_registers_transient_closer_with_modal_stack() {
-        let code = live_source(include_str!("eden_top_strip.rs"));
+        let code = live_source(include_str!("top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
         let reg = ["modal_stack", "::", "register_transient_closer"].concat();
         assert!(
@@ -3958,7 +3958,7 @@ mod t786_dialog_closes_popovers {
     /// `live_code`, so a doc comment or string cannot satisfy the needles.
     #[test]
     fn close_transients_closes_menu_export_and_hint() {
-        let scrubbed = live_code(include_str!("eden_top_strip.rs"));
+        let scrubbed = live_code(include_str!("top_strip.rs"));
         let body = only_body(&scrubbed, "pub fn TopCommandStrip(");
         // The definition and its three effects.
         let def_at = body
@@ -3983,7 +3983,7 @@ mod t786_dialog_closes_popovers {
     /// directly (they already close menu/export at the top of `run_action`).
     #[test]
     fn every_dialog_open_path_closes_the_controls_hint() {
-        let scrubbed = live_code(include_str!("eden_top_strip.rs"));
+        let scrubbed = live_code(include_str!("top_strip.rs"));
         let body = only_body(&scrubbed, "pub fn TopCommandStrip(");
         // Save Version, Mission Settings, and ORBAT Manager buttons each close transients before
         // opening. Match the open call, then require a hint-close within the handler just above it.
@@ -4057,7 +4057,7 @@ mod t789_save_version_dialog {
     /// the needles are the actual sets, not a mention in a comment/string.
     #[test]
     fn clears_stale_status_on_the_reopen_edge() {
-        let code = live_code(include_str!("eden_top_strip.rs"));
+        let code = live_code(include_str!("top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
         // The rising-edge guard: an Effect that reads save_open and a was-open cell.
         assert!(
@@ -4086,7 +4086,7 @@ mod t789_save_version_dialog {
     /// reactive insert does not fire). Same shape the eden_tree / eden_dock_left rename pins assert.
     #[test]
     fn version_input_takes_focus_on_open() {
-        let code = live_code(include_str!("eden_top_strip.rs"));
+        let code = live_code(include_str!("top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
         assert!(
             body.contains("let version_ref = NodeRef::<leptos::html::Input>::new()"),
@@ -4117,7 +4117,7 @@ mod t789_save_version_dialog {
     /// whole source and match on substrings rather than `only_body`.
     #[test]
     fn traps_tab_within_the_dialog_subtree() {
-        let code = live_code(include_str!("eden_top_strip.rs"));
+        let code = live_code(include_str!("top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
         assert!(
             body.contains("on:keydown=trap_tab"),
@@ -4130,7 +4130,7 @@ mod t789_save_version_dialog {
              focusables to this subtree"
         );
         // The wasm trap body: Tab-only, queries focusables, wraps at the edges.
-        let full = live_code(include_str!("eden_top_strip.rs"));
+        let full = live_code(include_str!("top_strip.rs"));
         let trap_at = full
             .find("fn trap_tab_in_dialog")
             .expect("T-789: trap_tab_in_dialog must exist");
@@ -4171,7 +4171,7 @@ mod t789_save_version_dialog {
     /// prove on-screen-ness. Never re-add a "by construction" claim here. `live_source` (classes).
     #[test]
     fn dialog_carries_the_centering_classes_rect_is_smoke_proven() {
-        let code = live_source(include_str!("eden_top_strip.rs"));
+        let code = live_source(include_str!("top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
         // Anchor on the dialog's unique description copy (the button label "Save Version" also
         // appears earlier, so it is not a unique anchor). The description sits INSIDE the popup, so
@@ -4228,7 +4228,7 @@ mod t798_validation_chip {
     /// so the strip does not re-implement the findings vocabulary, it renders the one home's output.
     #[test]
     fn the_chip_reads_the_validation_seam() {
-        let code = live_code(include_str!("eden_top_strip.rs"));
+        let code = live_code(include_str!("top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
         for needle in [
             "validation_open",                     // the chip's own latch
@@ -4242,7 +4242,7 @@ mod t798_validation_chip {
             );
         }
         // The chip's DOM handle for the live acceptance (the gate reads data-issue-total off it).
-        let lit = live_source(include_str!("eden_top_strip.rs"));
+        let lit = live_source(include_str!("top_strip.rs"));
         let body_lit = only_body(&lit, "pub fn TopCommandStrip(");
         assert!(
             body_lit.contains("data-validation-chip") && body_lit.contains("data-issue-total"),
@@ -4256,7 +4256,7 @@ mod t798_validation_chip {
     /// `live_source` keeps class strings (the colour is a class literal).
     #[test]
     fn the_error_count_uses_the_aa_contrast_red() {
-        let lit = live_source(include_str!("eden_top_strip.rs"));
+        let lit = live_source(include_str!("top_strip.rs"));
         let body = only_body(&lit, "pub fn TopCommandStrip(");
         // Scope to the CHIP's accent decision, not the whole strip: the Save dialog's rejected-save
         // list wears its own `text-error` on a different (passing) plate and is out of this finding's
@@ -4294,7 +4294,7 @@ mod t798_validation_chip {
     /// open dialog). This is the deviation the ticket asked be stated: dropdown = menu-class transient.
     #[test]
     fn the_dropdown_is_a_transient_not_a_modal_dialog() {
-        let code = live_code(include_str!("eden_top_strip.rs"));
+        let code = live_code(include_str!("top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
         // (1) close_transients clears it (opening a dialog / another popover closes the chip).
         let ct_at = body
@@ -4320,7 +4320,7 @@ mod t798_validation_chip {
         // (3) NOT a modal_stack Dialog. The chip's latch must never be registered as a modal — it is
         // a menu-class transient. (register_transient_closer is the T-814 strip-owned closer and is
         // fine; `register(` / a Dialog wrapper around validation_open is what is forbidden.)
-        let lit = live_source(include_str!("eden_top_strip.rs"));
+        let lit = live_source(include_str!("top_strip.rs"));
         let body_lit = only_body(&lit, "pub fn TopCommandStrip(");
         assert!(
             !body_lit.contains("<Dialog open=validation_open")
@@ -4335,7 +4335,7 @@ mod t798_validation_chip {
     /// would mis-centre (the Save-dialog portal trap). No portal needed, no rect-smoke regression.
     #[test]
     fn the_dropdown_is_anchored_via_menu_panel() {
-        let lit = live_source(include_str!("eden_top_strip.rs"));
+        let lit = live_source(include_str!("top_strip.rs"));
         let body = only_body(&lit, "pub fn TopCommandStrip(");
         // The validation dropdown's surface reuses MENU_PANEL (the export menu's anchored recipe).
         let drop_at = body

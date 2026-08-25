@@ -431,15 +431,15 @@ pub(crate) fn count_noun(n: usize, singular: &str, plural: &str) -> String {
 
 /// T-698 — the six-figure grid reference of a world position, in the map furniture's own format.
 ///
-/// **Both halves come from [`crate::eden_toolbelt::grid_ref_3digit`]** — the T-667 formatter whose
+/// **Both halves come from [`crate::editor::panels::toolbelt::grid_ref_3digit`]** — the T-667 formatter whose
 /// output is literally the text printed on the map-pane edge labels. Do not re-derive the rule here:
 /// a second convention that disagreed with the on-screen labels would be the confident-wrong-answer
 /// defect this exporter exists to avoid. Separator is one space (`mortar.rs`'s "012 020").
 pub(crate) fn format_grid_ref(x: f64, y: f64) -> String {
     format!(
         "{} {}",
-        crate::eden_toolbelt::grid_ref_3digit(x),
-        crate::eden_toolbelt::grid_ref_3digit(y)
+        crate::editor::panels::toolbelt::grid_ref_3digit(x),
+        crate::editor::panels::toolbelt::grid_ref_3digit(y)
     )
 }
 
@@ -596,7 +596,7 @@ mod imp {
         /// of the activation it lets through, and rejects the next one only when it carries the SAME
         /// stamp (the DOM's synthesised pointerup/click double). A `Cell` (not a `RefCell`) because a
         /// single `f64` copy needs no borrow, and a `thread_local` for the same wasm-single-thread
-        /// reason [`MIRROR`](crate::eden_top_strip) is.
+        /// reason [`MIRROR`](crate::editor::panels::top_strip) is.
         static LAST_EXPORT_STAMP: std::cell::Cell<f64> = const { std::cell::Cell::new(0.0) };
     }
 
@@ -855,7 +855,7 @@ mod imp {
     ///
     /// **T-690 — this is where the compile stops being a pass/fail.** The compile now returns a
     /// structured finding list alongside the bytes; this publishes that list to the T-655 validation
-    /// panel ([`crate::validation_panel::publish_compile_findings`]) and lets the toast shrink back
+    /// panel ([`crate::editor::panels::validation_panel::publish_compile_findings`]) and lets the toast shrink back
     /// to what a toast is good at — a one-line verdict with a pointer. The panel is the render
     /// surface and is deliberately not duplicated here.
     ///
@@ -881,10 +881,10 @@ mod imp {
                 // validation finding. Published AFTER the download starts: a diagnostic is not a
                 // refusal, and the file the author asked for is not held back by one.
                 let summary = super::compile_diagnostics_summary(&findings);
-                crate::validation_panel::publish_compile_findings(
+                crate::editor::panels::validation_panel::publish_compile_findings(
                     findings
                         .iter()
-                        .map(crate::validation_panel::PanelFinding::from_finding)
+                        .map(crate::editor::panels::validation_panel::PanelFinding::from_finding)
                         .collect(),
                 );
                 // Naming the staleness is the whole reason this is a toast and not a silent download:
@@ -2016,7 +2016,7 @@ mod tests {
     /// validation finding. No second panel, no parallel vocabulary.
     #[test]
     fn compile_findings_reach_the_validation_panel() {
-        use crate::validation_panel::{
+        use crate::editor::panels::validation_panel::{
             evaluate_now, publish_compile_findings, PanelFinding, Rollup,
         };
 
@@ -2133,8 +2133,8 @@ mod tests {
     /// clipboard convention nobody reconciled.
     #[test]
     fn the_exporter_grid_ref_is_the_map_furnitures_own_label_text() {
-        use crate::eden_layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
-        use crate::eden_toolbelt::{edge_eastings, edge_northings, GRID_STEP_M};
+        use crate::editor::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
+        use crate::editor::panels::toolbelt::{edge_eastings, edge_northings, GRID_STEP_M};
         use map_engine_core::camera::OrthoCamera;
 
         let (w, h) = (1600.0_f64, 900.0_f64);

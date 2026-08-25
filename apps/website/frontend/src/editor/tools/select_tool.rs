@@ -612,15 +612,15 @@ fn farthest_empty_px(w: f64, h: f64, proj: &[(f64, f64)]) -> (f64, f64) {
     // NaN/inverted box.
     // T-638 — the LIVE insets (dock collapse + chrome_hidden folded in), not the expanded consts:
     // a collapsed dock frees its strip to the map, so a "guaranteed-empty" probe px may now sit where
-    // the panel used to be. `crate::eden_layout::*` owns the accessors (`eden_chrome` re-exports the
+    // the panel used to be. `crate::editor::layout::*` owns the accessors (`eden_chrome` re-exports the
     // consts by name for the non-owned readers; the dynamic seam is the accessor).
     let (mut x0, mut x1) = (
-        crate::eden_layout::dock_left_px(),
-        w - crate::eden_layout::dock_right_px(),
+        crate::editor::layout::dock_left_px(),
+        w - crate::editor::layout::dock_right_px(),
     );
     let (mut y0, mut y1) = (
-        crate::eden_layout::strip_top_px(),
-        h - crate::eden_layout::toolbelt_band_px(),
+        crate::editor::layout::strip_top_px(),
+        h - crate::editor::layout::toolbelt_band_px(),
     );
     if x1 - x0 < 1.0 || y1 - y0 < 1.0 {
         x0 = 0.0;
@@ -903,7 +903,7 @@ pub fn register_editor_selection(
 // T-636 / T-638 / T-637 — the inset-reader tests live in `eden_layout` (the consts' owner, natively
 // compiled), NOT here: this whole module is `#[cfg(target_arch = "wasm32")]` (main.rs), so a native
 // `cargo test` never sees it. `farthest_empty_px` above reads the band via the T-638 accessor
-// `crate::eden_layout::toolbelt_band_px()` (was `eden_chrome::TOOLBELT_BAND_PX`) — that read is one of
+// `crate::editor::layout::toolbelt_band_px()` (was `eden_chrome::TOOLBELT_BAND_PX`) — that read is one of
 // the two the layout accessor-conversion test pins by name, and it must not hardcode `96.0`.
 //
 // T-637 equalised the docks to 240/240. This file needed no change for that, and THAT IS THE POINT:
