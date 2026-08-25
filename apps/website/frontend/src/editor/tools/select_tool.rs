@@ -28,7 +28,7 @@ use map_engine_render::draw_order::role_id;
 use map_engine_render::RenderEngine;
 use wasm_bindgen::prelude::*;
 
-use crate::mission_doc::DocHandle;
+use crate::editor::state::doc_host::DocHandle;
 
 /// Motion (CSS px) separating a click from a drag — the React `useSelectTool` `DRAG_THRESHOLD`.
 pub const DRAG_THRESHOLD_PX: f64 = 4.0;
@@ -116,7 +116,7 @@ pub enum LeftGesture {
     /// T-648 XFORM-SHIFT-001 — an in-flight **Shift-rotate**: a Shift+LMB press that landed on a
     /// selected entity. The whole live selection rotates to FACE the cursor (each entity about its
     /// own position); the release px is unprojected against the frozen `cam` to the aim point that
-    /// [`crate::editor_ops::rotate_selection_to_face`] rotates toward, quantised to the active
+    /// [`crate::editor::state::operations::rotate_selection_to_face`] rotates toward, quantised to the active
     /// rotation ladder rung. It is a SEPARATE arm from [`LeftGesture::Move`] on purpose: a rotate
     /// commits rotation (through the existing `attrs_update_position` / `set_vehicle_position` field
     /// writes), never the atomic `move_entities_and_vehicles` translate — so the `mission_editor`
@@ -184,7 +184,7 @@ pub fn pick(cam: &OrthoCamera, soa: &SlotSoa, px: f64, py: f64) -> Option<String
 /// T-425 — nearest placed vehicle id under a screen pixel, or `None`.
 ///
 /// Vehicles are off the slot SoA (they ride their own lane — see [`bind_vehicle_preview_lane`]), so
-/// the slot [`pick`] path never sees them. `points` is `(id, world_x, world_y)` from [`crate::editor_ops::vehicle_points`].
+/// the slot [`pick`] path never sees them. `points` is `(id, world_x, world_y)` from [`crate::editor::state::operations::vehicle_points`].
 /// Delegates to [`map_engine_core::doc::MissionDocCore::pick_vehicle`] (Class-R SoT).
 #[must_use]
 #[allow(dead_code)] // public host helper; live path uses pick_slot_or_vehicle
@@ -279,7 +279,7 @@ pub fn drag_delta(cam: &OrthoCamera, start_wx: f64, start_wy: f64, px: f64, py: 
 ///   offset ([`map_engine_core::slots_gpu::pack_vehicle_drag_preview`]). No engine change, and no
 ///   vehicle ids inside `map-engine-render`.
 ///
-/// `vehicle_points` is [`crate::editor_ops::vehicle_points`] — the same list the press-time pick
+/// `vehicle_points` is [`crate::editor::state::operations::vehicle_points`] — the same list the press-time pick
 /// ran against, so every draggable vehicle is by construction a row in it.
 pub fn push_drag_preview(
     e: &mut RenderEngine,
@@ -333,7 +333,7 @@ pub fn clear_drag_preview(e: &mut RenderEngine, vehicle_points: &[(String, f64, 
 /// **THE COLUMN-ALIGNMENT TRAP.** The four columns must describe the same rows in the same order or
 /// every vehicle wears another's kind, side and heading — and a silhouette pointing confidently the
 /// wrong way is believed, which makes it worse than the disc it replaces.
-/// [`crate::mission_history::vehicle_lane_fields`] is the SINGLE column builder (one pass over the
+/// [`crate::editor::state::history::vehicle_lane_fields`] is the SINGLE column builder (one pass over the
 /// id-sorted `editor_ops::vehicle_rows`); this reuses it rather than growing a second one, so the
 /// preview is built by the same code as the committed render and cannot drift from it. The `xy`
 /// handed in comes from `editor_ops::vehicle_points`, which is that same `vehicle_rows` reader
@@ -346,7 +346,7 @@ pub fn clear_drag_preview(e: &mut RenderEngine, vehicle_points: &[(String, f64, 
 /// Rather than zip a shift, fall back to the plain disc lane — less information, but never a
 /// confident lie.
 fn bind_vehicle_preview_lane(e: &mut RenderEngine, xy: &[f32]) {
-    let (doc_xy, aliases, tints, headings) = crate::mission_history::vehicle_lane_fields();
+    let (doc_xy, aliases, tints, headings) = crate::editor::state::history::vehicle_lane_fields();
     if doc_xy.len() == xy.len() {
         e.vehicles_bind_symbology(xy, aliases, &tints, &headings);
     } else {
@@ -362,7 +362,7 @@ fn bind_vehicle_preview_lane(e: &mut RenderEngine, xy: &[f32]) {
 /// still wholesale (hairline API replaces the role). `doc_handle` is the same live `Rc` the commit
 /// path reads — no signature change for callers, matching `vehicle_lane_fields`.
 fn bind_squad_link_preview(e: &mut RenderEngine, drag_ids: &[String], dx: f64, dy: f64) {
-    let Some(doc_h) = crate::mission_history::doc_handle() else {
+    let Some(doc_h) = crate::editor::state::history::doc_handle() else {
         return;
     };
     let guard = doc_h.borrow();

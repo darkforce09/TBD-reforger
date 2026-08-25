@@ -127,7 +127,7 @@ use map_engine_core::doc::MissionDocCore;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
-use crate::mission_doc::DocHandle;
+use crate::editor::state::doc_host::DocHandle;
 
 /// IndexedDB coordinates — identical to `yrsPersist.ts` (`DB_NAME` / `STORE` / v1). Distinct from the
 /// legacy v1 `tbd-mission-${id}` and v2 `tbd-mission-persist`; **no migration** (legacy drafts drop).
@@ -1157,7 +1157,8 @@ pub fn register_mission_persist(
     let warm_fn = {
         let id = mission_id.clone();
         Closure::wrap(Box::new(move || -> JsValue {
-            match crate::editor_session::read_warm(&id).and_then(|s| serde_json::to_string(&s).ok())
+            match crate::editor::state::session::read_warm(&id)
+                .and_then(|s| serde_json::to_string(&s).ok())
             {
                 Some(json) => JsValue::from_str(&json),
                 None => JsValue::NULL,
@@ -1184,7 +1185,7 @@ pub fn register_mission_persist(
             let id = id.clone();
             spawn_promise(async move {
                 let _ = clear_state(&id).await;
-                crate::editor_session::clear();
+                crate::editor::state::session::clear();
             })
             .into()
         }) as Box<dyn FnMut() -> JsValue>)

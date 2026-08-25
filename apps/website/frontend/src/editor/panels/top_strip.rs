@@ -382,7 +382,7 @@ const MENUS: [(&str, &[MenuItem]); 6] = [
 fn selection_count() -> usize {
     #[cfg(target_arch = "wasm32")]
     {
-        crate::editor_ops::selection_len()
+        crate::editor::state::operations::selection_len()
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -429,7 +429,7 @@ pub fn normalize_clock(s: &str) -> Option<String> {
 
 /// T-804 — the full chip text for a completed draft flush that happened `elapsed_ms` ago.
 ///
-/// The instant comes from [`crate::yrs_persist::last_flush_ms`] (a REAL completed flush — the T-779
+/// The instant comes from [`crate::editor::state::persist::last_flush_ms`] (a REAL completed flush — the T-779
 /// ack discipline), and this turns "now − then" into the F-24 pre-approved copy: **"Draft saved"**
 /// plus a coarse recency. The recency is deliberately whole-unit and monotone-degrading — seconds,
 /// then minutes, then hours — because it is refreshed off a 1 s coarse tick (never a per-frame
@@ -1015,7 +1015,7 @@ pub fn TopCommandStrip(
     // only in the browser. On the native view shell `last_flush` stays `None`, so the chip's `move ||`
     // renders nothing, which is the correct native behaviour (there is no draft store to report on).
     #[cfg(target_arch = "wasm32")]
-    crate::yrs_persist::set_last_flush_signal(last_flush);
+    crate::editor::state::persist::set_last_flush_signal(last_flush);
     #[cfg(target_arch = "wasm32")]
     {
         use wasm_bindgen::JsCast;
@@ -1114,7 +1114,7 @@ pub fn TopCommandStrip(
         }
         #[cfg(target_arch = "wasm32")]
         {
-            crate::editor_ops::read_env()
+            crate::editor::state::operations::read_env()
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -1133,7 +1133,8 @@ pub fn TopCommandStrip(
         }
         #[cfg(target_arch = "wasm32")]
         {
-            let (factions, squads, slot_squad_ids) = crate::editor_ops::census_input();
+            let (factions, squads, slot_squad_ids) =
+                crate::editor::state::operations::census_input();
             census_from_rows(&factions, &squads, &slot_squad_ids)
         }
         #[cfg(not(target_arch = "wasm32"))]
@@ -1148,7 +1149,7 @@ pub fn TopCommandStrip(
         let c = census.get();
         let terrain = env.get().terrain;
         #[cfg(target_arch = "wasm32")]
-        let mode = crate::editor_ops::read_env_value("mode")
+        let mode = crate::editor::state::operations::read_env_value("mode")
             .and_then(|v| v.as_str().map(str::to_string))
             .filter(|s| !s.trim().is_empty());
         #[cfg(not(target_arch = "wasm32"))]
@@ -1188,7 +1189,7 @@ pub fn TopCommandStrip(
         {
             // `MouseEvent: AsRef<Event>` — `time_stamp()` is the base `Event`'s `DOMHighResTimeStamp`.
             let stamp = AsRef::<web_sys::Event>::as_ref(_ev).time_stamp();
-            crate::mission_commands::begin_export_gesture(stamp)
+            crate::editor::state::commands_hotkeys::begin_export_gesture(stamp)
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -1210,19 +1211,19 @@ pub fn TopCommandStrip(
             }
             MenuAction::Export => {
                 #[cfg(target_arch = "wasm32")]
-                crate::mission_commands::export_now(&save_semver.get_untracked());
+                crate::editor::state::commands_hotkeys::export_now(&save_semver.get_untracked());
             }
             MenuAction::ExportCompiled => {
                 #[cfg(target_arch = "wasm32")]
-                crate::mission_commands::export_compiled_now(toasts);
+                crate::editor::state::commands_hotkeys::export_compiled_now(toasts);
             }
             MenuAction::Undo => {
                 #[cfg(target_arch = "wasm32")]
-                crate::mission_history::undo();
+                crate::editor::state::history::undo();
             }
             MenuAction::Redo => {
                 #[cfg(target_arch = "wasm32")]
-                crate::mission_history::redo();
+                crate::editor::state::history::redo();
             }
             MenuAction::Settings => {
                 if let Some(s) = settings_open {
@@ -1237,7 +1238,7 @@ pub fn TopCommandStrip(
             MenuAction::Pattern(kind) => {
                 #[cfg(target_arch = "wasm32")]
                 {
-                    crate::editor_ops::apply_pattern_to_selection(kind);
+                    crate::editor::state::operations::apply_pattern_to_selection(kind);
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 let _ = kind;
@@ -1245,7 +1246,7 @@ pub fn TopCommandStrip(
             MenuAction::Align(edge) => {
                 #[cfg(target_arch = "wasm32")]
                 {
-                    crate::editor_ops::align_selection(edge);
+                    crate::editor::state::operations::align_selection(edge);
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 let _ = edge;
@@ -1253,7 +1254,7 @@ pub fn TopCommandStrip(
             MenuAction::Space(axis) => {
                 #[cfg(target_arch = "wasm32")]
                 {
-                    crate::editor_ops::space_selection(axis);
+                    crate::editor::state::operations::space_selection(axis);
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 let _ = axis;
@@ -1261,7 +1262,7 @@ pub fn TopCommandStrip(
             MenuAction::Orient(cmd) => {
                 #[cfg(target_arch = "wasm32")]
                 {
-                    crate::editor_ops::orient_selection(cmd);
+                    crate::editor::state::operations::orient_selection(cmd);
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 let _ = cmd;
@@ -1276,21 +1277,25 @@ pub fn TopCommandStrip(
             // pre-mount) is a silent no-op.
             MenuAction::SelectAll => {
                 #[cfg(target_arch = "wasm32")]
-                crate::mission_editor::with_editor_toolbar_dispatch(|d| (d.select_all)());
+                crate::editor::mission_editor::with_editor_toolbar_dispatch(|d| (d.select_all)());
             }
             MenuAction::SetWidget(digit) => {
                 #[cfg(target_arch = "wasm32")]
-                crate::mission_editor::with_editor_toolbar_dispatch(|d| (d.set_widget)(digit));
+                crate::editor::mission_editor::with_editor_toolbar_dispatch(|d| {
+                    (d.set_widget)(digit)
+                });
                 #[cfg(not(target_arch = "wasm32"))]
                 let _ = digit;
             }
             MenuAction::ToggleSnap => {
                 #[cfg(target_arch = "wasm32")]
-                crate::mission_editor::with_editor_toolbar_dispatch(|d| (d.toggle_snap)());
+                crate::editor::mission_editor::with_editor_toolbar_dispatch(|d| (d.toggle_snap)());
             }
             MenuAction::SnapStep(delta) => {
                 #[cfg(target_arch = "wasm32")]
-                crate::mission_editor::with_editor_toolbar_dispatch(|d| (d.snap_step)(delta));
+                crate::editor::mission_editor::with_editor_toolbar_dispatch(|d| {
+                    (d.snap_step)(delta)
+                });
                 #[cfg(not(target_arch = "wasm32"))]
                 let _ = delta;
             }
@@ -1318,14 +1323,16 @@ pub fn TopCommandStrip(
     let widget_is = move |digit: u8| -> bool {
         // Subscribe to the dispatch's reactive presence FIRST (see the note above) — before, and
         // independent of, whether a dispatch is registered yet.
-        let _gen = crate::mission_editor::toolbar_dispatch_generation().get();
+        let _gen = crate::editor::mission_editor::toolbar_dispatch_generation().get();
         #[cfg(target_arch = "wasm32")]
         {
             // T-795's `widget_digit()` (1 No Widget / 2 Translate / 3 Rotate) is the tracked
             // three-way read — merged at the wave-205 barrier exactly as both slices planned —
             // so each plate lights on its own digit and keyboard and toolbar cannot disagree.
             let mut active = 0u8;
-            crate::mission_editor::with_editor_toolbar_dispatch(|d| active = (d.widget_digit)());
+            crate::editor::mission_editor::with_editor_toolbar_dispatch(|d| {
+                active = (d.widget_digit)()
+            });
             active == digit
         }
         #[cfg(not(target_arch = "wasm32"))]
@@ -1336,11 +1343,13 @@ pub fn TopCommandStrip(
     };
     let snap_on = move || -> bool {
         // Subscribe to the dispatch generation FIRST (see the note above `widget_is`).
-        let _gen = crate::mission_editor::toolbar_dispatch_generation().get();
+        let _gen = crate::editor::mission_editor::toolbar_dispatch_generation().get();
         #[cfg(target_arch = "wasm32")]
         {
             let mut on = false;
-            crate::mission_editor::with_editor_toolbar_dispatch(|d| on = (d.snap_enabled)());
+            crate::editor::mission_editor::with_editor_toolbar_dispatch(|d| {
+                on = (d.snap_enabled)()
+            });
             on
         }
         #[cfg(not(target_arch = "wasm32"))]
@@ -1585,7 +1594,7 @@ pub fn TopCommandStrip(
                     }
                     #[cfg(target_arch = "wasm32")]
                     let doc_title = {
-                        let t = crate::editor_ops::read_title();
+                        let t = crate::editor::state::operations::read_title();
                         if t.is_empty() { title_fallback.get_value() } else { t }
                     };
                     #[cfg(not(target_arch = "wasm32"))]
@@ -1604,7 +1613,7 @@ pub fn TopCommandStrip(
                                 {
                                     let v = event_target_value(&ev);
                                     if !v.trim().is_empty() {
-                                        crate::editor_ops::set_title(v.trim());
+                                        crate::editor::state::operations::set_title(v.trim());
                                     }
                                 }
                                 #[cfg(not(target_arch = "wasm32"))]
@@ -1750,7 +1759,7 @@ pub fn TopCommandStrip(
                 on:click=move |_| {
                     #[cfg(target_arch = "wasm32")]
                     {
-                        crate::mission_history::undo();
+                        crate::editor::state::history::undo();
                     }
                 }
             >
@@ -1765,7 +1774,7 @@ pub fn TopCommandStrip(
                 on:click=move |_| {
                     #[cfg(target_arch = "wasm32")]
                     {
-                        crate::mission_history::redo();
+                        crate::editor::state::history::redo();
                     }
                 }
             >
@@ -2195,7 +2204,7 @@ pub fn TopCommandStrip(
                         let estimate = {
                             #[cfg(target_arch = "wasm32")]
                             {
-                                crate::editor_ops::slots_json()
+                                crate::editor::state::operations::slots_json()
                                     .as_deref()
                                     .and_then(crate::editor::mission_size::estimate_compiled_bytes)
                             }
@@ -2380,7 +2389,7 @@ pub fn TopCommandStrip(
                                         class="self-end rounded bg-primary px-4 py-1.5 text-xs font-medium text-on-primary"
                                         on:click=move |_| {
                                             #[cfg(target_arch = "wasm32")]
-                                            crate::mission_commands::save_now(
+                                            crate::editor::state::commands_hotkeys::save_now(
                                                 save_semver.get_untracked(),
                                                 save_notes.get_untracked(),
                                                 save_status,
@@ -2678,7 +2687,7 @@ mod tests {
     /// T-746 — the row-id predicate is crate-visible so `eden_settings` does not keep a twin.
     #[test]
     fn t746_row_id_predicate_is_crate_visible() {
-        use crate::arsenal::class_r_scrub::live_code;
+        use crate::editor::arsenal::class_r_scrub::live_code;
         let src = live_code(include_str!("top_strip.rs"));
         assert!(
             src.contains("pub(crate) fn is_mission_row_id"),
@@ -3147,7 +3156,7 @@ mod tests {
 #[cfg(test)]
 mod t668_state_vocabulary {
     use super::{MenuAction, MENUS};
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
     /// This file with comments blanked but class STRINGS kept, so the Tailwind literals survive as
     /// the structural landmarks the class pins read.
@@ -3396,8 +3405,9 @@ mod t692_help_surface {
     /// mount string exists somewhere after the open tag.
     #[test]
     fn the_toggle_is_checked_in_the_gutter_and_mounted_here() {
-        let code = crate::arsenal::class_r_scrub::live_code(include_str!("top_strip.rs"));
-        let body = crate::arsenal::class_r_scrub::only_body(&code, "pub fn TopCommandStrip(");
+        let code = crate::editor::arsenal::class_r_scrub::live_code(include_str!("top_strip.rs"));
+        let body =
+            crate::editor::arsenal::class_r_scrub::only_body(&code, "pub fn TopCommandStrip(");
         let mount = format!("{} open=hint_open", "ControlsHint");
         let mount_at = body.find(&mount).expect(
             "T-692/T-755: the Controls Hint must be mounted inside TopCommandStrip's body — that              is the chrome_hidden-gated subtree",
@@ -3463,7 +3473,7 @@ mod t692_help_surface {
 #[cfg(test)]
 mod t633_aegis_controls {
     use super::WEATHER_OPTIONS;
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
     /// THE FIX, stated as an absence. No raw range input and no raw select may remain in the strip.
     /// Checked on the string-KEPT source, because `type="range"` is a literal and that is exactly
@@ -3571,7 +3581,7 @@ mod t633_aegis_controls {
 #[cfg(test)]
 mod t634_two_rows_and_a_hierarchy {
     use super::MENUS;
-    use crate::arsenal::class_r_scrub::{live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
     // T-637 — the row recipes moved to `eden_layout` (the T-634 fold-back) and the dead one-row
     // `STRIP` is deleted. `DOCK_L` stands in for it below: "the strip is the same glass as the docks
     // it sits above" is what comparing the two shells always meant.
@@ -3747,8 +3757,8 @@ mod t634_two_rows_and_a_hierarchy {
     fn the_exports_live_behind_one_secondary_trigger() {
         let b = body();
         for dispatch in [
-            "crate::mission_commands::export_now(",
-            "crate::mission_commands::export_compiled_now(",
+            "crate::editor::state::commands_hotkeys::export_now(",
+            "crate::editor::state::commands_hotkeys::export_compiled_now(",
         ] {
             assert_eq!(
                 b.matches(dispatch).count(),
@@ -3871,7 +3881,7 @@ mod t634_two_rows_and_a_hierarchy {
 /// T-726 / T-814 — top-strip Esc yields when modal_stack consumed Escape (wave139 F3 / wave200 F4).
 #[cfg(test)]
 mod t726_top_strip_esc_stack {
-    use crate::arsenal::class_r_scrub::{live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
 
     #[test]
     fn top_command_strip_escape_yields_when_modal_stack_consumed_escape() {
@@ -3951,7 +3961,7 @@ mod t726_top_strip_esc_stack {
 /// T-786 O-5 — opening a dialog closes the strip's popovers/help surfaces (the Controls Hint).
 #[cfg(test)]
 mod t786_dialog_closes_popovers {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     /// The `close_transients` helper must actually close all three transient surfaces — the open
     /// menu, the export dropdown, and the Controls Hint — or the exclusivity is hollow. Scrubbed
@@ -4048,7 +4058,7 @@ mod t786_dialog_closes_popovers {
 /// it, wave-203 MAJOR); it is now proven by the live-rect smoke in `tools/tbd-tools`, not a class pin.
 #[cfg(test)]
 mod t789_save_version_dialog {
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
     /// FRESH STATE. `save_status` is a shared prop (it also paints inline in the strip) and
     /// `save_now` writes it to `Saved v{semver}`, where it stays — so on reopen the dialog would
@@ -4221,7 +4231,7 @@ mod t789_save_version_dialog {
 /// count unchanged on a marker, Backspace clean-screenshot diff, contrast calc) is the playtest lane.
 #[cfg(test)]
 mod t798_validation_chip {
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
     /// THE CHIP EXISTS, IN THE STRIP, READING THE SEAM. The count comes from the headless eval loop
     /// via `validation_panel::chip_findings`, and the drop is `validation_panel::findings_dropdown` —

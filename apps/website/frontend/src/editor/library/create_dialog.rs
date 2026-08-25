@@ -277,7 +277,7 @@ pub fn CreateMissionDialog(open: RwSignal<bool>) -> impl IntoView {
 // own haystack (T-759).
 #[cfg(test)]
 mod t671_create_carries_the_briefing {
-    use crate::arsenal::class_r_scrub::{live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
 
     /// The briefing is typed here and it reaches `POST /missions`. `CreateMissionInput::briefing`
     /// binds straight into the INSERT, so a control that does not make it onto the body is a field

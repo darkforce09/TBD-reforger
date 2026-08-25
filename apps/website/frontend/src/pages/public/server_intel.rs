@@ -226,7 +226,7 @@ fn server_panel(s: Value, live_sig: RwSignal<Option<ServerStatusDto>>) -> impl I
     // clipboard vocabulary is how the two drift apart and one of them starts lying again.
     let copy_address = move |_| {
         #[cfg(target_arch = "wasm32")]
-        crate::mission_commands::write_clipboard(
+        crate::editor::state::commands_hotkeys::write_clipboard(
             copy_text.get_value(),
             "Server address copied".to_string(),
             crate::core::toast::use_toasts(),
@@ -575,7 +575,7 @@ mod t773 {
     /// stated: the thing under test is a `navigator.clipboard` promise, which does not exist in a
     /// native `cargo test` process at all, and granting a headless browser clipboard permission
     /// would test the browser rather than the button. What can be pinned without a browser is
-    /// *which path the button takes* — and since [`crate::mission_commands::write_clipboard`]'s
+    /// *which path the button takes* — and since [`crate::editor::state::commands_hotkeys::write_clipboard`]'s
     /// await-then-report contract is pinned in turn by
     /// `class_r_write_clipboard_toasts_only_on_the_resolve_arm`, the two together say: this button
     /// reaches the one helper, and that helper only claims success after the promise resolved.
@@ -585,13 +585,13 @@ mod t773 {
     /// the production code deleted.
     #[test]
     fn class_r_copy_address_routes_through_the_awaited_clipboard_helper() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
         const SRC: &str = include_str!("server_intel.rs");
         let production = live_code(SRC);
         let body = only_body(&production, "let copy_address = move |_|");
 
         assert!(
-            body.contains("crate::mission_commands::write_clipboard("),
+            body.contains("crate::editor::state::commands_hotkeys::write_clipboard("),
             "the Copy button must copy through the one awaited clipboard helper; got:\n{body}"
         );
         // The two halves of the original defect, each forbidden on its own so that re-introducing

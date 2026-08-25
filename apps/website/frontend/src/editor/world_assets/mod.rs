@@ -28,7 +28,7 @@ use fetch::{fetch_bytes, fetch_bytes_streamed};
 use forest_mass::ForestMassHost;
 use world_host::WorldHost;
 
-use crate::mission_editor::boot_progress::ProgressFn;
+use crate::editor::mission_editor::boot_progress::ProgressFn;
 
 const TERRAIN_M: f64 = 12_800.0;
 
@@ -280,7 +280,7 @@ pub async fn bootstrap(
     dem_out: DemGridHandle,
     report: ProgressFn,
 ) {
-    use crate::mission_editor::boot_progress::{BootEvent, BootSeg};
+    use crate::editor::mission_editor::boot_progress::{BootEvent, BootSeg};
 
     // The world's *static* plan, declared before its first fetch: the init + label files, and the
     // 8 m density bins, whose count is a property of the terrain grid (25×25) and is therefore
@@ -363,7 +363,7 @@ pub async fn bootstrap(
     // from the mission's `meta.environment`; the basemap view is a per-user localStorage pref. The
     // world-layer toggles are applied by the world host each settle.
     {
-        let env = crate::editor_ops::read_env();
+        let env = crate::editor::state::operations::read_env();
         if let Some(e) = engine.borrow_mut().as_mut() {
             #[allow(clippy::cast_possible_truncation)]
             e.set_lane_opacity(1, env.hillshade_opacity as f32, env.show_hillshade);
@@ -440,7 +440,7 @@ pub async fn bootstrap(
 /// also touch the host; a RefCell panic freezes camera input for the rest of the session.
 pub fn flush_viewport(host: HostHandle, engine: EngineHandle) {
     wasm_bindgen_futures::spawn_local(async move {
-        let no_progress = |_: crate::mission_editor::boot_progress::BootEvent| {};
+        let no_progress = |_: crate::editor::mission_editor::boot_progress::BootEvent| {};
         for _ in 0..6 {
             // Take the host out for the async pass so JS event handlers can still
             // `host.borrow()` (they no-op while `None`) without panicking.
@@ -583,9 +583,9 @@ async fn load_dem_and_hillshade(
     engine: &EngineHandle,
     base: &str,
     manifest: &ManifestDem,
-    report: &dyn Fn(crate::mission_editor::boot_progress::BootEvent),
+    report: &dyn Fn(crate::editor::mission_editor::boot_progress::BootEvent),
 ) -> Option<(Vec<f32>, u32, u32, u32, u32)> {
-    use crate::mission_editor::boot_progress::BootSeg;
+    use crate::editor::mission_editor::boot_progress::BootSeg;
     let dem_bytes = fetch_bytes_streamed(
         &format!("{base}/{}", manifest.dem.path),
         BootSeg::Terrain,

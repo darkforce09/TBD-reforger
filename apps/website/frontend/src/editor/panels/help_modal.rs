@@ -435,7 +435,7 @@ pub fn ControlsHint(open: RwSignal<bool>) -> impl IntoView {
 /// [`every_shared_channel_claimant_reads_live_state`] fails if a claimant stops gating itself.
 #[cfg(test)]
 pub(crate) mod keymap_census {
-    use crate::arsenal::class_r_scrub::live_source;
+    use crate::editor::arsenal::class_r_scrub::live_source;
     use std::collections::{BTreeMap, BTreeSet};
 
     /// A modifier PREDICATE, as read out of a live arm guard. `Some(true)` = the modifier is
@@ -618,16 +618,8 @@ pub(crate) mod keymap_census {
     /// on the file that owns the listener. Grep for the LISTENER HEADS, not for the component.
     fn editor_surface() -> Vec<(&'static str, &'static str, usize)> {
         vec![
-            (
-                "mission_editor.rs",
-                include_str!("../../mission_editor.rs"),
-                4,
-            ),
-            (
-                "mission_history.rs",
-                include_str!("../../mission_history.rs"),
-                1,
-            ),
+            ("mission_editor.rs", include_str!("../mission_editor.rs"), 4),
+            ("mission_history.rs", include_str!("../state/history.rs"), 1),
             ("attributes.rs", include_str!("attributes_modal.rs"), 1),
             ("top_strip.rs", include_str!("top_strip.rs"), 1),
             ("context_menu.rs", include_str!("context_menu.rs"), 1),
@@ -1165,7 +1157,7 @@ pub(crate) mod keymap_census {
         // gated on the measure tools having something to dismiss. `.escape()` returns false when a
         // tool is empty and the arm returns the OR, so an Escape with nothing placed falls through
         // untouched instead of swallowing the key from the dialogs above.
-        let arms = keydown_arms(include_str!("../../mission_editor.rs"));
+        let arms = keydown_arms(include_str!("../mission_editor.rs"));
         let esc = arms
             .find(&format!("\"{}\" if !modk", "Escape"))
             .expect("the editor keydown's Escape arm");
@@ -1455,7 +1447,7 @@ pub(crate) mod keymap_census {
 mod t692_help_covers_every_binding {
     use super::keymap_census;
     use super::{Shortcut, GROUPS, SHORTCUTS};
-    use crate::arsenal::class_r_scrub::live_code;
+    use crate::editor::arsenal::class_r_scrub::live_code;
     use std::collections::BTreeSet;
 
     /// Every window-level editor keydown listener, as one set of bound codes. One line, because the
@@ -1659,7 +1651,7 @@ mod t692_help_covers_every_binding {
         // `#[cfg(target_arch = "wasm32")]` item, which the scrubber (correctly) treats as dead on
         // the native shell. Hand it the region from the page fn onward, at a brace-0 boundary —
         // the same `editor_live()` manoeuvre the T-662 pins use for the same reason.
-        let raw = include_str!("../../mission_editor.rs");
+        let raw = include_str!("../mission_editor.rs");
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
         assert_eq!(
             raw.matches(anchor.as_str()).count(),
@@ -1693,7 +1685,7 @@ mod t772_controls_hint_close_hitbox {
     //!    under `live_code` (literals blanked) and exclusive `p-1.5` on the call-site recipe.
 
     use super::HINT_CLOSE_BTN;
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
     use crate::editor::layout::BTN_ICON;
 
     fn hint_body_source() -> String {

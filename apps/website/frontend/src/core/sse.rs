@@ -212,7 +212,7 @@ pub fn stream_server_status(
 
 #[cfg(test)]
 mod tests {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     /// T-287 Class-R — the SSE fetch must abort on dispose; a comment-only "fixed" is a fail.
     ///

@@ -5,85 +5,17 @@
 //! (S/V/R/T), not just `cargo check`.
 
 mod app_routes;
-// T-159.22 — flat registry rows → the Factions palette tree (the T-068.3 `buildCatalogTree` port).
-// Pure data, no web-sys: ungated so its unit tests run on the native `cargo test` shell.
-mod asset_catalog;
-// T-159.26 — Attributes modal (AttributesModal.tsx port; wasm-gated internals).
-// T-159.27 — Arsenal loadout tab (ArsenalTab.tsx port; dumb Forge).
-mod arsenal;
-// T-167 — Smart-Arsenal domain core (arsenalRules.ts + arsenalDollModel.ts port; pure/native-tested).
-mod arsenal_rules;
 // T-934.1 — core framework utilities (auth, client, dto, sse, datefmt, toast, ui,
 // url_guard, split_pane) and the app shell (layout, nav_config).
 mod core;
 mod shell;
-// T-934.2 — standard application pages (pages/public/…).
+// T-934.2/.3 — standard application pages (pages/{public,operations,admin}/…).
 mod pages;
-// T-934.4 — Mission Creator nest (library / tools / world assets).
+// T-934.4–.6 — the Mission Creator nest: library, tools, world assets, eden chrome
+// panels, editor state, arsenal, and the editor page itself. Per-module provenance
+// comments live in the folder mod.rs files.
 mod editor;
-// T-159.25 — the Mission Library's transient "New Mission" dialog (CreateMissionDialog.tsx port).
-// T-159.22 dock commands — outliner select / active layer / palette drag-to-place. Drives the hosted
-// MissionDocCore (add_slot / add_editor_layer), so wasm32-only, gated like the doc host.
-#[cfg(target_arch = "wasm32")]
-mod editor_ops;
-// T-159.21 Eden chrome — the Mission Creator's docked shell (top strip / toolbelt / docks). T-661
-// split it by symbol into the ten `eden_*` modules below; `eden_chrome` is now a re-export shim so
-// consumers' `use crate::editor::eden_chrome::*` paths stay stable. Ungated: they hold no wasm-only types
-// (the doc-driving on:click bodies are cfg-gated inside the closures), so the native view shell
-// compiles them too.
-// T-661 — the ten modules `eden_chrome` was split into, plus T-692's `eden_help` (eleven). Layout
-// consts feed `select_tool` / `mission_editor`; the rest is the docked shell (strip / docks /
-// toolbelt / settings / the Help menu's Controls Hint) plus the zone tool's pure predicates.
-// T-661 — pre-declared `mod` stubs the later editor-program tickets fill (Rust has no implicit
-// module discovery, so main.rs must name them before their tickets land).
-// T-664 — right-click context menu.
-// T-643 — line-of-sight tool.
-// T-645 — shared placement helpers.
-// T-642 — ruler / measure tool.
-// T-655 — mission validation panel.
-// T-159.17 warm editor session — sessionStorage marker; wasm32-only (uses web-sys/js-sys), gated
-// like the doc host below.
-#[cfg(target_arch = "wasm32")]
-mod editor_session;
-// T-159.16 MissionDoc host — all content is wasm32-only (links map-engine-core `doc`), so gate the
-// module declaration like the engine block inside `mission_editor`.
-#[cfg(target_arch = "wasm32")]
-mod mission_doc;
-// T-159.20 Save Version + Export — compile (map-engine-core `mission`) + authed POST + file download.
-// Module is ungated so T-417 Class-R helpers/tests compile on native `cargo test`; the wasm
-// transport body lives behind `#[cfg(target_arch = "wasm32")]` inside the file (sse.rs pattern).
-mod mission_commands;
-mod mission_editor;
-// T-159.26 server hydrate / conflict / dirty — GET /missions/:id → hydrate the saved version or
-// prompt on a local-vs-server conflict. wasm32-only (auth GET + doc), gated like the doc host.
-#[cfg(target_arch = "wasm32")]
-mod mission_hydrate;
-// T-522 — prefer-payload anti-stomp Class-R must run on native `cargo test -p website-frontend`
-// (cold gate). The live hydrate module stays wasm32-gated; the pure prefer helper + t505 pin live
-// here so a prefer→`&row.title` regression goes RED on the same native command CI uses.
-mod mission_title_prefer;
-// T-159.28 map-asset host (MVP: DEM hillshade) — fetch bytes + call the Rust dem core + engine
-// tex_layer. wasm32-only (fetch + engine), gated like the doc host.
-// T-159.21 undo/redo — drives the hosted MissionDocCore undo stack (+ the post-change glyph rebind
-// and the `__editorHistory` bridge); wasm32-only, gated like the doc host.
-#[cfg(target_arch = "wasm32")]
-mod mission_history;
-// T-172 B10 — the 3D arsenal doll mount (DollEngine, wasm-only like the map engine host).
-#[cfg(target_arch = "wasm32")]
-mod arsenal_doll;
-// T-172 B9 — pure SZ payload estimator (missionSize.ts port), native-tested.
-// T-159.22 — the left dock's Editor Layers tree (+ the "Unfiled" pseudo-root the seed forces). Owns
-// plain LayerRow/SlotRow rather than `SlotSoa`, because map-engine-core is wasm32-only — so this
-// stays ungated and its unit tests run on the native shell.
 mod router;
-// T-159.18 Select / LMB pick foundation — links map-engine-core `camera`+`spatial` and web-sys, so
-// wasm32-only, gated like the doc host + persist modules.
-// T-173 P6 — per-user world-layer visibility prefs + basemap view (localStorage). Pure/native-
-// tested; the wasm host applies them to the residency + engine each settle.
-// T-159.17 yrs IDB persist — IndexedDB (`idb` crate) + debounced writer; wasm32-only, gated like the
-// doc host.
-#[cfg(target_arch = "wasm32")]
-mod yrs_persist;
 
 // The wasm entry is a `#[wasm_bindgen(start)]`, not the bin `main`, because linking
 // map-engine-render (T-159.15) pulls in ITS `#[wasm_bindgen(start)]` (the panic hook); wasm-bindgen

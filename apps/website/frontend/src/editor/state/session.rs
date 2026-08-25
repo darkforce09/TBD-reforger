@@ -47,7 +47,7 @@ const SESSION_KEY: &str = "tbd-editor-session";
 /// owner bytes. A plain `{owner}|{logical}` join collides the moment an id contains the separator, and a
 /// `discord_id` is whatever the backend sends, not a shape this module gets to assume. The format is
 /// restated here rather than shared because `yrs_persist::scoped_key` is private;
-/// [`crate::yrs_persist::owner_token`] is `pub` (T-338) and is the one token every per-account cache has
+/// [`crate::editor::state::persist::owner_token`] is `pub` (T-338) and is the one token every per-account cache has
 /// to agree on.
 ///
 /// Scoping alone closes the hole — B resolves a different physical key and cannot even name A's record —
@@ -55,7 +55,7 @@ const SESSION_KEY: &str = "tbd-editor-session";
 /// *after* `clear_session` is `anon`, i.e. the wrong owner at exactly the wrong moment). Every caller
 /// goes through this module's three functions, so nothing outside it changed.
 fn session_key() -> String {
-    let owner = crate::yrs_persist::owner_token();
+    let owner = crate::editor::state::persist::owner_token();
     format!("u{}:{owner}|{SESSION_KEY}", owner.len())
 }
 

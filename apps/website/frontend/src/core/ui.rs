@@ -1051,7 +1051,7 @@ mod tests {
     /// otherwise be satisfied by the needles written in this very function (T-759).
     #[test]
     fn the_search_box_fires_on_every_keystroke_and_clears_through_the_same_callback() {
-        use crate::arsenal::class_r_scrub::{live_code, live_source, only_item};
+        use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_item};
         let code = only_item(&live_code(include_str!("ui.rs")), "pub fn SearchBox(").to_string();
         // `live_source` keeps string literals — every assertion below that is ABOUT a class recipe,
         // an element type or user-visible copy has to read this one, not `code`.
@@ -1225,7 +1225,7 @@ mod tests {
     /// be satisfied by this doc comment, by a string literal, or by an item the build drops.
     #[test]
     fn both_overlay_components_gate_escape_on_the_modal_stack() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
         let prod = live_code(include_str!("ui.rs"));
         for component in ["pub fn Dialog(", "pub fn Sheet("] {
             let body = only_body(&prod, component);
@@ -1432,7 +1432,7 @@ mod tests {
     /// design — it is the surface ORBAT yields *to*).
     #[test]
     fn orbat_manager_overlay_derives_z_from_the_modal_stack() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
         let scrubbed = live_code(include_str!("../pages/operations/orbat_manager.rs"));
         let body = only_body(&scrubbed, "pub fn OrbatManagerDialog(");
         assert!(
@@ -1452,7 +1452,7 @@ mod tests {
 /// so this module's own source can never satisfy them.
 #[cfg(test)]
 mod t633_range_and_select {
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
     fn code() -> String {
         live_code(include_str!("ui.rs"))

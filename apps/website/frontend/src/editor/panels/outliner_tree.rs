@@ -386,7 +386,7 @@ fn layer_flag_toggles(
                 ev.stop_propagation();
                 if !hidden_inherited {
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor_ops::set_layer_hidden(&eye_id, !hidden);
+                    crate::editor::state::operations::set_layer_hidden(&eye_id, !hidden);
                     #[cfg(not(target_arch = "wasm32"))]
                     let _ = &eye_id;
                 }
@@ -422,7 +422,7 @@ fn layer_flag_toggles(
                 ev.stop_propagation();
                 if !locked_inherited {
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor_ops::set_layer_locked(&lock_id, !locked);
+                    crate::editor::state::operations::set_layer_locked(&lock_id, !locked);
                     #[cfg(not(target_arch = "wasm32"))]
                     let _ = &lock_id;
                 }
@@ -516,7 +516,7 @@ fn folder_row_actions(
                         .and_then(|w| w.confirm_with_message(&msg).ok())
                         .unwrap_or(false);
                     if ok {
-                        let _ = crate::editor_ops::delete_layer(&del_id);
+                        let _ = crate::editor::state::operations::delete_layer(&del_id);
                     }
                 }
                 #[cfg(not(target_arch = "wasm32"))]
@@ -654,14 +654,14 @@ fn comment_row(
     // is never in, so it would open blank and write nothing.
     let on_dbl = move |_: web_sys::MouseEvent| {
         #[cfg(target_arch = "wasm32")]
-        crate::editor_ops::open_comment_editor(id_dbl.clone());
+        crate::editor::state::operations::open_comment_editor(id_dbl.clone());
         #[cfg(not(target_arch = "wasm32"))]
         let _ = &id_dbl;
     };
     let on_down = move |_: web_sys::PointerEvent| {
         if authoring_enabled {
             #[cfg(target_arch = "wasm32")]
-            crate::editor_ops::begin_layer_comment_drag(id_drag.clone());
+            crate::editor::state::operations::begin_layer_comment_drag(id_drag.clone());
             #[cfg(not(target_arch = "wasm32"))]
             let _ = &id_drag;
         }
@@ -771,7 +771,7 @@ fn single_row(
                         on:pointerup=move |ev| {
                             ev.stop_propagation();
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor_ops::complete_refile_onto_squad(dest.clone());
+                            crate::editor::state::operations::complete_refile_onto_squad(dest.clone());
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &dest;
                         }
@@ -876,7 +876,7 @@ fn single_row(
                     move |text: String| {
                         #[cfg(target_arch = "wasm32")]
                         {
-                            let _ = crate::editor_ops::rename_layer(&id, &text);
+                            let _ = crate::editor::state::operations::rename_layer(&id, &text);
                         }
                         #[cfg(not(target_arch = "wasm32"))]
                         let _ = (&id, &text);
@@ -938,12 +938,12 @@ fn single_row(
             let click = move |ev: web_sys::MouseEvent| {
                 #[cfg(target_arch = "wasm32")]
                 {
-                    crate::editor_ops::set_active_layer(Some(id_click.clone()));
+                    crate::editor::state::operations::set_active_layer(Some(id_click.clone()));
                     if authoring_on {
                         if ev.alt_key() || ev.shift_key() {
-                            crate::editor_ops::select_layer_descendants(&id_click);
+                            crate::editor::state::operations::select_layer_descendants(&id_click);
                         } else {
-                            crate::editor_ops::select_layer_children(&id_click);
+                            crate::editor::state::operations::select_layer_children(&id_click);
                         }
                     }
                 }
@@ -1019,7 +1019,7 @@ fn single_row(
                     on:pointerdown=move |_| {
                         if authoring_dnd {
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor_ops::begin_layer_drag(id_down.clone());
+                            crate::editor::state::operations::begin_layer_drag(id_down.clone());
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &id_down;
                         }
@@ -1029,7 +1029,7 @@ fn single_row(
                             ev.stop_propagation();
                             #[cfg(target_arch = "wasm32")]
                             {
-                                let _ = crate::editor_ops::complete_layer_drop_onto_folder(id_up.clone());
+                                let _ = crate::editor::state::operations::complete_layer_drop_onto_folder(id_up.clone());
                             }
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &id_up;
@@ -1086,13 +1086,13 @@ fn single_row(
                     class=move || format!("{}{dim}", if is_sel() { ROW_ACTIVE } else { ROW })
                     on:click=move |_| {
                         #[cfg(target_arch = "wasm32")]
-                        crate::editor_ops::select_slot(id.clone());
+                        crate::editor::state::operations::select_slot(id.clone());
                     }
                     // T-159.26 A1 — outliner activate (native dblclick) opens Attributes,
                     // the SEL-ORBAT-DBL-001 contract.
                     on:dblclick=move |_| {
                         #[cfg(target_arch = "wasm32")]
-                        crate::editor_ops::open_attributes(id_dbl.clone());
+                        crate::editor::state::operations::open_attributes(id_dbl.clone());
                         #[cfg(not(target_arch = "wasm32"))]
                         let _ = &id_dbl;
                     }
@@ -1100,14 +1100,14 @@ fn single_row(
                         if orbat_refile {
                             // T-180.6 — ORBAT tree: arm refile onto a squad.
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor_ops::begin_refile(id_refile.clone());
+                            crate::editor::state::operations::begin_refile(id_refile.clone());
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &id_refile;
                         } else if authoring_slot {
                             // T-666 — Editor-Layers tree: arm refile of this slot into a folder
                             // (a folder-row `pointerup` completes it via `move_slot_to_layer`).
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor_ops::begin_layer_slot_drag(id_layer_refile.clone());
+                            crate::editor::state::operations::begin_layer_slot_drag(id_layer_refile.clone());
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &id_layer_refile;
                         }
@@ -1149,10 +1149,11 @@ fn placed_vehicle_rows(authoring: bool, selected: RwSignal<Vec<String>>) -> AnyV
     if !authoring {
         return ().into_any();
     }
-    let rows: Vec<crate::editor_ops::VehicleRow> = crate::editor_ops::vehicle_rows()
-        .into_iter()
-        .filter(|v| v.xy.is_some()) // on-the-map vehicles only
-        .collect();
+    let rows: Vec<crate::editor::state::operations::VehicleRow> =
+        crate::editor::state::operations::vehicle_rows()
+            .into_iter()
+            .filter(|v| v.xy.is_some()) // on-the-map vehicles only
+            .collect();
     if rows.is_empty() {
         return ().into_any();
     }
@@ -1173,7 +1174,7 @@ fn placed_vehicle_rows(authoring: bool, selected: RwSignal<Vec<String>>) -> AnyV
                 // Label the row by the vehicle's classname tail (`resourceName` is a GUID-headed path);
                 // the outliner shows an author-legible name, not a raw prefab path.
                 let label = {
-                    let tail = crate::asset_catalog::classname_tail(&v.resource_name);
+                    let tail = crate::editor::arsenal::asset_catalog::classname_tail(&v.resource_name);
                     if tail.is_empty() { v.id.clone() } else { tail.to_string() }
                 };
                 let aria = label.clone();
@@ -1189,11 +1190,11 @@ fn placed_vehicle_rows(authoring: bool, selected: RwSignal<Vec<String>>) -> AnyV
                         on:click=move |_| {
                             // Same single-click contract a slot row has: select through the
                             // kind-agnostic `select_slot` (sets selection + engine tint).
-                            crate::editor_ops::select_slot(id_click.clone());
+                            crate::editor::state::operations::select_slot(id_click.clone());
                         }
                         on:dblclick=move |_| {
                             // SEL-ORBAT-DBL-001 — activate opens Attributes, exactly like a slot.
-                            crate::editor_ops::open_attributes(id_dbl.clone());
+                            crate::editor::state::operations::open_attributes(id_dbl.clone());
                         }
                     >
                         // A leading spacer keeps these rows aligned with the tree's guide column.
@@ -1285,7 +1286,7 @@ pub(crate) fn virtual_tree(
             // LAYER-CREATE-001 — a create just happened → open that new folder's inline rename.
             // Consumed once (the ops latch clears on read), so a later flatten won't re-arm it.
             #[cfg(target_arch = "wasm32")]
-            if let Some(new_id) = crate::editor_ops::take_rename_armed() {
+            if let Some(new_id) = crate::editor::state::operations::take_rename_armed() {
                 // Seed the buffer with the just-minted "New Layer N" name so a blur with no typing
                 // keeps it (rename rejects a blank), and the caret lands on real text to overwrite.
                 let seed = ns
@@ -1623,7 +1624,7 @@ mod tests {
         //! the controls are `#![cfg(target_arch = "wasm32")]` and cannot be exercised natively.
         //! A pin fails loudly if a rename drops a call the ticket requires.
 
-        const OPS: &str = include_str!("../../editor_ops.rs");
+        const OPS: &str = include_str!("../state/operations.rs");
         const TREE: &str = include_str!("outliner_tree.rs");
         const DOCK: &str = include_str!("dock_left.rs");
 
@@ -1693,7 +1694,7 @@ mod tests {
         /// windowed), so the list is present regardless of tree size.
         #[test]
         fn placed_vehicles_are_listed_in_the_outliner_with_slot_affordances() {
-            use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+            use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
             let code = live_code(TREE);
             // Two cfg variants share the name; the wasm one (no leading `_` on the params) is the one
             // with the real body — match its unique signature so `only_body` is unambiguous.
@@ -1756,7 +1757,7 @@ mod tests {
         fn layer_rename_uses_noderef_onload_and_decoupled_draft() {
             // Raw TREE includes this test module, so every needle below would self-match its own
             // assertion string (the T-759 hollow-pin class); scrub to the production half.
-            let tree = crate::arsenal::class_r_scrub::live_source(TREE);
+            let tree = crate::editor::arsenal::class_r_scrub::live_source(TREE);
             assert!(
                 tree.contains("NodeRef::<leptos::html::Input>::new()"),
                 "the layer rename input must carry a NodeRef so it can be focused on mount"
@@ -1819,7 +1820,7 @@ mod tests {
         /// `is_active`-predicate count.
         #[test]
         fn t803_drop_target_reads_differently() {
-            use crate::arsenal::class_r_scrub::{live_source, only_body};
+            use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
             let src = live_source(TREE);
             let body = only_body(&src, "fn single_row(");
 
@@ -2074,7 +2075,7 @@ mod t637_one_dense_row_geometry {
     /// the measured `clientHeight`. A fixed `height:420px` coming back is the defect this pin guards.
     #[test]
     fn the_windowed_scroller_is_measured_h_full_not_a_fixed_budget() {
-        use crate::arsenal::class_r_scrub::{live_code, live_source};
+        use crate::editor::arsenal::class_r_scrub::{live_code, live_source};
         let raw = include_str!("outliner_tree.rs");
         let code = live_code(raw);
         let source = live_source(raw);
@@ -2141,7 +2142,7 @@ mod t637_one_dense_row_geometry {
 #[cfg(test)]
 mod t784_comment_row_selects {
     use super::{inert_row_reason, row_router_subject, row_routes};
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
     use crate::editor::panels::outliner::NodeKind;
     use crate::editor::panels::validation_panel::{
         register_route_probe, register_select_by_id, route_select_by_subject_id,

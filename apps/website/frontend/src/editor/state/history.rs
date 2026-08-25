@@ -24,6 +24,8 @@
 //! `!Send` value.
 #![cfg(target_arch = "wasm32")]
 
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::operations as editor_ops;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -39,8 +41,8 @@ use map_engine_render::RenderEngine;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
+use crate::editor::state::doc_host::DocHandle;
 use crate::editor::tools::select_tool::{EngineHandle, SelectionHandle};
-use crate::mission_doc::DocHandle;
 
 /// Everything a history command needs, shared from `mission_editor::on_load`. `doc` is the same
 /// `Rc` the IDB restore swaps into, so undo/redo always see the live document. The four signals are
@@ -127,7 +129,7 @@ pub fn set_ctx(
 
 /// A clone of the live doc handle (the same `Rc` the IDB restore swaps into). For the conflict
 /// resolver, which needs the doc but isn't called from `on_load`'s scope. `None` before mount.
-pub fn doc_handle() -> Option<crate::mission_doc::DocHandle> {
+pub fn doc_handle() -> Option<crate::editor::state::doc_host::DocHandle> {
     HISTORY_CTX.with(|c| c.borrow().as_ref().map(|ctx| ctx.doc.clone()))
 }
 
@@ -302,7 +304,7 @@ pub fn refresh_hud() {
 /// each carrying its own `retain`, so the universe is decided once — two copies is how one of them
 /// gets widened and the other does not.
 ///
-/// The universe is [`crate::mission_editor::selectable_ids`], read from the POST-change document:
+/// The universe is [`crate::editor::mission_editor::selectable_ids`], read from the POST-change document:
 /// slots off `slots_json` (hidden rows included — `materialize()` drops T-665 / T-701 hidden slots
 /// and would deselect a slot for being invisible rather than for being gone, which is what made
 /// `editor_ops::toggle_hidden` unable to toggle back), plus the vehicle / entity / comment key sets
@@ -323,7 +325,7 @@ fn prune_selection(ctx: &HistoryCtx) {
         let Some(core) = d.as_ref() else {
             return;
         };
-        crate::mission_editor::selectable_ids(&core.slots_json(), &core.small_maps_json())
+        crate::editor::mission_editor::selectable_ids(&core.slots_json(), &core.small_maps_json())
     };
     ctx.selection
         .borrow_mut()
@@ -353,7 +355,7 @@ pub fn rebind_engine_from_doc() {
                 return;
             };
             (
-                crate::mission_editor::map_render_slot_soa(core),
+                crate::editor::mission_editor::map_render_slot_soa(core),
                 core.slot_count(),
             )
         };
@@ -395,7 +397,7 @@ pub fn refresh_selection() {
         };
         ctx.sel_count.set(ctx.selection.borrow().len());
     });
-    crate::editor_ops::refresh_selection_mirrors();
+    editor_ops::refresh_selection_mirrors();
 }
 
 /// The one post-document-change sequence: materialize → prune the selection → rebind the engine
@@ -418,7 +420,7 @@ fn after_doc_change(ctx: &HistoryCtx) {
             return;
         };
         (
-            crate::mission_editor::map_render_slot_soa(core),
+            crate::editor::mission_editor::map_render_slot_soa(core),
             core.slot_count(),
         )
     };
@@ -474,7 +476,7 @@ fn after_doc_change(ctx: &HistoryCtx) {
     // The same reasoning covers the hydrate/adopt tail (`mission_hydrate::adopt_payload` reaches
     // here via `after_local_edit` during boot): its content is persisted by that same boot persist.
     if ctx.restore_settled.get() {
-        crate::yrs_persist::schedule_edit_persist(ctx.doc.clone(), &ctx.mission_id);
+        crate::editor::state::persist::schedule_edit_persist(ctx.doc.clone(), &ctx.mission_id);
     }
     refresh_signals(ctx, obj);
 }
@@ -493,7 +495,7 @@ fn after_doc_change(ctx: &HistoryCtx) {
 /// `#![cfg(target_arch = "wasm32")]` in its entirety, so nothing defined here can be unit-tested
 /// (which is why the T-748 feed pin has to reach this file through `include_str!` at all).
 fn comment_lane_xy(doc: &MissionDocCore) -> Vec<f32> {
-    crate::mission_editor::comment_lane_xy(&doc.comments_json())
+    crate::editor::mission_editor::comment_lane_xy(&doc.comments_json())
 }
 
 /// **T-808 — the comment lane's SECOND column: one id per bubble**, for
@@ -508,7 +510,7 @@ fn comment_lane_xy(doc: &MissionDocCore) -> Vec<f32> {
 /// rule applied to the id column — an ids array built from any other walk of `commentsById` could
 /// hand row *i*'s selection to row *j*, which is worse than no selection treatment at all.
 fn comment_lane_ids(doc: &MissionDocCore) -> Vec<String> {
-    crate::mission_editor::comment_lane_ids(&doc.comments_json())
+    crate::editor::mission_editor::comment_lane_ids(&doc.comments_json())
 }
 
 /// **T-808 — the per-row ROLE column for [`RenderEngine::slots_bind_symbology`].** The SoA stores
@@ -528,7 +530,7 @@ pub(crate) fn soa_roles(soa: &SlotSoa) -> Vec<String> {
 
 /// **T-808 — the four parallel vehicle-lane columns for [`RenderEngine::vehicles_bind_symbology`]**
 /// (`xy`, registry alias / prefab path, packed RGBA8 side tint, compass heading), built in ONE pass
-/// over [`crate::editor_ops::vehicle_rows`].
+/// over [`editor_ops::vehicle_rows`].
 ///
 /// **Why one reader and not four.** `vehicle_rows` sorts by id; `MissionDocCore::vehicle_xy_flat`
 /// (what this lane used to be fed) walks the `yrs` map in ITERATION order. Keeping the old call for
@@ -549,7 +551,7 @@ pub(crate) fn soa_roles(soa: &SlotSoa) -> Vec<String> {
 /// and reuses these three non-positional columns rather than growing a second builder in a second
 /// row order. Do not re-privatise it; write the second caller's columns here.
 pub(crate) fn vehicle_lane_fields() -> (Vec<f32>, Vec<String>, Vec<u8>, Vec<f32>) {
-    let rows = crate::editor_ops::vehicle_rows();
+    let rows = editor_ops::vehicle_rows();
     let mut xy = Vec::with_capacity(rows.len() * 2);
     let mut aliases = Vec::with_capacity(rows.len());
     let mut tints = Vec::with_capacity(rows.len() * 4);
@@ -583,7 +585,7 @@ pub(crate) fn vehicle_lane_fields() -> (Vec<f32>, Vec<String>, Vec<u8>, Vec<f32>
 /// from BOTH bind sites so undo/redo/restore share one feed — a lane bound only from authoring call
 /// sites would go stale exactly the way the ticket forbids.
 fn marker_lane_xy_tints(doc: &MissionDocCore) -> (Vec<f32>, Vec<u8>, Vec<String>, Vec<String>) {
-    crate::mission_editor::marker_lane_fields(&doc.briefing_marker_rows_json())
+    crate::editor::mission_editor::marker_lane_fields(&doc.briefing_marker_rows_json())
 }
 
 /// T-180.4 — thin dirty→upload: collect inputs from doc, geometry in core, hairline role 9.
@@ -618,7 +620,7 @@ fn refresh_signals(ctx: &HistoryCtx, obj: usize) {
     // footing as OBJ/SEL, so they refresh from the same single point: every mutation site funnels
     // here (place / drag-move / undo / redo / click / marquee / the IDB restore swap). `editor_ops`
     // holds its own ctx and borrows its own `Rc`s, so this can't reenter `HISTORY_CTX`.
-    crate::editor_ops::refresh_docks();
+    editor_ops::refresh_docks();
 }
 
 /// True when focus is in a text-entry field, where Ctrl+Z means "undo my typing", not "undo the

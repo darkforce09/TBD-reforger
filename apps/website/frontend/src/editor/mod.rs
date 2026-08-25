@@ -2,13 +2,21 @@
 //! program: library/tools/world_assets first, panels/state/arsenal/canvas in
 //! later batches.
 
+// T-159.27/T-167 — Arsenal nest: loadout tab (arsenal/mod.rs), rules core, asset
+// catalog, 3D doll.
+pub mod arsenal;
 // T-159.21 Eden chrome — the docked shell was split by T-661 into the panel modules under
 // `panels/`; `eden_chrome` stays the re-export shim so consumers' paths survive splits.
 pub mod eden_chrome;
 // T-661 — layout consts feed `tools/select_tool` / `mission_editor`.
 pub mod layout;
 pub mod library;
+// The editor page itself — decomposes through Phase B/B2 of T-934.
+pub mod mission_editor;
 pub mod panels;
+// T-934.6 — reactive state & document commands (editor_session / mission_* / yrs_persist /
+// editor_ops before their renames).
+pub mod state;
 // T-172 B9 — pure SZ payload estimator (missionSize.ts port), native-tested.
 pub mod mission_size;
 pub mod tools;

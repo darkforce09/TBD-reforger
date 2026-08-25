@@ -994,7 +994,7 @@ pub fn cargo_unworn_container_errors(
 /// filesystem: the schema the importer enforces and the schema the repo ships are then the same
 /// bytes by construction, not by deployment discipline.
 pub const LOADOUT_EXPORT_SCHEMA_JSON: &str =
-    include_str!("../../../../packages/tbd-schema/schema/loadout-export.schema.json");
+    include_str!("../../../../../../packages/tbd-schema/schema/loadout-export.schema.json");
 
 /// Every JSON Schema keyword this checker implements, plus the annotations it may ignore.
 ///

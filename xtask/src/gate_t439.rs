@@ -78,7 +78,7 @@ const WB_REL: &str = "packages/tbd-schema/registry/registry-items.workbench.json
 /// What `SpawnMissionEntities` actually reads at mission load.
 const MOD_REL: &str = "apps/mod/tbd-framework/Data/registry.json";
 /// The frontend derivation this file mirrors; pinned by two `require`s, never parsed.
-const FE_REL: &str = "apps/website/frontend/src/asset_catalog.rs";
+const FE_REL: &str = "apps/website/frontend/src/editor/arsenal/asset_catalog.rs";
 /// Kinds the Objects palette offers. Anything else is a character, vehicle or gear item, and
 /// belongs to a different palette with a different alias namespace.
 const OBJECT_KINDS: &[&str] = &["crate", "other"];

@@ -104,7 +104,7 @@ mod t505_tests {
     /// received: this one still greps, so it is kept only as a fast, readable first failure.
     #[test]
     fn adopt_payload_wires_prefer_helper() {
-        const SRC: &str = include_str!("mission_hydrate.rs");
+        const SRC: &str = include_str!("hydrate.rs");
         let production = SRC.split("#[cfg(test)]").next().unwrap_or(SRC);
         let adopt = production
             .split("fn adopt_payload(")
@@ -167,7 +167,7 @@ mod t570_tests {
     use std::process::Command;
 
     /// The live hydrate glue, verbatim, at compile time.
-    const HYDRATE_SRC: &str = include_str!("mission_hydrate.rs");
+    const HYDRATE_SRC: &str = include_str!("hydrate.rs");
 
     const ADOPT_SIG: &str = "fn adopt_payload(";
     const APPLY_SIG: &str = "fn apply_row(";
@@ -251,14 +251,19 @@ impl Core {
 
 type DocHandle = RefCell<Option<Core>>;
 
-mod mission_title_prefer {
-    pub fn prefer_payload_title(_payload_json: &str, _row_title: &str) -> String {
-        crate::PREFER_SENTINEL.to_string()
-    }
-}
+// T-934.6 moved title_prefer/history under `crate::editor::state::*`; the mocks mirror that path.
+mod editor {
+    pub mod state {
+        pub mod title_prefer {
+            pub fn prefer_payload_title(_payload_json: &str, _row_title: &str) -> String {
+                crate::PREFER_SENTINEL.to_string()
+            }
+        }
 
-mod mission_history {
-    pub fn after_local_edit() {}
+        pub mod history {
+            pub fn after_local_edit() {}
+        }
+    }
 }
 
 fn report(label: &str, doc: &DocHandle) {

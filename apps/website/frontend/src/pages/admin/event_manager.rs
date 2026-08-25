@@ -1755,7 +1755,8 @@ mod tests {
         // Scrubbed production source (T-601/T-622): `live_source` keeps string literals, because
         // user-visible copy *is* the thing being pinned here, but folds comments and any dead
         // branch a decoy could hide in.
-        let prod = crate::arsenal::class_r_scrub::live_source(include_str!("event_manager.rs"));
+        let prod =
+            crate::editor::arsenal::class_r_scrub::live_source(include_str!("event_manager.rs"));
         assert!(
             prod.contains("description=DELETE_EVENT_CONFIRM_DESC"),
             "the delete confirm Dialog must render DELETE_EVENT_CONFIRM_DESC — a constant nothing \

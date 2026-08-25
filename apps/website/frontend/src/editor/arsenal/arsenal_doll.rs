@@ -20,7 +20,7 @@ use leptos::prelude::*;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
-use crate::arsenal_rules::{LOADOUT_ROWS, RAIL_REGIONS};
+use crate::editor::arsenal::arsenal_rules::{LOADOUT_ROWS, RAIL_REGIONS};
 
 const CLICK_SLOP_PX: f64 = 4.0; // same bar as the map's drag threshold
 const CALLOUT_DX: f64 = 52.0; // chip offset from the anchor (up-right)

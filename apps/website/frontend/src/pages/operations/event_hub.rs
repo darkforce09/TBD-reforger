@@ -1663,9 +1663,9 @@ mod tests {
         );
     }
 
-    /// The shipped half of this module, scrubbed (T-601 — [`crate::arsenal::class_r_scrub`]).
+    /// The shipped half of this module, scrubbed (T-601 — [`crate::editor::arsenal::class_r_scrub`]).
     fn live() -> String {
-        crate::arsenal::class_r_scrub::live_code(include_str!("event_hub.rs"))
+        crate::editor::arsenal::class_r_scrub::live_code(include_str!("event_hub.rs"))
     }
 
     /// T-407 — the hub hero must actually *read* `EventHub.briefing`. A pure call above is not
@@ -1691,7 +1691,7 @@ mod tests {
     #[test]
     fn hub_hero_reads_event_briefing() {
         let prod = live();
-        let hero = crate::arsenal::class_r_scrub::only_body(&prod, "fn event_hub_view(");
+        let hero = crate::editor::arsenal::class_r_scrub::only_body(&prod, "fn event_hub_view(");
         assert!(
             hero.contains("briefing_text(ev.briefing.as_deref())"),
             "event_hub hero must render EventHub.briefing via briefing_text — \
@@ -1714,7 +1714,8 @@ mod tests {
     #[test]
     fn briefing_text_source_ratchet_requires_trim() {
         let prod = live();
-        let dossier = crate::arsenal::class_r_scrub::only_body(&prod, "fn mission_dossier(");
+        let dossier =
+            crate::editor::arsenal::class_r_scrub::only_body(&prod, "fn mission_dossier(");
         assert!(
             dossier.contains("briefing_text(m.briefing.as_deref())"),
             "mission dossier must route briefing through briefing_text"
@@ -1733,7 +1734,7 @@ mod tests {
             !prod.contains(old_arm),
             "match-arm !b.is_empty() without trim must not return on briefing paths"
         );
-        let helper = crate::arsenal::class_r_scrub::only_body(&prod, "fn briefing_text(");
+        let helper = crate::editor::arsenal::class_r_scrub::only_body(&prod, "fn briefing_text(");
         let trim_arm = concat!("Some(b) if !b.trim().", "is_empty()");
         assert!(
             helper.contains(trim_arm),
@@ -1755,7 +1756,7 @@ mod tests {
     /// exactly how a whole-file grep gets fed a pristine decoy).
     #[test]
     fn the_briefing_pins_reject_every_dead_code_wrapper() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
         let needle = "briefing_text(ev.briefing.as_deref())";
         let attacks: [(&str, String); 12] = [
             (

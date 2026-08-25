@@ -3,7 +3,7 @@
 //! + a vehicle pool, wired to the live `/api/v1/factions` CRUD (owner-scoped, contract-validated).
 //!
 //! The character/vehicle pickers reuse the flat `/registry` (kind-filtered, abstract/variant
-//! dropped); per-role loadout reuses the Arsenal serialization ([`crate::arsenal::picks_to_loadout`])
+//! dropped); per-role loadout reuses the Arsenal serialization ([`crate::editor::arsenal::picks_to_loadout`])
 //! in **kind-only, no-compat** mode — the same `SlotLoadoutV2` shape a slot writes.
 #![allow(dead_code)]
 use leptos::prelude::*;
@@ -441,7 +441,7 @@ mod tests {
     /// T-726 — Faction Manager Esc must gate on modal_stack topmost (wave139 F3).
     #[test]
     fn faction_manager_gates_escape_on_modal_stack() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
         let code = live_code(include_str!("faction_manager.rs"));
         let body = only_body(&code, "pub fn FactionManagerDialog(");
         let reg = ["modal_stack", "::", "register("].concat();

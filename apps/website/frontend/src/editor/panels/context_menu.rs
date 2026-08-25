@@ -796,12 +796,12 @@ pub fn open(x: f64, y: f64, target: MenuTarget) {
     if let Some(id) = target.retarget_to.clone() {
         // Replace the selection with the hit entity — identical to a left-click on an unselected
         // object, so the map tint and SEL readout follow the menu's target.
-        crate::editor_ops::select_slot(id);
+        crate::editor::state::operations::select_slot(id);
     }
     // T-672 — snapshot the armed connect HERE, at open, the same rule `world` follows. The Connect
     // submenu shows one of two faces off this value; reading it at click time instead would let a
     // row the operator can see turn into a different action under their cursor.
-    let target = target.with_armed_connect(crate::editor_ops::pending_connect());
+    let target = target.with_armed_connect(crate::editor::state::operations::pending_connect());
     MENU.with(|m| {
         if let Some(sig) = *m.borrow() {
             sig.set(Some(MenuState {
@@ -866,18 +866,18 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         // acceptable for this slice (teleport-to-arbitrary-point has no editor API and is not one of
         // the six unblocked features).
         ContextItem::GoHere => {
-            crate::editor_ops::center_on_selection();
+            crate::editor::state::operations::center_on_selection();
         }
         // Attributes / arsenal open on the single target id (the retarget already made it the
         // selection, so `target_ids[0]` is that entity).
         ContextItem::Attributes => {
             if let Some(id) = target_ids.first() {
-                crate::editor_ops::open_attributes(id.clone());
+                crate::editor::state::operations::open_attributes(id.clone());
             }
         }
         ContextItem::EditLoadout => {
             if let Some(id) = target_ids.first() {
-                crate::editor_ops::open_arsenal(id.clone());
+                crate::editor::state::operations::open_arsenal(id.clone());
             }
         }
         // T-651 (`PLACE-COMMENT-001`) — place an editor-only annotation at the world point the
@@ -887,7 +887,7 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         // supply one) this is a no-op rather than a guess at the map centre.
         ContextItem::PlaceComment => {
             if let Some((x, z)) = world {
-                let _ = crate::editor_ops::place_comment(x, z);
+                let _ = crate::editor::state::operations::place_comment(x, z);
             }
         }
         // T-672 (`CONN-START-001`, act 1) — arm a connect FROM this entity. `target_ids[0]` is the
@@ -895,7 +895,7 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         // document edit, so there is no undo step and nothing to persist until act 2 lands the edge.
         ContextItem::ConnectStart(kind) => {
             if let Some(id) = target_ids.first() {
-                let _ = crate::editor_ops::arm_connect(kind.token(), id);
+                let _ = crate::editor::state::operations::arm_connect(kind.token(), id);
             }
         }
         // T-672 (`CONN-START-001`, act 2) — complete onto this entity. The core refuses a self-link
@@ -905,18 +905,18 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         // must keep working unchanged.
         ContextItem::ConnectComplete => {
             if let Some(id) = target_ids.first() {
-                let _ = crate::editor_ops::complete_connect(id);
+                let _ = crate::editor::state::operations::complete_connect(id);
             }
         }
-        ContextItem::ConnectCancel => crate::editor_ops::cancel_connect(),
+        ContextItem::ConnectCancel => crate::editor::state::operations::cancel_connect(),
         // T-672 — open the SEE + CHECK panel. The one row on both takes.
-        ContextItem::ShowConnections => crate::editor_ops::open_connections_panel(),
+        ContextItem::ShowConnections => crate::editor::state::operations::open_connections_panel(),
         // T-672 (`ACTION-FORM-001` / `CTX-FORMATION-001`) — re-form the target's squad. Inert (0
         // moved, no undo step) when the target does not LEAD a squad, which is the honest answer:
         // re-forming around a rifleman would be a leadership change nobody asked for.
         ContextItem::MoveToFormation(f) => {
             if let Some(id) = target_ids.first() {
-                let _ = crate::editor_ops::force_to_formation(id, f.token());
+                let _ = crate::editor::state::operations::force_to_formation(id, f.token());
             }
         }
         // Every other id is a disabled row (feature not shipped / owned by a later ticket) — no-op.
@@ -1716,7 +1716,7 @@ mod tests {
 /// T-726 — context menu Esc is a modal-stack citizen (wave108 MAJOR-2).
 #[cfg(test)]
 mod t726_context_menu_esc_stack {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     #[test]
     fn context_menu_gates_escape_on_modal_stack() {
@@ -1747,7 +1747,7 @@ mod t726_context_menu_esc_stack {
 #[cfg(test)]
 mod t807_disabled_rows_show_why {
     use super::*;
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     /// The one place the tooltip text is decided. A disabled row's title is the blocking ticket if
     /// it has one, else the item's [`ContextItem::why`] reason — so this mirrors `menu_row`.

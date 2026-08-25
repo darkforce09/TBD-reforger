@@ -953,7 +953,7 @@ mod tests {
     /// definition.
     #[test]
     fn content_boots_from_cms_list_not_mock_docs() {
-        use crate::arsenal::class_r_scrub::live_code;
+        use crate::editor::arsenal::class_r_scrub::live_code;
         const SRC: &str = include_str!("content.rs");
         let prod = live_code(SRC);
         assert!(
@@ -998,7 +998,7 @@ mod tests {
     /// exact bug T-447 shipped to fix.
     #[test]
     fn the_boot_pin_rejects_every_dead_code_wrapper() {
-        use crate::arsenal::class_r_scrub::live_code;
+        use crate::editor::arsenal::class_r_scrub::live_code;
         let needle = "LocalResource::new";
         let attacks: [(&str, String); 12] = [
             (

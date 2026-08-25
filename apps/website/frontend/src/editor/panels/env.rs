@@ -86,7 +86,9 @@ pub(crate) fn author_env(key: &str, value: serde_json::Value) {
     }
     let mut patch = serde_json::Map::new();
     patch.insert(key.to_string(), value);
-    crate::editor_ops::update_environment(serde_json::Value::Object(patch).to_string());
+    crate::editor::state::operations::update_environment(
+        serde_json::Value::Object(patch).to_string(),
+    );
 }
 
 /// What Mission Settings says where the View Distance field and the Thermals toggle used to be.
@@ -281,7 +283,7 @@ pub fn fmt_duration_secs(total: i64) -> String {
 /// mission has no briefing".
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn read_flow_seconds(key: &str, default: i64) -> i64 {
-    crate::editor_ops::read_env_value(key)
+    crate::editor::state::operations::read_env_value(key)
         .as_ref()
         .and_then(serde_json::Value::as_i64)
         .filter(|n| *n >= 0)
@@ -293,7 +295,7 @@ pub(crate) fn read_flow_seconds(key: &str, default: i64) -> i64 {
 /// selection at all, which reads as "unset" for a field that is very much set.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn read_flow_jip() -> String {
-    crate::editor_ops::read_env_value("jip")
+    crate::editor::state::operations::read_env_value("jip")
         .as_ref()
         .and_then(serde_json::Value::as_str)
         .filter(|v| JIP_OPTIONS.iter().any(|(k, _)| k == v))

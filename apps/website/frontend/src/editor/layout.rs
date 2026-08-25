@@ -486,7 +486,7 @@ pub(crate) const MENU_GUTTER: &str = "flex size-4 shrink-0 items-center justify-
 /// `#[cfg(target_arch = "wasm32")]` and so invisible to a native `cargo test`.
 #[cfg(test)]
 mod t636_band_readers_agree {
-    use crate::arsenal::class_r_scrub::live_code;
+    use crate::editor::arsenal::class_r_scrub::live_code;
 
     /// The band has ONE definition here (its expanded value), and both chokepoint readers reference
     /// the LIVE inset via the accessor — neither smuggles in a bare `96.0`/`240.0`/`48.0`.
@@ -536,7 +536,7 @@ mod t636_band_readers_agree {
         let band_read = "editor::layout::toolbelt_band_px()";
         let sel = live_code(include_str!("tools/select_tool.rs"));
 
-        let raw_editor = include_str!("../mission_editor.rs");
+        let raw_editor = include_str!("mission_editor.rs");
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
         assert_eq!(
             raw_editor.matches(anchor.as_str()).count(),
@@ -735,7 +735,7 @@ mod t638_collapse {
     /// cannot satisfy them.
     #[test]
     fn keydown_binds_e_and_r_to_the_collapse_latches() {
-        let src = include_str!("../mission_editor.rs");
+        let src = include_str!("mission_editor.rs");
         let arm = |code: &str| format!("\"{code}\" if !modk");
         // E → left latch, R → right latch.
         assert!(
@@ -991,7 +991,7 @@ mod t637_dock_geometry {
         DOCK_RIGHT_MOUNT, DOCK_RIGHT_MOUNT_COLLAPSED, DOCK_RIGHT_PX, ROW_MENUS, ROW_MENUS_PX,
         ROW_TOOLS, ROW_TOOLS_PX, STRIP_ROWS, STRIP_TOP_PX,
     };
-    use crate::arsenal::class_r_scrub::live_code;
+    use crate::editor::arsenal::class_r_scrub::live_code;
     use crate::editor::panels::toolbelt::STATUSBAR_H_PX;
     use map_engine_core::camera::OrthoCamera;
 
@@ -1200,7 +1200,7 @@ mod t637_dock_geometry {
     /// Exactly one use each: a second mount would be a second place the width could drift.
     #[test]
     fn mission_editor_mounts_the_docks_from_these_consts() {
-        let raw = include_str!("../mission_editor.rs");
+        let raw = include_str!("mission_editor.rs");
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
         let editor = live_code(&raw[raw.find(anchor.as_str()).expect("anchor present")..]);
         for name in [

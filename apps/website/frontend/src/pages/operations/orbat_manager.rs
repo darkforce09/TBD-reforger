@@ -87,7 +87,7 @@ impl SaveFromSideRefusal {
 /// (`apps/website/api/src/handlers/factions.rs::update_faction`), and [`FactionDoc`]'s
 /// `skip_serializing_if = "Option::is_none"` omits an absent key instead of nulling it. So a field
 /// this function does not carry over from `stored` is **deleted from the library**. Before this
-/// existed the button PUT [`crate::editor_ops::faction_doc_from_side`]'s output raw, taking only
+/// existed the button PUT [`crate::editor::state::operations::faction_doc_from_side`]'s output raw, taking only
 /// `name` from the stored row — which destroyed the emblem and every vehicle label on every press.
 ///
 /// The line is drawn in one place: **derive every field the ORBAT can express; preserve the ones it
@@ -365,7 +365,7 @@ pub fn OrbatManagerDialog(
                 on:click=move |ev| ev.stop_propagation()
                 on:pointerup=move |_| {
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor_ops::cancel_refile();
+                    crate::editor::state::operations::cancel_refile();
                 }
             >
                 // Header
@@ -467,7 +467,7 @@ pub fn OrbatManagerDialog(
                                 // the decision nor says what to do next. `orbat_apply_faction`
                                 // hands back `ApplyFactionError`'s own sentence, which names the
                                 // squads that block and how to clear them.
-                                match crate::editor_ops::orbat_apply_faction(side, uf.doc) {
+                                match crate::editor::state::operations::orbat_apply_faction(side, uf.doc) {
                                     Ok(()) => status.set("Template applied.".into()),
                                     Err(msg) => {
                                         leptos::logging::warn!("Apply Template refused: {msg}");
@@ -494,7 +494,7 @@ pub fn OrbatManagerDialog(
                             }
                             #[cfg(target_arch = "wasm32")]
                             {
-                                let Some(derived) = crate::editor_ops::faction_doc_from_side(&side)
+                                let Some(derived) = crate::editor::state::operations::faction_doc_from_side(&side)
                                 else {
                                     status.set("Could not read this side's ORBAT.".into());
                                     return;
@@ -583,7 +583,7 @@ pub fn OrbatManagerDialog(
                                 // two is correct here rather than destructive. The `None` arm now
                                 // also covers a doc whose own JSON will not parse, which used to
                                 // create an empty faction and report success.
-                                let Some(mut doc) = crate::editor_ops::faction_doc_from_side(&side)
+                                let Some(mut doc) = crate::editor::state::operations::faction_doc_from_side(&side)
                                 else {
                                     status.set("Could not read this side's ORBAT.".into());
                                     return;
@@ -749,7 +749,7 @@ pub fn OrbatManagerDialog(
                                     let side = side_tab.get_untracked();
                                     #[cfg(target_arch = "wasm32")]
                                     {
-                                        crate::editor_ops::orbat_add_squad(side);
+                                        crate::editor::state::operations::orbat_add_squad(side);
                                     }
                                     #[cfg(not(target_arch = "wasm32"))]
                                     let _ = side;
@@ -802,7 +802,7 @@ struct Snap {
 fn read_snapshot() -> Snap {
     #[cfg(target_arch = "wasm32")]
     {
-        let s = crate::editor_ops::orbat_manager_snapshot();
+        let s = crate::editor::state::operations::orbat_manager_snapshot();
         Snap {
             factions: s.factions,
             squads: s.squads,
@@ -1013,7 +1013,7 @@ fn stitch_row(
                         on:pointerup=move |ev| {
                             ev.stop_propagation();
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor_ops::complete_refile_onto_squad(id_drop.clone());
+                            crate::editor::state::operations::complete_refile_onto_squad(id_drop.clone());
                         }
                         on:click=move |_| {
                             collapsed.update(|c| {
@@ -1080,7 +1080,7 @@ fn stitch_row(
                                                 #[cfg(target_arch = "wasm32")]
                                                 {
                                                     let name = rename_draft.get_untracked();
-                                                    crate::editor_ops::orbat_rename_squad(id_commit.clone(), name);
+                                                    crate::editor::state::operations::orbat_rename_squad(id_commit.clone(), name);
                                                 }
                                                 rename_squad.set(None);
                                             }
@@ -1116,7 +1116,7 @@ fn stitch_row(
                                 on:click=move |ev| {
                                     ev.stop_propagation();
                                     #[cfg(target_arch = "wasm32")]
-                                    crate::editor_ops::orbat_add_slot(id_add.clone(), "Rifleman".into());
+                                    crate::editor::state::operations::orbat_add_slot(id_add.clone(), "Rifleman".into());
                                 }
                             >
                                 <MaterialIcon name="person_add" class="text-[16px]" />
@@ -1151,7 +1151,7 @@ fn stitch_row(
                                 on:click=move |ev| {
                                     ev.stop_propagation();
                                     #[cfg(target_arch = "wasm32")]
-                                    crate::editor_ops::orbat_remove_squad(id_rm.clone());
+                                    crate::editor::state::operations::orbat_remove_squad(id_rm.clone());
                                 }
                             >
                                 <MaterialIcon name="delete" class="text-[16px]" />
@@ -1201,7 +1201,7 @@ fn stitch_row(
                                         }
                                         #[cfg(target_arch = "wasm32")]
                                         {
-                                            let _ = crate::editor_ops::orbat_add_vehicle(
+                                            let _ = crate::editor::state::operations::orbat_add_vehicle(
                                                 id_veh_pick.clone(),
                                                 resource,
                                             );
@@ -1287,15 +1287,15 @@ fn stitch_row(
                         }
                         on:click=move |_| {
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor_ops::select_slot(id_sel.clone());
+                            crate::editor::state::operations::select_slot(id_sel.clone());
                         }
                         on:dblclick=move |_| {
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor_ops::open_attributes(id_dbl.clone());
+                            crate::editor::state::operations::open_attributes(id_dbl.clone());
                         }
                         on:pointerdown=move |_| {
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor_ops::begin_refile(id_refile.clone());
+                            crate::editor::state::operations::begin_refile(id_refile.clone());
                         }
                     >
                         <MaterialIcon name="drag_indicator" class="mr-2 cursor-grab text-[14px] text-on-surface-variant opacity-0 group-hover/slot:opacity-100" />
@@ -1316,7 +1316,7 @@ fn stitch_row(
                                 on:click=move |ev| {
                                     ev.stop_propagation();
                                     #[cfg(target_arch = "wasm32")]
-                                    crate::editor_ops::orbat_set_leader(squad_id.clone(), id_sl.clone());
+                                    crate::editor::state::operations::orbat_set_leader(squad_id.clone(), id_sl.clone());
                                 }
                             >
                                 <MaterialIcon name="military_tech" class="text-[14px]" />
@@ -1328,7 +1328,7 @@ fn stitch_row(
                                 on:click=move |ev| {
                                     ev.stop_propagation();
                                     #[cfg(target_arch = "wasm32")]
-                                    crate::editor_ops::orbat_remove_slot(id_rm.clone());
+                                    crate::editor::state::operations::orbat_remove_slot(id_rm.clone());
                                 }
                             >
                                 <MaterialIcon name="close" class="text-[14px]" />
@@ -1371,7 +1371,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
         let _ = selected.get();
         #[cfg(target_arch = "wasm32")]
         {
-            let snap = crate::editor_ops::orbat_manager_snapshot();
+            let snap = crate::editor::state::operations::orbat_manager_snapshot();
             if let Some(id) = selected.get_untracked().first() {
                 if let Some(d) = snap.slots.into_iter().find(|s| &s.id == id) {
                     role.set(d.role);
@@ -1402,7 +1402,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
                         #[cfg(target_arch = "wasm32")]
                         {
                             let r = role.get_untracked();
-                            crate::editor_ops::orbat_update_slot_fields(
+                            crate::editor::state::operations::orbat_update_slot_fields(
                                 id_role.clone(),
                                 Some(r),
                                 None,
@@ -1425,7 +1425,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
                             #[cfg(target_arch = "wasm32")]
                             {
                                 let c = callsign.get_untracked();
-                                crate::editor_ops::orbat_update_slot_fields(
+                                crate::editor::state::operations::orbat_update_slot_fields(
                                     id_cs.clone(),
                                     None,
                                     None,
@@ -1447,7 +1447,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
                             #[cfg(target_arch = "wasm32")]
                             {
                                 let r = rank.get_untracked();
-                                crate::editor_ops::orbat_update_slot_fields(
+                                crate::editor::state::operations::orbat_update_slot_fields(
                                     id_rank.clone(),
                                     None,
                                     None,
@@ -1472,7 +1472,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
                 class="flex w-full items-center justify-center gap-2 rounded border border-outline-variant bg-surface-container py-2 font-label-md text-on-surface hover:border-primary hover:bg-surface-variant"
                 on:click=move |_| {
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor_ops::open_arsenal(id_ars.clone());
+                    crate::editor::state::operations::open_arsenal(id_ars.clone());
                 }
             >
                 <MaterialIcon name="backpack" class="text-[18px]" />
@@ -1489,7 +1489,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
                         return;
                     }
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor_ops::orbat_add_slot(squad_for_add.clone(), "Rifleman".into());
+                    crate::editor::state::operations::orbat_add_slot(squad_for_add.clone(), "Rifleman".into());
                 }
             >
                 <MaterialIcon name="add" class="text-[14px]" />
@@ -1646,7 +1646,7 @@ mod tests {
             ),
             "Add Vehicle must not stay disabled"
         );
-        let ops = include_str!("../../editor_ops.rs");
+        let ops = include_str!("../../editor/state/operations.rs");
         assert!(
             ops.contains("pub fn orbat_add_vehicle"),
             "ops mutator must exist"
@@ -1655,7 +1655,7 @@ mod tests {
             ops.contains("add_vehicle") && ops.contains("attach_vehicle"),
             "ops must call core add+attach"
         );
-        let hist = include_str!("../../mission_history.rs");
+        let hist = include_str!("../../editor/state/history.rs");
         assert!(
             hist.contains("vehicles_bind"),
             "map presence: vehicles_bind on doc change"
@@ -1699,7 +1699,7 @@ mod tests {
     /// I7 — OPEN ARSENAL opens Attributes on tab 3 (Arsenal), not Identity-only open_attributes.
     #[test]
     fn open_arsenal_selects_arsenal_tab() {
-        let ops = include_str!("../../editor_ops.rs");
+        let ops = include_str!("../../editor/state/operations.rs");
         assert!(
             ops.contains("pub fn open_arsenal"),
             "open_arsenal must exist"
@@ -1970,7 +1970,7 @@ mod tests {
                 || src.contains("merge_faction_doc_from_side(&stored.doc"),
             "the Save button must PUT a merged body, never the raw derivation"
         );
-        let ops = include_str!("../../editor_ops.rs");
+        let ops = include_str!("../../editor/state/operations.rs");
         assert!(
             ops.contains("merge_faction_doc_from_side"),
             "faction_doc_from_side must name the merge callers have to use"
@@ -1986,7 +1986,7 @@ mod tests {
     fn orbat_squad_rename_focuses_via_noderef_on_load() {
         // Scope to stitch_row live body so the ban needle cannot self-match this test's
         // string literal (include_str of the whole file always contains the assert text).
-        use crate::arsenal::class_r_scrub::{live_source, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
         let code = live_source(include_str!("orbat_manager.rs"));
         let body = only_body(&code, "fn stitch_row(");
         assert!(
@@ -2024,7 +2024,7 @@ mod tests {
     /// T-726 — ORBAT Manager Esc must gate on modal_stack topmost (wave139 F3).
     #[test]
     fn orbat_manager_gates_escape_on_modal_stack() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
         let code = live_code(include_str!("orbat_manager.rs"));
         let body = only_body(&code, "pub fn OrbatManagerDialog(");
         let reg = ["modal_stack", "::", "register("].concat();
@@ -2049,7 +2049,7 @@ mod tests {
     /// `" slots · server cap"` literal must be gone and the `== 1` conditional present.
     #[test]
     fn cap_label_pluralizes_the_slot_count() {
-        use crate::arsenal::class_r_scrub::{live_source, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
         let code = live_source(include_str!("orbat_manager.rs"));
         let body = only_body(&code, "pub fn OrbatManagerDialog(");
         // Concat so this test's own literals cannot self-match (T-726 idiom).

@@ -146,7 +146,7 @@ pub fn register_mission_doc(doc: DocHandle, ver: Rc<Cell<u32>>) {
     // T-169 smoke hook — bulk-add N slots so the virtual-outliner gate can exceed the window
     // threshold. `FnMut(f64)`, not the read-only `FnMut() -> JsValue` shape of the others.
     let seed_slots = Closure::wrap(Box::new(move |n: f64| {
-        crate::editor_ops::debug_seed_slots(n.max(0.0) as u32);
+        crate::editor::state::operations::debug_seed_slots(n.max(0.0) as u32);
     }) as Box<dyn FnMut(f64)>);
 
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("slot_count"), slot_count.as_ref());

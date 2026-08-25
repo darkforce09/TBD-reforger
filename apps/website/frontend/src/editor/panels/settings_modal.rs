@@ -171,8 +171,8 @@ struct RowShape {
 }
 
 #[cfg(target_arch = "wasm32")]
-impl From<crate::mission_commands::HydratedRow> for RowShape {
-    fn from(h: crate::mission_commands::HydratedRow) -> Self {
+impl From<crate::editor::state::commands_hotkeys::HydratedRow> for RowShape {
+    fn from(h: crate::editor::state::commands_hotkeys::HydratedRow) -> Self {
         Self {
             game_mode: h.game_mode,
             max_players: h.max_players,
@@ -449,7 +449,7 @@ fn blur_focused_control() {
 /// which distinguishes "set to empty" from "not supplied".
 #[cfg(target_arch = "wasm32")]
 fn mirror_briefing_into_document(briefing: &str) {
-    let Some(handle) = crate::mission_history::doc_handle() else {
+    let Some(handle) = crate::editor::state::history::doc_handle() else {
         return;
     };
     let doc = handle.borrow();
@@ -560,7 +560,7 @@ impl ShapeMirror {
         // T-746 — seed from boot hydrate while the open-GET is in flight (or instead, when a PATCH
         // is already on the wire and we refuse to start a GET that can only stale-clobber).
         if shape.get_untracked().is_none() {
-            if let Some(h) = crate::mission_commands::hydrated_row() {
+            if let Some(h) = crate::editor::state::commands_hotkeys::hydrated_row() {
                 shape.set(Some(RowShape::from(h)));
             }
         }
@@ -597,8 +597,8 @@ impl ShapeMirror {
                         briefing: d.briefing.unwrap_or_default(),
                         thumbnail_url: d.thumbnail_url.unwrap_or_default(),
                     };
-                    crate::mission_commands::note_hydrated_row(
-                        crate::mission_commands::HydratedRow {
+                    crate::editor::state::commands_hotkeys::note_hydrated_row(
+                        crate::editor::state::commands_hotkeys::HydratedRow {
                             game_mode: row.game_mode.clone(),
                             max_players: row.max_players,
                             briefing: row.briefing.clone(),
@@ -651,7 +651,7 @@ impl ShapeMirror {
             )
             .await;
             match &res {
-                Ok(_) => crate::mission_commands::note_hydrated_game_mode(&next),
+                Ok(_) => crate::editor::state::commands_hotkeys::note_hydrated_game_mode(&next),
                 Err(e) => {
                     leptos::logging::warn!(
                         "T-694: could not save the mission's game mode: {}",
@@ -730,10 +730,16 @@ impl ShapeMirror {
                 Ok(_) => match field {
                     PresentationField::Briefing => {
                         mirror_briefing_into_document(&next);
-                        crate::mission_commands::note_hydrated_presentation(Some(&next), None);
+                        crate::editor::state::commands_hotkeys::note_hydrated_presentation(
+                            Some(&next),
+                            None,
+                        );
                     }
                     PresentationField::Thumbnail => {
-                        crate::mission_commands::note_hydrated_presentation(None, Some(&next));
+                        crate::editor::state::commands_hotkeys::note_hydrated_presentation(
+                            None,
+                            Some(&next),
+                        );
                     }
                 },
                 Err(e) => {
@@ -841,7 +847,7 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
         }
         let _ = doc_tick.get(); // re-read env on undo/redo while open
         #[cfg(target_arch = "wasm32")]
-        let env = crate::editor_ops::read_env();
+        let env = crate::editor::state::operations::read_env();
         #[cfg(not(target_arch = "wasm32"))]
         let env = crate::core::dto::MissionEnv::default();
         Some(view! {
@@ -1135,7 +1141,7 @@ fn render_shape_section(ctrl: &'static str, shape: RwSignal<Option<RowShape>>) -
         let row = shape.get();
         // The seats the document actually holds. `doc_handle()` is `None` on a dialog opened before
         // the editor's doc host mounted; zero is the honest answer there, not a hidden row.
-        let placed = match crate::mission_history::doc_handle() {
+        let placed = match crate::editor::state::history::doc_handle() {
             Some(handle) => {
                 let doc = handle.borrow();
                 doc.as_ref()
@@ -1390,7 +1396,7 @@ fn render_prefs_section(env: &crate::core::dto::MissionEnv) -> AnyView {
                         on:change=move |ev| {
                             let on = event_target_checked(&ev);
                             author_env("showHillshade", on.into());
-                            let op = crate::editor_ops::read_env().hillshade_opacity;
+                            let op = crate::editor::state::operations::read_env().hillshade_opacity;
                             crate::editor::world_assets::apply_hillshade(on, op);
                         }
                         class="accent-primary"
@@ -2096,7 +2102,7 @@ pub const ALL_SETTINGS_NOTE: &str =
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 fn document_root() -> Option<serde_json::Value> {
-    let handle = crate::mission_history::doc_handle()?;
+    let handle = crate::editor::state::history::doc_handle()?;
     let doc = handle.borrow();
     let core = doc.as_ref()?;
     serde_json::from_str::<serde_json::Value>(&core.small_maps_json()).ok()
@@ -2399,7 +2405,7 @@ fn setting_row_view(
 // that means "a real call" cannot false-green off a doc-comment, a label string, or this test.
 #[cfg(test)]
 mod t691_editor_prefs_split {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     /// Fragment-assembled `world_layer_prefs` store-call needles. If any of these appear inside the
     /// Mission Settings (document) dialog, the editor-local half did not actually move.
@@ -2533,7 +2539,7 @@ mod t691_editor_prefs_split {
 #[cfg(test)]
 mod t746_shape_flight {
     use super::ShapeSeq;
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     /// The reopen race: a GET that started (or would land) across a PATCH window must not apply.
     #[test]
@@ -2630,7 +2636,7 @@ mod t694_mission_shape {
         game_mode_failure_message, is_known_game_mode, PlayerCount, GAME_MODES,
         PLAYER_COUNT_RULING_NOTE, SLOTS_PLACED_NOTE,
     };
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
     use crate::editor::panels::top_strip::is_mission_row_id;
 
     /// The select's table is the server's enum. `handlers/missions.rs::valid_game_mode` maps exactly
@@ -2854,7 +2860,7 @@ mod t694_mission_shape {
 #[cfg(test)]
 mod t782_player_count_ruling {
     use super::{PlayerCount, MAX_PLAYERS_KEPT_NOTE, PLAYER_COUNT_RULING_NOTE};
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
     /// **The ruling, as a value.** Whatever the row declares, the figure is the count of placed
     /// slots. Perturbation this catches: pointing the display back at `max_players` — a
@@ -3012,7 +3018,7 @@ mod t688_aggregated_settings {
         MISSION_SCHEMA_JSON, MISSION_SETTING_POINTERS, NOT_A_SCHEMA_KEY, NO_DEFAULT_DECLARED,
         OWNER_UNRESOLVED_NOTE,
     };
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
     use serde_json::json;
 
     fn schema() -> serde_json::Value {
@@ -3619,9 +3625,9 @@ mod t754_click_affordance {
         aggregate_settings, owner_is_routable, row_cursor_class, SettingOwner,
         OWNER_UNRESOLVED_NOTE,
     };
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::mission_editor::{route_target, RouteTarget};
     use crate::editor::panels::validation_panel::register_route_probe;
-    use crate::mission_editor::{route_target, RouteTarget};
     use serde_json::json;
 
     /// Install the probe exactly as `mission_editor`'s mount installs it: the router's own
@@ -3972,7 +3978,7 @@ mod t754_click_affordance {
 #[cfg(test)]
 mod t758_inert_row_a11y {
     use super::{inert_settings_row_reason, owner_is_routable, row_cursor_class, SettingOwner};
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
     use crate::editor::panels::validation_panel::register_route_probe;
 
     /// Mission-owned rows name no entity: they are never routable, wear no pointer, and carry an
@@ -4100,7 +4106,7 @@ mod t671_mission_presentation {
         is_acceptable_thumbnail_url, presentation_failure_message, PresentationField, RowShape,
         BRIEFING_NOTE, THUMBNAIL_REJECTED_NOTE, THUMBNAIL_URL_NOTE,
     };
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
     fn row() -> RowShape {
         RowShape {
@@ -4343,7 +4349,7 @@ mod t671_mission_presentation {
 // `live_code` blanks literals and cuts test modules so a hollow comment cannot green these pins.
 #[cfg(test)]
 mod t766_clear_briefing_mirror {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     /// The blank arm must call the clear mutator — early-return on empty was the wave-117 defect.
     #[test]
@@ -4408,7 +4414,7 @@ mod t766_clear_briefing_mirror {
 /// gates on `is_topmost_open`. Hollow: strip the gate from any dialog body → RED.
 #[cfg(test)]
 mod t726_settings_esc_stack {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     fn prod() -> String {
         live_code(include_str!("settings_modal.rs"))

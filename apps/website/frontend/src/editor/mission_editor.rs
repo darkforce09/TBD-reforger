@@ -24,17 +24,31 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 
+// T-934.6 — editor_ops moved to `crate::editor::state::operations`; the alias keeps the dozens of
+// Class-S source-guard needles (`editor_ops::…`) and the page's own prose stable across the move.
+use crate::editor::panels::validation_panel;
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::doc_host as mission_doc;
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::history as mission_history;
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::hydrate as mission_hydrate;
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::operations as editor_ops;
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::persist as yrs_persist;
+
 /// T-750 — apply the `/registry` fetch's terminal failure to the three signals the dock reads.
 ///
 /// Lives OUTSIDE the wasm32 gate on purpose: the Favourites failure arm is host-testable via
 /// source pins, and `live_code` kills `#[cfg(target_arch = "wasm32")]` bodies on the native
 /// harness — a helper the Err arm *calls* is the only failure write that survives the scrub.
 fn mark_registry_fetch_failed(
-    catalog: RwSignal<crate::asset_catalog::CatalogState>,
-    vehicle_catalog: RwSignal<crate::asset_catalog::CatalogState>,
+    catalog: RwSignal<crate::editor::arsenal::asset_catalog::CatalogState>,
+    vehicle_catalog: RwSignal<crate::editor::arsenal::asset_catalog::CatalogState>,
     registry_failed: RwSignal<bool>,
 ) {
-    use crate::asset_catalog::CatalogState;
+    use crate::editor::arsenal::asset_catalog::CatalogState;
     catalog.set(CatalogState::Failed);
     vehicle_catalog.set(CatalogState::Failed);
     registry_failed.set(true);
@@ -53,8 +67,8 @@ mod registry_session {
     use std::cell::RefCell;
     use std::collections::HashMap;
 
-    use crate::arsenal_rules::{CargoRow, CompatFeed};
     use crate::core::dto::RegistryItem;
+    use crate::editor::arsenal::arsenal_rules::{CargoRow, CompatFeed};
 
     struct CachedCompat {
         feed: CompatFeed,
@@ -151,13 +165,13 @@ async fn fetch_compat_cold(
     auth: crate::core::auth::AuthStore,
 ) -> Result<
     (
-        crate::arsenal_rules::CompatFeed,
-        std::collections::HashMap<String, Vec<crate::arsenal_rules::CargoRow>>,
+        crate::editor::arsenal::arsenal_rules::CompatFeed,
+        std::collections::HashMap<String, Vec<crate::editor::arsenal::arsenal_rules::CargoRow>>,
     ),
     crate::core::client::ApiErr,
 > {
-    use crate::arsenal_rules::{CargoRow, CompatFeed, CompatGraph, CompatStatus};
     use crate::core::dto::{RegistryCargoDefaultsResponse, RegistryCompatResponse};
+    use crate::editor::arsenal::arsenal_rules::{CargoRow, CompatFeed, CompatGraph, CompatStatus};
     use std::collections::HashMap;
 
     let edges_path = format!("/registry/compat?edge_type={EDITOR_COMPAT_EDGE_TYPES}");
@@ -700,7 +714,7 @@ pub mod boot_progress {
 /// the eventual place will land at, plus the SCREEN pixel to anchor the floating panel at.
 ///
 /// Defined HERE (not in the wasm-only `editor_ops`) so the native test build — which compiles this
-/// page but not `editor_ops` — can name it. `editor_ops` re-uses it via `crate::mission_editor::…`.
+/// page but not `editor_ops` — can name it. `editor_ops` re-uses it via `crate::editor::mission_editor::…`.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct AssetPickerState {
     /// World metres — the anchor the operator aimed at (parity with the ghost/CUR unproject). The
@@ -1674,7 +1688,7 @@ fn AssetPickerOverlay(
                 && crate::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 ev.prevent_default();
-                crate::editor_ops::close_asset_picker();
+                editor_ops::close_asset_picker();
             }
         });
         on_cleanup(move || {
@@ -1688,11 +1702,13 @@ fn AssetPickerOverlay(
         // Flatten the side-filtered character catalog to placeable leaves (label + payload). Folders
         // carry no payload, so `payload.is_some()` is exactly "a placeable leaf" (asset_catalog docs).
         let items = registry.get().unwrap_or_default();
-        let tree = crate::asset_catalog::build_catalog_tree(&items, &active_side.get());
-        let mut leaves: Vec<(String, crate::asset_catalog::PlacePayload)> = Vec::new();
+        let tree =
+            crate::editor::arsenal::asset_catalog::build_catalog_tree(&items, &active_side.get());
+        let mut leaves: Vec<(String, crate::editor::arsenal::asset_catalog::PlacePayload)> =
+            Vec::new();
         fn collect(
-            nodes: &[crate::asset_catalog::CatalogNode],
-            out: &mut Vec<(String, crate::asset_catalog::PlacePayload)>,
+            nodes: &[crate::editor::arsenal::asset_catalog::CatalogNode],
+            out: &mut Vec<(String, crate::editor::arsenal::asset_catalog::PlacePayload)>,
         ) {
             for n in nodes {
                 if let Some(p) = &n.payload {
@@ -1724,8 +1740,8 @@ fn AssetPickerOverlay(
                             // places. `editor_ops` is wasm-only, so the arm is gated.
                             #[cfg(target_arch = "wasm32")]
                             {
-                                crate::editor_ops::begin_place(payload.clone());
-                                crate::editor_ops::close_asset_picker();
+                                editor_ops::begin_place(payload.clone());
+                                editor_ops::close_asset_picker();
                             }
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &payload;
@@ -1744,7 +1760,7 @@ fn AssetPickerOverlay(
                 on:pointerdown=move |ev| {
                     ev.stop_propagation();
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor_ops::close_asset_picker();
+                    editor_ops::close_asset_picker();
                 }
                 on:contextmenu=move |ev| ev.prevent_default()
             ></div>
@@ -1804,7 +1820,7 @@ fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
                 && crate::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 ev.prevent_default();
-                crate::editor_ops::close_comment_editor();
+                editor_ops::close_comment_editor();
             }
         });
         on_cleanup(move || {
@@ -1819,7 +1835,7 @@ fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
         // duplicate or an outliner refile bumps it and this panel re-reads the row.
         let _ = doc_tick.get();
         #[cfg(target_arch = "wasm32")]
-        let row = crate::editor_ops::read_comment(&id);
+        let row = editor_ops::read_comment(&id);
         #[cfg(not(target_arch = "wasm32"))]
         let row: Option<()> = None;
         // The row vanished (deleted, or undone away while the panel was open) — close rather than
@@ -1846,7 +1862,7 @@ fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
                 on:pointerdown=move |ev| {
                     ev.stop_propagation();
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor_ops::close_comment_editor();
+                    editor_ops::close_comment_editor();
                 }
             ></div>
             <div
@@ -1869,7 +1885,7 @@ fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
                         on:change=move |ev| {
                             #[cfg(target_arch = "wasm32")]
                             {
-                                crate::editor_ops::rename_comment(
+                                editor_ops::rename_comment(
                                     id_title.clone(),
                                     event_target_value(&ev),
                                 );
@@ -1891,7 +1907,7 @@ fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
                         on:change=move |ev| {
                             #[cfg(target_arch = "wasm32")]
                             {
-                                crate::editor_ops::set_comment_tooltip(
+                                editor_ops::set_comment_tooltip(
                                     id_tip.clone(),
                                     event_target_value(&ev),
                                 );
@@ -1914,7 +1930,7 @@ fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
                             on:change=move |ev| {
                                 #[cfg(target_arch = "wasm32")]
                                 if let Ok(v) = event_target_value(&ev).trim().parse::<f64>() {
-                                    crate::editor_ops::move_comment(id_x.clone(), v, z_for_x);
+                                    editor_ops::move_comment(id_x.clone(), v, z_for_x);
                                 }
                                 #[cfg(not(target_arch = "wasm32"))]
                                 let _ = (&id_x, &ev, z_for_x);
@@ -1930,7 +1946,7 @@ fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
                             on:change=move |ev| {
                                 #[cfg(target_arch = "wasm32")]
                                 if let Ok(v) = event_target_value(&ev).trim().parse::<f64>() {
-                                    crate::editor_ops::move_comment(id_z.clone(), x_for_z, v);
+                                    editor_ops::move_comment(id_z.clone(), x_for_z, v);
                                 }
                                 #[cfg(not(target_arch = "wasm32"))]
                                 let _ = (&id_z, &ev, x_for_z);
@@ -1948,9 +1964,9 @@ fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
                         on:click=move |_| {
                             #[cfg(target_arch = "wasm32")]
                             if let Some(new_id) =
-                                crate::editor_ops::duplicate_comment(&id_dup, COMMENT_COPY_OFFSET_M)
+                                editor_ops::duplicate_comment(&id_dup, COMMENT_COPY_OFFSET_M)
                             {
-                                crate::editor_ops::open_comment_editor(new_id);
+                                editor_ops::open_comment_editor(new_id);
                             }
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &id_dup;
@@ -1964,8 +1980,8 @@ fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
                         on:click=move |_| {
                             #[cfg(target_arch = "wasm32")]
                             {
-                                crate::editor_ops::delete_comment(id_del.clone());
-                                crate::editor_ops::close_comment_editor();
+                                editor_ops::delete_comment(id_del.clone());
+                                editor_ops::close_comment_editor();
                             }
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &id_del;
@@ -1978,7 +1994,7 @@ fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
                         class="ml-auto rounded bg-primary px-3 py-1.5 text-label-md text-on-primary"
                         on:click=move |_| {
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor_ops::close_comment_editor();
+                            editor_ops::close_comment_editor();
                         }
                     >
                         "Close"
@@ -2049,7 +2065,7 @@ fn ConnectionsPanelOverlay(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> imp
                 && crate::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 ev.prevent_default();
-                crate::editor_ops::close_connections_panel();
+                editor_ops::close_connections_panel();
             }
         });
         on_cleanup(move || {
@@ -2070,8 +2086,8 @@ fn ConnectionsPanelOverlay(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> imp
         // untested branch (the shape `CommentEditorOverlay` uses, for the same reason).
         #[cfg(target_arch = "wasm32")]
         let (rows, finding_count, armed_line) = {
-            let list = crate::editor_ops::connection_list();
-            let findings = crate::editor_ops::connection_findings();
+            let list = editor_ops::connection_list();
+            let findings = editor_ops::connection_findings();
             // Findings keyed by the row they belong to. Built once here rather than re-scanned per
             // row: a graph with N edges and N findings would otherwise be quadratic, and the panel
             // re-renders on every document mutation.
@@ -2092,7 +2108,7 @@ fn ConnectionsPanelOverlay(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> imp
                     id: r.id,
                 })
                 .collect();
-            let armed_line = crate::editor_ops::pending_connect()
+            let armed_line = editor_ops::pending_connect()
                 .map(|(kind, from)| format!("Connecting: {kind} from {from}"));
             (rows, findings.len(), armed_line)
         };
@@ -2135,7 +2151,7 @@ fn ConnectionsPanelOverlay(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> imp
                                 on:click=move |_| {
                                     #[cfg(target_arch = "wasm32")]
                                     {
-                                        crate::editor_ops::delete_connection(&del_id);
+                                        editor_ops::delete_connection(&del_id);
                                     }
                                     #[cfg(not(target_arch = "wasm32"))]
                                     let _ = &del_id;
@@ -2168,7 +2184,7 @@ fn ConnectionsPanelOverlay(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> imp
                 on:pointerdown=move |ev| {
                     ev.stop_propagation();
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor_ops::close_connections_panel();
+                    editor_ops::close_connections_panel();
                 }
             ></div>
             <div
@@ -2185,7 +2201,7 @@ fn ConnectionsPanelOverlay(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> imp
                         class="ml-auto cursor-pointer rounded px-2 py-1 font-label-sm text-[11px] text-on-surface-variant hover:bg-surface-dim"
                         on:click=move |_| {
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor_ops::close_connections_panel();
+                            editor_ops::close_connections_panel();
                         }
                     >
                         "Close"
@@ -2206,8 +2222,8 @@ fn ConnectionsPanelOverlay(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> imp
                                     on:click=move |_| {
                                         #[cfg(target_arch = "wasm32")]
                                         {
-                                            crate::editor_ops::cancel_connect();
-                                            crate::editor_ops::open_connections_panel();
+                                            editor_ops::cancel_connect();
+                                            editor_ops::open_connections_panel();
                                         }
                                     }
                                 >
@@ -2426,7 +2442,7 @@ fn live_connection_segments(core: &map_engine_core::doc::MissionDocCore) -> Vec<
             (f64::from(soa.xy[i * 2]), f64::from(soa.xy[i * 2 + 1])),
         );
     }
-    for (id, x, y) in crate::editor_ops::vehicle_points() {
+    for (id, x, y) in editor_ops::vehicle_points() {
         positions.insert(id, (x, y));
     }
     connection_segments(&core.connection_rows_json(), &positions)
@@ -2635,7 +2651,7 @@ pub(crate) fn pick_comment(
 /// follows `points` (already id-sorted), so a mixed drag's comment commit is deterministic.
 ///
 /// Shared by the drag PREVIEW ([`comment_drag_lane_xy`], offset by the live delta) and the drag
-/// COMMIT (base + delta → [`crate::editor_ops::move_comment`]) so the glyph that follows the cursor
+/// COMMIT (base + delta → [`editor_ops::move_comment`]) so the glyph that follows the cursor
 /// and the position finally stored are computed from ONE list — the parity the O-7 preview note asks
 /// for, applied to the comment lane.
 #[must_use]
@@ -2874,7 +2890,7 @@ pub(crate) struct HoverPoints {
 pub(crate) fn hover_hit(
     cache: &mut Option<HoverPoints>,
     tick: u64,
-    doc: &crate::mission_doc::DocHandle,
+    doc: &mission_doc::DocHandle,
     cam: &map_engine_core::camera::OrthoCamera,
     px: f64,
     py: f64,
@@ -2886,7 +2902,7 @@ pub(crate) fn hover_hit(
             tick,
             // T-819 — map pick cannot hit a crewed figure (nothing rendered).
             soa: map_render_slot_soa(c),
-            vehicles: crate::editor_ops::vehicle_points(),
+            vehicles: editor_ops::vehicle_points(),
             comments: comment_points(&c.comments_json()),
         });
         let Some(fresh) = fresh else { return false };
@@ -3417,8 +3433,9 @@ pub fn MissionEditorPage() -> impl IntoView {
     // quantise a Shift-rotate / widget-ring drag), and the DOM overlays (the status-bar SNAP readout
     // + the widget SVG, which re-run on `.get()`). The default `SnapState` is OFF, so an operator who
     // never presses `G`/`[`/`]` gets the exact pre-T-648 free move + free rotate.
-    let snap = RwSignal::new(crate::mission_editor::transform::SnapState::default());
-    let widget_variant = RwSignal::new(crate::mission_editor::transform::WidgetVariant::default());
+    let snap = RwSignal::new(crate::editor::mission_editor::transform::SnapState::default());
+    let widget_variant =
+        RwSignal::new(crate::editor::mission_editor::transform::WidgetVariant::default());
     // T-648 — repaint tick for the transform widget, bumped whenever the SELECTION changes without a
     // pointermove (a keyboard select-all, an outliner click), so the widget SVG re-projects onto the
     // new selection centroid even with a still pointer — the `ruler_tick`/`los_tick` idiom.
@@ -3454,7 +3471,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             let cb = Closure::once_into_js(move || {
                 timer2.set(None);
                 sz_bytes.set(
-                    crate::editor_ops::slots_json()
+                    editor_ops::slots_json()
                         .as_deref()
                         .and_then(crate::editor::mission_size::estimate_compiled_bytes),
                 );
@@ -3491,11 +3508,12 @@ pub fn MissionEditorPage() -> impl IntoView {
     let active_side = RwSignal::new(String::from("BLUFOR"));
     // T-180.5 — Objects chip stub (place no-op while true).
     let objects_mode = RwSignal::new(false);
-    let catalog = RwSignal::new(crate::asset_catalog::CatalogState::Loading);
+    let catalog = RwSignal::new(crate::editor::arsenal::asset_catalog::CatalogState::Loading);
     // T-215 — the Vehicles tab's tree, built from the SAME `/registry` response as `catalog`
     // (`kind == "vehicle"` instead of `"character"`). One fetch, two trees: a second request for
     // rows already in hand would double a ~940 KB payload for nothing.
-    let vehicle_catalog = RwSignal::new(crate::asset_catalog::CatalogState::Loading);
+    let vehicle_catalog =
+        RwSignal::new(crate::editor::arsenal::asset_catalog::CatalogState::Loading);
     // T-159.26 — Attributes modal: the open slot id + a doc-change tick the modal re-reads on
     // (`doc_ver` is a plain Rc<Cell>, not reactive; refresh_docks bumps this signal instead).
     let attrs_open = RwSignal::new(None::<String>);
@@ -3580,7 +3598,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     // the `/registry` rows land. Fetch paths below only write `registry_items` (+ vehicles); this
     // Effect owns `catalog` Ready trees so a BLUFOR→OPFOR chip flip drops NATO and shows USSR.
     {
-        use crate::asset_catalog::{build_catalog_tree, CatalogState};
+        use crate::editor::arsenal::asset_catalog::{build_catalog_tree, CatalogState};
         Effect::new(move |_| {
             let side = active_side.get();
             if let Some(items) = registry_items.get() {
@@ -3590,7 +3608,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     }
     // T-167 — the compat edge feed for the Smart Arsenal (optic/magazine edge rows + validation).
     // Fetched once alongside /registry; starts Loading, degrades to Unavailable on error.
-    let compat = RwSignal::new(crate::arsenal_rules::CompatFeed::default());
+    let compat = RwSignal::new(crate::editor::arsenal::arsenal_rules::CompatFeed::default());
     // T-159.26 — server hydrate / conflict / dirty (data-safety). `conflict` holds an offered
     // server payload when local IDB content diverges; `dirty` is the unsaved-changes flag;
     // `current_semver` tracks the adopted server version.
@@ -3657,7 +3675,7 @@ pub fn MissionEditorPage() -> impl IntoView {
         // T-750 — on Err also raise `registry_failed` (Favourites used to treat bare `None` as
         // forever-loading). Bumping `registry_fetch_gen` re-enters the cold path (Retry).
         {
-            use crate::asset_catalog::{build_vehicle_catalog_tree, CatalogState};
+            use crate::editor::arsenal::asset_catalog::{build_vehicle_catalog_tree, CatalogState};
             Effect::new(move |_| {
                 let gen = registry_fetch_gen.get();
                 if gen == 0 {
@@ -3713,14 +3731,14 @@ pub fn MissionEditorPage() -> impl IntoView {
         //   1. Arsenal edge families only (`optic_on_weapon,mag_in_weapon,attachment_on_weapon`)
         //   2. `?view=cargo_defaults` aggregated cargo seed map (server-side collapse)
         {
-            use crate::arsenal_rules::{CompatFeed, CompatGraph, CompatStatus};
+            use crate::editor::arsenal::arsenal_rules::{CompatFeed, CompatGraph, CompatStatus};
             if registry_session::must_fetch_compat() {
                 spawn_local({
                     async move {
                         match fetch_compat_cold(auth).await {
                             Ok((feed, cargo)) => {
                                 registry_session::store_compat(feed.clone(), cargo.clone());
-                                crate::editor_ops::set_cargo_defaults(cargo);
+                                editor_ops::set_cargo_defaults(cargo);
                                 compat.set(feed);
                             }
                             Err(_) => {
@@ -3734,7 +3752,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     }
                 });
             } else if let Some((feed, cargo)) = registry_session::cached_compat() {
-                crate::editor_ops::set_cargo_defaults(cargo);
+                editor_ops::set_cargo_defaults(cargo);
                 compat.set(feed);
             }
         }
@@ -3776,7 +3794,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             // engine coming up. The doc leaks on route-leave like the engine (`!Send` `Rc`, and
             // `on_cleanup` is `Send`-bound) — no double-free (plain Rust `Drop`). The optional
             // doc→engine bind (D5) happens below once the engine is `Some`.
-            let doc = crate::mission_doc::new_seeded_doc();
+            let doc = mission_doc::new_seeded_doc();
             // T-651 — THE NEW-MISSION TEMPLATE SEEDS COMMENTS. Two of them, under the `INIT` origin
             // so the template is not an undo step.
             //
@@ -3793,15 +3811,20 @@ pub fn MissionEditorPage() -> impl IntoView {
             // Comment entities. FNF v3 had 28. **This is ONE community across TWO eras — WOG and
             // OFCRA ship no comment equivalent at all** — so the seed copies what survived a
             // rewrite, not what a single era once had, and it is not a four-way convergence.
-            crate::editor_ops::seed_new_mission_template(&doc);
+            editor_ops::seed_new_mission_template(&doc);
             let doc_ver = Rc::new(Cell::new(1u32));
-            crate::mission_doc::register_mission_doc(doc.clone(), doc_ver.clone());
+            mission_doc::register_mission_doc(doc.clone(), doc_ver.clone());
 
             // T-159.20 — editor commands (Save/Export) context + the `__editorCommands` smoke bridge
             // (peer of `__missionDoc`). `set_ctx` shares the same `Rc` the persistence swap targets,
             // so both the buttons and the bridge see an IDB-restored doc.
-            crate::mission_commands::set_ctx(doc.clone(), auth, mission_id.clone(), current_semver);
-            crate::mission_commands::register_editor_commands(doc.clone());
+            crate::editor::state::commands_hotkeys::set_ctx(
+                doc.clone(),
+                auth,
+                mission_id.clone(),
+                current_semver,
+            );
+            crate::editor::state::commands_hotkeys::register_editor_commands(doc.clone());
 
             // T-159.18 — LMB select foundation. Selection is app-side state (NOT the Y.Doc — it never
             // lived in the document, matching React's Zustand), held in the editor's leaked-handle
@@ -4023,7 +4046,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // (the closure OWNS the rect, so the button hands over nothing).
                     select_all: Box::new(move || {
                         let rect = container.get_bounding_client_rect();
-                        crate::editor_ops::select_all_in_view(rect.width(), rect.height());
+                        editor_ops::select_all_in_view(rect.width(), rect.height());
                     }),
                     widget_digit: Box::new(move || widget_variant.get().to_digit()),
                     widget_is_rotate: Box::new(move || widget_variant.get().is_rotate()),
@@ -4047,28 +4070,24 @@ pub fn MissionEditorPage() -> impl IntoView {
             // catalogue is `None`, the conservative default).
             {
                 let doc = doc.clone();
-                crate::editor::panels::validation_panel::register_payload_source(std::rc::Rc::new(
-                    move || {
-                        let d = doc.borrow();
-                        let core = d.as_ref()?;
-                        let payload = map_engine_core::mission::compile::compile_payload(
-                            &core.small_maps_json(),
-                            &core.slots_json(),
-                            false,
-                        );
-                        // Catalogue: the live registry rows if loaded, else `None` (rule skips). Built
-                        // from `resource_name`s + object prop:/comp: aliases — the ids the payload uses.
-                        let known_asset_ids = registry_items.get_untracked().map(|items| {
-                            crate::editor::panels::validation_panel::known_asset_ids_from_registry(
-                                &items,
-                            )
-                        });
-                        Some(crate::editor::panels::validation_panel::PayloadSource {
-                            payload,
-                            known_asset_ids,
-                        })
-                    },
-                ));
+                validation_panel::register_payload_source(std::rc::Rc::new(move || {
+                    let d = doc.borrow();
+                    let core = d.as_ref()?;
+                    let payload = map_engine_core::mission::compile::compile_payload(
+                        &core.small_maps_json(),
+                        &core.slots_json(),
+                        false,
+                    );
+                    // Catalogue: the live registry rows if loaded, else `None` (rule skips). Built
+                    // from `resource_name`s + object prop:/comp: aliases — the ids the payload uses.
+                    let known_asset_ids = registry_items
+                        .get_untracked()
+                        .map(|items| validation_panel::known_asset_ids_from_registry(&items));
+                    Some(validation_panel::PayloadSource {
+                        payload,
+                        known_asset_ids,
+                    })
+                }));
             }
 
             // T-655 — the validation panel's CLICK-TO-SELECT router. A finding click routes its
@@ -4178,11 +4197,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                 };
                 {
                     let probe = std::rc::Rc::clone(&available);
-                    crate::editor::panels::validation_panel::register_route_probe(
-                        std::rc::Rc::new(move |subject_id: &str| probe(subject_id).is_some()),
-                    );
+                    validation_panel::register_route_probe(std::rc::Rc::new(
+                        move |subject_id: &str| probe(subject_id).is_some(),
+                    ));
                 }
-                crate::editor::panels::validation_panel::register_select_by_id(std::rc::Rc::new(
+                validation_panel::register_select_by_id(std::rc::Rc::new(
                     move |subject_id: &str| {
                         let Some((target, cx, cy)) = available(subject_id) else {
                             return false;
@@ -4207,7 +4226,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             if let Some(e) = engine.borrow_mut().as_mut() {
                                 e.set_selection(ids);
                             }
-                            crate::mission_history::refresh_selection();
+                            mission_history::refresh_selection();
                         }
                         if let Some(e) = engine.borrow_mut().as_mut() {
                             e.set_view(cx, cy, e.zoom()); // centre on the offender (React flyTo)
@@ -4232,7 +4251,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             // gate ask the same question ("has the document settled?"), so a second flag would only be
             // a second thing to keep in sync.
             let restore_settled = Rc::new(Cell::new(false));
-            crate::mission_history::set_ctx(
+            mission_history::set_ctx(
                 doc.clone(),
                 engine.clone(),
                 selection.clone(),
@@ -4249,7 +4268,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             // BEFORE `refresh_hud()` below, because that call funnels into
             // `editor_ops::refresh_docks` — without the ctx the outliner would render empty until
             // the first edit.
-            crate::editor_ops::set_ctx(
+            editor_ops::set_ctx(
                 doc.clone(),
                 engine.clone(),
                 selection.clone(),
@@ -4268,23 +4287,23 @@ pub fn MissionEditorPage() -> impl IntoView {
             crate::editor::panels::context_menu::set_menu_signal(context_menu);
             // T-647 PLACE-003 — same handoff for the empty-ground asset picker: the wasm `dblclick`
             // closure opens it through `editor_ops::open_asset_picker`, which writes this signal.
-            crate::editor_ops::set_asset_picker_signal(asset_picker);
+            editor_ops::set_asset_picker_signal(asset_picker);
             // T-651 — same handoff for the comment editor: the Outliner's comment row (a native
             // view with no reactive handle) opens it through `editor_ops::open_comment_editor`.
-            crate::editor_ops::set_comment_editor_signal(comment_editor);
+            editor_ops::set_comment_editor_signal(comment_editor);
             // T-672 — same idiom: the `Connections...` context-menu row calls
             // `editor_ops::open_connections_panel`, which needs this handle.
-            crate::editor_ops::set_connections_panel_signal(connections_panel);
+            editor_ops::set_connections_panel_signal(connections_panel);
             // T-780 [wave 142 F-1] — the SAME idiom, for the opposite reason: `editor_ops` does not
             // read this one to render an overlay, it reconciles it. Every entity-selection write in
             // the editor lands in `editor_ops::mirror_selection`, so handing the signal over is what
             // makes "an edge selection and a slot selection cannot both be live" true of routes this
             // page never sees (the Outliner row, the click-to-select router, a place), and what lets
             // an undo that removed the edge clear the amber line with it.
-            crate::editor_ops::set_connection_selection_signal(selected_connection);
+            editor_ops::set_connection_selection_signal(selected_connection);
 
-            crate::mission_history::register_editor_history();
-            crate::mission_history::register_key_handler();
+            mission_history::register_editor_history();
+            mission_history::register_key_handler();
             // T-189 — the unsaved-work guard (`beforeunload`). Registered after `set_ctx` above,
             // which is what supplies both the `dirty` flag it reads and the mission id it arms on.
             //
@@ -4295,8 +4314,8 @@ pub fn MissionEditorPage() -> impl IntoView {
             // is `!Send`, so the cleanup cannot own the handle. It doesn't have to — the closure
             // parks in a `mission_history` thread_local and the cleanup below is a zero-capture fn
             // item (`Send + Sync`) that removes and drops it.
-            crate::mission_history::register_unload_guard();
-            on_cleanup(crate::mission_history::unregister_unload_guard);
+            mission_history::register_unload_guard();
+            on_cleanup(mission_history::unregister_unload_guard);
 
             // ═══════════ T-780 — the CONNECTION lane feed, and it reads the DOCUMENT ═══════════
             //
@@ -4363,7 +4382,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 });
             }
 
-            crate::mission_history::refresh_hud();
+            mission_history::refresh_hud();
 
             // T-159.26 — editor keyboard actions (MissionCreatorPage onKeyDown): Delete
             // (remove selection), Space (center on centroid), Ctrl/Cmd+C/V (copy/paste at cursor).
@@ -4395,7 +4414,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let container = container.clone();
                 let onkeydown = Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new(
                     move |ev: web_sys::KeyboardEvent| {
-                        if crate::mission_history::in_editable_field() {
+                        if mission_history::in_editable_field() {
                             return;
                         }
                         let modk = ev.ctrl_key() || ev.meta_key();
@@ -4425,8 +4444,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     // T-723 — Esc disarms an armed place BEFORE the measure-tool seam.
                                     // `cancel_pending` was unreachable from the keyboard; Eden stamp
                                     // cancel is Esc (and RMB on pointerup). Clear the ghost with the arm.
-                                    let place_acted = if crate::editor_ops::has_pending() {
-                                        crate::editor_ops::cancel_pending();
+                                    let place_acted = if editor_ops::has_pending() {
+                                        editor_ops::cancel_pending();
                                         if let Some(e) = engine.borrow_mut().as_mut() {
                                             e.clear_place_preview();
                                         }
@@ -4453,16 +4472,15 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     // when it DOES act, feeding it to the `||` below prevents the
                                     // browser default and stops any lower Esc layer (dialog/menu/tab)
                                     // consuming the SAME press (one-Esc-one-layer, T-813/T-814).
-                                    let zone_draw_acted = crate::editor_ops::cancel_zone_draw();
+                                    let zone_draw_acted = editor_ops::cancel_zone_draw();
                                     // T-768 — Esc disarms an armed connect the same way it disarms an
                                     // armed place (T-723). Completing stays LMB pick / RMB Complete.
-                                    let connect_acted =
-                                        if crate::editor_ops::pending_connect().is_some() {
-                                            crate::editor_ops::cancel_connect();
-                                            true
-                                        } else {
-                                            false
-                                        };
+                                    let connect_acted = if editor_ops::pending_connect().is_some() {
+                                        editor_ops::cancel_connect();
+                                        true
+                                    } else {
+                                        false
+                                    };
                                     let ruler_acted = ruler.borrow_mut().escape();
                                     if ruler_acted {
                                         sync_ruler();
@@ -4491,7 +4509,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 }
                             }
                             "KeyC" if modk && !ev.alt_key() && !ev.shift_key() => {
-                                crate::editor_ops::copy_selection()
+                                editor_ops::copy_selection()
                             }
                             // T-669 ACTION-CUT-001 — Ctrl/Cmd+X is COPY, then DELETE, in that order
                             // and SHORT-CIRCUITED. `copy_selection` returns false when there was
@@ -4510,8 +4528,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // keeps Ctrl+X meaning "cut the text" while the operator is typing in an
                             // Attributes field.
                             "KeyX" if modk && !ev.alt_key() && !ev.shift_key() => {
-                                crate::editor_ops::copy_selection()
-                                    && crate::editor_ops::delete_selection()
+                                editor_ops::copy_selection() && editor_ops::delete_selection()
                             }
                             // T-743 — THE PLAIN PASTE ALWAYS CARRIES AN ANCHOR. It used to hand
                             // `paste_at_cursor` the raw `cx`/`cy`, which are `None` whenever the
@@ -4550,7 +4567,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     .map(|c| (c[0], c[1]));
                                 match plain_paste_anchor(cx.zip(cy), view_centre) {
                                     Some((ax, ay)) => {
-                                        crate::editor_ops::paste_at_cursor(Some(ax), Some(ay))
+                                        editor_ops::paste_at_cursor(Some(ax), Some(ay))
                                     }
                                     None => false,
                                 }
@@ -4579,7 +4596,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // is therefore irrelevant. Pinned by
                             // `the_two_paste_arms_are_mutually_exclusive`.
                             "KeyV" if modk && !ev.alt_key() && ev.shift_key() => {
-                                crate::editor_ops::paste_at_cursor(None, None)
+                                editor_ops::paste_at_cursor(None, None)
                             }
                             // T-649 SEL-ALL-001 — Ctrl/Cmd+A selects everything IN VIEW. Eden scopes
                             // Select All to the viewport, not to the whole mission, so this hands the
@@ -4598,7 +4615,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // stops the browser's own Select All blue-washing the editor chrome.
                             "KeyA" if modk && !ev.alt_key() && !ev.shift_key() => {
                                 let rect = container.get_bounding_client_rect();
-                                crate::editor_ops::select_all_in_view(rect.width(), rect.height())
+                                editor_ops::select_all_in_view(rect.width(), rect.height())
                             }
                             // T-635 — Ctrl/Cmd+Alt+D toggles the telemetry HUD (default hidden).
                             // Behind the same `in_editable_field()` guard at the top of this closure,
@@ -4610,7 +4627,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 debug_hud_shown.set(!debug_hud_shown.get_untracked());
                                 true
                             }
-                            "Space" if !modk => crate::editor_ops::center_on_selection(),
+                            "Space" if !modk => editor_ops::center_on_selection(),
                             // T-662 — Delete still removes the selection. Backspace is NO LONGER an
                             // alias for Delete; it toggles the Eden chrome (hide/show interface), so
                             // the two keys are now split arms. Backspace always "acts" (it flips the
@@ -4657,9 +4674,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 if armed.is_some() {
                                     selected_connection.set(None);
                                 }
-                                match armed.filter(|id| crate::editor_ops::connection_exists(id)) {
-                                    Some(id) => crate::editor_ops::delete_connection(&id),
-                                    None => crate::editor_ops::delete_selection(),
+                                match armed.filter(|id| editor_ops::connection_exists(id)) {
+                                    Some(id) => editor_ops::delete_connection(&id),
+                                    None => editor_ops::delete_selection(),
                                 }
                             }
                             "Backspace" if !modk => {
@@ -4844,7 +4861,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             // it); the IDB load / initial-persist / warm-mark run async below and flip `ready` last.
             let persist_ready = Rc::new(Cell::new(false));
             let persist_loaded = Rc::new(Cell::new(false));
-            crate::yrs_persist::register_mission_persist(
+            yrs_persist::register_mission_persist(
                 doc.clone(),
                 mission_id.clone(),
                 persist_ready.clone(),
@@ -4878,7 +4895,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     //    empty-shell + apply; rests on the tested fresh-peer path + persist_roundtrip_ok,
                     //    NOT on reapply-idempotence). The swap is a synchronous block: no `borrow`/
                     //    `borrow_mut` is ever held across an `.await` (the engine task shares this `Rc`).
-                    if let Some(blob) = crate::yrs_persist::load_state(&id).await {
+                    if let Some(blob) = yrs_persist::load_state(&id).await {
                         if !blob.is_empty() {
                             let fresh = map_engine_core::doc::MissionDocCore::new();
                             fresh.set_origin_init(true);
@@ -4892,7 +4909,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // INIT). Re-seed the HUD mirrors off it, or the toolbelt would show
                                 // the pre-restore counts. Not `after_local_edit`: nothing was edited,
                                 // and re-arming the persist writer here would echo the restore back.
-                                crate::mission_history::refresh_hud();
+                                mission_history::refresh_hud();
                                 // T-189 — but DO tell the truth about `dirty`. The restored blob is
                                 // local work that has never been through a Save (a Save is the only
                                 // thing that clears the flag), and leaving `dirty` at its `false`
@@ -4911,7 +4928,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // records a semver, not a document digest, so nothing on this path
                                 // can tell that case apart — and over-warning is the safe side of
                                 // the failure it replaces (silent loss).
-                                crate::mission_history::set_dirty(true);
+                                mission_history::set_dirty(true);
                             }
                         }
                     }
@@ -4919,7 +4936,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     //     `smoke` gate route is non-UUID and skips this, so the editor smokes are
                     //     untouched). Replaces the seed with the saved version, or prompts on a
                     //     genuine local-vs-server conflict — the data-safety guarantee.
-                    crate::mission_hydrate::hydrate_from_server(
+                    mission_hydrate::hydrate_from_server(
                         doc.clone(),
                         id.clone(),
                         auth,
@@ -4932,7 +4949,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // T-761 — Export Compiled parks findings in a thread_local; client-side
                     // `/missions/:id/edit` remounts reuse the wasm instance, so clear on hydrate
                     // or mission B inherits A's build report (wave-116 finding 3).
-                    crate::editor::panels::validation_panel::clear_compile_findings();
+                    validation_panel::clear_compile_findings();
                     // T-628 — the mission segment is over the instant the hydrate returns, on every
                     // one of its paths (adopted / trusted-local / conflict / 404 / offline). Closing
                     // it here rather than inside the hydrate is what stops a network failure from
@@ -4955,7 +4972,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     //      the overlay is still up, and a write would be the corruption itself.
                     restore_settled.set(true);
                     if engine_mounted.get() {
-                        crate::mission_history::rebind_engine_from_doc();
+                        mission_history::rebind_engine_from_doc();
                     }
                     // T-175 B5 — doc is hydrated: advance the loading overlay (→ Ready if the world
                     // already settled, else keep the overlay up until the world task finishes).
@@ -4975,7 +4992,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     {
                         let doc_get = doc.clone();
                         let doc_cancel = doc.clone();
-                        crate::yrs_persist::save_state_debounced(
+                        yrs_persist::save_state_debounced(
                             &id,
                             Box::new(move || {
                                 doc_get
@@ -4985,7 +5002,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     .unwrap_or_default()
                             }),
                             Box::new(move || doc_cancel.borrow().is_none()),
-                            crate::yrs_persist::debounce_ms(),
+                            yrs_persist::debounce_ms(),
                         );
                     }
                     // 3. Warm-session marker after the doc is ready.
@@ -4994,9 +5011,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                         .as_ref()
                         .map(|c| c.slot_count() as u32)
                         .unwrap_or(0);
-                    crate::editor_session::mark_ready(&id, n, None);
+                    crate::editor::state::session::mark_ready(&id, n, None);
                     // 4. Flush-on-hide listeners (visibilitychange/hidden + pagehide).
-                    crate::yrs_persist::register_flush_on_hide(id.clone());
+                    yrs_persist::register_flush_on_hide(id.clone());
                     // 5. Ready LAST — the gate waits on this before asserting.
                     ready.set(true);
                 }
@@ -5075,7 +5092,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     soa.ids.clone(),
                                     &soa.xy,
                                     &tints,
-                                    crate::mission_history::soa_roles(soa),
+                                    mission_history::soa_roles(soa),
                                     &soa.rotations,
                                 );
                             }
@@ -5085,7 +5102,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // rebind once it settles. Exactly one authoritative rebind runs.
                             engine_mounted.set(true);
                             if restore_settled.get() {
-                                crate::mission_history::rebind_engine_from_doc();
+                                mission_history::rebind_engine_from_doc();
                             }
                             start_raf(engine.clone(), disposed.clone(), debug_hud, scale_mpp);
                             // T-166 — full map-asset host (hillshade + sat + DEM vectors + world +
@@ -5283,7 +5300,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         // returned without take(), stranding Pending (phantom Move) or Ruler/LoS
                         // (phantom vertex / observer). `armed_place::open_left_gesture_while_armed`
                         // is the one decision; the armed pointerup still take()s as belt-and-braces.
-                        if crate::editor_ops::has_pending() {
+                        if editor_ops::has_pending() {
                             return;
                         }
                         // T-159.18/.19 — LMB pending-left: freeze the ortho camera at press (X-05: the
@@ -5422,7 +5439,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // the cursor's world point so the operator sees where it will land (the drop
                     // commits at pointerup). Mutually exclusive with a map drag/marquee (`left` is
                     // None during a palette place), so this returns before the gesture machine.
-                    if crate::editor_ops::has_pending() {
+                    if editor_ops::has_pending() {
                         if let Some(c) = world.filter(|c| c[0].is_finite() && c[1].is_finite()) {
                             if let Some(e) = engine.borrow_mut().as_mut() {
                                 e.set_place_preview(c[0] as f32, c[1] as f32);
@@ -5449,7 +5466,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         let prev = hover_state.get();
                         if hover_suppressed(
                             gesture_active,
-                            crate::editor_ops::has_pending(),
+                            editor_ops::has_pending(),
                             tool_mode.get_untracked().captures_points(),
                         ) {
                             // Drop the claim rather than freeze it: a drag that began on a glyph
@@ -5534,7 +5551,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     st::pick_slot_or_vehicle(
                                         &p.cam,
                                         &map_render_slot_soa(c),
-                                        &crate::editor_ops::vehicle_points(),
+                                        &editor_ops::vehicle_points(),
                                         p.start_x,
                                         p.start_y,
                                     )
@@ -5598,9 +5615,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                                 // Slot tint only — vehicle glyphs have no selection lane.
                                                 let slot_ids: Vec<String> = ids
                                                     .iter()
-                                                    .filter(|i| {
-                                                        !crate::editor_ops::is_vehicle_id(i)
-                                                    })
+                                                    .filter(|i| !editor_ops::is_vehicle_id(i))
                                                     .cloned()
                                                     .collect();
                                                 e.set_selection(slot_ids);
@@ -5646,7 +5661,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 st::push_drag_preview(
                                     e,
                                     &ids,
-                                    &crate::editor_ops::vehicle_points(),
+                                    &editor_ops::vehicle_points(),
                                     dx,
                                     dy,
                                 );
@@ -5778,7 +5793,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     //   * off-canvas LMB keeps the arm (arming click's own release) — Esc/RMB cancel.
                     // The host still stops `pointerdown` only, so a release over a dock bubbles here;
                     // the chrome insets decide Place vs KeepArmed.
-                    if crate::editor_ops::has_pending() {
+                    if editor_ops::has_pending() {
                         // T-723 — clear ANY stranded left gesture before deciding (Pending → phantom
                         // Move; Ruler → phantom vertex; LoS capture under the same LG::Ruler arm →
                         // phantom observer/target). Belt-and-braces with the pointerdown skip.
@@ -5790,7 +5805,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // keep armed; pan_px cleanup runs next
                         } else if button == 2 {
                             // RMB — Eden stamp-mode cancel
-                            crate::editor_ops::cancel_pending();
+                            editor_ops::cancel_pending();
                             if let Some(e) = engine.borrow_mut().as_mut() {
                                 e.clear_place_preview();
                             }
@@ -5848,9 +5863,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     let alt_empty = ev.alt_key();
                                     let c = world_ok.expect("Place implies finite world");
                                     if ctrl_multi {
-                                        crate::editor_ops::place_at_keep(c[0], c[1], alt_empty);
+                                        editor_ops::place_at_keep(c[0], c[1], alt_empty);
                                     } else {
-                                        crate::editor_ops::place_at_alt(c[0], c[1], alt_empty);
+                                        editor_ops::place_at_alt(c[0], c[1], alt_empty);
                                     }
                                 }
                                 armed_place::ArmedUp::KeepArmed => {
@@ -5901,7 +5916,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     let _ = container.release_pointer_capture(ev.pointer_id());
                                 }
                                 if let Some(e) = engine.borrow_mut().as_mut() {
-                                    st::clear_drag_preview(e, &crate::editor_ops::vehicle_points());
+                                    st::clear_drag_preview(e, &editor_ops::vehicle_points());
                                     // T-796 — a wrong-button release is never a commit; put a dragged
                                     // note's lane back at its authored position too (identity when the
                                     // drag held no comment). T-808 — with its ids, or the restore
@@ -5948,7 +5963,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     st::pick_slot_or_vehicle(
                                         &p.cam,
                                         &map_render_slot_soa(c),
-                                        &crate::editor_ops::vehicle_points(),
+                                        &editor_ops::vehicle_points(),
                                         p.start_x,
                                         p.start_y,
                                     )
@@ -5958,9 +5973,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // `complete_connect` the RMB "Complete Connection" row uses. A miss
                                 // keeps the arm (Esc / RMB Cancel / panel Cancel disarm). The arm is
                                 // consumed on attempt inside complete_connect — no stranded mode.
-                                if crate::editor_ops::pending_connect().is_some() {
+                                if editor_ops::pending_connect().is_some() {
                                     if let Some(ref id) = hit {
-                                        let _ = crate::editor_ops::complete_connect(id);
+                                        let _ = editor_ops::complete_connect(id);
                                     }
                                 }
                                 // ══════════ T-784 — pick the COMMENT GLYPH ══════════════════════
@@ -6080,14 +6095,14 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 if let Some(e) = engine.borrow_mut().as_mut() {
                                     let slot_ids: Vec<String> = ids
                                         .iter()
-                                        .filter(|i| !crate::editor_ops::is_vehicle_id(i))
+                                        .filter(|i| !editor_ops::is_vehicle_id(i))
                                         .cloned()
                                         .collect();
                                     e.set_selection(slot_ids); // tint lane (slots only)
                                 }
                                 // T-159.21 — SEL readout only: a click changes the selection, not the
                                 // document (no rebind / persist / undo step / tree rebuild).
-                                crate::mission_history::refresh_selection();
+                                mission_history::refresh_selection();
                             }
                         }
                         // T-159.19 M4/M5 — drag-move commit. Release capture; if it actually moved,
@@ -6121,13 +6136,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // regroup target under the drop.
                             let single_comment_drag = ids.len() == 1
                                 && doc.borrow().as_ref().is_some_and(|c| {
-                                    crate::editor_ops::comment_details(c)
+                                    editor_ops::comment_details(c)
                                         .iter()
                                         .any(|d| d.id == ids[0])
                                 });
                             let regrouped = if (ev.ctrl_key() || ev.meta_key())
                                 && ids.len() == 1
-                                && !crate::editor_ops::is_vehicle_id(&ids[0])
+                                && !editor_ops::is_vehicle_id(&ids[0])
                                 && !single_comment_drag
                             {
                                 let target = doc.borrow().as_ref().and_then(|c| {
@@ -6138,13 +6153,12 @@ pub fn MissionEditorPage() -> impl IntoView {
                                         // `regroup_slot_onto` runs the shared dirty tail itself
                                         // (via `refile_slot`), so this branch must NOT also call
                                         // `after_local_edit` — it only drops the stale drag preview.
-                                        let ok =
-                                            crate::editor_ops::regroup_slot_onto(&ids[0], &tid);
+                                        let ok = editor_ops::regroup_slot_onto(&ids[0], &tid);
                                         if ok {
                                             if let Some(e) = engine.borrow_mut().as_mut() {
                                                 st::clear_drag_preview(
                                                     e,
-                                                    &crate::editor_ops::vehicle_points(),
+                                                    &editor_ops::vehicle_points(),
                                                 );
                                             }
                                         }
@@ -6172,7 +6186,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     .as_ref()
                                     .map(|c| {
                                         let members: std::collections::HashSet<String> =
-                                            crate::editor_ops::comment_details(c)
+                                            editor_ops::comment_details(c)
                                                 .into_iter()
                                                 .map(|d| d.id)
                                                 .collect();
@@ -6210,7 +6224,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                         })
                                         .unwrap_or_default();
                                     for (id, x, z) in moves {
-                                        crate::editor_ops::move_comment(id, x, z);
+                                        editor_ops::move_comment(id, x, z);
                                     }
                                 }
                                 // T-491 — one LOCAL yrs txn for mixed slot+vehicle drag (T-425 split
@@ -6220,7 +6234,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     .iter()
                                     .filter(|id| !comment_ids.iter().any(|c| c == *id))
                                     .cloned()
-                                    .partition(|id| crate::editor_ops::is_vehicle_id(id));
+                                    .partition(|id| editor_ops::is_vehicle_id(id));
                                 if !slot_ids.is_empty() || !veh_ids.is_empty() {
                                     let guard = doc.borrow();
                                     let Some(core) = guard.as_ref() else {
@@ -6254,12 +6268,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     // fields are written), so it answers `Some` for every drag.
                                     let z_rows = (!slot_ids.is_empty())
                                         .then(|| {
-                                            crate::editor_ops::keep_z_rows(
-                                                core,
-                                                Some(dx),
-                                                Some(dy),
-                                                None,
-                                            )
+                                            editor_ops::keep_z_rows(core, Some(dx), Some(dy), None)
                                         })
                                         .flatten();
                                     let zs: Vec<f64> = slot_ids
@@ -6267,21 +6276,19 @@ pub fn MissionEditorPage() -> impl IntoView {
                                         .map(|id| {
                                             z_rows
                                                 .as_ref()
-                                                .and_then(|rows| {
-                                                    crate::editor_ops::slot_z(rows, id)
-                                                })
+                                                .and_then(|rows| editor_ops::slot_z(rows, id))
                                                 .unwrap_or(0.0)
                                         })
                                         .collect();
                                     core.move_entities_and_vehicles(slot_ids, &veh_ids, dx, dy, zs);
                                     drop(guard);
-                                    crate::mission_history::after_local_edit();
+                                    mission_history::after_local_edit();
                                 }
                             } else if let Some(e) = engine.borrow_mut().as_mut() {
                                 // No move ⇒ no commit, so nothing else re-binds: drop BOTH preview
                                 // lanes back to the authored positions (T-573 — the vehicle lane is
                                 // a live re-pack now, not a passive bind).
-                                st::clear_drag_preview(e, &crate::editor_ops::vehicle_points());
+                                st::clear_drag_preview(e, &editor_ops::vehicle_points());
                                 // T-796 — and the comment lane: a zero-delta release still ran the
                                 // preview re-pack above, so re-bind the notes to their authored
                                 // positions (no committed move re-binds them here). Identity when the
@@ -6317,7 +6324,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                         st::marquee_ids_with_vehicles(
                                             &cam,
                                             &map_render_slot_soa(c),
-                                            &crate::editor_ops::vehicle_points(),
+                                            &editor_ops::vehicle_points(),
                                             start_wx,
                                             start_wy,
                                             up_x,
@@ -6329,13 +6336,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 if let Some(e) = engine.borrow_mut().as_mut() {
                                     let slot_ids: Vec<String> = ids
                                         .iter()
-                                        .filter(|i| !crate::editor_ops::is_vehicle_id(i))
+                                        .filter(|i| !editor_ops::is_vehicle_id(i))
                                         .cloned()
                                         .collect();
                                     e.set_selection(slot_ids);
                                 }
                                 // T-159.21 — SEL readout only (selection change, not a doc edit).
-                                crate::mission_history::refresh_selection();
+                                mission_history::refresh_selection();
                             }
                             if let Some(e) = engine.borrow_mut().as_mut() {
                                 e.upload_marquee(0.0, 0.0, 0.0, 0.0, false); // hide
@@ -6439,14 +6446,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                             let aim = cam.unproject_xy(up_x, up_y);
                             if aim[0].is_finite() && aim[1].is_finite() {
                                 let rung = snap.get_untracked().effective_rotate_rung();
-                                let acted = crate::editor_ops::rotate_selection_to_face(
-                                    aim[0], aim[1], rung,
-                                );
+                                let acted =
+                                    editor_ops::rotate_selection_to_face(aim[0], aim[1], rung);
                                 if acted {
                                     // A rotate changes the doc but not the selection; keep the tint
                                     // lane in sync (glyphs re-bind off the history tail) and refresh
                                     // the SEL readout, mirroring the Move commit's bookkeeping.
-                                    crate::mission_history::refresh_selection();
+                                    mission_history::refresh_selection();
                                 }
                             }
                         }
@@ -6498,7 +6504,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         crate::editor::tools::select_tool::pick_slot_or_vehicle(
                             &cam,
                             &map_render_slot_soa(c),
-                            &crate::editor_ops::vehicle_points(),
+                            &editor_ops::vehicle_points(),
                             px,
                             py,
                         )
@@ -6562,8 +6568,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // T-159.22 — a cancelled pointer drops an armed place, like every other
                     // in-flight gesture below (pointercancel is never a commit).
                     // T-768 — same for an armed connect (never a commit on cancel).
-                    crate::editor_ops::cancel_pending();
-                    crate::editor_ops::cancel_connect();
+                    editor_ops::cancel_pending();
+                    editor_ops::cancel_connect();
                     if pan_px.get().is_some() {
                         pan_px.set(None);
                         if container.has_pointer_capture(ev.pointer_id()) {
@@ -6581,7 +6587,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // T-573 — a cancel is never a commit, so nothing downstream
                                 // re-binds: the previewed vehicle rows would otherwise stay parked
                                 // at the last offset while the document says they never moved.
-                                st::clear_drag_preview(e, &crate::editor_ops::vehicle_points());
+                                st::clear_drag_preview(e, &editor_ops::vehicle_points());
                                 // T-796 — the comment lane, same reasoning: a cancelled drag that
                                 // held a note left its glyph at the previewed offset. Re-bind the
                                 // authored positions (identity when no note was dragged).
@@ -6715,13 +6721,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                         crate::editor::tools::select_tool::pick_slot_or_vehicle(
                             &cam,
                             &map_render_slot_soa(c),
-                            &crate::editor_ops::vehicle_points(),
+                            &editor_ops::vehicle_points(),
                             px,
                             py,
                         )
                     });
                     match hit {
-                        Some(id) => crate::editor_ops::open_attributes(id),
+                        Some(id) => editor_ops::open_attributes(id),
                         // T-647 PLACE-003 — empty ground: open the asset picker at the world point
                         // the dblclick names (same frozen-cam unproject the place ghost/CUR use, so
                         // the picker's eventual drop lands where the dblclick was). A singular
@@ -6729,7 +6735,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         None => {
                             let world = cam.unproject_xy(px, py);
                             if world[0].is_finite() && world[1].is_finite() {
-                                crate::editor_ops::open_asset_picker(
+                                editor_ops::open_asset_picker(
                                     world[0],
                                     world[1],
                                     ev.client_x() as f64,
@@ -7018,7 +7024,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // readout, which ARE dock furniture and gated. Re-evaluates off `doc_tick` (the T-666
                 // channel) through its own 250 ms trailing debounce; the engine call is defensively
                 // wrapped so a rule panic can never take the editor down.
-                <crate::editor::panels::validation_panel::ValidationPanel doc_tick />
+                <validation_panel::ValidationPanel doc_tick />
                 // T-648 — the snap-grid step readout (TOOLBAR-GRID-MOVE-001). GATED on `chrome_hidden`
                 // — it is status-bar furniture like the scale bar / grid refs, so Backspace hides it
                 // too (this is the SEVENTH chrome-gated mount; the count pin is updated to match).
@@ -7485,7 +7491,7 @@ fn ConflictDialog(conflict: RwSignal<Option<ConflictInfo>>, conflict_id: String)
                             class="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-label-md text-on-surface transition-colors hover:bg-white/10"
                             on:click=move |_| {
                                 #[cfg(target_arch = "wasm32")]
-                                crate::mission_hydrate::resolve_conflict_local(
+                                mission_hydrate::resolve_conflict_local(
                                     id_local.clone(),
                                     conflict,
                                 );
@@ -7499,7 +7505,7 @@ fn ConflictDialog(conflict: RwSignal<Option<ConflictInfo>>, conflict_id: String)
                             class="rounded-lg bg-primary px-4 py-2 text-label-md font-medium text-on-primary"
                             on:click=move |_| {
                                 #[cfg(target_arch = "wasm32")]
-                                crate::mission_hydrate::resolve_conflict_server(
+                                mission_hydrate::resolve_conflict_server(
                                     id_server.clone(),
                                     conflict,
                                 );
@@ -7517,8 +7523,8 @@ fn ConflictDialog(conflict: RwSignal<Option<ConflictInfo>>, conflict_id: String)
 #[cfg(test)]
 mod t245_registry_session {
     use super::registry_session;
-    use crate::arsenal_rules::{CompatFeed, CompatStatus};
     use crate::core::dto::RegistryItem;
+    use crate::editor::arsenal::arsenal_rules::{CompatFeed, CompatStatus};
     use std::collections::HashMap;
 
     fn sample_item(resource_name: &str) -> RegistryItem {
@@ -7624,7 +7630,7 @@ mod t245_registry_session {
 /// raw page still names it (asserted separately with a fragment-assembled needle).
 #[cfg(test)]
 mod t750_registry_fetch_failure_signal {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
     use leptos::prelude::*;
 
     #[test]
@@ -7640,14 +7646,20 @@ mod t750_registry_fetch_failure_signal {
         );
         let owner = Owner::new();
         owner.with(|| {
-            let catalog = RwSignal::new(crate::asset_catalog::CatalogState::Loading);
-            let vehicle = RwSignal::new(crate::asset_catalog::CatalogState::Loading);
+            let catalog =
+                RwSignal::new(crate::editor::arsenal::asset_catalog::CatalogState::Loading);
+            let vehicle =
+                RwSignal::new(crate::editor::arsenal::asset_catalog::CatalogState::Loading);
             let failed = RwSignal::new(false);
             super::mark_registry_fetch_failed(catalog, vehicle, failed);
             assert!(
-                matches!(catalog.get(), crate::asset_catalog::CatalogState::Failed)
-                    && matches!(vehicle.get(), crate::asset_catalog::CatalogState::Failed)
-                    && failed.get(),
+                matches!(
+                    catalog.get(),
+                    crate::editor::arsenal::asset_catalog::CatalogState::Failed
+                ) && matches!(
+                    vehicle.get(),
+                    crate::editor::arsenal::asset_catalog::CatalogState::Failed
+                ) && failed.get(),
                 "T-750: calling the helper must leave every consumer in the terminal failure state"
             );
         });
@@ -7700,13 +7712,13 @@ mod t750_registry_fetch_failure_signal {
 /// `the_preview_pin_rejects_every_dead_code_wrapper` below keeps that honest.
 #[cfg(test)]
 mod t573_mixed_drag_preview {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     /// Both lanes must be driven from the same unfiltered `ids`, and the T-425 slot-only pre-filter
     /// must be gone from the drag branch — that filter WAS the bug (vehicles never previewed).
     #[test]
     fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
-        let tool = live_code(include_str!("editor/tools/select_tool.rs"));
+        let tool = live_code(include_str!("tools/select_tool.rs"));
         let push = only_body(&tool, "pub fn push_drag_preview(");
         assert!(
             push.contains("e.set_drag(ids.to_vec()"),
@@ -8419,8 +8431,8 @@ mod t628_boot_progress {
     /// be satisfied by code that ships.
     #[test]
     fn the_satellite_fetch_is_bounded_concurrent_ordered_and_fails_fast() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let src = live_code(include_str!("editor/world_assets/satellite.rs"));
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        let src = live_code(include_str!("world_assets/satellite.rs"));
         let body = only_body(&src, "async fn fetch_tiles(");
 
         assert!(
@@ -8508,8 +8520,8 @@ mod t628_boot_progress {
     /// very end — indistinguishable from a stall for the whole download.
     #[test]
     fn the_terrain_dem_is_streamed_against_its_content_length() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let src = live_code(include_str!("editor/world_assets/mod.rs"));
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        let src = live_code(include_str!("world_assets/mod.rs"));
         let body = only_body(&src, "async fn load_dem_and_hillshade(");
         assert!(
             body.contains("fetch_bytes_streamed(") && body.contains("BootSeg::Terrain"),
@@ -8521,7 +8533,7 @@ mod t628_boot_progress {
             "the unmeasured whole-body GET must not come back"
         );
 
-        let fetch = live_code(include_str!("editor/world_assets/fetch.rs"));
+        let fetch = live_code(include_str!("world_assets/fetch.rs"));
         let streamed = only_body(&fetch, "pub async fn fetch_bytes_streamed(");
         // `live_code` blanks string literals, so the header NAME cannot be the needle — the shape
         // that survives is "a header off this response, parsed as a number, becomes the budget",
@@ -8552,8 +8564,8 @@ mod t628_boot_progress {
     /// and then finds more work, which reads to the operator as a lie either way round.
     #[test]
     fn every_world_batch_declares_its_files_before_it_fetches_them() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let world = live_code(include_str!("editor/world_assets/world_host.rs"));
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        let world = live_code(include_str!("world_assets/world_host.rs"));
         let queue = only_body(&world, "async fn fetch_and_queue(");
         let declare = queue
             .find("BootEvent::Files")
@@ -8571,7 +8583,7 @@ mod t628_boot_progress {
              about to request, not an estimate of it"
         );
 
-        let boot = live_code(include_str!("editor/world_assets/mod.rs"));
+        let boot = live_code(include_str!("world_assets/mod.rs"));
         let bootstrap = only_body(&boot, "pub async fn bootstrap(");
         let plan = bootstrap
             .find("planned_density_bins()")
@@ -8588,7 +8600,7 @@ mod t628_boot_progress {
 
         // The forest host may only count a bin it actually landed; counting attempts would let a
         // retried bin advance a unit that was already declared and spent.
-        let forest = live_code(include_str!("editor/world_assets/forest_mass.rs"));
+        let forest = live_code(include_str!("world_assets/forest_mass.rs"));
         let upload = only_body(&forest, "async fn boot_upload(");
         let done_at = upload
             .find("BootEvent::Done")
@@ -8608,8 +8620,8 @@ mod t628_boot_progress {
     /// not come down until it is full.
     #[test]
     fn every_segment_is_closed_and_the_overlay_waits_for_a_full_bar() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let boot = live_code(include_str!("editor/world_assets/mod.rs"));
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        let boot = live_code(include_str!("world_assets/mod.rs"));
         let bootstrap = only_body(&boot, "pub async fn bootstrap(");
         for seg in ["BootSeg::Terrain", "BootSeg::Satellite", "BootSeg::World"] {
             assert!(
@@ -8666,8 +8678,8 @@ mod t628_boot_progress {
     /// map-asset host, and the one that must not grow a second copy of the auth contract.
     #[test]
     fn the_mission_document_is_measured_and_still_defers_to_the_single_flight_client() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let src = live_code(include_str!("mission_hydrate.rs"));
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        let src = live_code(include_str!("state/hydrate.rs"));
         let body = only_body(&src, "async fn get_mission_measured(");
         // `live_code` blanks string literals — see the terrain pin for why the shape, not the
         // header name, is the needle.
@@ -8859,7 +8871,7 @@ mod t631_boot_failure_state {
 /// test-only name is what lets that arithmetic be executed here rather than only grepped for.
 /// The two mounts are never both live: this one is `not(target_arch = "wasm32")`.
 #[cfg(all(test, not(target_arch = "wasm32")))]
-#[path = "editor/world_assets/tbd_sat.rs"]
+#[path = "world_assets/tbd_sat.rs"]
 mod tbd_sat_pure;
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
@@ -8982,8 +8994,8 @@ mod t629_satellite_resolution {
 
     #[test]
     fn no_call_site_may_guess_a_texture_limit() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let src = live_code(include_str!("editor/world_assets/satellite.rs"));
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        let src = live_code(include_str!("world_assets/satellite.rs"));
 
         assert!(
             !src.contains("unwrap_or(8192)"),
@@ -9040,8 +9052,8 @@ mod t629_satellite_resolution {
 
     #[test]
     fn a_downscaled_basemap_warns_and_a_stuck_placeholder_warns() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let src = live_code(include_str!("editor/world_assets/satellite.rs"));
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        let src = live_code(include_str!("world_assets/satellite.rs"));
 
         let report = only_body(&src, "fn report_chosen_level(");
         assert!(
@@ -9111,7 +9123,7 @@ mod t629_satellite_resolution {
 /// comments and dead code so a stale note or an `if false` wrapper cannot satisfy them.
 #[cfg(test)]
 mod t662_input_traps {
-    use crate::arsenal::class_r_scrub::live_code;
+    use crate::editor::arsenal::class_r_scrub::live_code;
 
     /// The keydown region, comment- and dead-code-stripped. The file's first `#[cfg(test)]` is the
     /// `clear_for_test` helper near the top, so `live_code` on the whole file would cut everything
@@ -9160,7 +9172,7 @@ mod t662_input_traps {
             "the Delete arm must still precede the Backspace arm"
         );
         assert!(
-            raw[del_at..bs_arm].contains("crate::editor_ops::delete_selection()"),
+            raw[del_at..bs_arm].contains("editor_ops::delete_selection()"),
             "Delete alone must still remove the selection"
         );
 
@@ -9288,7 +9300,7 @@ mod t662_input_traps {
 /// overlap is impossible; (d) keep the telemetry-vs-diagnostics distinction explicit in a comment.
 #[cfg(test)]
 mod t635_debug_hud {
-    use crate::arsenal::class_r_scrub::{live_code, live_source};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source};
 
     /// The editor page region with comments stripped but string literals KEPT (so Tailwind class
     /// strings survive as structural landmarks). Same slice boundary as `editor_live`.
@@ -9326,7 +9338,7 @@ mod t635_debug_hud {
         // The whole keydown closure sits behind the editable-field guard (shared with copy/paste/
         // Backspace) — a HUD toggle must not fire while the operator types in an Attributes field.
         assert!(
-            ed.contains("if crate::mission_history::in_editable_field() {"),
+            ed.contains("if mission_history::in_editable_field() {"),
             "T-635: the keydown closure must guard on in_editable_field() before acting"
         );
         // The literal binding is present on the raw file too (live_code blanks it above).
@@ -9436,7 +9448,7 @@ mod t635_debug_hud {
 /// wiring is the thing a native pin can prove, exactly as the T-573 / T-662 / T-635 modules do.
 #[cfg(test)]
 mod t647_placement_interactions {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     /// The editor page region (comments stripped, string literals blanked). The `#[cfg(wasm32)]`
     /// blocks the pointer/dblclick handlers live in are KEPT by the scrubber (it decides only
@@ -9456,7 +9468,7 @@ mod t647_placement_interactions {
     /// `editor_ops.rs`, scrubbed to live code. It is wasm-only, so nothing in it runs — but its
     /// wiring is pinnable as source (multiple modules already `include_str!` it for this).
     fn ops_live() -> String {
-        live_code(include_str!("editor_ops.rs"))
+        live_code(include_str!("state/operations.rs"))
     }
 
     // ───────────────────────── ATTR-OPEN-001 — dblclick opens Attributes for vehicles too ────────
@@ -9695,7 +9707,7 @@ mod t647_placement_interactions {
         assert!(
             up.contains("editor_ops::regroup_slot_onto(")
                 && up.contains("ids.len() == 1")
-                && up.contains("!crate::editor_ops::is_vehicle_id(&ids[0])"),
+                && up.contains("!editor_ops::is_vehicle_id(&ids[0])"),
             "CONN-GROUP-001: an unarmed Ctrl-drag of a SINGLE character onto another must regroup"
         );
 
@@ -9799,7 +9811,7 @@ mod t647_placement_interactions {
     #[test]
     fn alt_census_confirms_no_canvas_collision() {
         // mission_history: Alt is a NEGATIVE guard on the Ctrl/Cmd copy shortcut, never a place.
-        let hist = live_code(include_str!("mission_history.rs"));
+        let hist = live_code(include_str!("state/history.rs"));
         assert!(
             hist.contains("|| ev.alt_key()"),
             "census: mission_history uses alt_key only as a guard (|| ev.alt_key())"
@@ -9812,7 +9824,7 @@ mod t647_placement_interactions {
             "census: mission_editor's only positive alt_key keydown is the Ctrl+Alt+D HUD toggle"
         );
         // eden_tree: Alt-click is a DOCK-tree gesture (descendants selection), NOT the canvas.
-        let tree = live_code(include_str!("editor/panels/outliner_tree.rs"));
+        let tree = live_code(include_str!("panels/outliner_tree.rs"));
         assert!(
             tree.contains("ev.alt_key() || ev.shift_key()"),
             "census: eden_tree's Alt-click is a dock-tree gesture (no canvas collision)"
@@ -9863,7 +9875,7 @@ mod t647_placement_interactions {
 /// (undecided cfg), so the handler tokens are visible — the same reason t662 can pin inside them.
 #[cfg(test)]
 mod t642_ruler_wiring {
-    use crate::arsenal::class_r_scrub::live_code;
+    use crate::editor::arsenal::class_r_scrub::live_code;
 
     fn editor_live() -> String {
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
@@ -10010,7 +10022,7 @@ mod t642_ruler_wiring {
 /// needle is real code; the scrubber keeps `#[cfg(target_arch="wasm32")]` blocks visible.
 #[cfg(test)]
 mod t643_los_wiring {
-    use crate::arsenal::class_r_scrub::live_code;
+    use crate::editor::arsenal::class_r_scrub::live_code;
 
     fn editor_live() -> String {
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
@@ -10178,7 +10190,7 @@ mod t643_los_wiring {
 /// code; the scrubber keeps `#[cfg(target_arch="wasm32")]` blocks visible.
 #[cfg(test)]
 mod t644_viewshed_wiring {
-    use crate::arsenal::class_r_scrub::live_code;
+    use crate::editor::arsenal::class_r_scrub::live_code;
 
     fn editor_live() -> String {
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
@@ -10342,7 +10354,7 @@ mod t644_viewshed_wiring {
 /// this is pinned by SOURCE INSPECTION on scrubbed `eden_toolbelt.rs`, mirroring `t643`/`t668`.
 #[cfg(test)]
 mod t644_los_button_submode {
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
     /// (toggle on re-click) The LoS button's `on:pointerdown` toggles `los_mode` when LoS is ALREADY
     /// active (`is_los()` true → `los_mode.update(… toggled())`) and otherwise sets `tool_mode = LoS`.
@@ -10350,7 +10362,7 @@ mod t644_los_button_submode {
     /// so the button never lies about which tool it selects.
     #[test]
     fn los_button_reclick_toggles_the_submode() {
-        let code = live_code(include_str!("editor/panels/toolbelt.rs"));
+        let code = live_code(include_str!("panels/toolbelt.rs"));
         let body = only_body(&code, &format!("pub fn {}", "ModeToolbar("));
         assert!(
             body.contains("los_mode.update(|m| *m = m.toggled())"),
@@ -10374,7 +10386,7 @@ mod t644_los_button_submode {
     /// the string-KEPT source (the title/label literals survive) so the needle is the real view text.
     #[test]
     fn los_button_reflects_the_active_submode() {
-        let src = live_source(include_str!("editor/panels/toolbelt.rs"));
+        let src = live_source(include_str!("panels/toolbelt.rs"));
         let body = only_body(&src, &format!("pub fn {}", "ModeToolbar("));
         // The button reads the sub-mode to pick its title/label.
         assert!(
@@ -10407,8 +10419,8 @@ mod t644_los_button_submode {
 /// both window-level editor keydowns (this file + `mission_history`) as raw text.
 #[cfg(test)]
 mod t648_transform {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
-    use crate::mission_editor::transform::{
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::mission_editor::transform::{
         bearing_to_face, norm_deg, press_on_ring, snap_rotate, snap_translate, snap_value, step,
         Axis, SnapState, WidgetVariant, RING_HIT_TOL_PX, ROTATE_LADDER_DEG, TRANSLATE_LADDER_M,
         WIDGET_RADIUS_PX,
@@ -10777,7 +10789,7 @@ mod t648_transform {
         // detects collisions; `there_is_exactly_one_extractor` keeps it from being copied again.
         use crate::editor::panels::help_modal::keymap_census::keydown_arms;
         let this_arms = keydown_arms(include_str!("mission_editor.rs"));
-        let history_arms = keydown_arms(include_str!("mission_history.rs"));
+        let history_arms = keydown_arms(include_str!("state/history.rs"));
         // Needles assembled so the LITERAL never appears verbatim in this test's own source.
         let key = |k: &str| format!("\"{k}\"");
         let g = key("KeyG");
@@ -10836,7 +10848,7 @@ mod t648_transform {
         let space = key("Space");
         assert!(
             this_arms.contains(&format!(
-                "{space} if !modk => crate::editor_ops::center_on_selection()"
+                "{space} if !modk => editor_ops::center_on_selection()"
             )),
             "collision decision: Space must remain flyTo (center_on_selection), not a widget cycle"
         );
@@ -11089,7 +11101,7 @@ mod t648_transform {
              `cargo test -p website-frontend` (the command the wave gate uses)"
         );
         // And the rotate commit really rides the existing field write, per the ticket.
-        let ops = include_str!("editor_ops.rs");
+        let ops = include_str!("state/operations.rs");
         let ops_live = live_code(ops);
         let body = only_body(&ops_live, "pub fn rotate_selection_to_face(");
         assert!(
@@ -11106,7 +11118,7 @@ mod t648_transform {
 /// cannot false-match the gate check.
 #[cfg(test)]
 mod t655_validation_panel_wiring {
-    use crate::arsenal::class_r_scrub::live_code;
+    use crate::editor::arsenal::class_r_scrub::live_code;
 
     fn editor_live() -> String {
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
@@ -11194,7 +11206,7 @@ mod t655_validation_panel_wiring {
  */
 #[cfg(test)]
 mod t761_compile_findings_cleared_on_hydrate {
-    use crate::arsenal::class_r_scrub::live_code;
+    use crate::editor::arsenal::class_r_scrub::live_code;
 
     fn editor_live() -> String {
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
@@ -11250,7 +11262,7 @@ mod t761_compile_findings_cleared_on_hydrate {
 #[cfg(test)]
 mod t754_router_resolves_zones {
     use super::{route_target, RouteTarget};
-    use crate::arsenal::class_r_scrub::live_code;
+    use crate::editor::arsenal::class_r_scrub::live_code;
     use serde_json::json;
 
     fn doc() -> serde_json::Value {
@@ -11439,7 +11451,7 @@ mod t754_router_resolves_zones {
 #[cfg(test)]
 mod wave129_f6_probe_and_click_cannot_disagree {
     use super::{route_availability, route_target, RouteTarget};
-    use crate::arsenal::class_r_scrub::live_code;
+    use crate::editor::arsenal::class_r_scrub::live_code;
     use serde_json::json;
 
     fn doc() -> serde_json::Value {
@@ -11646,7 +11658,7 @@ mod wave129_f6_probe_and_click_cannot_disagree {
 /// blanked (`live_code`) wherever the shape rather than the text is the contract.
 #[cfg(test)]
 mod t649_select_all_and_multi_edit {
-    use crate::arsenal::class_r_scrub::live_code;
+    use crate::editor::arsenal::class_r_scrub::live_code;
     /// T-703/T-738 — THE keydown arm-list extractor, consumed rather than re-copied. This module
     /// carried the raw-text variant of it; the shared one scrubs comments, which is strictly
     /// stronger for the census below (a note that MENTIONS `KeyA` can no longer read as a binding).
@@ -11689,7 +11701,7 @@ mod t649_select_all_and_multi_edit {
     #[test]
     fn t649_ctrl_a_census() {
         let this_arms = keydown_arms(include_str!("mission_editor.rs"));
-        let history_arms = keydown_arms(include_str!("mission_history.rs"));
+        let history_arms = keydown_arms(include_str!("state/history.rs"));
         // Assembled so the literal never appears verbatim in this test's own source.
         let key_a = format!("\"{}\"", "KeyA");
         assert!(
@@ -11746,7 +11758,7 @@ mod t649_select_all_and_multi_edit {
     /// document" shortcut, which is the obvious wrong implementation of this ticket.
     #[test]
     fn select_all_is_viewport_scoped_through_the_marquee_primitive() {
-        let tool = live_code(include_str!("editor/tools/select_tool.rs"));
+        let tool = live_code(include_str!("tools/select_tool.rs"));
         let view_fn = fn_source(&tool, "pub fn view_ids_with_vehicles(");
         // The near corner is the top-left CSS pixel unprojected; the far corner is the viewport
         // size in PIXELS — the exact (world start, px end) shape `marquee_ids_with_vehicles` takes.
@@ -11765,7 +11777,7 @@ mod t649_select_all_and_multi_edit {
             "a non-finite unproject must select NOTHING (the marquee's own behaviour)"
         );
 
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("state/operations.rs"));
         let sel_fn = fn_source(&ops, "pub fn select_all_in_view(");
         assert!(
             sel_fn.contains("select_tool::view_ids_with_vehicles(")
@@ -11794,7 +11806,7 @@ mod t649_select_all_and_multi_edit {
     /// Both guards must be gone, and BOTH entry points must route through the one shared opener.
     #[test]
     fn multi_selection_no_longer_suppresses_the_attributes_modal() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("state/operations.rs"));
         assert!(
             !ops.contains("if ctx.selection.borrow().len() > 1 {"),
             "ATTR-MULTI-001: the suppress-on-multi guard must be gone from editor_ops"
@@ -11825,7 +11837,7 @@ mod t649_select_all_and_multi_edit {
     /// whose values DIFFER across the selection must now be blank, disabled, and behind one.
     #[test]
     fn differing_fields_are_locked_behind_a_per_field_checkbox() {
-        let raw_attrs = include_str!("editor/panels/attributes_modal.rs");
+        let raw_attrs = include_str!("panels/attributes_modal.rs");
         let attrs = live_code(raw_attrs);
         // The checkbox itself (string literal ⇒ pinned on the RAW source), assembled so this test's
         // own text is not the match.
@@ -11900,7 +11912,7 @@ mod t649_select_all_and_multi_edit {
     /// "must fire the history/persist tail OUTSIDE the fan-out loop".
     #[test]
     fn multi_edit_commits_fan_out_to_every_selected_id() {
-        let attrs = live_code(include_str!("editor/panels/attributes_modal.rs"));
+        let attrs = live_code(include_str!("panels/attributes_modal.rs"));
         for (seam, single, multi) in [
             (
                 "fn commit_position(",
@@ -11920,7 +11932,7 @@ mod t649_select_all_and_multi_edit {
                  otherwise"
             );
         }
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("state/operations.rs"));
         // T-732 — position multi is ONE LOCAL txn via update_entity_transforms (not N×
         // update_slot_position). F-26 (T-788) — identity multi is now ATOMIC too, via
         // `update_slots_attr_batch` (one txn, one undo step); the per-id fan-out moved INTO the core.
@@ -12085,7 +12097,7 @@ mod t649_select_all_and_multi_edit {
         // unconditional `= vec![id]` replace in select_slot collapsed SEL9→SEL1 before activate
         // fired and the modal could only ever open single-edit from a row. Same guard, same
         // outside-click-still-replaces Eden semantics (the contract context_menu::open documents).
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("state/operations.rs"));
         let sel_fn = fn_source(&ops, "pub fn select_slot(");
         assert!(
             squash(&sel_fn).contains(&squash("sel.len() > 1 && sel.iter().any(|s| *s == id)")),
@@ -12113,7 +12125,7 @@ mod t649_select_all_and_multi_edit {
     /// → "must re-render (or close) the open Attributes modal when the selection changes".
     #[test]
     fn t788_open_attributes_modal_follows_a_selection_change() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("state/operations.rs"));
         let f = fn_source(&ops, "pub fn refresh_selection_mirrors(");
         // Reads the open id WITHOUT subscribing (untracked — this is a plain fn, not an effect).
         assert!(
@@ -12158,7 +12170,7 @@ mod t649_select_all_and_multi_edit {
     /// is false for those three verbs and must not return.
     #[test]
     fn the_arsenal_tab_discloses_one_entity_picks_and_whole_selection_buffer_verbs() {
-        let raw = include_str!("editor/panels/attributes_modal.rs");
+        let raw = include_str!("panels/attributes_modal.rs");
         let modal_raw = fn_source(raw, "fn modal_view(");
         let one = "Pick and cargo edits apply to this one entity";
         let whole = "Copy, Apply, and Remove Everything act on the whole selection";
@@ -12207,7 +12219,7 @@ mod t669_clipboard_completion {
     #[test]
     fn t669_cut_key_census() {
         let this_arms = keydown_arms(include_str!("mission_editor.rs"));
-        let history_arms = keydown_arms(include_str!("mission_history.rs"));
+        let history_arms = keydown_arms(include_str!("state/history.rs"));
         let key_x = key("KeyX");
         assert!(
             !history_arms.contains(&key_x),
@@ -12395,7 +12407,7 @@ mod t669_clipboard_completion {
     fn both_new_chords_are_documented_in_the_help_table() {
         // Raw source: the chords ARE string literals, so a scrub that blanks literals would blank
         // the thing under test.
-        let help = include_str!("editor/panels/help_modal.rs");
+        let help = include_str!("panels/help_modal.rs");
         for chord in ["Ctrl/Cmd + X", "Ctrl/Cmd + Shift + V"] {
             assert!(
                 help.contains(chord),
@@ -12433,7 +12445,7 @@ mod t669_clipboard_completion {
         let word = english(bound.len());
         let sentence = format!("binds {word} distinct `KeyboardEvent` codes");
         assert!(
-            include_str!("editor/panels/help_modal.rs").contains(&sentence),
+            include_str!("panels/help_modal.rs").contains(&sentence),
             "T-669/T-740: the editor now binds {} distinct key codes ({bound:?}), so \
              `eden_help`'s opening paragraph must read \"{sentence}\"",
             bound.len()
@@ -12457,7 +12469,7 @@ mod t669_clipboard_completion {
 /// never satisfy them.
 #[cfg(test)]
 mod t670_scale_signal {
-    use crate::arsenal::class_r_scrub::{live_code, only_item};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_item};
 
     /// The editor page region onward, comments stripped and string literals blanked — the same
     /// slice `t635_debug_hud` uses. `start_raf` is defined after `MissionEditorPage`, so it is in.
@@ -12837,9 +12849,9 @@ mod t723_armed_place {
 /// same way T-573 pins `vehicles_bind` / `select_tool` from this file.
 #[cfg(test)]
 mod t760_markers_bind_feed {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
-    const HIST: &str = include_str!("mission_history.rs");
+    const HIST: &str = include_str!("state/history.rs");
 
     fn hist_live() -> String {
         live_code(HIST)
@@ -12894,9 +12906,9 @@ mod t760_markers_bind_feed {
 /// is a native test's only reach into it.
 #[cfg(test)]
 mod t808_symbology_feed {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
-    const HIST: &str = include_str!("mission_history.rs");
+    const HIST: &str = include_str!("state/history.rs");
 
     fn hist_live() -> String {
         live_code(HIST)
@@ -13068,7 +13080,7 @@ mod t808_symbology_feed {
     /// appear on this path at all.
     #[test]
     fn the_drag_preview_binds_through_the_symbology_signature() {
-        let tool = live_code(include_str!("editor/tools/select_tool.rs"));
+        let tool = live_code(include_str!("tools/select_tool.rs"));
         let bind = format!("{}{}", "vehicles_bind_", "symbology(");
         let binder = only_body(&tool, "fn bind_vehicle_preview_lane(");
 
@@ -13195,7 +13207,7 @@ mod t808_symbology_feed {
 /// self-satisfy them.
 #[cfg(test)]
 mod t726_window_esc_stack {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     fn gate_needles() -> (String, String, String) {
         (
@@ -13293,7 +13305,7 @@ mod t726_window_esc_stack {
 /// fragments so this module cannot self-satisfy them.
 #[cfg(test)]
 mod t768_connect_lmb_complete {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     fn page() -> String {
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
@@ -13404,7 +13416,7 @@ mod t780_connection_line {
         connection_lane_verts, connection_segments, pick_connection, ConnSegment, CONN_LINE_RGBA,
         CONN_LINE_SELECTED_RGBA,
     };
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
     use std::collections::HashMap;
 
     fn positions() -> HashMap<String, (f64, f64)> {
@@ -13613,7 +13625,7 @@ mod t780_connection_line {
     /// the core's `remove_connection` returns unit and cannot report what it removed afterwards.
     #[test]
     fn delete_connection_answers_the_document_not_a_count() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("state/operations.rs"));
         let verb = only_body(&ops, "pub fn delete_connection(");
         let count = ["connection", "_count("].concat();
         assert!(
@@ -13650,7 +13662,7 @@ mod t780_connection_line {
     /// not "someone remembered to clear it" — it is that `selected_ids` has exactly one writer.
     #[test]
     fn an_edge_selection_and_an_entity_selection_cannot_coexist() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("state/operations.rs"));
         let mirror = ["mirror_", "selection(ctx)"].concat();
         let reconcile = ["reconcile_connection", "_selection(ctx)"].concat();
         assert!(
@@ -13725,8 +13737,8 @@ mod t780_connection_line {
     /// here, never written — the chain already existed; what is new is that something checks it.
     #[test]
     fn every_history_path_reaches_the_doc_tick_the_lane_binds_on() {
-        let hist = live_code(include_str!("mission_history.rs"));
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let hist = live_code(include_str!("state/history.rs"));
+        let ops = live_code(include_str!("state/operations.rs"));
         let signals = ["refresh_", "signals("].concat();
         let docks = ["editor_ops", "::", "refresh_docks()"].concat();
         let tail = ["after_doc", "_change(ctx)"].concat();
@@ -13795,7 +13807,7 @@ mod t780_connection_line {
                 .contains(&resolve),
             "fired rule: dropping the document resolve must break the F-1 arm pin"
         );
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("state/operations.rs"));
         let gate = ["connection_id", "_in_doc("].concat();
         let verb_body = only_body(&ops, "pub fn delete_connection(");
         assert!(verb_body.contains(&gate), "canary: the real verb gates");
@@ -13838,7 +13850,7 @@ mod t784_comment_glyph {
     use super::{
         comment_lane_xy, comment_points, pick_comment, route_target, RouteTarget, COMMENT_PICK_PX,
     };
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     /// Three notes, deliberately NOT in id order in the JSON text, so a reader that trusted the
     /// map's iteration order would produce a different sequence from one that sorts.
@@ -13947,7 +13959,7 @@ mod t784_comment_glyph {
     /// natively (the `doc` feature is wasm32-only here), which is why this is a source read.
     #[test]
     fn comment_pick_px_is_the_slot_pick_radius() {
-        let store = include_str!("../../../../crates/map-engine-core/src/doc/store.rs");
+        let store = include_str!("../../../../../crates/map-engine-core/src/doc/store.rs");
         let needle = ["PICK_RADIUS", "_PX: f64 = "].concat();
         assert_eq!(
             store.matches(needle.as_str()).count(),
@@ -14008,7 +14020,7 @@ mod t784_comment_glyph {
     /// be an `include_str!` pin — the same reason the T-748 feed pin in `map-engine-render` is one.
     #[test]
     fn mission_history_packs_the_lane_through_this_module() {
-        let hist = live_code(include_str!("mission_history.rs"));
+        let hist = live_code(include_str!("state/history.rs"));
         let feed = only_body(&hist, &format!("fn comment_lane{}", "_xy(doc:"));
         let shared = ["mission_editor", "::", "comment_lane_xy("].concat();
         assert!(
@@ -14092,7 +14104,7 @@ mod t784_comment_glyph {
     /// a question a comment id answers by simply being in it.
     #[test]
     fn a_comment_composes_and_the_reconcile_is_still_the_one_writers_job() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("state/operations.rs"));
         let capture = only_body(&ops, &format!("fn capture_selection{}", "_entities("));
         assert!(
             capture.contains(&format!("comments{}", ".get(id)")),
@@ -14134,7 +14146,7 @@ mod t784_comment_glyph {
     /// comment id to `remove_slots` used to do.
     #[test]
     fn delete_partitions_the_selection_by_what_the_document_says() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("state/operations.rs"));
         let del = only_body(&ops, "pub fn delete_selection(");
         let ask = ["comment", "_details(core)"].concat();
         let part = "partition(";
@@ -14188,7 +14200,7 @@ mod t784_comment_glyph {
 #[cfg(test)]
 mod t796_comment_drag {
     use super::{comment_drag_lane_xy, comment_points, dragged_comment_points};
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     /// Two notes; a hydrated mission whose ids were NOT minted with the `cmt-` prefix, to prove
     /// membership is asked of the document, never of the id text.
@@ -14338,7 +14350,7 @@ mod t796_comment_drag {
         );
         // The slot/vehicle partition must EXCLUDE the comment ids, or a note double-commits.
         let veh_part = region
-            .find("partition(|id| crate::editor_ops::is_vehicle_id(id))")
+            .find("partition(|id| editor_ops::is_vehicle_id(id))")
             .expect("T-796: the veh/slot partition must survive");
         assert!(
             region[..veh_part].contains("!comment_ids"),
@@ -14357,13 +14369,13 @@ mod t796_comment_drag {
     /// pins the mutator's one-txn contract at its source.
     #[test]
     fn move_comment_is_one_transaction() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("state/operations.rs"));
         let body = only_body(&ops, "pub fn move_comment(");
         assert!(
             body.contains("set_comment_position("),
             "T-796: move_comment must write through the core's set_comment_position"
         );
-        let store = include_str!("../../../../crates/map-engine-core/src/doc/store.rs");
+        let store = include_str!("../../../../../crates/map-engine-core/src/doc/store.rs");
         // set_comment_position delegates the write to set_comment_field (the shared read-modify-write
         // for all three comment field edits), which is where the SINGLE transaction is opened.
         let sp = only_body(store, "pub fn set_comment_position(");
@@ -14425,7 +14437,7 @@ mod t796_comment_drag {
 #[cfg(test)]
 mod t790_marker_glyph_caption {
     use super::marker_lane_fields;
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     /// Three markers of THREE different icons, one with a caption, one faction each — the acceptance
     /// shape. Emitted in the `briefing_marker_rows_json` field vocabulary (x/z/factionId/icon/label).
@@ -14483,7 +14495,7 @@ mod t790_marker_glyph_caption {
     /// at `mission_history`, so this is the only guard that the write-half stays wired.
     #[test]
     fn both_feeds_pass_glyphs_and_captions() {
-        let hist = live_code(include_str!("mission_history.rs"));
+        let hist = live_code(include_str!("state/history.rs"));
         let bind = format!("{}{}", "markers", "_bind");
         let fields = format!("{}{}", "marker_lane_", "fields");
         for site in ["pub fn rebind_engine_from_doc", "fn after_doc_change"] {
@@ -14529,7 +14541,7 @@ mod t790_marker_glyph_caption {
 #[cfg(test)]
 mod w145_selection_prune {
     use super::selectable_ids;
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     /// Two slots, one of them carrying T-701 `editorHidden` — the row `materialize()` drops and the
     /// raw key map keeps.
@@ -14679,7 +14691,7 @@ mod w145_selection_prune {
     /// down; these only stop the SoA creeping back into the one body that must not read it.
     #[test]
     fn the_selection_prune_runs_over_the_whole_selectable_universe() {
-        let hist = live_code(include_str!("mission_history.rs"));
+        let hist = live_code(include_str!("state/history.rs"));
         let retain = ["retain", "(|id|"].concat();
         assert_eq!(
             hist.matches(&retain).count(),
@@ -14747,7 +14759,7 @@ mod t802_hover_cursor {
         hover_cursor_css, hover_due, hover_next, hover_suppressed, HoverState, COMMENT_PICK_PX,
         HOVER_CURSOR_PICKABLE, HOVER_CURSOR_PLAIN, HOVER_RELEASE_PX, HOVER_THROTTLE_MS,
     };
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     /// The editor page, scrubbed. Sliced from the RAW source at the component anchor first (the
     /// `t784_comment_glyph::page` idiom): `live_code` truncates at the first `#[cfg(test)]`, and
@@ -15161,7 +15173,7 @@ mod t802_hover_cursor {
 #[cfg(test)]
 mod t819_crewed_render_hide {
     use super::{crewed_slot_ids, map_render_keep_indices, selectable_ids};
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
     use std::collections::HashSet;
 
     fn slots_json() -> String {
@@ -15299,7 +15311,7 @@ mod t819_crewed_render_hide {
     /// Trap 1 — assign path must not stamp `editorHidden` / call the T-701 mutator.
     #[test]
     fn assign_crew_seat_does_not_write_editor_hidden() {
-        let ops = live_code(include_str!("editor_ops.rs"));
+        let ops = live_code(include_str!("state/operations.rs"));
         let body = only_body(&ops, "pub fn assign_crew_seat");
         assert!(
             !body.contains("editorHidden") && !body.contains("set_slots_editor_hidden"),
@@ -15314,7 +15326,7 @@ mod t819_crewed_render_hide {
     /// Wiring — every map glyph bind feeds `map_render_slot_soa`, not bare `materialize()`.
     #[test]
     fn map_binds_feed_map_render_slot_soa() {
-        let hist = include_str!("mission_history.rs");
+        let hist = include_str!("state/history.rs");
         let rebind = only_body(hist, "pub fn rebind_engine_from_doc");
         let after = only_body(hist, "fn after_doc_change");
         for (name, body) in [

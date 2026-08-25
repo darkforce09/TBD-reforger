@@ -86,7 +86,7 @@ use tbd_gate::{NotRun, Pattern, Verdict, gate};
 // bash `cd "$ROOT"` first and passed these relative, so a "target file missing" line printed the
 // relative path. Reproduced by joining onto `repo_root` to read and stripping back for the message,
 // rather than mutating this process's cwd — tests run in parallel threads.
-const EDITOR_OPS: &str = "apps/website/frontend/src/editor_ops.rs";
+const EDITOR_OPS: &str = "apps/website/frontend/src/editor/state/operations.rs";
 const ORBAT_RS: &str = "crates/map-engine-core/src/mission/orbat.rs";
 const ORBAT_MGR: &str = "apps/website/frontend/src/pages/operations/orbat_manager.rs";
 const EDEN_CHROME: &str = "apps/website/frontend/src/editor/eden_chrome.rs";

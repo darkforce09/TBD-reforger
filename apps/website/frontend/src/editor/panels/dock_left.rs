@@ -4,7 +4,7 @@
 //! moved to the top-strip ORBAT Manager modal (T-177 B1); this dock is Editor Layers only.
 //!
 //! T-638 — the dock COLLAPSES to a 24×24 stub in its outer (top-LEFT) corner, toggled by the tab-strip
-//! chevron or the `E` key ([`crate::mission_editor`]'s editor keydown). Collapsed is not a rail and
+//! chevron or the `E` key ([`crate::editor::mission_editor`]'s editor keydown). Collapsed is not a rail and
 //! not a vanish: the panel becomes exactly the stub, docked at the corner, overlaying the map, and the
 //! freed width reflows into the map pane (the inset accessors in [`crate::editor::layout`] carry it). The
 //! chevron glyph points OUTWARD when expanded (« left) and FLIPS when collapsed (» — "expand me"),
@@ -16,6 +16,8 @@
 //! positions, persisted). Both halves fly the camera through the ONE existing mover; neither is a
 //! document edit. See the `T-696` section at the foot of this file.
 #![allow(dead_code)]
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::operations as editor_ops;
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -538,7 +540,10 @@ pub fn DockLeft(
         if hits.is_empty() {
             // Half-typed and unreadable queries are NOT failed searches, and T-084 already owns the
             // three sentences that tell them apart — reused verbatim rather than re-worded here.
-            let msg = crate::asset_catalog::search_empty_message(&q, "entities in this mission");
+            let msg = crate::editor::arsenal::asset_catalog::search_empty_message(
+                &q,
+                "entities in this mission",
+            );
             return view! {
                 <p class="mt-1 px-1 text-label-sm text-outline" data-testid="dock-left-search-empty">
                     {msg}
@@ -696,7 +701,7 @@ pub fn DockLeft(
                         ev.stop_propagation();
                         #[cfg(target_arch = "wasm32")]
                         {
-                            let _ = crate::editor_ops::complete_layer_drop_onto_root();
+                            let _ = editor_ops::complete_layer_drop_onto_root();
                         }
                         #[cfg(not(target_arch = "wasm32"))]
                         let _ = &ev;
@@ -746,7 +751,7 @@ pub fn DockLeft(
                                         ev.stop_propagation();
                                         #[cfg(target_arch = "wasm32")]
                                         {
-                                            let _ = crate::editor_ops::create_layer();
+                                            let _ = editor_ops::create_layer();
                                         }
                                         #[cfg(not(target_arch = "wasm32"))]
                                         let _ = &ev;
@@ -868,7 +873,7 @@ pub fn DockLeft(
                                 class="mt-1 min-h-0 flex-1 overflow-y-auto"
                                 on:pointerup=move |_| {
                                     #[cfg(target_arch = "wasm32")]
-                                    crate::editor_ops::cancel_layer_drag();
+                                    editor_ops::cancel_layer_drag();
                                 }
                             >
                                 {virtual_tree(
@@ -1614,7 +1619,7 @@ const HIT_MIN_LABEL_PX: f64 = 80.0;
 /// two-node projection rather than a matcher of its own.
 #[must_use]
 pub fn query_hits(query: &str, text: &str, class_name: &str, group: &str) -> bool {
-    let leaf = crate::asset_catalog::CatalogNode {
+    let leaf = crate::editor::arsenal::asset_catalog::CatalogNode {
         id: class_name.to_string(),
         label: text.to_string(),
         default_expanded: false,
@@ -1622,19 +1627,20 @@ pub fn query_hits(query: &str, text: &str, class_name: &str, group: &str) -> boo
         // A `payload` is what makes a node a LEAF to `filter_catalog` (module rule: "a leaf is
         // `payload.is_some()`"), which is what puts it in the `class:` field's leaf-only path. The
         // values are inert here — this projection never reaches a palette.
-        payload: Some(crate::asset_catalog::PlacePayload {
+        payload: Some(crate::editor::arsenal::asset_catalog::PlacePayload {
             asset_id: class_name.to_string(),
             role: String::new(),
         }),
     };
-    let root = crate::asset_catalog::CatalogNode {
+    let root = crate::editor::arsenal::asset_catalog::CatalogNode {
         id: String::new(),
         label: group.to_string(),
         default_expanded: false,
         children: vec![leaf],
         payload: None,
     };
-    !crate::asset_catalog::filter_catalog(std::slice::from_ref(&root), query).is_empty()
+    !crate::editor::arsenal::asset_catalog::filter_catalog(std::slice::from_ref(&root), query)
+        .is_empty()
 }
 
 /// T-697 — search the whole document. Returns one hit per MATCHING ENTITY (not per matching
@@ -1644,7 +1650,7 @@ pub fn query_hits(query: &str, text: &str, class_name: &str, group: &str) -> boo
 /// A blank query returns NO hits rather than every row: an untouched filter box is not a request to
 /// list the mission, and answering it with 137 rows would bury the tree under the box that opened
 /// them. Half-typed (`class:`) and unreadable (`/[/`) queries return none too — `filter_catalog`
-/// already draws that line, and [`crate::asset_catalog::search_empty_message`] is what says which of
+/// already draws that line, and [`crate::editor::arsenal::asset_catalog::search_empty_message`] is what says which of
 /// the three empty answers this is.
 #[must_use]
 pub fn search_document(rows: &[DocEntity], query: &str) -> Vec<DocHit> {
@@ -1755,7 +1761,7 @@ pub fn selection_facets(rows: &[DocEntity]) -> Vec<SelectionFacet> {
 pub fn apply_selection(ids: Vec<String>) -> bool {
     #[cfg(target_arch = "wasm32")]
     {
-        crate::editor_ops::set_selection_ids(ids) > 0
+        editor_ops::set_selection_ids(ids) > 0
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -1768,7 +1774,7 @@ pub fn apply_selection(ids: Vec<String>) -> bool {
 pub fn document_rows() -> Vec<DocEntity> {
     #[cfg(target_arch = "wasm32")]
     {
-        crate::editor_ops::document_entities()
+        editor_ops::document_entities()
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -1782,7 +1788,7 @@ pub fn document_rows() -> Vec<DocEntity> {
 pub fn selection_rows() -> Vec<DocEntity> {
     #[cfg(target_arch = "wasm32")]
     {
-        crate::editor_ops::selection_entities()
+        editor_ops::selection_entities()
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -1814,13 +1820,13 @@ mod tests {
     /// on raw `SRC`: for "this must NOT appear", the widest unscrubbed haystack is the strongest
     /// one, and scrubbing could only ever hide a hit.
     fn live_src() -> String {
-        crate::arsenal::class_r_scrub::live_source(SRC)
+        crate::editor::arsenal::class_r_scrub::live_source(SRC)
     }
 
     /// The same production half with string/char literals blanked as well — for needles that mean
     /// "this is real CODE", where the same text sitting in a literal is precisely the decoy.
     fn live_rust() -> String {
-        crate::arsenal::class_r_scrub::live_code(SRC)
+        crate::editor::arsenal::class_r_scrub::live_code(SRC)
     }
 
     fn place(name: &str, x: f64, y: f64) -> NamedPlace {
@@ -2137,7 +2143,7 @@ mod tests {
     /// this assertion line cannot satisfy itself.
     #[test]
     fn fly_to_and_named_locations_bodies_are_live() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
         let src = live_code(include_str!("../world_assets/mod.rs"));
         let fly = only_body(&src, "pub fn fly_to");
         let render = format!("{}{}", "RENDER", "_CTX");
@@ -2538,10 +2544,10 @@ mod t697_document_search {
         DocEntity, DocHit, DocKind, HIT_GAP_PX, HIT_ICON_PX, HIT_MIN_LABEL_PX, HIT_ROW_PAD_PX,
         LIST_SCROLLBAR_PX, MAX_DOC_HITS, UPPERCASE_LABEL_ADVANCE_PX,
     };
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
     use crate::editor::layout::{tw_len_px, DOCK_L, DOCK_PX};
+    use crate::editor::mission_editor::route_target;
     use crate::editor::panels::validation_panel::register_route_probe;
-    use crate::mission_editor::route_target;
 
     /// The dock's own production text — comments, test modules and unreachable arms removed.
     fn dock_code() -> String {
@@ -2553,7 +2559,7 @@ mod t697_document_search {
     }
     /// The document index's production text (`editor_ops.rs` carries no test module of its own).
     fn ops_code() -> String {
-        live_code(include_str!("../../editor_ops.rs"))
+        live_code(include_str!("../state/operations.rs"))
     }
 
     fn entity(id: &str, kind: DocKind, label: &str, faction: &str) -> DocEntity {
@@ -2751,8 +2757,12 @@ mod t697_document_search {
             "half-typed operator"
         );
         assert!(search_document(&m, "/[/").is_empty(), "unreadable regex");
-        let msg =
-            |q: &str| crate::asset_catalog::search_empty_message(q, "entities in this mission");
+        let msg = |q: &str| {
+            crate::editor::arsenal::asset_catalog::search_empty_message(
+                q,
+                "entities in this mission",
+            )
+        };
         assert!(msg("class:").contains("class:"), "guidance, not `no match`");
         assert!(msg("/[/").contains("could not be read"));
         assert!(msg("nosuchthing").contains("No entities in this mission match"));

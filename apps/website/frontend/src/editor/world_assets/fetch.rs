@@ -2,7 +2,7 @@
 
 use wasm_bindgen::JsCast;
 
-use crate::mission_editor::boot_progress::{BootEvent, BootSeg, STREAM_REPORT_BYTES};
+use crate::editor::mission_editor::boot_progress::{BootEvent, BootSeg, STREAM_REPORT_BYTES};
 
 /// Soft-fail byte GET (same-origin `/map-assets`).
 pub async fn fetch_bytes(url: &str) -> Option<Vec<u8>> {

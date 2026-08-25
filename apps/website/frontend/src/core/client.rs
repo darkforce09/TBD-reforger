@@ -1241,20 +1241,20 @@ mod tests {
     }
 
     /// The shipped half of this file with comments, string literals and every construct that
-    /// cannot run removed (T-601 — [`crate::arsenal::class_r_scrub`]).
+    /// cannot run removed (T-601 — [`crate::editor::arsenal::class_r_scrub`]).
     ///
     /// Before T-601 this was `SRC.split("#[cfg(test)]").next()`: raw text, module docs included.
     /// Every needle these pins look for is discussed in prose somewhere in this file, and every
     /// one of them would have been satisfied by a `// …` line — plus by anything parked in
     /// `if false { … }`, `#[cfg(any())]`, or after a `return;`.
     fn prod() -> String {
-        crate::arsenal::class_r_scrub::live_code(include_str!("client.rs"))
+        crate::editor::arsenal::class_r_scrub::live_code(include_str!("client.rs"))
     }
 
     /// Same, but string literals survive — for the handful of assertions where the literal **is**
     /// the contract (a wire field name, a header value, a route).
     fn prod_src() -> String {
-        crate::arsenal::class_r_scrub::live_source(include_str!("client.rs"))
+        crate::editor::arsenal::class_r_scrub::live_source(include_str!("client.rs"))
     }
 
     /// The body of the ONE item whose signature is `start`.
@@ -1269,12 +1269,12 @@ mod tests {
     /// never-called `mod` while the real helper was cut — and a shadow copy is not a hypothetical
     /// here, since a second `fn api_post_raw` in an inner module compiles fine.
     fn item(start: &str) -> String {
-        crate::arsenal::class_r_scrub::only_item(&prod(), start).to_string()
+        crate::editor::arsenal::class_r_scrub::only_item(&prod(), start).to_string()
     }
 
     /// [`item`], literals kept.
     fn item_src(start: &str) -> String {
-        crate::arsenal::class_r_scrub::only_item(&prod_src(), start).to_string()
+        crate::editor::arsenal::class_r_scrub::only_item(&prod_src(), start).to_string()
     }
 
     /// T-591 — the raw-body POST exists and is the shape T-117 asked for.
@@ -1907,7 +1907,7 @@ mod tests {
     /// refusing ambiguity does.
     #[test]
     fn the_source_pins_reject_every_dead_code_wrapper() {
-        use crate::arsenal::class_r_scrub::{live_code, only_item};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_item};
         let needle = "Body::Raw(std::rc::Rc::new(body))";
         let attacks: [(&str, String); 12] = [
             (

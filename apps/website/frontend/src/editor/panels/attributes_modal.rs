@@ -238,7 +238,7 @@ fn field_label(label: &'static str, gate: Gate) -> impl IntoView {
 /// T-741 — Attributes multi-edit header copy (wave-112 NIT-4).
 ///
 /// Counts the **slot** subset the modal will write — never the full Ctrl+A selection — and says
-/// explicitly when vehicles were excluded because [`crate::editor_ops::attrs_multi_ids`] drops
+/// explicitly when vehicles were excluded because [`crate::editor::state::operations::attrs_multi_ids`] drops
 /// non-slot ids (vehicles carry none of the SoA columns multi-edit stamps).
 #[must_use]
 pub(crate) fn attrs_multi_subtitle(slot_n: usize, selection_n: usize) -> String {
@@ -261,7 +261,7 @@ pub fn AttributesModal(
     /// T-159.27 — flat registry gear rows for the Arsenal tab.
     registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
     /// T-167 — compat edge feed for the Smart Arsenal (optic/magazine rows + validation).
-    compat: RwSignal<crate::arsenal_rules::CompatFeed>,
+    compat: RwSignal<crate::editor::arsenal::arsenal_rules::CompatFeed>,
 ) -> impl IntoView {
     // Esc closes (React Dialog behavior); the editor's own keydown handler skips editable fields,
     // so this window listener is the one Esc path.
@@ -276,7 +276,7 @@ pub fn AttributesModal(
                 && ev.key() == "Escape"
                 && crate::core::ui::modal_stack::is_topmost_open(modal_id)
             {
-                crate::editor_ops::close_attributes();
+                crate::editor::state::operations::close_attributes();
             }
         });
         on_cleanup(move || {
@@ -298,7 +298,8 @@ pub fn AttributesModal(
     // are; on native (the pin build) the component renders nothing, so nothing needs it there. One
     // entry per edited id (single-edit is one entry); vehicles are excluded upstream, so all slots.
     #[cfg(target_arch = "wasm32")]
-    let snapshot: StoredValue<Vec<crate::editor_ops::SlotAttrs>> = StoredValue::new(Vec::new());
+    let snapshot: StoredValue<Vec<crate::editor::state::operations::SlotAttrs>> =
+        StoredValue::new(Vec::new());
     // The `opts` re-arm runs on both targets (native-safe); the snapshot capture is wasm-only.
     Effect::new(move |_| {
         let open = attrs_open.get();
@@ -312,12 +313,12 @@ pub fn AttributesModal(
             let snap = open
                 .as_deref()
                 .map(|id| {
-                    let mut ids = crate::editor_ops::attrs_multi_ids(id);
+                    let mut ids = crate::editor::state::operations::attrs_multi_ids(id);
                     if ids.is_empty() {
                         ids = vec![id.to_string()];
                     }
                     ids.iter()
-                        .filter_map(|i| crate::editor_ops::read_attrs(i))
+                        .filter_map(|i| crate::editor::state::operations::read_attrs(i))
                         .collect::<Vec<_>>()
                 })
                 .unwrap_or_default();
@@ -335,15 +336,15 @@ pub fn AttributesModal(
         let _ = (&id, registry_items, compat, attrs_tab, opts);
         #[cfg(target_arch = "wasm32")]
         {
-            match crate::editor_ops::read_attrs(&id) {
+            match crate::editor::state::operations::read_attrs(&id) {
                 Some(attrs) => {
                     // T-649 — the multi-edit target set (empty ⇒ the untouched single-slot modal)
                     // and which of its fields disagree. Both re-read per render, so a selection or
                     // doc change while the modal is open is reflected immediately.
-                    let multi = crate::editor_ops::attrs_multi_ids(&id);
+                    let multi = crate::editor::state::operations::attrs_multi_ids(&id);
                     // T-741 — full selection length (may include vehicles Ctrl+A picked up).
-                    let selection_n = crate::editor_ops::attrs_selection_len();
-                    let diff = crate::editor_ops::read_attrs_diff(&multi);
+                    let selection_n = crate::editor::state::operations::attrs_selection_len();
+                    let diff = crate::editor::state::operations::read_attrs_diff(&multi);
                     Some(modal_view(
                         attrs,
                         multi,
@@ -360,13 +361,13 @@ pub fn AttributesModal(
                     // T-818 — vehicles open Attributes (T-647 ATTR-OPEN) but live off the slot SoA,
                     // so `read_attrs` is None. Route them to the vehicle editor rather than treating
                     // the id as undone-away. True absence (undone / deleted) still closes.
-                    if crate::editor_ops::is_vehicle_id(&id) {
+                    if crate::editor::state::operations::is_vehicle_id(&id) {
                         Some(vehicle_attrs_view(id, registry_items))
                     } else {
                         // T-744 — `None` means the slot is GONE from the raw rows (undone / deleted),
                         // not merely hidden. Hide keeps `read_attrs` at `Some` (raw existence), so this
                         // arm is no longer reachable from H / layer-hide (wave-113 F-2).
-                        crate::editor_ops::close_attributes();
+                        crate::editor::state::operations::close_attributes();
                         None
                     }
                 }
@@ -387,16 +388,16 @@ pub fn AttributesModal(
 #[cfg(target_arch = "wasm32")]
 #[allow(clippy::too_many_arguments)]
 fn modal_view(
-    attrs: crate::editor_ops::SlotAttrs,
+    attrs: crate::editor::state::operations::SlotAttrs,
     multi: Vec<String>,
     selection_n: usize,
-    diff: crate::editor_ops::AttrDiff,
+    diff: crate::editor::state::operations::AttrDiff,
     opts: MultiOpts,
     // T-810 (F-23 b) — the pre-open snapshot the Revert button restores. Captured on open (see
     // `AttributesModal`), one entry per edited slot.
-    snapshot: StoredValue<Vec<crate::editor_ops::SlotAttrs>>,
+    snapshot: StoredValue<Vec<crate::editor::state::operations::SlotAttrs>>,
     registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
-    compat: RwSignal<crate::arsenal_rules::CompatFeed>,
+    compat: RwSignal<crate::editor::arsenal::arsenal_rules::CompatFeed>,
     tab: RwSignal<usize>,
 ) -> AnyView {
     let slot_id = StoredValue::new(attrs.id.clone());
@@ -413,7 +414,7 @@ fn modal_view(
     // the Transform tab's disabled state and the core's refusal are answers to the same question.
     // Re-asked on every `doc_tick` like every other value here, so unlocking the layer in the
     // Outliner re-enables the fields without closing the modal.
-    let locked_n = crate::editor_ops::attrs_locked_count(&targets.get_value());
+    let locked_n = crate::editor::state::operations::attrs_locked_count(&targets.get_value());
     let attrs = StoredValue::new(attrs);
     let subtitle = {
         let a = attrs.get_value();
@@ -432,7 +433,7 @@ fn modal_view(
     view! {
         <div
             class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
-            on:click=move |_| crate::editor_ops::close_attributes()
+            on:click=move |_| crate::editor::state::operations::close_attributes()
         ></div>
         <div class=move || {
             // T-167 — the Smart Arsenal (tab 3) needs the wide 2-column doll layout; other tabs stay compact.
@@ -470,7 +471,7 @@ fn modal_view(
                     <button
                         type="button"
                         aria-label="Close"
-                        on:click=move |_| crate::editor_ops::close_attributes()
+                        on:click=move |_| crate::editor::state::operations::close_attributes()
                         class="rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
                     >
                         <crate::core::ui::MaterialIcon name="close" />
@@ -522,7 +523,7 @@ fn modal_view(
                             .into_any(),
                         2 => states_tab().into_any(),
                         _ => {
-                            let loadout = crate::editor_ops::read_loadout(&slot_id.get_value());
+                            let loadout = crate::editor::state::operations::read_loadout(&slot_id.get_value());
                             view! {
                                 // T-649 / T-771 — HONESTY BANNER. Inverting the `open_arsenal` guard
                                 // is what stops the context menu's "Edit Loadout..." row being
@@ -540,7 +541,7 @@ fn modal_view(
                                             </p>
                                         }
                                     })}
-                                <crate::arsenal::ArsenalTab
+                                <crate::editor::arsenal::ArsenalTab
                                     slot_id=slot_id.get_value()
                                     loadout_json=loadout
                                     registry=registry_items
@@ -615,15 +616,15 @@ fn vehicle_attrs_view(
     id: String,
     registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
 ) -> AnyView {
-    use crate::editor_ops::VehicleCargoRow;
+    use crate::editor::state::operations::VehicleCargoRow;
     use std::collections::HashMap;
 
-    let Some(v) = crate::editor_ops::vehicle_rows()
+    let Some(v) = crate::editor::state::operations::vehicle_rows()
         .into_iter()
         .find(|r| r.id == id)
     else {
         // Race: id was a vehicle at the host gate, then vanished before this render.
-        crate::editor_ops::close_attributes();
+        crate::editor::state::operations::close_attributes();
         return ().into_any();
     };
 
@@ -661,7 +662,7 @@ fn vehicle_attrs_view(
         let id_h = StoredValue::new(vid.clone());
         number_field("Heading", h, Some("°"), Gate::open(), move |raw| {
             let deg = ((raw % 360.0) + 360.0) % 360.0;
-            crate::editor_ops::set_vehicle_heading(id_h.get_value(), deg);
+            crate::editor::state::operations::set_vehicle_heading(id_h.get_value(), deg);
         })
         .into_any()
     } else {
@@ -696,7 +697,7 @@ fn vehicle_attrs_view(
                             if let Some(r) = next.get_mut(i) {
                                 r.qty = q;
                             }
-                            crate::editor_ops::set_vehicle_cargo(id_q.clone(), next);
+                            crate::editor::state::operations::set_vehicle_cargo(id_q.clone(), next);
                         }
                     />
                     <button
@@ -708,7 +709,7 @@ fn vehicle_attrs_view(
                             if i < next.len() {
                                 next.remove(i);
                             }
-                            crate::editor_ops::set_vehicle_cargo(id_r.clone(), next);
+                            crate::editor::state::operations::set_vehicle_cargo(id_r.clone(), next);
                         }
                     >
                         <crate::core::ui::MaterialIcon name="close" class="block text-sm" />
@@ -718,7 +719,7 @@ fn vehicle_attrs_view(
         })
         .collect_view();
 
-    let seat_choices = StoredValue::new(crate::editor_ops::placed_slot_choices());
+    let seat_choices = StoredValue::new(crate::editor::state::operations::placed_slot_choices());
     let n_cargo_seats = DEFAULT_CARGO_SEATS;
     let seat_list = seat_model(n_cargo_seats)
         .into_iter()
@@ -738,9 +739,9 @@ fn vehicle_attrs_view(
                         on:change=move |ev| {
                             let slot = event_target_value(&ev);
                             if slot.is_empty() {
-                                crate::editor_ops::clear_crew_seat(id_seat.clone(), sid.clone());
+                                crate::editor::state::operations::clear_crew_seat(id_seat.clone(), sid.clone());
                             } else {
-                                crate::editor_ops::assign_crew_seat(
+                                crate::editor::state::operations::assign_crew_seat(
                                     id_seat.clone(),
                                     sid.clone(),
                                     slot,
@@ -773,7 +774,7 @@ fn vehicle_attrs_view(
     view! {
         <div
             class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
-            on:click=move |_| crate::editor_ops::close_attributes()
+            on:click=move |_| crate::editor::state::operations::close_attributes()
         ></div>
         <div class="glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200">
             <div class="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
@@ -787,7 +788,7 @@ fn vehicle_attrs_view(
                 <button
                     type="button"
                     aria-label="Close"
-                    on:click=move |_| crate::editor_ops::close_attributes()
+                    on:click=move |_| crate::editor::state::operations::close_attributes()
                     class="rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
                 >
                     <crate::core::ui::MaterialIcon name="close" />
@@ -821,7 +822,7 @@ fn vehicle_attrs_view(
                                 } else {
                                     next.push(VehicleCargoRow { item, qty: 1 });
                                 }
-                                crate::editor_ops::set_vehicle_cargo(id_add.clone(), next);
+                                crate::editor::state::operations::set_vehicle_cargo(id_add.clone(), next);
                             }
                         >
                             <option value="">"Add cargo…"</option>
@@ -1313,9 +1314,9 @@ fn commit_position(
 ) {
     let ids = targets.get_value();
     if ids.len() > 1 {
-        crate::editor_ops::attrs_update_position_multi(&ids, x, y, z, rotation);
+        crate::editor::state::operations::attrs_update_position_multi(&ids, x, y, z, rotation);
     } else if let Some(id) = ids.first() {
-        crate::editor_ops::attrs_update_position(id, x, y, z, rotation);
+        crate::editor::state::operations::attrs_update_position(id, x, y, z, rotation);
     }
 }
 
@@ -1336,9 +1337,23 @@ fn commit_slot(
 ) {
     let ids = targets.get_value();
     if ids.len() > 1 {
-        crate::editor_ops::attrs_update_slot_multi(&ids, role, tag, stance, asset_id, description);
+        crate::editor::state::operations::attrs_update_slot_multi(
+            &ids,
+            role,
+            tag,
+            stance,
+            asset_id,
+            description,
+        );
     } else if let Some(id) = ids.first() {
-        crate::editor_ops::attrs_update_slot(id, role, tag, stance, asset_id, description);
+        crate::editor::state::operations::attrs_update_slot(
+            id,
+            role,
+            tag,
+            stance,
+            asset_id,
+            description,
+        );
     }
 }
 
@@ -1366,16 +1381,16 @@ fn commit_slot(
 /// the history tail; that is the intended "real write" semantics, not a bug. The end state is the
 /// readback equality the acceptance pins: after Revert, `read_attrs(id)` equals the captured snap.
 #[cfg(target_arch = "wasm32")]
-fn revert_to_snapshot(snapshot: StoredValue<Vec<crate::editor_ops::SlotAttrs>>) {
+fn revert_to_snapshot(snapshot: StoredValue<Vec<crate::editor::state::operations::SlotAttrs>>) {
     for snap in snapshot.get_value() {
-        crate::editor_ops::attrs_update_position(
+        crate::editor::state::operations::attrs_update_position(
             &snap.id,
             Some(snap.x),
             Some(snap.y),
             Some(snap.z),
             Some(snap.rotation),
         );
-        crate::editor_ops::attrs_update_slot(
+        crate::editor::state::operations::attrs_update_slot(
             &snap.id,
             Some(snap.role.clone()),
             Some(snap.tag.clone()),
@@ -1389,9 +1404,9 @@ fn revert_to_snapshot(snapshot: StoredValue<Vec<crate::editor_ops::SlotAttrs>>) 
 #[cfg(target_arch = "wasm32")]
 fn transform_tab(
     targets: StoredValue<Vec<String>>,
-    attrs: StoredValue<crate::editor_ops::SlotAttrs>,
+    attrs: StoredValue<crate::editor::state::operations::SlotAttrs>,
     is_multi: bool,
-    diff: crate::editor_ops::AttrDiff,
+    diff: crate::editor::state::operations::AttrDiff,
     opts: MultiOpts,
     // T-082 (wave-102 F-7) — how many of `targets` sit on a transform-locked layer.
     locked_n: usize,
@@ -1527,13 +1542,13 @@ fn transform_tab(
 /// and the one commit seam). Structure, top to bottom:
 ///
 ///   * a **trigger button** showing the current type — the catalog's friendly `display_name` when the
-///     id resolves ([`crate::asset_catalog::find_catalog_item`]), the raw id when it does not (a
+///     id resolves ([`crate::editor::arsenal::asset_catalog::find_catalog_item`]), the raw id when it does not (a
 ///     modpack-switched or hand-typed id, still shown honestly), or "Faction default" when empty.
 ///     Empty = faction default stays a FIRST-CLASS option, exactly as the freetext field promised.
 ///   * an **anchored popover** (this is the containing-block trap the registry names — the popover is
 ///     `absolute` inside a `relative` wrapper, NOT `fixed`, so it stays inside the stack-governed
 ///     modal and cannot escape to the viewport). It holds a search box (typing filters the live tree
-///     via [`crate::asset_catalog::filter_catalog`], the SAME grammar the dock search uses), a
+///     via [`crate::editor::arsenal::asset_catalog::filter_catalog`], the SAME grammar the dock search uses), a
 ///     "Faction default (clear)" row, and the filtered leaves. Picking a leaf writes its canonical
 ///     `resource_name` through `on_commit`; the `ASSET-RESOLVES` validator then clears live because
 ///     that id is in `known_asset_ids_from_registry`.
@@ -1594,7 +1609,7 @@ fn type_picker(
         registry_items
             .get()
             .as_deref()
-            .and_then(|items| crate::asset_catalog::find_catalog_item(items, &id))
+            .and_then(|items| crate::editor::arsenal::asset_catalog::find_catalog_item(items, &id))
             .map_or(id, |it| it.display_name.clone())
     };
     // Pick a leaf / clear: commit, then close the popover. `close` first would drop the closure's
@@ -1659,8 +1674,8 @@ fn type_picker(
                                 </p>
                             }.into_any(),
                             Some(items) => {
-                                let full = crate::asset_catalog::build_picker_catalog_tree(&items);
-                                if crate::asset_catalog::catalog_leaf_count(&full) == 0 {
+                                let full = crate::editor::arsenal::asset_catalog::build_picker_catalog_tree(&items);
+                                if crate::editor::arsenal::asset_catalog::catalog_leaf_count(&full) == 0 {
                                     // T-800 MIRRORED vocabulary — cause + retry, never a dead list.
                                     view! {
                                         <div
@@ -1691,12 +1706,12 @@ fn type_picker(
                                     }.into_any()
                                 } else {
                                     let q = query.get();
-                                    let filtered = crate::asset_catalog::filter_catalog(&full, &q);
+                                    let filtered = crate::editor::arsenal::asset_catalog::filter_catalog(&full, &q);
                                     // Flatten the (filtered) tree to placeable leaves. A folder carries
                                     // no payload, so `payload.is_some()` is exactly "a pickable leaf".
                                     let mut leaves: Vec<(String, String)> = Vec::new();
                                     fn collect(
-                                        nodes: &[crate::asset_catalog::CatalogNode],
+                                        nodes: &[crate::editor::arsenal::asset_catalog::CatalogNode],
                                         out: &mut Vec<(String, String)>,
                                     ) {
                                         for n in nodes {
@@ -1708,7 +1723,7 @@ fn type_picker(
                                     }
                                     collect(&filtered, &mut leaves);
                                     let no_match = !q.trim().is_empty() && leaves.is_empty();
-                                    let empty_msg = crate::asset_catalog::search_empty_message(&q, "assets");
+                                    let empty_msg = crate::editor::arsenal::asset_catalog::search_empty_message(&q, "assets");
                                     let rows = leaves
                                         .into_iter()
                                         .map(|(lbl, id)| {
@@ -1837,9 +1852,9 @@ fn type_picker(
 #[cfg(target_arch = "wasm32")]
 fn identity_tab(
     targets: StoredValue<Vec<String>>,
-    attrs: StoredValue<crate::editor_ops::SlotAttrs>,
+    attrs: StoredValue<crate::editor::state::operations::SlotAttrs>,
     is_multi: bool,
-    diff: crate::editor_ops::AttrDiff,
+    diff: crate::editor::state::operations::AttrDiff,
     opts: MultiOpts,
     // T-810 (F-23 a) — the live catalog source for the TYPE picker.
     registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
@@ -1949,7 +1964,7 @@ fn states_tab() -> impl IntoView {
 // those tests cannot see: that the modal actually calls them, on the fields it claims to.
 #[cfg(test)]
 mod tests {
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
     fn attrs_src() -> String {
         live_code(include_str!("attributes_modal.rs"))
@@ -2058,7 +2073,9 @@ mod tests {
         let src = attrs_src();
         let modal = only_body(&src, "fn modal_view(");
         assert!(
-            modal.contains("crate::editor_ops::attrs_locked_count(&targets.get_value())"),
+            modal.contains(
+                "crate::editor::state::operations::attrs_locked_count(&targets.get_value())"
+            ),
             "the modal must ask the core over the same id set the commits fan out to"
         );
         let transform = only_body(&src, "fn transform_tab(");
@@ -2073,7 +2090,7 @@ mod tests {
     /// column — not because the mutator was missing.
     #[test]
     fn read_attrs_reads_asset_id_and_description_from_the_raw_slot_rows() {
-        let ops = live_code(include_str!("../../editor_ops.rs"));
+        let ops = live_code(include_str!("../state/operations.rs"));
         let body = only_body(&ops, "pub fn read_attrs(id: &str) -> Option<SlotAttrs>");
         assert!(
             body.contains("raw_slot_rows(core)"),
@@ -2097,7 +2114,7 @@ mod tests {
     /// drop the existence needle (proves the pin is about production, not this test module).
     #[test]
     fn read_attrs_gates_existence_on_raw_rows_not_soa_membership() {
-        let ops = live_code(include_str!("../../editor_ops.rs"));
+        let ops = live_code(include_str!("../state/operations.rs"));
         let body = only_body(&ops, "pub fn read_attrs(id: &str) -> Option<SlotAttrs>");
         let raw_gate = "!rows.contains_key(id)";
         assert!(
@@ -2172,7 +2189,7 @@ mod tests {
     /// original columns are not dragged along by a commit that only touches a new one.
     #[test]
     fn attrs_update_slot_routes_the_new_fields_through_update_slot_object() {
-        let ops = live_code(include_str!("../../editor_ops.rs"));
+        let ops = live_code(include_str!("../state/operations.rs"));
         let body = only_body(&ops, "pub fn attrs_update_slot(");
         assert!(
             body.contains("core.update_slot_object(id, asset_id, description)"),
@@ -2194,7 +2211,7 @@ mod tests {
     /// RED: strip `!raw_slot_rows(core).contains_key(id) → false`.
     #[test]
     fn attrs_update_slot_noops_when_all_none_or_id_missing() {
-        let ops = live_code(include_str!("../../editor_ops.rs"));
+        let ops = live_code(include_str!("../state/operations.rs"));
         let body = only_body(&ops, "pub fn attrs_update_slot(");
 
         // (1) five-field all-None early `return` before `let did`
@@ -2722,7 +2739,7 @@ mod tests {
     /// same shape as the `editor_ops.rs` pins in this module.
     #[test]
     fn the_chord_guard_reads_active_element_tag_and_content_editable_directly() {
-        let mh = live_code(include_str!("../../mission_history.rs"));
+        let mh = live_code(include_str!("../state/history.rs"));
         let body = only_body(&mh, "pub fn in_editable_field() -> bool");
         // The source of truth is the LIVE focused node, fetched every call.
         assert!(
@@ -2758,7 +2775,7 @@ mod tests {
     /// A source pin because `editor_ops` is wasm32-only and `cargo test` cannot build it.
     #[test]
     fn an_attributes_x_or_y_commit_carries_the_slots_current_z_back_in() {
-        let ops = live_code(include_str!("../../editor_ops.rs"));
+        let ops = live_code(include_str!("../state/operations.rs"));
         // Single-slot still goes through update_slot_position.
         {
             let f = "pub fn attrs_update_position(";
@@ -2817,7 +2834,7 @@ mod tests {
         // And the read is off the EXACT raw row, not the materialized SoA: the SoA's `zs` is f32 (a
         // round-trip would rewrite the authored value) and it OMITS slots on hidden layers (T-665),
         // where a failed read is a zeroed z.
-        let live_ops = live_source(include_str!("../../editor_ops.rs"));
+        let live_ops = live_source(include_str!("../state/operations.rs"));
         let read = only_body(&live_ops, "fn slot_z(");
         assert!(
             read.contains("\"position\"") && read.contains("\"z\""),
@@ -2843,7 +2860,7 @@ mod tests {
     /// test inside it is built by the native harness.
     #[test]
     fn a_placement_commit_carries_each_slots_current_z_back_in() {
-        let ops = live_code(include_str!("../../editor_ops.rs"));
+        let ops = live_code(include_str!("../state/operations.rs"));
         let body = only_body(&ops, "fn commit_positions(");
         // The old zeroing write, verbatim: x and y set, z hard-coded absent.
         assert!(
@@ -2914,7 +2931,7 @@ mod tests {
     /// this one cannot see the document, that one cannot see which value the frontend chooses.
     #[test]
     fn a_paste_carries_each_copied_slots_authored_z_into_the_copy() {
-        let ops = live_code(include_str!("../../editor_ops.rs"));
+        let ops = live_code(include_str!("../state/operations.rs"));
         // FILE-WIDE, not scoped to the paste body: the failure mode is the literal coming back, and
         // it does not have to come back in the function it was removed from.
         let flattening_push = ["zs.push(", "0.0)"].concat();
@@ -2927,7 +2944,7 @@ mod tests {
         // reader to restore the behaviour the operator just removed. Checked on RAW source because
         // `live_code` strips exactly the thing under test.
         assert!(
-            !include_str!("../../editor_ops.rs").contains("DEM not ready"),
+            !include_str!("../state/operations.rs").contains("DEM not ready"),
             "the paste's parity rationale was overruled on 2026-08-08 and must not be left standing"
         );
 
@@ -3061,8 +3078,8 @@ mod tests {
         let host = only_body(&src, "pub fn AttributesModal(");
         // (1) Assignment, not a dead call — hollow B (`let _ = attrs_selection_len(); let selection_n = multi.len()`) RED.
         assert!(
-            host.contains("let selection_n = crate::editor_ops::attrs_selection_len()"),
-            "AttributesModal must bind `let selection_n = crate::editor_ops::attrs_selection_len()` (not a discarded call); body was:\n{host}"
+            host.contains("let selection_n = crate::editor::state::operations::attrs_selection_len()"),
+            "AttributesModal must bind `let selection_n = crate::editor::state::operations::attrs_selection_len()` (not a discarded call); body was:\n{host}"
         );
         // (2) That binding must be the modal_view selection-length argument — hollow B2
         // (`modal_view(..., multi.len(), ...)` while keeping the binding) RED.
@@ -3098,7 +3115,7 @@ mod tests {
     /// `attrs_multi_ids` still filters to SoA slot ids — the subset the header is honest about.
     #[test]
     fn attrs_multi_ids_still_filters_selection_to_slot_soa() {
-        let ops = live_code(include_str!("../../editor_ops.rs"));
+        let ops = live_code(include_str!("../state/operations.rs"));
         let body = only_body(&ops, "pub fn attrs_multi_ids(open_id: &str) -> Vec<String>");
         assert!(
             body.contains("soa.ids.iter().any(|r| r == s)"),
@@ -3115,7 +3132,7 @@ mod tests {
 /// T-726 — Attributes modal Esc through the modal stack.
 #[cfg(test)]
 mod t726_attributes_esc_stack {
-    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
     #[test]
     fn attributes_modal_gates_escape_on_modal_stack() {
@@ -3141,7 +3158,7 @@ mod t726_attributes_esc_stack {
 /// KEPT — `live_code` would blank the very copy under test and make the pin hollow, the T-759 class).
 #[cfg(test)]
 mod t807_transform_tab_copy {
-    use crate::arsenal::class_r_scrub::{live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
 
     /// F-23 — DEM shipped, so the "Z is manual until terrain elevation (DEM) ships" hint is stale.
     /// The old promise must be gone from the whole live source.
@@ -3179,7 +3196,7 @@ mod t807_transform_tab_copy {
 /// T-810 (F-23) — the searchable TYPE picker, the Revert affordance, and Eden's axis colours.
 #[cfg(test)]
 mod t810_type_picker_revert_axes {
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
     /// F-23 (c) — the axis labels carry THREE DISTINCT colours (X/Y/Z), plus a fourth for Rotation,
     /// and no other field is tinted. This is the acceptance's "3 distinct colours" pinned by CALLING

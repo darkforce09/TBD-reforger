@@ -5,20 +5,22 @@
 //! side chips (`EDEN_SIDE_CHIPS` / [`EdenChip`]) drive `active_side` and the Objects place mode.
 //! Not cfg-gated (the doc-driving `on:pointerdown` bodies are wasm-gated inside their closures).
 #![allow(dead_code)]
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::operations as editor_ops;
 use leptos::prelude::*;
 
 use serde::{Deserialize, Serialize};
 
-use crate::asset_catalog::{CatalogNode, CatalogPalette, CatalogState};
 use crate::core::dto::RegistryItem;
 use crate::core::ui::MaterialIcon;
+use crate::editor::arsenal::asset_catalog::{CatalogNode, CatalogPalette, CatalogState};
 use crate::editor::layout::{DOCK_R, STUB_PX};
 use crate::editor::panels::dock_left::collapse_chevron;
 use crate::editor::panels::outliner_tree::{chevron_or_spacer, guide_spans, PALETTE_LEAF};
 use crate::editor::panels::zones_panel::zones_panel;
 
 /// T-076 (RIGHT-CREW-001) — the "place vehicle with crew" toggle rendered beside the Vehicles
-/// search. A checkbox bound to `with_crew`: a change writes the [`crate::editor_ops`] placement
+/// search. A checkbox bound to `with_crew`: a change writes the [`crate::editor::state::operations`] placement
 /// preference so the NEXT vehicle drop stamps the manned/unmanned intent (`crewed: false` when off)
 /// onto its `vehiclesById` row. Eden's default is crewed, which is `with_crew`'s seed.
 #[cfg(target_arch = "wasm32")]
@@ -33,7 +35,7 @@ fn crew_place_toggle(with_crew: RwSignal<bool>) -> impl IntoView {
                 on:change=move |ev| {
                     let on = event_target_checked(&ev);
                     with_crew.set(on);
-                    crate::editor_ops::set_place_with_crew(on);
+                    editor_ops::set_place_with_crew(on);
                 }
             />
             <span>"Place with crew"</span>
@@ -202,13 +204,13 @@ fn palette_rows(
                             #[cfg(target_arch = "wasm32")]
                             match kind {
                                 PaletteKind::Character => {
-                                    crate::editor_ops::begin_place(payload.clone())
+                                    editor_ops::begin_place(payload.clone())
                                 }
                                 PaletteKind::Vehicle => {
-                                    crate::editor_ops::begin_place_vehicle(payload.clone())
+                                    editor_ops::begin_place_vehicle(payload.clone())
                                 }
                                 PaletteKind::Object => {
-                                    crate::editor_ops::begin_place_object(payload.clone())
+                                    editor_ops::begin_place_object(payload.clone())
                                 }
                                 // T-650 — compositions are not catalog leaves; they arm from the
                                 // `compositions_panel` list, not from a `palette_rows` payload. This
@@ -378,11 +380,11 @@ pub(crate) fn record_placed(asset_id: String, label: String) {
     }
 }
 
-/// T-809 — render the **merged Factions tree** ([`crate::asset_catalog::build_faction_catalog_tree`]):
+/// T-809 — render the **merged Factions tree** ([`crate::editor::arsenal::asset_catalog::build_faction_catalog_tree`]):
 /// characters, vehicles and objects filed under one faction, so a vehicle leaf is reachable inside
 /// NATO. It is [`palette_rows`] with ONE difference — a leaf carries no fixed [`PaletteKind`], because
 /// the merged tree mixes kinds. Each leaf resolves its place-arm at press time from the live registry
-/// row ([`crate::asset_catalog::placeable_palette`]), the SAME resolution the Favourites collection
+/// row ([`crate::editor::arsenal::asset_catalog::placeable_palette`]), the SAME resolution the Favourites collection
 /// uses ([`arm_favourite_place`]) — so a character leaf writes a `slots` row and a vehicle leaf writes
 /// a `vehiclesById` row, decided by the row's own kind, never by which folder it sits in.
 ///
@@ -480,8 +482,8 @@ fn faction_palette_rows(
                     let glyph_kind = registry_items
                         .with_untracked(|opt| {
                             opt.as_ref().and_then(|items| {
-                                crate::asset_catalog::find_catalog_item(items, &payload.asset_id)
-                                    .and_then(crate::asset_catalog::placeable_palette)
+                                crate::editor::arsenal::asset_catalog::find_catalog_item(items, &payload.asset_id)
+                                    .and_then(crate::editor::arsenal::asset_catalog::placeable_palette)
                                     .map(PaletteKind::from_catalog)
                             })
                         })
@@ -502,11 +504,11 @@ fn faction_palette_rows(
                             {
                                 let palette = registry_items.with_untracked(|opt| {
                                     opt.as_ref().and_then(|items| {
-                                        crate::asset_catalog::find_catalog_item(
+                                        crate::editor::arsenal::asset_catalog::find_catalog_item(
                                             items,
                                             &press_payload.asset_id,
                                         )
-                                        .and_then(crate::asset_catalog::placeable_palette)
+                                        .and_then(crate::editor::arsenal::asset_catalog::placeable_palette)
                                     })
                                 });
                                 if let Some(palette) = palette {
@@ -1023,8 +1025,10 @@ pub fn resolve_favourites(fav: &Favourites, items: &[RegistryItem]) -> Vec<Favou
     fav.items
         .iter()
         .map(|f| {
-            let live = crate::asset_catalog::find_catalog_item(items, &f.asset_id)
-                .and_then(|it| crate::asset_catalog::placeable_palette(it).map(|p| (it, p)));
+            let live = crate::editor::arsenal::asset_catalog::find_catalog_item(items, &f.asset_id)
+                .and_then(|it| {
+                    crate::editor::arsenal::asset_catalog::placeable_palette(it).map(|p| (it, p))
+                });
             match live {
                 Some((item, palette)) => FavouriteRow::Live {
                     asset_id: f.asset_id.clone(),
@@ -1106,11 +1110,14 @@ fn favourite_star(favourites: RwSignal<Favourites>, asset_id: String, label: Str
 /// `favourites_place_arm_stays_clone_free` (T-751): a future tidy that cloned the payload here
 /// would let the favourites path satisfy T-215's palette needle while the palette itself regressed.
 #[cfg(target_arch = "wasm32")]
-fn arm_favourite_place(palette: CatalogPalette, payload: crate::asset_catalog::PlacePayload) {
+fn arm_favourite_place(
+    palette: CatalogPalette,
+    payload: crate::editor::arsenal::asset_catalog::PlacePayload,
+) {
     match palette {
-        CatalogPalette::Character => crate::editor_ops::begin_place(payload),
-        CatalogPalette::Vehicle => crate::editor_ops::begin_place_vehicle(payload),
-        CatalogPalette::Object => crate::editor_ops::begin_place_object(payload),
+        CatalogPalette::Character => editor_ops::begin_place(payload),
+        CatalogPalette::Vehicle => editor_ops::begin_place_vehicle(payload),
+        CatalogPalette::Object => editor_ops::begin_place_object(payload),
     }
 }
 
@@ -1154,7 +1161,7 @@ fn favourite_row_view(row: FavouriteRow, favourites: RwSignal<Favourites>) -> An
             palette,
         } => {
             let kind = PaletteKind::from_catalog(palette);
-            let payload = crate::asset_catalog::PlacePayload {
+            let payload = crate::editor::arsenal::asset_catalog::PlacePayload {
                 asset_id,
                 role: label.clone(),
             };
@@ -1321,13 +1328,13 @@ fn recently_placed_panel(
                         .into_iter()
                         .map(|r| {
                             // Resolve LIVE: a recent entry arms only if its row is still placeable.
-                            let palette = crate::asset_catalog::find_catalog_item(&items, &r.asset_id)
-                                .and_then(crate::asset_catalog::placeable_palette);
+                            let palette = crate::editor::arsenal::asset_catalog::find_catalog_item(&items, &r.asset_id)
+                                .and_then(crate::editor::arsenal::asset_catalog::placeable_palette);
                             let label = r.label.clone();
                             match palette {
                                 Some(palette) => {
                                     let kind = PaletteKind::from_catalog(palette);
-                                    let payload = crate::asset_catalog::PlacePayload {
+                                    let payload = crate::editor::arsenal::asset_catalog::PlacePayload {
                                         asset_id: r.asset_id.clone(),
                                         role: r.label.clone(),
                                     };
@@ -1633,7 +1640,7 @@ pub fn DockRight(
     // preference back; the next vehicle placement stamps the manned/unmanned intent on the row.
     // wasm-only: the preference lives in `editor_ops`, a wasm32-only module.
     #[cfg(target_arch = "wasm32")]
-    let place_with_crew = RwSignal::new(crate::editor_ops::place_with_crew());
+    let place_with_crew = RwSignal::new(editor_ops::place_with_crew());
     // T-254 — Objects chip palette (entities[]): own collapse + search, built from registry_items.
     let object_collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
     let object_search = RwSignal::new(String::new());
@@ -1703,7 +1710,8 @@ pub fn DockRight(
         // rows the dock already holds, so it need not wait on the character-only `catalog` signal.
         let side = active_side.get();
         if let Some(items) = registry_items.get() {
-            let nodes = crate::asset_catalog::build_faction_catalog_tree(&items, &side);
+            let nodes =
+                crate::editor::arsenal::asset_catalog::build_faction_catalog_tree(&items, &side);
             let mut set = std::collections::HashSet::new();
             collapsed_seed(&nodes, &mut set);
             faction_collapsed.set(set);
@@ -1910,7 +1918,7 @@ pub fn DockRight(
                                 if objects_mode.get() {
                                     let items = registry_items.get().unwrap_or_default();
                                     let nodes =
-                                        crate::asset_catalog::build_object_catalog_tree(&items);
+                                        crate::editor::arsenal::asset_catalog::build_object_catalog_tree(&items);
                                     if nodes.is_empty() {
                                         return view! {
                                             <p class="text-label-sm text-outline">
@@ -1932,11 +1940,11 @@ pub fn DockRight(
                                             favourites,
                                         );
                                     }
-                                    let filtered = crate::asset_catalog::filter_catalog(&nodes, &q);
+                                    let filtered = crate::editor::arsenal::asset_catalog::filter_catalog(&nodes, &q);
                                     if filtered.is_empty() {
                                         // T-646 — a `class:` with an empty operand says so; a genuine
                                         // miss reads "No objects match."
-                                        let msg = crate::asset_catalog::search_empty_message(&q, "objects");
+                                        let msg = crate::editor::arsenal::asset_catalog::search_empty_message(&q, "objects");
                                         return view! {
                                             <p class="text-label-sm text-outline">{msg}</p>
                                         }
@@ -1975,7 +1983,7 @@ pub fn DockRight(
                                     CatalogState::Ready(_) => {
                                         let items = registry_items.get().unwrap_or_default();
                                         let side = active_side.get();
-                                        let nodes = crate::asset_catalog::build_faction_catalog_tree(
+                                        let nodes = crate::editor::arsenal::asset_catalog::build_faction_catalog_tree(
                                             &items, &side,
                                         );
                                         if nodes.is_empty() {
@@ -2004,11 +2012,11 @@ pub fn DockRight(
                                             // vehicle leaves now inside the faction (filter_catalog is
                                             // kind-agnostic; it runs over whatever tree it is handed).
                                             let filtered =
-                                                crate::asset_catalog::filter_catalog(&nodes, &q);
+                                                crate::editor::arsenal::asset_catalog::filter_catalog(&nodes, &q);
                                             if filtered.is_empty() {
                                                 // T-646 — `class:` empty operand says so (see
                                                 // `search_empty_message`); a real miss reads "No assets match."
-                                                let msg = crate::asset_catalog::search_empty_message(
+                                                let msg = crate::editor::arsenal::asset_catalog::search_empty_message(
                                                     &q, "assets",
                                                 );
                                                 view! {
@@ -2129,10 +2137,10 @@ pub fn DockRight(
                                             )
                                         } else {
                                             let filtered =
-                                                crate::asset_catalog::filter_catalog(&nodes, &q);
+                                                crate::editor::arsenal::asset_catalog::filter_catalog(&nodes, &q);
                                             if filtered.is_empty() {
                                                 // T-646 — `class:` empty operand says so; else "No vehicles match."
-                                                let msg = crate::asset_catalog::search_empty_message(
+                                                let msg = crate::editor::arsenal::asset_catalog::search_empty_message(
                                                     &q, "vehicles",
                                                 );
                                                 view! {
@@ -2276,7 +2284,7 @@ pub(crate) fn compositions_panel(
     editing: RwSignal<Option<String>>,
 ) -> AnyView {
     use crate::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
-    use crate::editor_ops as ops;
+    use crate::editor::state::operations as ops;
 
     // The inline save form's open state + field buffers. Opening seeds no defaults; a blank title
     // reads "Untitled" on save so the row is always addressable.
@@ -2465,7 +2473,7 @@ pub(crate) fn compositions_panel(
             }
             // `composition_rows` is sorted by (category, title), so a run of equal categories is
             // contiguous — group by walking and emitting a heading when the category changes.
-            let mut groups: Vec<(String, Vec<crate::editor_ops::CompositionRow>)> = Vec::new();
+            let mut groups: Vec<(String, Vec<editor_ops::CompositionRow>)> = Vec::new();
             for r in rows {
                 match groups.last_mut() {
                     Some((cat, list)) if *cat == r.category => list.push(r),
@@ -2509,13 +2517,13 @@ pub(crate) fn compositions_panel(
 /// When `editing == this id`, the row swaps to inline title + category inputs (the T-666 idiom).
 #[cfg(target_arch = "wasm32")]
 fn composition_row_view(
-    c: crate::editor_ops::CompositionRow,
+    c: editor_ops::CompositionRow,
     doc_tick: RwSignal<u64>,
     editing: RwSignal<Option<String>>,
     row: &'static str,
     row_active: &'static str,
 ) -> AnyView {
-    use crate::editor_ops as ops;
+    use crate::editor::state::operations as ops;
 
     // `row_active` is part of the shared row vocabulary; a composition row does not carry a
     // persistent "selected" state (its selection IS the transient arm), so only `row` is used.
@@ -2706,7 +2714,7 @@ pub(crate) fn triggers_panel(
 ) -> AnyView {
     use crate::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
     use crate::editor::panels::zones_panel::{humanize_token, DrawTarget, ZoneShape};
-    use crate::editor_ops as ops;
+    use crate::editor::state::operations as ops;
 
     // The activation the NEXT draw will carry, seeded to the first of the three (presence).
     let draw_activation = RwSignal::new(
@@ -2949,12 +2957,12 @@ pub(crate) fn triggers_panel(
 /// `zone_attributes` twin, with the owner picker + activation in place of zone label/faction/type.
 #[cfg(target_arch = "wasm32")]
 fn trigger_attributes(
-    t: crate::editor_ops::TriggerRow,
+    t: editor_ops::TriggerRow,
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<String>>,
 ) -> AnyView {
     use crate::editor::panels::zones_panel::{humanize_token, DrawTarget, ZoneShape};
-    use crate::editor_ops as ops;
+    use crate::editor::state::operations as ops;
 
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
     let tid = t.id.clone();
@@ -3129,7 +3137,7 @@ fn trigger_rule_control(
     doc_tick: RwSignal<u64>,
 ) -> AnyView {
     use crate::editor::panels::zones_panel::{humanize_key, humanize_token, ZoneRuleKind};
-    use crate::editor_ops as ops;
+    use crate::editor::state::operations as ops;
 
     let current = rules.get(&f.key).cloned();
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
@@ -3301,7 +3309,7 @@ fn trigger_rule_control(
 #[cfg(target_arch = "wasm32")]
 #[component]
 fn TriggerOwnerLine(selected: RwSignal<Option<String>>, doc_tick: RwSignal<u64>) -> impl IntoView {
-    use crate::editor_ops as ops;
+    use crate::editor::state::operations as ops;
     use leptos::portal::Portal;
 
     // Pan/zoom heartbeat. `mission_editor` threads its `cursor`/`debug_hud` heartbeats into the ruler
@@ -3477,7 +3485,7 @@ pub fn marker_icons() -> &'static [String] {
 
 /// Is `icon` one of the closed `$defs/marker.icon` aliases?
 ///
-/// Every marker write in [`crate::editor_ops`] passes through this. It is exact and
+/// Every marker write in [`crate::editor::state::operations`] passes through this. It is exact and
 /// case-SENSITIVE: the enum is lower-case and `additionalProperties`-style validators do not
 /// case-fold, so accepting `"Objective"` here would author a value the schema rejects at save time,
 /// far from the control that produced it.
@@ -3773,7 +3781,7 @@ pub(crate) fn markers_panel(
 ) -> AnyView {
     use crate::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
     use crate::editor::panels::zones_panel::humanize_token;
-    use crate::editor_ops as ops;
+    use crate::editor::state::operations as ops;
 
     let icon_search = RwSignal::new(String::new());
 
@@ -3971,12 +3979,12 @@ pub(crate) fn markers_panel(
 /// are the ones the closed `{x, z, icon, label}` shape can carry today.
 #[cfg(target_arch = "wasm32")]
 fn marker_attributes(
-    m: crate::editor_ops::MarkerRow,
+    m: editor_ops::MarkerRow,
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<(String, String)>>,
 ) -> AnyView {
     use crate::editor::panels::zones_panel::humanize_token;
-    use crate::editor_ops as ops;
+    use crate::editor::state::operations as ops;
 
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
     let faction = m.faction_id.clone();
@@ -4228,7 +4236,7 @@ mod tests {
             "a Markers icon row must arm the marker place path"
         );
 
-        let ops = include_str!("../../editor_ops.rs");
+        let ops = include_str!("../state/operations.rs");
         assert!(
             ops.contains("pub fn begin_place_vehicle"),
             "editor_ops must expose the vehicle arm"
@@ -4255,7 +4263,7 @@ mod tests {
         const SRC: &str = include_str!("dock_right.rs");
         // Fragment the marker — a contiguous fn-name needle in this test would be a second hit.
         let marker = format!("{}{}", "fn arm_favourite_place", "(");
-        let fav_arm = crate::arsenal::class_r_scrub::only_body(SRC, &marker);
+        let fav_arm = crate::editor::arsenal::class_r_scrub::only_body(SRC, &marker);
         assert!(
             !fav_arm.contains(".clone()"),
             "T-751: arm_favourite_place must stay clone-free across Character/Object/Vehicle;              body was:\n{fav_arm}"
@@ -4363,8 +4371,8 @@ mod tests {
     /// after a BLUFOR default must drop NATO leaves and keep only the USSR perturbation row.
     #[test]
     fn eden_chip_side_rebuilds_filtered_catalog() {
-        use crate::asset_catalog::build_catalog_tree;
         use crate::core::dto::RegistryResponse;
+        use crate::editor::arsenal::asset_catalog::build_catalog_tree;
 
         let golden: RegistryResponse = serde_json::from_str(include_str!(
             "../../../tests/fixtures/api/GET__registry.json"
@@ -4403,7 +4411,10 @@ mod tests {
             "OPFOR chip must rebuild without NATO — got {:?}",
             opfor_tree.iter().map(|n| n.id.as_str()).collect::<Vec<_>>()
         );
-        fn has_leaf(nodes: &[crate::asset_catalog::CatalogNode], label: &str) -> bool {
+        fn has_leaf(
+            nodes: &[crate::editor::arsenal::asset_catalog::CatalogNode],
+            label: &str,
+        ) -> bool {
             nodes
                 .iter()
                 .any(|n| (n.payload.is_some() && n.label == label) || has_leaf(&n.children, label))
@@ -4446,10 +4457,10 @@ mod tests {
         // `save_composition`), so a raw `include_str!` haystack would let a comment satisfy a
         // presence check — the T-759 hollow-pin class. `live_source` blanks comments and KEEPS string
         // literals, which the `"Compositions"` / `ops::<fn>(` needles below need.
-        use crate::arsenal::class_r_scrub::live_source;
+        use crate::editor::arsenal::class_r_scrub::live_source;
         let src = live_source(include_str!("dock_right.rs"));
         let src = src.as_str();
-        // The panel aliases `use crate::editor_ops as ops`, so the calls read `ops::<fn>(`.
+        // The panel aliases `use crate::editor::state::operations as ops`, so the calls read `ops::<fn>(`.
         let call = |f: &str| format!("ops::{f}(");
 
         // The tab strip renders a Compositions tab at index 4.
@@ -4488,7 +4499,7 @@ mod tests {
         // The editor-ops seam actually exposes those functions AND the place reaches the core
         // one-undo-step mutator (the claim the store round-trip test rests on). Scrubbed the same
         // way (T-791): `editor_ops.rs` documents these `pub fn`s in prose right above them.
-        let ops = live_source(include_str!("../../editor_ops.rs"));
+        let ops = live_source(include_str!("../state/operations.rs"));
         assert!(
             ops.contains("pub fn save_composition")
                 && ops.contains("pub fn begin_place_composition"),
@@ -4517,9 +4528,9 @@ mod tests {
     /// time, this file's standing rule.
     #[test]
     fn a_composition_captures_comments_and_authored_elevation() {
-        use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
-        const OPS: &str = include_str!("../../editor_ops.rs");
+        const OPS: &str = include_str!("../state/operations.rs");
         // The elevation key is a CONTRACT string crossing a crate boundary: both ends below are
         // checked against this one value, so a rename that touches only one side is red.
         let elevation_key = format!("{:?}", "elevation");
@@ -4598,9 +4609,9 @@ mod tests {
     /// assembled at run time, this file's standing rule.
     #[test]
     fn both_id_minters_prove_uniqueness_against_hidden_slots_too() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
-        let ops_code = live_code(include_str!("../../editor_ops.rs"));
+        let ops_code = live_code(include_str!("../state/operations.rs"));
         let helper_call = format!("{}(", "live_slot_ids");
         let helper_body = only_body(&ops_code, &format!("fn {helper_call}"));
 
@@ -4651,8 +4662,8 @@ mod tests {
     /// needles that carry no literal are assembled at run time so this test body cannot match itself.
     #[test]
     fn composition_arm_rides_the_shared_pending_machine() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let ops = live_code(include_str!("../../editor_ops.rs"));
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        let ops = live_code(include_str!("../state/operations.rs"));
         // The arm variant exists and the public arm fn routes through the shared `arm(…)`.
         assert!(
             ops.contains("Composition(String)"),
@@ -4800,7 +4811,7 @@ mod tests {
 
         // The editor-ops seam actually exposes those functions AND the geometry reaches the core
         // trigger mutators (the claim the store round-trip rests on).
-        let ops = include_str!("../../editor_ops.rs");
+        let ops = include_str!("../state/operations.rs");
         for f in [
             "pub fn set_trigger_owner",
             "pub fn trigger_rows",
@@ -4827,7 +4838,7 @@ mod tests {
     fn trigger_draw_is_second_consumer_of_the_zone_tool() {
         const SRC: &str = include_str!("dock_right.rs");
         let zones_src = include_str!("zones_panel.rs");
-        let ops = include_str!("../../editor_ops.rs");
+        let ops = include_str!("../state/operations.rs");
 
         // Assemble the target tokens so this test's own source cannot satisfy the checks by accident.
         let trigger_target = ["Draw", "Target", "::", "Trigger"].concat();
@@ -5073,8 +5084,8 @@ mod tests {
     #[test]
     fn stale_favourite_is_kept_and_marked_not_dropped() {
         use super::{resolve_favourites, FavouriteAsset, FavouriteRow, Favourites};
-        use crate::asset_catalog::CatalogPalette;
         use crate::core::dto::RegistryResponse;
+        use crate::editor::arsenal::asset_catalog::CatalogPalette;
 
         let golden: RegistryResponse = serde_json::from_str(include_str!(
             "../../../tests/fixtures/api/GET__registry.json"
@@ -5245,7 +5256,7 @@ mod tests {
     /// module is not its own haystack.
     #[test]
     fn favourites_panel_failure_arm_has_retry() {
-        use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
         let code = live_code(include_str!("dock_right.rs"));
         let body = only_body(&code, "fn favourites_panel(");
         let failed_get = format!("{}{}", "registry_failed.", "get()");
@@ -5283,7 +5294,7 @@ mod tests {
     /// `live_source`; needles fragment-assembled so this module is not its own haystack.
     #[test]
     fn catalog_failure_view_names_cause_and_offers_retry() {
-        use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
         let code = live_code(include_str!("dock_right.rs"));
         let body = only_body(&code, "fn catalog_failure_view(");
         let cause_branch = format!("{}{}", "no_modpack.", "get()");
@@ -5324,7 +5335,7 @@ mod tests {
     /// can trip the negative.
     #[test]
     fn both_catalog_failed_arms_use_the_named_failure_view() {
-        use crate::arsenal::class_r_scrub::{live_source, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
         let sourced = live_source(include_str!("dock_right.rs"));
         let dock = only_body(&sourced, "pub fn DockRight(");
         // Two call sites: character catalog + vehicle catalog, each naming its noun.
@@ -5354,7 +5365,7 @@ mod tests {
     /// so the gate needles are the two `CatalogState::Failed` matches guarding the hint.
     #[test]
     fn grammar_hint_hides_while_the_tree_is_failed() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
         let code = live_code(include_str!("dock_right.rs"));
         let dock = only_body(&code, "pub fn DockRight(");
         // Both tab bodies must gate the hint on a not-Failed check. `.then(search_grammar_hint)` is
@@ -5412,7 +5423,7 @@ mod tests {
     /// `palette_rows(… PaletteKind::Character …)` character-only draw is gone from the Factions arm.
     #[test]
     fn factions_tab_draws_the_merged_tree() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
         let code = live_code(include_str!("dock_right.rs"));
         let dock = only_body(&code, "pub fn DockRight(");
         assert!(
@@ -5438,7 +5449,7 @@ mod tests {
     /// seam (`install_recent_recorder` / `record_placed`), pinned by the two tests below.
     #[test]
     fn a_merged_leaf_press_feeds_recently_placed() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
         let code = live_code(include_str!("dock_right.rs"));
         let rows = only_body(&code, "fn faction_palette_rows(");
         assert!(
@@ -5463,7 +5474,7 @@ mod tests {
     /// the pins; the fn-name needles are assembled at run time so the body cannot match itself.
     #[test]
     fn off_dock_placements_feed_recently_placed_through_the_recorder_seam() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
         let dock = live_code(include_str!("dock_right.rs"));
 
         // The dock installs the recorder (register + on_cleanup unregister) at mount, and the closure
@@ -5490,7 +5501,7 @@ mod tests {
         );
 
         // Both off-dock placement sites in editor_ops call the invoke, on the scrubbed fn bodies.
-        let ops = live_code(include_str!("../../editor_ops.rs"));
+        let ops = live_code(include_str!("../state/operations.rs"));
         let record_call = format!("record_{}(", "placed");
 
         // Composition STAMP: `place_at_impl` records ONE entry for the stamp (keyed on the composition
@@ -5516,7 +5527,7 @@ mod tests {
     /// ALONGSIDE Favourites, per the summary, rather than adding an eighth glyph to the tight strip.
     #[test]
     fn favourites_and_history_share_one_tab() {
-        use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
         let code = live_code(include_str!("dock_right.rs"));
         let dock = only_body(&code, "pub fn DockRight(");
         // Tab 6 calls BOTH panels behind the `history_open` toggle.
@@ -5540,7 +5551,7 @@ mod tests {
     /// cargo editor) is GONE. Crew editing lives in the vehicle Attributes modal now.
     #[test]
     fn vehicles_tab_is_catalog_only_without_the_placed_strip() {
-        use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
         let code = live_code(include_str!("dock_right.rs"));
         let dock = only_body(&code, "pub fn DockRight(");
         assert!(
@@ -5845,7 +5856,7 @@ mod tests {
     /// presence check fails.
     #[test]
     fn picker_rows_draw_glyph_svgs_and_arm_the_canonical_slug() {
-        use crate::arsenal::class_r_scrub::only_body;
+        use crate::editor::arsenal::class_r_scrub::only_body;
         const SRC: &str = include_str!("dock_right.rs");
 
         // `markers_panel` has two definitions (the wasm picker + the native shell), so it is not a
@@ -5922,7 +5933,7 @@ mod tests {
     /// Every literal is split so this test's own source cannot satisfy the search it performs.
     #[test]
     fn marker_writes_go_to_the_briefing_not_the_root_map() {
-        const OPS: &str = include_str!("../../editor_ops.rs");
+        const OPS: &str = include_str!("../state/operations.rs");
 
         assert!(
             OPS.contains(&format!("core.{}_faction_briefing_marker(", "set")),

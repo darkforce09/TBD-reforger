@@ -9,10 +9,10 @@
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 
-use crate::editor::tools::select_tool::EngineHandle;
-use crate::mission_editor::boot_progress::{
+use crate::editor::mission_editor::boot_progress::{
     split_range, BootEvent, BootSeg, Ordered, SAT_CHUNK_BYTES, SAT_FETCH_CONCURRENCY,
 };
+use crate::editor::tools::select_tool::EngineHandle;
 
 use super::bridge::{publish, BridgeHandle};
 use super::fetch::{fetch_bytes, fetch_range_outcome, RangeBody, RangeOutcome};

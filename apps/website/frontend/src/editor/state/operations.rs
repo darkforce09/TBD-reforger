@@ -22,6 +22,9 @@
 //! opens its read borrows.
 #![cfg(target_arch = "wasm32")]
 
+// T-934.6 — history moved to `crate::editor::state::history`; the alias keeps the Class-S
+// source-guard needles (`mission_history::…`) stable across the move.
+use crate::editor::state::history as mission_history;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 
@@ -32,13 +35,13 @@ use map_engine_core::doc::{
     FactionLibraryVehicle, MissionDocCore, APPLY_ANCHOR_X, APPLY_ANCHOR_Y, NONE_IDX,
 };
 
-use crate::asset_catalog::PlacePayload;
 use crate::core::dto::{FactionDoc, FactionRole, FactionVehicle};
+use crate::editor::arsenal::asset_catalog::PlacePayload;
 use crate::editor::panels::outliner::{
     build_outliner_with_comments, CommentRow, LayerRow, OutlinerNode, SlotRow,
 };
+use crate::editor::state::doc_host::DocHandle;
 use crate::editor::tools::select_tool::{EngineHandle, SelectionHandle};
-use crate::mission_doc::DocHandle;
 
 /// The lazily-minted default layer (React's `ensureDefaultLayer`).
 const DEFAULT_LAYER_ID: &str = "layer-1";
@@ -197,8 +200,8 @@ pub fn place_with_crew() -> bool {
 // The picker's state struct lives in `mission_editor` (always-compiled) because the picker COMPONENT
 // and its signal live there too — `editor_ops` is `#![cfg(wasm32)]`, so a native test build cannot
 // see a type defined here. This module only WRITES the signal (from the wasm dblclick path), so it
-// names the type through `crate::mission_editor::AssetPickerState`.
-use crate::mission_editor::AssetPickerState;
+// names the type through `crate::editor::mission_editor::AssetPickerState`.
+use crate::editor::mission_editor::AssetPickerState;
 
 thread_local! {
     /// T-647 PLACE-003 — the picker signal, installed once from `mission_editor::on_load` (the same
@@ -422,7 +425,7 @@ pub fn set_title(title: &str) {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
 }
 
@@ -451,7 +454,7 @@ pub fn update_environment(patch_json: String) {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
 }
 
@@ -475,7 +478,7 @@ thread_local! {
 /// `commentsById` key, not a slot id: handing it to `remove_slots` removed nothing and reported
 /// success, which is the T-779 class (an acknowledgement for a write that never landed) and exactly
 /// the failure a comment click would otherwise have shipped. Each half goes to the mutator that owns
-/// it — [`crate::editor_ops::delete_comment`]'s `remove_comment` for the notes, `remove_slots` for
+/// it — [`crate::editor::state::operations::delete_comment`]'s `remove_comment` for the notes, `remove_slots` for
 /// everything else — and neither half runs when it is empty, so **Delete over a comment-only
 /// selection removes that comment and touches nothing else**. A MIXED selection removes both, which
 /// is what selecting both and pressing Delete means.
@@ -549,7 +552,7 @@ pub fn delete_selection() -> bool {
         true
     });
     if removed {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     removed
 }
@@ -806,7 +809,7 @@ pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
         ids
     });
     if !placed.is_empty() {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
         true
     } else {
         false
@@ -880,7 +883,7 @@ pub fn save_composition(title: String, category: String, author: String) -> Opti
         Some(comp_id)
     });
     if new_id.is_some() {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     new_id
 }
@@ -1209,7 +1212,7 @@ fn edit_composition(f: impl FnOnce(&MissionDocCore)) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -1257,7 +1260,7 @@ fn open_attrs_modal(id: String, arsenal_tab: bool) {
         }
         ctx.attrs_open.set(Some(id));
     });
-    crate::mission_history::refresh_selection();
+    mission_history::refresh_selection();
 }
 
 /// Open Attributes for `id` (the dbl-click / outliner-activate contract). A multi-selection opens
@@ -1342,7 +1345,7 @@ pub fn select_all_in_view(viewport_w: f64, viewport_h: f64) -> bool {
     });
     if acted {
         // Selection change, not a doc edit — the SEL readout only (T-159.21), never a history step.
-        crate::mission_history::refresh_selection();
+        mission_history::refresh_selection();
     }
     acted
 }
@@ -1606,7 +1609,7 @@ pub fn attrs_update_position(
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
 }
 
@@ -1663,17 +1666,17 @@ pub fn attrs_update_position_multi(
         core.update_entity_transforms(&patches, b[2], b[3]) > 0
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
 }
 
 /// T-648 XFORM-SHIFT-001 — rotate the whole selection to FACE the cursor `(cx, cy)` (world metres),
 /// each entity about its OWN position, quantised to the rotation ladder rung `rung`
-/// ([`crate::mission_editor::transform`]). This is the commit end of the Shift+drag gesture and the
+/// ([`crate::editor::mission_editor::transform`]). This is the commit end of the Shift+drag gesture and the
 /// widget rotate ring.
 ///
 /// Returns whether anything rotated (nothing selected, or every entity sitting exactly under the
-/// cursor, is a no-op — [`crate::mission_editor::transform::bearing_to_face`] returns `None` for a
+/// cursor, is a no-op — [`crate::editor::mission_editor::transform::bearing_to_face`] returns `None` for a
 /// degenerate aim and that entity is left untouched).
 ///
 /// **Undo (T-732):** commits through [`MissionDocCore::rotate_entities`] — one LOCAL txn — so a
@@ -1708,9 +1711,9 @@ pub fn rotate_selection_to_face(cx: f64, cy: f64, rung: usize) -> bool {
             if let Some(row) = soa.ids.iter().position(|s| s == id) {
                 let (sx, sy) = (f64::from(soa.xs[row]), f64::from(soa.ys[row]));
                 if let Some(bearing) =
-                    crate::mission_editor::transform::bearing_to_face(sx, sy, cx, cy)
+                    crate::editor::mission_editor::transform::bearing_to_face(sx, sy, cx, cy)
                 {
-                    let deg = crate::mission_editor::transform::snap_rotate(bearing, rung);
+                    let deg = crate::editor::mission_editor::transform::snap_rotate(bearing, rung);
                     items.push((id.clone(), true, deg));
                 }
                 continue;
@@ -1727,16 +1730,17 @@ pub fn rotate_selection_to_face(cx: f64, cy: f64, rung: usize) -> bool {
             ) else {
                 continue;
             };
-            if let Some(bearing) = crate::mission_editor::transform::bearing_to_face(vx, vy, cx, cy)
+            if let Some(bearing) =
+                crate::editor::mission_editor::transform::bearing_to_face(vx, vy, cx, cy)
             {
-                let deg = crate::mission_editor::transform::snap_rotate(bearing, rung);
+                let deg = crate::editor::mission_editor::transform::snap_rotate(bearing, rung);
                 items.push((id.clone(), false, deg));
             }
         }
         core.rotate_entities(&items, tb[2], tb[3]) > 0
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -1965,7 +1969,7 @@ pub fn apply_pattern_to_selection(kind: crate::editor::tools::place_helpers::Pat
         commit_positions(core, &entities, &targets, tb)
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -2000,7 +2004,7 @@ pub fn align_selection(edge: crate::editor::tools::place_helpers::AlignEdge) -> 
         commit_positions(core, &entities, &targets, tb)
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -2035,7 +2039,7 @@ pub fn space_selection(axis: crate::editor::tools::place_helpers::SpaceAxis) -> 
         commit_positions(core, &entities, &targets, tb)
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -2088,7 +2092,7 @@ pub fn orient_selection(cmd: crate::editor::tools::place_helpers::Orient) -> boo
         core.rotate_entities(&items, tb[2], tb[3]) > 0
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -2113,12 +2117,14 @@ thread_local! {
     /// T-068.15.2 — per-character default cargo (registry `character_default_cargo`
     /// edges, aggregated). Filled by the editor's compat fetch; consumed by the
     /// seed hooks (place / apply-kit / Arsenal open).
-    static CARGO_DEFAULTS: RefCell<HashMap<String, Vec<crate::arsenal_rules::CargoRow>>> =
+    static CARGO_DEFAULTS: RefCell<HashMap<String, Vec<crate::editor::arsenal::arsenal_rules::CargoRow>>> =
         RefCell::new(HashMap::new());
 }
 
 /// Install the character → default-cargo map (from the `/registry/compat` fetch).
-pub fn set_cargo_defaults(map: HashMap<String, Vec<crate::arsenal_rules::CargoRow>>) {
+pub fn set_cargo_defaults(
+    map: HashMap<String, Vec<crate::editor::arsenal::arsenal_rules::CargoRow>>,
+) {
     CARGO_DEFAULTS.with(|c| *c.borrow_mut() = map);
 }
 
@@ -2135,7 +2141,7 @@ fn seed_cargo_in_core(
     let Some(defaults) = defaults else {
         return false;
     };
-    match crate::arsenal_rules::seed_cargo(loadout, &defaults) {
+    match crate::editor::arsenal::arsenal_rules::seed_cargo(loadout, &defaults) {
         // T-779 — the SINK's answer, not a hardcoded `true`. `update_slot_loadout` returns `false`
         // for an id the document does not hold (T-770), and "a seed was computed" is a different
         // claim from "the document took it". Every current caller discards this bool, which is
@@ -2162,7 +2168,8 @@ pub fn seed_slot_cargo(id: &str) -> Option<String> {
             .filter(|l| !l.is_null())
             .map(|l| l.to_string());
         let defaults = CARGO_DEFAULTS.with(|c| c.borrow().get(asset_id).cloned())?;
-        let json = crate::arsenal_rules::seed_cargo(loadout.as_deref(), &defaults)?;
+        let json =
+            crate::editor::arsenal::arsenal_rules::seed_cargo(loadout.as_deref(), &defaults)?;
         // T-779 — `Some(json)` only if the DOCUMENT took the write. The `map.get(id)?` above makes
         // a refusal hard to reach today, but the tail below (`after_local_edit`) mints an undo step
         // and dirties the mission off this `Option` alone, so it must carry the sink's answer
@@ -2171,7 +2178,7 @@ pub fn seed_slot_cargo(id: &str) -> Option<String> {
             .then_some(json)
     });
     if seeded.is_some() {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     seeded
 }
@@ -2195,12 +2202,12 @@ pub fn seed_slot_cargo(id: &str) -> Option<String> {
 /// a refusal: `ArsenalTab`'s persistence line would otherwise render its green "no unsaved changes"
 /// verdict over a pick that never landed. See `arsenal.rs`'s `persist` closure.
 ///
-/// The gate itself lives in [`crate::arsenal::commit_one_write`] and not in an `if` here, because
+/// The gate itself lives in [`crate::editor::arsenal::commit_one_write`] and not in an `if` here, because
 /// this module is `cfg(target_arch = "wasm32")` from line one and a native test cannot reach it —
 /// the same reason T-770 put the batch loop in `arsenal::commit_writes`. There the refusal→no-tail
 /// arithmetic is *driven* by `arsenal::tests::t779`; here it could only be read.
 pub fn set_loadout(id: &str, loadout_json: Option<String>) -> bool {
-    crate::arsenal::commit_one_write(
+    crate::editor::arsenal::commit_one_write(
         || {
             OPS_CTX.with(|c| {
                 let guard = c.borrow();
@@ -2215,7 +2222,7 @@ pub fn set_loadout(id: &str, loadout_json: Option<String>) -> bool {
             })
         },
         || {
-            crate::mission_history::after_local_edit();
+            mission_history::after_local_edit();
         },
     )
 }
@@ -2231,7 +2238,7 @@ thread_local! {
     /// Separate from `CLIPBOARD` on purpose. That one holds whole slot dicts for Ctrl+C/Ctrl+V and
     /// a copied *entity* is a different thing from a copied *kit*; sharing one cell would mean
     /// Ctrl+C silently destroying a loadout buffer the author was in the middle of using.
-    static LOADOUT_BUFFER: RefCell<Vec<crate::arsenal::BufferedLoadout>> =
+    static LOADOUT_BUFFER: RefCell<Vec<crate::editor::arsenal::BufferedLoadout>> =
         const { RefCell::new(Vec::new()) };
 
     /// The Apply seed stream. Fixed start + a fixed step (see `next_apply_seed`), so the Nth Apply
@@ -2301,7 +2308,7 @@ pub fn copy_loadouts_from_selection() -> usize {
                     .and_then(|s| s.get("loadout"))
                     .filter(|l| !l.is_null())
                     .map(ToString::to_string);
-                crate::arsenal::BufferedLoadout {
+                crate::editor::arsenal::BufferedLoadout {
                     source_id: id,
                     loadout_json,
                 }
@@ -2316,7 +2323,7 @@ pub fn copy_loadouts_from_selection() -> usize {
 }
 
 /// What is in the buffer right now (for the panel's label and its receipt).
-pub fn loadout_buffer() -> Vec<crate::arsenal::BufferedLoadout> {
+pub fn loadout_buffer() -> Vec<crate::editor::arsenal::BufferedLoadout> {
     LOADOUT_BUFFER.with(|b| b.borrow().clone())
 }
 
@@ -2347,8 +2354,8 @@ pub fn loadout_buffer_len() -> usize {
 /// builds its line from the returned commit count.
 pub fn apply_loadout_buffer_to_selection(
     items: &[crate::core::dto::RegistryItem],
-    feed: &crate::arsenal_rules::CompatFeed,
-) -> Result<(usize, usize), Vec<crate::arsenal_rules::RowError>> {
+    feed: &crate::editor::arsenal::arsenal_rules::CompatFeed,
+) -> Result<(usize, usize), Vec<crate::editor::arsenal::arsenal_rules::RowError>> {
     let buffer = loadout_buffer();
     let targets = selection_slot_targets();
     if buffer.is_empty() || targets.is_empty() {
@@ -2357,7 +2364,8 @@ pub fn apply_loadout_buffer_to_selection(
     if !confirm_bulk_n_step(targets.len(), "overwrite the loadout of") {
         return Ok((0, 0));
     }
-    let writes = crate::arsenal::plan_apply(&targets, &buffer, next_apply_seed(), items, feed)?;
+    let writes =
+        crate::editor::arsenal::plan_apply(&targets, &buffer, next_apply_seed(), items, feed)?;
     Ok((writes.len(), commit_loadout_writes(&writes)))
 }
 
@@ -2379,7 +2387,7 @@ pub fn remove_all_loadouts_from_selection() -> (usize, usize) {
     if !confirm_bulk_n_step(targets.len(), "remove every item from") {
         return (0, 0);
     }
-    let writes = crate::arsenal::plan_remove(&targets);
+    let writes = crate::editor::arsenal::plan_remove(&targets);
     (writes.len(), commit_loadout_writes(&writes))
 }
 
@@ -2387,7 +2395,7 @@ pub fn remove_all_loadouts_from_selection() -> (usize, usize) {
 /// write, one shared post-change tail. Returns the number of writes the document actually took —
 /// `arsenal::commit_writes` counts the sink, and both receipts are built from that count rather than
 /// from the plan length, so a drop cannot be reported as a success.
-fn commit_loadout_writes(writes: &[crate::arsenal::LoadoutWrite]) -> usize {
+fn commit_loadout_writes(writes: &[crate::editor::arsenal::LoadoutWrite]) -> usize {
     if writes.is_empty() {
         return 0;
     }
@@ -2400,10 +2408,10 @@ fn commit_loadout_writes(writes: &[crate::arsenal::LoadoutWrite]) -> usize {
         let Some(core) = d.as_ref() else {
             return 0;
         };
-        crate::arsenal::commit_writes(writes, |id, json| core.update_slot_loadout(id, json))
+        crate::editor::arsenal::commit_writes(writes, |id, json| core.update_slot_loadout(id, json))
     });
     if commits > 0 {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     commits
 }
@@ -2464,7 +2472,7 @@ pub fn attrs_update_slot(
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
 }
 
@@ -2521,7 +2529,7 @@ pub fn attrs_update_slot_multi(
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
 }
 
@@ -2956,7 +2964,7 @@ pub fn select_slot(id: String) {
             }
         }
     });
-    crate::mission_history::refresh_selection(); // SEL + dock highlight only — no tree rebuild
+    mission_history::refresh_selection(); // SEL + dock highlight only — no tree rebuild
 }
 
 /// Outliner folder row → make it the drop target (React's `setActiveLayer`).
@@ -2985,7 +2993,7 @@ pub fn set_layer_hidden(id: &str, hidden: bool) {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
 }
 
@@ -3005,7 +3013,7 @@ pub fn set_layer_locked(id: &str, locked: bool) {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
 }
 
@@ -3098,7 +3106,7 @@ fn set_selection_hidden(hidden: bool) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -3171,7 +3179,7 @@ pub fn show_all_hidden() -> usize {
         core.clear_all_editor_hidden()
     });
     if cleared > 0 {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     cleared
 }
@@ -3315,7 +3323,7 @@ pub fn create_layer() -> Option<String> {
         Some(id)
     });
     if created.is_some() {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     created
 }
@@ -3347,7 +3355,7 @@ pub fn rename_layer(id: &str, name: &str) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -3380,7 +3388,7 @@ pub fn delete_layer(id: &str) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -3402,7 +3410,7 @@ pub fn reparent_layer(id: &str, new_parent: Option<String>) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -3426,7 +3434,7 @@ pub fn refile_slot_to_layer(slot_id: &str, layer_id: &str) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -3570,7 +3578,7 @@ pub fn place_comment(x: f64, z: f64) -> Option<String> {
         core.move_comment_to_layer(&id, &layer_id);
         Some(id)
     })?;
-    crate::mission_history::after_local_edit();
+    mission_history::after_local_edit();
     Some(id)
 }
 
@@ -3615,7 +3623,7 @@ pub fn duplicate_comment(id: &str, offset: f64) -> Option<String> {
         core.move_comment_to_layer(&new_id, &layer_id);
         Some(new_id)
     })?;
-    crate::mission_history::after_local_edit();
+    mission_history::after_local_edit();
     Some(new_id)
 }
 
@@ -3646,7 +3654,7 @@ fn edit_comment(f: impl FnOnce(&MissionDocCore)) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -3933,7 +3941,7 @@ pub fn complete_connect(to_id: &str) -> bool {
         core.add_connection(&id, &kind, &from_id, to_id)
     });
     if drawn {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     drawn
 }
@@ -3972,7 +3980,7 @@ pub fn delete_connection(id: &str) -> bool {
         true
     });
     if removed {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     removed
 }
@@ -4082,7 +4090,7 @@ pub fn force_to_formation(leader_slot_id: &str, formation: &str) -> usize {
         core.force_to_formation(leader_slot_id, formation)
     });
     if moved > 0 {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     moved
 }
@@ -4223,7 +4231,7 @@ fn set_slot_selection(ids: Vec<String>) {
             e.set_selection(ids);
         }
     });
-    crate::mission_history::refresh_selection();
+    mission_history::refresh_selection();
 }
 
 /// Palette leaf `pointerdown` → arm a place. Consumed by [`place_at`] on a canvas release, or
@@ -4535,7 +4543,7 @@ pub fn debug_seed_slots(n: u32) {
             );
         }
     });
-    crate::mission_history::after_local_edit();
+    mission_history::after_local_edit();
 }
 
 /* ───────────────────────── T-180.7 — ORBAT Manager mutators ───────────────────────── */
@@ -4726,7 +4734,7 @@ pub fn orbat_add_squad(side: String) -> Option<String> {
         Some(squad_id)
     });
     if id.is_some() {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     id
 }
@@ -4788,7 +4796,7 @@ pub fn orbat_add_slot(squad_id: String, role: String) -> Option<String> {
         Some(slot_id)
     });
     if id.is_some() {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     id
 }
@@ -4868,7 +4876,7 @@ pub fn orbat_set_leader(squad_id: String, slot_id: String) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -4908,7 +4916,7 @@ pub fn orbat_remove_slot(slot_id: String) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -4928,7 +4936,7 @@ pub fn orbat_remove_squad(squad_id: String) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -4948,7 +4956,7 @@ pub fn orbat_rename_squad(squad_id: String, name: String) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -5018,7 +5026,7 @@ pub fn orbat_apply_faction(side: String, doc: FactionDoc) -> Result<(), String> 
         Ok(())
     });
     if res.is_ok() {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     res
 }
@@ -5056,7 +5064,7 @@ pub fn orbat_add_vehicle(squad_id: String, resource_name: String) -> Option<Stri
         Some(vehicle_id)
     });
     if id.is_some() {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
         // T-809 wave-203 — head the recently-placed list with the added vehicle, keyed on its
         // `resourceName` (the SAME `asset_id` a Vehicles-palette leaf records, so a re-add through
         // either path dedups to one entry). Recorded only on a real add, after the doc borrow closes;
@@ -5127,7 +5135,10 @@ fn place_object_in_core(
     if !matches!(side, "BLUFOR" | "OPFOR" | "INDFOR") || payload.asset_id.trim().is_empty() {
         return false;
     }
-    let alias = crate::asset_catalog::derive_object_alias(&payload.asset_id, &payload.role);
+    let alias = crate::editor::arsenal::asset_catalog::derive_object_alias(
+        &payload.asset_id,
+        &payload.role,
+    );
     if alias.is_empty() {
         return false;
     }
@@ -5276,7 +5287,7 @@ pub fn set_vehicle_cargo(vehicle_id: String, rows: Vec<VehicleCargoRow>) -> bool
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -5321,7 +5332,7 @@ pub fn set_vehicle_heading(vehicle_id: String, heading_deg: f64) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -5344,7 +5355,7 @@ pub fn move_vehicles(ids: Vec<String>, dx: f64, dy: f64) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -5372,7 +5383,7 @@ pub fn remove_vehicle(vehicle_id: String) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -5438,7 +5449,7 @@ pub fn assign_crew_seat(vehicle_id: String, seat_id: String, slot_id: String) ->
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -5463,7 +5474,7 @@ pub fn clear_crew_seat(vehicle_id: String, seat_id: String) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -5679,7 +5690,7 @@ pub fn orbat_update_slot_fields(
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -5727,7 +5738,7 @@ pub fn refile_slot(slot_id: String, dest_squad_id: String) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -5944,7 +5955,7 @@ fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
     if placed {
         // Rebinds the glyphs from the new SoA, bumps `doc_ver`, schedules the persist, and refreshes
         // the HUD + docks — the same tail the drag commit and undo/redo run.
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
         // T-809 wave-203 — now the doc borrow is closed, head the recently-placed list with the stamp
         // (composition arm only; `None` otherwise). No-ops when the dock is unmounted — not a dropped
         // ack: the stamp above already committed.
@@ -6337,7 +6348,7 @@ fn write_row(collection: DrawTarget, f: impl FnOnce(&MissionDocCore, &str)) -> b
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -6431,7 +6442,7 @@ fn edit_zone(f: impl FnOnce(&MissionDocCore)) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -6654,7 +6665,7 @@ fn edit_trigger(f: impl FnOnce(&MissionDocCore)) -> bool {
         true
     });
     if did {
-        crate::mission_history::after_local_edit();
+        mission_history::after_local_edit();
     }
     did
 }
@@ -7077,7 +7088,7 @@ pub fn remove_marker(faction_id: &str, marker_id: &str) -> bool {
             }
         }
     });
-    crate::mission_history::after_local_edit();
+    mission_history::after_local_edit();
     true
 }
 
@@ -7110,7 +7121,7 @@ fn upsert_marker_field(
             }
         }
     });
-    crate::mission_history::after_local_edit();
+    mission_history::after_local_edit();
     true
 }
 
@@ -7217,7 +7228,7 @@ pub fn document_entities() -> Vec<crate::editor::panels::dock_left::DocEntity> {
             push_text(
                 &mut text,
                 "class",
-                crate::asset_catalog::classname_tail(&asset_id),
+                crate::editor::arsenal::asset_catalog::classname_tail(&asset_id),
             );
             push_text(&mut text, "id", &s.id);
             out.push(DocEntity {
@@ -7248,7 +7259,7 @@ pub fn document_entities() -> Vec<crate::editor::panels::dock_left::DocEntity> {
                     push_text(
                         &mut text,
                         "class",
-                        crate::asset_catalog::classname_tail(&resource_name),
+                        crate::editor::arsenal::asset_catalog::classname_tail(&resource_name),
                     );
                     push_text(&mut text, "id", id);
                     out.push(DocEntity {
@@ -7295,7 +7306,8 @@ pub fn document_entities() -> Vec<crate::editor::panels::dock_left::DocEntity> {
 
     // ── Pass 2: the readers that open their own borrow ───────────────────────────────────────────
     for v in vehicle_rows() {
-        let tail = crate::asset_catalog::classname_tail(&v.resource_name).to_string();
+        let tail =
+            crate::editor::arsenal::asset_catalog::classname_tail(&v.resource_name).to_string();
         let mut text = Vec::new();
         push_text(&mut text, "class", &tail);
         push_text(&mut text, "id", &v.id);

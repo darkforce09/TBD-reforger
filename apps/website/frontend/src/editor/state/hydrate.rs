@@ -63,7 +63,7 @@
 //! survives is [`editor_session::purge_legacy_markers`], called once per boot below, which erases
 //! what earlier builds left in users' browsers.
 //!
-//! [`editor_session::purge_legacy_markers`]: crate::editor_session::purge_legacy_markers
+//! [`editor_session::purge_legacy_markers`]: crate::editor::state::session::purge_legacy_markers
 //!
 //! **T-338 — the snapshot cache is per-account, and sign-out destroys the account's copies.**
 //! T-221 scoped the IndexedDB *records* to the signed-in `discord_id`; it did not scope the RAM cache
@@ -117,7 +117,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::core::auth::AuthStore;
 use crate::core::dto::MissionDetail;
-use crate::mission_doc::DocHandle;
+use crate::editor::state::doc_host::DocHandle;
 
 /// React `UUID_RE` — an id that can exist on the API. `smoke`/`draft` fail this and stay local.
 fn is_uuid(id: &str) -> bool {
@@ -148,9 +148,9 @@ const DEFAULT_LAYER_ID: &str = "layer-1";
 async fn get_mission_measured(
     auth: AuthStore,
     path: &str,
-    report: &dyn Fn(crate::mission_editor::boot_progress::BootEvent),
+    report: &dyn Fn(crate::editor::mission_editor::boot_progress::BootEvent),
 ) -> Result<MissionDetail, crate::core::client::ApiErr> {
-    use crate::mission_editor::boot_progress::{BootEvent, BootSeg, STREAM_REPORT_BYTES};
+    use crate::editor::mission_editor::boot_progress::{BootEvent, BootSeg, STREAM_REPORT_BYTES};
     use wasm_bindgen::JsCast;
 
     let measured = async {
@@ -233,8 +233,8 @@ pub async fn hydrate_from_server(
     auth: AuthStore,
     loaded_from_idb: bool,
     current_semver: RwSignal<Option<String>>,
-    conflict: RwSignal<Option<crate::mission_editor::ConflictInfo>>,
-    report: crate::mission_editor::boot_progress::ProgressFn,
+    conflict: RwSignal<Option<crate::editor::mission_editor::ConflictInfo>>,
+    report: crate::editor::mission_editor::boot_progress::ProgressFn,
 ) {
     // T-191 — the recovery bridge is registered on every editor boot, not only when a conflict
     // fires: after a reload the in-memory snapshot is gone and the IDB record is the only copy, and
@@ -264,7 +264,7 @@ pub async fn hydrate_from_server(
     // **Do not move this below a branch, a `return`, or the fetch.** Wave 81 put it here precisely
     // so T-370's deletion could not strand residue in users' localStorage, and that deletion has
     // now happened — there is no second caller left to heal a boot this line misses.
-    crate::editor_session::purge_legacy_markers();
+    crate::editor::state::session::purge_legacy_markers();
     if !is_uuid(&id) {
         return;
     }
@@ -285,7 +285,7 @@ pub async fn hydrate_from_server(
     // which the author may still hit Export, so recording it once here rather than per-branch is
     // what makes `mission_commands::ROW_META`'s `None` mean exactly what it claims — the row never
     // arrived, not "it arrived down a branch nobody wired".
-    crate::mission_commands::set_row_meta(&detail);
+    crate::editor::state::commands_hotkeys::set_row_meta(&detail);
 
     let row = RowMeta::from(&detail);
     let version = detail.current_version.as_ref();
@@ -304,7 +304,7 @@ pub async fn hydrate_from_server(
         // a Save must not round-trip fixture data. A warm/IDB reopen keeps the user's local work.
         if !loaded_from_idb {
             adopt_payload(&doc, "{}", &row, Adopt::Init);
-            crate::mission_history::set_dirty(false);
+            crate::editor::state::history::set_dirty(false);
         } else {
             apply_row(&doc, &row);
         }
@@ -329,7 +329,7 @@ pub async fn hydrate_from_server(
             // snapshot, because there is nothing to lose.
             Local::Empty => {
                 adopt_payload(&doc, &payload_json, &row, Adopt::Init);
-                crate::mission_history::set_dirty(false);
+                crate::editor::state::history::set_dirty(false);
             }
             // Local IS the server's document. Nothing to choose between, so nothing to ask —
             // correcting `dirty` is the whole of this branch's work.
@@ -342,7 +342,7 @@ pub async fn hydrate_from_server(
             // rather than assumed — which is also why the marker this branch used to re-arm is gone
             // (T-352 emptied it, T-370 removed the write): nothing consults it to get here.
             Local::Matches => {
-                crate::mission_history::set_dirty(false);
+                crate::editor::state::history::set_dirty(false);
             }
             // Two different documents — ask. Note this now fires on a case the marker test
             // swallowed: local content that diverges while the marker still names the server's
@@ -352,7 +352,7 @@ pub async fn hydrate_from_server(
             // "Load server" is reversible twice over (T-191), while a document silently replaced
             // by one it never derived from is neither.
             Local::Diverged => {
-                conflict.set(Some(crate::mission_editor::ConflictInfo {
+                conflict.set(Some(crate::editor::mission_editor::ConflictInfo {
                     payload_json,
                     semver,
                 }));
@@ -361,7 +361,7 @@ pub async fn hydrate_from_server(
     } else {
         // Empty local → adopt the server payload (replaces the seed). Cold doc: INIT, no snapshot.
         adopt_payload(&doc, &payload_json, &row, Adopt::Init);
-        crate::mission_history::set_dirty(false);
+        crate::editor::state::history::set_dirty(false);
     }
 }
 
@@ -374,11 +374,11 @@ pub async fn hydrate_from_server(
 /// unrecoverable.
 pub fn resolve_conflict_server(
     id: String,
-    conflict: RwSignal<Option<crate::mission_editor::ConflictInfo>>,
+    conflict: RwSignal<Option<crate::editor::mission_editor::ConflictInfo>>,
 ) {
     if let (Some(c), Some(doc)) = (
         conflict.get_untracked(),
-        crate::mission_history::doc_handle(),
+        crate::editor::state::history::doc_handle(),
     ) {
         // A new adopt opens a new restore cycle, so the counterpart slot — which holds whatever
         // document the PREVIOUS restore displaced — is now stale: `undoRestore()` would put a server
@@ -393,7 +393,7 @@ pub fn resolve_conflict_server(
         // The payload carries its own map.terrain; the compile drops the title, so leave the
         // existing title untouched (row meta isn't refetched here).
         adopt_payload(&doc, &c.payload_json, &RowMeta::default(), Adopt::Undoable);
-        crate::mission_history::set_dirty(false);
+        crate::editor::state::history::set_dirty(false);
         // Tell the user the door swings both ways — the modal can't (it is gone by the next line),
         // and an undo nobody knows about is not a recovery.
         notify(&match saved {
@@ -415,9 +415,9 @@ pub fn resolve_conflict_server(
 /// there is exactly one call site (`mission_editor.rs`, the ConflictDialog's "Keep local" arm).
 pub fn resolve_conflict_local(
     _mission_id: String,
-    conflict: RwSignal<Option<crate::mission_editor::ConflictInfo>>,
+    conflict: RwSignal<Option<crate::editor::mission_editor::ConflictInfo>>,
 ) {
-    crate::mission_history::set_dirty(true);
+    crate::editor::state::history::set_dirty(true);
     conflict.set(None);
 }
 
@@ -592,7 +592,8 @@ fn adopt_payload(doc: &DocHandle, payload_json: &str, row: &RowMeta, mode: Adopt
             // T-505 — prefer non-blank payload title over a stale missions-row title.
             // Helper + Class-R live in `mission_title_prefer` so native cold-gate CI can pin this
             // (T-522); do not pass `&row.title` straight into `apply_row_meta`.
-            let title = crate::mission_title_prefer::prefer_payload_title(payload_json, &row.title);
+            let title =
+                crate::editor::state::title_prefer::prefer_payload_title(payload_json, &row.title);
             core.apply_row_meta(
                 &title,
                 &row.terrain,
@@ -605,7 +606,7 @@ fn adopt_payload(doc: &DocHandle, payload_json: &str, row: &RowMeta, mode: Adopt
     }
     // Rebind glyphs + HUD + schedule the persist (the drag-commit / undo tail). It sets dirty=true;
     // the caller corrects to false after marking adopted.
-    crate::mission_history::after_local_edit();
+    crate::editor::state::history::after_local_edit();
 }
 
 /// Apply the row meta to a doc with no server payload (fresh mission) under INIT.
@@ -734,7 +735,7 @@ thread_local! {
 /// *presence* of A's recovery record depend on B's activity, and the one thing this pair must never
 /// do is disappear because somebody else touched the machine.
 fn remember(mission_id: &str, kind: Snapshot, bytes: Vec<u8>) {
-    let owner = crate::yrs_persist::owner_token();
+    let owner = crate::editor::state::persist::owner_token();
     LOCAL_BACKUPS.with(|b| {
         let mut slots = b.borrow_mut();
         slots.retain(|s| s.owner != owner || s.mission_id != mission_id || s.kind != kind);
@@ -753,7 +754,7 @@ fn remember(mission_id: &str, kind: Snapshot, bytes: Vec<u8>) {
 /// rather than whoever is using it, and because [`has_snapshot`] consults it before the (already
 /// scoped) IDB read, it shadowed the scoping T-221 put on the records themselves.
 fn recall(mission_id: &str, kind: Snapshot) -> Option<Vec<u8>> {
-    let owner = crate::yrs_persist::owner_token();
+    let owner = crate::editor::state::persist::owner_token();
     LOCAL_BACKUPS.with(|b| {
         b.borrow()
             .iter()
@@ -775,14 +776,14 @@ fn recall(mission_id: &str, kind: Snapshot) -> Option<Vec<u8>> {
 /// cross the namespace boundary is [`purge_local_documents`], and there the account is deleting its
 /// own.
 fn forget_snapshot(mission_id: &str, kind: Snapshot) {
-    let owner = crate::yrs_persist::owner_token();
+    let owner = crate::editor::state::persist::owner_token();
     LOCAL_BACKUPS.with(|b| {
         b.borrow_mut()
             .retain(|s| s.owner != owner || s.mission_id != mission_id || s.kind != kind);
     });
     let key = backup_key(mission_id, kind);
     spawn_local(async move {
-        if let Err(e) = crate::yrs_persist::clear_state(&key).await {
+        if let Err(e) = crate::editor::state::persist::clear_state(&key).await {
             web_sys::console::warn_1(&JsValue::from_str(&format!(
                 "[t191] backup clear failed for {key}: {e:?}"
             )));
@@ -849,7 +850,7 @@ pub fn purge_local_documents(owner: &str) {
     let dropped = forget_owner(owner);
     let owner = owner.to_string();
     spawn_local(async move {
-        let gone = crate::yrs_persist::purge_owner(&owner).await;
+        let gone = crate::editor::state::persist::purge_owner(&owner).await;
         web_sys::console::log_1(&JsValue::from_str(&format!(
             "[t338] sign-out purge: dropped {dropped} in-memory snapshot(s) and deleted {gone} local record(s)"
         )));
@@ -878,7 +879,7 @@ fn snapshot_local(doc: &DocHandle, mission_id: &str, kind: Snapshot) -> Option<u
     remember(mission_id, kind, bytes.clone());
     let key = backup_key(mission_id, kind);
     spawn_local(async move {
-        if let Err(e) = crate::yrs_persist::save_state(&key, &bytes).await {
+        if let Err(e) = crate::editor::state::persist::save_state(&key, &bytes).await {
             // Non-fatal: the in-memory copy (and, for a pre-adopt, the undo step) still stands.
             web_sys::console::warn_1(&JsValue::from_str(&format!(
                 "[t191] backup save failed for {key}: {e:?}"
@@ -898,7 +899,7 @@ async fn has_snapshot(mission_id: &str, kind: Snapshot) -> bool {
     if recall(mission_id, kind).is_some() {
         return true;
     }
-    crate::yrs_persist::load_state(&backup_key(mission_id, kind))
+    crate::editor::state::persist::load_state(&backup_key(mission_id, kind))
         .await
         .is_some_and(|b| !b.is_empty())
 }
@@ -933,7 +934,7 @@ fn set_live_editor(mission_id: &str, doc: &DocHandle) {
 ///     makes pointer identity the exact test; the in-place `*doc.borrow_mut() = …` swaps that the
 ///     IDB restore and this module perform do not disturb it.
 fn live_editor_is(mission_id: &str) -> bool {
-    let Some(ctx_doc) = crate::mission_history::doc_handle() else {
+    let Some(ctx_doc) = crate::editor::state::history::doc_handle() else {
         return false;
     };
     LIVE_EDITOR.with(|e| {
@@ -981,14 +982,14 @@ async fn restore_snapshot(mission_id: String, want: Snapshot) -> bool {
     }
     let bytes = match recall(&mission_id, want) {
         Some(b) => b,
-        None => crate::yrs_persist::load_state(&backup_key(&mission_id, want))
+        None => crate::editor::state::persist::load_state(&backup_key(&mission_id, want))
             .await
             .unwrap_or_default(),
     };
     if bytes.is_empty() {
         return false;
     }
-    let Some(doc) = crate::mission_history::doc_handle() else {
+    let Some(doc) = crate::editor::state::history::doc_handle() else {
         return false;
     };
     // Rebuild as a FRESH core and swap, exactly like the boot IDB restore. Applying the update over
@@ -1020,9 +1021,9 @@ async fn restore_snapshot(mission_id: String, want: Snapshot) -> bool {
     // Wholesale document swap: rebind glyphs/HUD/docks (`after_local_edit` would be wrong — it
     // rebinds from a doc it assumes was edited in place), then mark dirty and re-arm the persist so
     // the restored document becomes the local record rather than the displaced one.
-    crate::mission_history::rebind_engine_from_doc();
-    crate::mission_history::set_dirty(true);
-    crate::yrs_persist::schedule_edit_persist(doc, &mission_id);
+    crate::editor::state::history::rebind_engine_from_doc();
+    crate::editor::state::history::set_dirty(true);
+    crate::editor::state::persist::schedule_edit_persist(doc, &mission_id);
     // Name the way back, for the same reason the adopt names Ctrl/Cmd+Z: a recovery nobody knows
     // about is not a recovery.
     let banked = match displaced {

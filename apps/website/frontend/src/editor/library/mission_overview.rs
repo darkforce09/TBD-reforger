@@ -1376,14 +1376,14 @@ mod tests {
     /// **The drift lock.** T-395 exists because T-389 fixed the badge and left a second copy of the
     /// same mapping in the grid. One mapper is only one mapper while the badge actually calls it —
     /// so pin the call, on the scrubbed production half of `missions.rs` (T-601/T-622
-    /// [`crate::arsenal::class_r_scrub`], which folds comments, dead `cfg` items and const-false
+    /// [`crate::editor::arsenal::class_r_scrub`], which folds comments, dead `cfg` items and const-false
     /// blocks away and fails closed on anything it cannot read).
     ///
     /// `live_code` blanks string literals as well, so a `"mission_status_label"` mention inside a
     /// doc string or a copy literal cannot green this.
     #[test]
     fn the_card_badge_and_the_dossier_grid_share_one_label_mapper() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
         let prod = live_code(include_str!("mission_library.rs"));
         let badge = only_body(&prod, "fn visibility_badge(status: &str)");
         assert!(

@@ -21,7 +21,7 @@ use crate::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
 /// same signature, exactly as [`placed_vehicles_panel`] does.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<String>>) -> AnyView {
-    use crate::editor_ops as ops;
+    use crate::editor::state::operations as ops;
 
     // The type the next draw will carry. Seeded from the schema, not typed here; `boundary` is the
     // play area, which is the zone a mission is most likely to want first.
@@ -259,11 +259,11 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
 /// the rules half is GENERATED from `$defs/zoneRules` by [`zone_rule_fields`].
 #[cfg(target_arch = "wasm32")]
 fn zone_attributes(
-    z: crate::editor_ops::ZoneRow,
+    z: crate::editor::state::operations::ZoneRow,
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<String>>,
 ) -> AnyView {
-    use crate::editor_ops as ops;
+    use crate::editor::state::operations as ops;
 
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
     let zid = z.id.clone();
@@ -420,7 +420,7 @@ fn zone_rule_control(
     rules: serde_json::Value,
     doc_tick: RwSignal<u64>,
 ) -> AnyView {
-    use crate::editor_ops as ops;
+    use crate::editor::state::operations as ops;
 
     let current = rules.get(&f.key).cloned();
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
@@ -1188,7 +1188,7 @@ mod tests {
     /// not, and the alternative is no assertion at all.
     #[test]
     fn every_t211_mutator_has_a_caller() {
-        const OPS: &str = include_str!("../../editor_ops.rs");
+        const OPS: &str = include_str!("../state/operations.rs");
         // The eleven, verbatim from `doc/store.rs`'s T-211 block.
         for m in [
             "add_circle_zone",
@@ -1250,9 +1250,9 @@ mod tests {
     /// whole-file `live_code` prunes reachable-only-after-a-jump statements too aggressively for a
     /// deep-nested match arm). `live_code` then deletes comments + blanks string literals.
     fn editor_live_from_page() -> String {
-        use crate::arsenal::class_r_scrub::live_code;
+        use crate::editor::arsenal::class_r_scrub::live_code;
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-        let raw = include_str!("../../mission_editor.rs");
+        let raw = include_str!("../mission_editor.rs");
         assert_eq!(
             raw.matches(anchor.as_str()).count(),
             1,
@@ -1270,7 +1270,7 @@ mod tests {
     fn t792_escape_arm_cancels_the_zone_draw() {
         let ed = editor_live_from_page();
         assert!(
-            ed.contains("crate::editor_ops::cancel_zone_draw()"),
+            ed.contains("editor_ops::cancel_zone_draw()"),
             "T-792: the editor keydown must call editor_ops::cancel_zone_draw() (the ONE cancel a \
              multi-click draw honours) — cancel_pending alone leaves the draft armed"
         );
@@ -1279,8 +1279,8 @@ mod tests {
         // keydown dispatch and the sibling place cancel it sits beside.
         assert!(
             ed.contains("code().as_str()")
-                && ed.contains("crate::editor_ops::has_pending()")
-                && ed.contains("crate::editor_ops::cancel_zone_draw()"),
+                && ed.contains("editor_ops::has_pending()")
+                && ed.contains("editor_ops::cancel_zone_draw()"),
             "T-792: the zone-draw cancel must live in the ONE shared keydown Escape arm, beside the \
              armed-place (has_pending) cancel — no second window keydown listener"
         );
@@ -1307,8 +1307,8 @@ mod tests {
     /// bump elsewhere in the file cannot satisfy it.
     #[test]
     fn t792_cancel_zone_draw_bumps_the_dock_tick() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let ops = live_code(include_str!("../../editor_ops.rs"));
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        let ops = live_code(include_str!("../state/operations.rs"));
         let body = only_body(&ops, "pub fn cancel_zone_draw() -> bool");
         assert!(
             body.contains("bump_doc_tick()"),

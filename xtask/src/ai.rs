@@ -435,7 +435,7 @@ mod tests {
 
     #[test]
     fn bare_file_read_is_denied() {
-        assert!(guard_bash("cat apps/website/frontend/src/mission_editor.rs").is_some());
+        assert!(guard_bash("cat apps/website/frontend/src/editor/mission_editor.rs").is_some());
         assert!(guard_bash("sed -n '1,200p' xtask/src/main.rs").is_some());
     }
 

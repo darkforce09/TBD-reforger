@@ -545,7 +545,7 @@ mod imp {
     type CompiledWithDiagnostics = (String, Vec<Finding>);
 
     use crate::core::auth::AuthStore;
-    use crate::mission_doc::DocHandle;
+    use crate::editor::state::doc_host::DocHandle;
 
     use super::{
         compiled_export_text, format_merge_report, resolve_selected_entities,
@@ -890,7 +890,7 @@ mod imp {
                 // Naming the staleness is the whole reason this is a toast and not a silent download:
                 // the file is the CURRENT document, which is only what a game server would fetch once
                 // this state is saved.
-                let staleness = if crate::mission_history::is_dirty() {
+                let staleness = if crate::editor::state::history::is_dirty() {
                     Some(
                         "Downloaded the compiled mission document — compiled from your unsaved \
                          changes, so the server still serves the last saved version.",
@@ -978,13 +978,13 @@ mod imp {
                     // (T-370 removed the `editor_session::mark_adopted` call that sat here: T-352
                     // had already emptied it, and T-223 replaced the semver marker it once wrote
                     // with the content test in `mission_hydrate::classify_local`.)
-                    crate::mission_history::set_dirty(false);
+                    crate::editor::state::history::set_dirty(false);
                     // T-191 fix — expire the conflict backup pair. This 201 is the one moment those
                     // whole-document IDB records stop being anybody's last copy, and nothing else ever
                     // deleted them: they accumulated one doc per mission ever conflicted, forever, while
                     // `__missionBackup.has()` kept offering a weeks-old document that a restore would
                     // swap over current work. Rationale in `mission_hydrate::clear_local_backups`.
-                    crate::mission_hydrate::clear_local_backups(&mission_id);
+                    crate::editor::state::hydrate::clear_local_backups(&mission_id);
                     if let Some(sig) = semver_signal() {
                         sig.set(Some(semver.clone()));
                     }
@@ -1090,7 +1090,7 @@ mod imp {
     /// T-693 (MENU-SCEN-011) — merge another mission (`source_id`) into the CURRENT document.
     ///
     /// Fetches the source's latest payload (`GET /missions/:id` → `current_version.json_payload`, the
-    /// same superset [`crate::mission_hydrate`] loads), runs [`MissionDocCore::merge_mission_payload_json`]
+    /// same superset [`crate::editor::state::hydrate`] loads), runs [`MissionDocCore::merge_mission_payload_json`]
     /// on the hosted doc, and reports the outcome via toasts: a counts line plus, when the merge
     /// tolerated malformed rows, an error toast listing each skipped row (the T-657 totality contract
     /// made visible to the author). `offset` is the optional template placement delta.
@@ -1163,7 +1163,7 @@ mod imp {
             // so a wired merge reported success by toast while the map showed nothing. The `EDITOR_CTX`
             // doc borrow was dropped at the end of the block above; `after_local_edit` takes its own
             // `HISTORY_CTX` borrow, so this is not held across the earlier `.await`.
-            crate::mission_history::after_local_edit();
+            crate::editor::state::history::after_local_edit();
 
             let (summary, skipped) = format_merge_report(&report_json);
             toasts.success(format!("{summary} (Ctrl+Z to undo.)"));
@@ -1281,7 +1281,7 @@ mod imp {
     /// Copy button carried the very defect this function was written against — a dropped
     /// `write_text` promise followed by an unconditional "copied" toast — and it was the live
     /// in-repo precedent any new exporter would have copied. It now calls through here (reachable
-    /// as `crate::mission_commands::write_clipboard` via the `pub use imp::*` re-export below).
+    /// as `crate::editor::state::commands_hotkeys::write_clipboard` via the `pub use imp::*` re-export below).
     /// A second clipboard path is a defect in itself: two vocabularies for "did the copy land"
     /// means one of them is eventually wrong and nobody notices. If another surface needs to copy,
     /// call this — do not re-derive it.
@@ -1678,8 +1678,8 @@ mod tests {
     /// two paths can no longer drift into shipping different bytes.
     #[test]
     fn class_r_source_forbids_value_pretty_on_compiled_export() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
-        const SRC: &str = include_str!("mission_commands.rs");
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        const SRC: &str = include_str!("commands_hotkeys.rs");
         let production = live_code(SRC);
         let code = only_body(
             &production,
@@ -1724,8 +1724,8 @@ mod tests {
     /// split so this assertion line cannot satisfy itself.
     #[test]
     fn t746_row_hydrate_keeps_game_mode_beside_meta() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let src = live_code(include_str!("mission_commands.rs"));
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        let src = live_code(include_str!("commands_hotkeys.rs"));
         let set = only_body(&src, "pub fn set_row_meta");
         let row_hydrate = format!("{}{}", "ROW_", "HYDRATE");
         let hydrated = format!("{}{}", "Hydrated", "Row {");
@@ -1758,7 +1758,7 @@ mod tests {
     /// pin reported the compact wire path was live.
     #[test]
     fn the_export_pin_rejects_every_dead_code_wrapper() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
         let needle = "compiled_export_text(&doc)";
         let attacks: [(&str, String); 12] = [
             (
@@ -1954,8 +1954,8 @@ mod tests {
     /// satisfy the needle — only a live call can.
     #[test]
     fn class_r_merge_mission_now_runs_the_after_local_edit_tail() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
-        const SRC: &str = include_str!("mission_commands.rs");
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        const SRC: &str = include_str!("commands_hotkeys.rs");
         let production = live_code(SRC);
         let code = only_body(&production, "pub fn merge_mission_now");
         assert!(
@@ -2063,8 +2063,8 @@ mod tests {
     /// download button would look fine and would be a second claimant. This reads the live body.
     #[test]
     fn class_r_the_export_publishes_to_the_panel_and_builds_no_second_one() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
-        const SRC: &str = include_str!("mission_commands.rs");
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        const SRC: &str = include_str!("commands_hotkeys.rs");
         let production = live_code(SRC);
         let code = only_body(&production, "pub fn export_compiled_now(");
         assert!(
@@ -2318,8 +2318,8 @@ mod tests {
     /// bare call, or if success is toasted before the match.
     #[test]
     fn class_r_write_clipboard_toasts_only_on_the_resolve_arm() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body};
-        const SRC: &str = include_str!("mission_commands.rs");
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        const SRC: &str = include_str!("commands_hotkeys.rs");
         let production = live_code(SRC);
         let body = only_body(
             &production,

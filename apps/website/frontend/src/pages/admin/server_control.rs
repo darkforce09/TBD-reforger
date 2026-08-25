@@ -842,10 +842,10 @@ mod t270 {
         assert_eq!(rcon_body_kick(), json!({ "action": "kick" }));
     }
 
-    /// The shipped half of this page, scrubbed (T-601 — [`crate::arsenal::class_r_scrub`]).
+    /// The shipped half of this page, scrubbed (T-601 — [`crate::editor::arsenal::class_r_scrub`]).
     /// Literals survive: a route path and a `data-testid` are the contract, not a mention of it.
     fn live() -> String {
-        crate::arsenal::class_r_scrub::live_source(include_str!("server_control.rs"))
+        crate::editor::arsenal::class_r_scrub::live_source(include_str!("server_control.rs"))
     }
 
     /// **Cure 2** — these are pure source-shape bans and wiring seams inside `view!` macros, with
@@ -1429,9 +1429,9 @@ fn reply(delivered: bool, accepted: bool) -> RconAccepted {
 "###;
 
         fn item(sig: &str) -> String {
-            let prod = crate::arsenal::class_r_scrub::live_source(SRC);
-            let raw = crate::arsenal::class_r_scrub::only_item(&prod, sig);
-            crate::arsenal::class_r_scrub::resolve_wasm_cfg(raw)
+            let prod = crate::editor::arsenal::class_r_scrub::live_source(SRC);
+            let raw = crate::editor::arsenal::class_r_scrub::only_item(&prod, sig);
+            crate::editor::arsenal::class_r_scrub::resolve_wasm_cfg(raw)
         }
 
         /// The verbatim `post_rcon`, renamed, plus the `post_rcon` the driver actually calls: a

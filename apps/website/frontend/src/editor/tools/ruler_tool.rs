@@ -1115,7 +1115,7 @@ mod tests {
     /// doc mutator) this is the "no store.rs writes" guarantee: a reload finds a clean map.
     #[test]
     fn no_ruler_doc_writes() {
-        let code = crate::arsenal::class_r_scrub::live_code(include_str!("ruler_tool.rs"));
+        let code = crate::editor::arsenal::class_r_scrub::live_code(include_str!("ruler_tool.rs"));
         for banned in [
             "MissionDocCore",
             "move_entities",
@@ -1461,7 +1461,7 @@ mod t778_seam_lifecycle {
     /// the standard Class-R substring ceiling is worth paying to raise.
     #[test]
     fn the_render_ctx_seam_is_installed() {
-        use crate::arsenal::class_r_scrub::{live_code, only_body, only_item};
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body, only_item};
         let src = live_code(include_str!("../world_assets/mod.rs"));
 
         let body = only_body(&src, "pub fn register_render_ctx(");

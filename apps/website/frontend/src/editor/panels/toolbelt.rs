@@ -560,7 +560,8 @@ pub fn StatusBar(
         if ids.len() == 1 {
             #[cfg(target_arch = "wasm32")]
             {
-                return crate::editor_ops::read_attrs(&ids[0]).map(|a| (a.x, a.y, a.z));
+                return crate::editor::state::operations::read_attrs(&ids[0])
+                    .map(|a| (a.x, a.y, a.z));
             }
         }
         let _ = ids;
@@ -953,7 +954,7 @@ pub fn BottomToolbelt(
 /// signature defect: a check reporting success over an input it never truly examined).
 #[cfg(test)]
 mod t636_status_bar {
-    use crate::arsenal::class_r_scrub::{live_code, live_source};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source};
 
     /// This module's file, with comments blanked but string literals KEPT — so the Tailwind class
     /// strings and the readout labels survive as structural landmarks for ordering proofs.
@@ -1150,9 +1151,11 @@ mod t636_status_bar {
     /// `key=` binding, not a mention in a comment or class string.
     #[test]
     fn grid_ref_for_is_keyed_by_position_not_text() {
-        let code = crate::arsenal::class_r_scrub::live_code(include_str!("toolbelt.rs"));
-        let body =
-            crate::arsenal::class_r_scrub::only_body(&code, &format!("pub fn {}", "MapGridRefs("));
+        let code = crate::editor::arsenal::class_r_scrub::live_code(include_str!("toolbelt.rs"));
+        let body = crate::editor::arsenal::class_r_scrub::only_body(
+            &code,
+            &format!("pub fn {}", "MapGridRefs("),
+        );
         // The rows key on the position-derived identity…
         assert!(
             body.contains("key=|l| l.key"),
@@ -1215,8 +1218,10 @@ mod t636_status_bar {
     #[test]
     fn status_bar_axis_readout_uses_the_eden_unit_formatter() {
         let src = live_source(include_str!("toolbelt.rs"));
-        let body =
-            crate::arsenal::class_r_scrub::only_body(&src, &format!("pub fn {}", "StatusBar("));
+        let body = crate::editor::arsenal::class_r_scrub::only_body(
+            &src,
+            &format!("pub fn {}", "StatusBar("),
+        );
         assert!(
             body.contains("fmt_coord_eden("),
             "F-13: the StatusBar axis readout must render the Eden ` m`-suffixed value via \
@@ -1284,7 +1289,7 @@ mod t636_status_bar {
 /// satisfies an absence check.
 #[cfg(test)]
 mod t642_ruler {
-    use crate::arsenal::class_r_scrub::{live_code, live_source};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source};
 
     /// This file with comments blanked but strings KEPT (class strings + labels survive as landmarks).
     fn src_kept() -> String {
@@ -1891,7 +1896,7 @@ mod t793_grid_labels_live_camera {
 /// Source-inspection on scrubbed code (the toolbar is a Leptos view); needles assembled at run time.
 #[cfg(test)]
 mod t668_state_vocabulary {
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
     /// The `cls` closure composes TOOL_BASE with the recipes — TOGGLED_PLATE for the current mode,
     /// HOVER_FILL for the rest. Proven on scrubbed code so the needle is the real `cn` call.
@@ -1960,7 +1965,7 @@ mod t668_state_vocabulary {
 #[cfg(test)]
 mod t670_scale_readout {
     use super::{format_m_per_px, m_per_px, pick_scale_bar};
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body, only_item};
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body, only_item};
     use map_engine_core::camera::{MAX_ZOOM, MIN_ZOOM};
 
     /// The readout across the whole zoom clamp, at the real rungs the operator sees. `MIN_ZOOM −6`
