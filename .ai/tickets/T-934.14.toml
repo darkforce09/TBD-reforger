@@ -1,23 +1,45 @@
 id = "T-934.14"
 kind = "work"
-parent = "T-934"
 title = "Reorg B8 — hotkeys → state/commands.rs; final shell"
 summary = "commands::attach_editor_hotkeys(&ctx); resolve naming vs state/commands_hotkeys.rs from A6; MissionEditorPage shell lands at ~450-800 LOC."
 class = "chore"
-status = "queued"
+status = "shipped"
 order = 6100
 spec = "docs/specs/website_reorg/plan.md"
 executor = "claude-code"
-created_at = "2026-08-25T00:00:00Z"
+notes = """
+Final mission_editor.rs: 3,453 lines (page body + view template + page-pinned anchors/
+helpers). The audit's ~450-LOC shell figure assumed tests and helpers vanish; the honest
+residue after B/B2 is the shell + t427/t573 scrub anchors + boot spawn tasks + view.
+Agent's watcher loops self-matched on pgrep and hung after the suite passed (22/0);
+operator flagged, watchers killed, verdict read from the suite log directly.
+"""
 depends_on = ["T-934.13"]
+parent = "T-934"
 main_goal = "Complete audit §4 Phase 2; final orchestrator shell."
+context = ["Phase B2 closer: the keyboard dispatch leaves MissionEditorPage; the page reaches its shell form for this program."]
 requirement = [
     "Backspace/Delete exclusivity, Ctrl+Z/Y, G, bracket, digit hotkeys preserved with guard tests.",
     "Spec pins final commands module layout (merge or sibling of commands_hotkeys.rs).",
 ]
-verify = ["cargo xtask mk ci-local-leptos", "cargo xtask mk leptos-gates"]
+current_state = ["Was: onkeydown (Backspace/Delete exclusivity, Ctrl+Z/Y, tool digits, Escape stack) inline in the 3.8k page, pinned by t648/t649/t662/t726/zones_panel and the help keymap census."]
+approach = [
+    "canvas/commands.rs (433 LOC) — audit-separation option over folding into gestures.rs; reuses EditorGestureContext; closure body byte-identical; registration moves with it.",
+    "state/commands_hotkeys.rs untouched (naming collision resolved by placement, not rename).",
+    "Keymap census re-attributed; twelve test modules re-anchored; zones_panel keydown needles repointed.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+]
 acceptance = ["Shell is signal init + boot spawn + view template; gates green."]
-estimated = ["scope"]
+shipped_at = "fc787c222"
+created_at = "2026-08-25T00:00:00Z"
+completed_at = "2026-08-25T20:09:04Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = ["apps/website/frontend/src/editor/state/"]
 
 [scope]
