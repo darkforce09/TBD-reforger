@@ -26,8 +26,9 @@ fn editor_live() -> String {
 /// below at runtime so this comment is not itself a match).
 #[test]
 fn backspace_hides_chrome_and_does_not_delete() {
-    // String-literal arms: pinned on the RAW file (live_code blanks string literals).
-    let raw = include_str!("../mission_editor.rs");
+    // String-literal arms: pinned on the RAW file (live_code blanks string literals). The arms
+    // moved with the keydown dispatch to `canvas/commands.rs` at T-934.14 — pin that file.
+    let raw = include_str!("../canvas/commands.rs");
     // Split the needle so the literal below is not itself a second occurrence in this file.
     let combined = format!("{}{}", "\"Delete\" | ", "\"Backspace\"");
     assert!(

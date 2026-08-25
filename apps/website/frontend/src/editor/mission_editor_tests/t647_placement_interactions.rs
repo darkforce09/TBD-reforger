@@ -16,6 +16,7 @@ fn editor_live() -> String {
     );
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
     src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    src.push_str(&live_code(include_str!("../canvas/commands.rs")));
     src
 }
 

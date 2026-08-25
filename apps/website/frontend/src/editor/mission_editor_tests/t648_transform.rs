@@ -18,6 +18,7 @@ fn editor_live() -> String {
     );
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
     src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    src.push_str(&live_code(include_str!("../canvas/commands.rs")));
     src
 }
 
@@ -372,7 +373,7 @@ fn t648_keydown_census() {
     // once, in `eden_help::keymap_census`, beside the structured (code, modifiers) census that
     // detects collisions; `there_is_exactly_one_extractor` keeps it from being copied again.
     use crate::editor::panels::help_modal::keymap_census::keydown_arms;
-    let this_arms = keydown_arms(include_str!("../mission_editor.rs"));
+    let this_arms = keydown_arms(include_str!("../canvas/commands.rs"));
     let history_arms = keydown_arms(include_str!("../state/history.rs"));
     // Needles assembled so the LITERAL never appears verbatim in this test's own source.
     let key = |k: &str| format!("\"{k}\"");

@@ -17,6 +17,7 @@ fn editor_live() -> String {
     );
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
     src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    src.push_str(&live_code(include_str!("../canvas/commands.rs")));
     src
 }
 
@@ -44,7 +45,7 @@ fn fn_source(src: &str, sig: &str) -> String {
 /// one must not also bind it, or the two listeners would both fire on one keypress.
 #[test]
 fn t649_ctrl_a_census() {
-    let this_arms = keydown_arms(include_str!("../mission_editor.rs"));
+    let this_arms = keydown_arms(include_str!("../canvas/commands.rs"));
     let history_arms = keydown_arms(include_str!("../state/history.rs"));
     // Assembled so the literal never appears verbatim in this test's own source.
     let key_a = format!("\"{}\"", "KeyA");
@@ -78,7 +79,7 @@ fn t649_ctrl_a_census() {
 #[test]
 fn ctrl_a_hands_the_container_rect_to_select_all_in_view() {
     let ed = editor_live();
-    let arms = keydown_arms(include_str!("../mission_editor.rs"));
+    let arms = keydown_arms(include_str!("../canvas/commands.rs"));
     assert!(
         arms.contains("container.get_bounding_client_rect()")
             && arms.contains("editor_ops::select_all_in_view(rect.width(), rect.height())"),

@@ -16,7 +16,7 @@ fn key(k: &str) -> String {
 /// would be cut twice.
 #[test]
 fn t669_cut_key_census() {
-    let this_arms = keydown_arms(include_str!("../mission_editor.rs"));
+    let this_arms = keydown_arms(include_str!("../canvas/commands.rs"));
     let history_arms = keydown_arms(include_str!("../state/history.rs"));
     let key_x = key("KeyX");
     assert!(
@@ -48,7 +48,7 @@ fn t669_cut_key_census() {
 /// never degrade into a silent destructive Delete. Order is the contract: copy first.
 #[test]
 fn cut_copies_before_it_deletes_and_short_circuits() {
-    let arms = keydown_arms(include_str!("../mission_editor.rs"));
+    let arms = keydown_arms(include_str!("../canvas/commands.rs"));
     let at = arms
         .find(&format!("{} if modk", key("KeyX")))
         .expect("the cut arm exists — censused above");
@@ -85,7 +85,7 @@ fn cut_copies_before_it_deletes_and_short_circuits() {
 /// pass by moving the offender out of a window.
 #[test]
 fn paste_at_original_passes_no_anchor() {
-    let arms = keydown_arms(include_str!("../mission_editor.rs"));
+    let arms = keydown_arms(include_str!("../canvas/commands.rs"));
     let key_v = key("KeyV");
     let plain = arms
         .find(&format!(
@@ -159,7 +159,7 @@ fn t743_plain_paste_falls_back_to_the_view_centre() {
 /// one `shiftKey`, so no event can satisfy both, and match ORDER between them is irrelevant.
 #[test]
 fn the_two_paste_arms_are_mutually_exclusive() {
-    let arms = keydown_arms(include_str!("../mission_editor.rs"));
+    let arms = keydown_arms(include_str!("../canvas/commands.rs"));
     let key_v = key("KeyV");
     assert_eq!(
         arms.matches(key_v.as_str()).count(),

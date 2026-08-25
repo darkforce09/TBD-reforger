@@ -14,12 +14,15 @@ fn overlays_region() -> String {
     live_code(include_str!("../canvas/overlays.rs"))
 }
 
-/// Page body — hosts the shared measure-tool Escape arm.
+/// Page body + the T-934.14 keydown dispatch (`canvas/commands.rs`), which hosts the shared
+/// measure-tool Escape arm since the move. Each half scrubbed separately.
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     let raw = include_str!("../mission_editor.rs");
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
-    live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
+    let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
+    src.push_str(&live_code(include_str!("../canvas/commands.rs")));
+    src
 }
 
 /// Asset picker / comment editor / connections panel each register and gate Escape.

@@ -8,9 +8,9 @@
 //! grep this file), and the capture preambles clone from locals mirroring the page's, so the
 //! capture semantics are unchanged.
 //!
-//! Deliberately NOT here: `onkeydown` (T-934.14's lane), `onpointercancel` / `onpointerleave` /
-//! `onresize` (they stay page-side with the boot tasks — the plan's six-closure scope), and the
-//! view template.
+//! Deliberately NOT here: `onkeydown` (T-934.14 moved it to the sibling `canvas/commands.rs`,
+//! riding this same context), `onpointercancel` / `onpointerleave` / `onresize` (they stay
+//! page-side with the boot tasks — the plan's six-closure scope), and the view template.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -82,13 +82,25 @@ pub(crate) struct EditorGestureContext {
     pub(crate) ruler_tick: RwSignal<u64>,
     /// T-643 — LoS repaint tick (`sync_los` bumps it).
     pub(crate) los_tick: RwSignal<u64>,
+    // ── T-934.14 — the four latches only the KEYDOWN dispatch (`canvas/commands.rs`) captures. ──
+    // The gesture closures never read them; they ride the shared context so the page hands ONE
+    // struct to both attach calls and the two files can never disagree about which signal a key
+    // flips.
+    /// T-662 — Backspace hide-interface latch (the chrome mounts gate on it page-side).
+    pub(crate) chrome_hidden: RwSignal<bool>,
+    /// T-638 — `E` toggles the LEFT dock (Entity List) collapse latch.
+    pub(crate) dock_left_collapsed: RwSignal<bool>,
+    /// T-638 — `R` toggles the RIGHT dock (Asset Browser) collapse latch.
+    pub(crate) dock_right_collapsed: RwSignal<bool>,
+    /// T-635 — the telemetry HUD toggle (Ctrl/Cmd+Alt+D; default hidden).
+    pub(crate) debug_hud_shown: RwSignal<bool>,
 }
 
 /// The page's `sync_ruler` rebuilt from the context: push the chain's current summary onto the
 /// reactive surface (status bar + repaint tick). Byte-for-byte the body the page's own copy runs
-/// (its Effect + Esc arm keep that copy), reading the SAME `Rc` + signals, so the two can never
-/// disagree about what a sync does.
-fn make_sync_ruler(ctx: &EditorGestureContext) -> impl Fn() + Clone {
+/// (its Effect keeps that copy; the keydown Esc arm's lives in `canvas/commands.rs`), reading the
+/// SAME `Rc` + signals, so no two can ever disagree about what a sync does.
+pub(super) fn make_sync_ruler(ctx: &EditorGestureContext) -> impl Fn() + Clone {
     let ruler = ctx.ruler.clone();
     let ruler_status = ctx.ruler_status;
     let ruler_tick = ctx.ruler_tick;
@@ -101,7 +113,7 @@ fn make_sync_ruler(ctx: &EditorGestureContext) -> impl Fn() + Clone {
 /// The page's `sync_los`, same contract as [`make_sync_ruler`]: bump the LoS repaint tick.
 /// `Copy` (the page's own copy is too — it captures one `Copy` signal), which is what lets the
 /// pointerup preamble's `let sync_los = sync_los;` keep its original by-value form.
-fn make_sync_los(ctx: &EditorGestureContext) -> impl Fn() + Copy {
+pub(super) fn make_sync_los(ctx: &EditorGestureContext) -> impl Fn() + Copy {
     let los_tick = ctx.los_tick;
     move || {
         los_tick.update(|t| *t = t.wrapping_add(1));

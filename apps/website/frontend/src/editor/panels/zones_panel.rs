@@ -1245,10 +1245,12 @@ mod tests {
     // only be satisfied by real shipping code, never by the very comments that describe the fix (this
     // is the T-759-class discipline: never grep the raw file for the token you just added).
 
-    /// The keydown Escape arm lives inside `MissionEditorPage`. Slice from there before scrubbing —
-    /// the same anchor `t642_ruler_wiring::editor_live` uses to keep the keydown closure intact (a
-    /// whole-file `live_code` prunes reachable-only-after-a-jump statements too aggressively for a
-    /// deep-nested match arm). `live_code` then deletes comments + blanks string literals.
+    /// The keydown Escape arm lives in the editor keydown dispatch — `canvas/commands.rs` since
+    /// T-934.14 (it was inside `MissionEditorPage` before). Slice the page from its anchor before
+    /// scrubbing — the same anchor `t642_ruler_wiring::editor_live` uses (a whole-file `live_code`
+    /// prunes reachable-only-after-a-jump statements too aggressively for a deep-nested match arm)
+    /// — then append the commands file, scrubbed separately (the T-934.13 concat idiom).
+    /// `live_code` deletes comments + blanks string literals.
     fn editor_live_from_page() -> String {
         use crate::editor::arsenal::class_r_scrub::live_code;
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
@@ -1258,7 +1260,9 @@ mod tests {
             1,
             "scrub anchor must be unambiguous"
         );
-        live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+        let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
+        src.push_str(&live_code(include_str!("../canvas/commands.rs")));
+        src
     }
 
     /// The keyboard Esc arm must ROUTE an in-progress draw to `cancel_zone_draw`. Before T-792 the arm

@@ -9,7 +9,9 @@ fn editor_src() -> String {
 }
 
 /// The editor page region with comments stripped and string literals blanked — same slice the
-/// t662 module uses (from `pub fn MissionEditorPage()` onward, at a brace-0 boundary).
+/// t662 module uses (from `pub fn MissionEditorPage()` onward, at a brace-0 boundary) — plus the
+/// T-934.14 keydown dispatch (`canvas/commands.rs`), where the Ctrl+Alt+D arm moved verbatim.
+/// Each half scrubbed separately.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     let raw = include_str!("../mission_editor.rs");
@@ -18,7 +20,9 @@ fn editor_live() -> String {
         1,
         "scrub anchor must be unambiguous"
     );
-    live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
+    src.push_str(&live_code(include_str!("../canvas/commands.rs")));
+    src
 }
 
 /// (a) Ctrl/Cmd+Alt+D is a keydown arm that toggles the HUD, and (a') the closure honours the
@@ -39,8 +43,9 @@ fn ctrl_alt_d_toggles_the_hud_behind_the_editable_guard() {
         ed.contains("if mission_history::in_editable_field() {"),
         "T-635: the keydown closure must guard on in_editable_field() before acting"
     );
-    // The literal binding is present on the raw file too (live_code blanks it above).
-    let raw = include_str!("../mission_editor.rs");
+    // The literal binding is present on the raw keydown file too (live_code blanks it above;
+    // the arm lives in `canvas/commands.rs` since T-934.14).
+    let raw = include_str!("../canvas/commands.rs");
     assert!(
         raw.contains("\"KeyD\" if modk && ev.alt_key()"),
         "T-635: the toggle must be bound to the D key"

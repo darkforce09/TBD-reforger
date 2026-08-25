@@ -734,12 +734,13 @@ mod t638_collapse {
         assert_ne!(icon(false, true), icon(false, false));
     }
 
-    /// The `E`/`R` keydown wiring is present in `mission_editor` (source pin — the arms live in a
-    /// wasm-only keydown a native test cannot fire). Needles are assembled so this test's own source
-    /// cannot satisfy them.
+    /// The `E`/`R` keydown wiring is present in the editor keydown dispatch (source pin — the arms
+    /// live in a wasm-only keydown a native test cannot fire). T-934.14 moved that dispatch from
+    /// `mission_editor.rs` to `canvas/commands.rs`; the pin follows the arms. Needles are assembled
+    /// so this test's own source cannot satisfy them.
     #[test]
     fn keydown_binds_e_and_r_to_the_collapse_latches() {
-        let src = include_str!("mission_editor.rs");
+        let src = include_str!("canvas/commands.rs");
         let arm = |code: &str| format!("\"{code}\" if !modk");
         // E → left latch, R → right latch.
         assert!(

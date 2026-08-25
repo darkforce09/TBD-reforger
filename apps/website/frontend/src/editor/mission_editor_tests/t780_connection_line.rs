@@ -124,6 +124,12 @@ fn page() -> String {
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
 
+/// The editor keydown dispatch — `canvas/commands.rs` since T-934.14 (the Delete arm moved out of
+/// the page verbatim). Scrubbed like `page()`.
+fn keydown() -> String {
+    live_code(include_str!("../canvas/commands.rs"))
+}
+
 /// **The lane is fed from the DOCUMENT.** The mount body must bind `connections_bind` from
 /// `live_connection_segments` (which reads `MissionDocCore`) packed by `connection_lane_verts`,
 /// re-reading on `doc_tick` — the one channel `after_doc_change` (edit / undo / redo),
@@ -166,7 +172,7 @@ fn lane_is_bound_from_the_document_on_every_doc_tick() {
 /// was handed straight to the verb, which reported success over a write that never happened.
 #[test]
 fn map_delete_calls_the_panels_delete_connection() {
-    let keys = only_body(&page(), "let onkeydown =").to_string();
+    let keys = only_body(&keydown(), "let onkeydown =").to_string();
     let verb = ["editor_ops", "::", "delete_connection("].concat();
     let sel = ["selected_", "connection.try_get_untracked()"].concat();
     assert!(
@@ -383,7 +389,7 @@ fn connection_pins_are_load_bearing() {
         !mount.replacen(&bind, "/* hollow */", 1).contains(&bind),
         "fired rule: deleting connections_bind must break the T-780 feed pin"
     );
-    let keys = only_body(&page(), "let onkeydown =").to_string();
+    let keys = only_body(&keydown(), "let onkeydown =").to_string();
     let verb = ["editor_ops", "::", "delete_connection("].concat();
     assert!(
         keys.contains(&verb),

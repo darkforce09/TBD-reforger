@@ -619,7 +619,10 @@ pub(crate) mod keymap_census {
     /// on the file that owns the listener. Grep for the LISTENER HEADS, not for the component.
     fn editor_surface() -> Vec<(&'static str, &'static str, usize)> {
         vec![
-            ("mission_editor.rs", include_str!("../mission_editor.rs"), 1),
+            // T-934.14 — the editor's own keydown dispatch moved out of `mission_editor.rs` into
+            // `canvas/commands.rs` (the page keeps ZERO window-level keydown listeners now, so it
+            // left the surface with its listener).
+            ("commands.rs", include_str!("../canvas/commands.rs"), 1),
             // T-934.11 — the asset picker / comment editor / connections panel (each installing
             // one Escape listener) moved out of `mission_editor.rs` into the canvas overlays file.
             ("overlays.rs", include_str!("../canvas/overlays.rs"), 3),
@@ -1161,7 +1164,7 @@ pub(crate) mod keymap_census {
         // gated on the measure tools having something to dismiss. `.escape()` returns false when a
         // tool is empty and the arm returns the OR, so an Escape with nothing placed falls through
         // untouched instead of swallowing the key from the dialogs above.
-        let arms = keydown_arms(include_str!("../mission_editor.rs"));
+        let arms = keydown_arms(include_str!("../canvas/commands.rs"));
         let esc = arms
             .find(&format!("\"{}\" if !modk", "Escape"))
             .expect("the editor keydown's Escape arm");
