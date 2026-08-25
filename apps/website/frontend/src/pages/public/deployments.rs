@@ -1005,7 +1005,7 @@ mod tests {
     // checked against the adversarial corpus, not just the predicate underneath it. If a future
     // edit reverts this cell to `!replay.is_empty()`, every `false` row stops returning `None` and
     // the test below names the exact payload that would have rendered.
-    include!("../../shared/is_http_url_cases.rs");
+    include!("../../../../shared/is_http_url_cases.rs");
 
     #[test]
     fn aar_cell_emits_an_href_only_for_http_urls() {

@@ -370,7 +370,7 @@ mod tests {
         assert!(!preview_text(&from_body).contains("&lt;"));
     }
 
-    include!("../../shared/is_http_url_cases.rs");
+    include!("../../../../shared/is_http_url_cases.rs");
 
     #[test]
     fn announcement_thumbnail_emits_src_only_for_http_urls() {

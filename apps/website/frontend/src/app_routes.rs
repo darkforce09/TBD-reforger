@@ -3,22 +3,22 @@
 //! `<Routes fallback>`. The chrome (Sidebar/TopNav) lives in AppLayout OUTSIDE `<Routes>`, so it
 //! persists across navigation — `<Routes>` swaps only `<main>`. The path list mirrors router.rs
 //! `ROUTES` (the S-routes gate's source of truth).
-use crate::announcements::AnnouncementsPage;
 use crate::approvals::MissionApprovalsPage;
 use crate::audit::AuditLogsPage;
 use crate::content::ContentManagerPage;
-use crate::dashboard::DashboardPage;
-use crate::deployments::DeploymentsPage;
 use crate::events::EventSchedulePage;
-use crate::leaderboards::LeaderboardsPage;
 use crate::missions::MissionLibraryPage;
-use crate::modpacks::ModpacksPage;
-use crate::mortar::MortarCalculatorPage;
+use crate::pages::public::announcements::AnnouncementsPage;
+use crate::pages::public::dashboard::DashboardPage;
+use crate::pages::public::deployments::DeploymentsPage;
+use crate::pages::public::leaderboards::LeaderboardsPage;
+use crate::pages::public::modpacks::ModpacksPage;
+use crate::pages::public::mortar::MortarCalculatorPage;
+use crate::pages::public::server_intel::ServerIntelPage;
+use crate::pages::public::settings::SettingsPage;
+use crate::pages::public::vehicles::VehicleDatabasePage;
 use crate::personnel::PersonnelRosterPage;
 use crate::server_control::ServerControlPage;
-use crate::server_intel::ServerIntelPage;
-use crate::settings::SettingsPage;
-use crate::vehicles::VehicleDatabasePage;
 use leptos::prelude::*;
 use leptos_router::components::{Route, Routes};
 use leptos_router::path;
@@ -96,8 +96,8 @@ pub fn AppRoutes() -> impl IntoView {
                 path=path!("/events/:id/missions/:emid/orbat")
                 view=crate::orbat_selection::OrbatSelectionPage
             />
-            <Route path=path!("/wiki") view=crate::wiki::WikiPage />
-            <Route path=path!("/wiki/:slug") view=crate::wiki::WikiPage />
+            <Route path=path!("/wiki") view=crate::pages::public::wiki::WikiPage />
+            <Route path=path!("/wiki/:slug") view=crate::pages::public::wiki::WikiPage />
             <Route path=path!("/vehicles") view=VehicleDatabasePage />
             <Route path=path!("/modpacks") view=ModpacksPage />
             <Route path=path!("/tools/mortar") view=MortarCalculatorPage />

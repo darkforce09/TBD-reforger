@@ -301,7 +301,7 @@ mod tests {
     use super::safe_avatar_url;
     use crate::core::ui::DEFAULT_AVATAR;
 
-    include!("../../shared/is_http_url_cases.rs");
+    include!("../../../../shared/is_http_url_cases.rs");
 
     #[test]
     fn profile_avatar_src_only_keeps_http_urls() {

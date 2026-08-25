@@ -241,7 +241,7 @@ mod tests {
     #[test]
     fn class_r_sse_abort_teardown_exists() {
         const SRC: &str = include_str!("sse.rs");
-        const INTEL: &str = include_str!("../server_intel.rs");
+        const INTEL: &str = include_str!("../pages/public/server_intel.rs");
         let production = live_code(SRC);
         // T-457 — the INTEL pin must ignore comments so commenting out the live
         // `on_cleanup(...abort_server_status_stream)` while leaving the string in a comment REDS.

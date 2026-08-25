@@ -504,7 +504,7 @@ mod t385 {
     /// which is the whole point.
     #[test]
     fn servers_golden_carries_terrain_from_match_join() {
-        const GOLDEN: &str = include_str!("../tests/fixtures/api/GET__servers.json");
+        const GOLDEN: &str = include_str!("../../../tests/fixtures/api/GET__servers.json");
         let v: serde_json::Value = serde_json::from_str(GOLDEN).expect("golden parses");
         let rows = v["data"].as_array().expect("golden has a `data` array");
         assert!(!rows.is_empty(), "golden must carry rows to assert against");

@@ -620,7 +620,7 @@ mod tests {
     // Shared adversarial corpus — same table both `is_http_url` implementations pin to.
     // If a future edit reverts this cell to `!url.is_empty()`, every `false` row starts
     // emitting an `<img src>` again and this names the payload.
-    include!("../../shared/is_http_url_cases.rs");
+    include!("../../../../shared/is_http_url_cases.rs");
 
     #[test]
     fn avatar_img_emits_src_only_for_http_urls() {

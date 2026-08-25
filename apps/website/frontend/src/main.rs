@@ -4,7 +4,6 @@
 //! land in later slices. Every slice is verified in a real headless browser via the gate harness
 //! (S/V/R/T), not just `cargo check`.
 
-mod announcements;
 mod app_routes;
 mod approvals;
 // T-159.22 — flat registry rows → the Factions palette tree (the T-068.3 `buildCatalogTree` port).
@@ -22,10 +21,10 @@ mod content;
 // url_guard, split_pane) and the app shell (layout, nav_config).
 mod core;
 mod shell;
+// T-934.2 — standard application pages (pages/public/…).
+mod pages;
 // T-159.25 — the Mission Library's transient "New Mission" dialog (CreateMissionDialog.tsx port).
 mod create_mission_dialog;
-mod dashboard;
-mod deployments;
 // T-159.22 dock commands — outliner select / active layer / palette drag-to-place. Drives the hosted
 // MissionDocCore (add_slot / add_editor_layer), so wasm32-only, gated like the doc host.
 #[cfg(target_arch = "wasm32")]
@@ -73,7 +72,6 @@ mod editor_session;
 mod event_hub;
 mod event_manager;
 mod events;
-mod leaderboards;
 // T-159.16 MissionDoc host — all content is wasm32-only (links map-engine-core `doc`), so gate the
 // module declaration like the engine block inside `mission_editor`.
 #[cfg(target_arch = "wasm32")]
@@ -106,8 +104,6 @@ mod mission_overview;
 // T-172 B9 — pure SZ payload estimator (missionSize.ts port), native-tested.
 mod mission_size;
 mod missions;
-mod modpacks;
-mod mortar;
 mod orbat_selection;
 // T-159.22 — the left dock's Editor Layers tree (+ the "Unfiled" pseudo-root the seed forces). Owns
 // plain LayerRow/SlotRow rather than `SlotSoa`, because map-engine-core is wasm32-only — so this
@@ -120,12 +116,8 @@ mod router;
 #[cfg(target_arch = "wasm32")]
 mod select_tool;
 mod server_control;
-mod server_intel;
-mod settings;
 // T-173 P6 — per-user world-layer visibility prefs + basemap view (localStorage). Pure/native-
 // tested; the wasm host applies them to the residency + engine each settle.
-mod vehicles;
-mod wiki;
 mod world_layer_prefs;
 // T-159.17 yrs IDB persist — IndexedDB (`idb` crate) + debounced writer; wasm32-only, gated like the
 // doc host.
