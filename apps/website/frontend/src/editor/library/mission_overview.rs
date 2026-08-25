@@ -63,7 +63,7 @@ fn terrain_label(t: &str) -> String {
 /// raw database token — a few hundred pixels under the "Returned by review" callout T-389 added on
 /// the same page (`missions.rs:2208`). Two labels for one state, disagreeing on one screen.
 ///
-/// The convention already existed: [`crate::missions::visibility_badge`] maps status → (label,
+/// The convention already existed: [`crate::editor::library::mission_library::visibility_badge`] maps status → (label,
 /// badge variant). Copying its `match` here would have made a **third** place to change, which is
 /// how T-395 happened in the first place — T-389 fixed the badge and the grid kept its own arm. So
 /// the label half lives here, once, and the badge calls it. The *variant* stays with the badge:
@@ -1323,7 +1323,7 @@ mod tests {
     /// Deserialised rather than hand-built so the test is driven by a status the backend really
     /// sends, not by a string this file invented.
     const REJECTED_GOLDEN: &str = include_str!(
-        "../tests/fixtures/api/GET__missions__82b937fc-c88e-4bb9-abb3-0bef67379398.json"
+        "../../../tests/fixtures/api/GET__missions__82b937fc-c88e-4bb9-abb3-0bef67379398.json"
     );
 
     /// **T-395 RED without the fix.** The dossier grid rendered `m.status` verbatim, so this is
@@ -1384,7 +1384,7 @@ mod tests {
     #[test]
     fn the_card_badge_and_the_dossier_grid_share_one_label_mapper() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let prod = live_code(include_str!("missions.rs"));
+        let prod = live_code(include_str!("mission_library.rs"));
         let badge = only_body(&prod, "fn visibility_badge(status: &str)");
         assert!(
             badge.contains("mission_status_label(status)"),

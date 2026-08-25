@@ -3,7 +3,7 @@
 //! `<Routes fallback>`. The chrome (Sidebar/TopNav) lives in AppLayout OUTSIDE `<Routes>`, so it
 //! persists across navigation — `<Routes>` swaps only `<main>`. The path list mirrors router.rs
 //! `ROUTES` (the S-routes gate's source of truth).
-use crate::missions::MissionLibraryPage;
+use crate::editor::library::mission_library::MissionLibraryPage;
 use crate::pages::admin::approvals::MissionApprovalsPage;
 use crate::pages::admin::audit::AuditLogsPage;
 use crate::pages::admin::content::ContentManagerPage;
@@ -85,7 +85,7 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/deployments") view=DeploymentsPage />
             <Route path=path!("/leaderboards") view=LeaderboardsPage />
             <Route path=path!("/missions") view=MissionLibraryPage />
-            <Route path=path!("/missions/:id") view=crate::mission_overview::MissionOverviewPage />
+            <Route path=path!("/missions/:id") view=crate::editor::library::mission_overview::MissionOverviewPage />
             <Route
                 path=path!("/missions/:id/edit")
                 view=crate::mission_editor::MissionEditorPage

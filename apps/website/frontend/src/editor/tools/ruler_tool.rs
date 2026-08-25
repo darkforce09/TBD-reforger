@@ -567,7 +567,7 @@ thread_local! {
  * I put there" and two mechanisms asking it. T-783 widened them to `pub(crate)` and deleted the copy.
  *
  * The `use` below is a RE-EXPORT, not a second definition: `los_tool` and `world_assets` import
- * `crate::ruler_tool::install_seam`, and that path still resolves — to `validation_panel`'s body.
+ * `crate::editor::tools::ruler_tool::install_seam`, and that path still resolves — to `validation_panel`'s body.
  * `world_assets` is `#[cfg(target_arch = "wasm32")]` while this file and `validation_panel` are
  * declared unconditionally in `main.rs`, so the single definition is reachable from every consumer on
  * BOTH targets.
@@ -650,7 +650,7 @@ pub fn RulerOverlay(
             }
             #[cfg(target_arch = "wasm32")]
             {
-                let Some((tx, ty, zoom)) = crate::world_assets::camera_snapshot() else {
+                let Some((tx, ty, zoom)) = crate::editor::world_assets::camera_snapshot() else {
                     return (Vec::new(), Vec::new(), Vec::new());
                 };
                 let Some(win) = web_sys::window() else {
@@ -663,7 +663,7 @@ pub fn RulerOverlay(
                 }
                 // The canvas is full-bleed (like MapGridRefs), so the camera viewport IS the whole
                 // window; build it exactly as `select_tool::frozen_camera` does.
-                let cam = crate::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
+                let cam = crate::editor::tools::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
                 let project = move |x: f64, y: f64| {
                     let p = cam.project([x, y, 0.0]);
                     (p[0], p[1])
@@ -1210,7 +1210,7 @@ mod tests {
 #[cfg(test)]
 mod t778_seam_lifecycle {
     use super::{read_registered_chain, register_ruler_chain, RulerChain, RulerPoint};
-    use crate::los_tool::{
+    use crate::editor::tools::los_tool::{
         read_registered_sampler, read_registered_state, read_registered_viewshed,
         register_los_sampler, register_los_state, register_viewshed_state, LosState, ViewshedState,
     };
@@ -1462,7 +1462,7 @@ mod t778_seam_lifecycle {
     #[test]
     fn the_render_ctx_seam_is_installed() {
         use crate::arsenal::class_r_scrub::{live_code, only_body, only_item};
-        let src = live_code(include_str!("world_assets/mod.rs"));
+        let src = live_code(include_str!("../world_assets/mod.rs"));
 
         let body = only_body(&src, "pub fn register_render_ctx(");
         // The call AND the cell it installs on — `install_seam_later = ()` does not contain this.

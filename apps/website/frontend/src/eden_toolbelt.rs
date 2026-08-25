@@ -424,13 +424,13 @@ fn fmt_coord_eden(v: Option<f64>) -> String {
 pub fn ModeToolbar(
     /// The active editor tool (shared with the map pointer handlers). Reading it tints the active
     /// button; the buttons set it.
-    tool_mode: RwSignal<crate::ruler_tool::EditorTool>,
+    tool_mode: RwSignal<crate::editor::tools::ruler_tool::EditorTool>,
     /// T-644 — the LoS sub-mode (Ray ⇆ Viewshed). Read here to reflect the active sub-mode in the LoS
     /// button's title/label and toggled by a re-click of the LoS button while LoS is already active;
     /// the map pointer commit reads the SAME signal to route a click. Shared with `mission_editor`.
-    los_mode: RwSignal<crate::los_tool::LosMode>,
+    los_mode: RwSignal<crate::editor::tools::los_tool::LosMode>,
 ) -> impl IntoView {
-    use crate::ruler_tool::EditorTool;
+    use crate::editor::tools::ruler_tool::EditorTool;
     // T-668 — the current mode wears TOGGLED_PLATE (plate + 1px dark top border); a live-but-not-
     // current mode wears HOVER_FILL. Same one state language as every other toggle in the chrome, so
     // the active tool reads the same as an open menu or a selected tree row — and can never be
@@ -620,7 +620,7 @@ pub fn StatusBar(
                                 .and_then(|s| s.get())
                                 .map_or_else(
                                     || "—".to_string(),
-                                    crate::mission_size::format_bytes,
+                                    crate::editor::mission_size::format_bytes,
                                 )
                         }}
                     </span>
@@ -770,7 +770,7 @@ pub fn ScaleBar(
         let mut deck_zoom = -2.0_f64;
         #[cfg(target_arch = "wasm32")]
         {
-            if let Some((_, _, z)) = crate::world_assets::camera_snapshot() {
+            if let Some((_, _, z)) = crate::editor::world_assets::camera_snapshot() {
                 deck_zoom = z;
             }
         }
@@ -823,7 +823,7 @@ pub fn MapGridRefs(
         #[cfg(target_arch = "wasm32")]
         {
             use crate::eden_layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
-            let Some((tx, ty, zoom)) = crate::world_assets::camera_snapshot() else {
+            let Some((tx, ty, zoom)) = crate::editor::world_assets::camera_snapshot() else {
                 return (Vec::new(), Vec::new());
             };
             let Some(win) = web_sys::window() else {
@@ -844,7 +844,7 @@ pub fn MapGridRefs(
             }
             // The canvas is full-bleed (NOT inset by the chrome — `eden_layout` note), so the camera
             // viewport IS the whole window; build it exactly as `select_tool::frozen_camera` does.
-            let cam = crate::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
+            let cam = crate::editor::tools::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
             let pane_left = DOCK_LEFT_PX;
             let pane_right = vw - DOCK_RIGHT_PX;
             (
@@ -932,10 +932,10 @@ pub fn BottomToolbelt(
     // the live mount in `mission_editor` shares the real signal with the pointer handlers. A caller
     // reaching for this compat symbol gets a self-contained, if inert, toggle. `ruler_status` is
     // optional on `StatusBar`, so the shim omits it (no ruler wiring on the compat path).
-    let tool_mode = RwSignal::new(crate::ruler_tool::EditorTool::Select);
+    let tool_mode = RwSignal::new(crate::editor::tools::ruler_tool::EditorTool::Select);
     // T-644 — the shim owns a local `los_mode` (default Ray) purely so `ModeToolbar` compiles on the
     // compat path; the live mount in `mission_editor` shares the real signal with the pointer commit.
-    let los_mode = RwSignal::new(crate::los_tool::LosMode::default());
+    let los_mode = RwSignal::new(crate::editor::tools::los_tool::LosMode::default());
     view! {
         <ModeToolbar tool_mode los_mode />
         <StatusBar cursor sel_count obj_count selected_ids sz_bytes />
@@ -2055,7 +2055,7 @@ mod t670_scale_readout {
         // (2) THE LADDER's feed — frontend dem_vectors.rs (not crates/). Contiguous bind→call so an
         // adjustment line between them goes RED; no `let zoom` / `zoom =` rebind before the bind so
         // an upstream re-based zoom goes RED.
-        let dem = live_code(include_str!("world_assets/dem_vectors.rs"));
+        let dem = live_code(include_str!("editor/world_assets/dem_vectors.rs"));
         let push = only_body(&dem, &format!("fn {}", "push_contours("));
         let bind = format!("let m_per_px = 2.0_f64.{}(-zoom);", "powf");
         let call = format!("{}(m_per_px)", "contour_interval_for_zoom");

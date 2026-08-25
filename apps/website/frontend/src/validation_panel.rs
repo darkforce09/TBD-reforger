@@ -389,7 +389,7 @@ impl Debouncer {
  * T-778 could not import [`install_seam`] / [`unregister_seam`] (they were module-private) and copied
  * the six-line mechanism into `ruler_tool` instead, leaving ONE identity check and TWO mechanisms that
  * used it. T-783 widened these three items to `pub(crate)` and deleted that copy; `ruler_tool` now
- * re-exports them so `crate::ruler_tool::install_seam` — the path `los_tool` and `world_assets` already
+ * re-exports them so `crate::editor::tools::ruler_tool::install_seam` — the path `los_tool` and `world_assets` already
  * import — keeps resolving, to this body. A duplicated vocabulary is its own defect class, and this one
  * guards a defect family found five times in a single wave.
  *

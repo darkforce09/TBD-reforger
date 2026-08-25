@@ -17,7 +17,7 @@ use map_engine_render::draw_order::role_id;
 
 use std::rc::Rc;
 
-use crate::select_tool::EngineHandle;
+use crate::editor::tools::select_tool::EngineHandle;
 
 // T-175 A3 — contours were near-invisible: the old dark brown (luma ~72, α180) vanished over both
 // the dark satellite photo and the tan Map basemap. Raised to a lighter warm tan-brown at higher

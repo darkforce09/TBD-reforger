@@ -14,8 +14,8 @@ use map_engine_core::world::class_visible;
 // compile-time link to `lane_role_from_u32`, so a renumber misroutes this upload silently.
 use map_engine_render::draw_order::role_id;
 
+use crate::editor::tools::select_tool::EngineHandle;
 use crate::mission_editor::boot_progress::{BootEvent, BootSeg};
-use crate::select_tool::EngineHandle;
 
 use super::bridge::{publish, publish_engine, BridgeHandle};
 use super::fetch::fetch_bytes;

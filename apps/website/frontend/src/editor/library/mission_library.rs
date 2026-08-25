@@ -10,7 +10,7 @@
 use crate::core::dto::{MissionCard, MissionDetail, Paginated};
 use crate::core::ui::{badge_class, AuthGate, MaterialIcon, Sheet};
 use crate::core::url_guard;
-use crate::create_mission_dialog::CreateMissionDialog;
+use crate::editor::library::create_dialog::CreateMissionDialog;
 use crate::shell::nav_config::{has_min_role_authed, Role};
 use leptos::prelude::*;
 // T-282 — the version differ indexes rows by id; these are its only two containers.
@@ -88,10 +88,10 @@ fn bookmark_api_path(id: &str) -> String {
 /// **T-395 — the label half moved out.** T-389 fixed this `match` and left the identical mapping
 /// inline in the mission dossier's STATUS cell, which went on rendering the raw `rejected`. Two
 /// copies is how that happened, so there is now one:
-/// [`crate::mission_overview::mission_status_label`]. The *variant* stays here — it is a badge
+/// [`crate::editor::library::mission_overview::mission_status_label`]. The *variant* stays here — it is a badge
 /// concern and the detail grid has no chips.
 fn visibility_badge(status: &str) -> impl IntoView + use<> {
-    let label = crate::mission_overview::mission_status_label(status);
+    let label = crate::editor::library::mission_overview::mission_status_label(status);
     let variant = match status {
         "pending_approval" => "warning",
         "live" => "success",
@@ -411,7 +411,7 @@ fn body(
                     let brief = featured_briefing_text(f.briefing.as_deref());
                     let fid = f.id.clone();
                     let is_live = f.status == "live";
-                    let status_label = crate::mission_overview::mission_status_label(&f.status);
+                    let status_label = crate::editor::library::mission_overview::mission_status_label(&f.status);
                     view! {
                         <section class="relative mb-8 flex min-h-[320px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/30 lg:flex-row">
                             <div class="relative z-10 flex w-full flex-col justify-center gap-4 p-8 lg:w-3/5">
@@ -1461,8 +1461,8 @@ fn oversize_refusal(bytes: usize) -> Option<String> {
             "That document is {} — this browser upload accepts up to {}. A mission that large has \
              to be saved from the Mission Creator, which builds the payload in memory instead of \
              parsing a file.",
-            crate::mission_size::format_bytes(bytes),
-            crate::mission_size::format_bytes(UPLOAD_MAX_BYTES)
+            crate::editor::mission_size::format_bytes(bytes),
+            crate::editor::mission_size::format_bytes(UPLOAD_MAX_BYTES)
         )
     })
 }
@@ -1740,7 +1740,7 @@ fn dossier_sheet_body(
     // one value in this SPA that reaches hundreds of MB, the T-282 differ went out of its way to
     // borrow rather than copy it, and a `.clone()` here would double the dossier's peak for a
     // panel that is idle until someone picks a file.
-    let overview_body = crate::mission_overview::dossier_body(&m);
+    let overview_body = crate::editor::library::mission_overview::dossier_body(&m);
     let version_rail = version_history_section(&m);
     // Suggested next version, derived from the tip so it is both valid SemVer (T-363) and not one
     // of the mission's known-taken numbers. Read before the payload is moved out below.
@@ -2619,7 +2619,7 @@ mod tests {
     /// left whitespace-only briefings on the featured hero. Pin the trim-aware helper arm.
     #[test]
     fn featured_briefing_source_ratchet_requires_trim() {
-        const SRC: &str = include_str!("missions.rs");
+        const SRC: &str = include_str!("mission_library.rs");
         assert!(
             SRC.contains("featured_briefing_text(f.briefing.as_deref())"),
             "featured hero must route briefing through featured_briefing_text"
@@ -2648,7 +2648,7 @@ mod tests {
     /// Memo wiring is dropped.
     #[test]
     fn maker_affordance_uses_authed_reactive_role() {
-        const SRC: &str = include_str!("missions.rs");
+        const SRC: &str = include_str!("mission_library.rs");
         assert!(
             SRC.contains("has_min_role_authed"),
             "Mission Library maker gate must use has_min_role_authed (not browse-mode None=>true)"
@@ -2674,7 +2674,7 @@ mod tests {
     /// (delete the path format, the testids, or the api_post_ok/api_delete arms).
     #[test]
     fn bookmark_control_and_handlers_are_wired() {
-        const SRC: &str = include_str!("missions.rs");
+        const SRC: &str = include_str!("mission_library.rs");
         assert!(
             SRC.contains("data-testid=\"mission-bookmark-toggle\""),
             "bookmark control must be present on the Mission Library surface \
@@ -2759,7 +2759,7 @@ mod tests {
         );
     }
 
-    include!("../../shared/is_http_url_cases.rs");
+    include!("../../../../shared/is_http_url_cases.rs");
 
     #[test]
     fn mission_art_falls_back_for_non_http_thumbnails() {
@@ -3174,7 +3174,7 @@ mod tests {
     /// in a browser at 367k slots.
     #[test]
     fn differ_source_ratchet_is_structural_and_wired_into_the_dossier() {
-        const SRC: &str = include_str!("missions.rs");
+        const SRC: &str = include_str!("mission_library.rs");
         assert!(
             SRC.contains("let mut left: HashMap<&str, &Value> = HashMap::new();"),
             "the id index must stay a BORROWED map — cloning rows doubles a hundreds-of-MB payload"
@@ -3516,7 +3516,7 @@ mod tests {
     /// `up_findings.set(rows)` assignment, or delete the findings block from the view.
     #[test]
     fn the_upload_panel_is_wired_to_the_versions_route() {
-        const SRC: &str = include_str!("missions.rs");
+        const SRC: &str = include_str!("mission_library.rs");
         let production = SRC
             .split("#[cfg(test)]")
             .next()
@@ -3579,7 +3579,7 @@ mod tests {
 
         // `File`/`FileList` are what `HtmlInputElement::files()` needs; without them this compiles
         // on native and dies on the wasm build (the T-446 lesson, pinned the same way).
-        let cargo = include_str!("../Cargo.toml");
+        let cargo = include_str!("../../../Cargo.toml");
         for feat in ["\"File\"", "\"FileList\"", "\"Blob\""] {
             assert!(
                 cargo.contains(feat),

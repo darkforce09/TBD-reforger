@@ -20,8 +20,9 @@ mod core;
 mod shell;
 // T-934.2 — standard application pages (pages/public/…).
 mod pages;
+// T-934.4 — Mission Creator nest (library / tools / world assets).
+mod editor;
 // T-159.25 — the Mission Library's transient "New Mission" dialog (CreateMissionDialog.tsx port).
-mod create_mission_dialog;
 // T-159.22 dock commands — outliner select / active layer / palette drag-to-place. Drives the hosted
 // MissionDocCore (add_slot / add_editor_layer), so wasm32-only, gated like the doc host.
 #[cfg(target_arch = "wasm32")]
@@ -51,11 +52,8 @@ mod eden_zones;
 // T-664 — right-click context menu.
 mod context_menu;
 // T-643 — line-of-sight tool.
-mod los_tool;
 // T-645 — shared placement helpers.
-mod place_helpers;
 // T-642 — ruler / measure tool.
-mod ruler_tool;
 // T-655 — mission validation panel.
 mod validation_panel;
 // T-159.17 warm editor session — sessionStorage marker; wasm32-only (uses web-sys/js-sys), gated
@@ -81,8 +79,6 @@ mod mission_hydrate;
 mod mission_title_prefer;
 // T-159.28 map-asset host (MVP: DEM hillshade) — fetch bytes + call the Rust dem core + engine
 // tex_layer. wasm32-only (fetch + engine), gated like the doc host.
-#[cfg(target_arch = "wasm32")]
-mod world_assets;
 // T-159.21 undo/redo — drives the hosted MissionDocCore undo stack (+ the post-change glyph rebind
 // and the `__editorHistory` bridge); wasm32-only, gated like the doc host.
 #[cfg(target_arch = "wasm32")]
@@ -90,10 +86,7 @@ mod mission_history;
 // T-172 B10 — the 3D arsenal doll mount (DollEngine, wasm-only like the map engine host).
 #[cfg(target_arch = "wasm32")]
 mod arsenal_doll;
-mod mission_overview;
 // T-172 B9 — pure SZ payload estimator (missionSize.ts port), native-tested.
-mod mission_size;
-mod missions;
 // T-159.22 — the left dock's Editor Layers tree (+ the "Unfiled" pseudo-root the seed forces). Owns
 // plain LayerRow/SlotRow rather than `SlotSoa`, because map-engine-core is wasm32-only — so this
 // stays ungated and its unit tests run on the native shell.
@@ -101,11 +94,8 @@ mod outliner;
 mod router;
 // T-159.18 Select / LMB pick foundation — links map-engine-core `camera`+`spatial` and web-sys, so
 // wasm32-only, gated like the doc host + persist modules.
-#[cfg(target_arch = "wasm32")]
-mod select_tool;
 // T-173 P6 — per-user world-layer visibility prefs + basemap view (localStorage). Pure/native-
 // tested; the wasm host applies them to the residency + engine each settle.
-mod world_layer_prefs;
 // T-159.17 yrs IDB persist — IndexedDB (`idb` crate) + debounced writer; wasm32-only, gated like the
 // doc host.
 #[cfg(target_arch = "wasm32")]

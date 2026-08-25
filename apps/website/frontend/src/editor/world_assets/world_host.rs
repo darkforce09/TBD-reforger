@@ -14,8 +14,8 @@ use map_engine_render::draw_order::role_id;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 
+use crate::editor::tools::select_tool::EngineHandle;
 use crate::mission_editor::boot_progress::{BootEvent, BootSeg};
-use crate::select_tool::EngineHandle;
 
 use super::bridge::{publish_engine, BridgeHandle};
 use super::fetch::{fetch_bytes, fetch_text};
@@ -212,7 +212,7 @@ impl WorldHost {
     /// recompose toggles) and the engine (standing vector/label-lane visibility). Idempotent: every
     /// setter early-returns when its value is unchanged.
     fn apply_layer_prefs(&mut self, engine: &EngineHandle) {
-        let p = crate::world_layer_prefs::load_prefs();
+        let p = crate::editor::world_layer_prefs::load_prefs();
         // Residency-driven (recompose) classes.
         self.residency
             .set_glyph_toggles(p.trees, p.props, p.buildings);

@@ -20,7 +20,7 @@ use map_engine_core::dem::png_decode::decode_png_to_meters;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 
-use crate::select_tool::EngineHandle;
+use crate::editor::tools::select_tool::EngineHandle;
 
 use bridge::{new_bridge, publish, publish_engine, BridgeHandle};
 use dem_vectors::DemVectors;
@@ -127,7 +127,7 @@ impl crate::validation_panel::SeamRegistration for (EngineHandle, HostHandle) {
 /// engine and [`fly_to`] would report nothing while moving a camera nobody can see — the T-778 /
 /// wave-129 dead click in its render-context form.
 pub fn register_render_ctx(engine: EngineHandle, host: HostHandle) {
-    crate::ruler_tool::install_seam(&RENDER_CTX, (engine, host));
+    crate::editor::tools::ruler_tool::install_seam(&RENDER_CTX, (engine, host));
 }
 
 /// T-667 — the live camera `(target_x, target_y, zoom)` in world meters + deckZoom, read off the
@@ -369,7 +369,7 @@ pub async fn bootstrap(
             e.set_lane_opacity(1, env.hillshade_opacity as f32, env.show_hillshade);
             e.set_grid(TERRAIN_M, TERRAIN_M, true, env.show_grid);
         }
-        let view = crate::world_layer_prefs::load_basemap_view();
+        let view = crate::editor::world_layer_prefs::load_basemap_view();
         if view == "map" {
             mh.set_basemap_view(&engine, &view).await;
         }
@@ -381,7 +381,7 @@ pub async fn bootstrap(
     // T-173 H6 — build + upload the airfield apron ground polygon once (static). Needs both the
     // runway-derived bbox (set in `world.init`) and the DEM grid.
     if let Some(grid) = mh.dem.grid() {
-        let show = crate::world_layer_prefs::load_prefs().airfield;
+        let show = crate::editor::world_layer_prefs::load_prefs().airfield;
         mh.world.upload_airfield_apron(&engine, &grid, show);
     }
 
@@ -393,7 +393,7 @@ pub async fn bootstrap(
             .init(&base, &meters, w, h, roads, report.as_ref())
             .await;
         let zoom = engine.borrow().as_ref().map(|e| e.zoom()).unwrap_or(-2.0);
-        let prefs = crate::world_layer_prefs::load_prefs();
+        let prefs = crate::editor::world_layer_prefs::load_prefs();
         mh.labels.push(&engine, zoom, &prefs);
     } else {
         // No DEM raster → `LabelHost::init` never runs, so its two declared files never land.
@@ -482,7 +482,7 @@ pub fn flush_viewport(host: HostHandle, engine: EngineHandle) {
             // T-173 H5 — repack the text labels for the current zoom band (memoized; cheap no-op
             // when the band + toggles are unchanged).
             {
-                let prefs = crate::world_layer_prefs::load_prefs();
+                let prefs = crate::editor::world_layer_prefs::load_prefs();
                 h.labels.push(&engine, zoom, &prefs);
             }
             if let Some(e) = engine.borrow().as_ref() {

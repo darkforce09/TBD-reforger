@@ -15,9 +15,9 @@ use map_engine_render::text_layout::{
     text_char_meters,
 };
 
+use crate::editor::tools::select_tool::EngineHandle;
+use crate::editor::world_layer_prefs::WorldLayerPrefs;
 use crate::mission_editor::boot_progress::{BootEvent, BootSeg};
-use crate::select_tool::EngineHandle;
-use crate::world_layer_prefs::WorldLayerPrefs;
 
 use super::fetch::fetch_text;
 

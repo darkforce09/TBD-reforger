@@ -1341,7 +1341,7 @@ pub fn save_bookmarks(bm: &Bookmarks) {
 pub fn live_camera() -> Option<(f64, f64, f64)> {
     #[cfg(target_arch = "wasm32")]
     {
-        crate::world_assets::camera_snapshot()
+        crate::editor::world_assets::camera_snapshot()
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -1363,7 +1363,7 @@ pub fn fly_to(x: f64, y: f64, zoom: Option<f64>) {
         let Some(z) = zoom.or_else(|| live_camera().map(|(_, _, z)| z)) else {
             return; // no engine yet — nothing to fly.
         };
-        crate::world_assets::fly_to(x, y, z);
+        crate::editor::world_assets::fly_to(x, y, z);
     }
 }
 
@@ -1373,7 +1373,7 @@ pub fn fly_to(x: f64, y: f64, zoom: Option<f64>) {
 fn load_named_places() -> Vec<NamedPlace> {
     #[cfg(target_arch = "wasm32")]
     {
-        let mut out: Vec<NamedPlace> = crate::world_assets::named_locations()
+        let mut out: Vec<NamedPlace> = crate::editor::world_assets::named_locations()
             .into_iter()
             .filter(|l| !l.name.trim().is_empty())
             .map(|l| NamedPlace {
@@ -2138,7 +2138,7 @@ mod tests {
     #[test]
     fn fly_to_and_named_locations_bodies_are_live() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let src = live_code(include_str!("world_assets/mod.rs"));
+        let src = live_code(include_str!("editor/world_assets/mod.rs"));
         let fly = only_body(&src, "pub fn fly_to");
         let render = format!("{}{}", "RENDER", "_CTX");
         let set_view = format!("{}{}", "set_view", "(");

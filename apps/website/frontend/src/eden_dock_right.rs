@@ -3356,7 +3356,7 @@ fn TriggerOwnerLine(selected: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
         let _ = tick.get();
         let sel = selected.get();
         let (world_a, world_b) = ops::owner_line_world(sel.as_deref())?;
-        let (tx, ty, zoom) = crate::world_assets::camera_snapshot()?;
+        let (tx, ty, zoom) = crate::editor::world_assets::camera_snapshot()?;
         let win = web_sys::window()?;
         let vw = win.inner_width().ok().and_then(|v| v.as_f64())?;
         let vh = win.inner_height().ok().and_then(|v| v.as_f64())?;
@@ -3365,7 +3365,7 @@ fn TriggerOwnerLine(selected: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
         }
         // Full-bleed canvas → the camera viewport IS the whole window, built exactly as the ruler
         // overlay does (`select_tool::frozen_camera`).
-        let cam = crate::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
+        let cam = crate::editor::tools::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
         let project = move |x: f64, y: f64| {
             let p = cam.project([x, y, 0.0]);
             (p[0], p[1])

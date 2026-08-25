@@ -288,7 +288,7 @@ mod t671_create_carries_the_briefing {
     /// caller.
     #[test]
     fn the_post_body_carries_the_authored_briefing() {
-        let src = live_source(include_str!("create_mission_dialog.rs"));
+        let src = live_source(include_str!("create_dialog.rs"));
         let submit = only_body(&src, "fn CreateMissionDialog");
         let key = format!("brief{}", "ing");
         assert!(
@@ -316,7 +316,7 @@ mod t671_create_carries_the_briefing {
     /// (T-413), and the editor's Mission Settings is where it is authored.
     #[test]
     fn the_create_form_offers_no_thumbnail_it_cannot_store() {
-        let src = live_source(include_str!("create_mission_dialog.rs"));
+        let src = live_source(include_str!("create_dialog.rs"));
         let body = only_body(&src, "fn CreateMissionDialog");
         assert!(
             !body.contains(&format!("thumbnail{}", "_url")),

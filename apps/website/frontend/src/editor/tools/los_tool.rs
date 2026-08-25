@@ -52,7 +52,7 @@
 
 use leptos::prelude::*;
 
-use crate::ruler_tool::install_seam;
+use crate::editor::tools::ruler_tool::install_seam;
 
 use map_engine_core::dem::sample::{ProfileSample, Viewshed, Visibility};
 
@@ -974,7 +974,7 @@ pub fn LosOverlay(
         }
         #[cfg(target_arch = "wasm32")]
         {
-            let Some((tx, ty, zoom)) = crate::world_assets::camera_snapshot() else {
+            let Some((tx, ty, zoom)) = crate::editor::world_assets::camera_snapshot() else {
                 return (Vec::new(), Vec::new(), Vec::new());
             };
             let Some(win) = web_sys::window() else {
@@ -985,7 +985,7 @@ pub fn LosOverlay(
             if vw <= 0.0 || vh <= 0.0 {
                 return (Vec::new(), Vec::new(), Vec::new());
             }
-            let cam = crate::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
+            let cam = crate::editor::tools::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
             let project = move |x: f64, y: f64| {
                 let p = cam.project([x, y, 0.0]);
                 (p[0], p[1])
@@ -1778,7 +1778,7 @@ mod tests {
     /// the viewshed alpha rationale to be re-derived against the new contour alpha.
     #[test]
     fn viewshed_rationale_cites_live_contour_rgba() {
-        let dem_vectors = include_str!("world_assets/dem_vectors.rs");
+        let dem_vectors = include_str!("../world_assets/dem_vectors.rs");
         assert!(
             dem_vectors.contains("[188, 150, 100, 235]"),
             "T-644 rationale cites CONTOUR_RGBA = [188,150,100,235]; dem_vectors.rs must still define \

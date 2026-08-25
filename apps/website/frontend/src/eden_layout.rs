@@ -534,7 +534,7 @@ mod t636_band_readers_agree {
         // helper near the TOP (above the band reader), so scrubbing the whole file would drop the
         // reader — slice from the page fn anchor first (the t662/t635 idiom), then scrub that.
         let band_read = "eden_layout::toolbelt_band_px()";
-        let sel = live_code(include_str!("select_tool.rs"));
+        let sel = live_code(include_str!("editor/tools/select_tool.rs"));
 
         let raw_editor = include_str!("mission_editor.rs");
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");

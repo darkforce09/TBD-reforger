@@ -34,9 +34,9 @@ use map_engine_core::doc::{
 
 use crate::asset_catalog::PlacePayload;
 use crate::core::dto::{FactionDoc, FactionRole, FactionVehicle};
+use crate::editor::tools::select_tool::{EngineHandle, SelectionHandle};
 use crate::mission_doc::DocHandle;
 use crate::outliner::{build_outliner_with_comments, CommentRow, LayerRow, OutlinerNode, SlotRow};
-use crate::select_tool::{EngineHandle, SelectionHandle};
 
 /// The lazily-minted default layer (React's `ensureDefaultLayer`).
 const DEFAULT_LAYER_ID: &str = "layer-1";
@@ -1282,7 +1282,7 @@ pub fn open_arsenal(id: String) {
 /// T-649 SEL-ALL-001 — Ctrl/Cmd+A: replace the selection with everything **on screen**.
 ///
 /// Eden scopes Select All to the viewport, not to the whole mission, so this is a viewport-rect
-/// query over [`crate::select_tool::view_ids_with_vehicles`] — the marquee's own primitive with its
+/// query over [`crate::editor::tools::select_tool::view_ids_with_vehicles`] — the marquee's own primitive with its
 /// corners pinned to the canvas — and not a `soa.ids` dump. `viewport_w`/`viewport_h` are the
 /// container's CSS size at keypress; the camera is snapshotted from the live engine view the same
 /// way a pointer-down freezes one, so Ctrl+A and a full-canvas marquee drag agree by construction.
@@ -1305,7 +1305,7 @@ pub fn select_all_in_view(viewport_w: f64, viewport_h: f64) -> bool {
             let Some(e) = eng.as_ref() else {
                 return false;
             };
-            crate::select_tool::frozen_camera(
+            crate::editor::tools::select_tool::frozen_camera(
                 viewport_w,
                 viewport_h,
                 e.target_x(),
@@ -1318,7 +1318,11 @@ pub fn select_all_in_view(viewport_w: f64, viewport_h: f64) -> bool {
             let Some(core) = d.as_ref() else {
                 return false;
             };
-            crate::select_tool::view_ids_with_vehicles(&cam, &core.materialize(), &points)
+            crate::editor::tools::select_tool::view_ids_with_vehicles(
+                &cam,
+                &core.materialize(),
+                &points,
+            )
         };
         // The engine tint lane is slots-only (the vehicle lane draws its own selection) — the same
         // split the `LG::Marquee` commit makes in `mission_editor.rs`.
@@ -1740,7 +1744,7 @@ pub fn rotate_selection_to_face(cx: f64, cy: f64, rung: usize) -> bool {
 // The wasm wiring for the Placement Tools. Every entry point here:
 //   1. reads the LIVE selection's positions (slots off the materialized SoA, vehicles off
 //      `small_maps_json` — the exact two sources `rotate_selection_to_face` reads),
-//   2. computes target positions/yaws with the DOM-free pure math in `crate::place_helpers`
+//   2. computes target positions/yaws with the DOM-free pure math in `crate::editor::tools::place_helpers`
 //      (natively golden-tested),
 //   3. CONFIRMS via `confirm_with_message` when the op moves MORE THAN 10 entities, and
 //   4. commits through [`MissionDocCore::update_entity_transforms`] / [`MissionDocCore::rotate_entities`]
@@ -1822,7 +1826,7 @@ fn resolve_selection_positions(core: &MissionDocCore, sel: &[String]) -> (Vec<Se
 /// toast form. Loadout bulk ops still N-step and use [`confirm_bulk_n_step`] instead.
 #[cfg(target_arch = "wasm32")]
 fn confirm_bulk(n: usize, verb: &str) -> bool {
-    if !crate::place_helpers::needs_confirm(n) {
+    if !crate::editor::tools::place_helpers::needs_confirm(n) {
         return true;
     }
     let msg = format!("This will {verb} {n} entities. Continue? (Ctrl+Z undoes the whole op.)");
@@ -1834,7 +1838,7 @@ fn confirm_bulk(n: usize, verb: &str) -> bool {
 /// Confirm for bulk ops that are still N undo steps (loadout apply/remove — no atomic batch yet).
 #[cfg(target_arch = "wasm32")]
 fn confirm_bulk_n_step(n: usize, verb: &str) -> bool {
-    if !crate::place_helpers::needs_confirm(n) {
+    if !crate::editor::tools::place_helpers::needs_confirm(n) {
         return true;
     }
     let msg = format!("This will {verb} {n} entities. Continue?");
@@ -1858,7 +1862,7 @@ fn confirm_bulk_n_step(n: usize, verb: &str) -> bool {
 fn commit_positions(
     core: &MissionDocCore,
     entities: &[SelPos],
-    targets: &[crate::place_helpers::Pt],
+    targets: &[crate::editor::tools::place_helpers::Pt],
     tb: [f64; 4],
 ) -> bool {
     let z_rows = entities
@@ -1914,7 +1918,7 @@ fn vehicle_heading_of(core: &MissionDocCore, id: &str) -> Option<f64> {
 /// Confirms when moving > 10 entities. Returns whether anything moved (a selection of `< 2`, or a
 /// pattern that lands every entity where it already is, moves nothing). **Undo: `k` steps for `k`
 /// Undo (T-732): one step for the whole selection.**
-pub fn apply_pattern_to_selection(kind: crate::place_helpers::PatternKind) -> bool {
+pub fn apply_pattern_to_selection(kind: crate::editor::tools::place_helpers::PatternKind) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
@@ -1929,20 +1933,24 @@ pub fn apply_pattern_to_selection(kind: crate::place_helpers::PatternKind) -> bo
         if entities.len() < 2 {
             return false;
         }
-        let src: Vec<crate::place_helpers::Pt> = entities
+        let src: Vec<crate::editor::tools::place_helpers::Pt> = entities
             .iter()
-            .map(|e| crate::place_helpers::Pt::new(e.x, e.y))
+            .map(|e| crate::editor::tools::place_helpers::Pt::new(e.x, e.y))
             .collect();
         let targets = match kind {
-            crate::place_helpers::PatternKind::Circular => {
-                crate::place_helpers::pattern_circular(&src)
+            crate::editor::tools::place_helpers::PatternKind::Circular => {
+                crate::editor::tools::place_helpers::pattern_circular(&src)
             }
-            crate::place_helpers::PatternKind::Line => crate::place_helpers::pattern_line(&src),
-            crate::place_helpers::PatternKind::Grid => crate::place_helpers::pattern_grid(&src),
-            crate::place_helpers::PatternKind::FillArea => {
+            crate::editor::tools::place_helpers::PatternKind::Line => {
+                crate::editor::tools::place_helpers::pattern_line(&src)
+            }
+            crate::editor::tools::place_helpers::PatternKind::Grid => {
+                crate::editor::tools::place_helpers::pattern_grid(&src)
+            }
+            crate::editor::tools::place_helpers::PatternKind::FillArea => {
                 let ids: Vec<String> = entities.iter().map(|e| e.id.clone()).collect();
-                let seed = crate::place_helpers::seed_from_ids(&ids);
-                crate::place_helpers::pattern_fill_area(&src, seed)
+                let seed = crate::editor::tools::place_helpers::seed_from_ids(&ids);
+                crate::editor::tools::place_helpers::pattern_fill_area(&src, seed)
             }
         };
         #[cfg(target_arch = "wasm32")]
@@ -1963,7 +1971,7 @@ pub fn apply_pattern_to_selection(kind: crate::place_helpers::PatternKind) -> bo
 /// T-645 (PLACE-ALIGN-001) — align the live selection to one of the six edges/centres
 /// (`place_helpers::AlignEdge`). Confirms when moving > 10. Returns whether anything moved. Undo:
 /// one step for the whole selection (T-732).
-pub fn align_selection(edge: crate::place_helpers::AlignEdge) -> bool {
+pub fn align_selection(edge: crate::editor::tools::place_helpers::AlignEdge) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
@@ -1978,11 +1986,11 @@ pub fn align_selection(edge: crate::place_helpers::AlignEdge) -> bool {
         if entities.len() < 2 {
             return false;
         }
-        let src: Vec<crate::place_helpers::Pt> = entities
+        let src: Vec<crate::editor::tools::place_helpers::Pt> = entities
             .iter()
-            .map(|e| crate::place_helpers::Pt::new(e.x, e.y))
+            .map(|e| crate::editor::tools::place_helpers::Pt::new(e.x, e.y))
             .collect();
-        let targets = crate::place_helpers::align_edge(&src, edge);
+        let targets = crate::editor::tools::place_helpers::align_edge(&src, edge);
         #[cfg(target_arch = "wasm32")]
         if !confirm_bulk(entities.len(), "align") {
             return false;
@@ -1998,7 +2006,7 @@ pub fn align_selection(edge: crate::place_helpers::AlignEdge) -> bool {
 /// T-645 (PLACE-SPACE-001) — space the live selection equally along one of the three axes
 /// (`place_helpers::SpaceAxis`). Confirms when moving > 10. Returns whether anything moved. Undo:
 /// one step for the whole selection (T-732).
-pub fn space_selection(axis: crate::place_helpers::SpaceAxis) -> bool {
+pub fn space_selection(axis: crate::editor::tools::place_helpers::SpaceAxis) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
@@ -2013,11 +2021,11 @@ pub fn space_selection(axis: crate::place_helpers::SpaceAxis) -> bool {
         if entities.len() < 3 {
             return false; // space-equally needs at least 3 (2 are already "spaced")
         }
-        let src: Vec<crate::place_helpers::Pt> = entities
+        let src: Vec<crate::editor::tools::place_helpers::Pt> = entities
             .iter()
-            .map(|e| crate::place_helpers::Pt::new(e.x, e.y))
+            .map(|e| crate::editor::tools::place_helpers::Pt::new(e.x, e.y))
             .collect();
-        let targets = crate::place_helpers::space_equally(&src, axis);
+        let targets = crate::editor::tools::place_helpers::space_equally(&src, axis);
         #[cfg(target_arch = "wasm32")]
         if !confirm_bulk(entities.len(), "space") {
             return false;
@@ -2039,7 +2047,7 @@ pub fn space_selection(axis: crate::place_helpers::SpaceAxis) -> bool {
 ///
 /// Confirms when re-orienting > 10 entities. Returns whether anything rotated.
 /// **Undo (T-732): one step for the whole selection.**
-pub fn orient_selection(cmd: crate::place_helpers::Orient) -> bool {
+pub fn orient_selection(cmd: crate::editor::tools::place_helpers::Orient) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
@@ -2058,17 +2066,17 @@ pub fn orient_selection(cmd: crate::place_helpers::Orient) -> bool {
         if !confirm_bulk(entities.len(), "re-orient") {
             return false;
         }
-        let pivot = crate::place_helpers::centroid(
+        let pivot = crate::editor::tools::place_helpers::centroid(
             &entities
                 .iter()
-                .map(|e| crate::place_helpers::Pt::new(e.x, e.y))
+                .map(|e| crate::editor::tools::place_helpers::Pt::new(e.x, e.y))
                 .collect::<Vec<_>>(),
         );
         let mut items: Vec<(String, bool, f64)> = Vec::new();
         for e in &entities {
-            let Some(deg) = crate::place_helpers::orient_yaw(
+            let Some(deg) = crate::editor::tools::place_helpers::orient_yaw(
                 cmd,
-                crate::place_helpers::Pt::new(e.x, e.y),
+                crate::editor::tools::place_helpers::Pt::new(e.x, e.y),
                 pivot,
             ) else {
                 continue; // degenerate face (entity on the centroid) → leave unchanged

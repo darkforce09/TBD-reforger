@@ -9,7 +9,7 @@
 //! **T-691 (Eden NEW-F2 + 3den E6) — editor preferences, separated from mission settings.** Eden
 //! keeps Settings ▸ Preferences (editor-local, per-user) apart from Attributes (the mission
 //! document); TBD used to mix both in [`MissionSettingsDialog`]. The per-user half — basemap view
-//! and the 12 world-layer toggles, both localStorage-backed via [`crate::world_layer_prefs`] — now
+//! and the 12 world-layer toggles, both localStorage-backed via [`crate::editor::world_layer_prefs`] — now
 //! lives in its own surface, [`EditorPreferencesDialog`]. [`MissionSettingsDialog`] keeps ONLY the
 //! document keys (time / weather / flow / hillshade / grid, all authored through `author_env` into
 //! `meta.environment`) and grows a one-line pointer row that opens the preferences dialog. The
@@ -1361,7 +1361,7 @@ fn render_flow_section(ctrl: &'static str) -> AnyView {
 /// [`author_env`]), so they stay in this dialog.
 ///
 /// **T-691:** the per-**user** editor-local controls that used to sit here — basemap view and the 12
-/// world-layer toggles ([`crate::world_layer_prefs`], localStorage) — moved to
+/// world-layer toggles ([`crate::editor::world_layer_prefs`], localStorage) — moved to
 /// [`EditorPreferencesDialog`]; this section now ends with a one-line pointer row linking there. No
 /// world-layer toggle remains in this dialog (the document-vs-local separation pin). On the native
 /// view-shell these are inert (no engine), which is fine — the dialog is a wasm surface.
@@ -1389,7 +1389,7 @@ fn render_prefs_section(env: &crate::core::dto::MissionEnv) -> AnyView {
                             let on = event_target_checked(&ev);
                             author_env("showHillshade", on.into());
                             let op = crate::editor_ops::read_env().hillshade_opacity;
-                            crate::world_assets::apply_hillshade(on, op);
+                            crate::editor::world_assets::apply_hillshade(on, op);
                         }
                         class="accent-primary"
                     />
@@ -1407,7 +1407,7 @@ fn render_prefs_section(env: &crate::core::dto::MissionEnv) -> AnyView {
                             let pct: f64 = event_target_value(&ev).parse().unwrap_or(40.0);
                             let op = (pct / 100.0).clamp(0.0, 1.0);
                             author_env("hillshadeOpacity", op.into());
-                            crate::world_assets::apply_hillshade(true, op);
+                            crate::editor::world_assets::apply_hillshade(true, op);
                         }
                         class="accent-primary"
                     />
@@ -1421,7 +1421,7 @@ fn render_prefs_section(env: &crate::core::dto::MissionEnv) -> AnyView {
                         on:change=move |ev| {
                             let on = event_target_checked(&ev);
                             author_env("showGrid", on.into());
-                            crate::world_assets::apply_grid(on);
+                            crate::editor::world_assets::apply_grid(on);
                         }
                         class="accent-primary"
                     />
@@ -1454,7 +1454,7 @@ fn render_prefs_section(env: &crate::core::dto::MissionEnv) -> AnyView {
 /// T-691 (Eden NEW-F2 + 3den E6) — the **Editor Preferences** dialog: the editor-local, per-user
 /// half that Eden keeps separate from mission Attributes. Basemap view (Satellite / Map) and the 12
 /// world-layer visibility toggles, both persisted to localStorage through
-/// [`crate::world_layer_prefs`] (the versioned editor-preferences store) and applied live to the map
+/// [`crate::editor::world_layer_prefs`] (the versioned editor-preferences store) and applied live to the map
 /// host. Mounted as a sibling of [`MissionSettingsDialog`] and opened via
 /// [`open_editor_preferences`] from that dialog's pointer row.
 ///
@@ -1520,7 +1520,7 @@ fn EditorPreferencesDialog(open: RwSignal<bool>) -> impl IntoView {
 
 /// T-691 — the body of [`EditorPreferencesDialog`]: basemap view + the 12 world-layer toggles, moved
 /// verbatim from the old `render_prefs_section`. Every control persists through
-/// [`crate::world_layer_prefs`] (localStorage) and applies live to the map host — no `author_env`.
+/// [`crate::editor::world_layer_prefs`] (localStorage) and applies live to the map host — no `author_env`.
 fn render_editor_prefs_body() -> AnyView {
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -1528,7 +1528,7 @@ fn render_editor_prefs_body() -> AnyView {
     }
     #[cfg(target_arch = "wasm32")]
     {
-        use crate::world_layer_prefs as wlp;
+        use crate::editor::world_layer_prefs as wlp;
         let sect = "text-label-sm uppercase tracking-wider text-outline";
         // Basemap view kept in a local signal so the active highlight follows a click within the
         // session (the store is still the source of truth; this only drives the button styling).
@@ -1550,7 +1550,7 @@ fn render_editor_prefs_body() -> AnyView {
                                 let mut p = wlp::load_prefs();
                                 p.set(key, checked);
                                 wlp::save_prefs(&p);
-                                crate::world_assets::refresh_world_layers();
+                                crate::editor::world_assets::refresh_world_layers();
                             }
                             class="accent-primary"
                         />
@@ -1577,7 +1577,7 @@ fn render_editor_prefs_body() -> AnyView {
                                     }
                                     on:click=move |_| {
                                         wlp::save_basemap_view(v);
-                                        crate::world_assets::apply_basemap_view(v);
+                                        crate::editor::world_assets::apply_basemap_view(v);
                                         basemap.set(v.to_string());
                                     }
                                 >

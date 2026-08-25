@@ -1482,7 +1482,7 @@ fn TransformWidgetOverlay(
         let (wx, wy) = read_widget_pivot()?;
         #[cfg(target_arch = "wasm32")]
         {
-            let (tx, ty, zoom) = crate::world_assets::camera_snapshot()?;
+            let (tx, ty, zoom) = crate::editor::world_assets::camera_snapshot()?;
             let win = web_sys::window()?;
             let vw = win
                 .inner_width()
@@ -1497,7 +1497,7 @@ fn TransformWidgetOverlay(
             if vw <= 0.0 || vh <= 0.0 {
                 return None;
             }
-            let cam = crate::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
+            let cam = crate::editor::tools::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
             let p = cam.project([wx, wy, 0.0]);
             if !p[0].is_finite() || !p[1].is_finite() {
                 return None;
@@ -2895,7 +2895,9 @@ pub(crate) fn hover_hit(
     let Some(pts) = cache.as_ref() else {
         return false;
     };
-    if crate::select_tool::pick_slot_or_vehicle(cam, &pts.soa, &pts.vehicles, px, py).is_some() {
+    if crate::editor::tools::select_tool::pick_slot_or_vehicle(cam, &pts.soa, &pts.vehicles, px, py)
+        .is_some()
+    {
         return true;
     }
     let w = cam.unproject_xy(px, py);
@@ -3388,13 +3390,13 @@ pub fn MissionEditorPage() -> impl IntoView {
     // branch on it to choose the point-capture gesture (Ruler AND LoS share `LG::Ruler`) vs the
     // Select machine, and the commit site routes a captured click by `is_ruler()`/`is_los()`. Default
     // Select.
-    let tool_mode = RwSignal::new(crate::ruler_tool::EditorTool::Select);
+    let tool_mode = RwSignal::new(crate::editor::tools::ruler_tool::EditorTool::Select);
     // T-644 — the LoS SUB-MODE (Ray ⇆ Viewshed). The `ModeToolbar` LoS button reads it (to reflect
     // the active sub-mode in its title/label) and toggles it on a re-click while LoS is already
     // active; the wasm pointer commit reads `get_untracked()` to route a captured LoS click to the
     // ray two-click capture or the one-shot viewshed placement. A plain reactive signal (like
     // `tool_mode`), shared between the toolbar and the pointer handlers — no thread_local. Default Ray.
-    let los_mode = RwSignal::new(crate::los_tool::LosMode::default());
+    let los_mode = RwSignal::new(crate::editor::tools::los_tool::LosMode::default());
     // T-642 — the ruler's status-bar readout (running total + last-leg) and a repaint tick. The
     // `RulerChain` itself is session-local overlay state held in a leaked `RefCell` in the wasm
     // block below (Decision 4 — NOT the Y.Doc); these two signals are the reactive surface the DOM
@@ -3454,7 +3456,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 sz_bytes.set(
                     crate::editor_ops::slots_json()
                         .as_deref()
-                        .and_then(crate::mission_size::estimate_compiled_bytes),
+                        .and_then(crate::editor::mission_size::estimate_compiled_bytes),
                 );
             });
             if let Ok(id) = win.set_timeout_with_callback_and_timeout_and_arguments_0(
@@ -3764,9 +3766,9 @@ pub fn MissionEditorPage() -> impl IntoView {
             let engine: Rc<RefCell<Option<map_engine_render::RenderEngine>>> =
                 Rc::new(RefCell::new(None));
             // T-166 — shared map-asset host (camera-settle refresh after wheel/pan).
-            let map_host = crate::world_assets::new_host_handle();
+            let map_host = crate::editor::world_assets::new_host_handle();
             // T-172 B2 — DEM grid handle for the CUR Z sample (published by bootstrap).
-            let dem_grid = crate::world_assets::new_dem_grid_handle();
+            let dem_grid = crate::editor::world_assets::new_dem_grid_handle();
             let disposed = Arc::new(AtomicBool::new(false));
 
             // T-159.16 — MissionDoc host. Built + seeded + bridged synchronously (before the async
@@ -3809,16 +3811,18 @@ pub fn MissionEditorPage() -> impl IntoView {
             // at the press drives every unproject) between pointerdown/move/up. Registered
             // synchronously (engine still `None` here — `probe()` reads it lazily; `pick_selfcheck()`
             // needs only the synchronously-seeded doc).
-            let selection: crate::select_tool::SelectionHandle = Rc::new(RefCell::new(Vec::new()));
-            let left: Rc<RefCell<Option<crate::select_tool::LeftGesture>>> =
+            let selection: crate::editor::tools::select_tool::SelectionHandle =
+                Rc::new(RefCell::new(Vec::new()));
+            let left: Rc<RefCell<Option<crate::editor::tools::select_tool::LeftGesture>>> =
                 Rc::new(RefCell::new(None));
             // T-642 — the persistent ruler polyline. Session-local OVERLAY state (Decision 4 — NOT
             // the Y.Doc, exactly like the selection set above), held in a leaked `Rc<RefCell<…>>` so
             // both the pointer handlers (which mutate it) and the `RulerOverlay`'s `read_chain`
             // closure (which clones it to project) share one source of truth without touching
             // reactive-owner state a route change could dispose.
-            let ruler: Rc<RefCell<crate::ruler_tool::RulerChain>> =
-                Rc::new(RefCell::new(crate::ruler_tool::RulerChain::new()));
+            let ruler: Rc<RefCell<crate::editor::tools::ruler_tool::RulerChain>> = Rc::new(
+                RefCell::new(crate::editor::tools::ruler_tool::RulerChain::new()),
+            );
             // Push the chain's current summary onto the reactive surface (status bar + repaint tick).
             // One helper so every mutation site (click / Esc / dbl-click / tool-switch clear) updates
             // both signals identically and can never drift.
@@ -3847,14 +3851,14 @@ pub fn MissionEditorPage() -> impl IntoView {
             // T-642 — hand the leaked chain to the `ruler_tool` thread_local so the `RulerOverlay`
             // (mounted in the shared view, outside this block) can read + project it (the
             // `context_menu::set_menu_signal` handoff idiom).
-            crate::ruler_tool::register_ruler_chain(ruler.clone());
+            crate::editor::tools::ruler_tool::register_ruler_chain(ruler.clone());
 
             // T-643 — the Line-of-Sight capture. Session-local OVERLAY state (Decision 4 — NOT the
             // Y.Doc, exactly like the selection set + the ruler chain above), a leaked
             // `Rc<RefCell<LosState>>` shared by the pointer handlers (which mutate it) and the
             // `LosOverlay` (which clones it to project + build the profile).
-            let los: Rc<RefCell<crate::los_tool::LosState>> =
-                Rc::new(RefCell::new(crate::los_tool::LosState::new()));
+            let los: Rc<RefCell<crate::editor::tools::los_tool::LosState>> =
+                Rc::new(RefCell::new(crate::editor::tools::los_tool::LosState::new()));
             // Bump the repaint tick on every LoS mutation (click / Esc / tool-switch clear) so the
             // overlay repaints even on a still-pointer click. (No status-bar readout — Decision 2's
             // verdict lives in the inline panel, so unlike the ruler there is no status signal here.)
@@ -3871,8 +3875,9 @@ pub fn MissionEditorPage() -> impl IntoView {
             // without recompute. Registered into `los_tool`'s thread_local (peer of the LoS state) so
             // the overlay/engine bridge reads it; the compute itself runs through the registered DEM
             // sampler set below (the same 8 m grid).
-            let viewshed: Rc<RefCell<crate::los_tool::ViewshedState>> =
-                Rc::new(RefCell::new(crate::los_tool::ViewshedState::new()));
+            let viewshed: Rc<RefCell<crate::editor::tools::los_tool::ViewshedState>> = Rc::new(
+                RefCell::new(crate::editor::tools::los_tool::ViewshedState::new()),
+            );
             // T-643/T-644 — tool-switch dismissal (Decision 3): switching the tool away from LoS clears
             // BOTH the ray shot AND the viewshed wash (the "second-Esc-equivalent"). One Effect observes
             // `tool_mode` AND `los_mode`; when the tool is not LoS it clears the ray state, and when the
@@ -3909,23 +3914,24 @@ pub fn MissionEditorPage() -> impl IntoView {
             // the overlay can rebuild the terrain profile after a pan. The sampler closes over the
             // SAME 8 m downsampled `dem_grid` the ruler's per-vertex Z read uses (the reachable DEM
             // in the editor) — `los_tool` takes no compile-time dependency on the grid-handle type.
-            crate::los_tool::register_los_state(los.clone());
+            crate::editor::tools::los_tool::register_los_state(los.clone());
             // T-644 — hand the leaked viewshed state to `los_tool`'s thread_local (peer of
             // `register_los_state`) so `place_viewshed` can store the computed raster into it and a
             // pan re-projects the same rect. The compute reuses the SAME DEM sampler registered just
             // below (the ray's sampler); `place_viewshed` calls `compute_viewshed_for`, which reads it.
-            crate::los_tool::register_viewshed_state(viewshed.clone());
+            crate::editor::tools::los_tool::register_viewshed_state(viewshed.clone());
             {
                 let dem_grid = dem_grid.clone();
-                crate::los_tool::register_los_sampler(std::rc::Rc::new(move |x: f64, y: f64| {
-                    dem_grid
-                        .borrow()
-                        .as_ref()
-                        .and_then(|g| map_engine_core::dem::downsample::sample_grid_meters(g, x, y))
-                }));
+                crate::editor::tools::los_tool::register_los_sampler(std::rc::Rc::new(
+                    move |x: f64, y: f64| {
+                        dem_grid.borrow().as_ref().and_then(|g| {
+                            map_engine_core::dem::downsample::sample_grid_meters(g, x, y)
+                        })
+                    },
+                ));
             }
 
-            crate::select_tool::register_editor_selection(
+            crate::editor::tools::select_tool::register_editor_selection(
                 selection.clone(),
                 doc.clone(),
                 engine.clone(),
@@ -4526,7 +4532,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     .ok()
                                     .and_then(|g| {
                                         g.as_ref().map(|e| {
-                                            crate::select_tool::frozen_camera(
+                                            crate::editor::tools::select_tool::frozen_camera(
                                                 rect.width(),
                                                 rect.height(),
                                                 e.target_x(),
@@ -5041,7 +5047,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             register_slot_stats(engine.clone());
                             // T-173 P6 — let the Mission Settings render-pref controls reach the
                             // live engine + host.
-                            crate::world_assets::register_render_ctx(
+                            crate::editor::world_assets::register_render_ctx(
                                 engine.clone(),
                                 map_host.clone(),
                             );
@@ -5102,7 +5108,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // T-628 — the bootstrap folds the DEM's, the satellite's and the
                                 // world's real measurements into the same one bar through this
                                 // reporter, and closes all three of its segments before it returns.
-                                let boot_fut = crate::world_assets::bootstrap(
+                                let boot_fut = crate::editor::world_assets::bootstrap(
                                     engine.clone(),
                                     terrain,
                                     host,
@@ -5226,7 +5232,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         // T-172 H5 — keep the slot ring px→m sizing + cluster gate in step with
                         // the camera (never called before; stale once the atlas exists).
                         e.on_camera_changed();
-                        crate::world_assets::schedule_camera_settle(
+                        crate::editor::world_assets::schedule_camera_settle(
                             map_host.clone(),
                             engine.clone(),
                         );
@@ -5266,7 +5272,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         // T-176 B2 — mark the pan active so a settle fired mid-drag (incl. by a
                         // simultaneous wheel-zoom) defers the heavy zoom-band recompute (DEM
                         // contours + 8 m forest mass) until the gesture ends.
-                        crate::world_assets::set_camera_gesture(true);
+                        crate::editor::world_assets::set_camera_gesture(true);
                     } else if ev.button() == 0 {
                         // T-723 — while a place is armed, do NOT open LG::Pending / LG::Ruler.
                         // A canvas press under the arm used to latch left; the armed pointerup then
@@ -5284,7 +5290,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         // reenters the rAF loop's `borrow_mut`.
                         if let Some(e) = engine.borrow().as_ref() {
                             let rect = container.get_bounding_client_rect();
-                            let cam = crate::select_tool::frozen_camera(
+                            let cam = crate::editor::tools::select_tool::frozen_camera(
                                 rect.width(),
                                 rect.height(),
                                 e.target_x(),
@@ -5302,18 +5308,18 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // predicate's other callers. `should_begin_ruler` is false under Select,
                             // so the existing Pending path is byte-for-byte unchanged there.
                             *left.borrow_mut() = Some(
-                                if crate::ruler_tool::should_begin_ruler(
+                                if crate::editor::tools::ruler_tool::should_begin_ruler(
                                     tool_mode.get_untracked(),
                                     ev.button(),
                                 ) {
-                                    crate::select_tool::LeftGesture::Ruler {
+                                    crate::editor::tools::select_tool::LeftGesture::Ruler {
                                         start_x: sx,
                                         start_y: sy,
                                         cam,
                                     }
                                 } else {
-                                    crate::select_tool::LeftGesture::Pending(
-                                        crate::select_tool::PendingLeft {
+                                    crate::editor::tools::select_tool::LeftGesture::Pending(
+                                        crate::editor::tools::select_tool::PendingLeft {
                                             start_x: sx,
                                             start_y: sy,
                                             cam,
@@ -5343,7 +5349,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let hover_points = hover_points.clone();
                 let canvas = canvas.clone();
                 move |ev: web_sys::PointerEvent| {
-                    use crate::select_tool::{self as st, LeftGesture as LG};
+                    use crate::editor::tools::select_tool::{self as st, LeftGesture as LG};
                     let rect = container.get_bounding_client_rect();
                     let (px, py) = (
                         ev.client_x() as f64 - rect.left(),
@@ -5401,7 +5407,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             e.on_camera_changed();
                         }
                         pan_px.set(Some((cx, cy)));
-                        crate::world_assets::schedule_camera_settle(
+                        crate::editor::world_assets::schedule_camera_settle(
                             map_host.clone(),
                             engine.clone(),
                         );
@@ -5801,7 +5807,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             let world = if on_canvas {
                                 let g = engine.borrow();
                                 g.as_ref().map(|e| {
-                                    crate::select_tool::frozen_camera(
+                                    crate::editor::tools::select_tool::frozen_camera(
                                         rect.width(),
                                         rect.height(),
                                         e.target_x(),
@@ -5869,8 +5875,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                         }
                         // T-176 B2 — pan ended: clear the gesture flag BEFORE scheduling so this
                         // settle runs the full zoom-band recompute (contours + forest) once.
-                        crate::world_assets::set_camera_gesture(false);
-                        crate::world_assets::schedule_camera_settle(
+                        crate::editor::world_assets::set_camera_gesture(false);
+                        crate::editor::world_assets::schedule_camera_settle(
                             map_host.clone(),
                             engine.clone(),
                         );
@@ -5880,7 +5886,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // just ended, `left` is None ⇒ this returns.
                     let taken = left.borrow_mut().take();
                     let Some(g) = taken else { return };
-                    use crate::select_tool::{self as st, LeftGesture as LG};
+                    use crate::editor::tools::select_tool::{self as st, LeftGesture as LG};
                     // T-723 — only button 0 commits a left gesture. A phantom Move (stranded
                     // Pending promoted after disarm) used to commit on RMB/MMB pointerup and
                     // teleport the just-placed entity. Wrong-button releases abandon the gesture.
@@ -6381,7 +6387,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                                             // runs when the engine is live — a dead map draws nothing.
                                             viewshed.borrow_mut().place(w[0], w[1], z);
                                             if let Some(tex) =
-                                                crate::los_tool::place_viewshed(w[0], w[1])
+                                                crate::editor::tools::los_tool::place_viewshed(
+                                                    w[0], w[1],
+                                                )
                                             {
                                                 if let Some(e) = engine.borrow_mut().as_mut() {
                                                     let _ = e.viewshed_upload(
@@ -6472,7 +6480,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     let cam = {
                         let g = engine.borrow();
                         let Some(e) = g.as_ref() else { return };
-                        crate::select_tool::frozen_camera(
+                        crate::editor::tools::select_tool::frozen_camera(
                             rect.width(),
                             rect.height(),
                             e.target_x(),
@@ -6483,7 +6491,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // Slot OR vehicle under the cursor — the same pick the left-click uses, so the
                     // menu's notion of "the entity here" matches selection's.
                     let hit = doc.borrow().as_ref().and_then(|c| {
-                        crate::select_tool::pick_slot_or_vehicle(
+                        crate::editor::tools::select_tool::pick_slot_or_vehicle(
                             &cam,
                             &map_render_slot_soa(c),
                             &crate::editor_ops::vehicle_points(),
@@ -6553,7 +6561,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             let _ = container.release_pointer_capture(ev.pointer_id());
                         }
                     }
-                    use crate::select_tool::{self as st, LeftGesture as LG};
+                    use crate::editor::tools::select_tool::{self as st, LeftGesture as LG};
                     let taken = left.borrow_mut().take();
                     match taken {
                         Some(LG::Move { .. }) => {
@@ -6684,7 +6692,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     let cam = {
                         let g = engine.borrow();
                         let Some(e) = g.as_ref() else { return };
-                        crate::select_tool::frozen_camera(
+                        crate::editor::tools::select_tool::frozen_camera(
                             rect.width(),
                             rect.height(),
                             e.target_x(),
@@ -6695,7 +6703,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // T-647 ATTR-OPEN-001 — slot OR vehicle under the cursor, matching the click and
                     // context-menu picks so "the entity here" means one thing editor-wide.
                     let hit = doc.borrow().as_ref().and_then(|c| {
-                        crate::select_tool::pick_slot_or_vehicle(
+                        crate::editor::tools::select_tool::pick_slot_or_vehicle(
                             &cam,
                             &map_render_slot_soa(c),
                             &crate::editor_ops::vehicle_points(),
@@ -6966,7 +6974,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // click-chain capture is the map's own pointer handlers), reads the live camera + chain
                 // itself, and re-runs off the same `cursor`/`debug_hud` heartbeats as the furniture (no
                 // new rAF loop) plus `ruler_tick` (repaint on a still-pointer click).
-                <crate::ruler_tool::RulerOverlay cursor debug_hud=Some(debug_hud) tick=ruler_tick />
+                <crate::editor::tools::ruler_tool::RulerOverlay cursor debug_hud=Some(debug_hud) tick=ruler_tick />
                 // T-643 — the Line-of-Sight overlay (dispatcher-authorized SINGLE mount line; the
                 // component + all its logic live in `los_tool`, my owned file). UNGATED like the ruler
                 // overlay: a placed LoS shot is a measurement the operator created, so it survives a
@@ -6975,7 +6983,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // reads the live camera + state + DEM sampler itself, and re-runs off the same
                 // `cursor`/`debug_hud` heartbeats as the ruler (no new rAF loop) plus `los_tick`
                 // (repaint on a still-pointer click).
-                <crate::los_tool::LosOverlay cursor debug_hud=Some(debug_hud) tick=los_tick />
+                <crate::editor::tools::los_tool::LosOverlay cursor debug_hud=Some(debug_hud) tick=los_tick />
                 // T-648 — the transformation widget (WIDGET-CYCLE-001 / WIDGET-TRANS-001). UNGATED
                 // like the ruler/LoS overlays: it draws on the live selection, is `pointer-events-none`
                 // (the gestures are the map's own handlers), and re-runs off the same
@@ -7359,7 +7367,7 @@ fn register_self_checks(
 #[cfg(target_arch = "wasm32")]
 fn register_editor_cam(
     engine: std::rc::Rc<std::cell::RefCell<Option<map_engine_render::RenderEngine>>>,
-    map_host: crate::world_assets::HostHandle,
+    map_host: crate::editor::world_assets::HostHandle,
 ) {
     use wasm_bindgen::prelude::*;
 
@@ -7391,7 +7399,7 @@ fn register_editor_cam(
                 e.on_camera_changed(); // T-172 H5
             }
             // Immediate flush so smoke_fullmap A_trees_on does not race the 120 ms debounce.
-            crate::world_assets::flush_viewport(map_host.clone(), engine.clone());
+            crate::editor::world_assets::flush_viewport(map_host.clone(), engine.clone());
         }
     }) as Box<dyn FnMut(f64, f64, f64)>);
 
@@ -7689,7 +7697,7 @@ mod t573_mixed_drag_preview {
     /// must be gone from the drag branch — that filter WAS the bug (vehicles never previewed).
     #[test]
     fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
-        let tool = live_code(include_str!("select_tool.rs"));
+        let tool = live_code(include_str!("editor/tools/select_tool.rs"));
         let push = only_body(&tool, "pub fn push_drag_preview(");
         assert!(
             push.contains("e.set_drag(ids.to_vec()"),
@@ -8403,7 +8411,7 @@ mod t628_boot_progress {
     #[test]
     fn the_satellite_fetch_is_bounded_concurrent_ordered_and_fails_fast() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let src = live_code(include_str!("world_assets/satellite.rs"));
+        let src = live_code(include_str!("editor/world_assets/satellite.rs"));
         let body = only_body(&src, "async fn fetch_tiles(");
 
         assert!(
@@ -8492,7 +8500,7 @@ mod t628_boot_progress {
     #[test]
     fn the_terrain_dem_is_streamed_against_its_content_length() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let src = live_code(include_str!("world_assets/mod.rs"));
+        let src = live_code(include_str!("editor/world_assets/mod.rs"));
         let body = only_body(&src, "async fn load_dem_and_hillshade(");
         assert!(
             body.contains("fetch_bytes_streamed(") && body.contains("BootSeg::Terrain"),
@@ -8504,7 +8512,7 @@ mod t628_boot_progress {
             "the unmeasured whole-body GET must not come back"
         );
 
-        let fetch = live_code(include_str!("world_assets/fetch.rs"));
+        let fetch = live_code(include_str!("editor/world_assets/fetch.rs"));
         let streamed = only_body(&fetch, "pub async fn fetch_bytes_streamed(");
         // `live_code` blanks string literals, so the header NAME cannot be the needle — the shape
         // that survives is "a header off this response, parsed as a number, becomes the budget",
@@ -8536,7 +8544,7 @@ mod t628_boot_progress {
     #[test]
     fn every_world_batch_declares_its_files_before_it_fetches_them() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let world = live_code(include_str!("world_assets/world_host.rs"));
+        let world = live_code(include_str!("editor/world_assets/world_host.rs"));
         let queue = only_body(&world, "async fn fetch_and_queue(");
         let declare = queue
             .find("BootEvent::Files")
@@ -8554,7 +8562,7 @@ mod t628_boot_progress {
              about to request, not an estimate of it"
         );
 
-        let boot = live_code(include_str!("world_assets/mod.rs"));
+        let boot = live_code(include_str!("editor/world_assets/mod.rs"));
         let bootstrap = only_body(&boot, "pub async fn bootstrap(");
         let plan = bootstrap
             .find("planned_density_bins()")
@@ -8571,7 +8579,7 @@ mod t628_boot_progress {
 
         // The forest host may only count a bin it actually landed; counting attempts would let a
         // retried bin advance a unit that was already declared and spent.
-        let forest = live_code(include_str!("world_assets/forest_mass.rs"));
+        let forest = live_code(include_str!("editor/world_assets/forest_mass.rs"));
         let upload = only_body(&forest, "async fn boot_upload(");
         let done_at = upload
             .find("BootEvent::Done")
@@ -8592,7 +8600,7 @@ mod t628_boot_progress {
     #[test]
     fn every_segment_is_closed_and_the_overlay_waits_for_a_full_bar() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let boot = live_code(include_str!("world_assets/mod.rs"));
+        let boot = live_code(include_str!("editor/world_assets/mod.rs"));
         let bootstrap = only_body(&boot, "pub async fn bootstrap(");
         for seg in ["BootSeg::Terrain", "BootSeg::Satellite", "BootSeg::World"] {
             assert!(
@@ -8842,7 +8850,7 @@ mod t631_boot_failure_state {
 /// test-only name is what lets that arithmetic be executed here rather than only grepped for.
 /// The two mounts are never both live: this one is `not(target_arch = "wasm32")`.
 #[cfg(all(test, not(target_arch = "wasm32")))]
-#[path = "world_assets/tbd_sat.rs"]
+#[path = "editor/world_assets/tbd_sat.rs"]
 mod tbd_sat_pure;
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
@@ -8966,7 +8974,7 @@ mod t629_satellite_resolution {
     #[test]
     fn no_call_site_may_guess_a_texture_limit() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let src = live_code(include_str!("world_assets/satellite.rs"));
+        let src = live_code(include_str!("editor/world_assets/satellite.rs"));
 
         assert!(
             !src.contains("unwrap_or(8192)"),
@@ -9024,7 +9032,7 @@ mod t629_satellite_resolution {
     #[test]
     fn a_downscaled_basemap_warns_and_a_stuck_placeholder_warns() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let src = live_code(include_str!("world_assets/satellite.rs"));
+        let src = live_code(include_str!("editor/world_assets/satellite.rs"));
 
         let report = only_body(&src, "fn report_chosen_level(");
         assert!(
@@ -10182,7 +10190,9 @@ mod t644_viewshed_wiring {
     fn los_mode_signal_is_owned_and_handed_to_the_toolbar() {
         let ed = editor_live();
         assert!(
-            ed.contains("let los_mode = RwSignal::new(crate::los_tool::LosMode::default())"),
+            ed.contains(
+                "let los_mode = RwSignal::new(crate::editor::tools::los_tool::LosMode::default())"
+            ),
             "T-644: the page must own a real los_mode RwSignal (the LoS sub-mode)"
         );
         assert!(
@@ -11730,7 +11740,7 @@ mod t649_select_all_and_multi_edit {
     /// document" shortcut, which is the obvious wrong implementation of this ticket.
     #[test]
     fn select_all_is_viewport_scoped_through_the_marquee_primitive() {
-        let tool = live_code(include_str!("select_tool.rs"));
+        let tool = live_code(include_str!("editor/tools/select_tool.rs"));
         let view_fn = fn_source(&tool, "pub fn view_ids_with_vehicles(");
         // The near corner is the top-left CSS pixel unprojected; the far corner is the viewport
         // size in PIXELS — the exact (world start, px end) shape `marquee_ids_with_vehicles` takes.
@@ -13052,7 +13062,7 @@ mod t808_symbology_feed {
     /// appear on this path at all.
     #[test]
     fn the_drag_preview_binds_through_the_symbology_signature() {
-        let tool = live_code(include_str!("select_tool.rs"));
+        let tool = live_code(include_str!("editor/tools/select_tool.rs"));
         let bind = format!("{}{}", "vehicles_bind_", "symbology(");
         let binder = only_body(&tool, "fn bind_vehicle_preview_lane(");
 

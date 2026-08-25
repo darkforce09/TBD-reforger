@@ -912,7 +912,7 @@ pub enum ZoneShape {
 
 /// T-079 (CONN-TRG-OWNER-001) — the owner-link line's SCREEN geometry: the projected endpoints
 /// (trigger centre → owner) ready for one `<line>`. Pure so a native `cargo test` proves the
-/// projection with no engine/`window`, the [`crate::ruler_tool::ProjectedLeg`] idiom.
+/// projection with no engine/`window`, the [`crate::editor::tools::ruler_tool::ProjectedLeg`] idiom.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ProjectedOwnerLine {
     pub x1: f64,
@@ -923,7 +923,7 @@ pub struct ProjectedOwnerLine {
 
 /// Project the owner-link line's two WORLD endpoints (trigger centre `a`, owner position `b`) to
 /// screen space through a world→pixel projector (the live `OrthoCamera::project` on wasm; injected
-/// here so this stays pure + native-testable, exactly like [`crate::ruler_tool::project_legs`]).
+/// here so this stays pure + native-testable, exactly like [`crate::editor::tools::ruler_tool::project_legs`]).
 #[must_use]
 pub fn project_owner_line<F>(a: (f64, f64), b: (f64, f64), project: F) -> ProjectedOwnerLine
 where

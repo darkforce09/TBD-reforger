@@ -39,8 +39,8 @@ use map_engine_render::RenderEngine;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
+use crate::editor::tools::select_tool::{EngineHandle, SelectionHandle};
 use crate::mission_doc::DocHandle;
-use crate::select_tool::{EngineHandle, SelectionHandle};
 
 /// Everything a history command needs, shared from `mission_editor::on_load`. `doc` is the same
 /// `Rc` the IDB restore swaps into, so undo/redo always see the live document. The four signals are
@@ -545,7 +545,7 @@ pub(crate) fn soa_roles(soa: &SlotSoa) -> Vec<String> {
 /// is north).
 ///
 /// `pub(crate)` because it is THE column builder, not this module's: T-808's drag preview
-/// ([`crate::select_tool::bind_vehicle_preview_lane`]) rebinds the same lane at dragged positions
+/// ([`crate::editor::tools::select_tool::bind_vehicle_preview_lane`]) rebinds the same lane at dragged positions
 /// and reuses these three non-positional columns rather than growing a second builder in a second
 /// row order. Do not re-privatise it; write the second caller's columns here.
 pub(crate) fn vehicle_lane_fields() -> (Vec<f32>, Vec<String>, Vec<u8>, Vec<f32>) {
