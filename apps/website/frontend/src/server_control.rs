@@ -19,8 +19,8 @@
 //! client-side honesty as Server Intel ("requires the Reforger client"). Swap Modpack / Global
 //! Broadcast have no matching RCON action → disabled.
 #![allow(dead_code)]
-use crate::dto::{DataEnvelope, ModpackDto, ServerRowDto, ServerStatusDto};
-use crate::ui::{cn, AdminGate, MaterialIcon};
+use crate::core::dto::{DataEnvelope, ModpackDto, ServerRowDto, ServerStatusDto};
+use crate::core::ui::{cn, AdminGate, MaterialIcon};
 use leptos::prelude::*;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -225,11 +225,11 @@ pub fn ServerControlPage() -> impl IntoView {
 
 #[component]
 fn ServerControlInner() -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let servers = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::client::api_get::<DataEnvelope<ServerRowDto>>(store, "/servers")
+            crate::core::client::api_get::<DataEnvelope<ServerRowDto>>(store, "/servers")
                 .await
                 .ok()
         }
@@ -275,7 +275,7 @@ fn control_board(list: Vec<ServerRowDto>) -> impl IntoView {
     let list_detail = list;
 
     view! {
-        <crate::split_pane::SplitPane
+        <crate::core::split_pane::SplitPane
             transparent=true
             master_width="17rem"
             master_header=master_header(list_master.len()).into_any()
@@ -386,13 +386,13 @@ fn append_log(console_log: RwSignal<Vec<String>>, line: impl Into<String>) {
 }
 
 fn post_rcon(
-    store: crate::auth::AuthStore,
+    store: crate::core::auth::AuthStore,
     server_id: String,
     body: Value,
     echo: String,
     console_log: RwSignal<Vec<String>>,
     busy: RwSignal<bool>,
-    toasts: crate::toast::Toasts,
+    toasts: crate::core::toast::Toasts,
 ) {
     if busy.get_untracked() || server_id.is_empty() {
         return;
@@ -403,7 +403,7 @@ fn post_rcon(
     {
         leptos::task::spawn_local(async move {
             let path = admin_server_rcon_path(&server_id);
-            match crate::client::api_post::<RconAccepted>(store, &path, body).await {
+            match crate::core::client::api_post::<RconAccepted>(store, &path, body).await {
                 Ok(resp) => {
                     let msg = rcon_accepted_message(&resp);
                     // T-598 — a 2xx is not a delivery. The console colours `RCON:` green
@@ -419,7 +419,7 @@ fn post_rcon(
                     }
                 }
                 Err(e) => {
-                    let msg = crate::client::api_error_message(&e, "RCON request failed");
+                    let msg = crate::core::client::api_error_message(&e, "RCON request failed");
                     append_log(console_log, format!("RCON error: {msg}"));
                     toasts.error(msg);
                 }
@@ -440,8 +440,8 @@ fn server_detail(
     busy: RwSignal<bool>,
     command: RwSignal<String>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
-    let toasts = crate::toast::use_toasts();
+    let store = expect_context::<crate::core::auth::AuthStore>();
+    let toasts = crate::core::toast::use_toasts();
     let server_id = s.id.clone();
     let name = s.name.clone();
     let endpoint = format_endpoint(&s.ip, s.port);
@@ -581,12 +581,12 @@ fn telemetry_col(
 }
 
 fn fire_custom_command(
-    store: crate::auth::AuthStore,
+    store: crate::core::auth::AuthStore,
     server_id: String,
     command: RwSignal<String>,
     console_log: RwSignal<Vec<String>>,
     busy: RwSignal<bool>,
-    toasts: crate::toast::Toasts,
+    toasts: crate::core::toast::Toasts,
 ) {
     let cmd = command.get_untracked();
     let trimmed = cmd.trim().to_string();
@@ -612,8 +612,8 @@ fn rcon_console(
     busy: RwSignal<bool>,
     command: RwSignal<String>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
-    let toasts = crate::toast::use_toasts();
+    let store = expect_context::<crate::core::auth::AuthStore>();
+    let toasts = crate::core::toast::use_toasts();
 
     let change_map = {
         let server_id = server_id.clone();
@@ -1084,7 +1084,7 @@ mod t270 {
     /// * **Does:** for each of the four `(delivered, accepted)` bodies and for a transport error,
     ///   the source as committed raises exactly one toast, on the severity the body warrants, with
     ///   the text the real [`rcon_accepted_message`] produces — and clears `busy` either way.
-    /// * **Does not:** say anything about `crate::toast::Toasts` itself, or about the colour the
+    /// * **Does not:** say anything about `crate::core::toast::Toasts` itself, or about the colour the
     ///   console renders `RCON:` in. Those are other modules' pins.
     /// * **Residual:** the harness reads its evidence from the generated program's stdout, so
     ///   production source that printed the sentinels could forge a record. That is the
@@ -1318,48 +1318,53 @@ fn emit(kind: &str, payload: &str) {
     CHANNEL.with(|c| println!("{}\u{1f}{}\u{1f}{}", c.borrow(), kind, payload));
 }
 
-mod auth {
-    #[derive(Clone)]
-    pub struct AuthStore;
-}
+// T-934.1 moved auth/toast/client under `crate::core::*`; the mocks mirror that path. The pin
+// file's own std-machinery paths use `std::` (not bare `core::`) so this local `mod core` cannot
+// shadow the builtin crate.
+mod core {
+    pub mod auth {
+        #[derive(Clone)]
+        pub struct AuthStore;
+    }
 
-/// Recording stand-in: it reports which toast the pinned source ACTUALLY raised, on the path that
-/// actually ran.
-mod toast {
-    #[derive(Clone)]
-    pub struct Toasts;
-    impl Toasts {
-        pub fn success(&self, msg: String) {
-            crate::emit("toast", &format!("success\u{1f}{}", msg));
-        }
-        pub fn error(&self, msg: String) {
-            crate::emit("toast", &format!("error\u{1f}{}", msg));
+    /// Recording stand-in: it reports which toast the pinned source ACTUALLY raised, on the path
+    /// that actually ran.
+    pub mod toast {
+        #[derive(Clone)]
+        pub struct Toasts;
+        impl Toasts {
+            pub fn success(&self, msg: String) {
+                crate::emit("toast", &format!("success\u{1f}{}", msg));
+            }
+            pub fn error(&self, msg: String) {
+                crate::emit("toast", &format!("error\u{1f}{}", msg));
+            }
         }
     }
-}
 
-mod client {
-    pub trait Scripted: Sized {
-        fn scripted() -> Result<Self, crate::ApiErr>;
-    }
-    impl Scripted for crate::RconAccepted {
-        fn scripted() -> Result<Self, crate::ApiErr> {
-            crate::SCRIPT
-                .with(|s| s.borrow_mut().take())
-                .expect("the harness arms exactly one scripted reply per drive")
+    pub mod client {
+        pub trait Scripted: Sized {
+            fn scripted() -> Result<Self, crate::ApiErr>;
         }
-    }
-    pub async fn api_post<T: Scripted>(
-        _store: crate::auth::AuthStore,
-        _path: &str,
-        _body: crate::Value,
-    ) -> Result<T, crate::ApiErr> {
-        T::scripted()
-    }
-    pub fn api_error_message(e: &crate::ApiErr, fallback: &str) -> String {
-        match &e.1 {
-            Some(m) => m.clone(),
-            None => fallback.to_string(),
+        impl Scripted for crate::RconAccepted {
+            fn scripted() -> Result<Self, crate::ApiErr> {
+                crate::SCRIPT
+                    .with(|s| s.borrow_mut().take())
+                    .expect("the harness arms exactly one scripted reply per drive")
+            }
+        }
+        pub async fn api_post<T: Scripted>(
+            _store: crate::core::auth::AuthStore,
+            _path: &str,
+            _body: crate::Value,
+        ) -> Result<T, crate::ApiErr> {
+            T::scripted()
+        }
+        pub fn api_error_message(e: &crate::ApiErr, fallback: &str) -> String {
+            match &e.1 {
+                Some(m) => m.clone(),
+                None => fallback.to_string(),
+            }
         }
     }
 }
@@ -1367,14 +1372,14 @@ mod client {
 /// The pinned code hands its work to `spawn_local`; nothing it awaits is real I/O, so one poll is
 /// the whole future. A `Pending` here means the pinned path grew a real await the harness does not
 /// model — RED, never a silent pass.
-fn block_on<F: core::future::Future<Output = ()>>(fut: F) {
-    use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
+fn block_on<F: std::future::Future<Output = ()>>(fut: F) {
+    use std::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
     unsafe fn np(_: *const ()) {}
     unsafe fn cl(p: *const ()) -> RawWaker {
         RawWaker::new(p, &VT)
     }
     static VT: RawWakerVTable = RawWakerVTable::new(cl, np, np, np);
-    let w = unsafe { Waker::from_raw(RawWaker::new(core::ptr::null(), &VT)) };
+    let w = unsafe { Waker::from_raw(RawWaker::new(std::ptr::null(), &VT)) };
     let mut cx = Context::from_waker(&w);
     let mut fut = Box::pin(fut);
     match fut.as_mut().poll(&mut cx) {
@@ -1385,7 +1390,7 @@ fn block_on<F: core::future::Future<Output = ()>>(fut: F) {
 
 mod leptos {
     pub mod task {
-        pub fn spawn_local<F: core::future::Future<Output = ()> + 'static>(f: F) {
+        pub fn spawn_local<F: std::future::Future<Output = ()> + 'static>(f: F) {
             crate::block_on(f)
         }
     }
@@ -1397,13 +1402,13 @@ fn drive(channel: &str, script: Result<RconAccepted, ApiErr>) {
     let console: RwSignal<Vec<String>> = RwSignal::new(Vec::new());
     let busy: RwSignal<bool> = RwSignal::new(false);
     post_rcon(
-        auth::AuthStore,
+        crate::core::auth::AuthStore,
         "T601-SERVER".to_string(),
         Value,
         "T601-ECHO".to_string(),
         console,
         busy,
-        toast::Toasts,
+        crate::core::toast::Toasts,
     );
     for line in console.get_untracked() {
         emit("console", &line);
@@ -1441,13 +1446,13 @@ fn reply(delivered: bool, accepted: bool) -> RconAccepted {
         /// under test stays *reachability*.
         const SHIM: &str = r###"
 fn post_rcon(
-    store: auth::AuthStore,
+    store: crate::core::auth::AuthStore,
     server_id: String,
     body: Value,
     echo: String,
     console_log: RwSignal<Vec<String>>,
     busy: RwSignal<bool>,
-    toasts: toast::Toasts,
+    toasts: crate::core::toast::Toasts,
 ) {
     let call = move || {
         post_rcon_live(

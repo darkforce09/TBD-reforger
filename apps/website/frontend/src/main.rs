@@ -17,15 +17,15 @@ mod arsenal;
 // T-167 — Smart-Arsenal domain core (arsenalRules.ts + arsenalDollModel.ts port; pure/native-tested).
 mod arsenal_rules;
 mod audit;
-mod auth;
-mod client;
 mod content;
+// T-934.1 — core framework utilities (auth, client, dto, sse, datefmt, toast, ui,
+// url_guard, split_pane) and the app shell (layout, nav_config).
+mod core;
+mod shell;
 // T-159.25 — the Mission Library's transient "New Mission" dialog (CreateMissionDialog.tsx port).
 mod create_mission_dialog;
 mod dashboard;
-mod datefmt;
 mod deployments;
-mod dto;
 // T-159.22 dock commands — outliner select / active layer / palette drag-to-place. Drives the hosted
 // MissionDocCore (add_slot / add_editor_layer), so wasm32-only, gated like the doc host.
 #[cfg(target_arch = "wasm32")]
@@ -73,7 +73,6 @@ mod editor_session;
 mod event_hub;
 mod event_manager;
 mod events;
-mod layout;
 mod leaderboards;
 // T-159.16 MissionDoc host — all content is wasm32-only (links map-engine-core `doc`), so gate the
 // module declaration like the engine block inside `mission_editor`.
@@ -109,7 +108,6 @@ mod mission_size;
 mod missions;
 mod modpacks;
 mod mortar;
-mod nav;
 mod orbat_selection;
 // T-159.22 — the left dock's Editor Layers tree (+ the "Unfiled" pseudo-root the seed forces). Owns
 // plain LayerRow/SlotRow rather than `SlotSoa`, because map-engine-core is wasm32-only — so this
@@ -124,23 +122,11 @@ mod select_tool;
 mod server_control;
 mod server_intel;
 mod settings;
-mod split_pane;
 // T-173 P6 — per-user world-layer visibility prefs + basemap view (localStorage). Pure/native-
 // tested; the wasm host applies them to the residency + engine each settle.
-mod world_layer_prefs;
-// T-159.25 SSE consumer (useServerTelemetry port). Transport body is wasm32-gated inside the
-// module; the module itself stays ungated so native `cargo test` can run the T-287 Class-R
-// abort/teardown source guard (`include_str!("sse.rs")` — same reason dto.rs owns the decode).
-mod sse;
-// T-159.25 — sonner replacement: Toasts context + top-right viewport (renders no DOM while empty).
-mod toast;
-mod ui;
-// T-405 — the output-side `<a href>` scheme guard. Ungated: pure Rust, no web-sys, so the native
-// shell compiles it and `cargo test -p website-frontend` runs its conformance tests against the
-// shared case table — which is the thing that stops it drifting from the API's copy.
-mod url_guard;
 mod vehicles;
 mod wiki;
+mod world_layer_prefs;
 // T-159.17 yrs IDB persist — IndexedDB (`idb` crate) + debounced writer; wasm32-only, gated like the
 // doc host.
 #[cfg(target_arch = "wasm32")]
@@ -153,9 +139,9 @@ mod yrs_persist;
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen(start)]
 pub fn start_app() {
-    use layout::AppLayout;
     use leptos::prelude::*;
     use leptos_router::components::Router;
+    use shell::layout::AppLayout;
     console_error_panic_hook::set_once();
     // Mount inside a `<div id="root">` to mirror React's Vite mount node exactly (body > #root >
     // app). Beyond drop-in structural parity, it keeps the V-gate's positional-id numbering

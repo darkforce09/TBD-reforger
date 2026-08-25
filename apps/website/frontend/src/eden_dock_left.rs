@@ -47,9 +47,9 @@ const TAB_LABEL_PLACES: &str = "Locations";
 const UPPERCASE_LABEL_ADVANCE_PX: f64 = 8.5;
 /// T-637 — a tab cell's horizontal padding (`px-1.5` ⇒ 6 px each side).
 const TAB_LABEL_PAD_PX: f64 = 12.0;
+use crate::core::ui::MaterialIcon;
 use crate::eden_tree::virtual_tree;
 use crate::outliner::OutlinerNode;
-use crate::ui::MaterialIcon;
 
 /// T-638 — the collapse/expand chevron shared by both docks. `outward_icon` is the glyph shown while
 /// EXPANDED (points out of the dock — `chevron_left` for the left dock, `chevron_right` for the

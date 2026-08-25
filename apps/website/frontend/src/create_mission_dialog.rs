@@ -14,7 +14,7 @@
 //! T-413's design. A control here would post a key the handler drops on the floor, which is worse
 //! than no control: it looks saved.
 #![allow(dead_code)]
-use crate::ui::{cn, Dialog};
+use crate::core::ui::{cn, Dialog};
 use leptos::prelude::*;
 
 // macOS pill controls — match the Event Manager create dialog (admin.tsx).
@@ -47,7 +47,7 @@ fn terrain_label(t: &str) -> String {
 
 #[component]
 pub fn CreateMissionDialog(open: RwSignal<bool>) -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     // The store feeds only the wasm-gated submit body.
     #[cfg(not(target_arch = "wasm32"))]
     let _ = &store;
@@ -82,7 +82,7 @@ pub fn CreateMissionDialog(open: RwSignal<bool>) -> impl IntoView {
         ev.prevent_default();
         #[cfg(target_arch = "wasm32")]
         {
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             let t = title.get_untracked().trim().to_string();
             if t.is_empty() {
                 toasts.error("Title is required");
@@ -105,7 +105,9 @@ pub fn CreateMissionDialog(open: RwSignal<bool>) -> impl IntoView {
                 "briefing": briefing.get_untracked().trim(),
             });
             leptos::task::spawn_local(async move {
-                match crate::client::api_post::<serde_json::Value>(store, "/missions", body).await {
+                match crate::core::client::api_post::<serde_json::Value>(store, "/missions", body)
+                    .await
+                {
                     Ok(data) => {
                         toasts.success("Mission created");
                         open.set(false);
@@ -117,7 +119,7 @@ pub fn CreateMissionDialog(open: RwSignal<bool>) -> impl IntoView {
                             }
                         }
                     }
-                    Err(e) => toasts.error(crate::client::api_error_message(
+                    Err(e) => toasts.error(crate::core::client::api_error_message(
                         &e,
                         "Failed to create mission",
                     )),

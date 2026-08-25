@@ -527,6 +527,7 @@ pub(crate) fn selection_summary_text(entities: &[SelectedEntity]) -> String {
 mod imp {
     use std::cell::RefCell;
 
+    use crate::core::toast::Toasts;
     use leptos::prelude::{GetUntracked, RwSignal, Set};
     use leptos::task::spawn_local;
     use wasm_bindgen::prelude::*;
@@ -543,7 +544,7 @@ mod imp {
     /// is what `class_r_source_forbids_value_pretty_on_compiled_export` locates it by.
     type CompiledWithDiagnostics = (String, Vec<Finding>);
 
-    use crate::auth::AuthStore;
+    use crate::core::auth::AuthStore;
     use crate::mission_doc::DocHandle;
 
     use super::{
@@ -615,7 +616,7 @@ mod imp {
     ///
     /// **T-746 — also records [`HydratedRow`].** `MissionMeta` still has no `game_mode`; the hydrate
     /// cell is the getter-facing half so ShapeMirror can seed without inventing values.
-    pub fn set_row_meta(detail: &crate::dto::MissionDetail) {
+    pub fn set_row_meta(detail: &crate::core::dto::MissionDetail) {
         ROW_META.with(|r| *r.borrow_mut() = Some(detail.compiled_meta()));
         ROW_HYDRATE.with(|h| {
             *h.borrow_mut() = Some(HydratedRow {
@@ -864,7 +865,7 @@ mod imp {
     ///
     /// `toasts` is resolved at component setup by the caller — `use_toasts()` is an `expect_context`
     /// and would panic from a DOM handler, the `RowMirror` precedent.
-    pub fn export_compiled_now(toasts: crate::toast::Toasts) {
+    pub fn export_compiled_now(toasts: crate::core::toast::Toasts) {
         let mission_id = EDITOR_CTX
             .with(|c| c.borrow().as_ref().map(|ctx| ctx.mission_id.clone()))
             .unwrap_or_default();
@@ -969,7 +970,7 @@ mod imp {
         let mission_id = snap.mission_id.clone();
         status.set(format!("Saving v{semver}…"));
         spawn_local(async move {
-            match crate::client::api_post::<serde_json::Value>(auth, &path, body).await {
+            match crate::core::client::api_post::<serde_json::Value>(auth, &path, body).await {
                 Ok(_) => {
                     status.set(format!("Saved v{semver}"));
                     // T-159.26 — the saved version is now what local derives from: clear the dirty
@@ -992,7 +993,7 @@ mod imp {
                 Err((413, _)) => status.set("Payload too large".to_string()),
                 Err((401, _)) => status.set("Sign in to save".to_string()),
                 Err((s, msg)) => {
-                    let (head, rows) = crate::client::split_error_lines(msg.as_deref());
+                    let (head, rows) = crate::core::client::split_error_lines(msg.as_deref());
                     let head = head.filter(|h| !h.is_empty());
                     status.set(match (&head, rows.len()) {
                         (Some(h), 0) => format!("Save rejected ({s}): {h}"),
@@ -1055,7 +1056,7 @@ mod imp {
     /// T-693 — the author's OTHER missions, for the "Merge Mission…" picker.
     ///
     /// Reuses the SPA's own list client (`GET /missions?scope=mine`, the same call
-    /// `missions::MissionLibraryPage` makes) through [`crate::client::api_get`], which owns the
+    /// `missions::MissionLibraryPage` makes) through [`crate::core::client::api_get`], which owns the
     /// single-flight refresh — so this adds no second auth path. The CURRENT mission is filtered out
     /// (you cannot merge a mission into itself). Titles come straight off the `MissionCard` rows.
     ///
@@ -1065,8 +1066,10 @@ mod imp {
         auth: AuthStore,
         exclude_id: &str,
     ) -> Result<Vec<MissionPick>, String> {
-        use crate::dto::{MissionCard, Paginated};
-        match crate::client::api_get::<Paginated<MissionCard>>(auth, "/missions?scope=mine").await {
+        use crate::core::dto::{MissionCard, Paginated};
+        match crate::core::client::api_get::<Paginated<MissionCard>>(auth, "/missions?scope=mine")
+            .await
+        {
             Ok(page) => Ok(page
                 .data
                 .into_iter()
@@ -1098,7 +1101,7 @@ mod imp {
     pub fn merge_mission_now(
         source_id: String,
         offset: Option<(f64, f64)>,
-        toasts: crate::toast::Toasts,
+        toasts: crate::core::toast::Toasts,
     ) {
         let Some((doc, auth)) =
             EDITOR_CTX.with(|c| c.borrow().as_ref().map(|ctx| (ctx.doc.clone(), ctx.auth)))
@@ -1109,7 +1112,9 @@ mod imp {
         let path = format!("/missions/{source_id}");
         spawn_local(async move {
             let detail =
-                match crate::client::api_get::<crate::dto::MissionDetail>(auth, &path).await {
+                match crate::core::client::api_get::<crate::core::dto::MissionDetail>(auth, &path)
+                    .await
+                {
                     Ok(d) => d,
                     Err((401, _)) => {
                         toasts.error("Sign in to merge a mission.");
@@ -1280,7 +1285,7 @@ mod imp {
     /// A second clipboard path is a defect in itself: two vocabularies for "did the copy land"
     /// means one of them is eventually wrong and nobody notices. If another surface needs to copy,
     /// call this — do not re-derive it.
-    pub(crate) fn write_clipboard(text: String, ok_message: String, toasts: crate::toast::Toasts) {
+    pub(crate) fn write_clipboard(text: String, ok_message: String, toasts: Toasts) {
         let clipboard = match clipboard_api() {
             Ok(c) => c,
             Err(why) => {
@@ -1308,7 +1313,7 @@ mod imp {
     /// reference" row is reported as residue rather than reached across for. They are harness-drivable
     /// today through `__editorCommands.clipboard_grid_json()` and its two peers.
     #[allow(dead_code)]
-    pub fn copy_grid_position_now(toasts: crate::toast::Toasts) {
+    pub fn copy_grid_position_now(toasts: crate::core::toast::Toasts) {
         let entities = selection_entities();
         if entities.is_empty() {
             toasts.error(NOTHING_SELECTED);
@@ -1333,7 +1338,7 @@ mod imp {
     /// string on the clipboard while reporting success is the same silent-failure shape the awaited
     /// promise exists to prevent.
     #[allow(dead_code)]
-    pub fn copy_classnames_now(toasts: crate::toast::Toasts) {
+    pub fn copy_classnames_now(toasts: crate::core::toast::Toasts) {
         let entities = selection_entities();
         if entities.is_empty() {
             toasts.error(NOTHING_SELECTED);
@@ -1363,7 +1368,7 @@ mod imp {
     /// **T-698 exporter 3 — copy a human-readable digest of the selection.** Same missing-menu-entry
     /// residue note as [`copy_grid_position_now`].
     #[allow(dead_code)]
-    pub fn copy_selection_summary_now(toasts: crate::toast::Toasts) {
+    pub fn copy_selection_summary_now(toasts: crate::core::toast::Toasts) {
         let entities = selection_entities();
         if entities.is_empty() {
             toasts.error(NOTHING_SELECTED);
@@ -2318,7 +2323,7 @@ mod tests {
         let production = live_code(SRC);
         let body = only_body(
             &production,
-            "pub(crate) fn write_clipboard(text: String, ok_message: String, toasts: crate::toast::Toasts)",
+            "pub(crate) fn write_clipboard(text: String, ok_message: String, toasts: Toasts)",
         );
 
         assert!(

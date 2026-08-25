@@ -163,7 +163,9 @@ const ANON_OWNER: &str = "anon";
 /// Exactly one string is needed here and exactly that string is allowed to fail.
 fn current_owner() -> Option<String> {
     let storage = web_sys::window()?.local_storage().ok()??;
-    let raw = storage.get_item(crate::auth::AUTH_PERSIST_KEY).ok()??;
+    let raw = storage
+        .get_item(crate::core::auth::AUTH_PERSIST_KEY)
+        .ok()??;
     let blob: serde_json::Value = serde_json::from_str(&raw).ok()?;
     let id = blob
         .get("state")?

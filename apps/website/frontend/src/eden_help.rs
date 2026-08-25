@@ -58,8 +58,8 @@ use std::cell::Cell;
 
 use leptos::prelude::*;
 
+use crate::core::ui::{cn, MaterialIcon};
 use crate::eden_layout::HOVER_FILL;
-use crate::ui::{cn, MaterialIcon};
 
 /// T-772 — ControlsHint close-button geometry. Dense strip/dock rows keep
 /// [`crate::eden_layout::BTN_ICON`]'s `p-0.5`; this overlay dismiss is not in a dense row, so the

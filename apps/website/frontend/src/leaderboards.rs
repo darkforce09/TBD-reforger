@@ -25,9 +25,9 @@
 //! `{category, data: Vec<Value>}` and typing the row is a `dto.rs` change (R-api golden), which is
 //! not this file.
 #![allow(dead_code)]
-use crate::dto::Leaderboard;
-use crate::ui::{cn, MaterialIcon, PageHeader, Sheet};
-use crate::url_guard;
+use crate::core::dto::Leaderboard;
+use crate::core::ui::{cn, MaterialIcon, PageHeader, Sheet};
+use crate::core::url_guard;
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -215,15 +215,15 @@ fn avatar_img_src(url: &str) -> Option<&str> {
 #[component]
 pub fn LeaderboardsPage() -> impl IntoView {
     view! {
-        <crate::ui::AuthGate>
+        <crate::core::ui::AuthGate>
             <LeaderboardsInner />
-        </crate::ui::AuthGate>
+        </crate::core::ui::AuthGate>
     }
 }
 
 #[component]
 fn LeaderboardsInner() -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let category = RwSignal::new("kd");
     let query = RwSignal::new(String::new());
     // Slide-over dossier: the clicked row (for the header) + the Sheet's open flag.
@@ -249,7 +249,7 @@ fn LeaderboardsInner() -> impl IntoView {
                             .unwrap_or_default(),
                     );
                 }
-                crate::client::api_get::<Leaderboard>(store, &path)
+                crate::core::client::api_get::<Leaderboard>(store, &path)
                     .await
                     .ok()
             }
@@ -464,7 +464,7 @@ fn roster_row(r: &Row, category: &str, open: impl Fn(Row) + Copy + 'static) -> i
 /// one is a `dto.rs` + R-api-golden change, i.e. a different file than this slice owns).
 #[component]
 fn OperatorDossier(row: Row) -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let id = StoredValue::new(row.discord_id.clone());
     let stats = LocalResource::new(move || {
         let id = id.get_value();
@@ -472,7 +472,9 @@ fn OperatorDossier(row: Row) -> impl IntoView {
             #[cfg(target_arch = "wasm32")]
             {
                 let path = format!("/users/{id}/stats");
-                crate::client::api_get::<Value>(store, &path).await.ok()
+                crate::core::client::api_get::<Value>(store, &path)
+                    .await
+                    .ok()
             }
             #[cfg(not(target_arch = "wasm32"))]
             {

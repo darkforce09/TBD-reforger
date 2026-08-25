@@ -24,8 +24,8 @@
 use leptos::prelude::*;
 use map_engine_core::camera::OrthoCamera;
 
+use crate::core::ui::{cn, MaterialIcon};
 use crate::eden_layout::{HOVER_FILL, TOGGLED_PLATE};
-use crate::ui::{cn, MaterialIcon};
 
 // ── T-667 — map furniture: scale bar + edge grid references (pure geometry) ─────────────────────────
 //

@@ -8,9 +8,9 @@
 //! **Unlink Arma ID** (`DELETE /me/link`, clears the panel, toast, me + link refetch) — the
 //! useGenerateLinkCode / useUnlinkArma port, invalidations mapped to `LocalResource::refetch`.
 #![allow(dead_code)]
-use crate::dto::{LinkStatus, MeResponse};
-use crate::ui::{AuthGate, MaterialIcon, PageHeader, DEFAULT_AVATAR};
-use crate::url_guard;
+use crate::core::dto::{LinkStatus, MeResponse};
+use crate::core::ui::{AuthGate, MaterialIcon, PageHeader, DEFAULT_AVATAR};
+use crate::core::url_guard;
 use leptos::prelude::*;
 
 /// Settings profile avatar `src`. **T-413** — stored `users.avatar_url` must be http(s);
@@ -50,11 +50,11 @@ struct ArmaLinkCtx {
 
 #[component]
 fn SettingsInner() -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let me = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::client::api_get::<MeResponse>(store, "/me")
+            crate::core::client::api_get::<MeResponse>(store, "/me")
                 .await
                 .ok()
         }
@@ -67,7 +67,7 @@ fn SettingsInner() -> impl IntoView {
     let link = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::client::api_get::<LinkStatus>(store, "/me/link/status")
+            crate::core::client::api_get::<LinkStatus>(store, "/me/link/status")
                 .await
                 .ok()
         }
@@ -88,13 +88,13 @@ fn SettingsInner() -> impl IntoView {
     let on_generate = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             if ctx.gen_busy.get_untracked() {
                 return;
             }
             ctx.gen_busy.set(true);
             leptos::task::spawn_local(async move {
-                match crate::client::api_post::<crate::dto::LinkCodeResponse>(
+                match crate::core::client::api_post::<crate::core::dto::LinkCodeResponse>(
                     store,
                     "/me/link",
                     serde_json::json!({}),
@@ -116,13 +116,13 @@ fn SettingsInner() -> impl IntoView {
     let on_unlink = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             if ctx.unlink_busy.get_untracked() {
                 return;
             }
             ctx.unlink_busy.set(true);
             leptos::task::spawn_local(async move {
-                match crate::client::api_delete(store, "/me/link").await {
+                match crate::core::client::api_delete(store, "/me/link").await {
                     Ok(()) => {
                         ctx.pending_code.set(None);
                         toasts.success("Arma identity unlinked");
@@ -299,7 +299,7 @@ fn body(
 #[cfg(test)]
 mod tests {
     use super::safe_avatar_url;
-    use crate::ui::DEFAULT_AVATAR;
+    use crate::core::ui::DEFAULT_AVATAR;
 
     include!("../../shared/is_http_url_cases.rs");
 

@@ -640,7 +640,7 @@ pub fn finding_is_routable(f: &PanelFinding) -> bool {
 /// unresolved — the correct reading of "the catalogue is loaded and holds nothing").
 #[must_use]
 pub fn known_asset_ids_from_registry(
-    items: &[crate::dto::RegistryItem],
+    items: &[crate::core::dto::RegistryItem],
 ) -> std::collections::HashSet<String> {
     let mut set = std::collections::HashSet::with_capacity(items.len() * 2);
     for item in items {
@@ -1031,7 +1031,7 @@ pub fn findings_dropdown(rows: Vec<PanelFinding>) -> AnyView {
                         class="flex items-center gap-2 px-3 py-2.5 text-label-md text-on-surface-variant opacity-80"
                         data-validation-empty
                     >
-                        <crate::ui::MaterialIcon name="check_circle" />
+                        <crate::core::ui::MaterialIcon name="check_circle" />
                         <span>"No issues"</span>
                     </div>
                 }

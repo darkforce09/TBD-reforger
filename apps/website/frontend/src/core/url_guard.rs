@@ -109,7 +109,7 @@ mod tests {
 
     // The shared input table — the same file `website-api`'s `services::text` tests include.
     // Editing either implementation without the other turns THIS red. See the file header.
-    include!("../../shared/is_http_url_cases.rs");
+    include!("../../../shared/is_http_url_cases.rs");
 
     #[test]
     fn matches_the_api_guard_on_every_shared_case() {

@@ -18,7 +18,7 @@
 //! longer render as a blank page. See [`ApiFailure`] for why a 401 reaching here is always the
 //! session and never the route.
 
-use crate::auth::{RefreshResponse, SingleFlight};
+use crate::core::auth::{RefreshResponse, SingleFlight};
 use futures::future::{FutureExt, LocalBoxFuture};
 
 /// Request failure: HTTP status (0 = network/serde) + the backend's `{"error": …}` body string when
@@ -358,8 +358,10 @@ pub async fn send_with_refresh<T>(
 #[cfg(target_arch = "wasm32")]
 mod wasm_client {
     use super::{send_with_refresh, Req};
-    use crate::auth::{load_persisted, persist, AuthStore, RefreshResponse, Session, SingleFlight};
-    use crate::dto::MeResponse;
+    use crate::core::auth::{
+        load_persisted, persist, AuthStore, RefreshResponse, Session, SingleFlight,
+    };
+    use crate::core::dto::MeResponse;
     use futures::future::FutureExt;
     use leptos::prelude::*;
     use serde::de::DeserializeOwned;

@@ -115,8 +115,8 @@ use map_engine_core::doc::MissionDocCore;
 use map_engine_core::mission::compile::compile_payload;
 use wasm_bindgen::prelude::*;
 
-use crate::auth::AuthStore;
-use crate::dto::MissionDetail;
+use crate::core::auth::AuthStore;
+use crate::core::dto::MissionDetail;
 use crate::mission_doc::DocHandle;
 
 /// React `UUID_RE` — an id that can exist on the API. `smoke`/`draft` fail this and stay local.
@@ -133,7 +133,7 @@ fn is_uuid(id: &str) -> bool {
 /// whose layer was pruned.
 const DEFAULT_LAYER_ID: &str = "layer-1";
 
-/// T-628 — `GET /api/v1/missions/:id`, measured, with [`crate::client::api_get`] behind it.
+/// T-628 — `GET /api/v1/missions/:id`, measured, with [`crate::core::client::api_get`] behind it.
 ///
 /// The mission document is the boot bar's first segment and the API sends a `content-length` for
 /// it, so it is determinate for the same reason the DEM is: budget from the header, progress from
@@ -149,7 +149,7 @@ async fn get_mission_measured(
     auth: AuthStore,
     path: &str,
     report: &dyn Fn(crate::mission_editor::boot_progress::BootEvent),
-) -> Result<MissionDetail, crate::client::ApiErr> {
+) -> Result<MissionDetail, crate::core::client::ApiErr> {
     use crate::mission_editor::boot_progress::{BootEvent, BootSeg, STREAM_REPORT_BYTES};
     use wasm_bindgen::JsCast;
 
@@ -208,7 +208,7 @@ async fn get_mission_measured(
     .await;
     match measured {
         Some(d) => Ok(d),
-        None => crate::client::api_get::<MissionDetail>(auth, path).await,
+        None => crate::core::client::api_get::<MissionDetail>(auth, path).await,
     }
 }
 
@@ -273,7 +273,7 @@ pub async fn hydrate_from_server(
         Ok(d) => d,
         Err((404, _)) => return, // ad-hoc/local-only id — stay local, silently
         Err(_) => {
-            crate::toast::use_toasts()
+            crate::core::toast::use_toasts()
                 .error("Could not load the saved version — editing your local copy.");
             return;
         }
@@ -1044,7 +1044,7 @@ async fn restore_snapshot(mission_id: String, want: Snapshot) -> bool {
 /// which has no reactive Owner, and `use_toasts()` would panic there — a panic in the middle of a
 /// recovery being the worst possible time for one.
 fn notify(msg: &str) {
-    if let Some(toasts) = use_context::<crate::toast::Toasts>() {
+    if let Some(toasts) = use_context::<crate::core::toast::Toasts>() {
         toasts.message(msg);
     }
 }

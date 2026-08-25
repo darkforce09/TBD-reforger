@@ -948,13 +948,14 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
     // editor's measure-tool Esc arm (wave108 MAJOR-2 / wave109–110).
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id =
-            crate::ui::modal_stack::register(move || menu.try_get_untracked().flatten().is_some());
+        let modal_id = crate::core::ui::modal_stack::register(move || {
+            menu.try_get_untracked().flatten().is_some()
+        });
         let key = window_event_listener(leptos::ev::keydown, move |ev| {
             let Some(state) = menu.get_untracked() else {
                 return;
             };
-            if !crate::ui::modal_stack::is_topmost_open(modal_id) {
+            if !crate::core::ui::modal_stack::is_topmost_open(modal_id) {
                 return;
             }
             match ev.key().as_str() {
@@ -1002,7 +1003,7 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
         });
         on_cleanup(move || {
             key.remove();
-            crate::ui::modal_stack::unregister(modal_id);
+            crate::core::ui::modal_stack::unregister(modal_id);
         });
     }
     // Reset the highlight every time the menu (re)opens so a stale highlight from a prior open never

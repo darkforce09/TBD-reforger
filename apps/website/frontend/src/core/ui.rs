@@ -1,12 +1,12 @@
 //! Small UI helpers ported from lib/utils.ts (`cn`) + components/MaterialIcon.tsx + AuthGate.tsx.
-use crate::auth::AuthStore;
+use crate::core::auth::AuthStore;
 // T-633 — the ONE state vocabulary (T-668), consumed rather than re-invented. The dependency runs
 // `ui` → `eden_layout` and it is deliberate: `eden_layout` owns the four named state recipes and is
 // their single source of truth, so a shared primitive that re-typed `hover:bg-white/10` here would
 // be a second definition of a rule the chrome files are pinned against. Nothing runtime crosses the
 // boundary — these are `&'static str` class recipes resolved at compile time.
 use crate::eden_layout::{DISABLED_GLYPH, HOVER_FILL};
-use crate::nav::{has_min_role_authed, Role};
+use crate::shell::nav_config::{has_min_role_authed, Role};
 use leptos::prelude::*;
 
 /// Neutral inline avatar (data URI) shown when a user has no Discord avatar — byte-identical to
@@ -943,7 +943,7 @@ pub fn Sheet(
 /// AdminGate — AuthGate + an admin-role check. Ported from components/AdminGate.tsx: authed
 /// non-admins see "Admin access required." instead of the children.
 ///
-/// T-458: uses [`has_min_role_authed`] (`None=>false`), not browse-mode [`crate::nav::has_min_role`]
+/// T-458: uses [`has_min_role_authed`] (`None=>false`), not browse-mode [`crate::shell::nav_config::has_min_role`]
 /// / `AuthStore::has_min_role` (`None=>true`). The reactive `move ||` + `auth.user.get()` re-reads
 /// after bootstrap so a pre-session guest cannot flash admin children.
 #[component]
@@ -1433,7 +1433,7 @@ mod tests {
     #[test]
     fn orbat_manager_overlay_derives_z_from_the_modal_stack() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
-        let scrubbed = live_code(include_str!("orbat_manager.rs"));
+        let scrubbed = live_code(include_str!("../orbat_manager.rs"));
         let body = only_body(&scrubbed, "pub fn OrbatManagerDialog(");
         assert!(
             body.contains("modal_stack::z_class(modal_id)"),

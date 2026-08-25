@@ -3,7 +3,7 @@
 //! content (master / detail / master_header) is passed as `AnyView` props, mirroring the React
 //! `ReactNode` props. Note: the detail pane is a nested `<main>` (inside AppLayout's `<main>`).
 #![allow(dead_code)]
-use crate::ui::{cn, MaterialIcon};
+use crate::core::ui::{cn, MaterialIcon};
 use leptos::prelude::*;
 
 #[component]

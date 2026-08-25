@@ -77,7 +77,7 @@ pub fn AppRoutes() -> impl IntoView {
     view! {
         <Routes fallback=|| view! { <NotFoundPage /> }>
             <Route path=path!("/login") view=LoginPage />
-            <Route path=path!("/auth/callback") view=crate::auth::AuthCallbackPage />
+            <Route path=path!("/auth/callback") view=crate::core::auth::AuthCallbackPage />
             <Route path=path!("/") view=DashboardPage />
             <Route path=path!("/server-intel") view=ServerIntelPage />
             <Route path=path!("/announcements") view=AnnouncementsPage />

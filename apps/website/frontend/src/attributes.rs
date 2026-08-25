@@ -259,7 +259,7 @@ pub fn AttributesModal(
     attrs_tab: RwSignal<usize>,
     doc_tick: RwSignal<u64>,
     /// T-159.27 — flat registry gear rows for the Arsenal tab.
-    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
     /// T-167 — compat edge feed for the Smart Arsenal (optic/magazine rows + validation).
     compat: RwSignal<crate::arsenal_rules::CompatFeed>,
 ) -> impl IntoView {
@@ -268,20 +268,20 @@ pub fn AttributesModal(
     // T-726 — modal-stack gate; topmost consumes.
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id = crate::ui::modal_stack::register(move || {
+        let modal_id = crate::core::ui::modal_stack::register(move || {
             attrs_open.try_get_untracked().flatten().is_some()
         });
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
             if attrs_open.get_untracked().is_some()
                 && ev.key() == "Escape"
-                && crate::ui::modal_stack::is_topmost_open(modal_id)
+                && crate::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 crate::editor_ops::close_attributes();
             }
         });
         on_cleanup(move || {
             esc.remove();
-            crate::ui::modal_stack::unregister(modal_id);
+            crate::core::ui::modal_stack::unregister(modal_id);
         });
     }
     // T-649 ATTR-MULTI-CHK-001 — the per-field opt-in latches, minted ONCE on the component (see
@@ -395,7 +395,7 @@ fn modal_view(
     // T-810 (F-23 b) — the pre-open snapshot the Revert button restores. Captured on open (see
     // `AttributesModal`), one entry per edited slot.
     snapshot: StoredValue<Vec<crate::editor_ops::SlotAttrs>>,
-    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
     compat: RwSignal<crate::arsenal_rules::CompatFeed>,
     tab: RwSignal<usize>,
 ) -> AnyView {
@@ -473,7 +473,7 @@ fn modal_view(
                         on:click=move |_| crate::editor_ops::close_attributes()
                         class="rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
                     >
-                        <crate::ui::MaterialIcon name="close" />
+                        <crate::core::ui::MaterialIcon name="close" />
                     </button>
                 </div>
             </div>
@@ -613,7 +613,7 @@ const VEHICLE_CARGO_KINDS: &[&str] = &[
 #[cfg(target_arch = "wasm32")]
 fn vehicle_attrs_view(
     id: String,
-    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
 ) -> AnyView {
     use crate::editor_ops::VehicleCargoRow;
     use std::collections::HashMap;
@@ -711,7 +711,7 @@ fn vehicle_attrs_view(
                             crate::editor_ops::set_vehicle_cargo(id_r.clone(), next);
                         }
                     >
-                        <crate::ui::MaterialIcon name="close" class="block text-sm" />
+                        <crate::core::ui::MaterialIcon name="close" class="block text-sm" />
                     </button>
                 </div>
             }
@@ -790,7 +790,7 @@ fn vehicle_attrs_view(
                     on:click=move |_| crate::editor_ops::close_attributes()
                     class="rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
                 >
-                    <crate::ui::MaterialIcon name="close" />
+                    <crate::core::ui::MaterialIcon name="close" />
                 </button>
             </div>
             <div class="custom-scrollbar flex-1 overflow-y-auto px-6 py-5">
@@ -798,7 +798,7 @@ fn vehicle_attrs_view(
                     {heading_row}
                     <div class="flex flex-col gap-1">
                         <div class="flex items-center gap-1.5">
-                            <crate::ui::MaterialIcon
+                            <crate::core::ui::MaterialIcon
                                 name="inventory_2"
                                 class="block shrink-0 text-sm text-outline"
                             />
@@ -834,7 +834,7 @@ fn vehicle_attrs_view(
                     </div>
                     <div class="flex flex-col gap-1">
                         <div class="flex items-center gap-1.5">
-                            <crate::ui::MaterialIcon
+                            <crate::core::ui::MaterialIcon
                                 name="group"
                                 class="block shrink-0 text-sm text-outline"
                             />
@@ -1565,7 +1565,7 @@ fn type_picker(
     label: &'static str,
     value: String,
     gate: Gate,
-    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
     // `+ Send` because the popover is a reactive render closure (it rebuilds the leaf list as the
     // query changes) and Leptos requires such closures to be `Send`. The only caller passes a
     // closure capturing `targets: StoredValue<Vec<String>>` (which is `Send`), so the bound is free
@@ -1638,7 +1638,7 @@ fn type_picker(
                             "truncate text-on-surface"
                         }
                     }>{trigger_text}</span>
-                    <crate::ui::MaterialIcon name="search" />
+                    <crate::core::ui::MaterialIcon name="search" />
                 </button>
                 {move || {
                     open.get().then(|| {
@@ -1842,7 +1842,7 @@ fn identity_tab(
     diff: crate::editor_ops::AttrDiff,
     opts: MultiOpts,
     // T-810 (F-23 a) — the live catalog source for the TYPE picker.
-    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
 ) -> impl IntoView {
     let a = attrs.get_value();
     let g = |differs: bool, latch| Gate::maybe(is_multi && differs, latch);

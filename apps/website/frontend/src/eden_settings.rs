@@ -77,8 +77,8 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 
+use crate::core::ui::MaterialIcon;
 use crate::eden_env::ENV_UNCARRIED_NOTE;
-use crate::ui::MaterialIcon;
 
 // T-691 — the Editor Preferences dialog's open flag, parked here from `MissionSettingsDialog`'s
 // setup so the pointer row (and any future in-owns caller) can arm it without threading a prop
@@ -274,7 +274,7 @@ const SHAPE_UNAVAILABLE_NOTE: &str =
 /// authorship while the editor route gates on role, so a `mission_maker` legitimately editing someone
 /// else's mission is refused every time and retrying cannot help. Anything else names what the server
 /// said and is worth another go. Both texts state that the control has been put back, because it has.
-fn game_mode_failure_message(err: &crate::client::ApiErr) -> String {
+fn game_mode_failure_message(err: &crate::core::client::ApiErr) -> String {
     if err.0 == 403 {
         return "Game mode was not saved — you are not this mission's author. It has been put back \
                 to the stored value."
@@ -282,7 +282,7 @@ fn game_mode_failure_message(err: &crate::client::ApiErr) -> String {
     }
     format!(
         "Could not save the game mode: {}. It has been put back to the stored value.",
-        crate::client::api_error_message(err, "the server did not respond")
+        crate::core::client::api_error_message(err, "the server did not respond")
     )
 }
 
@@ -352,7 +352,7 @@ impl PresentationField {
 #[must_use]
 fn is_acceptable_thumbnail_url(raw: &str) -> bool {
     let trimmed = raw.trim();
-    trimmed.is_empty() || crate::url_guard::is_http_url(trimmed)
+    trimmed.is_empty() || crate::core::url_guard::is_http_url(trimmed)
 }
 
 /// What the briefing box is for, and — because the two names are one keystroke apart — what it is
@@ -396,7 +396,10 @@ const PRESENTATION_UNAVAILABLE_NOTE: &str =
 /// editor route gates on role, so a `mission_maker` legitimately editing someone else's mission is
 /// refused every time and retrying cannot help. Both texts say the control has been put back,
 /// because it has.
-fn presentation_failure_message(field: PresentationField, err: &crate::client::ApiErr) -> String {
+fn presentation_failure_message(
+    field: PresentationField,
+    err: &crate::core::client::ApiErr,
+) -> String {
     let what = field.what();
     if err.0 == 403 {
         return format!(
@@ -407,7 +410,7 @@ fn presentation_failure_message(field: PresentationField, err: &crate::client::A
     format!(
         "Could not save {}: {}. It has been put back to the stored value.",
         what.to_lowercase(),
-        crate::client::api_error_message(err, "the server did not respond")
+        crate::core::client::api_error_message(err, "the server did not respond")
     )
 }
 
@@ -520,9 +523,9 @@ thread_local! {
 #[cfg(target_arch = "wasm32")]
 #[derive(Clone, Copy)]
 struct ShapeMirror {
-    auth: crate::auth::AuthStore,
+    auth: crate::core::auth::AuthStore,
     mission_id: StoredValue<String>,
-    toasts: crate::toast::Toasts,
+    toasts: crate::core::toast::Toasts,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -535,9 +538,9 @@ impl ShapeMirror {
             .map(|s| s.to_string())
             .unwrap_or_default();
         Self {
-            auth: expect_context::<crate::auth::AuthStore>(),
+            auth: expect_context::<crate::core::auth::AuthStore>(),
             mission_id: StoredValue::new(id),
-            toasts: crate::toast::use_toasts(),
+            toasts: crate::core::toast::use_toasts(),
         }
     }
 
@@ -574,7 +577,7 @@ impl ShapeMirror {
         };
         let auth = self.auth;
         leptos::task::spawn_local(async move {
-            let got = crate::client::api_get::<crate::dto::MissionDetail>(
+            let got = crate::core::client::api_get::<crate::core::dto::MissionDetail>(
                 auth,
                 &format!("/missions/{id}"),
             )
@@ -607,7 +610,7 @@ impl ShapeMirror {
                 Err(e) => {
                     leptos::logging::warn!(
                         "T-694: could not read the mission row's shape: {}",
-                        crate::client::api_error_message(&e, "GET /missions/:id failed")
+                        crate::core::client::api_error_message(&e, "GET /missions/:id failed")
                     );
                     shape.set(None);
                 }
@@ -641,7 +644,7 @@ impl ShapeMirror {
         let toasts = self.toasts;
         leptos::task::spawn_local(async move {
             let body = serde_json::json!({ "game_mode": next.clone() });
-            let res = crate::client::api_patch::<serde_json::Value>(
+            let res = crate::core::client::api_patch::<serde_json::Value>(
                 auth,
                 &format!("/missions/{id}"),
                 body,
@@ -652,7 +655,7 @@ impl ShapeMirror {
                 Err(e) => {
                     leptos::logging::warn!(
                         "T-694: could not save the mission's game mode: {}",
-                        crate::client::api_error_message(e, "PATCH /missions/:id failed")
+                        crate::core::client::api_error_message(e, "PATCH /missions/:id failed")
                     );
                     toasts.error(game_mode_failure_message(e));
                     shape.set(Some(previous));
@@ -715,7 +718,7 @@ impl ShapeMirror {
             let mut body = serde_json::Map::new();
             body.insert(column.to_string(), serde_json::Value::String(next.clone()));
             let body = serde_json::Value::Object(body);
-            let res = crate::client::api_patch::<serde_json::Value>(
+            let res = crate::core::client::api_patch::<serde_json::Value>(
                 auth,
                 &format!("/missions/{id}"),
                 body,
@@ -734,7 +737,7 @@ impl ShapeMirror {
                 Err(e) => {
                     leptos::logging::warn!(
                         "T-671: could not save the mission's {column}: {}",
-                        crate::client::api_error_message(e, "PATCH /missions/:id failed")
+                        crate::core::client::api_error_message(e, "PATCH /missions/:id failed")
                     );
                     toasts.error(presentation_failure_message(field, e));
                     shape.set(Some(previous));
@@ -777,12 +780,13 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
     // consume Escape first (wave106 MINOR-2).
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id =
-            crate::ui::modal_stack::register(move || open.try_get_untracked().unwrap_or(false));
+        let modal_id = crate::core::ui::modal_stack::register(move || {
+            open.try_get_untracked().unwrap_or(false)
+        });
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
             if open.get_untracked()
                 && ev.key() == "Escape"
-                && crate::ui::modal_stack::is_topmost_open(modal_id)
+                && crate::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 // T-671 — commit the focused control before the dialog goes away. Every authored
                 // control in here fires on `change` (blur/Enter), and Escape used to close without
@@ -797,7 +801,7 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
         });
         on_cleanup(move || {
             esc.remove();
-            crate::ui::modal_stack::unregister(modal_id);
+            crate::core::ui::modal_stack::unregister(modal_id);
         });
     }
     // T-192 — read the route id + auth store here, in the component body: the reactive owner is
@@ -837,7 +841,7 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
         #[cfg(target_arch = "wasm32")]
         let env = crate::editor_ops::read_env();
         #[cfg(not(target_arch = "wasm32"))]
-        let env = crate::dto::MissionEnv::default();
+        let env = crate::core::dto::MissionEnv::default();
         Some(view! {
             <div
                 class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
@@ -1361,7 +1365,7 @@ fn render_flow_section(ctrl: &'static str) -> AnyView {
 /// [`EditorPreferencesDialog`]; this section now ends with a one-line pointer row linking there. No
 /// world-layer toggle remains in this dialog (the document-vs-local separation pin). On the native
 /// view-shell these are inert (no engine), which is fine — the dialog is a wasm surface.
-fn render_prefs_section(env: &crate::dto::MissionEnv) -> AnyView {
+fn render_prefs_section(env: &crate::core::dto::MissionEnv) -> AnyView {
     #[cfg(not(target_arch = "wasm32"))]
     {
         let _ = env;
@@ -1464,19 +1468,20 @@ fn EditorPreferencesDialog(open: RwSignal<bool>) -> impl IntoView {
     // this first; parent survives until a second Esc.
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id =
-            crate::ui::modal_stack::register(move || open.try_get_untracked().unwrap_or(false));
+        let modal_id = crate::core::ui::modal_stack::register(move || {
+            open.try_get_untracked().unwrap_or(false)
+        });
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
             if open.get_untracked()
                 && ev.key() == "Escape"
-                && crate::ui::modal_stack::is_topmost_open(modal_id)
+                && crate::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 open.set(false);
             }
         });
         on_cleanup(move || {
             esc.remove();
-            crate::ui::modal_stack::unregister(modal_id);
+            crate::core::ui::modal_stack::unregister(modal_id);
         });
     }
     move || {
@@ -2107,19 +2112,20 @@ fn AllSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> impl Into
     // T-726 — modal-stack gate (same stacked-Esc contract as EditorPreferencesDialog).
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id =
-            crate::ui::modal_stack::register(move || open.try_get_untracked().unwrap_or(false));
+        let modal_id = crate::core::ui::modal_stack::register(move || {
+            open.try_get_untracked().unwrap_or(false)
+        });
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
             if open.get_untracked()
                 && ev.key() == "Escape"
-                && crate::ui::modal_stack::is_topmost_open(modal_id)
+                && crate::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 open.set(false);
             }
         });
         on_cleanup(move || {
             esc.remove();
-            crate::ui::modal_stack::unregister(modal_id);
+            crate::core::ui::modal_stack::unregister(modal_id);
         });
     }
     // The diff-from-default filter. Off by default: the ticket's view is "every authored setting",
@@ -2190,7 +2196,7 @@ fn render_all_settings_body(only_diffs: RwSignal<bool>) -> AnyView {
             all
         };
         let shown = rows.len();
-        let toasts = crate::toast::use_toasts();
+        let toasts = crate::core::toast::use_toasts();
 
         // The filter is a toggle button, not a checkbox: the T-668 state vocabulary gives a
         // toggled-on control a lighter plate + a 1px dark top border ([`TOGGLED_PLATE`]), distinct
@@ -2285,7 +2291,11 @@ pub fn inert_settings_row_reason(owner: &SettingOwner) -> String {
 /// `data-selectable=false` used to short-circuit the click while leaving a tab-stop that did
 /// nothing — the wave-115 MINOR. Peer of the left-dock search hit's button-vs-inert split.
 #[cfg(target_arch = "wasm32")]
-fn setting_row_view(row: SettingRow, toasts: crate::toast::Toasts, clickable: bool) -> AnyView {
+fn setting_row_view(
+    row: SettingRow,
+    toasts: crate::core::toast::Toasts,
+    clickable: bool,
+) -> AnyView {
     let state = row.diff_state();
     let subject = row.owner.subject_id().map(ToString::to_string);
     let selectable = clickable;

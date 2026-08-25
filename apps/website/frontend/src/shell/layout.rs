@@ -2,10 +2,10 @@
 //! class strings matched 1:1 to the React output (V-shell gate, byte-equal). Auth (role, user
 //! menu, breadcrumb source) and routing are stubbed to the guest "/" render until T-159.3 / .4.
 use crate::app_routes::AppRoutes;
-use crate::auth::AuthStore;
-use crate::nav::{has_min_role, NavItem, Role, NAVIGATION};
-use crate::ui::{cn, MaterialIcon, DEFAULT_AVATAR};
-use crate::url_guard;
+use crate::core::auth::AuthStore;
+use crate::core::ui::{cn, MaterialIcon, DEFAULT_AVATAR};
+use crate::core::url_guard;
+use crate::shell::nav_config::{has_min_role, NavItem, Role, NAVIGATION};
 use leptos::prelude::*;
 use leptos_router::hooks::use_location;
 
@@ -59,10 +59,10 @@ pub fn AppLayout() -> impl IntoView {
     // Cold-load bootstrap (refresh from tbd-auth) + the gloo-net client populate it next.
     provide_context(AuthStore::new());
     // Toasts context (sonner parity — React mounts <Toaster/> once in main.tsx). T-159.25.
-    crate::toast::provide_toasts();
+    crate::core::toast::provide_toasts();
     // Cold-load bootstrap: hydrate the session from tbd-auth (no-op for a guest with nothing stored).
     #[cfg(target_arch = "wasm32")]
-    leptos::task::spawn_local(crate::client::bootstrap(expect_context::<AuthStore>()));
+    leptos::task::spawn_local(crate::core::client::bootstrap(expect_context::<AuthStore>()));
     // Route determines the frame — reactive on SPA nav (T-172 A2/A8). The Memo dedups by
     // FrameKind, so navigating between two Chrome routes never remounts Sidebar/TopNav; only
     // crossing a login/editor boundary swaps the frame.
@@ -129,7 +129,7 @@ pub fn AppLayout() -> impl IntoView {
     // DOM while the toast list is empty, so byte-equal V captures are unaffected.
     view! {
         {frame}
-        <crate::toast::ToastViewport />
+        <crate::core::toast::ToastViewport />
     }
 }
 
@@ -157,10 +157,10 @@ fn TopNav() -> impl IntoView {
         {
             let rt = auth.refresh_token.get_untracked();
             auth.clear_session();
-            crate::auth::persist(&auth.persist_state());
+            crate::core::auth::persist(&auth.persist_state());
             leptos::task::spawn_local(async move {
                 if let Some(rt) = rt {
-                    let _ = crate::client::api_post_ok(
+                    let _ = crate::core::client::api_post_ok(
                         auth,
                         "/auth/logout",
                         serde_json::json!({ "refresh_token": rt }),
@@ -413,7 +413,7 @@ fn SidebarNav(
 #[cfg(test)]
 mod tests {
     use super::{classify_frame, is_active, safe_avatar_url, FrameKind};
-    use crate::ui::DEFAULT_AVATAR;
+    use crate::core::ui::DEFAULT_AVATAR;
 
     #[test]
     fn is_active_dashboard_exact() {
@@ -441,7 +441,7 @@ mod tests {
         assert!(matches!(classify_frame("/missions"), FrameKind::Chrome));
     }
 
-    include!("../../shared/is_http_url_cases.rs");
+    include!("../../../shared/is_http_url_cases.rs");
 
     #[test]
     fn topnav_avatar_src_only_keeps_http_urls() {

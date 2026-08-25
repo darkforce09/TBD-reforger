@@ -10,9 +10,9 @@ use leptos::prelude::*;
 use std::collections::HashMap;
 
 #[cfg(target_arch = "wasm32")]
-use crate::eden_layout::HOVER_FILL;
+use crate::core::ui::{cn, MaterialIcon};
 #[cfg(target_arch = "wasm32")]
-use crate::ui::{cn, MaterialIcon};
+use crate::eden_layout::HOVER_FILL;
 
 /// T-215 — registry kinds the vehicle cargo picker offers.
 ///
@@ -97,7 +97,7 @@ const VEHICLE_CARGO_KINDS: &[&str] = &[
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn placed_vehicles_panel(
     doc_tick: RwSignal<u64>,
-    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
     expanded: RwSignal<std::collections::HashSet<String>>,
 ) -> AnyView {
     use crate::editor_ops::{VehicleCargoRow, VehicleRow};
@@ -399,7 +399,7 @@ pub(crate) fn placed_vehicles_panel(
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn placed_vehicles_panel(
     doc_tick: RwSignal<u64>,
-    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
     expanded: RwSignal<std::collections::HashSet<String>>,
 ) -> AnyView {
     let _ = (doc_tick, registry_items, expanded);

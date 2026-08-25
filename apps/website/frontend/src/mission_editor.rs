@@ -54,7 +54,7 @@ mod registry_session {
     use std::collections::HashMap;
 
     use crate::arsenal_rules::{CargoRow, CompatFeed};
-    use crate::dto::RegistryItem;
+    use crate::core::dto::RegistryItem;
 
     struct CachedCompat {
         feed: CompatFeed,
@@ -120,15 +120,15 @@ const EDITOR_COMPAT_EDGE_TYPES: &str = "optic_on_weapon,mag_in_weapon,attachment
 /// Assemble the flat catalog via bounded pages (T-427). Never hits the unpaginated dump.
 #[cfg(target_arch = "wasm32")]
 async fn fetch_registry_pages(
-    auth: crate::auth::AuthStore,
-) -> Result<Vec<crate::dto::RegistryItem>, crate::client::ApiErr> {
-    use crate::dto::{RegistryItem, RegistryResponse};
+    auth: crate::core::auth::AuthStore,
+) -> Result<Vec<crate::core::dto::RegistryItem>, crate::core::client::ApiErr> {
+    use crate::core::dto::{RegistryItem, RegistryResponse};
 
     let mut all: Vec<RegistryItem> = Vec::new();
     let mut offset: i64 = 0;
     loop {
         let path = format!("/registry?limit={REGISTRY_COLD_PAGE}&offset={offset}");
-        let page: RegistryResponse = crate::client::api_get(auth, &path).await?;
+        let page: RegistryResponse = crate::core::client::api_get(auth, &path).await?;
         let n = page.data.len() as i64;
         let total = page.total.unwrap_or(offset + n);
         all.extend(page.data);
@@ -148,22 +148,22 @@ async fn fetch_registry_pages(
 /// Does **not** GET unfiltered `/registry/compat` and does **not** walk raw cargo edges client-side.
 #[cfg(target_arch = "wasm32")]
 async fn fetch_compat_cold(
-    auth: crate::auth::AuthStore,
+    auth: crate::core::auth::AuthStore,
 ) -> Result<
     (
         crate::arsenal_rules::CompatFeed,
         std::collections::HashMap<String, Vec<crate::arsenal_rules::CargoRow>>,
     ),
-    crate::client::ApiErr,
+    crate::core::client::ApiErr,
 > {
     use crate::arsenal_rules::{CargoRow, CompatFeed, CompatGraph, CompatStatus};
-    use crate::dto::{RegistryCargoDefaultsResponse, RegistryCompatResponse};
+    use crate::core::dto::{RegistryCargoDefaultsResponse, RegistryCompatResponse};
     use std::collections::HashMap;
 
     let edges_path = format!("/registry/compat?edge_type={EDITOR_COMPAT_EDGE_TYPES}");
-    let edges: RegistryCompatResponse = crate::client::api_get(auth, &edges_path).await?;
+    let edges: RegistryCompatResponse = crate::core::client::api_get(auth, &edges_path).await?;
     let cargo_resp: RegistryCargoDefaultsResponse =
-        crate::client::api_get(auth, "/registry/compat?view=cargo_defaults").await?;
+        crate::core::client::api_get(auth, "/registry/compat?view=cargo_defaults").await?;
 
     let mut cargo: HashMap<String, Vec<CargoRow>> = HashMap::new();
     for (character, rows) in cargo_resp.data {
@@ -1649,7 +1649,7 @@ fn SnapReadout(snap: RwSignal<transform::SnapState>) -> impl IntoView {
 #[component]
 fn AssetPickerOverlay(
     picker: RwSignal<Option<AssetPickerState>>,
-    registry: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    registry: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
     active_side: RwSignal<String>,
 ) -> impl IntoView {
     // A live query filters the flat leaf list (Eden's create-menu type-ahead). Reset on each open so
@@ -1665,13 +1665,13 @@ fn AssetPickerOverlay(
     // measure-tool Esc seam) owns Escape alone; topmost consumes.
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id = crate::ui::modal_stack::register(move || {
+        let modal_id = crate::core::ui::modal_stack::register(move || {
             picker.try_get_untracked().flatten().is_some()
         });
         let key = window_event_listener(leptos::ev::keydown, move |ev| {
             if picker.get_untracked().is_some()
                 && ev.key() == "Escape"
-                && crate::ui::modal_stack::is_topmost_open(modal_id)
+                && crate::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 ev.prevent_default();
                 crate::editor_ops::close_asset_picker();
@@ -1679,7 +1679,7 @@ fn AssetPickerOverlay(
         });
         on_cleanup(move || {
             key.remove();
-            crate::ui::modal_stack::unregister(modal_id);
+            crate::core::ui::modal_stack::unregister(modal_id);
         });
     }
 
@@ -1795,12 +1795,13 @@ fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
     // T-726 — modal-stack gate; topmost consumes.
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id =
-            crate::ui::modal_stack::register(move || open.try_get_untracked().flatten().is_some());
+        let modal_id = crate::core::ui::modal_stack::register(move || {
+            open.try_get_untracked().flatten().is_some()
+        });
         let key = window_event_listener(leptos::ev::keydown, move |ev| {
             if open.get_untracked().is_some()
                 && ev.key() == "Escape"
-                && crate::ui::modal_stack::is_topmost_open(modal_id)
+                && crate::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 ev.prevent_default();
                 crate::editor_ops::close_comment_editor();
@@ -1808,7 +1809,7 @@ fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
         });
         on_cleanup(move || {
             key.remove();
-            crate::ui::modal_stack::unregister(modal_id);
+            crate::core::ui::modal_stack::unregister(modal_id);
         });
     }
 
@@ -2039,12 +2040,13 @@ fn ConnectionsPanelOverlay(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> imp
     // T-726 — modal-stack gate; topmost consumes.
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id =
-            crate::ui::modal_stack::register(move || open.try_get_untracked().unwrap_or(false));
+        let modal_id = crate::core::ui::modal_stack::register(move || {
+            open.try_get_untracked().unwrap_or(false)
+        });
         let key = window_event_listener(leptos::ev::keydown, move |ev| {
             if open.get_untracked()
                 && ev.key() == "Escape"
-                && crate::ui::modal_stack::is_topmost_open(modal_id)
+                && crate::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 ev.prevent_default();
                 crate::editor_ops::close_connections_panel();
@@ -2052,7 +2054,7 @@ fn ConnectionsPanelOverlay(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> imp
         });
         on_cleanup(move || {
             key.remove();
-            crate::ui::modal_stack::unregister(modal_id);
+            crate::core::ui::modal_stack::unregister(modal_id);
         });
     }
 
@@ -3565,7 +3567,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     let dock_right_collapsed = RwSignal::new(false);
     // T-159.27 — the flat registry gear rows for the Attributes Arsenal tab (populated by the same
     // /registry fetch that builds the Factions palette). None until it lands.
-    let registry_items = RwSignal::new(None::<Vec<crate::dto::RegistryItem>>);
+    let registry_items = RwSignal::new(None::<Vec<crate::core::dto::RegistryItem>>);
     // T-750 — terminal failure of the `/registry` fetch. Distinct from `registry_items == None`
     // (still in flight): the Favourites panel must not spin on "Resolving…" forever when the
     // catalogue never arrives. `registry_fetch_gen` bumps re-kick the cold fetch (Retry).
@@ -3638,7 +3640,7 @@ pub fn MissionEditorPage() -> impl IntoView {
         // T-159.20 — auth store for the Save Version POST. Read here in the reactive body (the
         // owner is live); `on_load` is a non-reactive closure, and `AuthStore` is `Copy` so it moves
         // into it cleanly. Provided by `AppLayout` above `<AppRoutes/>`, so present on this route.
-        let auth = expect_context::<crate::auth::AuthStore>();
+        let auth = expect_context::<crate::core::auth::AuthStore>();
 
         // T-159.22 — the Factions palette catalog. Engine-independent so the dock fills even if
         // wgpu never comes up. `kind == "character"` rows only — `build_catalog_tree` is the
@@ -4407,7 +4409,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // pickers). Those register with `modal_stack`; without this guard,
                                 // Esc closing the menu also steps the measure machines (wave108
                                 // MAJOR-2; LoS/viewshed victims in waves 109–110).
-                                if crate::ui::modal_stack::any_open() {
+                                if crate::core::ui::modal_stack::any_open() {
                                     false
                                 } else {
                                     // T-723 — Esc disarms an armed place BEFORE the measure-tool seam.
@@ -7499,7 +7501,7 @@ fn ConflictDialog(conflict: RwSignal<Option<ConflictInfo>>, conflict_id: String)
 mod t245_registry_session {
     use super::registry_session;
     use crate::arsenal_rules::{CompatFeed, CompatStatus};
-    use crate::dto::RegistryItem;
+    use crate::core::dto::RegistryItem;
     use std::collections::HashMap;
 
     fn sample_item(resource_name: &str) -> RegistryItem {
@@ -7864,7 +7866,7 @@ mod t427_cold_registry_path {
             "limit": 500,
             "offset": 0
         });
-        let r: crate::dto::RegistryResponse = serde_json::from_value(page).unwrap();
+        let r: crate::core::dto::RegistryResponse = serde_json::from_value(page).unwrap();
         assert_eq!(r.total, Some(1857));
         assert_eq!(r.limit, Some(500));
         assert_eq!(r.offset, Some(0));
@@ -7879,7 +7881,8 @@ mod t427_cold_registry_path {
             "modpack_version": "1",
             "source_edge_count": 16223
         });
-        let c: crate::dto::RegistryCargoDefaultsResponse = serde_json::from_value(cargo).unwrap();
+        let c: crate::core::dto::RegistryCargoDefaultsResponse =
+            serde_json::from_value(cargo).unwrap();
         assert_eq!(c.view, "cargo_defaults");
         assert_eq!(c.source_edge_count, Some(16223));
         let rows = c.data.get("char_a").unwrap();
@@ -8662,7 +8665,7 @@ mod t628_boot_progress {
             "its progress must be the bytes off the body reader"
         );
         assert!(
-            body.contains("crate::client::api_get::<MissionDetail>(auth, path)"),
+            body.contains("crate::core::client::api_get::<MissionDetail>(auth, path)"),
             "anything that is not a 2xx — the 401 above all — must fall through to `api_get`, \
              which owns the single-flight refresh. A second refresh path would double-spend the \
              rotating token, and that is a data-safety bug, not a loading-bar bug"

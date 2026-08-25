@@ -5,9 +5,9 @@
 //! **Gate scope:** the seeded golden (empty ORBAT) → the selector short-circuits to "No ORBAT slots
 //! defined…". The full faction/squad/slot shell is content-gated (same `OrbatSelector` as the hub).
 #![allow(dead_code)]
-use crate::dto::EventHub;
+use crate::core::dto::EventHub;
+use crate::core::ui::{AuthGate, MaterialIcon};
 use crate::event_hub::OrbatSelector;
-use crate::ui::{AuthGate, MaterialIcon};
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 
@@ -22,7 +22,7 @@ pub fn OrbatSelectionPage() -> impl IntoView {
 
 #[component]
 fn OrbatSelectionInner() -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let params = use_params_map();
     let event = LocalResource::new(move || {
         let id = params
@@ -34,7 +34,9 @@ fn OrbatSelectionInner() -> impl IntoView {
             #[cfg(target_arch = "wasm32")]
             {
                 let path = format!("/events/{id}");
-                crate::client::api_get::<EventHub>(store, &path).await.ok()
+                crate::core::client::api_get::<EventHub>(store, &path)
+                    .await
+                    .ok()
             }
             #[cfg(not(target_arch = "wasm32"))]
             {

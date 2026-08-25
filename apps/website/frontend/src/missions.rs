@@ -7,11 +7,11 @@
 //! the Aegis confirm Dialog, sticky OPEN IN MISSION CREATOR footer), the transient
 //! CreateMissionDialog (New Mission button + true-empty CTA + Cmd/Ctrl+N), toasts.
 #![allow(dead_code)]
+use crate::core::dto::{MissionCard, MissionDetail, Paginated};
+use crate::core::ui::{badge_class, AuthGate, MaterialIcon, Sheet};
+use crate::core::url_guard;
 use crate::create_mission_dialog::CreateMissionDialog;
-use crate::dto::{MissionCard, MissionDetail, Paginated};
-use crate::nav::{has_min_role_authed, Role};
-use crate::ui::{badge_class, AuthGate, MaterialIcon, Sheet};
-use crate::url_guard;
+use crate::shell::nav_config::{has_min_role_authed, Role};
 use leptos::prelude::*;
 // T-282 — the version differ indexes rows by id; these are its only two containers.
 use serde_json::Value;
@@ -130,7 +130,7 @@ fn missions_query(scope: &str, q: &str, terrain: &str, mode: &str, players: &str
 
 #[component]
 pub fn MissionLibraryPage() -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     // T-286 — reactive + authed: browse-mode `has_min_role(None)=>true` must NOT drive New Mission.
     // Pre-bootstrap `None` (or a guest) is false; after session lands the Memo re-reads the role.
     let is_maker = Memo::new(move |_| {
@@ -163,7 +163,7 @@ pub fn MissionLibraryPage() -> impl IntoView {
         async move {
             #[cfg(target_arch = "wasm32")]
             {
-                crate::client::api_get::<Paginated<MissionCard>>(store, &url)
+                crate::core::client::api_get::<Paginated<MissionCard>>(store, &url)
                     .await
                     .ok()
             }
@@ -186,7 +186,7 @@ pub fn MissionLibraryPage() -> impl IntoView {
         async move {
             #[cfg(target_arch = "wasm32")]
             {
-                crate::client::api_get::<Paginated<MissionCard>>(store, &url)
+                crate::core::client::api_get::<Paginated<MissionCard>>(store, &url)
                     .await
                     .ok()
             }
@@ -566,7 +566,7 @@ fn mission_card(
     open_preview: impl Fn(String) + Copy + 'static,
     changed: Callback<()>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let art = mission_art_url(m.thumbnail_url.as_deref());
     // T-389 — the returned-mission line. `rejection_reason` is the only channel by which an author
     // ever learns why a mission came back (`handlers/approvals.rs:217` is its sole writer), and
@@ -610,13 +610,13 @@ fn mission_card(
             let next = !bookmarked.get_untracked();
             bookmarked.set(next);
             bookmark_busy.set(true);
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             let path = bookmark_api_path(&mid_bm);
             leptos::task::spawn_local(async move {
                 let result = if next {
-                    crate::client::api_post_ok(store, &path, serde_json::json!({})).await
+                    crate::core::client::api_post_ok(store, &path, serde_json::json!({})).await
                 } else {
-                    crate::client::api_delete(store, &path).await
+                    crate::core::client::api_delete(store, &path).await
                 };
                 match result {
                     Ok(()) => {
@@ -629,7 +629,7 @@ fn mission_card(
                     }
                     Err(e) => {
                         bookmarked.set(!next);
-                        toasts.error(crate::client::api_error_message(
+                        toasts.error(crate::core::client::api_error_message(
                             &e,
                             if next {
                                 "Could not bookmark mission"
@@ -762,7 +762,7 @@ fn MissionDossierSheet(
     sheet_open: RwSignal<bool>,
     changed: Callback<()>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let id_sv = StoredValue::new(id);
     let mission = LocalResource::new(move || {
         let id = id_sv.get_value();
@@ -770,7 +770,7 @@ fn MissionDossierSheet(
             #[cfg(target_arch = "wasm32")]
             {
                 let path = format!("/missions/{id}");
-                crate::client::api_get::<MissionDetail>(store, &path)
+                crate::core::client::api_get::<MissionDetail>(store, &path)
                     .await
                     .ok()
             }
@@ -1572,7 +1572,7 @@ fn next_semver(current: Option<&str>) -> String {
 /// different about — pick another version number, use the editor, sign in, check the connection —
 /// and none of them is a defect in the document they just picked.
 fn upload_failure(status: u16, msg: Option<&str>, semver: &str) -> (String, Vec<String>) {
-    let (head, rows) = crate::client::split_error_lines(msg);
+    let (head, rows) = crate::core::client::split_error_lines(msg);
     let head = head.filter(|h| !h.trim().is_empty());
     match status {
         409 => (
@@ -1666,7 +1666,7 @@ fn diff_summary_lines(diff: &MissionDiff) -> Vec<String> {
 fn version_history_section(m: &MissionDetail) -> Option<impl IntoView + use<>> {
     let v = m.current_version.as_ref()?;
     let semver = v.semver.clone();
-    let saved = crate::datefmt::format_local_datetime(&v.created_at);
+    let saved = crate::core::datefmt::format_local_datetime(&v.created_at);
     // `created_by` is a raw Discord snowflake, not a display name, and the dossier has no directory
     // to resolve one against. Name the author when the ids match; otherwise say nothing rather than
     // print an 18-digit number at them.
@@ -1724,7 +1724,7 @@ fn dossier_sheet_body(
     confirm_delete_open: RwSignal<bool>,
     changed: Callback<()>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     // These feed only the wasm-gated mutation closures.
     #[cfg(not(target_arch = "wasm32"))]
     let _ = (&store, id_sv, &changed);
@@ -1803,13 +1803,13 @@ fn dossier_sheet_body(
             let next = !bookmarked.get_untracked();
             bookmarked.set(next);
             bookmark_busy.set(true);
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             let path = bookmark_api_path(&id_sv.get_value());
             leptos::task::spawn_local(async move {
                 let result = if next {
-                    crate::client::api_post_ok(store, &path, serde_json::json!({})).await
+                    crate::core::client::api_post_ok(store, &path, serde_json::json!({})).await
                 } else {
-                    crate::client::api_delete(store, &path).await
+                    crate::core::client::api_delete(store, &path).await
                 };
                 match result {
                     Ok(()) => {
@@ -1822,7 +1822,7 @@ fn dossier_sheet_body(
                     }
                     Err(e) => {
                         bookmarked.set(!next);
-                        toasts.error(crate::client::api_error_message(
+                        toasts.error(crate::core::client::api_error_message(
                             &e,
                             if next {
                                 "Could not bookmark mission"
@@ -1849,11 +1849,11 @@ fn dossier_sheet_body(
                 return;
             }
             status_busy.set(true);
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             let path = format!("/missions/{}", id_sv.get_value());
             let next = if is_archived { "draft" } else { "archived" };
             leptos::task::spawn_local(async move {
-                match crate::client::api_patch::<serde_json::Value>(
+                match crate::core::client::api_patch::<serde_json::Value>(
                     store,
                     &path,
                     serde_json::json!({ "status": next }),
@@ -1868,7 +1868,7 @@ fn dossier_sheet_body(
                         });
                         changed.run(());
                     }
-                    Err(e) => toasts.error(crate::client::api_error_message(
+                    Err(e) => toasts.error(crate::core::client::api_error_message(
                         &e,
                         if is_archived {
                             "Could not unarchive mission"
@@ -1898,7 +1898,7 @@ fn dossier_sheet_body(
             if up_busy.get_untracked() {
                 return;
             }
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             let Some(document) = web_sys::window().and_then(|w| w.document()) else {
                 toasts.error("Could not open the file picker");
                 return;
@@ -2047,14 +2047,14 @@ fn dossier_sheet_body(
                 return;
             };
             let path = format!("/missions/{}/versions", id_sv.get_value());
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             leptos::task::spawn_local(async move {
                 // `api_post_raw`, not `api_post`: the 201 echoes the entire `json_payload` back
                 // (`models/mission.rs:128`), so a `T`-generic post would parse a whole extra tree
                 // out of the response — and the `Ok` arm below throws it away. Non-2xx bodies are
                 // still read and still fold `details` into the message (`client.rs:220`), which is
                 // what `upload_failure` needs.
-                match crate::client::api_post_raw(store, &path, body).await {
+                match crate::core::client::api_post_raw(store, &path, body).await {
                     Ok(()) => {
                         up_status.set(format!(
                             "Uploaded v{semver} — it is now this mission's current version."
@@ -2103,15 +2103,15 @@ fn dossier_sheet_body(
                 return;
             }
             submit_busy.set(true);
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             let path = format!("/missions/{}/submit", id_sv.get_value());
             leptos::task::spawn_local(async move {
-                match crate::client::api_post_ok(store, &path, serde_json::json!({})).await {
+                match crate::core::client::api_post_ok(store, &path, serde_json::json!({})).await {
                     Ok(()) => {
                         toasts.success("Submitted for review");
                         changed.run(());
                     }
-                    Err(e) => toasts.error(crate::client::api_error_message(
+                    Err(e) => toasts.error(crate::core::client::api_error_message(
                         &e,
                         "Could not submit mission for review",
                     )),
@@ -2130,16 +2130,16 @@ fn dossier_sheet_body(
                 return;
             }
             delete_busy.set(true);
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             let path = format!("/missions/{}", id_sv.get_value());
             leptos::task::spawn_local(async move {
-                match crate::client::api_delete(store, &path).await {
+                match crate::core::client::api_delete(store, &path).await {
                     Ok(()) => {
                         toasts.success("Mission deleted");
                         sheet_open.set(false);
                         changed.run(());
                     }
-                    Err(e) => toasts.error(crate::client::api_error_message(
+                    Err(e) => toasts.error(crate::core::client::api_error_message(
                         &e,
                         "Could not delete mission",
                     )),
@@ -2151,11 +2151,11 @@ fn dossier_sheet_body(
 
     let toasts_share = move |_| {
         #[cfg(target_arch = "wasm32")]
-        crate::toast::use_toasts().success("Will allow anyone to view and comment");
+        crate::core::toast::use_toasts().success("Will allow anyone to view and comment");
     };
     let toasts_planner = move |_| {
         #[cfg(target_arch = "wasm32")]
-        crate::toast::use_toasts().success("2D Tactical Planner — coming soon");
+        crate::core::toast::use_toasts().success("2D Tactical Planner — coming soon");
     };
     let goto_editor = move |_| {
         #[cfg(target_arch = "wasm32")]
@@ -2255,7 +2255,7 @@ fn dossier_sheet_body(
                                     .map(|at| {
                                         view! {
                                             <p class="mt-3 font-mono text-label-sm text-on-surface-variant">
-                                                "Reviewed " {crate::datefmt::format_local_datetime(&at)}
+                                                "Reviewed " {crate::core::datefmt::format_local_datetime(&at)}
                                             </p>
                                         }
                                     })}
@@ -2530,7 +2530,7 @@ fn dossier_sheet_body(
         </Sheet>
 
         // Invite editor — stubbed dialog.
-        <crate::ui::Dialog
+        <crate::core::ui::Dialog
             open=invite_open
             title="Invite editor"
             description="Grant another mission maker edit access to this mission."
@@ -2554,10 +2554,10 @@ fn dossier_sheet_body(
                     "Close"
                 </button>
             </div>
-        </crate::ui::Dialog>
+        </crate::core::ui::Dialog>
 
         // Destructive confirm (F4-04) — Aegis Dialog, not window.confirm.
-        <crate::ui::Dialog
+        <crate::core::ui::Dialog
             open=confirm_delete_open
             title="Delete this mission?"
             description="The mission and its versions are removed from the library for everyone. Deletion is refused while the mission is attached to an event."
@@ -2579,7 +2579,7 @@ fn dossier_sheet_body(
                     "Delete mission"
                 </button>
             </div>
-        </crate::ui::Dialog>
+        </crate::core::ui::Dialog>
     }
 }
 
@@ -2589,7 +2589,7 @@ mod tests {
         author_avatar_img_src, bookmark_api_path, card_is_bookmarked, featured_briefing_text,
         mission_art_url, FEATURED_BRIEFING_FALLBACK, PLACEHOLDER_ART,
     };
-    use crate::dto::MissionCard;
+    use crate::core::dto::MissionCard;
     use serde_json::json;
     // T-117 upload pipeline. `diff_mission_payloads` / `Value` come in via the T-282 differ's own
     // `use super::{…}` further down this module — deliberately not re-imported here.
@@ -3203,7 +3203,7 @@ mod tests {
     ///
     /// `create_version` answers a bad document with 400 + a `details` array naming every finding.
     /// This drives the FULL client chain the browser drives — the raw response body through
-    /// [`crate::client::error_body_message`] (which folds `details` into the message as extra
+    /// [`crate::core::client::error_body_message`] (which folds `details` into the message as extra
     /// lines) and out through [`upload_failure`] — and demands every finding survive.
     ///
     /// The body is **not invented**: it is the response measured from the running dev API on
@@ -3222,7 +3222,7 @@ mod tests {
                 "/editor: this payload does not match the shape the mission compiler reads, so it cannot be compiled — invalid type: integer `123`, expected a string at line 1 column 83"
             ]
         });
-        let msg = crate::client::error_body_message(&measured)
+        let msg = crate::core::client::error_body_message(&measured)
             .expect("the client must extract a message from a 400 body carrying `error`");
         let (head, findings) = upload_failure(400, Some(&msg), "0.2.0");
 
@@ -3256,7 +3256,7 @@ mod tests {
     }
 
     /// A systematic defect yields one finding per slot; the API caps its own list at 20 and the
-    /// client folds at [`crate::client::MAX_ERROR_DETAILS`] with a `… and N more` tail. That tail
+    /// client folds at [`crate::core::client::MAX_ERROR_DETAILS`] with a `… and N more` tail. That tail
     /// is itself a finding row and must reach the author — otherwise a 20-problem document reads
     /// as a 6-problem one and the author "fixes" it and re-uploads into the same wall.
     #[test]
@@ -3265,11 +3265,11 @@ mod tests {
             .map(|i| format!("/editor/slots/{i}/role: 42 is not of type \"string\""))
             .collect();
         let body = json!({ "error": "invalid mission payload", "details": details });
-        let msg = crate::client::error_body_message(&body).expect("message");
+        let msg = crate::core::client::error_body_message(&body).expect("message");
         let (_head, findings) = upload_failure(400, Some(&msg), "1.0.0");
         assert_eq!(
             findings.len(),
-            crate::client::MAX_ERROR_DETAILS + 1,
+            crate::core::client::MAX_ERROR_DETAILS + 1,
             "six shown findings plus the count tail; got {findings:?}"
         );
         assert!(

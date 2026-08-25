@@ -25,7 +25,7 @@ use crate::eden_layout::{
 };
 // T-633 — the scrubber and the weather picker are the shared Aegis primitives now, not raw
 // `<input type="range">` / `<select>`.
-use crate::ui::{cn, MaterialIcon, Select, Slider};
+use crate::core::ui::{cn, MaterialIcon, Select, Slider};
 
 // ═══════════════ T-634 — two rows, and one action hierarchy ═══════════════
 //
@@ -502,7 +502,7 @@ struct MirroredField {
 }
 
 /// T-633 — the inline weather picker's `(wire value, label)` table. A const rather than four
-/// `<option>` tags in the view, because [`crate::ui::Select`] takes its options as data: the wire
+/// `<option>` tags in the view, because [`crate::core::ui::Select`] takes its options as data: the wire
 /// enum and the words the author reads then have ONE definition in this file instead of markup that
 /// drifts. Values are the schema's snake_case weather enum — the same strings `MIRROR_WEATHER`
 /// mirrors onto the `missions` row, so the picker and the PATCH cannot disagree by construction.
@@ -547,7 +547,7 @@ const MIRROR_DEBOUNCE_MS: i32 = 400;
 ///
 /// Both say the setting will revert, because it will: the row still holds the old value, and the row
 /// wins on the next hydrate.
-fn mirror_failure_message(field: MirroredField, err: &crate::client::ApiErr) -> String {
+fn mirror_failure_message(field: MirroredField, err: &crate::core::client::ApiErr) -> String {
     let label = field.label;
     if err.0 == 403 {
         return format!(
@@ -557,7 +557,7 @@ fn mirror_failure_message(field: MirroredField, err: &crate::client::ApiErr) -> 
     format!(
         "Could not save {}: {}. It will revert when the editor reloads — try again.",
         label.to_lowercase(),
-        crate::client::api_error_message(err, "the server did not respond")
+        crate::core::client::api_error_message(err, "the server did not respond")
     )
 }
 
@@ -586,11 +586,11 @@ fn mirror_failure_message(field: MirroredField, err: &crate::client::ApiErr) -> 
 #[cfg(target_arch = "wasm32")]
 #[derive(Clone, Copy)]
 pub(crate) struct RowMirror {
-    auth: crate::auth::AuthStore,
+    auth: crate::core::auth::AuthStore,
     mission_id: StoredValue<String>,
     /// Where a failed mirror is reported. Resolved at setup for the same reason `auth` is —
     /// `use_toasts()` is an `expect_context` and would panic from a DOM handler or a timer.
-    toasts: crate::toast::Toasts,
+    toasts: crate::core::toast::Toasts,
 }
 
 /// Per-column mirror bookkeeping: the dedupe memory, the debounce queue, and the single-flight slot.
@@ -718,9 +718,9 @@ impl RowMirror {
             .map(|s| s.to_string())
             .unwrap_or_default();
         Self {
-            auth: expect_context::<crate::auth::AuthStore>(),
+            auth: expect_context::<crate::core::auth::AuthStore>(),
             mission_id: StoredValue::new(id),
-            toasts: crate::toast::use_toasts(),
+            toasts: crate::core::toast::use_toasts(),
         }
     }
 
@@ -789,7 +789,7 @@ impl RowMirror {
         let column = field.column;
         leptos::task::spawn_local(async move {
             let body = serde_json::json!({ column: value.clone() });
-            let res = crate::client::api_patch::<serde_json::Value>(
+            let res = crate::core::client::api_patch::<serde_json::Value>(
                 auth,
                 &format!("/missions/{id}"),
                 body,
@@ -809,7 +809,7 @@ impl RowMirror {
                 leptos::logging::warn!(
                     "T-192: could not mirror {} onto the mission row: {}",
                     column,
-                    crate::client::api_error_message(e, "PATCH /missions/:id failed")
+                    crate::core::client::api_error_message(e, "PATCH /missions/:id failed")
                 );
                 // A stale generation describes a value the author has already replaced, and its
                 // successor is queued and will report its own outcome. Toasting here would stack one
@@ -985,7 +985,8 @@ pub fn TopCommandStrip(
     // strip (canvas dblclick → Attributes, context-menu Arsenal, …) still clear menu/export/hint.
     // The wasm open-edge pump in `modal_stack` observes closed→open without per-dialog wiring.
     #[cfg(target_arch = "wasm32")]
-    let transient_closer_id = crate::ui::modal_stack::register_transient_closer(close_transients);
+    let transient_closer_id =
+        crate::core::ui::modal_stack::register_transient_closer(close_transients);
     // T-192 — row mirror for the inline scrubber / weather select. Setup-time, not handler-time.
     #[cfg(target_arch = "wasm32")]
     let row_mirror = RowMirror::from_route();
@@ -993,7 +994,7 @@ pub fn TopCommandStrip(
     // reason `row_mirror` is: `use_toasts()` is an `expect_context` and a DOM click handler has no
     // reactive owner to resolve it through.
     #[cfg(target_arch = "wasm32")]
-    let toasts = crate::toast::use_toasts();
+    let toasts = crate::core::toast::use_toasts();
     // T-181.44 — per-problem lines from a rejected Save (`details` from the 400). Local to the
     // strip because the Save dialog is the only place they are read; `save_status` stays a
     // one-liner because it also renders in the strip itself.
@@ -1050,7 +1051,7 @@ pub fn TopCommandStrip(
                 // capture-phase sentinel marks before any bubble listener runs; checking the mark
                 // (not live `any_open()`) survives a peer Dialog closing in the same keydown
                 // (wave200 F4 / wave139 F3 pile-up).
-                if crate::ui::modal_stack::escape_consumed() {
+                if crate::core::ui::modal_stack::escape_consumed() {
                     return;
                 }
                 // One surface per press — each arm returns after closing its layer.
@@ -1082,7 +1083,7 @@ pub fn TopCommandStrip(
         });
         on_cleanup(move || {
             esc.remove();
-            crate::ui::modal_stack::unregister_transient_closer(transient_closer_id);
+            crate::core::ui::modal_stack::unregister_transient_closer(transient_closer_id);
         });
     }
     // T-789 F-04 — FRESH STATE on reopen. `save_status` is a shared prop (it also paints inline in
@@ -1117,7 +1118,7 @@ pub fn TopCommandStrip(
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
-            crate::dto::MissionEnv::default()
+            crate::core::dto::MissionEnv::default()
         }
     });
     // T-659 — per-side slot census + generated summary line, on the SAME `doc_tick` channel as `env`
@@ -3454,7 +3455,7 @@ mod t692_help_surface {
 /// The defect was narrow and visible: the time scrubber was a raw `<input type="range">` whose only
 /// styling was `accent-[--color-primary]` — which tints the UA widget and nothing else, so it still
 /// drew a browser-blue rail and a browser-shaped thumb against Aegis `#adc6ff` — and the weather
-/// picker was a raw `<select>` wearing the platform's native arrow. Both are now `crate::ui`
+/// picker was a raw `<select>` wearing the platform's native arrow. Both are now `crate::core::ui`
 /// primitives (created by this ticket; see the pins in `ui.rs` for what they guarantee).
 ///
 /// Source pins, on scrubbed source: this is a Leptos view a native test cannot render. Absence
@@ -3504,7 +3505,7 @@ mod t633_aegis_controls {
         }
         // The import is by name, so a stale `ui::` glob cannot make the pin above pass on nothing.
         assert!(
-            code.contains("use crate::ui::{cn, MaterialIcon, Select, Slider}"),
+            code.contains("use crate::core::ui::{cn, MaterialIcon, Select, Slider}"),
             "T-633: the strip must import the two primitives by name from the shared ui module"
         );
     }

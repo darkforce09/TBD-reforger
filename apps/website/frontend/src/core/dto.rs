@@ -42,7 +42,7 @@
 //! **T-519** closed the remaining typed-DTO gap: `/members`, `/registry/compat`, and
 //! `POST /fire-missions/solve` now have committed goldens under `tests/fixtures/api/` and
 //! `r_api` round-trip pins (see `members_envelope`, `registry_compat_envelope`, `fire_solution`).
-use crate::auth::User;
+use crate::core::auth::User;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -797,7 +797,7 @@ pub struct AdminUserRow {
     #[serde(default)]
     pub arma_id: Option<String>,
     pub arma_character: String,
-    pub role: crate::nav::Role,
+    pub role: crate::shell::nav_config::Role,
     pub is_banned: bool,
     pub warnings: i64,
     /// `users.total_deployments` — same denormalized counter as `/me` (T-448).
@@ -1035,7 +1035,7 @@ impl Default for MissionEnv {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::nav::Role;
+    use crate::shell::nav_config::Role;
 
     #[test]
     fn paginated_shape() {
@@ -1375,10 +1375,10 @@ pub(crate) mod r_api {
 
     // Goldens are compile-time-embedded from the crate-local fixture corpus
     // (apps/website/frontend/tests/fixtures/api/ — T-171 fixture convention).
-    const FX: &str = "../tests/fixtures/api/";
+    const FX: &str = "../../tests/fixtures/api/";
     macro_rules! golden {
         ($f:literal) => {
-            include_str!(concat!("../tests/fixtures/api/", $f))
+            include_str!(concat!("../../tests/fixtures/api/", $f))
         };
     }
 

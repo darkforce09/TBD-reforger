@@ -36,7 +36,7 @@
 //! `error` signal, the same best-effort-with-audit shape T-316/T-326 used rather than either
 //! propagating or dropping in silence.
 //!
-//! The decode itself lives in [`crate::dto`] ([`decode_server_status_frame`]), not here, and that
+//! The decode itself lives in [`crate::core::dto`] ([`decode_server_status_frame`]), not here, and that
 //! placement is deliberate: **the wasm transport body is `#[cfg(target_arch = "wasm32")]`, so a
 //! `#[cfg(test)]` that only lived behind that gate would never be compiled by native `cargo test`.**
 //! The Class-R source guard below is therefore ungated (it `include_str!`s this file), and the pure
@@ -51,9 +51,9 @@ pub const SSE_ABORT_CLEANUP_FN: &str = "abort_server_status_stream";
 use std::cell::RefCell;
 
 #[cfg(target_arch = "wasm32")]
-use crate::auth::AuthStore;
+use crate::core::auth::AuthStore;
 #[cfg(target_arch = "wasm32")]
-use crate::dto::{decode_server_status_frame, ServerStatusDto, SseFrame};
+use crate::core::dto::{decode_server_status_frame, ServerStatusDto, SseFrame};
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
@@ -178,7 +178,7 @@ pub fn stream_server_status(
                             // claiming otherwise would be a second lie), but stop pretending nothing
                             // happened. `status` is deliberately left as-is rather than cleared: the
                             // last good frame is better intel than a blank panel.
-                            let msg = crate::dto::audit_rejected_frame(
+                            let msg = crate::core::dto::audit_rejected_frame(
                                 "sse stream_server_status",
                                 &e,
                                 &p,
@@ -241,7 +241,7 @@ mod tests {
     #[test]
     fn class_r_sse_abort_teardown_exists() {
         const SRC: &str = include_str!("sse.rs");
-        const INTEL: &str = include_str!("server_intel.rs");
+        const INTEL: &str = include_str!("../server_intel.rs");
         let production = live_code(SRC);
         // T-457 — the INTEL pin must ignore comments so commenting out the live
         // `on_cleanup(...abort_server_status_stream)` while leaving the string in a comment REDS.
@@ -302,7 +302,7 @@ mod tests {
             "stale leak documentation must not remain after T-287"
         );
         assert!(
-            intel_code.contains("on_cleanup(crate::sse::abort_server_status_stream)")
+            intel_code.contains("on_cleanup(crate::core::sse::abort_server_status_stream)")
                 || intel_code.contains("on_cleanup(abort_server_status_stream)"),
             "ServerIntelInner must register abort_server_status_stream under on_cleanup \
              (live production line — comment-only string is not enough)"

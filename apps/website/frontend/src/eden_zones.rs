@@ -10,9 +10,9 @@
 use leptos::prelude::*;
 
 #[cfg(target_arch = "wasm32")]
-use crate::eden_tree::{ROW, ROW_ACTIVE};
+use crate::core::ui::MaterialIcon;
 #[cfg(target_arch = "wasm32")]
-use crate::ui::MaterialIcon;
+use crate::eden_tree::{ROW, ROW_ACTIVE};
 
 /// T-582 — the Zones panel: draw controls, the authored-zone list, and the schema-driven
 /// Attributes panel.

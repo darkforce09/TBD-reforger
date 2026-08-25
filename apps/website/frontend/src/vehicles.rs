@@ -6,9 +6,9 @@
 //! List items ride `DataEnvelope<Value>` (dto.rs already pins the vehicle-database golden that
 //! way — no typed VehicleDatabase DTO consumer yet).
 #![allow(dead_code)]
-use crate::dto::DataEnvelope;
-use crate::split_pane::{GlassSplit, ListDetailItem, SidebarSearch};
-use crate::ui::MaterialIcon;
+use crate::core::dto::DataEnvelope;
+use crate::core::split_pane::{GlassSplit, ListDetailItem, SidebarSearch};
+use crate::core::ui::MaterialIcon;
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -45,19 +45,19 @@ fn faction_order(vehicles: &[Value]) -> Vec<String> {
 #[component]
 pub fn VehicleDatabasePage() -> impl IntoView {
     view! {
-        <crate::ui::AuthGate>
+        <crate::core::ui::AuthGate>
             <VehiclesInner />
-        </crate::ui::AuthGate>
+        </crate::core::ui::AuthGate>
     }
 }
 
 #[component]
 fn VehiclesInner() -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let vehicles = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::client::api_get::<DataEnvelope<Value>>(store, "/vehicle-database")
+            crate::core::client::api_get::<DataEnvelope<Value>>(store, "/vehicle-database")
                 .await
                 .ok()
         }
@@ -143,7 +143,7 @@ fn vehicle_list(selected_id: RwSignal<String>, query: &str, vehicles: &[Value]) 
                 .iter()
                 .filter(|v| vstr(v, "faction") == faction)
                 .filter(|v| {
-                    crate::split_pane::search_matches(
+                    crate::core::split_pane::search_matches(
                         &query,
                         &format!(
                             "{} {} {}",

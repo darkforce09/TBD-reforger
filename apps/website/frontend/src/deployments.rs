@@ -30,13 +30,13 @@
 //! Each LOA panel owns its own `LocalResource` so a submit/review refetch cannot go stale against
 //! the deployments payload.
 #![allow(dead_code)]
-use crate::auth::AuthStore;
-use crate::datefmt::{countdown_label, format_local_datetime, format_short_date};
-use crate::dto::{CreateLeaveInput, DataEnvelope, Deployments, LeaveRequest, Paginated};
-use crate::nav::Role;
-use crate::ui::{badge_class, MaterialIcon};
+use crate::core::auth::AuthStore;
+use crate::core::datefmt::{countdown_label, format_local_datetime, format_short_date};
+use crate::core::dto::{CreateLeaveInput, DataEnvelope, Deployments, LeaveRequest, Paginated};
+use crate::core::ui::{badge_class, MaterialIcon};
+use crate::shell::nav_config::Role;
 // T-405 — the AAR `<a href>` at the bottom of Combat History is the sink of the T-391 XSS.
-use crate::url_guard;
+use crate::core::url_guard;
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -151,9 +151,9 @@ const BANNER_IMG: &str = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/
 #[component]
 pub fn DeploymentsPage() -> impl IntoView {
     view! {
-        <crate::ui::AuthGate>
+        <crate::core::ui::AuthGate>
             <DeploymentsInner />
-        </crate::ui::AuthGate>
+        </crate::core::ui::AuthGate>
     }
 }
 
@@ -163,7 +163,7 @@ fn DeploymentsInner() -> impl IntoView {
     let data = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::client::api_get::<Deployments>(store, "/me/deployments")
+            crate::core::client::api_get::<Deployments>(store, "/me/deployments")
                 .await
                 .ok()
         }
@@ -561,7 +561,7 @@ fn LeaveOfAbsencePanel() -> impl IntoView {
     let mine = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::client::api_get::<DataEnvelope<LeaveRequest>>(store, "/me/leave-requests")
+            crate::core::client::api_get::<DataEnvelope<LeaveRequest>>(store, "/me/leave-requests")
                 .await
                 .ok()
         }
@@ -581,7 +581,7 @@ fn LeaveOfAbsencePanel() -> impl IntoView {
         ev.prevent_default();
         #[cfg(target_arch = "wasm32")]
         {
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             let start = starts_on.get_untracked().trim().to_string();
             let end = ends_on.get_untracked().trim().to_string();
             let why = reason.get_untracked().trim().to_string();
@@ -597,8 +597,12 @@ fn LeaveOfAbsencePanel() -> impl IntoView {
             busy.set(true);
             let body = create_leave_body(start, end, why);
             leptos::task::spawn_local(async move {
-                match crate::client::api_post::<LeaveRequest>(store, "/me/leave-requests", body)
-                    .await
+                match crate::core::client::api_post::<LeaveRequest>(
+                    store,
+                    "/me/leave-requests",
+                    body,
+                )
+                .await
                 {
                     Ok(_) => {
                         toasts.success("Leave request submitted");
@@ -607,7 +611,7 @@ fn LeaveOfAbsencePanel() -> impl IntoView {
                         reason.set(String::new());
                         mine.refetch();
                     }
-                    Err(e) => toasts.error(crate::client::api_error_message(
+                    Err(e) => toasts.error(crate::core::client::api_error_message(
                         &e,
                         "Failed to submit leave request",
                     )),
@@ -717,7 +721,7 @@ fn AdminLeaveQueue() -> impl IntoView {
     let queue = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::client::api_get::<Paginated<LeaveRequest>>(store, "/admin/leave-requests")
+            crate::core::client::api_get::<Paginated<LeaveRequest>>(store, "/admin/leave-requests")
                 .await
                 .ok()
         }
@@ -867,10 +871,10 @@ fn admin_leave_table(
                             let on_approve = move |_| {
                                 #[cfg(target_arch = "wasm32")]
                                 {
-                                    let toasts = crate::toast::use_toasts();
+                                    let toasts = crate::core::toast::use_toasts();
                                     let path = format!("/admin/leave-requests/{id}");
                                     leptos::task::spawn_local(async move {
-                                        match crate::client::api_patch::<Value>(
+                                        match crate::core::client::api_patch::<Value>(
                                             store,
                                             &path,
                                             serde_json::json!({"status":"approved"}),
@@ -882,7 +886,7 @@ fn admin_leave_table(
                                                 queue.refetch();
                                             }
                                             Err(e) => toasts.error(
-                                                crate::client::api_error_message(
+                                                crate::core::client::api_error_message(
                                                     &e,
                                                     "Failed to approve LOA",
                                                 ),
@@ -898,10 +902,10 @@ fn admin_leave_table(
                             let on_deny = move |_| {
                                 #[cfg(target_arch = "wasm32")]
                                 {
-                                    let toasts = crate::toast::use_toasts();
+                                    let toasts = crate::core::toast::use_toasts();
                                     let path = format!("/admin/leave-requests/{id_deny}");
                                     leptos::task::spawn_local(async move {
-                                        match crate::client::api_patch::<Value>(
+                                        match crate::core::client::api_patch::<Value>(
                                             store,
                                             &path,
                                             serde_json::json!({"status":"denied"}),
@@ -913,7 +917,7 @@ fn admin_leave_table(
                                                 queue.refetch();
                                             }
                                             Err(e) => toasts.error(
-                                                crate::client::api_error_message(
+                                                crate::core::client::api_error_message(
                                                     &e,
                                                     "Failed to deny LOA",
                                                 ),

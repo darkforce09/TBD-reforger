@@ -67,7 +67,7 @@ use crate::arsenal_rules::{
     self as rules, format_loadout_weight, index_by_name, loadout_weight, row_options,
     validate_loadout, CompatFeed,
 };
-use crate::dto::RegistryItem;
+use crate::core::dto::RegistryItem;
 
 const CONTROL: &str = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60";
 
@@ -4128,10 +4128,10 @@ mod tests {
 
     /// A ready compat feed carrying only `attachment_on_weapon` edges.
     fn attachment_feed(edges: &[(&str, &str)]) -> CompatFeed {
-        let rows: Vec<crate::dto::RegistryCompatEdge> = edges
+        let rows: Vec<crate::core::dto::RegistryCompatEdge> = edges
             .iter()
             .enumerate()
-            .map(|(i, (from, to))| crate::dto::RegistryCompatEdge {
+            .map(|(i, (from, to))| crate::core::dto::RegistryCompatEdge {
                 id: i.to_string(),
                 modpack_id: "m".into(),
                 from_node: (*from).into(),
@@ -4648,7 +4648,7 @@ mod tests {
     #[test]
     fn the_modpack_id_comes_from_the_catalog_the_picks_were_made_against() {
         assert_eq!(export_modpack_id(&[]), "");
-        let it = crate::dto::RegistryItem {
+        let it = crate::core::dto::RegistryItem {
             id: "1".into(),
             modpack_id: "00000000-0000-4000-a000-000000000001".into(),
             resource_name: "res://rifle_m16".into(),
@@ -4889,21 +4889,22 @@ mod tests {
         // `kit_default_items` is the seam between the UI and the pure rule, so it gets its own
         // test: the vouching set must come from the character's `character_default_cargo` edges,
         // and must answer `None` — "no evidence", the silent case — whenever it cannot.
-        let edges: Vec<crate::dto::RegistryCompatEdge> = ["res://mag_stanag", "res://bandage"]
-            .iter()
-            .enumerate()
-            .map(|(i, item)| crate::dto::RegistryCompatEdge {
-                id: i.to_string(),
-                modpack_id: "mp".into(),
-                from_node: (*item).into(),
-                to_node: "kit:us_rifleman".into(),
-                edge_type: rules::CHARACTER_DEFAULT_CARGO_EDGE.into(),
-                evidence: "TargetStorage=Vest/Mags".into(),
-                qty: 1,
-                created_at: String::new(),
-                updated_at: String::new(),
-            })
-            .collect();
+        let edges: Vec<crate::core::dto::RegistryCompatEdge> =
+            ["res://mag_stanag", "res://bandage"]
+                .iter()
+                .enumerate()
+                .map(|(i, item)| crate::core::dto::RegistryCompatEdge {
+                    id: i.to_string(),
+                    modpack_id: "mp".into(),
+                    from_node: (*item).into(),
+                    to_node: "kit:us_rifleman".into(),
+                    edge_type: rules::CHARACTER_DEFAULT_CARGO_EDGE.into(),
+                    evidence: "TargetStorage=Vest/Mags".into(),
+                    qty: 1,
+                    created_at: String::new(),
+                    updated_at: String::new(),
+                })
+                .collect();
         let ready = CompatFeed {
             status: rules::CompatStatus::Ready,
             graph: rules::CompatGraph::from_edges(&edges),
@@ -6000,10 +6001,10 @@ mod tests {
         /// `attachment_on_weapon`; the two rows this defect is about (`optic`, `magazine`) are
         /// `RowSource::Edge` rows on two *other* edge types, so they need their own feed.
         fn typed_feed(edges: &[(&str, &str, &str)]) -> CompatFeed {
-            let rows: Vec<crate::dto::RegistryCompatEdge> = edges
+            let rows: Vec<crate::core::dto::RegistryCompatEdge> = edges
                 .iter()
                 .enumerate()
-                .map(|(i, (from, to, ty))| crate::dto::RegistryCompatEdge {
+                .map(|(i, (from, to, ty))| crate::core::dto::RegistryCompatEdge {
                     id: i.to_string(),
                     modpack_id: "m".into(),
                     from_node: (*from).into(),

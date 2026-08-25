@@ -21,11 +21,15 @@
 //! per-faction vehicle roster. See [`briefing_text`] for the one that was a live defect and
 //! [`meta_badges`] for the shape the rest were removed into.
 #![allow(dead_code)]
-use crate::datefmt::{countdown_label, format_local_datetime};
-use crate::dto::{DataEnvelope, EventHub, EventMissionDossier, Member, ModpackDto, OrbatSquad};
-use crate::nav::{has_min_role_authed, Role};
-use crate::ui::{cn, AuthGate, MaterialIcon, DEFAULT_AVATAR};
-use crate::url_guard;
+#[cfg(target_arch = "wasm32")]
+use crate::core::client::api_get;
+use crate::core::datefmt::{countdown_label, format_local_datetime};
+use crate::core::dto::{
+    DataEnvelope, EventHub, EventMissionDossier, Member, ModpackDto, OrbatSquad,
+};
+use crate::core::ui::{cn, AuthGate, MaterialIcon, DEFAULT_AVATAR};
+use crate::core::url_guard;
+use crate::shell::nav_config::{has_min_role_authed, Role};
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 
@@ -127,7 +131,7 @@ pub fn EventHubPage() -> impl IntoView {
 
 #[component]
 fn EventHubInner() -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let params = use_params_map();
     let event = LocalResource::new(move || {
         let id = params
@@ -139,7 +143,9 @@ fn EventHubInner() -> impl IntoView {
             #[cfg(target_arch = "wasm32")]
             {
                 let path = format!("/events/{id}");
-                crate::client::api_get::<EventHub>(store, &path).await.ok()
+                crate::core::client::api_get::<EventHub>(store, &path)
+                    .await
+                    .ok()
             }
             #[cfg(not(target_arch = "wasm32"))]
             {
@@ -206,7 +212,7 @@ fn hub_modpack_fetch(modpack_id: Option<&str>) -> HubModpackFetch {
 /// Shared hub body — standalone `/events/:id` shell and the `/events` schedule detail column
 /// (T-353). Callers own chrome (back link, scroll shell) and the `on_change` refetch.
 pub(crate) fn event_hub_view(ev: EventHub, on_change: Callback<()>) -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let event_modpack_id = ev.modpack_id.clone();
     let modpack = LocalResource::new(move || {
         let event_modpack_id = event_modpack_id.clone();
@@ -215,15 +221,13 @@ pub(crate) fn event_hub_view(ev: EventHub, on_change: Callback<()>) -> impl Into
             {
                 match hub_modpack_fetch(event_modpack_id.as_deref()) {
                     HubModpackFetch::ById(id) => {
-                        match crate::client::api_get::<DataEnvelope<ModpackDto>>(store, "/modpacks")
-                            .await
-                        {
+                        match api_get::<DataEnvelope<ModpackDto>>(store, "/modpacks").await {
                             Ok(env) => env.data.into_iter().find(|mp| mp.modpack.id == id),
                             Err(_) => None,
                         }
                     }
                     HubModpackFetch::Current => {
-                        crate::client::api_get::<ModpackDto>(store, "/modpacks/current")
+                        crate::core::client::api_get::<ModpackDto>(store, "/modpacks/current")
                             .await
                             .ok()
                     }
@@ -506,7 +510,10 @@ fn mission_dossier(index: usize, m: EventMissionDossier, on_change: Callback<()>
     }
 }
 
-fn faction_dossier_card(faction: String, items: Vec<crate::dto::ArmoryItem>) -> impl IntoView {
+fn faction_dossier_card(
+    faction: String,
+    items: Vec<crate::core::dto::ArmoryItem>,
+) -> impl IntoView {
     view! {
         <div class="rounded-lg border border-border-subtle bg-surface-container p-3">
             <h5 class="mb-3 text-sm font-semibold">{faction}</h5>
@@ -584,7 +591,7 @@ pub fn OrbatSelector(
     my_state: Option<String>,
     #[prop(optional)] on_change: Option<Callback<()>>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let emid_res = emid.clone();
     let orbat = LocalResource::new(move || {
         let emid = emid_res.clone();
@@ -592,7 +599,7 @@ pub fn OrbatSelector(
             #[cfg(target_arch = "wasm32")]
             {
                 let path = format!("/event-missions/{emid}/orbat");
-                crate::client::api_get::<DataEnvelope<OrbatSquad>>(store, &path)
+                crate::core::client::api_get::<DataEnvelope<OrbatSquad>>(store, &path)
                     .await
                     .ok()
             }
@@ -673,7 +680,7 @@ fn selector_shell(
     busy: OrbatBusy,
     changed: Callback<()>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let factions = sort_factions(
         squads
             .iter()
@@ -735,10 +742,10 @@ fn selector_shell(
                 return;
             }
             busy.register.set(true);
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             let path = format!("/event-missions/{}/register", emid_reg.get_value());
             leptos::task::spawn_local(async move {
-                match crate::client::api_post_ok(
+                match crate::core::client::api_post_ok(
                     store,
                     &path,
                     serde_json::json!({ "slot_id": slot }),
@@ -750,7 +757,7 @@ fn selector_shell(
                         selected_slot.set(None);
                         changed.run(());
                     }
-                    Err(e) => toasts.error(crate::client::api_error_message(
+                    Err(e) => toasts.error(crate::core::client::api_error_message(
                         &e,
                         "Could not claim that slot",
                     )),
@@ -771,10 +778,10 @@ fn selector_shell(
                 return;
             }
             busy.withdraw.set(true);
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             let path = format!("/event-missions/{emid_wd}/register");
             leptos::task::spawn_local(async move {
-                match crate::client::api_delete(store, &path).await {
+                match crate::core::client::api_delete(store, &path).await {
                     Ok(()) => {
                         toasts.success("Withdrawn from mission");
                         changed.run(());
@@ -1046,7 +1053,7 @@ fn squad_pane(
     emid_rsv: String,
     emid_rel: String,
 ) -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let _ = my_state;
     // The store/callback feed only the wasm-gated mutation closures.
     #[cfg(not(target_arch = "wasm32"))]
@@ -1067,11 +1074,11 @@ fn squad_pane(
                 return;
             }
             busy.reserve.set(true);
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             let path = format!("/event-missions/{emid_rsv}/squads/reserve");
             let squad = squad_rsv.clone();
             leptos::task::spawn_local(async move {
-                match crate::client::api_post_ok(
+                match crate::core::client::api_post_ok(
                     store,
                     &path,
                     serde_json::json!({ "squad": squad }),
@@ -1082,7 +1089,7 @@ fn squad_pane(
                         toasts.success(format!("Reserved {squad}"));
                         changed.run(());
                     }
-                    Err(e) => toasts.error(crate::client::api_error_message(
+                    Err(e) => toasts.error(crate::core::client::api_error_message(
                         &e,
                         "Could not reserve squad",
                     )),
@@ -1103,11 +1110,11 @@ fn squad_pane(
                 return;
             }
             busy.release.set(true);
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             let path = format!("/event-missions/{emid_rel}/squads/release");
             let squad = squad_rel.clone();
             leptos::task::spawn_local(async move {
-                match crate::client::api_post_ok(
+                match crate::core::client::api_post_ok(
                     store,
                     &path,
                     serde_json::json!({ "squad": squad }),
@@ -1118,7 +1125,7 @@ fn squad_pane(
                         toasts.success("Squad released");
                         changed.run(());
                     }
-                    Err(e) => toasts.error(crate::client::api_error_message(
+                    Err(e) => toasts.error(crate::core::client::api_error_message(
                         &e,
                         "Could not release squad",
                     )),
@@ -1288,14 +1295,14 @@ fn squad_pane(
                                                             ev.stop_propagation();
                                                             #[cfg(target_arch = "wasm32")]
                                                             {
-                                                                let toasts = crate::toast::use_toasts();
+                                                                let toasts = crate::core::toast::use_toasts();
                                                                 let path = format!(
                                                                     "/event-missions/{}/slots/{}/assign",
                                                                     emid_clear,
                                                                     sid_clear
                                                                 );
                                                                 leptos::task::spawn_local(async move {
-                                                                    match crate::client::api_delete(
+                                                                    match crate::core::client::api_delete(
                                                                         store, &path,
                                                                     )
                                                                     .await
@@ -1307,7 +1314,7 @@ fn squad_pane(
                                                                             changed.run(());
                                                                         }
                                                                         Err(e) => toasts.error(
-                                                                            crate::client::api_error_message(
+                                                                            crate::core::client::api_error_message(
                                                                                 &e,
                                                                                 "Could not clear slot",
                                                                             ),
@@ -1441,7 +1448,7 @@ fn AssignPicker(
     assigning: RwSignal<Option<String>>,
     changed: Callback<()>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     // StoredValues so `on_pick` is Copy (it's used inside the reactive members-list closure).
     let emid = StoredValue::new(emid);
     let slot_id = StoredValue::new(slot_id);
@@ -1457,7 +1464,7 @@ fn AssignPicker(
                         .as_string()
                         .unwrap_or_default()
                 );
-                crate::client::api_get::<DataEnvelope<Member>>(store, &path)
+                crate::core::client::api_get::<DataEnvelope<Member>>(store, &path)
                     .await
                     .ok()
                     .map(|e| e.data)
@@ -1480,14 +1487,14 @@ fn AssignPicker(
                 return;
             }
             assign_busy.set(true);
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             let path = format!(
                 "/event-missions/{}/slots/{}/assign",
                 emid.get_value(),
                 slot_id.get_value()
             );
             leptos::task::spawn_local(async move {
-                match crate::client::api_put::<serde_json::Value>(
+                match crate::core::client::api_put::<serde_json::Value>(
                     store,
                     &path,
                     serde_json::json!({ "discord_id": m.discord_id }),
@@ -1499,7 +1506,7 @@ fn AssignPicker(
                         assigning.set(None);
                         changed.run(());
                     }
-                    Err(e) => toasts.error(crate::client::api_error_message(
+                    Err(e) => toasts.error(crate::core::client::api_error_message(
                         &e,
                         "Could not assign member",
                     )),

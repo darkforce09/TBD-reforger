@@ -33,7 +33,7 @@ use map_engine_core::doc::{
 };
 
 use crate::asset_catalog::PlacePayload;
-use crate::dto::{FactionDoc, FactionRole, FactionVehicle};
+use crate::core::dto::{FactionDoc, FactionRole, FactionVehicle};
 use crate::mission_doc::DocHandle;
 use crate::outliner::{build_outliner_with_comments, CommentRow, LayerRow, OutlinerNode, SlotRow};
 use crate::select_tool::{EngineHandle, SelectionHandle};
@@ -318,9 +318,9 @@ pub fn set_ctx(
 
 /* ───────────────────────── Mission Settings (T-159.26 — environment half) ───────────────────────── */
 
-/// The doc's terrain + environment fields — relocated to the always-compiled [`crate::dto`] so the
+/// The doc's terrain + environment fields — relocated to the always-compiled [`crate::core::dto`] so the
 /// native `eden_chrome` view shell can build a default; re-exported here for wasm callers.
-pub use crate::dto::MissionEnv;
+pub use crate::core::dto::MissionEnv;
 
 /// Read terrain + environment from the doc meta (`small_maps_json` → `meta`).
 pub fn read_env() -> MissionEnv {
@@ -2336,7 +2336,7 @@ pub fn loadout_buffer_len() -> usize {
 /// atomicity this comment refuses. The author is told the real number: `arsenal::apply_receipt`
 /// builds its line from the returned commit count.
 pub fn apply_loadout_buffer_to_selection(
-    items: &[crate::dto::RegistryItem],
+    items: &[crate::core::dto::RegistryItem],
     feed: &crate::arsenal_rules::CompatFeed,
 ) -> Result<(usize, usize), Vec<crate::arsenal_rules::RowError>> {
     let buffer = loadout_buffer();

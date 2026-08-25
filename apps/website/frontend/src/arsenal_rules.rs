@@ -19,7 +19,7 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use crate::dto::{RegistryCompatEdge, RegistryItem};
+use crate::core::dto::{RegistryCompatEdge, RegistryItem};
 
 /// How a row sources its options.
 #[derive(Clone, Copy, PartialEq, Eq)]

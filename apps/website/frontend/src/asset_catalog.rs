@@ -31,7 +31,7 @@
 use std::collections::HashSet;
 use std::sync::OnceLock;
 
-use crate::dto::RegistryItem;
+use crate::core::dto::RegistryItem;
 
 /// Mod spawn registry (`apps/mod/tbd-framework/Data/registry.json`) — T-439 pins Objects
 /// palette leaves to aliases this file actually resolves. Included at compile time so the
@@ -1541,7 +1541,7 @@ pub fn placeable_palette(item: &RegistryItem) -> Option<CatalogPalette> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dto::RegistryResponse;
+    use crate::core::dto::RegistryResponse;
 
     /// The same committed golden the R-api gate pins (`dto::r_api`), so this test and the live
     /// palette read byte-identical data.

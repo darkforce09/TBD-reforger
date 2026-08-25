@@ -13,9 +13,9 @@
 //! `matches.terrain` LEFT JOIN on the route and the golden; the panel reads `terrain` again and
 //! only labels a theater when the key carries a non-empty string (no permanent placeholder).
 #![allow(dead_code)]
-use crate::datefmt::format_uptime;
-use crate::dto::{DataEnvelope, ServerStatusDto};
-use crate::ui::{cn, AuthGate, MaterialIcon};
+use crate::core::datefmt::format_uptime;
+use crate::core::dto::{DataEnvelope, ServerStatusDto};
+use crate::core::ui::{cn, AuthGate, MaterialIcon};
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -64,11 +64,11 @@ pub fn ServerIntelPage() -> impl IntoView {
 
 #[component]
 fn ServerIntelInner() -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let servers = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::client::api_get::<DataEnvelope<Value>>(store, "/servers")
+            crate::core::client::api_get::<DataEnvelope<Value>>(store, "/servers")
                 .await
                 .ok()
         }
@@ -90,7 +90,7 @@ fn ServerIntelInner() -> impl IntoView {
     // pattern as T-189's unload guard). Must register on the *page* owner, not inside the Suspense
     // reactive fragment — a fragment re-run would abort a still-mounted stream.
     #[cfg(target_arch = "wasm32")]
-    on_cleanup(crate::sse::abort_server_status_stream);
+    on_cleanup(crate::core::sse::abort_server_status_stream);
 
     view! {
         <Suspense fallback=move || {
@@ -107,7 +107,7 @@ fn ServerIntelInner() -> impl IntoView {
                                 let id = v_str(s, "id").to_string();
                                 if !id.is_empty() && !subscribed.get_untracked() {
                                     subscribed.set(true);
-                                    crate::sse::stream_server_status(
+                                    crate::core::sse::stream_server_status(
                                         store,
                                         id,
                                         live,
@@ -181,9 +181,9 @@ fn server_panel(s: Value, live_sig: RwSignal<Option<ServerStatusDto>>) -> impl I
                 let payload: String = v
                     .to_string()
                     .chars()
-                    .take(crate::dto::PAYLOAD_AUDIT_CHARS)
+                    .take(crate::core::dto::PAYLOAD_AUDIT_CHARS)
                     .collect();
-                crate::dto::audit_rejected_frame(
+                crate::core::dto::audit_rejected_frame(
                     "server_intel cached row status",
                     &e.to_string(),
                     &payload,
@@ -229,12 +229,12 @@ fn server_panel(s: Value, live_sig: RwSignal<Option<ServerStatusDto>>) -> impl I
         crate::mission_commands::write_clipboard(
             copy_text.get_value(),
             "Server address copied".to_string(),
-            crate::toast::use_toasts(),
+            crate::core::toast::use_toasts(),
         );
     };
     let launch_stub = move |_| {
         #[cfg(target_arch = "wasm32")]
-        crate::toast::use_toasts().success("Launch requires the Reforger client");
+        crate::core::toast::use_toasts().success("Launch requires the Reforger client");
     };
 
     view! {

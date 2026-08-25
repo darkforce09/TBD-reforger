@@ -30,11 +30,11 @@
 //! arise here. The row items stay `serde_json::Value`; the fields read are pinned by the enum
 //! vocabulary in `announcement_tag` (`update` / `event` / `modpack_update` / `important`).
 #![allow(dead_code)]
-use crate::datefmt::{format_local_datetime, format_short_date};
-use crate::dto::Paginated;
-use crate::split_pane::{ListDetailItem, SplitPane, SplitPaneEmpty};
-use crate::ui::{badge_class, AuthGate, MaterialIcon};
-use crate::url_guard;
+use crate::core::datefmt::{format_local_datetime, format_short_date};
+use crate::core::dto::Paginated;
+use crate::core::split_pane::{ListDetailItem, SplitPane, SplitPaneEmpty};
+use crate::core::ui::{badge_class, AuthGate, MaterialIcon};
+use crate::core::url_guard;
 use leptos::prelude::*;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use serde_json::Value;
@@ -115,11 +115,11 @@ pub fn AnnouncementsPage() -> impl IntoView {
 
 #[component]
 fn AnnouncementsInner() -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     let posts = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::client::api_get::<Paginated<Value>>(store, "/announcements")
+            crate::core::client::api_get::<Paginated<Value>>(store, "/announcements")
                 .await
                 .ok()
         }

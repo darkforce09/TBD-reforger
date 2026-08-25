@@ -8,7 +8,7 @@
 //! spent at most once at a time. The gloo-net POST + 401-retry client wire on top (wasm) in the
 //! client slice; the coordination + persist serde here are pure and unit-tested natively.
 
-use crate::nav::{has_min_role, has_min_role_authed, Role};
+use crate::shell::nav_config::{has_min_role, has_min_role_authed, Role};
 use futures::future::{FutureExt, LocalBoxFuture, Shared};
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -347,7 +347,7 @@ fn install_route_auth_guard(store: AuthStore) {
             return;
         };
         // Role notice: toast when the shell has mounted Toasts; query param remains for deep links.
-        if let Some(toasts) = use_context::<crate::toast::Toasts>() {
+        if let Some(toasts) = use_context::<crate::core::toast::Toasts>() {
             toasts.message("Mission Maker role required to open the editor.");
         }
         navigate(&dest, Default::default());
@@ -454,7 +454,9 @@ pub fn AuthCallbackPage() -> impl IntoView {
                 store.set_tokens(tokens.clone());
                 persist(&store.persist_state());
                 leptos::task::spawn_local(async move {
-                    match crate::client::api_get::<crate::dto::MeResponse>(store, "/me").await {
+                    match crate::core::client::api_get::<crate::core::dto::MeResponse>(store, "/me")
+                        .await
+                    {
                         Ok(me) => {
                             store.set_session(Session {
                                 access_token: store

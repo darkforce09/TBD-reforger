@@ -10,12 +10,12 @@ use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::asset_catalog::{CatalogNode, CatalogPalette, CatalogState};
-use crate::dto::RegistryItem;
+use crate::core::dto::RegistryItem;
+use crate::core::ui::MaterialIcon;
 use crate::eden_dock_left::collapse_chevron;
 use crate::eden_layout::{DOCK_R, STUB_PX};
 use crate::eden_tree::{chevron_or_spacer, guide_spans, PALETTE_LEAF};
 use crate::eden_zones::zones_panel;
-use crate::ui::MaterialIcon;
 
 /// T-076 (RIGHT-CREW-001) — the "place vehicle with crew" toggle rendered beside the Vehicles
 /// search. A checkbox bound to `with_crew`: a change writes the [`crate::editor_ops`] placement
@@ -403,7 +403,7 @@ fn faction_palette_rows(
     id_prefix: &[String],
     collapsed: RwSignal<std::collections::HashSet<String>>,
     favourites: RwSignal<Favourites>,
-    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
     recent: RwSignal<Vec<RecentPlaced>>,
 ) -> AnyView {
     let len = nodes.len();
@@ -1575,7 +1575,7 @@ pub fn DockRight(
     /// T-215 — the `kind == "vehicle"` half of the same registry fetch.
     vehicle_catalog: RwSignal<CatalogState>,
     /// T-215 — the raw registry rows, for the placed-vehicle cargo picker's labels and options.
-    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
     /// T-750 — terminal `/registry` failure (distinct from `registry_items == None` = still loading).
     registry_failed: RwSignal<bool>,
     /// T-750 — bump to re-kick the cold `/registry` fetch (Favourites Retry).
@@ -1721,7 +1721,7 @@ pub fn DockRight(
     let registry_no_modpack = RwSignal::new(false);
     #[cfg(target_arch = "wasm32")]
     {
-        let auth = use_context::<crate::auth::AuthStore>();
+        let auth = use_context::<crate::core::auth::AuthStore>();
         Effect::new(move |_| {
             if !registry_failed.get() {
                 // Loading or Ready — no failure to attribute; a successful Retry clears the cause.
@@ -1734,8 +1734,8 @@ pub fn DockRight(
             leptos::task::spawn_local(async move {
                 // A single row is enough to learn the status; success and any non-404 both mean
                 // "not the no-modpack case", so the arm falls back to the request-failed wording.
-                let got: Result<crate::dto::RegistryResponse, crate::client::ApiErr> =
-                    crate::client::api_get(auth, "/registry?limit=1&offset=0").await;
+                let got: Result<crate::core::dto::RegistryResponse, crate::core::client::ApiErr> =
+                    crate::core::client::api_get(auth, "/registry?limit=1&offset=0").await;
                 registry_no_modpack.set(matches!(got, Err((404, _))));
             });
         });
@@ -2413,7 +2413,7 @@ pub(crate) fn compositions_panel(
                                     };
                                     // Author = the current user's display string (as-authored) —
                                     // read off the AuthStore context; "You" when unauthenticated.
-                                    let author = use_context::<crate::auth::AuthStore>()
+                                    let author = use_context::<crate::core::auth::AuthStore>()
                                         .and_then(|s| s.user.get_untracked().map(|u| u.username))
                                         .filter(|u| !u.is_empty())
                                         .unwrap_or_else(|| "You".to_string());
@@ -4364,7 +4364,7 @@ mod tests {
     #[test]
     fn eden_chip_side_rebuilds_filtered_catalog() {
         use crate::asset_catalog::build_catalog_tree;
-        use crate::dto::RegistryResponse;
+        use crate::core::dto::RegistryResponse;
 
         let golden: RegistryResponse =
             serde_json::from_str(include_str!("../tests/fixtures/api/GET__registry.json"))
@@ -5073,7 +5073,7 @@ mod tests {
     fn stale_favourite_is_kept_and_marked_not_dropped() {
         use super::{resolve_favourites, FavouriteAsset, FavouriteRow, Favourites};
         use crate::asset_catalog::CatalogPalette;
-        use crate::dto::RegistryResponse;
+        use crate::core::dto::RegistryResponse;
 
         let golden: RegistryResponse =
             serde_json::from_str(include_str!("../tests/fixtures/api/GET__registry.json"))

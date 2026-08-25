@@ -44,8 +44,8 @@
 //! [`parse_grid`] only for pre-T-587 rows. The round-trip test on that encoding stays: it is what
 //! keeps the fallback path honest for every row already in the table.
 #![allow(dead_code)]
-use crate::dto::{DataEnvelope, FireSolution, Paginated};
-use crate::ui::{AuthGate, PageHeader};
+use crate::core::dto::{DataEnvelope, FireSolution, Paginated};
+use crate::core::ui::{AuthGate, PageHeader};
 use leptos::prelude::*;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -174,7 +174,7 @@ struct SavedFor {
 
 /// One `/events` row, narrowed to what the operation picker needs.
 ///
-/// Deliberately *not* [`crate::dto::EventListItem`]: that DTO models the whole schedule card
+/// Deliberately *not* [`crate::core::dto::EventListItem`]: that DTO models the whole schedule card
 /// (`percent`, `filled`, `total_slots`, `mission_count`, …) and every one of those is a field this
 /// dropdown would fail to decode over for no reason. Three fields is the honest dependency.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -190,7 +190,7 @@ impl EventOption {
     /// reason: `name_override` is nullable and an option labelled with the empty string is an
     /// option nobody can pick on purpose.
     ///
-    /// Deliberately **not** including the date: `crate::datefmt` is `js_sys::Date` all the way
+    /// Deliberately **not** including the date: `crate::core::datefmt` is `js_sys::Date` all the way
     /// down and aborts the native test binary ("function not implemented on non-wasm32 targets"),
     /// so folding the date in here would make this whole struct untestable by `cargo test`. The
     /// view composes the two.
@@ -542,7 +542,7 @@ pub fn MortarCalculatorPage() -> impl IntoView {
 
 #[component]
 fn MortarInner() -> impl IntoView {
-    let store = expect_context::<crate::auth::AuthStore>();
+    let store = expect_context::<crate::core::auth::AuthStore>();
     #[cfg(not(target_arch = "wasm32"))]
     let _ = &store;
     let fp_x = RwSignal::new(1000.0);
@@ -559,7 +559,7 @@ fn MortarInner() -> impl IntoView {
     let events = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::client::api_get::<Paginated<EventOption>>(store, "/events")
+            crate::core::client::api_get::<Paginated<EventOption>>(store, "/events")
                 .await
                 .ok()
                 .map(|p| p.data)
@@ -579,7 +579,7 @@ fn MortarInner() -> impl IntoView {
             #[cfg(target_arch = "wasm32")]
             {
                 match ev {
-                    Some(id) => crate::client::api_get::<DataEnvelope<SavedFire>>(
+                    Some(id) => crate::core::client::api_get::<DataEnvelope<SavedFire>>(
                         store,
                         &format!("/events/{id}/fire-missions"),
                     )
@@ -668,7 +668,7 @@ fn MortarInner() -> impl IntoView {
                 return;
             }
             busy.set(true);
-            let toasts = crate::toast::use_toasts();
+            let toasts = crate::core::toast::use_toasts();
             let ev = event_id.get_untracked();
             let body = save_body(
                 &weapon.get_untracked(),
@@ -682,8 +682,12 @@ fn MortarInner() -> impl IntoView {
                     // (`POST /fire-missions`). Solving first and saving second would leave a
                     // window where the operator is looking at numbers that failed to save.
                     Some(_) => {
-                        match crate::client::api_post::<SaveResponse>(store, "/fire-missions", body)
-                            .await
+                        match crate::core::client::api_post::<SaveResponse>(
+                            store,
+                            "/fire-missions",
+                            body,
+                        )
+                        .await
                         {
                             Ok(r) => {
                                 let mut shown = Shown::from(&r.solution);
@@ -692,7 +696,7 @@ fn MortarInner() -> impl IntoView {
                                 saved.refetch();
                                 toasts.success("Firing solution saved to the operation");
                             }
-                            Err(e) => toasts.error(crate::client::api_error_message(
+                            Err(e) => toasts.error(crate::core::client::api_error_message(
                                 &e,
                                 "Could not compute firing solution",
                             )),
@@ -701,7 +705,7 @@ fn MortarInner() -> impl IntoView {
                     // No operation: solve only, and say so. There is no endpoint that persists a
                     // fire mission the operator can find again without one.
                     None => {
-                        match crate::client::api_post::<FireSolution>(
+                        match crate::core::client::api_post::<FireSolution>(
                             store,
                             "/fire-missions/solve",
                             body,
@@ -713,7 +717,7 @@ fn MortarInner() -> impl IntoView {
                                 toasts
                                     .message("Not saved — pick an operation to keep this solution");
                             }
-                            Err(e) => toasts.error(crate::client::api_error_message(
+                            Err(e) => toasts.error(crate::core::client::api_error_message(
                                 &e,
                                 "Could not compute firing solution",
                             )),
@@ -772,7 +776,7 @@ fn MortarInner() -> impl IntoView {
                                             let label = format!(
                                                 "{} — {}",
                                                 e.name(),
-                                                crate::datefmt::format_short_date(&e.start_time),
+                                                crate::core::datefmt::format_short_date(&e.start_time),
                                             );
                                             view! { <option value=e.id.clone()>{label}</option> }
                                         })

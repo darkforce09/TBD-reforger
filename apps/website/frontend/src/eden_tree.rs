@@ -8,10 +8,10 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 
+use crate::core::ui::MaterialIcon;
 use crate::outliner::{
     flatten_visible, FlatRow, LayerRow, NodeKind, OutlinerNode, VIRTUAL_SLOT_THRESHOLD,
 };
-use crate::ui::MaterialIcon;
 
 /* ───────────────────────── T-666 — folder-click selection rules ───────────────────────── */
 
