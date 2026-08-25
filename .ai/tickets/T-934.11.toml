@@ -1,19 +1,38 @@
 id = "T-934.11"
 kind = "work"
-parent = "T-934"
 title = "Reorg B5 — overlays → canvas/overlays.rs"
 summary = "Extract TransformWidgetOverlay, WidgetModeHint, SnapReadout, MapGridRefs, RulerOverlay, LosOverlay, AssetPickerOverlay, CommentEditorOverlay, ConnectionsPanelOverlay, ConflictDialog, BootProgressBar + AssetPickerState + registries."
 class = "chore"
-status = "queued"
+status = "shipped"
 order = 6100
 spec = "docs/specs/website_reorg/plan.md"
 executor = "claude-code"
-created_at = "2026-08-25T00:00:00Z"
 depends_on = ["T-934.10"]
+parent = "T-934"
 main_goal = "Overlay component extraction (audit §4 Phase 1 item 2)."
-verify = ["cargo xtask mk ci-local-leptos", "cargo xtask mk leptos-gates"]
+context = ["Phase B: seven overlay/dialog components leave mission_editor.rs for canvas/overlays.rs; browser gates verify mount behavior."]
+requirement = [
+    "Page mounts stay byte-identical via re-exports; external AssetPickerState/ConflictInfo paths preserved.",
+    "Audit-named components that live elsewhere are reported, not invented.",
+]
+current_state = ["Was: overlays inline in the 7k page file; MapGridRefs/RulerOverlay/LosOverlay already lived in toolbelt/tools; no BootProgressBar component exists (inline view code, T-934.12's lane)."]
+approach = [
+    "972-LOC overlays.rs (7 components + AssetPickerState/ConflictInfo + widget-pivot registry); toolbar-dispatch registry stays (page↔strip bridge).",
+    "Guard repoints: t647 definition pins, t726 esc-stack region, help_modal keymap census re-attributed (13 total, mission_editor 4→1 + overlays 3).",
+    "Three signatures rewrapped multi-line (pub(crate) pushed them past 100 cols); all needles substring-match.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+]
 acceptance = ["Browser gates green (overlay mount behavior)."]
-estimated = ["scope"]
+shipped_at = "6829e45e5"
+created_at = "2026-08-25T00:00:00Z"
+completed_at = "2026-08-25T18:43:00Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = ["apps/website/frontend/src/editor/canvas/"]
 
 [scope]
