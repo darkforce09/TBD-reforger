@@ -1,11 +1,18 @@
 use crate::editor::arsenal::class_r_scrub::{live_code, only_item};
 
 /// The editor page region onward, comments stripped and string literals blanked — the same
-/// slice `t635_debug_hud` uses. `start_raf` is defined after `MissionEditorPage`, so it is in.
+/// slice `t635_debug_hud` uses.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     let raw = include_str!("../mission_editor.rs");
     live_code(&raw[raw.find(anchor.as_str()).expect("anchor present")..])
+}
+
+/// T-934.12 — `start_raf` moved to `canvas/viewport.rs`; the sampler pins scrub THAT file.
+/// Whole-file `live_code` is safe there: the file's only `#[cfg(test)]` (registry_session's
+/// `clear_for_test`) sits below `start_raf`, so the cut keeps the sampler.
+fn viewport_live() -> String {
+    live_code(include_str!("../canvas/viewport.rs"))
 }
 
 /// The signal is a real signal seeded from the shared `m_per_px` conversion (not a bare float
@@ -41,7 +48,7 @@ fn the_scale_signal_is_seeded_and_reaches_the_status_bar() {
 /// invisible to a compile and to every other test in this crate.
 #[test]
 fn the_sampler_writes_the_scale_only_when_the_readout_changes() {
-    let ed = editor_live();
+    let ed = viewport_live();
     let raf = only_item(&ed, &format!("fn {}", "start_raf("));
     let set = format!("scale_mpp.{}(", "set");
     assert_eq!(
@@ -78,7 +85,7 @@ fn the_sampler_writes_the_scale_only_when_the_readout_changes() {
 /// the regression this ticket is about.
 #[test]
 fn the_scale_does_not_ride_the_one_hz_hud_sample() {
-    let ed = editor_live();
+    let ed = viewport_live();
     let raf = only_item(&ed, &format!("fn {}", "start_raf("));
     let scale = raf
         .find(&format!("scale_mpp.{}(", "set"))
