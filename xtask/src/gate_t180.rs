@@ -87,6 +87,17 @@ use tbd_gate::{NotRun, Pattern, Verdict, gate};
 // relative path. Reproduced by joining onto `repo_root` to read and stripping back for the message,
 // rather than mutating this process's cwd — tests run in parallel threads.
 const EDITOR_OPS: &str = "apps/website/frontend/src/editor/state/operations.rs";
+// T-934.7 — `operations.rs` is a façade over six submodules; the ban must read the files the
+// place path actually lives in now, so every submodule joins the target list (and the scratch
+// copies below).
+const EDITOR_OPS_SPLIT: [&str; 6] = [
+    "apps/website/frontend/src/editor/state/operations/attrs.rs",
+    "apps/website/frontend/src/editor/state/operations/cargo.rs",
+    "apps/website/frontend/src/editor/state/operations/compositions.rs",
+    "apps/website/frontend/src/editor/state/operations/context.rs",
+    "apps/website/frontend/src/editor/state/operations/entity.rs",
+    "apps/website/frontend/src/editor/state/operations/transform.rs",
+];
 const ORBAT_RS: &str = "crates/map-engine-core/src/mission/orbat.rs";
 const ORBAT_MGR: &str = "apps/website/frontend/src/pages/operations/orbat_manager.rs";
 const EDEN_CHROME: &str = "apps/website/frontend/src/editor/eden_chrome.rs";
@@ -99,7 +110,10 @@ type BanRow = (&'static str, &'static str, bool, &'static [&'static str], &'stat
 #[rustfmt::skip]
 const BANS: &[BanRow] = &[
     ("ensure_default_squad still present in editor_ops.rs",
-     "ensure_default_squad", false, &[EDITOR_OPS],
+     "ensure_default_squad", false,
+     &[EDITOR_OPS,
+       EDITOR_OPS_SPLIT[0], EDITOR_OPS_SPLIT[1], EDITOR_OPS_SPLIT[2],
+       EDITOR_OPS_SPLIT[3], EDITOR_OPS_SPLIT[4], EDITOR_OPS_SPLIT[5]],
      "no ensure_default_squad on place path"),
     ("orbat.rs still hardcodes loadout: String::new()",
      r"loadout: String::new\(\)", false, &[ORBAT_RS],
@@ -424,7 +438,10 @@ mod tests {
     fn scratch(name: &str) -> PathBuf {
         let root = std::env::temp_dir().join(format!("tbd-t180-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
-        for rel in [EDITOR_OPS, ORBAT_RS, ORBAT_MGR, EDEN_CHROME, SLOTS_GPU] {
+        for rel in [EDITOR_OPS, ORBAT_RS, ORBAT_MGR, EDEN_CHROME, SLOTS_GPU]
+            .into_iter()
+            .chain(EDITOR_OPS_SPLIT)
+        {
             let dst = root.join(rel);
             std::fs::create_dir_all(dst.parent().unwrap()).unwrap();
             std::fs::copy(repo().join(rel), &dst).unwrap();

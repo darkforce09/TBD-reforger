@@ -1646,7 +1646,7 @@ mod tests {
             ),
             "Add Vehicle must not stay disabled"
         );
-        let ops = include_str!("../../editor/state/operations.rs");
+        let ops = include_str!("../../editor/state/operations/entity.rs");
         assert!(
             ops.contains("pub fn orbat_add_vehicle"),
             "ops mutator must exist"
@@ -1699,7 +1699,7 @@ mod tests {
     /// I7 — OPEN ARSENAL opens Attributes on tab 3 (Arsenal), not Identity-only open_attributes.
     #[test]
     fn open_arsenal_selects_arsenal_tab() {
-        let ops = include_str!("../../editor/state/operations.rs");
+        let ops = include_str!("../../editor/state/operations/context.rs");
         assert!(
             ops.contains("pub fn open_arsenal"),
             "open_arsenal must exist"
@@ -1970,13 +1970,16 @@ mod tests {
                 || src.contains("merge_faction_doc_from_side(&stored.doc"),
             "the Save button must PUT a merged body, never the raw derivation"
         );
-        let ops = include_str!("../../editor/state/operations.rs");
+        // T-934.7 — the merge naming lives in operations/entity.rs; the wasm gate stayed on
+        // the operations.rs façade (its `#![cfg]` gates the whole split tree).
+        let ops = include_str!("../../editor/state/operations/entity.rs");
         assert!(
             ops.contains("merge_faction_doc_from_side"),
             "faction_doc_from_side must name the merge callers have to use"
         );
+        let facade = include_str!("../../editor/state/operations.rs");
         assert!(
-            ops.contains("#![cfg(target_arch = \"wasm32\")]"),
+            facade.contains("#![cfg(target_arch = \"wasm32\")]"),
             "editor_ops stays wasm-only, which is why the merge lives here where it is testable"
         );
     }

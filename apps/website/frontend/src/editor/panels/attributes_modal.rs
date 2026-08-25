@@ -2090,7 +2090,7 @@ mod tests {
     /// column — not because the mutator was missing.
     #[test]
     fn read_attrs_reads_asset_id_and_description_from_the_raw_slot_rows() {
-        let ops = live_code(include_str!("../state/operations.rs"));
+        let ops = live_code(include_str!("../state/operations/attrs.rs"));
         let body = only_body(&ops, "pub fn read_attrs(id: &str) -> Option<SlotAttrs>");
         assert!(
             body.contains("raw_slot_rows(core)"),
@@ -2114,7 +2114,7 @@ mod tests {
     /// drop the existence needle (proves the pin is about production, not this test module).
     #[test]
     fn read_attrs_gates_existence_on_raw_rows_not_soa_membership() {
-        let ops = live_code(include_str!("../state/operations.rs"));
+        let ops = live_code(include_str!("../state/operations/attrs.rs"));
         let body = only_body(&ops, "pub fn read_attrs(id: &str) -> Option<SlotAttrs>");
         let raw_gate = "!rows.contains_key(id)";
         assert!(
@@ -2189,7 +2189,7 @@ mod tests {
     /// original columns are not dragged along by a commit that only touches a new one.
     #[test]
     fn attrs_update_slot_routes_the_new_fields_through_update_slot_object() {
-        let ops = live_code(include_str!("../state/operations.rs"));
+        let ops = live_code(include_str!("../state/operations/attrs.rs"));
         let body = only_body(&ops, "pub fn attrs_update_slot(");
         assert!(
             body.contains("core.update_slot_object(id, asset_id, description)"),
@@ -2211,7 +2211,7 @@ mod tests {
     /// RED: strip `!raw_slot_rows(core).contains_key(id) → false`.
     #[test]
     fn attrs_update_slot_noops_when_all_none_or_id_missing() {
-        let ops = live_code(include_str!("../state/operations.rs"));
+        let ops = live_code(include_str!("../state/operations/attrs.rs"));
         let body = only_body(&ops, "pub fn attrs_update_slot(");
 
         // (1) five-field all-None early `return` before `let did`
@@ -2775,7 +2775,7 @@ mod tests {
     /// A source pin because `editor_ops` is wasm32-only and `cargo test` cannot build it.
     #[test]
     fn an_attributes_x_or_y_commit_carries_the_slots_current_z_back_in() {
-        let ops = live_code(include_str!("../state/operations.rs"));
+        let ops = live_code(include_str!("../state/operations/attrs.rs"));
         // Single-slot still goes through update_slot_position.
         {
             let f = "pub fn attrs_update_position(";
@@ -2834,7 +2834,7 @@ mod tests {
         // And the read is off the EXACT raw row, not the materialized SoA: the SoA's `zs` is f32 (a
         // round-trip would rewrite the authored value) and it OMITS slots on hidden layers (T-665),
         // where a failed read is a zeroed z.
-        let live_ops = live_source(include_str!("../state/operations.rs"));
+        let live_ops = live_source(include_str!("../state/operations/attrs.rs"));
         let read = only_body(&live_ops, "fn slot_z(");
         assert!(
             read.contains("\"position\"") && read.contains("\"z\""),
@@ -2860,7 +2860,7 @@ mod tests {
     /// test inside it is built by the native harness.
     #[test]
     fn a_placement_commit_carries_each_slots_current_z_back_in() {
-        let ops = live_code(include_str!("../state/operations.rs"));
+        let ops = live_code(include_str!("../state/operations/transform.rs"));
         let body = only_body(&ops, "fn commit_positions(");
         // The old zeroing write, verbatim: x and y set, z hard-coded absent.
         assert!(
@@ -2931,7 +2931,18 @@ mod tests {
     /// this one cannot see the document, that one cannot see which value the frontend chooses.
     #[test]
     fn a_paste_carries_each_copied_slots_authored_z_into_the_copy() {
-        let ops = live_code(include_str!("../state/operations.rs"));
+        // T-934.7 — the ops module was split; both the scrubbed and the RAW haystacks concatenate
+        // every submodule so these file-wide absence pins keep their whole-module meaning.
+        let ops_raw = [
+            include_str!("../state/operations/attrs.rs"),
+            include_str!("../state/operations/cargo.rs"),
+            include_str!("../state/operations/compositions.rs"),
+            include_str!("../state/operations/context.rs"),
+            include_str!("../state/operations/entity.rs"),
+            include_str!("../state/operations/transform.rs"),
+        ]
+        .concat();
+        let ops = live_code(&ops_raw);
         // FILE-WIDE, not scoped to the paste body: the failure mode is the literal coming back, and
         // it does not have to come back in the function it was removed from.
         let flattening_push = ["zs.push(", "0.0)"].concat();
@@ -2944,7 +2955,7 @@ mod tests {
         // reader to restore the behaviour the operator just removed. Checked on RAW source because
         // `live_code` strips exactly the thing under test.
         assert!(
-            !include_str!("../state/operations.rs").contains("DEM not ready"),
+            !ops_raw.contains("DEM not ready"),
             "the paste's parity rationale was overruled on 2026-08-08 and must not be left standing"
         );
 
@@ -3115,7 +3126,7 @@ mod tests {
     /// `attrs_multi_ids` still filters to SoA slot ids — the subset the header is honest about.
     #[test]
     fn attrs_multi_ids_still_filters_selection_to_slot_soa() {
-        let ops = live_code(include_str!("../state/operations.rs"));
+        let ops = live_code(include_str!("../state/operations/attrs.rs"));
         let body = only_body(&ops, "pub fn attrs_multi_ids(open_id: &str) -> Vec<String>");
         assert!(
             body.contains("soa.ids.iter().any(|r| r == s)"),

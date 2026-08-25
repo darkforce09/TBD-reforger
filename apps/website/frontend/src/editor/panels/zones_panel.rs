@@ -1188,7 +1188,7 @@ mod tests {
     /// not, and the alternative is no assertion at all.
     #[test]
     fn every_t211_mutator_has_a_caller() {
-        const OPS: &str = include_str!("../state/operations.rs");
+        const OPS: &str = include_str!("../state/operations/entity.rs");
         // The eleven, verbatim from `doc/store.rs`'s T-211 block.
         for m in [
             "add_circle_zone",
@@ -1308,7 +1308,7 @@ mod tests {
     #[test]
     fn t792_cancel_zone_draw_bumps_the_dock_tick() {
         use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
-        let ops = live_code(include_str!("../state/operations.rs"));
+        let ops = live_code(include_str!("../state/operations/entity.rs"));
         let body = only_body(&ops, "pub fn cancel_zone_draw() -> bool");
         assert!(
             body.contains("bump_doc_tick()"),

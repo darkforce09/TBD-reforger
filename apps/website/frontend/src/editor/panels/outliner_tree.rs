@@ -1624,7 +1624,7 @@ mod tests {
         //! the controls are `#![cfg(target_arch = "wasm32")]` and cannot be exercised natively.
         //! A pin fails loudly if a rename drops a call the ticket requires.
 
-        const OPS: &str = include_str!("../state/operations.rs");
+        const OPS: &str = include_str!("../state/operations/entity.rs");
         const TREE: &str = include_str!("outliner_tree.rs");
         const DOCK: &str = include_str!("dock_left.rs");
 

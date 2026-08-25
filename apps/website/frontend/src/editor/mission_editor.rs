@@ -9468,7 +9468,7 @@ mod t647_placement_interactions {
     /// `editor_ops.rs`, scrubbed to live code. It is wasm-only, so nothing in it runs — but its
     /// wiring is pinnable as source (multiple modules already `include_str!` it for this).
     fn ops_live() -> String {
-        live_code(include_str!("state/operations.rs"))
+        live_code(include_str!("state/operations/entity.rs"))
     }
 
     // ───────────────────────── ATTR-OPEN-001 — dblclick opens Attributes for vehicles too ────────
@@ -11101,7 +11101,7 @@ mod t648_transform {
              `cargo test -p website-frontend` (the command the wave gate uses)"
         );
         // And the rotate commit really rides the existing field write, per the ticket.
-        let ops = include_str!("state/operations.rs");
+        let ops = include_str!("state/operations/transform.rs");
         let ops_live = live_code(ops);
         let body = only_body(&ops_live, "pub fn rotate_selection_to_face(");
         assert!(
@@ -11777,7 +11777,7 @@ mod t649_select_all_and_multi_edit {
             "a non-finite unproject must select NOTHING (the marquee's own behaviour)"
         );
 
-        let ops = live_code(include_str!("state/operations.rs"));
+        let ops = live_code(include_str!("state/operations/entity.rs"));
         let sel_fn = fn_source(&ops, "pub fn select_all_in_view(");
         assert!(
             sel_fn.contains("select_tool::view_ids_with_vehicles(")
@@ -11806,7 +11806,19 @@ mod t649_select_all_and_multi_edit {
     /// Both guards must be gone, and BOTH entry points must route through the one shared opener.
     #[test]
     fn multi_selection_no_longer_suppresses_the_attributes_modal() {
-        let ops = live_code(include_str!("state/operations.rs"));
+        // T-934.7 — the ops module was split; concatenate every submodule so the file-wide
+        // absence / uniqueness assertions keep their whole-module meaning.
+        let ops = live_code(
+            &[
+                include_str!("state/operations/attrs.rs"),
+                include_str!("state/operations/cargo.rs"),
+                include_str!("state/operations/compositions.rs"),
+                include_str!("state/operations/context.rs"),
+                include_str!("state/operations/entity.rs"),
+                include_str!("state/operations/transform.rs"),
+            ]
+            .concat(),
+        );
         assert!(
             !ops.contains("if ctx.selection.borrow().len() > 1 {"),
             "ATTR-MULTI-001: the suppress-on-multi guard must be gone from editor_ops"
@@ -11932,7 +11944,7 @@ mod t649_select_all_and_multi_edit {
                  otherwise"
             );
         }
-        let ops = live_code(include_str!("state/operations.rs"));
+        let ops = live_code(include_str!("state/operations/attrs.rs"));
         // T-732 — position multi is ONE LOCAL txn via update_entity_transforms (not N×
         // update_slot_position). F-26 (T-788) — identity multi is now ATOMIC too, via
         // `update_slots_attr_batch` (one txn, one undo step); the per-id fan-out moved INTO the core.
@@ -12097,7 +12109,7 @@ mod t649_select_all_and_multi_edit {
         // unconditional `= vec![id]` replace in select_slot collapsed SEL9→SEL1 before activate
         // fired and the modal could only ever open single-edit from a row. Same guard, same
         // outside-click-still-replaces Eden semantics (the contract context_menu::open documents).
-        let ops = live_code(include_str!("state/operations.rs"));
+        let ops = live_code(include_str!("state/operations/entity.rs"));
         let sel_fn = fn_source(&ops, "pub fn select_slot(");
         assert!(
             squash(&sel_fn).contains(&squash("sel.len() > 1 && sel.iter().any(|s| *s == id)")),
@@ -12125,7 +12137,7 @@ mod t649_select_all_and_multi_edit {
     /// → "must re-render (or close) the open Attributes modal when the selection changes".
     #[test]
     fn t788_open_attributes_modal_follows_a_selection_change() {
-        let ops = live_code(include_str!("state/operations.rs"));
+        let ops = live_code(include_str!("state/operations/context.rs"));
         let f = fn_source(&ops, "pub fn refresh_selection_mirrors(");
         // Reads the open id WITHOUT subscribing (untracked — this is a plain fn, not an effect).
         assert!(
@@ -13625,7 +13637,7 @@ mod t780_connection_line {
     /// the core's `remove_connection` returns unit and cannot report what it removed afterwards.
     #[test]
     fn delete_connection_answers_the_document_not_a_count() {
-        let ops = live_code(include_str!("state/operations.rs"));
+        let ops = live_code(include_str!("state/operations/entity.rs"));
         let verb = only_body(&ops, "pub fn delete_connection(");
         let count = ["connection", "_count("].concat();
         assert!(
@@ -13662,7 +13674,19 @@ mod t780_connection_line {
     /// not "someone remembered to clear it" — it is that `selected_ids` has exactly one writer.
     #[test]
     fn an_edge_selection_and_an_entity_selection_cannot_coexist() {
-        let ops = live_code(include_str!("state/operations.rs"));
+        // T-934.7 — the ops module was split; concatenate every submodule so the file-wide
+        // absence / uniqueness assertions keep their whole-module meaning.
+        let ops = live_code(
+            &[
+                include_str!("state/operations/attrs.rs"),
+                include_str!("state/operations/cargo.rs"),
+                include_str!("state/operations/compositions.rs"),
+                include_str!("state/operations/context.rs"),
+                include_str!("state/operations/entity.rs"),
+                include_str!("state/operations/transform.rs"),
+            ]
+            .concat(),
+        );
         let mirror = ["mirror_", "selection(ctx)"].concat();
         let reconcile = ["reconcile_connection", "_selection(ctx)"].concat();
         assert!(
@@ -13738,7 +13762,7 @@ mod t780_connection_line {
     #[test]
     fn every_history_path_reaches_the_doc_tick_the_lane_binds_on() {
         let hist = live_code(include_str!("state/history.rs"));
-        let ops = live_code(include_str!("state/operations.rs"));
+        let ops = live_code(include_str!("state/operations/context.rs"));
         let signals = ["refresh_", "signals("].concat();
         let docks = ["editor_ops", "::", "refresh_docks()"].concat();
         let tail = ["after_doc", "_change(ctx)"].concat();
@@ -13807,7 +13831,19 @@ mod t780_connection_line {
                 .contains(&resolve),
             "fired rule: dropping the document resolve must break the F-1 arm pin"
         );
-        let ops = live_code(include_str!("state/operations.rs"));
+        // T-934.7 — the ops module was split; concatenate every submodule so the file-wide
+        // absence / uniqueness assertions keep their whole-module meaning.
+        let ops = live_code(
+            &[
+                include_str!("state/operations/attrs.rs"),
+                include_str!("state/operations/cargo.rs"),
+                include_str!("state/operations/compositions.rs"),
+                include_str!("state/operations/context.rs"),
+                include_str!("state/operations/entity.rs"),
+                include_str!("state/operations/transform.rs"),
+            ]
+            .concat(),
+        );
         let gate = ["connection_id", "_in_doc("].concat();
         let verb_body = only_body(&ops, "pub fn delete_connection(");
         assert!(verb_body.contains(&gate), "canary: the real verb gates");
@@ -14104,7 +14140,19 @@ mod t784_comment_glyph {
     /// a question a comment id answers by simply being in it.
     #[test]
     fn a_comment_composes_and_the_reconcile_is_still_the_one_writers_job() {
-        let ops = live_code(include_str!("state/operations.rs"));
+        // T-934.7 — the ops module was split; concatenate every submodule so the file-wide
+        // absence / uniqueness assertions keep their whole-module meaning.
+        let ops = live_code(
+            &[
+                include_str!("state/operations/attrs.rs"),
+                include_str!("state/operations/cargo.rs"),
+                include_str!("state/operations/compositions.rs"),
+                include_str!("state/operations/context.rs"),
+                include_str!("state/operations/entity.rs"),
+                include_str!("state/operations/transform.rs"),
+            ]
+            .concat(),
+        );
         let capture = only_body(&ops, &format!("fn capture_selection{}", "_entities("));
         assert!(
             capture.contains(&format!("comments{}", ".get(id)")),
@@ -14146,7 +14194,7 @@ mod t784_comment_glyph {
     /// comment id to `remove_slots` used to do.
     #[test]
     fn delete_partitions_the_selection_by_what_the_document_says() {
-        let ops = live_code(include_str!("state/operations.rs"));
+        let ops = live_code(include_str!("state/operations/entity.rs"));
         let del = only_body(&ops, "pub fn delete_selection(");
         let ask = ["comment", "_details(core)"].concat();
         let part = "partition(";
@@ -14369,7 +14417,7 @@ mod t796_comment_drag {
     /// pins the mutator's one-txn contract at its source.
     #[test]
     fn move_comment_is_one_transaction() {
-        let ops = live_code(include_str!("state/operations.rs"));
+        let ops = live_code(include_str!("state/operations/entity.rs"));
         let body = only_body(&ops, "pub fn move_comment(");
         assert!(
             body.contains("set_comment_position("),
@@ -15311,7 +15359,7 @@ mod t819_crewed_render_hide {
     /// Trap 1 — assign path must not stamp `editorHidden` / call the T-701 mutator.
     #[test]
     fn assign_crew_seat_does_not_write_editor_hidden() {
-        let ops = live_code(include_str!("state/operations.rs"));
+        let ops = live_code(include_str!("state/operations/entity.rs"));
         let body = only_body(&ops, "pub fn assign_crew_seat");
         assert!(
             !body.contains("editorHidden") && !body.contains("set_slots_editor_hidden"),

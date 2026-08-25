@@ -2559,7 +2559,7 @@ mod t697_document_search {
     }
     /// The document index's production text (`editor_ops.rs` carries no test module of its own).
     fn ops_code() -> String {
-        live_code(include_str!("../state/operations.rs"))
+        live_code(include_str!("../state/operations/entity.rs"))
     }
 
     fn entity(id: &str, kind: DocKind, label: &str, faction: &str) -> DocEntity {

@@ -37,7 +37,7 @@
 //!   made in this paragraph.) Line cites are otherwise omitted on purpose: five drifted during the
 //!   127–141 remediation run, and a file+symbol survives edits that a number does not.
 //!   The Arsenal's `set_loadout`
-//!   (`editor_ops.rs:2209`) is one of them. Its own siblings in this very modal are the clearest
+//!   (`editor_ops.rs:122`) is one of them. Its own siblings in this very modal are the clearest
 //!   case: Transform X/Y/Z/rotation (`attributes.rs:265`) and Identity role/tag/stance
 //!   (`attributes.rs:335`) commit on blur/Enter with no Save of their own — `attributes.rs:7` states
 //!   the contract in as many words ("rebind + persist + one undo step per commit"). Same for the
@@ -1390,7 +1390,7 @@ pub fn ArsenalTab(
                     // The three `set`s are signal writes and commit nothing; the single `persist`
                     // that follows is the only document mutation, and `persist` is one
                     // `editor_ops::set_loadout` is **at most one** `mission_history::after_local_edit`
-                    // (`editor_ops.rs:2225`) is at most one undo step. So Ctrl+Z after an import
+                    // (`editor_ops.rs:138`) is at most one undo step. So Ctrl+Z after an import
                     // restores the whole loadout the author had before it — not the last wear row
                     // of it. "At most" since T-779: the tail is gated on the document having taken
                     // the write, so an import applied over an entity that is no longer in the
@@ -5881,7 +5881,19 @@ mod tests {
         /// arise here — asserted below rather than assumed, because the day somebody adds one is the
         /// day this pin needs re-reading.
         fn live_ops_src() -> String {
-            super::super::class_r_scrub::live_code(include_str!("../state/operations.rs"))
+            // T-934.7 — the ops module was split; the exclusion pins below are whole-module
+            // claims, so the haystack concatenates every submodule.
+            super::super::class_r_scrub::live_code(
+                &[
+                    include_str!("../state/operations/attrs.rs"),
+                    include_str!("../state/operations/cargo.rs"),
+                    include_str!("../state/operations/compositions.rs"),
+                    include_str!("../state/operations/context.rs"),
+                    include_str!("../state/operations/entity.rs"),
+                    include_str!("../state/operations/transform.rs"),
+                ]
+                .concat(),
+            )
         }
 
         /// Class-R: the three verbs must reach the live document through the gated, counted path —
@@ -6276,9 +6288,26 @@ mod tests {
     /// RED (stale arsenal cite): change either `editor_ops.rs:NNNN` cite away from the live
     /// `pub fn set_loadout` / its tail line → "arsenal must cite the live set_loadout line".
     mod t739 {
-        /// Production `editor_ops.rs` (comments kept — the defect lives in a doc comment).
-        fn ops_src() -> &'static str {
-            include_str!("../state/operations.rs")
+        /// Production `editor_ops` source (comments kept — the defect lives in a doc
+        /// comment). T-934.7 — the module was split; the suppress-on-multi absences are
+        /// whole-module claims, so this concatenates every submodule.
+        fn ops_src() -> String {
+            [
+                include_str!("../state/operations/attrs.rs"),
+                include_str!("../state/operations/cargo.rs"),
+                include_str!("../state/operations/compositions.rs"),
+                include_str!("../state/operations/context.rs"),
+                include_str!("../state/operations/entity.rs"),
+                include_str!("../state/operations/transform.rs"),
+            ]
+            .concat()
+        }
+
+        /// `operations/cargo.rs` alone — the file `set_loadout` now lives in, so the computed
+        /// line numbers below are REAL lines of that file (the `editor_ops.rs:` cite prefix is
+        /// the historical name the arsenal docs kept across the T-934.6/.7 moves).
+        fn cargo_src() -> &'static str {
+            include_str!("../state/operations/cargo.rs")
         }
 
         fn arsenal_production_src() -> String {
@@ -6354,7 +6383,7 @@ mod tests {
 
         #[test]
         fn arsenal_cites_live_set_loadout_lines() {
-            let ops = ops_src();
+            let ops = cargo_src();
             // Production only — the pin module itself names the old numbers in RED prose, and
             // include_str!(arsenal.rs) would otherwise false-fail on its own commentary.
             let arsenal = arsenal_production_src();
@@ -6417,7 +6446,19 @@ mod tests {
         /// literals blanked — the needles below are calls and shapes, never copy, so a decoy
         /// parked in a literal must not match. It carries no test module of its own (asserted).
         fn live_ops() -> String {
-            super::super::class_r_scrub::live_code(include_str!("../state/operations.rs"))
+            // T-934.7 — whole-module negatives (the discarded-ack statement must appear NOWHERE
+            // in the ops surface), so the haystack concatenates every submodule.
+            super::super::class_r_scrub::live_code(
+                &[
+                    include_str!("../state/operations/attrs.rs"),
+                    include_str!("../state/operations/cargo.rs"),
+                    include_str!("../state/operations/compositions.rs"),
+                    include_str!("../state/operations/context.rs"),
+                    include_str!("../state/operations/entity.rs"),
+                    include_str!("../state/operations/transform.rs"),
+                ]
+                .concat(),
+            )
         }
 
         /// **The acceptance test: a write the document REFUSES mints no history tail.**

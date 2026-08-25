@@ -4236,7 +4236,7 @@ mod tests {
             "a Markers icon row must arm the marker place path"
         );
 
-        let ops = include_str!("../state/operations.rs");
+        let ops = include_str!("../state/operations/entity.rs");
         assert!(
             ops.contains("pub fn begin_place_vehicle"),
             "editor_ops must expose the vehicle arm"
@@ -4499,7 +4499,14 @@ mod tests {
         // The editor-ops seam actually exposes those functions AND the place reaches the core
         // one-undo-step mutator (the claim the store round-trip test rests on). Scrubbed the same
         // way (T-791): `editor_ops.rs` documents these `pub fn`s in prose right above them.
-        let ops = live_source(include_str!("../state/operations.rs"));
+        // T-934.7 — the save lives in operations/compositions.rs, the arm + place in entity.rs.
+        let ops = live_source(
+            &[
+                include_str!("../state/operations/compositions.rs"),
+                include_str!("../state/operations/entity.rs"),
+            ]
+            .concat(),
+        );
         assert!(
             ops.contains("pub fn save_composition")
                 && ops.contains("pub fn begin_place_composition"),
@@ -4530,7 +4537,14 @@ mod tests {
     fn a_composition_captures_comments_and_authored_elevation() {
         use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
-        const OPS: &str = include_str!("../state/operations.rs");
+        // T-934.7 — capture_selection_entities lives in operations/compositions.rs and
+        // mint_ids in operations/entity.rs; the haystack is their concatenation.
+        let ops_all = [
+            include_str!("../state/operations/compositions.rs"),
+            include_str!("../state/operations/entity.rs"),
+        ]
+        .concat();
+        let ops_all: &str = &ops_all;
         // The elevation key is a CONTRACT string crossing a crate boundary: both ends below are
         // checked against this one value, so a rename that touches only one side is red.
         let elevation_key = format!("{:?}", "elevation");
@@ -4538,8 +4552,8 @@ mod tests {
         let capture = format!("fn {}(", "capture_selection_entities");
 
         // ── The CAPTURE half (`website-frontend`, wasm-only) ─────────────────────────────────────
-        let ops_text = live_source(OPS);
-        let ops_code = live_code(OPS);
+        let ops_text = live_source(ops_all);
+        let ops_code = live_code(ops_all);
         let capture_text = only_body(&ops_text, &capture);
         let capture_code = only_body(&ops_code, &capture);
         assert!(
@@ -4611,7 +4625,7 @@ mod tests {
     fn both_id_minters_prove_uniqueness_against_hidden_slots_too() {
         use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 
-        let ops_code = live_code(include_str!("../state/operations.rs"));
+        let ops_code = live_code(include_str!("../state/operations/entity.rs"));
         let helper_call = format!("{}(", "live_slot_ids");
         let helper_body = only_body(&ops_code, &format!("fn {helper_call}"));
 
@@ -4663,7 +4677,15 @@ mod tests {
     #[test]
     fn composition_arm_rides_the_shared_pending_machine() {
         use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
-        let ops = live_code(include_str!("../state/operations.rs"));
+        // T-934.7 — the Pending enum lives in operations/context.rs, the arm verbs and
+        // place_at_impl in operations/entity.rs; the haystack is their concatenation.
+        let ops = live_code(
+            &[
+                include_str!("../state/operations/context.rs"),
+                include_str!("../state/operations/entity.rs"),
+            ]
+            .concat(),
+        );
         // The arm variant exists and the public arm fn routes through the shared `arm(…)`.
         assert!(
             ops.contains("Composition(String)"),
@@ -4811,7 +4833,7 @@ mod tests {
 
         // The editor-ops seam actually exposes those functions AND the geometry reaches the core
         // trigger mutators (the claim the store round-trip rests on).
-        let ops = include_str!("../state/operations.rs");
+        let ops = include_str!("../state/operations/entity.rs");
         for f in [
             "pub fn set_trigger_owner",
             "pub fn trigger_rows",
@@ -4838,7 +4860,16 @@ mod tests {
     fn trigger_draw_is_second_consumer_of_the_zone_tool() {
         const SRC: &str = include_str!("dock_right.rs");
         let zones_src = include_str!("zones_panel.rs");
-        let ops = include_str!("../state/operations.rs");
+        // T-934.7 — the ops module was split; the no-forked-draw absence pins scan every submodule.
+        let ops = [
+            include_str!("../state/operations/attrs.rs"),
+            include_str!("../state/operations/cargo.rs"),
+            include_str!("../state/operations/compositions.rs"),
+            include_str!("../state/operations/context.rs"),
+            include_str!("../state/operations/entity.rs"),
+            include_str!("../state/operations/transform.rs"),
+        ]
+        .concat();
 
         // Assemble the target tokens so this test's own source cannot satisfy the checks by accident.
         let trigger_target = ["Draw", "Target", "::", "Trigger"].concat();
@@ -5501,7 +5532,7 @@ mod tests {
         );
 
         // Both off-dock placement sites in editor_ops call the invoke, on the scrubbed fn bodies.
-        let ops = live_code(include_str!("../state/operations.rs"));
+        let ops = live_code(include_str!("../state/operations/entity.rs"));
         let record_call = format!("record_{}(", "placed");
 
         // Composition STAMP: `place_at_impl` records ONE entry for the stamp (keyed on the composition
@@ -5933,7 +5964,19 @@ mod tests {
     /// Every literal is split so this test's own source cannot satisfy the search it performs.
     #[test]
     fn marker_writes_go_to_the_briefing_not_the_root_map() {
-        const OPS: &str = include_str!("../state/operations.rs");
+        // T-934.7 — the ops module was split; the marker pins and the root-map absence scan
+        // every submodule so the file-wide claims keep their whole-module meaning.
+        let ops_all = [
+            include_str!("../state/operations/attrs.rs"),
+            include_str!("../state/operations/cargo.rs"),
+            include_str!("../state/operations/compositions.rs"),
+            include_str!("../state/operations/context.rs"),
+            include_str!("../state/operations/entity.rs"),
+            include_str!("../state/operations/transform.rs"),
+        ]
+        .concat();
+        #[allow(non_snake_case)]
+        let OPS: &str = &ops_all;
 
         assert!(
             OPS.contains(&format!("core.{}_faction_briefing_marker(", "set")),
