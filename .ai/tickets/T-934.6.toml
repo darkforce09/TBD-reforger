@@ -1,24 +1,47 @@
 id = "T-934.6"
 kind = "work"
-parent = "T-934"
 title = "Reorg A6 — editor/state/ + editor/arsenal/ + mission_editor move"
 summary = "8 state modules to editor/state/ (session, commands_hotkeys, doc_host, history, hydrate, title_prefer, persist, operations); arsenal.rs→arsenal/mod.rs (+rules/catalog/doll); mission_editor.rs→editor/. Phase A exit."
 class = "chore"
-status = "queued"
+status = "shipped"
 order = 6100
 spec = "docs/specs/website_reorg/plan.md"
 executor = "claude-code"
-created_at = "2026-08-25T00:00:00Z"
+notes = """
+Phase A exit evidence (2026-08-25): gate doctor OK; editor-suite 22/22 pass, 0 fail;
+ci-local-leptos green (1204 native tests). Composite `mk leptos-gates` exit is non-zero
+solely on the v-suite SPA goldens (21 FAIL / 4 PASS) — the pre-existing T-933 condition
+recorded at wave 211 (same four surviving pages), filed 2026-08-19 before this program.
+Per T-933/T-843 option (b) the rect pre-close evidence is doctor + editor-suite; the
+golden refresh belongs to T-933, not this move batch (path moves cannot change SPA DOM).
+"""
 depends_on = ["T-934.5"]
+parent = "T-934"
 main_goal = "Final move batch; arsenal/mod.rs preserves crate::arsenal::class_r_scrub path for external callers."
+context = ["Phase A batch 6, the exit batch: editor state modules, the arsenal nest, and mission_editor.rs itself leave flat src/; leptos-gates closes Phase A."]
 requirement = [
     "Repoint all cross-guards targeting editor_ops.rs (8 origin files) and mission_editor.rs.",
     "Update gate_t180 EDITOR_OPS/ORBAT_MGR, gate_t439 FE_REL, ai.rs:438.",
     "map-engine-core store.rs deep include gains one ../.",
 ]
-verify = ["cargo xtask mk ci-local-leptos", "cargo xtask mk leptos-gates"]
+current_state = ["Was: eight state modules, four arsenal modules and the 15.4k-LOC mission_editor flat in src/; ~90 cross-file source guards pinned their old relative geometry."]
+approach = [
+    "git mv + renames; arsenal.rs becomes arsenal/mod.rs so class_r_scrub callers keep their path.",
+    "Alias imports (operations as editor_ops, history as mission_history, doc_host/hydrate/persist) keep dozens of Class-S needles byte-stable instead of rewriting them.",
+    "gate_t180 EDITOR_OPS, gate_t439 FE_REL, ai.rs guard string updated; t570 pin mocks nested under mod editor.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+]
 acceptance = ["Phase A exit: full leptos-gates green on new layout."]
-estimated = ["scope"]
+shipped_at = "34ab65f77"
+created_at = "2026-08-25T00:00:00Z"
+completed_at = "2026-08-25T16:40:40Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = ["apps/website/frontend/src/editor/"]
 
 [scope]
