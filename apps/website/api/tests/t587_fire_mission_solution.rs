@@ -434,7 +434,7 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
 
 // ───────────────────────── T-626 — the claim 0020 makes about its own regex ─────────────────────
 
-/// `frontend/src/mortar.rs::parse_grid`, transcribed.
+/// `frontend/src/pages/public/mortar.rs::parse_grid`, transcribed.
 ///
 /// The frontend is a separate crate (`website-frontend`, built for `wasm32`) and cannot be linked
 /// into an API test binary, so the rule is restated here and
@@ -448,7 +448,7 @@ fn parse_grid(s: &str) -> Option<(f64, f64)> {
     (x.is_finite() && y.is_finite()).then_some((x, y))
 }
 
-const SHIPPED_MORTAR: &str = include_str!("../../frontend/src/mortar.rs");
+const SHIPPED_MORTAR: &str = include_str!("../../frontend/src/pages/public/mortar.rs");
 const MIGRATION_0020: &str = include_str!("../migrations/0020_fire_missions_solution.sql");
 
 /// The accept regex out of the shipped migration — both copies, which must be the same regex.
@@ -510,7 +510,7 @@ fn parse_grid_source(src: &str, whose: &str) -> String {
 fn the_transcription_of_parse_grid_is_still_the_shipped_one() {
     assert_eq!(
         parse_grid_source(THIS_SUITE, "this suite"),
-        parse_grid_source(SHIPPED_MORTAR, "frontend/src/mortar.rs"),
+        parse_grid_source(SHIPPED_MORTAR, "frontend/src/pages/public/mortar.rs"),
         "the copy of parse_grid in this file is no longer the shipped one — every assertion about \
          'what the calculator accepts' below is measuring a function nothing ships"
     );

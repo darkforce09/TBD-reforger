@@ -229,7 +229,7 @@ proven; the API half is mechanical from here.
    answering start/restart, on purpose. Use 20s. A timeout shorter than the dwell would
    turn every honest slow answer into a false \"unreachable\".
 
-3. HANDLER — apps/website/api/src/handlers/admin.rs `send_rcon` (currently ends in the
+3. HANDLER — apps/website/api/src/handlers/admin/admin.rs `send_rcon` (currently ends in the
    unconditional Err(SERVICE_UNAVAILABLE, RCON_NO_TRANSPORT) at :628). Map the validated
    RconCommand, then map the reply — the mapping is three-way, because that is the delivery
    result T-269 asked for:

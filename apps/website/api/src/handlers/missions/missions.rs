@@ -1607,7 +1607,7 @@ pub async fn ingest_list_missions(
 /// OWNS the defaults, so the key list is derived from it here and never hardcoded — a hardcoded
 /// list rots the first time a `default` is added, removed or retuned in the schema.
 const MISSION_SCHEMA_SRC: &str =
-    include_str!("../../../../../packages/tbd-schema/schema/mission.schema.json");
+    include_str!("../../../../../../packages/tbd-schema/schema/mission.schema.json");
 
 /// One schema-declared default: where an author writes it in a stored payload, and its value.
 struct SchemaDefaultKey {
@@ -2901,7 +2901,7 @@ mod tests {
         );
         // Route registration lives in app.rs (T-532 owns) — pin the path string here so a
         // handler without a route cannot Class-R green.
-        const APP: &str = include_str!("../app.rs");
+        const APP: &str = include_str!("../../app.rs");
         assert!(
             APP.contains("/missions/{id}/versions/{vid}/set-current")
                 && APP.contains("set_current_version"),

@@ -331,9 +331,9 @@ fn the_sql_lives_only_in_the_service() {
         "services/user_stats.rs no longer owns the deployment count"
     );
     for handler in [
-        include_str!("../src/handlers/telemetry.rs"),
-        include_str!("../src/handlers/me.rs"),
-        include_str!("../src/handlers/deployments.rs"),
+        include_str!("../src/handlers/telemetry/telemetry.rs"),
+        include_str!("../src/handlers/auth/me.rs"),
+        include_str!("../src/handlers/telemetry/deployments.rs"),
     ] {
         assert!(
             !handler.contains("count(DISTINCT match_id) FROM match_player_stats"),

@@ -379,7 +379,7 @@ fn api_doc_fail(msg: &str) -> GateExit {
         "  not an environment one — re-running will not fix it. Check the API log: a 500 here is"
     );
     println!("  'compiled mission failed schema validation' (validated_compiled_body in");
-    println!("  apps/website/api/src/handlers/missions.rs), a 409 is 'no placed slots'.");
+    println!("  apps/website/api/src/handlers/missions/missions.rs), a 409 is 'no placed slots'.");
     GateExit(1)
 }
 

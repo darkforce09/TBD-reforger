@@ -1400,13 +1400,13 @@ fn users_insert_arma_id_value(code: &str) -> Option<String> {
 /// the fast, readable first failure that names the literals — not as the guarantee.
 #[test]
 fn t534_dev_login_prime_literals_still_match_handler() {
-    let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/dev.rs");
+    let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/auth/dev.rs");
     let src = std::fs::read_to_string(&handler)
         .unwrap_or_else(|e| panic!("T-534 Class-R: read {}: {e}", handler.display()));
     for needle in [DEV_LOGIN_USER, DEV_LOGIN_ARMA_ID] {
         assert!(
             src.contains(needle),
-            "T-534/T-557: src/handlers/dev.rs no longer contains `{needle}`. The dev-login \
+            "T-534/T-557: src/handlers/auth/dev.rs no longer contains `{needle}`. The dev-login \
              prime in tests/common/mod.rs seeds that exact row; update both together."
         );
     }

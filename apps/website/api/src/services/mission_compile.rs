@@ -953,7 +953,7 @@ mod tests {
             "compile adapter must name the live /compiled catalogued path (T-549)"
         );
 
-        const HANDLER: &str = include_str!("../handlers/missions.rs");
+        const HANDLER: &str = include_str!("../handlers/missions/missions.rs");
         let handler_prod = HANDLER
             .split("#[cfg(test)]")
             .next()

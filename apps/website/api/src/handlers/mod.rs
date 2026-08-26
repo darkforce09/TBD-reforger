@@ -1,27 +1,27 @@
 //! HTTP handlers — Rust port of `internal/handlers`, grouped by domain. Populated
 //! per phase; the `/api/v1` route tree is assembled in [`crate::app`].
+//!
+//! T-934.15 nested the 21 flat handler files into six domain directories. Where a
+//! domain directory carries a file of its own name (`auth/auth.rs`, …) the domain's
+//! `mod.rs` glob re-exports it, and the `pub use` façade below restores every other
+//! module at its old flat path — so `handlers::oauth::discord_login`,
+//! `handlers::servers::list_servers` and friends resolve exactly as before and
+//! [`crate::app`]'s route wiring is untouched. The shared helpers below stay here:
+//! they are the domain-neutral floor every domain sits on.
 
 pub mod admin;
-pub mod announcements;
-pub mod approvals;
-pub mod audit;
 pub mod auth;
-pub mod cms;
-pub mod dashboard;
-pub mod deployments;
-pub mod dev;
+pub mod content;
 pub mod events;
-pub mod factions;
-pub mod field_tools;
-pub mod leaderboards;
-pub mod me;
 pub mod missions;
-pub mod modpacks;
-pub mod oauth;
-pub mod registry;
-pub mod servers;
 pub mod telemetry;
-pub mod wiki;
+
+pub use self::admin::audit;
+pub use self::auth::{dev, me, oauth};
+pub use self::content::{announcements, cms, modpacks, wiki};
+pub use self::events::factions;
+pub use self::missions::{approvals, registry};
+pub use self::telemetry::{dashboard, deployments, field_tools, leaderboards, servers};
 
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -150,8 +150,8 @@ pub async fn load_mission(pool: &PgPool, id: Uuid) -> sqlx::Result<Option<Missio
 /// tickets established is that a trim on read must agree with the trim on write. Checked, not
 /// assumed:
 /// - **No writer trims, so there is no counterpart to disagree with.** `users.username` has
-///   exactly two writers — `handlers/oauth.rs:117` binds `du.display_name()` (Discord's
-///   `global_name`, else `username`) with no trim and no guard at any hop, and `handlers/dev.rs`
+///   exactly two writers — `handlers/auth/oauth.rs:117` binds `du.display_name()` (Discord's
+///   `global_name`, else `username`) with no trim and no guard at any hop, and `handlers/auth/dev.rs`
 ///   binds the literal `'Dev Operator'`. No CHECK constraint, no trigger, no `btrim` in SQL, and
 ///   no request body anywhere in the crate carries a `username` field. `display_name()`
 ///   (`services/discord.rs:113`) selects on `global_name.is_empty()`, so a Discord

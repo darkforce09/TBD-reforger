@@ -366,8 +366,8 @@ fn t566_fn_body<'a>(code: &'a str, name: &str) -> &'a str {
         [only] => *only,
         [] => panic!(
             "T-566/T-572 Class-R: no FILE-SCOPE `{marker}` in comment-stripped \
-             src/handlers/dev.rs — a definition nested in a `mod`/`impl`/block is not the item \
-             the crate calls, and this pin binds the top-level one on purpose."
+             src/handlers/auth/dev.rs — a definition nested in a `mod`/`impl`/block is not \
+             the item the crate calls, and this pin binds the top-level one on purpose."
         ),
         many => panic!(
             "T-572 Class-R: {} file-scope `{marker}` definitions (offsets {many:?}) — a Rust \
@@ -476,7 +476,7 @@ fn t566_fn_body<'a>(code: &'a str, name: &str) -> &'a str {
 /// logs in as all four roles and reads the identities back over HTTP.
 #[test]
 fn t387_dev_login_roles_use_distinct_discord_ids() {
-    let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/dev.rs");
+    let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/auth/dev.rs");
     let src = std::fs::read_to_string(&handler)
         .unwrap_or_else(|e| panic!("T-387 Class-R: read {}: {e}", handler.display()));
     // T-566: pins below run on comment-stripped code so `// "enlisted" => …` cannot green.
@@ -497,13 +497,14 @@ fn t387_dev_login_roles_use_distinct_discord_ids() {
     for id in discord_ids {
         assert!(
             code.contains(id),
-            "T-387: src/handlers/dev.rs missing discord_id `{id}` — each role needs its own row"
+            "T-387: src/handlers/auth/dev.rs missing discord_id `{id}` — each role needs its own \
+             row"
         );
     }
     for id in arma_ids {
         assert!(
             code.contains(id),
-            "T-387: src/handlers/dev.rs missing arma_id `{id}` — per-role COALESCE must not race \
+            "T-387: src/handlers/auth/dev.rs missing arma_id `{id}` — per-role COALESCE must not race \
              idx_users_arma_id"
         );
     }

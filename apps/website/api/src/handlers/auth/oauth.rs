@@ -781,7 +781,7 @@ mod tests {
     /// The committed template, compiled in. Reading the file the repo actually ships is the
     /// whole point — a constant restating the intended values would pass while `.env.example`
     /// said something else, which is exactly how T-303 survived being "known" for days.
-    const ENV_EXAMPLE: &str = include_str!("../../.env.example");
+    const ENV_EXAMPLE: &str = include_str!("../../../.env.example");
 
     /// First non-comment `KEY=` assignment in a dotenv-style file.
     fn env_example_value(key: &str) -> String {

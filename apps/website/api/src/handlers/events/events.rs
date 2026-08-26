@@ -2713,7 +2713,7 @@ mod t550_roster_cargo_catalog {
 
 #[cfg(test)]
 mod t412_members_pagination {
-    use super::PageParams;
+    use crate::handlers::PageParams;
 
     /// Pure page oracle over a sorted username list — mirrors SQL `ORDER BY username ASC
     /// LIMIT $limit OFFSET $offset`. Member index 20 is invisible at offset 0 and appears
