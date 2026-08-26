@@ -43,7 +43,7 @@ citations = [
     "operator-liked chip semantics",
 ]
 estimated = ["scope"]
-owns = ["apps/website/frontend/src/mission_history.rs"]
+owns = ["apps/website/frontend/src/editor/state/history.rs"]
 
 [scope]
 domain = "website"

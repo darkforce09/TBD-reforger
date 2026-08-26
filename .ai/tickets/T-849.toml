@@ -49,8 +49,8 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/website/frontend/src/context_menu.rs",
-    "apps/website/frontend/src/orbat_manager.rs",
+    "apps/website/frontend/src/editor/panels/context_menu.rs",
+    "apps/website/frontend/src/pages/operations/orbat_manager.rs",
     "crates/map-engine-core/src/doc/place_orbat.rs",
 ]
 

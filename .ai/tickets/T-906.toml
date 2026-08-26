@@ -41,11 +41,11 @@ citations = [
 estimated = ["scope"]
 owns = [
     "apps/website/api/src/app.rs",
-    "apps/website/api/src/handlers/admin.rs",
-    "apps/website/api/src/handlers/events.rs",
-    "apps/website/api/src/handlers/missions.rs",
-    "apps/website/api/src/handlers/oauth.rs",
-    "apps/website/api/src/handlers/telemetry.rs",
+    "apps/website/api/src/handlers/admin/admin.rs",
+    "apps/website/api/src/handlers/events/events.rs",
+    "apps/website/api/src/handlers/missions/missions.rs",
+    "apps/website/api/src/handlers/auth/oauth.rs",
+    "apps/website/api/src/handlers/telemetry/telemetry.rs",
     "apps/website/api/src/services/mission_compile.rs",
 ]
 

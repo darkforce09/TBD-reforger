@@ -34,7 +34,7 @@ acceptance = [
 estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/world_assets",
-    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/editor/mission_editor.rs",
 ]
 
 [scope]

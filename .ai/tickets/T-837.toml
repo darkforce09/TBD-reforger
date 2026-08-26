@@ -53,9 +53,9 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/website/frontend/src/editor_ops.rs",
-    "apps/website/frontend/src/mission_editor.rs",
-    "apps/website/frontend/src/context_menu.rs",
+    "apps/website/frontend/src/editor/state/operations.rs",
+    "apps/website/frontend/src/editor/mission_editor.rs",
+    "apps/website/frontend/src/editor/panels/context_menu.rs",
 ]
 
 [scope]

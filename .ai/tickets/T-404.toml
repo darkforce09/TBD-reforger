@@ -52,7 +52,7 @@ citations = [
 ]
 owns = [
     "apps/website/api/tests/common/mod.rs",
-    "apps/website/api/src/handlers/deployments.rs",
+    "apps/website/api/src/handlers/telemetry/deployments.rs",
     "docs/platform/frontend_data_provenance.md",
 ]
 

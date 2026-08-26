@@ -13,7 +13,7 @@ current_state = [
     "The server has no optimistic concurrency: POST /versions is a bare INSERT and the only 409 means you reused a semver, not someone edited since you loaded.",
 ]
 estimated = ["scope"]
-owns = ["apps/website/frontend/src/yrs_persist.rs"]
+owns = ["apps/website/frontend/src/editor/state/persist.rs"]
 
 [scope]
 domain = "website"

@@ -43,7 +43,7 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/website/frontend/src/attributes.rs",
+    "apps/website/frontend/src/editor/panels/attributes_modal.rs",
 ]
 
 [scope]

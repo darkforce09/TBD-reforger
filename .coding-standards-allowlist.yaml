@@ -22,187 +22,187 @@
 
 # --- T-159 Leptos port god-files. Split is a follow-up; silencing by dropping the walk is forbidden. ---
 - rule: SIZE-3
-  path: apps/website/frontend/src/arsenal.rs
+  path: apps/website/frontend/src/editor/arsenal/mod.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/arsenal_rules.rs
+  path: apps/website/frontend/src/editor/arsenal/arsenal_rules.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/asset_catalog.rs
+  path: apps/website/frontend/src/editor/arsenal/asset_catalog.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/attributes.rs
+  path: apps/website/frontend/src/editor/panels/attributes_modal.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/client.rs
+  path: apps/website/frontend/src/core/client.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/content.rs
+  path: apps/website/frontend/src/pages/admin/content.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/context_menu.rs
+  path: apps/website/frontend/src/editor/panels/context_menu.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/deployments.rs
+  path: apps/website/frontend/src/pages/public/deployments.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/dto.rs
+  path: apps/website/frontend/src/core/dto.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/eden_dock_left.rs
+  path: apps/website/frontend/src/editor/panels/dock_left.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/eden_dock_right.rs
+  path: apps/website/frontend/src/editor/panels/dock_right.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/eden_help.rs
+  path: apps/website/frontend/src/editor/panels/help_modal.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/eden_layout.rs
+  path: apps/website/frontend/src/editor/layout.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/eden_settings.rs
+  path: apps/website/frontend/src/editor/panels/settings_modal.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/eden_toolbelt.rs
+  path: apps/website/frontend/src/editor/panels/toolbelt.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/eden_top_strip.rs
+  path: apps/website/frontend/src/editor/panels/top_strip.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/eden_tree.rs
+  path: apps/website/frontend/src/editor/panels/outliner_tree.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/eden_zones.rs
+  path: apps/website/frontend/src/editor/panels/zones_panel.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/editor_ops.rs
+  path: apps/website/frontend/src/editor/state/operations.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/event_hub.rs
+  path: apps/website/frontend/src/pages/operations/event_hub.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/event_manager.rs
+  path: apps/website/frontend/src/pages/admin/event_manager.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/los_tool.rs
+  path: apps/website/frontend/src/editor/tools/los_tool.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/mission_commands.rs
+  path: apps/website/frontend/src/editor/state/commands_hotkeys.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/mission_editor.rs
+  path: apps/website/frontend/src/editor/mission_editor.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/mission_hydrate.rs
+  path: apps/website/frontend/src/editor/state/hydrate.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/mission_overview.rs
+  path: apps/website/frontend/src/editor/library/mission_overview.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/missions.rs
+  path: apps/website/frontend/src/editor/library/mission_library.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/mortar.rs
+  path: apps/website/frontend/src/pages/public/mortar.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/orbat_manager.rs
+  path: apps/website/frontend/src/pages/operations/orbat_manager.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/outliner.rs
+  path: apps/website/frontend/src/editor/panels/outliner.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/personnel.rs
+  path: apps/website/frontend/src/pages/admin/personnel.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/place_helpers.rs
+  path: apps/website/frontend/src/editor/tools/place_helpers.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/ruler_tool.rs
+  path: apps/website/frontend/src/editor/tools/ruler_tool.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/server_control.rs
+  path: apps/website/frontend/src/pages/admin/server_control.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/ui.rs
+  path: apps/website/frontend/src/core/ui.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/validation_panel.rs
+  path: apps/website/frontend/src/editor/panels/validation_panel.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/yrs_persist.rs
+  path: apps/website/frontend/src/editor/state/persist.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
@@ -213,27 +213,27 @@
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/api/src/handlers/admin.rs
+  path: apps/website/api/src/handlers/admin/admin.rs
   reason: T-145 Axum port; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/api/src/handlers/events.rs
+  path: apps/website/api/src/handlers/events/events.rs
   reason: T-145 Axum port; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/api/src/handlers/missions.rs
+  path: apps/website/api/src/handlers/missions/missions.rs
   reason: T-145 Axum port; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/api/src/handlers/oauth.rs
+  path: apps/website/api/src/handlers/auth/oauth.rs
   reason: T-145 Axum port; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/api/src/handlers/telemetry.rs
+  path: apps/website/api/src/handlers/telemetry/telemetry.rs
   reason: T-145 Axum port; split follow-up
   expires: 2026-11-13
 
@@ -344,4 +344,12 @@
 - rule: SIZE-3
   path: apps/website/frontend/src/editor/canvas/gestures.rs
   reason: T-934.13 verbatim gesture-closure move; Class-S pinned bodies, split follow-up
+  expires: 2026-11-13
+- rule: SIZE-3
+  path: apps/website/frontend/src/editor/arsenal/loadout.rs
+  reason: T-934.8 verbatim loadout-core move out of arsenal.rs; guard-pinned, shard follow-up
+  expires: 2026-11-13
+- rule: SIZE-3
+  path: apps/website/frontend/src/editor/state/operations/entity.rs
+  reason: T-934.7 domain-CRUD shard of editor_ops; guard-pinned, follow-on shard flagged in ticket
   expires: 2026-11-13

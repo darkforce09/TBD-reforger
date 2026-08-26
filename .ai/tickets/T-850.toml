@@ -51,7 +51,7 @@ citations = [
 estimated = ["scope"]
 owns = [
     "crates/map-engine-core/src/squad_links.rs",
-    "apps/website/frontend/src/select_tool.rs",
+    "apps/website/frontend/src/editor/tools/select_tool.rs",
 ]
 
 [scope]

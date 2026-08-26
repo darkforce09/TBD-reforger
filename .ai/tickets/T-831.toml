@@ -51,7 +51,7 @@ citations = [
     "T-673 runtime half parked",
 ]
 estimated = ["scope"]
-owns = ["apps/website/frontend/src/eden_dock_right.rs"]
+owns = ["apps/website/frontend/src/editor/panels/dock_right.rs"]
 
 [scope]
 domain = "website"

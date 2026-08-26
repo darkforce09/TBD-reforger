@@ -50,7 +50,7 @@ citations = [
     "AuthStore re-probe Effect",
 ]
 estimated = ["scope"]
-owns = ["apps/website/frontend/src/eden_dock_right.rs"]
+owns = ["apps/website/frontend/src/editor/panels/dock_right.rs"]
 
 [scope]
 domain = "website"

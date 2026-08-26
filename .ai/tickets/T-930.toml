@@ -38,8 +38,8 @@ citations = [
 estimated = ["scope"]
 owns = [
     "crates/map-engine-core/src/slots_gpu.rs",
-    "apps/website/frontend/src/editor_ops.rs",
-    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/editor/state/operations.rs",
+    "apps/website/frontend/src/editor/mission_editor.rs",
 ]
 
 [scope]

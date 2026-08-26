@@ -50,7 +50,7 @@ citations = [
     "wave203.md MINOR PRE-EXISTING",
 ]
 estimated = ["scope"]
-owns = ["apps/website/frontend/src/mission_commands.rs"]
+owns = ["apps/website/frontend/src/editor/state/commands_hotkeys.rs"]
 
 [scope]
 domain = "website"

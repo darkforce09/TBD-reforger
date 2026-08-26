@@ -50,7 +50,7 @@ citations = [
     "eden_toolbelt.rs label memo",
 ]
 estimated = ["scope"]
-owns = ["apps/website/frontend/src/eden_toolbelt.rs"]
+owns = ["apps/website/frontend/src/editor/panels/toolbelt.rs"]
 
 [scope]
 domain = "website"

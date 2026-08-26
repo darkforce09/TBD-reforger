@@ -45,7 +45,7 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/website/frontend/src/eden_zones.rs",
+    "apps/website/frontend/src/editor/panels/zones_panel.rs",
     "crates/map-engine-render/src/scene.rs",
 ]
 

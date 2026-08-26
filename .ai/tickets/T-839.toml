@@ -53,8 +53,8 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/website/frontend/src/eden_top_strip.rs",
-    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/editor/panels/top_strip.rs",
+    "apps/website/frontend/src/editor/mission_editor.rs",
 ]
 
 [scope]

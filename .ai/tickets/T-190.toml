@@ -33,7 +33,7 @@ citations = [
     "mission_editor.rs conflict modal arm",
 ]
 estimated = ["scope"]
-owns = ["apps/website/frontend/src/yrs_persist.rs"]
+owns = ["apps/website/frontend/src/editor/state/persist.rs"]
 
 [scope]
 domain = "website"
