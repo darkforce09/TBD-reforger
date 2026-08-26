@@ -95,7 +95,7 @@ class TBD_BackendConfig
 		if (!s_Config)
 			return false;
 
-		SCR_JsonSaveContext ctx = new SCR_JsonSaveContext();
+		JsonSaveContext ctx = new JsonSaveContext();
 		ctx.WriteValue("", s_Config);
 		if (!ctx.SaveToFile(s_ConfigPath))
 		{

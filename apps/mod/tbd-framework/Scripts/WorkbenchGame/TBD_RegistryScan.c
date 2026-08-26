@@ -144,12 +144,13 @@ class TBD_RegistryScanner
 			m_Addons.Insert(info);
 		}
 
+		array<string> extEt = { "et" };
 		foreach (TBD_RegistryAddonInfo addon : m_Addons)
 		{
 			int before = m_Items.Count();
 			m_sCurrentAddonId = addon.id;
 			string root = "$" + addon.id + ":Prefabs";
-			Workbench.SearchResources(OnResourceFound, {"et"}, null, root, true);
+			Workbench.SearchResources(OnResourceFound, extEt, null, root, true);
 			Print(string.Format("%1 addon %2 (%3): %4 items (seen %5 so far)", m_sLogTag, addon.id, addon.guid, m_Items.Count() - before, m_iSeen));
 		}
 
@@ -159,7 +160,7 @@ class TBD_RegistryScanner
 		{
 			Print(m_sLogTag + " per-addon rootPath search found nothing — retrying one global SearchResources pass", LogLevel.WARNING);
 			m_sCurrentAddonId = string.Empty;
-			Workbench.SearchResources(OnResourceFound, {"et"}, null, string.Empty, true);
+			Workbench.SearchResources(OnResourceFound, extEt, null, string.Empty, true);
 		}
 
 		return !m_Items.IsEmpty();
@@ -1147,10 +1148,11 @@ class TBD_RegistryScanner
 	void ScanEntityCatalogs()
 	{
 		m_CatalogConfPaths.Clear();
+		array<string> extConf = { "conf" };
 		foreach (TBD_RegistryAddonInfo addon : m_Addons)
 		{
 			string root = "$" + addon.id + ":Configs/EntityCatalog";
-			Workbench.SearchResources(OnCatalogConfFound, {"conf"}, null, root, true);
+			Workbench.SearchResources(OnCatalogConfFound, extConf, null, root, true);
 		}
 		Print(string.Format("%1 EntityCatalog scan: %2 conf files", m_sLogTag, m_CatalogConfPaths.Count()));
 
