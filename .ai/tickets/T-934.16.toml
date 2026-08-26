@@ -1,28 +1,13 @@
 id = "T-934.16"
 kind = "work"
-parent = "T-934"
 title = "Reorg C2 — program close-out"
 summary = "Full gate sweep, stale owns remap on queued tickets, wave repack, Cursor handoff note for doc-link sync."
 class = "chore"
-status = "queued"
+status = "shipped"
 order = 6100
 spec = "docs/specs/website_reorg/plan.md"
 executor = "claude-code"
-created_at = "2026-08-25T00:00:00Z"
-depends_on = ["T-934.14", "T-934.15"]
-main_goal = "Verified program close: gates, registry hygiene, doc handoff."
-context = [
-    "Program closer: 15 children shipped; this child sweeps gates on the final layout, remaps registry ownership, and hands doc sync to Cursor.",
-]
-current_state = [
-    "Was: 33 open tickets owned pre-reorg flat paths; wave.lock reflected the old ownership; docs still cite flat paths.",
-]
-approach = [
-    "Owns remap via the spec §4 migration table across 33 open tickets; sync + wave repack + strict check (0 errors).",
-    "Gate sweep: cargo xtask ci ci-local + gate doctor + editor-suite on the final tree.",
-    "Cursor handoff recorded in notes (doc links, CLAUDE.md §Status, ~30 prose citations).",
-]
-notes = """
+notes = '''
 CURSOR HANDOFF (doc writes are Cursor's per the 2026-06 split):
 1. docs/website/frontend/pages/*.md — `Live source:` paths for every moved SPA page
    (spec §4 migration table in docs/specs/website_reorg/plan.md is the authority).
@@ -32,20 +17,43 @@ CURSOR HANDOFF (doc writes are Cursor's per the 2026-06 split):
 3. ~30 prose-only doc-comment citations to old flat paths (e.g. server_control.rs:14
    cites handlers/admin.rs:824 — now handlers/admin/admin.rs:824; line numbers inside
    moved files are unchanged, only directory prefixes are stale). Grep:
-   `grep -rn 'handlers/[a-z_]*\\.rs:[0-9]\\|src/[a-z_]*\\.rs:[0-9]' apps/ --include='*.rs'`.
+   `grep -rn 'handlers/[a-z_]*\.rs:[0-9]\|src/[a-z_]*\.rs:[0-9]' apps/ --include='*.rs'`.
 4. v-suite SPA goldens remain T-933's (21 FAIL / 4 PASS pre-dates this program).
 Follow-on candidates registered, not silently deferred: entity.rs shard (4.8k, T-934.7
 notes), events.rs/missions.rs handler splits (T-934.15), layout.rs topnav/sidebar split
 (T-934.1 notes).
-"""
+'''
+depends_on = [
+    "T-934.14",
+    "T-934.15",
+]
+parent = "T-934"
+main_goal = "Verified program close: gates, registry hygiene, doc handoff."
+context = ["Program closer: 15 children shipped; this child sweeps gates on the final layout, remaps registry ownership, and hands doc sync to Cursor."]
 requirement = [
     "Remap flat owns paths on queued tickets (e.g. T-926, T-930).",
     "cargo xtask wave repack after owns remap.",
     "Handoff note to Cursor: docs/website/frontend/pages/*.md links + CLAUDE.md §Status (Cursor owns doc writes).",
 ]
-verify = ["cargo xtask ci ci-local", "cargo xtask mk leptos-gates", "cargo xtask ticket check --strict"]
+current_state = ["Was: 33 open tickets owned pre-reorg flat paths; wave.lock reflected the old ownership; docs still cite flat paths."]
+approach = [
+    "Owns remap via the spec §4 migration table across 33 open tickets; sync + wave repack + strict check (0 errors).",
+    "Gate sweep: cargo xtask ci ci-local + gate doctor + editor-suite on the final tree.",
+    "Cursor handoff recorded in notes (doc links, CLAUDE.md §Status, ~30 prose citations).",
+]
+verify = [
+    "cargo xtask ci ci-local",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask ticket check --strict",
+]
 acceptance = ["All gates green on final layout; registry checks pass."]
-estimated = ["scope"]
+shipped_at = "ca10047a1"
+created_at = "2026-08-25T00:00:00Z"
+completed_at = "2026-08-26T08:54:28Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = [".ai/tickets/"]
 
 [scope]
