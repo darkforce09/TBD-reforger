@@ -56,8 +56,9 @@ class TBD_MapExportRoads
 
 		int cells = Math.Ceil(worldSize / cellSize);
 
-		string outJson = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_RoadsExport.json");
-		string outMeta = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_RoadsExport_meta.json");
+		string mapName = ctx.GetMapName(cfg);
+		string outJson = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "roads", "road_network.json");
+		string outMeta = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "roads", "roads_meta.json");
 
 		Print(string.Format("%1 Scanning road network across %2x%2 grid (%3 m cells)...",
 			TAG, cells, cellSize));
@@ -132,7 +133,7 @@ class TBD_MapExportRoads
 			mj += "  \"method\": \"mod-road-network-export\",\n";
 			mj += "  \"segmentCount\": " + m_aSegments.Count().ToString() + ",\n";
 			mj += "  \"worldSizeM\": " + worldSize.ToString() + ",\n";
-			mj += "  \"dataFile\": \"TBD_RoadsExport.json\"\n";
+			mj += "  \"dataFile\": \"road_network.json\"\n";
 			mj += "}\n";
 			TBD_MapExportJson.Write(mh, mj, TAG);
 			mh.Close();

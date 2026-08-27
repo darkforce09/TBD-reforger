@@ -58,8 +58,9 @@ class TBD_MapExportFences
 
 		int cells = Math.Ceil(worldSize / cellSize);
 
-		string outJsonl = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_FencesExport.jsonl");
-		string outMeta = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_FencesExport_meta.json");
+		string mapName = ctx.GetMapName(cfg);
+		string outJsonl = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "infrastructure", "fences_walls.jsonl");
+		string outMeta = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "infrastructure", "fences_meta.json");
 
 		Print(string.Format("%1 Scanning fences/walls across %2x%2 grid (%3 m cells)...",
 			TAG, cells, cellSize));
@@ -125,7 +126,7 @@ class TBD_MapExportFences
 			mj += "  \"method\": \"mod-fences-walls-export\",\n";
 			mj += "  \"segmentCount\": " + m_aFences.Count().ToString() + ",\n";
 			mj += "  \"worldSizeM\": " + worldSize.ToString() + ",\n";
-			mj += "  \"dataFile\": \"TBD_FencesExport.jsonl\"\n";
+			mj += "  \"dataFile\": \"fences_walls.jsonl\"\n";
 			mj += "}\n";
 			TBD_MapExportJson.Write(mh, mj, TAG);
 			mh.Close();

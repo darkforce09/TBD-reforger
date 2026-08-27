@@ -2,16 +2,17 @@
  * TBD_InlandWaterExportPlugin.c
  *
  * Dedicated standalone Workbench plugin for fast inland water export:
- *   - Procedural & placed inland lakes, ponds, rivers, and mountain streams
- *   - Ground-truth multi-altitude water surface & bathymetry probing
- *   - Skips deep ocean cells to provide rapid iteration in seconds
+ *   - Rivers (Splines & subparts -> rivers.json)
+ *   - Lakes  (Lake polygons & elevations -> lakes.json)
+ *   - Ponds  (Pond bodies & perimeters -> ponds.json)
+ *   - Consolidated metadata manifest -> inland_water_meta.json
  *
- * Menu: Workbench > Plugins > TBD > "Export Inland Water (Lakes & Rivers)"
+ * Menu: Workbench > Plugins > TBD > "Export Inland Water (Rivers, Lakes & Ponds)"
  */
 
 [WorkbenchPluginAttribute(
-	name: "Export Inland Water (Lakes & Rivers)",
-	description: "Fast standalone inland water exporter: extracts ground-truth lakes, ponds, and river networks in seconds.",
+	name: "Export Inland Water (Rivers, Lakes & Ponds)",
+	description: "Fast standalone inland water exporter: extracts rivers, lakes, and ponds.",
 	category: "TBD"
 )]
 class TBD_InlandWaterExportPlugin : WorkbenchPlugin

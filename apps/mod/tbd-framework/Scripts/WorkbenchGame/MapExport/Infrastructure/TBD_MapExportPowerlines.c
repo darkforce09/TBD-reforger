@@ -72,8 +72,9 @@ class TBD_MapExportPowerlines
 
 		int cells = Math.Ceil(worldSize / cellSize);
 
-		string outJson = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_PowerlinesExport.json");
-		string outMeta = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_PowerlinesExport_meta.json");
+		string mapName = ctx.GetMapName(cfg);
+		string outJson = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "infrastructure", "power_grid.json");
+		string outMeta = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "infrastructure", "powerlines_meta.json");
 
 		Print(string.Format("%1 Scanning power grid assets across %2x%2 grid (%3 m cells)...",
 			TAG, cells, cellSize));
@@ -181,7 +182,7 @@ class TBD_MapExportPowerlines
 			mj += "  \"method\": \"mod-powerlines-grid-export\",\n";
 			mj += "  \"pylonCount\": " + m_aPylons.Count().ToString() + ",\n";
 			mj += "  \"wireSpanCount\": " + m_aWires.Count().ToString() + ",\n";
-			mj += "  \"dataFile\": \"TBD_PowerlinesExport.json\"\n";
+			mj += "  \"dataFile\": \"power_grid.json\"\n";
 			mj += "}\n";
 			TBD_MapExportJson.Write(mh, mj, TAG);
 			mh.Close();

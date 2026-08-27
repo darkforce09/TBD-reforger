@@ -80,8 +80,9 @@ class TBD_MapExportAviation
 
 		int cells = Math.Ceil(worldSize / cellSize);
 
-		string outJson = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_AviationExport.json");
-		string outMeta = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_AviationExport_meta.json");
+		string mapName = ctx.GetMapName(cfg);
+		string outJson = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "infrastructure", "aviation.json");
+		string outMeta = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "infrastructure", "aviation_meta.json");
 
 		Print(string.Format("%1 Scanning aviation assets across %2x%2 grid (%3 m cells)...",
 			TAG, cells, cellSize));
@@ -190,7 +191,7 @@ class TBD_MapExportAviation
 			mj += "  \"method\": \"mod-aviation-export\",\n";
 			mj += "  \"runwayCount\": " + m_aRunways.Count().ToString() + ",\n";
 			mj += "  \"helipadCount\": " + m_aHelipads.Count().ToString() + ",\n";
-			mj += "  \"dataFile\": \"TBD_AviationExport.json\"\n";
+			mj += "  \"dataFile\": \"aviation.json\"\n";
 			mj += "}\n";
 			TBD_MapExportJson.Write(mh, mj, TAG);
 			mh.Close();

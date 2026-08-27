@@ -71,8 +71,9 @@ class TBD_MapExportArsenal
 		m_aWeapons = {};
 		m_aMagazines = {};
 
-		string outJson = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_ArsenalExport.json");
-		string outMeta = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_ArsenalExport_meta.json");
+		string mapName = ctx.GetMapName(cfg);
+		string outJson = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "registry", "arsenal.json");
+		string outMeta = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "registry", "arsenal_meta.json");
 
 		Print(TAG + " Extracting arsenal items, weapons & magazine registries...");
 
@@ -186,7 +187,7 @@ class TBD_MapExportArsenal
 			mj += "  \"method\": \"mod-arsenal-registry-export\",\n";
 			mj += "  \"weaponCount\": " + m_aWeapons.Count().ToString() + ",\n";
 			mj += "  \"magazineCount\": " + m_aMagazines.Count().ToString() + ",\n";
-			mj += "  \"dataFile\": \"TBD_ArsenalExport.json\"\n";
+			mj += "  \"dataFile\": \"arsenal.json\"\n";
 			mj += "}\n";
 			TBD_MapExportJson.Write(mh, mj, TAG);
 			mh.Close();

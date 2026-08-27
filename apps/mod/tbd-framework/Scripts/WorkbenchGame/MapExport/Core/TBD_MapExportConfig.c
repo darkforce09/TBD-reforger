@@ -9,6 +9,9 @@ class TBD_MapExportConfig
 	[Attribute("$profile:TBD_Export/", UIWidgets.EditBox, "Destination directory (e.g. $profile:TBD_Export/ or custom subfolder)")]
 	string m_sDestinationDir;
 
+	[Attribute("", UIWidgets.EditBox, "Map/Terrain name override (leave empty to auto-detect from active world)")]
+	string m_sMapNameOverride;
+
 	[Attribute("1", UIWidgets.CheckBox, "Export DEM 16-bit elevation heightmap matrix & metadata")]
 	bool m_bExportDEM;
 

@@ -12,6 +12,8 @@ class TBD_MapExportContext
 	vector m_vBoundsMin;
 	vector m_vBoundsMax;
 	float m_fWorldSize;
+	string m_sWorldPath;
+	string m_sMapName;
 	bool m_bValid;
 
 	//------------------------------------------------------------------------------------------------
@@ -51,8 +53,68 @@ class TBD_MapExportContext
 		if (m_fWorldSize <= 0)
 			m_fWorldSize = 12800.0;
 
+		m_sWorldPath = "";
+		m_API.GetWorldPath(m_sWorldPath);
+		m_sMapName = DeriveMapName(m_sWorldPath);
+
 		m_bValid = true;
 		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Derives a clean canonical lowercase slug for the map from the world path.
+	static string DeriveMapName(string worldPath)
+	{
+		if (worldPath.IsEmpty())
+			return "everon";
+
+		worldPath.Replace("\\", "/");
+		array<string> parts = {};
+		worldPath.Split("/", parts, false);
+		if (parts.Count() == 0)
+			return "everon";
+
+		string leaf = parts[parts.Count() - 1];
+		int dotIdx = leaf.LastIndexOf(".");
+		if (dotIdx > 0)
+			leaf = leaf.Substring(0, dotIdx);
+
+		string terrainName = leaf;
+		if (parts.Count() >= 2)
+		{
+			string parentFolder = parts[parts.Count() - 2];
+			if (parentFolder != "worlds" && parentFolder != "Worlds" && parentFolder != "MP" && !parentFolder.IsEmpty())
+				terrainName = parentFolder;
+		}
+
+		terrainName.ToLower();
+		terrainName.Trim();
+
+		if (terrainName == "eden")
+			terrainName = "everon";
+
+		if (terrainName.IsEmpty())
+			terrainName = "everon";
+
+		return terrainName;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Returns the active map name, respecting any user config override.
+	string GetMapName(TBD_MapExportConfig cfg = null)
+	{
+		if (cfg && !cfg.m_sMapNameOverride.IsEmpty())
+		{
+			string over = cfg.m_sMapNameOverride;
+			over.ToLower();
+			over.Trim();
+			return over;
+		}
+
+		if (!m_sMapName.IsEmpty())
+			return m_sMapName;
+
+		return "everon";
 	}
 
 	//------------------------------------------------------------------------------------------------

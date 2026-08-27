@@ -1,15 +1,14 @@
 /**
- * TBD_MapExportInlandWater.c
+ * TBD_MapExportRivers.c
  *
- * Ground-truth complete river export engine for Bohemia Reforger (Everon).
- * Exports all native 28 RiverEntity instances with:
+ * Dedicated ground-truth river export engine for Bohemia Reforger (Everon).
+ * Extracts all native RiverEntity instances with:
  *   1. Full continuous 3D SplineShapeEntity control points
- *   2. Complete RiverPartEntity subparts with 3D world bounds, local half-extents, lengths, and orientations
+ *   2. Complete RiverPartEntity subparts with 3D world bounds, local half-extents, lengths, and downhill flow sorting
  *   3. Native RiverEntity properties (Width, SplineOffsetUp, ReverseFlow, Material, Surface)
  *
  * Outputs:
- *   - TBD_InlandWaterExport_vectors.json
- *   - TBD_InlandWaterExport_meta.json
+ *   - rivers.json
  */
 
 class TBD_RiverPartExport
@@ -104,9 +103,9 @@ class TBD_RiverExport
 	}
 }
 
-class TBD_MapExportInlandWater
+class TBD_MapExportRivers
 {
-	protected static const string TAG = "[TBD][InlandWater]";
+	protected static const string TAG = "[TBD][InlandRivers]";
 	protected static const int FLUSH = 8000;
 
 	protected ref array<ref TBD_RiverExport> m_aRivers;
@@ -114,7 +113,7 @@ class TBD_MapExportInlandWater
 	protected ref array<RiverPartEntity> m_aRiverPartsHit;
 
 	//------------------------------------------------------------------------------------------------
-	static bool Export(TBD_MapExportContext ctx, TBD_MapExportConfig cfg)
+	bool Export(TBD_MapExportContext ctx, TBD_MapExportConfig cfg, out array<ref TBD_RiverExport> outRivers = null)
 	{
 		if (!ctx || !ctx.m_bValid || !ctx.m_World || !ctx.m_API)
 		{
@@ -122,43 +121,59 @@ class TBD_MapExportInlandWater
 			return false;
 		}
 
-		TBD_MapExportInlandWater exporter = new TBD_MapExportInlandWater();
-		return exporter.Execute(ctx, cfg);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	bool Execute(TBD_MapExportContext ctx, TBD_MapExportConfig cfg)
-	{
+		string mapName = ctx.GetMapName(cfg);
 		float worldSize = ctx.m_fWorldSize;
-		string outVectors = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_InlandWaterExport_vectors.json");
-		string outMeta = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_InlandWaterExport_meta.json");
+		string outVectors = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "water", "rivers.json");
 
 		m_aRivers = new array<ref TBD_RiverExport>();
 
 		Print(TAG + " Extracting complete ground-truth river dataset (Splines & Subparts)...", LogLevel.NORMAL);
 		ExportAllRivers(ctx, worldSize);
 
-		Print(TAG + " Writing river vectors & subparts dataset to JSON...", LogLevel.NORMAL);
-		WriteVectorsJson(outVectors);
-		WriteMetaJson(outMeta, worldSize);
+		Print(TAG + " Writing river vectors dataset to JSON: " + outVectors, LogLevel.NORMAL);
+		bool ok = WriteVectorsJson(outVectors);
 
 		int totalParts = 0;
 		for (int i = 0; i < m_aRivers.Count(); i++)
 			totalParts += m_aRivers[i].m_aParts.Count();
 
-		Print(string.Format("%1 EXPORT COMPLETE — Rivers=%2 (total length: %3m, total subparts: %4) -> %5",
+		Print(string.Format("%1 River export complete — Rivers=%2 (total length: %3m, total subparts: %4) -> %5",
 			TAG, m_aRivers.Count(), GetTotalRiversLength().ToString(1), totalParts, outVectors), LogLevel.NORMAL);
 
-		return true;
+		if (outRivers)
+			outRivers = m_aRivers;
+
+		return ok;
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected float GetTotalRiversLength()
+	float GetTotalRiversLength()
 	{
+		if (!m_aRivers)
+			return 0.0;
+
 		float tot = 0.0;
 		for (int i = 0; i < m_aRivers.Count(); i++)
 			tot += m_aRivers[i].m_fTotalLengthM;
 		return tot;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	int GetTotalPartsCount()
+	{
+		if (!m_aRivers)
+			return 0;
+
+		int totalParts = 0;
+		for (int i = 0; i < m_aRivers.Count(); i++)
+			totalParts += m_aRivers[i].m_aParts.Count();
+		return totalParts;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	array<ref TBD_RiverExport> GetRivers()
+	{
+		return m_aRivers;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -360,19 +375,20 @@ class TBD_MapExportInlandWater
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected void WriteVectorsJson(string path)
+	protected bool WriteVectorsJson(string path)
 	{
 		FileHandle f = FileIO.OpenFile(path, FileMode.WRITE);
 		if (!f)
 		{
 			Print(TAG + " Failed to open vectors JSON: " + path, LogLevel.ERROR);
-			return;
+			return false;
 		}
 
 		string buf = "{\n";
 		buf += "  \"type\": \"RiverVectorDataset\",\n";
 		buf += "  \"riversCount\": " + m_aRivers.Count().ToString() + ",\n";
 		buf += "  \"rivers\": [\n";
+		bool writeOk = true;
 
 		for (int r = 0; r < m_aRivers.Count(); r++)
 		{
@@ -433,36 +449,19 @@ class TBD_MapExportInlandWater
 
 			if (buf.Length() > FLUSH)
 			{
-				TBD_MapExportJson.Write(f, buf, TAG);
+				writeOk = TBD_MapExportJson.Write(f, buf, TAG);
+				if (!writeOk) break;
 				buf = "";
 			}
 		}
 
-		buf += "  ]\n";
-		buf += "}\n";
+		if (writeOk)
+		{
+			buf += "  ]\n}\n";
+			writeOk = TBD_MapExportJson.Write(f, buf, TAG);
+		}
 
-		TBD_MapExportJson.Write(f, buf, TAG);
 		f.Close();
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected void WriteMetaJson(string path, float worldSize)
-	{
-		FileHandle f = FileIO.OpenFile(path, FileMode.WRITE);
-		if (!f) return;
-
-		int totalParts = 0;
-		for (int i = 0; i < m_aRivers.Count(); i++)
-			totalParts += m_aRivers[i].m_aParts.Count();
-
-		string buf = "{\n";
-		buf += "  \"worldSize\": " + worldSize.ToString() + ",\n";
-		buf += "  \"riversCount\": " + m_aRivers.Count().ToString() + ",\n";
-		buf += "  \"totalRiversLengthM\": " + GetTotalRiversLength().ToString() + ",\n";
-		buf += "  \"totalSubpartsCount\": " + totalParts.ToString() + "\n";
-		buf += "}\n";
-
-		TBD_MapExportJson.Write(f, buf, TAG);
-		f.Close();
+		return writeOk;
 	}
 }

@@ -39,13 +39,19 @@ class TBD_MapExportSatellite
 		Color otherArea   = Color.FromRGBA(110, 104, 88, 255);
 		exporter.SetupColors(landBright, landDark, oceanBright, oceanDark, forestArea, otherArea);
 
-		string nativeTga = TBD_MapExportPaths.ResolveNativeOsPath(cfg.m_sDestinationDir, "TBD_SatExport_everon.tga");
-		string outMeta = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_SatExport_meta.json");
+		string mapName = ctx.GetMapName(cfg);
+		string satDir = TBD_MapExportPaths.GetCategoryDir(cfg.m_sDestinationDir, mapName, "satellite");
+		string nativeTga = TBD_MapExportPaths.ResolveNativeOsPath(satDir, "rasterization.tga");
+		string outMeta = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "satellite", "satellite_meta.json");
 
-		Print(string.Format("%1 Exporting rasterization to %2", TAG, nativeTga));
+		string worldPath = ctx.m_sWorldPath;
+		if (worldPath.IsEmpty())
+			worldPath = "worlds/Eden/Eden.ent";
+
+		Print(string.Format("%1 Exporting rasterization for '%2' (%3) to %4", TAG, mapName, worldPath, nativeTga));
 
 		DataExportErrorType err = exporter.ExportRasterization(
-			nativeTga, WORLD_PATH,
+			nativeTga, worldPath,
 			SCALE_LAND, SCALE_OCEAN, HEIGHT_SCALE, DEPTH_SCALE, DEPTH_LERP_METERS,
 			SHADE_INTENSITY, HEIGHT_INTENSITY, INCLUDE_GEN_AREAS, FOREST_INTENSITY, OTHER_INTENSITY);
 
@@ -62,7 +68,7 @@ class TBD_MapExportSatellite
 			string j;
 			j += "{\n";
 			j += "  \"method\": \"mod-maprasterization-export\",\n";
-			j += "  \"worldPath\": \"" + TBD_MapExportJson.Escape(WORLD_PATH) + "\",\n";
+			j += "  \"worldPath\": \"" + TBD_MapExportJson.Escape(worldPath) + "\",\n";
 			j += "  \"returnCode\": " + rc.ToString() + ",\n";
 			j += "  \"returnMessage\": \"" + TBD_MapExportJson.Escape(rmsg) + "\",\n";
 			j += "  \"outputPath\": \"" + TBD_MapExportJson.Escape(nativeTga) + "\",\n";

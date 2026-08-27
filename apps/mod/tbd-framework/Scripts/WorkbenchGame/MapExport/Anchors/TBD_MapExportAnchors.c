@@ -63,8 +63,9 @@ class TBD_MapExportAnchors
 
 		int cells = Math.Ceil(worldSize / cellSize);
 
-		string outJson = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_AnchorsExport.json");
-		string outMeta = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_AnchorsExport_meta.json");
+		string mapName = ctx.GetMapName(cfg);
+		string outJson = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "anchors", "verification.json");
+		string outMeta = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "anchors", "anchors_meta.json");
 
 		Print(string.Format("%1 Scanning landmark anchors across %2x%2 grid (%3 m cells)...",
 			TAG, cells, cellSize));
@@ -141,7 +142,7 @@ class TBD_MapExportAnchors
 			mj += "  \"method\": \"mod-anchors-oracle-export\",\n";
 			mj += "  \"anchorCount\": " + m_aAnchors.Count().ToString() + ",\n";
 			mj += "  \"worldSizeM\": " + worldSize.ToString() + ",\n";
-			mj += "  \"dataFile\": \"TBD_AnchorsExport.json\"\n";
+			mj += "  \"dataFile\": \"verification.json\"\n";
 			mj += "}\n";
 			TBD_MapExportJson.Write(mh, mj, TAG);
 			mh.Close();

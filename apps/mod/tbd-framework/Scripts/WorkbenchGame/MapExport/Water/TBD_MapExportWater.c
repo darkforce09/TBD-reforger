@@ -90,10 +90,11 @@ class TBD_MapExportWater
 			h = 6400;
 		}
 
-		string outMask = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_WaterExport_mask.txt");
-		string outDepth = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_WaterExport_depth.txt");
-		string outVectors = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_WaterExport_vectors.json");
-		string outMeta = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_WaterExport_meta.json");
+		string mapName = ctx.GetMapName(cfg);
+		string outMask = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "water", "bathymetry_mask.txt");
+		string outDepth = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "water", "bathymetry_depth.txt");
+		string outVectors = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "water", "lakes.json");
+		string outMeta = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "water", "water_meta.json");
 
 		Print(string.Format("%1 Rasterizing water grid %2x%3 (res %4 m/px, world %5 m)...",
 			TAG, w, h, mpp, worldSize));
@@ -379,9 +380,9 @@ class TBD_MapExportWater
 		mj += "  \"riverPixelCount\": " + riverPx.ToString() + ",\n";
 		mj += "  \"minWaterSurfaceYM\": " + minWaterY.ToString() + ",\n";
 		mj += "  \"maxWaterSurfaceYM\": " + maxWaterY.ToString() + ",\n";
-		mj += "  \"maskFile\": \"TBD_WaterExport_mask.txt\",\n";
-		mj += "  \"depthFile\": \"TBD_WaterExport_depth.txt\",\n";
-		mj += "  \"vectorsFile\": \"TBD_WaterExport_vectors.json\",\n";
+		mj += "  \"maskFile\": \"bathymetry_mask.txt\",\n";
+		mj += "  \"depthFile\": \"bathymetry_depth.txt\",\n";
+		mj += "  \"vectorsFile\": \"lakes.json\",\n";
 		mj += "  \"inlandWaterBodiesCount\": " + bodiesList.Count().ToString() + ",\n";
 		mj += "  \"inlandWaterBodies\": [\n";
 

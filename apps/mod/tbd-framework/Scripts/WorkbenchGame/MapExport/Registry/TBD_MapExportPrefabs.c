@@ -66,8 +66,9 @@ class TBD_MapExportPrefabs
 
 		int cells = Math.Ceil(worldSize / cellSize);
 
-		string outJson = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_PrefabsExport.json");
-		string outMeta = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_PrefabsExport_meta.json");
+		string mapName = ctx.GetMapName(cfg);
+		string outJson = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "registry", "prefabs.json");
+		string outMeta = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "registry", "prefabs_meta.json");
 
 		Print(string.Format("%1 Scanning unique prefabs across %2x%2 grid (%3 m cells)...",
 			TAG, cells, cellSize));
@@ -146,7 +147,7 @@ class TBD_MapExportPrefabs
 			mj += "  \"method\": \"mod-prefabs-component-export\",\n";
 			mj += "  \"uniquePrefabCount\": " + m_aPrefabsList.Count().ToString() + ",\n";
 			mj += "  \"worldSizeM\": " + worldSize.ToString() + ",\n";
-			mj += "  \"dataFile\": \"TBD_PrefabsExport.json\"\n";
+			mj += "  \"dataFile\": \"prefabs.json\"\n";
 			mj += "}\n";
 			TBD_MapExportJson.Write(mh, mj, TAG);
 			mh.Close();

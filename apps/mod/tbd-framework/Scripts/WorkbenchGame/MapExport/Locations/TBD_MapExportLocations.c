@@ -75,9 +75,10 @@ class TBD_MapExportLocations
 			return false;
 		}
 
+		string mapName = ctx.GetMapName(cfg);
 		float worldSize = ctx.m_fWorldSize;
-		string outJson = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_LocationsExport.json");
-		string outMeta = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_LocationsExport_meta.json");
+		string outJson = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "locations", "locations.json");
+		string outMeta = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "locations", "locations_meta.json");
 
 		m_aHits = {};
 		vector mins = Vector(0, Y_MIN, 0);

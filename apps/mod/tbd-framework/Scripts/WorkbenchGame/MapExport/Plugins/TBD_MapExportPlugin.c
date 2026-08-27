@@ -78,15 +78,16 @@ class TBD_MapExportPlugin : WorkbenchPlugin
 		}
 
 		int tickStart = System.GetTickCount();
-		TBD_MapExportPaths.EnsureDestinationDir(activeConfig.m_sDestinationDir);
-		Print(string.Format("[TBD][MapExport] Starting unified map export to '%1'...", activeConfig.m_sDestinationDir));
-
 		TBD_MapExportContext ctx = new TBD_MapExportContext();
 		if (!ctx.Init())
 		{
 			Print("[TBD][MapExport] Failed to initialize map export context — aborting.", LogLevel.ERROR);
 			return false;
 		}
+
+		string mapName = ctx.GetMapName(activeConfig);
+		TBD_MapExportPaths.EnsureDirRecursive(TBD_MapExportPaths.GetCategoryDir(activeConfig.m_sDestinationDir, mapName));
+		Print(string.Format("[TBD][MapExport] Starting unified map export for '%1' to '%2'...", mapName, activeConfig.m_sDestinationDir));
 
 		bool allOk = true;
 

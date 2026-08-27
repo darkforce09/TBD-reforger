@@ -93,8 +93,9 @@ class TBD_MapExportDEM
 			hMax = ctx.m_vBoundsMax[1];
 		}
 
-		string outRaster = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_TerrainExport_heightmap.txt");
-		string outMeta = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_TerrainExport_meta.json");
+		string mapName = ctx.GetMapName(cfg);
+		string outRaster = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "terrain", "heightmap.txt");
+		string outMeta = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "terrain", "dem_meta.json");
 
 		Print(string.Format("%1 Exporting DEM %2x%3 (res %4 m/px, world %5 m) -> %6",
 			TAG, w, h, mpp, worldSize, outRaster));
@@ -187,7 +188,7 @@ class TBD_MapExportDEM
 			mj += "  \"sampledMaxM\": " + sampMax.ToString() + ",\n";
 			mj += "  \"boundsMin\": \"" + ctx.m_vBoundsMin.ToString() + "\",\n";
 			mj += "  \"boundsMax\": \"" + ctx.m_vBoundsMax.ToString() + "\",\n";
-			mj += "  \"rasterFile\": \"TBD_TerrainExport_heightmap.txt\",\n";
+			mj += "  \"rasterFile\": \"heightmap.txt\",\n";
 			mj += "  \"rasterFormat\": \"ascii-uint16-rows\",\n";
 			mj += "  \"anchors\": [\n";
 			for (int i = 0; i < anchors.Count(); i++)

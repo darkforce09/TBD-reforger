@@ -1,48 +1,51 @@
-#!/usr/bin/env node
+#!/usr/bin/env -S node --max-old-space-size=8192
 /**
  * export-water-to-png.mjs
  *
  * Converts Arma Reforger TBD water export data:
- *   - Global Water: TBD_WaterExport_mask.txt, depth.txt, meta.json, vectors.json
- *   - Fast Inland Water: TBD_InlandWaterExport_mask.txt, depth.txt, meta.json, vectors.json
+ *   - Global Water: bathymetry_mask.txt, bathymetry_depth.txt, water_meta.json, inland_water_meta.json
+ *   - Inland Water Vectors: rivers.json, lakes.json, ponds.json
+ *   - Legacy Export: TBD_WaterExport_mask.txt, depth.txt, meta.json, vectors.json
  *
  * Features:
  *   - Ground-truth discrete matrix decoding + continuous Catmull-Rom spline river rasterization
- *   - Organic lake polygon scanline rendering with anti-aliasing
+ *   - Organic lake and pond polygon scanline rendering with DEM heightfield bathymetric profiling
  *   - Sub-decimeter (0.1m/px) resolution support for Region of Interest (ROI) viewports
  *   - 3D bathymetric depth profiling without discrete stair-step contour slicing
+ *   - Pure transparent land 32-bit RGBA water rendering
  *
  * Generates:
- *   1. everon-water-bathymetry.png / everon-inland-water-bathymetry.png (32-bit RGBA, transparent land)
+ *   1. everon-water-bathymetry.png (32-bit RGBA, transparent land, water colored by depth)
  *   2. everon-water-bathymetry-dark.png (24-bit RGB, dark charcoal land with subtle depth contours)
  *   3. everon-water-depth-16bit.png (16-bit Grayscale raw depth heightfield in decimeters)
- *   4. everon-water-mask.png (8-bit Grayscale classification mask: 0=Land, 1=Ocean, 2=Lake, 3=River)
- *   5. everon-water-preview.png (24-bit RGB 1600x1600 downsampled preview)
+ *   4. everon-water-mask.png (8-bit Grayscale classification mask: 0=Land, 1=Ocean, 2=Lake/Pond, 3=River)
+ *   5. everon-water-preview.png (24-bit RGB downsampled preview)
  *
  * Usage:
- *   node tools/export-water-to-png.mjs [options]
+ *   node tools/export-water-to-png.mjs [path_to_water_export] [options]
  *
  * Options:
- *   --export-dir <path>     Source export directory (default: /home/Samuel/Games/ArmaReforger-Base/TBD_Export)
- *   --out-dir <path>        Output directory (default: <export-dir>/images)
- *   --mode <mode>           Mode: all | bathymetry | dark | depth16 | mask | preview (default: all)
+ *   --export-dir <path>     Source export directory (default: /home/Samuel/Games/ArmaReforger-Base/TBD_Export/$tbd_framework:worlds/water)
+ *   --out-dir <path>        Output directory (default: <export-dir>/images or <export-dir>)
+ *   --mode <mode>           Mode: water | bathymetry | dark | depth16 | mask | preview | all (default: water)
  *   --terrain <name>        Terrain name prefix (default: everon)
- *   --inland-only           Process TBD_InlandWaterExport files exclusively
+ *   --dem <path>            Custom DEM 16-bit PNG or heightmap.txt path
+ *   --inland-only           Process inland water files exclusively
  *   --res <mpp>             Target resolution in meters/pixel (default: from meta, e.g. 1.0 or 0.1 for high-res)
  *   --roi <minX,minZ,maxX,maxZ> Bounding box for Region of Interest rendering (e.g. 4000,5500,5500,7000)
  *   --no-vector-enhance     Disable continuous spline/polygon rasterization
  */
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
-import { resolve, join } from 'node:path';
-import { deflateSync } from 'node:zlib';
+import { resolve, join, dirname } from 'node:path';
+import { deflateSync, inflateSync, crc32 as zlibCrc32 } from 'node:zlib';
 
 function parseArgs() {
   const args = process.argv.slice(2);
   const options = {
-    exportDir: '/home/Samuel/Games/ArmaReforger-Base/TBD_Export',
+    exportDir: '',
     outDir: '',
-    mode: 'all',
+    mode: 'water',
     terrain: 'everon',
     inlandOnly: false,
     res: 0,
@@ -52,32 +55,48 @@ function parseArgs() {
   };
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--export-dir' && i + 1 < args.length) {
+    const arg = args[i];
+    if (arg === '--export-dir' && i + 1 < args.length) {
       options.exportDir = args[++i];
-    } else if (args[i] === '--out-dir' && i + 1 < args.length) {
+    } else if (arg === '--out-dir' && i + 1 < args.length) {
       options.outDir = args[++i];
-    } else if (args[i] === '--dem' && i + 1 < args.length) {
+    } else if (arg === '--dem' && i + 1 < args.length) {
       options.demPath = args[++i];
-    } else if (args[i] === '--mode' && i + 1 < args.length) {
-      options.mode = args[++i];
-    } else if (args[i] === '--terrain' && i + 1 < args.length) {
+    } else if (arg === '--mode' && i + 1 < args.length) {
+      options.mode = args[++i].toLowerCase();
+    } else if (arg === '--terrain' && i + 1 < args.length) {
       options.terrain = args[++i];
-    } else if (args[i] === '--inland-only') {
+    } else if (arg === '--inland-only') {
       options.inlandOnly = true;
-    } else if (args[i] === '--res' && i + 1 < args.length) {
+    } else if (arg === '--res' && i + 1 < args.length) {
       options.res = parseFloat(args[++i]);
-    } else if (args[i] === '--roi' && i + 1 < args.length) {
+    } else if (arg === '--roi' && i + 1 < args.length) {
       const parts = args[++i].split(',').map((v) => parseFloat(v.trim()));
       if (parts.length === 4 && !parts.some(isNaN)) {
         options.roi = parts; // [minX, minZ, maxX, maxZ]
       }
-    } else if (args[i] === '--no-vector-enhance') {
+    } else if (arg === '--no-vector-enhance') {
       options.vectorEnhance = false;
+    } else if (!arg.startsWith('--') && !options.exportDir) {
+      options.exportDir = arg;
     }
   }
 
-  if (!options.outDir) {
-    options.outDir = join(options.exportDir, 'images');
+  // Fallback defaults for export directory
+  if (!options.exportDir) {
+    const defaultCandidates = [
+      '/home/Samuel/Games/ArmaReforger-Base/TBD_Export/$tbd_framework:worlds/water',
+      '/home/Samuel/Games/ArmaReforger-Base/TBD_Export',
+    ];
+    for (const cand of defaultCandidates) {
+      if (existsSync(cand)) {
+        options.exportDir = cand;
+        break;
+      }
+    }
+    if (!options.exportDir) {
+      options.exportDir = defaultCandidates[0];
+    }
   }
 
   return options;
@@ -85,22 +104,13 @@ function parseArgs() {
 
 // --- PNG Low-Level Encoder ---
 
-const CRC_TABLE = (() => {
-  const table = new Uint32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) {
-      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    }
-    table[n] = c >>> 0;
+function computeCrc32(buffer) {
+  if (typeof zlibCrc32 === 'function') {
+    return zlibCrc32(buffer) >>> 0;
   }
-  return table;
-})();
-
-function crc32(buffer) {
   let c = 0xffffffff;
   for (let i = 0; i < buffer.length; i++) {
-    c = CRC_TABLE[(c ^ buffer[i]) & 0xff] ^ (c >>> 8);
+    c = (c >>> 8) ^ ((c ^ buffer[i]) & 0xff);
   }
   return (c ^ 0xffffffff) >>> 0;
 }
@@ -110,8 +120,9 @@ function createChunk(typeStr, data) {
   len.writeUInt32BE(data.length, 0);
   const typeBuf = Buffer.from(typeStr, 'ascii');
   const crc = Buffer.allocUnsafe(4);
-  crc.writeUInt32BE(crc32(Buffer.concat([typeBuf, data])), 0);
-  return Buffer.concat([len, typeBuf, data, crc]);
+  const chunkHeaderAndData = Buffer.concat([typeBuf, data]);
+  crc.writeUInt32BE(computeCrc32(chunkHeaderAndData), 0);
+  return Buffer.concat([len, chunkHeaderAndData, crc]);
 }
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -126,7 +137,7 @@ function encodePng({ width, height, bitDepth, colorType, rawScanlines }) {
   ihdr[11] = 0;
   ihdr[12] = 0;
 
-  const idat = deflateSync(rawScanlines, { level: 9 });
+  const idat = deflateSync(rawScanlines, { level: 6 });
   return Buffer.concat([
     PNG_SIGNATURE,
     createChunk('IHDR', ihdr),
@@ -197,7 +208,7 @@ function getBathymetryColor(depthM, maskType) {
 
 function getContourMultiplier(depthM, maskType) {
   if (maskType === 2 || maskType === 3) {
-    return 1.0; // No contour cuts on rivers and lakes
+    return 1.0;
   }
   const intervals = [5, 10, 20, 50, 100, 150, 200];
   for (const interval of intervals) {
@@ -208,14 +219,14 @@ function getContourMultiplier(depthM, maskType) {
   }
   return 1.0;
 }
-// --- Spline & Polygon Vector Geometry Engine ---
 
-import { inflateSync } from 'node:zlib';
+// --- DEM Heightfield Engine ---
 
-function loadDemHeightfield(customPath, exportDir) {
+function loadDemHeightfield(customPath, waterDir) {
   const candidates = [
     customPath,
-    join(exportDir, 'everon-dem-16bit.png'),
+    join(waterDir, '../terrain/everon-dem-16bit.png'),
+    join(waterDir, 'everon-dem-16bit.png'),
     resolve(process.cwd(), 'packages/map-assets/everon/dem/everon-dem-16bit.png'),
     '/home/Samuel/Projects/TBD-Reforger/packages/map-assets/everon/dem/everon-dem-16bit.png',
   ].filter(Boolean);
@@ -251,8 +262,7 @@ function loadDemHeightfield(customPath, exportDir) {
 
         const getElev = (wx, wz) => {
           const px = Math.min(width - 1, Math.max(0, Math.round(wx / 2.0)));
-          const iy = Math.min(height - 1, Math.max(0, Math.round(wz / 2.0)));
-          const py = height - 1 - iy; // North-up scanline
+          const py = Math.min(height - 1, Math.max(0, Math.round(wz / 2.0)));
           const o = py * stride + 1 + px * 2;
           const u16 = (raw[o] << 8) | raw[o + 1];
           return minM + (u16 / 65535.0) * (maxM - minM);
@@ -267,6 +277,8 @@ function loadDemHeightfield(customPath, exportDir) {
   }
   return null;
 }
+
+// --- Spline & Polygon Vector Geometry Engine ---
 
 function evaluateCatmullRom(p0, p1, p2, p3, t) {
   const t2 = t * t;
@@ -300,25 +312,29 @@ function rasterizeSplineRivers({ rivers, mask, depth, W, H, minWorldX, minWorldZ
   let drawnSegments = 0;
 
   for (const river of rivers) {
-    const nodes = river.nodes;
-    if (!nodes || nodes.length < 2) continue;
+    // Support splinePoints: [[x,y,z], ...] OR nodes: [{ pos: [x,y,z] }, ...]
+    const pts = river.splinePoints || river.nodes?.map((n) => (Array.isArray(n) ? n : n.pos)) || [];
+    if (pts.length < 2) continue;
 
-    const nLen = nodes.length;
+    const defaultWidth = river.widthM || river.averageWidthM || 6.0;
+    const nLen = pts.length;
+
     for (let i = 0; i < nLen - 1; i++) {
-      const p0 = (i > 0 ? nodes[i - 1].pos : nodes[i].pos);
-      const p1 = nodes[i].pos;
-      const p2 = nodes[i + 1].pos;
-      const p3 = (i + 2 < nLen ? nodes[i + 2].pos : nodes[i + 1].pos);
+      const p0 = (i > 0 ? pts[i - 1] : pts[i]);
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = (i + 2 < nLen ? pts[i + 2] : pts[i + 1]);
 
-      const w1 = nodes[i].widthM || river.averageWidthM || 6.0;
-      const w2 = nodes[i + 1].widthM || river.averageWidthM || 6.0;
-      const d1 = nodes[i].depthM || 1.2;
-      const d2 = nodes[i + 1].depthM || 1.2;
+      const w1 = (river.nodes && river.nodes[i]?.widthM) || defaultWidth;
+      const w2 = (river.nodes && river.nodes[i + 1]?.widthM) || defaultWidth;
+      const d1 = (river.nodes && river.nodes[i]?.depthM) || 1.4;
+      const d2 = (river.nodes && river.nodes[i + 1]?.depthM) || 1.4;
 
       const segLen = Math.hypot(p2[0] - p1[0], p2[2] - p1[2]);
-      const steps = Math.max(4, Math.ceil(segLen / 0.5));
+      const stepDist = Math.min(sx, sz, 0.5);
+      const steps = Math.max(4, Math.ceil(segLen / stepDist));
 
-      for (let s = 0; s < steps; s++) {
+      for (let s = 0; s <= steps; s++) {
         const t = s / steps;
         const sample = evaluateCatmullRom(p0, p1, p2, p3, t);
         const curWidth = w1 + (w2 - w1) * t;
@@ -326,9 +342,9 @@ function rasterizeSplineRivers({ rivers, mask, depth, W, H, minWorldX, minWorldZ
         const halfW = curWidth * 0.5;
 
         // Stamp perpendicular ribbon samples
-        const subSteps = Math.max(3, Math.ceil(curWidth / 0.5));
+        const subSteps = Math.max(2, Math.ceil(halfW / stepDist));
         for (let sub = -subSteps; sub <= subSteps; sub++) {
-          const ratio = sub / subSteps; // -1 to +1
+          const ratio = sub / subSteps; // -1.0 to +1.0
           const offDist = ratio * halfW;
           const wx = sample.pos[0] + sample.normal[0] * offDist;
           const wz = sample.pos[2] + sample.normal[2] * offDist;
@@ -341,7 +357,7 @@ function rasterizeSplineRivers({ rivers, mask, depth, W, H, minWorldX, minWorldZ
             mask[pIdx] = 3; // River
 
             // Parabolic cross-section depth
-            const crossSectionFactor = Math.max(0.2, 1.0 - ratio * ratio);
+            const crossSectionFactor = Math.max(0.25, 1.0 - ratio * ratio);
             const depthM = curDepth * crossSectionFactor;
             const depthDm = Math.min(65535, Math.round(depthM * 10.0));
             if (depthDm > depth[pIdx]) {
@@ -356,91 +372,214 @@ function rasterizeSplineRivers({ rivers, mask, depth, W, H, minWorldX, minWorldZ
   return drawnSegments;
 }
 
-function rasterizeOrganicLakes({ lakes, mask, depth, W, H, minWorldX, minWorldZ, sx, sz, dem }) {
-  if (!lakes || !Array.isArray(lakes)) return 0;
-  let lakeCount = 0;
+function rasterizePolygons({ items, mask, depth, W, H, minWorldX, minWorldZ, sx, sz, dem, maskType = 2 }) {
+  if (!items || !Array.isArray(items)) return 0;
+  let count = 0;
 
-  for (const lake of lakes) {
-    const bbox = lake.bbox || [0, 0, 0, 12800, 100, 12800];
-    const surfaceY = lake.surfaceElevationYM || 0.0;
+  for (const item of items) {
+    const poly = item.polygon || item.perimeter || item.points;
+    if (!poly || !Array.isArray(poly) || poly.length < 3) continue;
 
-    const minPx = Math.max(0, Math.floor((bbox[0] - minWorldX) / sx));
-    const maxPx = Math.min(W - 1, Math.ceil((bbox[3] - minWorldX) / sx));
-    const minPy = Math.max(0, Math.floor((bbox[2] - minWorldZ) / sz));
-    const maxPy = Math.min(H - 1, Math.ceil((bbox[5] - minWorldZ) / sz));
+    const surfaceY = typeof item.surfaceElevationYM === 'number' ? item.surfaceElevationYM : 0.0;
+    const defaultDepthM = typeof item.avgDepthM === 'number' ? item.avgDepthM : (typeof item.maxDepthM === 'number' ? item.maxDepthM * 0.6 : 1.5);
+    const maxD = typeof item.maxDepthM === 'number' ? item.maxDepthM : defaultDepthM * 1.5;
 
-    if (minPx > maxPx || minPy > maxPy) continue;
+    // Determine 2D bounding box
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    if (item.bounds?.min && item.bounds?.max) {
+      minX = item.bounds.min[0];
+      minZ = item.bounds.min[2];
+      maxX = item.bounds.max[0];
+      maxZ = item.bounds.max[2];
+    } else {
+      for (const p of poly) {
+        if (p[0] < minX) minX = p[0];
+        if (p[0] > maxX) maxX = p[0];
+        if (p[2] < minZ) minZ = p[2];
+        if (p[2] > maxZ) maxZ = p[2];
+      }
+    }
+
+    const minPy = Math.max(0, Math.floor((minZ - minWorldZ) / sz));
+    const maxPy = Math.min(H - 1, Math.ceil((maxZ - minWorldZ) / sz));
+    if (minPy > maxPy) continue;
+
+    const n = poly.length;
 
     for (let py = minPy; py <= maxPy; py++) {
       const wz = minWorldZ + py * sz;
+      const nodes = [];
+
+      for (let j = 0; j < n; j++) {
+        const pA = poly[j];
+        const pB = poly[(j + 1) % n];
+        const az = pA[2], bz = pB[2];
+        if ((az <= wz && bz > wz) || (bz <= wz && az > wz)) {
+          const t = (wz - az) / (bz - az);
+          nodes.push(pA[0] + t * (pB[0] - pA[0]));
+        }
+      }
+
+      if (nodes.length < 2) continue;
+      nodes.sort((a, b) => a - b);
+
       const rowOffset = py * W;
 
-      for (let px = minPx; px <= maxPx; px++) {
-        const wx = minWorldX + px * sx;
-        const pIdx = rowOffset + px;
+      for (let k = 0; k < nodes.length; k += 2) {
+        if (k + 1 >= nodes.length) break;
+        const xStart = nodes[k];
+        const xEnd = nodes[k + 1];
+        if (xEnd < minWorldX || xStart > (minWorldX + (W - 1) * sx)) continue;
 
-        if (dem) {
-          const terrainY = dem.getElev(wx, wz);
-          if (terrainY <= surfaceY) {
-            const depthM = surfaceY - terrainY;
-            if (depthM > 0.05) {
-              mask[pIdx] = 2; // Lake
-              const depthDm = Math.min(65535, Math.round(depthM * 10.0));
-              if (depthDm > depth[pIdx]) {
-                depth[pIdx] = depthDm;
-              }
+        const minPx = Math.max(0, Math.floor((xStart - minWorldX) / sx));
+        const maxPx = Math.min(W - 1, Math.ceil((xEnd - minWorldX) / sx));
+
+        for (let px = minPx; px <= maxPx; px++) {
+          const wx = minWorldX + px * sx;
+          const pIdx = rowOffset + px;
+
+          mask[pIdx] = maskType; // 2 = Lake/Pond
+
+          let depthM = defaultDepthM;
+          if (dem) {
+            const terrainY = dem.getElev(wx, wz);
+            if (terrainY < surfaceY) {
+              depthM = Math.min(maxD, Math.max(0.1, surfaceY - terrainY));
             }
           }
-        } else {
-          // Fallback if no DEM
-          mask[pIdx] = 2;
-          if (depth[pIdx] === 0) depth[pIdx] = 45; // 4.5m
+
+          const depthDm = Math.min(65535, Math.round(depthM * 10.0));
+          if (depthDm > depth[pIdx]) {
+            depth[pIdx] = depthDm;
+          }
         }
       }
     }
-    lakeCount++;
+    count++;
   }
-  return lakeCount;
+  return count;
 }
 
 // --- Main Execution ---
 
 async function main() {
   const options = parseArgs();
-  console.log(`=== TBD Water Export to PNG Converter (High-Resolution Engine) ===`);
-  console.log(`Source export dir : ${options.exportDir}`);
-  console.log(`Target out dir    : ${options.outDir}`);
+  console.log(`=== TBD Water Export to PNG Converter ===`);
+  console.log(`Source export path: ${options.exportDir}`);
   console.log(`Terrain           : ${options.terrain}`);
   console.log(`Mode              : ${options.mode}`);
   console.log(`Vector enhance    : ${options.vectorEnhance}`);
 
-  // Detect whether we are processing Inland Water or Global Water
-  let prefix = 'TBD_WaterExport';
-  let outPrefix = `${options.terrain}-water`;
+  // Locate water directory
+  const candidateDirs = [
+    options.exportDir,
+    join(options.exportDir, options.terrain, 'water'),
+    join(options.exportDir, 'water'),
+    join(options.exportDir, '$tbd_framework:worlds/water'),
+  ];
 
-  if (options.inlandOnly || (!existsSync(join(options.exportDir, 'TBD_WaterExport_meta.json')) && existsSync(join(options.exportDir, 'TBD_InlandWaterExport_meta.json')))) {
-    prefix = 'TBD_InlandWaterExport';
-    outPrefix = `${options.terrain}-inland-water`;
-    console.log(`Mode: Fast Inland Water Exporter (${prefix})`);
+  let waterDir = options.exportDir;
+  for (const d of candidateDirs) {
+    if (existsSync(d) && (
+      existsSync(join(d, 'water_meta.json')) ||
+      existsSync(join(d, 'inland_water_meta.json')) ||
+      existsSync(join(d, 'bathymetry_mask.txt')) ||
+      existsSync(join(d, 'TBD_WaterExport_meta.json')) ||
+      existsSync(join(d, 'TBD_InlandWaterExport_meta.json'))
+    )) {
+      waterDir = d;
+      break;
+    }
   }
 
-  const metaPath = join(options.exportDir, `${prefix}_meta.json`);
-  const maskPath = join(options.exportDir, `${prefix}_mask.txt`);
-  const depthPath = join(options.exportDir, `${prefix}_depth.txt`);
-  const vectorsPath = join(options.exportDir, `${prefix}_vectors.json`);
+  console.log(`Resolved water data dir: ${waterDir}`);
+
+  // Resolve metadata file
+  let metaPath = join(waterDir, 'water_meta.json');
+  let isInland = false;
+  if (!existsSync(metaPath)) {
+    if (existsSync(join(waterDir, 'inland_water_meta.json'))) {
+      metaPath = join(waterDir, 'inland_water_meta.json');
+      isInland = true;
+    } else if (existsSync(join(waterDir, 'TBD_WaterExport_meta.json'))) {
+      metaPath = join(waterDir, 'TBD_WaterExport_meta.json');
+    } else if (existsSync(join(waterDir, 'TBD_InlandWaterExport_meta.json'))) {
+      metaPath = join(waterDir, 'TBD_InlandWaterExport_meta.json');
+      isInland = true;
+    }
+  }
+
+  // Determine output directory
+  const defaultOutCandidates = [
+    options.outDir,
+    join(waterDir, 'images'),
+    resolve(process.cwd(), 'packages/map-assets', options.terrain, 'staging/water/images'),
+    resolve(process.cwd(), 'output/water'),
+    resolve(process.cwd(), 'images'),
+  ].filter(Boolean);
+
+  let targetOutDir = '';
+  for (const cand of defaultOutCandidates) {
+    try {
+      if (!existsSync(cand)) {
+        mkdirSync(cand, { recursive: true });
+      }
+      targetOutDir = cand;
+      break;
+    } catch {
+      // Continue to next candidate if directory is read-only
+    }
+  }
+
+  if (!targetOutDir) {
+    targetOutDir = resolve(process.cwd(), 'output/water');
+    mkdirSync(targetOutDir, { recursive: true });
+  }
+  options.outDir = targetOutDir;
+  console.log(`Target output dir : ${options.outDir}`);
+
+  let outPrefix = isInland ? `${options.terrain}-inland-water` : `${options.terrain}-water`;
+
+  const maskCandidates = [
+    join(waterDir, 'bathymetry_mask.txt'),
+    join(waterDir, 'TBD_WaterExport_mask.txt'),
+    join(waterDir, 'TBD_InlandWaterExport_mask.txt'),
+  ];
+  const maskPath = maskCandidates.find(existsSync);
+
+  const depthCandidates = [
+    join(waterDir, 'bathymetry_depth.txt'),
+    join(waterDir, 'TBD_WaterExport_depth.txt'),
+    join(waterDir, 'TBD_InlandWaterExport_depth.txt'),
+  ];
+  const depthPath = depthCandidates.find(existsSync);
+
+  const riversCandidates = [
+    join(waterDir, 'rivers.json'),
+    join(waterDir, 'TBD_InlandWaterExport_vectors.json'),
+    join(waterDir, 'TBD_WaterExport_vectors.json'),
+  ];
+  const riversPath = riversCandidates.find(existsSync);
+
+  const lakesCandidates = [
+    join(waterDir, 'lakes.json'),
+    join(waterDir, 'TBD_WaterExport_vectors.json'),
+  ];
+  const lakesPath = lakesCandidates.find(existsSync);
+
+  const pondsCandidates = [
+    join(waterDir, 'ponds.json'),
+  ];
+  const pondsPath = pondsCandidates.find(existsSync);
 
   if (!existsSync(metaPath)) {
-    console.error(`Error: Missing required metadata file (${prefix}_meta.json) in ${options.exportDir}`);
+    console.error(`Error: Missing required metadata file (water_meta.json or inland_water_meta.json) in ${waterDir}`);
     process.exit(1);
   }
 
-  if (!existsSync(options.outDir)) {
-    mkdirSync(options.outDir, { recursive: true });
-  }
-
   const meta = JSON.parse(readFileSync(metaPath, 'utf8'));
-  let W = meta.widthPx || 6400;
-  let H = meta.heightPx || 6400;
+  let W = meta.widthPx || 12800;
+  let H = meta.heightPx || 12800;
   let worldSizeM = meta.worldSizeM || 12800;
   let minWorldX = 0;
   let minWorldZ = 0;
@@ -473,8 +612,8 @@ async function main() {
   const depth = new Uint16Array(totalPx);
 
   // 1. Parse discrete matrix files if matching full terrain
-  if (!options.roi && existsSync(maskPath) && existsSync(depthPath) && W === meta.widthPx && H === meta.heightPx) {
-    console.log(`\n1. Parsing Ground-Truth Water Mask (${W}x${H})...`);
+  if (!options.roi && maskPath && depthPath && W === (meta.widthPx || 12800) && H === (meta.heightPx || 12800)) {
+    console.log(`\n1. Parsing Ground-Truth Ocean Bathymetry Mask (${W}x${H})...`);
     const t0 = performance.now();
     const maskBuf = readFileSync(maskPath);
     let idx = 0, cur = 0, inNum = false;
@@ -490,9 +629,9 @@ async function main() {
       }
     }
     if (inNum && idx < totalPx) mask[idx++] = cur;
-    console.log(`   Mask parsed in ${(performance.now() - t0).toFixed(0)} ms.`);
+    console.log(`   Mask parsed in ${(performance.now() - t0).toFixed(0)} ms (${idx} pixels).`);
 
-    console.log(`\n2. Parsing Ground-Truth Water Depth (${W}x${H})...`);
+    console.log(`\n2. Parsing Ground-Truth Ocean Bathymetry Depth (${W}x${H})...`);
     const t1 = performance.now();
     const depthBuf = readFileSync(depthPath);
     idx = 0; cur = 0; inNum = false;
@@ -508,23 +647,36 @@ async function main() {
       }
     }
     if (inNum && idx < totalPx) depth[idx++] = cur;
-    console.log(`   Depth parsed in ${(performance.now() - t1).toFixed(0)} ms.`);
+    console.log(`   Depth parsed in ${(performance.now() - t1).toFixed(0)} ms (${idx} pixels).`);
   }
 
-  // 2. Vector Spline & Polygon Enhancement
-  if (options.vectorEnhance && existsSync(vectorsPath)) {
-    console.log(`\n3. Applying Continuous Vector Splines & Lake Polygons (${vectorsPath})...`);
+  // 2. Vector Spline & Polygon Enhancement (Rivers, Lakes, Ponds)
+  if (options.vectorEnhance && (lakesPath || pondsPath || riversPath)) {
+    console.log(`\n3. Applying Continuous Vector Splines (Rivers) & Lake/Pond Polygons...`);
     const tVec = performance.now();
-    const vecData = JSON.parse(readFileSync(vectorsPath, 'utf8'));
+    let lakes = [];
+    let ponds = [];
+    let rivers = [];
 
-    const lakes = vecData.lakes || [];
-    const rivers = vecData.rivers || [];
+    if (lakesPath && existsSync(lakesPath)) {
+      const lData = JSON.parse(readFileSync(lakesPath, 'utf8'));
+      lakes = lData.lakes || lData.waterBodies || [];
+    }
+    if (pondsPath && existsSync(pondsPath)) {
+      const pData = JSON.parse(readFileSync(pondsPath, 'utf8'));
+      ponds = pData.ponds || [];
+    }
+    if (riversPath && existsSync(riversPath)) {
+      const rData = JSON.parse(readFileSync(riversPath, 'utf8'));
+      rivers = rData.rivers || [];
+    }
 
-    const dem = loadDemHeightfield(options.demPath, options.exportDir);
-    const lCount = rasterizeOrganicLakes({ lakes, mask, depth, W, H, minWorldX, minWorldZ, sx, sz, dem });
+    const dem = loadDemHeightfield(options.demPath, waterDir);
+    const lCount = rasterizePolygons({ items: lakes, mask, depth, W, H, minWorldX, minWorldZ, sx, sz, dem, maskType: 2 });
+    const pCount = rasterizePolygons({ items: ponds, mask, depth, W, H, minWorldX, minWorldZ, sx, sz, dem, maskType: 2 });
     const rSegs = rasterizeSplineRivers({ rivers, mask, depth, W, H, minWorldX, minWorldZ, sx, sz });
 
-    console.log(`   Vector rasterization complete in ${(performance.now() - tVec).toFixed(0)} ms (${lCount} lakes, ${rSegs} river segments).`);
+    console.log(`   Vector rasterization complete in ${(performance.now() - tVec).toFixed(0)} ms (${lCount} lakes, ${pCount} ponds, ${rSegs} river segments).`);
   }
 
   // Compute stats
@@ -545,33 +697,37 @@ async function main() {
   }
   if (minDepthDm > maxDepthDm) minDepthDm = 0;
 
-  console.log(`\nStatistics: Land=${landCount}, Ocean=${oceanCount}, Lake=${lakeCount}, River=${riverCount}`);
+  console.log(`\nStatistics: Land=${landCount}, Ocean=${oceanCount}, Lake/Pond=${lakeCount}, River=${riverCount}`);
+  console.log(`Total Water Pixels: ${oceanCount + lakeCount + riverCount}`);
   console.log(`Depth Range: ${(minDepthDm * 0.1).toFixed(1)} m to ${(maxDepthDm * 0.1).toFixed(1)} m`);
 
+  const isWaterMode = options.mode === 'water' || options.mode === 'bathymetry';
   const runAll = options.mode === 'all';
 
-  // --- Output 1: 32-bit RGBA Bathymetry with Transparent Land (North-Up) ---
-  if (runAll || options.mode === 'bathymetry') {
-    console.log(`\n4. Building 32-bit RGBA Bathymetry PNG (Transparent Land, North-Up)...`);
+  // --- Output: 32-bit RGBA Water Image (Transparent Land, North-Up) ---
+  if (runAll || isWaterMode) {
+    console.log(`\n4. Building 32-bit RGBA Pure Water PNG (Transparent Land, North-Up)...`);
     const tStart = performance.now();
     const rowBytes = 1 + W * 4;
     const raw = Buffer.allocUnsafe(rowBytes * H);
 
     for (let iy = 0; iy < H; iy++) {
-      const exportY = H - 1 - iy;
+      const exportY = H - 1 - iy; // North-up flip
       const exportRowOffset = exportY * W;
       let o = iy * rowBytes;
-      raw[o++] = 0; // filter: none
+      raw[o++] = 0; // PNG filter: None
 
       for (let x = 0; x < W; x++) {
         const pIdx = exportRowOffset + x;
         const m = mask[pIdx];
         if (m === 0) {
+          // Land: 100% Transparent
           raw[o++] = 0;
           raw[o++] = 0;
           raw[o++] = 0;
           raw[o++] = 0;
         } else {
+          // Water: Depth colored RGB with solid Alpha 255
           const depthM = depth[pIdx] * 0.1;
           const [r, g, b] = getBathymetryColor(depthM, m);
           raw[o++] = r;
@@ -583,9 +739,12 @@ async function main() {
     }
 
     const png = encodePng({ width: W, height: H, bitDepth: 8, colorType: 6, rawScanlines: raw });
-    const outPath = join(options.outDir, `${outPrefix}-bathymetry.png`);
-    writeFileSync(outPath, png);
-    console.log(`   Wrote ${outPath} (${(png.length / 1024 / 1024).toFixed(2)} MB in ${(performance.now() - tStart).toFixed(0)} ms)`);
+    const outBathymetry = join(options.outDir, `${outPrefix}-bathymetry.png`);
+    const outWater = join(options.outDir, `${outPrefix}.png`);
+    writeFileSync(outBathymetry, png);
+    writeFileSync(outWater, png);
+    console.log(`   Wrote ${outBathymetry} (${(png.length / 1024 / 1024).toFixed(2)} MB in ${(performance.now() - tStart).toFixed(0)} ms)`);
+    console.log(`   Wrote ${outWater}`);
   }
 
   // --- Output 2: 24-bit RGB Bathymetry Dark Mode with Contours (North-Up) ---
@@ -756,11 +915,12 @@ async function main() {
     console.log(`   Wrote ${outPath} (${(png.length / 1024 / 1024).toFixed(2)} MB in ${(performance.now() - tStart).toFixed(0)} ms)`);
   }
 
-  console.log(`\n=== All water image exports complete! ===`);
+  console.log(`\n=== Water export complete! ===`);
 }
 
 main().catch((err) => {
   console.error('Fatal error:', err);
   process.exit(1);
 });
+
 

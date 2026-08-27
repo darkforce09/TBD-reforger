@@ -89,8 +89,9 @@ class TBD_MapExportBridges
 
 		int cells = Math.Ceil(worldSize / cellSize);
 
-		string outJson = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_BridgesExport.json");
-		string outMeta = TBD_MapExportPaths.BuildPath(cfg.m_sDestinationDir, "TBD_BridgesExport_meta.json");
+		string mapName = ctx.GetMapName(cfg);
+		string outJson = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "infrastructure", "bridges_piers.json");
+		string outMeta = TBD_MapExportPaths.BuildCategoryPath(cfg.m_sDestinationDir, mapName, "infrastructure", "bridges_meta.json");
 
 		Print(string.Format("%1 Scanning bridges and piers across %2x%2 grid (%3 m cells)...",
 			TAG, cells, cellSize));
@@ -202,7 +203,7 @@ class TBD_MapExportBridges
 			mj += "  \"method\": \"mod-bridges-piers-export\",\n";
 			mj += "  \"bridgeCount\": " + m_aBridges.Count().ToString() + ",\n";
 			mj += "  \"pierCount\": " + m_aPiers.Count().ToString() + ",\n";
-			mj += "  \"dataFile\": \"TBD_BridgesExport.json\"\n";
+			mj += "  \"dataFile\": \"bridges_piers.json\"\n";
 			mj += "}\n";
 			TBD_MapExportJson.Write(mh, mj, TAG);
 			mh.Close();

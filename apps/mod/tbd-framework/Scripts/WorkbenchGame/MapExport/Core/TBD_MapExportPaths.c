@@ -25,17 +25,73 @@ class TBD_MapExportPaths
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Ensure the destination directory exists before creating files.
-	static void EnsureDestinationDir(string dir)
+	//! Recursively ensure every directory segment in a destination path exists.
+	static void EnsureDirRecursive(string dir)
 	{
 		string normDir = NormalizeDirPath(dir);
 		if (normDir.StartsWith("$profile:"))
 		{
-			string sub = normDir;
-			if (sub.EndsWith("/"))
-				sub = sub.Substring(0, sub.Length() - 1);
-			FileIO.MakeDirectory(sub);
+			string rel = normDir.Substring(9, normDir.Length() - 9); // strip "$profile:"
+			array<string> parts = {};
+			rel.Split("/", parts, false);
+			string current = "$profile:";
+			for (int i = 0; i < parts.Count(); i++)
+			{
+				string p = parts[i];
+				if (p.IsEmpty())
+					continue;
+				if (current != "$profile:")
+					current += "/";
+				current += p;
+				FileIO.MakeDirectory(current);
+			}
 		}
+		else
+		{
+			array<string> nonProfileParts = {};
+			normDir.Split("/", nonProfileParts, false);
+			string curPath = "";
+			for (int j = 0; j < nonProfileParts.Count(); j++)
+			{
+				string np = nonProfileParts[j];
+				if (np.IsEmpty())
+				{
+					if (j == 0) curPath = "/";
+					continue;
+				}
+				if (!curPath.IsEmpty() && !curPath.EndsWith("/"))
+					curPath += "/";
+				curPath += np;
+				FileIO.MakeDirectory(curPath);
+			}
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Ensure the destination directory exists before creating files.
+	static void EnsureDestinationDir(string dir)
+	{
+		EnsureDirRecursive(dir);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Build canonical directory path for a map domain category (e.g. $profile:TBD_Export/everon/water/).
+	static string GetCategoryDir(string baseDir, string mapName, string category = "")
+	{
+		string normBase = NormalizeDirPath(baseDir);
+		string cleanMap = mapName;
+		cleanMap.ToLower();
+		cleanMap.Trim();
+		if (cleanMap.IsEmpty())
+			cleanMap = "default";
+
+		string cleanCat = category;
+		cleanCat.ToLower();
+		cleanCat.Trim();
+		if (cleanCat.IsEmpty())
+			return normBase + cleanMap + "/";
+
+		return normBase + cleanMap + "/" + cleanCat + "/";
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -48,9 +104,19 @@ class TBD_MapExportPaths
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Resolve a filename against a scoped map category directory (e.g. $profile:TBD_Export/everon/water/rivers.json).
+	static string BuildCategoryPath(string baseDir, string mapName, string category, string filename)
+	{
+		string catDir = GetCategoryDir(baseDir, mapName, category);
+		EnsureDirRecursive(catDir);
+		return catDir + filename;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! Resolve a destination file to a native Windows OS path (needed for MapDataExporter / MakeScreenshot).
 	static string ResolveNativeOsPath(string dir, string filename)
 	{
+		EnsureDirRecursive(dir);
 		string normDir = NormalizeDirPath(dir);
 		if (normDir.StartsWith("$profile:"))
 		{
