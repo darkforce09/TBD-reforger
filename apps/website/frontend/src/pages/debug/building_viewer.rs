@@ -35,7 +35,7 @@
 #![allow(dead_code)] // native build: the wasm host wires the live path; tests pin the pure core.
 
 use leptos::prelude::*;
-use map_engine_core::building_blueprint::{BuildingBlueprint, LosResult};
+use map_engine_core::building_blueprint::{BuildingBlueprint, LosHitKind, LosResult};
 
 /// Default blueprint when no `?prefab=` override is present — the FarmHouse golden.
 const DEFAULT_PREFAB_PATH: &str = "/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01.json";
@@ -541,7 +541,7 @@ pub mod geom {
             spans.push((t_prev, h.t, color));
             t_prev = h.t;
             color = match h.kind {
-                LosHitKind::Wall => RAY_BLOCKED,
+                LosHitKind::Wall | LosHitKind::Roof => RAY_BLOCKED,
                 LosHitKind::Window => RAY_GLASS,
                 LosHitKind::Furniture if h.concealment >= 1.0 => RAY_BLOCKED,
                 LosHitKind::Furniture => RAY_COVER,
@@ -565,7 +565,7 @@ pub mod geom {
                 continue;
             }
             let col = match h.kind {
-                LosHitKind::Wall => RAY_BLOCKED,
+                LosHitKind::Wall | LosHitKind::Roof => RAY_BLOCKED,
                 LosHitKind::Window => RAY_GLASS,
                 LosHitKind::DoorOpen => RAY_CLEAR,
                 LosHitKind::Furniture => RAY_COVER,
@@ -779,6 +779,20 @@ pub mod geom {
                 .map(|c| [c[2], c[3], c[4], c[5]])
                 .collect();
             assert!(colors.contains(&RAY_BLOCKED));
+            // roof crossing → red span + red dot, same as a wall block.
+            let (packed, _) = build_ray_lane(
+                [0.0, 1.4, -8.0],
+                [0.0, 1.4, -1.0],
+                &[hit(0.5, LosHitKind::Roof, 1.0)],
+                false,
+                GROUND_BAND,
+                false,
+            );
+            let colors: Vec<[f32; 4]> = packed
+                .chunks_exact(6)
+                .map(|c| [c[2], c[3], c[4], c[5]])
+                .collect();
+            assert!(colors.contains(&RAY_BLOCKED));
         }
 
         #[test]
@@ -974,6 +988,7 @@ pub fn BuildingViewerPage() -> impl IntoView {
                     {(!windows.is_empty()).then(|| view! { <div>"through glass: "<span class="text-cyan-300">{windows.clone()}</span></div> })}
                     {(!doors.is_empty()).then(|| view! { <div>"through door: "<span class="text-emerald-300">{doors.clone()}</span></div> })}
                     {r.blocked_by_wall_id.clone().map(|w| view! { <div>"blocked by "<span class="text-red-300">{w}</span></div> })}
+                    {r.hits.last().filter(|h| h.kind == LosHitKind::Roof).map(|h| view! { <div>"blocked by "<span class="text-red-300">{format!("roof @ {:.1} m", h.pos[1])}</span></div> })}
                     {r.cover_furniture_id.clone().map(|f| view! { <div>"cover: "<span class="text-yellow-300">{f}</span></div> })}
                 </div>
             }

@@ -249,12 +249,13 @@ mod tests {
         }
         assert_eq!(total, 1_216_109);
 
-        // 888 road segments · 36 forest regions.
+        // 887 road segments (roads.json.gz refreshed from the latest roads export at 9ae81694c;
+        // was 888) · 36 forest regions.
         assert_eq!(
             store
                 .load_roads_gz(&read(&objects.join("roads.json.gz")))
                 .unwrap(),
-            888
+            887
         );
         assert_eq!(
             store

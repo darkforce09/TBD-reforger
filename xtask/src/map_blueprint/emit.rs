@@ -133,6 +133,7 @@ pub fn assemble(
             },
             footprint_sq_m: (plate_cells as f64 * m.cell * m.cell * 100.0).round() / 100.0,
         },
+        roof: None,
         levels,
     }
 }
