@@ -1,7 +1,7 @@
 # T-181.1 — headless Enfusion compile gate. The "HEMTT for Reforger".
 #
-# Compiles tbd-framework's Game scripts using the NATIVE Linux dedicated server
-# (ArmaReforgerServer) — no Workbench, no Proton, no GPU, no Steam client, no clicking.
+# Compiles the Game scripts of tbd-framework AND tbd-export using the NATIVE Linux dedicated
+# server (ArmaReforgerServer) — no Workbench, no Proton, no GPU, no Steam client, no clicking.
 # Measured: the compile itself takes ~0.78 s and the whole gate ~1.3 s, versus a 90–120 s
 # Workbench restart that also needs a human to click "Open".
 #
@@ -41,3 +41,7 @@
 #     see the success marker.
 #   * `int x = ;` compiles CLEAN — Enfusion is lenient. Undefined functions/types are what
 #     actually error. That is why --selftest uses an undefined symbol, not bad punctuation.
+#   * The server compiles ONLY the Game module (probed 2026-08-28): Scripts/WorkbenchGame is
+#     never read headless — not even lexed. Workbench rejects non-ASCII punctuation in those
+#     files at load, so the gate runs its own pure-ASCII byte scan over tbd-export/Scripts
+#     (exit 1 on hit). Symbol errors in WorkbenchGame still surface only inside Workbench.

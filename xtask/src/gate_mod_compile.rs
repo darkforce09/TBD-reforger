@@ -190,6 +190,15 @@ pub fn preflight_with_root(root: &Path) -> u8 {
         );
         fail = 1;
     }
+    let rdb_export = root.join("apps/mod/tbd-export/resourceDatabase.rdb");
+    let rdb_export_ok =
+        rdb_export.is_file() && rdb_export.metadata().map(|m| m.len() > 0).unwrap_or(false);
+    if !rdb_export_ok {
+        eprintln!(
+            "::error title=mod-gates checkout incomplete::apps/mod/tbd-export/resourceDatabase.rdb missing or empty. Without it the engine skips the loose addon and compiles none of the mod."
+        );
+        fail = 1;
+    }
     fail
 }
 
@@ -220,6 +229,15 @@ pub fn run_with_root(root: &Path, opts: &Opts) -> u8 {
     if !mod_src.join("addon.gproj").is_file() {
         return env_fail(
             &format!("no addon.gproj at {}", mod_src.display()),
+            Some(
+                "The checkout does not look like this repo — verify the working tree before blaming the mod.",
+            ),
+        );
+    }
+    let export_src = root.join("apps/mod/tbd-export");
+    if !export_src.join("addon.gproj").is_file() {
+        return env_fail(
+            &format!("no addon.gproj at {}", export_src.display()),
             Some(
                 "The checkout does not look like this repo — verify the working tree before blaming the mod.",
             ),
@@ -271,8 +289,11 @@ fn compile_inner(
     let link = run_dir.join("addons/tbd-framework");
     let _ = fs::remove_file(&link);
     std::os::unix::fs::symlink(mod_src, &link)?;
+    let export_link = run_dir.join("addons/tbd-export");
+    let _ = fs::remove_file(&export_link);
+    std::os::unix::fs::symlink(root.join("apps/mod/tbd-export"), &export_link)?;
 
-    let mut addons = String::from("TBD_Framework");
+    let mut addons = String::from("TBD_Framework,TBD_Export");
 
     if opts.selftest {
         let st = run_dir.join("addons/tbd-selftest");
@@ -309,7 +330,7 @@ fn compile_inner(
         }
     }
 
-    println!("==> compiling tbd-framework (native headless server, no Workbench)");
+    println!("==> compiling tbd-framework + tbd-export (native headless server, no Workbench)");
 
     let log = OpenOptions::new()
         .create(true)
@@ -388,6 +409,22 @@ fn compile_inner(
         return Ok(code);
     }
 
+    let ascii_bad = ascii_check_export(&root.join("apps/mod/tbd-export"))?;
+    if !ascii_bad.is_empty() {
+        println!();
+        println!("FAIL: non-ASCII bytes in tbd-export scripts (first offending byte per file)");
+        println!("------------------------------------------------------------");
+        for l in &ascii_bad {
+            println!("{l}");
+        }
+        println!("------------------------------------------------------------");
+        println!("Workbench's lexer rejects these, and the headless server never reads the");
+        println!(
+            "WorkbenchGame module — this scan is the only pre-restart guard. Transliterate to ASCII."
+        );
+        return Ok(1);
+    }
+
     let files = last_re(
         &console,
         r"Module: Game; loaded [0-9]*x files; [0-9]*x classes",
@@ -403,6 +440,39 @@ fn compile_inner(
     }
     println!("    {warn} warning(s) in TBD sources");
     Ok(0)
+}
+
+/// The dedicated server compiles only the Game module: `Scripts/WorkbenchGame` sources are never
+/// read headless — a planted `Undefined function` there sails through (probed 2026-08-28), and
+/// their Workbench API symbols do not exist server-side, so no flag can compile them here.
+/// Workbench itself DOES lex them and hard-rejects non-ASCII punctuation, which makes this byte
+/// scan the only pre-restart guard for that module. Runs after the engine verdict so
+/// `compile-selftest`'s exit-1 still means a real Enfusion rejection. tbd-export is kept pure
+/// ASCII; tbd-framework predates the rule (non-ASCII comments, engine-green) and is exempt.
+fn ascii_check_export(export_src: &Path) -> io::Result<Vec<String>> {
+    let mut bad = Vec::new();
+    let mut stack = vec![export_src.join("Scripts")];
+    while let Some(dir) = stack.pop() {
+        for e in fs::read_dir(&dir)? {
+            let p = e?.path();
+            if p.is_dir() {
+                stack.push(p);
+            } else if p.extension().and_then(|x| x.to_str()) == Some("c") {
+                let bytes = fs::read(&p)?;
+                let mut line = 1usize;
+                for &b in &bytes {
+                    if b == b'\n' {
+                        line += 1;
+                    } else if b > 0x7F {
+                        bad.push(format!("{}:{line}: non-ASCII byte 0x{b:02X}", p.display()));
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    bad.sort();
+    Ok(bad)
 }
 
 fn report_compile_errors(mod_src: &Path, run_dir: &Path, errlog: &Path) -> io::Result<u8> {
@@ -423,6 +493,7 @@ fn report_compile_errors(mod_src: &Path, run_dir: &Path, errlog: &Path) -> io::R
     for line in &all {
         let p = line.split(':').next().unwrap_or("");
         if mod_src.join(p).exists()
+            || run_dir.join("addons/tbd-export").join(p).exists()
             || run_dir.join("addons/tbd-selftest").join(p).exists()
             || run_dir.join("addons/tbd-probe").join(p).exists()
         {
@@ -678,6 +749,10 @@ mod tests {
         let home = root.join("home");
         fake_server(&home);
         fs::write(root.join("apps/mod/tbd-framework/addon.gproj"), "x\n").unwrap();
+        // tbd-export is gate-checked since the voxel-dump split — the fixture must satisfy the
+        // env preconditions so the probe-arg check (the thing under test) is what fires.
+        fs::create_dir_all(root.join("apps/mod/tbd-export")).unwrap();
+        fs::write(root.join("apps/mod/tbd-export/addon.gproj"), "x\n").unwrap();
         let opts = Opts {
             probe_dir: Some(PathBuf::from("/tmp/t853/compile/no-such-probe-dir-ut")),
             ..Default::default()

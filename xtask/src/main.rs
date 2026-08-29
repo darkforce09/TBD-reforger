@@ -61,6 +61,9 @@ mod gate_ui_layouts_awk;
 mod golden_gate;
 mod hostrun;
 mod label_gates;
+mod map_blueprint;
+mod map_ingest_blueprints;
+mod map_parity_report;
 mod mcp;
 mod mcp_daemon;
 mod metrics;
@@ -466,6 +469,28 @@ enum MapCmd {
     /// Args mirror `export-terrain.sh` (unknown tokens → rc=1; missing raw → rc=2).
     #[command(name = "export-terrain", disable_help_flag = true)]
     ExportTerrain {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Building-blueprint ingest: profile TBD_Export → packages/map-assets, serde-validated
+    /// against the BuildingBlueprint contract ([--src <dir>] [--filter <substr>]).
+    #[command(name = "ingest-blueprints")]
+    IngestBlueprints {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Replay the Workbench parity oracle through `evaluate_los` and report agreement
+    /// (--pairs <parity.json> --blueprint <blueprint.json>).
+    #[command(name = "parity-report")]
+    ParityReport {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Interpret raw Workbench voxel dumps (action "dump") into BuildingBlueprint JSON —
+    /// all extraction heuristics run offline here ([--filter <substr>] [--algo segments|grid]
+    /// [--src <dir>] [--out <dir>] [--params <file.json>] [--debug-dir <dir>]).
+    #[command(name = "blueprint-from-voxels")]
+    BlueprintFromVoxels {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
@@ -1117,6 +1142,9 @@ fn run() -> Result<u8> {
         },
         TopCmd::Map { cmd } => match cmd {
             MapCmd::ExportTerrain { args } => gate_export_terrain::run(&args),
+            MapCmd::IngestBlueprints { args } => map_ingest_blueprints::run(&args),
+            MapCmd::ParityReport { args } => map_parity_report::run(&args),
+            MapCmd::BlueprintFromVoxels { args } => map_blueprint::run(&args),
         },
         TopCmd::Verify { cmd } => {
             let code = match cmd {

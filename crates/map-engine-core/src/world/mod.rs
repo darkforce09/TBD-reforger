@@ -24,6 +24,11 @@ mod road_labels;
 mod roads;
 mod store;
 
+pub use crate::building_blueprint::{
+    BBox2D, BuildingBlueprint, BuildingDoor, BuildingFurniture, BuildingLevel, BuildingStairs,
+    BuildingWall, BuildingWindow, LosHit, LosHitKind, LosResult, OverallFootprint, VerticalProfile,
+    dist_2d, line_segment_intersection_2d, segment_intersects_aabb_2d,
+};
 pub use airfield::{
     AIRFIELD_BBOX_MARGIN_M, APRON_AREA_MIN_M2, APRON_ELEV_TOLERANCE_M, APRON_FILL_RGBA,
     APRON_FLATNESS_SIGMA_M, RUNWAY_POLISH_WIDTH_M, apron_qualifying_area_m2,

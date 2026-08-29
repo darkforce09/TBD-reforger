@@ -16,6 +16,10 @@
 
 mod js;
 
+/// Building architectural blueprints + 2.5D line-of-sight (standalone feature so the SPA links it
+/// without the `world` parser stack; `world` re-exports it for backend callers).
+#[cfg(feature = "blueprint")]
+pub mod building_blueprint;
 pub mod camera;
 pub mod dem;
 #[cfg(feature = "doc")]

@@ -842,6 +842,11 @@ const FOSSIL_ALLOWLIST: &[(&str, &str)] = &[
          agent-editable from a platform slice",
     ),
     (
+        "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionValidator.c",
+        "same T-181-era lane note, carried verbatim into the tbd-export addon copy (T-090.6 \
+         landing); workbench-gated like its tbd-framework twin",
+    ),
+    (
         "apps/website/api/migrations/0011_events_server_modpack.sql",
         "committed migrations are checksum-frozen (db_migrate persist audits them); editing one \
          to reword a comment is the a843905f incident",

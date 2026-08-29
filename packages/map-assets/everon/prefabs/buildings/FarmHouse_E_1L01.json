@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": "FarmHouse_E_1L01",
+  "resourceName": "{CD370ECB385DE67A}Prefabs/Structures/Houses/Farm/FarmHouse_E_1L01/FarmHouse_E_1L01.et",
+  "modelMesh": "{64ED080B5D3952D1}Assets/Structures/Houses/Farm/FarmHouse_E_1L01/FarmHouse_E_1L01.xob",
+  "label": "Eastern Wooden Farmhouse (L-Shape)",
+  "kind": "building",
+  "category": "residential",
+  "destructible": true,
+  "verticalProfile": {
+    "pivotElevationOffsetM": 0,
+    "foundationSkirtDepthM": 4.50401,
+    "totalHeightM": 7.8,
+    "eaveHeightM": 2.8,
+    "ridgeHeightM": 6.8,
+    "chimneyHeightM": 7.8,
+    "roofType": "gable_with_dormers"
+  },
+  "overallFootprint": {
+    "polygon2D": [
+      [-6.5, -4.5],
+      [6.5, -4.5],
+      [6.5, 1.5],
+      [1.5, 1.5],
+      [1.5, 5.5],
+      [-6.5, 5.5]
+    ],
+    "boundingBox2D": {
+      "min": [-10.3152, -9.53446],
+      "max": [5.86759, 11.6766],
+      "widthM": 16.1828,
+      "depthM": 21.211
+    },
+    "footprintSqM": 95
+  },
+  "levels": [
+    {
+      "levelIndex": 0,
+      "name": "Ground Floor",
+      "elevationRange": [0, 2.8],
+      "sliceHeightM": 1.2,
+      "footprintPolygon": [
+        [-6.5, -4.5],
+        [6.5, -4.5],
+        [6.5, 1.5],
+        [1.5, 1.5],
+        [1.5, 5.5],
+        [-6.5, 5.5]
+      ],
+      "walls": [
+        {"id":"w_ext_south","start":[-6.5,-4.5],"end":[6.5,-4.5],"thickness":0.28,"isExterior":true,"material":"wood_log"},
+        {"id":"w_ext_east","start":[6.5,-4.5],"end":[6.5,1.5],"thickness":0.28,"isExterior":true,"material":"wood_log"},
+        {"id":"w_ext_north1","start":[6.5,1.5],"end":[1.5,1.5],"thickness":0.28,"isExterior":true,"material":"wood_log"},
+        {"id":"w_ext_east_wing","start":[1.5,1.5],"end":[1.5,5.5],"thickness":0.28,"isExterior":true,"material":"wood_log"},
+        {"id":"w_ext_north2","start":[1.5,5.5],"end":[-6.5,5.5],"thickness":0.28,"isExterior":true,"material":"wood_log"},
+        {"id":"w_ext_west","start":[-6.5,5.5],"end":[-6.5,-4.5],"thickness":0.28,"isExterior":true,"material":"wood_log"},
+        {"id":"w_int_divider","start":[-1,-4.5],"end":[-1,1.5],"thickness":0.15,"isExterior":false,"material":"plaster_timber"}
+      ],
+      "doors": [
+        {"id":"door_front_entrance","prefabResource":"{...}Door_Wood_01.et","wallId":"w_ext_south","pos2D":[0,-4.5],"widthM":0.95,"heightM":2.1,"hingeSide":"left","swingDirection":"inward","isExterior":true,"hasGlass":true,"defaultState":"closed"},
+        {"id":"door_int_living","prefabResource":"{...}Door_Wood_01.et","wallId":"w_int_divider","pos2D":[-1,-1.5],"widthM":0.85,"heightM":2,"hingeSide":"right","swingDirection":"inward","isExterior":false,"hasGlass":false,"defaultState":"open"}
+      ],
+      "windows": [
+        {"id":"win_gf_front_left","prefabResource":"{...}Window_Wood_01.et","wallId":"w_ext_south","pos2D":[-3.8,-4.5],"widthM":0.95,"sillHeightM":0.85,"windowHeightM":1.25,"normal":[0,-1],"fovDeg":140,"hasGlass":true,"glassPaneCount":4},
+        {"id":"win_gf_front_right","prefabResource":"{...}Window_Wood_01.et","wallId":"w_ext_south","pos2D":[3.5,-4.5],"widthM":0.95,"sillHeightM":0.85,"windowHeightM":1.25,"normal":[0,-1],"fovDeg":140,"hasGlass":true,"glassPaneCount":4},
+        {"id":"win_gf_west","prefabResource":"{...}Window_Wood_01.et","wallId":"w_ext_west","pos2D":[-6.5,0.5],"widthM":0.95,"sillHeightM":0.85,"windowHeightM":1.25,"normal":[-1,0],"fovDeg":140,"hasGlass":true,"glassPaneCount":4}
+      ],
+      "stairs": [
+        {"id":"stairs_main","bounds":[[0.2,-0.5],[1.2,2]],"connectsToLevel":1,"directionDeg":0,"stepCount":14,"transparentSteps":true,"losConcealment":0.35}
+      ],
+      "furniture": [
+      ]
+    },
+    {
+      "levelIndex": 1,
+      "name": "Second Floor / Attic",
+      "elevationRange": [2.8, 5.6],
+      "sliceHeightM": 3.8,
+      "footprintPolygon": [
+        [-6.5, -4.5],
+        [6.5, -4.5],
+        [6.5, 1.5],
+        [-6.5, 1.5]
+      ],
+      "walls": [
+        {"id":"w_f1_south","start":[-6.5,-4.5],"end":[6.5,-4.5],"thickness":0.25,"isExterior":true,"material":"wood_siding"},
+        {"id":"w_f1_east","start":[6.5,-4.5],"end":[6.5,1.5],"thickness":0.25,"isExterior":true,"material":"wood_siding"},
+        {"id":"w_f1_north","start":[6.5,1.5],"end":[-6.5,1.5],"thickness":0.25,"isExterior":true,"material":"wood_siding"},
+        {"id":"w_f1_west","start":[-6.5,1.5],"end":[-6.5,-4.5],"thickness":0.25,"isExterior":true,"material":"wood_siding"}
+      ],
+      "doors": [
+      ],
+      "windows": [
+        {"id":"win_f1_dormer_south","prefabResource":"{...}Window_Dormer_01.et","wallId":"w_f1_south","pos2D":[0,-4.5],"widthM":0.85,"sillHeightM":0.65,"windowHeightM":1.1,"normal":[0,-1],"fovDeg":130,"hasGlass":true,"glassPaneCount":2},
+        {"id":"win_f1_gable_east","prefabResource":"{...}Window_Gable_01.et","wallId":"w_f1_east","pos2D":[6.5,-1.5],"widthM":0.85,"sillHeightM":0.7,"windowHeightM":1.1,"normal":[1,0],"fovDeg":130,"hasGlass":true,"glassPaneCount":2}
+      ],
+      "stairs": [
+      ],
+      "furniture": [
+      ]
+    }
+  ]
+}

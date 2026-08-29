@@ -1,0 +1,419 @@
+//! Synthetic dump generators for the test suite: analytic buildings marched exactly like the
+//! Enfusion dumper (entry face per solid front, both directions, normalized coordinates), so the
+//! pipeline is exercised end-to-end without a Workbench in the room.
+
+use super::types::{DumpMeta, ExcludedCounts, VoxelDump};
+
+const CELL: f64 = 0.1;
+const PAD: f64 = 0.6;
+
+/// Analytic solid in LOCAL coordinates (pre-pad).
+enum Solid {
+    Box3 {
+        min: [f64; 3],
+        max: [f64; 3],
+    },
+    /// Vertical wall slab at x ∈ [x0,x1] whose top follows the gable profile
+    /// h(z) = ridge - |z - zc| * slope, from y0 up.
+    GableWall {
+        x0: f64,
+        x1: f64,
+        y0: f64,
+        zc: f64,
+        ridge: f64,
+        slope: f64,
+        z0: f64,
+        z1: f64,
+    },
+    /// Sloped roof plane pair (both pitches), vertical thickness `thick`, over z ∈ [z0,z1].
+    RoofPlane {
+        x0: f64,
+        x1: f64,
+        zc: f64,
+        ridge: f64,
+        slope: f64,
+        thick: f64,
+        z0: f64,
+        z1: f64,
+    },
+}
+
+impl Solid {
+    fn gable_h(zc: f64, ridge: f64, slope: f64, z: f64) -> f64 {
+        ridge - (z - zc).abs() * slope
+    }
+
+    /// Solid intervals crossed by an axis line. `axis`: 0=x line at (fy=a, fz=b),
+    /// 1=y line at (fx=a, fz=b), 2=z line at (fx=a, fy=b).
+    fn intervals(&self, axis: usize, a: f64, b: f64) -> Vec<(f64, f64)> {
+        match *self {
+            Solid::Box3 { min, max } => {
+                let (lo, hi, in1, in2) = match axis {
+                    0 => (min[0], max[0], (a, min[1], max[1]), (b, min[2], max[2])),
+                    1 => (min[1], max[1], (a, min[0], max[0]), (b, min[2], max[2])),
+                    _ => (min[2], max[2], (a, min[0], max[0]), (b, min[1], max[1])),
+                };
+                let inside = |v: (f64, f64, f64)| v.0 >= v.1 && v.0 < v.2;
+                if inside(in1) && inside(in2) {
+                    vec![(lo, hi)]
+                } else {
+                    vec![]
+                }
+            }
+            Solid::GableWall {
+                x0,
+                x1,
+                y0,
+                zc,
+                ridge,
+                slope,
+                z0,
+                z1,
+            } => match axis {
+                0 => {
+                    let (fy, fz) = (a, b);
+                    let h = Self::gable_h(zc, ridge, slope, fz);
+                    if fz >= z0 && fz < z1 && fy >= y0 && fy < h {
+                        vec![(x0, x1)]
+                    } else {
+                        vec![]
+                    }
+                }
+                1 => {
+                    let (fx, fz) = (a, b);
+                    let h = Self::gable_h(zc, ridge, slope, fz);
+                    if fx >= x0 && fx < x1 && fz >= z0 && fz < z1 && h > y0 {
+                        vec![(y0, h)]
+                    } else {
+                        vec![]
+                    }
+                }
+                _ => {
+                    let (fx, fy) = (a, b);
+                    if fx < x0 || fx >= x1 || fy < y0 || fy >= ridge {
+                        return vec![];
+                    }
+                    let o = (ridge - fy) / slope;
+                    vec![((zc - o).max(z0), (zc + o).min(z1))]
+                }
+            },
+            Solid::RoofPlane {
+                x0,
+                x1,
+                zc,
+                ridge,
+                slope,
+                thick,
+                z0,
+                z1,
+            } => match axis {
+                0 => {
+                    let (fy, fz) = (a, b);
+                    let h = Self::gable_h(zc, ridge, slope, fz);
+                    if fz >= z0 && fz < z1 && fy >= h - thick && fy < h {
+                        vec![(x0, x1)]
+                    } else {
+                        vec![]
+                    }
+                }
+                1 => {
+                    let (fx, fz) = (a, b);
+                    let h = Self::gable_h(zc, ridge, slope, fz);
+                    if fx >= x0 && fx < x1 && fz >= z0 && fz < z1 {
+                        vec![(h - thick, h)]
+                    } else {
+                        vec![]
+                    }
+                }
+                _ => {
+                    let (fx, fy) = (a, b);
+                    if fx < x0 || fx >= x1 || fy >= ridge {
+                        return vec![];
+                    }
+                    // h(z) ∈ [fy, fy + thick] on both pitches.
+                    let (o1, o2) = ((ridge - fy - thick) / slope, (ridge - fy) / slope);
+                    let (o1, o2) = (o1.max(0.0), o2.max(0.0));
+                    let mut out = Vec::new();
+                    let left = ((zc - o2).max(z0), (zc - o1).min(z1));
+                    let right = ((zc + o1).max(z0), (zc + o2).min(z1));
+                    if left.1 > left.0 {
+                        out.push(left);
+                    }
+                    if right.1 > right.0 && (out.is_empty() || right.0 > out[0].1) {
+                        out.push(right);
+                    }
+                    out
+                }
+            },
+        }
+    }
+}
+
+fn merged_intervals(solids: &[Solid], axis: usize, a: f64, b: f64) -> Vec<(f64, f64)> {
+    let mut ivs: Vec<(f64, f64)> = solids
+        .iter()
+        .flat_map(|s| s.intervals(axis, a, b))
+        .collect();
+    ivs.sort_by(|x, y| x.0.total_cmp(&y.0));
+    let mut out: Vec<(f64, f64)> = Vec::new();
+    for iv in ivs {
+        match out.last_mut() {
+            Some(last) if iv.0 <= last.1 + 0.02 => last.1 = last.1.max(iv.1),
+            _ => out.push(iv),
+        }
+    }
+    out
+}
+
+/// March all six directions over the solids, local frame; normalize by origin = bounds - PAD.
+fn generate(solids: Vec<Solid>, bbox_min: [f64; 3], bbox_max: [f64; 3]) -> VoxelDump {
+    let origin = [bbox_min[0] - PAD, bbox_min[1] - PAD, bbox_min[2] - PAD];
+    let span = [
+        bbox_max[0] - bbox_min[0] + 2.0 * PAD,
+        bbox_max[1] - bbox_min[1] + PAD + 1.2, // mirror the scanner's +1.2 top pad
+        bbox_max[2] - bbox_min[2] + 2.0 * PAD,
+    ];
+    let dims = [
+        (span[0] / CELL).ceil() as usize,
+        (span[1] / CELL).ceil() as usize,
+        (span[2] / CELL).ceil() as usize,
+    ];
+    let r2 = |v: f64| (v * 100.0).round() / 100.0;
+
+    let mut dump = VoxelDump {
+        meta: Some(DumpMeta {
+            v: super::types::DUMP_VERSION.to_string(),
+            slug: "synth".into(),
+            resource: "synth://".into(),
+            origin,
+            cell: CELL,
+            dims,
+            span,
+            bbox_min,
+            bbox_max,
+            root_yaw_deg: 0.0,
+            excluded: ExcludedCounts {
+                doors: 0,
+                glass: 0,
+                furniture: 0,
+            },
+            tick: 0,
+        }),
+        ..VoxelDump::default()
+    };
+
+    // x lines over (iy, iz); y lines over (ix, iz); z lines over (ix, iy).
+    for iy in 0..dims[1] {
+        let fy = origin[1] + (iy as f64 + 0.5) * CELL;
+        for iz in 0..dims[2] {
+            let fz = origin[2] + (iz as f64 + 0.5) * CELL;
+            let ivs = merged_intervals(&solids, 0, fy, fz);
+            if ivs.is_empty() {
+                continue;
+            }
+            let fwd: Vec<f64> = ivs.iter().map(|iv| r2(iv.0 - origin[0])).collect();
+            let mut bwd: Vec<f64> = ivs.iter().map(|iv| r2(iv.1 - origin[0])).collect();
+            bwd.reverse();
+            dump.x_pos.insert((iy, iz), fwd);
+            dump.x_neg.insert((iy, iz), bwd);
+        }
+    }
+    for ix in 0..dims[0] {
+        let fx = origin[0] + (ix as f64 + 0.5) * CELL;
+        for iz in 0..dims[2] {
+            let fz = origin[2] + (iz as f64 + 0.5) * CELL;
+            let ivs = merged_intervals(&solids, 1, fx, fz);
+            if ivs.is_empty() {
+                continue;
+            }
+            let up: Vec<f64> = ivs.iter().map(|iv| r2(iv.0 - origin[1])).collect();
+            let mut down: Vec<f64> = ivs.iter().map(|iv| r2(iv.1 - origin[1])).collect();
+            down.reverse();
+            dump.y_up.insert((ix, iz), up);
+            dump.y_down.insert((ix, iz), down);
+        }
+    }
+    for ix in 0..dims[0] {
+        let fx = origin[0] + (ix as f64 + 0.5) * CELL;
+        for iy in 0..dims[1] {
+            let fy = origin[1] + (iy as f64 + 0.5) * CELL;
+            let ivs = merged_intervals(&solids, 2, fx, fy);
+            if ivs.is_empty() {
+                continue;
+            }
+            let fwd: Vec<f64> = ivs.iter().map(|iv| r2(iv.0 - origin[2])).collect();
+            let mut bwd: Vec<f64> = ivs.iter().map(|iv| r2(iv.1 - origin[2])).collect();
+            bwd.reverse();
+            dump.z_pos.insert((ix, iy), fwd);
+            dump.z_neg.insert((ix, iy), bwd);
+        }
+    }
+    dump
+}
+
+fn shell(w: f64, d: f64, h: f64, t: f64) -> Vec<Solid> {
+    vec![
+        Solid::Box3 {
+            min: [0.0, -0.12, 0.0],
+            max: [w, 0.0, d],
+        }, // floor plate
+        Solid::Box3 {
+            min: [0.0, h, 0.0],
+            max: [w, h + 0.12, d],
+        }, // flat roof
+        Solid::Box3 {
+            min: [0.0, 0.0, 0.0],
+            max: [t, h, d],
+        }, // west
+        Solid::Box3 {
+            min: [w - t, 0.0, 0.0],
+            max: [w, h, d],
+        }, // east
+        Solid::Box3 {
+            min: [t, 0.0, 0.0],
+            max: [w - t, h, t],
+        }, // south
+        Solid::Box3 {
+            min: [t, 0.0, d - t],
+            max: [w - t, h, d],
+        }, // north
+    ]
+}
+
+pub fn box_room(w: f64, d: f64, h: f64, t: f64) -> VoxelDump {
+    generate(shell(w, d, h, t), [0.0, -0.12, 0.0], [w, h + 0.12, d])
+}
+
+/// Box room with a doorway (width `door_w`, lintel at `door_h`) cut into the south wall.
+pub fn box_with_door(w: f64, d: f64, h: f64, t: f64, door_x: f64, door_w: f64) -> VoxelDump {
+    let door_h = 2.0;
+    let mut solids = vec![
+        Solid::Box3 {
+            min: [0.0, -0.12, 0.0],
+            max: [w, 0.0, d],
+        },
+        Solid::Box3 {
+            min: [0.0, h, 0.0],
+            max: [w, h + 0.12, d],
+        },
+        Solid::Box3 {
+            min: [0.0, 0.0, 0.0],
+            max: [t, h, d],
+        },
+        Solid::Box3 {
+            min: [w - t, 0.0, 0.0],
+            max: [w, h, d],
+        },
+        Solid::Box3 {
+            min: [t, 0.0, d - t],
+            max: [w - t, h, d],
+        },
+    ];
+    solids.push(Solid::Box3 {
+        min: [t, 0.0, 0.0],
+        max: [door_x, h, t],
+    });
+    solids.push(Solid::Box3 {
+        min: [door_x + door_w, 0.0, 0.0],
+        max: [w - t, h, t],
+    });
+    solids.push(Solid::Box3 {
+        min: [door_x, door_h, 0.0],
+        max: [door_x + door_w, h, t],
+    });
+    generate(solids, [0.0, -0.12, 0.0], [w, h + 0.12, d])
+}
+
+/// One-story box with a gable roof: ridge along x at z = d/2, gable-end triangles on the west
+/// and east walls, sloped planes elsewhere.
+pub fn gable_box(w: f64, d: f64, eave: f64, ridge: f64, t: f64) -> VoxelDump {
+    let zc = d / 2.0;
+    let slope = (ridge - eave) / zc;
+    let solids = vec![
+        Solid::Box3 {
+            min: [0.0, -0.12, 0.0],
+            max: [w, 0.0, d],
+        },
+        Solid::Box3 {
+            min: [0.0, 0.0, 0.0],
+            max: [t, eave, d],
+        },
+        Solid::Box3 {
+            min: [w - t, 0.0, 0.0],
+            max: [w, eave, d],
+        },
+        Solid::Box3 {
+            min: [t, 0.0, 0.0],
+            max: [w - t, eave, t],
+        },
+        Solid::Box3 {
+            min: [t, 0.0, d - t],
+            max: [w - t, eave, d],
+        },
+        Solid::GableWall {
+            x0: 0.0,
+            x1: t,
+            y0: eave,
+            zc,
+            ridge,
+            slope,
+            z0: 0.0,
+            z1: d,
+        },
+        Solid::GableWall {
+            x0: w - t,
+            x1: w,
+            y0: eave,
+            zc,
+            ridge,
+            slope,
+            z0: 0.0,
+            z1: d,
+        },
+        Solid::RoofPlane {
+            x0: 0.0,
+            x1: w,
+            zc,
+            ridge,
+            slope,
+            thick: 0.15,
+            z0: 0.0,
+            z1: d,
+        },
+    ];
+    generate(solids, [0.0, -0.12, 0.0], [w, ridge + 0.1, d])
+}
+
+/// The grid-vs-segments regression scenario: a two-story box (walls to the flat roof at 5.4 m,
+/// second slab at 2.6 m) plus an injected steep roof graze in the second band — a thin solid
+/// whose center drifts 0.015 m per 0.1 m slice. Over the 0.35 m between the live pipeline's two
+/// probe heights that is ~0.05 m (same 0.1 m cell → survives the AND); over the segments
+/// algorithm's ~1.5 m slice window it is ~0.22 m of drift (killed by the 0.08 m stationarity cap).
+pub fn steep_graze() -> VoxelDump {
+    let (w, d, h, t) = (6.0, 4.0, 5.4, 0.15);
+    let mut solids = shell(w, d, h, t);
+    solids.push(Solid::Box3 {
+        min: [t, 2.48, t],
+        max: [w - t, 2.6, d - t],
+    }); // 2nd slab
+    let mut dump = generate(solids, [0.0, -0.12, 0.0], [w, h + 0.12, d]);
+
+    let m = dump.meta().clone();
+    let iy0 = ((2.6 + 0.3 - m.origin[1]) / CELL - 0.5).ceil() as usize;
+    let iy1 = ((2.6 + 2.2 - m.origin[1]) / CELL - 0.5).floor() as usize;
+    let (iz0, iz1) = (12usize, 30usize);
+    for iy in iy0..=iy1 {
+        let center = 3.03 + (iy - iy0) as f64 * 0.015;
+        let (a, b) = ((center - 0.05_f64).max(0.0), center + 0.05);
+        let r2 = |v: f64| (v * 100.0).round() / 100.0;
+        for iz in iz0..iz1 {
+            let fwd = dump.x_pos.entry((iy, iz)).or_default();
+            fwd.push(r2(a));
+            fwd.sort_by(f64::total_cmp);
+            let bwd = dump.x_neg.entry((iy, iz)).or_default();
+            bwd.push(r2(b));
+            bwd.sort_by(|x, y| y.total_cmp(x));
+        }
+    }
+    dump
+}
