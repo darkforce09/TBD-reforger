@@ -15,8 +15,14 @@ blueprint layer reaches the mission creator.
 
 ## Behavior
 
-- Loads `/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01.json` by default;
-  `?prefab=<map-assets path>` overrides.
+- Loads `/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.json` (the scanned
+  blueprint: roof heightfield, verbatim floor plates, attic level) by default;
+  `?prefab=<map-assets path>` overrides — the hand-authored `FarmHouse_E_1L01.json` is still
+  there for the polygon-fallback path.
+- Level views paint the scanned `plate` grid cell-by-cell (voids stay void — partial
+  mezzanines and double-height rooms render as measured) with `floorPolygons` boundary rings
+  as hairline loops on top; plate-less levels (old assets, the attic) fall back to the
+  footprint-polygon fill.
 - Renders on the real wgpu engine (`map_engine_render::RenderEngine`) via the generic vector
   lanes — floor plate, thickness walls, window/door apertures (open/closed), swing arcs,
   furniture cover plates, stairs with tread hatch, ghost centerlines for inactive floors.

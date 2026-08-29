@@ -37,8 +37,10 @@
 use leptos::prelude::*;
 use map_engine_core::building_blueprint::{BuildingBlueprint, LosHitKind, LosResult};
 
-/// Default blueprint when no `?prefab=` override is present — the FarmHouse golden.
-const DEFAULT_PREFAB_PATH: &str = "/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01.json";
+/// Default blueprint when no `?prefab=` override is present — the scanned FarmHouse (roof
+/// heightfield + verbatim plates + attic). The hand-authored pre-scan asset stays reachable
+/// via `?prefab=/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01.json`.
+const DEFAULT_PREFAB_PATH: &str = "/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.json";
 
 /// One end of the LOS ray in blueprint-local coordinates (x/z plan, y elevation).
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -132,6 +134,10 @@ pub mod geom {
     pub const COL_ROOF_LO: [f32; 4] = [0.16, 0.22, 0.33, 0.92];
     pub const COL_ROOF_HI: [f32; 4] = [0.82, 0.86, 0.95, 0.95];
     pub const COL_ROOF_CHIMNEY: [f32; 4] = [0.95, 0.63, 0.20, 0.95];
+    /// Floor plate ramp (±0.4 m around the level base — landings read) + ring edge accent.
+    pub const COL_PLATE_LO: [f32; 4] = [0.10, 0.13, 0.18, 0.85];
+    pub const COL_PLATE_HI: [f32; 4] = [0.24, 0.30, 0.40, 0.90];
+    pub const COL_PLATE_EDGE: [f32; 4] = [0.45, 0.62, 0.72, 0.80];
 
     /// Blueprint-local plan `[x, z]` → engine world `[x, y]`. The ortho camera is deck.gl
     /// `flipY:false` — world **+y renders UP** — so mapping game +z (north) straight onto +y
@@ -253,6 +259,8 @@ pub mod geom {
         pub hairline_count: u32,
         /// Covered `RoofGrid` cells painted on the Roof view (0 elsewhere / roofless).
         pub roof_cell_count: u32,
+        /// Covered `PlateGrid` cells painted on the active Level view (0 on plate-less levels).
+        pub plate_cell_count: u32,
     }
 
     fn append_polygon(
@@ -391,14 +399,68 @@ pub mod geom {
             return out;
         };
 
-        // Active floor plate + stairs plates.
-        append_polygon(
-            &mut out.floor_pos,
-            &mut out.floor_col,
-            &mut out.floor_idx,
-            &lvl.footprint_polygon,
-            COL_FLOOR,
-        );
+        // Active floor plate: the verbatim PlateGrid when present (one tinted quad per covered
+        // cell — partial mezzanines and double-height voids render exactly as measured, and
+        // landings read via the height ramp), else the traced-polygon fill for pre-plate assets.
+        match lvl.plate.as_ref().filter(|g| g.is_valid()) {
+            Some(plate) => {
+                let base = lvl.elevation_range[0];
+                let cell = plate.cell_size_m;
+                for cx in 0..plate.nx {
+                    for cz in 0..plate.nz {
+                        let Some(h) = plate.heights_m[cx * plate.nz + cz] else {
+                            continue;
+                        };
+                        // ±0.4 m ramp around the level base between the two floor shades.
+                        let t = (((h - base) / 0.8 + 0.5).clamp(0.0, 1.0)) as f32;
+                        let col = [
+                            COL_PLATE_LO[0] + (COL_PLATE_HI[0] - COL_PLATE_LO[0]) * t,
+                            COL_PLATE_LO[1] + (COL_PLATE_HI[1] - COL_PLATE_LO[1]) * t,
+                            COL_PLATE_LO[2] + (COL_PLATE_HI[2] - COL_PLATE_LO[2]) * t,
+                            COL_PLATE_LO[3] + (COL_PLATE_HI[3] - COL_PLATE_LO[3]) * t,
+                        ];
+                        let center = [
+                            plate.origin[0] + (cx as f64 + 0.5) * cell,
+                            plate.origin[1] + (cz as f64 + 0.5) * cell,
+                        ];
+                        append_polygon(
+                            &mut out.floor_pos,
+                            &mut out.floor_col,
+                            &mut out.floor_idx,
+                            &rect_corners(center, [cell, cell], 0.0),
+                            col,
+                        );
+                        out.plate_cell_count += 1;
+                    }
+                }
+            }
+            None => {
+                append_polygon(
+                    &mut out.floor_pos,
+                    &mut out.floor_col,
+                    &mut out.floor_idx,
+                    &lvl.footprint_polygon,
+                    COL_FLOOR,
+                );
+            }
+        }
+        // Traced plate boundary rings (outer + holes) as hairline loops over the grid — the
+        // derived polygon contract drawn against the verbatim cells, so ring-vs-grid
+        // coincidence is directly eyeballable.
+        for piece in &lvl.floor_polygons {
+            for ring in std::iter::once(&piece.outer).chain(piece.holes.iter()) {
+                let n = ring.len();
+                for i in 0..n {
+                    seg(
+                        &mut out.hairlines,
+                        to_world(ring[i]),
+                        to_world(ring[(i + 1) % n]),
+                        COL_PLATE_EDGE,
+                    );
+                    out.hairline_count += 1;
+                }
+            }
+        }
         for st in &lvl.stairs {
             let ring = [
                 [st.bounds[0][0], st.bounds[0][1]],
@@ -782,6 +844,74 @@ pub mod geom {
             let (band, last) = ViewFloor::Roof.band(&bp);
             assert_eq!(band, [5.6, 7.8]);
             assert!(last);
+        }
+
+        /// Level views paint the PlateGrid verbatim: one quad per covered cell replacing the
+        /// polygon fill (a partial mezzanine's void stays unpainted); nulls skip; stairs
+        /// plates still land on the floor lane.
+        #[test]
+        fn level_view_paints_plate_grid_verbatim() {
+            use map_engine_core::building_blueprint::PlateGrid;
+            let mut bp = farmhouse();
+            bp.levels[0].plate = Some(PlateGrid {
+                origin: [-2.0, -2.0],
+                cell_size_m: 0.5,
+                nx: 4,
+                nz: 4,
+                heights_m: (0..16).map(|i| (i % 4 != 0).then_some(0.0)).collect(),
+            });
+            let lanes = build_static_lanes(&bp, ViewFloor::Level(0));
+            let covered = (0..16).filter(|i| i % 4 != 0).count();
+            assert_eq!(lanes.plate_cell_count, covered as u32);
+            // Floor lane = plate quads (4 verts each) + the one stairs plate (4 verts);
+            // the footprint-polygon fill is REPLACED, not underlaid.
+            assert_eq!(lanes.floor_pos.len(), covered * 8 + 8);
+        }
+
+        /// Pre-plate assets keep the traced-polygon fill path byte-for-byte.
+        #[test]
+        fn plate_none_falls_back_to_polygon() {
+            let bp = farmhouse();
+            let lanes = build_static_lanes(&bp, ViewFloor::Level(0));
+            assert_eq!(lanes.plate_cell_count, 0);
+            assert!(!lanes.floor_pos.is_empty());
+        }
+
+        /// floorPolygons rings (outer + holes) draw as closed hairline loops over the plate.
+        #[test]
+        fn floor_rings_draw_closed_hairline_loops() {
+            use map_engine_core::building_blueprint::FloorPolygon;
+            let bp = farmhouse();
+            let base = build_static_lanes(&bp, ViewFloor::Level(0));
+            let mut bp = farmhouse();
+            bp.levels[0].floor_polygons = vec![FloorPolygon {
+                outer: vec![[0.0, 0.0], [2.0, 0.0], [2.0, 2.0], [0.0, 2.0]],
+                holes: vec![vec![[0.5, 0.5], [0.5, 1.0], [1.0, 1.0], [1.0, 0.5]]],
+            }];
+            let lanes = build_static_lanes(&bp, ViewFloor::Level(0));
+            // 4 outer edges + 4 hole edges, closed loops.
+            assert_eq!(lanes.hairline_count, base.hairline_count + 8);
+        }
+
+        /// A third (attic) level slots into the band math: its own band is not the topmost,
+        /// and the Roof band shifts above it.
+        #[test]
+        fn attic_third_level_band_math() {
+            let mut bp = farmhouse();
+            let mut attic = bp.levels[1].clone();
+            attic.level_index = 2;
+            attic.name = "Attic".to_string();
+            attic.elevation_range = [5.6, 7.0];
+            attic.footprint_polygon = Vec::new();
+            attic.walls.clear();
+            attic.windows.clear();
+            bp.levels.push(attic);
+            let (band, last) = ViewFloor::Level(2).band(&bp);
+            assert_eq!(band, [5.6, 7.0]);
+            assert!(!last, "roof still owns the space above the attic");
+            let (roof_band, roof_last) = ViewFloor::Roof.band(&bp);
+            assert_eq!(roof_band, [7.0, 7.8]);
+            assert!(roof_last);
         }
 
         /// The Roof view paints the emitted RoofGrid verbatim: one tinted quad per covered cell
@@ -1290,6 +1420,7 @@ pub fn BuildingViewerPage() -> impl IntoView {
                 <div><span class="mr-1 inline-block h-2 w-4 bg-[#e6574a]"></span>"full cover · ray blocked"</div>
                 <div><span class="mr-1 inline-block h-2 w-4 bg-[#7059b3]"></span>"stairs (transparent treads)"</div>
                 <div><span class="mr-1 inline-block h-2 w-4 bg-gradient-to-r from-[#2a3854] to-[#d1dbf2]"></span>"roof height (eave → ridge) · "<span class="text-[#f2a133]">"chimney"</span></div>
+                <div><span class="mr-1 inline-block h-2 w-4 bg-gradient-to-r from-[#1a212e] to-[#3d4c66]"></span>"floor plate (scanned cells) · "<span class="text-[#739eb8]">"ring edge"</span></div>
             </div>
         </div>
     }
