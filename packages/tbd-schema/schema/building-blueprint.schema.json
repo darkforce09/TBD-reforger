@@ -71,6 +71,19 @@
         "footprintSqM": { "type": "number", "minimum": 0 }
       }
     },
+    "roof": {
+      "description": "Optional downsampled top-surface heightfield (local frame, y up). Row-major ix*nz+iz; null = no coverage. Absent on pre-roof blueprints — consumers fall back to no roof test.",
+      "type": "object",
+      "required": ["origin", "cellSizeM", "nx", "nz", "heightsM"],
+      "additionalProperties": false,
+      "properties": {
+        "origin": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } },
+        "cellSizeM": { "type": "number", "exclusiveMinimum": 0 },
+        "nx": { "type": "integer", "minimum": 1 },
+        "nz": { "type": "integer", "minimum": 1 },
+        "heightsM": { "type": "array", "items": { "type": ["number", "null"] } }
+      }
+    },
     "levels": {
       "type": "array",
       "minItems": 1,

@@ -95,6 +95,19 @@ pub struct Params {
     pub top_band_min_m: f64,
     /// The viewer's slice height marker above each floor.
     pub slice_height_above_floor_m: f64,
+
+    // ── roof heightfield ────────────────────────────────────────────────────────────────────
+    /// Coarse grid pitch for the emitted `RoofGrid` (snapped to a multiple of the dump cell).
+    /// Farmhouse sweep (phantom 0 at every pitch): 0.2 → 385/400 · 0.3 → 384 · 0.4 → 380 ·
+    /// 0.5 → 375; 0.3 takes the knee — 0.2 buys one pair for 2.25× the grid.
+    pub roof_cell_m: f64,
+    /// Fraction of a coarse cell's fine block that must be covered, else the cell is `None`.
+    /// 1.0 = fully covered — the surface never reaches past the true silhouette.
+    pub roof_min_coverage: f64,
+    /// Top surfaces below `floors[0] + this` are ground clutter (stoops, terraces), not roof.
+    pub roof_min_above_floor_m: f64,
+    /// Extra 4-neighbor erosion passes on the coarse grid (0 = the coverage rule is enough).
+    pub roof_erode_cells: usize,
 }
 
 impl Default for Params {
@@ -148,6 +161,11 @@ impl Default for Params {
 
             top_band_min_m: 2.0,
             slice_height_above_floor_m: 0.45,
+
+            roof_cell_m: 0.3,
+            roof_min_coverage: 1.0,
+            roof_min_above_floor_m: 1.2,
+            roof_erode_cells: 0,
         }
     }
 }

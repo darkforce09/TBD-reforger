@@ -78,9 +78,10 @@ pub fn run(args: &[String]) -> Result<u8> {
                     "  obs [{ox:.1},{oy:.1},{oz:.1}] → tgt [{tx:.1},{ty:.1},{tz:.1}]: engine {} vs model {}{}",
                     verdict(engine_clear),
                     verdict(los.is_clear),
-                    los.blocked_by_wall_id
-                        .as_deref()
-                        .map(|w| format!(" ({w})"))
+                    // Name the terminal hit (wall id, roof, full-cover furniture) on blocks.
+                    (!los.is_clear)
+                        .then(|| los.hits.last().map(|h| format!(" ({:?} {})", h.kind, h.id)))
+                        .flatten()
                         .unwrap_or_default(),
                 ));
             }

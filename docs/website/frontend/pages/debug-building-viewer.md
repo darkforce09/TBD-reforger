@@ -23,7 +23,9 @@ blueprint layer reaches the mission creator.
 - Click the building → floor selector tabs appear (stay visible once opened).
 - Draggable observer (A) / target (B) markers + elevation sliders (0–10 m); the LOS ray is
   colored per `LosHit` span: green clear, cyan through glass, yellow past cover, red blocked;
-  verdict panel lists traversed apertures / blocker / concealment.
+  verdict panel lists traversed apertures / blocker / concealment. Blueprints with a `roof`
+  heightfield block rays that pierce the top surface — the verdict then reads
+  "blocked by roof @ <y> m".
 - Wheel zooms (engine ortho camera, ≤ 64 px/m), drag pans; window sill/height badges appear
   past ~16 px/m.
 

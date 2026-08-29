@@ -17,6 +17,7 @@ mod pair;
 mod params;
 mod parse;
 mod plate;
+mod roof;
 mod slabs;
 #[cfg(test)]
 mod synth;
@@ -274,8 +275,12 @@ mod tests {
     }
 
     /// The acceptance instrument, pinned: replay the committed 400-pair engine oracle through
-    /// the golden blueprint. 260/400 was measured 2026-08-29 (segments 65.0% vs live v6 64.0%,
-    /// grid port 63.2%); every miss is model-clear/engine-blocked — the unmodeled roof.
+    /// the golden blueprint. 384/400 with the roof heightfield, measured 2026-08-29 (was
+    /// 260/400 = 65.0% pre-roof, where every miss was the unmodeled roof; segments 65.0% vs
+    /// live v6 64.0%, grid port 63.2%). The 16 remaining misses are all model-clear/
+    /// engine-blocked — chimney flanks, dormer cheeks and guard resets that deliberately lean
+    /// clear. The mesh/COLL lane scores 374/400 on the same oracle (unpinned — no committed
+    /// mesh dump fixture).
     #[test]
     fn farmhouse_golden_parity_is_pinned() {
         #[derive(serde::Deserialize)]
@@ -303,7 +308,7 @@ mod tests {
                 model_blocked_engine_clear += 1;
             }
         }
-        assert_eq!(agree, 260, "parity drifted (was 65.0%)");
+        assert_eq!(agree, 384, "parity drifted (was 96.0%)");
         assert_eq!(
             model_blocked_engine_clear, 0,
             "phantom geometry blocks rays the engine clears"
