@@ -8,10 +8,11 @@ use std::path::Path;
 
 use anyhow::{Context, Result, bail};
 use map_engine_core::building_blueprint::{
-    BBox2D, BuildingBlueprint, BuildingFurniture, BuildingLevel, BuildingWall, OverallFootprint,
-    VerticalProfile,
+    BBox2D, BuildingBlueprint, BuildingFurniture, BuildingLevel, BuildingWall, FloorPolygon,
+    OverallFootprint, PlateGrid, VerticalProfile,
 };
 
+use super::march::r2;
 use super::params::Params;
 use super::types::{VerticalScan, VoxelDump};
 use super::walls::BandWalls;
@@ -20,7 +21,12 @@ pub struct BandProducts {
     pub band_lo: f64,
     pub band_hi: f64,
     pub walls: BandWalls,
+    /// Largest traced outer ring, normalized frame (empty for slab-less bands).
     pub footprint: Vec<[f64; 2]>,
+    /// All traced plate pieces (outer + holes), normalized frame.
+    pub floor_polygons: Vec<FloorPolygon>,
+    /// Per-cell topmost in-window y_down entry, normalized frame; empty = no plate scanned.
+    pub plate_heights: Vec<Option<f64>>,
     pub plate_cells: usize,
 }
 
@@ -33,6 +39,7 @@ pub fn assemble(
     let m = dump.meta();
     let (ox, oy, oz) = (m.origin[0], m.origin[1], m.origin[2]);
     let local_pt = |pt: [f64; 2]| [pt[0] + ox, pt[1] + oz];
+    let (dims_nx, dims_nz) = (vert.nx, vert.nz);
 
     let mut levels = Vec::new();
     let mut wall_seq = 0usize;
@@ -67,14 +74,36 @@ pub fn assemble(
             });
             wall_seq += 1;
         }
+        let plate = (!band.plate_heights.is_empty()).then(|| PlateGrid {
+            origin: [ox, oz],
+            cell_size_m: m.cell,
+            nx: dims_nx,
+            nz: dims_nz,
+            heights_m: band
+                .plate_heights
+                .iter()
+                .map(|h| h.map(|y| r2(y + oy)))
+                .collect(),
+        });
         levels.push(BuildingLevel {
             level_index: li,
             name: ordinal_floor_name(li + 1),
             elevation_range: [band.band_lo + oy, band.band_hi + oy],
             slice_height_m: band.band_lo + oy + p.slice_height_above_floor_m,
             footprint_polygon: band.footprint.iter().map(|pt| local_pt(*pt)).collect(),
-            plate: None, // wired in the rings/plate emission commit
-            floor_polygons: Vec::new(),
+            plate,
+            floor_polygons: band
+                .floor_polygons
+                .iter()
+                .map(|fp| FloorPolygon {
+                    outer: fp.outer.iter().map(|pt| local_pt(*pt)).collect(),
+                    holes: fp
+                        .holes
+                        .iter()
+                        .map(|h| h.iter().map(|pt| local_pt(*pt)).collect())
+                        .collect(),
+                })
+                .collect(),
             walls,
             doors: Vec::new(),   // apertures muted: walls-first iteration
             windows: Vec::new(), // (dump carries the data; no re-dump needed to enable)
@@ -259,9 +288,10 @@ mod tests {
         let lo = v.floors[0];
         let hi = v.eave.max(lo + p.top_band_min_m);
         let bw = walls::extract_band(&d, &v, lo, hi, walls::Algo::Segments, &p);
-        let pg = plate::floor_plate(&d.y_down, v.nx, v.nz, lo, &p);
+        let (pg, plate_heights) = plate::floor_plate(&d.y_down, v.nx, v.nz, lo, &p);
         let plate_cells = pg.count();
-        let footprint = plate::outline(&pg, m.cell, &p);
+        let traced = crate::map_blueprint::rings::trace(&pg, m.cell, p.plate_min_ring_area_m2);
+        let (footprint, floor_polygons) = traced.contract();
         let bp = assemble(
             &d,
             &v,
@@ -270,6 +300,8 @@ mod tests {
                 band_hi: hi,
                 walls: bw,
                 footprint,
+                floor_polygons,
+                plate_heights,
                 plate_cells,
             }],
             &p,

@@ -73,12 +73,13 @@ pub struct Params {
     pub merge_overlap_m: f64,
     pub merge_gap_m: f64,
 
-    // ── floor plate / outline ───────────────────────────────────────────────────────────────
+    // ── floor plate / rings ─────────────────────────────────────────────────────────────────
     /// Plate probe window around the slab: [slab - below, slab + above].
     pub plate_below_m: f64,
     pub plate_above_m: f64,
-    /// Outline hysteresis in cells (extreme jumps below this are jitter, not corners).
-    pub outline_jump_cells: i64,
+    /// Traced boundary rings (outer or hole) under this area are collision noise: dropped from
+    /// the POLYGON products only — the painted plate grid stays verbatim, nothing is hidden.
+    pub plate_min_ring_area_m2: f64,
 
     // ── furniture ───────────────────────────────────────────────────────────────────────────
     /// Prop-size ceilings (larger = composition parent, skipped).
@@ -151,7 +152,7 @@ impl Default for Params {
 
             plate_below_m: 0.35,
             plate_above_m: 0.4,
-            outline_jump_cells: 2,
+            plate_min_ring_area_m2: 0.02,
 
             furn_max_plan_m: 4.0,
             furn_max_height_m: 3.5,

@@ -17,6 +17,7 @@ mod pair;
 mod params;
 mod parse;
 mod plate;
+mod rings;
 mod roof;
 mod slabs;
 #[cfg(test)]
@@ -194,22 +195,28 @@ fn interpret_one(
             None => vert.eave.max(lo + p.top_band_min_m),
         };
         let bw = walls::extract_band(&dump, &vert, lo, hi, algo, &p);
-        let plate_grid = plate::floor_plate(&dump.y_down, vert.nx, vert.nz, lo, &p);
+        let (plate_grid, plate_heights) =
+            plate::floor_plate(&dump.y_down, vert.nx, vert.nz, lo, &p);
         let plate_cells = plate_grid.count();
-        let footprint = plate::outline(&plate_grid, m.cell, &p);
+        let traced = rings::trace(&plate_grid, m.cell, p.plate_min_ring_area_m2);
+        let (footprint, floor_polygons) = traced.contract();
         println!(
-            "    band {li} [{:.2}..{:.2}]: plate={plate_cells} raw={} walls={} masses={}",
+            "    band {li} [{:.2}..{:.2}]: plate={plate_cells} raw={} walls={} masses={} rings={}(+{} dropped)",
             lo + m.origin[1],
             hi + m.origin[1],
             bw.raw_count,
             bw.walls.len(),
-            bw.masses.len()
+            bw.masses.len(),
+            traced.pieces.len(),
+            traced.dropped,
         );
         bands.push(BandProducts {
             band_lo: lo,
             band_hi: hi,
             walls: bw,
             footprint,
+            floor_polygons,
+            plate_heights,
             plate_cells,
         });
     }
