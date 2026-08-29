@@ -33,8 +33,9 @@ Master index for all TBD Reforger frontend surfaces.
 | [pages/content-manager.md](pages/content-manager.md) | `/admin/content` | doc-complete | §4.11 | T-087 |
 | [pages/audit-logs.md](pages/audit-logs.md) | `/admin/audit` | doc-complete | §4.12 | shipped |
 | [pages/settings.md](pages/settings.md) | `/settings` | doc-complete | — | — |
+| [pages/debug-building-viewer.md](pages/debug-building-viewer.md) | `/debug/building-viewer` (URL-only) | in-progress | — | blueprint program Phase A |
 | [pages/not-found.md](pages/not-found.md) | `*` | doc-complete | — | — |
 
 **Foundation:** [THEME.md](THEME.md) | [TRACKING.md](TRACKING.md) | [_template.md](_template.md)
 
-**Documentation Gate:** Passed — 28 surface docs + 3 foundation files = 31; all `doc-complete` except [mission-editor.md](pages/mission-editor.md) (`in-progress`).
+**Documentation Gate:** Passed — 29 surface docs + 3 foundation files = 32; all `doc-complete` except [mission-editor.md](pages/mission-editor.md) and [debug-building-viewer.md](pages/debug-building-viewer.md) (`in-progress`).

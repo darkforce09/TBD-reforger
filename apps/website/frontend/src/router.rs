@@ -157,6 +157,14 @@ pub static ROUTES: &[RouteDef] = &[
         auth: "none",
     },
     RouteDef {
+        // Debug bench — URL-only (no nav entry): blueprint viewer + interactive 2.5D LOS.
+        path: "/debug/building-viewer",
+        component: "BuildingViewerPage",
+        full_bleed: true,
+        chromeless: true,
+        auth: "none",
+    },
+    RouteDef {
         path: "/settings",
         component: "SettingsPage",
         full_bleed: false,

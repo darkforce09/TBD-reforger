@@ -353,3 +353,9 @@
   path: apps/website/frontend/src/editor/state/operations/entity.rs
   reason: T-934.7 domain-CRUD shard of editor_ops; guard-pinned, follow-on shard flagged in ticket
   expires: 2026-11-13
+
+# --- T-090.6 building-viewer debug page. ---
+- rule: SIZE-3
+  path: apps/website/frontend/src/pages/debug/building_viewer.rs
+  reason: T-090.6 building-viewer test bench; split follow-up
+  expires: 2026-11-13

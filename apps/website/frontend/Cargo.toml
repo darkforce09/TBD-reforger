@@ -20,7 +20,10 @@ serde_json = "1"
 # wasm build is a projection `cargo test` cannot check; `compiled_meta_is_the_row_the_server_compiles_from`
 # runs it against the real captured `GET /missions/:id` golden. The feature is three optional deps
 # (serde / serde_json / thiserror) already in this crate's tree, so it costs the bundle nothing.
-map-engine-core = { path = "../../../crates/map-engine-core", default-features = false, features = ["mission"] }
+# `blueprint` — building-blueprint structs + 2.5D LOS raycaster for the `/debug/building-viewer`
+# test bench. Standalone feature (serde only, already linked) so the wasm bundle does NOT pull the
+# `world` parser stack (flate2 + serde_json float_roundtrip).
+map-engine-core = { path = "../../../crates/map-engine-core", default-features = false, features = ["mission", "blueprint"] }
 gloo-net = "0.6"
 js-sys = "0.3"
 # T-405 — the `<a href>` scheme guard (`url_guard.rs`). Costs the bundle NOTHING: `url` is already
@@ -90,6 +93,8 @@ web-sys = { version = "0.3", features = [
     # T-159.25 Server Intel copy-address (navigator.clipboard.writeText).
     "Navigator",
     "Clipboard",
+    # Building-viewer debug bench — `?prefab=` override parse.
+    "UrlSearchParams",
     # T-166 — TBDS/WebP decode → ImageBitmap (WebGPU) or OffscreenCanvas→RGBA (WebGL2 gates).
     "ImageBitmap",
     "ImageBitmapOptions",
