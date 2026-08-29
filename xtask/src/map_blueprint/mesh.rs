@@ -401,6 +401,27 @@ pub fn write_dump(dump: &VoxelDump, path: &std::path::Path) -> Result<usize> {
 }
 
 fn print_stats(m: &xob::XobMesh) {
+    if m.descriptors.is_empty() {
+        // COLL geometry: no descriptors/materials — report per-record triangle counts.
+        let nrec = m.tri_submesh.iter().copied().max().map_or(0, |r| r + 1);
+        for r in 0..nrec {
+            let n = m.tri_submesh.iter().filter(|&&s| s == r).count();
+            println!("  collider record {r}: {n} tris");
+        }
+        let (min, max) = xob::aabb(&m.verts);
+        println!(
+            "loaded COLL: {} verts, {} tris, AABB [{:.2},{:.2},{:.2}]..[{:.2},{:.2},{:.2}]",
+            m.verts.len(),
+            m.tris.len(),
+            min[0],
+            min[1],
+            min[2],
+            max[0],
+            max[1],
+            max[2],
+        );
+        return;
+    }
     println!("materials ({}):", m.materials.len());
     for (i, mat) in m.materials.iter().enumerate() {
         println!("  [{i}] {mat}");
@@ -449,9 +470,23 @@ pub fn run_voxels_from_mesh(args: &[String]) -> Result<u8> {
     let mut exclude_material: Vec<String> = Vec::new();
     let mut lod: Option<u32> = None;
     let mut stats_only = false;
+    let mut geometry = String::from("auto");
+    let mut coll_record: Option<u16> = None;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
+            "--geometry" if i + 1 < args.len() => {
+                geometry = args[i + 1].clone();
+                i += 2;
+            }
+            "--coll-record" if i + 1 < args.len() => {
+                coll_record = Some(
+                    args[i + 1]
+                        .parse()
+                        .context("--coll-record wants an index")?,
+                );
+                i += 2;
+            }
             "--mesh" if i + 1 < args.len() => {
                 mesh_path = Some(PathBuf::from(&args[i + 1]));
                 i += 2;
@@ -497,7 +532,40 @@ pub fn run_voxels_from_mesh(args: &[String]) -> Result<u8> {
     }
     let mesh_path = mesh_path.context("--mesh <file.xob> is required")?;
     let bytes = fs::read(&mesh_path).with_context(|| mesh_path.display().to_string())?;
-    let parsed = xob::parse_xob(&bytes, lod)?;
+    let use_coll = match geometry.as_str() {
+        "coll" => true,
+        "visual" => false,
+        "auto" => xob::has_coll(&bytes),
+        other => bail!("--geometry '{other}' is not auto|coll|visual"),
+    };
+    println!(
+        "geometry: {}",
+        if use_coll {
+            "COLL (fire-collision — the surface LOS traces)"
+        } else {
+            "LODS (visual mesh)"
+        }
+    );
+    let mut parsed = if use_coll {
+        xob::parse_coll(&bytes)?
+    } else {
+        xob::parse_xob(&bytes, lod)?
+    };
+    if let Some(rsel) = coll_record {
+        let mut tris = Vec::new();
+        let mut subs = Vec::new();
+        for (i, tri) in parsed.tris.iter().enumerate() {
+            if parsed.tri_submesh[i] == rsel {
+                tris.push(*tri);
+                subs.push(rsel);
+            }
+        }
+        if tris.is_empty() {
+            bail!("--coll-record {rsel}: no triangles in that record");
+        }
+        parsed.tris = tris;
+        parsed.tri_submesh = subs;
+    }
     print_stats(&parsed);
     if stats_only {
         return Ok(0);

@@ -496,9 +496,11 @@ enum MapCmd {
     },
     /// Generate a standard voxel dump from real triangle geometry (a Reforger .xob) by
     /// analytic ray-marching — same wire format as the Workbench sensor, no engine needed
-    /// (--mesh <file.xob> --slug <s> [--out <dir>] [--resource <str>] [--lod <tier>]
-    /// [--reference <dump.jsonl[.gz]>] [--axes x,y,-z] [--flip-winding]
-    /// [--exclude-material <substr>]... [--stats]).
+    /// (--mesh <file.xob> --slug <s> [--geometry auto|coll|visual] [--coll-record <i>]
+    /// [--out <dir>] [--resource <str>] [--lod <tier>] [--reference <dump.jsonl[.gz]>]
+    /// [--axes x,y,-z] [--flip-winding] [--exclude-material <substr>]... [--stats]).
+    /// Default geometry is the COLL fire-collision chunk when present — the exact surface
+    /// engine LOS traces; visual LODS are the fallback.
     #[command(name = "voxels-from-mesh")]
     VoxelsFromMesh {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]

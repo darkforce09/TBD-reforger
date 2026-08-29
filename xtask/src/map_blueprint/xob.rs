@@ -387,6 +387,167 @@ pub fn aabb(verts: &[[f64; 3]]) -> ([f64; 3], [f64; 3]) {
     (min, max)
 }
 
+/* ───────────────────────────── COLL: the collision chunk ─────────────────────────────
+ *
+ * Reverse-engineered in this repo (2026-08-29) from CardboardBox_01.xob (one 76-byte box
+ * record, half-extents match the visual AABB) and FarmHouse_E_1L01.xob (two trimesh
+ * records, 62,332 bytes consumed byte-exact; vertex AABB reproduces the engine dump's
+ * bounds to the centimeter, chimney included). No public parser existed for this chunk.
+ *
+ * COLL payload = sequence of collider records, each:
+ *   u8 shape_type · u8 0xFF · u16 node_count(?) ·
+ *   rotation 3×3 f32 (row-major) · center 3×f32 · f32 0 · u16 pair (node ids) · u32 0 ·
+ *   shape payload:
+ *     type 3 (box):     half-extents 3×f32
+ *     type 6 (trimesh): u16 nverts · u16 ntris · u32 nsub · nsub×(u16 node, u16 first_tri)
+ *                       · verts nverts×3×f32 · indices ntris×3×u16
+ * A `VOLM` sibling chunk carries per-collider volume/layer words (unparsed — layer choice
+ * is judged empirically by the parity harness instead).
+ */
+
+/// Does this xob carry a collision chunk?
+pub fn has_coll(data: &[u8]) -> bool {
+    data.len() >= 12 && data[0..4] == *b"FORM" && find_chunk(data, b"COLL").is_some()
+}
+
+fn mat_apply(rot: &[f64; 9], c: [f64; 3], v: [f64; 3]) -> [f64; 3] {
+    [
+        rot[0] * v[0] + rot[1] * v[1] + rot[2] * v[2] + c[0],
+        rot[3] * v[0] + rot[4] * v[1] + rot[5] * v[2] + c[1],
+        rot[6] * v[0] + rot[7] * v[1] + rot[8] * v[2] + c[2],
+    ]
+}
+
+/// Parse the COLL chunk into a triangle soup. `tri_submesh` carries the RECORD index so
+/// callers can isolate one collider; `vert_normals` are all-zero (collision meshes carry
+/// no normal stream — face orientation falls back to index winding).
+pub fn parse_coll(data: &[u8]) -> Result<XobMesh> {
+    if data.len() < 12 || &data[0..4] != b"FORM" || &data[8..11] != b"XOB" {
+        bail!("not a FORM/XOB9 file (magic mismatch)");
+    }
+    let b = find_chunk(data, b"COLL").context("XOB: no COLL chunk")?;
+    let mut mesh = XobMesh {
+        verts: Vec::new(),
+        vert_normals: Vec::new(),
+        tris: Vec::new(),
+        tri_submesh: Vec::new(),
+        materials: Vec::new(),
+        descriptors: Vec::new(),
+        tier: 0,
+    };
+    let mut p = 0usize;
+    let mut rec = 0u16;
+    while p + 4 <= b.len() {
+        let shape_type = b[p];
+        if b[p + 1] != 0xFF {
+            bail!(
+                "COLL record {rec} at +{p}: framing byte 0x{:02X} != 0xFF",
+                b[p + 1]
+            );
+        }
+        p += 4;
+        if p + 60 > b.len() {
+            bail!("COLL record {rec}: truncated fixed part");
+        }
+        let mut rot = [0.0f64; 9];
+        for (i, r) in rot.iter_mut().enumerate() {
+            *r = f64::from(f32le(&b[p + i * 4..]));
+        }
+        let center = {
+            let c = vec3le(&b[p + 36..]);
+            [f64::from(c[0]), f64::from(c[1]), f64::from(c[2])]
+        };
+        p += 60;
+        match shape_type {
+            3 => {
+                if p + 12 > b.len() {
+                    bail!("COLL record {rec}: truncated box extents");
+                }
+                let e = vec3le(&b[p..]);
+                let e = [f64::from(e[0]), f64::from(e[1]), f64::from(e[2])];
+                p += 12;
+                // Emit the box as 12 outward-wound triangles in the record frame.
+                let base = mesh.verts.len() as u32;
+                for corner in 0..8u32 {
+                    let local = [
+                        if corner & 1 != 0 { e[0] } else { -e[0] },
+                        if corner & 2 != 0 { e[1] } else { -e[1] },
+                        if corner & 4 != 0 { e[2] } else { -e[2] },
+                    ];
+                    mesh.verts.push(mat_apply(&rot, center, local));
+                    mesh.vert_normals.push([0.0, 0.0, 0.0]);
+                }
+                // Quads (outward, CCW seen from outside): −x +x −y +y −z +z.
+                const QUADS: [[u32; 4]; 6] = [
+                    [0, 4, 6, 2],
+                    [1, 3, 7, 5],
+                    [0, 1, 5, 4],
+                    [2, 6, 7, 3],
+                    [0, 2, 3, 1],
+                    [4, 5, 7, 6],
+                ];
+                for q in QUADS {
+                    mesh.tris.push([base + q[0], base + q[1], base + q[2]]);
+                    mesh.tris.push([base + q[0], base + q[2], base + q[3]]);
+                    mesh.tri_submesh.push(rec);
+                    mesh.tri_submesh.push(rec);
+                }
+            }
+            6 => {
+                if p + 8 > b.len() {
+                    bail!("COLL record {rec}: truncated mesh header");
+                }
+                let nv = u16le(&b[p..]) as usize;
+                let nt = u16le(&b[p + 2..]) as usize;
+                let nsub = u32le(&b[p + 4..]) as usize;
+                p += 8 + nsub * 4; // subrange table (node → first-tri) — not needed here
+                if p + nv * 12 + nt * 6 > b.len() {
+                    bail!(
+                        "COLL record {rec}: mesh nv={nv} nt={nt} overruns chunk ({} left)",
+                        b.len() - p
+                    );
+                }
+                let base = mesh.verts.len() as u32;
+                for i in 0..nv {
+                    let v = vec3le(&b[p + i * 12..]);
+                    mesh.verts.push(mat_apply(
+                        &rot,
+                        center,
+                        [f64::from(v[0]), f64::from(v[1]), f64::from(v[2])],
+                    ));
+                    mesh.vert_normals.push([0.0, 0.0, 0.0]);
+                }
+                p += nv * 12;
+                for t in 0..nt {
+                    let mut tri = [0u32; 3];
+                    for (k, slot) in tri.iter_mut().enumerate() {
+                        let idx = u16le(&b[p + (t * 3 + k) * 2..]) as u32;
+                        if idx as usize >= nv {
+                            bail!("COLL record {rec}: index {idx} >= nverts {nv}");
+                        }
+                        *slot = base + idx;
+                    }
+                    mesh.tris.push(tri);
+                    mesh.tri_submesh.push(rec);
+                }
+                p += nt * 6;
+            }
+            other => bail!(
+                "COLL record {rec} at +{}: unknown shape type {other} — extend the grammar",
+                p - 64
+            ),
+        }
+        rec += 1;
+    }
+    if p != b.len() {
+        bail!("COLL: walked {p} of {} bytes — grammar drift", b.len());
+    }
+    if mesh.tris.is_empty() {
+        bail!("COLL: no colliders decoded");
+    }
+    Ok(mesh)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -525,5 +686,94 @@ mod tests {
         let mut file = tiny_xob();
         file[0] = b'X';
         assert!(parse_xob(&file, None).is_err());
+    }
+
+    /// One COLL box record: type 3, identity rotation, given center/extents.
+    fn coll_box_record(center: [f32; 3], ext: [f32; 3]) -> Vec<u8> {
+        let mut r = vec![3u8, 0xFF, 1, 0];
+        for i in 0..9u32 {
+            let v: f32 = if i % 4 == 0 { 1.0 } else { 0.0 };
+            r.extend_from_slice(&v.to_le_bytes());
+        }
+        for c in center {
+            r.extend_from_slice(&c.to_le_bytes());
+        }
+        r.extend_from_slice(&0.0f32.to_le_bytes());
+        r.extend_from_slice(&2u16.to_le_bytes());
+        r.extend_from_slice(&3u16.to_le_bytes());
+        r.extend_from_slice(&0u32.to_le_bytes());
+        for e in ext {
+            r.extend_from_slice(&e.to_le_bytes());
+        }
+        r
+    }
+
+    fn with_coll(mut file: Vec<u8>, coll_payload: &[u8]) -> Vec<u8> {
+        let mut chunk = b"COLL".to_vec();
+        chunk.extend_from_slice(&(coll_payload.len() as u32).to_be_bytes());
+        chunk.extend_from_slice(coll_payload);
+        file.extend_from_slice(&chunk);
+        let total = (file.len() - 8) as u32;
+        file[4..8].copy_from_slice(&total.to_be_bytes());
+        file
+    }
+
+    #[test]
+    fn coll_box_record_becomes_twelve_triangles() {
+        let file = with_coll(
+            tiny_xob(),
+            &coll_box_record([1.0, 2.0, 3.0], [0.5, 0.25, 1.5]),
+        );
+        assert!(has_coll(&file));
+        let mesh = parse_coll(&file).unwrap();
+        assert_eq!(mesh.verts.len(), 8);
+        assert_eq!(mesh.tris.len(), 12);
+        let (min, max) = aabb(&mesh.verts);
+        assert_eq!(min, [0.5, 1.75, 1.5]);
+        assert_eq!(max, [1.5, 2.25, 4.5]);
+        assert!(mesh.tri_submesh.iter().all(|&s| s == 0));
+    }
+
+    #[test]
+    fn coll_trimesh_record_parses_and_transforms() {
+        // type 6, one triangle, center offset (10, 0, 0).
+        let mut r = vec![6u8, 0xFF, 1, 0];
+        for i in 0..9u32 {
+            let v: f32 = if i % 4 == 0 { 1.0 } else { 0.0 };
+            r.extend_from_slice(&v.to_le_bytes());
+        }
+        for c in [10.0f32, 0.0, 0.0] {
+            r.extend_from_slice(&c.to_le_bytes());
+        }
+        r.extend_from_slice(&0.0f32.to_le_bytes());
+        r.extend_from_slice(&2u16.to_le_bytes());
+        r.extend_from_slice(&3u16.to_le_bytes());
+        r.extend_from_slice(&0u32.to_le_bytes());
+        r.extend_from_slice(&3u16.to_le_bytes()); // nv
+        r.extend_from_slice(&1u16.to_le_bytes()); // nt
+        r.extend_from_slice(&1u32.to_le_bytes()); // nsub
+        r.extend_from_slice(&5u16.to_le_bytes()); // sub node
+        r.extend_from_slice(&0u16.to_le_bytes()); // sub first tri
+        for v in [[0.0f32, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]] {
+            for c in v {
+                r.extend_from_slice(&c.to_le_bytes());
+            }
+        }
+        for idx in [0u16, 1, 2] {
+            r.extend_from_slice(&idx.to_le_bytes());
+        }
+        let file = with_coll(tiny_xob(), &r);
+        let mesh = parse_coll(&file).unwrap();
+        assert_eq!(mesh.tris.len(), 1);
+        assert_eq!(mesh.verts[1], [11.0, 0.0, 0.0]); // center applied
+    }
+
+    #[test]
+    fn coll_grammar_drift_is_rejected() {
+        let mut payload = coll_box_record([0.0; 3], [1.0; 3]);
+        payload.push(0); // trailing garbage → walked != len
+        let file = with_coll(tiny_xob(), &payload);
+        assert!(parse_coll(&file).is_err());
+        assert!(parse_coll(&tiny_xob()).is_err()); // no COLL chunk at all
     }
 }
