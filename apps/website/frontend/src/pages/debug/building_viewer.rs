@@ -128,6 +128,10 @@ pub mod geom {
     pub const RAY_GLASS: [f32; 4] = [0.20, 0.80, 0.95, 1.0];
     pub const RAY_COVER: [f32; 4] = [0.95, 0.85, 0.20, 1.0];
     pub const RAY_BLOCKED: [f32; 4] = [0.95, 0.25, 0.20, 1.0];
+    /// Roof heightfield ramp (eave → ridge) + the above-ridge chimney accent.
+    pub const COL_ROOF_LO: [f32; 4] = [0.16, 0.22, 0.33, 0.92];
+    pub const COL_ROOF_HI: [f32; 4] = [0.82, 0.86, 0.95, 0.95];
+    pub const COL_ROOF_CHIMNEY: [f32; 4] = [0.95, 0.63, 0.20, 0.95];
 
     /// Blueprint-local plan `[x, z]` → engine world `[x, y]`. The ortho camera is deck.gl
     /// `flipY:false` — world **+y renders UP** — so mapping game +z (north) straight onto +y
@@ -247,6 +251,8 @@ pub mod geom {
         /// `CONTOURS` hairlines: ghosts + arcs + normals + hatch.
         pub hairlines: Vec<f32>,
         pub hairline_count: u32,
+        /// Covered `RoofGrid` cells painted on the Roof view (0 elsewhere / roofless).
+        pub roof_cell_count: u32,
     }
 
     fn append_polygon(
@@ -330,6 +336,44 @@ pub mod geom {
                 &bp.overall_footprint.polygon2_d,
                 COL_FLOOR,
             );
+            // Heightfield cells over the plate: dark at the eave, light at the ridge, chimney
+            // spikes (above ridge + 0.3) in the accent color. This is the emitted RoofGrid drawn
+            // verbatim — ridge lines, hips, valleys and dormer pits are eyeballable directly.
+            if let Some(roof) = bp.roof.as_ref().filter(|r| r.is_valid()) {
+                let vp = &bp.vertical_profile;
+                let span = (vp.ridge_height_m - vp.eave_height_m).max(0.1);
+                let cell = roof.cell_size_m;
+                for cx in 0..roof.nx {
+                    for cz in 0..roof.nz {
+                        let Some(h) = roof.heights_m[cx * roof.nz + cz] else {
+                            continue;
+                        };
+                        let col = if h > vp.ridge_height_m + 0.3 {
+                            COL_ROOF_CHIMNEY
+                        } else {
+                            let t = (((h - vp.eave_height_m) / span).clamp(0.0, 1.0)) as f32;
+                            [
+                                COL_ROOF_LO[0] + (COL_ROOF_HI[0] - COL_ROOF_LO[0]) * t,
+                                COL_ROOF_LO[1] + (COL_ROOF_HI[1] - COL_ROOF_LO[1]) * t,
+                                COL_ROOF_LO[2] + (COL_ROOF_HI[2] - COL_ROOF_LO[2]) * t,
+                                COL_ROOF_LO[3] + (COL_ROOF_HI[3] - COL_ROOF_LO[3]) * t,
+                            ]
+                        };
+                        let center = [
+                            roof.origin[0] + (cx as f64 + 0.5) * cell,
+                            roof.origin[1] + (cz as f64 + 0.5) * cell,
+                        ];
+                        append_polygon(
+                            &mut out.floor_pos,
+                            &mut out.floor_col,
+                            &mut out.floor_idx,
+                            &rect_corners(center, [cell, cell], 0.0),
+                            col,
+                        );
+                        out.roof_cell_count += 1;
+                    }
+                }
+            }
             for ghost in &bp.levels {
                 for wall in &ghost.walls {
                     seg(
@@ -730,12 +774,54 @@ pub mod geom {
             assert_eq!(roof.aperture_count, 0);
             assert!(roof.furn_pos.is_empty());
             assert!(!roof.floor_pos.is_empty());
+            // Roofless fixture: no heightfield cells painted.
+            assert_eq!(roof.roof_cell_count, 0);
             // Ghosts: 7 ground + 4 upstairs centerlines.
             assert_eq!(roof.hairline_count, 11);
             // Roof band sits above the top level and reaches the ridge-carrying total height.
             let (band, last) = ViewFloor::Roof.band(&bp);
             assert_eq!(band, [5.6, 7.8]);
             assert!(last);
+        }
+
+        /// The Roof view paints the emitted RoofGrid verbatim: one tinted quad per covered cell
+        /// on the floor lane, ramping dark→light with height; nulls skip; ghosts unaffected.
+        #[test]
+        fn roof_view_paints_the_heightfield() {
+            use map_engine_core::building_blueprint::RoofGrid;
+            let mut bp = farmhouse();
+            let base = build_static_lanes(&bp, ViewFloor::Roof);
+            bp.roof = Some(RoofGrid {
+                origin: [-2.0, -2.0],
+                cell_size_m: 1.0,
+                nx: 4,
+                nz: 4,
+                // Every 3rd cell null; the rest climb 3.0 … 6.0.
+                heights_m: (0..16)
+                    .map(|i| (i % 3 != 0).then(|| 3.0 + f64::from(i) * 0.2))
+                    .collect(),
+            });
+            let lanes = build_static_lanes(&bp, ViewFloor::Roof);
+            let covered = (0..16).filter(|i| i % 3 != 0).count();
+            assert_eq!(lanes.roof_cell_count, covered as u32);
+            // One 4-vertex rect (8 floats) per covered cell on top of the plate mesh.
+            assert_eq!(lanes.floor_pos.len(), base.floor_pos.len() + covered * 8);
+            // The ramp actually ramps: the cell colors are not all identical.
+            let cell_cols: std::collections::HashSet<[u32; 4]> = lanes.floor_col
+                [base.floor_col.len()..]
+                .chunks_exact(4)
+                .map(|c| {
+                    [
+                        c[0].to_bits(),
+                        c[1].to_bits(),
+                        c[2].to_bits(),
+                        c[3].to_bits(),
+                    ]
+                })
+                .collect();
+            assert!(cell_cols.len() >= 3, "distinct tints: {}", cell_cols.len());
+            // Ghost walls unchanged by the paint.
+            assert_eq!(lanes.hairline_count, base.hairline_count);
         }
 
         const GROUND_BAND: [f64; 2] = [0.0, 2.8];
@@ -1203,6 +1289,7 @@ pub fn BuildingViewerPage() -> impl IntoView {
                 <div><span class="mr-1 inline-block h-2 w-4 bg-[#ebcc40]"></span>"low cover · ray past cover"</div>
                 <div><span class="mr-1 inline-block h-2 w-4 bg-[#e6574a]"></span>"full cover · ray blocked"</div>
                 <div><span class="mr-1 inline-block h-2 w-4 bg-[#7059b3]"></span>"stairs (transparent treads)"</div>
+                <div><span class="mr-1 inline-block h-2 w-4 bg-gradient-to-r from-[#2a3854] to-[#d1dbf2]"></span>"roof height (eave → ridge) · "<span class="text-[#f2a133]">"chimney"</span></div>
             </div>
         </div>
     }
