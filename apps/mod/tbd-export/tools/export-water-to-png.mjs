@@ -22,7 +22,7 @@
  *   5. everon-water-preview.png (24-bit RGB downsampled preview)
  *
  * Usage:
- *   node tools/export-water-to-png.mjs [path_to_water_export] [options]
+ *   node apps/mod/tbd-export/tools/export-water-to-png.mjs [path_to_water_export] [options]
  *
  * Options:
  *   --export-dir <path>     Source export directory (default: /home/Samuel/Games/ArmaReforger-Base/TBD_Export/$tbd_framework:worlds/water)
@@ -225,6 +225,7 @@ function getContourMultiplier(depthM, maskType) {
 function loadDemHeightfield(customPath, waterDir) {
   const candidates = [
     customPath,
+    join(waterDir, '../dem/everon-dem-16bit.png'),
     join(waterDir, '../terrain/everon-dem-16bit.png'),
     join(waterDir, 'everon-dem-16bit.png'),
     resolve(process.cwd(), 'packages/map-assets/everon/dem/everon-dem-16bit.png'),
@@ -473,7 +474,9 @@ async function main() {
   // Locate water directory
   const candidateDirs = [
     options.exportDir,
+    join(options.exportDir, options.terrain, 'terrain/water'),
     join(options.exportDir, options.terrain, 'water'),
+    join(options.exportDir, 'terrain/water'),
     join(options.exportDir, 'water'),
     join(options.exportDir, '$tbd_framework:worlds/water'),
   ];

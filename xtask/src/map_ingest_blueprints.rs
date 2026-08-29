@@ -7,7 +7,7 @@
 //! the viewer can render).
 //!
 //! Source resolution: `--src <dir>` override, else the first existing of the known profile
-//! locations (the same candidates `tools/export-roads-to-png.mjs` probes), searched two levels
+//! locations (the same candidates `apps/mod/tbd-export/tools/export-roads-to-png.mjs` probes), searched two levels
 //! deep for `prefabs/buildings/*.json` (the map segment is derived Workbench-side and has taken
 //! the shapes `everon/` and `$tbd_export:worlds/` in real runs).
 //!
