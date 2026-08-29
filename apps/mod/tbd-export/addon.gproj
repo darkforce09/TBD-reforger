@@ -1,0 +1,26 @@
+GameProject {
+ ID "TBD_Export"
+ GUID "C3D4E5F6A7B89012"
+ TITLE "TBD Export"
+ Dependencies {
+  "58D0FB3206B6F859"
+ }
+ Configurations {
+  GameProjectConfig PC {
+   MenuManagerSettings MenuManagerSettings {
+    MenuConfigs {
+     "{C747AFB6B750CE9A}Configs/System/chimeraMenus.conf"
+     "{7BD1A70000000703}Configs/System/chimeraMenus.conf"
+    }
+   }
+  }
+  GameProjectConfig HEADLESS {
+   MenuManagerSettings MenuManagerSettings {
+    MenuConfigs {
+     "{C747AFB6B750CE9A}Configs/System/chimeraMenus.conf"
+     "{7BD1A70000000703}Configs/System/chimeraMenus.conf"
+    }
+   }
+  }
+ }
+}

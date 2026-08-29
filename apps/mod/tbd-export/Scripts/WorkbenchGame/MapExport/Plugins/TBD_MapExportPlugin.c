@@ -74,7 +74,7 @@ class TBD_MapExportPlugin : WorkbenchPlugin
 		TBD_MapExportContext ctx = new TBD_MapExportContext();
 		if (!ctx.Init())
 		{
-			Print("[TBD][MapExport] Failed to initialize map export context — aborting.", LogLevel.ERROR);
+			Print("[TBD][MapExport] Failed to initialize map export context - aborting.", LogLevel.ERROR);
 			return false;
 		}
 

@@ -1,0 +1,38 @@
+SCR_BaseGameMode : "{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et" {
+ ID "2D0FF9E203CA93B6"
+ components {
+  TBD_RoadExportComponent "{B3C4D5E6F7890123}" {
+  }
+  TBD_FrameworkManager "{CF7EB40B6E5F2618}" {
+  }
+  TBD_SpawnManager "{AC1D5E7F9B3D2610}" {
+   m_bAutoDeploy 0
+  }
+  TBD_SafestartManager "{F3A6D2B84C071E95}" {
+  }
+  TBD_LoadoutEquipComponent "{B2F0C7A14D6E9A33}" {
+  }
+  TBD_SpectatorComponent "{E4A9C1730B6D5F82}" {
+  }
+  TBD_LobbyComponent "{C5B71E4802A9D63F}" {
+  }
+  TBD_PlayAreaComponent "{A7D3F1C609E45B28}" {
+  }
+  TBD_MarkerComponent "{A7D3E60F5C81B924}" {
+  }
+  TBD_RadioComponent "{B93C2F5A17E6D04C}" {
+  }
+  TBD_ObjectivesComponent "{B9E2C4A70D15F836}" {
+  }
+  TBD_PreSlotComponent "{D1F4A9C3705E6B82}" {
+  }
+  SCR_EditableEntityComponent "{D8BE94B38E91B5D0}" {
+  }
+  SCR_RespawnSystemComponent "{56B2B4793051E7C9}" {
+   m_sLoadingLayout ""
+  }
+ }
+ PlayerControllerPrefab "{1A1ABD939E1E8423}Prefabs/Systems/TBD_PlayerController.et"
+ m_bAutoPlayerRespawn 0
+ m_bAllowFactionChange 0
+}

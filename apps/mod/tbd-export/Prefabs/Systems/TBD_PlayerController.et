@@ -1,0 +1,15 @@
+SCR_PlayerController : "{225E51284CC95CFA}Prefabs/Characters/Core/DefaultPlayerControllerMP.et" {
+ ID "61852048A26652B2"
+ components {
+  SCR_RespawnComponent "{998227246E6A49E0}" {
+   components {
+    SCR_FreeSpawnRequestComponent "{5CD2D126A634C24E}" {
+     Enabled 0
+    }
+    SCR_SpawnPointRespawnRequestComponent "{5CD2D126BE7315B8}" {
+     Enabled 0
+    }
+   }
+  }
+ }
+}
