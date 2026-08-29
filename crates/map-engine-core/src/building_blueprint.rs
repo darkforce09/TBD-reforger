@@ -139,7 +139,15 @@ pub struct BuildingLevel {
     pub name: String,
     pub elevation_range: [f64; 2],
     pub slice_height_m: f64,
+    /// Largest outer ring of the traced floor plate (empty for slab-less levels like the
+    /// attic). The full multi-piece truth lives in `floor_polygons` / `plate`.
     pub footprint_polygon: Vec<[f64; 2]>,
+    /// Verbatim per-cell floor occupancy + heights; absent on pre-plate blueprints.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plate: Option<PlateGrid>,
+    /// Traced plate boundary rings (outer + holes per connected piece); empty when untraced.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub floor_polygons: Vec<FloorPolygon>,
     pub walls: Vec<BuildingWall>,
     pub doors: Vec<BuildingDoor>,
     pub windows: Vec<BuildingWindow>,
@@ -187,6 +195,60 @@ impl RoofGrid {
         }
         self.heights_m[ix * self.nz + iz]
     }
+}
+
+/// Downsampled walkable-floor heightfield for ONE level, in the building's local frame (y up).
+/// Same shape as [`RoofGrid`] but different semantics: a covered cell means "there is floor
+/// slab here at this height" — the verbatim per-cell product of the plate scan, so partial
+/// mezzanines and double-height voids render exactly as measured. Optional — absent on
+/// pre-plate blueprints and on levels with no real slab (attic).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlateGrid {
+    /// Local `[x, z]` of the low corner of cell (0, 0).
+    pub origin: [f64; 2],
+    pub cell_size_m: f64,
+    pub nx: usize,
+    pub nz: usize,
+    /// Row-major `ix * nz + iz`; `None` = no floor here; `Some(y)` = local slab-surface height.
+    pub heights_m: Vec<Option<f64>>,
+}
+
+impl PlateGrid {
+    /// Shape sanity — an inconsistent grid is ignored by consumers.
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.cell_size_m > 0.0
+            && self.nx > 0
+            && self.nz > 0
+            && self.heights_m.len() == self.nx * self.nz
+    }
+
+    /// Nearest-cell floor height at local `(x, z)`; `None` outside the grid or over a void.
+    #[must_use]
+    pub fn height_at(&self, x: f64, z: f64) -> Option<f64> {
+        let fx = (x - self.origin[0]) / self.cell_size_m;
+        let fz = (z - self.origin[1]) / self.cell_size_m;
+        if fx < 0.0 || fz < 0.0 {
+            return None;
+        }
+        let (ix, iz) = (fx as usize, fz as usize);
+        if ix >= self.nx || iz >= self.nz {
+            return None;
+        }
+        self.heights_m[ix * self.nz + iz]
+    }
+}
+
+/// One connected piece of a level's floor plate as traced polygon rings: an outer boundary
+/// (CCW) plus any interior voids (CW holes). A level with disconnected floor (split mezzanine)
+/// carries several of these.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FloorPolygon {
+    pub outer: Vec<[f64; 2]>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub holes: Vec<Vec<[f64; 2]>>,
 }
 
 /// Complete building archetype blueprint definition.

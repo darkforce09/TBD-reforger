@@ -102,13 +102,51 @@
           },
           "sliceHeightM": { "type": "number" },
           "footprintPolygon": {
+            "description": "Largest outer ring of the traced plate; EMPTY for slab-less levels (attic). Full multi-piece truth in floorPolygons/plate.",
             "type": "array",
-            "minItems": 3,
+            "minItems": 0,
             "items": {
               "type": "array",
               "minItems": 2,
               "maxItems": 2,
               "items": { "type": "number" }
+            }
+          },
+          "plate": {
+            "description": "Optional verbatim walkable-floor heightfield for this level (local frame, y up). Row-major ix*nz+iz; null = void.",
+            "type": "object",
+            "required": ["origin", "cellSizeM", "nx", "nz", "heightsM"],
+            "additionalProperties": false,
+            "properties": {
+              "origin": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } },
+              "cellSizeM": { "type": "number", "exclusiveMinimum": 0 },
+              "nx": { "type": "integer", "minimum": 1 },
+              "nz": { "type": "integer", "minimum": 1 },
+              "heightsM": { "type": "array", "items": { "type": ["number", "null"] } }
+            }
+          },
+          "floorPolygons": {
+            "description": "Traced plate boundary per connected piece: outer ring (CCW) + interior hole rings (CW).",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["outer"],
+              "additionalProperties": false,
+              "properties": {
+                "outer": {
+                  "type": "array",
+                  "minItems": 3,
+                  "items": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } }
+                },
+                "holes": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "minItems": 3,
+                    "items": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } }
+                  }
+                }
+              }
             }
           },
           "walls": {

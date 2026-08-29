@@ -221,6 +221,8 @@ fn gable_blueprint() -> BuildingBlueprint {
             elevation_range: [0.0, 2.4],
             slice_height_m: 1.2,
             footprint_polygon: square,
+            plate: None,
+            floor_polygons: vec![],
             walls: vec![BuildingWall {
                 id: "w_test".to_string(),
                 start: [2.0, 0.0],
@@ -354,4 +356,48 @@ fn blueprint_without_roof_is_unchanged() {
     // invalid the roof test is skipped and nothing else is on the path.
     let los = broken.evaluate_los([3.5, 6.0, 0.2], [3.5, 2.0, 3.4]);
     assert!(los.is_clear, "invalid grid must be ignored: {:?}", los.hits);
+}
+
+/// Plate contract: pre-plate JSONs parse to `None`/empty and the absent fields round-trip
+/// away; populated plate + rings survive a serde round trip; shape checks work.
+#[test]
+fn plate_grid_and_floor_polygons_round_trip() {
+    // Back-compat: the committed pre-plate asset has neither field.
+    let bp = farmhouse();
+    assert!(bp.levels.iter().all(|l| l.plate.is_none()));
+    assert!(bp.levels.iter().all(|l| l.floor_polygons.is_empty()));
+    let v = serde_json::to_value(&bp).expect("serialize");
+    let l0 = &v["levels"][0];
+    assert!(l0.get("plate").is_none(), "absent plate must not serialize");
+    assert!(
+        l0.get("floorPolygons").is_none(),
+        "empty floorPolygons must not serialize"
+    );
+
+    // Round trip with both populated.
+    let mut bp = gable_blueprint();
+    bp.levels[0].plate = Some(PlateGrid {
+        origin: [0.0, 0.0],
+        cell_size_m: 0.5,
+        nx: 2,
+        nz: 2,
+        heights_m: vec![Some(0.1), None, Some(0.15), Some(0.1)],
+    });
+    bp.levels[0].floor_polygons = vec![FloorPolygon {
+        outer: vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
+        holes: vec![vec![[0.4, 0.4], [0.4, 0.6], [0.6, 0.6], [0.6, 0.4]]],
+    }];
+    let json = serde_json::to_string(&bp).expect("serialize");
+    assert!(json.contains("\"cellSizeM\":0.5") && json.contains("\"heightsM\""));
+    let back: BuildingBlueprint = serde_json::from_str(&json).expect("reparse");
+    assert_eq!(back, bp);
+
+    let plate = back.levels[0].plate.as_ref().expect("plate");
+    assert!(plate.is_valid());
+    assert_eq!(plate.height_at(0.25, 0.25), Some(0.1));
+    assert_eq!(plate.height_at(0.25, 0.75), None, "void cell");
+    assert_eq!(plate.height_at(-0.1, 0.2), None, "outside grid");
+    let mut bad = plate.clone();
+    bad.heights_m.pop();
+    assert!(!bad.is_valid());
 }

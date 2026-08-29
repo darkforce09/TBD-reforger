@@ -73,6 +73,8 @@ pub fn assemble(
             elevation_range: [band.band_lo + oy, band.band_hi + oy],
             slice_height_m: band.band_lo + oy + p.slice_height_above_floor_m,
             footprint_polygon: band.footprint.iter().map(|pt| local_pt(*pt)).collect(),
+            plate: None, // wired in the rings/plate emission commit
+            floor_polygons: Vec::new(),
             walls,
             doors: Vec::new(),   // apertures muted: walls-first iteration
             windows: Vec::new(), // (dump carries the data; no re-dump needed to enable)
