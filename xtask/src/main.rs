@@ -494,6 +494,16 @@ enum MapCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
+    /// Generate a standard voxel dump from real triangle geometry (a Reforger .xob) by
+    /// analytic ray-marching — same wire format as the Workbench sensor, no engine needed
+    /// (--mesh <file.xob> --slug <s> [--out <dir>] [--resource <str>] [--lod <tier>]
+    /// [--reference <dump.jsonl[.gz]>] [--axes x,y,-z] [--flip-winding]
+    /// [--exclude-material <substr>]... [--stats]).
+    #[command(name = "voxels-from-mesh")]
+    VoxelsFromMesh {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -1145,6 +1155,7 @@ fn run() -> Result<u8> {
             MapCmd::IngestBlueprints { args } => map_ingest_blueprints::run(&args),
             MapCmd::ParityReport { args } => map_parity_report::run(&args),
             MapCmd::BlueprintFromVoxels { args } => map_blueprint::run(&args),
+            MapCmd::VoxelsFromMesh { args } => map_blueprint::run_voxels_from_mesh(&args),
         },
         TopCmd::Verify { cmd } => {
             let code = match cmd {

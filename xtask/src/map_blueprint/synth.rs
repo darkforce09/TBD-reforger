@@ -2,10 +2,8 @@
 //! Enfusion dumper (entry face per solid front, both directions, normalized coordinates), so the
 //! pipeline is exercised end-to-end without a Workbench in the room.
 
-use super::types::{DumpMeta, ExcludedCounts, VoxelDump};
-
-const CELL: f64 = 0.1;
-const PAD: f64 = 0.6;
+use super::march::{self, CELL, DumpIdent};
+use super::types::VoxelDump;
 
 /// Analytic solid in LOCAL coordinates (pre-pad).
 enum Solid {
@@ -165,90 +163,25 @@ fn merged_intervals(solids: &[Solid], axis: usize, a: f64, b: f64) -> Vec<(f64, 
     out
 }
 
-/// March all six directions over the solids, local frame; normalize by origin = bounds - PAD.
+/// March all six directions over the solids via the shared [`march`] skeleton (which owns the
+/// pad/origin/dims math and r2 normalization): forward entries are interval starts ascending,
+/// backward entries are interval ends in reverse — exactly the closing faces a −axis march sees.
 fn generate(solids: Vec<Solid>, bbox_min: [f64; 3], bbox_max: [f64; 3]) -> VoxelDump {
-    let origin = [bbox_min[0] - PAD, bbox_min[1] - PAD, bbox_min[2] - PAD];
-    let span = [
-        bbox_max[0] - bbox_min[0] + 2.0 * PAD,
-        bbox_max[1] - bbox_min[1] + PAD + 1.2, // mirror the scanner's +1.2 top pad
-        bbox_max[2] - bbox_min[2] + 2.0 * PAD,
-    ];
-    let dims = [
-        (span[0] / CELL).ceil() as usize,
-        (span[1] / CELL).ceil() as usize,
-        (span[2] / CELL).ceil() as usize,
-    ];
-    let r2 = |v: f64| (v * 100.0).round() / 100.0;
-
-    let mut dump = VoxelDump {
-        meta: Some(DumpMeta {
-            v: super::types::DUMP_VERSION.to_string(),
+    march::generate_dump(
+        DumpIdent {
             slug: "synth".into(),
             resource: "synth://".into(),
-            origin,
-            cell: CELL,
-            dims,
-            span,
-            bbox_min,
-            bbox_max,
-            root_yaw_deg: 0.0,
-            excluded: ExcludedCounts {
-                doors: 0,
-                glass: 0,
-                furniture: 0,
-            },
-            tick: 0,
-        }),
-        ..VoxelDump::default()
-    };
-
-    // x lines over (iy, iz); y lines over (ix, iz); z lines over (ix, iy).
-    for iy in 0..dims[1] {
-        let fy = origin[1] + (iy as f64 + 0.5) * CELL;
-        for iz in 0..dims[2] {
-            let fz = origin[2] + (iz as f64 + 0.5) * CELL;
-            let ivs = merged_intervals(&solids, 0, fy, fz);
-            if ivs.is_empty() {
-                continue;
-            }
-            let fwd: Vec<f64> = ivs.iter().map(|iv| r2(iv.0 - origin[0])).collect();
-            let mut bwd: Vec<f64> = ivs.iter().map(|iv| r2(iv.1 - origin[0])).collect();
+        },
+        bbox_min,
+        bbox_max,
+        |axis, a, b| {
+            let ivs = merged_intervals(&solids, axis, a, b);
+            let fwd: Vec<f64> = ivs.iter().map(|iv| iv.0).collect();
+            let mut bwd: Vec<f64> = ivs.iter().map(|iv| iv.1).collect();
             bwd.reverse();
-            dump.x_pos.insert((iy, iz), fwd);
-            dump.x_neg.insert((iy, iz), bwd);
-        }
-    }
-    for ix in 0..dims[0] {
-        let fx = origin[0] + (ix as f64 + 0.5) * CELL;
-        for iz in 0..dims[2] {
-            let fz = origin[2] + (iz as f64 + 0.5) * CELL;
-            let ivs = merged_intervals(&solids, 1, fx, fz);
-            if ivs.is_empty() {
-                continue;
-            }
-            let up: Vec<f64> = ivs.iter().map(|iv| r2(iv.0 - origin[1])).collect();
-            let mut down: Vec<f64> = ivs.iter().map(|iv| r2(iv.1 - origin[1])).collect();
-            down.reverse();
-            dump.y_up.insert((ix, iz), up);
-            dump.y_down.insert((ix, iz), down);
-        }
-    }
-    for ix in 0..dims[0] {
-        let fx = origin[0] + (ix as f64 + 0.5) * CELL;
-        for iy in 0..dims[1] {
-            let fy = origin[1] + (iy as f64 + 0.5) * CELL;
-            let ivs = merged_intervals(&solids, 2, fx, fy);
-            if ivs.is_empty() {
-                continue;
-            }
-            let fwd: Vec<f64> = ivs.iter().map(|iv| r2(iv.0 - origin[2])).collect();
-            let mut bwd: Vec<f64> = ivs.iter().map(|iv| r2(iv.1 - origin[2])).collect();
-            bwd.reverse();
-            dump.z_pos.insert((ix, iy), fwd);
-            dump.z_neg.insert((ix, iy), bwd);
-        }
-    }
-    dump
+            (fwd, bwd)
+        },
+    )
 }
 
 fn shell(w: f64, d: f64, h: f64, t: f64) -> Vec<Solid> {

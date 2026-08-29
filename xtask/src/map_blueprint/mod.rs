@@ -11,6 +11,8 @@
 //! Exit: 0 = every matched dump interpreted and validated · 1 = no match or any failure.
 
 mod emit;
+mod march;
+mod mesh;
 mod pair;
 mod params;
 mod parse;
@@ -20,6 +22,9 @@ mod slabs;
 mod synth;
 mod types;
 mod walls;
+mod xob;
+
+pub use mesh::run_voxels_from_mesh;
 
 use std::path::PathBuf;
 

@@ -4,11 +4,11 @@
 
 use std::collections::HashMap;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 pub const DUMP_VERSION: &str = "tbd-voxel-dump/1";
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DumpMeta {
     pub v: String,
@@ -28,7 +28,7 @@ pub struct DumpMeta {
     pub tick: i64,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ExcludedCounts {
     pub doors: usize,
     pub glass: usize,
