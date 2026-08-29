@@ -188,17 +188,59 @@ fn interpret_one(
     p.min_floor_y -= m.origin[1];
 
     let vert = slabs::analyze(&dump.y_down, m.dims, m.cell, m.span[1], &p);
+    let mut band_debugs: Vec<walls::BandDebug> = debug_dir.map(|_| Vec::new()).unwrap_or_default();
+    let bands = build_bands(&dump, &vert, algo, &p, debug_dir.map(|_| &mut band_debugs));
+
+    if let Some(dir) = debug_dir {
+        std::fs::create_dir_all(dir)?;
+        let dbg = serde_json::json!({
+            "slug": m.slug,
+            "floors_local": vert.floors.iter().map(|f| f + m.origin[1]).collect::<Vec<_>>(),
+            "slabs_local": vert.slabs.iter().map(|s| s + m.origin[1]).collect::<Vec<_>>(),
+            "eave_local": vert.eave + m.origin[1],
+            "ridge_local": vert.ridge + m.origin[1],
+            "truncated_scanlines": dump.truncated,
+            "furniture_records": dump.furniture.len(),
+            // Per-band cluster attribution: every viewer-visible wall gap has a verdict here
+            // (persistence / drift), with the roof-clipped denominator it was judged against.
+            "bands": band_debugs,
+        });
+        std::fs::write(
+            dir.join(format!("{}_stages.json", m.slug)),
+            serde_json::to_string_pretty(&dbg)? + "\n",
+        )?;
+    }
+
+    Ok(emit::assemble(&dump, &vert, bands, &p))
+}
+
+/// Band construction: one band per detected floor slab, then — when the ridge rises at least
+/// `attic_min_rise_m` above the last band — a synthesized attic band up to the ridge (gable
+/// ends and the upper walls of double-height rooms live there). The attic gets NO floor plate:
+/// it has no slab, and probing the y_down window there would ingest sloped-roof smear as floor.
+fn build_bands(
+    dump: &types::VoxelDump,
+    vert: &types::VerticalScan,
+    algo: Algo,
+    p: &Params,
+    mut debugs: Option<&mut Vec<walls::BandDebug>>,
+) -> Vec<BandProducts> {
+    let m = dump.meta();
+    let cell = m.cell;
     let mut bands = Vec::new();
     for (li, &lo) in vert.floors.iter().enumerate() {
         let hi = match vert.floors.get(li + 1) {
             Some(&next) => next,
             None => vert.eave.max(lo + p.top_band_min_m),
         };
-        let bw = walls::extract_band(&dump, &vert, lo, hi, algo, &p);
-        let (plate_grid, plate_heights) =
-            plate::floor_plate(&dump.y_down, vert.nx, vert.nz, lo, &p);
+        let mut dbg = debugs.as_deref_mut().map(|_| walls::BandDebug::default());
+        let bw = walls::extract_band(dump, vert, lo, hi, algo, p, dbg.as_mut());
+        if let (Some(sink), Some(d)) = (debugs.as_deref_mut(), dbg) {
+            sink.push(d);
+        }
+        let (plate_grid, plate_heights) = plate::floor_plate(&dump.y_down, vert.nx, vert.nz, lo, p);
         let plate_cells = plate_grid.count();
-        let traced = rings::trace(&plate_grid, m.cell, p.plate_min_ring_area_m2);
+        let traced = rings::trace(&plate_grid, cell, p.plate_min_ring_area_m2);
         let (footprint, floor_polygons) = traced.contract();
         println!(
             "    band {li} [{:.2}..{:.2}]: plate={plate_cells} raw={} walls={} masses={} rings={}(+{} dropped)",
@@ -218,27 +260,37 @@ fn interpret_one(
             floor_polygons,
             plate_heights,
             plate_cells,
+            is_attic: false,
         });
     }
 
-    if let Some(dir) = debug_dir {
-        std::fs::create_dir_all(dir)?;
-        let dbg = serde_json::json!({
-            "slug": m.slug,
-            "floors_local": vert.floors.iter().map(|f| f + m.origin[1]).collect::<Vec<_>>(),
-            "slabs_local": vert.slabs.iter().map(|s| s + m.origin[1]).collect::<Vec<_>>(),
-            "eave_local": vert.eave + m.origin[1],
-            "ridge_local": vert.ridge + m.origin[1],
-            "truncated_scanlines": dump.truncated,
-            "furniture_records": dump.furniture.len(),
+    let last_hi = bands.last().map_or(0.0, |b| b.band_hi);
+    if vert.ridge - last_hi >= p.attic_min_rise_m {
+        let mut dbg = debugs.as_deref_mut().map(|_| walls::BandDebug::default());
+        let bw = walls::extract_band(dump, vert, last_hi, vert.ridge, algo, p, dbg.as_mut());
+        if let (Some(sink), Some(d)) = (debugs.as_deref_mut(), dbg) {
+            sink.push(d);
+        }
+        println!(
+            "    attic [{:.2}..{:.2}]: raw={} walls={} masses={}",
+            last_hi + m.origin[1],
+            vert.ridge + m.origin[1],
+            bw.raw_count,
+            bw.walls.len(),
+            bw.masses.len(),
+        );
+        bands.push(BandProducts {
+            band_lo: last_hi,
+            band_hi: vert.ridge,
+            walls: bw,
+            footprint: Vec::new(),
+            floor_polygons: Vec::new(),
+            plate_heights: Vec::new(),
+            plate_cells: 0,
+            is_attic: true,
         });
-        std::fs::write(
-            dir.join(format!("{}_stages.json", m.slug)),
-            serde_json::to_string_pretty(&dbg)? + "\n",
-        )?;
     }
-
-    Ok(emit::assemble(&dump, &vert, bands, &p))
+    bands
 }
 
 #[cfg(test)]
@@ -251,6 +303,88 @@ mod tests {
             .expect("repo root")
             .join("xtask/tests/fixtures")
             .join(name)
+    }
+
+    /// The floors-and-walls fixture end to end: partial mezzanine plate (void stays void),
+    /// the under-roof knee wall surviving via the roof-clipped persistence denominator, and
+    /// the attic band self-synthesizing with gable ends and no plate.
+    #[test]
+    fn gable_mezzanine_bands_plate_and_knee_wall() {
+        let d = synth::gable_mezzanine();
+        let m = d.meta().clone();
+        let mut p = Params::default();
+        p.min_floor_y = -0.5 - m.origin[1];
+        let vert = slabs::analyze(&d.y_down, m.dims, m.cell, m.span[1], &p);
+        assert_eq!(
+            vert.floors.len(),
+            2,
+            "ground + mezzanine: {:?}",
+            vert.floors
+        );
+
+        let mut dbg: Vec<walls::BandDebug> = Vec::new();
+        let bands = build_bands(&d, &vert, Algo::Segments, &p, Some(&mut dbg));
+        assert_eq!(bands.len(), 3, "two floors + attic");
+        assert_eq!(dbg.len(), 3);
+
+        // Attic: [band1_hi .. ridge], no plate products, gable ends on both x extremes.
+        let attic = &bands[2];
+        assert!(attic.is_attic);
+        assert!((attic.band_hi - vert.ridge).abs() < 1e-9);
+        assert!(attic.plate_heights.is_empty() && attic.footprint.is_empty());
+        let gable_ends = attic
+            .walls
+            .walls
+            .iter()
+            .filter(|w| (w.start[0] - w.end[0]).abs() < 1e-9)
+            .count();
+        assert!(
+            gable_ends >= 2,
+            "gable ends missing: {:?}",
+            attic.walls.walls
+        );
+
+        // Mezzanine plate covers roughly the west half — and only that.
+        assert!(bands[1].plate_cells > 0);
+        assert!(
+            bands[1].plate_cells * 3 < bands[0].plate_cells * 2,
+            "mezzanine plate must stay partial: {} vs ground {}",
+            bands[1].plate_cells,
+            bands[0].plate_cells
+        );
+
+        // The knee wall (x-running; solid z = 0.325 → normalized 0.925 after the 0.6 m dump
+        // PAD) survives in band 1: only ~6/16 whole-window rows, but ≥ need against its
+        // roof-clipped denominator.
+        let knee = bands[1]
+            .walls
+            .walls
+            .iter()
+            .find(|w| {
+                (w.start[1] - w.end[1]).abs() < 1e-9
+                    && (w.start[1] - 0.925).abs() < 0.15
+                    && w.start[0].min(w.end[0]) > 3.4
+            })
+            .unwrap_or_else(|| panic!("knee wall missing: {:?}", bands[1].walls.walls));
+        assert!(
+            (w_len(knee) - 1.8).abs() < 0.4,
+            "knee wall run length: {:?}",
+            knee
+        );
+        let knee_cluster = dbg[1]
+            .clusters
+            .iter()
+            .find(|c| c.axis == "x-running" && (c.center - 0.925).abs() < 0.15 && c.fixed > 34)
+            .expect("knee cluster recorded");
+        assert_eq!(knee_cluster.verdict, "accepted");
+        assert!(
+            knee_cluster.rows_avail < 16 && knee_cluster.rows_seen >= knee_cluster.need,
+            "roof clipping engaged: {knee_cluster:?}"
+        );
+    }
+
+    fn w_len(w: &types::WallSeg) -> f64 {
+        ((w.end[0] - w.start[0]).powi(2) + (w.end[1] - w.start[1]).powi(2)).sqrt()
     }
 
     /// Full pipeline on the real FarmHouse dump == the committed golden. Any heuristic change
@@ -282,12 +416,12 @@ mod tests {
     }
 
     /// The acceptance instrument, pinned: replay the committed 400-pair engine oracle through
-    /// the golden blueprint. 384/400 with the roof heightfield, measured 2026-08-29 (was
-    /// 260/400 = 65.0% pre-roof, where every miss was the unmodeled roof; segments 65.0% vs
-    /// live v6 64.0%, grid port 63.2%). The 16 remaining misses are all model-clear/
-    /// engine-blocked — chimney flanks, dormer cheeks and guard resets that deliberately lean
-    /// clear. The mesh/COLL lane scores 374/400 on the same oracle (unpinned — no committed
-    /// mesh dump fixture).
+    /// the golden blueprint. 387/400 with the attic band + roof-clipped persistence + the
+    /// above-roof wall cap, measured 2026-08-30 (roof heightfield alone was 384; pre-roof
+    /// 260/400 = 65.0%, where every miss was the unmodeled roof). The 13 remaining misses are
+    /// all model-clear/engine-blocked — chimney flanks, dormer cheeks and guard resets that
+    /// deliberately lean clear. The mesh/COLL lane scores 377/400 on the same oracle (unpinned
+    /// — no committed mesh dump fixture).
     #[test]
     fn farmhouse_golden_parity_is_pinned() {
         #[derive(serde::Deserialize)]
@@ -315,7 +449,7 @@ mod tests {
                 model_blocked_engine_clear += 1;
             }
         }
-        assert_eq!(agree, 384, "parity drifted (was 96.0%)");
+        assert_eq!(agree, 387, "parity drifted (was 96.8%)");
         assert_eq!(
             model_blocked_engine_clear, 0,
             "phantom geometry blocks rays the engine clears"

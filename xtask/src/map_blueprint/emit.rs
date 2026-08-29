@@ -28,6 +28,8 @@ pub struct BandProducts {
     /// Per-cell topmost in-window y_down entry, normalized frame; empty = no plate scanned.
     pub plate_heights: Vec<Option<f64>>,
     pub plate_cells: usize,
+    /// Synthesized eave→ridge band: named "Attic", carries no plate by design.
+    pub is_attic: bool,
 }
 
 pub fn assemble(
@@ -87,7 +89,11 @@ pub fn assemble(
         });
         levels.push(BuildingLevel {
             level_index: li,
-            name: ordinal_floor_name(li + 1),
+            name: if band.is_attic {
+                "Attic".to_string()
+            } else {
+                ordinal_floor_name(li + 1)
+            },
             elevation_range: [band.band_lo + oy, band.band_hi + oy],
             slice_height_m: band.band_lo + oy + p.slice_height_above_floor_m,
             footprint_polygon: band.footprint.iter().map(|pt| local_pt(*pt)).collect(),
@@ -287,7 +293,7 @@ mod tests {
         let v = slabs::analyze(&d.y_down, m.dims, m.cell, m.span[1], &p);
         let lo = v.floors[0];
         let hi = v.eave.max(lo + p.top_band_min_m);
-        let bw = walls::extract_band(&d, &v, lo, hi, walls::Algo::Segments, &p);
+        let bw = walls::extract_band(&d, &v, lo, hi, walls::Algo::Segments, &p, None);
         let (pg, plate_heights) = plate::floor_plate(&d.y_down, v.nx, v.nz, lo, &p);
         let plate_cells = pg.count();
         let traced = crate::map_blueprint::rings::trace(&pg, m.cell, p.plate_min_ring_area_m2);
@@ -303,6 +309,7 @@ mod tests {
                 floor_polygons,
                 plate_heights,
                 plate_cells,
+                is_attic: false,
             }],
             &p,
         );

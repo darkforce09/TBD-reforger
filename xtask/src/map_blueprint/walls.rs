@@ -30,6 +30,35 @@ pub struct BandWalls {
     pub raw_count: usize,
 }
 
+/// One cluster's fate during extraction — the attribution record behind every wall (or gap)
+/// the viewer shows. Emitted into the `--debug-dir` stages JSON.
+#[derive(Debug, serde::Serialize)]
+pub struct ClusterDebug {
+    /// "z-running" (constant x) or "x-running" (constant z).
+    pub axis: &'static str,
+    /// Fixed lattice index (iz for z-running, ix for x-running).
+    pub fixed: usize,
+    /// Cluster centerline along the interval axis, normalized meters.
+    pub center: f64,
+    pub thick: f64,
+    pub rows_seen: usize,
+    /// Roof-clipped slice rows available at this column (the persistence denominator).
+    pub rows_avail: usize,
+    /// Rows required: max(min_persist_rows, ceil(persistence_frac × rows_avail)).
+    pub need: usize,
+    pub drift: f64,
+    /// "accepted" | "persistence" | "drift".
+    pub verdict: &'static str,
+}
+
+/// Per-band extraction attribution for `--debug-dir` (never allocated on normal runs).
+#[derive(Debug, Default, serde::Serialize)]
+pub struct BandDebug {
+    pub clusters: Vec<ClusterDebug>,
+    pub graze_vetoed: usize,
+    pub mass_cells: usize,
+}
+
 pub fn extract_band(
     dump: &VoxelDump,
     vert: &VerticalScan,
@@ -37,9 +66,10 @@ pub fn extract_band(
     band_hi: f64,
     algo: Algo,
     p: &Params,
+    debug: Option<&mut BandDebug>,
 ) -> BandWalls {
     match algo {
-        Algo::Segments => segments_band(dump, vert, band_lo, band_hi, p),
+        Algo::Segments => segments_band(dump, vert, band_lo, band_hi, p, debug),
         Algo::Grid => grid_band(dump, vert, band_lo, band_hi, p),
     }
 }
@@ -84,12 +114,14 @@ fn segments_band(
     band_lo: f64,
     band_hi: f64,
     p: &Params,
+    mut debug: Option<&mut BandDebug>,
 ) -> BandWalls {
     let m = dump.meta();
     let cell = m.cell;
     let rows = slice_rows(band_lo, band_hi, cell, m.dims[1], p);
     let mut walls = Vec::new();
     let mut raw = 0usize;
+    let mut vetoed = 0usize;
     let mut thick_hits: HashMap<(usize, usize), usize> = HashMap::new();
 
     // z-running walls (constant x) from x± marches; keyed (iy, iz), interval axis = x.
@@ -101,23 +133,43 @@ fn segments_band(
         cell,
         p,
         &mut raw,
+        &mut vetoed,
         &mut thick_hits,
         |center, k, row_y| roof_veto(vert, cell, center, (k as f64 + 0.5) * cell, row_y, p),
         |center, k, ny_thick| thick_cells(center, k, ny_thick, cell, true),
+        |center, k| roof_clipped_rows(vert, &rows, cell, (center / cell) as usize, k, p),
+        "z-running",
+        debug.as_deref_mut(),
     );
     walls.extend(merge_columns(cols_z, cell, p, true));
 
     // x-running walls (constant z) from z± marches; keyed (ix, iy), interval axis = z.
-    let cols_x = collect_columns_zaxis(dump, &rows, m.dims[0], p, &mut raw, &mut thick_hits, vert);
+    let cols_x = collect_columns_zaxis(
+        dump,
+        &rows,
+        m.dims[0],
+        p,
+        &mut raw,
+        &mut vetoed,
+        &mut thick_hits,
+        vert,
+        debug.as_deref_mut(),
+    );
     walls.extend(merge_columns(cols_x, cell, p, false));
 
     // Interior masses: cells persistently covered by over-thick intervals → greedy rects.
+    // (Deliberately still GLOBALLY normalized — masses are stand-in furniture; the per-column
+    // denominator below is a wall-acceptance change only.)
     let need = ((rows.len() as f64) * p.persistence_frac).ceil() as usize;
     let mut mass_grid = PlanGrid::new(vert.nx, vert.nz);
     for (&(ix, iz), &n) in &thick_hits {
         if n >= need && ix < vert.nx && iz < vert.nz {
             mass_grid.set(ix, iz, true);
         }
+    }
+    if let Some(dbg) = debug.as_deref_mut() {
+        dbg.graze_vetoed = vetoed;
+        dbg.mass_cells = mass_grid.count();
     }
     let masses = rects_from_grid(&mass_grid, cell)
         .into_iter()
@@ -133,8 +185,32 @@ fn segments_band(
     }
 }
 
+/// Slice rows a wall column at plan cell `(ix, iz)` can actually occupy: rows whose center sits
+/// clear below the local TOP surface (margin = `roof_graze_eps_m`, symmetric with the graze
+/// veto, so rows the veto eats also leave the persistence denominator). No top surface → the
+/// full window. This is what lets knee walls and gable-side walls under the roof plane pass
+/// persistence on the rows they can exist in, instead of being judged against the whole band.
+fn roof_clipped_rows(
+    vert: &VerticalScan,
+    rows: &[usize],
+    cell: f64,
+    ix: usize,
+    iz: usize,
+    p: &Params,
+) -> usize {
+    if ix >= vert.nx || iz >= vert.nz {
+        return rows.len();
+    }
+    let Some(top) = vert.top_at(ix, iz) else {
+        return rows.len();
+    };
+    rows.iter()
+        .filter(|&&r| (r as f64 + 0.5) * cell <= top - p.roof_graze_eps_m)
+        .count()
+}
+
 /// Gather per-scanline interval observations and cluster them into wall columns.
-/// Generic over the axis via the two closures; returns (fixed_index, along_center, thickness).
+/// Generic over the axis via the closures; returns (fixed_index, along_center, thickness).
 #[allow(clippy::too_many_arguments)]
 fn collect_columns(
     pos: &ScanMap,
@@ -144,9 +220,13 @@ fn collect_columns(
     cell: f64,
     p: &Params,
     raw: &mut usize,
+    vetoed: &mut usize,
     thick_hits: &mut HashMap<(usize, usize), usize>,
     veto: impl Fn(f64, usize, f64) -> bool,
     thick_mark: impl Fn(f64, usize, f64) -> Vec<(usize, usize)>,
+    avail: impl Fn(f64, usize) -> usize,
+    axis: &'static str,
+    mut debug: Option<&mut BandDebug>,
 ) -> Vec<(usize, f64, f64)> {
     let empty: Vec<f64> = Vec::new();
     let mut out = Vec::new();
@@ -168,6 +248,7 @@ fn collect_columns(
                     continue;
                 }
                 if veto(iv.mid(), k, row_y) {
+                    *vetoed += 1;
                     continue;
                 }
                 obs.push(Obs {
@@ -177,7 +258,15 @@ fn collect_columns(
                 });
             }
         }
-        out.extend(cluster_columns(&mut obs, k, rows.len(), p));
+        out.extend(cluster_columns(
+            &mut obs,
+            k,
+            rows.len(),
+            &avail,
+            axis,
+            p,
+            debug.as_deref_mut(),
+        ));
     }
     out
 }
@@ -191,8 +280,10 @@ fn collect_columns_zaxis(
     nx: usize,
     p: &Params,
     raw: &mut usize,
+    vetoed: &mut usize,
     thick_hits: &mut HashMap<(usize, usize), usize>,
     vert: &VerticalScan,
+    mut debug: Option<&mut BandDebug>,
 ) -> Vec<(usize, f64, f64)> {
     let cell = dump.meta().cell;
     let empty: Vec<f64> = Vec::new();
@@ -219,6 +310,7 @@ fn collect_columns_zaxis(
                     continue;
                 }
                 if roof_veto(vert, cell, (ix as f64 + 0.5) * cell, iv.mid(), row_y, p) {
+                    *vetoed += 1;
                     continue;
                 }
                 obs.push(Obs {
@@ -228,18 +320,33 @@ fn collect_columns_zaxis(
                 });
             }
         }
-        out.extend(cluster_columns(&mut obs, ix, rows.len(), p));
+        out.extend(cluster_columns(
+            &mut obs,
+            ix,
+            rows.len(),
+            &|center: f64, fixed: usize| {
+                roof_clipped_rows(vert, rows, cell, fixed, (center / cell) as usize, p)
+            },
+            "x-running",
+            p,
+            debug.as_deref_mut(),
+        ));
     }
     out
 }
 
 /// Cluster one scanline's observations by center; keep clusters that persist across slices
-/// without drifting (the two signals a sloped roof plane cannot fake).
+/// without drifting (the two signals a sloped roof plane cannot fake). Persistence is judged
+/// against the ROOF-CLIPPED row count at the cluster's own plan cell (`avail`), floored by
+/// `min_persist_rows` so a normalized denominator cannot let 1–2-observation noise through.
 fn cluster_columns(
     obs: &mut [Obs],
     fixed: usize,
     n_rows: usize,
+    avail: &impl Fn(f64, usize) -> usize,
+    axis: &'static str,
     p: &Params,
+    mut debug: Option<&mut BandDebug>,
 ) -> Vec<(usize, f64, f64)> {
     obs.sort_by(|a, b| a.center.total_cmp(&b.center));
     let mut out = Vec::new();
@@ -259,8 +366,32 @@ fn cluster_columns(
             .iter()
             .map(|o| (o.center - med).abs())
             .fold(0.0, f64::max);
-        let persistent = rows_seen.len() as f64 >= (n_rows as f64 * p.persistence_frac).max(1.0);
-        if persistent && drift <= p.max_drift_m {
+        let rows_avail = avail(med, fixed).min(n_rows);
+        let floor_rows = p.min_persist_rows.min(n_rows).max(1);
+        let need = (((rows_avail as f64) * p.persistence_frac).ceil() as usize).max(floor_rows);
+        let persistent = rows_seen.len() >= need;
+        let verdict = if !persistent {
+            "persistence"
+        } else if drift > p.max_drift_m {
+            "drift"
+        } else {
+            "accepted"
+        };
+        if let Some(dbg) = debug.as_deref_mut() {
+            let mut thicks: Vec<f64> = cluster.iter().map(|o| o.thick).collect();
+            dbg.clusters.push(ClusterDebug {
+                axis,
+                fixed,
+                center: med,
+                thick: median(&mut thicks),
+                rows_seen: rows_seen.len(),
+                rows_avail,
+                need,
+                drift,
+                verdict,
+            });
+        }
+        if verdict == "accepted" {
             let mut thicks: Vec<f64> = cluster.iter().map(|o| o.thick).collect();
             out.push((fixed, med, median(&mut thicks)));
         }
@@ -713,7 +844,7 @@ mod tests {
         let p = Params::default();
         let lo = v.floors[0];
         let hi = v.eave.max(lo + p.top_band_min_m);
-        extract_band(d, v, lo, hi, algo, &p)
+        extract_band(d, v, lo, hi, algo, &p, None)
     }
 
     #[test]
@@ -780,7 +911,7 @@ mod tests {
         let v = vertical(&d);
         let p = Params::default();
         // Second band: eave slab does not exist — synthesize the attic band [eave, ridge].
-        let bw = extract_band(&d, &v, v.eave, v.ridge, Algo::Segments, &p);
+        let bw = extract_band(&d, &v, v.eave, v.ridge, Algo::Segments, &p, None);
         let z_running: Vec<_> = bw
             .walls
             .iter()
@@ -814,8 +945,8 @@ mod tests {
         let in_phantom_zone = |w: &WallSeg| {
             (w.start[0] - w.end[0]).abs() < 1e-9 && w.start[0] > 2.5 && w.start[0] < 3.7
         };
-        let grid = extract_band(&d, &v, lo, hi, Algo::Grid, &p);
-        let seg = extract_band(&d, &v, lo, hi, Algo::Segments, &p);
+        let grid = extract_band(&d, &v, lo, hi, Algo::Grid, &p, None);
+        let seg = extract_band(&d, &v, lo, hi, Algo::Segments, &p, None);
         assert!(
             grid.walls.iter().any(in_phantom_zone),
             "the graze must fool the live AND (else this regression tests nothing): {:?}",
@@ -826,5 +957,31 @@ mod tests {
             "segments must reject the graze: {:?}",
             seg.walls
         );
+    }
+
+    /// The phantom counter-guard for the per-column denominator: a column whose roof-clipped
+    /// window is tiny cannot be captured by 1–2 stationary noise observations —
+    /// `min_persist_rows` (3) floors the requirement.
+    #[test]
+    fn sparse_noise_fails_min_persist_rows_floor() {
+        let p = Params::default();
+        let avail = |_c: f64, _k: usize| 3usize; // heavily roof-clipped column
+        let mk = |rows: &[usize]| -> Vec<Obs> {
+            rows.iter()
+                .map(|&row| Obs {
+                    row,
+                    center: 1.0,
+                    thick: 0.1,
+                })
+                .collect()
+        };
+        // Two stationary observations: need = max(3, ceil(3·0.6) = 2) = 3 → rejected.
+        let mut obs = mk(&[0, 1]);
+        let cols = cluster_columns(&mut obs, 5, 16, &avail, "z-running", &p, None);
+        assert!(cols.is_empty(), "2 rows must fail the absolute floor");
+        // Three observations → accepted.
+        let mut obs = mk(&[0, 1, 2]);
+        let cols = cluster_columns(&mut obs, 5, 16, &avail, "z-running", &p, None);
+        assert_eq!(cols.len(), 1);
     }
 }

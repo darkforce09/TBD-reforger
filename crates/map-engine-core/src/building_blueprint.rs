@@ -359,9 +359,21 @@ impl BuildingBlueprint {
         }
 
         if let Some(roof) = &self.roof
-            && let Some(hit) = roof_crossing(roof, obs, tgt)
+            && roof.is_valid()
         {
-            events.push(hit);
+            // 2.5D wall planes span their level band uniformly, but gable ends and knee walls
+            // are really triangles under the roof — the heightfield knows the true top surface,
+            // so a wall hit ABOVE it is open air, not structure. (Covered cells only: a `None`
+            // cell offers no evidence and the wall stands.)
+            events.retain(|ev| {
+                ev.kind != LosHitKind::Wall
+                    || roof
+                        .height_at(ev.pos[0], ev.pos[2])
+                        .is_none_or(|h| ev.pos[1] <= h + ROOF_MARGIN_M)
+            });
+            if let Some(hit) = roof_crossing(roof, obs, tgt) {
+                events.push(hit);
+            }
         }
 
         events.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap_or(std::cmp::Ordering::Equal));

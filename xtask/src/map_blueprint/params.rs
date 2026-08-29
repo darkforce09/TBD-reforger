@@ -50,10 +50,15 @@ pub struct Params {
     pub slice_top_margin_m: f64,
     /// Cluster epsilon on interval centers within one scanline.
     pub cluster_eps_m: f64,
-    /// A cluster is a wall only if it appears in at least this fraction of slices...
+    /// A cluster is a wall only if it appears in at least this fraction of its ROOF-CLIPPED
+    /// available slices (rows below the local top surface — knee walls under the roof plane are
+    /// judged on the window they can occupy)...
     pub persistence_frac: f64,
     /// ...and its center drifts no more than this from the median across slices.
     pub max_drift_m: f64,
+    /// Absolute floor on rows_seen regardless of the clipped denominator — the phantom guard
+    /// that keeps 1–2-observation noise out when few rows are available.
+    pub min_persist_rows: usize,
     /// Column-merge along the wall axis: max gap between accepted columns, max lateral offset.
     pub run_gap_m: f64,
     pub run_lateral_m: f64,
@@ -94,6 +99,10 @@ pub struct Params {
     // ── band shape ──────────────────────────────────────────────────────────────────────────
     /// Top band height fallback: max(eave, slab + this).
     pub top_band_min_m: f64,
+    /// Synthesize an attic band [last band top .. ridge] when the ridge rises at least this
+    /// far above it — gable ends and upper double-height walls live there. The attic gets NO
+    /// floor plate: it has no slab, and probing would ingest sloped-roof smear as floor.
+    pub attic_min_rise_m: f64,
     /// The viewer's slice height marker above each floor.
     pub slice_height_above_floor_m: f64,
 
@@ -139,6 +148,7 @@ impl Default for Params {
             cluster_eps_m: 0.06,
             persistence_frac: 0.6,
             max_drift_m: 0.08,
+            min_persist_rows: 3,
             run_gap_m: 0.15,
             run_lateral_m: 0.06,
             roof_graze_eps_m: 0.15,
@@ -161,6 +171,7 @@ impl Default for Params {
             furn_level_slack_m: 0.3,
 
             top_band_min_m: 2.0,
+            attic_min_rise_m: 1.0,
             slice_height_above_floor_m: 0.45,
 
             roof_cell_m: 0.3,

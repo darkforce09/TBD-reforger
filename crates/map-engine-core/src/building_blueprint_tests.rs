@@ -358,6 +358,24 @@ fn blueprint_without_roof_is_unchanged() {
     assert!(los.is_clear, "invalid grid must be ignored: {:?}", los.hits);
 }
 
+/// 2.5D wall planes span their band uniformly, but real gable/knee walls are triangles under
+/// the roof: a wall hit ABOVE the roof heightfield is open air and must not block; the same
+/// wall below the surface still does.
+#[test]
+fn wall_hits_above_the_roof_surface_are_void() {
+    let mut bp = gable_blueprint();
+    bp.levels[0].elevation_range = [0.0, 6.0]; // wall plane now extends past the roof
+
+    // Horizontal at 5.5 across the x = 2.0 wall where the pitch sits at ~3.2 — open air.
+    let over = bp.evaluate_los([0.5, 5.5, 1.0], [3.5, 5.5, 1.0]);
+    assert!(over.is_clear, "hits: {:?}", over.hits);
+
+    // Same crossing at 2.0 — under the roof, the wall is real.
+    let under = bp.evaluate_los([0.5, 2.0, 1.0], [3.5, 2.0, 1.0]);
+    assert!(!under.is_clear);
+    assert_eq!(under.blocked_by_wall_id, Some("w_test".to_string()));
+}
+
 /// Plate contract: pre-plate JSONs parse to `None`/empty and the absent fields round-trip
 /// away; populated plate + rings survive a serde round trip; shape checks work.
 #[test]

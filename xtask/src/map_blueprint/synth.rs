@@ -257,12 +257,12 @@ pub fn box_with_door(w: f64, d: f64, h: f64, t: f64, door_x: f64, door_w: f64) -
     generate(solids, [0.0, -0.12, 0.0], [w, h + 0.12, d])
 }
 
-/// One-story box with a gable roof: ridge along x at z = d/2, gable-end triangles on the west
-/// and east walls, sloped planes elsewhere.
-pub fn gable_box(w: f64, d: f64, eave: f64, ridge: f64, t: f64) -> VoxelDump {
+/// The gable-house solid set shared by [`gable_box`] and [`gable_mezzanine`]: floor plate,
+/// four eave-height walls, west/east gable-end triangles, and the sloped roof planes.
+fn gable_solids(w: f64, d: f64, eave: f64, ridge: f64, t: f64) -> Vec<Solid> {
     let zc = d / 2.0;
     let slope = (ridge - eave) / zc;
-    let solids = vec![
+    vec![
         Solid::Box3 {
             min: [0.0, -0.12, 0.0],
             max: [w, 0.0, d],
@@ -313,7 +313,35 @@ pub fn gable_box(w: f64, d: f64, eave: f64, ridge: f64, t: f64) -> VoxelDump {
             z0: 0.0,
             z1: d,
         },
-    ];
+    ]
+}
+
+/// One-story box with a gable roof: ridge along x at z = d/2, gable-end triangles on the west
+/// and east walls, sloped planes elsewhere.
+pub fn gable_box(w: f64, d: f64, eave: f64, ridge: f64, t: f64) -> VoxelDump {
+    let solids = gable_solids(w, d, eave, ridge, t);
+    generate(solids, [0.0, -0.12, 0.0], [w, ridge + 0.1, d])
+}
+
+/// Gable house with a PARTIAL mezzanine and a knee wall — the floors-and-walls fixtures:
+/// - mezzanine slab at 2.0 m (top face; 1.8 m slab spacing keeps it a distinct floor) over the
+///   WEST half only — the east half is open floor-to-roof, so the level-1 plate must trace a
+///   partial ring and leave the void void;
+/// - a floor-to-2.9 m wall on the open side near the south eave, under the roof plane at
+///   ~3.0 m there: in band 1 [2.0, 4.0] it shows in only ~6 of 16 slice rows (old global
+///   persistence = dropped) yet fills its ROOF-CLIPPED window — the per-column regression;
+/// - ridge 5.2 over the 4.0 band top ⇒ the attic band self-synthesizes (rise 1.2 ≥ 1.0).
+pub fn gable_mezzanine() -> VoxelDump {
+    let (w, d, eave, ridge, t) = (6.0, 4.0, 2.6, 5.2, 0.15);
+    let mut solids = gable_solids(w, d, eave, ridge, t);
+    solids.push(Solid::Box3 {
+        min: [t, 1.88, t],
+        max: [3.0, 2.0, d - t],
+    }); // mezzanine slab, west half
+    solids.push(Solid::Box3 {
+        min: [3.2, 0.0, 0.25],
+        max: [5.0, 2.9, 0.4],
+    }); // knee wall on the open side, top under the descending roof
     generate(solids, [0.0, -0.12, 0.0], [w, ridge + 0.1, d])
 }
 
