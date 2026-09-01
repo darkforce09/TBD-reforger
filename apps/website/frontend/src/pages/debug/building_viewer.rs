@@ -30,8 +30,8 @@
 //!
 //! | lane (draw order ↑)      | content |
 //! |--------------------------|---------|
-//! | `LANDCOVER` (poly)       | active floor: blueprint plate + stairs plate, overlaid by the MESH floor faces (Roof view: footprint + RoofGrid + mesh roof faces) |
-//! | `CONTOURS` (hairline)    | low section cut (sills), lower floors' cuts through this floor's voids, door swing arcs, window normals, stair hatch, rings (fallback: ghost centerlines) |
+//! | `LANDCOVER` (poly)       | the MESH heightfield clipped below this floor's cut plane, one 0.2 m cell quad per surface, height-ramped (Roof view: the full top surface eave→ridge; fallback: blueprint plate / RoofGrid) |
+//! | `CONTOURS` (hairline)    | low section cut (sills), lower floors' cuts through this floor's voids, door swing arcs, window normals; Roof view + fallback: blueprint wall centerlines as ghosts |
 //! | `AIRFIELD_APRON` (poly)  | furniture plates (cover-class colored) |
 //! | `ROADS_CASING` (strip)   | the MESH section cut at eye height as 0.05 m strips (fallback: blueprint walls at nominal thickness) |
 //! | `ROADS` (strip)          | window / door aperture overlays on the walls |
@@ -54,7 +54,7 @@ use std::sync::Arc;
 use leptos::prelude::*;
 use map_engine_core::building_blueprint::{BuildingBlueprint, LosHitKind, LosResult};
 use map_engine_core::building_section::{building_drawing, BuildingDrawing};
-use map_engine_core::building_viewshed::{level_washes, LevelWash, WashParams};
+use map_engine_core::building_viewshed::{level_wash, LevelWash, WashParams};
 use map_engine_core::bvh::BvhSidecar;
 
 /// Default blueprint when no `?prefab=` override is present — the scanned FarmHouse (roof
@@ -121,14 +121,15 @@ impl ViewFloor {
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 pub mod geom {
     use super::ViewFloor;
-    use crate::editor::tools::los_tool::{pack_rgba_256, viewshed_cell_rgba, ViewshedTexture};
+    use crate::editor::tools::los_tool::{pack_rgba_256, ViewshedTexture};
     use map_engine_core::building_blueprint::{
         clip_t_to_band, BuildingBlueprint, BuildingLevel, LosHit, LosHitKind,
     };
     use map_engine_core::building_section::{
-        through_voids, BuildingDrawing, FaceFill, VOID_CELL_M,
+        through_voids, BuildingDrawing, HeightField, FLOOR_WINDOW_M, PIT_DEPTH_M, PLAN_CELL_M,
     };
     use map_engine_core::building_viewshed::LevelWash;
+    use map_engine_core::dem::sample::Visibility;
     use map_engine_core::geometry::polyline_strip::{expand_polyline_strip, StripVertex};
     use map_engine_core::geometry::triangulate::triangulate_simple;
 
@@ -171,6 +172,13 @@ pub mod geom {
     /// Width of the eye-height cut strips (m): weight when zoomed in; the hairline carries it
     /// at low zoom.
     pub const CUT_STRIP_M: f64 = 0.05;
+    /// Heightfield ramp ends beyond the plate pair: a pit (a void down to the floor below)
+    /// and a raised surface (treads, sills, a lower roof seen from above).
+    pub const COL_PIT: [f32; 4] = [0.05, 0.07, 0.10, 0.85];
+    pub const COL_RAISED: [f32; 4] = [0.50, 0.58, 0.72, 0.92];
+    /// Viewshed wash: green where A sees (α 0.27), nothing elsewhere.
+    pub const WASH_VISIBLE_RGBA: [u8; 4] = [64, 230, 102, 70];
+    pub const WASH_CLEAR_RGBA: [u8; 4] = [0, 0, 0, 0];
 
     /// Blueprint-local plan `[x, z]` → engine world `[x, y]`. The ortho camera is deck.gl
     /// `flipY:false` — world **+y renders UP** — so mapping game +z (north) straight onto +y
@@ -299,7 +307,7 @@ pub mod geom {
         pub plate_cell_count: u32,
         /// Mesh faces painted on the floor lane (floor faces on a Level view, roof faces on
         /// the Roof view; 0 without a drawing).
-        pub mesh_face_count: u32,
+        pub mesh_cell_count: u32,
     }
 
     fn append_polygon(
@@ -319,55 +327,63 @@ pub mod geom {
         idx.extend(mesh.indices.iter().map(|i| base + i));
     }
 
-    /// One mesh triangle (plan coords) → the floor polygon lane, world-mapped like
-    /// [`append_polygon`].
-    fn append_tri(
-        pos: &mut Vec<f32>,
-        col: &mut Vec<f32>,
-        idx: &mut Vec<u32>,
-        tri: [[f64; 2]; 3],
-        color: [f32; 4],
-    ) {
-        let base = (pos.len() / 2) as u32;
-        for p in tri {
-            let w = to_world(p);
-            pos.extend_from_slice(&[w[0] as f32, w[1] as f32]);
-            col.extend_from_slice(&color);
+    /// Piecewise-linear colour ramp over ascending `(height, colour)` stops, clamped at both
+    /// ends. Pure; the stepped-gradient look comes from applying it per 0.2 m cell.
+    #[must_use]
+    pub fn ramp(stops: &[(f64, [f32; 4])], y: f64) -> [f32; 4] {
+        let Some(first) = stops.first() else {
+            return [0.0; 4];
+        };
+        if y <= first.0 {
+            return first.1;
         }
-        idx.extend_from_slice(&[base, base + 1, base + 2]);
+        for w in stops.windows(2) {
+            let ((y0, c0), (y1, c1)) = (w[0], w[1]);
+            if y <= y1 {
+                let t = if y1 > y0 {
+                    ((y - y0) / (y1 - y0)) as f32
+                } else {
+                    1.0
+                };
+                return [
+                    c0[0] + (c1[0] - c0[0]) * t,
+                    c0[1] + (c1[1] - c0[1]) * t,
+                    c0[2] + (c1[2] - c0[2]) * t,
+                    c0[3] + (c1[3] - c0[3]) * t,
+                ];
+            }
+        }
+        stops.last().map_or([0.0; 4], |s| s.1)
     }
 
-    /// Mesh faces onto the floor lane, tinted by height from `lo_col` at `ramp_y[0]` to `hi_col`
-    /// at `ramp_y[1]`; faces above `accent_above` take the chimney accent.
-    fn paint_faces(
+    /// A mesh heightfield onto the floor lane: one quad per cell with a surface, tinted through
+    /// [`ramp`]; cells above `accent_above` take the chimney accent. Relief reads at a glance —
+    /// the same stepped gradient the RoofGrid cells had, now from the mesh on every view.
+    fn paint_heightfield(
         out: &mut StaticLanes,
-        faces: &[FaceFill],
-        ramp_y: [f64; 2],
+        hf: &HeightField,
+        stops: &[(f64, [f32; 4])],
         accent_above: Option<f64>,
-        lo_col: [f32; 4],
-        hi_col: [f32; 4],
     ) {
-        let span = (ramp_y[1] - ramp_y[0]).max(1e-6);
-        for f in faces {
-            let col = if accent_above.is_some_and(|a| f.y > a) {
-                COL_ROOF_CHIMNEY
-            } else {
-                let t = (((f.y - ramp_y[0]) / span).clamp(0.0, 1.0)) as f32;
-                [
-                    lo_col[0] + (hi_col[0] - lo_col[0]) * t,
-                    lo_col[1] + (hi_col[1] - lo_col[1]) * t,
-                    lo_col[2] + (hi_col[2] - lo_col[2]) * t,
-                    lo_col[3] + (hi_col[3] - lo_col[3]) * t,
-                ]
-            };
-            append_tri(
-                &mut out.floor_pos,
-                &mut out.floor_col,
-                &mut out.floor_idx,
-                f.tri,
-                col,
-            );
-            out.mesh_face_count += 1;
+        for row in 0..hf.rows {
+            for col in 0..hf.cols {
+                let Some(y) = hf.at(col, row) else {
+                    continue;
+                };
+                let color = if accent_above.is_some_and(|a| y > a) {
+                    COL_ROOF_CHIMNEY
+                } else {
+                    ramp(stops, y)
+                };
+                append_polygon(
+                    &mut out.floor_pos,
+                    &mut out.floor_col,
+                    &mut out.floor_idx,
+                    &rect_corners(hf.cell_center(col, row), [hf.cell_m, hf.cell_m], 0.0),
+                    color,
+                );
+                out.mesh_cell_count += 1;
+            }
         }
     }
 
@@ -446,7 +462,11 @@ pub mod geom {
             // Heightfield cells over the plate: dark at the eave, light at the ridge, chimney
             // spikes (above ridge + 0.3) in the accent color. This is the emitted RoofGrid drawn
             // verbatim — ridge lines, hips, valleys and dormer pits are eyeballable directly.
-            if let Some(roof) = bp.roof.as_ref().filter(|r| r.is_valid()) {
+            if let Some(roof) = bp
+                .roof
+                .as_ref()
+                .filter(|r| r.is_valid() && drawing.is_none())
+            {
                 let vp = &bp.vertical_profile;
                 let span = (vp.ridge_height_m - vp.eave_height_m).max(0.1);
                 let cell = roof.cell_size_m;
@@ -481,45 +501,35 @@ pub mod geom {
                     }
                 }
             }
-            // Mesh roof faces over the grid — the surfaces the rays actually hit, ramped over
-            // their own height range, chimney accent above the ridge.
-            if let Some(d) = drawing.filter(|d| !d.roof.is_empty()) {
-                paint_faces(
+            // The mesh's full top surface as a stepped heightfield — the roof plan. Eave→ridge
+            // ramp from the vertical profile (the field's own range when the profile is flat),
+            // chimney accent above the ridge; replaces the RoofGrid cells when present.
+            if let Some(d) = drawing.filter(|d| d.roof.range().is_some()) {
+                let vp = &bp.vertical_profile;
+                let profiled = vp.eave_height_m < vp.ridge_height_m;
+                let (eave, ridge) = if profiled {
+                    (vp.eave_height_m, vp.ridge_height_m)
+                } else {
+                    (d.roof_y[0], d.roof_y[1])
+                };
+                paint_heightfield(
                     &mut out,
                     &d.roof,
-                    d.roof_y,
-                    Some(bp.vertical_profile.ridge_height_m + 0.3),
-                    COL_ROOF_LO,
-                    COL_ROOF_HI,
+                    &[(eave, COL_ROOF_LO), (ridge, COL_ROOF_HI)],
+                    profiled.then_some(vp.ridge_height_m + 0.3),
                 );
             }
-            match drawing {
-                // Every floor's eye-height section as a ghost: the plan through the roof.
-                Some(d) => {
-                    for l in &d.levels {
-                        for s in &l.cut_main {
-                            seg(
-                                &mut out.hairlines,
-                                to_world(s[0]),
-                                to_world(s[1]),
-                                COL_GHOST,
-                            );
-                            out.hairline_count += 1;
-                        }
-                    }
-                }
-                None => {
-                    for ghost in &bp.levels {
-                        for wall in &ghost.walls {
-                            seg(
-                                &mut out.hairlines,
-                                to_world(wall.start),
-                                to_world(wall.end),
-                                COL_GHOST,
-                            );
-                            out.hairline_count += 1;
-                        }
-                    }
+            // Every floor's wall centerlines as ghosts — few and clean, the plan through the
+            // roof (the mesh cuts would be hundreds of segments of noise here).
+            for ghost in &bp.levels {
+                for wall in &ghost.walls {
+                    seg(
+                        &mut out.hairlines,
+                        to_world(wall.start),
+                        to_world(wall.end),
+                        COL_GHOST,
+                    );
+                    out.hairline_count += 1;
                 }
             }
             return out;
@@ -529,112 +539,117 @@ pub mod geom {
         };
         let mesh_level = drawing.and_then(|d| d.levels.get(active));
 
-        // Active floor plate: the verbatim PlateGrid when present (one tinted quad per covered
-        // cell — partial mezzanines and double-height voids render exactly as measured, and
-        // landings read via the height ramp), else the traced-polygon fill for pre-plate assets.
-        match lvl.plate.as_ref().filter(|g| g.is_valid()) {
-            Some(plate) => {
-                let base = lvl.elevation_range[0];
-                let cell = plate.cell_size_m;
-                for cx in 0..plate.nx {
-                    for cz in 0..plate.nz {
-                        let Some(h) = plate.heights_m[cx * plate.nz + cz] else {
-                            continue;
-                        };
-                        // ±0.4 m ramp around the level base between the two floor shades.
-                        let t = (((h - base) / 0.8 + 0.5).clamp(0.0, 1.0)) as f32;
-                        let col = [
-                            COL_PLATE_LO[0] + (COL_PLATE_HI[0] - COL_PLATE_LO[0]) * t,
-                            COL_PLATE_LO[1] + (COL_PLATE_HI[1] - COL_PLATE_LO[1]) * t,
-                            COL_PLATE_LO[2] + (COL_PLATE_HI[2] - COL_PLATE_LO[2]) * t,
-                            COL_PLATE_LO[3] + (COL_PLATE_HI[3] - COL_PLATE_LO[3]) * t,
-                        ];
-                        let center = [
-                            plate.origin[0] + (cx as f64 + 0.5) * cell,
-                            plate.origin[1] + (cz as f64 + 0.5) * cell,
-                        ];
-                        append_polygon(
-                            &mut out.floor_pos,
-                            &mut out.floor_col,
-                            &mut out.floor_idx,
-                            &rect_corners(center, [cell, cell], 0.0),
-                            col,
+        if let Some(l) = mesh_level {
+            // The mesh's top surface below this floor's cut plane as a stepped heightfield:
+            // floor mid-tone, treads / sills / lower roofs brighter with height, stairwell
+            // pits and the floors below darker with depth. Replaces the blueprint plate, its
+            // traced rings and its stairs plate — the mesh now shows all of that for real.
+            paint_heightfield(
+                &mut out,
+                &l.surface,
+                &[
+                    (l.lo - PIT_DEPTH_M, COL_PIT),
+                    (l.floor_min_y(), COL_PLATE_LO),
+                    (l.lo + FLOOR_WINDOW_M[1], COL_PLATE_HI),
+                    (l.cut_main_y, COL_RAISED),
+                ],
+                None,
+            );
+        } else {
+            // Active floor plate: the verbatim PlateGrid when present (one tinted quad per covered
+            // cell — partial mezzanines and double-height voids render exactly as measured, and
+            // landings read via the height ramp), else the traced-polygon fill for pre-plate assets.
+            match lvl.plate.as_ref().filter(|g| g.is_valid()) {
+                Some(plate) => {
+                    let base = lvl.elevation_range[0];
+                    let cell = plate.cell_size_m;
+                    for cx in 0..plate.nx {
+                        for cz in 0..plate.nz {
+                            let Some(h) = plate.heights_m[cx * plate.nz + cz] else {
+                                continue;
+                            };
+                            // ±0.4 m ramp around the level base between the two floor shades.
+                            let t = (((h - base) / 0.8 + 0.5).clamp(0.0, 1.0)) as f32;
+                            let col = [
+                                COL_PLATE_LO[0] + (COL_PLATE_HI[0] - COL_PLATE_LO[0]) * t,
+                                COL_PLATE_LO[1] + (COL_PLATE_HI[1] - COL_PLATE_LO[1]) * t,
+                                COL_PLATE_LO[2] + (COL_PLATE_HI[2] - COL_PLATE_LO[2]) * t,
+                                COL_PLATE_LO[3] + (COL_PLATE_HI[3] - COL_PLATE_LO[3]) * t,
+                            ];
+                            let center = [
+                                plate.origin[0] + (cx as f64 + 0.5) * cell,
+                                plate.origin[1] + (cz as f64 + 0.5) * cell,
+                            ];
+                            append_polygon(
+                                &mut out.floor_pos,
+                                &mut out.floor_col,
+                                &mut out.floor_idx,
+                                &rect_corners(center, [cell, cell], 0.0),
+                                col,
+                            );
+                            out.plate_cell_count += 1;
+                        }
+                    }
+                }
+                None => {
+                    append_polygon(
+                        &mut out.floor_pos,
+                        &mut out.floor_col,
+                        &mut out.floor_idx,
+                        &lvl.footprint_polygon,
+                        COL_FLOOR,
+                    );
+                }
+            }
+            // Traced plate boundary rings (outer + holes) as hairline loops over the grid — the
+            // derived polygon contract drawn against the verbatim cells, so ring-vs-grid
+            // coincidence is directly eyeballable.
+            for piece in &lvl.floor_polygons {
+                for ring in std::iter::once(&piece.outer).chain(piece.holes.iter()) {
+                    let n = ring.len();
+                    for i in 0..n {
+                        seg(
+                            &mut out.hairlines,
+                            to_world(ring[i]),
+                            to_world(ring[(i + 1) % n]),
+                            COL_PLATE_EDGE,
                         );
-                        out.plate_cell_count += 1;
+                        out.hairline_count += 1;
                     }
                 }
             }
-            None => {
+            for st in &lvl.stairs {
+                let ring = [
+                    [st.bounds[0][0], st.bounds[0][1]],
+                    [st.bounds[1][0], st.bounds[0][1]],
+                    [st.bounds[1][0], st.bounds[1][1]],
+                    [st.bounds[0][0], st.bounds[1][1]],
+                ];
                 append_polygon(
                     &mut out.floor_pos,
                     &mut out.floor_col,
                     &mut out.floor_idx,
-                    &lvl.footprint_polygon,
-                    COL_FLOOR,
+                    &ring,
+                    COL_STAIRS,
                 );
-            }
-        }
-        // Mesh floor faces over the plate: the slab the rays actually see (landings and
-        // thresholds ramp like the plate cells; wall footprints at floor level land here too,
-        // under their own cut lines).
-        if let Some(l) = mesh_level {
-            paint_faces(
-                &mut out,
-                &l.floor,
-                [l.lo - 0.4, l.lo + 0.4],
-                None,
-                COL_PLATE_LO,
-                COL_PLATE_HI,
-            );
-        }
-        // Traced plate boundary rings (outer + holes) as hairline loops over the grid — the
-        // derived polygon contract drawn against the verbatim cells, so ring-vs-grid
-        // coincidence is directly eyeballable.
-        for piece in &lvl.floor_polygons {
-            for ring in std::iter::once(&piece.outer).chain(piece.holes.iter()) {
-                let n = ring.len();
-                for i in 0..n {
-                    seg(
-                        &mut out.hairlines,
-                        to_world(ring[i]),
-                        to_world(ring[(i + 1) % n]),
-                        COL_PLATE_EDGE,
-                    );
+                // Tread hatch: lines across the short axis.
+                let (w, d) = (
+                    st.bounds[1][0] - st.bounds[0][0],
+                    st.bounds[1][1] - st.bounds[0][1],
+                );
+                let n = st.step_count.clamp(4, 24);
+                for i in 1..n {
+                    let f = f64::from(i) / f64::from(n);
+                    let (a, b) = if w >= d {
+                        let x = st.bounds[0][0] + w * f;
+                        ([x, st.bounds[0][1]], [x, st.bounds[1][1]])
+                    } else {
+                        let z = st.bounds[0][1] + d * f;
+                        ([st.bounds[0][0], z], [st.bounds[1][0], z])
+                    };
+                    seg(&mut out.hairlines, to_world(a), to_world(b), COL_HATCH);
                     out.hairline_count += 1;
                 }
-            }
-        }
-        for st in &lvl.stairs {
-            let ring = [
-                [st.bounds[0][0], st.bounds[0][1]],
-                [st.bounds[1][0], st.bounds[0][1]],
-                [st.bounds[1][0], st.bounds[1][1]],
-                [st.bounds[0][0], st.bounds[1][1]],
-            ];
-            append_polygon(
-                &mut out.floor_pos,
-                &mut out.floor_col,
-                &mut out.floor_idx,
-                &ring,
-                COL_STAIRS,
-            );
-            // Tread hatch: lines across the short axis.
-            let (w, d) = (
-                st.bounds[1][0] - st.bounds[0][0],
-                st.bounds[1][1] - st.bounds[0][1],
-            );
-            let n = st.step_count.clamp(4, 24);
-            for i in 1..n {
-                let f = f64::from(i) / f64::from(n);
-                let (a, b) = if w >= d {
-                    let x = st.bounds[0][0] + w * f;
-                    ([x, st.bounds[0][1]], [x, st.bounds[1][1]])
-                } else {
-                    let z = st.bounds[0][1] + d * f;
-                    ([st.bounds[0][0], z], [st.bounds[1][0], z])
-                };
-                seg(&mut out.hairlines, to_world(a), to_world(b), COL_HATCH);
-                out.hairline_count += 1;
             }
         }
 
@@ -778,7 +793,9 @@ pub mod geom {
                     } else {
                         COL_GHOST_DEEP
                     };
-                    for s in through_voids(&below.cut_main, &l.coverage, VOID_CELL_M) {
+                    for s in
+                        through_voids(&below.cut_main, &l.surface, l.floor_min_y(), PLAN_CELL_M)
+                    {
                         seg(&mut out.hairlines, to_world(s[0]), to_world(s[1]), col);
                         out.hairline_count += 1;
                     }
@@ -878,18 +895,29 @@ pub mod geom {
         (packed, count)
     }
 
-    /// One level's visibility raster → the engine's viewshed texture payload. The terrain
-    /// viewshed's colour language verbatim (`viewshed_cell_rgba`: ink on HIDDEN cells, VISIBLE
-    /// left untouched — one language across the product), rows straight through (the raster is
-    /// already north-first, which IS the texture's row-0 = world max-y contract), rows padded to
-    /// 256 bytes for `write_texture`, world rect from the local plan rect. Pure: native tests pin
-    /// the bytes and the rect. Replaces the 720-ray centre-fan of the single-floor viewshed,
-    /// whose fan topology leaked light around occluders — a per-cell raster cannot.
+    /// Wash palette: GREEN where the observer sees (the old fan's colour, so the disc reads
+    /// at a glance), nothing where it does not or beyond the disc — the inverse of the terrain
+    /// viewshed's ink-on-hidden language, on purpose: inside a building the walls already carry
+    /// the dark, and the operator asked for the green disc back.
+    #[must_use]
+    pub fn wash_cell_rgba(v: Visibility) -> [u8; 4] {
+        match v {
+            Visibility::Visible => WASH_VISIBLE_RGBA,
+            Visibility::Hidden | Visibility::Unknown => WASH_CLEAR_RGBA,
+        }
+    }
+
+    /// One level's visibility raster → the engine's viewshed texture payload: [`wash_cell_rgba`]
+    /// per cell, rows straight through (the raster is already north-first, which IS the
+    /// texture's row-0 = world max-y contract), rows padded to 256 bytes for `write_texture`,
+    /// world rect from the local plan rect. Pure: native tests pin the bytes and the rect.
+    /// Replaces the 720-ray centre-fan of the single-floor viewshed, whose fan topology leaked
+    /// light around occluders — a per-cell raster cannot.
     #[must_use]
     pub fn wash_texture(w: &LevelWash) -> ViewshedTexture {
         let mut tight = Vec::with_capacity(w.cols * w.rows * 4);
         for &cell in &w.cells {
-            tight.extend_from_slice(&viewshed_cell_rgba(cell));
+            tight.extend_from_slice(&wash_cell_rgba(cell));
         }
         let (rgba, stride_bytes) = pack_rgba_256(&tight, w.cols, w.rows);
         let lo = to_world([w.min_x, w.min_z]);
@@ -909,13 +937,11 @@ pub mod geom {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use crate::editor::tools::los_tool::VIEWSHED_HIDDEN_RGBA;
         use map_engine_core::building_blueprint::LosHit;
         use map_engine_core::building_section::building_drawing;
         use map_engine_core::building_viewshed::{level_washes, WashParams};
         use map_engine_core::bvh::Bvh;
         use map_engine_core::bvh::BvhSidecar;
-        use map_engine_core::dem::sample::Visibility;
 
         fn farmhouse() -> BuildingBlueprint {
             serde_json::from_str(include_str!(
@@ -1375,17 +1401,19 @@ pub mod geom {
             (bp, BvhSidecar { verts, tris, bvh })
         }
 
-        /// The encoder's contract with the engine lane: palette bytes per cell (ink on HIDDEN,
-        /// VISIBLE transparent), rows straight through (row 0 = north = texture row 0), rows
+        /// The encoder's contract with the engine lane: GREEN per visible cell, nothing for
+        /// hidden / unknown, rows straight through (row 0 = north = texture row 0), rows
         /// padded to a 256-byte stride, and the world rect from the local plan rect.
         #[test]
-        fn wash_texture_maps_palette_and_world_rect() {
+        fn wash_texture_maps_green_visible_and_world_rect() {
             let mut cells = vec![Visibility::Visible; 6];
             cells[1] = Visibility::Hidden; // row 0, col 1
+            cells[2] = Visibility::Unknown; // row 0, col 2
             let w = LevelWash {
                 level_index: 0,
                 eye_y: 1.0,
                 obs: [0.0; 3],
+                radius_m: 10.0,
                 min_x: -1.0,
                 min_z: -2.0,
                 max_x: 2.0,
@@ -1398,11 +1426,16 @@ pub mod geom {
             let t = wash_texture(&w);
             assert_eq!((t.tex_w, t.tex_h, t.stride_bytes), (3, 2, 256));
             assert_eq!(t.rgba.len(), 512);
-            assert_eq!(&t.rgba[4..8], &VIEWSHED_HIDDEN_RGBA);
-            assert_eq!(&t.rgba[0..4], &[0, 0, 0, 0]);
+            assert_eq!(&t.rgba[0..4], &WASH_VISIBLE_RGBA);
+            assert_eq!(&t.rgba[4..8], &WASH_CLEAR_RGBA, "hidden is not inked");
+            assert_eq!(
+                &t.rgba[8..12],
+                &WASH_CLEAR_RGBA,
+                "beyond the disc is not inked"
+            );
             assert_eq!(
                 &t.rgba[256..260],
-                &[0, 0, 0, 0],
+                &WASH_VISIBLE_RGBA,
                 "row 1 starts at the stride"
             );
             assert!((t.min_x - (ANCHOR[0] - 1.0)).abs() < 1e-9);
@@ -1419,9 +1452,19 @@ pub mod geom {
             let (bp, sc) = box_room();
             // Observer mid-room at standing eye height, inside the window's sill..top band.
             let obs = [0.0, 1.4, 0.0];
-            let washes = level_washes(&bp, &sc, obs, &WashParams::default());
+            // The viewer's radius: the footprint diagonal + 5 m (the old fan's range).
+            let p = WashParams {
+                radius_m: 10f64.hypot(10.0) + 5.0,
+                ..WashParams::default()
+            };
+            let washes = level_washes(&bp, &sc, obs, &p);
             assert_eq!(washes.len(), 1);
             let w = &washes[0];
+            assert_eq!(
+                w.visibility_at(15.0, -15.0),
+                Visibility::Unknown,
+                "beyond the disc, inside the square"
+            );
             let mut south_lit = 0usize;
             for row in 0..w.rows {
                 for col in 0..w.cols {
@@ -1435,10 +1478,11 @@ pub mod geom {
                     }
                 }
             }
-            // The hole subtends ±atan(1 / 4.9) ≈ ±11.5°: a cone ~2–4 m wide over the 5 m pad
-            // south of the wall, a couple of hundred 0.25 m cells — never the whole exterior.
+            // The hole subtends ±atan(1 / 4.9) ≈ ±11.5°: a cone 2–8 m wide over the ~14 m of
+            // disc south of the wall, on the order of a thousand 0.25 m cells — never the
+            // whole exterior.
             assert!(
-                south_lit > 20 && south_lit < 400,
+                south_lit > 100 && south_lit < 2500,
                 "south cone: {south_lit} cells lit"
             );
             assert_eq!(
@@ -1505,7 +1549,7 @@ pub mod geom {
                 ([-5.0, 0.5], [2.9, 3.1], [0.5, 1.5]),
                 ([1.5, 5.0], [2.9, 3.1], [0.5, 1.5]),
                 // Interior ground-floor wall running under the hole.
-                ([0.9, 1.1], [0.0, 2.9], [-2.0, 3.0]),
+                ([0.9, 1.1], [0.0, 2.0], [-2.0, 3.0]),
             ];
             if with_roof {
                 slabs.push(([-5.1, 5.1], [6.0, 6.2], [-5.1, 5.1]));
@@ -1528,15 +1572,16 @@ pub mod geom {
         }
 
         /// With a drawing the walls are the mesh's eye-height section (window gap and all),
-        /// the low cut and the floor faces are added, and the blueprint's apertures stay.
+        /// the low cut is added, the plate is the clipped heightfield, and the blueprint's
+        /// apertures stay.
         #[test]
-        fn mesh_drawing_replaces_walls_and_overlays_floor() {
+        fn mesh_drawing_replaces_walls_and_paints_heightfield() {
             let (bp, sc) = box_room();
             let d = building_drawing(&bp, &sc);
             let plain = build_static_lanes(&bp, None, ViewFloor::Level(0));
             let mesh = build_static_lanes(&bp, Some(&d), ViewFloor::Level(0));
             assert_eq!(plain.wall_count, 4, "blueprint walls on the fallback path");
-            assert_eq!((plain.cut_count, plain.mesh_face_count), (0, 0));
+            assert_eq!((plain.cut_count, plain.mesh_cell_count), (0, 0));
             assert!(mesh.cut_count > 4, "section segments: {}", mesh.cut_count);
             assert_eq!(mesh.wall_count, mesh.cut_count, "one strip per cut segment");
             assert_eq!(
@@ -1544,14 +1589,19 @@ pub mod geom {
                 "blueprint apertures stay as annotation"
             );
             assert!(
-                mesh.mesh_face_count > 0,
-                "wall footprints at floor level paint"
+                mesh.mesh_cell_count > 0,
+                "wall footprints at floor level are surfaces"
             );
             assert!(mesh.hairline_count > plain.hairline_count, "low cut added");
             assert!(
                 mesh.floor_pos.len() > plain.floor_pos.len(),
-                "faces overlay the plate"
+                "heightfield cells replace the polygon fill"
             );
+            // The ramp is monotone and clamped.
+            let stops = [(0.0, [0.0, 0.0, 0.0, 0.0]), (1.0, [1.0, 1.0, 1.0, 1.0])];
+            assert_eq!(ramp(&stops, -1.0), [0.0; 4]);
+            assert_eq!(ramp(&stops, 2.0), [1.0; 4]);
+            assert!((ramp(&stops, 0.25)[0] - 0.25).abs() < 1e-6);
             // The window hole opens the eye-height section: no south-wall segment spans x = 0.
             let spans_window = d.levels[0].cut_main.iter().any(|s| {
                 (s[0][1] + 5.0).abs() < 0.15
@@ -1578,11 +1628,13 @@ pub mod geom {
             let d = building_drawing(&bp, &sc);
             let up = build_static_lanes(&bp, Some(&d), ViewFloor::Level(1));
             assert!(
-                up.mesh_face_count > 0,
+                up.mesh_cell_count > 0,
                 "the ceiling slab is the upper floor"
             );
             let ghosts = hairline_mids(&up.hairlines, COL_GHOST);
-            let in_hole = |m: &[f64; 2]| (0.5..1.5).contains(&m[0]) && (0.5..1.5).contains(&m[1]);
+            // Pieces are 0.2 m long, so a midpoint can sit on the hole edge: allow half a piece.
+            let in_hole =
+                |m: &[f64; 2]| (0.35..=1.65).contains(&m[0]) && (0.35..=1.65).contains(&m[1]);
             assert!(
                 ghosts.iter().any(in_hole),
                 "no ghost through the stairwell: {ghosts:?}"
@@ -1597,22 +1649,21 @@ pub mod geom {
             assert!(hairline_mids(&ground.hairlines, COL_GHOST).is_empty());
         }
 
-        /// The Roof view paints the mesh roof faces and ghosts every level's section.
+        /// The Roof view paints the mesh top surface as a heightfield and ghosts the blueprint's
+        /// wall centerlines (few and clean), never the mesh cuts.
         #[test]
-        fn roof_view_paints_mesh_faces() {
+        fn roof_view_paints_heightfield_and_centerline_ghosts() {
             let (bp, sc) = box_room_two_level(true);
             let d = building_drawing(&bp, &sc);
             let roof = build_static_lanes(&bp, Some(&d), ViewFloor::Roof);
-            assert!(
-                roof.mesh_face_count >= 2,
-                "roof slab faces: {}",
-                roof.mesh_face_count
-            );
+            assert!(roof.mesh_cell_count > 0, "roof slab cells");
             assert_eq!(roof.roof_cell_count, 0, "no RoofGrid on the synthetic room");
             assert_eq!((roof.wall_count, roof.cut_count), (0, 0));
-            let cuts: usize = d.levels.iter().map(|l| l.cut_main.len()).sum();
-            assert_eq!(roof.hairline_count as usize, cuts);
+            assert_eq!(roof.hairline_count, 8, "4 + 4 blueprint centerlines");
             assert!((d.roof_y[1] - 6.2).abs() < 1e-9);
+            // Every painted roof cell is at the slab top (the highest surface wins).
+            let top = d.roof.value_at(0.0, 0.0).expect("roof over the room");
+            assert!((top - 6.2).abs() < 1e-9);
         }
 
         #[test]
@@ -1646,7 +1697,7 @@ pub fn BuildingViewerPage() -> impl IntoView {
     let sidecar_err = RwSignal::new(None::<String>);
     // Per-level visibility rasters while the viewshed is on (one `LevelWash` per level, level
     // order); `Arc` for the same reason as the sidecar. `None` = off / nothing to trace.
-    let washes = RwSignal::new(None::<Arc<Vec<LevelWash>>>);
+    let wash = RwSignal::new(None::<Arc<LevelWash>>);
     // The mesh's 2D drawing (section cuts, floor / roof faces, void coverage) — computed once
     // per (blueprint, sidecar); `None` = no sidecar → the blueprint draws everything.
     let drawing = RwSignal::new(None::<Arc<BuildingDrawing>>);
@@ -1691,25 +1742,29 @@ pub fn BuildingViewerPage() -> impl IntoView {
         });
     });
 
-    // Multi-floor viewshed — the per-level rasters follow the observer live while the viewshed
-    // is on (Alt+click / Alt+drag on A). Pure core compute, native-safe; the wasm host uploads
-    // the VIEWED level's wash to the engine's texture lane and swaps it with the floor rail.
+    // Multi-floor viewshed — the VIEWED level's visibility disc follows the observer live while
+    // the viewshed is on (Alt+click / Alt+drag on A); a floor-rail change recomputes for that
+    // level (the Roof view has no eye plane). Radius = the old fan's range, footprint diagonal
+    // + 5 m. Pure core compute, native-safe; the wasm host uploads it to the texture lane.
     // No sidecar → no wash: the blueprint alone cannot stop a ray.
     Effect::new(move |_| {
         if !viewshed_on.get() {
-            washes.set(None);
+            wash.set(None);
             return;
         }
         let o = obs.get();
         let sc = sidecar.get();
+        let view = view_floor.get();
         blueprint.with(|bp| {
-            washes.set(match (bp.as_ref(), sc.as_deref()) {
-                (Some(bp), Some(occl)) => Some(Arc::new(level_washes(
-                    bp,
-                    occl,
-                    [o.x, o.y, o.z],
-                    &WashParams::default(),
-                ))),
+            wash.set(match (bp.as_ref(), sc.as_deref(), view) {
+                (Some(bp), Some(occl), ViewFloor::Level(i)) => {
+                    let bb = &bp.overall_footprint.bounding_box2_d;
+                    let p = WashParams {
+                        radius_m: bb.width_m.hypot(bb.depth_m) + 5.0,
+                        ..WashParams::default()
+                    };
+                    level_wash(bp, occl, [o.x, o.y, o.z], i, &p).map(Arc::new)
+                }
                 _ => None,
             });
         });
@@ -1732,7 +1787,7 @@ pub fn BuildingViewerPage() -> impl IntoView {
         blueprint,
         sidecar,
         sidecar_err,
-        washes,
+        wash,
         drawing,
         load_err,
         engine_err,
@@ -2117,14 +2172,10 @@ mod live {
         e.mark_dirty();
     }
 
-    /// The viewed level's wash → the engine's single viewshed texture slot. The Roof view (no
-    /// eye plane), a missing wash set (viewshed off / no sidecar) or a level without a raster
-    /// clears the lane — a wash with nothing to stop it would be a lie.
-    fn upload_wash(e: &mut RenderEngine, washes: Option<&[LevelWash]>, view: ViewFloor) {
-        let wash = match view {
-            ViewFloor::Level(i) => washes.and_then(|ws| ws.iter().find(|w| w.level_index == i)),
-            ViewFloor::Roof => None,
-        };
+    /// The viewed level's wash → the engine's single viewshed texture slot; `None` (viewshed
+    /// off, Roof view, no sidecar) clears the lane — a wash with nothing to stop it would be a
+    /// lie.
+    fn upload_wash(e: &mut RenderEngine, wash: Option<&LevelWash>) {
         match wash {
             Some(w) => {
                 let t = geom::wash_texture(w);
@@ -2199,7 +2250,7 @@ mod live {
         blueprint: RwSignal<Option<BuildingBlueprint>>,
         sidecar: RwSignal<Option<Arc<BvhSidecar>>>,
         sidecar_err: RwSignal<Option<String>>,
-        washes: RwSignal<Option<Arc<Vec<LevelWash>>>>,
+        wash: RwSignal<Option<Arc<LevelWash>>>,
         drawing: RwSignal<Option<Arc<BuildingDrawing>>>,
         load_err: RwSignal<Option<String>>,
         engine_err: RwSignal<Option<String>>,
@@ -2364,19 +2415,18 @@ mod live {
             }
         });
 
-        // Wash lane: the viewed level's raster while the viewshed is on (the page's compute
-        // Effect owns `washes`); the floor rail swaps levels, Roof / off / no sidecar clears.
+        // Wash lane: mirrors the page's `wash` signal (already the viewed level's disc; the
+        // page recomputes it on observer / floor-rail change, `None` clears).
         Effect::new({
             let engine = engine.clone();
             move |_| {
                 if !engine_ready.get() {
                     return;
                 }
-                let view = view_floor.get();
-                let ws = washes.get();
+                let w = wash.get();
                 if let Ok(mut guard) = engine.try_borrow_mut() {
                     if let Some(e) = guard.as_mut() {
-                        upload_wash(e, ws.as_deref().map(Vec::as_slice), view);
+                        upload_wash(e, w.as_deref());
                     }
                 }
             }

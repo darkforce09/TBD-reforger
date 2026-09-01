@@ -6,10 +6,18 @@ use super::*;
 use crate::building_blueprint::tests::{room_blueprint, room_sidecar, slab};
 use crate::bvh::tests::Scene;
 
+/// Test radius: an 8 m disc → a 64 × 64 grid at 0.25 m around the observer.
+fn params() -> WashParams {
+    WashParams {
+        radius_m: 8.0,
+        ..WashParams::default()
+    }
+}
+
 fn washes_for(obs: [f64; 3], extra: &[Scene]) -> Vec<LevelWash> {
     let bp = room_blueprint();
     let sc = room_sidecar(extra);
-    level_washes(&bp, &sc, obs, &WashParams::default())
+    level_washes(&bp, &sc, obs, &params())
 }
 
 /// Ceiling between the two levels (y ∈ [2.95, 3.05]) with a 1 × 1 m stairwell hole at
@@ -41,7 +49,7 @@ fn interior_lit(w: &LevelWash) -> (usize, usize) {
 }
 
 #[test]
-fn grid_is_padded_bbox_at_eye_height_rows_north_first() {
+fn grid_is_an_observer_centred_square_rows_north_first() {
     let w = washes_for([3.0, 1.4, 3.0], &[]);
     assert_eq!(w.len(), 2);
     for (i, lw) in w.iter().enumerate() {
@@ -52,6 +60,7 @@ fn grid_is_padded_bbox_at_eye_height_rows_north_first() {
         assert!((lw.max_x - 11.0).abs() < 1e-9 && (lw.max_z - 11.0).abs() < 1e-9);
         assert!((lw.cell_m - 0.25).abs() < 1e-12);
         assert_eq!(lw.obs, [3.0, 1.4, 3.0]);
+        assert!((lw.radius_m - 8.0).abs() < 1e-12);
     }
     assert!((w[0].eye_y - 1.0).abs() < 1e-9 && (w[1].eye_y - 4.0).abs() < 1e-9);
     // Row 0 is the NORTH edge, col 0 the WEST edge — the texture contract.
@@ -75,6 +84,26 @@ fn grid_is_padded_bbox_at_eye_height_rows_north_first() {
 }
 
 #[test]
+fn cells_outside_the_radius_are_unknown() {
+    let w = washes_for([3.0, 1.4, 3.0], &[]);
+    let g = &w[0];
+    // The square's corners lie 11.3 m out: no ray, `Unknown`.
+    assert_eq!(g.at(0, 0), Visibility::Unknown);
+    assert_eq!(g.at(63, 63), Visibility::Unknown);
+    // Just inside the disc along an axis: judged.
+    assert_ne!(g.visibility_at(10.5, 3.0), Visibility::Unknown);
+    // Inside the square but outside the disc (diagonal): not.
+    assert_eq!(g.visibility_at(9.5, 9.5), Visibility::Unknown);
+    let (v, h, u) = g.class_counts();
+    assert_eq!(v + h + u, g.cells.len());
+    // A disc in a square: ~21 % of the cells are outside it.
+    assert!(
+        u * 100 > g.cells.len() * 15 && u * 100 < g.cells.len() * 30,
+        "unknown {u}"
+    );
+}
+
+#[test]
 fn ground_wash_reads_the_room() {
     let w = washes_for([3.0, 1.4, 3.0], &[]);
     let g = &w[0];
@@ -91,8 +120,8 @@ fn ground_wash_reads_the_room() {
         "south wall beside the hole"
     );
     assert_eq!(g.visibility_at(-1.0, 3.0), Visibility::Hidden, "west wall");
-    let (v, h) = g.class_counts();
-    assert!(v > 0 && h > 0 && v + h == g.cells.len());
+    let (v, h, _) = g.class_counts();
+    assert!(v > 0 && h > 0);
 }
 
 #[test]
@@ -111,16 +140,13 @@ fn upstairs_wash_visible_only_through_stairwell() {
         Visibility::Hidden,
         "ceiling between"
     );
-    // Only the stairwell cone lights the upstairs plane.
     let (vis, total) = interior_lit(up);
     assert!(vis > 0, "nothing lit through the stairwell");
     assert!(
         vis * 100 < total * 15,
         "{vis}/{total} lit — the ceiling is not occluding"
     );
-    // The ceiling changes nothing on the ground floor (its rays never reach y = 3).
     assert_eq!(with[0].cells, without[0].cells);
-    // Without a ceiling in the mesh the upstairs plane is wide open from below.
     let (vis, total) = interior_lit(&without[1]);
     assert!(vis * 100 > total * 90, "{vis}/{total} lit with no ceiling");
 }
@@ -142,57 +168,56 @@ fn observer_cell_and_open_air_are_visible() {
         "the west wall between"
     );
     // Exactly on a cell centre at eye height: the zero-length segment is clear by definition.
-    let c = g.cell_center(4, 60);
+    let (col, row) = g.cell_at(-4.0, 3.0).expect("observer cell");
+    let c = g.cell_center(col, row);
     let w2 = washes_for([c[0], 1.0, c[1]], &[]);
-    assert_eq!(w2[0].at(4, 60), Visibility::Visible);
+    assert_eq!(w2[0].visibility_at(c[0], c[1]), Visibility::Visible);
 }
 
 #[test]
-fn oversized_footprint_coarsens_the_cell_to_the_cap() {
-    let bb = BBox2D {
-        min: [0.0, 0.0],
-        max: [1000.0, 500.0],
-        width_m: 1000.0,
-        depth_m: 500.0,
-    };
-    let (min_x, min_z, cols, rows, cell) = grid_rect(&bb, WASH_CELL_M, WASH_PAD_M);
-    assert!((min_x - -5.0).abs() < 1e-9 && (min_z - -5.0).abs() < 1e-9);
-    assert!(
-        cols <= MAX_WASH_DIM && rows <= MAX_WASH_DIM,
-        "{cols} × {rows}"
-    );
-    assert_eq!(cols, MAX_WASH_DIM, "the long axis fills the cap exactly");
+fn oversized_radius_coarsens_the_cell_to_the_cap() {
+    let (min_x, min_z, n, cell) = grid_rect([0.0, 0.0], 1000.0, WASH_CELL_M);
+    assert!((min_x - -1000.0).abs() < 1e-9 && (min_z - -1000.0).abs() < 1e-9);
+    assert_eq!(n, MAX_WASH_DIM, "the side fills the cap exactly");
     assert!(cell > WASH_CELL_M, "cell {cell}");
-    // The rect still covers the padded bbox.
-    assert!(min_x + cols as f64 * cell >= 1005.0 - 1e-9);
-    assert!(min_z + rows as f64 * cell >= 505.0 - 1e-9);
-    // A small footprint keeps the requested cell.
-    let small = room_blueprint().overall_footprint.bounding_box2_d;
-    let (_, _, c, r, cell) = grid_rect(&small, WASH_CELL_M, WASH_PAD_M);
-    assert_eq!((c, r), (64, 64));
+    assert!(min_x + n as f64 * cell >= 1000.0 - 1e-9);
+    let (_, _, n, cell) = grid_rect([3.0, 3.0], 8.0, WASH_CELL_M);
+    assert_eq!(n, 64);
     assert!((cell - WASH_CELL_M).abs() < 1e-12);
 }
 
 #[test]
-fn no_levels_no_washes() {
-    let mut bp = room_blueprint();
-    bp.levels.clear();
+fn level_wash_picks_one_level() {
+    let bp = room_blueprint();
     let sc = room_sidecar(&[]);
-    assert!(level_washes(&bp, &sc, [3.0, 1.4, 3.0], &WashParams::default()).is_empty());
+    let obs = [3.0, 1.4, 3.0];
+    let up = level_wash(&bp, &sc, obs, 1, &params()).expect("level 1");
+    assert_eq!(up.level_index, 1);
+    assert!((up.eye_y - 4.0).abs() < 1e-9);
+    assert!(level_wash(&bp, &sc, obs, 7, &params()).is_none());
+    let mut none = room_blueprint();
+    none.levels.clear();
+    assert!(level_washes(&none, &sc, obs, &params()).is_empty());
 }
 
-/// Assertion-free timing print for the report (`--nocapture`): two 64 × 64 levels = 8192 rays.
+/// Assertion-free timing print for the report (`--nocapture`): two 64 × 64 discs.
 #[test]
 fn wash_timing_envelope() {
     let bp = room_blueprint();
     let sc = room_sidecar(&ceiling_with_stairwell());
     let t0 = std::time::Instant::now();
-    let w = level_washes(&bp, &sc, [3.0, 1.4, 3.0], &WashParams::default());
+    let w = level_washes(&bp, &sc, [3.0, 1.4, 3.0], &params());
     let dt = t0.elapsed();
-    let rays: usize = w.iter().map(|l| l.cells.len()).sum();
+    let rays: usize = w
+        .iter()
+        .map(|l| {
+            let (v, h, _) = l.class_counts();
+            v + h
+        })
+        .sum();
     eprintln!(
         "wash_timing_envelope: {rays} rays in {:.1} ms ({:.2} µs/ray)",
         dt.as_secs_f64() * 1e3,
-        dt.as_secs_f64() * 1e6 / rays as f64
+        dt.as_secs_f64() * 1e6 / rays.max(1) as f64
     );
 }

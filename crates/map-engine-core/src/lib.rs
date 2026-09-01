@@ -21,8 +21,8 @@ mod js;
 /// `world` re-exports it for backend callers).
 #[cfg(feature = "blueprint")]
 pub mod building_blueprint;
-/// T-090.6 — the building viewer's 2D drawing from the [`bvh`] sidecar mesh: per-level section
-/// cuts, floor / roof faces, and the floor-coverage raster for see-through voids.
+/// T-090.6 — the "section box" plan renderer over the [`bvh`] sidecar mesh: per-view clipped
+/// top-down heightfields + section cuts of the vertical faces, for any mesh.
 #[cfg(feature = "blueprint")]
 pub mod building_section;
 /// T-090.6 step 4 — per-level visibility rasters (multi-floor viewshed) over the [`bvh`]
