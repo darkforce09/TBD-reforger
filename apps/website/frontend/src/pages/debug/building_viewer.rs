@@ -14,6 +14,13 @@
 //! one BVH ray to every 0.25 m cell at eye height on EVERY level, and the floor rail swaps which
 //! level's raster the engine's `Viewshed` texture lane shows.
 //!
+//! The 2D DRAWING is the mesh's too (`map_engine_core::building_section`): per-floor section
+//! cuts through the COLL triangles at eye height (walls as true double-line outlines, windows as
+//! gaps, mullions/columns/mesh furniture as outlines) plus a dim low cut for sills, the slab
+//! faces as the floor, the roof faces on the Roof view, and — through a floor's voids — the
+//! floors below. The blueprint's walls / plates / RoofGrid are the no-sidecar fallback; its
+//! apertures, furniture, stairs, swing arcs and rings stay as annotations over the mesh.
+//!
 //! ── Architecture ───────────────────────────────────────────────────────────────────────────────
 //! Rendering is the REAL wgpu engine (`map_engine_render::RenderEngine`) on a page canvas — the
 //! same crate the mission editor mounts — but with none of the editor's boot machinery (no IDB,
@@ -23,11 +30,12 @@
 //!
 //! | lane (draw order ↑)      | content |
 //! |--------------------------|---------|
-//! | `LANDCOVER` (poly)       | active floor plate + stairs plate |
-//! | `CONTOURS` (hairline)    | ghost floors (centerlines), door swing arcs, window normals, stair hatch |
+//! | `LANDCOVER` (poly)       | active floor: blueprint plate + stairs plate, overlaid by the MESH floor faces (Roof view: footprint + RoofGrid + mesh roof faces) |
+//! | `CONTOURS` (hairline)    | low section cut (sills), lower floors' cuts through this floor's voids, door swing arcs, window normals, stair hatch, rings (fallback: ghost centerlines) |
 //! | `AIRFIELD_APRON` (poly)  | furniture plates (cover-class colored) |
-//! | `ROADS_CASING` (strip)   | active-floor walls at true thickness |
+//! | `ROADS_CASING` (strip)   | the MESH section cut at eye height as 0.05 m strips (fallback: blueprint walls at nominal thickness) |
 //! | `ROADS` (strip)          | window / door aperture overlays on the walls |
+//! | `FOREST_OUTLINE` (hairline) | the same eye-height section as constant 1 px hairlines — never thins out at low zoom |
 //! | `Viewshed` (texture)     | the viewed level's visibility wash (`viewshed_upload`; the terrain viewshed's palette — ink on hidden cells) |
 //! | `MISSION_ZONES` (strip)  | the LOS ray, split + colored at each `LosHit`, plus event dots |
 //!
@@ -45,6 +53,7 @@ use std::sync::Arc;
 
 use leptos::prelude::*;
 use map_engine_core::building_blueprint::{BuildingBlueprint, LosHitKind, LosResult};
+use map_engine_core::building_section::{building_drawing, BuildingDrawing};
 use map_engine_core::building_viewshed::{level_washes, LevelWash, WashParams};
 use map_engine_core::bvh::BvhSidecar;
 
@@ -116,6 +125,9 @@ pub mod geom {
     use map_engine_core::building_blueprint::{
         clip_t_to_band, BuildingBlueprint, BuildingLevel, LosHit, LosHitKind,
     };
+    use map_engine_core::building_section::{
+        through_voids, BuildingDrawing, FaceFill, VOID_CELL_M,
+    };
     use map_engine_core::building_viewshed::LevelWash;
     use map_engine_core::geometry::polyline_strip::{expand_polyline_strip, StripVertex};
     use map_engine_core::geometry::triangulate::triangulate_simple;
@@ -151,6 +163,14 @@ pub mod geom {
     pub const COL_PLATE_LO: [f32; 4] = [0.10, 0.13, 0.18, 0.85];
     pub const COL_PLATE_HI: [f32; 4] = [0.24, 0.30, 0.40, 0.90];
     pub const COL_PLATE_EDGE: [f32; 4] = [0.45, 0.62, 0.72, 0.80];
+    /// Mesh section cuts: the eye-height outline (bright hairline), the low cut (dim), and the
+    /// deeper-than-one-floor ghost seen through voids.
+    pub const COL_CUT: [f32; 4] = [0.92, 0.94, 0.98, 1.0];
+    pub const COL_CUT_LOW: [f32; 4] = [0.55, 0.60, 0.72, 0.60];
+    pub const COL_GHOST_DEEP: [f32; 4] = [0.55, 0.60, 0.70, 0.20];
+    /// Width of the eye-height cut strips (m): weight when zoomed in; the hairline carries it
+    /// at low zoom.
+    pub const CUT_STRIP_M: f64 = 0.05;
 
     /// Blueprint-local plan `[x, z]` → engine world `[x, y]`. The ortho camera is deck.gl
     /// `flipY:false` — world **+y renders UP** — so mapping game +z (north) straight onto +y
@@ -267,13 +287,19 @@ pub mod geom {
         /// `ROADS` strip tris: aperture overlays.
         pub apertures: Vec<f32>,
         pub aperture_count: u32,
-        /// `CONTOURS` hairlines: ghosts + arcs + normals + hatch.
+        /// `CONTOURS` hairlines: low cut + void ghosts + arcs + normals + hatch + rings.
         pub hairlines: Vec<f32>,
         pub hairline_count: u32,
+        /// `FOREST_OUTLINE` hairlines: the mesh's eye-height section (0 on the fallback path).
+        pub cuts: Vec<f32>,
+        pub cut_count: u32,
         /// Covered `RoofGrid` cells painted on the Roof view (0 elsewhere / roofless).
         pub roof_cell_count: u32,
         /// Covered `PlateGrid` cells painted on the active Level view (0 on plate-less levels).
         pub plate_cell_count: u32,
+        /// Mesh faces painted on the floor lane (floor faces on a Level view, roof faces on
+        /// the Roof view; 0 without a drawing).
+        pub mesh_face_count: u32,
     }
 
     fn append_polygon(
@@ -291,6 +317,58 @@ pub mod geom {
             col.extend_from_slice(&color);
         }
         idx.extend(mesh.indices.iter().map(|i| base + i));
+    }
+
+    /// One mesh triangle (plan coords) → the floor polygon lane, world-mapped like
+    /// [`append_polygon`].
+    fn append_tri(
+        pos: &mut Vec<f32>,
+        col: &mut Vec<f32>,
+        idx: &mut Vec<u32>,
+        tri: [[f64; 2]; 3],
+        color: [f32; 4],
+    ) {
+        let base = (pos.len() / 2) as u32;
+        for p in tri {
+            let w = to_world(p);
+            pos.extend_from_slice(&[w[0] as f32, w[1] as f32]);
+            col.extend_from_slice(&color);
+        }
+        idx.extend_from_slice(&[base, base + 1, base + 2]);
+    }
+
+    /// Mesh faces onto the floor lane, tinted by height from `lo_col` at `ramp_y[0]` to `hi_col`
+    /// at `ramp_y[1]`; faces above `accent_above` take the chimney accent.
+    fn paint_faces(
+        out: &mut StaticLanes,
+        faces: &[FaceFill],
+        ramp_y: [f64; 2],
+        accent_above: Option<f64>,
+        lo_col: [f32; 4],
+        hi_col: [f32; 4],
+    ) {
+        let span = (ramp_y[1] - ramp_y[0]).max(1e-6);
+        for f in faces {
+            let col = if accent_above.is_some_and(|a| f.y > a) {
+                COL_ROOF_CHIMNEY
+            } else {
+                let t = (((f.y - ramp_y[0]) / span).clamp(0.0, 1.0)) as f32;
+                [
+                    lo_col[0] + (hi_col[0] - lo_col[0]) * t,
+                    lo_col[1] + (hi_col[1] - lo_col[1]) * t,
+                    lo_col[2] + (hi_col[2] - lo_col[2]) * t,
+                    lo_col[3] + (hi_col[3] - lo_col[3]) * t,
+                ]
+            };
+            append_tri(
+                &mut out.floor_pos,
+                &mut out.floor_col,
+                &mut out.floor_idx,
+                f.tri,
+                col,
+            );
+            out.mesh_face_count += 1;
+        }
     }
 
     /// Door swing arc as a hairline polyline: quarter circle of radius `width` around the hinge,
@@ -342,11 +420,19 @@ pub mod geom {
         }
     }
 
-    /// Tessellate one (blueprint, view-floor) state into lane payloads. The Roof view draws the
-    /// overall footprint plate plus every floor's wall centerlines as ghosts — the plan of what
-    /// you stand ON, not a floor with its own walls.
+    /// Tessellate one (blueprint, drawing, view-floor) state into lane payloads. With a mesh
+    /// `drawing` the structure is the mesh's: eye-height section cuts are the walls, slab faces
+    /// the floor, roof faces the roof, and lower floors show through this floor's voids; the
+    /// blueprint contributes plates, apertures, furniture, stairs and rings as annotations.
+    /// Without one (no sidecar) the blueprint draws everything as before. The Roof view draws
+    /// the overall footprint plate plus every floor's section (or centerlines) as ghosts — the
+    /// plan of what you stand ON, not a floor with its own walls.
     #[must_use]
-    pub fn build_static_lanes(bp: &BuildingBlueprint, view: ViewFloor) -> StaticLanes {
+    pub fn build_static_lanes(
+        bp: &BuildingBlueprint,
+        drawing: Option<&BuildingDrawing>,
+        view: ViewFloor,
+    ) -> StaticLanes {
         let mut out = StaticLanes::default();
         let ViewFloor::Level(active) = view else {
             // Roof.
@@ -395,15 +481,45 @@ pub mod geom {
                     }
                 }
             }
-            for ghost in &bp.levels {
-                for wall in &ghost.walls {
-                    seg(
-                        &mut out.hairlines,
-                        to_world(wall.start),
-                        to_world(wall.end),
-                        COL_GHOST,
-                    );
-                    out.hairline_count += 1;
+            // Mesh roof faces over the grid — the surfaces the rays actually hit, ramped over
+            // their own height range, chimney accent above the ridge.
+            if let Some(d) = drawing.filter(|d| !d.roof.is_empty()) {
+                paint_faces(
+                    &mut out,
+                    &d.roof,
+                    d.roof_y,
+                    Some(bp.vertical_profile.ridge_height_m + 0.3),
+                    COL_ROOF_LO,
+                    COL_ROOF_HI,
+                );
+            }
+            match drawing {
+                // Every floor's eye-height section as a ghost: the plan through the roof.
+                Some(d) => {
+                    for l in &d.levels {
+                        for s in &l.cut_main {
+                            seg(
+                                &mut out.hairlines,
+                                to_world(s[0]),
+                                to_world(s[1]),
+                                COL_GHOST,
+                            );
+                            out.hairline_count += 1;
+                        }
+                    }
+                }
+                None => {
+                    for ghost in &bp.levels {
+                        for wall in &ghost.walls {
+                            seg(
+                                &mut out.hairlines,
+                                to_world(wall.start),
+                                to_world(wall.end),
+                                COL_GHOST,
+                            );
+                            out.hairline_count += 1;
+                        }
+                    }
                 }
             }
             return out;
@@ -411,6 +527,7 @@ pub mod geom {
         let Some(lvl) = bp.levels.get(active) else {
             return out;
         };
+        let mesh_level = drawing.and_then(|d| d.levels.get(active));
 
         // Active floor plate: the verbatim PlateGrid when present (one tinted quad per covered
         // cell — partial mezzanines and double-height voids render exactly as measured, and
@@ -456,6 +573,19 @@ pub mod geom {
                     COL_FLOOR,
                 );
             }
+        }
+        // Mesh floor faces over the plate: the slab the rays actually see (landings and
+        // thresholds ramp like the plate cells; wall footprints at floor level land here too,
+        // under their own cut lines).
+        if let Some(l) = mesh_level {
+            paint_faces(
+                &mut out,
+                &l.floor,
+                [l.lo - 0.4, l.lo + 0.4],
+                None,
+                COL_PLATE_LO,
+                COL_PLATE_HI,
+            );
         }
         // Traced plate boundary rings (outer + holes) as hairline loops over the grid — the
         // derived polygon contract drawn against the verbatim cells, so ring-vs-grid
@@ -508,17 +638,45 @@ pub mod geom {
             }
         }
 
-        // Walls at true thickness (active floor).
-        for wall in &lvl.walls {
-            let col = if wall.is_exterior {
-                COL_WALL_EXT
-            } else {
-                COL_WALL_INT
-            };
-            let pts = [to_world(wall.start), to_world(wall.end)];
-            let verts = expand_polyline_strip(&pts, wall.thickness.max(0.06), col);
-            push_strip(&mut out.walls, &verts);
-            out.wall_count += 1;
+        match mesh_level {
+            // The mesh's section at eye height IS the wall drawing: true double-line outlines,
+            // window gaps, mullions, columns, collision furniture — one strip per segment for
+            // weight when zoomed in (ROADS_CASING) plus a constant 1 px hairline
+            // (FOREST_OUTLINE) so the outline never thins out at low zoom. The low cut draws
+            // the wall continuous under the window gaps (sills), dim.
+            Some(l) => {
+                for s in &l.cut_main {
+                    let pts = [to_world(s[0]), to_world(s[1])];
+                    let verts = expand_polyline_strip(&pts, CUT_STRIP_M, COL_WALL_EXT);
+                    push_strip(&mut out.walls, &verts);
+                    out.wall_count += 1;
+                    seg(&mut out.cuts, pts[0], pts[1], COL_CUT);
+                    out.cut_count += 1;
+                }
+                for s in &l.cut_low {
+                    seg(
+                        &mut out.hairlines,
+                        to_world(s[0]),
+                        to_world(s[1]),
+                        COL_CUT_LOW,
+                    );
+                    out.hairline_count += 1;
+                }
+            }
+            // Fallback: the blueprint's walls at nominal thickness.
+            None => {
+                for wall in &lvl.walls {
+                    let col = if wall.is_exterior {
+                        COL_WALL_EXT
+                    } else {
+                        COL_WALL_INT
+                    };
+                    let pts = [to_world(wall.start), to_world(wall.end)];
+                    let verts = expand_polyline_strip(&pts, wall.thickness.max(0.06), col);
+                    push_strip(&mut out.walls, &verts);
+                    out.wall_count += 1;
+                }
+            }
         }
 
         // Aperture overlays along the wall direction, slightly wider than the wall.
@@ -609,19 +767,39 @@ pub mod geom {
             );
         }
 
-        // Ghost floors: wall centerlines only.
-        for (i, ghost) in bp.levels.iter().enumerate() {
-            if i == active {
-                continue;
+        match (drawing, mesh_level) {
+            // Lower floors show ONLY through this floor's voids (stairwells, double-height
+            // spaces): their eye-height cuts, clipped by this level's floor-coverage raster,
+            // dimmer the deeper they are.
+            (Some(d), Some(l)) => {
+                for (j, below) in d.levels.iter().enumerate().take(active) {
+                    let col = if j + 1 == active {
+                        COL_GHOST
+                    } else {
+                        COL_GHOST_DEEP
+                    };
+                    for s in through_voids(&below.cut_main, &l.coverage, VOID_CELL_M) {
+                        seg(&mut out.hairlines, to_world(s[0]), to_world(s[1]), col);
+                        out.hairline_count += 1;
+                    }
+                }
             }
-            for wall in &ghost.walls {
-                seg(
-                    &mut out.hairlines,
-                    to_world(wall.start),
-                    to_world(wall.end),
-                    COL_GHOST,
-                );
-                out.hairline_count += 1;
+            // Fallback: every other floor's wall centerlines as ghosts.
+            _ => {
+                for (i, ghost) in bp.levels.iter().enumerate() {
+                    if i == active {
+                        continue;
+                    }
+                    for wall in &ghost.walls {
+                        seg(
+                            &mut out.hairlines,
+                            to_world(wall.start),
+                            to_world(wall.end),
+                            COL_GHOST,
+                        );
+                        out.hairline_count += 1;
+                    }
+                }
             }
         }
 
@@ -733,7 +911,9 @@ pub mod geom {
         use super::*;
         use crate::editor::tools::los_tool::VIEWSHED_HIDDEN_RGBA;
         use map_engine_core::building_blueprint::LosHit;
+        use map_engine_core::building_section::building_drawing;
         use map_engine_core::building_viewshed::{level_washes, WashParams};
+        use map_engine_core::bvh::Bvh;
         use map_engine_core::bvh::BvhSidecar;
         use map_engine_core::dem::sample::Visibility;
 
@@ -799,7 +979,7 @@ pub mod geom {
         #[test]
         fn static_lanes_cover_every_feature_of_the_active_floor() {
             let bp = farmhouse();
-            let l0 = build_static_lanes(&bp, ViewFloor::Level(0));
+            let l0 = build_static_lanes(&bp, None, ViewFloor::Level(0));
             assert_eq!(l0.wall_count, 7);
             assert_eq!(l0.aperture_count, 3 + 2); // windows + doors
             assert!(!l0.floor_pos.is_empty() && !l0.floor_idx.is_empty());
@@ -809,7 +989,7 @@ pub mod geom {
             assert_eq!(l0.furn_pos.is_empty(), bp.levels[0].furniture.is_empty());
             // Ghost centerlines for the OTHER floor are present (4 upstairs walls).
             assert!(l0.hairline_count >= 4);
-            let l1 = build_static_lanes(&bp, ViewFloor::Level(1));
+            let l1 = build_static_lanes(&bp, None, ViewFloor::Level(1));
             assert_eq!(l1.wall_count, 4);
             assert_eq!(l1.aperture_count, 2);
         }
@@ -817,7 +997,7 @@ pub mod geom {
         #[test]
         fn roof_view_is_footprint_plus_all_ghost_walls() {
             let bp = farmhouse();
-            let roof = build_static_lanes(&bp, ViewFloor::Roof);
+            let roof = build_static_lanes(&bp, None, ViewFloor::Roof);
             assert_eq!(roof.wall_count, 0);
             assert_eq!(roof.aperture_count, 0);
             assert!(roof.furn_pos.is_empty());
@@ -846,7 +1026,7 @@ pub mod geom {
                 nz: 4,
                 heights_m: (0..16).map(|i| (i % 4 != 0).then_some(0.0)).collect(),
             });
-            let lanes = build_static_lanes(&bp, ViewFloor::Level(0));
+            let lanes = build_static_lanes(&bp, None, ViewFloor::Level(0));
             let covered = (0..16).filter(|i| i % 4 != 0).count();
             assert_eq!(lanes.plate_cell_count, covered as u32);
             // Floor lane = plate quads (4 verts each) + the one stairs plate (4 verts);
@@ -858,7 +1038,7 @@ pub mod geom {
         #[test]
         fn plate_none_falls_back_to_polygon() {
             let bp = farmhouse();
-            let lanes = build_static_lanes(&bp, ViewFloor::Level(0));
+            let lanes = build_static_lanes(&bp, None, ViewFloor::Level(0));
             assert_eq!(lanes.plate_cell_count, 0);
             assert!(!lanes.floor_pos.is_empty());
         }
@@ -868,13 +1048,13 @@ pub mod geom {
         fn floor_rings_draw_closed_hairline_loops() {
             use map_engine_core::building_blueprint::FloorPolygon;
             let bp = farmhouse();
-            let base = build_static_lanes(&bp, ViewFloor::Level(0));
+            let base = build_static_lanes(&bp, None, ViewFloor::Level(0));
             let mut bp = farmhouse();
             bp.levels[0].floor_polygons = vec![FloorPolygon {
                 outer: vec![[0.0, 0.0], [2.0, 0.0], [2.0, 2.0], [0.0, 2.0]],
                 holes: vec![vec![[0.5, 0.5], [0.5, 1.0], [1.0, 1.0], [1.0, 0.5]]],
             }];
-            let lanes = build_static_lanes(&bp, ViewFloor::Level(0));
+            let lanes = build_static_lanes(&bp, None, ViewFloor::Level(0));
             // 4 outer edges + 4 hole edges, closed loops.
             assert_eq!(lanes.hairline_count, base.hairline_count + 8);
         }
@@ -906,7 +1086,7 @@ pub mod geom {
         fn roof_view_paints_the_heightfield() {
             use map_engine_core::building_blueprint::RoofGrid;
             let mut bp = farmhouse();
-            let base = build_static_lanes(&bp, ViewFloor::Roof);
+            let base = build_static_lanes(&bp, None, ViewFloor::Roof);
             bp.roof = Some(RoofGrid {
                 origin: [-2.0, -2.0],
                 cell_size_m: 1.0,
@@ -917,7 +1097,7 @@ pub mod geom {
                     .map(|i| (i % 3 != 0).then(|| 3.0 + f64::from(i) * 0.2))
                     .collect(),
             });
-            let lanes = build_static_lanes(&bp, ViewFloor::Roof);
+            let lanes = build_static_lanes(&bp, None, ViewFloor::Roof);
             let covered = (0..16).filter(|i| i % 3 != 0).count();
             assert_eq!(lanes.roof_cell_count, covered as u32);
             // One 4-vertex rect (8 floats) per covered cell on top of the plate mesh.
@@ -1274,6 +1454,167 @@ pub mod geom {
             assert_eq!(w.visibility_at(0.0, 7.0), Visibility::Hidden, "north wall");
         }
 
+        /// Append axis-aligned slabs (absolute extents) to a scene and rebuild its BVH.
+        fn with_slabs(sc: BvhSidecar, slabs: &[([f64; 2], [f64; 2], [f64; 2])]) -> BvhSidecar {
+            let (mut verts, mut tris) = (sc.verts, sc.tris);
+            for &(x, y, z) in slabs {
+                let (v, t) = cube(
+                    [
+                        0.5 * (x[0] + x[1]),
+                        0.5 * (y[0] + y[1]),
+                        0.5 * (z[0] + z[1]),
+                    ],
+                    [
+                        0.5 * (x[1] - x[0]),
+                        0.5 * (y[1] - y[0]),
+                        0.5 * (z[1] - z[0]),
+                    ],
+                );
+                let base = verts.len() as u32;
+                verts.extend_from_slice(&v);
+                tris.extend(
+                    t.iter()
+                        .map(|tri| [tri[0] + base, tri[1] + base, tri[2] + base]),
+                );
+            }
+            let bvh = Bvh::build(&verts, &tris);
+            BvhSidecar { verts, tris, bvh }
+        }
+
+        /// [`box_room`] plus an upper level [3, 6]: upper walls, a ceiling slab y ∈ [2.9, 3.1]
+        /// with a stairwell hole x, z ∈ [0.5, 1.5], an interior ground-floor wall x ∈ [0.9, 1.1]
+        /// running under the hole, and (optionally) a roof slab y ∈ [6, 6.2].
+        fn box_room_two_level(with_roof: bool) -> (BuildingBlueprint, BvhSidecar) {
+            let (mut bp, sc) = box_room();
+            let mut upper = bp.levels[0].clone();
+            upper.level_index = 1;
+            upper.name = "upper".into();
+            upper.elevation_range = [3.0, 6.0];
+            upper.windows.clear();
+            bp.levels.push(upper);
+            bp.vertical_profile.total_height_m = if with_roof { 6.2 } else { 6.0 };
+            let mut slabs = vec![
+                // Upper walls (solid).
+                ([-5.0, 5.0], [3.0, 6.0], [-5.1, -4.9]),
+                ([-5.0, 5.0], [3.0, 6.0], [4.9, 5.1]),
+                ([-5.1, -4.9], [3.0, 6.0], [-5.0, 5.0]),
+                ([4.9, 5.1], [3.0, 6.0], [-5.0, 5.0]),
+                // Ceiling / upper floor slab around the stairwell hole.
+                ([-5.0, 5.0], [2.9, 3.1], [-5.0, 0.5]),
+                ([-5.0, 5.0], [2.9, 3.1], [1.5, 5.0]),
+                ([-5.0, 0.5], [2.9, 3.1], [0.5, 1.5]),
+                ([1.5, 5.0], [2.9, 3.1], [0.5, 1.5]),
+                // Interior ground-floor wall running under the hole.
+                ([0.9, 1.1], [0.0, 2.9], [-2.0, 3.0]),
+            ];
+            if with_roof {
+                slabs.push(([-5.1, 5.1], [6.0, 6.2], [-5.1, 5.1]));
+            }
+            (bp, with_slabs(sc, &slabs))
+        }
+
+        /// Hairline segment midpoints (local plan) of one colour in a packed hairline lane.
+        fn hairline_mids(packed: &[f32], col: [f32; 4]) -> Vec<[f64; 2]> {
+            packed
+                .chunks_exact(12)
+                .filter(|v| v[2..6] == col[..])
+                .map(|v| {
+                    from_world([
+                        0.5 * (f64::from(v[0]) + f64::from(v[6])),
+                        0.5 * (f64::from(v[1]) + f64::from(v[7])),
+                    ])
+                })
+                .collect()
+        }
+
+        /// With a drawing the walls are the mesh's eye-height section (window gap and all),
+        /// the low cut and the floor faces are added, and the blueprint's apertures stay.
+        #[test]
+        fn mesh_drawing_replaces_walls_and_overlays_floor() {
+            let (bp, sc) = box_room();
+            let d = building_drawing(&bp, &sc);
+            let plain = build_static_lanes(&bp, None, ViewFloor::Level(0));
+            let mesh = build_static_lanes(&bp, Some(&d), ViewFloor::Level(0));
+            assert_eq!(plain.wall_count, 4, "blueprint walls on the fallback path");
+            assert_eq!((plain.cut_count, plain.mesh_face_count), (0, 0));
+            assert!(mesh.cut_count > 4, "section segments: {}", mesh.cut_count);
+            assert_eq!(mesh.wall_count, mesh.cut_count, "one strip per cut segment");
+            assert_eq!(
+                mesh.aperture_count, 1,
+                "blueprint apertures stay as annotation"
+            );
+            assert!(
+                mesh.mesh_face_count > 0,
+                "wall footprints at floor level paint"
+            );
+            assert!(mesh.hairline_count > plain.hairline_count, "low cut added");
+            assert!(
+                mesh.floor_pos.len() > plain.floor_pos.len(),
+                "faces overlay the plate"
+            );
+            // The window hole opens the eye-height section: no south-wall segment spans x = 0.
+            let spans_window = d.levels[0].cut_main.iter().any(|s| {
+                (s[0][1] + 5.0).abs() < 0.15
+                    && (s[1][1] + 5.0).abs() < 0.15
+                    && s[0][0].min(s[1][0]) < 0.0
+                    && s[0][0].max(s[1][0]) > 0.0
+            });
+            assert!(!spans_window, "the window hole must open the section");
+            // …while the low cut runs under the sill.
+            let sill = d.levels[0].cut_low.iter().any(|s| {
+                (s[0][1] + 5.1).abs() < 1e-6
+                    && (s[1][1] + 5.1).abs() < 1e-6
+                    && s[0][0].min(s[1][0]) < 0.0
+                    && s[0][0].max(s[1][0]) > 0.0
+            });
+            assert!(sill, "the low cut must run continuous under the window");
+        }
+
+        /// On the upper floor the ground floor's section shows ONLY through the stairwell:
+        /// ghost pieces exist in the hole, none under the solid slab.
+        #[test]
+        fn lower_floor_ghosts_only_through_voids() {
+            let (bp, sc) = box_room_two_level(false);
+            let d = building_drawing(&bp, &sc);
+            let up = build_static_lanes(&bp, Some(&d), ViewFloor::Level(1));
+            assert!(
+                up.mesh_face_count > 0,
+                "the ceiling slab is the upper floor"
+            );
+            let ghosts = hairline_mids(&up.hairlines, COL_GHOST);
+            let in_hole = |m: &[f64; 2]| (0.5..1.5).contains(&m[0]) && (0.5..1.5).contains(&m[1]);
+            assert!(
+                ghosts.iter().any(in_hole),
+                "no ghost through the stairwell: {ghosts:?}"
+            );
+            let leaked: Vec<&[f64; 2]> = ghosts
+                .iter()
+                .filter(|m| m[0].abs() < 4.9 && m[1].abs() < 4.9 && !in_hole(m))
+                .collect();
+            assert!(leaked.is_empty(), "ghosts under solid floor: {leaked:?}");
+            // The ground floor itself has no ghosts (nothing below it).
+            let ground = build_static_lanes(&bp, Some(&d), ViewFloor::Level(0));
+            assert!(hairline_mids(&ground.hairlines, COL_GHOST).is_empty());
+        }
+
+        /// The Roof view paints the mesh roof faces and ghosts every level's section.
+        #[test]
+        fn roof_view_paints_mesh_faces() {
+            let (bp, sc) = box_room_two_level(true);
+            let d = building_drawing(&bp, &sc);
+            let roof = build_static_lanes(&bp, Some(&d), ViewFloor::Roof);
+            assert!(
+                roof.mesh_face_count >= 2,
+                "roof slab faces: {}",
+                roof.mesh_face_count
+            );
+            assert_eq!(roof.roof_cell_count, 0, "no RoofGrid on the synthetic room");
+            assert_eq!((roof.wall_count, roof.cut_count), (0, 0));
+            let cuts: usize = d.levels.iter().map(|l| l.cut_main.len()).sum();
+            assert_eq!(roof.hairline_count as usize, cuts);
+            assert!((d.roof_y[1] - 6.2).abs() < 1e-9);
+        }
+
         #[test]
         fn rect_corners_rotation_preserves_area_orientation() {
             let c = rect_corners([1.0, 2.0], [2.0, 1.0], 90.0);
@@ -1306,6 +1647,9 @@ pub fn BuildingViewerPage() -> impl IntoView {
     // Per-level visibility rasters while the viewshed is on (one `LevelWash` per level, level
     // order); `Arc` for the same reason as the sidecar. `None` = off / nothing to trace.
     let washes = RwSignal::new(None::<Arc<Vec<LevelWash>>>);
+    // The mesh's 2D drawing (section cuts, floor / roof faces, void coverage) — computed once
+    // per (blueprint, sidecar); `None` = no sidecar → the blueprint draws everything.
+    let drawing = RwSignal::new(None::<Arc<BuildingDrawing>>);
     let load_err = RwSignal::new(None::<String>);
     let engine_err = RwSignal::new(None::<String>);
     let view_floor = RwSignal::new(ViewFloor::Level(0));
@@ -1371,6 +1715,17 @@ pub fn BuildingViewerPage() -> impl IntoView {
         });
     });
 
+    // The mesh drawing follows the blueprint + sidecar pair (pure core compute, native-safe).
+    Effect::new(move |_| {
+        let sc = sidecar.get();
+        blueprint.with(|bp| {
+            drawing.set(match (bp.as_ref(), sc.as_deref()) {
+                (Some(bp), Some(occl)) => Some(Arc::new(building_drawing(bp, occl))),
+                _ => None,
+            });
+        });
+    });
+
     #[cfg(target_arch = "wasm32")]
     live::wire(
         canvas_ref,
@@ -1378,6 +1733,7 @@ pub fn BuildingViewerPage() -> impl IntoView {
         sidecar,
         sidecar_err,
         washes,
+        drawing,
         load_err,
         engine_err,
         view_floor,
@@ -1684,6 +2040,7 @@ mod live {
     use super::{geom, Cam, Drag, RayEnd, ViewFloor, DEFAULT_PREFAB_PATH};
     use leptos::prelude::*;
     use map_engine_core::building_blueprint::{BuildingBlueprint, LosResult};
+    use map_engine_core::building_section::BuildingDrawing;
     use map_engine_core::building_viewshed::LevelWash;
     use map_engine_core::bvh::BvhSidecar;
     use map_engine_render::draw_order::role_id;
@@ -1704,8 +2061,13 @@ mod live {
         });
     }
 
-    fn upload_static(e: &mut RenderEngine, bp: &BuildingBlueprint, view: ViewFloor) {
-        let lanes = geom::build_static_lanes(bp, view);
+    fn upload_static(
+        e: &mut RenderEngine,
+        bp: &BuildingBlueprint,
+        drawing: Option<&BuildingDrawing>,
+        view: ViewFloor,
+    ) {
+        let lanes = geom::build_static_lanes(bp, drawing, view);
         e.upload_polygon_mesh(
             role_id::LANDCOVER,
             &lanes.floor_pos,
@@ -1730,6 +2092,8 @@ mod live {
             lanes.hairline_count,
             true,
         );
+        // Empty on the fallback path → the engine drops the lane.
+        e.upload_hairline_segments(role_id::FOREST_OUTLINE, &lanes.cuts, lanes.cut_count, true);
         e.mark_dirty();
     }
 
@@ -1836,6 +2200,7 @@ mod live {
         sidecar: RwSignal<Option<Arc<BvhSidecar>>>,
         sidecar_err: RwSignal<Option<String>>,
         washes: RwSignal<Option<Arc<Vec<LevelWash>>>>,
+        drawing: RwSignal<Option<Arc<BuildingDrawing>>>,
         load_err: RwSignal<Option<String>>,
         engine_err: RwSignal<Option<String>>,
         view_floor: RwSignal<ViewFloor>,
@@ -1874,21 +2239,21 @@ mod live {
 
             let Some(url) = path.strip_suffix(".json").map(|s| format!("{s}.bvh")) else {
                 sidecar_err.set(Some(format!(
-                    "{path}: not a .json path, no occlusion sidecar — LOS disabled"
+                    "{path}: not a .json path, no occlusion sidecar — LOS, viewshed and mesh drawing off (blueprint fallback)"
                 )));
                 return;
             };
             let outcome = match gloo_net::http::Request::get(&url).send().await {
                 Ok(resp) if resp.ok() => match resp.binary().await {
                     Ok(bytes) => BvhSidecar::parse(&bytes)
-                        .map_err(|e| format!("{url}: sidecar parse failed — {e} — LOS disabled")),
-                    Err(e) => Err(format!("{url}: read failed — {e} — LOS disabled")),
+                        .map_err(|e| format!("{url}: sidecar parse failed — {e} — LOS, viewshed and mesh drawing off (blueprint fallback)")),
+                    Err(e) => Err(format!("{url}: read failed — {e} — LOS, viewshed and mesh drawing off (blueprint fallback)")),
                 },
                 Ok(resp) => Err(format!(
-                    "{url}: HTTP {} — no occlusion sidecar, LOS disabled",
+                    "{url}: HTTP {} — no occlusion sidecar, LOS, viewshed and mesh drawing off (blueprint fallback)",
                     resp.status()
                 )),
-                Err(e) => Err(format!("{url}: {e} — LOS disabled")),
+                Err(e) => Err(format!("{url}: {e} — LOS, viewshed and mesh drawing off (blueprint fallback)")),
             };
             match outcome {
                 Ok(sc) => sidecar.set(Some(Arc::new(sc))),
@@ -1959,6 +2324,7 @@ mod live {
                     return;
                 }
                 let view = view_floor.get();
+                let d = drawing.get();
                 blueprint.with(|bp| {
                     let Some(bp) = bp.as_ref() else { return };
                     if let Ok(mut guard) = engine.try_borrow_mut() {
@@ -1969,7 +2335,7 @@ mod live {
                                 sync_cam(e, cam);
                                 fitted.set(true);
                             }
-                            upload_static(e, bp, view);
+                            upload_static(e, bp, d.as_deref(), view);
                         }
                     }
                 });
