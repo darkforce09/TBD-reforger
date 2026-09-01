@@ -10,6 +10,7 @@
 //!         [--params <file.json>] [--debug-dir <dir>]`
 //! Exit: 0 = every matched dump interpreted and validated · 1 = no match or any failure.
 
+mod bvh;
 mod emit;
 mod march;
 mod mesh;
@@ -26,6 +27,7 @@ mod types;
 mod walls;
 mod xob;
 
+pub use bvh::run_bvh_parity;
 pub use mesh::run_voxels_from_mesh;
 
 use std::path::PathBuf;

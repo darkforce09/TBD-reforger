@@ -506,6 +506,15 @@ enum MapCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
+    /// One-number LOS parity proof: BVH any-hit raycast over the COLL fire-collision
+    /// trimesh (both-sided, all records) replayed against the Workbench parity oracle
+    /// (--mesh <file.xob> --pairs <parity.json> [--record <i>] [--t-eps <meters>]
+    /// [--dump-misses <path.jsonl>]).
+    #[command(name = "bvh-parity")]
+    BvhParity {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -1158,6 +1167,7 @@ fn run() -> Result<u8> {
             MapCmd::ParityReport { args } => map_parity_report::run(&args),
             MapCmd::BlueprintFromVoxels { args } => map_blueprint::run(&args),
             MapCmd::VoxelsFromMesh { args } => map_blueprint::run_voxels_from_mesh(&args),
+            MapCmd::BvhParity { args } => map_blueprint::run_bvh_parity(&args),
         },
         TopCmd::Verify { cmd } => {
             let code = match cmd {

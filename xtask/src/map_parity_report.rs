@@ -16,10 +16,10 @@ use anyhow::{Context, Result};
 use map_engine_core::building_blueprint::BuildingBlueprint;
 
 #[derive(serde::Deserialize)]
-struct ParityFile {
-    slug: String,
+pub(crate) struct ParityFile {
+    pub(crate) slug: String,
     /// `[ox, oy, oz, tx, ty, tz, engineClear]` per row.
-    pairs: Vec<(f64, f64, f64, f64, f64, f64, bool)>,
+    pub(crate) pairs: Vec<(f64, f64, f64, f64, f64, f64, bool)>,
 }
 
 pub fn run(args: &[String]) -> Result<u8> {
