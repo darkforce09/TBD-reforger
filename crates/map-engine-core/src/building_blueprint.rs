@@ -759,4 +759,4 @@ pub fn segment_intersects_aabb_2d(
 
 #[cfg(test)]
 #[path = "building_blueprint_tests.rs"]
-mod tests;
+pub(crate) mod tests;

@@ -21,6 +21,10 @@ mod js;
 /// `world` re-exports it for backend callers).
 #[cfg(feature = "blueprint")]
 pub mod building_blueprint;
+/// T-090.6 step 4 — per-level visibility rasters (multi-floor viewshed) over the [`bvh`]
+/// sidecar; the building viewer's wash textures.
+#[cfg(feature = "blueprint")]
+pub mod building_viewshed;
 /// T-090.6 — BVH any-hit / closest-hit raycaster over collision trimeshes + the `.bvh` sidecar
 /// codec (the 3D occlusion lane that retired 2.5D LOS; zero-dep, wasm-safe).
 #[cfg(feature = "bvh")]

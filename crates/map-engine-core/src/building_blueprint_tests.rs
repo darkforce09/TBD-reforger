@@ -39,7 +39,7 @@ fn clip_t_to_band_horizontal_boundary_belongs_to_upper_level() {
 /* ───────────── synthetic two-level box room: blueprint + COLL-style slab mesh ───────────── */
 
 /// Axis-aligned slab from absolute extents `[x0, x1] × [y0, y1] × [z0, z1]`.
-fn slab(x: [f64; 2], y: [f64; 2], z: [f64; 2]) -> Scene {
+pub(crate) fn slab(x: [f64; 2], y: [f64; 2], z: [f64; 2]) -> Scene {
     cube(
         [
             0.5 * (x[0] + x[1]),
@@ -112,7 +112,7 @@ fn level(index: usize, band: [f64; 2], suffix: &str) -> BuildingLevel {
 /// Two-level 6 × 6 m box room, bands [0, 3) and [3, 6], flat roof at 6.0: one window per floor
 /// on the south wall (x ∈ [2.5, 3.5], y ∈ [1, 2] / [4, 5]), an open door in the ground-floor
 /// east wall (z ∈ [2.5, 3.5], y < 2.1).
-fn room_blueprint() -> BuildingBlueprint {
+pub(crate) fn room_blueprint() -> BuildingBlueprint {
     let square = vec![[0.0, 0.0], [6.0, 0.0], [6.0, 6.0], [0.0, 6.0]];
     let mut ground = level(0, [0.0, 3.0], "0");
     ground.doors.push(BuildingDoor {
@@ -170,7 +170,7 @@ fn room_blueprint() -> BuildingBlueprint {
 /// The COLL-style trimesh matching [`room_blueprint`]: 0.2 m slabs on the wall centerlines with
 /// the window / door holes cut, plus the roof slab. `extra` scenes are appended verbatim (a
 /// pillar the blueprint does not know about, a mullion inside a window hole).
-fn room_sidecar(extra: &[Scene]) -> BvhSidecar {
+pub(crate) fn room_sidecar(extra: &[Scene]) -> BvhSidecar {
     let mut scenes = vec![
         // South wall (z = 0): window holes x ∈ [2.5, 3.5] at y ∈ [1, 2] (L0) and [4, 5] (L1).
         slab([0.0, 2.5], [0.0, 6.0], [-0.1, 0.1]),

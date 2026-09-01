@@ -9,7 +9,10 @@
 //! colored by the ordered [`LosHit`] trace). The blueprint JSON is fetched from
 //! `/map-assets/everon/prefabs/buildings/…` (served by the API, proxied by Trunk in dev) and the
 //! sidecar from the same path with `.json` → `.bvh`; without a sidecar the plan still draws but
-//! LOS and the viewshed stay off (the header says so).
+//! LOS and the viewshed stay off (the header says so). The viewshed (Alt+click) is the
+//! multi-floor wash of T-090.6 step 4: `map_engine_core::building_viewshed::level_washes` casts
+//! one BVH ray to every 0.25 m cell at eye height on EVERY level, and the floor rail swaps which
+//! level's raster the engine's `Viewshed` texture lane shows.
 //!
 //! ── Architecture ───────────────────────────────────────────────────────────────────────────────
 //! Rendering is the REAL wgpu engine (`map_engine_render::RenderEngine`) on a page canvas — the
@@ -25,6 +28,7 @@
 //! | `AIRFIELD_APRON` (poly)  | furniture plates (cover-class colored) |
 //! | `ROADS_CASING` (strip)   | active-floor walls at true thickness |
 //! | `ROADS` (strip)          | window / door aperture overlays on the walls |
+//! | `Viewshed` (texture)     | the viewed level's visibility wash (`viewshed_upload`; the terrain viewshed's palette — ink on hidden cells) |
 //! | `MISSION_ZONES` (strip)  | the LOS ray, split + colored at each `LosHit`, plus event dots |
 //!
 //! The building sits at world ANCHOR (6400, 6400) with blueprint +z (game north) mapped UP on
@@ -41,6 +45,7 @@ use std::sync::Arc;
 
 use leptos::prelude::*;
 use map_engine_core::building_blueprint::{BuildingBlueprint, LosHitKind, LosResult};
+use map_engine_core::building_viewshed::{level_washes, LevelWash, WashParams};
 use map_engine_core::bvh::BvhSidecar;
 
 /// Default blueprint when no `?prefab=` override is present — the scanned FarmHouse (roof
@@ -107,10 +112,11 @@ impl ViewFloor {
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 pub mod geom {
     use super::ViewFloor;
+    use crate::editor::tools::los_tool::{pack_rgba_256, viewshed_cell_rgba, ViewshedTexture};
     use map_engine_core::building_blueprint::{
         clip_t_to_band, BuildingBlueprint, BuildingLevel, LosHit, LosHitKind,
     };
-    use map_engine_core::bvh::BvhSidecar;
+    use map_engine_core::building_viewshed::LevelWash;
     use map_engine_core::geometry::polyline_strip::{expand_polyline_strip, StripVertex};
     use map_engine_core::geometry::triangulate::triangulate_simple;
 
@@ -694,74 +700,42 @@ pub mod geom {
         (packed, count)
     }
 
-    /// 360° viewshed from `obs` (horizontal rays at the observer's own elevation): one boundary
-    /// point per direction — the terminal hit when blocked, the range cap when clear. The mesh
-    /// decides: window and door HOLES pass (vision extends beyond them), frames, walls and any
-    /// solid mass stop it, and full-cover furniture stops it too — exactly
-    /// [`BuildingBlueprint::evaluate_los`]'s rules, because each direction IS one `evaluate_los`
-    /// call over `occl`. Returned points are blueprint-local plan coords, CCW by construction.
+    /// One level's visibility raster → the engine's viewshed texture payload. The terrain
+    /// viewshed's colour language verbatim (`viewshed_cell_rgba`: ink on HIDDEN cells, VISIBLE
+    /// left untouched — one language across the product), rows straight through (the raster is
+    /// already north-first, which IS the texture's row-0 = world max-y contract), rows padded to
+    /// 256 bytes for `write_texture`, world rect from the local plan rect. Pure: native tests pin
+    /// the bytes and the rect. Replaces the 720-ray centre-fan of the single-floor viewshed,
+    /// whose fan topology leaked light around occluders — a per-cell raster cannot.
     #[must_use]
-    pub fn build_viewshed(
-        bp: &BuildingBlueprint,
-        occl: &BvhSidecar,
-        obs: [f64; 3],
-        range_m: f64,
-        n_rays: usize,
-    ) -> Vec<[f64; 2]> {
-        let mut boundary = Vec::with_capacity(n_rays);
-        for i in 0..n_rays {
-            let a = std::f64::consts::TAU * (i as f64) / (n_rays as f64);
-            let tgt = [
-                obs[0] + range_m * a.cos(),
-                obs[1],
-                obs[2] + range_m * a.sin(),
-            ];
-            let los = bp.evaluate_los(occl, obs, tgt);
-            let p = if los.is_clear {
-                [tgt[0], tgt[2]]
-            } else {
-                los.hits
-                    .last()
-                    .map_or([tgt[0], tgt[2]], |h| [h.pos[0], h.pos[2]])
-            };
-            boundary.push(p);
+    pub fn wash_texture(w: &LevelWash) -> ViewshedTexture {
+        let mut tight = Vec::with_capacity(w.cols * w.rows * 4);
+        for &cell in &w.cells {
+            tight.extend_from_slice(&viewshed_cell_rgba(cell));
         }
-        boundary
-    }
-
-    /// Viewshed boundary → translucent fill fan for the `FOREST_FILL` strip lane.
-    /// Returns `(packed, item_count)`.
-    #[must_use]
-    pub fn build_viewshed_lane(obs2: [f64; 2], boundary: &[[f64; 2]]) -> (Vec<f32>, u32) {
-        let mut packed = Vec::new();
-        if boundary.len() < 3 {
-            return (packed, 0);
+        let (rgba, stride_bytes) = pack_rgba_256(&tight, w.cols, w.rows);
+        let lo = to_world([w.min_x, w.min_z]);
+        let hi = to_world([w.max_x, w.max_z]);
+        ViewshedTexture {
+            min_x: lo[0],
+            min_y: lo[1],
+            max_x: hi[0],
+            max_y: hi[1],
+            tex_w: w.cols as u32,
+            tex_h: w.rows as u32,
+            rgba,
+            stride_bytes,
         }
-        let col: [f32; 4] = [0.25, 0.90, 0.40, 0.16];
-        let c = to_world(obs2);
-        let mut count = 0u32;
-        for i in 0..boundary.len() {
-            let a = to_world(boundary[i]);
-            let b = to_world(boundary[(i + 1) % boundary.len()]);
-            for p in [c, a, b] {
-                packed.extend_from_slice(&[
-                    p[0] as f32,
-                    p[1] as f32,
-                    col[0],
-                    col[1],
-                    col[2],
-                    col[3],
-                ]);
-            }
-            count += 1;
-        }
-        (packed, count)
     }
 
     #[cfg(test)]
     mod tests {
         use super::*;
+        use crate::editor::tools::los_tool::VIEWSHED_HIDDEN_RGBA;
         use map_engine_core::building_blueprint::LosHit;
+        use map_engine_core::building_viewshed::{level_washes, WashParams};
+        use map_engine_core::bvh::BvhSidecar;
+        use map_engine_core::dem::sample::Visibility;
 
         fn farmhouse() -> BuildingBlueprint {
             serde_json::from_str(include_str!(
@@ -1221,51 +1195,83 @@ pub mod geom {
             (bp, BvhSidecar { verts, tris, bvh })
         }
 
+        /// The encoder's contract with the engine lane: palette bytes per cell (ink on HIDDEN,
+        /// VISIBLE transparent), rows straight through (row 0 = north = texture row 0), rows
+        /// padded to a 256-byte stride, and the world rect from the local plan rect.
         #[test]
-        fn viewshed_escapes_only_through_apertures() {
+        fn wash_texture_maps_palette_and_world_rect() {
+            let mut cells = vec![Visibility::Visible; 6];
+            cells[1] = Visibility::Hidden; // row 0, col 1
+            let w = LevelWash {
+                level_index: 0,
+                eye_y: 1.0,
+                obs: [0.0; 3],
+                min_x: -1.0,
+                min_z: -2.0,
+                max_x: 2.0,
+                max_z: 0.0,
+                cell_m: 1.0,
+                cols: 3,
+                rows: 2,
+                cells,
+            };
+            let t = wash_texture(&w);
+            assert_eq!((t.tex_w, t.tex_h, t.stride_bytes), (3, 2, 256));
+            assert_eq!(t.rgba.len(), 512);
+            assert_eq!(&t.rgba[4..8], &VIEWSHED_HIDDEN_RGBA);
+            assert_eq!(&t.rgba[0..4], &[0, 0, 0, 0]);
+            assert_eq!(
+                &t.rgba[256..260],
+                &[0, 0, 0, 0],
+                "row 1 starts at the stride"
+            );
+            assert!((t.min_x - (ANCHOR[0] - 1.0)).abs() < 1e-9);
+            assert!((t.min_y - (ANCHOR[1] - 2.0)).abs() < 1e-9);
+            assert!((t.max_x - (ANCHOR[0] + 2.0)).abs() < 1e-9);
+            assert!((t.max_y - ANCHOR[1]).abs() < 1e-9);
+        }
+
+        /// The raster on the one-level box room: every interior cell lit, the exterior lit
+        /// ONLY in the cone the south window hole subtends, walls dark — the per-cell rays
+        /// cannot leak the way the retired centre-fan did.
+        #[test]
+        fn wash_escapes_only_through_the_window() {
             let (bp, sc) = box_room();
             // Observer mid-room at standing eye height, inside the window's sill..top band.
             let obs = [0.0, 1.4, 0.0];
-            let boundary = build_viewshed(&bp, &sc, obs, 25.0, 720);
-            assert_eq!(boundary.len(), 720);
-            let mut escaped_south = 0usize;
-            for p in &boundary {
-                // Anything clearly south of the south wall exited through the window hole.
-                if p[1] < -5.1 {
-                    escaped_south += 1;
+            let washes = level_washes(&bp, &sc, obs, &WashParams::default());
+            assert_eq!(washes.len(), 1);
+            let w = &washes[0];
+            let mut south_lit = 0usize;
+            for row in 0..w.rows {
+                for col in 0..w.cols {
+                    let c = w.cell_center(col, row);
+                    let v = w.at(col, row);
+                    if c[0].abs() < 4.5 && c[1].abs() < 4.5 {
+                        assert_eq!(v, Visibility::Visible, "interior cell {c:?}");
+                    }
+                    if c[1] < -5.1 && v == Visibility::Visible {
+                        south_lit += 1;
+                    }
                 }
-                // Nothing may exceed the range cap.
-                let d = map_engine_core::building_blueprint::dist_2d([obs[0], obs[2]], *p);
-                assert!(d <= 25.0 + 1e-6);
             }
-            // The hole subtends ±atan(1 / 4.9) ≈ ±11.5° → ~46 of 720 rays escape; the slabs
-            // stop every other direction.
+            // The hole subtends ±atan(1 / 4.9) ≈ ±11.5°: a cone ~2–4 m wide over the 5 m pad
+            // south of the wall, a couple of hundred 0.25 m cells — never the whole exterior.
             assert!(
-                escaped_south > 30,
-                "too few rays escaped through the window: {escaped_south}"
+                south_lit > 20 && south_lit < 400,
+                "south cone: {south_lit} cells lit"
             );
-            assert!(
-                escaped_south < 60,
-                "walls stopped too little: {escaped_south} rays escaped south"
+            assert_eq!(
+                w.visibility_at(0.0, -7.0),
+                Visibility::Visible,
+                "dead ahead through the window"
             );
-            // Straight north (i = 180 → +z) meets the north slab's INNER face at z = 4.9: it
-            // must REACH the wall (no phantom blocker) and STOP there (no leak).
-            let north = boundary[180];
-            assert!(north[0].abs() < 0.1, "north ray bent: {north:?}");
-            assert!(
-                north[1] > 4.8 && north[1] < 5.0,
-                "north ray should end on the north wall: {north:?}"
+            assert_eq!(
+                w.visibility_at(3.0, -7.0),
+                Visibility::Hidden,
+                "beside the window"
             );
-            // Straight south (i = 540 → −z) is dead center in the hole: out to the range cap.
-            let south = boundary[540];
-            assert!(
-                south[1] < -24.0,
-                "south ray should escape through the window: {south:?}"
-            );
-            // Fan lane packs 3 verts per triangle, 6 f32 per vert.
-            let (packed, n) = build_viewshed_lane([obs[0], obs[2]], &boundary);
-            assert_eq!(n, 720);
-            assert_eq!(packed.len(), 720 * 3 * 6);
+            assert_eq!(w.visibility_at(0.0, 7.0), Visibility::Hidden, "north wall");
         }
 
         #[test]
@@ -1297,6 +1303,9 @@ pub fn BuildingViewerPage() -> impl IntoView {
     // is `!Clone` (`RwSignal::get` clones) and the signal store wants `Send + Sync`.
     let sidecar = RwSignal::new(None::<Arc<BvhSidecar>>);
     let sidecar_err = RwSignal::new(None::<String>);
+    // Per-level visibility rasters while the viewshed is on (one `LevelWash` per level, level
+    // order); `Arc` for the same reason as the sidecar. `None` = off / nothing to trace.
+    let washes = RwSignal::new(None::<Arc<Vec<LevelWash>>>);
     let load_err = RwSignal::new(None::<String>);
     let engine_err = RwSignal::new(None::<String>);
     let view_floor = RwSignal::new(ViewFloor::Level(0));
@@ -1338,12 +1347,37 @@ pub fn BuildingViewerPage() -> impl IntoView {
         });
     });
 
+    // Multi-floor viewshed — the per-level rasters follow the observer live while the viewshed
+    // is on (Alt+click / Alt+drag on A). Pure core compute, native-safe; the wasm host uploads
+    // the VIEWED level's wash to the engine's texture lane and swaps it with the floor rail.
+    // No sidecar → no wash: the blueprint alone cannot stop a ray.
+    Effect::new(move |_| {
+        if !viewshed_on.get() {
+            washes.set(None);
+            return;
+        }
+        let o = obs.get();
+        let sc = sidecar.get();
+        blueprint.with(|bp| {
+            washes.set(match (bp.as_ref(), sc.as_deref()) {
+                (Some(bp), Some(occl)) => Some(Arc::new(level_washes(
+                    bp,
+                    occl,
+                    [o.x, o.y, o.z],
+                    &WashParams::default(),
+                ))),
+                _ => None,
+            });
+        });
+    });
+
     #[cfg(target_arch = "wasm32")]
     live::wire(
         canvas_ref,
         blueprint,
         sidecar,
         sidecar_err,
+        washes,
         load_err,
         engine_err,
         view_floor,
@@ -1592,9 +1626,20 @@ pub fn BuildingViewerPage() -> impl IntoView {
                 {slider("Observer Y", obs)}
                 {slider("Target Y", tgt)}
                 <div class="text-[10px] text-on-surface-variant">"drag A/B markers · drag canvas to pan · wheel zooms · click the building for floors · Alt+click moves A and fills its viewshed"</div>
-                {move || viewshed_on.get().then(|| view! {
+                {move || viewshed_on.get().then(|| {
+                    // Which level's wash is on screen — the floor rail swaps it; the roof
+                    // view has no eye plane and shows none.
+                    let shown = match view_floor.get() {
+                        ViewFloor::Level(i) => blueprint.with(|bp| {
+                            bp.as_ref()
+                                .and_then(|b| b.levels.iter().find(|l| l.level_index == i))
+                                .map_or_else(|| format!("level {i}"), |l| l.name.clone())
+                        }),
+                        ViewFloor::Roof => "no wash on the roof view".to_string(),
+                    };
+                    view! {
                     <div class="flex items-center gap-2 rounded bg-emerald-500/10 px-2 py-1 text-xs text-emerald-300">
-                        "viewshed from A"
+                        {format!("viewshed from A · {shown}")}
                         <button
                             type="button"
                             class="rounded px-1 text-on-surface-variant hover:text-red-300"
@@ -1603,6 +1648,7 @@ pub fn BuildingViewerPage() -> impl IntoView {
                             "✕ clear"
                         </button>
                     </div>
+                    }
                 })}
                 {move || load_err.get().map(|e| view! { <div class="rounded bg-red-500/15 p-2 text-xs text-red-300">{e}</div> })}
                 {move || sidecar_err.get().map(|e| view! { <div class="rounded bg-amber-500/15 p-2 text-xs text-amber-300">{e}</div> })}
@@ -1638,6 +1684,7 @@ mod live {
     use super::{geom, Cam, Drag, RayEnd, ViewFloor, DEFAULT_PREFAB_PATH};
     use leptos::prelude::*;
     use map_engine_core::building_blueprint::{BuildingBlueprint, LosResult};
+    use map_engine_core::building_viewshed::LevelWash;
     use map_engine_core::bvh::BvhSidecar;
     use map_engine_render::draw_order::role_id;
     use map_engine_render::RenderEngine;
@@ -1706,25 +1753,37 @@ mod live {
         e.mark_dirty();
     }
 
-    /// Off, or no sidecar to trace → the lane is cleared (a viewshed with nothing to stop it
-    /// would be a lie).
-    fn upload_viewshed(
-        e: &mut RenderEngine,
-        bp: &BuildingBlueprint,
-        occl: Option<&BvhSidecar>,
-        obs: RayEnd,
-        on: bool,
-    ) {
-        let Some(occl) = occl.filter(|_| on) else {
-            e.clear_vector_lane(role_id::FOREST_FILL);
-            e.mark_dirty();
-            return;
+    /// The viewed level's wash → the engine's single viewshed texture slot. The Roof view (no
+    /// eye plane), a missing wash set (viewshed off / no sidecar) or a level without a raster
+    /// clears the lane — a wash with nothing to stop it would be a lie.
+    fn upload_wash(e: &mut RenderEngine, washes: Option<&[LevelWash]>, view: ViewFloor) {
+        let wash = match view {
+            ViewFloor::Level(i) => washes.and_then(|ws| ws.iter().find(|w| w.level_index == i)),
+            ViewFloor::Roof => None,
         };
-        let bb = &bp.overall_footprint.bounding_box2_d;
-        let range = (bb.width_m.hypot(bb.depth_m)) + 5.0;
-        let boundary = geom::build_viewshed(bp, occl, [obs.x, obs.y, obs.z], range, 720);
-        let (packed, n) = geom::build_viewshed_lane([obs.x, obs.z], &boundary);
-        e.upload_strip_tris(role_id::FOREST_FILL, &packed, n, true);
+        match wash {
+            Some(w) => {
+                let t = geom::wash_texture(w);
+                if let Err(err) = e.viewshed_upload(
+                    t.min_x,
+                    t.min_y,
+                    t.max_x,
+                    t.max_y,
+                    t.tex_w,
+                    t.tex_h,
+                    &t.rgba,
+                    t.stride_bytes,
+                ) {
+                    let err: JsValue = err.into();
+                    web_sys::console::warn_2(
+                        &"building-viewer: viewshed wash upload failed".into(),
+                        &err,
+                    );
+                    e.viewshed_clear();
+                }
+            }
+            None => e.viewshed_clear(),
+        }
         e.mark_dirty();
     }
 
@@ -1776,6 +1835,7 @@ mod live {
         blueprint: RwSignal<Option<BuildingBlueprint>>,
         sidecar: RwSignal<Option<Arc<BvhSidecar>>>,
         sidecar_err: RwSignal<Option<String>>,
+        washes: RwSignal<Option<Arc<Vec<LevelWash>>>>,
         load_err: RwSignal<Option<String>>,
         engine_err: RwSignal<Option<String>>,
         view_floor: RwSignal<ViewFloor>,
@@ -1938,25 +1998,21 @@ mod live {
             }
         });
 
-        // Viewshed fill: follows the observer while enabled; clears when toggled off or when
-        // there is no sidecar to trace.
+        // Wash lane: the viewed level's raster while the viewshed is on (the page's compute
+        // Effect owns `washes`); the floor rail swaps levels, Roof / off / no sidecar clears.
         Effect::new({
             let engine = engine.clone();
             move |_| {
                 if !engine_ready.get() {
                     return;
                 }
-                let on = viewshed_on.get();
-                let o = obs.get();
-                let sc = sidecar.get();
-                blueprint.with(|bp| {
-                    let Some(bp) = bp.as_ref() else { return };
-                    if let Ok(mut guard) = engine.try_borrow_mut() {
-                        if let Some(e) = guard.as_mut() {
-                            upload_viewshed(e, bp, sc.as_deref(), o, on);
-                        }
+                let view = view_floor.get();
+                let ws = washes.get();
+                if let Ok(mut guard) = engine.try_borrow_mut() {
+                    if let Some(e) = guard.as_mut() {
+                        upload_wash(e, ws.as_deref().map(Vec::as_slice), view);
                     }
-                });
+                }
             }
         });
 
