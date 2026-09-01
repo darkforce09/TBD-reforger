@@ -1,19 +1,23 @@
 //! Phase B — `cargo xtask map parity-report`: replay the Workbench parity oracle through the
-//! Rust 2.5D raycaster and report agreement.
+//! blueprint LOS evaluator (`evaluate_los` over the `.bvh` occlusion sidecar) and report agreement.
 //!
 //! The oracle (`EMCP_WB_TbdBlueprint` action `parity`) records engine `TraceMove` verdicts for
 //! random observer/target pairs in the building's LOCAL frame — the same frame the blueprint
 //! uses — with glass panes excluded (vision passes glass). This command replays every pair
-//! through `BuildingBlueprint::evaluate_los` on the extracted blueprint and prints where the
-//! 2.5D model and the engine disagree. Report-only: the number is the instrument, not a gate.
+//! through `BuildingBlueprint::evaluate_los` — the BVH raycast over the sidecar decides
+//! clear/blocked, the blueprint names the hit — and prints where the model and the engine
+//! disagree. Report-only: the number is the instrument, not a gate (the CI pin lives in
+//! `map_blueprint::tests::farmhouse_golden_parity_is_pinned`).
 //!
-//! Usage: `cargo xtask map parity-report --pairs <parity.json> --blueprint <blueprint.json>`
+//! Usage: `cargo xtask map parity-report --pairs <parity.json> --blueprint <blueprint.json>
+//!         --sidecar <file.bvh>`
 
 use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use map_engine_core::building_blueprint::BuildingBlueprint;
+use map_engine_core::bvh::BvhSidecar;
 
 #[derive(serde::Deserialize)]
 pub(crate) struct ParityFile {
@@ -22,9 +26,12 @@ pub(crate) struct ParityFile {
     pub(crate) pairs: Vec<(f64, f64, f64, f64, f64, f64, bool)>,
 }
 
+const USAGE: &str = "--pairs <json> --blueprint <json> --sidecar <file.bvh>";
+
 pub fn run(args: &[String]) -> Result<u8> {
     let mut pairs_path: Option<PathBuf> = None;
     let mut bp_path: Option<PathBuf> = None;
+    let mut sidecar_path: Option<PathBuf> = None;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
@@ -36,16 +43,19 @@ pub fn run(args: &[String]) -> Result<u8> {
                 bp_path = Some(PathBuf::from(&args[i + 1]));
                 i += 2;
             }
+            "--sidecar" if i + 1 < args.len() => {
+                sidecar_path = Some(PathBuf::from(&args[i + 1]));
+                i += 2;
+            }
             other => {
-                eprintln!(
-                    "parity-report: unknown arg {other} (usage: --pairs <json> --blueprint <json>)"
-                );
+                eprintln!("parity-report: unknown arg {other} (usage: {USAGE})");
                 return Ok(1);
             }
         }
     }
-    let (Some(pairs_path), Some(bp_path)) = (pairs_path, bp_path) else {
-        eprintln!("parity-report: --pairs and --blueprint are both required");
+    let (Some(pairs_path), Some(bp_path), Some(sidecar_path)) = (pairs_path, bp_path, sidecar_path)
+    else {
+        eprintln!("parity-report: --pairs, --blueprint and --sidecar are all required ({USAGE})");
         return Ok(1);
     };
 
@@ -58,13 +68,17 @@ pub fn run(args: &[String]) -> Result<u8> {
         &fs::read_to_string(&bp_path).with_context(|| format!("read {}", bp_path.display()))?,
     )
     .context("parse blueprint JSON")?;
+    let sidecar = BvhSidecar::parse(
+        &fs::read(&sidecar_path).with_context(|| format!("read {}", sidecar_path.display()))?,
+    )
+    .with_context(|| format!("parse sidecar {}", sidecar_path.display()))?;
 
     let mut agree = 0usize;
     let mut model_clear_engine_blocked = 0usize;
     let mut model_blocked_engine_clear = 0usize;
     let mut disagreements: Vec<String> = Vec::new();
     for &(ox, oy, oz, tx, ty, tz, engine_clear) in &parity.pairs {
-        let los = bp.evaluate_los([ox, oy, oz], [tx, ty, tz]);
+        let los = bp.evaluate_los(&sidecar, [ox, oy, oz], [tx, ty, tz]);
         if los.is_clear == engine_clear {
             agree += 1;
         } else {
@@ -78,7 +92,7 @@ pub fn run(args: &[String]) -> Result<u8> {
                     "  obs [{ox:.1},{oy:.1},{oz:.1}] → tgt [{tx:.1},{ty:.1},{tz:.1}]: engine {} vs model {}{}",
                     verdict(engine_clear),
                     verdict(los.is_clear),
-                    // Name the terminal hit (wall id, roof, full-cover furniture) on blocks.
+                    // Name the terminal hit (wall id, roof, solid, full-cover furniture) on blocks.
                     (!los.is_clear)
                         .then(|| los.hits.last().map(|h| format!(" ({:?} {})", h.kind, h.id)))
                         .flatten()

@@ -4,9 +4,12 @@
 //!
 //! Purpose: a hyper-focused single-prefab instrument for eyeballing what the Workbench extractor
 //! produced — floor plates, thickness walls, apertures, furniture cover, stairs — and for driving
-//! the 2.5D `evaluate_los` raycaster interactively (draggable observer/target + elevation
-//! sliders, ray colored by the ordered [`LosHit`] trace). The blueprint JSON is fetched from
-//! `/map-assets/everon/prefabs/buildings/…` (served by the API, proxied by Trunk in dev).
+//! `evaluate_los` (the BVH raycast over the building's `.bvh` occlusion sidecar, attributed
+//! through the blueprint) interactively (draggable observer/target + elevation sliders, ray
+//! colored by the ordered [`LosHit`] trace). The blueprint JSON is fetched from
+//! `/map-assets/everon/prefabs/buildings/…` (served by the API, proxied by Trunk in dev) and the
+//! sidecar from the same path with `.json` → `.bvh`; without a sidecar the plan still draws but
+//! LOS and the viewshed stay off (the header says so).
 //!
 //! ── Architecture ───────────────────────────────────────────────────────────────────────────────
 //! Rendering is the REAL wgpu engine (`map_engine_render::RenderEngine`) on a page canvas — the
@@ -34,8 +37,11 @@
 //! engine. This is the `los_tool.rs` idiom.
 #![allow(dead_code)] // native build: the wasm host wires the live path; tests pin the pure core.
 
+use std::sync::Arc;
+
 use leptos::prelude::*;
 use map_engine_core::building_blueprint::{BuildingBlueprint, LosHitKind, LosResult};
+use map_engine_core::bvh::BvhSidecar;
 
 /// Default blueprint when no `?prefab=` override is present — the scanned FarmHouse (roof
 /// heightfield + verbatim plates + attic). The hand-authored pre-scan asset stays reachable
@@ -104,6 +110,7 @@ pub mod geom {
     use map_engine_core::building_blueprint::{
         clip_t_to_band, BuildingBlueprint, BuildingLevel, LosHit, LosHitKind,
     };
+    use map_engine_core::bvh::BvhSidecar;
     use map_engine_core::geometry::polyline_strip::{expand_polyline_strip, StripVertex};
     use map_engine_core::geometry::triangulate::triangulate_simple;
 
@@ -647,9 +654,11 @@ pub mod geom {
             spans.push((t_prev, h.t, color));
             t_prev = h.t;
             color = match h.kind {
-                LosHitKind::Wall | LosHitKind::Roof => RAY_BLOCKED,
-                LosHitKind::Window => RAY_GLASS,
+                LosHitKind::Wall | LosHitKind::Roof | LosHitKind::Solid => RAY_BLOCKED,
+                // A terminal window / stairs hit is frame or tread MASS, not a pass.
+                LosHitKind::Window | LosHitKind::Stairs if h.concealment >= 1.0 => RAY_BLOCKED,
                 LosHitKind::Furniture if h.concealment >= 1.0 => RAY_BLOCKED,
+                LosHitKind::Window => RAY_GLASS,
                 LosHitKind::Furniture => RAY_COVER,
                 LosHitKind::DoorOpen | LosHitKind::Stairs => color,
             };
@@ -671,7 +680,8 @@ pub mod geom {
                 continue;
             }
             let col = match h.kind {
-                LosHitKind::Wall | LosHitKind::Roof => RAY_BLOCKED,
+                LosHitKind::Wall | LosHitKind::Roof | LosHitKind::Solid => RAY_BLOCKED,
+                LosHitKind::Window | LosHitKind::Stairs if h.concealment >= 1.0 => RAY_BLOCKED,
                 LosHitKind::Window => RAY_GLASS,
                 LosHitKind::DoorOpen => RAY_CLEAR,
                 LosHitKind::Furniture => RAY_COVER,
@@ -685,13 +695,15 @@ pub mod geom {
     }
 
     /// 360° viewshed from `obs` (horizontal rays at the observer's own elevation): one boundary
-    /// point per direction — the terminal hit when blocked, the range cap when clear. Windows and
-    /// open doors pass (vision extends beyond them); walls, closed doors, and full-cover stop it —
-    /// exactly [`BuildingBlueprint::evaluate_los`]'s rules, because each direction IS one
-    /// `evaluate_los` call. Returned points are blueprint-local plan coords, CCW by construction.
+    /// point per direction — the terminal hit when blocked, the range cap when clear. The mesh
+    /// decides: window and door HOLES pass (vision extends beyond them), frames, walls and any
+    /// solid mass stop it, and full-cover furniture stops it too — exactly
+    /// [`BuildingBlueprint::evaluate_los`]'s rules, because each direction IS one `evaluate_los`
+    /// call over `occl`. Returned points are blueprint-local plan coords, CCW by construction.
     #[must_use]
     pub fn build_viewshed(
         bp: &BuildingBlueprint,
+        occl: &BvhSidecar,
         obs: [f64; 3],
         range_m: f64,
         n_rays: usize,
@@ -704,7 +716,7 @@ pub mod geom {
                 obs[1],
                 obs[2] + range_m * a.sin(),
             ];
-            let los = bp.evaluate_los(obs, tgt);
+            let los = bp.evaluate_los(occl, obs, tgt);
             let p = if los.is_clear {
                 [tgt[0], tgt[2]]
             } else {
@@ -1009,6 +1021,34 @@ pub mod geom {
                 .map(|c| [c[2], c[3], c[4], c[5]])
                 .collect();
             assert!(colors.contains(&RAY_BLOCKED));
+            // solid mass the blueprint does not name → red, same as a wall block.
+            let (packed, _) = build_ray_lane(
+                [0.0, 1.4, -8.0],
+                [0.0, 1.4, -1.0],
+                &[hit(0.5, LosHitKind::Solid, 1.0)],
+                false,
+                GROUND_BAND,
+                false,
+            );
+            let colors: Vec<[f32; 4]> = packed
+                .chunks_exact(6)
+                .map(|c| [c[2], c[3], c[4], c[5]])
+                .collect();
+            assert!(colors.contains(&RAY_BLOCKED));
+            // a TERMINAL window hit is frame mass: red, never cyan.
+            let (packed, _) = build_ray_lane(
+                [0.0, 1.4, -8.0],
+                [0.0, 1.4, -1.0],
+                &[hit(0.5, LosHitKind::Window, 1.0)],
+                false,
+                GROUND_BAND,
+                false,
+            );
+            let colors: Vec<[f32; 4]> = packed
+                .chunks_exact(6)
+                .map(|c| [c[2], c[3], c[4], c[5]])
+                .collect();
+            assert!(colors.contains(&RAY_BLOCKED) && !colors.contains(&RAY_GLASS));
         }
 
         #[test]
@@ -1038,38 +1078,189 @@ pub mod geom {
             assert!(max_gz <= min_az + 0.2, "ground {max_gz} vs attic {min_az}");
         }
 
+        /// Axis-aligned cuboid as 12 triangles — the same quad table as `map_engine_core`'s
+        /// `bvh_tests::cube` (crate-private there).
+        fn cube(center: [f64; 3], half: [f64; 3]) -> (Vec<[f64; 3]>, Vec<[u32; 3]>) {
+            let mut verts = Vec::new();
+            for corner in 0..8u32 {
+                verts.push([
+                    center[0] + if corner & 1 != 0 { half[0] } else { -half[0] },
+                    center[1] + if corner & 2 != 0 { half[1] } else { -half[1] },
+                    center[2] + if corner & 4 != 0 { half[2] } else { -half[2] },
+                ]);
+            }
+            const QUADS: [[u32; 4]; 6] = [
+                [0, 4, 6, 2],
+                [1, 3, 7, 5],
+                [0, 1, 5, 4],
+                [2, 6, 7, 3],
+                [0, 2, 3, 1],
+                [4, 5, 7, 6],
+            ];
+            let mut tris = Vec::new();
+            for q in QUADS {
+                tris.push([q[0], q[1], q[2]]);
+                tris.push([q[0], q[2], q[3]]);
+            }
+            (verts, tris)
+        }
+
+        /// One-level 10 × 10 m box room (band [0, 3]) with a single window hole in the south
+        /// wall (x ∈ [-1, 1], y ∈ [1, 2]): the blueprint names it, the 0.2 m slab mesh HAS it.
+        fn box_room() -> (BuildingBlueprint, BvhSidecar) {
+            use map_engine_core::building_blueprint::{
+                BBox2D, BuildingWall, BuildingWindow, OverallFootprint, VerticalProfile,
+            };
+            use map_engine_core::bvh::Bvh;
+            let wall = |id: &str, start: [f64; 2], end: [f64; 2]| BuildingWall {
+                id: id.into(),
+                start,
+                end,
+                thickness: 0.2,
+                is_exterior: true,
+                material: "synthetic".into(),
+            };
+            let square = vec![[-5.0, -5.0], [5.0, -5.0], [5.0, 5.0], [-5.0, 5.0]];
+            let bp = BuildingBlueprint {
+                schema_version: "1.0.0".into(),
+                prefab_id: "BoxRoom".into(),
+                resource_name: "synthetic://box".into(),
+                model_mesh: None,
+                label: None,
+                kind: "building".into(),
+                category: "generic".into(),
+                destructible: false,
+                vertical_profile: VerticalProfile {
+                    pivot_elevation_offset_m: 0.0,
+                    foundation_skirt_depth_m: 0.0,
+                    total_height_m: 3.0,
+                    eave_height_m: 3.0,
+                    ridge_height_m: 3.0,
+                    chimney_height_m: None,
+                    roof_type: "flat".into(),
+                },
+                overall_footprint: OverallFootprint {
+                    polygon2_d: square.clone(),
+                    bounding_box2_d: BBox2D {
+                        min: [-5.0, -5.0],
+                        max: [5.0, 5.0],
+                        width_m: 10.0,
+                        depth_m: 10.0,
+                    },
+                    footprint_sq_m: 100.0,
+                },
+                roof: None,
+                levels: vec![BuildingLevel {
+                    level_index: 0,
+                    name: "ground".into(),
+                    elevation_range: [0.0, 3.0],
+                    slice_height_m: 1.5,
+                    footprint_polygon: square,
+                    plate: None,
+                    floor_polygons: vec![],
+                    walls: vec![
+                        wall("w_s", [-5.0, -5.0], [5.0, -5.0]),
+                        wall("w_n", [-5.0, 5.0], [5.0, 5.0]),
+                        wall("w_w", [-5.0, -5.0], [-5.0, 5.0]),
+                        wall("w_e", [5.0, -5.0], [5.0, 5.0]),
+                    ],
+                    doors: vec![],
+                    windows: vec![BuildingWindow {
+                        id: "win_s".into(),
+                        prefab_resource: "synthetic://window".into(),
+                        wall_id: "w_s".into(),
+                        pos2_d: [0.0, -5.0],
+                        width_m: 2.0,
+                        sill_height_m: 1.0,
+                        window_height_m: 1.0,
+                        normal: [0.0, -1.0],
+                        fov_deg: 120.0,
+                        has_glass: true,
+                        glass_pane_count: 1,
+                    }],
+                    stairs: vec![],
+                    furniture: vec![],
+                }],
+            };
+            let slab = |x: [f64; 2], y: [f64; 2], z: [f64; 2]| {
+                cube(
+                    [
+                        0.5 * (x[0] + x[1]),
+                        0.5 * (y[0] + y[1]),
+                        0.5 * (z[0] + z[1]),
+                    ],
+                    [
+                        0.5 * (x[1] - x[0]),
+                        0.5 * (y[1] - y[0]),
+                        0.5 * (z[1] - z[0]),
+                    ],
+                )
+            };
+            let pieces = [
+                // South wall around the hole.
+                slab([-5.0, -1.0], [0.0, 3.0], [-5.1, -4.9]),
+                slab([1.0, 5.0], [0.0, 3.0], [-5.1, -4.9]),
+                slab([-1.0, 1.0], [0.0, 1.0], [-5.1, -4.9]),
+                slab([-1.0, 1.0], [2.0, 3.0], [-5.1, -4.9]),
+                // North, west, east: solid.
+                slab([-5.0, 5.0], [0.0, 3.0], [4.9, 5.1]),
+                slab([-5.1, -4.9], [0.0, 3.0], [-5.0, 5.0]),
+                slab([4.9, 5.1], [0.0, 3.0], [-5.0, 5.0]),
+            ];
+            let mut verts = Vec::new();
+            let mut tris = Vec::new();
+            for (v, t) in pieces {
+                let base = verts.len() as u32;
+                verts.extend_from_slice(&v);
+                tris.extend(
+                    t.iter()
+                        .map(|tri| [tri[0] + base, tri[1] + base, tri[2] + base]),
+                );
+            }
+            let bvh = Bvh::build(&verts, &tris);
+            (bp, BvhSidecar { verts, tris, bvh })
+        }
+
         #[test]
         fn viewshed_escapes_only_through_apertures() {
-            let bp = farmhouse();
-            // Observer mid living-room at standing eye height.
-            let obs = [-3.8, 1.4, -1.0];
-            let boundary = build_viewshed(&bp, obs, 25.0, 720);
+            let (bp, sc) = box_room();
+            // Observer mid-room at standing eye height, inside the window's sill..top band.
+            let obs = [0.0, 1.4, 0.0];
+            let boundary = build_viewshed(&bp, &sc, obs, 25.0, 720);
             assert_eq!(boundary.len(), 720);
             let mut escaped_south = 0usize;
             for p in &boundary {
-                // Anything clearly south of the south wall line exited through the window.
-                if p[1] < -4.6 {
+                // Anything clearly south of the south wall exited through the window hole.
+                if p[1] < -5.1 {
                     escaped_south += 1;
                 }
                 // Nothing may exceed the range cap.
                 let d = map_engine_core::building_blueprint::dist_2d([obs[0], obs[2]], *p);
                 assert!(d <= 25.0 + 1e-6);
             }
-            // The south window lets a cone escape — but only a cone: solid walls stop the rest.
-            // (Containment is NOT asserted via point-in-polygon: blocked points sit exactly ON
-            // the wall centerline, where even-odd is float noise.)
-            assert!(escaped_south > 0, "no rays escaped through the window");
+            // The hole subtends ±atan(1 / 4.9) ≈ ±11.5° → ~46 of 720 rays escape; the slabs
+            // stop every other direction.
             assert!(
-                escaped_south < 200,
-                "walls stopped nothing: {escaped_south} rays escaped south"
+                escaped_south > 30,
+                "too few rays escaped through the window: {escaped_south}"
             );
-            // The straight-north ray (i = 180 → 90°) faces solid `w_ext_north2` at z = 5.5:
-            // it must REACH the wall (no phantom blocker) and STOP there (no leak).
-            let north = boundary[180];
-            assert!((north[0] - obs[0]).abs() < 0.1, "north ray bent: {north:?}");
             assert!(
-                north[1] > 5.3 && north[1] < 5.6,
+                escaped_south < 60,
+                "walls stopped too little: {escaped_south} rays escaped south"
+            );
+            // Straight north (i = 180 → +z) meets the north slab's INNER face at z = 4.9: it
+            // must REACH the wall (no phantom blocker) and STOP there (no leak).
+            let north = boundary[180];
+            assert!(north[0].abs() < 0.1, "north ray bent: {north:?}");
+            assert!(
+                north[1] > 4.8 && north[1] < 5.0,
                 "north ray should end on the north wall: {north:?}"
+            );
+            // Straight south (i = 540 → −z) is dead center in the hole: out to the range cap.
+            let south = boundary[540];
+            assert!(
+                south[1] < -24.0,
+                "south ray should escape through the window: {south:?}"
             );
             // Fan lane packs 3 verts per triangle, 6 f32 per vert.
             let (packed, n) = build_viewshed_lane([obs[0], obs[2]], &boundary);
@@ -1098,10 +1289,14 @@ pub mod geom {
 // The page.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-/// Building-blueprint viewer + interactive 2.5D LOS bench.
+/// Building-blueprint viewer + interactive LOS bench (BVH raycast, blueprint-attributed).
 #[component]
 pub fn BuildingViewerPage() -> impl IntoView {
     let blueprint = RwSignal::new(None::<BuildingBlueprint>);
+    // The `.bvh` occlusion sidecar fetched beside the JSON — `Arc` because the parsed sidecar
+    // is `!Clone` (`RwSignal::get` clones) and the signal store wants `Send + Sync`.
+    let sidecar = RwSignal::new(None::<Arc<BvhSidecar>>);
+    let sidecar_err = RwSignal::new(None::<String>);
     let load_err = RwSignal::new(None::<String>);
     let engine_err = RwSignal::new(None::<String>);
     let view_floor = RwSignal::new(ViewFloor::Level(0));
@@ -1127,15 +1322,19 @@ pub fn BuildingViewerPage() -> impl IntoView {
     let drag = RwSignal::new(Drag::None);
     let canvas_ref = NodeRef::<leptos::html::Canvas>::new();
 
-    // Pure LOS evaluation — reruns on any ray/blueprint change; the wasm host mirrors `los`
-    // into the ray lane. Ungated: harmless on native (never mounted there).
+    // Pure LOS evaluation — reruns on any ray/blueprint/sidecar change; the wasm host mirrors
+    // `los` into the ray lane. Ungated: harmless on native (never mounted there). No sidecar →
+    // no verdict: the blueprint alone cannot block a ray.
     Effect::new(move |_| {
         let (o, t) = (obs.get(), tgt.get());
+        let sc = sidecar.get();
         blueprint.with(|bp| {
-            los.set(
-                bp.as_ref()
-                    .map(|bp| bp.evaluate_los([o.x, o.y, o.z], [t.x, t.y, t.z])),
-            );
+            los.set(match (bp.as_ref(), sc.as_deref()) {
+                (Some(bp), Some(occl)) => {
+                    Some(bp.evaluate_los(occl, [o.x, o.y, o.z], [t.x, t.y, t.z]))
+                }
+                _ => None,
+            });
         });
     });
 
@@ -1143,6 +1342,8 @@ pub fn BuildingViewerPage() -> impl IntoView {
     live::wire(
         canvas_ref,
         blueprint,
+        sidecar,
+        sidecar_err,
         load_err,
         engine_err,
         view_floor,
@@ -1205,6 +1406,8 @@ pub fn BuildingViewerPage() -> impl IntoView {
                     {(!doors.is_empty()).then(|| view! { <div>"through door: "<span class="text-emerald-300">{doors.clone()}</span></div> })}
                     {r.blocked_by_wall_id.clone().map(|w| view! { <div>"blocked by "<span class="text-red-300">{w}</span></div> })}
                     {r.hits.last().filter(|h| h.kind == LosHitKind::Roof).map(|h| view! { <div>"blocked by "<span class="text-red-300">{format!("roof @ {:.1} m", h.pos[1])}</span></div> })}
+                    {r.hits.last().filter(|h| h.kind == LosHitKind::Solid).map(|h| view! { <div>"blocked by "<span class="text-red-300">{format!("solid @ {:.1} m", h.pos[1])}</span></div> })}
+                    {r.hits.last().filter(|h| h.kind == LosHitKind::Window && h.concealment >= 1.0).map(|h| view! { <div>"blocked by "<span class="text-red-300">{format!("frame of {}", h.id)}</span></div> })}
                     {r.cover_furniture_id.clone().map(|f| view! { <div>"cover: "<span class="text-yellow-300">{f}</span></div> })}
                 </div>
             }
@@ -1402,6 +1605,7 @@ pub fn BuildingViewerPage() -> impl IntoView {
                     </div>
                 })}
                 {move || load_err.get().map(|e| view! { <div class="rounded bg-red-500/15 p-2 text-xs text-red-300">{e}</div> })}
+                {move || sidecar_err.get().map(|e| view! { <div class="rounded bg-amber-500/15 p-2 text-xs text-amber-300">{e}</div> })}
                 {move || engine_err.get().map(|e| view! { <div class="rounded bg-red-500/15 p-2 text-xs text-red-300">{e}</div> })}
             </div>
 
@@ -1434,10 +1638,12 @@ mod live {
     use super::{geom, Cam, Drag, RayEnd, ViewFloor, DEFAULT_PREFAB_PATH};
     use leptos::prelude::*;
     use map_engine_core::building_blueprint::{BuildingBlueprint, LosResult};
+    use map_engine_core::bvh::BvhSidecar;
     use map_engine_render::draw_order::role_id;
     use map_engine_render::RenderEngine;
     use std::cell::RefCell;
     use std::rc::Rc;
+    use std::sync::Arc;
     use wasm_bindgen::prelude::*;
     use wasm_bindgen::JsCast;
 
@@ -1500,15 +1706,23 @@ mod live {
         e.mark_dirty();
     }
 
-    fn upload_viewshed(e: &mut RenderEngine, bp: &BuildingBlueprint, obs: RayEnd, on: bool) {
-        if !on {
+    /// Off, or no sidecar to trace → the lane is cleared (a viewshed with nothing to stop it
+    /// would be a lie).
+    fn upload_viewshed(
+        e: &mut RenderEngine,
+        bp: &BuildingBlueprint,
+        occl: Option<&BvhSidecar>,
+        obs: RayEnd,
+        on: bool,
+    ) {
+        let Some(occl) = occl.filter(|_| on) else {
             e.clear_vector_lane(role_id::FOREST_FILL);
             e.mark_dirty();
             return;
-        }
+        };
         let bb = &bp.overall_footprint.bounding_box2_d;
         let range = (bb.width_m.hypot(bb.depth_m)) + 5.0;
-        let boundary = geom::build_viewshed(bp, [obs.x, obs.y, obs.z], range, 720);
+        let boundary = geom::build_viewshed(bp, occl, [obs.x, obs.y, obs.z], range, 720);
         let (packed, n) = geom::build_viewshed_lane([obs.x, obs.z], &boundary);
         e.upload_strip_tris(role_id::FOREST_FILL, &packed, n, true);
         e.mark_dirty();
@@ -1560,6 +1774,8 @@ mod live {
     pub fn wire(
         canvas_ref: NodeRef<leptos::html::Canvas>,
         blueprint: RwSignal<Option<BuildingBlueprint>>,
+        sidecar: RwSignal<Option<Arc<BvhSidecar>>>,
+        sidecar_err: RwSignal<Option<String>>,
         load_err: RwSignal<Option<String>>,
         engine_err: RwSignal<Option<String>>,
         view_floor: RwSignal<ViewFloor>,
@@ -1579,7 +1795,9 @@ mod live {
         // arrives before `RenderEngine::create` resolves would never get its first upload.
         let engine_ready = RwSignal::new(false);
 
-        // Blueprint fetch (once).
+        // Blueprint + sidecar fetch (once). The sidecar is the JSON path with `.bvh` in place of
+        // `.json`; a missing one (the hand-authored Green/plain assets ship none) is not an error
+        // for the plan view — LOS just stays off, and the header says why.
         leptos::task::spawn_local(async move {
             let path = prefab_path();
             match gloo_net::http::Request::get(&path).send().await {
@@ -1592,6 +1810,29 @@ mod live {
                 },
                 Ok(resp) => load_err.set(Some(format!("{path}: HTTP {}", resp.status()))),
                 Err(e) => load_err.set(Some(format!("{path}: {e}"))),
+            }
+
+            let Some(url) = path.strip_suffix(".json").map(|s| format!("{s}.bvh")) else {
+                sidecar_err.set(Some(format!(
+                    "{path}: not a .json path, no occlusion sidecar — LOS disabled"
+                )));
+                return;
+            };
+            let outcome = match gloo_net::http::Request::get(&url).send().await {
+                Ok(resp) if resp.ok() => match resp.binary().await {
+                    Ok(bytes) => BvhSidecar::parse(&bytes)
+                        .map_err(|e| format!("{url}: sidecar parse failed — {e} — LOS disabled")),
+                    Err(e) => Err(format!("{url}: read failed — {e} — LOS disabled")),
+                },
+                Ok(resp) => Err(format!(
+                    "{url}: HTTP {} — no occlusion sidecar, LOS disabled",
+                    resp.status()
+                )),
+                Err(e) => Err(format!("{url}: {e} — LOS disabled")),
+            };
+            match outcome {
+                Ok(sc) => sidecar.set(Some(Arc::new(sc))),
+                Err(msg) => sidecar_err.set(Some(msg)),
             }
         });
 
@@ -1697,7 +1938,8 @@ mod live {
             }
         });
 
-        // Viewshed fill: follows the observer while enabled; clears when toggled off.
+        // Viewshed fill: follows the observer while enabled; clears when toggled off or when
+        // there is no sidecar to trace.
         Effect::new({
             let engine = engine.clone();
             move |_| {
@@ -1706,11 +1948,12 @@ mod live {
                 }
                 let on = viewshed_on.get();
                 let o = obs.get();
+                let sc = sidecar.get();
                 blueprint.with(|bp| {
                     let Some(bp) = bp.as_ref() else { return };
                     if let Ok(mut guard) = engine.try_borrow_mut() {
                         if let Some(e) = guard.as_mut() {
-                            upload_viewshed(e, bp, o, on);
+                            upload_viewshed(e, bp, sc.as_deref(), o, on);
                         }
                     }
                 });

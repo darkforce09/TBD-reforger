@@ -3,11 +3,11 @@
 
 use super::*;
 
-type Scene = (Vec<[f64; 3]>, Vec<[u32; 3]>);
+pub(crate) type Scene = (Vec<[f64; 3]>, Vec<[u32; 3]>);
 
 /// Axis-aligned cuboid as 12 outward-wound triangles (quad table from the COLL box
 /// emitter in xtask's `xob.rs`).
-fn cube(center: [f64; 3], half: [f64; 3]) -> Scene {
+pub(crate) fn cube(center: [f64; 3], half: [f64; 3]) -> Scene {
     let mut verts = Vec::new();
     for corner in 0..8u32 {
         verts.push([
@@ -32,7 +32,7 @@ fn cube(center: [f64; 3], half: [f64; 3]) -> Scene {
     (verts, tris)
 }
 
-fn concat(scenes: &[Scene]) -> Scene {
+pub(crate) fn concat(scenes: &[Scene]) -> Scene {
     let mut verts = Vec::new();
     let mut tris = Vec::new();
     for (v, t) in scenes {
@@ -232,6 +232,135 @@ fn endpoint_epsilon_excludes_surface_start() {
         )
         .is_some()
     );
+}
+
+/* ───────────────────────────── first_hit (closest-hit) ───────────────────────────── */
+
+/// Nearest raw t in range over every triangle — the oracle for [`Bvh::first_hit`].
+fn brute_force_first(
+    verts: &[[f64; 3]],
+    tris: &[[u32; 3]],
+    p: [f64; 3],
+    q: [f64; 3],
+    t_lo: f64,
+    t_hi: f64,
+) -> Option<f64> {
+    tris.iter()
+        .filter_map(|&[a, b, c]| {
+            segment_hits_tri(
+                p,
+                q,
+                verts[a as usize],
+                verts[b as usize],
+                verts[c as usize],
+            )
+        })
+        .filter(|t| (t_lo..=t_hi).contains(t))
+        .min_by(f64::total_cmp)
+}
+
+#[test]
+fn first_hit_returns_nearest_of_stacked_cubes() {
+    let (verts, tris) = concat(&[
+        cube([0.0, 0.0, 0.0], [0.5, 0.5, 0.5]),
+        cube([10.0, 0.0, 0.0], [0.5, 0.5, 0.5]),
+    ]);
+    let bvh = Bvh::build(&verts, &tris);
+    // -3 → 13 along x (off-center so no face diagonal is grazed): the near cube's x = -0.5
+    // face comes first, at t = 2.5 / 16.
+    let p = [-3.0, 0.1, 0.2];
+    let q = [13.0, 0.1, 0.2];
+    let h = bvh
+        .first_hit(&verts, &tris, p, q, 0.0, 1.0)
+        .expect("near cube hit");
+    assert!((h.t - 2.5 / 16.0).abs() < 1e-12, "t = {}", h.t);
+    assert!(h.tri < 12, "tri {} should be in the near cube", h.tri);
+    // Reversed: the far cube's x = 10.5 face is nearest to the new origin.
+    let h = bvh
+        .first_hit(&verts, &tris, q, p, 0.0, 1.0)
+        .expect("far cube hit");
+    assert!((h.t - 2.5 / 16.0).abs() < 1e-12, "t = {}", h.t);
+    assert!(h.tri >= 12, "tri {} should be in the far cube", h.tri);
+    // any_hit may accept any face on the path; the closest hit is never behind it.
+    let any = bvh.any_hit(&verts, &tris, p, q, 0.0, 1.0).expect("any hit");
+    let first = bvh
+        .first_hit(&verts, &tris, p, q, 0.0, 1.0)
+        .expect("first hit");
+    assert!(first.t <= any.t);
+}
+
+#[test]
+fn first_hit_matches_min_t_brute_force_on_box_grid() {
+    let (verts, tris) = box_grid();
+    let bvh = Bvh::build(&verts, &tris);
+    let mut rng = Rng(0x5851_F42D_4C95_7F2D);
+    for i in 0..200 {
+        let p = [
+            rng.coord(-3.0, 9.0),
+            rng.coord(-3.0, 9.0),
+            rng.coord(-3.0, 9.0),
+        ];
+        let q = [
+            rng.coord(-3.0, 9.0),
+            rng.coord(-3.0, 9.0),
+            rng.coord(-3.0, 9.0),
+        ];
+        let fast = bvh.first_hit(&verts, &tris, p, q, 0.0, 1.0);
+        let slow = brute_force_first(&verts, &tris, p, q, 0.0, 1.0);
+        // Bit-equal: both sides evaluate the same Möller–Trumbore on the same triangle.
+        assert_eq!(
+            fast.map(|h| h.t.to_bits()),
+            slow.map(f64::to_bits),
+            "segment {i}: p {p:?} q {q:?}"
+        );
+        // The returned triangle really produces that t (its id may legitimately differ from
+        // another triangle sharing the exact same t on a shared edge — check t, not id).
+        if let Some(h) = fast {
+            let [a, b, c] = tris[h.tri as usize];
+            let t = segment_hits_tri(
+                p,
+                q,
+                verts[a as usize],
+                verts[b as usize],
+                verts[c as usize],
+            )
+            .expect("returned tri is hit");
+            assert_eq!(t.to_bits(), h.t.to_bits(), "segment {i}");
+        }
+    }
+}
+
+/// The parity contract `evaluate_los` rests on: existence is decided by the same range test,
+/// so closest-hit and any-hit agree on clear-vs-blocked for every segment and every t-range.
+#[test]
+fn first_hit_none_iff_any_hit_none() {
+    let (verts, tris) = box_grid();
+    let bvh = Bvh::build(&verts, &tris);
+    let mut rng = Rng(0x0123_4567_89AB_CDEF);
+    for i in 0..300 {
+        let p = [
+            rng.coord(-3.0, 9.0),
+            rng.coord(-3.0, 9.0),
+            rng.coord(-3.0, 9.0),
+        ];
+        let q = [
+            rng.coord(-3.0, 9.0),
+            rng.coord(-3.0, 9.0),
+            rng.coord(-3.0, 9.0),
+        ];
+        let (a, b) = (rng.next_f64(), rng.next_f64());
+        let (t_lo, t_hi) = (a.min(b), a.max(b));
+        let first = bvh.first_hit(&verts, &tris, p, q, t_lo, t_hi);
+        let any = bvh.any_hit(&verts, &tris, p, q, t_lo, t_hi);
+        assert_eq!(
+            first.is_none(),
+            any.is_none(),
+            "segment {i}: p {p:?} q {q:?} range [{t_lo}, {t_hi}]"
+        );
+        if let (Some(f), Some(a)) = (first, any) {
+            assert!(f.t <= a.t, "segment {i}: first {} behind any {}", f.t, a.t);
+        }
+    }
 }
 
 /* ───────────────────────────── sidecar codec tests ───────────────────────────── */

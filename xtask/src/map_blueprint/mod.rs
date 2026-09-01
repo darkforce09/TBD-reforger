@@ -418,12 +418,13 @@ pub(crate) mod tests {
     }
 
     /// The acceptance instrument, pinned: replay the committed 400-pair engine oracle through
-    /// the golden blueprint. 387/400 with the attic band + roof-clipped persistence + the
-    /// above-roof wall cap, measured 2026-08-30 (roof heightfield alone was 384; pre-roof
-    /// 260/400 = 65.0%, where every miss was the unmodeled roof). The 13 remaining misses are
-    /// all model-clear/engine-blocked — chimney flanks, dormer cheeks and guard resets that
-    /// deliberately lean clear. The mesh/COLL lane scores 377/400 on the same oracle (unpinned
-    /// — no committed mesh dump fixture).
+    /// the golden blueprint + the golden `.bvh` sidecar. **400/400** since `evaluate_los` moved
+    /// onto the BVH raycaster (T-090.6 step 3, 2026-09-01). 2.5D history: 260/400 pre-roof
+    /// (every miss the unmodeled roof) → 384 roof heightfield → 387 attic band + above-roof
+    /// wall cap, where the 13 misses were all model-clear/engine-blocked roof-margin leans.
+    /// Same instrument as `bvh::tests::farmhouse_bvh_sidecar_parity_is_pinned` by construction
+    /// (`Bvh::first_hit` ⇔ `Bvh::any_hit` on existence) — kept as the blueprint-lane pin so an
+    /// attribution or annotation bug that flips `is_clear` fails HERE, on the shipping path.
     #[test]
     fn farmhouse_golden_parity_is_pinned() {
         #[derive(serde::Deserialize)]
@@ -435,6 +436,10 @@ pub(crate) mod tests {
                 .expect("read golden"),
         )
         .expect("parse golden");
+        let sidecar = map_engine_core::bvh::BvhSidecar::parse(
+            &std::fs::read(fixture("FarmHouse_E_1L01_Wood.bvh.golden")).expect("read sidecar"),
+        )
+        .expect("parse golden sidecar");
         let oracle: ParityFile = serde_json::from_str(
             &std::fs::read_to_string(fixture("FarmHouse_E_1L01_Wood_parity.json"))
                 .expect("read parity"),
@@ -444,14 +449,16 @@ pub(crate) mod tests {
         let mut agree = 0usize;
         let mut model_blocked_engine_clear = 0usize;
         for &(ox, oy, oz, tx, ty, tz, engine_clear) in &oracle.pairs {
-            let model_clear = bp.evaluate_los([ox, oy, oz], [tx, ty, tz]).is_clear;
+            let model_clear = bp
+                .evaluate_los(&sidecar, [ox, oy, oz], [tx, ty, tz])
+                .is_clear;
             if model_clear == engine_clear {
                 agree += 1;
             } else if !model_clear && engine_clear {
                 model_blocked_engine_clear += 1;
             }
         }
-        assert_eq!(agree, 387, "parity drifted (was 96.8%)");
+        assert_eq!(agree, 400, "parity drifted (was 100%)");
         assert_eq!(
             model_blocked_engine_clear, 0,
             "phantom geometry blocks rays the engine clears"

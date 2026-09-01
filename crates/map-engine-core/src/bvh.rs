@@ -237,6 +237,67 @@ impl Bvh {
         }
         None
     }
+
+    /// Closest-hit traversal over segment p→q: same slab walk as [`Bvh::any_hit`] but
+    /// tracks the best t and shrinks the range instead of returning on first acceptance —
+    /// `first_hit(..).is_none()` ⇔ `any_hit(..).is_none()` by construction (existence is
+    /// decided by the same [t_lo, t_hi] test; only the returned t/tri differ).
+    pub fn first_hit(
+        &self,
+        verts: &[[f64; 3]],
+        tris: &[[u32; 3]],
+        p: [f64; 3],
+        q: [f64; 3],
+        t_lo: f64,
+        t_hi: f64,
+    ) -> Option<Hit> {
+        let dir = sub(q, p);
+        let inv = [1.0 / dir[0], 1.0 / dir[1], 1.0 / dir[2]];
+        let mut best: Option<Hit> = None;
+        let mut t_best = t_hi;
+        let mut stack = [0u32; 64];
+        stack[0] = 0;
+        let mut sp = 1usize;
+        while sp > 0 {
+            sp -= 1;
+            let node = &self.nodes[stack[sp] as usize];
+            let mut lo = t_lo;
+            let mut hi = t_best;
+            for a in 0..3 {
+                let t1 = (f64::from(node.min[a]) - p[a]) * inv[a];
+                let t2 = (f64::from(node.max[a]) - p[a]) * inv[a];
+                lo = lo.max(t1.min(t2));
+                hi = hi.min(t1.max(t2));
+            }
+            if lo > hi {
+                continue;
+            }
+            if node.count > 0 {
+                for k in node.left_first..node.left_first + node.count {
+                    let tri = self.tri_order[k as usize];
+                    let [ia, ib, ic] = tris[tri as usize];
+                    if let Some(t) = segment_hits_tri(
+                        p,
+                        q,
+                        verts[ia as usize],
+                        verts[ib as usize],
+                        verts[ic as usize],
+                    ) && t >= t_lo
+                        && t <= t_best
+                    {
+                        best = Some(Hit { t, tri });
+                        t_best = t;
+                    }
+                }
+            } else {
+                debug_assert!(sp + 2 <= stack.len());
+                stack[sp] = node.left_first;
+                stack[sp + 1] = node.left_first + 1;
+                sp += 2;
+            }
+        }
+        best
+    }
 }
 
 impl Builder<'_> {
@@ -647,4 +708,4 @@ pub fn emit_bytes(verts_f32: &[[f32; 3]], tris: &[[u32; 3]], bvh: &Bvh) -> Vec<u
 
 #[cfg(test)]
 #[path = "bvh_tests.rs"]
-mod tests;
+pub(crate) mod tests;

@@ -16,12 +16,13 @@
 
 mod js;
 
-/// Building architectural blueprints + 2.5D line-of-sight (standalone feature so the SPA links it
-/// without the `world` parser stack; `world` re-exports it for backend callers).
+/// Building architectural blueprints + line-of-sight attribution over the [`bvh`] raycaster
+/// (`blueprint` implies `bvh`; standalone so the SPA links it without the `world` parser stack;
+/// `world` re-exports it for backend callers).
 #[cfg(feature = "blueprint")]
 pub mod building_blueprint;
-/// T-090.6 — BVH any-hit raycaster over collision trimeshes + the `.bvh` sidecar codec (the 3D
-/// occlusion lane that retired 2.5D LOS; zero-dep, wasm-safe).
+/// T-090.6 — BVH any-hit / closest-hit raycaster over collision trimeshes + the `.bvh` sidecar
+/// codec (the 3D occlusion lane that retired 2.5D LOS; zero-dep, wasm-safe).
 #[cfg(feature = "bvh")]
 pub mod bvh;
 pub mod camera;
