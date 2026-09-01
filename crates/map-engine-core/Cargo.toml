@@ -31,6 +31,9 @@ world = ["dep:thiserror", "dep:flate2", "dep:serde", "serde_json/float_roundtrip
 # `blueprint` (building-blueprint structs + 2.5D LOS raycaster) stands alone so the Leptos SPA can
 # link it without pulling `world`'s flate2/serde_json parser stack into the wasm bundle.
 blueprint = ["dep:serde"]
+# `bvh` (T-090.6 3D-occlusion lane): zero-dep BVH raycaster over collision trimeshes + the binary
+# `.bvh` sidecar codec. Pure compute, wasm-safe, no serde — sidecars are hand-framed LE bytes.
+bvh = []
 
 [dependencies]
 png = { version = "0.17", optional = true }

@@ -31,7 +31,7 @@ tbd-tools = { path = "../tools/tbd-tools" }
 tbd-gate = { path = "../crates/tbd-gate" }
 tbd-tickets = { path = "../crates/tbd-tickets" }
 libc = "0.2"
-map-engine-core = { path = "../crates/map-engine-core", features = ["png", "world"] }
+map-engine-core = { path = "../crates/map-engine-core", features = ["png", "world", "bvh"] }
 typify = "0.7"
 schemars = "0.8"
 prettyplease = "0.2"

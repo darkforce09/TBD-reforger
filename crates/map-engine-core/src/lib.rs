@@ -20,6 +20,10 @@ mod js;
 /// without the `world` parser stack; `world` re-exports it for backend callers).
 #[cfg(feature = "blueprint")]
 pub mod building_blueprint;
+/// T-090.6 — BVH any-hit raycaster over collision trimeshes + the `.bvh` sidecar codec (the 3D
+/// occlusion lane that retired 2.5D LOS; zero-dep, wasm-safe).
+#[cfg(feature = "bvh")]
+pub mod bvh;
 pub mod camera;
 pub mod dem;
 #[cfg(feature = "doc")]
@@ -41,28 +45,31 @@ pub mod squad_links;
 #[cfg(feature = "world")]
 pub mod world;
 
-/// T-747 — bare `cargo test -p map-engine-core` is a vacuous pass: `doc` / `mission` / `world`
-/// (and their ~500 tests) are feature-gated and never compile. This module is deliberately
+/// T-747 — bare `cargo test -p map-engine-core` is a vacuous pass: `doc` / `mission` / `world` /
+/// `bvh` (and their ~500 tests) are feature-gated and never compile. This module is deliberately
 /// *not* behind those features so a featureless suite still runs one test — and that test
-/// fails until `--all-features` (or `--features doc,mission,world`) is supplied.
+/// fails until `--all-features` (or `--features doc,mission,world,bvh`) is supplied.
 #[cfg(test)]
 mod feature_gate_tripwire {
     /// Fail loudly when the feature floor is incomplete so agents cannot mistake a partial suite
-    /// (~140 bare / ~502 with doc,mission) for the real ~635-test run.
+    /// (~140 bare / ~502 with doc,mission) for the real ~650-test run.
     ///
     /// Wave gate (`cargo xtask platform wave` test map-engine) and Makefile use `--all-features`
     /// (sound). Ad-hoc `cargo xtask platform wave test --slice T-nnn -p map-engine-core`
     /// (T-742 private target dirs) does **not** auto-add features — pass `--all-features` (or
-    /// `--features doc,mission,world`) yourself. `doc` alone does not compile the suite.
+    /// `--features doc,mission,world,bvh`) yourself. `doc` alone does not compile the suite.
     #[test]
     #[allow(clippy::assertions_on_constants)] // intentional: cfg! is the tripwire signal
     fn map_engine_core_tests_require_doc_feature() {
         assert!(
-            cfg!(feature = "doc") && cfg!(feature = "mission") && cfg!(feature = "world"),
-            "map-engine-core tests must run with --all-features (or --features doc,mission,world). \
-             Bare `cargo test -p map-engine-core` compiles out doc/mission/world and silently \
-             skips hundreds of tests (~140 listed vs ~635 with --all-features). \
-             `--features doc,mission` still skips the world suite. Wave gate + Makefile use \
+            cfg!(feature = "doc")
+                && cfg!(feature = "mission")
+                && cfg!(feature = "world")
+                && cfg!(feature = "bvh"),
+            "map-engine-core tests must run with --all-features (or --features doc,mission,world,bvh). \
+             Bare `cargo test -p map-engine-core` compiles out doc/mission/world/bvh and silently \
+             skips hundreds of tests (~140 listed vs ~650 with --all-features). \
+             `--features doc,mission` still skips the world and bvh suites. Wave gate + Makefile use \
              --all-features; T-742 `cargo xtask platform wave test --slice` still needs you to pass --all-features \
              for this crate (T-747)."
         );

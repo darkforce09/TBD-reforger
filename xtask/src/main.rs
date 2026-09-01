@@ -507,11 +507,20 @@ enum MapCmd {
         args: Vec<String>,
     },
     /// One-number LOS parity proof: BVH any-hit raycast over the COLL fire-collision
-    /// trimesh (both-sided, all records) replayed against the Workbench parity oracle
-    /// (--mesh <file.xob> --pairs <parity.json> [--record <i>] [--t-eps <meters>]
+    /// trimesh (both-sided, all records) or an emitted sidecar, replayed against the
+    /// Workbench parity oracle ((--mesh <file.xob> | --sidecar <file.bvh>)
+    /// --pairs <parity.json> [--record <i>] [--t-eps <meters>]
     /// [--dump-misses <path.jsonl>]).
     #[command(name = "bvh-parity")]
     BvhParity {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Emit the binary `.bvh` occlusion sidecar (COLL trimesh + BVH, deterministic bytes)
+    /// next to the blueprint JSON in packages/map-assets/everon/prefabs/buildings/
+    /// (--mesh <file.xob> --slug <slug> [--out <dir>]).
+    #[command(name = "bvh-emit")]
+    BvhEmit {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
@@ -1168,6 +1177,7 @@ fn run() -> Result<u8> {
             MapCmd::BlueprintFromVoxels { args } => map_blueprint::run(&args),
             MapCmd::VoxelsFromMesh { args } => map_blueprint::run_voxels_from_mesh(&args),
             MapCmd::BvhParity { args } => map_blueprint::run_bvh_parity(&args),
+            MapCmd::BvhEmit { args } => map_blueprint::run_bvh_emit(&args),
         },
         TopCmd::Verify { cmd } => {
             let code = match cmd {

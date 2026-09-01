@@ -27,7 +27,7 @@ mod types;
 mod walls;
 mod xob;
 
-pub use bvh::run_bvh_parity;
+pub use bvh::{run_bvh_emit, run_bvh_parity};
 pub use mesh::run_voxels_from_mesh;
 
 use std::path::PathBuf;
@@ -296,11 +296,11 @@ fn build_bands(
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::root::find_repo_root;
 
-    fn fixture(name: &str) -> std::path::PathBuf {
+    pub(crate) fn fixture(name: &str) -> std::path::PathBuf {
         find_repo_root()
             .expect("repo root")
             .join("xtask/tests/fixtures")
