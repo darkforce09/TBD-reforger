@@ -10,50 +10,54 @@ tickets = ["T-001", "T-002", "T-003", "T-004", "T-005", "T-006", "T-008", "T-009
 
 [[waves]]
 n = 248
-tickets = ["T-090.10.2", "T-090.4", "T-146", "T-673", "T-674.1", "T-674.2", "T-676", "T-677"]
+tickets = ["T-090.10.2", "T-090.11", "T-090.11.1", "T-090.4", "T-146", "T-673", "T-674.1", "T-674.2"]
 
 [[waves]]
 n = 249
-tickets = ["T-090.6", "T-090.7", "T-675.1", "T-675.2", "T-678", "T-679", "T-680", "T-681"]
+tickets = ["T-090.11.2", "T-090.11.5", "T-090.6", "T-090.7", "T-675.1", "T-675.2", "T-676", "T-677"]
 
 [[waves]]
 n = 250
-tickets = ["T-090.9", "T-682", "T-685", "T-684", "T-702", "T-705", "T-654", "T-816"]
+tickets = ["T-090.11.3", "T-090.11.4", "T-090.9", "T-678", "T-679", "T-680", "T-681", "T-682"]
 
 [[waves]]
 n = 251
-tickets = ["T-689", "T-212", "T-817", "T-820", "T-821", "T-822", "T-823", "T-824"]
+tickets = ["T-090.11.6", "T-685", "T-684", "T-702", "T-705", "T-654", "T-816", "T-817"]
 
 [[waves]]
 n = 252
-tickets = ["T-825", "T-827", "T-828", "T-830", "T-833", "T-848", "T-933", "T-906"]
+tickets = ["T-689", "T-212", "T-820", "T-821", "T-822", "T-823", "T-824", "T-827"]
 
 [[waves]]
 n = 253
-tickets = ["T-831", "T-834", "T-841", "T-845", "T-849", "T-850", "T-932", "T-908"]
+tickets = ["T-825", "T-828", "T-830", "T-833", "T-848", "T-933", "T-906", "T-908"]
 
 [[waves]]
 n = 254
-tickets = ["T-837", "T-926", "T-907"]
+tickets = ["T-831", "T-834", "T-841", "T-845", "T-849", "T-850", "T-932"]
 
 [[waves]]
 n = 255
-tickets = ["T-838"]
+tickets = ["T-837", "T-926", "T-907"]
 
 [[waves]]
 n = 256
-tickets = ["T-839"]
+tickets = ["T-838"]
 
 [[waves]]
 n = 257
-tickets = ["T-927"]
+tickets = ["T-839"]
 
 [[waves]]
 n = 258
-tickets = ["T-930"]
+tickets = ["T-927"]
 
 [[waves]]
 n = 259
+tickets = ["T-930"]
+
+[[waves]]
+n = 260
 tickets = ["T-905"]
 
 [[emptied]]
@@ -68,6 +72,13 @@ T-079 = ["apps/website/frontend/src/eden_dock_right.rs", "apps/website/frontend/
 T-082 = ["apps/website/frontend/src/attributes.rs", "apps/website/frontend/src/editor_ops.rs"]
 T-084 = ["apps/website/frontend/src/asset_catalog.rs", "apps/website/frontend/src/eden_dock_right.rs"]
 "T-090.10.2" = ["crates/map-engine-render", "apps/website/frontend/src/world_assets"]
+"T-090.11" = ["docs/plans/t-090_11_plan.md"]
+"T-090.11.1" = ["crates/map-engine-core/src/bvh.rs", "crates/map-engine-core/src/bvh_tests.rs", "xtask/src/map_blueprint/bvh.rs", "xtask/tests/fixtures/FarmHouse_E_1L01_Wood.bvh.golden", "packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.bvh"]
+"T-090.11.2" = ["xtask/src/map_blueprint", "xtask/src/main.rs", "xtask/tests/fixtures/prefab", "packages/map-assets/everon/prefabs/blas", "packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.instances.json", "packages/tbd-schema/schema/building-instances.schema.json"]
+"T-090.11.3" = ["apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings", "apps/mod/tbd-export/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_TbdBlueprint.c", "xtask/tests/fixtures/FarmHouse_E_1L01_Wood_children.json", "xtask/tests/fixtures/FarmHouse_E_1L01_Wood_parity_doors.json"]
+"T-090.11.4" = ["crates/map-engine-core/src/building_compound.rs", "crates/map-engine-core/src/building_compound_tests.rs", "crates/map-engine-core/src/building_section.rs", "crates/map-engine-core/src/building_section_tests.rs", "crates/map-engine-core/src/building_viewshed.rs", "crates/map-engine-core/src/building_viewshed_tests.rs", "crates/map-engine-core/src/building_blueprint.rs", "crates/map-engine-core/src/geometry/rigid.rs", "crates/map-engine-core/src/geometry/mod.rs", "crates/map-engine-core/src/lib.rs"]
+"T-090.11.5" = ["crates/map-engine-render/src/draw_order.rs", "crates/map-engine-render/src/draw_order_tests.rs"]
+"T-090.11.6" = ["apps/website/frontend/src/pages/debug", "packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.scene.json"]
 "T-090.4" = ["tools/tbd-tools/src/world", "packages/map-assets/everon/objects"]
 "T-090.6" = ["tools/tbd-tools/src/world", "packages/map-assets/everon/objects"]
 "T-090.7" = ["apps/website/frontend/src/world_assets", "packages/tbd-schema/schema/map-object-resolved.schema.json"]
@@ -832,6 +843,10 @@ T-076 = ["T-661"]
 T-079 = ["T-661"]
 T-082 = ["T-661"]
 T-084 = ["T-661"]
+"T-090.11.2" = ["T-090.11.1"]
+"T-090.11.3" = ["T-090.11.2"]
+"T-090.11.4" = ["T-090.11.2"]
+"T-090.11.6" = ["T-090.11.4", "T-090.11.5"]
 T-091 = ["T-090"]
 T-092 = ["T-091"]
 T-111 = ["T-067"]

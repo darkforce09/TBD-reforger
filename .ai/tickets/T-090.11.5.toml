@@ -1,0 +1,24 @@
+id = "T-090.11.5"
+kind = "work"
+title = "T-090.11.5 — Dedicated architectural render lanes"
+summary = "13 LaneRole variants after WorldTownLabels with fill/outline twins (InteriorSlabs, InteriorFurniture(+Outline), InteriorWalls(+Outline), InteriorPortals(+Outline), InteriorGlazing(+Outline), InteriorStairs, SceneVegetation(+Outline)) plus InteriorProbe above Viewshed; role_id 11..=23; ALL_LANES 48; pins updated; no engine dispatch change."
+class = "feature"
+status = "ready"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+plan = "docs/plans/t-090_11_5_plan.md"
+executor = "claude-code"
+parent = "T-090"
+main_goal = "Building drawing has its own draw-order contract instead of borrowing terrain lanes."
+context = ["Plan of record: ~/.claude/plans/implementation-plan-tender-seahorse.md (operator-approved 2026-09-03); Cursor authors docs/specs/Mission_Creator_Architecture/t090_11_architectural_interiors.md from it.", "Follows the ForestFill/ForestOutline and WorldBuildings/WorldBuildingsOutline one-payload-per-role precedent."]
+requirement = ["draw_order.rs: variants, lane_order (+13 shift of Viewshed..MarqueeOutline), ALL_LANES, role_id 11..=23, both u32 maps, lane_order_pins (with_id 24; every interior lane < Viewshed < InteriorProbe < Grid)."]
+current_state = ["11 vector-lane upload ids; the viewer uploads walls to ROADS_CASING, furniture to AIRFIELD_APRON, cuts to CONTOURS/FOREST_OUTLINE, the ray to MISSION_ZONES."]
+approach = ["Pure edit of the draw-order contract; tests in draw_order_tests.rs if the file needs headroom."]
+verify = ["cargo test -p map-engine-render", "cargo clippy -p map-engine-render --target wasm32-unknown-unknown -- -D warnings"]
+acceptance = ["wire_round_trip_is_exhaustive_both_ways passes with 24 ids; relation pins hold; existing lane relations unchanged."]
+owns = ["crates/map-engine-render/src/draw_order.rs", "crates/map-engine-render/src/draw_order_tests.rs"]
+created_at = "2026-09-03T14:49:12Z"
+
+[scope]
+domain = "engine"
+layer = "core"

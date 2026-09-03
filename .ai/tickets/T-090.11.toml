@@ -1,0 +1,39 @@
+id = "T-090.11"
+kind = "work"
+title = "T-090.11 — Architectural interiors: SurfaceKind BVH, portals, glazing, props"
+summary = "Umbrella for six slices: SurfaceKind sidecar v2 + multi-hit BVH, offline pak/.et/XOB pipeline with per-XOB BLAS + instance records, Workbench recon/door-parity oracle, compound building with hinge DoorState and glass/foliage LOS, dedicated Interior* lanes, debug-viewer bench."
+class = "feature"
+status = "ready"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+plan = "docs/plans/t-090_11_plan.md"
+executor = "claude-code"
+parent = "T-090"
+main_goal = "Building LOS knows glass, foliage, doors and furniture: every Enfusion child entity of a building is a placed BLAS instance under the shell, rays traverse glass, attenuate in foliage and stop on a closed door leaf, and the debug viewer draws it on dedicated architectural lanes."
+context = [
+    "T-090.6 shipped shell-only BVH LOS (400/400 phantom 0); doors, window frames, glass panes and furniture are separate Enfusion entities slotted onto XOB socket bones, not part of the shell COLL.",
+    "Plan of record: ~/.claude/plans/implementation-plan-tender-seahorse.md (operator-approved 2026-09-03); Cursor authors docs/specs/Mission_Creator_Architecture/t090_11_architectural_interiors.md from it.",
+    "Explicit operator go for the previously parked items: batch extraction (pak -> COLL -> BVH), SurfaceKind taxonomy, recon/aperture records. VOLM layer decode stays parked.",
+]
+requirement = [
+    "Per-triangle SurfaceKind (Opaque/Glass/Foliage) in a versioned .bvh sidecar; multi-hit traversal that continues through glass and foliage.",
+    "Two-level model: shell BLAS + per-XOB BLAS instances (doors, frames, glass, furniture, trees) under local rigid transforms; doors carry hinge DoorState.",
+    "Dedicated Interior* render lanes; the debug viewer is the integration surface (door click-to-toggle, glass-transparent rays, exterior scene trees). Mission-editor integration is out of scope.",
+]
+current_state = ["Shell-only sidecar v1, single terminal first_hit, viewer draws on borrowed terrain lanes, oracle excludes doors and glass."]
+approach = ["Six sequential slices T-090.11.1 .. T-090.11.6, one commit each on main, pins re-blessed deliberately with old -> new numbers in the commit body."]
+verify = [
+    "cargo test -p map-engine-core --all-features; cargo test -p xtask; cargo test -p website-frontend; cargo test -p map-engine-render",
+    "cargo clippy -p map-engine-core --all-targets --all-features -- -D warnings; cargo xtask verify file-length; cargo xtask ticket check",
+]
+acceptance = [
+    "Shell parity stays 400/400 phantom 0 on both instruments through every slice; door-inclusive parity >= 395/400 phantom 0 once the oracle fixture exists.",
+    "Viewer: closed door blocks the ray and the wash; open door lets both through the aperture; glass pane is traversed with 5% concealment; a window frame blocks; trees attenuate by canopy depth.",
+    "No terrain lane receives building geometry in the viewer.",
+]
+owns = ["docs/plans/t-090_11_plan.md"]
+created_at = "2026-09-03T14:49:12Z"
+
+[scope]
+domain = "engine"
+layer = "world"

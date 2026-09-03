@@ -1,0 +1,43 @@
+id = "T-090.11.4"
+kind = "work"
+title = "T-090.11.4 — Compound building: DoorState, glass/foliage LOS, instance wash"
+summary = "Rigid transforms; CompoundBuilding {shell, instances}; trace / evaluate_los / level_wash_compound / flatten; DoorState Closed/Open with local-Y hinge; Glass 0.05 concealment; foliage 1-exp(-k d); TriSource + SegClass for the section drawing; unit tests + door-parity pin."
+class = "feature"
+status = "ready"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+plan = "docs/plans/t-090_11_4_plan.md"
+executor = "claude-code"
+parent = "T-090"
+depends_on = ["T-090.11.2"]
+main_goal = "One ray walks shell + instances kind by kind: terminal on opaque, through glass with a small concealment, attenuated by foliage depth, blocked by a closed leaf and clear through an open aperture."
+context = ["Plan of record: ~/.claude/plans/implementation-plan-tender-seahorse.md (operator-approved 2026-09-03); Cursor authors docs/specs/Mission_Creator_Architecture/t090_11_architectural_interiors.md from it."]
+requirement = [
+    "crates/map-engine-core/src/geometry/rigid.rs (pure) and building_compound.rs (+tests, feature blueprint): Instance{kind, blas, local, door, state, cover}, DoorState, DoorSpec, TraceEvent walk sorted by t.",
+    "LosHitKind gains Glass, DoorLeaf, DoorAperture, WindowFrame, Foliage, Prop; BuildingBlueprint::evaluate_los untouched (pin).",
+    "building_section takes a TriSource; cut segments carry SegClass; building_viewshed gains level_wash_compound.",
+]
+current_state = ["Shell-only evaluate_los / wash / drawing."]
+approach = ["Synthetic room + instance scenes (glass, frame, door flip, foliage, transform precision) plus the farmhouse door-parity pin (#[ignore] until the fixture exists)."]
+verify = ["cargo test -p map-engine-core --all-features", "cargo clippy -p map-engine-core --all-targets --all-features -- -D warnings"]
+acceptance = [
+    "Glass: clear with a Glass hit at 0.05; frame: blocked WindowFrame; door Closed blocked by DoorLeaf, Open{90} clear with DoorAperture and the swung leaf blocks; 6 m of canopy >= 0.95 concealment still clear; transform round trip < 1e-6 m.",
+    "Door-inclusive farmhouse pin >= 395/400 phantom 0; shell pin 400/400 untouched.",
+]
+owns = [
+    "crates/map-engine-core/src/building_compound.rs",
+    "crates/map-engine-core/src/building_compound_tests.rs",
+    "crates/map-engine-core/src/building_section.rs",
+    "crates/map-engine-core/src/building_section_tests.rs",
+    "crates/map-engine-core/src/building_viewshed.rs",
+    "crates/map-engine-core/src/building_viewshed_tests.rs",
+    "crates/map-engine-core/src/building_blueprint.rs",
+    "crates/map-engine-core/src/geometry/rigid.rs",
+    "crates/map-engine-core/src/geometry/mod.rs",
+    "crates/map-engine-core/src/lib.rs",
+]
+created_at = "2026-09-03T14:49:12Z"
+
+[scope]
+domain = "engine"
+layer = "core"

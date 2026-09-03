@@ -1,0 +1,33 @@
+id = "T-090.11.6"
+kind = "work"
+title = "T-090.11.6 — Viewer bench: interior lanes, doors, glass, trees"
+summary = "building_interior.rs pure lane builder; instances + BLAS fetch into a CompoundBuilding; door_states signal with click-to-toggle; ray colours for glass/foliage/leaf; ?scene=1 conifers; borrowed terrain lanes retired; native tests."
+class = "feature"
+status = "ready"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+plan = "docs/plans/t-090_11_6_plan.md"
+executor = "claude-code"
+parent = "T-090"
+depends_on = ["T-090.11.4", "T-090.11.5"]
+main_goal = "The debug viewer shows the furnished building on architectural lanes and lets the operator open doors and watch rays pass glass and foliage."
+context = ["Plan of record: ~/.claude/plans/implementation-plan-tender-seahorse.md (operator-approved 2026-09-03); Cursor authors docs/specs/Mission_Creator_Architecture/t090_11_architectural_interiors.md from it.", "building_viewer.rs is SIZE-3 allowlisted (2624 lines); new code lives in building_interior.rs and the ray lane moves there so the file shrinks."]
+requirement = [
+    "apps/website/frontend/src/pages/debug/building_interior.rs: InteriorLanes + build_interior_lanes + door_at; building_viewer.rs fetches <slug>.instances.json + blas/*.bvh, holds compound + door_states signals, uploads the 13 roles by role_id::INTERIOR_* only.",
+    "Click inside a door leaf toggles it and recomputes LOS, wash and drawing; ?scene=1 loads <slug>.scene.json with four t_picea_abies_3s instances.",
+]
+current_state = ["Viewer draws the shell mesh on seven borrowed lanes; no instances, no door interaction."]
+approach = ["Pure lane builder tested natively; wasm host wires signals; five live screenshots in the commit body."]
+verify = ["cargo test -p website-frontend", "cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets", "cd apps/website/frontend && trunk build --release"]
+acceptance = [
+    "Walls, doors + swing arcs, glazing + jamb ticks, furniture footprints, stairs and scene trees each draw on their own lane; engine stats show 0 contour/road/forest items.",
+    "Door click swings the leaf and the wash expands through the aperture; observer outside -> target behind glass reads CLEAR with 5% concealment; behind the frame reads BLOCKED.",
+]
+owns = ["apps/website/frontend/src/pages/debug", "packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.scene.json"]
+estimated = ["scope"]
+created_at = "2026-09-03T14:49:12Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "site_pages"

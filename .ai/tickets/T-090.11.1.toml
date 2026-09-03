@@ -1,0 +1,40 @@
+id = "T-090.11.1"
+kind = "work"
+title = "T-090.11.1 — SurfaceKind, sidecar v2, multi-hit BVH traversal"
+summary = "SurfaceKind {Opaque, Glass, Foliage} per triangle; sidecar v2 (kinds section + flags word, v1 still parses); any_hit_where / first_hit_where / all_hits; goldens re-blessed with pins 400/400 phantom 0 kept."
+class = "feature"
+status = "ready"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+plan = "docs/plans/t-090_11_1_plan.md"
+executor = "claude-code"
+parent = "T-090"
+main_goal = "The occlusion sidecar carries a material class per triangle and the raycaster can skip or collect non-terminal surfaces."
+context = ["Plan of record: ~/.claude/plans/implementation-plan-tender-seahorse.md (operator-approved 2026-09-03); Cursor authors docs/specs/Mission_Creator_Architecture/t090_11_architectural_interiors.md from it."]
+requirement = [
+    "SurfaceKind repr(u8) {Opaque=0, Glass=1, Foliage=2}; BvhSidecar.kinds parallel to tris; sidecar version 2 appends kinds (ntris x u8, zero-padded to 4 B), header reserved word 0 = flags (bit0 kinds present).",
+    "parse accepts v1 (kinds Opaque) and v2; emit always v2; new BvhParseError variants for kinds length / unknown kind.",
+    "any_hit_where / first_hit_where take a terminal predicate over SurfaceKind; all_hits collects every crossing; any_hit / first_hit stay as wrappers with identical results.",
+]
+current_state = ["Sidecar v1, every triangle opaque, single-hit traversal only."]
+approach = ["Extend crates/map-engine-core/src/bvh.rs (+ bvh_tests.rs); xtask bvh-emit writes v2; re-emit the farmhouse sidecar and its golden."]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p xtask (farmhouse_bvh_sidecar_parity_is_pinned + farmhouse_golden_parity_is_pinned)",
+]
+acceptance = [
+    "v2 round-trips byte-identically; v1 bytes still parse; malformed kinds rejected.",
+    "Both farmhouse pins stay 400/400 phantom 0; sidecar shape (3170, 4012, 1521) unchanged.",
+]
+owns = [
+    "crates/map-engine-core/src/bvh.rs",
+    "crates/map-engine-core/src/bvh_tests.rs",
+    "xtask/src/map_blueprint/bvh.rs",
+    "xtask/tests/fixtures/FarmHouse_E_1L01_Wood.bvh.golden",
+    "packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.bvh",
+]
+created_at = "2026-09-03T14:49:12Z"
+
+[scope]
+domain = "engine"
+layer = "core"

@@ -1,0 +1,45 @@
+id = "T-090.11.2"
+kind = "work"
+title = "T-090.11.2 — Offline pipeline: pak, prefabs, XOB nodes, bvh-batch"
+summary = "Rust PAC1 pak reader; .et grammar + inheritance resolver; XOB HEAD node/socket table + COLL subrange -> gamemat; xob-inspect; SurfaceKind from gamemat; bvh-batch emits one v2 BLAS per XOB plus <slug>.instances.json; farmhouse closure committed."
+class = "feature"
+status = "ready"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+plan = "docs/plans/t-090_11_2_plan.md"
+executor = "claude-code"
+parent = "T-090"
+depends_on = ["T-090.11.1"]
+main_goal = "Every entity of a building prefab (shell, door sets, window sets, glass panes, furniture, scene trees) becomes a BLAS + a placed instance record, engine-free, straight from the game paks."
+context = [
+    "Plan of record: ~/.claude/plans/implementation-plan-tender-seahorse.md (operator-approved 2026-09-03); Cursor authors docs/specs/Mission_Creator_Architecture/t090_11_architectural_interiors.md from it.",
+    "Reforger paks are FORM/PAC1 IFF containers (HEAD/DATA/FILE chunks, zlib payloads) — layout per scripts/mod/node_modules/enfusion-mcp/dist/pak/reader.js; extracted BI files are never committed, derived .bvh / .instances.json are.",
+]
+requirement = [
+    "xtask/src/map_blueprint/{pak.rs, prefab.rs, surface_kind.rs, batch.rs} + xob.rs node table and COLL subrange decode; cargo xtask map xob-inspect and map bvh-batch.",
+    "SurfaceKind from game material stem (glass*/plexiglass -> Glass; foliage*/grass*/moss/seaweed -> Foliage; else Opaque); never from visual .emat names.",
+    "Instance records tag their transform source (xobSocket | recon | prefabCoords); trees without a foliage collider get a visual-LOD hull canopy tagged Foliage.",
+]
+current_state = ["parse_coll skips the subrange table; only the farmhouse shell is extracted, by hand, via the Windows unpacker."]
+approach = ["Synthetic-bytes unit tests for pak/.et/xob grammar; real-file tests #[ignore]-gated on ~/.cache/enfusion-mcp-root; farmhouse closure run and committed with goldens."]
+verify = [
+    "cargo test -p xtask",
+    "cargo xtask map bvh-batch --prefab Prefabs/Structures/Houses/Farm/FarmHouse_E_1L01/FarmHouse_E_1L01_Wood.et; cargo xtask ci ci-local-schema",
+]
+acceptance = [
+    "xob-inspect on the farmhouse resolves COLL record 0's 9 subranges to tiles_ceramic, wood, concrete, carpet, tiles, metal, stone, wood_floor, brick covering all 1129 tris; record 1 to metal_sheet / tiles_roof; 25 socket names decoded.",
+    "Shell sidecar re-emitted with real kinds keeps 400/400 phantom 0; instances JSON validates against building-instances.schema.json.",
+]
+owns = [
+    "xtask/src/map_blueprint",
+    "xtask/src/main.rs",
+    "xtask/tests/fixtures/prefab",
+    "packages/map-assets/everon/prefabs/blas",
+    "packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.instances.json",
+    "packages/tbd-schema/schema/building-instances.schema.json",
+]
+created_at = "2026-09-03T14:49:12Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
