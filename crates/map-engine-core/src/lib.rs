@@ -25,6 +25,9 @@ pub mod building_blueprint;
 /// furniture, trees) and the `<slug>.instances.json` wire types.
 #[cfg(feature = "blueprint")]
 pub mod building_compound;
+/// T-090.11.4 — the ray walk, LOS verdict and wash over a compound building.
+#[cfg(feature = "blueprint")]
+pub mod building_compound_los;
 /// T-090.6 — the "section box" plan renderer over the [`bvh`] sidecar mesh: per-view clipped
 /// top-down heightfields + section cuts of the vertical faces, for any mesh.
 #[cfg(feature = "blueprint")]

@@ -10,6 +10,8 @@
     "localCoords": [-0.018, 0.82, 0.1],
     "localAnglesDeg": [-55, 0, 0],
     "observedRelPos": [-0.118164, 0.809226, -0.11824],
-    "observedYawDeg": -96.8186
+    "observedYawDeg": -96.8186,
+    "observedAnglesDeg": [-57.7406, -96.8186, -8.91997],
+    "observedLocalPos": [-0.0179276, 0.820009, 0.100274]
   }
 }

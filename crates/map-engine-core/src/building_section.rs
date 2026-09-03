@@ -272,8 +272,25 @@ pub fn mesh_bounds(occl: &BvhSidecar) -> Option<([f64; 2], [f64; 2])> {
 /// distinct points make one segment.
 #[must_use]
 pub fn section_at(occl: &BvhSidecar, y: f64, max_abs_ny: f64) -> Vec<Seg2> {
+    section_at_owned(occl, &[], y, max_abs_ny)
+        .into_iter()
+        .map(|(s, _)| s)
+        .collect()
+}
+
+/// [`section_at`] with the owner of every cut segment: `owner[tri]` (a
+/// [`crate::building_compound::FlatMesh`]'s table — `0` shell, `i + 1` instance `i`; missing
+/// entries read as `0`), so the viewer routes wall, leaf, frame, pane and furniture cuts to
+/// their own lanes (T-090.11.4).
+#[must_use]
+pub fn section_at_owned(
+    occl: &BvhSidecar,
+    owner: &[u32],
+    y: f64,
+    max_abs_ny: f64,
+) -> Vec<(Seg2, u32)> {
     let mut out = Vec::new();
-    for &[ia, ib, ic] in &occl.tris {
+    for (ti, &[ia, ib, ic]) in occl.tris.iter().enumerate() {
         let v = [
             occl.verts[ia as usize],
             occl.verts[ib as usize],
@@ -308,7 +325,7 @@ pub fn section_at(occl: &BvhSidecar, y: f64, max_abs_ny: f64) -> Vec<Seg2> {
             }
         }
         if pts.len() >= 2 {
-            out.push([pts[0], pts[1]]);
+            out.push(([pts[0], pts[1]], owner.get(ti).copied().unwrap_or(0)));
         }
     }
     out

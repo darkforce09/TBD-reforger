@@ -29,6 +29,7 @@
 //! ≈ 45k rays inside the disc per level; the viewer computes one level at a time.
 
 use crate::building_blueprint::BuildingBlueprint;
+use crate::building_compound::CompoundBuilding;
 use crate::bvh::BvhSidecar;
 use crate::dem::sample::Visibility;
 
@@ -160,14 +161,81 @@ pub fn level_wash(
     p: &WashParams,
 ) -> Option<LevelWash> {
     let lvl = bp.levels.iter().find(|l| l.level_index == level_index)?;
+    Some(wash_band(
+        lvl.level_index,
+        lvl.elevation_range[0] + p.eye_m,
+        obs,
+        p,
+        |a, b| {
+            occl.bvh
+                .any_hit(&occl.verts, &occl.tris, a, b, 0.0, 1.0)
+                .is_some()
+        },
+    ))
+}
+
+/// The same wash judged by a [`CompoundBuilding`] — shell + instances, glass and foliage
+/// transparent, doors in their current state (T-090.11.4).
+#[must_use]
+pub fn level_wash_compound(
+    bp: &BuildingBlueprint,
+    c: &CompoundBuilding,
+    obs: [f64; 3],
+    level_index: usize,
+    p: &WashParams,
+) -> Option<LevelWash> {
+    let lvl = bp.levels.iter().find(|l| l.level_index == level_index)?;
+    Some(compound_wash(
+        c,
+        obs,
+        lvl.elevation_range[0] + p.eye_m,
+        lvl.level_index,
+        p,
+    ))
+}
+
+/// One [`LevelWash`] per level of `bp` over the compound (see [`level_wash_compound`]).
+#[must_use]
+pub fn level_washes_compound(
+    bp: &BuildingBlueprint,
+    c: &CompoundBuilding,
+    obs: [f64; 3],
+    p: &WashParams,
+) -> Vec<LevelWash> {
+    bp.levels
+        .iter()
+        .filter_map(|l| level_wash_compound(bp, c, obs, l.level_index, p))
+        .collect()
+}
+
+/// Blueprint-free form of [`level_wash_compound`]: the eye plane is given directly.
+#[must_use]
+pub fn compound_wash(
+    c: &CompoundBuilding,
+    obs: [f64; 3],
+    eye_y: f64,
+    level_index: usize,
+    p: &WashParams,
+) -> LevelWash {
+    wash_band(level_index, eye_y, obs, p, |a, b| c.blocked(a, b))
+}
+
+/// The raster itself: every cell's eye point inside the disc, `blocked(obs, eye_point)`
+/// deciding `Hidden`.
+fn wash_band(
+    level_index: usize,
+    eye_y: f64,
+    obs: [f64; 3],
+    p: &WashParams,
+    blocked: impl Fn([f64; 3], [f64; 3]) -> bool,
+) -> LevelWash {
     let (min_x, min_z, n, cell_m) = grid_rect([obs[0], obs[2]], p.radius_m, p.cell_m);
     let (cols, rows) = (n, n);
     let max_x = min_x + cols as f64 * cell_m;
     let max_z = min_z + rows as f64 * cell_m;
-    let eye_y = lvl.elevation_range[0] + p.eye_m;
     let radius_m = p.radius_m;
     let mut wash = LevelWash {
-        level_index: lvl.level_index,
+        level_index,
         eye_y,
         obs,
         radius_m,
@@ -190,11 +258,7 @@ pub fn level_wash(
             let tgt = [x, eye_y, z];
             // A cell centred on the observer is a zero-length segment: clear by definition
             // (nothing can lie between a point and itself).
-            let clear = tgt == obs
-                || occl
-                    .bvh
-                    .any_hit(&occl.verts, &occl.tris, obs, tgt, 0.0, 1.0)
-                    .is_none();
+            let clear = tgt == obs || !blocked(obs, tgt);
             wash.cells.push(if clear {
                 Visibility::Visible
             } else {
@@ -202,7 +266,7 @@ pub fn level_wash(
             });
         }
     }
-    Some(wash)
+    wash
 }
 
 /// One [`LevelWash`] per level of `bp`, in level order (empty for a level-less blueprint).

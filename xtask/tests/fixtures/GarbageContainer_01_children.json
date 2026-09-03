@@ -1,13 +1,15 @@
 {
-  "prefabFilter": "Container",
+  "prefabFilter": "GarbageContainer_01",
   "resourceName": "{72E42BEAFED9B5A7}Prefabs/Props/Garbage/Bins/GarbageContainer_01.et",
   "slug": "GarbageContainer_01",
   "rootWorldPos": [9878.51,6.753,236.2],
   "rootAngles": [-3.044,-104.126,-4.754],
   "rootBoundsMin": [-0.832147,0,-0.465231],
   "rootBoundsMax": [0.768917,1.48852,0.634833],
+  "rootWorldBoundsMin": [9877.66,6.64942,235.102],
+  "rootWorldBoundsMax": [9879.17,8.32364,237.057],
   "rootComponents": ["MeshObject","RigidBody","SCR_DestructionMultiPhaseComponent","TagComponent","RplComponent"],
   "children": [
-    {"depth":1,"name":"","class":"GenericEntity","resource":"","relPos":[-0.118164,0.809226,-0.11824],"worldPos":[9878.39,7.56223,236.082],"yawDeg":-96.8186,"size":[1.56692,0.949048,0.785247],"boundsMinY":-0.200947,"components":["MeshObject","RigidBody","SCR_DestructionMultiPhaseComponent","RplComponent","Hierarchy"]}
+    {"depth":1,"name":"","class":"GenericEntity","resource":"","relPos":[-0.118164,0.809226,-0.11824],"worldPos":[9878.39,7.56223,236.082],"yawDeg":-96.8186,"size":[1.56692,0.949048,0.785247],"boundsMinY":-0.200947,"anglesDeg":[-57.7406,-96.8186,-8.91997],"localPos":[-0.0179276,0.820009,0.100274],"worldBoundsMin":[9877.57,7.34388,235.116],"worldBoundsMax":[9879.14,8.64003,236.92],"prefab":"","pivotId":"","mesh":"{B3D619C0571896D6}Assets/Props/Garbage/Bins/GarbageContainer_01/GarbageContainer_01_Cap.xob","components":["MeshObject","RigidBody","SCR_DestructionMultiPhaseComponent","RplComponent","Hierarchy"]}
   ]
 }

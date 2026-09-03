@@ -58,6 +58,31 @@ pub struct ReconChild {
     pub size: [f64; 3],
     #[serde(default)]
     pub components: Vec<String>,
+    // ── T-090.11.3 enrichment (present once the recon plugin is compiled with ExtrasJson) ──
+    /// The `Hierarchy` component's `PivotID` — the socket the child hangs on.
+    #[serde(default)]
+    pub pivot_id: String,
+    /// Origin in the PARENT entity's frame (`parent.CoordToLocal`).
+    #[serde(default)]
+    pub local_pos: Option<[f64; 3]>,
+    /// World `[pitch, yaw, roll]`.
+    #[serde(default)]
+    pub angles_deg: Option<[f64; 3]>,
+    /// `DoorComponent` params on a leaf.
+    #[serde(default)]
+    pub door: Option<ReconDoor>,
+}
+
+/// The recon's `door` object (a `DoorComponent`'s hinge params).
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ReconDoor {
+    #[serde(default)]
+    pub angle_range: f64,
+    #[serde(default)]
+    pub closed_angle: f64,
+    #[serde(default)]
+    pub initial_angle: f64,
 }
 
 /// Architectural bucket shared by recon children and instances.
@@ -121,6 +146,13 @@ pub struct Report {
     pub extra: Vec<(usize, Group)>,
     /// Instances skipped because they descend from a furniture instance.
     pub skipped_furniture: usize,
+    /// Enriched-recon checks: how many were possible, and the failures (`instance: detail`).
+    pub door_checks: usize,
+    pub door_mismatches: Vec<String>,
+    pub pivot_checks: usize,
+    pub pivot_mismatches: Vec<String>,
+    pub local_checks: usize,
+    pub local_mismatches: Vec<String>,
 }
 
 impl Report {
@@ -140,7 +172,11 @@ impl Report {
             .fold(0.0, f64::max)
     }
     pub fn ok(&self) -> bool {
-        self.failures().is_empty() && self.unmatched.is_empty()
+        self.failures().is_empty()
+            && self.unmatched.is_empty()
+            && self.door_mismatches.is_empty()
+            && self.pivot_mismatches.is_empty()
+            && self.local_mismatches.is_empty()
     }
 }
 
@@ -282,7 +318,62 @@ pub fn verify(file: &InstancesFile, recon: &ReconFile) -> Report {
     let score = |r: &Report| {
         r.matches.iter().map(|m| m.pos_err_m).sum::<f64>() + r.unmatched.len() as f64 * MATCH_CAP_M
     };
-    if score(&b) < score(&a) { b } else { a }
+    let mut best = if score(&b) < score(&a) { b } else { a };
+    enrichment_checks(file, recon, &mut best);
+    best
+}
+
+/// The T-090.11.3 enrichment, when the dump carries it: a leaf's hinge params must equal the
+/// instance's `DoorRecord`, the child's `pivotId` must be the instance id's last segment, and
+/// its parent-frame origin must match the instance placed under its parent (2 cm).
+fn enrichment_checks(file: &InstancesFile, recon: &ReconFile, report: &mut Report) {
+    let by_id: HashMap<&str, &InstanceRecord> =
+        file.instances.iter().map(|i| (i.id.as_str(), i)).collect();
+    for m in &report.matches {
+        let Some(inst) = by_id.get(m.instance.as_str()) else {
+            continue;
+        };
+        let child = &recon.children[m.child_index];
+        if let Some(d) = child.door {
+            report.door_checks += 1;
+            match inst.door {
+                Some(r)
+                    if (r.angle_range_deg - d.angle_range).abs() < 1e-3
+                        && (r.closed_angle_deg - d.closed_angle).abs() < 1e-3
+                        && (r.initial_angle_deg - d.initial_angle).abs() < 1e-3 => {}
+                other => report.door_mismatches.push(format!(
+                    "{}: recon door {:?} vs instance {:?}",
+                    inst.id, d, other
+                )),
+            }
+        }
+        if !child.pivot_id.is_empty() {
+            report.pivot_checks += 1;
+            let tail = inst.id.rsplit('/').next().unwrap_or(&inst.id);
+            if !tail.eq_ignore_ascii_case(&child.pivot_id) {
+                report.pivot_mismatches.push(format!(
+                    "{}: recon pivot {:?} vs id tail {:?}",
+                    inst.id, child.pivot_id, tail
+                ));
+            }
+        }
+        if let (Some(lp), Some(parent_id)) = (child.local_pos, inst.parent.as_deref()) {
+            if let Some(parent) = by_id.get(parent_id) {
+                report.local_checks += 1;
+                let mine = parent.local.rigid().inverse().point(inst.local.pos);
+                let d = (0..3)
+                    .map(|a| (mine[a] - lp[a]).powi(2))
+                    .sum::<f64>()
+                    .sqrt();
+                if d > POS_TOL_M {
+                    report.local_mismatches.push(format!(
+                        "{}: parent-frame origin {:?} vs recon localPos {:?} ({:.4} m)",
+                        inst.id, mine, lp, d
+                    ));
+                }
+            }
+        }
+    }
 }
 
 pub fn load(instances: &PathBuf, recon: &PathBuf) -> Result<(InstancesFile, ReconFile)> {
@@ -370,14 +461,31 @@ pub fn run_instances_verify(args: &[String]) -> Result<u8> {
             m.yaw_err_deg
         );
     }
+    println!(
+        "  enrichment: door params {}/{} ok · pivot ids {}/{} ok · parent-frame origins {}/{} ok",
+        report.door_checks - report.door_mismatches.len(),
+        report.door_checks,
+        report.pivot_checks - report.pivot_mismatches.len(),
+        report.pivot_checks,
+        report.local_checks - report.local_mismatches.len(),
+        report.local_checks
+    );
+    for m in report
+        .door_mismatches
+        .iter()
+        .chain(&report.pivot_mismatches)
+        .chain(&report.local_mismatches)
+    {
+        println!("  ENRICHMENT MISMATCH {m}");
+    }
     for u in &report.unmatched {
         println!("  UNMATCHED {u}");
     }
     for (ci, g) in &report.extra {
         let c = &dump.children[*ci];
         println!(
-            "  UNCLAIMED child #{ci} ({g:?}, depth {}, size {:?}, relPos {:?})",
-            c.depth, c.size, c.rel_pos
+            "  UNCLAIMED child #{ci} ({g:?}, depth {}, size {:?}, relPos {:?}, angles {:?})",
+            c.depth, c.size, c.rel_pos, c.angles_deg
         );
     }
     Ok(u8::from(!report.ok()))
@@ -419,6 +527,10 @@ mod tests {
             yaw_deg: yaw,
             size: [1.0, 1.0, if class == "Building" { 0.5 } else { 0.0 }],
             components: comps.iter().map(|s| s.to_string()).collect(),
+            pivot_id: String::new(),
+            local_pos: None,
+            angles_deg: None,
+            door: None,
         }
     }
 
@@ -604,5 +716,15 @@ mod tests {
             r.worst_yaw_deg(),
             r.failures()
         );
+        // The enriched dump (Workbench restarted 2026-09-04): every leaf's hinge params, every
+        // child's socket name and every nested child's parent-frame origin agree with the
+        // prefab + XOB decode.
+        assert_eq!(r.door_checks, 7);
+        assert_eq!(r.pivot_checks, 88);
+        assert!(r.local_checks >= 60, "{}", r.local_checks);
+        assert!(r.door_mismatches.is_empty(), "{:?}", r.door_mismatches);
+        assert!(r.pivot_mismatches.is_empty(), "{:?}", r.pivot_mismatches);
+        assert!(r.local_mismatches.is_empty(), "{:?}", r.local_mismatches);
+        assert!(r.ok());
     }
 }

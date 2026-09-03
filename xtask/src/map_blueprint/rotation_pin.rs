@@ -44,6 +44,14 @@ pub struct PinChild {
     pub local_angles_deg: [f64; 3],
     pub observed_rel_pos: [f64; 3],
     pub observed_yaw_deg: f64,
+    /// The child's full world `[pitch, yaw, roll]` (enriched recon) — scored on all three
+    /// angles when present, else only `observed_yaw_deg`.
+    #[serde(default)]
+    pub observed_angles_deg: Option<[f64; 3]>,
+    /// The child's parent-frame origin as the engine reports it (enriched recon) — must equal
+    /// `local_coords`, the prefab assumption the pin rests on.
+    #[serde(default)]
+    pub observed_local_pos: Option<[f64; 3]>,
 }
 
 pub type Mat3 = [[f64; 3]; 3];
@@ -211,7 +219,9 @@ pub struct Score {
     pub predicted_rel: [f64; 3],
     pub rel_err_m: f64,
     pub predicted_yaw_deg: f64,
+    /// Yaw error, or the sum of the three angle errors when the fixture carries full angles.
     pub yaw_err_deg: f64,
+    pub predicted_angles_deg: [f64; 3],
 }
 
 impl Score {
@@ -232,13 +242,18 @@ pub fn score_all(fx: &PinFixture) -> Vec<Score> {
                 .map(|i| (rel[i] - fx.child.observed_rel_pos[i]).powi(2))
                 .sum::<f64>()
                 .sqrt();
-            let yaw = h.decompose(&mul(&mp, &mc))[1];
+            let angles = h.decompose(&mul(&mp, &mc));
+            let yaw_err = match fx.child.observed_angles_deg {
+                Some(obs) => (0..3).map(|k| wrap(angles[k] - obs[k]).abs()).sum::<f64>(),
+                None => wrap(angles[1] - fx.child.observed_yaw_deg).abs(),
+            };
             Score {
                 hypothesis: h,
                 predicted_rel: rel,
                 rel_err_m: rel_err,
-                predicted_yaw_deg: yaw,
-                yaw_err_deg: wrap(yaw - fx.child.observed_yaw_deg).abs(),
+                predicted_yaw_deg: angles[1],
+                yaw_err_deg: yaw_err,
+                predicted_angles_deg: angles,
             }
         })
         .collect();
@@ -292,11 +307,12 @@ pub fn run_rotation_pin(args: &[String]) -> Result<u8> {
     );
     for (rank, s) in scores.iter().enumerate().take(12) {
         println!(
-            "  #{:<2} {:<34} rel {:?} (err {:.4} m) · yaw {:>9.4}° (err {:.4}°) · total {:.5}{}",
+            "  #{:<2} {:<34} rel {:?} (err {:.4} m) · angles {:?} yaw {:>9.4}° (err {:.4}°) · total {:.5}{}",
             rank + 1,
             s.hypothesis.name(),
             s.predicted_rel.map(|v| (v * 1e4).round() / 1e4),
             s.rel_err_m,
+            s.predicted_angles_deg.map(|v| (v * 1e3).round() / 1e3),
             s.predicted_yaw_deg,
             s.yaw_err_deg,
             s.total(),
@@ -305,6 +321,16 @@ pub fn run_rotation_pin(args: &[String]) -> Result<u8> {
             } else {
                 ""
             }
+        );
+    }
+    if let Some(lp) = fx.child.observed_local_pos {
+        let d = (0..3)
+            .map(|k| (lp[k] - fx.child.local_coords[k]).powi(2))
+            .sum::<f64>()
+            .sqrt();
+        println!(
+            "child parent-frame origin: engine {lp:?} vs prefab coords {:?} → {d:.4} m",
+            fx.child.local_coords
         );
     }
     let winner = &scores[0];

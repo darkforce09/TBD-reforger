@@ -8,14 +8,27 @@
 //! `packages/map-assets/everon/prefabs/buildings/`.
 //!
 //! Usage: `map bvh-parity (--mesh <file.xob> | --sidecar <file.bvh>) --pairs <parity.json>
-//!         [--record <i>] [--t-eps <meters>] [--dump-misses <path.jsonl>]`
+//!         [--record <i>] [--t-eps <meters>] [--dump-misses <path.jsonl>]
+//!         [--instances <slug>.instances.json [--exclude-kinds a,b] [--doors closed|open]]`
+//! (`--instances` = the T-090.11.4 compound lane: shell + every BLAS the instances file
+//! references, replayed through `CompoundBuilding::blocked_range` — glass and foliage never
+//! block, doors in the requested state; `--exclude-kinds furniture` drops what the Workbench
+//! oracle's world does not nest under the building.)
 //!        `map bvh-emit --mesh <file.xob> --slug <slug> [--out <dir>]`
 
 use std::fs;
 use std::io::Write as _;
 use std::path::PathBuf;
 
+use std::collections::HashMap;
+use std::path::Path;
+use std::sync::Arc;
+
 use anyhow::{Context, Result, bail};
+use map_engine_core::building_compound::{
+    CompoundBuilding, DoorState, InstanceKind, InstanceRecord, InstancesFile,
+};
+use map_engine_core::building_compound_los::Owner;
 use map_engine_core::bvh::{
     Bvh, BvhSidecar, SurfaceKind, dot, emit_bytes, lift_verts, quantize_verts, sub,
 };
@@ -33,9 +46,32 @@ pub fn run_bvh_parity(args: &[String]) -> Result<u8> {
     let mut record: Option<u16> = None;
     let mut t_eps = 0.0f64;
     let mut dump_misses: Option<PathBuf> = None;
+    let mut instances_path: Option<PathBuf> = None;
+    let mut exclude_kinds: Vec<String> = Vec::new();
+    let mut doors_open = false;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
+            "--instances" if i + 1 < args.len() => {
+                instances_path = Some(PathBuf::from(&args[i + 1]));
+                i += 2;
+            }
+            "--exclude-kinds" if i + 1 < args.len() => {
+                exclude_kinds = args[i + 1]
+                    .split(',')
+                    .map(|s| s.trim().to_ascii_lowercase())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                i += 2;
+            }
+            "--doors" if i + 1 < args.len() => {
+                doors_open = match args[i + 1].as_str() {
+                    "open" => true,
+                    "closed" => false,
+                    other => bail!("--doors expects closed|open, got {other}"),
+                };
+                i += 2;
+            }
             "--mesh" if i + 1 < args.len() => {
                 mesh_path = Some(PathBuf::from(&args[i + 1]));
                 i += 2;
@@ -65,7 +101,8 @@ pub fn run_bvh_parity(args: &[String]) -> Result<u8> {
             other => {
                 eprintln!(
                     "bvh-parity: unknown arg {other} (usage: (--mesh <file.xob> | --sidecar <file.bvh>) \
-                     --pairs <parity.json> [--record <i>] [--t-eps <meters>] [--dump-misses <path.jsonl>])"
+                     --pairs <parity.json> [--record <i>] [--t-eps <meters>] [--dump-misses <path.jsonl>] \
+                     [--instances <slug>.instances.json [--exclude-kinds a,b] [--doors closed|open]])"
                 );
                 return Ok(1);
             }
@@ -149,6 +186,27 @@ pub fn run_bvh_parity(args: &[String]) -> Result<u8> {
     )
     .context("parse parity JSON")?;
 
+    // T-090.11.4: the compound lane — the shell (the geometry loaded above) plus every
+    // instance the file references, in the requested door state.
+    let compound: Option<CompoundBuilding> = match &instances_path {
+        Some(path) => {
+            let shell = Arc::new(BvhSidecar {
+                verts: verts.clone(),
+                tris: tris.clone(),
+                bvh: Bvh::build(&verts, &tris),
+                kinds: vec![SurfaceKind::Opaque; tris.len()],
+            });
+            let (c, kept, dropped) = load_compound(path, shell, &exclude_kinds, doors_open)?;
+            println!(
+                "compound: {kept} instances ({dropped} excluded by kind [{}]) · doors {}",
+                exclude_kinds.join(", "),
+                if doors_open { "OPEN" } else { "closed" }
+            );
+            Some(c)
+        }
+        None => None,
+    };
+
     let mut agree = 0usize;
     let mut model_clear_engine_blocked = 0usize;
     let mut model_blocked_engine_clear = 0usize;
@@ -166,6 +224,26 @@ pub fn run_bvh_parity(args: &[String]) -> Result<u8> {
         };
         let hit = if seg_len < 1e-9 {
             None // degenerate pair: zero-length segment occludes nothing
+        } else if let Some(c) = &compound {
+            // Compound: the first opaque crossing (shell or instance) is the block.
+            c.blocked_range(p, q, t_lo, t_hi).then(|| {
+                c.trace_range(p, q, t_lo, t_hi)
+                    .into_iter()
+                    .find(|e| e.kind == SurfaceKind::Opaque)
+                    .map_or(
+                        map_engine_core::bvh::Hit {
+                            t: f64::NAN,
+                            tri: u32::MAX,
+                        },
+                        |e| map_engine_core::bvh::Hit {
+                            t: e.t,
+                            tri: match e.owner {
+                                Owner::Shell => e.tri,
+                                Owner::Instance(i) => 1_000_000 + i as u32,
+                            },
+                        },
+                    )
+            })
         } else {
             bvh.any_hit(&verts, &tris, p, q, t_lo, t_hi)
         };
@@ -222,6 +300,66 @@ pub fn run_bvh_parity(args: &[String]) -> Result<u8> {
         model_blocked_engine_clear,
     );
     Ok(0)
+}
+
+/// Load `<slug>.instances.json` + every BLAS it references (paths relative to the file's
+/// directory) onto `shell`; `exclude_kinds` are lower-camel kind names (`furniture`, `glass`,
+/// …). Returns `(compound, kept, dropped)`.
+pub fn load_compound(
+    instances_path: &Path,
+    shell: Arc<BvhSidecar>,
+    exclude_kinds: &[String],
+    doors_open: bool,
+) -> Result<(CompoundBuilding, usize, usize)> {
+    let file: InstancesFile = serde_json::from_str(
+        &fs::read_to_string(instances_path)
+            .with_context(|| instances_path.display().to_string())?,
+    )
+    .context("parse instances JSON")?;
+    let dir = instances_path.parent().unwrap_or_else(|| Path::new("."));
+    let kind_name = |k: InstanceKind| {
+        serde_json::to_value(k)
+            .ok()
+            .and_then(|v| v.as_str().map(str::to_ascii_lowercase))
+            .unwrap_or_default()
+    };
+    let kept: Vec<InstanceRecord> = file
+        .instances
+        .iter()
+        .filter(|r| !exclude_kinds.contains(&kind_name(r.kind)))
+        .cloned()
+        .collect();
+    let dropped = file.instances.len() - kept.len();
+    let mut blas_by_path: HashMap<String, Arc<BvhSidecar>> = HashMap::new();
+    for r in &kept {
+        if blas_by_path.contains_key(&r.blas) {
+            continue;
+        }
+        // `blas/<stem>.bvh` is relative to the prefabs root (the parent of `buildings/`); a
+        // flat layout beside the instances file is accepted too.
+        let mut path = dir.join(&r.blas);
+        if !path.is_file() {
+            if let Some(parent) = dir.parent() {
+                let up = parent.join(&r.blas);
+                if up.is_file() {
+                    path = up;
+                }
+            }
+        }
+        let bytes = fs::read(&path).with_context(|| path.display().to_string())?;
+        let sc =
+            BvhSidecar::parse(&bytes).with_context(|| format!("parse BLAS {}", path.display()))?;
+        blas_by_path.insert(r.blas.clone(), Arc::new(sc));
+    }
+    let mut c = CompoundBuilding::assemble(shell, &kept, &blas_by_path)
+        .map_err(|e| anyhow::anyhow!("assemble compound: {e}"))?;
+    if doors_open {
+        let ids: Vec<String> = c.doors().map(|d| d.record.id.clone()).collect();
+        for id in ids {
+            c.set_door(&id, DoorState::OPEN);
+        }
+    }
+    Ok((c, kept.len(), dropped))
 }
 
 pub fn run_bvh_emit(args: &[String]) -> Result<u8> {
@@ -339,5 +477,77 @@ mod tests {
         }
         assert_eq!(agree, 400, "sidecar parity drifted (was 100.0%)");
         assert_eq!(phantom, 0, "phantom geometry blocks rays");
+    }
+}
+
+#[cfg(test)]
+mod compound_tests {
+    use super::*;
+    use crate::map_blueprint::tests::fixture;
+
+    /// The T-090.11.4 door-parity pin: the committed shell + every architectural instance
+    /// (doors closed — the editor's `InitialAngle 0`; furniture excluded because the Workbench
+    /// world places the furniture composition beside the building, not under it, so the oracle
+    /// never traced it) replayed against the 4000-pair door-inclusive oracle of T-090.11.3.
+    /// Measured 2026-09-04: 3983/4000 agree; the shell alone scores 3965 with 20
+    /// model-clear/engine-blocked pairs — every one of them a closed door leaf, all recovered
+    /// here (0 left); the 17 model-blocked/engine-clear pairs are 15 the shell already had on
+    /// this larger oracle (roof ridge / eave skims at y ≈ 8.3 m and rays starting inside a
+    /// collider, which `TraceMove` ignores) plus 2 instance-owned ones, both window frames
+    /// (`Socket_Win_110x142_005` with the observer inside its collider at t = 0, and the
+    /// interior `socket_win_130x142_003` at t = 0.065). Re-bless deliberately, old → new in
+    /// the commit message.
+    #[test]
+    fn farmhouse_compound_door_parity_is_pinned() {
+        let root = crate::root::find_repo_root().expect("repo root");
+        let buildings = root.join("packages/map-assets/everon/prefabs/buildings");
+        let shell_bytes = fs::read(buildings.join("FarmHouse_E_1L01_Wood.bvh")).expect("shell");
+        let sc = BvhSidecar::parse(&shell_bytes).expect("shell parses");
+        let shell = Arc::new(BvhSidecar {
+            verts: sc.verts.clone(),
+            tris: sc.tris.clone(),
+            bvh: Bvh::build(&sc.verts, &sc.tris),
+            kinds: sc.kinds.clone(),
+        });
+        let instances = buildings.join("FarmHouse_E_1L01_Wood.instances.json");
+        assert_eq!(
+            fs::read(&instances).expect("instances"),
+            fs::read(fixture("FarmHouse_E_1L01_Wood.instances.golden.json")).expect("golden"),
+            "map-assets instances diverged from the golden fixture — re-emit and re-bless both"
+        );
+        let (c, kept, dropped) =
+            load_compound(&instances, shell, &["furniture".to_string()], false).expect("compound");
+        assert_eq!((kept, dropped), (132, 49));
+        assert_eq!(c.doors().count(), 7);
+        assert!(c.doors().all(|d| d.state == DoorState::Closed));
+
+        let replay = |name: &str| -> (usize, usize, usize, usize) {
+            let oracle: ParityFile =
+                serde_json::from_str(&fs::read_to_string(fixture(name)).expect("oracle"))
+                    .expect("parse oracle");
+            let (mut agree, mut missed, mut phantom) = (0usize, 0usize, 0usize);
+            for &(ox, oy, oz, tx, ty, tz, engine_clear) in &oracle.pairs {
+                let clear = !c.blocked([ox, oy, oz], [tx, ty, tz]);
+                if clear == engine_clear {
+                    agree += 1;
+                } else if clear {
+                    missed += 1;
+                } else {
+                    phantom += 1;
+                }
+            }
+            (oracle.pairs.len(), agree, missed, phantom)
+        };
+        assert_eq!(
+            replay("FarmHouse_E_1L01_Wood_parity_doors.json"),
+            (4000, 3983, 0, 17),
+            "door-inclusive parity drifted (was 3983/4000, 0 missed blocks, 17 phantoms)"
+        );
+        // The T-090.6 oracle (doors and glass excluded) is untouched by the instances.
+        assert_eq!(
+            replay("FarmHouse_E_1L01_Wood_parity.json"),
+            (400, 400, 0, 0),
+            "shell oracle drifted under the compound"
+        );
     }
 }

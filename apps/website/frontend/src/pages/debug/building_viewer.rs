@@ -859,9 +859,14 @@ pub mod geom {
                 // A terminal window / stairs hit is frame or tread MASS, not a pass.
                 LosHitKind::Window | LosHitKind::Stairs if h.concealment >= 1.0 => RAY_BLOCKED,
                 LosHitKind::Furniture if h.concealment >= 1.0 => RAY_BLOCKED,
-                LosHitKind::Window => RAY_GLASS,
-                LosHitKind::Furniture => RAY_COVER,
-                LosHitKind::DoorOpen | LosHitKind::Stairs => color,
+                LosHitKind::Window | LosHitKind::Glass => RAY_GLASS,
+                LosHitKind::Furniture | LosHitKind::Foliage => RAY_COVER,
+                LosHitKind::DoorOpen | LosHitKind::DoorAperture | LosHitKind::Stairs => color,
+                // T-090.11.4 compound terminals (instances are real geometry).
+                LosHitKind::DoorLeaf
+                | LosHitKind::DoorFrame
+                | LosHitKind::WindowFrame
+                | LosHitKind::Prop => RAY_BLOCKED,
             };
         }
         spans.push((t_prev, 1.0, if is_clear { color } else { RAY_BLOCKED }));
@@ -883,10 +888,14 @@ pub mod geom {
             let col = match h.kind {
                 LosHitKind::Wall | LosHitKind::Roof | LosHitKind::Solid => RAY_BLOCKED,
                 LosHitKind::Window | LosHitKind::Stairs if h.concealment >= 1.0 => RAY_BLOCKED,
-                LosHitKind::Window => RAY_GLASS,
-                LosHitKind::DoorOpen => RAY_CLEAR,
-                LosHitKind::Furniture => RAY_COVER,
+                LosHitKind::Window | LosHitKind::Glass => RAY_GLASS,
+                LosHitKind::DoorOpen | LosHitKind::DoorAperture => RAY_CLEAR,
+                LosHitKind::Furniture | LosHitKind::Foliage => RAY_COVER,
                 LosHitKind::Stairs => COL_HATCH,
+                LosHitKind::DoorLeaf
+                | LosHitKind::DoorFrame
+                | LosHitKind::WindowFrame
+                | LosHitKind::Prop => RAY_BLOCKED,
             };
             let c = [h.pos[0], h.pos[2]];
             quad(&mut packed, rect_corners(c, [0.34, 0.34], 45.0), col);

@@ -295,6 +295,21 @@ pub enum LosHitKind {
     Roof,
     /// Structural hit no blueprint feature claims — terminates the ray.
     Solid,
+    // ── T-090.11.4 compound-building events (instances are real geometry) ──
+    /// A glass pane crossed — concealment 0.05, never terminal.
+    Glass,
+    /// A closed (or swung) door leaf stopped the ray.
+    DoorLeaf,
+    /// A door set's frame stopped the ray.
+    DoorFrame,
+    /// The ray passed where an OPEN leaf would hang closed — annotation, concealment 0.
+    DoorAperture,
+    /// A window frame (mullion, sill) stopped the ray.
+    WindowFrame,
+    /// Canopy crossed — concealment `1 − e^(−k·depth)`, never terminal.
+    Foliage,
+    /// An opaque prop (entry, tree trunk, decoration) stopped the ray.
+    Prop,
 }
 
 /// One ordered event along the observer→target ray. `t` is the parametric position on the FULL
@@ -417,7 +432,14 @@ impl BuildingBlueprint {
                 | LosHitKind::DoorOpen
                 | LosHitKind::Stairs
                 | LosHitKind::Roof
-                | LosHitKind::Solid => {}
+                | LosHitKind::Solid
+                | LosHitKind::Glass
+                | LosHitKind::DoorLeaf
+                | LosHitKind::DoorFrame
+                | LosHitKind::DoorAperture
+                | LosHitKind::WindowFrame
+                | LosHitKind::Foliage
+                | LosHitKind::Prop => {}
             }
             result.concealment = result.concealment.max(ev.concealment);
             result.hits.push(ev);
@@ -434,7 +456,7 @@ impl BuildingBlueprint {
     /// it never changes the verdict. Order: the containing level's nearest wall (a window frame
     /// when inside that wall's aperture rect) → roof surface → stairs footprint → furniture
     /// footprint → [`LosHitKind::Solid`].
-    fn attribute_structural_hit(&self, p: [f64; 3]) -> (LosHitKind, String) {
+    pub(crate) fn attribute_structural_hit(&self, p: [f64; 3]) -> (LosHitKind, String) {
         let xz = [p[0], p[2]];
         let last = self.levels.len().saturating_sub(1);
         // Same half-open rule as `clip_t_to_band`: bands own [min, max), the topmost is closed.
