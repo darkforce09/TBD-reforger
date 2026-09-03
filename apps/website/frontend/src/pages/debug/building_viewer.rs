@@ -1398,7 +1398,7 @@ pub mod geom {
                 );
             }
             let bvh = Bvh::build(&verts, &tris);
-            (bp, BvhSidecar { verts, tris, bvh })
+            (bp, BvhSidecar::opaque(verts, tris, bvh))
         }
 
         /// The encoder's contract with the engine lane: GREEN per visible cell, nothing for
@@ -1522,7 +1522,7 @@ pub mod geom {
                 );
             }
             let bvh = Bvh::build(&verts, &tris);
-            BvhSidecar { verts, tris, bvh }
+            BvhSidecar::opaque(verts, tris, bvh)
         }
 
         /// [`box_room`] plus an upper level [3, 6]: upper walls, a ceiling slab y ∈ [2.9, 3.1]

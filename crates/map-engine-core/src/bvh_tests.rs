@@ -383,14 +383,24 @@ fn box_grid() -> Scene {
 /// (bytes, lifted verts, tris, freshly built Bvh) from the emitter pipeline under test.
 type Emitted = (Vec<u8>, Vec<[f64; 3]>, Vec<[u32; 3]>, Bvh);
 
-/// The emitter pipeline under test: quantize → lift → build → emit.
+/// The emitter pipeline under test: quantize → lift → build → emit, every triangle Opaque.
 fn emit_scene(scene: &Scene) -> Emitted {
+    emit_scene_kinds(scene, &vec![SurfaceKind::Opaque; scene.1.len()])
+}
+
+/// Same pipeline with an explicit kinds table.
+fn emit_scene_kinds(scene: &Scene, kinds: &[SurfaceKind]) -> Emitted {
     let (verts, tris) = scene;
     let verts_f32 = quantize_verts(verts);
     let lifted = lift_verts(&verts_f32);
     let bvh = Bvh::build(&lifted, tris);
-    let bytes = emit_bytes(&verts_f32, tris, &bvh);
+    let bytes = emit_bytes(&verts_f32, tris, kinds, &bvh);
     (bytes, lifted, tris.clone(), bvh)
+}
+
+/// Byte length of the padded kinds section for `ntris` triangles (the format's own rule).
+fn kinds_len(ntris: usize) -> usize {
+    ntris.div_ceil(4) * 4
 }
 
 fn hit_key(h: Option<Hit>) -> Option<(u64, u32)> {
@@ -423,9 +433,176 @@ fn sidecar_round_trip_box_grid() {
             hit_key(fresh.any_hit(&lifted, &tris, p, q, 0.0, 1.0)),
         );
     }
+    assert_eq!(sc.kinds, vec![SurfaceKind::Opaque; tris.len()]);
     // Re-emitting the parsed sidecar reproduces the file byte-for-byte.
     let verts_f32 = quantize_verts(&sc.verts);
-    assert_eq!(emit_bytes(&verts_f32, &sc.tris, &sc.bvh), bytes);
+    assert_eq!(emit_bytes(&verts_f32, &sc.tris, &sc.kinds, &sc.bvh), bytes);
+}
+
+/// A version-1 file (no flags, no kinds section) still parses, reads all-Opaque, and
+/// re-emits as the byte-identical version-2 file the same mesh produces today.
+#[test]
+fn v1_sidecar_parses_as_all_opaque_and_upgrades() {
+    let scene = box_grid();
+    let (v2, _, tris, _) = emit_scene(&scene);
+    let mut v1 = v2[..v2.len() - kinds_len(tris.len())].to_vec();
+    v1[4..8].copy_from_slice(&1u32.to_le_bytes());
+    v1[20..24].copy_from_slice(&0u32.to_le_bytes());
+    let sc = BvhSidecar::parse(&v1).expect("v1 bytes parse");
+    assert_eq!(sc.kinds, vec![SurfaceKind::Opaque; tris.len()]);
+    assert_eq!(sc.kind_counts(), (tris.len(), 0, 0));
+    let verts_f32 = quantize_verts(&sc.verts);
+    assert_eq!(emit_bytes(&verts_f32, &sc.tris, &sc.kinds, &sc.bvh), v2);
+    // A v1 header with the kinds flag set is not a v1 file.
+    let mut flagged = v1.clone();
+    flagged[20] = 1;
+    assert_eq!(
+        BvhSidecar::parse(&flagged).unwrap_err(),
+        BvhParseError::NonZeroReserved
+    );
+}
+
+/// Mixed kinds survive the round trip verbatim; unknown codes and dirty padding are
+/// rejected by name.
+#[test]
+fn kinds_round_trip_and_rejections() {
+    use BvhParseError as E;
+    // 9 triangles → 3 padding bytes, so the padding rule is exercised.
+    let (verts, tris) = cube([0.0, 0.0, 0.0], [1.0, 1.0, 1.0]);
+    let scene = (verts, tris[..9].to_vec());
+    let kinds: Vec<SurfaceKind> = (0..9u8)
+        .map(|i| SurfaceKind::from_u8(i % 3).unwrap())
+        .collect();
+    let (bytes, ..) = emit_scene_kinds(&scene, &kinds);
+    let o = offs(&bytes);
+    assert_eq!(bytes.len(), o.kinds + 12);
+    assert!(bytes[o.kinds + 9..].iter().all(|&b| b == 0));
+    let sc = BvhSidecar::parse(&bytes).expect("mixed kinds parse");
+    assert_eq!(sc.kinds, kinds);
+    assert_eq!(sc.kind_counts(), (3, 3, 3));
+    assert_eq!(sc.kind(4), SurfaceKind::Glass);
+    assert_eq!(
+        BvhSidecar::parse(&patch(&bytes, o.kinds + 2, &[3])).unwrap_err(),
+        E::UnknownKind { tri: 2, code: 3 }
+    );
+    assert_eq!(
+        BvhSidecar::parse(&patch(&bytes, o.kinds + 10, &[1])).unwrap_err(),
+        E::KindsPadding
+    );
+    assert_eq!(SurfaceKind::from_u8(SurfaceKind::MAX_CODE + 1), None);
+    assert!(SurfaceKind::Opaque.is_terminal());
+    assert!(!SurfaceKind::Glass.is_terminal() && !SurfaceKind::Foliage.is_terminal());
+}
+
+/// Two cubes stacked along +y: the near one glass, the far one opaque. The filtered
+/// traversals skip the pane without stopping, the plain ones stop on it.
+#[test]
+fn filtered_traversals_skip_non_terminal_kinds() {
+    let scene = concat(&[
+        cube([0.0, 0.0, 0.0], [1.0, 1.0, 1.0]),
+        cube([0.0, 4.0, 0.0], [1.0, 1.0, 1.0]),
+    ]);
+    let (verts, tris) = &scene;
+    let bvh = Bvh::build(verts, tris);
+    let mut kinds = vec![SurfaceKind::Glass; 12];
+    kinds.extend(std::iter::repeat_n(SurfaceKind::Opaque, 12));
+    let p = [0.3, -3.0, -0.2];
+    let q = [0.3, 8.0, -0.2];
+    // Segment parameters of the four face crossings: y = -1, 1, 3, 5 over a span of 11.
+    let t_at = |y: f64| (y + 3.0) / 11.0;
+    let solid = SurfaceKind::is_terminal;
+    let first_all = bvh
+        .first_hit(verts, tris, p, q, 0.0, 1.0)
+        .expect("glass face");
+    assert!((first_all.t - t_at(-1.0)).abs() < 1e-12);
+    let first_solid = bvh
+        .first_hit_where(verts, tris, &kinds, p, q, 0.0, 1.0, solid)
+        .expect("opaque face");
+    assert!((first_solid.t - t_at(3.0)).abs() < 1e-12);
+    assert!(first_solid.tri >= 12);
+    let any_solid = bvh
+        .any_hit_where(verts, tris, &kinds, p, q, 0.0, 1.0, solid)
+        .expect("some opaque face");
+    assert!(any_solid.tri >= 12 && any_solid.t >= t_at(3.0) - 1e-12);
+    let any_glass = bvh
+        .any_hit_where(verts, tris, &kinds, p, q, 0.0, 1.0, |k| {
+            k == SurfaceKind::Glass
+        })
+        .expect("some glass face");
+    assert!(any_glass.tri < 12 && any_glass.t <= t_at(1.0) + 1e-12);
+    // Stop the segment inside the pane's cube: nothing solid, something glass.
+    let q_short = [0.3, 2.0, -0.2];
+    assert!(
+        bvh.any_hit_where(verts, tris, &kinds, p, q_short, 0.0, 1.0, solid)
+            .is_none()
+    );
+    assert!(bvh.any_hit(verts, tris, p, q_short, 0.0, 1.0).is_some());
+    // An explicit all-Opaque table is the empty-table wrapper, bit for bit.
+    let opaque = vec![SurfaceKind::Opaque; tris.len()];
+    let mut rng = Rng(0x5EED_5EED_5EED_5EED);
+    for _ in 0..40 {
+        let a = [
+            rng.coord(-3.0, 3.0),
+            rng.coord(-3.0, 7.0),
+            rng.coord(-3.0, 3.0),
+        ];
+        let b = [
+            rng.coord(-3.0, 3.0),
+            rng.coord(-3.0, 7.0),
+            rng.coord(-3.0, 3.0),
+        ];
+        assert_eq!(
+            hit_key(bvh.first_hit_where(verts, tris, &opaque, a, b, 0.0, 1.0, solid)),
+            hit_key(bvh.first_hit(verts, tris, a, b, 0.0, 1.0)),
+        );
+        assert_eq!(
+            hit_key(bvh.any_hit_where(verts, tris, &opaque, a, b, 0.0, 1.0, solid)),
+            hit_key(bvh.any_hit(verts, tris, a, b, 0.0, 1.0)),
+        );
+    }
+}
+
+/// `all_hits` lists every crossing of three stacked cubes in ascending t, exactly the
+/// brute-force set, and appends after whatever the caller already holds.
+#[test]
+fn all_hits_lists_every_crossing_sorted() {
+    let scene = concat(&[
+        cube([0.0, 0.0, 0.0], [1.0, 1.0, 1.0]),
+        cube([0.0, 4.0, 0.0], [1.0, 1.0, 1.0]),
+        cube([0.0, 8.0, 0.0], [1.0, 1.0, 1.0]),
+    ]);
+    let (verts, tris) = &scene;
+    let bvh = Bvh::build(verts, tris);
+    // Off the face diagonals (x ≠ z in half-extent units) so each face yields ONE triangle.
+    let p = [0.3, -3.0, -0.2];
+    let q = [0.3, 12.0, -0.2];
+    let mut out = vec![Hit { t: -1.0, tri: 99 }];
+    bvh.all_hits(verts, tris, p, q, 0.0, 1.0, &mut out);
+    assert_eq!(out[0], Hit { t: -1.0, tri: 99 }, "prefix untouched");
+    let hits = &out[1..];
+    assert_eq!(hits.len(), 6, "entry + exit per cube: {hits:?}");
+    assert!(hits.windows(2).all(|w| w[0].t < w[1].t), "ascending t");
+    let mut brute: Vec<Hit> = tris
+        .iter()
+        .enumerate()
+        .filter_map(|(i, &[a, b, c])| {
+            segment_hits_tri(
+                p,
+                q,
+                verts[a as usize],
+                verts[b as usize],
+                verts[c as usize],
+            )
+            .filter(|t| (0.0..=1.0).contains(t))
+            .map(|t| Hit { t, tri: i as u32 })
+        })
+        .collect();
+    brute.sort_by(|a, b| a.t.total_cmp(&b.t).then(a.tri.cmp(&b.tri)));
+    assert_eq!(hits, brute.as_slice());
+    // The window clips: stop inside the middle cube → 3 crossings.
+    let mut short = Vec::new();
+    bvh.all_hits(verts, tris, p, [0.3, 4.0, -0.2], 0.0, 1.0, &mut short);
+    assert_eq!(short.len(), 3);
 }
 
 #[test]
@@ -440,9 +617,18 @@ fn double_emit_is_byte_identical() {
 fn emitted_size_matches_formula() {
     let scene = box_grid();
     let (bytes, _, tris, bvh) = emit_scene(&scene);
-    let expected =
-        32 + scene.0.len() * 12 + tris.len() * 12 + bvh.node_count() * 32 + tris.len() * 4;
+    let expected = 32
+        + scene.0.len() * 12
+        + tris.len() * 12
+        + bvh.node_count() * 32
+        + tris.len() * 4
+        + kinds_len(tris.len());
     assert_eq!(bytes.len(), expected);
+    assert_eq!(u32::from_le_bytes(bytes[4..8].try_into().unwrap()), 2);
+    assert_eq!(
+        u32::from_le_bytes(bytes[20..24].try_into().unwrap()),
+        FLAG_KINDS
+    );
 }
 
 #[test]
@@ -474,6 +660,7 @@ struct Offs {
     tris: usize,
     nodes: usize,
     order: usize,
+    kinds: usize,
     nverts: u32,
     ntris: u32,
 }
@@ -486,11 +673,13 @@ fn offs(bytes: &[u8]) -> Offs {
     let tris = verts + nverts as usize * 12;
     let nodes = tris + ntris as usize * 12;
     let order = nodes + nnodes as usize * 32;
+    let kinds = order + ntris as usize * 4;
     Offs {
         verts,
         tris,
         nodes,
         order,
+        kinds,
         nverts,
         ntris,
     }
@@ -518,11 +707,24 @@ fn parse_rejects_malformed_bytes() {
         E::BadMagic(*b"XBVH")
     );
     assert_eq!(
-        BvhSidecar::parse(&patch(&base, 4, &2u32.to_le_bytes())).unwrap_err(),
-        E::UnsupportedVersion(2)
+        BvhSidecar::parse(&patch(&base, 4, &3u32.to_le_bytes())).unwrap_err(),
+        E::UnsupportedVersion(3)
     );
     assert_eq!(
-        BvhSidecar::parse(&patch(&base, 20, &[1])).unwrap_err(),
+        BvhSidecar::parse(&patch(&base, 4, &0u32.to_le_bytes())).unwrap_err(),
+        E::UnsupportedVersion(0)
+    );
+    // Flags: an unknown bit; reserved: either of the two trailing header words.
+    assert_eq!(
+        BvhSidecar::parse(&patch(&base, 21, &[1])).unwrap_err(),
+        E::NonZeroReserved
+    );
+    assert_eq!(
+        BvhSidecar::parse(&patch(&base, 24, &[1])).unwrap_err(),
+        E::NonZeroReserved
+    );
+    assert_eq!(
+        BvhSidecar::parse(&patch(&base, 31, &[1])).unwrap_err(),
         E::NonZeroReserved
     );
     // Counts are judged before the length equation, so a zeroed count reads as an
@@ -586,7 +788,8 @@ fn craft(nodes: Vec<BvhNode>, ntris: u32) -> Vec<u8> {
     let verts_f32 = vec![[0.0f32; 3], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]];
     let tris = vec![[0u32, 1, 2]; ntris as usize];
     let tri_order: Vec<u32> = (0..ntris).collect();
-    emit_bytes(&verts_f32, &tris, &Bvh { nodes, tri_order })
+    let kinds = vec![SurfaceKind::Opaque; ntris as usize];
+    emit_bytes(&verts_f32, &tris, &kinds, &Bvh { nodes, tri_order })
 }
 
 fn leaf(first: u32, count: u32) -> BvhNode {

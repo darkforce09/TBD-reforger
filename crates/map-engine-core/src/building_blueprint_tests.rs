@@ -191,7 +191,7 @@ pub(crate) fn room_sidecar(extra: &[Scene]) -> BvhSidecar {
     scenes.extend_from_slice(extra);
     let (verts, tris) = concat(&scenes);
     let bvh = Bvh::build(&verts, &tris);
-    BvhSidecar { verts, tris, bvh }
+    BvhSidecar::opaque(verts, tris, bvh)
 }
 
 fn room() -> (BuildingBlueprint, BvhSidecar) {

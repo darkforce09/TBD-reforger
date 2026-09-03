@@ -16,7 +16,9 @@ use std::io::Write as _;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result, bail};
-use map_engine_core::bvh::{Bvh, BvhSidecar, dot, emit_bytes, lift_verts, quantize_verts, sub};
+use map_engine_core::bvh::{
+    Bvh, BvhSidecar, SurfaceKind, dot, emit_bytes, lift_verts, quantize_verts, sub,
+};
 
 use super::xob;
 use crate::map_parity_report::ParityFile;
@@ -129,8 +131,9 @@ pub fn run_bvh_parity(args: &[String]) -> Result<u8> {
                 fs::read(&sidecar_path).with_context(|| sidecar_path.display().to_string())?;
             let sc = BvhSidecar::parse(&bytes)
                 .with_context(|| format!("parse sidecar {}", sidecar_path.display()))?;
+            let (opaque, glass, foliage) = sc.kind_counts();
             println!(
-                "sidecar: {} verts · {} tris · {} bvh nodes · {} bytes",
+                "sidecar: {} verts · {} tris · {} bvh nodes · {} bytes · kinds opaque {opaque} / glass {glass} / foliage {foliage}",
                 sc.verts.len(),
                 sc.tris.len(),
                 sc.bvh.node_count(),
@@ -267,7 +270,10 @@ pub fn run_bvh_emit(args: &[String]) -> Result<u8> {
     }
     let lifted = lift_verts(&verts_f32);
     let bvh = Bvh::build(&lifted, &parsed.tris);
-    let out_bytes = emit_bytes(&verts_f32, &parsed.tris, &bvh);
+    // Every COLL triangle is Opaque on this lane (the shell); T-090.11.2's batch emitter is
+    // the one that reads game materials and tags glass / foliage.
+    let kinds = vec![SurfaceKind::Opaque; parsed.tris.len()];
+    let out_bytes = emit_bytes(&verts_f32, &parsed.tris, &kinds, &bvh);
     BvhSidecar::parse(&out_bytes).context("emitted sidecar failed its own parse self-check")?;
 
     fs::create_dir_all(&out_dir).with_context(|| out_dir.display().to_string())?;
