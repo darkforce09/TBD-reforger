@@ -4,12 +4,3 @@
 # Developer Queue
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
-
-## T-090 — Map visualization program
-
-- **Active slice:** `T-090.11`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
-- **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
-- **Branch:** `ticket/T-090`
-- **Targets:** 
-- **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.

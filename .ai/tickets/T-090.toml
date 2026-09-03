@@ -56,7 +56,6 @@ children = [
     "T-090.11.5",
     "T-090.11.6",
 ]
-active = "T-090.11"
 main_goal = "T-090 / T-091 — Map & terrain program (hub). Mission Creator shows Everon cartography in the editor. Active: T-090.11 (architectural interiors — material-aware BVH, portals, glazing, prop BLAS/TLAS). Single lane."
 acceptance = [
     "Automated sign-off @ T-091.0: cargo xtask ci verify-terrain-strict exit 0.",

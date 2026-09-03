@@ -157,7 +157,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-934**
 
-**ACTIVE NOW:** **T-090** — T-090.11 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`.
+**ACTIVE NOW:** **T-154** — T-154.1 (Rust/wgpu 3D arsenal doll (T-151-adjacent 3D pipeline spike)). Slice spec: `docs/specs/Mission_Creator_Architecture/t154_1_doll_polish.md`.
 
 **Next (by order):**
 - **T-090** — Map visualization program (`ready`)

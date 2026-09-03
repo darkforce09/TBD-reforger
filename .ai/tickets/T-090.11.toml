@@ -3,7 +3,7 @@ kind = "work"
 title = "T-090.11 — Architectural interiors: SurfaceKind BVH, portals, glazing, props"
 summary = "Umbrella for six slices: SurfaceKind sidecar v2 + multi-hit BVH, offline pak/.et/XOB pipeline with per-XOB BLAS + instance records, Workbench recon/door-parity oracle, compound building with hinge DoorState and glass/foliage LOS, dedicated Interior* lanes, debug-viewer bench."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
 plan = "docs/plans/t-090_11_plan.md"
@@ -31,8 +31,11 @@ acceptance = [
     "Viewer: closed door blocks the ray and the wash; open door lets both through the aperture; glass pane is traversed with 5% concealment; a window frame blocks; trees attenuate by canopy depth.",
     "No terrain lane receives building geometry in the viewer.",
 ]
-owns = ["docs/plans/t-090_11_plan.md"]
+shipped_at = "e37c1dd5e"
 created_at = "2026-09-03T14:49:12Z"
+completed_at = "2026-09-03T23:12:41Z"
+estimated = ["tokens"]
+owns = ["docs/plans/t-090_11_plan.md"]
 
 [scope]
 domain = "engine"
