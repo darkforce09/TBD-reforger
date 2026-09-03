@@ -10,6 +10,9 @@ pub mod contours;
 pub mod density_island;
 pub mod forest_mass;
 pub mod polyline_strip;
+/// T-090.11 — rigid transforms (quaternion / Enfusion Euler → matrix, compose, inverse) for
+/// the building-local instance tree.
+pub mod rigid;
 pub mod sea_band;
 pub mod tbdd;
 pub mod triangulate;

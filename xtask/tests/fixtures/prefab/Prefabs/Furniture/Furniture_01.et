@@ -1,0 +1,23 @@
+GenericEntity : "{5000000000000002}Prefabs/Core/Furniture_base.et" {
+ ID "5000000000000003"
+ {
+  GenericEntity : "{6000000000000001}Prefabs/Props/Table.et" {
+   ID "T1"
+   coords 1.035 0.28 -7.666
+   angles 0 91.667 0
+  }
+  $grp GenericEntity : "{6000000000000002}Prefabs/Props/Chair.et" {
+   {
+    ID "C1"
+    coords 0.658 0.28 -7.691
+    angles 0 86.9 0
+   }
+   {
+    ID "C2"
+    coords 4.518 3.664 0.434
+    angles 88.816 -180 96.7
+    scale 1.152
+   }
+  }
+ }
+}

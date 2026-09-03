@@ -1,0 +1,18 @@
+GenericEntity : "{4000000000000030}Prefabs/Windows/Glass_Base.et" {
+ ID "4000000000000031"
+ components {
+  MeshObject "{4000000000000032}" {
+   Object "{4000000000000033}Assets/Windows/Glass_01.xob"
+  }
+  RigidBody "{4000000000000034}" {
+   ResponseIndex "TinyDestructible"
+  }
+  SCR_DestructionMultiPhaseComponent "{4000000000000035}" {
+   m_aDamagePhases {
+    SCR_DamagePhaseData "{4000000000000036}" {
+     m_PhaseModel "{4000000000000037}Assets/Windows/Glass_01_dst.xob"
+    }
+   }
+  }
+ }
+}

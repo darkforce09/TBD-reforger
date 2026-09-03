@@ -1,0 +1,27 @@
+GenericEntity {
+ components {
+  DoorComponent "{3000000000000030}" {
+   DoorAction SCR_DoorUserAction "{3000000000000031}" {
+    ParentContextList {
+     "SCR_DoorUserAction"
+    }
+   }
+   SoundFilename "{3000000000000032}Sounds/door.acp"
+   DoorAnimationType WholeEntity
+  }
+  MeshObject "{3000000000000033}" {
+   LODFactors {
+    20 5 1 1 1
+   }
+   PixelSizeScale 10
+  }
+  RigidBody "{3000000000000034}" {
+   ResponseIndex "Normal"
+   ModelGeometry 1
+   Static 1
+   Kinematic 1
+  }
+  Hierarchy "{3000000000000035}" {
+  }
+ }
+}

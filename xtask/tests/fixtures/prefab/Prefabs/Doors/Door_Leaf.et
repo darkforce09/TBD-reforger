@@ -1,0 +1,19 @@
+GenericEntity : "{3000000000000036}Prefabs/Doors/Door_Base.et" {
+ ID "3000000000000037"
+ components {
+  DoorComponent "{3000000000000030}" {
+   SoundPoints {
+    SoundPointEventInfo "{3000000000000038}" {
+     Offset 1.2063 1.0073 0
+     Event SOUND_OPEN_FINISH
+    }
+   }
+   AngleRange -120
+   ClosedAngle 0
+   InitialAngle 0
+  }
+  MeshObject "{3000000000000033}" {
+   Object "{3000000000000039}Assets/Doors/Door_Leaf.xob"
+  }
+ }
+}

@@ -1,0 +1,67 @@
+SCR_DestructibleBuildingEntity : "{2000000000000001}Prefabs/Core/Building_Base.et" {
+ ID "0000000000000002"
+ components {
+  MeshObject "{1000000000000001}" {
+   Object "{2000000000000002}Assets/Houses/House.xob"
+  }
+  SCR_DestructibleBuildingComponent "{2000000000000003}" : "{2000000000000004}Prefabs/Core/Destructible.ct" {
+   m_aInteriorQueryBoundingBoxes {
+    SCR_InteriorBoundingBox "{2000000000000005}" {
+     m_vCenter PointInfo "{2000000000000006}" {
+      Offset 1.4871 1.8286 1.0105
+     }
+     m_vScale 7.5 13 20
+    }
+   }
+  }
+ }
+ SlotBoneMappings {
+  SlotBoneMappingObject "{2000000000000007}" {
+   BonePrefix "socket_door_left"
+   Prefab "{3000000000000001}Prefabs/Doors/DoorSet.et"
+  }
+  SlotBoneMappingObject "{2000000000000008}" {
+   BonePrefix "socket_win"
+   Prefab "{4000000000000001}Prefabs/Windows/Window.et"
+  }
+ }
+ {
+  GenericEntity : "{3000000000000001}Prefabs/Doors/DoorSet.et" {
+   ID "2000000000000010"
+   components {
+    Hierarchy "{2000000000000011}" {
+     PivotID "socket_door_left_01"
+    }
+   }
+   coords 0 0 -0.1
+  }
+  $grp Building : "{4000000000000001}Prefabs/Windows/Window.et" {
+   {
+    ID "2000000000000012"
+    components {
+     Hierarchy "{2000000000000013}" {
+      Enabled 1
+      PivotID "socket_win_01"
+      AutoTransform 1
+     }
+    }
+    coords 0 0 0
+   }
+   {
+    ID "2000000000000014"
+    components {
+     Hierarchy "{2000000000000013}" {
+      Enabled 1
+      PivotID "socket_win_02"
+      AutoTransform 1
+     }
+    }
+    coords 0 0 0
+   }
+  }
+  GameEnvironmentProbeEntity : "{2000000000000015}Prefabs/Core/Probe.et" {
+   ID "2000000000000016"
+   coords 2.655 2.289 4.876
+  }
+ }
+}

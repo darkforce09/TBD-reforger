@@ -10,24 +10,33 @@
 //!         [--params <file.json>] [--debug-dir <dir>]`
 //! Exit: 0 = every matched dump interpreted and validated · 1 = no match or any failure.
 
+mod batch;
 mod bvh;
 mod emit;
+mod hull;
+mod inspect;
 mod march;
 mod mesh;
 mod pair;
+mod pak;
 mod params;
 mod parse;
 mod plate;
+mod prefab;
 mod rings;
 mod roof;
 mod slabs;
+mod surface_kind;
 #[cfg(test)]
 mod synth;
 mod types;
 mod walls;
 mod xob;
+mod xob_nodes;
 
+pub use batch::run_bvh_batch;
 pub use bvh::{run_bvh_emit, run_bvh_parity};
+pub use inspect::run_xob_inspect;
 pub use mesh::run_voxels_from_mesh;
 
 use std::path::PathBuf;

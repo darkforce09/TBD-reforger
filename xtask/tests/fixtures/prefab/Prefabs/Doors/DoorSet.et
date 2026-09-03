@@ -1,0 +1,18 @@
+GenericEntity : "{3000000000000013}Prefabs/Doors/DoorSet_Base.et" {
+ ID "3000000000000014"
+ components {
+  MeshObject "{3000000000000010}" {
+   Object "{3000000000000015}Assets/Doors/DoorFrame.xob"
+  }
+ }
+ {
+  GenericEntity : "{3000000000000020}Prefabs/Doors/Door_Leaf.et" {
+   ID "3000000000000021"
+   components {
+    Hierarchy "{3000000000000012}" {
+     PivotID "socket_door_LEFT"
+    }
+   }
+  }
+ }
+}

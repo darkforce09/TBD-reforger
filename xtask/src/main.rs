@@ -525,6 +525,25 @@ enum MapCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
+    /// T-090.11.2 — walk a building prefab's closure straight out of the game paks: the
+    /// shell sidecar (v2, kinds from COLL game materials), one BLAS per child model under
+    /// prefabs/blas/, and `<slug>.instances.json` (--prefab <Prefabs/…/X.et> [--slug <s>]
+    /// [--out <dir>] [--paks <dir>] [--extract <dir>] [--scene <spec.json>]
+    /// [--kind <record>=<kind>]… [--dry-run]).
+    #[command(name = "bvh-batch")]
+    BvhBatch {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// T-090.11.2 — print what the XOB decoder sees: string table, node records + sockets,
+    /// COLL records with layer preset and per-material triangle runs, kinds histogram
+    /// (<file.xob | in-pak path> [--paks <dir>] [--extract <dir>] [--strings]
+    /// [--kind <record>=<kind>]…).
+    #[command(name = "xob-inspect")]
+    XobInspect {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -1179,6 +1198,8 @@ fn run() -> Result<u8> {
             MapCmd::VoxelsFromMesh { args } => map_blueprint::run_voxels_from_mesh(&args),
             MapCmd::BvhParity { args } => map_blueprint::run_bvh_parity(&args),
             MapCmd::BvhEmit { args } => map_blueprint::run_bvh_emit(&args),
+            MapCmd::BvhBatch { args } => map_blueprint::run_bvh_batch(&args),
+            MapCmd::XobInspect { args } => map_blueprint::run_xob_inspect(&args),
         },
         TopCmd::Verify { cmd } => {
             let code = match cmd {

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tbd.example/schema/building-instances.schema.json",
+  "title": "TBD Building Instances",
+  "description": "T-090.11 — the placed BLAS instances of one building prefab (`<slug>.instances.json`, beside the blueprint JSON and the shell `.bvh`): every child entity the prefab slots into the building (door leaves and frames, window frames, glass panes, furniture, props) or a scene places around it (trees), each with its own `.bvh` sidecar under `blas/` and a rigid transform in the building's local frame (Enfusion x, y up, z; metres; rotation as a unit quaternion [x, y, z, w]). Emitted by `cargo xtask map bvh-batch`; the Rust source of truth is `map_engine_core::building_compound`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "prefabId", "resourceName", "shellBvh", "instances"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0.0" },
+    "prefabId": { "type": "string", "minLength": 1 },
+    "resourceName": { "type": "string", "minLength": 1 },
+    "shellBvh": { "type": "string" },
+    "instances": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/instance" }
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "vec3": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "quat": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "localTransform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pos", "quat"],
+      "properties": {
+        "pos": { "$ref": "#/$defs/vec3" },
+        "quat": { "$ref": "#/$defs/quat" },
+        "scale": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "door": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["angleRangeDeg", "closedAngleDeg", "initialAngleDeg"],
+      "properties": {
+        "angleRangeDeg": { "type": "number" },
+        "closedAngleDeg": { "type": "number" },
+        "initialAngleDeg": { "type": "number" },
+        "angleRangeExplicit": { "type": "boolean" },
+        "openedDistance": { "type": "number" }
+      }
+    },
+    "instance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "prefab", "blas", "local", "cover", "source"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": {
+          "type": "string",
+          "enum": ["shell", "doorLeaf", "doorFrame", "windowFrame", "glass", "furniture", "tree", "treeCanopy", "prop"]
+        },
+        "prefab": { "type": "string" },
+        "blas": { "type": "string", "minLength": 1 },
+        "xob": { "type": "string" },
+        "local": { "$ref": "#/$defs/localTransform" },
+        "door": { "$ref": "#/$defs/door" },
+        "cover": { "type": "string", "enum": ["full", "low", "none"] },
+        "source": { "type": "string", "enum": ["xobSocket", "recon", "prefabCoords", "scene"] },
+        "parent": { "type": "string" }
+      }
+    }
+  }
+}

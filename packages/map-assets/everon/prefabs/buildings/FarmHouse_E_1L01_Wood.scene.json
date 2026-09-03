@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": "FarmHouse_E_1L01_Wood",
+  "resourceName": "Prefabs/Structures/Houses/Farm/FarmHouse_E_1L01/FarmHouse_E_1L01_Wood.et",
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "tree_nw",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_3s.et",
+      "blas": "blas/t_picea_abies_3s.bvh",
+      "xob": "Assets/Vegetation/Tree/Picea_Abies/t_picea_abies_3s.xob",
+      "local": {
+        "pos": [
+          -15.5,
+          0.0,
+          -3.0
+        ],
+        "quat": [
+          0.0,
+          0.3007057995042731,
+          0.0,
+          0.9537169507482269
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "scene"
+    },
+    {
+      "id": "tree_e",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_3s.et",
+      "blas": "blas/t_picea_abies_3s.bvh",
+      "xob": "Assets/Vegetation/Tree/Picea_Abies/t_picea_abies_3s.xob",
+      "local": {
+        "pos": [
+          10.5,
+          0.0,
+          2.5
+        ],
+        "quat": [
+          0.0,
+          -0.8660254037844385,
+          0.0,
+          0.5000000000000001
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "scene"
+    },
+    {
+      "id": "tree_n",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_3s.et",
+      "blas": "blas/t_picea_abies_3s.bvh",
+      "xob": "Assets/Vegetation/Tree/Picea_Abies/t_picea_abies_3s.xob",
+      "local": {
+        "pos": [
+          -1.5,
+          0.0,
+          17.5
+        ],
+        "quat": [
+          -0.0,
+          -0.984807753012208,
+          -0.0,
+          0.17364817766693033
+        ],
+        "scale": 0.9
+      },
+      "cover": "full",
+      "source": "scene"
+    },
+    {
+      "id": "tree_se",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_2s.et",
+      "blas": "blas/t_picea_abies_2s.bvh",
+      "xob": "Assets/Vegetation/Tree/Picea_Abies/t_picea_abies_2s.xob",
+      "local": {
+        "pos": [
+          8.5,
+          0.0,
+          -13.0
+        ],
+        "quat": [
+          0.0,
+          0.6427876096865393,
+          0.0,
+          0.7660444431189781
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "scene"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **T-090.5.5 shipped** @ `2b1a0dda` · **Active:** **T-090.6** (geometry placement audit). Single lane.  
+**Status:** **T-090.5.5 shipped** @ `2b1a0dda` · **Active:** **T-090.11** (architectural interiors — SurfaceKind BVH, portals, glazing, prop BLAS/TLAS; the T-090.6 3D-occlusion lane is shipped). Single lane.  
 **Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](../../../.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · **LOD v2:** [`t090_render_lod_contract.md`](t090_render_lod_contract.md)  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  

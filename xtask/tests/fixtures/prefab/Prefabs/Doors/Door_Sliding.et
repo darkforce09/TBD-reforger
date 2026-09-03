@@ -1,0 +1,20 @@
+GenericEntity : "{3000000000000036}Prefabs/Doors/Door_Base.et" {
+ ID "3000000000000050"
+ components {
+  DoorComponent "{3000000000000030}" {
+   Enabled 0
+   TestContacts 1
+   TestCollider "UBX_door001"
+  }
+  MeshObject "{3000000000000033}" {
+   Object "{3000000000000051}Assets/Doors/Door_Barn.xob"
+  }
+  SlidingDoorComponent "{3000000000000052}" {
+   OpenTime 1.5
+   AnimationCurveType Custom
+   AnimationCurveParams 0.25 0.5
+   AngleRange 131
+   OpenedDistance 2.05
+  }
+ }
+}

@@ -1,0 +1,40 @@
+Building : "{4000000000000002}Prefabs/Windows/Window_Base.et" {
+ ID "4000000000000003"
+ components {
+  MeshObject "{4000000000000004}" {
+   Object "{4000000000000005}Assets/Windows/Win.xob"
+  }
+ }
+ SlotBoneMappings {
+  SlotBoneMappingObject "{4000000000000006}" {
+   BonePrefix "socket_glass"
+   Prefab "{4000000000000010}Prefabs/Windows/Glass.et"
+  }
+ }
+ {
+  $grp GenericEntity : "{4000000000000010}Prefabs/Windows/Glass.et" {
+   {
+    ID "4000000000000011"
+    components {
+     Hierarchy "{4000000000000012}" {
+      Enabled 1
+      PivotID "socket_glass_001"
+      AutoTransform 1
+     }
+    }
+    coords 0 0 0
+   }
+   {
+    ID "4000000000000013"
+    components {
+     Hierarchy "{4000000000000012}" {
+      Enabled 1
+      PivotID "socket_glass_002"
+      AutoTransform 1
+     }
+    }
+    coords 0 0 0
+   }
+  }
+ }
+}

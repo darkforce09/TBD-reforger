@@ -1,0 +1,13 @@
+Building {
+ components {
+  MeshObject "{4000000000000004}" {
+   Object "{A4048C2AA75EF832}Common/Models/Default.xob"
+  }
+  RigidBody "{4000000000000020}" {
+   ModelGeometry 1
+   Static 1
+  }
+  Hierarchy "{4000000000000021}" {
+  }
+ }
+}

@@ -1,0 +1,9 @@
+{
+  "$comment": "T-090.11 hand-placed scene roots around FarmHouse_E_1L01_Wood (building-local metres, y up, angles [pitch, yaw, roll] deg). Input to `cargo xtask map bvh-batch --scene`; the emitted document is buildings/FarmHouse_E_1L01_Wood.scene.json. Footprint bbox x -9.72..5.28, z -8.83..11.17.",
+  "entries": [
+    { "id": "tree_nw", "prefab": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_3s.et", "pos": [-15.5, 0.0, -3.0], "anglesDeg": [0.0, 35.0, 0.0] },
+    { "id": "tree_e", "prefab": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_3s.et", "pos": [10.5, 0.0, 2.5], "anglesDeg": [0.0, -120.0, 0.0] },
+    { "id": "tree_n", "prefab": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_3s.et", "pos": [-1.5, 0.0, 17.5], "anglesDeg": [0.0, 200.0, 0.0], "scale": 0.9 },
+    { "id": "tree_se", "prefab": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_2s.et", "pos": [8.5, 0.0, -13.0], "anglesDeg": [0.0, 80.0, 0.0] }
+  ]
+}

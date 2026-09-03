@@ -1,0 +1,19 @@
+SCR_DestructibleBuildingEntity : "{2000000000000009}Prefabs/Houses/House_Base.et" {
+ ID "0000000000000002"
+ components {
+  MeshObject "{1000000000000001}" {
+   Materials {
+    MaterialAssignClass "{2000000000000020}" {
+     SourceMaterial "House_Ext1"
+     AssignedMaterial "{2000000000000021}Assets/Houses/Data/House_Ext1_wood.emat"
+    }
+   }
+  }
+ }
+ {
+  GenericEntity : "{5000000000000001}Prefabs/Furniture/Furniture_01.et" {
+   ID "F1"
+   coords 0 0 0
+  }
+ }
+}

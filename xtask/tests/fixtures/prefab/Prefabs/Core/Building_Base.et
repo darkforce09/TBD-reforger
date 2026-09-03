@@ -1,0 +1,16 @@
+SCR_DestructibleBuildingEntity {
+ ID "0000000000000001"
+ components {
+  MeshObject "{1000000000000001}" {
+   Object "{A4048C2AA75EF832}Common/Models/Default.xob"
+   PixelSizeScale 10
+  }
+  RigidBody "{1000000000000002}" {
+   ModelGeometry 1
+   Static 1
+  }
+  Hierarchy "{1000000000000003}" {
+  }
+ }
+ Flags 0x403 0
+}

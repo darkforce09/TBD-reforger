@@ -1,0 +1,14 @@
+GenericEntity : "{6000000000000010}Prefabs/Core/Prop_Base.et" {
+ ID "6000000000000011"
+ components {
+  MeshObject "{6000000000000012}" {
+   Object "{6000000000000013}Assets/Props/Table.xob"
+  }
+  RigidBody "{6000000000000014}" {
+   ResponseIndex "TinyDestructible"
+   ModelGeometry 1
+   Static 1
+  }
+ }
+ coords 0 0 0
+}

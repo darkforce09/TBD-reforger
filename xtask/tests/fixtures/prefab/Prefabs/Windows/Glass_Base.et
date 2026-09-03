@@ -1,0 +1,21 @@
+GenericEntity {
+ components {
+  MeshObject "{4000000000000032}" {
+   Object "{A4048C2AA75EF832}Common/Models/Default.xob"
+   CastShadow 0
+  }
+  SCR_DestructionMultiPhaseComponent "{4000000000000035}" : "{4000000000000038}Prefabs/Core/Destruction.ct" {
+   Enabled 1
+   "Additional hit zones" {
+    SCR_WindowHitZone Default {
+     "Kinetic multiplier" 4
+    }
+   }
+   m_fBaseHealth 1
+   m_eMaterialSoundType BREAK_GLASS_PANE
+  }
+  Hierarchy "{4000000000000039}" {
+  }
+ }
+ Flags 0x403 0
+}

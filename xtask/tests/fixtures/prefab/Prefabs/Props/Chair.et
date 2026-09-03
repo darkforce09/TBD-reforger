@@ -1,0 +1,8 @@
+GenericEntity : "{6000000000000010}Prefabs/Core/Prop_Base.et" {
+ ID "6000000000000020"
+ components {
+  MeshObject "{6000000000000012}" {
+   Object "{6000000000000021}Assets/Props/Chair.xob"
+  }
+ }
+}

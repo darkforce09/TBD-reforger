@@ -1,0 +1,14 @@
+GenericEntity {
+ components {
+  MeshObject "{3000000000000010}" {
+   Object "{A4048C2AA75EF832}Common/Models/Default.xob"
+   PixelSizeScale 10
+  }
+  RigidBody "{3000000000000011}" {
+   ModelGeometry 1
+   Static 1
+  }
+  Hierarchy "{3000000000000012}" {
+  }
+ }
+}

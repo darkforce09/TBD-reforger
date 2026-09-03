@@ -1,0 +1,8 @@
+GenericEntity : "{3000000000000036}Prefabs/Doors/Door_Base.et" {
+ ID "3000000000000040"
+ components {
+  MeshObject "{3000000000000033}" {
+   Object "{3000000000000041}Assets/Doors/Door_Plain.xob"
+  }
+ }
+}
