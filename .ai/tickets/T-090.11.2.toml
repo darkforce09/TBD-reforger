@@ -3,13 +3,13 @@ kind = "work"
 title = "T-090.11.2 — Offline pipeline: pak, prefabs, XOB nodes, bvh-batch"
 summary = "Rust PAC1 pak reader; .et grammar + inheritance resolver; XOB HEAD node/socket table + COLL subrange -> gamemat; xob-inspect; SurfaceKind from gamemat; bvh-batch emits one v2 BLAS per XOB plus <slug>.instances.json; farmhouse closure committed."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
 plan = "docs/plans/t-090_11_2_plan.md"
 executor = "claude-code"
-parent = "T-090"
 depends_on = ["T-090.11.1"]
+parent = "T-090"
 main_goal = "Every entity of a building prefab (shell, door sets, window sets, glass panes, furniture, scene trees) becomes a BLAS + a placed instance record, engine-free, straight from the game paks."
 context = [
     "Plan of record: ~/.claude/plans/implementation-plan-tender-seahorse.md (operator-approved 2026-09-03); Cursor authors docs/specs/Mission_Creator_Architecture/t090_11_architectural_interiors.md from it.",
@@ -30,6 +30,10 @@ acceptance = [
     "xob-inspect on the farmhouse resolves COLL record 0's 9 subranges to tiles_ceramic, wood, concrete, carpet, tiles, metal, stone, wood_floor, brick covering all 1129 tris; record 1 to metal_sheet / tiles_roof; 25 socket names decoded.",
     "Shell sidecar re-emitted with real kinds keeps 400/400 phantom 0; instances JSON validates against building-instances.schema.json.",
 ]
+shipped_at = "40053cbaa"
+created_at = "2026-09-03T14:49:12Z"
+completed_at = "2026-09-03T19:04:34Z"
+estimated = ["tokens"]
 owns = [
     "xtask/src/map_blueprint",
     "xtask/src/main.rs",
@@ -38,7 +42,6 @@ owns = [
     "packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.instances.json",
     "packages/tbd-schema/schema/building-instances.schema.json",
 ]
-created_at = "2026-09-03T14:49:12Z"
 
 [scope]
 domain = "repo"

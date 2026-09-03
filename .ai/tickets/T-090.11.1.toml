@@ -3,7 +3,7 @@ kind = "work"
 title = "T-090.11.1 — SurfaceKind, sidecar v2, multi-hit BVH traversal"
 summary = "SurfaceKind {Opaque, Glass, Foliage} per triangle; sidecar v2 (kinds section + flags word, v1 still parses); any_hit_where / first_hit_where / all_hits; goldens re-blessed with pins 400/400 phantom 0 kept."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
 plan = "docs/plans/t-090_11_1_plan.md"
@@ -26,6 +26,10 @@ acceptance = [
     "v2 round-trips byte-identically; v1 bytes still parse; malformed kinds rejected.",
     "Both farmhouse pins stay 400/400 phantom 0; sidecar shape (3170, 4012, 1521) unchanged.",
 ]
+shipped_at = "a668ac19f"
+created_at = "2026-09-03T14:49:12Z"
+completed_at = "2026-09-03T19:04:22Z"
+estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/bvh.rs",
     "crates/map-engine-core/src/bvh_tests.rs",
@@ -33,7 +37,6 @@ owns = [
     "xtask/tests/fixtures/FarmHouse_E_1L01_Wood.bvh.golden",
     "packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.bvh",
 ]
-created_at = "2026-09-03T14:49:12Z"
 
 [scope]
 domain = "engine"

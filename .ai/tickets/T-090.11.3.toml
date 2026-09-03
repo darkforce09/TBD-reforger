@@ -3,13 +3,13 @@ kind = "work"
 title = "T-090.11.3 — Workbench oracle: recon children, door-inclusive parity"
 summary = "Recon dump records localPos/anglesDeg/pivotId/meshPath/DoorComponent params per child; parity sampling with doors + glass included (closed); instances-verify pins every xobSocket transform within 2 cm / 1 deg with recon as fallback; rotation-order test."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
 plan = "docs/plans/t-090_11_3_plan.md"
 executor = "claude-code"
-parent = "T-090"
 depends_on = ["T-090.11.2"]
+parent = "T-090"
 main_goal = "The offline socket/placement decode is proved against the engine, and a door-inclusive LOS oracle exists for the compound model."
 context = [
     "Plan of record: ~/.claude/plans/implementation-plan-tender-seahorse.md (operator-approved 2026-09-03); Cursor authors docs/specs/Mission_Creator_Architecture/t090_11_architectural_interiors.md from it.",
@@ -30,13 +30,16 @@ acceptance = [
     "All 25 farmhouse sockets match recon within tolerance (or the mismatch table is in the commit body and instances fall back to recon).",
     "FarmHouse_E_1L01_Wood_children.json and FarmHouse_E_1L01_Wood_parity_doors.json committed (400 pairs, doors closed).",
 ]
+shipped_at = "d73856a2d"
+created_at = "2026-09-03T14:49:12Z"
+completed_at = "2026-09-03T19:04:42Z"
+estimated = ["tokens"]
 owns = [
     "apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings",
     "apps/mod/tbd-export/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_TbdBlueprint.c",
     "xtask/tests/fixtures/FarmHouse_E_1L01_Wood_children.json",
     "xtask/tests/fixtures/FarmHouse_E_1L01_Wood_parity_doors.json",
 ]
-created_at = "2026-09-03T14:49:12Z"
 
 [scope]
 domain = "mod"
