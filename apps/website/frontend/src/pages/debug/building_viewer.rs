@@ -28,16 +28,24 @@
 //! generic upload API (`upload_polygon_mesh` / `upload_strip_tris` / `upload_hairline_segments`
 //! with `role_id::*` constants — never re-copied integers, see draw_order.rs):
 //!
-//! | lane (draw order ↑)      | content |
-//! |--------------------------|---------|
-//! | `LANDCOVER` (poly)       | the MESH heightfield clipped below this floor's cut plane, one 0.2 m cell quad per surface, height-ramped (Roof view: the full top surface eave→ridge; fallback: blueprint plate / RoofGrid) |
-//! | `CONTOURS` (hairline)    | low section cut (sills), lower floors' cuts through this floor's voids, door swing arcs, window normals; Roof view + fallback: blueprint wall centerlines as ghosts |
-//! | `AIRFIELD_APRON` (poly)  | furniture plates (cover-class colored) |
-//! | `ROADS_CASING` (strip)   | the MESH section cut at eye height as 0.05 m strips (fallback: blueprint walls at nominal thickness) |
-//! | `ROADS` (strip)          | window / door aperture overlays on the walls |
-//! | `FOREST_OUTLINE` (hairline) | the same eye-height section as constant 1 px hairlines — never thins out at low zoom |
-//! | `Viewshed` (texture)     | the viewed level's visibility wash (`viewshed_upload`; the terrain viewshed's palette — ink on hidden cells) |
-//! | `MISSION_ZONES` (strip)  | the LOS ray, split + colored at each `LosHit`, plus event dots |
+//! | lane (draw order ↑, T-090.11.5 ids) | content |
+//! |-------------------------------------|---------|
+//! | `INTERIOR_SLABS` (poly)             | the MESH heightfield clipped below this floor's cut plane, one 0.2 m cell quad per surface, height-ramped (Roof view: the full top surface eave→ridge; fallback: blueprint plate / RoofGrid) |
+//! | `INTERIOR_FURNITURE` (+outline)     | furniture / prop footprints — the compound's instances (world AABB, cover-tier colour); blueprint plates without one |
+//! | `INTERIOR_WALLS` (strip)            | the MESH section cut at eye height as 0.05 m strips (fallback: blueprint walls at nominal thickness) |
+//! | `INTERIOR_WALLS_OUTLINE` (hairline) | the same cut as constant 1 px hairlines, the low cut (sills), lower floors' cuts through voids, window normals, rings, ghosts |
+//! | `INTERIOR_PORTALS` (+outline)       | door leaves where they hang (orange closed / green open) + door frames; outline = swing arcs (blueprint overlays / arcs without a compound) |
+//! | `INTERIOR_GLAZING` (+outline)       | glass pane cuts (cyan); outline = window-frame jamb ticks |
+//! | `INTERIOR_STAIRS` (hairline)        | tread hatch |
+//! | `SCENE_VEGETATION` (+outline)       | `?scene=1` trees: trunk disc + canopy, rim + stipple |
+//! | `Viewshed` (texture)                | the viewed level's visibility wash (`viewshed_upload`; green where A sees) |
+//! | `INTERIOR_PROBE` (strip)            | the LOS ray, split + coloured at each `LosHit` (cyan past glass, yellow-green past canopy), plus event dots |
+//!
+//! T-090.11.6: with `<slug>.instances.json` beside the blueprint the bench assembles the
+//! `CompoundBuilding` (shell + every door leaf / frame / pane / furniture BLAS under its socket
+//! transform); LOS, wash and the section cuts then run over it — a click on a leaf swings it.
+//! URL flags: `?scene=1` (exterior trees from `<slug>.scene.json`), `?doors=open` (every leaf
+//! open on load), `?a=x,y,z&b=x,y,z` (ray ends), `?force=webgl` (the headless capture backend).
 //!
 //! The building sits at world ANCHOR (6400, 6400) with blueprint +z (game north) mapped UP on
 //! screen (`to_world` flips z; the engine's y axis points down). Camera = the engine's own ortho
@@ -53,9 +61,12 @@ use std::sync::Arc;
 
 use leptos::prelude::*;
 use map_engine_core::building_blueprint::{BuildingBlueprint, LosHitKind, LosResult};
+use map_engine_core::building_compound::CompoundBuilding;
 use map_engine_core::building_section::{building_drawing, BuildingDrawing};
-use map_engine_core::building_viewshed::{level_wash, LevelWash, WashParams};
+use map_engine_core::building_viewshed::{level_wash, level_wash_compound, LevelWash, WashParams};
 use map_engine_core::bvh::BvhSidecar;
+
+use super::building_interior::LevelCuts;
 
 /// Default blueprint when no `?prefab=` override is present — the scanned FarmHouse (roof
 /// heightfield + verbatim plates + attic). The hand-authored pre-scan asset stays reachable
@@ -122,9 +133,7 @@ impl ViewFloor {
 pub mod geom {
     use super::ViewFloor;
     use crate::editor::tools::los_tool::{pack_rgba_256, ViewshedTexture};
-    use map_engine_core::building_blueprint::{
-        clip_t_to_band, BuildingBlueprint, BuildingLevel, LosHit, LosHitKind,
-    };
+    use map_engine_core::building_blueprint::{BuildingBlueprint, BuildingLevel};
     use map_engine_core::building_section::{
         through_voids, BuildingDrawing, HeightField, FLOOR_WINDOW_M, PIT_DEPTH_M, PLAN_CELL_M,
     };
@@ -247,7 +256,7 @@ pub mod geom {
         inside
     }
 
-    fn push_strip(out: &mut Vec<f32>, verts: &[StripVertex]) {
+    pub(crate) fn push_strip(out: &mut Vec<f32>, verts: &[StripVertex]) {
         for v in verts {
             out.extend_from_slice(&[
                 v.pos[0], v.pos[1], v.color[0], v.color[1], v.color[2], v.color[3],
@@ -255,7 +264,7 @@ pub mod geom {
         }
     }
 
-    fn seg(out: &mut Vec<f32>, a: [f64; 2], b: [f64; 2], c: [f32; 4]) {
+    pub(crate) fn seg(out: &mut Vec<f32>, a: [f64; 2], b: [f64; 2], c: [f32; 4]) {
         for p in [a, b] {
             out.extend_from_slice(&[p[0] as f32, p[1] as f32, c[0], c[1], c[2], c[3]]);
         }
@@ -270,7 +279,7 @@ pub mod geom {
         [rot(-hw, -hd), rot(hw, -hd), rot(hw, hd), rot(-hw, hd)]
     }
 
-    fn quad(out: &mut Vec<f32>, corners: [[f64; 2]; 4], col: [f32; 4]) {
+    pub(crate) fn quad(out: &mut Vec<f32>, corners: [[f64; 2]; 4], col: [f32; 4]) {
         // Two triangles, corners in local plan coords → world.
         for idx in [0usize, 1, 2, 0, 2, 3] {
             let w = to_world(corners[idx]);
@@ -301,6 +310,12 @@ pub mod geom {
         /// `FOREST_OUTLINE` hairlines: the mesh's eye-height section (0 on the fallback path).
         pub cuts: Vec<f32>,
         pub cut_count: u32,
+        /// Door swing arcs (hairlines) — `INTERIOR_PORTALS_OUTLINE` (T-090.11.6).
+        pub arcs: Vec<f32>,
+        pub arc_count: u32,
+        /// Stairs tread hatch (hairlines) — `INTERIOR_STAIRS` (T-090.11.6).
+        pub stairs: Vec<f32>,
+        pub stairs_count: u32,
         /// Covered `RoofGrid` cells painted on the Roof view (0 elsewhere / roofless).
         pub roof_cell_count: u32,
         /// Covered `PlateGrid` cells painted on the active Level view (0 on plate-less levels).
@@ -310,7 +325,7 @@ pub mod geom {
         pub mesh_cell_count: u32,
     }
 
-    fn append_polygon(
+    pub(crate) fn append_polygon(
         pos: &mut Vec<f32>,
         col: &mut Vec<f32>,
         idx: &mut Vec<u32>,
@@ -647,8 +662,8 @@ pub mod geom {
                         let z = st.bounds[0][1] + d * f;
                         ([st.bounds[0][0], z], [st.bounds[1][0], z])
                     };
-                    seg(&mut out.hairlines, to_world(a), to_world(b), COL_HATCH);
-                    out.hairline_count += 1;
+                    seg(&mut out.stairs, to_world(a), to_world(b), COL_HATCH);
+                    out.stairs_count += 1;
                 }
             }
         }
@@ -754,8 +769,8 @@ pub mod geom {
             push_strip(&mut out.apertures, &verts);
             out.aperture_count += 1;
             swing_arc(
-                &mut out.hairlines,
-                &mut out.hairline_count,
+                &mut out.arcs,
+                &mut out.arc_count,
                 lvl,
                 door.pos2_d,
                 door.width_m,
@@ -823,87 +838,6 @@ pub mod geom {
         out
     }
 
-    /// Ray strip + event dots for `MISSION_ZONES`, clipped to the ACTIVE view's elevation band
-    /// (`band`/`band_last` from [`ViewFloor::band`], intersected via the raycaster's own
-    /// [`clip_t_to_band`] so display and evaluation cannot disagree). Spans between consecutive
-    /// hits are colored by a state machine over the trace: clear → green, after a window → cyan,
-    /// after furniture cover → yellow; from a terminal block to the target → red. Dots draw only
-    /// where the hit's own elevation lies inside the band. Returns `(packed, item_count)` —
-    /// empty when the ray never enters the band (that floor's plan honestly shows no ray).
-    #[must_use]
-    pub fn build_ray_lane(
-        obs: [f64; 3],
-        tgt: [f64; 3],
-        hits: &[LosHit],
-        is_clear: bool,
-        band: [f64; 2],
-        band_last: bool,
-    ) -> (Vec<f32>, u32) {
-        let mut packed = Vec::new();
-        let mut count = 0u32;
-        let Some((band_t0, band_t1)) = clip_t_to_band(obs[1], tgt[1], band, band_last) else {
-            return (packed, count);
-        };
-        let o2 = [obs[0], obs[2]];
-        let t2 = [tgt[0], tgt[2]];
-        let at = |t: f64| [o2[0] + t * (t2[0] - o2[0]), o2[1] + t * (t2[1] - o2[1])];
-
-        let mut spans: Vec<(f64, f64, [f32; 4])> = Vec::new();
-        let mut color = RAY_CLEAR;
-        let mut t_prev = 0.0f64;
-        for h in hits {
-            spans.push((t_prev, h.t, color));
-            t_prev = h.t;
-            color = match h.kind {
-                LosHitKind::Wall | LosHitKind::Roof | LosHitKind::Solid => RAY_BLOCKED,
-                // A terminal window / stairs hit is frame or tread MASS, not a pass.
-                LosHitKind::Window | LosHitKind::Stairs if h.concealment >= 1.0 => RAY_BLOCKED,
-                LosHitKind::Furniture if h.concealment >= 1.0 => RAY_BLOCKED,
-                LosHitKind::Window | LosHitKind::Glass => RAY_GLASS,
-                LosHitKind::Furniture | LosHitKind::Foliage => RAY_COVER,
-                LosHitKind::DoorOpen | LosHitKind::DoorAperture | LosHitKind::Stairs => color,
-                // T-090.11.4 compound terminals (instances are real geometry).
-                LosHitKind::DoorLeaf
-                | LosHitKind::DoorFrame
-                | LosHitKind::WindowFrame
-                | LosHitKind::Prop => RAY_BLOCKED,
-            };
-        }
-        spans.push((t_prev, 1.0, if is_clear { color } else { RAY_BLOCKED }));
-
-        for (a, b, col) in spans {
-            let (a, b) = (a.max(band_t0), b.min(band_t1));
-            if b - a < 1e-6 {
-                continue;
-            }
-            let verts = expand_polyline_strip(&[to_world(at(a)), to_world(at(b))], 0.16, col);
-            push_strip(&mut packed, &verts);
-            count += 1;
-        }
-        // Event dots — only those inside the viewed band.
-        for h in hits {
-            if h.pos[1] < band[0] - 1e-9 || h.pos[1] > band[1] + 1e-9 {
-                continue;
-            }
-            let col = match h.kind {
-                LosHitKind::Wall | LosHitKind::Roof | LosHitKind::Solid => RAY_BLOCKED,
-                LosHitKind::Window | LosHitKind::Stairs if h.concealment >= 1.0 => RAY_BLOCKED,
-                LosHitKind::Window | LosHitKind::Glass => RAY_GLASS,
-                LosHitKind::DoorOpen | LosHitKind::DoorAperture => RAY_CLEAR,
-                LosHitKind::Furniture | LosHitKind::Foliage => RAY_COVER,
-                LosHitKind::Stairs => COL_HATCH,
-                LosHitKind::DoorLeaf
-                | LosHitKind::DoorFrame
-                | LosHitKind::WindowFrame
-                | LosHitKind::Prop => RAY_BLOCKED,
-            };
-            let c = [h.pos[0], h.pos[2]];
-            quad(&mut packed, rect_corners(c, [0.34, 0.34], 45.0), col);
-            count += 1;
-        }
-        (packed, count)
-    }
-
     /// Wash palette: GREEN where the observer sees (the old fan's colour, so the disc reads
     /// at a glance), nothing where it does not or beyond the disc — the inverse of the terrain
     /// viewshed's ink-on-hidden language, on purpose: inside a building the walls already carry
@@ -946,7 +880,6 @@ pub mod geom {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use map_engine_core::building_blueprint::LosHit;
         use map_engine_core::building_section::building_drawing;
         use map_engine_core::building_viewshed::{level_washes, WashParams};
         use map_engine_core::bvh::Bvh;
@@ -1156,116 +1089,6 @@ pub mod geom {
         }
 
         const GROUND_BAND: [f64; 2] = [0.0, 2.8];
-
-        #[test]
-        fn ray_lane_colors_follow_the_hit_state_machine() {
-            let hit = |t: f64, kind: LosHitKind, conceal: f64| LosHit {
-                t,
-                pos: [0.0, 1.4, -8.0 + t * 7.0],
-                kind,
-                id: "x".into(),
-                concealment: conceal,
-            };
-            // window pass → span colors [green, cyan]; still clear.
-            let (packed, n) = build_ray_lane(
-                [0.0, 1.4, -8.0],
-                [0.0, 1.4, -1.0],
-                &[hit(0.5, LosHitKind::Window, 0.0)],
-                true,
-                GROUND_BAND,
-                false,
-            );
-            assert!(n >= 3); // 2 spans + 1 dot
-            assert!(!packed.is_empty());
-            let colors: Vec<[f32; 4]> = packed
-                .chunks_exact(6)
-                .map(|c| [c[2], c[3], c[4], c[5]])
-                .collect();
-            assert!(colors.contains(&RAY_CLEAR) && colors.contains(&RAY_GLASS));
-            // blocked wall → red span present.
-            let (packed, _) = build_ray_lane(
-                [0.0, 1.4, -8.0],
-                [0.0, 1.4, -1.0],
-                &[hit(0.5, LosHitKind::Wall, 1.0)],
-                false,
-                GROUND_BAND,
-                false,
-            );
-            let colors: Vec<[f32; 4]> = packed
-                .chunks_exact(6)
-                .map(|c| [c[2], c[3], c[4], c[5]])
-                .collect();
-            assert!(colors.contains(&RAY_BLOCKED));
-            // roof crossing → red span + red dot, same as a wall block.
-            let (packed, _) = build_ray_lane(
-                [0.0, 1.4, -8.0],
-                [0.0, 1.4, -1.0],
-                &[hit(0.5, LosHitKind::Roof, 1.0)],
-                false,
-                GROUND_BAND,
-                false,
-            );
-            let colors: Vec<[f32; 4]> = packed
-                .chunks_exact(6)
-                .map(|c| [c[2], c[3], c[4], c[5]])
-                .collect();
-            assert!(colors.contains(&RAY_BLOCKED));
-            // solid mass the blueprint does not name → red, same as a wall block.
-            let (packed, _) = build_ray_lane(
-                [0.0, 1.4, -8.0],
-                [0.0, 1.4, -1.0],
-                &[hit(0.5, LosHitKind::Solid, 1.0)],
-                false,
-                GROUND_BAND,
-                false,
-            );
-            let colors: Vec<[f32; 4]> = packed
-                .chunks_exact(6)
-                .map(|c| [c[2], c[3], c[4], c[5]])
-                .collect();
-            assert!(colors.contains(&RAY_BLOCKED));
-            // a TERMINAL window hit is frame mass: red, never cyan.
-            let (packed, _) = build_ray_lane(
-                [0.0, 1.4, -8.0],
-                [0.0, 1.4, -1.0],
-                &[hit(0.5, LosHitKind::Window, 1.0)],
-                false,
-                GROUND_BAND,
-                false,
-            );
-            let colors: Vec<[f32; 4]> = packed
-                .chunks_exact(6)
-                .map(|c| [c[2], c[3], c[4], c[5]])
-                .collect();
-            assert!(colors.contains(&RAY_BLOCKED) && !colors.contains(&RAY_GLASS));
-        }
-
-        #[test]
-        fn ray_lane_is_clipped_to_the_viewed_band() {
-            // A flat ground-floor ray on the ATTIC view: nothing to draw.
-            let (packed, n) = build_ray_lane(
-                [0.0, 1.4, -8.0],
-                [0.0, 1.4, -1.0],
-                &[],
-                true,
-                [2.8, 5.6],
-                false,
-            );
-            assert!(packed.is_empty() && n == 0);
-            // A climbing ray (0.9 → 4.5 m) split across views: the ground view draws only the
-            // early t-range, the attic view only the late one — together they tile the ray.
-            let obs = [-3.8, 0.9, -12.0];
-            let tgt = [-3.8, 4.5, 1.0];
-            let (g, gn) = build_ray_lane(obs, tgt, &[], true, GROUND_BAND, false);
-            let (a, an) = build_ray_lane(obs, tgt, &[], true, [2.8, 5.6], false);
-            assert!(gn >= 1 && an >= 1);
-            // Ground portion must stay south of the attic portion (z increases with t). The
-            // strip expander's round caps overshoot each endpoint by the half-width, so the two
-            // portions may overlap by up to one strip width (0.16 m) at the shared band edge.
-            let max_gz = g.chunks_exact(6).map(|c| c[1]).fold(f32::MIN, f32::max);
-            let min_az = a.chunks_exact(6).map(|c| c[1]).fold(f32::MAX, f32::min);
-            assert!(max_gz <= min_az + 0.2, "ground {max_gz} vs attic {min_az}");
-        }
 
         /// Axis-aligned cuboid as 12 triangles — the same quad table as `map_engine_core`'s
         /// `bvh_tests::cube` (crate-private there).
@@ -1733,6 +1556,12 @@ pub fn BuildingViewerPage() -> impl IntoView {
     });
     let css = RwSignal::new((1200.0f64, 800.0f64));
     let drag = RwSignal::new(Drag::None);
+    // T-090.11.6 — the furnished compound (shell + instances, door states inside), the
+    // per-level owned cuts of its flattened mesh (recomputed on every door toggle) and the
+    // instances-load error line. `None` = the shell-only path (blueprint annotations).
+    let compound = RwSignal::new(None::<CompoundBuilding>);
+    let compound_err = RwSignal::new(None::<String>);
+    let cuts = RwSignal::new(None::<Arc<Vec<LevelCuts>>>);
     let canvas_ref = NodeRef::<leptos::html::Canvas>::new();
 
     // Pure LOS evaluation — reruns on any ray/blueprint/sidecar change; the wasm host mirrors
@@ -1743,9 +1572,11 @@ pub fn BuildingViewerPage() -> impl IntoView {
         let sc = sidecar.get();
         blueprint.with(|bp| {
             los.set(match (bp.as_ref(), sc.as_deref()) {
-                (Some(bp), Some(occl)) => {
-                    Some(bp.evaluate_los(occl, [o.x, o.y, o.z], [t.x, t.y, t.z]))
-                }
+                (Some(bp), Some(occl)) => Some(compound.with(|c| match c.as_ref() {
+                    // T-090.11.6: the compound walks doors, glass, foliage and props.
+                    Some(c) => c.evaluate_los(Some(bp), [o.x, o.y, o.z], [t.x, t.y, t.z]),
+                    None => bp.evaluate_los(occl, [o.x, o.y, o.z], [t.x, t.y, t.z]),
+                })),
                 _ => None,
             });
         });
@@ -1772,7 +1603,12 @@ pub fn BuildingViewerPage() -> impl IntoView {
                         radius_m: bb.width_m.hypot(bb.depth_m) + 5.0,
                         ..WashParams::default()
                     };
-                    level_wash(bp, occl, [o.x, o.y, o.z], i, &p).map(Arc::new)
+                    compound
+                        .with(|c| match c.as_ref() {
+                            Some(c) => level_wash_compound(bp, c, [o.x, o.y, o.z], i, &p),
+                            None => level_wash(bp, occl, [o.x, o.y, o.z], i, &p),
+                        })
+                        .map(Arc::new)
                 }
                 _ => None,
             });
@@ -1788,6 +1624,16 @@ pub fn BuildingViewerPage() -> impl IntoView {
                 _ => None,
             });
         });
+    });
+
+    // T-090.11.6 — the flattened compound's owned section cuts per level: door leaves, frames
+    // and panes routed to their own lanes. Reruns on every door toggle (the compound signal).
+    Effect::new(move |_| {
+        let d = drawing.get();
+        cuts.set(compound.with(|c| match (c.as_ref(), d.as_deref()) {
+            (Some(c), Some(d)) => Some(Arc::new(LevelCuts::for_drawing(c, d))),
+            _ => None,
+        }));
     });
 
     #[cfg(target_arch = "wasm32")]
@@ -1809,6 +1655,9 @@ pub fn BuildingViewerPage() -> impl IntoView {
         cam,
         css,
         drag,
+        compound,
+        compound_err,
+        cuts,
     );
 
     // ── DOM overlay derivations ─────────────────────────────────────────────────────────────
@@ -1851,6 +1700,20 @@ pub fn BuildingViewerPage() -> impl IntoView {
             let pct = (r.concealment * 100.0).round();
             let windows = r.window_ids_traversed.join(", ");
             let doors = r.door_ids_traversed.join(", ");
+            let canopy = r
+                .hits
+                .iter()
+                .filter(|h| h.kind == LosHitKind::Foliage)
+                .map(|h| format!("{} ({:.0}%)", h.id, h.concealment * 100.0))
+                .collect::<Vec<_>>()
+                .join(", ");
+            let blocker = r.hits.last().and_then(|h| match h.kind {
+                LosHitKind::DoorLeaf => Some(format!("door leaf {}", h.id)),
+                LosHitKind::DoorFrame => Some(format!("door frame {}", h.id)),
+                LosHitKind::WindowFrame => Some(format!("window frame {}", h.id)),
+                LosHitKind::Prop => Some(format!("prop {}", h.id)),
+                _ => None,
+            });
             view! {
                 <div class="space-y-1">
                     <div class="flex items-center gap-2">{badge}
@@ -1863,6 +1726,8 @@ pub fn BuildingViewerPage() -> impl IntoView {
                     {r.hits.last().filter(|h| h.kind == LosHitKind::Solid).map(|h| view! { <div>"blocked by "<span class="text-red-300">{format!("solid @ {:.1} m", h.pos[1])}</span></div> })}
                     {r.hits.last().filter(|h| h.kind == LosHitKind::Window && h.concealment >= 1.0).map(|h| view! { <div>"blocked by "<span class="text-red-300">{format!("frame of {}", h.id)}</span></div> })}
                     {r.cover_furniture_id.clone().map(|f| view! { <div>"cover: "<span class="text-yellow-300">{f}</span></div> })}
+                    {(!canopy.is_empty()).then(|| view! { <div>"through canopy: "<span class="text-lime-300">{canopy.clone()}</span></div> })}
+                    {blocker.map(|b| view! { <div>"blocked by "<span class="text-red-300">{b}</span></div> })}
                 </div>
             }
         })
@@ -2045,7 +1910,12 @@ pub fn BuildingViewerPage() -> impl IntoView {
                 </div>
                 {slider("Observer Y", obs)}
                 {slider("Target Y", tgt)}
-                <div class="text-[10px] text-on-surface-variant">"drag A/B markers · drag canvas to pan · wheel zooms · click the building for floors · Alt+click moves A and fills its viewshed"</div>
+                <div class="text-[10px] text-on-surface-variant">"drag A/B markers · drag canvas to pan · wheel zooms · click the building for floors · click a door to swing it · Alt+click moves A and fills its viewshed"</div>
+                {move || compound.with(|c| c.as_ref().map(|c| {
+                    let (open, closed) = c.doors().fold((0usize, 0usize), |(o, k), d| if d.state.is_open() { (o + 1, k) } else { (o, k + 1) });
+                    view! { <div class="text-xs text-on-surface-variant">{format!("furnished: {} instances · doors {open} open · {closed} closed", c.instances.len())}</div> }
+                }))}
+                {move || compound_err.get().map(|e| view! { <div class="rounded bg-amber-500/15 p-2 text-xs text-amber-300">{e}</div> })}
                 {move || viewshed_on.get().then(|| {
                     // Which level's wash is on screen — the floor rail swaps it; the roof
                     // view has no eye plane and shows none.
@@ -2086,6 +1956,9 @@ pub fn BuildingViewerPage() -> impl IntoView {
                 <div><span class="mr-1 inline-block h-2 w-4 bg-[#34c7f2]"></span>"window / glass"</div>
                 <div><span class="mr-1 inline-block h-2 w-4 bg-[#4dd973]"></span>"open door · ray clear"</div>
                 <div><span class="mr-1 inline-block h-2 w-4 bg-[#f2a133]"></span>"closed door"</div>
+                <div><span class="mr-1 inline-block h-2 w-4 bg-[#9ed940]"></span>"canopy · ray through leaves"</div>
+                <div><span class="mr-1 inline-block h-2 w-4 bg-[#8c6640]"></span>"tree trunk"</div>
+                <div><span class="mr-1 inline-block h-2 w-4 bg-[#808c9e]"></span>"prop footprint"</div>
                 <div><span class="mr-1 inline-block h-2 w-4 bg-[#ebcc40]"></span>"low cover · ray past cover"</div>
                 <div><span class="mr-1 inline-block h-2 w-4 bg-[#e6574a]"></span>"full cover · ray blocked"</div>
                 <div><span class="mr-1 inline-block h-2 w-4 bg-[#7059b3]"></span>"stairs (transparent treads)"</div>
@@ -2101,15 +1974,18 @@ pub fn BuildingViewerPage() -> impl IntoView {
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 #[cfg(target_arch = "wasm32")]
 mod live {
+    use super::super::building_interior::{self, InteriorLanes, LevelCuts};
     use super::{geom, Cam, Drag, RayEnd, ViewFloor, DEFAULT_PREFAB_PATH};
     use leptos::prelude::*;
     use map_engine_core::building_blueprint::{BuildingBlueprint, LosResult};
+    use map_engine_core::building_compound::{CompoundBuilding, InstancesFile};
     use map_engine_core::building_section::BuildingDrawing;
     use map_engine_core::building_viewshed::LevelWash;
     use map_engine_core::bvh::BvhSidecar;
     use map_engine_render::draw_order::role_id;
     use map_engine_render::RenderEngine;
     use std::cell::RefCell;
+    use std::collections::HashMap;
     use std::rc::Rc;
     use std::sync::Arc;
     use wasm_bindgen::prelude::*;
@@ -2125,39 +2001,76 @@ mod live {
         });
     }
 
+    /// T-090.11.6 — every static lane of the bench on its OWN role (`InteriorLanes::ROLES`);
+    /// the probe (`INTERIOR_PROBE`) is `upload_ray`'s. An empty payload drops its lane.
     fn upload_static(
         e: &mut RenderEngine,
         bp: &BuildingBlueprint,
         drawing: Option<&BuildingDrawing>,
+        compound: Option<&CompoundBuilding>,
+        cuts: Option<&[LevelCuts]>,
         view: ViewFloor,
     ) {
-        let lanes = geom::build_static_lanes(bp, drawing, view);
+        let l: InteriorLanes =
+            building_interior::build_interior_lanes(bp, drawing, compound, cuts, view);
         e.upload_polygon_mesh(
-            role_id::LANDCOVER,
-            &lanes.floor_pos,
-            &lanes.floor_col,
-            &lanes.floor_idx,
+            role_id::INTERIOR_SLABS,
+            &l.slabs_pos,
+            &l.slabs_col,
+            &l.slabs_idx,
             1,
             true,
         );
         e.upload_polygon_mesh(
-            role_id::AIRFIELD_APRON,
-            &lanes.furn_pos,
-            &lanes.furn_col,
-            &lanes.furn_idx,
+            role_id::INTERIOR_FURNITURE,
+            &l.furniture_pos,
+            &l.furniture_col,
+            &l.furniture_idx,
             1,
             true,
         );
-        e.upload_strip_tris(role_id::ROADS_CASING, &lanes.walls, lanes.wall_count, true);
-        e.upload_strip_tris(role_id::ROADS, &lanes.apertures, lanes.aperture_count, true);
         e.upload_hairline_segments(
-            role_id::CONTOURS,
-            &lanes.hairlines,
-            lanes.hairline_count,
+            role_id::INTERIOR_FURNITURE_OUTLINE,
+            &l.furniture_outline,
+            l.furniture_outline_count,
             true,
         );
-        // Empty on the fallback path → the engine drops the lane.
-        e.upload_hairline_segments(role_id::FOREST_OUTLINE, &lanes.cuts, lanes.cut_count, true);
+        e.upload_strip_tris(role_id::INTERIOR_WALLS, &l.walls, l.wall_count, true);
+        e.upload_hairline_segments(
+            role_id::INTERIOR_WALLS_OUTLINE,
+            &l.walls_outline,
+            l.walls_outline_count,
+            true,
+        );
+        e.upload_strip_tris(role_id::INTERIOR_PORTALS, &l.portals, l.portal_count, true);
+        e.upload_hairline_segments(
+            role_id::INTERIOR_PORTALS_OUTLINE,
+            &l.portals_outline,
+            l.portals_outline_count,
+            true,
+        );
+        e.upload_strip_tris(role_id::INTERIOR_GLAZING, &l.glazing, l.glazing_count, true);
+        e.upload_hairline_segments(
+            role_id::INTERIOR_GLAZING_OUTLINE,
+            &l.glazing_outline,
+            l.glazing_outline_count,
+            true,
+        );
+        e.upload_hairline_segments(role_id::INTERIOR_STAIRS, &l.stairs, l.stairs_count, true);
+        e.upload_polygon_mesh(
+            role_id::SCENE_VEGETATION,
+            &l.vegetation_pos,
+            &l.vegetation_col,
+            &l.vegetation_idx,
+            1,
+            true,
+        );
+        e.upload_hairline_segments(
+            role_id::SCENE_VEGETATION_OUTLINE,
+            &l.vegetation_outline,
+            l.vegetation_outline_count,
+            true,
+        );
         e.mark_dirty();
     }
 
@@ -2169,7 +2082,7 @@ mod live {
         band: [f64; 2],
         band_last: bool,
     ) {
-        let (packed, n) = geom::build_ray_lane(
+        let (packed, n) = building_interior::build_ray_lane(
             [obs.x, obs.y, obs.z],
             [tgt.x, tgt.y, tgt.z],
             &los.hits,
@@ -2177,7 +2090,7 @@ mod live {
             band,
             band_last,
         );
-        e.upload_strip_tris(role_id::MISSION_ZONES, &packed, n, true);
+        e.upload_strip_tris(role_id::INTERIOR_PROBE, &packed, n, true);
         e.mark_dirty();
     }
 
@@ -2253,6 +2166,108 @@ mod live {
             .unwrap_or_else(|| DEFAULT_PREFAB_PATH.to_string())
     }
 
+    /// One query parameter, if present and non-empty.
+    fn query(name: &str) -> Option<String> {
+        web_sys::window()
+            .and_then(|w| w.location().search().ok())
+            .and_then(|s| {
+                web_sys::UrlSearchParams::new_with_str(&s)
+                    .ok()
+                    .and_then(|p| p.get(name))
+            })
+            .filter(|v| !v.is_empty())
+    }
+
+    /// `?a=x,y,z` / `?b=x,y,z` — the ray ends in building-local metres (a reproducible LOS state
+    /// for screenshots and bug reports).
+    fn ray_end_query(name: &str) -> Option<RayEnd> {
+        let v = query(name)?;
+        let mut it = v.split(',').map(|s| s.trim().parse::<f64>().ok());
+        let (x, y, z) = (it.next()??, it.next()??, it.next()??);
+        (x.is_finite() && y.is_finite() && z.is_finite()).then_some(RayEnd { x, y, z })
+    }
+
+    /// `?scene=1` — also load `<slug>.scene.json` (hand-placed exterior trees) into the compound.
+    fn scene_mode() -> bool {
+        web_sys::window()
+            .and_then(|w| w.location().search().ok())
+            .and_then(|s| {
+                web_sys::UrlSearchParams::new_with_str(&s)
+                    .ok()
+                    .and_then(|p| p.get("scene"))
+            })
+            .is_some_and(|v| matches!(v.as_str(), "1" | "true" | "on"))
+    }
+
+    async fn fetch_bytes(url: &str) -> Result<Vec<u8>, String> {
+        match gloo_net::http::Request::get(url).send().await {
+            Ok(resp) if resp.ok() => resp
+                .binary()
+                .await
+                .map_err(|e| format!("{url}: read failed — {e}")),
+            Ok(resp) => Err(format!("{url}: HTTP {}", resp.status())),
+            Err(e) => Err(format!("{url}: {e}")),
+        }
+    }
+
+    /// T-090.11.6 — `<slug>.instances.json` + every BLAS it references (paths relative to the
+    /// prefabs root, the parent of `buildings/`) assembled onto the shell; with `scene`, the
+    /// `<slug>.scene.json` trees too. Returns the compound and a non-fatal warning (scene file
+    /// missing).
+    async fn load_compound(
+        json_path: &str,
+        shell: Arc<BvhSidecar>,
+        scene: bool,
+    ) -> Result<(CompoundBuilding, Option<String>), String> {
+        let stem = json_path
+            .strip_suffix(".json")
+            .ok_or_else(|| format!("{json_path}: not a .json path"))?;
+        let root = stem
+            .rsplit_once('/')
+            .and_then(|(dir, _)| dir.rsplit_once('/'))
+            .map_or_else(|| "/".to_string(), |(parent, _)| format!("{parent}/"));
+        let url = format!("{stem}.instances.json");
+        let bytes = fetch_bytes(&url).await?;
+        let file: InstancesFile =
+            serde_json::from_slice(&bytes).map_err(|e| format!("{url}: parse failed — {e}"))?;
+        let mut records = file.instances;
+        let mut warning = None;
+        if scene {
+            let surl = format!("{stem}.scene.json");
+            match fetch_bytes(&surl).await {
+                Ok(b) => match serde_json::from_slice::<InstancesFile>(&b) {
+                    Ok(sf) => records.extend(sf.instances),
+                    Err(e) => warning = Some(format!("{surl}: parse failed — {e} — scene off")),
+                },
+                Err(e) => warning = Some(format!("{e} — scene off")),
+            }
+        }
+        let mut paths: Vec<String> = Vec::new();
+        for r in &records {
+            if !paths.contains(&r.blas) {
+                paths.push(r.blas.clone());
+            }
+        }
+        let fetched = futures::future::join_all(paths.iter().map(|p| {
+            let url = format!("{root}{p}");
+            async move {
+                let res = fetch_bytes(&url).await;
+                (url, res)
+            }
+        }))
+        .await;
+        let mut map: HashMap<String, Arc<BvhSidecar>> = HashMap::new();
+        for (p, (url, res)) in paths.iter().zip(fetched) {
+            let b = res?;
+            let sc =
+                BvhSidecar::parse(&b).map_err(|e| format!("{url}: BLAS parse failed — {e}"))?;
+            map.insert(p.clone(), Arc::new(sc));
+        }
+        let c =
+            CompoundBuilding::assemble(shell, &records, &map).map_err(|e| format!("{url}: {e}"))?;
+        Ok((c, warning))
+    }
+
     #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
     pub fn wire(
         canvas_ref: NodeRef<leptos::html::Canvas>,
@@ -2272,9 +2287,22 @@ mod live {
         cam: RwSignal<Cam>,
         css: RwSignal<(f64, f64)>,
         drag: RwSignal<Drag>,
+        compound: RwSignal<Option<CompoundBuilding>>,
+        compound_err: RwSignal<Option<String>>,
+        cuts: RwSignal<Option<Arc<Vec<LevelCuts>>>>,
     ) {
         let engine: EngineHandle = Rc::new(RefCell::new(None));
         let disposed = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        // T-090.11.6 URL flags: reproducible ray ends; `?force=webgl` = the headless capture
+        // backend (the editor's convention — software WebGPU wedges headless Chrome).
+        if let Some(a) = ray_end_query("a") {
+            obs.set(a);
+        }
+        if let Some(b) = ray_end_query("b") {
+            tgt.set(b);
+        }
+        let force_webgl = query("force").is_some_and(|v| v == "webgl");
+        let doors_open = query("doors").is_some_and(|v| matches!(v.as_str(), "open" | "1"));
         let fitted = Rc::new(std::cell::Cell::new(false));
         // Bumped once the engine lands so the upload effects rerun — without it, a blueprint that
         // arrives before `RenderEngine::create` resolves would never get its first upload.
@@ -2316,7 +2344,30 @@ mod live {
                 Err(e) => Err(format!("{url}: {e} — LOS, viewshed and mesh drawing off (blueprint fallback)")),
             };
             match outcome {
-                Ok(sc) => sidecar.set(Some(Arc::new(sc))),
+                Ok(sc) => {
+                    let shell = Arc::new(sc);
+                    sidecar.set(Some(Arc::clone(&shell)));
+                    // T-090.11.6: the instances + BLAS closure on top of the shell.
+                    match load_compound(&path, shell, scene_mode()).await {
+                        Ok((mut c, warning)) => {
+                            if doors_open {
+                                let ids: Vec<String> =
+                                    c.doors().map(|d| d.record.id.clone()).collect();
+                                for id in ids {
+                                    c.set_door(
+                                        &id,
+                                        map_engine_core::building_compound::DoorState::OPEN,
+                                    );
+                                }
+                            }
+                            compound_err.set(warning);
+                            compound.set(Some(c));
+                        }
+                        Err(msg) => compound_err.set(Some(format!(
+                            "{msg} — shell-only bench (no doors, glass, furniture)"
+                        ))),
+                    }
+                }
                 Err(msg) => sidecar_err.set(Some(msg)),
             }
         });
@@ -2346,7 +2397,7 @@ mod live {
                 let engine = engine.clone();
                 let disposed = disposed.clone();
                 leptos::task::spawn_local(async move {
-                    match RenderEngine::create(canvas, false).await {
+                    match RenderEngine::create(canvas, force_webgl).await {
                         Ok(mut e) => {
                             let _ = e.resize(cw, ch, dpr);
                             // Camera roam box: a generous pad around the anchor-placed building.
@@ -2385,6 +2436,7 @@ mod live {
                 }
                 let view = view_floor.get();
                 let d = drawing.get();
+                let cu = cuts.get();
                 blueprint.with(|bp| {
                     let Some(bp) = bp.as_ref() else { return };
                     if let Ok(mut guard) = engine.try_borrow_mut() {
@@ -2395,7 +2447,16 @@ mod live {
                                 sync_cam(e, cam);
                                 fitted.set(true);
                             }
-                            upload_static(e, bp, d.as_deref(), view);
+                            compound.with(|c| {
+                                upload_static(
+                                    e,
+                                    bp,
+                                    d.as_deref(),
+                                    c.as_ref(),
+                                    cu.as_deref().map(Vec::as_slice),
+                                    view,
+                                );
+                            });
                         }
                     }
                 });
@@ -2565,13 +2626,41 @@ mod live {
                                 size,
                             );
                             let l = geom::from_world(w);
-                            blueprint.with_untracked(|bp| {
-                                if let Some(bp) = bp.as_ref() {
-                                    if geom::point_in_polygon(l, &bp.overall_footprint.polygon2_d) {
-                                        floors_open.set(true);
+                            // T-090.11.6: a click on a door leaf (or its closed footprint) swings it;
+                            // LOS, wash, cuts and lanes follow through the compound signal.
+                            let toggled = blueprint.with_untracked(|bp| {
+                                let Some(bp) = bp.as_ref() else { return false };
+                                let (band, _) = view_floor.get_untracked().band(bp);
+                                let id = compound.with_untracked(|c| {
+                                    c.as_ref()
+                                        .and_then(|c| building_interior::door_at(c, l, band))
+                                });
+                                match id {
+                                    Some(id) => {
+                                        compound.update(|c| {
+                                            if let Some(c) = c.as_mut() {
+                                                if let Some(s) = c.door_state(&id) {
+                                                    c.set_door(&id, s.toggled());
+                                                }
+                                            }
+                                        });
+                                        true
                                     }
+                                    None => false,
                                 }
                             });
+                            if !toggled {
+                                blueprint.with_untracked(|bp| {
+                                    if let Some(bp) = bp.as_ref() {
+                                        if geom::point_in_polygon(
+                                            l,
+                                            &bp.overall_footprint.polygon2_d,
+                                        ) {
+                                            floors_open.set(true);
+                                        }
+                                    }
+                                });
+                            }
                         }
                         moved.set(0.0);
                     }) as Box<dyn FnMut(_)>)
