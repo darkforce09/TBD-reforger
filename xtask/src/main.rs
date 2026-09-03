@@ -66,6 +66,7 @@ mod map_ingest_blueprints;
 mod map_parity_report;
 mod mcp;
 mod mcp_daemon;
+mod mcp_netapi;
 mod metrics;
 mod migrate_main_goal;
 mod migrate_v2;
@@ -544,6 +545,22 @@ enum MapCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
+    /// T-090.11.3 — match every `xobSocket` instance against a Workbench recon dump
+    /// (`--instances <slug>.instances.json --recon <slug>_children.json`); exit 1 on any
+    /// mismatch over 2 cm / 1° or an unmatched instance.
+    #[command(name = "instances-verify")]
+    InstancesVerify {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// T-090.11.3 — rank the 48 Euler-composition hypotheses against a recon sample of a
+    /// tilted parent with a rotated child (`--fixture <json>`); exit 1 unless
+    /// `Rigid::from_enfusion` (Y·X·Z, positive signs) wins.
+    #[command(name = "rotation-pin")]
+    RotationPin {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -743,6 +760,16 @@ enum McpCmd {
     /// Live wb_connect + wb_state smoke (T-877 port of mcp-smoke.sh).
     /// Exit: 0 OK · 1 FAIL.
     Smoke,
+    /// T-090.11.3 — raw Workbench NET API call (`<APIFunc> [json]`, e.g.
+    /// `EMCP_WB_TbdBlueprint {"action":"recon","filter":"FarmHouse_E_1L01_Wood"}`).
+    /// Exit: 0 ok (JSON on stdout) · 1 usage · 2 cannot connect · 3 Workbench error.
+    Wbcall {
+        api_func: Option<String>,
+        args_json: Option<String>,
+        /// Read/connect timeout in seconds (recon on a 1.2 M-entity world needs minutes).
+        #[arg(long, default_value_t = 600)]
+        timeout: u64,
+    },
     /// setsid + AF_UNIX socket lifecycle (T-888 port of mcp-daemon.sh).
     /// Exit: 0 success · 1 stopped/fail · 2 usage.
     Daemon {
@@ -1042,6 +1069,11 @@ fn run() -> Result<u8> {
                 McpCmd::Call { tool, args_json } => gate_mcp_call::run(tool, args_json),
                 McpCmd::Selftest => gate_mcp_call_selftest::run(),
                 McpCmd::Smoke => gate_mcp_smoke::run(),
+                McpCmd::Wbcall {
+                    api_func,
+                    args_json,
+                    timeout,
+                } => mcp_netapi::cmd(api_func.as_deref(), args_json.as_deref(), timeout),
                 McpCmd::Daemon { action } => mcp_daemon::cmd(action.as_deref()),
                 McpCmd::WbLogs {
                     file,
@@ -1200,6 +1232,8 @@ fn run() -> Result<u8> {
             MapCmd::BvhEmit { args } => map_blueprint::run_bvh_emit(&args),
             MapCmd::BvhBatch { args } => map_blueprint::run_bvh_batch(&args),
             MapCmd::XobInspect { args } => map_blueprint::run_xob_inspect(&args),
+            MapCmd::InstancesVerify { args } => map_blueprint::run_instances_verify(&args),
+            MapCmd::RotationPin { args } => map_blueprint::run_rotation_pin(&args),
         },
         TopCmd::Verify { cmd } => {
             let code = match cmd {

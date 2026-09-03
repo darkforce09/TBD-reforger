@@ -1,0 +1,15 @@
+{
+  "source": "Workbench recon 2026-09-03 (EMCP_WB_TbdBlueprint action recon, filter GarbageContainer_01, Everon @ 9878.51 6.753 236.2) + Prefabs/Props/Garbage/Bins/GarbageContainer_01.et / GarbageContainer_01_lid.et (lid child inherits the lid prefab coords, overrides angles -55 0 0)",
+  "parent": {
+    "prefab": "Prefabs/Props/Garbage/Bins/GarbageContainer_01.et",
+    "worldPos": [9878.51, 6.753, 236.2],
+    "anglesDeg": [-3.044, -104.126, -4.754]
+  },
+  "child": {
+    "prefab": "Prefabs/Props/Garbage/Bins/GarbageContainer_01_lid.et",
+    "localCoords": [-0.018, 0.82, 0.1],
+    "localAnglesDeg": [-55, 0, 0],
+    "observedRelPos": [-0.118164, 0.809226, -0.11824],
+    "observedYawDeg": -96.8186
+  }
+}

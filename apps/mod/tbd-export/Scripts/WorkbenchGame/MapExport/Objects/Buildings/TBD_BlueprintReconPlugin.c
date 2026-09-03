@@ -6,6 +6,10 @@
  * prefab resource contains the configured filter, walks the runtime hierarchy to full depth and
  * records per entity: name, class, prefab resource, world/root-relative position, bounds size,
  * and the component class list (IEntitySource level -- the EMCP_WB_Components idiom).
+ * T-090.11.3 adds per child: anglesDeg (pitch/yaw/roll), localPos (parent frame), world
+ * bounds, and the source-derived prefab / pivotId / mesh / door params (see ExtrasJson), plus
+ * the root world bounds -- the offline instance emitter is validated against this dump
+ * (`cargo xtask map instances-verify`).
  *
  * Output: $profile:TBD_Export/<map>/prefabs/debug/<slug>_children.json
  * Menu:   Workbench > Plugins > TBD > "Recon Building Children"
@@ -71,6 +75,10 @@ class TBD_BlueprintRecon
 		root.GetBounds(bMin, bMax);
 		m_sJson += "  \"rootBoundsMin\": [" + bMin[0].ToString() + "," + bMin[1].ToString() + "," + bMin[2].ToString() + "],\n";
 		m_sJson += "  \"rootBoundsMax\": [" + bMax[0].ToString() + "," + bMax[1].ToString() + "," + bMax[2].ToString() + "],\n";
+		vector wbMin, wbMax;
+		root.GetWorldBounds(wbMin, wbMax);
+		m_sJson += "  \"rootWorldBoundsMin\": [" + wbMin[0].ToString() + "," + wbMin[1].ToString() + "," + wbMin[2].ToString() + "],\n";
+		m_sJson += "  \"rootWorldBoundsMax\": [" + wbMax[0].ToString() + "," + wbMax[1].ToString() + "," + wbMax[2].ToString() + "],\n";
 		m_sJson += "  \"rootComponents\": " + ComponentsJson(root) + ",\n";
 		m_sJson += "  \"children\": [\n";
 
@@ -153,6 +161,7 @@ class TBD_BlueprintRecon
 		m_sJson += "\"yawDeg\":" + ang[1].ToString() + ",";
 		m_sJson += "\"size\":[" + (cMax[0] - cMin[0]).ToString() + "," + (cMax[1] - cMin[1]).ToString() + "," + (cMax[2] - cMin[2]).ToString() + "],";
 		m_sJson += "\"boundsMinY\":" + cMin[1].ToString() + ",";
+		m_sJson += ExtrasJson(ent);
 		m_sJson += "\"components\":" + ComponentsJson(ent);
 		m_sJson += "}";
 		m_iRecorded++;
@@ -163,6 +172,90 @@ class TBD_BlueprintRecon
 			DumpRecursive(root, child, depth + 1, false);
 			child = child.GetSibling();
 		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-090.11.3 — per-child fields the offline pipeline validates against: full angles, the
+	//! parent-relative origin, world bounds, and (via the entity SOURCE, which prefab-nested
+	//! children keep even when GetPrefabData() is empty) the prefab resource, the hierarchy
+	//! PivotID, the MeshObject model and the DoorComponent / SlidingDoorComponent params.
+	//! Every field ends with a comma; the caller appends "components" last.
+	protected string ExtrasJson(IEntity ent)
+	{
+		vector ang = ent.GetAngles();
+		string json = "\"anglesDeg\":[" + ang[0].ToString() + "," + ang[1].ToString() + "," + ang[2].ToString() + "],";
+		IEntity parent = ent.GetParent();
+		if (parent)
+		{
+			vector lp = parent.CoordToLocal(ent.GetOrigin());
+			json += "\"localPos\":[" + lp[0].ToString() + "," + lp[1].ToString() + "," + lp[2].ToString() + "],";
+		}
+		vector wMin, wMax;
+		ent.GetWorldBounds(wMin, wMax);
+		json += "\"worldBoundsMin\":[" + wMin[0].ToString() + "," + wMin[1].ToString() + "," + wMin[2].ToString() + "],";
+		json += "\"worldBoundsMax\":[" + wMax[0].ToString() + "," + wMax[1].ToString() + "," + wMax[2].ToString() + "],";
+
+		string prefab = "";
+		string pivot = "";
+		string mesh = "";
+		string door = "";
+		WorldEditor we = Workbench.GetModule(WorldEditor);
+		if (we)
+		{
+			WorldEditorAPI api = we.GetApi();
+			if (api)
+			{
+				IEntitySource src = api.EntityToSource(ent);
+				if (src)
+				{
+					BaseContainer anc = src.GetAncestor();
+					if (anc)
+						prefab = anc.GetResourceName();
+					int n = src.GetComponentCount();
+					for (int i = 0; i < n; i++)
+					{
+						IEntityComponentSource comp = src.GetComponent(i);
+						if (!comp)
+							continue;
+						string cls = comp.GetClassName();
+						if (cls == "Hierarchy")
+						{
+							string p;
+							if (comp.Get("PivotID", p))
+								pivot = p;
+						}
+						else if (cls == "MeshObject")
+						{
+							ResourceName m;
+							if (comp.Get("Object", m))
+								mesh = m;
+						}
+						else if (cls == "DoorComponent")
+						{
+							float range = 0;
+							float closed = 0;
+							float initial = 0;
+							comp.Get("AngleRange", range);
+							comp.Get("ClosedAngle", closed);
+							comp.Get("InitialAngle", initial);
+							door = "{\"angleRange\":" + range.ToString() + ",\"closedAngle\":" + closed.ToString() + ",\"initialAngle\":" + initial.ToString() + "}";
+						}
+						else if (cls == "SlidingDoorComponent")
+						{
+							float dist = 0;
+							comp.Get("OpenedDistance", dist);
+							door = "{\"openedDistance\":" + dist.ToString() + "}";
+						}
+					}
+				}
+			}
+		}
+		json += "\"prefab\":\"" + TBD_MapExportJson.Escape(prefab) + "\",";
+		json += "\"pivotId\":\"" + TBD_MapExportJson.Escape(pivot) + "\",";
+		json += "\"mesh\":\"" + TBD_MapExportJson.Escape(mesh) + "\",";
+		if (!door.IsEmpty())
+			json += "\"door\":" + door + ",";
+		return json;
 	}
 
 	//------------------------------------------------------------------------------------------------

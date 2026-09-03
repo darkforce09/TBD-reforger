@@ -378,6 +378,7 @@ impl<'a> Walker<'a> {
     /// Walk one entity: emit its instance (when it has a collision mesh and is not the
     /// shell) and recurse into its children. Returns the entity's own asset (the socket
     /// table the children attach to).
+    #[allow(clippy::too_many_arguments)]
     pub fn walk(
         &mut self,
         prefab_path: &str,

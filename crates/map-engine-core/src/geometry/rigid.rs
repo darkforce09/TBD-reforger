@@ -6,7 +6,7 @@
 //!
 //! Conventions (Enfusion, left-handed, y up): a quaternion is `[x, y, z, w]`; Euler angles
 //! are `[pitch, yaw, roll]` degrees about the local X, Y, Z axes, composed as
-//! `R = R_y(yaw) · R_x(pitch) · R_z(roll)` (roll first, yaw last) — the order the recon
+//! `R = R_y(yaw) · R_x(-pitch) · R_z(-roll)` (roll first, yaw last; pitch and roll negated) — the order and signs the recon
 //! oracle test in T-090.11.3 pins. Doors rotate about their leaf's local Y ([`Rigid::rot_y`]).
 
 /// 3×3 rotation (row-major, applied as `m · v`) plus translation; `scale` is a uniform
@@ -106,11 +106,18 @@ impl Rigid {
     }
 
     /// From Enfusion `coords` + `angles [pitch, yaw, roll]` (degrees) + uniform `scale`.
+    ///
+    /// Convention pinned against the Workbench (T-090.11.3, 2026-09-03 — a tilted
+    /// `GarbageContainer_01` with its `-55°`-pitched lid child, 0.3 mm / 0.0000° residual, 430×
+    /// margin over the runner-up): `R_y(+yaw) · R_x(-pitch) · R_z(-roll)`. Yaw turns the way the
+    /// right-handed `rot_y` does (the 88 yaw-only farmhouse sockets agree to 0.5 mm); pitch and
+    /// roll enter negated — positive pitch is nose-down, positive roll is right-side-down in the
+    /// engine's X-right / Y-up / Z-forward frame.
     #[must_use]
     pub fn from_enfusion(pos: [f64; 3], angles_deg: [f64; 3], scale: f64) -> Self {
         let r = Self::rot_y(angles_deg[1])
-            .compose(&Self::rot_x(angles_deg[0]))
-            .compose(&Self::rot_z(angles_deg[2]));
+            .compose(&Self::rot_x(-angles_deg[0]))
+            .compose(&Self::rot_z(-angles_deg[2]));
         Self {
             m: r.m,
             t: pos,
@@ -306,11 +313,12 @@ mod tests {
                 assert!((g.m[i][j] - g2.m[i][j]).abs() < 1e-9);
             }
         }
-        // Composition order: yaw applied last.
+        // Composition order: yaw applied last; pitch and roll enter negated (the T-090.11.3
+        // garbage-container pin — see `from_enfusion`).
         let ypr = Rigid::from_enfusion([0.0; 3], [30.0, 40.0, 50.0], 1.0);
         let manual = Rigid::rot_y(40.0)
-            .compose(&Rigid::rot_x(30.0))
-            .compose(&Rigid::rot_z(50.0));
+            .compose(&Rigid::rot_x(-30.0))
+            .compose(&Rigid::rot_z(-50.0));
         for i in 0..3 {
             for j in 0..3 {
                 assert!((ypr.m[i][j] - manual.m[i][j]).abs() < 1e-12);

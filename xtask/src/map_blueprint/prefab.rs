@@ -450,6 +450,7 @@ fn read_child(head: &Block, inst: &Block) -> ChildRef {
 
 /// The facts of ONE file (no inheritance applied).
 #[derive(Debug, Clone, Default)]
+#[allow(clippy::type_complexity)]
 struct OwnFacts {
     class: String,
     base: Option<String>,

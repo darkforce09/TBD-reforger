@@ -227,11 +227,10 @@ pub fn lz4_decompress_chained(src: &[u8]) -> Result<Vec<u8>> {
                 }
             }
             // Byte-wise copy: overlapping matches (offset < len) replicate by design.
-            let mut from = out.len() - offset;
-            for _ in 0..mlen {
-                let b = out[from];
+            let start = out.len() - offset;
+            for i in 0..mlen {
+                let b = out[start + i];
                 out.push(b);
-                from += 1;
             }
         }
         if out.len() - out_start > 0x10000 + 0x20000 {
