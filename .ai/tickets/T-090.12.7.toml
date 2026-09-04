@@ -1,0 +1,46 @@
+id = "T-090.12.7"
+kind = "work"
+title = "T-090.12.7 — Docs pass: LOS tool, world-los bench, map-assets, MCP"
+summary = "Cursor documentation pass: mission-editor.md LOS + viewshed section, new debug-world-los.md + INDEX rows, map-assets README objects/prefabs rows, MCP_TOOLING wbcall + TbdBlueprint actions, SHIPPED_HISTORY T-090.11/T-090.12 entries, program hub status line, tbd-export README."
+class = "docs"
+status = "queued"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+plan = "docs/plans/t-090_12_7_plan.md"
+executor = "cursor-docs"
+depends_on = ["T-090.12.6"]
+parent = "T-090"
+main_goal = "Every surface the program changed is documented where the doc hub says it lives."
+context = [
+    "packages/map-assets/README.md has no objects/ or prefabs/ rows; docs/mod/MCP_TOOLING.md never mentions mcp wbcall or EMCP_WB_TbdBlueprint.",
+    "docs/platform/SHIPPED_HISTORY.md has no T-090.11 entries; apps/mod/tbd-export/README.md is a stale copy of the framework README.",
+]
+requirement = [
+    "docs/website/frontend/pages/mission-editor.md gains a LOS + viewshed section (object verdict wording, coverage honesty, palette).",
+    "New docs/website/frontend/pages/debug-world-los.md + INDEX.md rows and count; debug-building-viewer.md gains the T-090.11.6 URL flags.",
+    "packages/map-assets/README.md rows for objects/ (chunks v2, prefabs.json.gz) and prefabs/ (blas, descriptors, blas-manifest).",
+    "docs/mod/MCP_TOOLING.md: cargo xtask mcp wbcall + every EMCP_WB_TbdBlueprint action including world-parity; SHIPPED_HISTORY entries; hub status line; tbd-export README.",
+]
+current_state = ["Not started."]
+approach = ["Read the T-090.12 commit bodies (Docs for Cursor lines) and the program plan doc; write the documents; sync INDEX and TAGS only if a spec doc is added."]
+verify = [
+    "cargo xtask ci schema-validate (citations); cargo xtask ticket check",
+]
+acceptance = [
+    "Every path in the requirement list is updated and links resolve; no generated TICKET_*.md is hand-edited.",
+]
+created_at = "2026-09-04T01:22:27Z"
+owns = [
+    "docs/website/frontend/pages/mission-editor.md",
+    "docs/website/frontend/pages/debug-world-los.md",
+    "docs/website/frontend/pages/debug-building-viewer.md",
+    "docs/website/frontend/INDEX.md",
+    "packages/map-assets/README.md",
+    "docs/mod/MCP_TOOLING.md",
+    "docs/platform/SHIPPED_HISTORY.md",
+    "apps/mod/tbd-export/README.md",
+]
+
+[scope]
+domain = "repo"
+layer = "docs"

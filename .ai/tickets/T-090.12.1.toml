@@ -1,0 +1,54 @@
+id = "T-090.12.1"
+kind = "work"
+title = "T-090.12.1 — World export v2: pitch, roll, scale rows"
+summary = "Chunk wire tuple widens to [pid,x,y,z,yaw,pitch,roll,scale] (5 or 8 wide); schema 1.1.0 + golden; converter reads pitchDeg/rollDeg/scale; resurrected full-export plugin writes scale; WorldChunk gains columns; farmhouse and garbage-container transform pins."
+class = "feature"
+status = "ready"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+plan = "docs/plans/t-090_12_1_plan.md"
+executor = "claude-code"
+parent = "T-090"
+main_goal = "Every chunk row carries the full Enfusion transform so a BLAS can be placed exactly where the engine placed the entity."
+context = [
+    "The staged raw export (staging/export/raw-entities.jsonl, 2026-07-05) already carries pitchDeg/rollDeg; build.rs:245 reads headingDeg only; scale is captured nowhere.",
+    "The plugin that wrote the full export was deleted in edfae8405; TBD_ObjectsExportPlugin writes categorized files the converter does not read.",
+    "map-object-instance.schema.json pins the chunk tuple to exactly 5 numbers; narrow_instance_row and redensify already tolerate longer rows.",
+]
+requirement = [
+    "Rows are exactly 5 or 8 wide; 8 iff pitch != 0 or roll != 0 or scale != 1 after round2/round3; the golden gate checks canonicality.",
+    "manifest.json objects.schemaVersion 1.1.0 plus transforms, scaleSource, workbenchVersion; the golden chunk sample gains one 8-wide row.",
+    "narrow_instance_row_v2 + WorldChunk pitch/roll/scale columns; narrow_instance_row and the Class R columns untouched.",
+    "TBD_WorldFullExportPlugin.c resurrected in both addon twins with scale (GetScale, <= 0.001 -> 1.0) and meta exportVersion 2; scale added to TBD_MapExportObjects.c rows.",
+    "instances-verify --world-row: farmhouse row + 88 socket locals match the recon within 2 cm; garbage-container row pitch/roll match within 0.01 deg.",
+]
+current_state = ["Chunks are yaw-only 5-tuples built from the July staging; the converter discards pitch and roll."]
+approach = ["1a: schema, core, converter, rebuild from the staged export (scale absent), exporter scripts, pins. 1b after the operator re-export: rebuild with scale, report the delta."]
+verify = [
+    "cargo test -p tbd-tools; cargo test -p map-engine-core --all-features; cargo test -p xtask",
+    "cargo xtask ci schema-validate; cargo xtask verify map-object-golden; cargo xtask verify type-inventory; cargo xtask verify map-object-enums; cargo xtask verify terrain-manifest everon",
+]
+acceptance = [
+    "Chunks rebuild through verify-phase with the row-length census by kind reported; 5-wide rows are byte-identical to today.",
+    "Farmhouse world-row pin 88/88 within 2 cm; garbage-container row pitch -3.04 / roll -4.75; after 1b its scale is recorded and scaleSource is GetScale.",
+]
+created_at = "2026-09-04T01:22:27Z"
+owns = [
+    "tools/tbd-tools/src/world/build.rs",
+    "packages/tbd-schema/schema/map-object-instance.schema.json",
+    "packages/tbd-schema/golden/map-objects/map-object-chunk-sample.json",
+    "packages/map-assets/everon/objects",
+    "packages/map-assets/everon/manifest.json",
+    "crates/map-engine-core/src/world/chunk.rs",
+    "crates/map-engine-core/src/world/classify.rs",
+    "xtask/src/golden_gate.rs",
+    "xtask/src/map_blueprint/verify.rs",
+    "apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/TBD_WorldFullExportPlugin.c",
+    "apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/TBD_MapExportObjects.c",
+    "apps/mod/tbd-framework/Scripts/WorkbenchGame/MapExport/Objects/TBD_WorldFullExportPlugin.c",
+    "apps/mod/tbd-framework/Scripts/WorkbenchGame/MapExport/Objects/TBD_MapExportObjects.c",
+]
+
+[scope]
+domain = "repo"
+layer = "tools"

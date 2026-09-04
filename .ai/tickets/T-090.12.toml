@@ -1,0 +1,40 @@
+id = "T-090.12"
+kind = "work"
+title = "T-090.12 — Every building, every object: world-scale BVH LOS"
+summary = "Umbrella for six slices plus a docs slice: chunk rows with pitch/roll/scale, BLAS descriptors for every prefab, a chunked WorldOccluder (TLAS + DDA + compounds), a cell-scoped Workbench oracle, and terrain-and-object LOS plus viewshed in the mission editor."
+class = "feature"
+status = "ready"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+plan = "docs/plans/t-090_12_plan.md"
+executor = "claude-code"
+parent = "T-090"
+main_goal = "Every placed object on Everon has a BVH and the mission creator's LOS shot and viewshed judge terrain and objects together, naming the blocker."
+context = [
+    "T-090.11 proved pak -> COLL -> SurfaceKind sidecar -> compound instances -> multi-hit LOS on one prefab (3983/4000 oracle agreement).",
+    "The editor LOS tool (los_tool.rs occlusion) and viewshed (dem::sample::compute_viewshed) are terrain-only; chunk rows carry yaw only.",
+    "Plan of record: ~/.claude/plans/plan-written-claude-plans-t090-12-world-glistening-unicorn.md (operator-approved 2026-09-04), reconciled against live code.",
+]
+requirement = [
+    "Chunk wire v2 rows [pid,x,y,z,yaw,pitch,roll,scale] (5 or 8 wide), schema 1.1.0, converter reads pitch/roll/scale, exporter writes scale.",
+    "A BLAS descriptor + manifest for every prefab in prefabs.json.gz; prefabs without collision are blocks:false, never phantom-block.",
+    "WorldOccluder: per-chunk AABB TLAS, chunk DDA, compound expansion, proxy fallback, honest coverage; terrain AND objects behind the LOS readout and viewshed.",
+    "Cell-scoped Workbench oracle (world-parity) with two pinned cells; transform pins on the farmhouse and garbage-container rows.",
+]
+current_state = ["Yaw-only chunks; one building has a BVH; LOS tool and viewshed see terrain only; oracle is one-entity whitelist parity."]
+approach = ["Slices .1-.6 on main in order 0, 1a, 2, 3, 4a, operator session, 1b, 4b, 5, 6; .7 is the Cursor docs pass; pins re-blessed old -> new."]
+verify = [
+    "cargo test -p map-engine-core --all-features; cargo test -p xtask; cargo test -p tbd-tools; cargo test -p website-frontend; cargo test -p map-engine-render",
+    "cargo clippy -p map-engine-core --all-targets --all-features -- -D warnings; cargo xtask verify file-length; cargo xtask ticket check",
+]
+acceptance = [
+    "Farmhouse world-row pin 88/88 within 2 cm; garbage-container row carries pitch -3.04 / roll -4.75; compound door pin stays 3983/4000.",
+    "Two cell oracles pinned at measured agreement (bar 98% objects-only) with disagreement classes characterised in the commit body.",
+    "Editor readout names the blocking object or reports objects not loaded; viewshed shows object-hidden and canopy-concealed cells progressively.",
+]
+created_at = "2026-09-04T01:22:27Z"
+owns = ["docs/plans/t-090_12_plan.md"]
+
+[scope]
+domain = "engine"
+layer = "world"

@@ -1,0 +1,59 @@
+id = "T-090.12.3"
+kind = "work"
+title = "T-090.12.3 — WorldOccluder: TLAS, chunk DDA, compounds, world-los CLI"
+summary = "world/occluder: AabbTlas per chunk, 2-D chunk DDA, WorldInstance rows, descriptor expansion into instance lists, proxy fallback with Fidelity, Coverage, BlockPolicy, BLAS byte cap; trace_parts/reduce_events extracted from the compound; residency accessors; cargo xtask map world-los census/probe/bench."
+class = "feature"
+status = "ready"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+plan = "docs/plans/t-090_12_3_plan.md"
+executor = "claude-code"
+depends_on = [
+    "T-090.12.1",
+    "T-090.12.2",
+]
+parent = "T-090"
+main_goal = "One segment walks the chunks it crosses, culls to a handful of instances per chunk, traces their BLAS under world transforms and reports the verdict with honest coverage."
+context = [
+    "CompoundBuilding's instance loop is a linear scan with a per-instance slab reject (building_compound_los.rs:90,135): the TLAS-leaf math, unaccelerated.",
+    "A triangle BVH over 12-tri boxes misses an observer standing inside a box (no entry hit); the TLAS is a dedicated AABB tree with a slab test.",
+    "The occluder speaks the Enfusion frame [x, y_up, z_north] like every BLAS; map_to_engine is the single adapter.",
+]
+requirement = [
+    "AabbTlas::candidates by slab test ordered by entry t; 2-D Amanatides-Woo over 512 m cells; missing chunks reported in Coverage, never fake-clear.",
+    "Rows place by Rigid::from_enfusion([x, z_up, y_north], [pitch, yaw, roll], scale); expanded prefabs trace via the extracted trace_parts; un-expanded ones by proxy box with Fidelity::Proxy.",
+    "evaluate_los mirrors the compound (glass 0.05, foliage 1-exp(-0.5 d), doors closed) through the extracted reduce_events; blocked_fn drops into wash_band.",
+    "BLAS cache capped at 48 MB, evicting only sidecars no resident chunk references; memory_bytes reported.",
+    "WorldResidency gains chunk(id), prefab_rows() and take_residency_events(); no second chunk store.",
+]
+current_state = ["No TLAS, no DDA, no world-level occluder; CompoundBuilding is the only two-level structure and it is per building."]
+approach = ["New crates/map-engine-core/src/world/occluder/{mod,tlas,placed,dda,trace}.rs (each < 600 lines) + occluder_tests.rs; xtask/src/map_world_los.rs; synthetic 3x3 chunk worlds for tests."]
+verify = [
+    "cargo test -p map-engine-core --all-features; cargo test -p xtask",
+    "cargo clippy -p map-engine-core --all-targets --all-features -- -D warnings; cargo xtask verify file-length",
+]
+acceptance = [
+    "TLAS equals brute force on 2,000 random boxes and segments including the observer-inside case; DDA equals a brute-force cell rasteriser.",
+    "Compound tests and the (4000, 3983, 0, 17) door-parity replay are unchanged after the trace_parts / reduce_events extraction.",
+    "world-los --census lists every chunk's kinds and pending pids; --bench on the densest tree cell reports microseconds per ray and memory_bytes.",
+]
+created_at = "2026-09-04T01:22:27Z"
+owns = [
+    "crates/map-engine-core/src/world/occluder/mod.rs",
+    "crates/map-engine-core/src/world/occluder/tlas.rs",
+    "crates/map-engine-core/src/world/occluder/placed.rs",
+    "crates/map-engine-core/src/world/occluder/dda.rs",
+    "crates/map-engine-core/src/world/occluder/trace.rs",
+    "crates/map-engine-core/src/world/occluder/occluder_tests.rs",
+    "crates/map-engine-core/src/world/mod.rs",
+    "crates/map-engine-core/src/world/residency.rs",
+    "crates/map-engine-core/src/building_compound_los.rs",
+    "crates/map-engine-core/src/building_compound_tests.rs",
+    "crates/map-engine-core/src/building_viewshed.rs",
+    "xtask/src/map_world_los.rs",
+    "xtask/src/map_world_los_tests.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "world"

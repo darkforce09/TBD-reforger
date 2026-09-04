@@ -1,0 +1,45 @@
+id = "T-090.12.4"
+kind = "work"
+title = "T-090.12.4 — World oracle: world-parity action, two cell pins"
+summary = "EMCP_WB_TbdBlueprint action world-parity (cx, cy, seed, samples) via TBD_WorldTraceParity.c: seeded stratified in-cell pairs, ENTS and ENTS|WORLD verdicts on the Projectile layer, hit prefab slug; world-los --pairs replay with glass/foliage policy flags; two cell fixtures pinned."
+class = "feature"
+status = "ready"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+plan = "docs/plans/t-090_12_4_plan.md"
+executor = "claude-code"
+depends_on = ["T-090.12.3"]
+parent = "T-090"
+main_goal = "The engine's own trace over a whole 512 m cell agrees with the world occluder on random pairs, and the disagreements are named class by class."
+context = [
+    "Today's oracle (TBD_BuildingTraceScanner.c:191) traces ENTS on the Projectile layer with a whitelist to one root; TraceFlags.WORLD only in the probe diagnostic.",
+    "A stale (uncompiled) handler answers unknown action 'world-parity'; new Workbench classes need a Script Editor compile.",
+    "Cells: 18_0 (the farmhouse village) and the densest tree cell from world-los --census.",
+]
+requirement = [
+    "Pairs in absolute engine coordinates, seeded, four strata (uniform eye-height, around a random entity, long 300-500 m, elevated ends); no whitelist, nothing excluded.",
+    "Each pair traced twice (ENTS, ENTS|WORLD) with the hit prefab slug; output prefabs/debug/world_parity_<cx>_<cy>.json; response carries version world-parity-1.",
+    "Replay through cargo xtask map world-los --pairs under BlockPolicy flags; pins in map_world_los_tests.rs stay #[ignore] with a printed reason until the fixtures land.",
+]
+current_state = ["Only the one-entity parity/probe actions exist; no cell-scoped oracle, no world-inclusive verdict."]
+approach = ["4a: scripts in both addon twins + replay + staged pins. Operator session: compile, run world-parity for both cells over wbcall. 4b: fixtures committed, pins un-ignored at measured numbers."]
+verify = [
+    "cargo test -p xtask; cargo xtask map world-los --cell 18_0 --pairs xtask/tests/fixtures/world_parity_18_0.json",
+    "cargo xtask mcp wbcall EMCP_WB_TbdBlueprint '{\"action\":\"world-parity\",\"cx\":18,\"cy\":0,\"maxEntities\":4000,\"seed\":1}'",
+]
+acceptance = [
+    "Both cells pinned at their measured agreement under the policy that matches the engine; both policies' numbers and the world-inclusive number in the commit body.",
+    "Bar 98% objects-only agreement; any shortfall characterised class by class (roof skims, inside-collider starts, foliage) and never silently re-blessed.",
+]
+created_at = "2026-09-04T01:22:27Z"
+owns = [
+    "apps/mod/tbd-export/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_TbdBlueprint.c",
+    "apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/TBD_WorldTraceParity.c",
+    "apps/mod/tbd-framework/Scripts/WorkbenchGame/MapExport/Objects/TBD_WorldTraceParity.c",
+    "xtask/tests/fixtures/world_parity_18_0.json",
+    "xtask/tests/fixtures/world_parity_forest.json",
+]
+
+[scope]
+domain = "mod"
+layer = "scripts"

@@ -1,0 +1,51 @@
+id = "T-090.12.2"
+kind = "work"
+title = "T-090.12.2 — BLAS library: --all-prefabs, descriptors, manifest"
+summary = "cargo xtask map bvh-batch --all-prefabs walks every prefab in prefabs.json.gz through the T-090.11.2 Walker, emits shared BLAS, a PrefabDescriptor per pid (blocks:false when nothing collides), a deterministic blas-manifest with a hot set, and cargo xtask verify blas-manifest."
+class = "feature"
+status = "ready"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+plan = "docs/plans/t-090_12_2_plan.md"
+executor = "claude-code"
+parent = "T-090"
+main_goal = "Every prefab placed on Everon has a collision BLAS, or an explicit blocks:false, that the world occluder can fetch lazily by pid."
+context = [
+    "bvh-batch takes one --prefab per call (batch.rs:588); 85 BLAS (636 KB) exist under prefabs/blas; prefabs.json.gz lists 1,623 prefabs (287 buildings, 1,166 props, 53 rocks, 51 trees).",
+    "InstanceKind::Shell already exists, so the root mesh can be an ordinary instance record; AssetCache dedups BLAS by XOB stem.",
+    "Chunk census: tree 501,861, prop 400,211, rock 307,431, building 4,131; the top-100 pids cover 91.8% of instances.",
+]
+requirement = [
+    "Descriptors are the InstancesFile shape plus kind, blocks, reason, canopy, localBounds; the root mesh is an InstanceKind::Shell record at identity.",
+    "Shared types PrefabDescriptor / BlasManifest live in map-engine-core world/occluder/descriptor.rs; manifest sorted and timestamp-free; hot = top 100 pids by instance count.",
+    "Tree prefabs with no Foliage COLL triangles get a visual-LOD0 convex hull tagged Foliage (hull.rs) when the dry-run census finds any; the census is reported either way.",
+    "Storage: plain git when the library is <= 24 MB, else LFS for prefabs/blas/*.bvh with the CI selective lfs pull extended so verify blas-manifest still runs in CI.",
+]
+current_state = ["One building (FarmHouse_E_1L01_Wood) has a shell sidecar, instances file and 85 child BLAS; no descriptor or manifest exists."]
+approach = ["library.rs loop over prefabs.json.gz reusing Walker / AssetCache / PrefabResolver / validate_instances; --dry-run census first; schemas; verify lane; commit the library under the size rule."]
+verify = [
+    "cargo test -p xtask; cargo xtask verify blas-manifest; cargo xtask ci schema-validate",
+    "cargo clippy -p xtask --all-targets -- -D warnings; cargo xtask verify file-length",
+]
+acceptance = [
+    "Every prefabs.json.gz pid has a descriptor; every listed BLAS parses and its byte size matches; the farmhouse descriptor reproduces the T-090.11 instance set.",
+    "Emit is deterministic (a second run writes zero files); per-kind table, total bytes and the 20 largest BLAS are in the commit body.",
+]
+created_at = "2026-09-04T01:22:27Z"
+owns = [
+    "xtask/src/map_blueprint/library.rs",
+    "xtask/src/map_blueprint/library_tests.rs",
+    "xtask/src/map_blueprint/hull.rs",
+    "xtask/src/map_blueprint/batch.rs",
+    "xtask/src/verify_blas_manifest.rs",
+    "crates/map-engine-core/src/world/occluder/descriptor.rs",
+    "packages/tbd-schema/schema/prefab-descriptor.schema.json",
+    "packages/tbd-schema/schema/blas-manifest.schema.json",
+    "packages/map-assets/everon/prefabs/descriptors",
+    "packages/map-assets/everon/prefabs/blas",
+    "packages/map-assets/everon/prefabs/blas-manifest.json",
+]
+
+[scope]
+domain = "repo"
+layer = "xtask"

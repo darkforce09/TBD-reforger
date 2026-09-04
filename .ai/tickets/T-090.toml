@@ -55,6 +55,14 @@ children = [
     "T-090.11.4",
     "T-090.11.5",
     "T-090.11.6",
+    "T-090.12",
+    "T-090.12.1",
+    "T-090.12.2",
+    "T-090.12.3",
+    "T-090.12.4",
+    "T-090.12.5",
+    "T-090.12.6",
+    "T-090.12.7",
 ]
 main_goal = "T-090 / T-091 — Map & terrain program (hub). Mission Creator shows Everon cartography in the editor. Active: T-090.11 (architectural interiors — material-aware BVH, portals, glazing, prop BLAS/TLAS). Single lane."
 acceptance = [

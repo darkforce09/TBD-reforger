@@ -1,0 +1,61 @@
+id = "T-090.12.5"
+kind = "work"
+title = "T-090.12.5 — Editor: object LOS verdict, viewshed wash, world-los bench"
+summary = "los_world.rs: ObjectVerdict, combine, format_combined, ObjectPass coarse-to-fine object wash stepped by the rAF loop; with_occluder accessor + occluder_host BLAS fetch by residency; /debug/world-los bench; routes.csv fixed; wiring tests and native goldens."
+class = "feature"
+status = "ready"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+plan = "docs/plans/t-090_12_5_plan.md"
+executor = "claude-code"
+depends_on = ["T-090.12.3"]
+parent = "T-090"
+main_goal = "The mission creator's LOS shot names the object that blocks it and the viewshed shades object-hidden and canopy-concealed ground, honestly marking where objects are not loaded."
+context = [
+    "los_tool.rs (2041 lines, allowlisted) is terrain-only: occlusion(profile, eye_obs, eye_tgt) at :226; the viewshed is synchronous one-shot on pointer-up (gestures.rs:1293).",
+    "The frontend native build enables core features mission+blueprint only; world is wasm32-only, so verdict/wash types are frontend-local with injected closures.",
+    "WorldResidency sits behind HostHandle = Rc<RefCell<Option<MapHost>>> and is taken out during async settles; accessors are RENDER_CTX peers of camera_snapshot.",
+]
+requirement = [
+    "ObjectVerdict {NotLoaded, Clear, Blocked, Provisional}, combine, first_block_dist, format_combined; occlusion and format_verdict untouched so every golden stays.",
+    "ObjectPass: terrain-visible cells only, nearest-first, 32 m and 16 m over the disc, 8 m within 1 km, 8 ms per frame, generation cancel; Untested cells keep the terrain colour.",
+    "occluder_host.rs: manifest + hot set at boot, residency events into insert/remove, wanted_blas fetched in batches; with_occluder returns None while the host is taken.",
+    "/debug/world-los?x&y&r[&a&b][&force=webgl] on the Interior*/SceneVegetation lanes; routes.csv gains both debug rows (28 -> 30) and gate s-routes is green.",
+]
+current_state = ["Terrain-only shot readout and viewshed; no object layer, no bench for world-scale occlusion."]
+approach = ["New los_world.rs (+ los_world_wasm.rs), occluder_host.rs, pages/debug/world_los.rs + world_los_scene.rs; los_tool.rs diff ~20 lines at the seams; viewport.rs rAF hook."]
+verify = [
+    "cargo test -p website-frontend; cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets -- -D warnings; trunk build --release",
+    "cargo run -q -p tbd-tools --bin gate -- s-routes; cargo xtask verify file-length; cargo run -q -p tbd-tools --bin capture -- shot <png> <url> <waitMs> --canvas",
+]
+acceptance = [
+    "Village shot reads the blocking building and surface; a window shot reads clear with a glass note; a forest shot reads the canopy percentage; outside residency reads objects not loaded.",
+    "Viewshed shows object-hidden and canopy-concealed cells progressively with the measured fill time on the forest cell in the commit body.",
+    "The bench replays a parity fixture in-browser and the wasm agreement equals the native number; one URL per live-check state.",
+]
+created_at = "2026-09-04T01:22:27Z"
+owns = [
+    "apps/website/frontend/src/editor/tools/los_world.rs",
+    "apps/website/frontend/src/editor/tools/los_world_wasm.rs",
+    "apps/website/frontend/src/editor/tools/los_world_tests.rs",
+    "apps/website/frontend/src/editor/tools/los_tool.rs",
+    "apps/website/frontend/src/editor/tools/mod.rs",
+    "apps/website/frontend/src/editor/world_assets/occluder_host.rs",
+    "apps/website/frontend/src/editor/world_assets/world_host.rs",
+    "apps/website/frontend/src/editor/world_assets/mod.rs",
+    "apps/website/frontend/src/editor/canvas/viewport.rs",
+    "apps/website/frontend/src/editor/canvas/gestures.rs",
+    "apps/website/frontend/src/editor/mission_editor_tests/t090_12_world_los_wiring.rs",
+    "apps/website/frontend/src/pages/debug/world_los.rs",
+    "apps/website/frontend/src/pages/debug/world_los_scene.rs",
+    "apps/website/frontend/src/pages/debug/mod.rs",
+    "apps/website/frontend/src/router.rs",
+    "apps/website/frontend/src/app_routes.rs",
+    "tools/tbd-tools/fixtures/t159/manifests/routes.csv",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["tools", "map_canvas"]
