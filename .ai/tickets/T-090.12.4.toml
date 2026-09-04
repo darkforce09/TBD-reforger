@@ -3,7 +3,7 @@ kind = "work"
 title = "T-090.12.4 — World oracle: world-parity action, two cell pins"
 summary = "EMCP_WB_TbdBlueprint action world-parity (cx, cy, seed, samples) via TBD_WorldTraceParity.c: seeded stratified in-cell pairs, ENTS and ENTS|WORLD verdicts on the Projectile layer, hit prefab slug; world-los --pairs replay with glass/foliage policy flags; two cell fixtures pinned."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
 plan = "docs/plans/t-090_12_4_plan.md"
@@ -25,13 +25,16 @@ current_state = ["Only the one-entity parity/probe actions exist; no cell-scoped
 approach = ["4a: scripts in both addon twins + replay + staged pins. Operator session: compile, run world-parity for both cells over wbcall. 4b: fixtures committed, pins un-ignored at measured numbers."]
 verify = [
     "cargo test -p xtask; cargo xtask map world-los --cell 18_0 --pairs xtask/tests/fixtures/world_parity_18_0.json",
-    "cargo xtask mcp wbcall EMCP_WB_TbdBlueprint '{\"action\":\"world-parity\",\"cx\":18,\"cy\":0,\"maxEntities\":4000,\"seed\":1}'",
+    """cargo xtask mcp wbcall EMCP_WB_TbdBlueprint '{"action":"world-parity","cx":18,"cy":0,"maxEntities":4000,"seed":1}'""",
 ]
 acceptance = [
     "Both cells pinned at their measured agreement under the policy that matches the engine; both policies' numbers and the world-inclusive number in the commit body.",
     "Bar 98% objects-only agreement; any shortfall characterised class by class (roof skims, inside-collider starts, foliage) and never silently re-blessed.",
 ]
+shipped_at = "2bc58f5c5"
 created_at = "2026-09-04T01:22:27Z"
+completed_at = "2026-09-04T13:26:31Z"
+estimated = ["tokens"]
 owns = [
     "apps/mod/tbd-export/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_TbdBlueprint.c",
     "apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/TBD_WorldTraceParity.c",
