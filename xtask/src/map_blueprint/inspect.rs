@@ -251,3 +251,61 @@ pub fn run_xob_inspect(args: &[String]) -> Result<u8> {
     }
     Ok(0)
 }
+
+/// `cargo xtask map pak-cat <in-pak path> [--paks <dir>] [--head <bytes>] [--out <file>]` —
+/// read one entry of the game paks (any type: `.ent` worlds, `.et` prefabs, `.conf`, …) and
+/// print it (or its first `--head` bytes) / write it to `--out`. The census + peek tool the
+/// world-scale BVH program needs (`worlds/Eden/Eden.ent` is 68 MB — too big for the MCP reader).
+pub fn run_pak_cat(args: &[String]) -> Result<u8> {
+    let mut path: Option<String> = None;
+    let mut paks: Option<PathBuf> = None;
+    let mut head: Option<usize> = None;
+    let mut out: Option<PathBuf> = None;
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--paks" if i + 1 < args.len() => {
+                paks = Some(PathBuf::from(&args[i + 1]));
+                i += 2;
+            }
+            "--head" if i + 1 < args.len() => {
+                head = Some(args[i + 1].parse().context("--head expects bytes")?);
+                i += 2;
+            }
+            "--out" if i + 1 < args.len() => {
+                out = Some(PathBuf::from(&args[i + 1]));
+                i += 2;
+            }
+            other if path.is_none() && !other.starts_with("--") => {
+                path = Some(other.to_string());
+                i += 1;
+            }
+            other => {
+                eprintln!(
+                    "pak-cat: unknown arg {other} (usage: <in-pak path> [--paks <dir>] [--head <bytes>] [--out <file>])"
+                );
+                return Ok(1);
+            }
+        }
+    }
+    let path = path.context("pak-cat: an in-pak path is required")?;
+    let set = match paks {
+        Some(d) => PakSet::from_dir(&d)?,
+        None => PakSet::from_dir(&PakSet::default_dir().context("no default pak dir")?)?,
+    };
+    let bytes = set
+        .read(&path)
+        .with_context(|| format!("pak-cat: {path} not found in {} pak(s)", set.pak_count()))?;
+    if let Some(out) = out {
+        std::fs::write(&out, &bytes).with_context(|| out.display().to_string())?;
+        eprintln!("pak-cat {path}: {} bytes → {}", bytes.len(), out.display());
+        return Ok(0);
+    }
+    let n = head.map_or(bytes.len(), |h| h.min(bytes.len()));
+    use std::io::Write as _;
+    std::io::stdout().write_all(&bytes[..n])?;
+    if n < bytes.len() {
+        eprintln!("\n… pak-cat {path}: {} of {} bytes shown", n, bytes.len());
+    }
+    Ok(0)
+}

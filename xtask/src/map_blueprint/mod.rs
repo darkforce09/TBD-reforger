@@ -38,7 +38,7 @@ mod xob_nodes;
 
 pub use batch::run_bvh_batch;
 pub use bvh::{run_bvh_emit, run_bvh_parity};
-pub use inspect::run_xob_inspect;
+pub use inspect::{run_pak_cat, run_xob_inspect};
 pub use mesh::run_voxels_from_mesh;
 pub use rotation_pin::run_rotation_pin;
 pub use verify::run_instances_verify;

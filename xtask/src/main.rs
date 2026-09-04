@@ -545,6 +545,13 @@ enum MapCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
+    /// Read one game-pak entry of any type (`<in-pak path> [--paks <dir>] [--head <bytes>]
+    /// [--out <file>]`) — the peek / census tool for `.ent` worlds and `.et` prefabs.
+    #[command(name = "pak-cat")]
+    PakCat {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
     /// T-090.11.3 — match every `xobSocket` instance against a Workbench recon dump
     /// (`--instances <slug>.instances.json --recon <slug>_children.json`); exit 1 on any
     /// mismatch over 2 cm / 1° or an unmatched instance.
@@ -1232,6 +1239,7 @@ fn run() -> Result<u8> {
             MapCmd::BvhEmit { args } => map_blueprint::run_bvh_emit(&args),
             MapCmd::BvhBatch { args } => map_blueprint::run_bvh_batch(&args),
             MapCmd::XobInspect { args } => map_blueprint::run_xob_inspect(&args),
+            MapCmd::PakCat { args } => map_blueprint::run_pak_cat(&args),
             MapCmd::InstancesVerify { args } => map_blueprint::run_instances_verify(&args),
             MapCmd::RotationPin { args } => map_blueprint::run_rotation_pin(&args),
         },
