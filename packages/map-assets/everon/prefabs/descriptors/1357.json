@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1357,
+  "slug": "TrenchOld_02_450cm_metal",
+  "resourceName": "Prefabs/Structures/Military/Fortifications/Trenches/TrenchOld_02/TrenchOld_02_450cm_metal.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.540328025817871,
+      -0.5215200185775757,
+      -3.5154049396514893
+    ],
+    "max": [
+      2.1657791137695312,
+      1.270622968673706,
+      3.4739348888397217
+    ]
+  },
+  "shellBvh": "blas/TrenchOld_02_450cm_metal.bvh",
+  "instances": [
+    {
+      "id": "TrenchOld_02_450cm_metal",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Military/Fortifications/Trenches/TrenchOld_02/TrenchOld_02_450cm_metal.et",
+      "blas": "blas/TrenchOld_02_450cm_metal.bvh",
+      "xob": "Assets/Structures/Military/Fortifications/Trenches/TrenchOld_01/TrenchOld_02_450cm_metal.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

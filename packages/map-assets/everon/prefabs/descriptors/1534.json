@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1534,
+  "slug": "PoleFence_02_Pole",
+  "resourceName": "Prefabs/Structures/Walls/Pole/PoleFence_02/PoleFence_02_Pole.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

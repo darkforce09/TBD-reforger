@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 441,
+  "slug": "BrickWall_01_4m_Corner",
+  "resourceName": "Prefabs/Structures/Walls/Brick/BrickWall_01/BrickWall_01_4m_Corner.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.06426499783992767,
+      -1.4371055960655212,
+      -3.8733917474746704
+    ],
+    "max": [
+      0.41273699700832367,
+      2.1821224242448807,
+      0.2981642931699753
+    ]
+  },
+  "shellBvh": "blas/BrickWall_01_4m_Corner.bvh",
+  "instances": [
+    {
+      "id": "BrickWall_01_4m_Corner",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Brick/BrickWall_01/BrickWall_01_4m_Corner.et",
+      "blas": "blas/BrickWall_01_4m_Corner.bvh",
+      "xob": "Assets/Structures/Walls/Brick/BrickWall_01_4m_Corner.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

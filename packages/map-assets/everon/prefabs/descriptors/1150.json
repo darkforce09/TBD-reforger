@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1150,
+  "slug": "DeckChair_01_greenstripe",
+  "resourceName": "Prefabs/Props/Furniture/DeckChair_01/DeckChair_01_greenstripe.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.36990401335060596,
+      -0.0002631247043609619,
+      -0.6004641713451435
+    ],
+    "max": [
+      0.36990401335060596,
+      1.1564121661228046,
+      0.4607410132884979
+    ]
+  },
+  "shellBvh": "blas/DeckChair_01.bvh",
+  "instances": [
+    {
+      "id": "DeckChair_01_greenstripe",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/DeckChair_01/DeckChair_01_greenstripe.et",
+      "blas": "blas/DeckChair_01.bvh",
+      "xob": "Assets/Props/Furniture/DeckChair_01/DeckChair_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

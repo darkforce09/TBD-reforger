@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 830,
+  "slug": "WoodLog_01_D",
+  "resourceName": "Prefabs/Props/Forest/WoodPile/WoodLog_01_D.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.22443306093667026,
+      -0.002821505069732666,
+      -3.0612250684824445
+    ],
+    "max": [
+      0.2402674937838194,
+      0.33641649782657623,
+      3.1193857363298862
+    ]
+  },
+  "shellBvh": "blas/WoodLog_01_D.bvh",
+  "instances": [
+    {
+      "id": "WoodLog_01_D",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Forest/WoodPile/WoodLog_01_D.et",
+      "blas": "blas/WoodLog_01_D.bvh",
+      "xob": "Assets/Props/Forest/WoodPile_01/WoodLog_01_D.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

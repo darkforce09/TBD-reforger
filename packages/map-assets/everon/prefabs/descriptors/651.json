@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 651,
+  "slug": "ConcretePipe_01_Long",
+  "resourceName": "Prefabs/Props/Construction/ConcretePipe/ConcretePipe_01_Long.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

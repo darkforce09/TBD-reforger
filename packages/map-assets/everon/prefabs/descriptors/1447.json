@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1447,
+  "slug": "ObstacleCrawl_01",
+  "resourceName": "Prefabs/Props/Military/Training/Obstacles/ObstacleCrawl_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.1194101572036743,
+      -0.07003200054168701,
+      -6.075840950012207
+    ],
+    "max": [
+      0.09678995609283447,
+      0.8655030131340027,
+      0.12035894393920898
+    ]
+  },
+  "shellBvh": "blas/ObstacleCrawl_01.bvh",
+  "instances": [
+    {
+      "id": "ObstacleCrawl_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Military/Training/Obstacles/ObstacleCrawl_01.et",
+      "blas": "blas/ObstacleCrawl_01.bvh",
+      "xob": "Assets/Props/Military/Training/Obstacles/ObstacleCrawl_01/ObstacleCrawl_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

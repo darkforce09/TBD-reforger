@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1609,
+  "slug": "LadderWooden_01",
+  "resourceName": "Prefabs/Props/Civilian/LadderWooden_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.24201999604701996,
+      -0.0006690025329589844,
+      -0.04659829870797694
+    ],
+    "max": [
+      0.23999999463558197,
+      2.9600000381469727,
+      0.044801698764786124
+    ]
+  },
+  "shellBvh": "blas/LadderWooden_01.bvh",
+  "instances": [
+    {
+      "id": "LadderWooden_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/LadderWooden_01.et",
+      "blas": "blas/LadderWooden_01.bvh",
+      "xob": "Assets/Props/Civilian/LadderWooden_01/LadderWooden_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

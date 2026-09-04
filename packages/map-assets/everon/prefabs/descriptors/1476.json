@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1476,
+  "slug": "SignDirection_Eden_15_1",
+  "resourceName": "Prefabs/Structures/Signs/Directions/SignDirection_Eden_01/SignDirection_Eden_15_1.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.511528491973877,
+      -0.5051910877227783,
+      -0.03696160018444061
+    ],
+    "max": [
+      0.4957695007324219,
+      2.5529487133026123,
+      0.04185640066862106
+    ]
+  },
+  "shellBvh": "blas/SignDirection_Eden_15_1.bvh",
+  "instances": [
+    {
+      "id": "SignDirection_Eden_15_1",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Directions/SignDirection_Eden_01/SignDirection_Eden_15_1.et",
+      "blas": "blas/SignDirection_Eden_15_1.bvh",
+      "xob": "Assets/Structures/Signs/Directions/SignDirection_Eden_15_1.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

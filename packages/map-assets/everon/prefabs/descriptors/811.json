@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 811,
+  "slug": "t_picea_abies_3d_fallen_mossy",
+  "resourceName": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_3d_fallen_mossy.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.35892150457948446,
+      -0.18397170305252075,
+      -11.004478454589844
+    ],
+    "max": [
+      0.3559440076351166,
+      0.5611259937286377,
+      11.243038177490234
+    ]
+  },
+  "shellBvh": "blas/t_picea_abies_3d_fallen.bvh",
+  "instances": [
+    {
+      "id": "t_picea_abies_3d_fallen_mossy",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_3d_fallen_mossy.et",
+      "blas": "blas/t_picea_abies_3d_fallen.bvh",
+      "xob": "Assets/Vegetation/Tree/Picea_Abies/t_picea_abies_3d_fallen.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

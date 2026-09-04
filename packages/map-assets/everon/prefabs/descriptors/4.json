@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 4,
+  "slug": "CabbageCrop_01",
+  "resourceName": "Prefabs/Vegetation/Vegetables/CabbageCrop_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.10769999772310257,
+      -0.0013740956783294678,
+      -0.10769999772310257
+    ],
+    "max": [
+      0.10769999772310257,
+      0.21402589976787567,
+      0.10769999772310257
+    ]
+  },
+  "shellBvh": "blas/CabbageCrop_01.bvh",
+  "instances": [
+    {
+      "id": "CabbageCrop_01",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Vegetables/CabbageCrop_01.et",
+      "blas": "blas/CabbageCrop_01.bvh",
+      "xob": "Assets/Vegetation/Vegetables/CabbageCrop_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

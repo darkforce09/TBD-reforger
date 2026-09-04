@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 720,
+  "slug": "TouristSign_Pole_01_I25_Montfort",
+  "resourceName": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_Pole_01_I25_Montfort.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.1815878199164659,
+      1.9399401768841926,
+      -0.15598072171532934
+    ],
+    "max": [
+      0.23743156982289929,
+      2.359940364936847,
+      0.207399428888764
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "socket_TouristSign_01_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Right_red.et",
+      "blas": "blas/TouristSign_01_right.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_right.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          1.999922275543213,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          0.41640774151243165,
+          0.0,
+          0.9091779764207424
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_TouristSignLocation_01_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Location_I25_Montfort.et",
+      "blas": "blas/TouristSign_01_location.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_location.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          2.299922466278076,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_TouristSign_01_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Left_red.et",
+      "blas": "blas/TouristSign_01_left.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_left.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          2.1499223709106445,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          0.0325795309208235,
+          0.0,
+          0.9994691461796003
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ],
+  "notes": [
+    "socket_TouristSignLocation_01_01/5E04D781DC42F465: Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Decal/TouristSign_01_Decal_I25_Montfort_01_V94.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

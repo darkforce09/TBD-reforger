@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 226,
+  "slug": "Litter_01_long",
+  "resourceName": "Prefabs/Props/Garbage/Generic/Litter_01_long.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.4478015899658203,
+      -0.008192494511604309,
+      -0.5497390031814575
+    ],
+    "max": [
+      2.1731178760528564,
+      0.0948915034532547,
+      0.39766761660575867
+    ]
+  },
+  "shellBvh": "blas/Litter_01_long.bvh",
+  "instances": [
+    {
+      "id": "Litter_01_long",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Garbage/Generic/Litter_01_long.et",
+      "blas": "blas/Litter_01_long.bvh",
+      "xob": "Assets/Props/Garbage/Generic/Litter_01/Litter_01_long.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

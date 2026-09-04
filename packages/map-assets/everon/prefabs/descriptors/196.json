@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 196,
+  "slug": "GraveStone_E_01_D",
+  "resourceName": "Prefabs/Structures/Cultural/Cemeteries/Tombstones/GraveStone_E_01_D.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.6380206719040871,
+      0.0032809972763061523,
+      -0.15361478924751282
+    ],
+    "max": [
+      0.6562283262610435,
+      1.226559042930603,
+      0.15338560560485348
+    ]
+  },
+  "shellBvh": "blas/GraveStone_E_01_D.bvh",
+  "instances": [
+    {
+      "id": "GraveStone_E_01_D",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Cultural/Cemeteries/Tombstones/GraveStone_E_01_D.et",
+      "blas": "blas/GraveStone_E_01_D.bvh",
+      "xob": "Assets/Structures/Cultural/Cemeteries/Tombstones/GraveStone_E_01/GraveStone_E_01_D.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

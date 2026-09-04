@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1431,
+  "slug": "SignGeneric_01_NoEntry_V2",
+  "resourceName": "Prefabs/Structures/Signs/Generic/SignGeneric_01_NoEntry_V2.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.35053370081004687,
+      -0.24253229470923543,
+      0.03731339843943715
+    ],
+    "max": [
+      0.35026630081119947,
+      0.2568676951341331,
+      0.04531339881941676
+    ]
+  },
+  "shellBvh": "blas/SignGeneric_01.bvh",
+  "instances": [
+    {
+      "id": "SignGeneric_01_NoEntry_V2",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Generic/SignGeneric_01_NoEntry_V2.et",
+      "blas": "blas/SignGeneric_01.bvh",
+      "xob": "Assets/Structures/Signs/Generic/SignGeneric_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

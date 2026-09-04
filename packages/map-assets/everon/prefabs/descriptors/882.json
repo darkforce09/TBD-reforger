@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 882,
+  "slug": "FeedRack_02",
+  "resourceName": "Prefabs/Props/Forest/FeedRack/FeedRack_02.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.577579975128174,
+      -0.929025411605835,
+      -3.2000006064772606
+    ],
+    "max": [
+      2.690330982208252,
+      4.469534873962402,
+      3.150000251829624
+    ]
+  },
+  "shellBvh": "blas/FeedRack_02.bvh",
+  "instances": [
+    {
+      "id": "FeedRack_02",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Forest/FeedRack/FeedRack_02.et",
+      "blas": "blas/FeedRack_02.bvh",
+      "xob": "Assets/Props/Forest/FeedRack_02/FeedRack_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_DoorFrame",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/DoorSet_Shed_02_R_EXT_B.et",
+      "blas": "blas/DoorFrame_Shed_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Shed/DoorFrame_Shed_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.17929789423942566,
+          2.9046521186828613
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorFrame/socket_door_shed_02_right_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Shed_02_EXT_COV_B.et",
+      "blas": "blas/Door_Shed_02_Right.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Shed/Door_Shed_02_Right.xob",
+      "local": {
+        "pos": [
+          -0.4831385016441345,
+          0.20846849493682384,
+          2.956926718354225
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "Socket_DoorFrame"
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1372,
+  "slug": "TouristSign_Pole_01_I08_Lamentin",
+  "resourceName": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_Pole_01_I08_Lamentin.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.1853367077782992,
+      1.9399401768841926,
+      -0.1556126435470085
+    ],
+    "max": [
+      0.23636045823180035,
+      2.359940364936847,
+      0.20693519541399416
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "socket_TouristSignLocation_01_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Location_I08_Lamentin.et",
+      "blas": "blas/TouristSign_01_location.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_location.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          2.299922466278076,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_TouristSign_01_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Right_yellow.et",
+      "blas": "blas/TouristSign_01_right.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_right.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          1.999922275543213,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          0.414645596627081,
+          0.0,
+          0.9099829829165884
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_TouristSign_01_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Left_green.et",
+      "blas": "blas/TouristSign_01_left.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_left.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          2.1499223709106445,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          -0.0985903092951553,
+          0.0,
+          0.9951281077896884
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ],
+  "notes": [
+    "socket_TouristSignLocation_01_01/5E04D78264FBDDCF: Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Decal/TouristSign_01_Decal_I08_Lamentin_01_V28.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

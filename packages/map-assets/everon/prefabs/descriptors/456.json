@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 456,
+  "slug": "BoatWreck_01",
+  "resourceName": "Prefabs/Props/Wrecks/BoatWreck_01/BoatWreck_01.et",
+  "kind": "vehicle",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7111619710922241,
+      -0.005432099103927612,
+      -2.5529069900512695
+    ],
+    "max": [
+      0.7168828025460243,
+      0.8014079928398132,
+      2.5461399015039206
+    ]
+  },
+  "shellBvh": "blas/BoatWreck_01.bvh",
+  "instances": [
+    {
+      "id": "BoatWreck_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Wrecks/BoatWreck_01/BoatWreck_01.et",
+      "blas": "blas/BoatWreck_01.bvh",
+      "xob": "Assets/Props/Wrecks/BoatWreck_01/BoatWreck_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

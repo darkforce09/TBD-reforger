@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 628,
+  "slug": "DirtPile_Cluttered_US_02",
+  "resourceName": "Prefabs/Compositions/Misc/SubCompositions/DirtPile_Cluttered_US_02.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.5603411197662354,
+      -1.0154619216918945,
+      -1.4292683601379395
+    ],
+    "max": [
+      1.5163469314575195,
+      0.5587303589185884,
+      1.5113494396209717
+    ]
+  },
+  "shellBvh": "blas/DirtPile_01_small.bvh",
+  "instances": [
+    {
+      "id": "DirtPile_Cluttered_US_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Compositions/Misc/SubCompositions/DirtPile_Cluttered_US_02.et",
+      "blas": "blas/DirtPile_01_small.bvh",
+      "xob": "Assets/Structures/Military/Fortifications/DirtMounds/DirtPile_01_small.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "571A8EA3DEBA5540",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Military/Sandbags/Sandbag_01_single_plastic.et",
+      "blas": "blas/Sandbag_01_single.bvh",
+      "xob": "Assets/Props/Military/Sandbags/Sandbag_01_single.xob",
+      "local": {
+        "pos": [
+          -0.184,
+          0.0,
+          -0.225
+        ],
+        "quat": [
+          -0.0,
+          -0.9407535927365727,
+          -0.0,
+          0.3390909579349334
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "571A8EA3DEBA554C",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Military/Sandbags/Sandbag_01_single_plastic.et",
+      "blas": "blas/Sandbag_01_single.bvh",
+      "xob": "Assets/Props/Military/Sandbags/Sandbag_01_single.xob",
+      "local": {
+        "pos": [
+          0.145,
+          0.103,
+          -0.117
+        ],
+        "quat": [
+          -0.3501783890333239,
+          -0.9366694005940304,
+          0.0017693712732915691,
+          0.004732776156053981
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "571A8EA3DEBA554E",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Military/Sandbags/Sandbag_01_single_plastic.et",
+      "blas": "blas/Sandbag_01_single.bvh",
+      "xob": "Assets/Props/Military/Sandbags/Sandbag_01_single.xob",
+      "local": {
+        "pos": [
+          0.018,
+          0.0,
+          0.202
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

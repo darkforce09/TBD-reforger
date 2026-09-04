@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1434,
+  "slug": "SilageWall_01_5m_M1",
+  "resourceName": "Prefabs/Structures/Walls/Concrete/SilageWall_01/SilageWall_01_5m_M1.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.08447599411010742,
+      -1.3522050380706787,
+      -0.07792899757623672
+    ],
+    "max": [
+      4.963289260864258,
+      2.7014129161834717,
+      0.07856500148773193
+    ]
+  },
+  "shellBvh": "blas/SilageWall_01_5m_M1.bvh",
+  "instances": [
+    {
+      "id": "SilageWall_01_5m_M1",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/SilageWall_01/SilageWall_01_5m_M1.et",
+      "blas": "blas/SilageWall_01_5m_M1.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/SilageWall_01_5m_M1.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

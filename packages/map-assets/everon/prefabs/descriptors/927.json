@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 927,
+  "slug": "Chock_01_red",
+  "resourceName": "Prefabs/Props/Civilian/Chock_01/Chock_01_red.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.0939750000834465,
+      -3.0547380447387695e-7,
+      -0.2266594097018242
+    ],
+    "max": [
+      0.0939750000834465,
+      0.23226669430732727,
+      0.23026060312986374
+    ]
+  },
+  "shellBvh": "blas/Chock_01.bvh",
+  "instances": [
+    {
+      "id": "Chock_01_red",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/Chock_01/Chock_01_red.et",
+      "blas": "blas/Chock_01.bvh",
+      "xob": "Assets/Props/Civilian/Chock_01/Chock_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

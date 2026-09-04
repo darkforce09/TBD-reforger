@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1249,
+  "slug": "CardboardBoxStack_01",
+  "resourceName": "Prefabs/Props/Crates/CardboardBoxStack_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.3196705905455926,
+      -0.000021591782569885254,
+      -0.41682550862645434
+    ],
+    "max": [
+      0.3509929915625432,
+      0.8184561386108866,
+      0.409039708713346
+    ]
+  },
+  "shellBvh": "blas/CardboardBoxStack_01.bvh",
+  "instances": [
+    {
+      "id": "CardboardBoxStack_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/CardboardBoxStack_01.et",
+      "blas": "blas/CardboardBoxStack_01.bvh",
+      "xob": "Assets/Props/Crates/CardboardBoxStack_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

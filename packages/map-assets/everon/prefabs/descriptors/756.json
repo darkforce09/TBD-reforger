@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 756,
+  "slug": "p_fucus_fesiculosus_02",
+  "resourceName": "Prefabs/Vegetation/Plant/p_fucus_fesiculosus_02.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.7602832913398743,
+      -0.04543349891901016,
+      -1.4722245335578918
+    ],
+    "max": [
+      1.0657747387886047,
+      0.151979498565197,
+      1.5199204087257385
+    ]
+  },
+  "shellBvh": "blas/FucusVesiculosus_02.bvh",
+  "instances": [
+    {
+      "id": "p_fucus_fesiculosus_02",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Plant/p_fucus_fesiculosus_02.et",
+      "blas": "blas/FucusVesiculosus_02.bvh",
+      "xob": "Assets/Vegetation/Plant/Fucus_Vesiculosus/FucusVesiculosus_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

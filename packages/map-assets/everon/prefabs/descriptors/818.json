@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 818,
+  "slug": "PumpkinCrop_01",
+  "resourceName": "Prefabs/Vegetation/Vegetables/PumpkinCrop_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.9542942072988101,
+      0.02204960584640503,
+      -1.0684142795433882
+    ],
+    "max": [
+      0.8822704057932444,
+      0.22244960069656372,
+      1.041968279801834
+    ]
+  },
+  "shellBvh": "blas/PumpkinCrop_01.bvh",
+  "instances": [
+    {
+      "id": "PumpkinCrop_01",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Vegetables/PumpkinCrop_01.et",
+      "blas": "blas/PumpkinCrop_01.bvh",
+      "xob": "Assets/Vegetation/Vegetables/PumpkinCrop_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

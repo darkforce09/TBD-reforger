@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 703,
+  "slug": "ObstacleClimb_01",
+  "resourceName": "Prefabs/Props/Military/Training/Obstacles/ObstacleClimb_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.526732474565506,
+      -0.000043511390686035156,
+      -0.11666890315245837
+    ],
+    "max": [
+      1.5084370598196983,
+      2.0399564504623413,
+      0.12208870332688093
+    ]
+  },
+  "shellBvh": "blas/ObstacleClimb_01.bvh",
+  "instances": [
+    {
+      "id": "ObstacleClimb_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Military/Training/Obstacles/ObstacleClimb_01.et",
+      "blas": "blas/ObstacleClimb_01.bvh",
+      "xob": "Assets/Props/Military/Training/Obstacles/ObstacleClimb_01/ObstacleClimb_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

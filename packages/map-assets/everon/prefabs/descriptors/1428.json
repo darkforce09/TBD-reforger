@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1428,
+  "slug": "ShopModern_E_Terrace_01",
+  "resourceName": "Prefabs/Structures/Commercial/Shops/ShopModern_E_01/BuildingAddons/ShopModern_E_Terrace_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -9.975069046020508,
+      -5.986847877502441,
+      -0.08855831623077393
+    ],
+    "max": [
+      2.7343592643737793,
+      3.860182046890259,
+      3.0677926540374756
+    ]
+  },
+  "shellBvh": "blas/ShopModern_FrontCover_E_01.bvh",
+  "instances": [
+    {
+      "id": "ShopModern_E_Terrace_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Commercial/Shops/ShopModern_E_01/BuildingAddons/ShopModern_E_Terrace_01.et",
+      "blas": "blas/ShopModern_FrontCover_E_01.bvh",
+      "xob": "Assets/Structures/Commercial/Shop/ShopModern_E/ShopModern_FrontCover_E_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

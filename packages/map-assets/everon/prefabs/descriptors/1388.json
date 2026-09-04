@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1388,
+  "slug": "VehicleGarbage_01_pile_small",
+  "resourceName": "Prefabs/Props/Industrial/Repair/VehicleGarbage_01_pile_small.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

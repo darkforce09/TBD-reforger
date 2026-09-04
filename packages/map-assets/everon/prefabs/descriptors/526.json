@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 526,
+  "slug": "SurveyMarker_E_01_marker",
+  "resourceName": "Prefabs/Structures/Infrastructure/Benchmarks/SurveyMarker_E_01/SurveyMarker_E_01_marker.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.10970000177621841,
+      -0.3005269952118397,
+      -0.1096000000834465
+    ],
+    "max": [
+      0.10970000177621841,
+      0.19887299463152885,
+      0.1096000000834465
+    ]
+  },
+  "shellBvh": "blas/SurveyMarker_E_01_marker.bvh",
+  "instances": [
+    {
+      "id": "SurveyMarker_E_01_marker",
+      "kind": "furniture",
+      "prefab": "Prefabs/Structures/Infrastructure/Benchmarks/SurveyMarker_E_01/SurveyMarker_E_01_marker.et",
+      "blas": "blas/SurveyMarker_E_01_marker.bvh",
+      "xob": "Assets/Structures/Infrastructure/Benchmarks/SurveyMarker_E_01/SurveyMarker_E_01_marker.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

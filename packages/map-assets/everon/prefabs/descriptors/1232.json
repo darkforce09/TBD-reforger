@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1232,
+  "slug": "t_tilia_cordata_3s",
+  "resourceName": "Prefabs/Vegetation/Tree/t_tilia_cordata/t_tilia_cordata_3s.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -10.532724683278019,
+      -3.346792221069336,
+      -10.338536265819357
+    ],
+    "max": [
+      9.958183264098537,
+      25.827999658381035,
+      7.812840938568115
+    ]
+  },
+  "shellBvh": "blas/t_tilia_cordata_3s.bvh",
+  "instances": [
+    {
+      "id": "t_tilia_cordata_3s",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_tilia_cordata/t_tilia_cordata_3s.et",
+      "blas": "blas/t_tilia_cordata_3s.bvh",
+      "xob": "Assets/Vegetation/Tree/Tilia_Cordata/t_tilia_cordata_3s.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

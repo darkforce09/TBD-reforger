@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 869,
+  "slug": "HouseRuin_01_Entry",
+  "resourceName": "Prefabs/Structures/Ruins/HouseRuins/HouseRuin_01/HouseRuin_01_Entry.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -7.301183223724365,
+      -1.5,
+      -0.19931770861148834
+    ],
+    "max": [
+      3.5515849590301514,
+      3.3337690830230713,
+      0.3132033050060272
+    ]
+  },
+  "shellBvh": "blas/HouseRuin_01_Entry.bvh",
+  "instances": [
+    {
+      "id": "HouseRuin_01_Entry",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Ruins/HouseRuins/HouseRuin_01/HouseRuin_01_Entry.et",
+      "blas": "blas/HouseRuin_01_Entry.bvh",
+      "xob": "Assets/Structures/Ruins/HouseRuin_01/HouseRuin_01_Entry.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

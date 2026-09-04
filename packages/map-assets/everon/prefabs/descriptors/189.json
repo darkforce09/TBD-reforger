@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 189,
+  "slug": "HouseRuin_01_Corner_Stairs",
+  "resourceName": "Prefabs/Structures/Ruins/HouseRuins/HouseRuin_01/HouseRuin_01_Corner_Stairs.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.6694400310516357,
+      -1.3972269296646118,
+      -2.930358409881592
+    ],
+    "max": [
+      2.745757579803467,
+      2.922929048538208,
+      3.4096906185150146
+    ]
+  },
+  "shellBvh": "blas/HouseRuin_01_Corner_Stairs.bvh",
+  "instances": [
+    {
+      "id": "HouseRuin_01_Corner_Stairs",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Ruins/HouseRuins/HouseRuin_01/HouseRuin_01_Corner_Stairs.et",
+      "blas": "blas/HouseRuin_01_Corner_Stairs.bvh",
+      "xob": "Assets/Structures/Ruins/HouseRuin_01/HouseRuin_01_Corner_Stairs.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

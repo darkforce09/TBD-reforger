@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1176,
+  "slug": "GateCollectiveFarm_02_SaintPhilippe",
+  "resourceName": "Prefabs/Structures/Agriculture/Gates/GateCollectiveFarm_02/GateCollectiveFarm_02_SaintPhilippe.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -4.470158502459526,
+      -1.379192590713501,
+      -0.12664129445329309
+    ],
+    "max": [
+      4.46936871111393,
+      8.351319789886475,
+      0.138558694627136
+    ]
+  },
+  "shellBvh": "blas/GateCollectiveFarm_02.bvh",
+  "instances": [
+    {
+      "id": "GateCollectiveFarm_02_SaintPhilippe",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Agriculture/Gates/GateCollectiveFarm_02/GateCollectiveFarm_02_SaintPhilippe.et",
+      "blas": "blas/GateCollectiveFarm_02.bvh",
+      "xob": "Assets/Structures/Agriculture/Gates/GateCollectiveFarm_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,157 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 452,
+  "slug": "LightBeacon_01",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Lighthouse/LightBeacon_01/LightBeacon_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.100001096725464,
+      -3.789813995361328,
+      -2.60994291305542
+    ],
+    "max": [
+      2.100001096725464,
+      10.14439868927002,
+      2.490000009536743
+    ]
+  },
+  "shellBvh": "blas/LightBeacon_01.bvh",
+  "instances": [
+    {
+      "id": "LightBeacon_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Lighthouse/LightBeacon_01/LightBeacon_01.et",
+      "blas": "blas/LightBeacon_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Lighthouse/LightBeacon_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_hatchframe",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/HatchSet_Lightbeacon.et",
+      "blas": "blas/HatchFrame_Lightbeacon_EXT_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Lighthouse/HatchFrame_Lightbeacon_EXT_B.xob",
+      "local": {
+        "pos": [
+          -0.00877320021390915,
+          8.400020599365234,
+          -0.6054555773735046
+        ],
+        "quat": [
+          -0.7071067811865474,
+          0.0,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_hatchframe/socket_hatchdoor",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/HatchDoor_Lightbeacon_L_EXT_COV_B.et",
+      "blas": "blas/HatchDoor_Lightbeacon_L_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Lighthouse/HatchDoor_Lightbeacon_L_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -0.6696630045771599,
+          8.595228403806686,
+          -0.605455277373494
+        ],
+        "quat": [
+          -0.7071067811865474,
+          0.0,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "socket_hatchframe"
+    },
+    {
+      "id": "socket_doorframe",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/DoorSet_LightBeacon.et",
+      "blas": "blas/DoorFrame_Lightbeacon_Ext_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Lighthouse/DoorFrame_Lightbeacon_Ext_B.xob",
+      "local": {
+        "pos": [
+          -1.0000000116860974e-7,
+          0.3473810851573944,
+          0.363805890083313
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_doorframe/socket_door_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Lightbeacon_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_Lightbeacon_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Lighthouse/Door_Lightbeacon_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          0.490914513008498,
+          0.3647962845861912,
+          0.5366504937410355
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 135.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "socket_doorframe"
+    }
+  ],
+  "notes": [
+    "521A820ADF74DB63: Prefabs/Structures/Core/ProbeHouse_Base.et has no mesh",
+    "66369ACBFD3D9FB1: Prefabs/Props/Naval/Buoy_01_lightsource_red.et has no mesh"
+  ]
+}

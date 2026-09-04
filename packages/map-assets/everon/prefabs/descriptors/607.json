@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 607,
+  "slug": "NetHanger_01_long",
+  "resourceName": "Prefabs/Props/Naval/NetHanger_01_long.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

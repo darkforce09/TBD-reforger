@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1416,
+  "slug": "SandPile_01",
+  "resourceName": "Prefabs/Props/Construction/GravelPile_01/SandPile_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.761812925338745,
+      -0.3833213150501251,
+      -3.9043800830841064
+    ],
+    "max": [
+      4.081089019775391,
+      1.9235937595367432,
+      3.924894094467163
+    ]
+  },
+  "shellBvh": "blas/SandPile_01.bvh",
+  "instances": [
+    {
+      "id": "SandPile_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Construction/GravelPile_01/SandPile_01.et",
+      "blas": "blas/SandPile_01.bvh",
+      "xob": "Assets/Props/Construction/SandPile_01/SandPile_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

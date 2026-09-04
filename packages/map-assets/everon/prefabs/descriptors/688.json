@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 688,
+  "slug": "t_salix_fragilis_2s",
+  "resourceName": "Prefabs/Vegetation/Tree/t_salix_fragilis/t_salix_fragilis_2s.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -5.399191647768021,
+      -0.9808160066604614,
+      -5.371295116841793
+    ],
+    "max": [
+      4.560808390378952,
+      9.496808290481567,
+      4.9580729976296425
+    ]
+  },
+  "shellBvh": "blas/t_salix_fragilis_2s.bvh",
+  "instances": [
+    {
+      "id": "t_salix_fragilis_2s",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_salix_fragilis/t_salix_fragilis_2s.et",
+      "blas": "blas/t_salix_fragilis_2s.bvh",
+      "xob": "Assets/Vegetation/Tree/Salix_Fragilis/t_salix_fragilis_2s.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

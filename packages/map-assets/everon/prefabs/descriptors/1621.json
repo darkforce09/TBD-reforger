@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1621,
+  "slug": "RampVehicle_01_concrete",
+  "resourceName": "Prefabs/Structures/Industrial/Repair/RampVehicle_01/RampVehicle_01_concrete.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.6845619678497314,
+      -0.3672280013561249,
+      -3.991373062133789
+    ],
+    "max": [
+      2.6884100437164307,
+      1.018170952796936,
+      8.65913200378418
+    ]
+  },
+  "shellBvh": "blas/RampVehicle_01_concrete.bvh",
+  "instances": [
+    {
+      "id": "RampVehicle_01_concrete",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Industrial/Repair/RampVehicle_01/RampVehicle_01_concrete.et",
+      "blas": "blas/RampVehicle_01_concrete.bvh",
+      "xob": "Assets/Structures/Industrial/Repair/RampVehicle_01/RampVehicle_01_concrete.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

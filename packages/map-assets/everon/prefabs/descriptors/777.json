@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 777,
+  "slug": "NetFence_03_D",
+  "resourceName": "Prefabs/Structures/Walls/Net/NetFence_03/NetFence_03_D.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.11113200336694717,
+      -2.0,
+      -0.29710501432418823
+    ],
+    "max": [
+      0.6599079966545105,
+      2.611670970916748,
+      0.22297999262809753
+    ]
+  },
+  "shellBvh": "blas/NetFence_03_D.bvh",
+  "instances": [
+    {
+      "id": "NetFence_03_D",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Net/NetFence_03/NetFence_03_D.et",
+      "blas": "blas/NetFence_03_D.bvh",
+      "xob": "Assets/Structures/Walls/Net/NetFence_03_D.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

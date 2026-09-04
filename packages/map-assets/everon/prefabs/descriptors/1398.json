@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1398,
+  "slug": "PalletFuel_01",
+  "resourceName": "Prefabs/Props/Military/Camps/PalletFuel_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7425829768180847,
+      -0.008554999716579914,
+      -1.0543179512023926
+    ],
+    "max": [
+      0.6318449974060059,
+      1.2317984104156494,
+      1.0188210010528564
+    ]
+  },
+  "shellBvh": "blas/PalletFuel_01.bvh",
+  "instances": [
+    {
+      "id": "PalletFuel_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Military/Camps/PalletFuel_01.et",
+      "blas": "blas/PalletFuel_01.bvh",
+      "xob": "Assets/Props/Industrial/Pallets/PalletFuel_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

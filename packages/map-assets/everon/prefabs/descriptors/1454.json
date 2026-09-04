@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1454,
+  "slug": "TouristSign_Pole_01_I18_Levie",
+  "resourceName": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_Pole_01_I18_Levie.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.23732640177560393,
+      1.639940343777198,
+      -0.2095982283022895
+    ],
+    "max": [
+      0.23625379280907857,
+      2.359940364936847,
+      0.1732132093220044
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "socket_TouristSign_01_03",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Left_yellow.et",
+      "blas": "blas/TouristSign_01_left.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_left.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          1.84992253780365,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          0.46100535082756977,
+          0.0,
+          0.8873973554774374
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_TouristSign_01_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Right_green.et",
+      "blas": "blas/TouristSign_01_right.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_right.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          1.999922275543213,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          -0.4430007795781158,
+          0.0,
+          0.896521226348368
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_TouristSign_01_04",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Right_yellow.et",
+      "blas": "blas/TouristSign_01_right.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_right.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          1.6999224424362183,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          -0.15784785425866432,
+          0.0,
+          0.9874634448453955
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_TouristSignLocation_01_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Location_I18_Levie.et",
+      "blas": "blas/TouristSign_01_location.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_location.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          2.299922466278076,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_TouristSign_01_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Left_green.et",
+      "blas": "blas/TouristSign_01_left.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_left.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          2.1499223709106445,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          0.015140152786410312,
+          0.0,
+          0.9998853813180809
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ],
+  "notes": [
+    "socket_TouristSignLocation_01_01/5E04D7811606BC74: Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Decal/TouristSign_01_Decal_I18_Levie_01_V66.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 472,
+  "slug": "BreakwaterStone_01_stack_slope",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Breakwater/BreakwaterStone_01_stack_slope.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.09750771522521973,
+      -0.035557448863983154,
+      -6.215821266174316
+    ],
+    "max": [
+      7.89005184173584,
+      1.967817783355713,
+      5.972655296325684
+    ]
+  },
+  "shellBvh": "blas/BreakwaterStone_01_stack_slope.bvh",
+  "instances": [
+    {
+      "id": "BreakwaterStone_01_stack_slope",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Breakwater/BreakwaterStone_01_stack_slope.et",
+      "blas": "blas/BreakwaterStone_01_stack_slope.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Breakwater/BreakwaterStone_01_stack_slope.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

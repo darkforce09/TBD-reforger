@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 319,
+  "slug": "BenchStreet_02",
+  "resourceName": "Prefabs/Props/Civilian/BenchStreet/BenchStreet_02.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.0931564745510471,
+      -0.022297304780261373,
+      -0.5649610626835773
+    ],
+    "max": [
+      1.097705152391371,
+      1.0053842302469858,
+      0.3255168946494611
+    ]
+  },
+  "shellBvh": "blas/BenchStreet_02.bvh",
+  "instances": [
+    {
+      "id": "BenchStreet_02",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Civilian/BenchStreet/BenchStreet_02.et",
+      "blas": "blas/BenchStreet_02.bvh",
+      "xob": "Assets/Props/Civilian/BenchStreet/BenchStreet_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

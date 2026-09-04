@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 906,
+  "slug": "PortableCabin_E_02_stripes",
+  "resourceName": "Prefabs/Structures/Industrial/Houses/PortableCabin_E_02/PortableCabin_E_02_stripes.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.833488941192627,
+      -2.8502466678619385,
+      -1.4491252899169922
+    ],
+    "max": [
+      1.9590764100054305,
+      3.5629355907440186,
+      1.4791977405548096
+    ]
+  },
+  "shellBvh": "blas/PortableCabin_E_02.bvh",
+  "instances": [
+    {
+      "id": "PortableCabin_E_02_stripes",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Industrial/Houses/PortableCabin_E_02/PortableCabin_E_02_stripes.et",
+      "blas": "blas/PortableCabin_E_02.bvh",
+      "xob": "Assets/Structures/Industrial/Houses/PortableCabin_E_02/PortableCabin_E_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_Door_metal_A_LEFT_EXT_COV_B",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Metal_A_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_metal_A_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_metal_A_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -0.13003019988536835,
+          0.5884007811546326,
+          1.199868083000183
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_Win_woodenhouse_70x72",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_WoodenHouse_E/Win_woodenhouse_70x72_1_B.et",
+      "blas": "blas/Win_woodenhouse_70x72.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_woodenhouse_70x72.xob",
+      "local": {
+        "pos": [
+          1.7050000429153442,
+          2.7287161350250244,
+          -0.25451791286468506
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_Win_woodenhouse_70x72/socket_glass_54x55",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          1.6879942435771227,
+          2.7246926352381706,
+          -0.257562612881884
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_Win_woodenhouse_70x72"
+    },
+    {
+      "id": "5B18D348A3AC035A/584E986118D7EC14",
+      "kind": "furniture",
+      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/ElectricCabinetInterior_01.et",
+      "blas": "blas/ElectricCabinetInterior_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Electrical/ElectricCabinet/ElectricCabinetInterior_01.xob",
+      "local": {
+        "pos": [
+          0.88,
+          0.555,
+          0.613
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18D348A3AC035A"
+    }
+  ],
+  "notes": [
+    "551EB1EC2AA326B0: Prefabs/Structures/Core/ProbeHouse_Base.et has no mesh"
+  ]
+}

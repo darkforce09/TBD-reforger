@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 992,
+  "slug": "DivingBoard_01",
+  "resourceName": "Prefabs/Structures/Recreation/Beach/DivingBoard_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.4002839922904968,
+      -1.8866620063781738,
+      -3.6004509925842285
+    ],
+    "max": [
+      0.400285005569458,
+      0.5598530173301697,
+      3.596566915512085
+    ]
+  },
+  "shellBvh": "blas/DivingBoard_01.bvh",
+  "instances": [
+    {
+      "id": "DivingBoard_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Recreation/Beach/DivingBoard_01.et",
+      "blas": "blas/DivingBoard_01.bvh",
+      "xob": "Assets/Structures/Recreation/Beach/DivingBoard_01/DivingBoard_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

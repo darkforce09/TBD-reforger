@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 600,
+  "slug": "TrashBin_02",
+  "resourceName": "Prefabs/Props/Garbage/Bins/TrashBin_02.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.3404743894934654,
+      0.0002390742301940918,
+      -0.2796025089919567
+    ],
+    "max": [
+      0.30429161339998245,
+      1.026667058467865,
+      0.3651605136692524
+    ]
+  },
+  "shellBvh": "blas/TrashBin_02.bvh",
+  "instances": [
+    {
+      "id": "TrashBin_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Garbage/Bins/TrashBin_02.et",
+      "blas": "blas/TrashBin_02.bvh",
+      "xob": "Assets/Props/Garbage/Bins/TrashBin_02/TrashBin_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

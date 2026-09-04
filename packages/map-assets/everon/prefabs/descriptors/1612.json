@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1612,
+  "slug": "DogHouse_01",
+  "resourceName": "Prefabs/Structures/Civilian/DogHouse_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.4542680084705353,
+      0.00009699999645818025,
+      -0.5366629958152771
+    ],
+    "max": [
+      0.4460639953613281,
+      0.9587200284004211,
+      0.5384849905967712
+    ]
+  },
+  "shellBvh": "blas/DogHouse_01.bvh",
+  "instances": [
+    {
+      "id": "DogHouse_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Civilian/DogHouse_01.et",
+      "blas": "blas/DogHouse_01.bvh",
+      "xob": "Assets/Structures/Civilian/DogHouse_01/DogHouse_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

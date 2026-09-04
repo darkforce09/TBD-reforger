@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1270,
+  "slug": "HayBale_01_square_small",
+  "resourceName": "Prefabs/Props/Agriculture/Farm/HayBale_01_square_small.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.31792479823343456,
+      -0.0072423964738845825,
+      -0.42946870531886816
+    ],
+    "max": [
+      0.3156751983333379,
+      0.4577576071023941,
+      0.437331304885447
+    ]
+  },
+  "shellBvh": "blas/HayBale_01_square_small.bvh",
+  "instances": [
+    {
+      "id": "HayBale_01_square_small",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayBale_01_square_small.et",
+      "blas": "blas/HayBale_01_square_small.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayBale_01_square_small.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

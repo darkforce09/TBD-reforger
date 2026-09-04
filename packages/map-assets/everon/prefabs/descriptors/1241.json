@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1241,
+  "slug": "CompositionDecal_CigarButts_01",
+  "resourceName": "Prefabs/Compositions/Misc/CustomEntities/CompositionDecals/CompositionDecal_CigarButts_01.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": [],
+  "notes": [
+    "56E0B29F4975B6A9: Prefabs/Decals/Miscellaneous/CigarButts_01.et has no mesh"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1273,
+  "slug": "p_artemisia_vulgaris_0s",
+  "resourceName": "Prefabs/Vegetation/Plant/p_artemisia_vulgaris_0s.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.23126810230314732,
+      2.384185791015625e-7,
+      -0.4052695003338158
+    ],
+    "max": [
+      0.28883991204202175,
+      1.2234912514686584,
+      0.31950950948521495
+    ]
+  },
+  "shellBvh": "blas/p_artemisia_vulgaris_0s.bvh",
+  "instances": [
+    {
+      "id": "p_artemisia_vulgaris_0s",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Plant/p_artemisia_vulgaris_0s.et",
+      "blas": "blas/p_artemisia_vulgaris_0s.bvh",
+      "xob": "Assets/Vegetation/Plant/Artemisia_Vulgaris/p_artemisia_vulgaris_0s.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

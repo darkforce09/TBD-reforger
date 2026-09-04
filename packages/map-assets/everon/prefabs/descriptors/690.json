@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 690,
+  "slug": "Pier_Stairs01",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Stairs01.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.2122429609298706,
+      -1.450158953666687,
+      -0.11156799644231796
+    ],
+    "max": [
+      1.224845051765442,
+      0.005834758281707764,
+      2.2419439554214478
+    ]
+  },
+  "shellBvh": "blas/Pier_Stairs01.bvh",
+  "instances": [
+    {
+      "id": "Pier_Stairs01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Stairs01.et",
+      "blas": "blas/Pier_Stairs01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Stairs01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 745,
+  "slug": "Granite_ForestStone_03",
+  "resourceName": "Prefabs/Rocks/Granite/Granite_ForestStone_03.et",
+  "kind": "rock",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.353809431195259,
+      -0.6837370097637177,
+      -1.4014339745044708
+    ],
+    "max": [
+      1.1704166382551193,
+      1.3686330020427704,
+      2.3244108855724335
+    ]
+  },
+  "shellBvh": "blas/GraniteBeachStone_03.bvh",
+  "instances": [
+    {
+      "id": "Granite_ForestStone_03",
+      "kind": "prop",
+      "prefab": "Prefabs/Rocks/Granite/Granite_ForestStone_03.et",
+      "blas": "blas/GraniteBeachStone_03.bvh",
+      "xob": "Assets/Rocks/Granite/GraniteBeachStone_03.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

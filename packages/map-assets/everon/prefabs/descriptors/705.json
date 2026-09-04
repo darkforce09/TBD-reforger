@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 705,
+  "slug": "ObstacleWindow_01",
+  "resourceName": "Prefabs/Props/Military/Training/Obstacles/ObstacleWindow_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.3008773792535067,
+      -0.11482930183410645,
+      -2.134337902069092
+    ],
+    "max": [
+      1.3033389318734407,
+      2.7471273690462112,
+      2.1854426860809326
+    ]
+  },
+  "shellBvh": "blas/ObstacleWindow_01.bvh",
+  "instances": [
+    {
+      "id": "ObstacleWindow_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Military/Training/Obstacles/ObstacleWindow_01.et",
+      "blas": "blas/ObstacleWindow_01.bvh",
+      "xob": "Assets/Props/Military/Training/Obstacles/ObstacleWindow_01/ObstacleWindow_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

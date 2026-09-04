@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 6,
+  "slug": "TouristSign_Pole_01_I20_Perelle",
+  "resourceName": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_Pole_01_I20_Perelle.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.23755346151840928,
+      1.9399401768841926,
+      -0.10027359038314185
+    ],
+    "max": [
+      0.23863556835351435,
+      2.359940364936847,
+      0.09774025868830566
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "socket_TouristSign_01_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Left_blue.et",
+      "blas": "blas/TouristSign_01_left.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_left.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          2.1499223709106445,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          0.13075114056173326,
+          0.0,
+          0.9914152204005171
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_TouristSignLocation_01_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Location_I20_Perelle.et",
+      "blas": "blas/TouristSign_01_location.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_location.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          2.299922466278076,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_TouristSign_01_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Right_blue.et",
+      "blas": "blas/TouristSign_01_right.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_right.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          1.999922275543213,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          -0.15405511252512716,
+          0.0,
+          0.9880622562899923
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ],
+  "notes": [
+    "socket_TouristSignLocation_01_01/5E04D7815F80AAB9: Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Decal/TouristSign_01_Decal_I20_Perelle_01_V75.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

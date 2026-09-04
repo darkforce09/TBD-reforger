@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 570,
+  "slug": "HouseRuin_01_BrickPile_Big",
+  "resourceName": "Prefabs/Structures/Ruins/HouseRuins/HouseRuin_01/HouseRuin_01_BrickPile_Big.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.2445871829986572,
+      -0.246712327003479,
+      -2.3909780979156494
+    ],
+    "max": [
+      2.631934642791748,
+      0.6400446891784668,
+      2.2674028873443604
+    ]
+  },
+  "shellBvh": "blas/HouseRuin_01_BrickPile_Big.bvh",
+  "instances": [
+    {
+      "id": "HouseRuin_01_BrickPile_Big",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Ruins/HouseRuins/HouseRuin_01/HouseRuin_01_BrickPile_Big.et",
+      "blas": "blas/HouseRuin_01_BrickPile_Big.bvh",
+      "xob": "Assets/Structures/Ruins/HouseRuin_01/HouseRuin_01_BrickPile_Big.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

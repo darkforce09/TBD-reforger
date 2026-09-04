@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 579,
+  "slug": "ErodedEmbankment_01_dirt_turnin",
+  "resourceName": "Prefabs/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_dirt_turnin.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -8.400788307189941,
+      -1.1899449825286865,
+      -3.9936280250549316
+    ],
+    "max": [
+      8.400788307189941,
+      1.9483389854431152,
+      5.831985950469971
+    ]
+  },
+  "shellBvh": "blas/ErodedEmbankment_01_dirt_turnin.bvh",
+  "instances": [
+    {
+      "id": "ErodedEmbankment_01_dirt_turnin",
+      "kind": "prop",
+      "prefab": "Prefabs/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_dirt_turnin.et",
+      "blas": "blas/ErodedEmbankment_01_dirt_turnin.bvh",
+      "xob": "Assets/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_dirt_turnin.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

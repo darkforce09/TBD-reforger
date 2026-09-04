@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 904,
+  "slug": "DeerSkull_01",
+  "resourceName": "Prefabs/Props/Forest/DeerSkull_01/DeerSkull_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.4274003989994526,
+      -0.293856393545866,
+      -0.2711869031190872
+    ],
+    "max": [
+      0.43349889293313026,
+      0.7053296715021133,
+      0.037827201187610626
+    ]
+  },
+  "shellBvh": "blas/DeerSkull_01.bvh",
+  "instances": [
+    {
+      "id": "DeerSkull_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Forest/DeerSkull_01/DeerSkull_01.et",
+      "blas": "blas/DeerSkull_01.bvh",
+      "xob": "Assets/Props/Forest/DeerSkull_01/DeerSkull_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

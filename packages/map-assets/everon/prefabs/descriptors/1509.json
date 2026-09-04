@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1509,
+  "slug": "FishingBuoy_01",
+  "resourceName": "Prefabs/Props/Naval/FishingBuoy_01.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

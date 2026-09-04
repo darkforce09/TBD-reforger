@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 415,
+  "slug": "PosterSingle_27x41_01_RadioEveron",
+  "resourceName": "Prefabs/Props/Commercial/Posters/PosterSingle_27x41_01_RadioEveron.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

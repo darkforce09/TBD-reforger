@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1495,
+  "slug": "SackTruck_01",
+  "resourceName": "Prefabs/Props/Civilian/SackTruck_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.29890042543411255,
+      -0.03070917990995259,
+      -0.4205293460260284
+    ],
+    "max": [
+      0.2990225851535797,
+      1.2231600284576416,
+      0.19854968786239624
+    ]
+  },
+  "shellBvh": "blas/SackTruck_01.bvh",
+  "instances": [
+    {
+      "id": "SackTruck_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/SackTruck_01.et",
+      "blas": "blas/SackTruck_01.bvh",
+      "xob": "Assets/Props/Civilian/SackTruck_01/SackTruck_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

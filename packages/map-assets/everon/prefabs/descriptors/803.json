@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 803,
+  "slug": "StepladderWooden_01_Open",
+  "resourceName": "Prefabs/Props/Civilian/StepladderWooden_01_Open.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.3033190071582794,
+      0.0017890000017359853,
+      -0.5355380177497864
+    ],
+    "max": [
+      0.3033190071582794,
+      1.863677978515625,
+      0.5355380177497864
+    ]
+  },
+  "shellBvh": "blas/StepLadderWooden_01_Open.bvh",
+  "instances": [
+    {
+      "id": "StepladderWooden_01_Open",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/StepladderWooden_01_Open.et",
+      "blas": "blas/StepLadderWooden_01_Open.bvh",
+      "xob": "Assets/Props/Civilian/StepladderWooden_01/StepLadderWooden_01_Open.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

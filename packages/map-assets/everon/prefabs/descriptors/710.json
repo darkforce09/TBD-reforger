@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 710,
+  "slug": "WoodKindling_Crate_01",
+  "resourceName": "Prefabs/Props/Civilian/WoodKindling_Crate_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.3041916899383068,
+      -0.0029945001006126404,
+      -0.2058998985456455
+    ],
+    "max": [
+      0.3041916899383068,
+      0.22061630338430405,
+      0.20590679999440908
+    ]
+  },
+  "shellBvh": "blas/WoodKindling_Crate_01.bvh",
+  "instances": [
+    {
+      "id": "WoodKindling_Crate_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Civilian/WoodKindling_Crate_01.et",
+      "blas": "blas/WoodKindling_Crate_01.bvh",
+      "xob": "Assets/Props/Civilian/WoodKindling_01/WoodKindling_Crate_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "5C64CB17312C16AE",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/Crate_01_green.et",
+      "blas": "blas/Crate_01.bvh",
+      "xob": "Assets/Props/Crates/Crate_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

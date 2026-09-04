@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1098,
+  "slug": "GraniteCliff_01_Fucus",
+  "resourceName": "Prefabs/Rocks/Granite/GraniteCliff_01_Fucus.et",
+  "kind": "rock",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -7.950588226318359,
+      -1.3255120515823364,
+      -3.341610908508301
+    ],
+    "max": [
+      8.999894142150879,
+      21.79576873779297,
+      5.4503021240234375
+    ]
+  },
+  "shellBvh": "blas/GraniteCliff_01.bvh",
+  "instances": [
+    {
+      "id": "GraniteCliff_01_Fucus",
+      "kind": "prop",
+      "prefab": "Prefabs/Rocks/Granite/GraniteCliff_01_Fucus.et",
+      "blas": "blas/GraniteCliff_01.bvh",
+      "xob": "Assets/Rocks/Granite/GraniteCliff_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

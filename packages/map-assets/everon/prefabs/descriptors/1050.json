@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1050,
+  "slug": "PlowWreck_01",
+  "resourceName": "Prefabs/Props/Agriculture/PlowWreck_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.48851627111434937,
+      -0.13854634761810303,
+      -1.6172977685928345
+    ],
+    "max": [
+      0.7474936842918396,
+      1.5478277206420898,
+      0.5507552027702332
+    ]
+  },
+  "shellBvh": "blas/PlowWreck_01.bvh",
+  "instances": [
+    {
+      "id": "PlowWreck_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/PlowWreck_01.et",
+      "blas": "blas/PlowWreck_01.bvh",
+      "xob": "Assets/Props/Agricultural/PlowWreck_01/PlowWreck_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

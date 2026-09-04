@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 288,
+  "slug": "RadioSmall_01_black",
+  "resourceName": "Prefabs/Props/Civilian/RadioSmall_01_black.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.1710143017116934,
+      0.001314505934715271,
+      -0.037673399318009615
+    ],
+    "max": [
+      0.17778570181690156,
+      0.2255145013332367,
+      0.046726598870009184
+    ]
+  },
+  "shellBvh": "blas/RadioSmall_01.bvh",
+  "instances": [
+    {
+      "id": "RadioSmall_01_black",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/RadioSmall_01_black.et",
+      "blas": "blas/RadioSmall_01.bvh",
+      "xob": "Assets/Props/Civilian/RadioSmall_01/RadioSmall_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

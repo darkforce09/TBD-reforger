@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1352,
+  "slug": "GarbageStack_01_Long",
+  "resourceName": "Prefabs/Props/Construction/GarbageStack_01/GarbageStack_01_Long.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.4252729415893555,
+      -0.013410000130534172,
+      -1.1355763524770737
+    ],
+    "max": [
+      4.8393731117248535,
+      1.265447974205017,
+      1.3050466924905777
+    ]
+  },
+  "shellBvh": "blas/GarbageStack_01_Long.bvh",
+  "instances": [
+    {
+      "id": "GarbageStack_01_Long",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Construction/GarbageStack_01/GarbageStack_01_Long.et",
+      "blas": "blas/GarbageStack_01_Long.bvh",
+      "xob": "Assets/Props/Construction/GarbageStack_01/GarbageStack_01_Long.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

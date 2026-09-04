@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1364,
+  "slug": "LifeGuardTower_01_white",
+  "resourceName": "Prefabs/Props/Recreation/Beach/LifeGuardTower_01/LifeGuardTower_01_white.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7408040165901184,
+      0.01168499980121851,
+      -1.3057146519422531
+    ],
+    "max": [
+      0.7407115112873726,
+      2.5389853715896606,
+      0.9119769930839539
+    ]
+  },
+  "shellBvh": "blas/LifeGuardTower_01.bvh",
+  "instances": [
+    {
+      "id": "LifeGuardTower_01_white",
+      "kind": "shell",
+      "prefab": "Prefabs/Props/Recreation/Beach/LifeGuardTower_01/LifeGuardTower_01_white.et",
+      "blas": "blas/LifeGuardTower_01.bvh",
+      "xob": "Assets/Props/Recreation/Beach/LifeGuardTower_01/LifeGuardTower_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

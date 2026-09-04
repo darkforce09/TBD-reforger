@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 230,
+  "slug": "Junk_01_pile_large",
+  "resourceName": "Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_pile_large.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.256505250930786,
+      -0.25628361105918884,
+      -2.25858736038208
+    ],
+    "max": [
+      3.1448676586151123,
+      0.9303063750267029,
+      2.215568780899048
+    ]
+  },
+  "shellBvh": "blas/Junk_01_pile_large.bvh",
+  "instances": [
+    {
+      "id": "Junk_01_pile_large",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_pile_large.et",
+      "blas": "blas/Junk_01_pile_large.bvh",
+      "xob": "Assets/Props/Garbage/Generic/Junk_01/Junk_01_pile_large.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

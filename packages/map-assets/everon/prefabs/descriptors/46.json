@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 46,
+  "slug": "BarGate_01",
+  "resourceName": "Prefabs/Structures/Infrastructure/Barriers/BarGate_01/BarGate_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -11.95703935083363,
+      -2.9997804164886475,
+      -0.26272420585155487
+    ],
+    "max": [
+      4.244056701660156,
+      1.5885918140411377,
+      0.22230678796768188
+    ]
+  },
+  "shellBvh": "blas/BarGate_01.bvh",
+  "instances": [
+    {
+      "id": "BarGate_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Infrastructure/Barriers/BarGate_01/BarGate_01.et",
+      "blas": "blas/BarGate_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Barriers/BarGate_01/BarGate_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_bar",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/Infrastructure/Barriers/BarGate_01/BarGate_01_bar.et",
+      "blas": "blas/BarGate_01_bar.bvh",
+      "xob": "Assets/Structures/Infrastructure/Barriers/BarGate_01/BarGate_01_bar.xob",
+      "local": {
+        "pos": [
+          -4.284088134765625,
+          1.339999794960022,
+          0.08975379914045334
+        ],
+        "quat": [
+          -0.5,
+          -0.5,
+          0.5,
+          0.5
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -70.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    }
+  ]
+}

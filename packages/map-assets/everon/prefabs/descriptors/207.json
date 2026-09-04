@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 207,
+  "slug": "ChairOld_01",
+  "resourceName": "Prefabs/Props/Furniture/ChairOld_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.22968529099132606,
+      -0.004363417625427246,
+      -0.24454432725906372
+    ],
+    "max": [
+      0.25991466555978504,
+      0.9953190684318542,
+      0.3173920810222626
+    ]
+  },
+  "shellBvh": "blas/ChairOld_01.bvh",
+  "instances": [
+    {
+      "id": "ChairOld_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/ChairOld_01.et",
+      "blas": "blas/ChairOld_01.bvh",
+      "xob": "Assets/Props/Furniture/ChairOld_01/ChairOld_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

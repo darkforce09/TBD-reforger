@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 659,
+  "slug": "Sunshade_01_rainbow",
+  "resourceName": "Prefabs/Props/Furniture/Sunshade_01/Sunshade_01_rainbow.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 256,
+  "slug": "TentSmall_02_red",
+  "resourceName": "Prefabs/Props/Recreation/Camp/TentSmall_02/TentSmall_02_red.et",
+  "kind": "building",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

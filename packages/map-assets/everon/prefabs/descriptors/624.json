@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 624,
+  "slug": "CarrierFood_01",
+  "resourceName": "Prefabs/Props/Civilian/CarrierFood_01/CarrierFood_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.11867599934339523,
+      0.000038295984268188477,
+      -0.10089100152254105
+    ],
+    "max": [
+      0.11867599934339523,
+      0.3985068053007126,
+      0.10089100152254105
+    ]
+  },
+  "shellBvh": "blas/CarrierFood_01.bvh",
+  "instances": [
+    {
+      "id": "CarrierFood_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/CarrierFood_01/CarrierFood_01.et",
+      "blas": "blas/CarrierFood_01.bvh",
+      "xob": "Assets/Props/Civilian/CarrierFood_01/CarrierFood_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

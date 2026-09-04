@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1490,
+  "slug": "FuelStation_E_01_roof",
+  "resourceName": "Prefabs/Structures/Commercial/FuelStations/FuelStation_E_01/HouseAddons/FuelStation_E_01_roof.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -5.073005676269531,
+      -0.4989433288574219,
+      -4.659531593322754
+    ],
+    "max": [
+      5.615358352661133,
+      7.111147880554199,
+      4.325198173522949
+    ]
+  },
+  "shellBvh": "blas/FuelStation_E_01_roof.bvh",
+  "instances": [
+    {
+      "id": "FuelStation_E_01_roof",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Commercial/FuelStations/FuelStation_E_01/HouseAddons/FuelStation_E_01_roof.et",
+      "blas": "blas/FuelStation_E_01_roof.bvh",
+      "xob": "Assets/Structures/Commercial/FuelStations/FuelStation_E_01/FuelStation_E_01_roof.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

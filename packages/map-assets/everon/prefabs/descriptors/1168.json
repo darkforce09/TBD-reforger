@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1168,
+  "slug": "SnowBreaker_E_01_B",
+  "resourceName": "Prefabs/Props/Infrastructure/SnowBreakers/SnowBreaker_E_01_B.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.1051752865314484,
+      -0.04025684122223616,
+      -0.9641575001389953
+    ],
+    "max": [
+      0.9023172855377197,
+      1.686287982503364,
+      0.8484269899962538
+    ]
+  },
+  "shellBvh": "blas/SnowBreaker_E_01_B.bvh",
+  "instances": [
+    {
+      "id": "SnowBreaker_E_01_B",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Infrastructure/SnowBreakers/SnowBreaker_E_01_B.et",
+      "blas": "blas/SnowBreaker_E_01_B.bvh",
+      "xob": "Assets/Props/Infrastructure/SnowBreaker_E_01/SnowBreaker_E_01_B.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

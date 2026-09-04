@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 65,
+  "slug": "BreakwaterStone_01_stack_wall_half",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Breakwater/BreakwaterStone_01_stack_wall_half.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -19.51441764831543,
+      -0.9064375758171082,
+      -9.975095748901367
+    ],
+    "max": [
+      18.602622985839844,
+      7.9064764976501465,
+      1.485610008239746
+    ]
+  },
+  "shellBvh": "blas/BreakwaterStone_01_stack_wall_half.bvh",
+  "instances": [
+    {
+      "id": "BreakwaterStone_01_stack_wall_half",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Breakwater/BreakwaterStone_01_stack_wall_half.et",
+      "blas": "blas/BreakwaterStone_01_stack_wall_half.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Breakwater/BreakwaterStone_01_stack_wall_half.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1494,
+  "slug": "M151A2_wreck",
+  "resourceName": "Prefabs/Props/Wrecks/M151A2_wreck/M151A2_wreck.et",
+  "kind": "vehicle",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

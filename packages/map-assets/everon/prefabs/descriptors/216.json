@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 216,
+  "slug": "Monument_01_LamentinBattle",
+  "resourceName": "Prefabs/Structures/Cultural/Statues/Monument_01_LamentinBattle.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7865309715270996,
+      -0.2632850110530853,
+      -0.6237540245056152
+    ],
+    "max": [
+      0.8658879995346069,
+      1.6060829758644104,
+      0.583145022392273
+    ]
+  },
+  "shellBvh": "blas/Monument_01.bvh",
+  "instances": [
+    {
+      "id": "Monument_01_LamentinBattle",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Statues/Monument_01_LamentinBattle.et",
+      "blas": "blas/Monument_01.bvh",
+      "xob": "Assets/Structures/Cultural/Statues/Monument_01/Monument_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1121,
+  "slug": "Decal_OilStain_01_large",
+  "resourceName": "Prefabs/Decals/Fluids/Decal_OilStain_01_large.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

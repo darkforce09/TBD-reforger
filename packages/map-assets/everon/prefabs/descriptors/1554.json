@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1554,
+  "slug": "b_juniperus_communis_2s",
+  "resourceName": "Prefabs/Vegetation/Bush/b_juniperus_communis_2s.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.4742067096375702,
+      -0.8614819049835205,
+      -1.4544375719852745
+    ],
+    "max": [
+      1.3454290527388455,
+      6.9559907235919205,
+      1.703408605347066
+    ]
+  },
+  "shellBvh": "blas/b_Juniperus_communis_2s.bvh",
+  "instances": [
+    {
+      "id": "b_juniperus_communis_2s",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Bush/b_juniperus_communis_2s.et",
+      "blas": "blas/b_Juniperus_communis_2s.bvh",
+      "xob": "Assets/Vegetation/Bush/Juniperus_Communis/b_Juniperus_communis_2s.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

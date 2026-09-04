@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1614,
+  "slug": "WaterMill_01",
+  "resourceName": "Prefabs/Structures/Agriculture/WaterMill_01/WaterMill_01.et",
+  "kind": "building",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

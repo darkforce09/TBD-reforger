@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1113,
+  "slug": "GameProofFence_01_5m_D",
+  "resourceName": "Prefabs/Structures/Walls/Net/GameProofFence_01/GameProofFence_01_5m_D.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.09346900135278702,
+      -0.6708430051803589,
+      -1.2797635793685913
+    ],
+    "max": [
+      5.092537879943848,
+      1.9005420207977295,
+      1.1904674768447876
+    ]
+  },
+  "shellBvh": "blas/GameProofFence_01_5m_D.bvh",
+  "instances": [
+    {
+      "id": "GameProofFence_01_5m_D",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Net/GameProofFence_01/GameProofFence_01_5m_D.et",
+      "blas": "blas/GameProofFence_01_5m_D.bvh",
+      "xob": "Assets/Structures/Walls/Net/GameProofFence_01_5m_D.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1157,
+  "slug": "ConeTraffic_01_stack",
+  "resourceName": "Prefabs/Props/Infrastructure/ConeTraffic/ConeTraffic_01_stack.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

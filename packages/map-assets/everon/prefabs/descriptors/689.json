@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 689,
+  "slug": "Musician_Memorial_01",
+  "resourceName": "Prefabs/Structures/Cultural/Statues/Musician_Memorial_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.36027600429952145,
+      0.015576601028442383,
+      -0.05470349919050932
+    ],
+    "max": [
+      0.3919240031391382,
+      1.4195636063814163,
+      0.07109649945050478
+    ]
+  },
+  "shellBvh": "blas/Musician_Memorial_01.bvh",
+  "instances": [
+    {
+      "id": "Musician_Memorial_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Statues/Musician_Memorial_01.et",
+      "blas": "blas/Musician_Memorial_01.bvh",
+      "xob": "Assets/Structures/Cultural/Statues/Memorial_01/Musician_Memorial_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 913,
+  "slug": "FlowerpotStreet_01_rect_long_begonia_white",
+  "resourceName": "Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_long_begonia_white.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7399570234119892,
+      -0.003158092498779297,
+      -0.33036179008195177
+    ],
+    "max": [
+      0.739974319934845,
+      0.7407441139221191,
+      0.33043819008162245
+    ]
+  },
+  "shellBvh": "blas/FlowerpotStreet_01_rect_long_begonia.bvh",
+  "instances": [
+    {
+      "id": "FlowerpotStreet_01_rect_long_begonia_white",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_long_begonia_white.et",
+      "blas": "blas/FlowerpotStreet_01_rect_long_begonia.bvh",
+      "xob": "Assets/Props/Decorations/FlowerpotStreet_01/FlowerpotStreet_01_rect_long_begonia.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

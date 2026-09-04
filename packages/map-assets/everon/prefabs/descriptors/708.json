@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 708,
+  "slug": "PlaygroundClimber_02",
+  "resourceName": "Prefabs/Structures/Civilian/SportGrounds/PlaygroundClimber_02.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.024358799681067467,
+      -0.17681550979614258,
+      -1.9472041130065918
+    ],
+    "max": [
+      0.025641201063990593,
+      1.5688674449920654,
+      1.7459516525268555
+    ]
+  },
+  "shellBvh": "blas/PlaygroundClimber_02.bvh",
+  "instances": [
+    {
+      "id": "PlaygroundClimber_02",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Civilian/SportGrounds/PlaygroundClimber_02.et",
+      "blas": "blas/PlaygroundClimber_02.bvh",
+      "xob": "Assets/Structures/Civilian/SportsGrounds/PlaygroundClimber_02/PlaygroundClimber_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

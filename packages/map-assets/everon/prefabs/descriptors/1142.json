@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1142,
+  "slug": "LampFluorescent_01_exterior",
+  "resourceName": "Prefabs/Props/Furniture/LampFluorescent/LampFluorescent_01_exterior.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.6630809903144836,
+      -0.08777350187301636,
+      -0.1151999980211258
+    ],
+    "max": [
+      0.6625570058822632,
+      -0.0010211998596787453,
+      0.1151999980211258
+    ]
+  },
+  "shellBvh": "blas/LampFluorescent_01_Dst_01.bvh",
+  "instances": [
+    {
+      "id": "LampFluorescent_01_exterior",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/LampFluorescent/LampFluorescent_01_exterior.et",
+      "blas": "blas/LampFluorescent_01_Dst_01.bvh",
+      "xob": "Assets/Props/Furniture/LampFluorescent_01/Dst/LampFluorescent_01_Dst_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "5F0AF54F02189810",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/LampFluorescent/LampFluorescent_01_glass.et",
+      "blas": "blas/LampFluorescent_01_Dst_02.bvh",
+      "xob": "Assets/Props/Furniture/LampFluorescent_01/Dst/LampFluorescent_01_Dst_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ],
+  "notes": [
+    "5F0AF54F02189810/58D69D7BA124BCB0: Prefabs/Structures/Infrastructure/Lamps/LampStreet_E_01/LightPrefabs/LampStreet_E_01_light.et has no mesh"
+  ]
+}

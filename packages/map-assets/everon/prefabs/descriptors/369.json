@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 369,
+  "slug": "GenericWorldPP_Default",
+  "resourceName": "Prefabs/World/DefaultWorld/GenericWorldPP_Default.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

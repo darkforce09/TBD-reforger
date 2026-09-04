@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 157,
+  "slug": "t_malus_domestica_2s",
+  "resourceName": "Prefabs/Vegetation/Tree/t_malus_domestica/t_malus_domestica_2s.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -4.053802013397217,
+      1.2318099737167358,
+      -3.229628086090088
+    ],
+    "max": [
+      2.663166046142578,
+      6.443116188049316,
+      2.853058099746704
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "t_malus_domestica_2s/canopy",
+      "kind": "treeCanopy",
+      "prefab": "Prefabs/Vegetation/Tree/t_malus_domestica/t_malus_domestica_2s.et",
+      "blas": "blas/t_malus_domestica_2s_canopy.bvh",
+      "xob": "Assets/Vegetation/Tree/Malus_Domestica/t_malus_domestica_2s.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "t_malus_domestica_2s"
+    }
+  ],
+  "notes": [
+    "t_malus_domestica_2s/canopy: convex hull of the visual LOD0 (5500 verts) tagged Foliage — the COLL carries no Foliage triangle"
+  ]
+}

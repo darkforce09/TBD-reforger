@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1075,
+  "slug": "FuelTank_01_rust",
+  "resourceName": "Prefabs/Structures/Industrial/Containers/FuelTanks/FuelTank_01/FuelTank_01_rust.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.5423080921173096,
+      -1.7073659896850586,
+      -2.2488902546465397
+    ],
+    "max": [
+      2.4933950901031494,
+      8.503819465637207,
+      2.401642084121704
+    ]
+  },
+  "shellBvh": "blas/FuelTank_01.bvh",
+  "instances": [
+    {
+      "id": "FuelTank_01_rust",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Industrial/Containers/FuelTanks/FuelTank_01/FuelTank_01_rust.et",
+      "blas": "blas/FuelTank_01.bvh",
+      "xob": "Assets/Structures/Industrial/Containers/FuelTanks/FuelTank_01/FuelTank_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

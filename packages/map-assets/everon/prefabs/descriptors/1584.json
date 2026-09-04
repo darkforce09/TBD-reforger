@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1584,
+  "slug": "TomatoCrop_01",
+  "resourceName": "Prefabs/Vegetation/Vegetables/TomatoCrop_01.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

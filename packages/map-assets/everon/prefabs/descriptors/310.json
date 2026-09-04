@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 310,
+  "slug": "SignDirection_Harbor_01_forward",
+  "resourceName": "Prefabs/Structures/Signs/Directions/SignDirection_Harbor_01/SignDirection_Harbor_01_forward.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.515629805624485,
+      -0.16378419753164053,
+      0.03330030106008053
+    ],
+    "max": [
+      0.4973702058196068,
+      0.3140309154987335,
+      0.05330030061304569
+    ]
+  },
+  "shellBvh": "blas/SignDirection_Eden_01_Straight.bvh",
+  "instances": [
+    {
+      "id": "SignDirection_Harbor_01_forward",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Directions/SignDirection_Harbor_01/SignDirection_Harbor_01_forward.et",
+      "blas": "blas/SignDirection_Eden_01_Straight.bvh",
+      "xob": "Assets/Structures/Signs/Directions/SignDirection_Eden_01_Straight.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

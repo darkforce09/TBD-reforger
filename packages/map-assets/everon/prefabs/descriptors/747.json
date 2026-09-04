@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 747,
+  "slug": "GoalPost_01",
+  "resourceName": "Prefabs/Structures/Civilian/SportGrounds/GoalPost_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.6672708988189697,
+      -0.006347000133246183,
+      -1.0775870084762573
+    ],
+    "max": [
+      3.6657350063323975,
+      2.468614101409912,
+      0.35239601135253906
+    ]
+  },
+  "shellBvh": "blas/GoalPost_01.bvh",
+  "instances": [
+    {
+      "id": "GoalPost_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Civilian/SportGrounds/GoalPost_01.et",
+      "blas": "blas/GoalPost_01.bvh",
+      "xob": "Assets/Structures/Civilian/SportsGrounds/GoalPost_01/GoalPost_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

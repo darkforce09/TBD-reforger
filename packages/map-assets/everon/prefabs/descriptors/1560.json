@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1560,
+  "slug": "LifeBuoy_01_stand",
+  "resourceName": "Prefabs/Props/Naval/LifeBuoy_01_stand.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.37500032782554626,
+      -0.0019949674606323242,
+      -0.14155760407447815
+    ],
+    "max": [
+      0.3756231367588043,
+      1.500000238418579,
+      0.24884238839149475
+    ]
+  },
+  "shellBvh": "blas/LifeBuoy_01_stand.bvh",
+  "instances": [
+    {
+      "id": "LifeBuoy_01_stand",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Naval/LifeBuoy_01_stand.et",
+      "blas": "blas/LifeBuoy_01_stand.bvh",
+      "xob": "Assets/Props/Naval/LifeBuoy_01/LifeBuoy_01_stand.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

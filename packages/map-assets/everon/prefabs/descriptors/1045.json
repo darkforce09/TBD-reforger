@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1045,
+  "slug": "PierConcrete_01_slipway",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/PierConcrete_01_slipway.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -5.007640838623047,
+      -5.600000381469727,
+      -4.157641887664795
+    ],
+    "max": [
+      5.007641792297363,
+      4.013876914978027,
+      3.9176411628723145
+    ]
+  },
+  "shellBvh": "blas/PierConcrete_01_slipway.bvh",
+  "instances": [
+    {
+      "id": "PierConcrete_01_slipway",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/PierConcrete_01_slipway.et",
+      "blas": "blas/PierConcrete_01_slipway.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/PierConcrete_01_slipway.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

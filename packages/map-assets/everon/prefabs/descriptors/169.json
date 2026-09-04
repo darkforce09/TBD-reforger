@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 169,
+  "slug": "PlaygroundSwing_01",
+  "resourceName": "Prefabs/Structures/Civilian/SportGrounds/PlaygroundSwing_01.et",
+  "kind": "building",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

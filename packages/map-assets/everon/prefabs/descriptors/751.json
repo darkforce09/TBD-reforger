@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 751,
+  "slug": "VegetableBed_01_small",
+  "resourceName": "Prefabs/Structures/Agriculture/VegetableBed_01/VegetableBed_01/VegetableBed_01_small.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.2512012859806418,
+      -0.44526340067386627,
+      -0.9952086880803108
+    ],
+    "max": [
+      1.2630093349143863,
+      0.3009794130921364,
+      1.2520752027630806
+    ]
+  },
+  "shellBvh": "blas/VegetableBed_01_small.bvh",
+  "instances": [
+    {
+      "id": "VegetableBed_01_small",
+      "kind": "furniture",
+      "prefab": "Prefabs/Structures/Agriculture/VegetableBed_01/VegetableBed_01/VegetableBed_01_small.et",
+      "blas": "blas/VegetableBed_01_small.bvh",
+      "xob": "Assets/Structures/Agriculture/VegetableBed_01/VegetableBed_01_small.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

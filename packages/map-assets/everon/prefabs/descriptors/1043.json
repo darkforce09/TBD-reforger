@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1043,
+  "slug": "PierConcrete_01_wall_10m",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/PierConcrete_01_wall_10m.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -4.999918460845947,
+      -4.0059027671813965,
+      -0.5768160223960876
+    ],
+    "max": [
+      5.006163597106934,
+      6.045191764831543,
+      0.576816976070404
+    ]
+  },
+  "shellBvh": "blas/PierConcrete_wall_10m.bvh",
+  "instances": [
+    {
+      "id": "PierConcrete_01_wall_10m",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/PierConcrete_01_wall_10m.et",
+      "blas": "blas/PierConcrete_wall_10m.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/PierConcrete_wall_10m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

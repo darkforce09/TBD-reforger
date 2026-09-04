@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1046,
+  "slug": "Junk_01_single_mattress",
+  "resourceName": "Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_single_mattress.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.4200119972229004,
+      -0.009755999781191349,
+      -1.131011962890625
+    ],
+    "max": [
+      0.8094199895858765,
+      0.49388501048088074,
+      1.1504640579223633
+    ]
+  },
+  "shellBvh": "blas/Junk_01_mattress.bvh",
+  "instances": [
+    {
+      "id": "Junk_01_single_mattress",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_single_mattress.et",
+      "blas": "blas/Junk_01_mattress.bvh",
+      "xob": "Assets/Props/Garbage/Generic/Junk_01/Junk_01_mattress.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

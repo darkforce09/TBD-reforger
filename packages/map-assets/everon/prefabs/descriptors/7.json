@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 7,
+  "slug": "GraniteRock_02_Forest",
+  "resourceName": "Prefabs/Rocks/Granite/GraniteRock_02_Forest.et",
+  "kind": "rock",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -7.761569023132324,
+      -0.6924440264701843,
+      -7.735726833343506
+    ],
+    "max": [
+      8.23465347290039,
+      8.507121086120605,
+      8.429668426513672
+    ]
+  },
+  "shellBvh": "blas/GraniteRock_02.bvh",
+  "instances": [
+    {
+      "id": "GraniteRock_02_Forest",
+      "kind": "prop",
+      "prefab": "Prefabs/Rocks/Granite/GraniteRock_02_Forest.et",
+      "blas": "blas/GraniteRock_02.bvh",
+      "xob": "Assets/Rocks/Granite/GraniteRock_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

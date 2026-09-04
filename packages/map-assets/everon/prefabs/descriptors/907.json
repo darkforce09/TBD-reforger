@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 907,
+  "slug": "GateCollectiveFarm_01_Montignac",
+  "resourceName": "Prefabs/Structures/Agriculture/Gates/GateCollectiveFarm_01/GateCollectiveFarm_01_Montignac.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -4.464534521102905,
+      -1.376091718673706,
+      -0.1266286070458591
+    ],
+    "max": [
+      4.465602934360504,
+      8.366938591003418,
+      0.24406079202890396
+    ]
+  },
+  "shellBvh": "blas/GateCollectiveFarm_01.bvh",
+  "instances": [
+    {
+      "id": "GateCollectiveFarm_01_Montignac",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Agriculture/Gates/GateCollectiveFarm_01/GateCollectiveFarm_01_Montignac.et",
+      "blas": "blas/GateCollectiveFarm_01.bvh",
+      "xob": "Assets/Structures/Agriculture/Gates/GateCollectiveFarm_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 334,
+  "slug": "PlaygroundSlide_01",
+  "resourceName": "Prefabs/Structures/Civilian/SportGrounds/PlaygroundSlide_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.4835081994533539,
+      -0.13807399570941925,
+      -1.363441824913025
+    ],
+    "max": [
+      0.45558980107307434,
+      2.184781074523926,
+      2.667929172515869
+    ]
+  },
+  "shellBvh": "blas/PlaygroundSlide_01.bvh",
+  "instances": [
+    {
+      "id": "PlaygroundSlide_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Civilian/SportGrounds/PlaygroundSlide_01.et",
+      "blas": "blas/PlaygroundSlide_01.bvh",
+      "xob": "Assets/Structures/Civilian/SportsGrounds/PlaygroundSlide_01/PlaygroundSlide_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

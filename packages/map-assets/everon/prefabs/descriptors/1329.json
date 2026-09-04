@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1329,
+  "slug": "t_carpinus_betulus_1f",
+  "resourceName": "Prefabs/Vegetation/Tree/t_carpinus_betulus/t_carpinus_betulus_1f.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -3.7875313184553354,
+      -0.1437229961156845,
+      -3.93859005054528
+    ],
+    "max": [
+      2.5502020360887716,
+      12.54880760637428,
+      2.5216845509834447
+    ]
+  },
+  "shellBvh": "blas/T_Carpinus_betulus_1f.bvh",
+  "instances": [
+    {
+      "id": "t_carpinus_betulus_1f",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_carpinus_betulus/t_carpinus_betulus_1f.et",
+      "blas": "blas/T_Carpinus_betulus_1f.bvh",
+      "xob": "Assets/Vegetation/Tree/Carpinus_Betulus/T_Carpinus_betulus_1f.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

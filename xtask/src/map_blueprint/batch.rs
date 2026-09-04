@@ -545,7 +545,7 @@ fn one() -> f64 {
     1.0
 }
 
-fn slug_of(prefab_path: &str) -> String {
+pub(super) fn slug_of(prefab_path: &str) -> String {
     Path::new(prefab_path)
         .file_stem()
         .map(|s| s.to_string_lossy().into_owned())
@@ -572,7 +572,7 @@ fn validate_instances(file: &InstancesFile, schema_path: &Path) -> Result<serde_
     Ok(value)
 }
 
-fn write_if_changed(path: &Path, bytes: &[u8]) -> Result<bool> {
+pub(super) fn write_if_changed(path: &Path, bytes: &[u8]) -> Result<bool> {
     if fs::read(path).map(|old| old == bytes).unwrap_or(false) {
         return Ok(false);
     }
@@ -586,6 +586,10 @@ fn write_if_changed(path: &Path, bytes: &[u8]) -> Result<bool> {
 /// `map bvh-batch --prefab <Prefabs/…/X.et> [--slug <s>] [--out <dir>] [--paks <dir>]
 /// [--extract <dir>] [--scene <spec.json>] [--kind <record>=<kind>]… [--dry-run]`
 pub fn run_bvh_batch(args: &[String]) -> Result<u8> {
+    // T-090.12.2 — the whole-catalogue lane lives in `library.rs`.
+    if args.iter().any(|a| a == "--all-prefabs") {
+        return super::library_cli::run(args);
+    }
     let mut prefab: Option<String> = None;
     let mut slug: Option<String> = None;
     let mut out: Option<PathBuf> = None;

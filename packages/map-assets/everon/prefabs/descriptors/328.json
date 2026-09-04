@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 328,
+  "slug": "Ashtray_01_Full_clear",
+  "resourceName": "Prefabs/Props/Civilian/Ashtray_01_Full_clear.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

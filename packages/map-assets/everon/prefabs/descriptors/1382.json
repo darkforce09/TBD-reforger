@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1382,
+  "slug": "b_rosa_canina_0s",
+  "resourceName": "Prefabs/Vegetation/Bush/b_rosa_canina_0s.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7069388266832942,
+      -0.6014211958199012,
+      -0.6242374757640228
+    ],
+    "max": [
+      0.4402700659672345,
+      0.9726439237919579,
+      0.5436051589145396
+    ]
+  },
+  "shellBvh": "blas/B_Rosa_canina_0s.bvh",
+  "instances": [
+    {
+      "id": "b_rosa_canina_0s",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Bush/b_rosa_canina_0s.et",
+      "blas": "blas/B_Rosa_canina_0s.bvh",
+      "xob": "Assets/Vegetation/Bush/Rosa_Canina/B_Rosa_canina_0s.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

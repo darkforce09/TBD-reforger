@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 266,
+  "slug": "PierWooden_02_bridge",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/PierWooden_02/PierWooden_02_bridge.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.6675636768341064,
+      -14.403197288513184,
+      -24.99640655517578
+    ],
+    "max": [
+      2.641878366470337,
+      3.7389307022094727,
+      25.266382217407227
+    ]
+  },
+  "shellBvh": "blas/PierWooden_02_bridge.bvh",
+  "instances": [
+    {
+      "id": "PierWooden_02_bridge",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/PierWooden_02/PierWooden_02_bridge.et",
+      "blas": "blas/PierWooden_02_bridge.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/PierWooden_02/PierWooden_02_bridge.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

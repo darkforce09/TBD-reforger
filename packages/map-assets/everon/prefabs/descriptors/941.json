@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 941,
+  "slug": "HouseAddon_ShedMetal_01_Short",
+  "resourceName": "Prefabs/Structures/Industrial/Houses/HouseAddon_ShedMetal_01/HouseAddon_ShedMetal_01_Short.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -4.812179088592529,
+      -3.950000047683716,
+      -2.3315064907073975
+    ],
+    "max": [
+      4.7862114906311035,
+      5.399768829345703,
+      2.346810817718506
+    ]
+  },
+  "shellBvh": "blas/HouseAddon_ShedMetal_01_Short.bvh",
+  "instances": [
+    {
+      "id": "HouseAddon_ShedMetal_01_Short",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Industrial/Houses/HouseAddon_ShedMetal_01/HouseAddon_ShedMetal_01_Short.et",
+      "blas": "blas/HouseAddon_ShedMetal_01_Short.bvh",
+      "xob": "Assets/Structures/Industrial/Houses/Warehouse_01/HouseAddon_ShedMetal_01_Short.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

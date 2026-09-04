@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 734,
+  "slug": "RampVehicle_01_metal",
+  "resourceName": "Prefabs/Structures/Industrial/Repair/RampVehicle_01/RampVehicle_01_metal.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.5298919677734375,
+      -0.6810190081596375,
+      -1.539713978767395
+    ],
+    "max": [
+      2.5296878814697266,
+      1.014849066734314,
+      9.50020694732666
+    ]
+  },
+  "shellBvh": "blas/RampVehicle_01_metal.bvh",
+  "instances": [
+    {
+      "id": "RampVehicle_01_metal",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Industrial/Repair/RampVehicle_01/RampVehicle_01_metal.et",
+      "blas": "blas/RampVehicle_01_metal.bvh",
+      "xob": "Assets/Structures/Industrial/Repair/RampVehicle_01/RampVehicle_01_metal.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

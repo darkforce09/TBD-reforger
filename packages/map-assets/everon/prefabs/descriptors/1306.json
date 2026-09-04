@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1306,
+  "slug": "EnvProbe_Eden",
+  "resourceName": "Prefabs/World/Game/Eden/EnvProbe_Eden.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

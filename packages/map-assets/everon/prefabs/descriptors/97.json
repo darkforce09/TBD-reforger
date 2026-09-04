@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 97,
+  "slug": "SmokestackBrick_E_01",
+  "resourceName": "Prefabs/Structures/Industrial/Smokestacks/SmokestackBrick_E_01/SmokestackBrick_E_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.0760574340820312,
+      -3.9000096321105957,
+      -1.8964699506759644
+    ],
+    "max": [
+      4.57814884185791,
+      34.1911735534668,
+      2.039766788482666
+    ]
+  },
+  "shellBvh": "blas/SmokestackBrick_E_01.bvh",
+  "instances": [
+    {
+      "id": "SmokestackBrick_E_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Industrial/Smokestacks/SmokestackBrick_E_01/SmokestackBrick_E_01.et",
+      "blas": "blas/SmokestackBrick_E_01.bvh",
+      "xob": "Assets/Structures/Industrial/Smokestacks/SmokestackBrick_E_01/SmokestackBrick_E_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ],
+  "notes": [
+    "5E0EE616C1BF1EAF: Assets/Structures/BuildingsParts/Electrical/HazardBeacon_01/HazardBeacon_01.xob has no collision chunk — no BLAS, no instance",
+    "5E0EE616C1BF1EAF/5A0882CA93C16A09: Prefabs/Structures/BuildingParts/Eletrical/HazardBeacon_01/HazardBeacon_01_light.et has no mesh"
+  ]
+}

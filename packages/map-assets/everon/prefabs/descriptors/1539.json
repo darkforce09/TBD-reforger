@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1539,
+  "slug": "GraveFence_E_02",
+  "resourceName": "Prefabs/Structures/Cultural/Cemeteries/Graves/GraveFence_E_02.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.6754140853881836,
+      -0.18180328607559204,
+      -1.1691119251772761
+    ],
+    "max": [
+      0.5789854703471065,
+      0.5862807035446167,
+      1.2227928452193737
+    ]
+  },
+  "shellBvh": "blas/GraveFence_E_02.bvh",
+  "instances": [
+    {
+      "id": "GraveFence_E_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Cultural/Cemeteries/Graves/GraveFence_E_02.et",
+      "blas": "blas/GraveFence_E_02.bvh",
+      "xob": "Assets/Structures/Cultural/Cemeteries/Graves/GraveFence_02/GraveFence_E_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

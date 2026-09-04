@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1380,
+  "slug": "TrenchOld_01_6m_wood_end_forest",
+  "resourceName": "Prefabs/Structures/Military/Fortifications/Trenches/TrenchOld_01/TrenchOld_01_6m_wood_end_forest.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.4098219871520996,
+      -0.22191999852657318,
+      -3.478745937347412
+    ],
+    "max": [
+      3.676558017730713,
+      1.2791780233383179,
+      3.518934965133667
+    ]
+  },
+  "shellBvh": "blas/TrenchOld_01_6m_end_forest.bvh",
+  "instances": [
+    {
+      "id": "TrenchOld_01_6m_wood_end_forest",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Military/Fortifications/Trenches/TrenchOld_01/TrenchOld_01_6m_wood_end_forest.et",
+      "blas": "blas/TrenchOld_01_6m_end_forest.bvh",
+      "xob": "Assets/Structures/Military/Fortifications/Trenches/TrenchOld_01/TrenchOld_01_6m_end_forest.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

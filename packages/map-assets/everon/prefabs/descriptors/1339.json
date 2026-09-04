@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1339,
+  "slug": "SawmillRail_01_5m_crossing",
+  "resourceName": "Prefabs/Structures/Infrastructure/Railways/SawmillRail_01/SawmillRail_01_5m_crossing.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.9288296010345221,
+      -0.4716006815433502,
+      -4.998673915863037
+    ],
+    "max": [
+      0.8571583721786737,
+      0.1189865954220295,
+      0.013735532760620117
+    ]
+  },
+  "shellBvh": "blas/SawmillRail_01_5m_Crossing.bvh",
+  "instances": [
+    {
+      "id": "SawmillRail_01_5m_crossing",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Railways/SawmillRail_01/SawmillRail_01_5m_crossing.et",
+      "blas": "blas/SawmillRail_01_5m_Crossing.bvh",
+      "xob": "Assets/Structures/Infrastructure/Railways/SawmillRail_01_5m_Crossing.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

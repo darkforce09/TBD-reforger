@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1030,
+  "slug": "Granite_Cluster_Large_01",
+  "resourceName": "Prefabs/Rocks/Granite/Granite_Cluster_Large_01.et",
+  "kind": "rock",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.357390880584717,
+      -0.2766546905040741,
+      -2.944455623626709
+    ],
+    "max": [
+      3.7415573596954346,
+      0.7061643600463867,
+      3.9679765701293945
+    ]
+  },
+  "shellBvh": "blas/Granite_Cluster_Large_01.bvh",
+  "instances": [
+    {
+      "id": "Granite_Cluster_Large_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Rocks/Granite/Granite_Cluster_Large_01.et",
+      "blas": "blas/Granite_Cluster_Large_01.bvh",
+      "xob": "Assets/Rocks/Granite/Granite_Cluster_Large_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

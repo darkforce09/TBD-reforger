@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 583,
+  "slug": "HouseRuin_01_WoodPile",
+  "resourceName": "Prefabs/Structures/Ruins/HouseRuins/HouseRuin_01/HouseRuin_01_WoodPile.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.5205912590026855,
+      -0.2981318235397339,
+      -2.527217149734497
+    ],
+    "max": [
+      2.6356587409973145,
+      0.49147018790245056,
+      2.2165327072143555
+    ]
+  },
+  "shellBvh": "blas/HouseRuin_01_WoodPile.bvh",
+  "instances": [
+    {
+      "id": "HouseRuin_01_WoodPile",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Ruins/HouseRuins/HouseRuin_01/HouseRuin_01_WoodPile.et",
+      "blas": "blas/HouseRuin_01_WoodPile.bvh",
+      "xob": "Assets/Structures/Ruins/HouseRuin_01/HouseRuin_01_WoodPile.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

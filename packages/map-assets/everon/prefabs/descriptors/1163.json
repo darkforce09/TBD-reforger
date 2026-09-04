@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1163,
+  "slug": "Granite_Boulder_01_Fucus",
+  "resourceName": "Prefabs/Rocks/Granite/Granite_Boulder_01_Fucus.et",
+  "kind": "rock",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.748816967010498,
+      -1.0090709924697876,
+      -1.9094610214233398
+    ],
+    "max": [
+      2.0579299926757812,
+      2.7219839096069336,
+      1.8873050212860107
+    ]
+  },
+  "shellBvh": "blas/GraniteBoulder_01.bvh",
+  "instances": [
+    {
+      "id": "Granite_Boulder_01_Fucus",
+      "kind": "prop",
+      "prefab": "Prefabs/Rocks/Granite/Granite_Boulder_01_Fucus.et",
+      "blas": "blas/GraniteBoulder_01.bvh",
+      "xob": "Assets/Rocks/Granite/GraniteBoulder_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

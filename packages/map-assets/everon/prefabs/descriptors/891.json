@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 891,
+  "slug": "BeerBottle_01_group",
+  "resourceName": "Prefabs/Props/Civilian/BeerBottle_01_group.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.21969814215663774,
+      0.010711999610066414,
+      -0.17282568422119637
+    ],
+    "max": [
+      0.21901899576187134,
+      0.28733301162719727,
+      0.16603124087181764
+    ]
+  },
+  "shellBvh": "blas/BeerBottle_01_Group.bvh",
+  "instances": [
+    {
+      "id": "BeerBottle_01_group",
+      "kind": "glass",
+      "prefab": "Prefabs/Props/Civilian/BeerBottle_01_group.et",
+      "blas": "blas/BeerBottle_01_Group.bvh",
+      "xob": "Assets/Props/Civilian/BeerBottle_01/BeerBottle_01_Group.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 919,
+  "slug": "LawnMower_01",
+  "resourceName": "Prefabs/Props/Civilian/LawnMower_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.35194772481918335,
+      -0.0047605037689208984,
+      -1.4687392700927522
+    ],
+    "max": [
+      0.3500002920627594,
+      0.9595164354116863,
+      0.4141570031642914
+    ]
+  },
+  "shellBvh": "blas/LawnMower_01.bvh",
+  "instances": [
+    {
+      "id": "LawnMower_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/LawnMower_01.et",
+      "blas": "blas/LawnMower_01.bvh",
+      "xob": "Assets/Props/Civilian/LawnMower_01/LawnMower_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

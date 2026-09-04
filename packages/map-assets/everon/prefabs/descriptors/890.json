@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 890,
+  "slug": "TableOld_01_white",
+  "resourceName": "Prefabs/Props/Furniture/TableOld_01/TableOld_01_white.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.8494950183667243,
+      -0.0011292099952697754,
+      -0.4517757056746632
+    ],
+    "max": [
+      0.8569050184451044,
+      0.901333287358284,
+      0.4538243056740612
+    ]
+  },
+  "shellBvh": "blas/TableOld_01.bvh",
+  "instances": [
+    {
+      "id": "TableOld_01_white",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/TableOld_01/TableOld_01_white.et",
+      "blas": "blas/TableOld_01.bvh",
+      "xob": "Assets/Props/Furniture/TableOld_01/TableOld_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

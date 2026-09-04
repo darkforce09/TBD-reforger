@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1219,
+  "slug": "Dragontooth_01_V1",
+  "resourceName": "Prefabs/Structures/Military/Fortifications/Dragontooth_01/Dragontooth_01_V1.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.4740122053772211,
+      0.002501189708709717,
+      -0.798568502334092
+    ],
+    "max": [
+      0.8637067880481482,
+      1.2241321802139282,
+      0.809887513252761
+    ]
+  },
+  "shellBvh": "blas/Dragonsteeth_01.bvh",
+  "instances": [
+    {
+      "id": "Dragontooth_01_V1",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Military/Fortifications/Dragontooth_01/Dragontooth_01_V1.et",
+      "blas": "blas/Dragonsteeth_01.bvh",
+      "xob": "Assets/Structures/Military/Fortifications/Dragonsteeth_01/Dragonsteeth_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

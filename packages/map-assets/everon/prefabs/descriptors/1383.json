@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1383,
+  "slug": "SignDirection_PowerPlant_01_forward_pole",
+  "resourceName": "Prefabs/Structures/Signs/Directions/SignDirection_PowerPlant_01/SignDirection_PowerPlant_01_forward_pole.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.515629805624485,
+      2.0751338684931397,
+      0.035664101131260395
+    ],
+    "max": [
+      0.4973702058196068,
+      2.552948981523514,
+      0.05566410068422556
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "socket_sign_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Directions/SignDirection_PowerPlant_01/SignDirection_PowerPlant_01_forward.et",
+      "blas": "blas/SignDirection_Eden_01_Straight.bvh",
+      "xob": "Assets/Structures/Signs/Directions/SignDirection_Eden_01_Straight.xob",
+      "local": {
+        "pos": [
+          0.0,
+          2.2389180660247803,
+          0.002363800071179867
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ]
+}

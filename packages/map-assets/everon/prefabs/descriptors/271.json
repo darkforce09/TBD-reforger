@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 271,
+  "slug": "StatueCharacter_01",
+  "resourceName": "Prefabs/Structures/Cultural/Statues/StatueCharacter_01/StatueCharacter_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.6248639822006226,
+      -0.6032800078392029,
+      -0.49805599451065063
+    ],
+    "max": [
+      0.46724000573158264,
+      3.8974740505218506,
+      0.5595669746398926
+    ]
+  },
+  "shellBvh": "blas/StatueCharacter_01.bvh",
+  "instances": [
+    {
+      "id": "StatueCharacter_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Statues/StatueCharacter_01/StatueCharacter_01.et",
+      "blas": "blas/StatueCharacter_01.bvh",
+      "xob": "Assets/Structures/Cultural/Statues/StatueCharacter_01/StatueCharacter_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

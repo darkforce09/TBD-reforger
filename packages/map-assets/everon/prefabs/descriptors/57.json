@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 57,
+  "slug": "ObstacleLadder_01",
+  "resourceName": "Prefabs/Props/Military/Training/Obstacles/ObstacleLadder_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -4.7341179847717285,
+      -0.01602800004184246,
+      -1.7474700212478638
+    ],
+    "max": [
+      4.688998222351074,
+      7.281822204589844,
+      1.7583550214767456
+    ]
+  },
+  "shellBvh": "blas/ObstacleLadder_01.bvh",
+  "instances": [
+    {
+      "id": "ObstacleLadder_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Military/Training/Obstacles/ObstacleLadder_01.et",
+      "blas": "blas/ObstacleLadder_01.bvh",
+      "xob": "Assets/Props/Military/Training/Obstacles/ObstacleLadder_01/ObstacleLadder_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ],
+  "notes": [
+    "Socket_Ladder_03: Assets/Structures/BuildingsParts/Ladders/Ladder_Metal/Ladder_Metal_612_B.xob has no collision chunk — no BLAS, no instance",
+    "Socket_Ladder_04: Assets/Structures/BuildingsParts/Ladders/Ladder_Metal/Ladder_Metal_612_B.xob has no collision chunk — no BLAS, no instance",
+    "Socket_Ladder_01: Assets/Structures/BuildingsParts/Ladders/Ladder_Metal/Ladder_Metal_612_B.xob has no collision chunk — no BLAS, no instance",
+    "Socket_Ladder_02: Assets/Structures/BuildingsParts/Ladders/Ladder_Metal/Ladder_Metal_612_B.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

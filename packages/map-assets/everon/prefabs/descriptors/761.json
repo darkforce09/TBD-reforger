@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 761,
+  "slug": "TBD_GameMode",
+  "resourceName": "Prefabs/Systems/TBD_GameMode.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "unresolved",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": [],
+  "notes": [
+    "TBD_GameMode: Prefabs/Systems/TBD_GameMode.et unresolved (read prefab Prefabs/Systems/TBD_GameMode.et: Prefabs/Systems/TBD_GameMode.et: not found in any asset source)"
+  ]
+}

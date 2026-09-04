@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 572,
+  "slug": "NetFence_02_4m",
+  "resourceName": "Prefabs/Structures/Walls/Net/NetFence_02/NetFence_02_4m.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

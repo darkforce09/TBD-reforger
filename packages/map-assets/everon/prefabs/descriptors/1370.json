@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1370,
+  "slug": "TableSaw_01",
+  "resourceName": "Prefabs/Props/Civilian/TableSaw_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.4002619981765747,
+      -0.01500099990516901,
+      -0.8224049955606461
+    ],
+    "max": [
+      0.4002619981765747,
+      1.0316599607467651,
+      0.7856079787015915
+    ]
+  },
+  "shellBvh": "blas/TableSaw_01.bvh",
+  "instances": [
+    {
+      "id": "TableSaw_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Civilian/TableSaw_01.et",
+      "blas": "blas/TableSaw_01.bvh",
+      "xob": "Assets/Props/Civilian/TableSaw_01/TableSaw_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

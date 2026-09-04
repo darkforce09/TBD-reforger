@@ -96,6 +96,7 @@ mod sql_gates;
 mod sync;
 mod test_env;
 mod tickets_store;
+mod verify_blas_manifest;
 mod verify_ci_shell;
 mod verify_ci_shell_rules;
 mod vocab_check;
@@ -530,7 +531,9 @@ enum MapCmd {
     /// shell sidecar (v2, kinds from COLL game materials), one BLAS per child model under
     /// prefabs/blas/, and `<slug>.instances.json` (--prefab <Prefabs/…/X.et> [--slug <s>]
     /// [--out <dir>] [--paks <dir>] [--extract <dir>] [--scene <spec.json>]
-    /// [--kind <record>=<kind>]… [--dry-run]).
+    /// [--kind <record>=<kind>]… [--dry-run]). T-090.12.2: `--all-prefabs [--terrain everon]
+    /// [--only-kind K]… [--limit N] [--hot N] [--dry-run]` walks every catalogue prefab into
+    /// prefabs/descriptors/<pid>.json + the shared BLAS library + prefabs/blas-manifest.json.
     #[command(name = "bvh-batch")]
     BvhBatch {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
@@ -590,6 +593,12 @@ enum VerifyCmd {
     /// SIZE-1/3 file-length gate (verify-file-length.mjs port)
     #[command(name = "file-length")]
     FileLength,
+    /// T-090.12.2: the prefab BLAS library is complete and consistent — every catalogue pid has
+    /// a schema-valid descriptor, every listed BLAS parses with the manifest's bytes / tris /
+    /// kinds, the hot set is blocking pids by placement count, the farmhouse root BLAS is the
+    /// T-090.11 shell.
+    #[command(name = "blas-manifest")]
+    BlasManifest,
     /// T-165.10 hard gate: zero tracked .mjs/.cjs; no node/npx outside the enfusion-mcp floor
     #[command(name = "no-node")]
     NoNode,
@@ -1248,6 +1257,9 @@ fn run() -> Result<u8> {
         TopCmd::Verify { cmd } => {
             let code = match cmd {
                 VerifyCmd::FileLength => node_free::verify_file_length()?,
+                VerifyCmd::BlasManifest => {
+                    verify_blas_manifest::verify_blas_manifest(&find_repo_root()?)?
+                }
                 VerifyCmd::NoNode => node_free::verify_no_node()?,
                 VerifyCmd::NoShell => shell_free::verify_no_shell()?,
                 VerifyCmd::CiShell => verify_ci_shell::verify_ci_shell()?,

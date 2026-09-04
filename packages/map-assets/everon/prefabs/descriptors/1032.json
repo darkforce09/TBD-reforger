@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1032,
+  "slug": "b_corylus_avellana_2",
+  "resourceName": "Prefabs/Vegetation/Bush/b_corylus_avellana_2.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.150870442390442,
+      -0.798367977142334,
+      -3.6695491671562195
+    ],
+    "max": [
+      2.581713557243347,
+      6.2291741371154785,
+      2.8256948590278625
+    ]
+  },
+  "shellBvh": "blas/b_corylus_avellana_2.bvh",
+  "instances": [
+    {
+      "id": "b_corylus_avellana_2",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Bush/b_corylus_avellana_2.et",
+      "blas": "blas/b_corylus_avellana_2.bvh",
+      "xob": "Assets/Vegetation/Bush/Corylus_Avellana/b_corylus_avellana_2.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

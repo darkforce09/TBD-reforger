@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 293,
+  "slug": "SignLarge_01_MilitaryBase",
+  "resourceName": "Prefabs/Structures/Signs/Large/SignLarge_01_MilitaryBase.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

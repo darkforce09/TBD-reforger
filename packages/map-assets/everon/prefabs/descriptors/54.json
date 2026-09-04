@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 54,
+  "slug": "Decal_OilStain_01_medium",
+  "resourceName": "Prefabs/Decals/Fluids/Decal_OilStain_01_medium.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

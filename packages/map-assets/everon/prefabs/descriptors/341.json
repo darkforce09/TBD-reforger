@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 341,
+  "slug": "WeightStation_01_platform",
+  "resourceName": "Prefabs/Structures/Agriculture/WeightStation/WeightStation_01/BuildingAddons/WeightStation_01_platform.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.668363094329834,
+      -0.8723559975624084,
+      -9.62180233001709
+    ],
+    "max": [
+      2.6691598892211914,
+      0.17496100068092346,
+      9.665755745023489
+    ]
+  },
+  "shellBvh": "blas/WeightStation_01_platform.bvh",
+  "instances": [
+    {
+      "id": "WeightStation_01_platform",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Agriculture/WeightStation/WeightStation_01/BuildingAddons/WeightStation_01_platform.et",
+      "blas": "blas/WeightStation_01_platform.bvh",
+      "xob": "Assets/Structures/Agriculture/WeightStation_01/WeightStation_01_platform.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

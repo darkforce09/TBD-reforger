@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1378,
+  "slug": "CannonWreck_01",
+  "resourceName": "Prefabs/Props/Wrecks/CannonWreck_01/CannonWreck_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.019817590713501,
+      -0.013819999992847443,
+      -4.296090126037598
+    ],
+    "max": [
+      1.5087810754776,
+      1.6818541288375854,
+      3.593637704849243
+    ]
+  },
+  "shellBvh": "blas/CannonWreck_01.bvh",
+  "instances": [
+    {
+      "id": "CannonWreck_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Wrecks/CannonWreck_01/CannonWreck_01.et",
+      "blas": "blas/CannonWreck_01.bvh",
+      "xob": "Assets/Props/Wrecks/CannonWreck_01/CannonWreck_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1193,
+  "slug": "BoardMap_01_Dot",
+  "resourceName": "Prefabs/Structures/Civilian/BoardMap_01/BoardMap_01_Dot.et",
+  "kind": "building",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

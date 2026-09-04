@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 922,
+  "slug": "FlowerpotStreet_01_octa_Tagetes_yellow",
+  "resourceName": "Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_octa_Tagetes_yellow.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.6504727154970169,
+      -0.24859344145757767,
+      -0.64085563063822
+    ],
+    "max": [
+      0.6489532887935638,
+      0.8269298225641251,
+      0.6312480120406674
+    ]
+  },
+  "shellBvh": "blas/FlowerpotStreet_01_octa_Tagetes.bvh",
+  "instances": [
+    {
+      "id": "FlowerpotStreet_01_octa_Tagetes_yellow",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_octa_Tagetes_yellow.et",
+      "blas": "blas/FlowerpotStreet_01_octa_Tagetes.bvh",
+      "xob": "Assets/Props/Decorations/FlowerpotStreet_01/FlowerpotStreet_01_octa_Tagetes.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

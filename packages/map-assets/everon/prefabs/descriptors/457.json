@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 457,
+  "slug": "Decal_Dirt_Patch_05",
+  "resourceName": "Prefabs/Decals/Dirt/Decal_Dirt_Patch_05.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

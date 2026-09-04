@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 77,
+  "slug": "Silo_02_red_yellow",
+  "resourceName": "Prefabs/Structures/Industrial/Containers/Silos/Silo_02/Silo_02_red_yellow.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.736443042755127,
+      -0.9734582901000977,
+      -1.731799602508545
+    ],
+    "max": [
+      1.7338145971298218,
+      15.077980995178223,
+      2.5970544815063477
+    ]
+  },
+  "shellBvh": "blas/Silo_02.bvh",
+  "instances": [
+    {
+      "id": "Silo_02_red_yellow",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Industrial/Containers/Silos/Silo_02/Silo_02_red_yellow.et",
+      "blas": "blas/Silo_02.bvh",
+      "xob": "Assets/Structures/Industrial/Containers/Silos/Silo_02/Silo_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_ladder_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Ladders/Ladder_Silo_02_1472_B.et",
+      "blas": "blas/Ladder_Silo_02_1472_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Ladders/Ladder_Silo_02/Ladder_Silo_02_1472_B.xob",
+      "local": {
+        "pos": [
+          0.0,
+          13.498469352722168,
+          1.7482410669326782
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ]
+}

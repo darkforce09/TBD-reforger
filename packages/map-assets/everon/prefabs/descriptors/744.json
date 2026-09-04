@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 744,
+  "slug": "T_stump_debris_01_dry",
+  "resourceName": "Prefabs/Vegetation/Tree/Debris/T_stump_debris_01_dry.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.4702577590942383,
+      -0.21137820184230804,
+      -1.8302977085113525
+    ],
+    "max": [
+      1.661264181137085,
+      1.3980717658996582,
+      2.1392621994018555
+    ]
+  },
+  "shellBvh": "blas/T_stump_debris_01.bvh",
+  "instances": [
+    {
+      "id": "T_stump_debris_01_dry",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/Debris/T_stump_debris_01_dry.et",
+      "blas": "blas/T_stump_debris_01.bvh",
+      "xob": "Assets/Vegetation/Tree/TreeParts/T_stump_debris_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

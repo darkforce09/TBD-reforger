@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 860,
+  "slug": "PostersGround_01_Eden_V1",
+  "resourceName": "Prefabs/Props/Commercial/Posters/PostersGround_01_Eden_V1.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

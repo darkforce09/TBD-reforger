@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1037,
+  "slug": "WaterTower_01",
+  "resourceName": "Prefabs/Structures/Agriculture/WaterTowers/WaterTower_01/WaterTower_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.8773810863494873,
+      -1.617703914642334,
+      -3.8773810863494873
+    ],
+    "max": [
+      3.8773810863494873,
+      33.30574417114258,
+      3.8773810863494873
+    ]
+  },
+  "shellBvh": "blas/WaterTower_01.bvh",
+  "instances": [
+    {
+      "id": "WaterTower_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Agriculture/WaterTowers/WaterTower_01/WaterTower_01.et",
+      "blas": "blas/WaterTower_01.bvh",
+      "xob": "Assets/Structures/Agriculture/WaterTowers/WaterTower_01/WaterTower_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

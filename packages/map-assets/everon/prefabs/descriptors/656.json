@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 656,
+  "slug": "MarsBox_01_wood",
+  "resourceName": "Prefabs/Props/Industrial/Pallets/MarsBox_01_wood.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.43528790239361115,
+      0.09900528192520142,
+      -0.6513794835773297
+    ],
+    "max": [
+      0.43471210237476043,
+      0.5828034970909357,
+      0.6530204836162739
+    ]
+  },
+  "shellBvh": "blas/MarsBox_01_Wood.bvh",
+  "instances": [
+    {
+      "id": "MarsBox_01_wood",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Industrial/Pallets/MarsBox_01_wood.et",
+      "blas": "blas/MarsBox_01_Wood.bvh",
+      "xob": "Assets/Props/Industrial/Pallets/MarsBox_01_Wood.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

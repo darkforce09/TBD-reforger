@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 445,
+  "slug": "Castle_01_Pillar",
+  "resourceName": "Prefabs/Structures/Cultural/Castles/Castle_01_Pillar.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.01453319936990738,
+      -7.489468097686768,
+      -2.7040653228759766
+    ],
+    "max": [
+      1.9878698587417603,
+      5.50965690612793,
+      4.76837158203125e-7
+    ]
+  },
+  "shellBvh": "blas/Castle_01_Pillar.bvh",
+  "instances": [
+    {
+      "id": "Castle_01_Pillar",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Castles/Castle_01_Pillar.et",
+      "blas": "blas/Castle_01_Pillar.bvh",
+      "xob": "Assets/Structures/Cultural/Castles/Castle_01/Castle_01_Pillar.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

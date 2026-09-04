@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1580,
+  "slug": "FishingNet_02",
+  "resourceName": "Prefabs/Props/Naval/FishingNet_02.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.0903420448303223,
+      -0.03658600151538849,
+      -1.7260274663567543
+    ],
+    "max": [
+      2.0312805473804474,
+      1.5094460248947144,
+      1.7141040563583374
+    ]
+  },
+  "shellBvh": "blas/FishingNet_02.bvh",
+  "instances": [
+    {
+      "id": "FishingNet_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Naval/FishingNet_02.et",
+      "blas": "blas/FishingNet_02.bvh",
+      "xob": "Assets/Props/Naval/FishingGear_01/FishingNet_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

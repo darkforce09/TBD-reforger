@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 823,
+  "slug": "SeaBollard_01",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.2970010042190552,
+      0.0013630000175908208,
+      -0.22258999943733215
+    ],
+    "max": [
+      0.29875099658966064,
+      0.5197020173072815,
+      0.2256300002336502
+    ]
+  },
+  "shellBvh": "blas/Sea_Bollard.bvh",
+  "instances": [
+    {
+      "id": "SeaBollard_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

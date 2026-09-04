@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 145,
+  "slug": "Granite_BeachCluster_01_Fucus",
+  "resourceName": "Prefabs/Rocks/Granite/Granite_BeachCluster_01_Fucus.et",
+  "kind": "rock",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.2847900390625,
+      -0.36683228611946106,
+      -2.7044382095336914
+    ],
+    "max": [
+      2.180485963821411,
+      0.5498846769332886,
+      2.5773062705993652
+    ]
+  },
+  "shellBvh": "blas/GraniteBeachCluster_01.bvh",
+  "instances": [
+    {
+      "id": "Granite_BeachCluster_01_Fucus",
+      "kind": "prop",
+      "prefab": "Prefabs/Rocks/Granite/Granite_BeachCluster_01_Fucus.et",
+      "blas": "blas/GraniteBeachCluster_01.bvh",
+      "xob": "Assets/Rocks/Granite/GraniteBeachCluster_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

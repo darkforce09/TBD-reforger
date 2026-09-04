@@ -1,0 +1,1233 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 314,
+  "slug": "Greenhouse_01",
+  "resourceName": "Prefabs/Structures/Agriculture/Greenhouse/Greenhouse_01/Greenhouse_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.8873071670532227,
+      -1.0420000553131104,
+      -2.108062744140625
+    ],
+    "max": [
+      1.8789727687835693,
+      3.0008726119995117,
+      2.1058313846588135
+    ]
+  },
+  "shellBvh": "blas/GreenHouse_01.bvh",
+  "instances": [
+    {
+      "id": "Greenhouse_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Agriculture/Greenhouse/Greenhouse_01/Greenhouse_01.et",
+      "blas": "blas/GreenHouse_01.bvh",
+      "xob": "Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Left_85x35_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Left_85x35.et",
+      "blas": "blas/Glass_GreenHouse_01_Left_85x35.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Left_85x35/Glass_GreenHouse_01_Left_85x35.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Left_85x35_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Left_85x35.et",
+      "blas": "blas/Glass_GreenHouse_01_Left_85x35.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Left_85x35/Glass_GreenHouse_01_Left_85x35.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Right_85x35_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Right_85x35.et",
+      "blas": "blas/Glass_GreenHouse_01_Right_85x35.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Right_85x35/Glass_GreenHouse_01_Right_85x35.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Right_85x35_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Right_85x35.et",
+      "blas": "blas/Glass_GreenHouse_01_Right_85x35.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Right_85x35/Glass_GreenHouse_01_Right_85x35.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_90x80_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_90x80.et",
+      "blas": "blas/Glass_GreenHouse_01_90x80.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_90x80/Glass_GreenHouse_01_90x80.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Left_103x80_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Left_103x80.et",
+      "blas": "blas/Glass_GreenHouse_01_Left_103x80.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Left_103x80/Glass_GreenHouse_01_Left_103x80.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Left_103x80_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Left_103x80.et",
+      "blas": "blas/Glass_GreenHouse_01_Left_103x80.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Left_103x80/Glass_GreenHouse_01_Left_103x80.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Left_119x44_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Left_119x44.et",
+      "blas": "blas/Glass_GreenHouse_01_Right_119x44.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Right_119x44/Glass_GreenHouse_01_Right_119x44.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Left_119x44_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Left_119x44.et",
+      "blas": "blas/Glass_GreenHouse_01_Right_119x44.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Right_119x44/Glass_GreenHouse_01_Right_119x44.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Right_103x80_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Right_103x80.et",
+      "blas": "blas/Glass_GreenHouse_01_Right_103x80.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Right_103x80/Glass_GreenHouse_01_Right_103x80.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Right_103x80_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Right_103x80.et",
+      "blas": "blas/Glass_GreenHouse_01_Right_103x80.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Right_103x80/Glass_GreenHouse_01_Right_103x80.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Right_112x65_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Right_112x65.et",
+      "blas": "blas/Glass_GreenHouse_01_Right_112x65.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Right_112x65/Glass_GreenHouse_01_Right_112x65.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Right_112x65_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Right_112x65.et",
+      "blas": "blas/Glass_GreenHouse_01_Right_112x65.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Right_112x65/Glass_GreenHouse_01_Right_112x65.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_90x44_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_90x44.et",
+      "blas": "blas/Glass_GreenHouse_01_90x44.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_90x44/Glass_GreenHouse_01_90x44.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Right_119x44_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Right_119x44.et",
+      "blas": "blas/Glass_GreenHouse_01_Right_119x44.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Right_119x44/Glass_GreenHouse_01_Right_119x44.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Right_119x44_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Right_119x44.et",
+      "blas": "blas/Glass_GreenHouse_01_Right_119x44.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Right_119x44/Glass_GreenHouse_01_Right_119x44.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_door_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Greenhouse_01_Right_EXT_ST_B.et",
+      "blas": "blas/Door_Greenhouse_01_Right.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Greenhouse_01/Door_Greenhouse_01_Right.xob",
+      "local": {
+        "pos": [
+          -0.4543878138065338,
+          0.3152025043964386,
+          2.003174066543579
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_door_01/Glass_Door_Greenhouse_01_77x47_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_Door_Greenhouse_01_77x47.et",
+      "blas": "blas/Glass_Door_Greenhouse_01_77x47.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_Door_Greenhouse_01_77x47/Glass_Door_Greenhouse_01_77x47.xob",
+      "local": {
+        "pos": [
+          -0.4543878138065338,
+          0.3152025043964386,
+          2.003174066543579
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "Socket_door_01"
+    },
+    {
+      "id": "Socket_door_01/Glass_Door_Greenhouse_01_77x75_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_Door_Greenhouse_01_77x75.et",
+      "blas": "blas/Glass_GreenHouse_01_90x80.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_90x80/Glass_GreenHouse_01_90x80.xob",
+      "local": {
+        "pos": [
+          -0.4543878138065338,
+          0.3152025043964386,
+          2.003174066543579
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "Socket_door_01"
+    },
+    {
+      "id": "Socket_door_01/Glass_Door_Greenhouse_01_77x57_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_Door_Greenhouse_01_77x57.et",
+      "blas": "blas/Glass_GreenHouse_01_90x80.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_90x80/Glass_GreenHouse_01_90x80.xob",
+      "local": {
+        "pos": [
+          -0.4543878138065338,
+          0.3152025043964386,
+          2.003174066543579
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "Socket_door_01"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x208_08",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x208.et",
+      "blas": "blas/Glass_GreenHouse_01_60x208.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x208/Glass_GreenHouse_01_60x208.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x208_10",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x208.et",
+      "blas": "blas/Glass_GreenHouse_01_60x208.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x208/Glass_GreenHouse_01_60x208.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x208_09",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x208.et",
+      "blas": "blas/Glass_GreenHouse_01_60x208.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x208/Glass_GreenHouse_01_60x208.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x208_11",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x208.et",
+      "blas": "blas/Glass_GreenHouse_01_60x208.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x208/Glass_GreenHouse_01_60x208.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x208_12",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x208.et",
+      "blas": "blas/Glass_GreenHouse_01_60x208.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x208/Glass_GreenHouse_01_60x208.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x208_03",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x208.et",
+      "blas": "blas/Glass_GreenHouse_01_60x208.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x208/Glass_GreenHouse_01_60x208.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x208_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x208.et",
+      "blas": "blas/Glass_GreenHouse_01_60x208.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x208/Glass_GreenHouse_01_60x208.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x208_04",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x208.et",
+      "blas": "blas/Glass_GreenHouse_01_60x208.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x208/Glass_GreenHouse_01_60x208.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x208_06",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x208.et",
+      "blas": "blas/Glass_GreenHouse_01_60x208.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x208/Glass_GreenHouse_01_60x208.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x208_05",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x208.et",
+      "blas": "blas/Glass_GreenHouse_01_60x208.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x208/Glass_GreenHouse_01_60x208.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x208_07",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x208.et",
+      "blas": "blas/Glass_GreenHouse_01_60x208.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x208/Glass_GreenHouse_01_60x208.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x208_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x208.et",
+      "blas": "blas/Glass_GreenHouse_01_60x208.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x208/Glass_GreenHouse_01_60x208.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Left_112x65_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Left_112x65.et",
+      "blas": "blas/Glass_GreenHouse_01_Left_103x80_dmg_15.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Left_112x65/Glass_GreenHouse_01_Left_103x80_dmg_15.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_Left_112x65_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_Left_112x65.et",
+      "blas": "blas/Glass_GreenHouse_01_Left_103x80_dmg_15.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_Left_112x65/Glass_GreenHouse_01_Left_103x80_dmg_15.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x157_09",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x157.et",
+      "blas": "blas/Glass_GreenHouse_01_60x157.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x157/Glass_GreenHouse_01_60x157.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x157_11",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x157.et",
+      "blas": "blas/Glass_GreenHouse_01_60x157.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x157/Glass_GreenHouse_01_60x157.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x157_10",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x157.et",
+      "blas": "blas/Glass_GreenHouse_01_60x157.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x157/Glass_GreenHouse_01_60x157.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x157_12",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x157.et",
+      "blas": "blas/Glass_GreenHouse_01_60x157.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x157/Glass_GreenHouse_01_60x157.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x157_04",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x157.et",
+      "blas": "blas/Glass_GreenHouse_01_60x157.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x157/Glass_GreenHouse_01_60x157.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x157_03",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x157.et",
+      "blas": "blas/Glass_GreenHouse_01_60x157.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x157/Glass_GreenHouse_01_60x157.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x157_05",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x157.et",
+      "blas": "blas/Glass_GreenHouse_01_60x157.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x157/Glass_GreenHouse_01_60x157.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x157_07",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x157.et",
+      "blas": "blas/Glass_GreenHouse_01_60x157.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x157/Glass_GreenHouse_01_60x157.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x157_06",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x157.et",
+      "blas": "blas/Glass_GreenHouse_01_60x157.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x157/Glass_GreenHouse_01_60x157.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x157_08",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x157.et",
+      "blas": "blas/Glass_GreenHouse_01_60x157.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x157/Glass_GreenHouse_01_60x157.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x157_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x157.et",
+      "blas": "blas/Glass_GreenHouse_01_60x157.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x157/Glass_GreenHouse_01_60x157.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_60x157_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_60x157.et",
+      "blas": "blas/Glass_GreenHouse_01_60x157.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_60x157/Glass_GreenHouse_01_60x157.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_90x29_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_90x29.et",
+      "blas": "blas/Glass_GreenHouse_01_90x29.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_90x29/Glass_GreenHouse_01_90x29.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_90x29_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_90x29.et",
+      "blas": "blas/Glass_GreenHouse_01_90x29.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_90x29/Glass_GreenHouse_01_90x29.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Glass_GreenHouse_01_90x66_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_GreenHouse_01/Glass_GreenHouse_01_90x66.et",
+      "blas": "blas/Glass_GreenHouse_01_90x66.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_GreenHouse_01_90x66/Glass_GreenHouse_01_90x66.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ],
+  "notes": [
+    "Glass_GreenHouse_01_Left_85x35_02: socket Glass_GreenHouse_01_Left_85x35_02 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Left_85x35_01: socket Glass_GreenHouse_01_Left_85x35_01 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Right_85x35_02: socket Glass_GreenHouse_01_Right_85x35_02 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Right_85x35_01: socket Glass_GreenHouse_01_Right_85x35_01 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_90x80_01: socket Glass_GreenHouse_01_90x80_01 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Left_103x80_02: socket Glass_GreenHouse_01_Left_103x80_02 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Left_103x80_01: socket Glass_GreenHouse_01_Left_103x80_01 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Left_119x44_01: socket Glass_GreenHouse_01_Left_119x44_01 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Left_119x44_02: socket Glass_GreenHouse_01_Left_119x44_02 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Right_103x80_02: socket Glass_GreenHouse_01_Right_103x80_02 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Right_103x80_01: socket Glass_GreenHouse_01_Right_103x80_01 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Right_112x65_01: socket Glass_GreenHouse_01_Right_112x65_01 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Right_112x65_02: socket Glass_GreenHouse_01_Right_112x65_02 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_90x44_01: socket Glass_GreenHouse_01_90x44_01 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Right_119x44_02: socket Glass_GreenHouse_01_Right_119x44_02 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Right_119x44_01: socket Glass_GreenHouse_01_Right_119x44_01 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Socket_door_01/Glass_Door_Greenhouse_01_77x47_01: socket Glass_Door_Greenhouse_01_77x47_01 not found in Assets/Structures/BuildingsParts/Doors/Door_Greenhouse_01/Door_Greenhouse_01_Right.xob — prefab coords used",
+    "Socket_door_01/Glass_Door_Greenhouse_01_77x75_01: socket Glass_Door_Greenhouse_01_77x75_01 not found in Assets/Structures/BuildingsParts/Doors/Door_Greenhouse_01/Door_Greenhouse_01_Right.xob — prefab coords used",
+    "Socket_door_01/Glass_Door_Greenhouse_01_77x57_01: socket Glass_Door_Greenhouse_01_77x57_01 not found in Assets/Structures/BuildingsParts/Doors/Door_Greenhouse_01/Door_Greenhouse_01_Right.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x208_08: socket Glass_GreenHouse_01_60x208_08 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x208_10: socket Glass_GreenHouse_01_60x208_10 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x208_09: socket Glass_GreenHouse_01_60x208_09 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x208_11: socket Glass_GreenHouse_01_60x208_11 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x208_12: socket Glass_GreenHouse_01_60x208_12 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x208_03: socket Glass_GreenHouse_01_60x208_03 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x208_02: socket Glass_GreenHouse_01_60x208_02 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x208_04: socket Glass_GreenHouse_01_60x208_04 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x208_06: socket Glass_GreenHouse_01_60x208_06 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x208_05: socket Glass_GreenHouse_01_60x208_05 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x208_07: socket Glass_GreenHouse_01_60x208_07 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x208_01: socket Glass_GreenHouse_01_60x208_01 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Left_112x65_02: socket Glass_GreenHouse_01_Left_112x65_02 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_Left_112x65_01: socket Glass_GreenHouse_01_Left_112x65_01 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x157_09: socket Glass_GreenHouse_01_60x157_09 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x157_11: socket Glass_GreenHouse_01_60x157_11 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x157_10: socket Glass_GreenHouse_01_60x157_10 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x157_12: socket Glass_GreenHouse_01_60x157_12 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x157_04: socket Glass_GreenHouse_01_60x157_04 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x157_03: socket Glass_GreenHouse_01_60x157_03 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x157_05: socket Glass_GreenHouse_01_60x157_05 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x157_07: socket Glass_GreenHouse_01_60x157_07 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x157_06: socket Glass_GreenHouse_01_60x157_06 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x157_08: socket Glass_GreenHouse_01_60x157_08 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x157_01: socket Glass_GreenHouse_01_60x157_01 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_60x157_02: socket Glass_GreenHouse_01_60x157_02 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_90x29_02: socket Glass_GreenHouse_01_90x29_02 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_90x29_01: socket Glass_GreenHouse_01_90x29_01 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used",
+    "Glass_GreenHouse_01_90x66_01: socket Glass_GreenHouse_01_90x66_01 not found in Assets/Structures/Agriculture/Greenhouse/Greenhouse_01/GreenHouse_01.xob — prefab coords used"
+  ]
+}

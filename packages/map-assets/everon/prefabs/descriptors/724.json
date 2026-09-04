@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 724,
+  "slug": "GarbageContainer_01",
+  "resourceName": "Prefabs/Props/Garbage/Bins/GarbageContainer_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.8267611786723137,
+      -0.1586567331057265,
+      -0.5799721570793307
+    ],
+    "max": [
+      0.7759651951491833,
+      1.4879326224327087,
+      0.6274406828930492
+    ]
+  },
+  "shellBvh": "blas/GarbageContainer_01_Base.bvh",
+  "instances": [
+    {
+      "id": "GarbageContainer_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Garbage/Bins/GarbageContainer_01.et",
+      "blas": "blas/GarbageContainer_01_Base.bvh",
+      "xob": "Assets/Props/Garbage/Bins/GarbageContainer_01/GarbageContainer_01_Base.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "5C64CC0693F240E3",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Garbage/Bins/GarbageContainer_01_lid.et",
+      "blas": "blas/GarbageContainer_01_Cap.bvh",
+      "xob": "Assets/Props/Garbage/Bins/GarbageContainer_01/GarbageContainer_01_Cap.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.4617486132350339,
+          0.0,
+          0.0,
+          0.8870108331782217
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

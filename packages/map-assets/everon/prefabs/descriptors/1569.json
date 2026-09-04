@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1569,
+  "slug": "Pier_Wood_Broken_01",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Wood_Broken_01.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.3787827491760254,
+      -0.5,
+      0.007499999832361937
+    ],
+    "max": [
+      1.8689112663269043,
+      0.5,
+      0.557807981967926
+    ]
+  },
+  "shellBvh": "blas/Pier_Wood_Broken_01.bvh",
+  "instances": [
+    {
+      "id": "Pier_Wood_Broken_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Wood_Broken_01.et",
+      "blas": "blas/Pier_Wood_Broken_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Wood_Broken_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

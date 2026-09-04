@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 249,
+  "slug": "BoxWooden_01",
+  "resourceName": "Prefabs/Props/Crates/BoxWooden_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.41912420094013214,
+      0.002700899727642536,
+      -0.17898819921538234
+    ],
+    "max": [
+      0.4172772914171219,
+      0.2750253975391388,
+      0.18355659395456314
+    ]
+  },
+  "shellBvh": "blas/BoxWooden_01.bvh",
+  "instances": [
+    {
+      "id": "BoxWooden_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/BoxWooden_01.et",
+      "blas": "blas/BoxWooden_01.bvh",
+      "xob": "Assets/Props/Crates/BoxWooden_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 16,
+  "slug": "PoleFence_02_8m_C",
+  "resourceName": "Prefabs/Structures/Walls/Pole/PoleFence_02/PoleFence_02_8m_C.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.6248270273208618,
+      -1.0270487908273935,
+      -0.08953090757131577
+    ],
+    "max": [
+      8.34516429901123,
+      1.2856040000915527,
+      0.19582800567150116
+    ]
+  },
+  "shellBvh": "blas/PoleFence_02_8m_C.bvh",
+  "instances": [
+    {
+      "id": "PoleFence_02_8m_C",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Pole/PoleFence_02/PoleFence_02_8m_C.et",
+      "blas": "blas/PoleFence_02_8m_C.bvh",
+      "xob": "Assets/Structures/Walls/Pole/PoleFence_02_8m_C.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

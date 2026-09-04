@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 648,
+  "slug": "RadioBroadcastManager_Everon",
+  "resourceName": "Prefabs/Systems/Radio/RadioBroadcastManager_Everon.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1134,
+  "slug": "HaystackDryer_01_folded",
+  "resourceName": "Prefabs/Props/Agriculture/Farm/HaystackDryer_01_folded.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.9869658617552628,
+      -0.26551400422917504,
+      -0.8766581416130066
+    ],
+    "max": [
+      0.950499415397644,
+      2.3704843058613605,
+      0.9014880432559198
+    ]
+  },
+  "shellBvh": "blas/HaystackDryer_01_folded.bvh",
+  "instances": [
+    {
+      "id": "HaystackDryer_01_folded",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HaystackDryer_01_folded.et",
+      "blas": "blas/HaystackDryer_01_folded.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HaystackDryer_01_folded.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

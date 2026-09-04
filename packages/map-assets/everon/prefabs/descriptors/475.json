@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 475,
+  "slug": "Davit_01",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Davits/Davit_01.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.25,
+      -0.03816299885511398,
+      -0.3499999940395355
+    ],
+    "max": [
+      0.25,
+      3.2080109119415283,
+      3.0899999141693115
+    ]
+  },
+  "shellBvh": "blas/Davit_01.bvh",
+  "instances": [
+    {
+      "id": "Davit_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Davits/Davit_01.et",
+      "blas": "blas/Davit_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Davits/Davit_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

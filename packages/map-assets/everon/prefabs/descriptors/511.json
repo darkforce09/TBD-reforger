@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 511,
+  "slug": "GasWelder_01",
+  "resourceName": "Prefabs/Props/Industrial/Repair/GasWelder_01.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

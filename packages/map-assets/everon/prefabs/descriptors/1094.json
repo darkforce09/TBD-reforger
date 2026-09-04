@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1094,
+  "slug": "FeedRack_01",
+  "resourceName": "Prefabs/Props/Forest/FeedRack/FeedRack_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.8032602071762085,
+      -0.23421823978424072,
+      -0.8451009392738342
+    ],
+    "max": [
+      0.8038461804389954,
+      1.8025072813034058,
+      0.900733232498169
+    ]
+  },
+  "shellBvh": "blas/FeedRack_01_B.bvh",
+  "instances": [
+    {
+      "id": "FeedRack_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Forest/FeedRack/FeedRack_01.et",
+      "blas": "blas/FeedRack_01_B.bvh",
+      "xob": "Assets/Props/Forest/FeedRack_01/FeedRack_01_B.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

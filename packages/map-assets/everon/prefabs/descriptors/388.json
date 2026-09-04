@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 388,
+  "slug": "HouseRuin_01_Windows",
+  "resourceName": "Prefabs/Structures/Ruins/HouseRuins/HouseRuin_01/HouseRuin_01_Windows.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -4.79867696762085,
+      -1.5,
+      -0.3755829930305481
+    ],
+    "max": [
+      5.903103828430176,
+      3.8437650203704834,
+      0.21775899827480316
+    ]
+  },
+  "shellBvh": "blas/HouseRuin_01_Windows.bvh",
+  "instances": [
+    {
+      "id": "HouseRuin_01_Windows",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Ruins/HouseRuins/HouseRuin_01/HouseRuin_01_Windows.et",
+      "blas": "blas/HouseRuin_01_Windows.bvh",
+      "xob": "Assets/Structures/Ruins/HouseRuin_01/HouseRuin_01_Windows.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

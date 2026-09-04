@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1183,
+  "slug": "WoodKindling_01",
+  "resourceName": "Prefabs/Props/Civilian/WoodKindling_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.21792539954185486,
+      0.0,
+      -0.27500030398368835
+    ],
+    "max": [
+      0.23676860332489014,
+      0.152305006980896,
+      0.37924671173095703
+    ]
+  },
+  "shellBvh": "blas/WoodKindling_01.bvh",
+  "instances": [
+    {
+      "id": "WoodKindling_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/WoodKindling_01.et",
+      "blas": "blas/WoodKindling_01.bvh",
+      "xob": "Assets/Props/Civilian/WoodKindling_01/WoodKindling_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 146,
+  "slug": "TentBig_02_green",
+  "resourceName": "Prefabs/Props/Recreation/Camp/TentBig_02/TentBig_02_green.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.276305913925171,
+      -0.15348899364471436,
+      -3.9813649654388428
+    ],
+    "max": [
+      3.2974789142608643,
+      2.333329916000366,
+      3.841568946838379
+    ]
+  },
+  "shellBvh": "blas/TentBig_02.bvh",
+  "instances": [
+    {
+      "id": "TentBig_02_green",
+      "kind": "shell",
+      "prefab": "Prefabs/Props/Recreation/Camp/TentBig_02/TentBig_02_green.et",
+      "blas": "blas/TentBig_02.bvh",
+      "xob": "Assets/Props/Recreation/Camp/TentBig_02/TentBig_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 976,
+  "slug": "ErodedEmbankment_01_forest_straight",
+  "resourceName": "Prefabs/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_forest_straight.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -7.938350200653076,
+      -1.0014400482177734,
+      -2.1762468814849854
+    ],
+    "max": [
+      7.938350200653076,
+      1.8448870182037354,
+      6.299442768096924
+    ]
+  },
+  "shellBvh": "blas/ErodedEmbankment_01_forest_straight.bvh",
+  "instances": [
+    {
+      "id": "ErodedEmbankment_01_forest_straight",
+      "kind": "prop",
+      "prefab": "Prefabs/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_forest_straight.et",
+      "blas": "blas/ErodedEmbankment_01_forest_straight.bvh",
+      "xob": "Assets/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_forest_straight.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

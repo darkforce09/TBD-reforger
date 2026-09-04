@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 598,
+  "slug": "PipeRailing_02_End",
+  "resourceName": "Prefabs/Structures/Walls/Pipe/PipeRailing_02/PipeRailing_02_End.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

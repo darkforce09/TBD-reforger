@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1123,
+  "slug": "p_carduus_acanthoides_0s",
+  "resourceName": "Prefabs/Vegetation/Plant/p_carduus_acanthoides_0s.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.5598921105265617,
+      -0.14809566736221313,
+      -0.19189389050006866
+    ],
+    "max": [
+      0.3252489045262337,
+      1.1685653328895569,
+      0.5931761115789413
+    ]
+  },
+  "shellBvh": "blas/p_Carduus_acanthoides_0s.bvh",
+  "instances": [
+    {
+      "id": "p_carduus_acanthoides_0s",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Plant/p_carduus_acanthoides_0s.et",
+      "blas": "blas/p_Carduus_acanthoides_0s.bvh",
+      "xob": "Assets/Vegetation/Plant/Carduus_acanthoides/p_Carduus_acanthoides_0s.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 587,
+  "slug": "NetFence_01_Pole",
+  "resourceName": "Prefabs/Structures/Walls/Net/NetFence_01/NetFence_01_Pole.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.00010938942432403564,
+      -1.0000112354755402,
+      -0.15119999647140503
+    ],
+    "max": [
+      0.302290603518486,
+      1.6255888640880585,
+      0.15119999647140503
+    ]
+  },
+  "shellBvh": "blas/NetFence_01_Pole.bvh",
+  "instances": [
+    {
+      "id": "NetFence_01_Pole",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Net/NetFence_01/NetFence_01_Pole.et",
+      "blas": "blas/NetFence_01_Pole.bvh",
+      "xob": "Assets/Structures/Walls/Net/NetFence_01/NetFence_01_Pole.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

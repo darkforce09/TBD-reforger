@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 593,
+  "slug": "Slipway_01_cradle_01",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Slipway_01/Slipway_01_cradle_01.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.135906737485011,
+      0.06560499966144562,
+      -3.048543930053711
+    ],
+    "max": [
+      2.1271591186523438,
+      2.4920129776000977,
+      2.853177070617676
+    ]
+  },
+  "shellBvh": "blas/Slipway_Cradle_01.bvh",
+  "instances": [
+    {
+      "id": "Slipway_01_cradle_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Slipway_01/Slipway_01_cradle_01.et",
+      "blas": "blas/Slipway_Cradle_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Slipway_01/Slipway_Cradle_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

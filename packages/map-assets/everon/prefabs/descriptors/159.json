@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 159,
+  "slug": "TilePavement_01_Narrow_90",
+  "resourceName": "Prefabs/Structures/Infrastructure/Pavements/TilePavement_01/TilePavement_01_Narrow_90.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.35227108001708984,
+      -0.1477814018726349,
+      -1.1988660097122192
+    ],
+    "max": [
+      2.1624937057495117,
+      0.15103158354759216,
+      1.3614929914474487
+    ]
+  },
+  "shellBvh": "blas/TilePavement_01_Narrow_90.bvh",
+  "instances": [
+    {
+      "id": "TilePavement_01_Narrow_90",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Pavements/TilePavement_01/TilePavement_01_Narrow_90.et",
+      "blas": "blas/TilePavement_01_Narrow_90.bvh",
+      "xob": "Assets/Structures/Infrastructure/Pavements/TilePavement_01/TilePavement_01_Narrow_90.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

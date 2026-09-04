@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 949,
+  "slug": "BeerKegMetal_01_lines",
+  "resourceName": "Prefabs/Props/Commercial/BeerKegMetal_01_lines.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.2789379949681461,
+      -0.0027610063552856445,
+      -0.28801678674062714
+    ],
+    "max": [
+      0.29290899680927396,
+      0.6427710056304932,
+      0.289711186720524
+    ]
+  },
+  "shellBvh": "blas/BeerKegMetal_01_lines.bvh",
+  "instances": [
+    {
+      "id": "BeerKegMetal_01_lines",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Commercial/BeerKegMetal_01_lines.et",
+      "blas": "blas/BeerKegMetal_01_lines.bvh",
+      "xob": "Assets/Props/Commercial/BeerKegMetal_01/BeerKegMetal_01_lines.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

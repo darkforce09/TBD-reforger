@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1169,
+  "slug": "TrenchOld_01_roof_2m_forest",
+  "resourceName": "Prefabs/Structures/Military/Fortifications/Trenches/TrenchOld_01/TrenchOld_01_roof_2m_forest.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.0014337301254272,
+      -0.4547030031681061,
+      -1.24568772315979
+    ],
+    "max": [
+      1.0005491971969604,
+      0.463934063911438,
+      1.2470753192901611
+    ]
+  },
+  "shellBvh": "blas/TrenchOld_01_roof_2m.bvh",
+  "instances": [
+    {
+      "id": "TrenchOld_01_roof_2m_forest",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Military/Fortifications/Trenches/TrenchOld_01/TrenchOld_01_roof_2m_forest.et",
+      "blas": "blas/TrenchOld_01_roof_2m.bvh",
+      "xob": "Assets/Structures/Military/Fortifications/Trenches/TrenchOld_01/TrenchOld_01_roof_2m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

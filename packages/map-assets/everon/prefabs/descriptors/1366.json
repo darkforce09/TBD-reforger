@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1366,
+  "slug": "b_sambucus_nigra_1",
+  "resourceName": "Prefabs/Vegetation/Bush/b_sambucus_nigra_1.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

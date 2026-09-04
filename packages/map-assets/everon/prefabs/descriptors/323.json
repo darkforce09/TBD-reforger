@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 323,
+  "slug": "VehicleGarbage_01_pile_medium",
+  "resourceName": "Prefabs/Props/Industrial/Repair/VehicleGarbage_01_pile_medium.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.9221535325050354,
+      -0.07413200289011002,
+      -1.1266500428318977
+    ],
+    "max": [
+      0.8024094700813293,
+      0.8308054953813553,
+      1.162058711051941
+    ]
+  },
+  "shellBvh": "blas/VehicleGarbage_01_pile_medium.bvh",
+  "instances": [
+    {
+      "id": "VehicleGarbage_01_pile_medium",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Industrial/Repair/VehicleGarbage_01_pile_medium.et",
+      "blas": "blas/VehicleGarbage_01_pile_medium.bvh",
+      "xob": "Assets/Props/Industrial/Repair/VehicleGarbage_01/VehicleGarbage_01_pile_medium.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

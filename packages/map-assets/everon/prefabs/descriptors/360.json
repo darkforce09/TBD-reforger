@@ -1,0 +1,340 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 360,
+  "slug": "PierShed_01",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Sheds/PierShed_01/PierShed_01.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -6.660160064697266,
+      -1.100000023841858,
+      -7.323126792907715
+    ],
+    "max": [
+      6.587637901306152,
+      6.340375900268555,
+      7.365591049194336
+    ]
+  },
+  "shellBvh": "blas/PierShed_01.bvh",
+  "instances": [
+    {
+      "id": "PierShed_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Sheds/PierShed_01/PierShed_01.et",
+      "blas": "blas/PierShed_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Sheds/PierShed_01/PierShed_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_double_left_004",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_PierShed_01_A_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_PierShed_01_A_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_PierShed_01/Door_PierShed_01_A_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -1.8867510557174683,
+          1.0000000116860974e-7,
+          7.080026626586914
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_double_left_003",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_PierShed_01_A_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_PierShed_01_A_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_PierShed_01/Door_PierShed_01_A_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          3.5000035762786865,
+          2.0000000233721948e-7,
+          7.080028533935547
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_double_left_006",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_PierShed_01_A_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_PierShed_01_A_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_PierShed_01/Door_PierShed_01_A_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -6.030019760131836,
+          4.0000000467443897e-7,
+          -1.3499302864074707
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_double_left_002",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_PierShed_01_A_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_PierShed_01_A_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_PierShed_01/Door_PierShed_01_A_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          6.030005931854248,
+          -4.999999987376214e-7,
+          1.3499767780303955
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_double_right_004",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_PierShed_01_A_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_PierShed_01_A_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_PierShed_01/Door_PierShed_01_A_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -5.2867841720581055,
+          -2.0000000233721948e-7,
+          7.080075263977051
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_double_right_002",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_PierShed_01_A_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_PierShed_01_A_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_PierShed_01/Door_PierShed_01_A_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          6.029971122741699,
+          1.0000000116860974e-7,
+          4.749927520751953
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_double_right_003",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_PierShed_01_A_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_PierShed_01_A_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_PierShed_01/Door_PierShed_01_A_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          0.09999950230121613,
+          1.0999999631167157e-6,
+          7.080028533935547
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_double_right_006",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_PierShed_01_A_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_PierShed_01_A_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_PierShed_01/Door_PierShed_01_A_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -6.030020236968994,
+          -4.999999987376214e-7,
+          -4.7500224113464355
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_door_001",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/DoorBoarded_PierShed_01_A.et",
+      "blas": "blas/DoorBoarded_PierShed_01_A.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_PierShed_01/DoorBoarded_PierShed_01_A.xob",
+      "local": {
+        "pos": [
+          6.053220272064209,
+          -4.999999987376214e-7,
+          -3.050053358078003
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_door_005",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/DoorBoarded_PierShed_01_A.et",
+      "blas": "blas/DoorBoarded_PierShed_01_A.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_PierShed_01/DoorBoarded_PierShed_01_A.xob",
+      "local": {
+        "pos": [
+          -6.053172588348389,
+          -4.999999987376214e-7,
+          3.050032615661621
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    }
+  ],
+  "notes": [
+    "5E6C68E3CE1DC322: Prefabs/Structures/Agriculture/Barn/Barn_E_01/BuildingAddons/Probe_Barn_E_01.et has no mesh"
+  ]
+}

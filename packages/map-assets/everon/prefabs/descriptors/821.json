@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 821,
+  "slug": "Shed_03",
+  "resourceName": "Prefabs/Structures/Houses/Shed/Shed_03/Shed_03.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.420085906982422,
+      -1.0237109661102295,
+      -1.9442780017852783
+    ],
+    "max": [
+      3.420085906982422,
+      3.6597518920898438,
+      1.9443814754486084
+    ]
+  },
+  "shellBvh": "blas/Shed_03.bvh",
+  "instances": [
+    {
+      "id": "Shed_03",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Houses/Shed/Shed_03/Shed_03.et",
+      "blas": "blas/Shed_03.bvh",
+      "xob": "Assets/Structures/Houses/Shed/Shed_03/Shed_03.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

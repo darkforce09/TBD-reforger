@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 224,
+  "slug": "Decal_PetrolStain_01_V3",
+  "resourceName": "Prefabs/Decals/Fluids/Decal_PetrolStain_01_V3.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

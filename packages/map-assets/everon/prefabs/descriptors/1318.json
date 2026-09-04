@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1318,
+  "slug": "DeerStand_01",
+  "resourceName": "Prefabs/Structures/Forest/DeerStands/DeerStand_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.3905620574951172,
+      -0.6713969707489014,
+      -1.4345639944076538
+    ],
+    "max": [
+      1.4307039976119995,
+      7.874982833862305,
+      2.5761053119718595
+    ]
+  },
+  "shellBvh": "blas/DeerStand_01.bvh",
+  "instances": [
+    {
+      "id": "DeerStand_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Forest/DeerStands/DeerStand_01.et",
+      "blas": "blas/DeerStand_01.bvh",
+      "xob": "Assets/Structures/Forest/DeerStands/DeerStand_01/DeerStand_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

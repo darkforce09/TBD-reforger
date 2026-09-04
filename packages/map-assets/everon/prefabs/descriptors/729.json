@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 729,
+  "slug": "MessageBoard_02_filled_V1",
+  "resourceName": "Prefabs/Structures/Civilian/MessageBoard/Filled/MessageBoard_02_filled_V1.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

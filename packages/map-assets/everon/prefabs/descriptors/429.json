@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 429,
+  "slug": "Birdhouse_01_pole",
+  "resourceName": "Prefabs/Props/Civilian/Birdhouse_01/Birdhouse_01_pole.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.12686081601171925,
+      -0.1359720230102539,
+      -0.030199400852325198
+    ],
+    "max": [
+      0.13477934646088777,
+      1.9592303295442484,
+      0.2751534942388535
+    ]
+  },
+  "shellBvh": "blas/Birdhouse_01_pole.bvh",
+  "instances": [
+    {
+      "id": "Birdhouse_01_pole",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/Birdhouse_01/Birdhouse_01_pole.et",
+      "blas": "blas/Birdhouse_01_pole.bvh",
+      "xob": "Assets/Props/Civilian/Birdhouse_01/Birdhouse_01_pole.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "566CD3063E12A845",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/Birdhouse_01/Birdhouse_01.et",
+      "blas": "blas/Birdhouse_01.bvh",
+      "xob": "Assets/Props/Civilian/Birdhouse_01/Birdhouse_01.xob",
+      "local": {
+        "pos": [
+          0.004,
+          1.756,
+          0.166
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.009285018202778467,
+          0.9999568932893927
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

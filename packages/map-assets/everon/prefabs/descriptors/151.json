@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 151,
+  "slug": "Guitar_01",
+  "resourceName": "Prefabs/Props/Civilian/Guitar_01/Guitar_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.21789099276065826,
+      -0.04176418241633029,
+      -0.9723385831468648
+    ],
+    "max": [
+      0.21789099276065826,
+      0.13730744243964454,
+      0.5861831903457642
+    ]
+  },
+  "shellBvh": "blas/Guitar_01.bvh",
+  "instances": [
+    {
+      "id": "Guitar_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/Guitar_01/Guitar_01.et",
+      "blas": "blas/Guitar_01.bvh",
+      "xob": "Assets/Props/Civilian/Guitar_01/Guitar_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

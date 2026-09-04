@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1408,
+  "slug": "SignNoPeds_01_pole",
+  "resourceName": "Prefabs/Structures/Signs/Warnings/SignNoPeds_01_pole.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": [],
+  "notes": [
+    "socket_sign_01: Assets/Structures/Signs/Warnings/Sign_Circle_A.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

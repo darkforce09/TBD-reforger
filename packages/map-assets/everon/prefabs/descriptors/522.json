@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 522,
+  "slug": "SignBendDoubleRight_01_pole",
+  "resourceName": "Prefabs/Structures/Signs/Warnings/SignBendDoubleRight_01_pole.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.4537840032717213,
+      1.9087724685668945,
+      0.04090679902583361
+    ],
+    "max": [
+      0.45899398683104664,
+      2.7235577441751957,
+      0.06090679857879877
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "socket_sign_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Warnings/SignBendDoubleRight_01.et",
+      "blas": "blas/Sign_Triangle_A.bvh",
+      "xob": "Assets/Structures/Signs/Warnings/Sign_Triangle_A.xob",
+      "local": {
+        "pos": [
+          0.0,
+          2.2389180660247803,
+          0.002363800071179867
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ]
+}

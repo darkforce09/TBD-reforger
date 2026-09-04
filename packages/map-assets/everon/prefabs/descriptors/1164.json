@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1164,
+  "slug": "TableWorkshop_01",
+  "resourceName": "Prefabs/Props/Furniture/TableWorkshop_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.6499999761581421,
+      1.7881393432617188e-7,
+      -0.44999998807907104
+    ],
+    "max": [
+      0.6499999761581421,
+      1.0034788846969604,
+      0.4500000880790722
+    ]
+  },
+  "shellBvh": "blas/TableWorkshop_01.bvh",
+  "instances": [
+    {
+      "id": "TableWorkshop_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/TableWorkshop_01.et",
+      "blas": "blas/TableWorkshop_01.bvh",
+      "xob": "Assets/Props/Furniture/TableWorkshop_01/TableWorkshop_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

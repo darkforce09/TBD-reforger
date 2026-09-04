@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1064,
+  "slug": "Slipway_01_winch",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Slipway_01/Slipway_01_winch.et",
+  "kind": "water",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

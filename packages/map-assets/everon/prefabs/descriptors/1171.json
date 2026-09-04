@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1171,
+  "slug": "Junk_01_single_carpet",
+  "resourceName": "Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_single_carpet.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.10335248120311206,
+      -0.010440930963262748,
+      -1.193845633417368
+    ],
+    "max": [
+      0.1253052634507552,
+      0.1716271897442631,
+      1.1296564303338528
+    ]
+  },
+  "shellBvh": "blas/Junk_01_carpet.bvh",
+  "instances": [
+    {
+      "id": "Junk_01_single_carpet",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_single_carpet.et",
+      "blas": "blas/Junk_01_carpet.bvh",
+      "xob": "Assets/Props/Garbage/Generic/Junk_01/Junk_01_carpet.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

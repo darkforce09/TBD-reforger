@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 681,
+  "slug": "UAZ469_wreck",
+  "resourceName": "Prefabs/Props/Wrecks/UAZ469_wreck/UAZ469_wreck.et",
+  "kind": "vehicle",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

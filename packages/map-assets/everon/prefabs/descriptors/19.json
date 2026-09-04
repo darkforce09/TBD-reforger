@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 19,
+  "slug": "t_pinus_sylvestris_3s",
+  "resourceName": "Prefabs/Vegetation/Tree/t_pinus_sylvestris/t_pinus_sylvestris_3s.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -5.813396327959111,
+      -1.0918207168579102,
+      -4.963570120796277
+    ],
+    "max": [
+      4.139255108843329,
+      18.328616594939398,
+      4.718682154104997
+    ]
+  },
+  "shellBvh": "blas/t_pinus_sylvestris_3s.bvh",
+  "instances": [
+    {
+      "id": "t_pinus_sylvestris_3s",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_pinus_sylvestris/t_pinus_sylvestris_3s.et",
+      "blas": "blas/t_pinus_sylvestris_3s.bvh",
+      "xob": "Assets/Vegetation/Tree/Pinus_Sylvestris/t_pinus_sylvestris_3s.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

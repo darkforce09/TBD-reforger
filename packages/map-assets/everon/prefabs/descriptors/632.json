@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 632,
+  "slug": "SignGeneric_01_DumpingProhibited_pole",
+  "resourceName": "Prefabs/Structures/Signs/Generic/SignGeneric_01_DumpingProhibited_pole.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.35053370081004687,
+      1.9963857713155448,
+      0.03967719851061702
+    ],
+    "max": [
+      0.35026630081119947,
+      2.4957857611589134,
+      0.04767719889059663
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "socket_sign_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Generic/SignGeneric_01_DumpingProhibited.et",
+      "blas": "blas/SignGeneric_01.bvh",
+      "xob": "Assets/Structures/Signs/Generic/SignGeneric_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          2.2389180660247803,
+          0.002363800071179867
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ]
+}

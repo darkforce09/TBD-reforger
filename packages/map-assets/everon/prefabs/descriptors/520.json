@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 520,
+  "slug": "WoodenSnowPole_01",
+  "resourceName": "Prefabs/Structures/Signs/Forest/WoodenSnowPole_01/WoodenSnowPole_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.05723369726911187,
+      -0.10000000149011612,
+      -0.052796998992562294
+    ],
+    "max": [
+      0.04394400119781494,
+      3.898822546005249,
+      0.07654800079762936
+    ]
+  },
+  "shellBvh": "blas/WoodenSnowPole_01.bvh",
+  "instances": [
+    {
+      "id": "WoodenSnowPole_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Forest/WoodenSnowPole_01/WoodenSnowPole_01.et",
+      "blas": "blas/WoodenSnowPole_01.bvh",
+      "xob": "Assets/Structures/Signs/Forest/WoodenSnowPole_01/WoodenSnowPole_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

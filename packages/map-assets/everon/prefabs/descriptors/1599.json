@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1599,
+  "slug": "SummitCross_01",
+  "resourceName": "Prefabs/Structures/Cultural/Statues/SummitCross_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.14070500433444977,
+      -0.0889899730682373,
+      -1.5
+    ],
+    "max": [
+      0.14070500433444977,
+      5.015525817871094,
+      1.5
+    ]
+  },
+  "shellBvh": "blas/SummitCross_01.bvh",
+  "instances": [
+    {
+      "id": "SummitCross_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Statues/SummitCross_01.et",
+      "blas": "blas/SummitCross_01.bvh",
+      "xob": "Assets/Structures/Cultural/Statues/SummitCross_01/SummitCross_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

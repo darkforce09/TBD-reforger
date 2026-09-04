@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1308,
+  "slug": "t_prunus_domestica_2s",
+  "resourceName": "Prefabs/Vegetation/Tree/t_prunus_domestica/t_prunus_domestica_2s.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -3.986000292490547,
+      -0.8022892475128174,
+      -4.150541701677465
+    ],
+    "max": [
+      3.993873848582093,
+      8.03153926507386,
+      4.231964035871954
+    ]
+  },
+  "shellBvh": "blas/t_prunus_domestica_2s.bvh",
+  "instances": [
+    {
+      "id": "t_prunus_domestica_2s",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_prunus_domestica/t_prunus_domestica_2s.et",
+      "blas": "blas/t_prunus_domestica_2s.bvh",
+      "xob": "Assets/Vegetation/Tree/Prunus_Domestica/t_prunus_domestica_2s.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

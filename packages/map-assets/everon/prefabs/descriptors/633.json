@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 633,
+  "slug": "t_populus_nigra_3s",
+  "resourceName": "Prefabs/Vegetation/Tree/t_populus_nigra/t_populus_nigra_3s.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -2.0174527649258183,
+      -1.0514719486236572,
+      -4.701388950039155
+    ],
+    "max": [
+      2.351214108324665,
+      22.734430488030938,
+      3.624735688202307
+    ]
+  },
+  "shellBvh": "blas/T_Populus_nigra_3s.bvh",
+  "instances": [
+    {
+      "id": "t_populus_nigra_3s",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_populus_nigra/t_populus_nigra_3s.et",
+      "blas": "blas/T_Populus_nigra_3s.bvh",
+      "xob": "Assets/Vegetation/Tree/Populus_Nigra/T_Populus_nigra_3s.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

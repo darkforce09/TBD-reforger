@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 338,
+  "slug": "Pier_Wood_Long_01",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -4.872316360473633,
+      -4.832025572657585,
+      -0.259922593832016
+    ],
+    "max": [
+      4.334592342376709,
+      4.3649739772081375,
+      0.7306773960590363
+    ]
+  },
+  "shellBvh": "blas/Pier_Wood_Long_01.bvh",
+  "instances": [
+    {
+      "id": "Pier_Wood_Long_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.et",
+      "blas": "blas/Pier_Wood_Long_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

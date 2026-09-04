@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 755,
+  "slug": "ConcretePanel_01_stack",
+  "resourceName": "Prefabs/Props/Industrial/ConcretePanel_01_stack.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.084846258163452,
+      0.0036014989018440247,
+      -1.1267372369766235
+    ],
+    "max": [
+      2.2349798679351807,
+      1.8887597918510437,
+      1.0538207292556763
+    ]
+  },
+  "shellBvh": "blas/ConcretePanel_01_stack.bvh",
+  "instances": [
+    {
+      "id": "ConcretePanel_01_stack",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Industrial/ConcretePanel_01_stack.et",
+      "blas": "blas/ConcretePanel_01_stack.bvh",
+      "xob": "Assets/Props/Industrial/ConcretePanel_01/ConcretePanel_01_stack.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

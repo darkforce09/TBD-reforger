@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 296,
+  "slug": "p_urtica_dioica_0s",
+  "resourceName": "Prefabs/Vegetation/Plant/p_urtica_dioica_0s.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.5514012877712559,
+      -0.09269046872938713,
+      -0.4278728118307475
+    ],
+    "max": [
+      0.5391544027171311,
+      0.8609934760383895,
+      0.414396368190623
+    ]
+  },
+  "shellBvh": "blas/P_Urtica_dioica_0s.bvh",
+  "instances": [
+    {
+      "id": "p_urtica_dioica_0s",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Plant/p_urtica_dioica_0s.et",
+      "blas": "blas/P_Urtica_dioica_0s.bvh",
+      "xob": "Assets/Vegetation/Plant/Urtica_dioica/P_Urtica_dioica_0s.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

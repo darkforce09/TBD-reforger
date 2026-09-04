@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 679,
+  "slug": "Granite_BeachStone_02",
+  "resourceName": "Prefabs/Rocks/Granite/Granite_BeachStone_02.et",
+  "kind": "rock",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.248646453022957,
+      -0.48724865913391113,
+      -1.490251511335373
+    ],
+    "max": [
+      1.5739114731550217,
+      1.5648503303527832,
+      1.8052184879779816
+    ]
+  },
+  "shellBvh": "blas/GraniteBeachStone_02.bvh",
+  "instances": [
+    {
+      "id": "Granite_BeachStone_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Rocks/Granite/Granite_BeachStone_02.et",
+      "blas": "blas/GraniteBeachStone_02.bvh",
+      "xob": "Assets/Rocks/Granite/GraniteBeachStone_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

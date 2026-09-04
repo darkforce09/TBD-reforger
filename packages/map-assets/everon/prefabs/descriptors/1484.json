@@ -1,0 +1,3455 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1484,
+  "slug": "FireStation_E_01",
+  "resourceName": "Prefabs/Structures/Services/Fire/FireStation_E_01/FireStation_E_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -8.145511627197266,
+      -5.970000000670552,
+      -12.906819939613342
+    ],
+    "max": [
+      7.693355083465576,
+      12.624068021774292,
+      12.920763611793518
+    ]
+  },
+  "shellBvh": "blas/FireStation_E_01.bvh",
+  "instances": [
+    {
+      "id": "FireStation_E_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Services/Fire/FireStation_E_01/FireStation_E_01.et",
+      "blas": "blas/FireStation_E_01.bvh",
+      "xob": "Assets/Structures/Services/Fire/FireStation_E_01/FireStation_E_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_Antenna_left",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/Firestation_rod.et",
+      "blas": "blas/Firestation_rod.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Electrical/Firestation/Firestation_rod.xob",
+      "local": {
+        "pos": [
+          -2.598092794418335,
+          9.458878517150879,
+          2.92352557182312
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorSet_Village_E_01_R_INT_B_001",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/DoorSet_Village_E_01_R_INT_ST_B.et",
+      "blas": "blas/DoorFrame_Village_E_A_INT_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Village_E/DoorFrame_Village_E_A_INT_B.xob",
+      "local": {
+        "pos": [
+          2.0000386238098145,
+          0.05000000074505806,
+          -5.0455522537231445
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorSet_Village_E_01_R_INT_B_001/socket_door_RIGHT",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Village_E_A_RIGHT_INT_ST_B.et",
+      "blas": "blas/Door_Village_E_A_RIGHT_INT_ST_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Village_E/Door_Village_E_A_RIGHT_INT_ST_B.xob",
+      "local": {
+        "pos": [
+          2.0919783264398575,
+          0.05000000074505806,
+          -4.3878172636032104
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "Socket_DoorSet_Village_E_01_R_INT_B_001"
+    },
+    {
+      "id": "Socket_DoorSet_Village_E_01_R_INT_B_001/socket_door_RIGHT/Socket_Glass_102x58_RIGHT",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_102x58/Glass_102x58.et",
+      "blas": "blas/Glass_01_102x58.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_102x58/Glass_01_102x58.xob",
+      "local": {
+        "pos": [
+          2.0686283260583878,
+          1.9993800409138203,
+          -5.047382056713104
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_DoorSet_Village_E_01_R_INT_B_001/socket_door_RIGHT"
+    },
+    {
+      "id": "Socket_Entry_slope",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Entry/Entry_Slope_Platform_01.et",
+      "blas": "blas/ConcreteSlope_01_entry.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Entry/ConcreteSlope_01_entry.xob",
+      "local": {
+        "pos": [
+          -5.1407670974731445,
+          0.029999999329447746,
+          4.5913238525390625
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorSet_Village_E_01_R_INT_B_002",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/DoorSet_Village_E_01_R_INT_COV_B.et",
+      "blas": "blas/DoorFrame_Village_E_A_INT_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Village_E/DoorFrame_Village_E_A_INT_B.xob",
+      "local": {
+        "pos": [
+          2.0000393390655518,
+          0.05000000074505806,
+          -0.5458405017852783
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorSet_Village_E_01_R_INT_B_002/socket_door_right",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Village_E_A_RIGHT_INT_COV_B.et",
+      "blas": "blas/Door_Village_E_A_RIGHT_INT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Village_E/Door_Village_E_A_RIGHT_INT_COV_B.xob",
+      "local": {
+        "pos": [
+          2.091979041695595,
+          0.05000000074505806,
+          0.11189448833465565
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "Socket_DoorSet_Village_E_01_R_INT_B_002"
+    },
+    {
+      "id": "Socket_Win_Office_E_90x142_1_B_base_005",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Office_E_A/Win_Office_E_90x142_1_B.et",
+      "blas": "blas/Win_Office_E_90x142_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_Office_E/Win_Office_E_90x142_1_B.xob",
+      "local": {
+        "pos": [
+          7.302867412567139,
+          1.970000147819519,
+          -2.54040265083313
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Win_Office_E_90x142_1_B_base_005/socket_glass_74x121_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_74x121/Glass_74x121.et",
+      "blas": "blas/Glass_01_74x121.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_74x121/Glass_01_74x121.xob",
+      "local": {
+        "pos": [
+          7.302867412567139,
+          1.970000147819519,
+          -2.54040265083313
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_Office_E_90x142_1_B_base_005"
+    },
+    {
+      "id": "Socket_Win_Office_E_90x142_1_B_base_006",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Office_E_A/Win_Office_E_90x142_1_B.et",
+      "blas": "blas/Win_Office_E_90x142_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_Office_E/Win_Office_E_90x142_1_B.xob",
+      "local": {
+        "pos": [
+          -0.1953493058681488,
+          4.961759567260742,
+          7.385573387145996
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Win_Office_E_90x142_1_B_base_006/socket_glass_74x121_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_74x121/Glass_74x121.et",
+      "blas": "blas/Glass_01_74x121.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_74x121/Glass_01_74x121.xob",
+      "local": {
+        "pos": [
+          -0.1953493058681488,
+          4.961759567260742,
+          7.385573387145996
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_Office_E_90x142_1_B_base_006"
+    },
+    {
+      "id": "Socket_Win_Office_E_90x142_1_B_base_007",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Office_E_A/Win_Office_E_90x142_1_B.et",
+      "blas": "blas/Win_Office_E_90x142_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_Office_E/Win_Office_E_90x142_1_B.xob",
+      "local": {
+        "pos": [
+          -0.1953493058681488,
+          7.940370082855225,
+          7.385573387145996
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Win_Office_E_90x142_1_B_base_007/socket_glass_74x121_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_74x121/Glass_74x121.et",
+      "blas": "blas/Glass_01_74x121.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_74x121/Glass_01_74x121.xob",
+      "local": {
+        "pos": [
+          -0.1953493058681488,
+          7.940370082855225,
+          7.385573387145996
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_Office_E_90x142_1_B_base_007"
+    },
+    {
+      "id": "Socket_Win_Office_E_90x142_1_B_base_001",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Office_E_A/Win_Office_E_90x142_1_B.et",
+      "blas": "blas/Win_Office_E_90x142_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_Office_E/Win_Office_E_90x142_1_B.xob",
+      "local": {
+        "pos": [
+          3.7038185596466064,
+          1.970000147819519,
+          4.427554607391357
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Win_Office_E_90x142_1_B_base_001/socket_glass_74x121_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_74x121/Glass_74x121.et",
+      "blas": "blas/Glass_01_74x121.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_74x121/Glass_01_74x121.xob",
+      "local": {
+        "pos": [
+          3.7038185596466064,
+          1.970000147819519,
+          4.427554607391357
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_Office_E_90x142_1_B_base_001"
+    },
+    {
+      "id": "Socket_Win_Office_E_90x142_1_B_base_002",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Office_E_A/Win_Office_E_90x142_1_B.et",
+      "blas": "blas/Win_Office_E_90x142_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_Office_E/Win_Office_E_90x142_1_B.xob",
+      "local": {
+        "pos": [
+          5.704185485839844,
+          1.970000147819519,
+          4.427554607391357
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Win_Office_E_90x142_1_B_base_002/socket_glass_74x121_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_74x121/Glass_74x121.et",
+      "blas": "blas/Glass_01_74x121.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_74x121/Glass_01_74x121.xob",
+      "local": {
+        "pos": [
+          5.704185485839844,
+          1.970000147819519,
+          4.427554607391357
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_Office_E_90x142_1_B_base_002"
+    },
+    {
+      "id": "Socket_Win_Office_E_90x142_1_B_base_004",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Office_E_A/Win_Office_E_90x142_1_B.et",
+      "blas": "blas/Win_Office_E_90x142_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_Office_E/Win_Office_E_90x142_1_B.xob",
+      "local": {
+        "pos": [
+          7.302867412567139,
+          1.970000147819519,
+          -1.0552915334701538
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Win_Office_E_90x142_1_B_base_004/socket_glass_74x121_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_74x121/Glass_74x121.et",
+      "blas": "blas/Glass_01_74x121.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_74x121/Glass_01_74x121.xob",
+      "local": {
+        "pos": [
+          7.302867412567139,
+          1.970000147819519,
+          -1.0552915334701538
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_Office_E_90x142_1_B_base_004"
+    },
+    {
+      "id": "Socket_Win_Office_E_90x142_1_B_base_003",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Office_E_A/Win_Office_E_90x142_1_B.et",
+      "blas": "blas/Win_Office_E_90x142_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_Office_E/Win_Office_E_90x142_1_B.xob",
+      "local": {
+        "pos": [
+          7.292867183685303,
+          1.970000147819519,
+          2.852886199951172
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Win_Office_E_90x142_1_B_base_003/socket_glass_74x121_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_74x121/Glass_74x121.et",
+      "blas": "blas/Glass_01_74x121.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_74x121/Glass_01_74x121.xob",
+      "local": {
+        "pos": [
+          7.292867183685303,
+          1.970000147819519,
+          2.852886199951172
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_Office_E_90x142_1_B_base_003"
+    },
+    {
+      "id": "Socket_Win_village_e_a_195x72_3_B_base_001",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_village_E_A/Win_village_e_a_195x72_3_B.et",
+      "blas": "blas/Win_village_e_a_195x72_3_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_Village_E_A/Win_village_e_a_195x72_3_B.xob",
+      "local": {
+        "pos": [
+          -3.802241325378418,
+          3.0100951194763184,
+          -7.359750270843506
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Win_village_e_a_195x72_3_B_base_001/socket_glass_54x55_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          -4.430402338504791,
+          3.02501161955297,
+          -7.3463134709745646
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_village_e_a_195x72_3_B_base_001"
+    },
+    {
+      "id": "Socket_Win_village_e_a_195x72_3_B_base_001/socket_glass_54x55_03",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          -3.1740804314613342,
+          3.02501161955297,
+          -7.3463134709745646
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_village_e_a_195x72_3_B_base_001"
+    },
+    {
+      "id": "Socket_Win_village_e_a_195x72_3_B_base_001/socket_glass_54x55_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          -3.8126014256849885,
+          3.02501161955297,
+          -7.3463134709745646
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_village_e_a_195x72_3_B_base_001"
+    },
+    {
+      "id": "Socket_Win_village_e_a_195x72_3_B_base_002",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_village_E_A/Win_village_e_a_195x72_3_B.et",
+      "blas": "blas/Win_village_e_a_195x72_3_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_Village_E_A/Win_village_e_a_195x72_3_B.xob",
+      "local": {
+        "pos": [
+          -6.292987823486328,
+          3.0100951194763184,
+          -7.359750270843506
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Win_village_e_a_195x72_3_B_base_002/socket_glass_54x55_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          -6.921148836612701,
+          3.02501161955297,
+          -7.3463134709745646
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_village_e_a_195x72_3_B_base_002"
+    },
+    {
+      "id": "Socket_Win_village_e_a_195x72_3_B_base_002/socket_glass_54x55_03",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          -5.664826929569244,
+          3.02501161955297,
+          -7.3463134709745646
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_village_e_a_195x72_3_B_base_002"
+    },
+    {
+      "id": "Socket_Win_village_e_a_195x72_3_B_base_002/socket_glass_54x55_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          -6.303347923792899,
+          3.02501161955297,
+          -7.3463134709745646
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_village_e_a_195x72_3_B_base_002"
+    },
+    {
+      "id": "Socket_hoses",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Services/Fire/FireStation_E_01/FireStation_E_01_hose_hanger.et",
+      "blas": "blas/Firestation_hose_hanger.bvh",
+      "xob": "Assets/Structures/Services/Fire/FireStation_E_01/Firestation_hose_hanger.xob",
+      "local": {
+        "pos": [
+          -1.8486413955688477,
+          0.05000000074505806,
+          4.212779521942139
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorSet_Village_E_01_L_INT_B_002",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/DoorSet_Village_E_01_L_INT_COV_B.et",
+      "blas": "blas/DoorFrame_Village_E_A_INT_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Village_E/DoorFrame_Village_E_A_INT_B.xob",
+      "local": {
+        "pos": [
+          2.000039577484131,
+          0.05000000074505806,
+          1.4609570503234863
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorSet_Village_E_01_L_INT_B_002/socket_door_LEFT",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Village_E_A_LEFT_INT_COV_B.et",
+      "blas": "blas/Door_Village_E_A_LEFT_INT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Village_E/Door_Village_E_A_LEFT_INT_COV_B.xob",
+      "local": {
+        "pos": [
+          2.0919794738292694,
+          0.05000000074505806,
+          0.8064762353897096
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865475
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "Socket_DoorSet_Village_E_01_L_INT_B_002"
+    },
+    {
+      "id": "Socket_DoorSet_Village_E_01_L_INT_B_003",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/DoorSet_Village_E_01_L_INT_COV_B.et",
+      "blas": "blas/DoorFrame_Village_E_A_INT_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Village_E/DoorFrame_Village_E_A_INT_B.xob",
+      "local": {
+        "pos": [
+          -0.16616299748420715,
+          0.05000000074505806,
+          2.992912769317627
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorSet_Village_E_01_L_INT_B_003/socket_door_LEFT",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Village_E_A_LEFT_INT_COV_B.et",
+      "blas": "blas/Door_Village_E_A_LEFT_INT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Village_E/Door_Village_E_A_LEFT_INT_COV_B.xob",
+      "local": {
+        "pos": [
+          -0.820643812417984,
+          0.05000000074505806,
+          2.9009728729724884
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "Socket_DoorSet_Village_E_01_L_INT_B_003"
+    },
+    {
+      "id": "Socket_siren_left",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/Firestation_siren_01.et",
+      "blas": "blas/Firestation_siren_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Electrical/Firestation/Firestation_siren_01.xob",
+      "local": {
+        "pos": [
+          -2.598092794418335,
+          9.458878517150879,
+          6.311180591583252
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Entry_stair_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Entry/ConcreteStairs_02_Wide.et",
+      "blas": "blas/ConcreteStairs_02_Wide.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Entry/ConcreteStairs_02_Wide.xob",
+      "local": {
+        "pos": [
+          -0.19591569900512695,
+          0.029999999329447746,
+          7.520742893218994
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Win_village_e_a_150x72_2_B_base_001",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_village_e_a_150x72_2_B.et",
+      "blas": "blas/Win_village_e_a_150x72_2_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_Village_E_A/Win_village_e_a_150x72_2_B.xob",
+      "local": {
+        "pos": [
+          7.300333023071289,
+          2.310234308242798,
+          -5.6570634841918945
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Win_village_e_a_150x72_2_B_base_001/socket_glass_60x52_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_60x52/Glass_60x52.et",
+      "blas": "blas/Glass_01_60x52.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_60x52/Glass_01_60x52.xob",
+      "local": {
+        "pos": [
+          7.28822102304548,
+          2.310234308242798,
+          -5.30110228061676
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_village_e_a_150x72_2_B_base_001"
+    },
+    {
+      "id": "Socket_Win_village_e_a_150x72_2_B_base_001/socket_glass_60x52_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_60x52/Glass_60x52.et",
+      "blas": "blas/Glass_01_60x52.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_60x52/Glass_01_60x52.xob",
+      "local": {
+        "pos": [
+          7.28822102304548,
+          2.310234308242798,
+          -6.0124475955963135
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "Socket_Win_village_e_a_150x72_2_B_base_001"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CA84",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/ShelfBarracks_01.et",
+      "blas": "blas/ShelfBarracks_01.bvh",
+      "xob": "Assets/Props/Furniture/ShelfBarracks_01/ShelfBarracks_01.xob",
+      "local": {
+        "pos": [
+          4.999,
+          1.752,
+          -3.82
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CC0B",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/ShelfBarracks_01.et",
+      "blas": "blas/ShelfBarracks_01.bvh",
+      "xob": "Assets/Props/Furniture/ShelfBarracks_01/ShelfBarracks_01.xob",
+      "local": {
+        "pos": [
+          -2.071,
+          1.555,
+          0.343
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CC14",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/ShelfBarracks_01.et",
+      "blas": "blas/ShelfBarracks_01.bvh",
+      "xob": "Assets/Props/Furniture/ShelfBarracks_01/ShelfBarracks_01.xob",
+      "local": {
+        "pos": [
+          -2.733,
+          1.569,
+          1.081
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CC3D",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/ShelfBarracks_01.et",
+      "blas": "blas/ShelfBarracks_01.bvh",
+      "xob": "Assets/Props/Furniture/ShelfBarracks_01/ShelfBarracks_01.xob",
+      "local": {
+        "pos": [
+          3.709,
+          1.752,
+          -3.82
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CC47",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/ShelfBarracks_01.et",
+      "blas": "blas/ShelfBarracks_01.bvh",
+      "xob": "Assets/Props/Furniture/ShelfBarracks_01/ShelfBarracks_01.xob",
+      "local": {
+        "pos": [
+          6.279,
+          1.752,
+          -3.82
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CDE4",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/ShelfBarracks_01.et",
+      "blas": "blas/ShelfBarracks_01.bvh",
+      "xob": "Assets/Props/Furniture/ShelfBarracks_01/ShelfBarracks_01.xob",
+      "local": {
+        "pos": [
+          -2.071,
+          1.555,
+          1.53
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CDFB",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/ShelfBarracks_01.et",
+      "blas": "blas/ShelfBarracks_01.bvh",
+      "xob": "Assets/Props/Furniture/ShelfBarracks_01/ShelfBarracks_01.xob",
+      "local": {
+        "pos": [
+          -2.733,
+          1.569,
+          2.679
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CD80",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/CabinetMetal_01_grey_V1.et",
+      "blas": "blas/CabinetMetal_01.bvh",
+      "xob": "Assets/Props/Furniture/CabinetMetal_01/CabinetMetal_01.xob",
+      "local": {
+        "pos": [
+          2.319,
+          0.05,
+          -2.763
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CD91",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/CabinetMetal_01_grey_V1.et",
+      "blas": "blas/CabinetMetal_01.bvh",
+      "xob": "Assets/Props/Furniture/CabinetMetal_01/CabinetMetal_01.xob",
+      "local": {
+        "pos": [
+          2.319,
+          0.05,
+          -3.5
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CDB1",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/CabinetMetal_01_grey_V1.et",
+      "blas": "blas/CabinetMetal_01.bvh",
+      "xob": "Assets/Props/Furniture/CabinetMetal_01/CabinetMetal_01.xob",
+      "local": {
+        "pos": [
+          2.319,
+          0.05,
+          -2.032
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CD65",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/CabinetMetal_01_olive_V3.et",
+      "blas": "blas/CabinetMetal_01.bvh",
+      "xob": "Assets/Props/Furniture/CabinetMetal_01/CabinetMetal_01.xob",
+      "local": {
+        "pos": [
+          -1.946,
+          0.05,
+          -4.247
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CD75",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/ClockUniversal_01.et",
+      "blas": "blas/ClockUniversal_01.bvh",
+      "xob": "Assets/Props/Civilian/ClockUniversal_01/ClockUniversal_01.xob",
+      "local": {
+        "pos": [
+          4.318,
+          2.092,
+          0.546
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CD45",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Industrial/Workbench_Vice_01.et",
+      "blas": "blas/Workbench_Vice_01.bvh",
+      "xob": "Assets/Props/Industrial/Workbench_01/Workbench_Vice_01.xob",
+      "local": {
+        "pos": [
+          -6.392,
+          1.057,
+          -6.248
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CD05",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/BoxWooden_01.et",
+      "blas": "blas/BoxWooden_01.bvh",
+      "xob": "Assets/Props/Crates/BoxWooden_01.xob",
+      "local": {
+        "pos": [
+          -2.005,
+          6.194,
+          6.778
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CD17",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/BoxWooden_01.et",
+      "blas": "blas/BoxWooden_01.bvh",
+      "xob": "Assets/Props/Crates/BoxWooden_01.xob",
+      "local": {
+        "pos": [
+          -3.069,
+          0.067,
+          -5.312
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CD2F",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/BoxWooden_01.et",
+      "blas": "blas/BoxWooden_01.bvh",
+      "xob": "Assets/Props/Crates/BoxWooden_01.xob",
+      "local": {
+        "pos": [
+          -1.866,
+          0.05,
+          6.904
+        ],
+        "quat": [
+          0.0,
+          0.05679733858358769,
+          0.0,
+          0.9983857282282341
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CD31",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/BoxWooden_01.et",
+      "blas": "blas/BoxWooden_01.bvh",
+      "xob": "Assets/Props/Crates/BoxWooden_01.xob",
+      "local": {
+        "pos": [
+          -1.822,
+          3.25,
+          6.987
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CD3C",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/BoxWooden_01.et",
+      "blas": "blas/BoxWooden_01.bvh",
+      "xob": "Assets/Props/Crates/BoxWooden_01.xob",
+      "local": {
+        "pos": [
+          -3.069,
+          0.067,
+          -5.764
+        ],
+        "quat": [
+          0.0,
+          0.05679733858358769,
+          0.0,
+          0.9983857282282341
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CD5B",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/BoxWooden_01.et",
+      "blas": "blas/BoxWooden_01.bvh",
+      "xob": "Assets/Props/Crates/BoxWooden_01.xob",
+      "local": {
+        "pos": [
+          -1.924,
+          0.05,
+          6.447
+        ],
+        "quat": [
+          0.0,
+          -0.01581202406160765,
+          0.0,
+          0.999874982132804
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CEEB",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/MirrorBathroom_01.et",
+      "blas": "blas/MirrorBathroom_01.bvh",
+      "xob": "Assets/Props/Furniture/MirrorBathroom_01/MirrorBathroom_01.xob",
+      "local": {
+        "pos": [
+          4.499,
+          1.328,
+          -7.151
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CEF5",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/TVSet_01.et",
+      "blas": "blas/TVset_01.bvh",
+      "xob": "Assets/Props/Furniture/TVset_01/TVset_01.xob",
+      "local": {
+        "pos": [
+          2.715,
+          1.05,
+          3.499
+        ],
+        "quat": [
+          0.0,
+          0.8408454025287808,
+          0.0,
+          0.5412753541832591
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CEAF",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/PhoneTable_01_Base.et",
+      "blas": "blas/PhoneTable_01.bvh",
+      "xob": "Assets/Props/Furniture/PhoneTable_01/PhoneTable_01.xob",
+      "local": {
+        "pos": [
+          5.034,
+          0.956,
+          2.625
+        ],
+        "quat": [
+          0.0,
+          0.5691503743241959,
+          0.0,
+          0.8222334531060066
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CE96",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Chair_01/Chair_01_yellow.et",
+      "blas": "blas/Chair_01.bvh",
+      "xob": "Assets/Props/Furniture/Chair_01/Chair_01.xob",
+      "local": {
+        "pos": [
+          -7.169,
+          0.057,
+          -5.056
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CE67",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Misc/VentCover_01_1x1.et",
+      "blas": "blas/VentCover_01_1x1.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Misc/VentCover_01_1x1.xob",
+      "local": {
+        "pos": [
+          7.1,
+          0.326,
+          -2.743
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CE7B",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Misc/VentCover_01_1x1.et",
+      "blas": "blas/VentCover_01_1x1.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Misc/VentCover_01_1x1.xob",
+      "local": {
+        "pos": [
+          7.1,
+          0.326,
+          -0.809
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CE08",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Urinal_01.et",
+      "blas": "blas/Urinal_01.bvh",
+      "xob": "Assets/Props/Furniture/Urinal_01/Urinal_01.xob",
+      "local": {
+        "pos": [
+          5.437,
+          0.43,
+          -4.22
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CE25",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Urinal_01.et",
+      "blas": "blas/Urinal_01.bvh",
+      "xob": "Assets/Props/Furniture/Urinal_01/Urinal_01.xob",
+      "local": {
+        "pos": [
+          6.196,
+          0.43,
+          -4.22
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CE34",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Urinal_01.et",
+      "blas": "blas/Urinal_01.bvh",
+      "xob": "Assets/Props/Furniture/Urinal_01/Urinal_01.xob",
+      "local": {
+        "pos": [
+          4.696,
+          0.43,
+          -4.22
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CFC5",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/Crate_01_white.et",
+      "blas": "blas/Crate_01.bvh",
+      "xob": "Assets/Props/Crates/Crate_01.xob",
+      "local": {
+        "pos": [
+          -1.953,
+          3.25,
+          6.095
+        ],
+        "quat": [
+          0.0,
+          0.69777795790805,
+          0.0,
+          0.7163141220565679
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CFD6",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/ShowerCurtains_01_orange.et",
+      "blas": "blas/ShowerCurtains_01.bvh",
+      "xob": "Assets/Props/Furniture/ShowerCurtains_01/ShowerCurtains_01.xob",
+      "local": {
+        "pos": [
+          2.347,
+          1.119,
+          -6.078
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CFA4",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Cupboard_01/Cupboard_01_B.et",
+      "blas": "blas/Cupboard_01_B.bvh",
+      "xob": "Assets/Props/Furniture/Cupboard_01/Cupboard_01_B.xob",
+      "local": {
+        "pos": [
+          2.211,
+          0.05,
+          2.684
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CF8F",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Heating/RadiatorCastIron_01/RadiatorCastIron_01_130.et",
+      "blas": "blas/RadiatorCastIron_01_130.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Heating/RadiatorCastIron_01/RadiatorCastIron_01_130.xob",
+      "local": {
+        "pos": [
+          7.1,
+          0.68,
+          -1.716
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CF9F",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Heating/RadiatorCastIron_01/RadiatorCastIron_01_130.et",
+      "blas": "blas/RadiatorCastIron_01_130.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Heating/RadiatorCastIron_01/RadiatorCastIron_01_130.xob",
+      "local": {
+        "pos": [
+          7.1,
+          0.68,
+          -5.716
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CF4A",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
+      "blas": "blas/LightSwitch_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
+      "local": {
+        "pos": [
+          2.21,
+          1.365,
+          -5.987
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CF51",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
+      "blas": "blas/LightSwitch_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
+      "local": {
+        "pos": [
+          1.8,
+          1.399,
+          -1.431
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CF5C",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
+      "blas": "blas/LightSwitch_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
+      "local": {
+        "pos": [
+          0.715,
+          1.386,
+          -7.162
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CF61",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
+      "blas": "blas/LightSwitch_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
+      "local": {
+        "pos": [
+          2.2,
+          1.396,
+          -1.427
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CF76",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
+      "blas": "blas/LightSwitch_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
+      "local": {
+        "pos": [
+          0.707,
+          1.366,
+          2.788
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CF93",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
+      "blas": "blas/LightSwitch_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
+      "local": {
+        "pos": [
+          2.2,
+          1.357,
+          2.305
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CF27",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Garbage/Bins/BinInterior_01_red.et",
+      "blas": "blas/BinInterior_01.bvh",
+      "xob": "Assets/Props/Garbage/Bins/BinInterior_01/BinInterior_01.xob",
+      "local": {
+        "pos": [
+          5.101,
+          0.05,
+          2.169
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 0.86
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CF35",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Garbage/Bins/BinInterior_01_red.et",
+      "blas": "blas/BinInterior_01.bvh",
+      "xob": "Assets/Props/Garbage/Bins/BinInterior_01/BinInterior_01.xob",
+      "local": {
+        "pos": [
+          4.27,
+          0.05,
+          0.051
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CF1F",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchWooden_02_Painted.et",
+      "blas": "blas/BenchWooden_02.bvh",
+      "xob": "Assets/Props/Furniture/BenchWooden_02/BenchWooden_02.xob",
+      "local": {
+        "pos": [
+          -1.847,
+          0.081,
+          0.939
+        ],
+        "quat": [
+          0.0,
+          0.7052098499152714,
+          0.0,
+          0.7089986372218782
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C8EC",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Industrial/Workbench_01.et",
+      "blas": "blas/Workbench_01.bvh",
+      "xob": "Assets/Props/Industrial/Workbench_01/Workbench_01.xob",
+      "local": {
+        "pos": [
+          -5.443,
+          0.047,
+          -6.672
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C8E3",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/NoticeBoardCork_01.et",
+      "blas": "blas/NoticeBoardCork_01.bvh",
+      "xob": "Assets/Props/Civilian/NoticeBoardCork_01/NoticeBoardCork_01.xob",
+      "local": {
+        "pos": [
+          1.788,
+          1.249,
+          -3.072
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C8C3",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Dresser_01.et",
+      "blas": "blas/Dresser_01.bvh",
+      "xob": "Assets/Props/Furniture/Dresser_01/Dresser_01.xob",
+      "local": {
+        "pos": [
+          1.795,
+          0.05,
+          -2.275
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C8D7",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Heating/RadiatorCastIron_01/RadiatorCastIron_01_65.et",
+      "blas": "blas/RadiatorCastIron_01_65.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Heating/RadiatorCastIron_01/RadiatorCastIron_01_65.xob",
+      "local": {
+        "pos": [
+          7.095,
+          0.737,
+          2.818
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C8AB",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Chair_01/Chair_01_base.et",
+      "blas": "blas/Chair_01.bvh",
+      "xob": "Assets/Props/Furniture/Chair_01/Chair_01.xob",
+      "local": {
+        "pos": [
+          3.32,
+          0.05,
+          -3.631
+        ],
+        "quat": [
+          0.0,
+          0.051926361577675974,
+          0.0,
+          0.9986509164734715
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C8B1",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Chair_01/Chair_01_base.et",
+      "blas": "blas/Chair_01.bvh",
+      "xob": "Assets/Props/Furniture/Chair_01/Chair_01.xob",
+      "local": {
+        "pos": [
+          6.327,
+          0.05,
+          -3.644
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C8BE",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Chair_01/Chair_01_base.et",
+      "blas": "blas/Chair_01.bvh",
+      "xob": "Assets/Props/Furniture/Chair_01/Chair_01.xob",
+      "local": {
+        "pos": [
+          5.827,
+          0.05,
+          -3.644
+        ],
+        "quat": [
+          0.0,
+          -0.02956157025885954,
+          0.0,
+          0.999562961280494
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C886",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/CoatRack_04.et",
+      "blas": "blas/CoatRack_04.bvh",
+      "xob": "Assets/Props/Furniture/CoatRack_04/CoatRack_04.xob",
+      "local": {
+        "pos": [
+          2.589,
+          0.05,
+          2.434
+        ],
+        "quat": [
+          0.0,
+          0.35361361580460526,
+          0.0,
+          0.9353915814874502
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C844",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/FireExtinguisher_01.et",
+      "blas": "blas/FireExtinguisher_01.bvh",
+      "xob": "Assets/Props/Civilian/FireExtinguisher_01/FireExtinguisher_01.xob",
+      "local": {
+        "pos": [
+          -1.968,
+          0.059,
+          2.718
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C870",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/FireExtinguisher_01.et",
+      "blas": "blas/FireExtinguisher_01.bvh",
+      "xob": "Assets/Props/Civilian/FireExtinguisher_01/FireExtinguisher_01.xob",
+      "local": {
+        "pos": [
+          -2.712,
+          0.062,
+          -0.264
+        ],
+        "quat": [
+          0.0,
+          0.8762099682335575,
+          0.0,
+          0.48192955042012947
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C87C",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/FireExtinguisher_01.et",
+      "blas": "blas/FireExtinguisher_01.bvh",
+      "xob": "Assets/Props/Civilian/FireExtinguisher_01/FireExtinguisher_01.xob",
+      "local": {
+        "pos": [
+          -2.731,
+          0.062,
+          0.025
+        ],
+        "quat": [
+          0.0,
+          -0.11823932676367645,
+          0.0,
+          0.9929851265786777
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C80E",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Misc/VentCover_01_Circular.et",
+      "blas": "blas/VentCover_01_Circular.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Misc/VentCover_01_Circular.xob",
+      "local": {
+        "pos": [
+          -2.201,
+          8.558,
+          3.996
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C825",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Misc/VentCover_01_Circular.et",
+      "blas": "blas/VentCover_01_Circular.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Misc/VentCover_01_Circular.xob",
+      "local": {
+        "pos": [
+          -2.201,
+          5.776,
+          3.996
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C83A",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Misc/VentCover_01_Circular.et",
+      "blas": "blas/VentCover_01_Circular.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Misc/VentCover_01_Circular.xob",
+      "local": {
+        "pos": [
+          -2.599,
+          5.776,
+          3.996
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C857",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Misc/VentCover_01_Circular.et",
+      "blas": "blas/VentCover_01_Circular.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Misc/VentCover_01_Circular.xob",
+      "local": {
+        "pos": [
+          -2.599,
+          8.558,
+          3.996
+        ],
+        "quat": [
+          -0.017479729480103613,
+          -0.7068906980978759,
+          0.017479729480103613,
+          0.706890698097876
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C803",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/CardboardBoxStack_01.et",
+      "blas": "blas/CardboardBoxStack_01.bvh",
+      "xob": "Assets/Props/Crates/CardboardBoxStack_01.xob",
+      "local": {
+        "pos": [
+          -2.997,
+          0.054,
+          -6.729
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C812",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Faucet_01/Faucet_01.et",
+      "blas": "blas/Faucet_01.bvh",
+      "xob": "Assets/Props/Furniture/Faucet_01/Faucet_01.xob",
+      "local": {
+        "pos": [
+          4.491,
+          1.266,
+          -7.151
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C9AC",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Chair_01/Chair_01_white.et",
+      "blas": "blas/Chair_01.bvh",
+      "xob": "Assets/Props/Furniture/Chair_01/Chair_01.xob",
+      "local": {
+        "pos": [
+          5.308,
+          0.05,
+          -3.642
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C9CA",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Chair_01/Chair_01_white.et",
+      "blas": "blas/Chair_01.bvh",
+      "xob": "Assets/Props/Furniture/Chair_01/Chair_01.xob",
+      "local": {
+        "pos": [
+          3.808,
+          0.05,
+          -3.642
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C9D9",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Chair_01/Chair_01_white.et",
+      "blas": "blas/Chair_01.bvh",
+      "xob": "Assets/Props/Furniture/Chair_01/Chair_01.xob",
+      "local": {
+        "pos": [
+          4.808,
+          0.05,
+          -3.642
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C9E3",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Chair_01/Chair_01_white.et",
+      "blas": "blas/Chair_01.bvh",
+      "xob": "Assets/Props/Furniture/Chair_01/Chair_01.xob",
+      "local": {
+        "pos": [
+          6.808,
+          0.05,
+          -3.642
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C9F7",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Chair_01/Chair_01_white.et",
+      "blas": "blas/Chair_01.bvh",
+      "xob": "Assets/Props/Furniture/Chair_01/Chair_01.xob",
+      "local": {
+        "pos": [
+          4.308,
+          0.05,
+          -3.642
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C982",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Heating/RadiatorCastIron_01/RadiatorCastIron_01_95.et",
+      "blas": "blas/RadiatorCastIron_01_95.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Heating/RadiatorCastIron_01/RadiatorCastIron_01_95.xob",
+      "local": {
+        "pos": [
+          5.73,
+          0.702,
+          4.236
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C98F",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Heating/RadiatorCastIron_01/RadiatorCastIron_01_95.et",
+      "blas": "blas/RadiatorCastIron_01_95.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Heating/RadiatorCastIron_01/RadiatorCastIron_01_95.xob",
+      "local": {
+        "pos": [
+          3.668,
+          0.702,
+          4.236
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C996",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/FirstAidBox_01.et",
+      "blas": "blas/FirstAidBox_01.bvh",
+      "xob": "Assets/Props/Furniture/FirstAidBox_01/FirstAidBox_01.xob",
+      "local": {
+        "pos": [
+          1.725,
+          1.248,
+          -1.833
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C940",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/LampFluorescent/LampFluorescent_02.et",
+      "blas": "blas/LampFluorescent_02.bvh",
+      "xob": "Assets/Props/Furniture/LampFluorescent_02/LampFluorescent_02.xob",
+      "local": {
+        "pos": [
+          -0.308,
+          3.05,
+          -3.619
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C94D",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/LampFluorescent/LampFluorescent_02.et",
+      "blas": "blas/LampFluorescent_02.bvh",
+      "xob": "Assets/Props/Furniture/LampFluorescent_02/LampFluorescent_02.xob",
+      "local": {
+        "pos": [
+          -0.308,
+          3.05,
+          0.321
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C95A",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/LampFluorescent/LampFluorescent_02.et",
+      "blas": "blas/LampFluorescent_02.bvh",
+      "xob": "Assets/Props/Furniture/LampFluorescent_02/LampFluorescent_02.xob",
+      "local": {
+        "pos": [
+          4.572,
+          3.05,
+          -1.826
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C979",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/LampFluorescent/LampFluorescent_02.et",
+      "blas": "blas/LampFluorescent_02.bvh",
+      "xob": "Assets/Props/Furniture/LampFluorescent_02/LampFluorescent_02.xob",
+      "local": {
+        "pos": [
+          4.437,
+          3.05,
+          2.214
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C928",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Misc/VentCover_01_3x1.et",
+      "blas": "blas/VentCover_01_3x1.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Misc/VentCover_01_3x1.xob",
+      "local": {
+        "pos": [
+          7.499,
+          0.393,
+          -1.063
+        ],
+        "quat": [
+          -0.008681915591817475,
+          0.7070534805385349,
+          -0.008681915591817475,
+          0.7070534805385351
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C93D",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Misc/VentCover_01_3x1.et",
+      "blas": "blas/VentCover_01_3x1.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Misc/VentCover_01_3x1.xob",
+      "local": {
+        "pos": [
+          7.498,
+          0.393,
+          -2.554
+        ],
+        "quat": [
+          0.001974612072773893,
+          0.7071040241061862,
+          0.001974612072773893,
+          0.7071040241061863
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C932",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Decorations/Paintings/PaintingSmall_01_base.et",
+      "blas": "blas/PaintingSmall_01.bvh",
+      "xob": "Assets/Props/Decorations/PaintingSmall_01_400x600/PaintingSmall_01.xob",
+      "local": {
+        "pos": [
+          4.691,
+          1.881,
+          4.239
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127C91A",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Rack_01_Long.et",
+      "blas": "blas/Rack_01_Long.bvh",
+      "xob": "Assets/Props/Furniture/Rack_01/Rack_01_Long.xob",
+      "local": {
+        "pos": [
+          -3.294,
+          0.058,
+          -6.284
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CAEC",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/Crate_01_base.et",
+      "blas": "blas/Crate_01.bvh",
+      "xob": "Assets/Props/Crates/Crate_01.xob",
+      "local": {
+        "pos": [
+          -0.1,
+          6.211,
+          3.465
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CAFF",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/Crate_01_base.et",
+      "blas": "blas/Crate_01.bvh",
+      "xob": "Assets/Props/Crates/Crate_01.xob",
+      "local": {
+        "pos": [
+          -3.003,
+          0.073,
+          -4.365
+        ],
+        "quat": [
+          0.0,
+          -0.06578627472035872,
+          0.0,
+          0.9978337366808248
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CAF3",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Bookshelf_01/Bookshelf_01.et",
+      "blas": "blas/Bookshelf_01.bvh",
+      "xob": "Assets/Props/Furniture/Bookshelf_01/Bookshelf_01.xob",
+      "local": {
+        "pos": [
+          7.059,
+          0.05,
+          2.106
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CAF3/socket_Bookshelf_01_Glass_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Props/Furniture/Bookshelf_01/Parts/Bookshelf_01_glass_01.et",
+      "blas": "blas/Bookshelf_01_Glass_01.bvh",
+      "xob": "Assets/Props/Furniture/Bookshelf_01/dst/Bookshelf_01_Glass_01.xob",
+      "local": {
+        "pos": [
+          6.583467498064041,
+          1.3849509239196778,
+          1.4933031139373778
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "5B18CC603B15B9A2/5B18C1675127CAF3"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CAF3/socket_Bookshelf_01_Glass_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Props/Furniture/Bookshelf_01/Parts/Bookshelf_01_glass_02.et",
+      "blas": "blas/Bookshelf_01_Glass_02.bvh",
+      "xob": "Assets/Props/Furniture/Bookshelf_01/dst/Bookshelf_01_Glass_02.xob",
+      "local": {
+        "pos": [
+          6.5712039020061495,
+          1.3849509239196778,
+          1.6819296119213103
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "5B18CC603B15B9A2/5B18C1675127CAF3"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CAC7",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Desk_01_Base.et",
+      "blas": "blas/Desk_01.bvh",
+      "xob": "Assets/Props/Furniture/Desk_01/Desk_01.xob",
+      "local": {
+        "pos": [
+          4.762,
+          0.05,
+          2.302
+        ],
+        "quat": [
+          0.0,
+          0.7019666209519486,
+          0.0,
+          0.7122098448275643
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CAD4",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Wardrobe_01.et",
+      "blas": "blas/Wardrobe_01.bvh",
+      "xob": "Assets/Props/Furniture/Wardrobe_01/Wardrobe_01.xob",
+      "local": {
+        "pos": [
+          4.945,
+          0.05,
+          0.338
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CAAA",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/CabinetMetal_01_olive_V2.et",
+      "blas": "blas/CabinetMetal_01.bvh",
+      "xob": "Assets/Props/Furniture/CabinetMetal_01/CabinetMetal_01.xob",
+      "local": {
+        "pos": [
+          -1.945,
+          0.05,
+          -5.736
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CAB1",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/CabinetMetal_01_olive_V2.et",
+      "blas": "blas/CabinetMetal_01.bvh",
+      "xob": "Assets/Props/Furniture/CabinetMetal_01/CabinetMetal_01.xob",
+      "local": {
+        "pos": [
+          -1.945,
+          0.051,
+          -4.988
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "5B18CC603B15B9A2/5B18C1675127CABD",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/CabinetMetal_01_olive_V2.et",
+      "blas": "blas/CabinetMetal_01.bvh",
+      "xob": "Assets/Props/Furniture/CabinetMetal_01/CabinetMetal_01.xob",
+      "local": {
+        "pos": [
+          -1.945,
+          0.051,
+          -6.49
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18CC603B15B9A2"
+    },
+    {
+      "id": "Socket_handrail_roof",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Services/Fire/FireStation_E_01/FireStation_E_01 handrail_roof.et",
+      "blas": "blas/Firestation_Handrail_roof.bvh",
+      "xob": "Assets/Structures/Services/Fire/FireStation_E_01/Firestation_Handrail_roof.xob",
+      "local": {
+        "pos": [
+          -0.19975219666957855,
+          9.25,
+          5.193545818328857
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorSet_Garage_E_03_EXT",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/DoorSet_Garage_E_03_EXT_red.et",
+      "blas": "blas/DoorFrame_Garage_E_03_A_EXT_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Garage_E_03/DoorFrame_Garage_E_03_A_EXT_B.xob",
+      "local": {
+        "pos": [
+          -5.1407670974731445,
+          0.05000000074505806,
+          4.418134689331055
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorSet_Garage_E_03_EXT/Socket_Door_right",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Garage_E_03_A_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_Garage_E_03_A_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Garage_E_03/Door_Garage_E_03_A_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -7.293823719024658,
+          0.06700000166893005,
+          4.45301578938961
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "Socket_DoorSet_Garage_E_03_EXT"
+    },
+    {
+      "id": "Socket_DoorSet_Garage_E_03_EXT/Socket_Door_left",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Garage_E_03_A_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_Garage_E_03_A_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Garage_E_03/Door_Garage_E_03_A_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -2.9943323135375977,
+          0.06700000166893005,
+          4.45301578938961
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "Socket_DoorSet_Garage_E_03_EXT"
+    },
+    {
+      "id": "Socket_HatchSet_Lightbeacon_01",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/HatchSet_Lightbeacon_Red.et",
+      "blas": "blas/HatchFrame_Lightbeacon_EXT_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Lighthouse/HatchFrame_Lightbeacon_EXT_B.xob",
+      "local": {
+        "pos": [
+          1.0750806818008423,
+          9.103096008300781,
+          3.7998365592956542
+        ],
+        "quat": [
+          -0.5,
+          -0.5,
+          -0.5,
+          0.5
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_HatchSet_Lightbeacon_01/socket_hatchdoor",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/HatchDoor_Lightbeacon_L_EXT_COV_B.et",
+      "blas": "blas/HatchDoor_Lightbeacon_L_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Lighthouse/HatchDoor_Lightbeacon_L_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          1.0750803818008317,
+          9.298303812742233,
+          3.1389467549324035
+        ],
+        "quat": [
+          -0.5,
+          -0.5,
+          -0.5,
+          0.5
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "Socket_HatchSet_Lightbeacon_01"
+    },
+    {
+      "id": "Socket_Entry_stair_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Entry/ConcreteStairs_02_Narrow.et",
+      "blas": "blas/ConcreteStairs_02_Narrow.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Entry/ConcreteStairs_02_Narrow.xob",
+      "local": {
+        "pos": [
+          -0.19591699540615082,
+          0.029999999329447746,
+          -7.506799697875977
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorSet_Village_E_01_L_INT_B_001",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/DoorSet_Village_E_01_R_EXT_COV_B_brown.et",
+      "blas": "blas/DoorFrame_Village_E_A_EXT_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Village_E/DoorFrame_Village_E_A_EXT_B.xob",
+      "local": {
+        "pos": [
+          -0.19591699540615082,
+          0.05000000074505806,
+          -7.361013412475586
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorSet_Village_E_01_L_INT_B_001/socket_door_right",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Village_E_A_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_Village_E_A_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Village_E/Door_Village_E_A_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -0.8343763202428818,
+          0.05000000074505806,
+          -7.259396910667419
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "Socket_DoorSet_Village_E_01_L_INT_B_001"
+    },
+    {
+      "id": "Socket_DoorSet_Industrial_01_EXT_02",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/DoorSet_Industrial_01_EXT_red.et",
+      "blas": "blas/DoorFrame_Industrial_A_EXT_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Industrial/DoorFrame_Industrial_A_EXT_B.xob",
+      "local": {
+        "pos": [
+          -2.3999180793762207,
+          0.049988001585006714,
+          -2.1862285137176514
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorSet_Industrial_01_EXT_02/socket_door_RIGHT",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Industrial_A_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_Industrial_A_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Industrial/Door_Industrial_A_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -2.2971154823899274,
+          0.0784223023802042,
+          -0.9067133665084841
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "Socket_DoorSet_Industrial_01_EXT_02"
+    },
+    {
+      "id": "Socket_DoorSet_Industrial_01_EXT_02/socket_door_LEFT",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Industrial_A_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_Industrial_A_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Industrial/Door_Industrial_A_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -2.2971154823899265,
+          0.0784223023802042,
+          -3.465743660926819
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865475
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "Socket_DoorSet_Industrial_01_EXT_02"
+    },
+    {
+      "id": "Socket_DoorSet_Industrial_01_EXT_01",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/DoorSet_Industrial_01_EXT_red.et",
+      "blas": "blas/DoorFrame_Industrial_A_EXT_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Industrial/DoorFrame_Industrial_A_EXT_B.xob",
+      "local": {
+        "pos": [
+          -0.19591569900512695,
+          0.05000000074505806,
+          7.359987735748291
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorSet_Industrial_01_EXT_01/socket_door_RIGHT",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Industrial_A_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_Industrial_A_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Industrial/Door_Industrial_A_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -1.4754308462142944,
+          0.07843430154025555,
+          7.462790332734585
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "Socket_DoorSet_Industrial_01_EXT_01"
+    },
+    {
+      "id": "Socket_DoorSet_Industrial_01_EXT_01/socket_door_LEFT",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Industrial_A_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_Industrial_A_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Industrial/Door_Industrial_A_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          1.0835994482040405,
+          0.07843430154025555,
+          7.462790332734585
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "Socket_DoorSet_Industrial_01_EXT_01"
+    }
+  ],
+  "notes": [
+    "5E66C5E358657DC0: Prefabs/Structures/Services/Fire/FireStation_E_01/Probe_FireStation_E_01.et has no mesh",
+    "5B18CC603B15B9A2/5B18C1675127CDC6: Assets/Props/Furniture/Chair_02/Chair_02.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CDD5: Assets/Props/Furniture/Chair_02/Chair_02.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CDA0: Assets/Props/Furniture/PlantRoom_04/PlantRoom_04.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CECB: Assets/Props/Furniture/LightWall_01/LightWall_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CED9: Assets/Props/Furniture/LightWall_01/LightWall_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CE8C: Assets/Props/Furniture/Chair_02/Chair_02.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CEBE: Assets/Props/Furniture/Chair_02/Chair_02.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CE81: Assets/Props/Furniture/Sink_01/Sink_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CE49: Assets/Props/Civilian/PaintCan_01/PaintCan_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CE51: Assets/Props/Civilian/PaintCan_01/PaintCan_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CE5E: Assets/Props/Civilian/PaintCan_01/PaintCan_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CE11: Assets/Structures/BuildingsParts/Lights/LampIndustrial_02.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CE1D: Assets/Structures/BuildingsParts/Lights/LampIndustrial_02.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CFE1: Assets/Structures/BuildingsParts/Lights/LampIndustrial_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CFF5: Assets/Props/Furniture/Toilet_02/Toilet_02.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127CFB8: Assets/Props/Garbage/Cardboard/Cardboard_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127C8CD: Assets/Props/Civilian/Broom_01/Broom_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127C868: Assets/Props/Civilian/Bucket_01/Bucket_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127C89A: Assets/Props/Civilian/Bucket_01/Bucket_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127C9A0: Assets/Props/Garbage/Cardboard/Cardboard_Pile_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127C9BB: Assets/Props/Garbage/Cardboard/Cardboard_Pile_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127C964: Assets/Props/Furniture/Shower_01/Shower_01_addon.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC603B15B9A2/5B18C1675127C905: Assets/Props/Furniture/ShowerCurtains_01/ShowerCurtains_01_Straight.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

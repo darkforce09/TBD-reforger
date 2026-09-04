@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1261,
+  "slug": "PicnicTable_01",
+  "resourceName": "Prefabs/Props/Civilian/PicnicTable/PicnicTable_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.9907833763863891,
+      -0.0031250000465661287,
+      -1.1868749856948853
+    ],
+    "max": [
+      0.9914759993553162,
+      0.8970635831356049,
+      1.1950000524520874
+    ]
+  },
+  "shellBvh": "blas/PicnicTable_01.bvh",
+  "instances": [
+    {
+      "id": "PicnicTable_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Civilian/PicnicTable/PicnicTable_01.et",
+      "blas": "blas/PicnicTable_01.bvh",
+      "xob": "Assets/Props/Civilian/TablePicnic_01/PicnicTable_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

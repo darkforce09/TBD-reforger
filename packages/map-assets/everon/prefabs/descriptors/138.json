@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 138,
+  "slug": "FishingGear_01",
+  "resourceName": "Prefabs/Props/Naval/FishingGear_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.4134617598950863,
+      -0.01142599992454052,
+      -2.148673126935959
+    ],
+    "max": [
+      1.120499178558588,
+      0.4356124997138977,
+      1.138998318195343
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "54749B8486683488",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Naval/FishingRope_01.et",
+      "blas": "blas/FishingRope_01.bvh",
+      "xob": "Assets/Props/Naval/FishingGear_01/FishingRope_01.xob",
+      "local": {
+        "pos": [
+          -0.279,
+          0.0,
+          0.888
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "54749B848668348B",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Naval/FishingNet_01.et",
+      "blas": "blas/FishingNet_01.bvh",
+      "xob": "Assets/Props/Naval/FishingGear_01/FishingNet_01.xob",
+      "local": {
+        "pos": [
+          -0.101,
+          0.0,
+          -1.304
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "54749B848668348F",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Naval/LobsterTrapWooden_01.et",
+      "blas": "blas/LobsterTrapWooden_01.bvh",
+      "xob": "Assets/Props/Naval/FishingGear_01/LobsterTrapWooden_01.xob",
+      "local": {
+        "pos": [
+          0.041,
+          0.0,
+          -0.22
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "54749B848668348D",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Naval/LobsterTrapWooden_02.et",
+      "blas": "blas/LobsterTrapWooden_02.bvh",
+      "xob": "Assets/Props/Naval/FishingGear_01/LobsterTrapWooden_02.xob",
+      "local": {
+        "pos": [
+          -0.13,
+          0.0,
+          0.284
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ],
+  "notes": [
+    "54749B8486683489: Assets/Props/Naval/FishingGear_01/FishingBuoy_01.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

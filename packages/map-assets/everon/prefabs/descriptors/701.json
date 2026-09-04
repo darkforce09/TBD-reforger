@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 701,
+  "slug": "NetFence_01_Pole_Metal_green",
+  "resourceName": "Prefabs/Structures/Walls/Net/NetFence_01/NetFence_01_Pole_Metal_green.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.8071094751358032,
+      -1.3022827506065369,
+      -0.1512006964713919
+    ],
+    "max": [
+      2.1092904806137085,
+      1.4525082111358643,
+      0.15119929647141817
+    ]
+  },
+  "shellBvh": "blas/NetFence_01_Pole_Metal.bvh",
+  "instances": [
+    {
+      "id": "NetFence_01_Pole_Metal_green",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Net/NetFence_01/NetFence_01_Pole_Metal_green.et",
+      "blas": "blas/NetFence_01_Pole_Metal.bvh",
+      "xob": "Assets/Structures/Walls/Net/NetFence_01/NetFence_01_Pole_Metal.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

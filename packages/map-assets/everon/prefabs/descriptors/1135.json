@@ -1,0 +1,335 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1135,
+  "slug": "PhoneBooth_E_01",
+  "resourceName": "Prefabs/Structures/Infrastructure/Landlines/PhoneBooth_E/PhoneBooth_E_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.8592114448547363,
+      -0.550570547580719,
+      -0.937949538230896
+    ],
+    "max": [
+      0.8593736290931702,
+      2.8194875717163086,
+      0.6868253350257874
+    ]
+  },
+  "shellBvh": "blas/PhoneBooth_E_01.bvh",
+  "instances": [
+    {
+      "id": "PhoneBooth_E_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Infrastructure/Landlines/PhoneBooth_E/PhoneBooth_E_01.et",
+      "blas": "blas/PhoneBooth_E_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Landlines/PhoneBooth_E/PhoneBooth_E_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_glass_phonebooth_04",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_95x72.et",
+      "blas": "blas/Glass_PhoneBooth_E_01_95x72.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_95x72.xob",
+      "local": {
+        "pos": [
+          0.5368332266807556,
+          1.0550364255905151,
+          0.08710519969463348
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_glass_phonebooth_03",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_95x72.et",
+      "blas": "blas/Glass_PhoneBooth_E_01_95x72.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_95x72.xob",
+      "local": {
+        "pos": [
+          -0.5373818278312683,
+          1.055048942565918,
+          0.08711779862642288
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_glass_phonebooth_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_95x86.et",
+      "blas": "blas/Glass_PhoneBooth_E_01_95x86.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_95x86.xob",
+      "local": {
+        "pos": [
+          0.5368335843086243,
+          1.9184234142303467,
+          0.08708959817886353
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_glass_phonebooth_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_95x86.et",
+      "blas": "blas/Glass_PhoneBooth_E_01_95x86.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_95x86.xob",
+      "local": {
+        "pos": [
+          -0.5374022126197815,
+          1.9184165000915527,
+          0.08691900223493576
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_glass_phonebooth_05",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_13x86.et",
+      "blas": "blas/Glass_PhoneBooth_E_01_13x86.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_13x86.xob",
+      "local": {
+        "pos": [
+          -0.42161259055137634,
+          1.8827804327011108,
+          0.6283854246139526
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_glass_phonebooth_06",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_13x86.et",
+      "blas": "blas/Glass_PhoneBooth_E_01_13x86.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_13x86.xob",
+      "local": {
+        "pos": [
+          0.4213598966598511,
+          1.8843293190002441,
+          0.6283854246139526
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_phonebooth",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_PhoneBooth_E_01.et",
+      "blas": "blas/Door_PhoneBooth_E_EXT_ST.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_PhoneBooth_01/Door_PhoneBooth_E_EXT_ST.xob",
+      "local": {
+        "pos": [
+          0.4518156051635742,
+          0.155599907040596,
+          -0.47881731390953064
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_phonebooth/socket_glass_door_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_PhoneBooth_E_01/Glass_Door_PhoneBooth_E_63x58.et",
+      "blas": "blas/Glass_Door_PhoneBooth_E_63x58.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_PhoneBooth_E_01/Glass_Door_PhoneBooth_E_63x58.xob",
+      "local": {
+        "pos": [
+          -0.0011976063251495361,
+          1.753203108906746,
+          -0.4661477142944932
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_door_phonebooth"
+    },
+    {
+      "id": "socket_door_phonebooth/socket_glass_door_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_PhoneBooth_E_01/Glass_Door_PhoneBooth_E_63x72.et",
+      "blas": "blas/Glass_Door_PhoneBooth_E_63x72.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_PhoneBooth_E_01/Glass_Door_PhoneBooth_E_63x72.xob",
+      "local": {
+        "pos": [
+          -0.0012283027172088623,
+          1.0530178099870682,
+          -0.4661844139918685
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_door_phonebooth"
+    },
+    {
+      "id": "socket_glass_phonebooth_07",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_13x72.et",
+      "blas": "blas/Glass_PhoneBooth_E_01_13x72.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_13x72.xob",
+      "local": {
+        "pos": [
+          -0.42199239134788513,
+          1.0565049648284912,
+          0.6283854246139526
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_glass_phonebooth_08",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_13x72.et",
+      "blas": "blas/Glass_PhoneBooth_E_01_13x72.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_PhoneBooth_E_01/Glass_PhoneBooth_E_01_13x72.xob",
+      "local": {
+        "pos": [
+          0.4214468002319336,
+          1.0565565824508667,
+          0.6283854246139526
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_light_phonebooth",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Landlines/PhoneBooth_E/PhoneBooth_E_01_Light.et",
+      "blas": "blas/PhoneBooth_E_01_Light.bvh",
+      "xob": "Assets/Structures/Infrastructure/Landlines/PhoneBooth_E/PhoneBooth_E_01_Light.xob",
+      "local": {
+        "pos": [
+          -0.001446999958716333,
+          2.386984348297119,
+          0.32485431432724
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ],
+  "notes": [
+    "58B8D6D7FF222B0D: Assets/Props/Services/PhoneWall_01/PhoneWall_01.xob has no collision chunk — no BLAS, no instance",
+    "socket_light_phonebooth/5878F673B04BA318: Prefabs/Structures/Infrastructure/Lamps/LampStreet_E_01/LightPrefabs/LampStreet_E_01_light.et has no mesh"
+  ]
+}

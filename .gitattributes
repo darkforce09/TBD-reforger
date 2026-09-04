@@ -3,3 +3,4 @@
 packages/map-assets/**/*.png filter=lfs diff=lfs merge=lfs -text
 packages/map-assets/**/*.r16 filter=lfs diff=lfs merge=lfs -text
 packages/map-assets/**/*.tbd-sat filter=lfs diff=lfs merge=lfs -text
+packages/map-assets/**/prefabs/blas/*.bvh filter=lfs diff=lfs merge=lfs -text

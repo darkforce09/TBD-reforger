@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 312,
+  "slug": "HouseAddon_Shed_E_01",
+  "resourceName": "Prefabs/Structures/Houses/Village/HouseAddon_Shed_E_01/HouseAddon_Shed_E_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.6821224689483643,
+      -2.9262540340423584,
+      -4.211521625518799
+    ],
+    "max": [
+      2.0779836177825928,
+      5.057045936584473,
+      4.24431037902832
+    ]
+  },
+  "shellBvh": "blas/HouseAddon_Shed_E_01.bvh",
+  "instances": [
+    {
+      "id": "HouseAddon_Shed_E_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Houses/Village/HouseAddon_Shed_E_01/HouseAddon_Shed_E_01.et",
+      "blas": "blas/HouseAddon_Shed_E_01.bvh",
+      "xob": "Assets/Structures/Houses/Village/HouseAddon/HouseAddon_Shed_E_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_double_right_door",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_HouseAddon_Shed_E_R_EXT_COV_01.et",
+      "blas": "blas/Door_HouseAddon_Shed_E_R_EXT_COV_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_HouseAddon_Shed_E/Door_HouseAddon_Shed_E_R_EXT_COV_01.xob",
+      "local": {
+        "pos": [
+          1.8966868743300438,
+          0.0,
+          -3.999607809344525
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_right_door",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_HouseAddon_Shed_E_R_EXT_COV_02.et",
+      "blas": "blas/Door_HouseAddon_Shed_E_L_EXT_COV_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_HouseAddon_Shed_E/Door_HouseAddon_Shed_E_L_EXT_COV_02.xob",
+      "local": {
+        "pos": [
+          0.6987403035163879,
+          0.0,
+          3.988886833190918
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_double_left_door",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_HouseAddon_Shed_E_L_EXT_COV_01.et",
+      "blas": "blas/Door_HouseAddon_Shed_E_L_EXT_COV_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_HouseAddon_Shed_E/Door_HouseAddon_Shed_E_L_EXT_COV_01.xob",
+      "local": {
+        "pos": [
+          -1.5004356279969215,
+          0.0,
+          -3.9996061093444837
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    }
+  ],
+  "notes": [
+    "6122C72DCED8A12F: Prefabs/Structures/Agriculture/Barn/Barn_E_01/BuildingAddons/Probe_Barn_E_01.et has no mesh"
+  ]
+}

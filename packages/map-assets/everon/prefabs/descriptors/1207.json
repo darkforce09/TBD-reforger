@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1207,
+  "slug": "TouristSign_Pole_01_I11_Morton",
+  "resourceName": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_Pole_01_I11_Morton.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.18000160715268976,
+      1.939940276884954,
+      -0.17079819491205284
+    ],
+    "max": [
+      0.2163073975473083,
+      2.359940364936847,
+      0.16096420244793244
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "socket_TouristSign_01_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Left_blue.et",
+      "blas": "blas/TouristSign_01_left.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_left.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          2.1499223709106445,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          -0.2707096581485738,
+          0.0,
+          0.9626610415847742
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_TouristSignLocation_01_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Location_I11_Morton.et",
+      "blas": "blas/TouristSign_01_location.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_location.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          2.299922466278076,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_TouristSign_01_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Left_green.et",
+      "blas": "blas/TouristSign_01_left.bvh",
+      "xob": "Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_left.xob",
+      "local": {
+        "pos": [
+          -4.900000021734741e-6,
+          1.999922275543213,
+          0.0000562999994144775
+        ],
+        "quat": [
+          0.0,
+          0.332292827373134,
+          0.0,
+          0.9431762703102579
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ],
+  "notes": [
+    "socket_TouristSignLocation_01_01/5E04D782ADBB91F5: Assets/Structures/Signs/Tourist/TouristSign_01/TouristSign_01_Decal/TouristSign_01_Decal_I11_Morton_01_V39.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

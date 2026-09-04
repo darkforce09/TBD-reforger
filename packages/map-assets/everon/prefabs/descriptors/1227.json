@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1227,
+  "slug": "PlagueColumn_01",
+  "resourceName": "Prefabs/Structures/Cultural/Statues/PlagueColumn_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.6646779775619507,
+      -3.0173001289367676,
+      -1.6515920162200928
+    ],
+    "max": [
+      1.638759970664978,
+      8.609517097473145,
+      1.651845932006836
+    ]
+  },
+  "shellBvh": "blas/PlagueColumn_01.bvh",
+  "instances": [
+    {
+      "id": "PlagueColumn_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Statues/PlagueColumn_01.et",
+      "blas": "blas/PlagueColumn_01.bvh",
+      "xob": "Assets/Structures/Cultural/Statues/PlagueColumn_01/PlagueColumn_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

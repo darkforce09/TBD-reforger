@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1260,
+  "slug": "Tire_BTR70",
+  "resourceName": "Prefabs/Props/VehicleParts/Tires/Tire_BTR70.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

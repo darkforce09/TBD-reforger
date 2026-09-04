@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 684,
+  "slug": "HaystackSmall_01",
+  "resourceName": "Prefabs/Props/Agriculture/Farm/HaystackSmall_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.8000208139419556,
+      -0.7363978998618892,
+      -1.331565022468567
+    ],
+    "max": [
+      1.8746657371520996,
+      2.550416946411133,
+      2.08425006725746
+    ]
+  },
+  "shellBvh": "blas/HaystackSmall_01.bvh",
+  "instances": [
+    {
+      "id": "HaystackSmall_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HaystackSmall_01.et",
+      "blas": "blas/HaystackSmall_01.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HaystackSmall_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

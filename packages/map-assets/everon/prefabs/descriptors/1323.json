@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1323,
+  "slug": "PipeRailing_03_V1_Start",
+  "resourceName": "Prefabs/Structures/Walls/Pipe/PipeRailing_03/PipeRailing_03_V1_Start.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.5219142436981201,
+      -0.5518367886543274,
+      -1.7775124864158627
+    ],
+    "max": [
+      3.04414963722229,
+      1.378071904182434,
+      1.783960686388373
+    ]
+  },
+  "shellBvh": "blas/PipeRailing_03_V1_Start.bvh",
+  "instances": [
+    {
+      "id": "PipeRailing_03_V1_Start",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Pipe/PipeRailing_03/PipeRailing_03_V1_Start.et",
+      "blas": "blas/PipeRailing_03_V1_Start.bvh",
+      "xob": "Assets/Structures/Walls/Pipe/PipeRailing_03_V1_Start.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

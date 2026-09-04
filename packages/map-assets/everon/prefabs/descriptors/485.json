@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 485,
+  "slug": "ChangingCabin_01",
+  "resourceName": "Prefabs/Structures/Recreation/Beach/ChangingCabin_01/ChangingCabin_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7785170078277588,
+      0.0005360000068321824,
+      -0.7896339893341064
+    ],
+    "max": [
+      0.7785170078277588,
+      2.8271028995513916,
+      0.7785170078277588
+    ]
+  },
+  "shellBvh": "blas/ChangingCabin_01.bvh",
+  "instances": [
+    {
+      "id": "ChangingCabin_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Recreation/Beach/ChangingCabin_01/ChangingCabin_01.et",
+      "blas": "blas/ChangingCabin_01.bvh",
+      "xob": "Assets/Structures/Recreation/Beach/ChangingCabin_01/ChangingCabin_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_DoorFrame",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_ChangingCabin_01/DoorSet_ChangingCabin_01_A_L_EXT_COV_B.et",
+      "blas": "blas/DoorFrame_ChangingCabin_01_A_LEFT_EXT_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_ChangingCabin_01/DoorFrame_ChangingCabin_01_A_LEFT_EXT_B.xob",
+      "local": {
+        "pos": [
+          0.000540599983651191,
+          0.0823156014084816,
+          0.6740689992904663
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_DoorFrame/socket_door_left",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_ChangingCabin_01/Door_ChangingCabin_01_A_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_ChangingCabin_01_A_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_ChangingCabin_01/Door_ChangingCabin_01_A_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          0.45088671223493293,
+          0.08227510140932282,
+          0.6740689992904663
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "Socket_DoorFrame"
+    }
+  ]
+}

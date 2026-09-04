@@ -17,6 +17,7 @@ mod locations;
 mod lod_gates;
 mod manifest;
 mod obb;
+pub mod occluder;
 mod prefab;
 mod regions;
 mod residency;

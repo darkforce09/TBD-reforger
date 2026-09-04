@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 534,
+  "slug": "GlassBeer_02",
+  "resourceName": "Prefabs/Props/Civilian/GlassBeer_01/GlassBeer_02.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

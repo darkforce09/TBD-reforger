@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 951,
+  "slug": "TinWall_01_6m_B",
+  "resourceName": "Prefabs/Structures/Walls/Metal/TinWall_01/TinWall_01_6m_B.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      3.129243850708008e-7,
+      -0.7351500988006592,
+      -0.042708300054073334
+    ],
+    "max": [
+      6.058025121688843,
+      2.0232419967651367,
+      0.1936916932463646
+    ]
+  },
+  "shellBvh": "blas/TinWall_01_6m_B.bvh",
+  "instances": [
+    {
+      "id": "TinWall_01_6m_B",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Metal/TinWall_01/TinWall_01_6m_B.et",
+      "blas": "blas/TinWall_01_6m_B.bvh",
+      "xob": "Assets/Structures/Walls/Metal/TinWall_01_6m_B.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

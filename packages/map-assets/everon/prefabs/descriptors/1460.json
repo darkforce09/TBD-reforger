@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1460,
+  "slug": "SignGeneric_02_Water",
+  "resourceName": "Prefabs/Structures/Signs/Generic/SignGeneric_02_Water.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.22633829270489514,
+      -0.17437769286334515,
+      0.037725400645285845
+    ],
+    "max": [
+      0.2252616926562041,
+      0.12582229264080524,
+      0.046125400345772505
+    ]
+  },
+  "shellBvh": "blas/SignGeneric_02.bvh",
+  "instances": [
+    {
+      "id": "SignGeneric_02_Water",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Generic/SignGeneric_02_Water.et",
+      "blas": "blas/SignGeneric_02.bvh",
+      "xob": "Assets/Structures/Signs/Generic/SignGeneric_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

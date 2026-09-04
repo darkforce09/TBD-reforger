@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1089,
+  "slug": "LatrineBeach_01_bluewhite",
+  "resourceName": "Prefabs/Structures/Recreation/Beach/LatrineBeach_01/LatrineBeach_01_bluewhite.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.4774580001831055,
+      -0.24164700508117676,
+      -0.9032580256462097
+    ],
+    "max": [
+      1.5324859619140625,
+      2.688194990158081,
+      0.9878780245780945
+    ]
+  },
+  "shellBvh": "blas/LatrineBeach_01.bvh",
+  "instances": [
+    {
+      "id": "LatrineBeach_01_bluewhite",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Recreation/Beach/LatrineBeach_01/LatrineBeach_01_bluewhite.et",
+      "blas": "blas/LatrineBeach_01.bvh",
+      "xob": "Assets/Structures/Recreation/Beach/LatrineBeach_01/LatrineBeach_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_Door_LEFT",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_LatrineBeach_01/Door_LatrineBeach_01_A_LEFT_EXT_COV_B_bluewhite.et",
+      "blas": "blas/Door_LatrineBeach_01_A_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_LatrineBeach_01/Door_LatrineBeach_01_A_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          0.9889698028564453,
+          0.1489063948392868,
+          0.7158417105674744
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Door_RIGHT",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_LatrineBeach_01/Door_LatrineBeach_01_A_RIGHT_EXT_COV_B_bluewhite.et",
+      "blas": "blas/Door_LatrineBeach_01_A_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_LatrineBeach_01/Door_LatrineBeach_01_A_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -0.9889698028564453,
+          0.14889879524707794,
+          0.7158417105674744
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    }
+  ]
+}

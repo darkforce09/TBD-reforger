@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 8,
+  "slug": "Cardboard_Pile_07",
+  "resourceName": "Prefabs/Props/Garbage/Cardboard/Cardboard_Pile_07.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

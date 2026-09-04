@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 382,
+  "slug": "Caravan_03",
+  "resourceName": "Prefabs/Props/Recreation/Beach/Caravan_03/Caravan_03.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.044381022453308,
+      -0.01613599993288517,
+      -2.5719499588012695
+    ],
+    "max": [
+      1.0580849647521973,
+      3.530565023422241,
+      3.1792171001434326
+    ]
+  },
+  "shellBvh": "blas/Caravan_03.bvh",
+  "instances": [
+    {
+      "id": "Caravan_03",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Recreation/Beach/Caravan_03/Caravan_03.et",
+      "blas": "blas/Caravan_03.bvh",
+      "xob": "Assets/Props/Recreation/Camp/Caravan_03/Caravan_03.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_Window_Left_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Caravan_03/Win_Caravan_03_Left_01.et",
+      "blas": "blas/Win_Caravan_03_Left_03.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_Caravan_03/Win_Caravan_03_Left_03.xob",
+      "local": {
+        "pos": [
+          1.0276463031768799,
+          1.8878811597824097,
+          -1.482991337776184
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Window_Back_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Caravan_03/Win_Caravan_03_Back_01.et",
+      "blas": "blas/Win_Caravan_03_Back_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_Caravan_03/Win_Caravan_03_Back_02.xob",
+      "local": {
+        "pos": [
+          -0.0015596000012010336,
+          1.8476899862289429,
+          -2.3389182090759277
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Window_Right_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Caravan_03/Win_Caravan_03_Right_01.et",
+      "blas": "blas/Win_Caravan_03_Right_04.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_Caravan_03/Win_Caravan_03_Right_04.xob",
+      "local": {
+        "pos": [
+          -1.0135926008224487,
+          1.8878810405731201,
+          -1.4819294214248657
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Window_Front_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Caravan_03/Win_Caravan_03_Front_01.et",
+      "blas": "blas/Win_Caravan_03_Front_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_Caravan_03/Win_Caravan_03_Front_01.xob",
+      "local": {
+        "pos": [
+          0.0013484000228345394,
+          1.8759251832962036,
+          1.8194202184677124
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ],
+  "notes": [
+    "Socket_door_01: Assets/Structures/BuildingsParts/Doors/Door_Caravan_03/Door_Caravan_03_A_RIGHT_EXT_COV_B.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

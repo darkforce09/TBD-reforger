@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 577,
+  "slug": "ConcreteKerb_01_2m_entry",
+  "resourceName": "Prefabs/Structures/Infrastructure/Pavements/ConcreteKerb_01/ConcreteKerb_01_2m_entry.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -4.0531158447265625e-6,
+      -0.13930168940263332,
+      -0.15604174675932847
+    ],
+    "max": [
+      2.000018000602722,
+      0.12882924032573495,
+      0.16410308479794677
+    ]
+  },
+  "shellBvh": "blas/ConcreteKerb_01_2m_Entry.bvh",
+  "instances": [
+    {
+      "id": "ConcreteKerb_01_2m_entry",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Pavements/ConcreteKerb_01/ConcreteKerb_01_2m_entry.et",
+      "blas": "blas/ConcreteKerb_01_2m_Entry.bvh",
+      "xob": "Assets/Structures/Infrastructure/Pavements/ConcreteKerb_01/ConcreteKerb_01_2m_Entry.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

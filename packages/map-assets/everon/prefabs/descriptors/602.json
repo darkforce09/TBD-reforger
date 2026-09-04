@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 602,
+  "slug": "WoodenRural_01_8m",
+  "resourceName": "Prefabs/Structures/Walls/Wooden/WoodenRural_01/WoodenRural_01_8m.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      0.026861000806093216,
+      -1.4255650043487549,
+      -0.13091400265693665
+    ],
+    "max": [
+      8.015872955322266,
+      1.965399980545044,
+      0.09356900304555893
+    ]
+  },
+  "shellBvh": "blas/WoodenRural_01_8m.bvh",
+  "instances": [
+    {
+      "id": "WoodenRural_01_8m",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Wooden/WoodenRural_01/WoodenRural_01_8m.et",
+      "blas": "blas/WoodenRural_01_8m.bvh",
+      "xob": "Assets/Structures/Walls/Wooden/WoodenRural_01_8m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1065,
+  "slug": "FuelTank_02_Pump_Base",
+  "resourceName": "Prefabs/Structures/Industrial/Containers/FuelTanks/FuelTank_02/FuelTank_02_Pump_Base.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -5.051926612854004,
+      -4.5,
+      -1.6754525303840642
+    ],
+    "max": [
+      6.1032538414001465,
+      3.1525421142578125,
+      1.4214015007019043
+    ]
+  },
+  "shellBvh": "blas/FuelTank_02_Pump.bvh",
+  "instances": [
+    {
+      "id": "FuelTank_02_Pump_Base",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Industrial/Containers/FuelTanks/FuelTank_02/FuelTank_02_Pump_Base.et",
+      "blas": "blas/FuelTank_02_Pump.bvh",
+      "xob": "Assets/Structures/Industrial/Containers/FuelTanks/FuelTank_02/FuelTank_02_Pump.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_pump",
+      "kind": "prop",
+      "prefab": "PrefabLibrary/DefaultLibrary/Structures/Commercial/FuelStation_E_01_tankpistol.et",
+      "blas": "blas/FuelStation_E_01_tankpistol.bvh",
+      "xob": "Assets/Structures/Commercial/FuelStations/FuelStation_E_01/FuelStation_E_01_tankpistol.xob",
+      "local": {
+        "pos": [
+          -3.3905060291290283,
+          0.2863534092903137,
+          -0.7024068236351013
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pump/5C64CDC70F989713",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Commercial/FuelNozzle_01.et",
+      "blas": "blas/FuelStation_E_01_fuelnozzle.bvh",
+      "xob": "Assets/Structures/Commercial/FuelStations/FuelStation_E_01/FuelStation_E_01_fuelnozzle.xob",
+      "local": {
+        "pos": [
+          -3.4815060291290285,
+          1.5423534092903137,
+          -1.083406823635101
+        ],
+        "quat": [
+          0.0,
+          8.040613248383184e-17,
+          0.0,
+          0.9999999999999999
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pump"
+    },
+    {
+      "id": "socket_pump/socket_glass_76x63_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_76x63/Glass_76x63.et",
+      "blas": "blas/Glass_01_76x63.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_76x63/Glass_01_76x63.xob",
+      "local": {
+        "pos": [
+          -3.073908716440201,
+          1.5510762333869934,
+          -0.6930234236642719
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865475
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_pump"
+    },
+    {
+      "id": "socket_pump/socket_glass_76x63_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_76x63/Glass_76x63.et",
+      "blas": "blas/Glass_01_76x63.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_76x63/Glass_01_76x63.xob",
+      "local": {
+        "pos": [
+          -3.7085801362991333,
+          1.5510761141777039,
+          -0.6930234236642717
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_pump"
+    }
+  ]
+}

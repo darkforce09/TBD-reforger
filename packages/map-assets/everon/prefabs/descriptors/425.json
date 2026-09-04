@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 425,
+  "slug": "t_betula_pendula_2sd",
+  "resourceName": "Prefabs/Vegetation/Tree/t_betula_pendula/t_betula_pendula_2sd.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -3.7738280296325684,
+      -0.6474124193191528,
+      -2.659183979034424
+    ],
+    "max": [
+      2.768531084060669,
+      11.896459579467773,
+      3.901348114013672
+    ]
+  },
+  "shellBvh": "blas/t_betula_pendula_2sd.bvh",
+  "instances": [
+    {
+      "id": "t_betula_pendula_2sd",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_betula_pendula/t_betula_pendula_2sd.et",
+      "blas": "blas/t_betula_pendula_2sd.bvh",
+      "xob": "Assets/Vegetation/Tree/Betula_Pendula/t_betula_pendula_2sd.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "t_betula_pendula_2sd/canopy",
+      "kind": "treeCanopy",
+      "prefab": "Prefabs/Vegetation/Tree/t_betula_pendula/t_betula_pendula_2sd.et",
+      "blas": "blas/t_betula_pendula_2sd_canopy.bvh",
+      "xob": "Assets/Vegetation/Tree/Betula_Pendula/t_betula_pendula_2sd.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "t_betula_pendula_2sd"
+    }
+  ],
+  "notes": [
+    "t_betula_pendula_2sd/canopy: convex hull of the visual LOD0 (1044 verts) tagged Foliage — the COLL carries no Foliage triangle"
+  ]
+}

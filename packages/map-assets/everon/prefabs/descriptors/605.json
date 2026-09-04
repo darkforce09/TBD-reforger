@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 605,
+  "slug": "StatueStPeter_01_pedestal",
+  "resourceName": "Prefabs/Structures/Cultural/Statues/StatueStPeter_01_pedestal.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.45409601044654846,
+      -0.12768719345331192,
+      -0.3651976063847542
+    ],
+    "max": [
+      0.4226048863232136,
+      3.1917389621734618,
+      0.3384804129600525
+    ]
+  },
+  "shellBvh": "blas/StatueStPeter_01_pedestal.bvh",
+  "instances": [
+    {
+      "id": "StatueStPeter_01_pedestal",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Statues/StatueStPeter_01_pedestal.et",
+      "blas": "blas/StatueStPeter_01_pedestal.bvh",
+      "xob": "Assets/Structures/Cultural/Statues/StatueStPeter_01/StatueStPeter_01_pedestal.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "54FE78513AE4C499",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Cultural/Statues/StatueStPeter_01.et",
+      "blas": "blas/StatueStPeter_01.bvh",
+      "xob": "Assets/Structures/Cultural/Statues/StatueStPeter_01/StatueStPeter_01.xob",
+      "local": {
+        "pos": [
+          0.003,
+          1.199,
+          0.007
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

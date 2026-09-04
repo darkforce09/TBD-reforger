@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1401,
+  "slug": "FlowerpotStreet_01_rect_short_Empty",
+  "resourceName": "Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_short_Empty.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.4220719113945961,
+      -0.003158092498779297,
+      -0.33062470667937305
+    ],
+    "max": [
+      0.4523528106510639,
+      0.588641881942749,
+      0.3303753066720674
+    ]
+  },
+  "shellBvh": "blas/FlowerpotStreet_01_rect_short.bvh",
+  "instances": [
+    {
+      "id": "FlowerpotStreet_01_rect_short_Empty",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_short_Empty.et",
+      "blas": "blas/FlowerpotStreet_01_rect_short.bvh",
+      "xob": "Assets/Props/Decorations/FlowerpotStreet_01/FlowerpotStreet_01_rect_short.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

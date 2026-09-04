@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 194,
+  "slug": "b_salix_cinerea_1w",
+  "resourceName": "Prefabs/Vegetation/Bush/b_salix_cinerea_1w.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.146460145711899,
+      -0.6751581430435181,
+      -2.7674281150102615
+    ],
+    "max": [
+      2.446260839700699,
+      2.3666539192199707,
+      2.39119391143322
+    ]
+  },
+  "shellBvh": "blas/b_salix_cinerea_1w.bvh",
+  "instances": [
+    {
+      "id": "b_salix_cinerea_1w",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Bush/b_salix_cinerea_1w.et",
+      "blas": "blas/b_salix_cinerea_1w.bvh",
+      "xob": "Assets/Vegetation/Bush/Salix_Cinerea/b_salix_cinerea_1w.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

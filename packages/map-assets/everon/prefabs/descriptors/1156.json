@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1156,
+  "slug": "Anthill_01",
+  "resourceName": "Prefabs/Structures/Forest/Anthill_01.et",
+  "kind": "rock",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.46151864528656,
+      -0.06575608998537064,
+      -1.4083948135375977
+    ],
+    "max": [
+      1.3916034698486328,
+      0.9657119512557983,
+      1.3889691829681396
+    ]
+  },
+  "shellBvh": "blas/Anthill_01.bvh",
+  "instances": [
+    {
+      "id": "Anthill_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Forest/Anthill_01.et",
+      "blas": "blas/Anthill_01.bvh",
+      "xob": "Assets/Structures/Forest/Anthill/Anthill_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

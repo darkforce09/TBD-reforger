@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 687,
+  "slug": "PierWooden_01_25m_abandoned",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/PierWooden_01_25m_abandoned.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7740370035171509,
+      -15.000144958496094,
+      -10.303997039794922
+    ],
+    "max": [
+      0.906781017780304,
+      1.2901860475540161,
+      11.752058029174805
+    ]
+  },
+  "shellBvh": "blas/PierWooden_01_abandoned_25m.bvh",
+  "instances": [
+    {
+      "id": "PierWooden_01_25m_abandoned",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/PierWooden_01_25m_abandoned.et",
+      "blas": "blas/PierWooden_01_abandoned_25m.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/PierWooden_01_abandoned_25m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

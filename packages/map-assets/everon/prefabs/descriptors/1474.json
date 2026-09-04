@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1474,
+  "slug": "GateCollectiveFarm_04_LeMoule",
+  "resourceName": "Prefabs/Structures/Agriculture/Gates/GateCollectiveFarm_04/GateCollectiveFarm_04_LeMoule.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -4.4707615077495575,
+      -1.3644729852676392,
+      -0.13750370196066797
+    ],
+    "max": [
+      4.468569681048393,
+      7.352297782897949,
+      0.14096570014953613
+    ]
+  },
+  "shellBvh": "blas/GateCollectiveFarm_04.bvh",
+  "instances": [
+    {
+      "id": "GateCollectiveFarm_04_LeMoule",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Agriculture/Gates/GateCollectiveFarm_04/GateCollectiveFarm_04_LeMoule.et",
+      "blas": "blas/GateCollectiveFarm_04.bvh",
+      "xob": "Assets/Structures/Agriculture/Gates/GateCollectiveFarm_04.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1611,
+  "slug": "FireExtinguisherBox_01",
+  "resourceName": "Prefabs/Props/Services/Fire/FireExtinguisherBox_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.43149399757385254,
+      -0.003681391477584839,
+      -0.3150140047073364
+    ],
+    "max": [
+      0.43501898646354675,
+      1.8295901417732239,
+      0.3124566972255707
+    ]
+  },
+  "shellBvh": "blas/FireExtinguisherBox_01.bvh",
+  "instances": [
+    {
+      "id": "FireExtinguisherBox_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Services/Fire/FireExtinguisherBox_01.et",
+      "blas": "blas/FireExtinguisherBox_01.bvh",
+      "xob": "Assets/Props/Services/Fire/FireExtinguisherBox_01/FireExtinguisherBox_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "5888D6CE82546FB8",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/FireExtinguisher_01.et",
+      "blas": "blas/FireExtinguisher_01.bvh",
+      "xob": "Assets/Props/Civilian/FireExtinguisher_01/FireExtinguisher_01.xob",
+      "local": {
+        "pos": [
+          0.183,
+          1.012,
+          -0.172
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ],
+  "notes": [
+    "564E86E7301F3834: Assets/Props/Services/Fire/FireExtinguisherBox_01/FireExtinguisherBox_01_Shovel.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

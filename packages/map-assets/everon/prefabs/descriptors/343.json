@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 343,
+  "slug": "SignLarge_01_E_Airfield",
+  "resourceName": "Prefabs/Structures/Signs/Large/SignLarge_01_E_Airfield.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

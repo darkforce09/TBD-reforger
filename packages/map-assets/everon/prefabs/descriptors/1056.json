@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1056,
+  "slug": "ProbeExterior_Base",
+  "resourceName": "Prefabs/Structures/Core/ProbeExterior_Base.et",
+  "kind": "building",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

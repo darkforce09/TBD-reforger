@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 464,
+  "slug": "FactionManager_Editor",
+  "resourceName": "Prefabs/MP/Managers/Factions/FactionManager_Editor.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

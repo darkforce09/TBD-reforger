@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 285,
+  "slug": "Grave_E_01_Frame",
+  "resourceName": "Prefabs/Structures/Cultural/Cemeteries/Graves/Grave_E_01_Frame.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.5793281197547913,
+      -0.17499999701976776,
+      -1.3250967264175415
+    ],
+    "max": [
+      0.5673788785934448,
+      0.15447498857975006,
+      1.2551791667938232
+    ]
+  },
+  "shellBvh": "blas/Grave_E_01_Frame.bvh",
+  "instances": [
+    {
+      "id": "Grave_E_01_Frame",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Cultural/Cemeteries/Graves/Grave_E_01_Frame.et",
+      "blas": "blas/Grave_E_01_Frame.bvh",
+      "xob": "Assets/Structures/Cultural/Cemeteries/Graves/Grave_01/Grave_E_01_Frame.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

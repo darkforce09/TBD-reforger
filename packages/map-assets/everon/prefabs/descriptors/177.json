@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 177,
+  "slug": "PotatoCrop_01_Longline",
+  "resourceName": "Prefabs/Vegetation/Vegetables/PotatoCrop_01_Longline.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

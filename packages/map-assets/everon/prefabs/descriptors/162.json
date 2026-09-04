@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 162,
+  "slug": "GateCollectiveFarm_03_Chotain",
+  "resourceName": "Prefabs/Structures/Agriculture/Gates/GateCollectiveFarm_03/GateCollectiveFarm_03_Chotain.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -4.471357002854347,
+      -1.3770673274993896,
+      -0.138692699954845
+    ],
+    "max": [
+      4.470346167683601,
+      7.667158842086792,
+      0.14132249518297613
+    ]
+  },
+  "shellBvh": "blas/GateCollectiveFarm_03.bvh",
+  "instances": [
+    {
+      "id": "GateCollectiveFarm_03_Chotain",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Agriculture/Gates/GateCollectiveFarm_03/GateCollectiveFarm_03_Chotain.et",
+      "blas": "blas/GateCollectiveFarm_03.bvh",
+      "xob": "Assets/Structures/Agriculture/Gates/GateCollectiveFarm_03.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

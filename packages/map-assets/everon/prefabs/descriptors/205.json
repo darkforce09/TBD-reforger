@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 205,
+  "slug": "BMP1_wreck",
+  "resourceName": "Prefabs/Props/Wrecks/BMP1_wreck/BMP1_wreck.et",
+  "kind": "vehicle",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.180871361866594,
+      -0.07381200045347214,
+      -2.9951675839766723
+    ],
+    "max": [
+      1.6650049686431885,
+      2.2794183492660522,
+      4.639400959014893
+    ]
+  },
+  "shellBvh": "blas/BMP1_wreck_hull.bvh",
+  "instances": [
+    {
+      "id": "BMP1_wreck",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Wrecks/BMP1_wreck/BMP1_wreck.et",
+      "blas": "blas/BMP1_wreck_hull.bvh",
+      "xob": "Assets/Props/Wrecks/BMP1/BMP1_wreck_hull.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_BMP1_turret",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Wrecks/BMP1_wreck/BMP1_turret.et",
+      "blas": "blas/BMP1_wreck_turret.bvh",
+      "xob": "Assets/Props/Wrecks/BMP1/BMP1_wreck_turret.xob",
+      "local": {
+        "pos": [
+          0.011537199839949608,
+          1.4903595447540283,
+          0.7685527801513672
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_BMP1_door",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Wrecks/BMP1_wreck/BMP1_door.et",
+      "blas": "blas/BMP1_wreck_door.bvh",
+      "xob": "Assets/Props/Wrecks/BMP1/BMP1_wreck_door.xob",
+      "local": {
+        "pos": [
+          -0.9913660883903503,
+          0.5230876207351685,
+          -1.953362226486206
+        ],
+        "quat": [
+          -0.021606077523806833,
+          0.6783797393027284,
+          -0.023941199299060602,
+          0.7340033553695243
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ]
+}

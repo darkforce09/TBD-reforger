@@ -1,0 +1,893 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1217,
+  "slug": "ConcreteBridge_01_Wide_PillarSmall",
+  "resourceName": "Prefabs/Structures/Infrastructure/Bridges/ConcreteBridge_01/ConcreteBridge_01_Wide_PillarSmall.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.010010000318288803,
+      -1.3250001668930054,
+      -6.521759033203125
+    ],
+    "max": [
+      26.007307052612305,
+      1.570539951324463,
+      6.48010778427124
+    ]
+  },
+  "shellBvh": "blas/ConcreteBridge_01_Wide.bvh",
+  "instances": [
+    {
+      "id": "ConcreteBridge_01_Wide_PillarSmall",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Infrastructure/Bridges/ConcreteBridge_01/ConcreteBridge_01_Wide_PillarSmall.et",
+      "blas": "blas/ConcreteBridge_01_Wide.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/ConcreteBridge_01_Wide.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_pillar_029",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          15.402499198913574,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_029/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          14.203499198913574,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_029"
+    },
+    {
+      "id": "socket_pillar_028",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          13.002498626708984,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_028/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          11.803498626708985,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_028"
+    },
+    {
+      "id": "socket_pillar_027",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          10.602497100830078,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_027/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          9.403497100830078,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_027"
+    },
+    {
+      "id": "socket_pillar_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          3.4024970531463623,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_02/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          2.2034970531463625,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_02"
+    },
+    {
+      "id": "socket_pillar_043",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          22.602500915527344,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_043/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          21.403500915527342,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_043"
+    },
+    {
+      "id": "socket_pillar_042",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          20.202497482299805,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_042/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          19.003497482299803,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_042"
+    },
+    {
+      "id": "socket_pillar_041",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          17.80249786376953,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_041/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          16.60349786376953,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_041"
+    },
+    {
+      "id": "socket_pillar_040",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          15.402499198913574,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_040/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          14.203499198913574,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_040"
+    },
+    {
+      "id": "socket_pillar_04",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          8.202497482299805,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_04/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          7.003497482299805,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_04"
+    },
+    {
+      "id": "socket_pillar_032",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          22.602500915527344,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_032/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          21.403500915527342,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_032"
+    },
+    {
+      "id": "socket_pillar_031",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          20.202497482299805,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_031/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          19.003497482299803,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_031"
+    },
+    {
+      "id": "socket_pillar_030",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          17.80249786376953,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_030/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          16.60349786376953,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_030"
+    },
+    {
+      "id": "socket_pillar_03",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          5.802496910095215,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_03/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          4.603496910095215,
+          0.11955499649047852,
+          -6.0863800048828125
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_03"
+    },
+    {
+      "id": "socket_pillar_039",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          13.002498626708984,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_039/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          11.803498626708985,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_039"
+    },
+    {
+      "id": "socket_pillar_038",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          10.602497100830078,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_038/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          9.403497100830078,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_038"
+    },
+    {
+      "id": "socket_pillar_037",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          8.202497482299805,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_037/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          7.003497482299805,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_037"
+    },
+    {
+      "id": "socket_pillar_036",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          5.802496910095215,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_036/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          4.603496910095215,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_036"
+    },
+    {
+      "id": "socket_pillar_035",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingConcrete_01_small_railing.et",
+      "blas": "blas/BridgeRailingConcrete_01_pole_small.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/BridgeRailingConcrete_01_pole_small.xob",
+      "local": {
+        "pos": [
+          3.4024970531463623,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_pillar_035/5916AA04112B0231",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Bridges/BridgeRailingMetal_01.et",
+      "blas": "blas/Metal_rails.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/Metal_rails.xob",
+      "local": {
+        "pos": [
+          2.2034970531463625,
+          0.11955499649047852,
+          6.045030117034912
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_pillar_035"
+    }
+  ]
+}

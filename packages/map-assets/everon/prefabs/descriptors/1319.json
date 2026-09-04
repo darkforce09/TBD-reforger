@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1319,
+  "slug": "Decal_Dirt_Crossroad_01",
+  "resourceName": "Prefabs/Decals/Dirt/Decal_Dirt_Crossroad_01.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

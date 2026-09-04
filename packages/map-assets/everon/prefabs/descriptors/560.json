@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 560,
+  "slug": "AsphaltPavement_01_Wide_End_Right",
+  "resourceName": "Prefabs/Structures/Infrastructure/Pavements/AsphaltPavement_01/AsphaltPavement_01_Wide_End_Right.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.39984631538391113,
+      -0.15000000409781933,
+      -1.9123722314834595
+    ],
+    "max": [
+      3.9197466373443604,
+      0.15793311595916748,
+      1.904540777206421
+    ]
+  },
+  "shellBvh": "blas/AsphaltPavement_01_Wide_End_Right.bvh",
+  "instances": [
+    {
+      "id": "AsphaltPavement_01_Wide_End_Right",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Pavements/AsphaltPavement_01/AsphaltPavement_01_Wide_End_Right.et",
+      "blas": "blas/AsphaltPavement_01_Wide_End_Right.bvh",
+      "xob": "Assets/Structures/Infrastructure/Pavements/AsphaltPavement_01/AsphaltPavement_01_Wide_End_Right.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

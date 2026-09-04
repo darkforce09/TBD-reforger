@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 247,
+  "slug": "TrackSign_01_Flat_rectangle_yellow",
+  "resourceName": "Prefabs/Structures/Signs/Tourist/TrackSign_01/TrackSign_01_Flat_rectangle_yellow.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

@@ -1,0 +1,139 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1608,
+  "slug": "ShedMetal_02_long_walls",
+  "resourceName": "Prefabs/Structures/Industrial/Sheds/ShedMetal_02/ShedMetal_02_long_walls.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -30.792218852043153,
+      -2.0977108611562834,
+      -10.277386581212282
+    ],
+    "max": [
+      30.579448511362074,
+      5.199787139892578,
+      5.617251396179199
+    ]
+  },
+  "shellBvh": "blas/ShedMetal_02.bvh",
+  "instances": [
+    {
+      "id": "ShedMetal_02_long_walls",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Industrial/Sheds/ShedMetal_02/ShedMetal_02_long_walls.et",
+      "blas": "blas/ShedMetal_02.bvh",
+      "xob": "Assets/Structures/Industrial/Sheds/ShedMetal_02/ShedMetal_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "647ECB552D5319B4",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Industrial/Sheds/ShedMetal_02/ShedMetal_02_long_nowalls.et",
+      "blas": "blas/ShedMetal_02.bvh",
+      "xob": "Assets/Structures/Industrial/Sheds/ShedMetal_02/ShedMetal_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_back_wall",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Industrial/Sheds/ShedMetal_02/HouseAddons/ShedMetal_02_BackWall.et",
+      "blas": "blas/ShedMetal_02_long_back_wall.bvh",
+      "xob": "Assets/Structures/Industrial/Sheds/ShedMetal_02/ShedMetal_02_long_back_wall.xob",
+      "local": {
+        "pos": [
+          -0.11080419981479644,
+          -0.1850003000000106,
+          -9.962302726745605
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.007
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_left_wall",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Industrial/Sheds/ShedMetal_02/HouseAddons/ShedMetal_02_LeftWall.et",
+      "blas": "blas/ShedMetal_02_left_side_wall.bvh",
+      "xob": "Assets/Structures/Industrial/Sheds/ShedMetal_02/ShedMetal_02_left_side_wall.xob",
+      "local": {
+        "pos": [
+          -30.507947731018067,
+          -0.16200120000004245,
+          -0.4026838049888611
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_right_wall",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Industrial/Sheds/ShedMetal_02/HouseAddons/ShedMetal_02_RightWall.et",
+      "blas": "blas/ShedMetal_02_right_side_wall.bvh",
+      "xob": "Assets/Structures/Industrial/Sheds/ShedMetal_02/ShedMetal_02_right_side_wall.xob",
+      "local": {
+        "pos": [
+          30.272214790344236,
+          -0.165,
+          -0.4336880071163177
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ]
+}

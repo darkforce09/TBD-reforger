@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1562,
+  "slug": "ConcreteWall_01_6m_D_A",
+  "resourceName": "Prefabs/Structures/Walls/Concrete/ConcreteWall_01/ConcreteWall_01_6m_D_A.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      0.0026628971099853516,
+      -0.800478994846344,
+      -0.12611180543899536
+    ],
+    "max": [
+      6.00540828704834,
+      2.9586679935455322,
+      0.12491220235824585
+    ]
+  },
+  "shellBvh": "blas/ConcreteWall_01_6m_D_A.bvh",
+  "instances": [
+    {
+      "id": "ConcreteWall_01_6m_D_A",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/ConcreteWall_01/ConcreteWall_01_6m_D_A.et",
+      "blas": "blas/ConcreteWall_01_6m_D_A.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/ConcreteWall_01_6m_D_A.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 361,
+  "slug": "FlowerpotPelargonia_01_white",
+  "resourceName": "Prefabs/Props/Decorations/Flowerpots/FlowerpotPelargonia_01_white.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.6120746791712008,
+      -1.043081283569336e-7,
+      -0.1329413049388677
+    ],
+    "max": [
+      0.6153932749875821,
+      0.3926114961504936,
+      0.14346550218760967
+    ]
+  },
+  "shellBvh": "blas/FlowerpotPelargonia_01_white.bvh",
+  "instances": [
+    {
+      "id": "FlowerpotPelargonia_01_white",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Decorations/Flowerpots/FlowerpotPelargonia_01_white.et",
+      "blas": "blas/FlowerpotPelargonia_01_white.bvh",
+      "xob": "Assets/Props/Decorations/FlowerpotPelargonia_01/FlowerpotPelargonia_01_white.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

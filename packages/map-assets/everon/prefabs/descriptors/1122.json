@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1122,
+  "slug": "SignPub_01_Eden_FoodMarket_V1",
+  "resourceName": "Prefabs/Props/Commercial/SignPub_01_Eden_FoodMarket_V1.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.34483879269100726,
+      0.11126012402734775,
+      -0.2727767773486063
+    ],
+    "max": [
+      0.34796129271853715,
+      1.014683357894802,
+      0.27614037176140993
+    ]
+  },
+  "shellBvh": "blas/SignPub_01.bvh",
+  "instances": [
+    {
+      "id": "SignPub_01_Eden_FoodMarket_V1",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Commercial/SignPub_01_Eden_FoodMarket_V1.et",
+      "blas": "blas/SignPub_01.bvh",
+      "xob": "Assets/Props/Commercial/SignPub_01/SignPub_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

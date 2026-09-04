@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 250,
+  "slug": "M113_wreck",
+  "resourceName": "Prefabs/Props/Wrecks/M113_wreck/M113_wreck.et",
+  "kind": "vehicle",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.3414177894592285,
+      -0.013788999989628792,
+      -2.720768451690674
+    ],
+    "max": [
+      1.323458194732666,
+      2.6468749046325684,
+      2.6956474781036377
+    ]
+  },
+  "shellBvh": "blas/M113_wreck.bvh",
+  "instances": [
+    {
+      "id": "M113_wreck",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Wrecks/M113_wreck/M113_wreck.et",
+      "blas": "blas/M113_wreck.bvh",
+      "xob": "Assets/Props/Wrecks/M113/M113_wreck.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

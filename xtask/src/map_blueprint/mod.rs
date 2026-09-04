@@ -15,6 +15,8 @@ mod bvh;
 mod emit;
 mod hull;
 mod inspect;
+mod library;
+mod library_cli;
 mod march;
 mod mesh;
 mod pair;

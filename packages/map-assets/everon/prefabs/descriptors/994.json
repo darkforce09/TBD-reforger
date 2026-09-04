@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 994,
+  "slug": "t_carpinus_betulus_0",
+  "resourceName": "Prefabs/Vegetation/Tree/t_carpinus_betulus/t_carpinus_betulus_0.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -0.4180789887905121,
+      0.3271619975566864,
+      -0.5065240263938904
+    ],
+    "max": [
+      0.3665359914302826,
+      1.5655319690704346,
+      0.46039900183677673
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "t_carpinus_betulus_0/canopy",
+      "kind": "treeCanopy",
+      "prefab": "Prefabs/Vegetation/Tree/t_carpinus_betulus/t_carpinus_betulus_0.et",
+      "blas": "blas/T_Carpinus_betulus_0_canopy.bvh",
+      "xob": "Assets/Vegetation/Tree/Carpinus_Betulus/T_Carpinus_betulus_0.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "t_carpinus_betulus_0"
+    }
+  ],
+  "notes": [
+    "t_carpinus_betulus_0/canopy: convex hull of the visual LOD0 (307 verts) tagged Foliage — the COLL carries no Foliage triangle"
+  ]
+}

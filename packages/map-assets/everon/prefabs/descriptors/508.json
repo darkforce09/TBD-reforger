@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 508,
+  "slug": "SignNoEntryTruck_01",
+  "resourceName": "Prefabs/Structures/Signs/Warnings/SignNoEntryTruck_01.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

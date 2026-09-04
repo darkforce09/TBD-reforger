@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 234,
+  "slug": "Granite_BeachCluster_02",
+  "resourceName": "Prefabs/Rocks/Granite/Granite_BeachCluster_02.et",
+  "kind": "rock",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.568588972091675,
+      -0.32306429743766785,
+      -3.169492721557617
+    ],
+    "max": [
+      2.1179358959198,
+      0.46031269431114197,
+      3.9132204055786133
+    ]
+  },
+  "shellBvh": "blas/GraniteBeachCluster_02.bvh",
+  "instances": [
+    {
+      "id": "Granite_BeachCluster_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Rocks/Granite/Granite_BeachCluster_02.et",
+      "blas": "blas/GraniteBeachCluster_02.bvh",
+      "xob": "Assets/Rocks/Granite/GraniteBeachCluster_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

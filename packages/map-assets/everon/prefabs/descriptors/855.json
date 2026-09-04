@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 855,
+  "slug": "ManurePile_01",
+  "resourceName": "Prefabs/Structures/Agriculture/Manure/ManurePile_01/ManurePile_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -4.21462869644165,
+      -0.28343307971954346,
+      -2.432742118835449
+    ],
+    "max": [
+      3.784313440322876,
+      1.7465118169784546,
+      2.435821771621704
+    ]
+  },
+  "shellBvh": "blas/ManurePile_01.bvh",
+  "instances": [
+    {
+      "id": "ManurePile_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Agriculture/Manure/ManurePile_01/ManurePile_01.et",
+      "blas": "blas/ManurePile_01.bvh",
+      "xob": "Assets/Structures/Agriculture/Manure/ManurePile_01/ManurePile_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

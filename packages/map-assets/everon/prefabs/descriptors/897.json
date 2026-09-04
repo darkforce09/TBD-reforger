@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 897,
+  "slug": "EngineCrane_01",
+  "resourceName": "Prefabs/Props/Industrial/Repair/EngineCrane_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.3999640941619873,
+      -0.005482915788888931,
+      -0.8434958457946777
+    ],
+    "max": [
+      0.40005290508270264,
+      1.4846301078796387,
+      0.8514060974121094
+    ]
+  },
+  "shellBvh": "blas/EngineCrane_01.bvh",
+  "instances": [
+    {
+      "id": "EngineCrane_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Props/Industrial/Repair/EngineCrane_01.et",
+      "blas": "blas/EngineCrane_01.bvh",
+      "xob": "Assets/Props/Industrial/Repair/EngineCrane_01/EngineCrane_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

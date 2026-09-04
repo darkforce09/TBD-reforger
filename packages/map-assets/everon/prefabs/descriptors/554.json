@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 554,
+  "slug": "Trough_01",
+  "resourceName": "Prefabs/Props/Agriculture/Farm/Trough_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.3971957266330719,
+      0.006763700395822525,
+      -1.470449099317193
+    ],
+    "max": [
+      0.31663231179118156,
+      0.6000001132488251,
+      1.529550900682807
+    ]
+  },
+  "shellBvh": "blas/Trough_01.bvh",
+  "instances": [
+    {
+      "id": "Trough_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/Trough_01.et",
+      "blas": "blas/Trough_01.bvh",
+      "xob": "Assets/Props/Agricultural/Trough_01/Trough_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

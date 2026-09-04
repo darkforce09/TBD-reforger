@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1421,
+  "slug": "BarrelMetal_01_rust",
+  "resourceName": "Prefabs/Props/Industrial/BarrelMetal_01_rust.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

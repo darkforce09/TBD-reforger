@@ -1,0 +1,1618 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 165,
+  "slug": "LighthouseSmall_01",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Lighthouse/LighthouseSmall_01/LighthouseSmall_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -5.0269551277160645,
+      -6.012510299682617,
+      -4.98031759262085
+    ],
+    "max": [
+      5.050332069396973,
+      25.77083396911621,
+      8.41195011138916
+    ]
+  },
+  "shellBvh": "blas/LighthouseSmall_01.bvh",
+  "instances": [
+    {
+      "id": "LighthouseSmall_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Lighthouse/LighthouseSmall_01/LighthouseSmall_01.et",
+      "blas": "blas/LighthouseSmall_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Lighthouse/LighthouseSmall_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_box_electrical",
+      "kind": "furniture",
+      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/BoxElectrical_Lighthouse_01.et",
+      "blas": "blas/Lighthouse_Box_Electrical.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Lighthouse/Lighthouse_Box_Electrical.xob",
+      "local": {
+        "pos": [
+          0.6856610774993896,
+          20.21005630493164,
+          0.31975919008255005
+        ],
+        "quat": [
+          0.0,
+          -0.38268341598791294,
+          0.0,
+          0.9238795392949354
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_ext_metal",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/DoorSet_Lighthouse_main_right.et",
+      "blas": "blas/DoorFrame_Lighthouse_main_right.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Lighthouse/DoorFrame_Lighthouse_main_right.xob",
+      "local": {
+        "pos": [
+          -1.9000000293090125e-6,
+          0.7475081086158752,
+          2.6801018714904785
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_ext_metal/socket_door",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Lighthouse_main_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_Lighthouse_main_right.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Lighthouse/Door_Lighthouse_main_right.xob",
+      "local": {
+        "pos": [
+          -0.6753815935081775,
+          0.7674844078719616,
+          2.7238688729703426
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "socket_door_ext_metal"
+    },
+    {
+      "id": "socket_door_ext_lighthouse_top_02",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Lighthouse_top_LEFT_EXT_ST_B.et",
+      "blas": "blas/Door_Lighthouse_top_left.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Lighthouse/Door_Lighthouse_top_left.xob",
+      "local": {
+        "pos": [
+          1.6606253221380027,
+          19.779111825147993,
+          -0.9339990043081341
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_02",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x54_1_B.et",
+      "blas": "blas/Win_lighthouse_95x54_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x54_1_B.xob",
+      "local": {
+        "pos": [
+          0.47976601123809814,
+          22.6767578125,
+          1.7255148887634277
+        ],
+        "quat": [
+          -0.0,
+          -0.9914448732731242,
+          -0.0,
+          0.13052610183575772
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_02/socket_glass_88x47",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x47/Glass_88x47.et",
+      "blas": "blas/Glass_01_88x47.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x47/Glass_01_88x47.xob",
+      "local": {
+        "pos": [
+          0.4906338863020083,
+          22.676760212500085,
+          1.7660739938822458
+        ],
+        "quat": [
+          -0.0,
+          -0.9914448732731242,
+          -0.0,
+          0.13052610183575772
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x54_02"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_01",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x54_1_B.et",
+      "blas": "blas/Win_lighthouse_95x54_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x54_1_B.xob",
+      "local": {
+        "pos": [
+          1.2869540452957153,
+          22.6767520904541,
+          1.259483814239502
+        ],
+        "quat": [
+          -0.0,
+          -0.9238795392949355,
+          -0.0,
+          0.3826834159879129
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_01/socket_glass_88x47",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x47/Glass_88x47.et",
+      "blas": "blas/Glass_01_88x47.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x47/Glass_01_88x47.xob",
+      "local": {
+        "pos": [
+          1.3166454581065432,
+          22.676754490454186,
+          1.2891750877342698
+        ],
+        "quat": [
+          -0.0,
+          -0.9238795392949355,
+          -0.0,
+          0.3826834159879129
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x54_01"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_03",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x54_1_B.et",
+      "blas": "blas/Win_lighthouse_95x54_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x54_1_B.xob",
+      "local": {
+        "pos": [
+          -0.4522952139377594,
+          22.6767578125,
+          1.7255158424377441
+        ],
+        "quat": [
+          0.0,
+          0.9914448732731242,
+          0.0,
+          0.13052610183575772
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_03/socket_glass_88x47",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x47/Glass_88x47.et",
+      "blas": "blas/Glass_01_88x47.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x47/Glass_01_88x47.xob",
+      "local": {
+        "pos": [
+          -0.4631628958164926,
+          22.676760212500085,
+          1.7660749993203366
+        ],
+        "quat": [
+          0.0,
+          0.9914448732731242,
+          0.0,
+          0.13052610183575772
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x54_03"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_05",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x54_1_B.et",
+      "blas": "blas/Win_lighthouse_95x54_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x54_1_B.xob",
+      "local": {
+        "pos": [
+          -1.7255148887634277,
+          22.676759719848633,
+          0.4522976875305176
+        ],
+        "quat": [
+          0.0,
+          0.793353259122799,
+          0.0,
+          0.6087615347894716
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_05/socket_glass_88x47",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x47/Glass_88x47.et",
+      "blas": "blas/Glass_01_88x47.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x47/Glass_01_88x47.xob",
+      "local": {
+        "pos": [
+          -1.7660739947988315,
+          22.676762119848718,
+          0.46316555917371255
+        ],
+        "quat": [
+          0.0,
+          0.793353259122799,
+          0.0,
+          0.6087615347894716
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x54_05"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_04",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x54_1_B.et",
+      "blas": "blas/Win_lighthouse_95x54_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x54_1_B.xob",
+      "local": {
+        "pos": [
+          -1.259483814239502,
+          22.6767578125,
+          1.2594859600067139
+        ],
+        "quat": [
+          0.0,
+          0.9238795392949355,
+          0.0,
+          0.3826834159879129
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_04/socket_glass_88x47",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x47/Glass_88x47.et",
+      "blas": "blas/Glass_01_88x47.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x47/Glass_01_88x47.xob",
+      "local": {
+        "pos": [
+          -1.289175085628967,
+          22.676760212500085,
+          1.2891773749228346
+        ],
+        "quat": [
+          0.0,
+          0.9238795392949355,
+          0.0,
+          0.3826834159879129
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x54_04"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_06",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x54_1_B.et",
+      "blas": "blas/Win_lighthouse_95x54_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x54_1_B.xob",
+      "local": {
+        "pos": [
+          -1.7255154848098755,
+          22.676759719848633,
+          -0.479763388633728
+        ],
+        "quat": [
+          0.0,
+          0.6087614397000725,
+          0.0,
+          0.7933533320874723
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_06/socket_glass_88x47",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x47/Glass_88x47.et",
+      "blas": "blas/Glass_01_88x47.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x47/Glass_01_88x47.xob",
+      "local": {
+        "pos": [
+          -1.7660746400038891,
+          22.676762119848718,
+          -0.49063107681438567
+        ],
+        "quat": [
+          0.0,
+          0.6087614397000725,
+          0.0,
+          0.7933533320874723
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x54_06"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_12",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x54_1_B.et",
+      "blas": "blas/Win_lighthouse_95x54_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x54_1_B.xob",
+      "local": {
+        "pos": [
+          1.7580103874206543,
+          22.6767520904541,
+          0.4710566997528076
+        ],
+        "quat": [
+          0.0,
+          -0.793353259122799,
+          0.0,
+          0.6087615347894716
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_12/socket_glass_88x47",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x47/Glass_88x47.et",
+      "blas": "blas/Glass_01_88x47.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x47/Glass_01_88x47.xob",
+      "local": {
+        "pos": [
+          1.7985695452198163,
+          22.676754490454186,
+          0.4819243782108213
+        ],
+        "quat": [
+          0.0,
+          -0.793353259122799,
+          0.0,
+          0.6087615347894716
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x54_12"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_08",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x54_1_B.et",
+      "blas": "blas/Win_lighthouse_95x54_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x54_1_B.xob",
+      "local": {
+        "pos": [
+          -0.4522973895072937,
+          22.6767520904541,
+          -1.7529834508895874
+        ],
+        "quat": [
+          0.0,
+          0.13052610183575772,
+          0.0,
+          0.9914448732731242
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_08/socket_glass_88x47",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x47/Glass_88x47.et",
+      "blas": "blas/Glass_01_88x47.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x47/Glass_01_88x47.xob",
+      "local": {
+        "pos": [
+          -0.4631652645712039,
+          22.676754490454186,
+          -1.7935425560084055
+        ],
+        "quat": [
+          0.0,
+          0.13052610183575772,
+          0.0,
+          0.9914448732731242
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x54_08"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_07",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x54_1_B.et",
+      "blas": "blas/Win_lighthouse_95x54_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x54_1_B.xob",
+      "local": {
+        "pos": [
+          -1.2594856023788452,
+          22.6767520904541,
+          -1.2869523763656616
+        ],
+        "quat": [
+          0.0,
+          0.38268341598791294,
+          0.0,
+          0.9238795392949354
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_07/socket_glass_88x47",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x47/Glass_88x47.et",
+      "blas": "blas/Glass_01_88x47.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x47/Glass_01_88x47.xob",
+      "local": {
+        "pos": [
+          -1.289177015189673,
+          22.676754490454186,
+          -1.3166436498604295
+        ],
+        "quat": [
+          0.0,
+          0.38268341598791294,
+          0.0,
+          0.9238795392949354
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x54_07"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_09",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x54_1_B.et",
+      "blas": "blas/Win_lighthouse_95x54_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x54_1_B.xob",
+      "local": {
+        "pos": [
+          0.4797635078430176,
+          22.6767520904541,
+          -1.7529841661453247
+        ],
+        "quat": [
+          0.0,
+          -0.13052610183575772,
+          0.0,
+          0.9914448732731242
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_09/socket_glass_88x47",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x47/Glass_88x47.et",
+      "blas": "blas/Glass_01_88x47.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x47/Glass_01_88x47.xob",
+      "local": {
+        "pos": [
+          0.4906311897217508,
+          22.676754490454186,
+          -1.7935433230279172
+        ],
+        "quat": [
+          0.0,
+          -0.13052610183575772,
+          0.0,
+          0.9914448732731242
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x54_09"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_11",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x54_1_B.et",
+      "blas": "blas/Win_lighthouse_95x54_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x54_1_B.xob",
+      "local": {
+        "pos": [
+          1.7580101490020752,
+          22.6767520904541,
+          -0.47105810046195984
+        ],
+        "quat": [
+          0.0,
+          -0.6087614397000725,
+          0.0,
+          0.7933533320874723
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_11/socket_glass_88x47",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x47/Glass_88x47.et",
+      "blas": "blas/Glass_01_88x47.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x47/Glass_01_88x47.xob",
+      "local": {
+        "pos": [
+          1.7985692524322845,
+          22.676754490454186,
+          -0.4819259818277864
+        ],
+        "quat": [
+          0.0,
+          -0.6087614397000725,
+          0.0,
+          0.7933533320874723
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x54_11"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_10",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x54_1_B.et",
+      "blas": "blas/Win_lighthouse_95x54_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x54_1_B.xob",
+      "local": {
+        "pos": [
+          1.286952257156372,
+          22.6767520904541,
+          -1.2869536876678467
+        ],
+        "quat": [
+          0.0,
+          -0.38268341598791294,
+          0.0,
+          0.9238795392949354
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x54_10/socket_glass_88x47",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x47/Glass_88x47.et",
+      "blas": "blas/Glass_01_88x47.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x47/Glass_01_88x47.xob",
+      "local": {
+        "pos": [
+          1.316643528545837,
+          22.676754490454186,
+          -1.3166451025839674
+        ],
+        "quat": [
+          0.0,
+          -0.38268341598791294,
+          0.0,
+          0.9238795392949354
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x54_10"
+    },
+    {
+      "id": "socket_door_ext_lighthouse_top_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Lighthouse_top_RIGHT_EXT_ST_B.et",
+      "blas": "blas/Door_Lighthouse_top_right.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Lighthouse/Door_Lighthouse_top_right.xob",
+      "local": {
+        "pos": [
+          1.66061712213741,
+          19.779111825147993,
+          0.933996675070375
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865475
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_light_main",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Lights/Lighthouse_Light_Main_01.et",
+      "blas": "blas/Lighthouse_Light_Main.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Lighthouse/Lighthouse_Light_Main.xob",
+      "local": {
+        "pos": [
+          0.0012642999645322561,
+          20.739036560058594,
+          0.0012643999652937055
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_04",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/win_lighthouse_50x50_1_B.et",
+      "blas": "blas/win_lighthouse_50x50_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/win_lighthouse_50x50_1_B.xob",
+      "local": {
+        "pos": [
+          -5.500000042957254e-6,
+          9.080133438110352,
+          2.8160226345062256
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_04/socket_glass_54x55",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          -5.500000042957254e-6,
+          9.080133438110352,
+          2.83384863473475
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_50x50_04"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_05",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/win_lighthouse_50x50_1_B.et",
+      "blas": "blas/win_lighthouse_50x50_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/win_lighthouse_50x50_1_B.xob",
+      "local": {
+        "pos": [
+          -2.8160240650177,
+          18.114925384521484,
+          -6.300000222836388e-6
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_05/socket_glass_54x55",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          -2.8338500652462244,
+          18.114925384521484,
+          -6.3000002228403465e-6
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_50x50_05"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_07",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/win_lighthouse_50x50_1_B.et",
+      "blas": "blas/win_lighthouse_50x50_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/win_lighthouse_50x50_1_B.xob",
+      "local": {
+        "pos": [
+          4.600000011123484e-6,
+          10.887090682983398,
+          -2.816023826599121
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_07/socket_glass_54x55",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          4.600000011123484e-6,
+          10.887090682983398,
+          -2.8338498268276453
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_50x50_07"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_06",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/win_lighthouse_50x50_1_B.et",
+      "blas": "blas/win_lighthouse_50x50_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/win_lighthouse_50x50_1_B.xob",
+      "local": {
+        "pos": [
+          5.80000005356851e-6,
+          18.114925384521484,
+          -2.8160240650177
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_06/socket_glass_54x55",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          5.80000005356851e-6,
+          18.114925384521484,
+          -2.8338500652462244
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_50x50_06"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_08",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/win_lighthouse_50x50_1_B.et",
+      "blas": "blas/win_lighthouse_50x50_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/win_lighthouse_50x50_1_B.xob",
+      "local": {
+        "pos": [
+          4.600000011123484e-6,
+          3.659254550933838,
+          -2.816023826599121
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_08/socket_glass_54x55",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          4.600000011123484e-6,
+          3.659254550933838,
+          -2.8338498268276453
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_50x50_08"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_02",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/win_lighthouse_50x50_1_B.et",
+      "blas": "blas/win_lighthouse_50x50_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/win_lighthouse_50x50_1_B.xob",
+      "local": {
+        "pos": [
+          -5.500000042957254e-6,
+          18.114925384521484,
+          2.816023588180542
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_02/socket_glass_54x55",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          -5.500000042957254e-6,
+          18.114925384521484,
+          2.833849588409066
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_50x50_02"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_01",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/win_lighthouse_50x50_1_B.et",
+      "blas": "blas/win_lighthouse_50x50_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/win_lighthouse_50x50_1_B.xob",
+      "local": {
+        "pos": [
+          2.8160240650177,
+          18.114925384521484,
+          5.500000042957254e-6
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_01/socket_glass_54x55",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          2.8338500652462244,
+          18.114925384521484,
+          5.5000000429532956e-6
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_50x50_01"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_03",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/win_lighthouse_50x50_1_B.et",
+      "blas": "blas/win_lighthouse_50x50_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/win_lighthouse_50x50_1_B.xob",
+      "local": {
+        "pos": [
+          -5.500000042957254e-6,
+          16.307968139648438,
+          2.8160226345062256
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_50x50_03/socket_glass_54x55",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x55/Glass_54x55.et",
+      "blas": "blas/Glass_01_54x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x55/Glass_01_54x55.xob",
+      "local": {
+        "pos": [
+          -5.500000042957254e-6,
+          16.307968139648438,
+          2.83384863473475
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_50x50_03"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_09",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x160_1_B.et",
+      "blas": "blas/Win_lighthouse_95x160_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x160_1_B.xob",
+      "local": {
+        "pos": [
+          0.4660288989543915,
+          21.576398849487305,
+          -1.7392501831054688
+        ],
+        "quat": [
+          0.0,
+          -0.13052610183575772,
+          0.0,
+          0.9914448732731242
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_09/socket_glass_88x154_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x154/Glass_88x154.et",
+      "blas": "blas/Glass_01_88x154.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x154/Glass_01_88x154.xob",
+      "local": {
+        "pos": [
+          0.4697655446512334,
+          21.576398849487305,
+          -1.7531955448665095
+        ],
+        "quat": [
+          0.0,
+          -0.13052610183575772,
+          0.0,
+          0.9914448732731242
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x160_09"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_10",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x160_1_B.et",
+      "blas": "blas/Win_lighthouse_95x160_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x160_1_B.xob",
+      "local": {
+        "pos": [
+          1.2732176780700684,
+          21.576398849487305,
+          -1.2732198238372803
+        ],
+        "quat": [
+          0.0,
+          -0.38268341598791294,
+          0.0,
+          0.9238795392949354
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_10/socket_glass_88x154_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x154/Glass_88x154.et",
+      "blas": "blas/Glass_01_88x154.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x154/Glass_01_88x154.xob",
+      "local": {
+        "pos": [
+          1.2834263905484045,
+          21.576398849487305,
+          -1.2834285370394765
+        ],
+        "quat": [
+          0.0,
+          -0.38268341598791294,
+          0.0,
+          0.9238795392949354
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x160_10"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_05",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x160_1_B.et",
+      "blas": "blas/Win_lighthouse_95x160_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x160_1_B.xob",
+      "local": {
+        "pos": [
+          -1.7392494678497314,
+          21.576404571533203,
+          0.46603161096572876
+        ],
+        "quat": [
+          0.0,
+          0.793353259122799,
+          0.0,
+          0.6087615347894716
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_05/socket_glass_88x154_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x154/Glass_88x154.et",
+      "blas": "blas/Glass_01_88x154.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x154/Glass_01_88x154.xob",
+      "local": {
+        "pos": [
+          -1.7531948299259172,
+          21.576404571533203,
+          0.46976825548643253
+        ],
+        "quat": [
+          0.0,
+          0.793353259122799,
+          0.0,
+          0.6087615347894716
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x160_05"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_06",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x160_1_B.et",
+      "blas": "blas/Win_lighthouse_95x160_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x160_1_B.xob",
+      "local": {
+        "pos": [
+          -1.7392498254776,
+          21.576404571533203,
+          -0.46602949500083923
+        ],
+        "quat": [
+          0.0,
+          0.6087614397000725,
+          0.0,
+          0.7933533320874723
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_06/socket_glass_88x154_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x154/Glass_88x154.et",
+      "blas": "blas/Glass_01_88x154.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x154/Glass_01_88x154.xob",
+      "local": {
+        "pos": [
+          -1.7531951866580553,
+          21.576404571533203,
+          -0.46976614286445734
+        ],
+        "quat": [
+          0.0,
+          0.6087614397000725,
+          0.0,
+          0.7933533320874723
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x160_06"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_07",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x160_1_B.et",
+      "blas": "blas/Win_lighthouse_95x160_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x160_1_B.xob",
+      "local": {
+        "pos": [
+          -1.2732200622558594,
+          21.576396942138672,
+          -1.2732185125350952
+        ],
+        "quat": [
+          0.0,
+          0.38268341598791294,
+          0.0,
+          0.9238795392949354
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_07/socket_glass_88x154_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x154/Glass_88x154.et",
+      "blas": "blas/Glass_01_88x154.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x154/Glass_01_88x154.xob",
+      "local": {
+        "pos": [
+          -1.2834287747341955,
+          21.576396942138672,
+          -1.2834272257372914
+        ],
+        "quat": [
+          0.0,
+          0.38268341598791294,
+          0.0,
+          0.9238795392949354
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x160_07"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_08",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x160_1_B.et",
+      "blas": "blas/Win_lighthouse_95x160_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x160_1_B.xob",
+      "local": {
+        "pos": [
+          -0.4660319983959198,
+          21.576396942138672,
+          -1.7392494678497314
+        ],
+        "quat": [
+          0.0,
+          0.13052610183575772,
+          0.0,
+          0.9914448732731242
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_08/socket_glass_88x154_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x154/Glass_88x154.et",
+      "blas": "blas/Glass_01_88x154.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x154/Glass_01_88x154.xob",
+      "local": {
+        "pos": [
+          -0.4697686440927617,
+          21.576396942138672,
+          -1.7531948296107722
+        ],
+        "quat": [
+          0.0,
+          0.13052610183575772,
+          0.0,
+          0.9914448732731242
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x160_08"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_01",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x160_1_B.et",
+      "blas": "blas/Win_lighthouse_95x160_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x160_1_B.xob",
+      "local": {
+        "pos": [
+          1.2732195854187012,
+          21.576398849487305,
+          1.2732179164886475
+        ],
+        "quat": [
+          -0.0,
+          -0.9238795392949355,
+          -0.0,
+          0.3826834159879129
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_01/socket_glass_88x154_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x154/Glass_88x154.et",
+      "blas": "blas/Glass_01_88x154.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x154/Glass_01_88x154.xob",
+      "local": {
+        "pos": [
+          1.2834282978970373,
+          21.576398849487305,
+          1.2834266296908436
+        ],
+        "quat": [
+          -0.0,
+          -0.9238795392949355,
+          -0.0,
+          0.3826834159879129
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x160_01"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_02",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x160_1_B.et",
+      "blas": "blas/Win_lighthouse_95x160_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x160_1_B.xob",
+      "local": {
+        "pos": [
+          0.46603140234947205,
+          21.576400756835938,
+          1.7392487525939941
+        ],
+        "quat": [
+          -0.0,
+          -0.9914448732731242,
+          -0.0,
+          0.13052610183575772
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_02/socket_glass_88x154_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x154/Glass_88x154.et",
+      "blas": "blas/Glass_01_88x154.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x154/Glass_01_88x154.xob",
+      "local": {
+        "pos": [
+          0.46976804804631395,
+          21.576400756835938,
+          1.753194114355035
+        ],
+        "quat": [
+          -0.0,
+          -0.9914448732731242,
+          -0.0,
+          0.13052610183575772
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x160_02"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_04",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x160_1_B.et",
+      "blas": "blas/Win_lighthouse_95x160_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x160_1_B.xob",
+      "local": {
+        "pos": [
+          -1.2732183933258057,
+          21.576400756835938,
+          1.2732198238372803
+        ],
+        "quat": [
+          0.0,
+          0.9238795392949355,
+          0.0,
+          0.3826834159879129
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_04/socket_glass_88x154_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x154/Glass_88x154.et",
+      "blas": "blas/Glass_01_88x154.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x154/Glass_01_88x154.xob",
+      "local": {
+        "pos": [
+          -1.2834271058041418,
+          21.576400756835938,
+          1.2834285370394765
+        ],
+        "quat": [
+          0.0,
+          0.9238795392949355,
+          0.0,
+          0.3826834159879129
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x160_04"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_03",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Lighthouse/Win_lighthouse_95x160_1_B.et",
+      "blas": "blas/Win_lighthouse_95x160_1_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_lighthouse_95x160_1_B.xob",
+      "local": {
+        "pos": [
+          -0.4660297930240631,
+          21.576400756835938,
+          1.7392498254776
+        ],
+        "quat": [
+          0.0,
+          0.9914448732731242,
+          0.0,
+          0.13052610183575772
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_lighthouse_95x160_03/socket_glass_88x154_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_88x154/Glass_88x154.et",
+      "blas": "blas/Glass_01_88x154.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_88x154/Glass_01_88x154.xob",
+      "local": {
+        "pos": [
+          -0.469766438720905,
+          21.576400756835938,
+          1.7531951872386409
+        ],
+        "quat": [
+          0.0,
+          0.9914448732731242,
+          0.0,
+          0.13052610183575772
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_lighthouse_95x160_03"
+    }
+  ],
+  "notes": [
+    "521A820B2E4B1517: Prefabs/Structures/Core/ProbeHouse_Base.et has no mesh",
+    "socket_light_signal: Assets/Structures/Infrastructure/Naval/Lighthouse/Lighthouse_Signal_Light.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

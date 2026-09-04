@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1402,
+  "slug": "TrenchOld_01_poles_wood",
+  "resourceName": "Prefabs/Structures/Military/Fortifications/Trenches/TrenchOld_01/TrenchOld_01_poles_wood.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.07658493518829346,
+      0.0010870000114664435,
+      -1.0690943002700806
+    ],
+    "max": [
+      0.06783103942871094,
+      1.1978189945220947,
+      1.069848656654358
+    ]
+  },
+  "shellBvh": "blas/TrenchOld_01_poles_wood.bvh",
+  "instances": [
+    {
+      "id": "TrenchOld_01_poles_wood",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Military/Fortifications/Trenches/TrenchOld_01/TrenchOld_01_poles_wood.et",
+      "blas": "blas/TrenchOld_01_poles_wood.bvh",
+      "xob": "Assets/Structures/Military/Fortifications/Trenches/TrenchOld_01/TrenchOld_01_poles_wood.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

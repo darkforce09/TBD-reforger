@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1116,
+  "slug": "StatueFIA_01_big",
+  "resourceName": "Prefabs/Structures/Cultural/Statues/StatueFIA_01_big.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.34961279065464623,
+      -0.504252016544342,
+      -0.596331000328064
+    ],
+    "max": [
+      0.34998719065333717,
+      3.03416109085083,
+      0.506184995174408
+    ]
+  },
+  "shellBvh": "blas/StatueFIA_01_big.bvh",
+  "instances": [
+    {
+      "id": "StatueFIA_01_big",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Statues/StatueFIA_01_big.et",
+      "blas": "blas/StatueFIA_01_big.bvh",
+      "xob": "Assets/Structures/Cultural/Statues/StatueFIA_01/StatueFIA_01_big.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

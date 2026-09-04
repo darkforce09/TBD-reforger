@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 494,
+  "slug": "MessageBoardSmall_01_frame_filled_castle",
+  "resourceName": "Prefabs/Structures/Civilian/MessageBoard/Filled/MessageBoardSmall_01_frame_filled_castle.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7046980261802673,
+      0.0,
+      -0.015403300523757935
+    ],
+    "max": [
+      0.7046980261802673,
+      1.1072490215301514,
+      0.15521669387817383
+    ]
+  },
+  "shellBvh": "blas/MessageBoardSmall_01_frame.bvh",
+  "instances": [
+    {
+      "id": "MessageBoardSmall_01_frame_filled_castle",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Civilian/MessageBoard/Filled/MessageBoardSmall_01_frame_filled_castle.et",
+      "blas": "blas/MessageBoardSmall_01_frame.bvh",
+      "xob": "Assets/Structures/Civilian/MessageBoardSmall_01/MessageBoardSmall_01_frame.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ],
+  "notes": [
+    "5E0ED97452F0F416: Assets/Structures/Civilian/MessageBoardSmall_01/MessageBoardSmall_MontfortPoster_01.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

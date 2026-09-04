@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 433,
+  "slug": "WoodPile_01_End_B",
+  "resourceName": "Prefabs/Props/Forest/WoodPile/WoodPile_01_End_B.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.6594539880752563,
+      -0.06837379932403564,
+      -3.255812406539917
+    ],
+    "max": [
+      2.1197550296783447,
+      1.5456682443618774,
+      3.2710494995117188
+    ]
+  },
+  "shellBvh": "blas/WoodPile_01_End_B.bvh",
+  "instances": [
+    {
+      "id": "WoodPile_01_End_B",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Forest/WoodPile/WoodPile_01_End_B.et",
+      "blas": "blas/WoodPile_01_End_B.bvh",
+      "xob": "Assets/Props/Forest/WoodPile_01/WoodPile_01_End_B.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 156,
+  "slug": "BarTap_01",
+  "resourceName": "Prefabs/Props/Furniture/BarTap_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.9619361162185669,
+      1.018119528889656,
+      0.10384629666805267
+    ],
+    "max": [
+      -0.10433614253997803,
+      1.578166976571083,
+      0.39303888380527496
+    ]
+  },
+  "shellBvh": "blas/BarTap_01.bvh",
+  "instances": [
+    {
+      "id": "BarTap_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BarTap_01.et",
+      "blas": "blas/BarTap_01.bvh",
+      "xob": "Assets/Props/Furniture/BarTap_01/BarTap_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

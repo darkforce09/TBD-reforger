@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 474,
+  "slug": "HouseRuin_01_Chimney",
+  "resourceName": "Prefabs/Structures/Ruins/HouseRuins/HouseRuin_01/HouseRuin_01_Chimney.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.6460071802139282,
+      -1.4994820356369019,
+      -0.7053850889205933
+    ],
+    "max": [
+      0.541678786277771,
+      6.020503997802734,
+      0.3602029085159302
+    ]
+  },
+  "shellBvh": "blas/HouseRuin_01_Chimney.bvh",
+  "instances": [
+    {
+      "id": "HouseRuin_01_Chimney",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Ruins/HouseRuins/HouseRuin_01/HouseRuin_01_Chimney.et",
+      "blas": "blas/HouseRuin_01_Chimney.bvh",
+      "xob": "Assets/Structures/Ruins/HouseRuin_01/HouseRuin_01_Chimney.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

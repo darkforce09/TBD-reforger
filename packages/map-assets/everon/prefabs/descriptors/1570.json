@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1570,
+  "slug": "SoundSource_WaterFall_Medium",
+  "resourceName": "Prefabs/Sounds/Sources/SoundSource_WaterFall_Medium.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

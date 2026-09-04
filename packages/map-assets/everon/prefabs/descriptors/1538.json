@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1538,
+  "slug": "SignDirection_Airport_01_right",
+  "resourceName": "Prefabs/Structures/Signs/Directions/SignDirection_Airport_01/SignDirection_Airport_01_right.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7517669796943665,
+      -0.14254160225391388,
+      0.03330030106008053
+    ],
+    "max": [
+      0.49735207855701447,
+      0.16933159716427326,
+      0.05330030061304569
+    ]
+  },
+  "shellBvh": "blas/SignDirection_Eden_01_Right.bvh",
+  "instances": [
+    {
+      "id": "SignDirection_Airport_01_right",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Directions/SignDirection_Airport_01/SignDirection_Airport_01_right.et",
+      "blas": "blas/SignDirection_Eden_01_Right.bvh",
+      "xob": "Assets/Structures/Signs/Directions/SignDirection_Eden_01_Right.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 167,
+  "slug": "ConcreteRetainingWall_01_Corner",
+  "resourceName": "Prefabs/Structures/Walls/Concrete/ConcreteRetainingWall_01/ConcreteRetainingWall_01_Corner.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.6697368025779724,
+      -2.4659409523010254,
+      -1.3121780157089233
+    ],
+    "max": [
+      1.971014142036438,
+      4.028264999389648,
+      1.2967530488967896
+    ]
+  },
+  "shellBvh": "blas/ConcreteRetainingWall_01_Corner.bvh",
+  "instances": [
+    {
+      "id": "ConcreteRetainingWall_01_Corner",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/ConcreteRetainingWall_01/ConcreteRetainingWall_01_Corner.et",
+      "blas": "blas/ConcreteRetainingWall_01_Corner.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/ConcreteRetainingWall_01_Corner.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

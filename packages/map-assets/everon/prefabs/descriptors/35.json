@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 35,
+  "slug": "Tire_UAZ469_pile",
+  "resourceName": "Prefabs/Props/VehicleParts/Tires/Tire_UAZ469_pile.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": [],
+  "notes": [
+    "5216C470CA8B3802: Assets/Props/VehicleParts/Wheel_UAZ469/Tire_UAZ469.xob has no collision chunk — no BLAS, no instance",
+    "5216C470CA8B3808: Assets/Props/VehicleParts/Wheel_UAZ469/Tire_UAZ469.xob has no collision chunk — no BLAS, no instance",
+    "5216C470CA8B3817: Assets/Props/VehicleParts/Wheel_UAZ469/Tire_UAZ469.xob has no collision chunk — no BLAS, no instance",
+    "5216C470CA8B3836: Assets/Props/VehicleParts/Wheel_UAZ469/Tire_UAZ469.xob has no collision chunk — no BLAS, no instance",
+    "5216C470CA8B38E6: Assets/Props/VehicleParts/Wheel_UAZ469/Tire_UAZ469.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

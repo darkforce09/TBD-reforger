@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 619,
+  "slug": "Grave_E_01_CoveredDouble",
+  "resourceName": "Prefabs/Structures/Cultural/Cemeteries/Graves/Grave_E_01_CoveredDouble.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.1950644478201866,
+      -0.17498589400202036,
+      -1.3340609520673752
+    ],
+    "max": [
+      1.204935647547245,
+      0.27497290447354317,
+      1.3059391528367996
+    ]
+  },
+  "shellBvh": "blas/Grave_E_01_CoveredDouble.bvh",
+  "instances": [
+    {
+      "id": "Grave_E_01_CoveredDouble",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Cultural/Cemeteries/Graves/Grave_E_01_CoveredDouble.et",
+      "blas": "blas/Grave_E_01_CoveredDouble.bvh",
+      "xob": "Assets/Structures/Cultural/Cemeteries/Graves/Grave_01/Grave_E_01_CoveredDouble.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

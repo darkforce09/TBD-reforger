@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 264,
+  "slug": "LampKerosene_01_military_USSR",
+  "resourceName": "Prefabs/Props/Civilian/LampKerosene_01/LampKerosene_01_military_USSR.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.10768670285218906,
+      -0.0020290017127990723,
+      -0.10768670285218906
+    ],
+    "max": [
+      0.10768670285218906,
+      0.3524479866027832,
+      0.10768670285218906
+    ]
+  },
+  "shellBvh": "blas/LampKerosene_01.bvh",
+  "instances": [
+    {
+      "id": "LampKerosene_01_military_USSR",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/LampKerosene_01/LampKerosene_01_military_USSR.et",
+      "blas": "blas/LampKerosene_01.bvh",
+      "xob": "Assets/Props/Civilian/LampKerosene_01/LampKerosene_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

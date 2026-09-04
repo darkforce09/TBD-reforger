@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 143,
+  "slug": "S105_wreck_static",
+  "resourceName": "Prefabs/Props/Wrecks/S105_wreck/S105_wreck_static.et",
+  "kind": "vehicle",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.253748893737793,
+      0.04133400321006775,
+      -2.283557891845703
+    ],
+    "max": [
+      1.267137050628662,
+      1.4816830158233643,
+      2.2434580326080322
+    ]
+  },
+  "shellBvh": "blas/S105_wreck_static.bvh",
+  "instances": [
+    {
+      "id": "S105_wreck_static",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Wrecks/S105_wreck/S105_wreck_static.et",
+      "blas": "blas/S105_wreck_static.bvh",
+      "xob": "Assets/Vehicles/Wheeled/S105/S105_wreck_static.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 174,
+  "slug": "Granite_Boulder_02",
+  "resourceName": "Prefabs/Rocks/Granite/Granite_Boulder_02.et",
+  "kind": "rock",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.8670300245285034,
+      -1.9803999662399292,
+      -1.79345703125
+    ],
+    "max": [
+      1.6762139797210693,
+      2.330756902694702,
+      1.4838509559631348
+    ]
+  },
+  "shellBvh": "blas/GraniteBoulder_02.bvh",
+  "instances": [
+    {
+      "id": "Granite_Boulder_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Rocks/Granite/Granite_Boulder_02.et",
+      "blas": "blas/GraniteBoulder_02.bvh",
+      "xob": "Assets/Rocks/Granite/GraniteBoulder_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

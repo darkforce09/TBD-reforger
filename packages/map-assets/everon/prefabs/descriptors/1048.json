@@ -1,0 +1,381 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1048,
+  "slug": "ConcretePlant_E_01",
+  "resourceName": "Prefabs/Structures/Industrial/Houses/ConcretePlant_E_01/ConcretePlant_E_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -6.193813800811768,
+      -0.9668283462524414,
+      -5.841804806579295
+    ],
+    "max": [
+      6.643883228302002,
+      8.799036979675293,
+      18.446197509765625
+    ]
+  },
+  "shellBvh": "blas/ConcretePlant_E_01.bvh",
+  "instances": [
+    {
+      "id": "ConcretePlant_E_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Industrial/Houses/ConcretePlant_E_01/ConcretePlant_E_01.et",
+      "blas": "blas/ConcretePlant_E_01.bvh",
+      "xob": "Assets/Structures/Industrial/Houses/ConcretePlant_E_01/ConcretePlant_E_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_Glass_82x84_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ConcretePlant/Glass_01_82x84.et",
+      "blas": "blas/Glass_01_82x84.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ConcretePlant/Glass_01_82x84.xob",
+      "local": {
+        "pos": [
+          -1.8522822856903076,
+          7.197669506072998,
+          9.470186233520508
+        ],
+        "quat": [
+          0.0,
+          0.8947239322729782,
+          -0.4466196200548955,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_Glass_85x96_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ConcretePlant/Glass_01_85x96_left.et",
+      "blas": "blas/Glass_01_85x96.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ConcretePlant/Glass_01_85x96.xob",
+      "local": {
+        "pos": [
+          -2.4115333557128906,
+          7.047863006591797,
+          8.788980484008789
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_Glass_127x126_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ConcretePlant/Glass_01_127x126.et",
+      "blas": "blas/Glass_01_127x126.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ConcretePlant/Glass_01_127x126.xob",
+      "local": {
+        "pos": [
+          -6.002097129821777,
+          6.731770038604736,
+          1.9056185483932495
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_right_ext_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_ConcretePlant_E_01_RIGHT_EXT_ST_B.et",
+      "blas": "blas/Door_ConcretePlant_E_01_RIGHT_EXT_ST_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_ConcretePlant_E_01/Door_ConcretePlant_E_01_RIGHT_EXT_ST_B.xob",
+      "local": {
+        "pos": [
+          0.17737820744514465,
+          0.0,
+          7.928286075592041
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_left_ext_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_ConcretePlant_E_01_LEFT_EXT_ST_B.et",
+      "blas": "blas/Door_ConcretePlant_E_01_LEFT_EXT_ST_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_ConcretePlant_E_01/Door_ConcretePlant_E_01_LEFT_EXT_ST_B.xob",
+      "local": {
+        "pos": [
+          -3.941538095474243,
+          0.0,
+          7.928286075592041
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_Glass_127x104_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ConcretePlant/Glass_01_127x104.et",
+      "blas": "blas/Glass_01_127x104.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ConcretePlant/Glass_01_127x104.xob",
+      "local": {
+        "pos": [
+          -6.000076770782471,
+          6.731770038604736,
+          3.184638738632202
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_Glass_85x54_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ConcretePlant/Glass_01_85x54.et",
+      "blas": "blas/Glass_01_85x54.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ConcretePlant/Glass_01_85x54.xob",
+      "local": {
+        "pos": [
+          -2.4087090492248535,
+          7.017902851104736,
+          7.958309173583984
+        ],
+        "quat": [
+          -0.0030865564952824733,
+          0.7071000446676561,
+          -0.0030865564952824733,
+          0.7071000446676563
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_Glass_85x54_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ConcretePlant/Glass_01_85x54.et",
+      "blas": "blas/Glass_01_85x54.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ConcretePlant/Glass_01_85x54.xob",
+      "local": {
+        "pos": [
+          -1.293462872505188,
+          7.020472526550293,
+          7.938170909881592
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_Glass_85x92_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ConcretePlant/Glass_01_85x92.et",
+      "blas": "blas/Glass_01_85x92.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ConcretePlant/Glass_01_85x92.xob",
+      "local": {
+        "pos": [
+          -1.8519939184188843,
+          7.021983623504639,
+          7.5909318923950195
+        ],
+        "quat": [
+          0.01982397472321708,
+          0.0,
+          0.0,
+          0.9998034857041523
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_Pipe_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Industrial/ConcretePlant_E_01_Pipe.et",
+      "blas": "blas/ConcretePlant_E_01_Pipe.bvh",
+      "xob": "Assets/Structures/Industrial/Houses/ConcretePlant_E_01/BuildingAddons/ConcretePlant_E_01_Pipe.xob",
+      "local": {
+        "pos": [
+          -0.9220854043960571,
+          6.8101935386657715,
+          1.181924819946289
+        ],
+        "quat": [
+          0.0,
+          -0.17364855828069908,
+          0.0,
+          0.9848076858996556
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_Pipe_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Industrial/ConcretePlant_E_01_Pipe.et",
+      "blas": "blas/ConcretePlant_E_01_Pipe.bvh",
+      "xob": "Assets/Structures/Industrial/Houses/ConcretePlant_E_01/BuildingAddons/ConcretePlant_E_01_Pipe.xob",
+      "local": {
+        "pos": [
+          -1.240156650543213,
+          6.8101935386657715,
+          1.245581030845642
+        ],
+        "quat": [
+          0.0,
+          0.13052610183575772,
+          0.0,
+          0.9914448732731242
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_Glass_127x164_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ConcretePlant/Glass_01_127x164.et",
+      "blas": "blas/Glass_01_127x164.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ConcretePlant/Glass_01_127x164.xob",
+      "local": {
+        "pos": [
+          -4.954378128051758,
+          6.731770038604736,
+          3.9321045875549316
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_Glass_85x96_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ConcretePlant/Glass_01_85x96_right.et",
+      "blas": "blas/Glass_01_85x96_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ConcretePlant/Glass_01_85x96_02.xob",
+      "local": {
+        "pos": [
+          -1.281381368637085,
+          7.04541015625,
+          8.788922309875488
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_Glass_70x92_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ConcretePlant/Glass_01_70x92.et",
+      "blas": "blas/Glass_01_70x92.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ConcretePlant/Glass_01_70x92.xob",
+      "local": {
+        "pos": [
+          -1.8522812128067017,
+          6.160661697387695,
+          9.515426635742188
+        ],
+        "quat": [
+          0.0,
+          0.9876138872555027,
+          -0.15690382308941714,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ]
+}

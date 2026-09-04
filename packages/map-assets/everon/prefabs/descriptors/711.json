@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 711,
+  "slug": "BarrelFuel_01_closed_old",
+  "resourceName": "Prefabs/Props/Industrial/BarrelFuel_01_closed_old.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

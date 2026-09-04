@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1459,
+  "slug": "BlanketFolded_01_orange",
+  "resourceName": "Prefabs/Props/Recreation/Beach/BlanketFolded_01/BlanketFolded_01_orange.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.24269170314073563,
+      -0.0013945996761322021,
+      -0.18260770663619041
+    ],
+    "max": [
+      0.18273430317640305,
+      0.06562940031290054,
+      0.15129229798913002
+    ]
+  },
+  "shellBvh": "blas/BlanketFolded_01.bvh",
+  "instances": [
+    {
+      "id": "BlanketFolded_01_orange",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Recreation/Beach/BlanketFolded_01/BlanketFolded_01_orange.et",
+      "blas": "blas/BlanketFolded_01.bvh",
+      "xob": "Assets/Props/Recreation/Beach/BlanketFolded_01/BlanketFolded_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

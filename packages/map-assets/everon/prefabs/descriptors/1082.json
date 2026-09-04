@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1082,
+  "slug": "Ural4320_wreck_static",
+  "resourceName": "Prefabs/Props/Wrecks/Ural4320_wreck/Ural4320_wreck_static.et",
+  "kind": "vehicle",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.8091700077056885,
+      0.13755905628204346,
+      -3.7139220237731934
+    ],
+    "max": [
+      1.3131029605865479,
+      2.7232141494750977,
+      3.9096522331237793
+    ]
+  },
+  "shellBvh": "blas/Ural_4320_wreck_static.bvh",
+  "instances": [
+    {
+      "id": "Ural4320_wreck_static",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Wrecks/Ural4320_wreck/Ural4320_wreck_static.et",
+      "blas": "blas/Ural_4320_wreck_static.bvh",
+      "xob": "Assets/Vehicles/Wheeled/Ural4320/Ural_4320_wreck_static.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

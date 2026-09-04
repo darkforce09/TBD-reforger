@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1332,
+  "slug": "Decal_DrainChannel_01",
+  "resourceName": "Prefabs/Decals/Infrastructure/Decal_DrainChannel_01.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

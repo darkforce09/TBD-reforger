@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 85,
+  "slug": "MessageBoard_01_filled_V1",
+  "resourceName": "Prefabs/Structures/Civilian/MessageBoard/Filled/MessageBoard_01_filled_V1.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.262549877166748,
+      -0.30126678943634033,
+      -0.6174780130386353
+    ],
+    "max": [
+      1.291478157043457,
+      2.4442481994628906,
+      0.454598993062973
+    ]
+  },
+  "shellBvh": "blas/MessageBoard_01.bvh",
+  "instances": [
+    {
+      "id": "MessageBoard_01_filled_V1",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Civilian/MessageBoard/Filled/MessageBoard_01_filled_V1.et",
+      "blas": "blas/MessageBoard_01.bvh",
+      "xob": "Assets/Structures/Civilian/MessageBoard/MessageBoard_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_glass_85x55_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_85x55/Glass_85x55.et",
+      "blas": "blas/Glass_01_85x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_85x55/Glass_01_85x55.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_glass_85x55_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_85x55/Glass_85x55.et",
+      "blas": "blas/Glass_01_85x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_85x55/Glass_01_85x55.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ],
+  "notes": [
+    "socket_glass_85x55_01: socket socket_glass_85x55_01 not found in Assets/Structures/Civilian/MessageBoard/MessageBoard_01.xob — prefab coords used",
+    "socket_glass_85x55_02: socket socket_glass_85x55_02 not found in Assets/Structures/Civilian/MessageBoard/MessageBoard_01.xob — prefab coords used",
+    "5E046EE8504F8B11: Assets/Props/Commercial/Posters/PosterSingle_A4.xob has no collision chunk — no BLAS, no instance",
+    "5E046EE8504F8B04: Assets/Props/Commercial/Posters/PosterSingle_A3.xob has no collision chunk — no BLAS, no instance",
+    "5E046EE8504F8B79: Assets/Props/Commercial/Posters/PosterLarge_40x40.xob has no collision chunk — no BLAS, no instance",
+    "5E046EE8504F8BB1: Assets/Props/Commercial/Posters/PosterSingle_A4.xob has no collision chunk — no BLAS, no instance",
+    "5E046EE8504F8B36: Assets/Props/Commercial/Posters/PosterSingle_A4.xob has no collision chunk — no BLAS, no instance",
+    "5E046EE8504F84DF: Assets/Props/Commercial/Posters/PosterLarge_27x41.xob has no collision chunk — no BLAS, no instance",
+    "5E046EE8504F8B28: Assets/Props/Commercial/Posters/PosterSingle_A4.xob has no collision chunk — no BLAS, no instance",
+    "5E046EE8504F8B43: Assets/Props/Commercial/Posters/PosterSingle_A3.xob has no collision chunk — no BLAS, no instance",
+    "5E046EE8504F84CD: Assets/Props/Commercial/Posters/PosterSingle_A4.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

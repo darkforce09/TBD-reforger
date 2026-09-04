@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1295,
+  "slug": "GameProofFence_01_Stairs",
+  "resourceName": "Prefabs/Structures/Walls/Net/GameProofFence_01/GameProofFence_01_Stairs.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.07769100368022919,
+      -0.7631229758262634,
+      -1.8678770065307617
+    ],
+    "max": [
+      1.422767996788025,
+      2.2663159370422363,
+      1.896949052810669
+    ]
+  },
+  "shellBvh": "blas/GameProofFence_01_Stairs.bvh",
+  "instances": [
+    {
+      "id": "GameProofFence_01_Stairs",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Net/GameProofFence_01/GameProofFence_01_Stairs.et",
+      "blas": "blas/GameProofFence_01_Stairs.bvh",
+      "xob": "Assets/Structures/Walls/Net/GameProofFence_01_Stairs.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

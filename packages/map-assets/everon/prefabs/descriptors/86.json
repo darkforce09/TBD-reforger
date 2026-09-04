@@ -1,0 +1,701 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 86,
+  "slug": "Barn_E_01_white",
+  "resourceName": "Prefabs/Structures/Agriculture/Barn/Barn_E_01/Barn_E_01_white.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -7.1773801612854005,
+      -6.019490199163556,
+      -12.633437156677246
+    ],
+    "max": [
+      7.603617855631991,
+      4.12565158439611,
+      12.63733959197998
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "socket_entry_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Entry/Entry_Slope_Platform_01.et",
+      "blas": "blas/ConcreteSlope_01_entry.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Entry/ConcreteSlope_01_entry.xob",
+      "local": {
+        "pos": [
+          0.15526780486106873,
+          -0.0194901991635561,
+          -5.30000114440918
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_entry_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Entry/Entry_Slope_Platform_01.et",
+      "blas": "blas/ConcreteSlope_01_entry.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Entry/ConcreteSlope_01_entry.xob",
+      "local": {
+        "pos": [
+          0.15526770055294037,
+          -0.0194901991635561,
+          5.303903579711914
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_R_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Barn_E_01_LEFT.et",
+      "blas": "blas/Door_Barn_E_01_LEFT.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Barn_E_01/Door_Barn_E_01_LEFT.xob",
+      "local": {
+        "pos": [
+          -0.9945396780967712,
+          4.286815120147708,
+          -5.110518992248217
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 0.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false,
+        "openedDistance": 2.05
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_R_02",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Barn_E_01_LEFT.et",
+      "blas": "blas/Door_Barn_E_01_LEFT.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Barn_E_01/Door_Barn_E_01_LEFT.xob",
+      "local": {
+        "pos": [
+          1.3017619848251343,
+          4.2868194896364,
+          5.128012266747646
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 0.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false,
+        "openedDistance": 2.05
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_L_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Barn_E_01_RIGHT.et",
+      "blas": "blas/Door_Barn_E_01_RIGHT.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Barn_E_01/Door_Barn_E_01_RIGHT.xob",
+      "local": {
+        "pos": [
+          1.3017601370811462,
+          4.286819920147764,
+          -5.110533692248737
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 0.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false,
+        "openedDistance": -2.05
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_L_02",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Barn_E_01_RIGHT.et",
+      "blas": "blas/Door_Barn_E_01_RIGHT.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Barn_E_01/Door_Barn_E_01_RIGHT.xob",
+      "local": {
+        "pos": [
+          -0.9945402145385742,
+          4.286824689635978,
+          5.128012566748112
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 0.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false,
+        "openedDistance": -2.05
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E128399B1",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/SackUniversal_01_Pile.et",
+      "blas": "blas/SackUniversal_01_Pile.bvh",
+      "xob": "Assets/Props/Civilian/SackUniversal_01/SackUniversal_01_Pile.xob",
+      "local": {
+        "pos": [
+          -6.063,
+          0.0,
+          3.201
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E12839A6E",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayBale_01_square_big.et",
+      "blas": "blas/HayBale_01_square_big.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayBale_01_square_big.xob",
+      "local": {
+        "pos": [
+          6.193,
+          0.0,
+          -3.261
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E12839A7F",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayBale_01_square_big.et",
+      "blas": "blas/HayBale_01_square_big.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayBale_01_square_big.xob",
+      "local": {
+        "pos": [
+          4.973,
+          0.0,
+          -0.923
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E12839BC8",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayBale_01_square_big.et",
+      "blas": "blas/HayBale_01_square_big.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayBale_01_square_big.xob",
+      "local": {
+        "pos": [
+          -3.69,
+          0.0,
+          -3.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E12839AF8",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/Wheelbarrow_01.et",
+      "blas": "blas/Wheelbarrow_01.bvh",
+      "xob": "Assets/Props/Civilian/Wheelbarrow_01/Wheelbarrow_01.xob",
+      "local": {
+        "pos": [
+          -5.359,
+          0.0,
+          2.05
+        ],
+        "quat": [
+          0.0,
+          -0.8660254037844385,
+          0.0,
+          0.5000000000000001
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E12839BEF",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayBale_01_square_big_bottom.et",
+      "blas": "blas/HayBale_01_square_big.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayBale_01_square_big.xob",
+      "local": {
+        "pos": [
+          6.296,
+          0.0,
+          1.315
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/616AED3208C2DDD8",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayBale_01_square_big_bottom.et",
+      "blas": "blas/HayBale_01_square_big.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayBale_01_square_big.xob",
+      "local": {
+        "pos": [
+          -6.36,
+          0.0,
+          -3.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/616AED323A6A4E3F",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayBale_01_square_big_bottom.et",
+      "blas": "blas/HayBale_01_square_big.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayBale_01_square_big.xob",
+      "local": {
+        "pos": [
+          6.193,
+          0.0,
+          -0.923
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/616AED32C7CEA473",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayBale_01_square_big_bottom.et",
+      "blas": "blas/HayBale_01_square_big.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayBale_01_square_big.xob",
+      "local": {
+        "pos": [
+          4.959,
+          0.0,
+          1.315
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/616AED32CD43EC3B",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayBale_01_square_big_bottom.et",
+      "blas": "blas/HayBale_01_square_big.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayBale_01_square_big.xob",
+      "local": {
+        "pos": [
+          -6.42,
+          0.0,
+          -0.721
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/616AED32F4877275",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayBale_01_square_big_bottom.et",
+      "blas": "blas/HayBale_01_square_big.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayBale_01_square_big.xob",
+      "local": {
+        "pos": [
+          -5.074,
+          0.0,
+          -0.721
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/616AED32FD627ED5",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayBale_01_square_big_bottom.et",
+      "blas": "blas/HayBale_01_square_big.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayBale_01_square_big.xob",
+      "local": {
+        "pos": [
+          -5.048,
+          0.0,
+          -3.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E12839ADD",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Industrial/Pallets/Pallet_01.et",
+      "blas": "blas/Pallet_01.bvh",
+      "xob": "Assets/Props/Industrial/Pallets/Pallet_01.xob",
+      "local": {
+        "pos": [
+          3.594,
+          0.0,
+          -3.132
+        ],
+        "quat": [
+          0.0,
+          -0.3826834323650897,
+          0.0,
+          0.9238795325112867
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E12839908",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayPile_01.et",
+      "blas": "blas/HayPile_01.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayPile_01.xob",
+      "local": {
+        "pos": [
+          -4.399,
+          0.0,
+          -1.068
+        ],
+        "quat": [
+          0.0,
+          -0.21189624100621576,
+          0.0,
+          0.977292168723067
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E12839919",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayPile_01.et",
+      "blas": "blas/HayPile_01.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayPile_01.xob",
+      "local": {
+        "pos": [
+          5.79,
+          0.004,
+          2.496
+        ],
+        "quat": [
+          0.0,
+          0.6087614290087207,
+          0.0,
+          0.7933533402912352
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E1283992E",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayPile_01.et",
+      "blas": "blas/HayPile_01.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayPile_01.xob",
+      "local": {
+        "pos": [
+          5.468,
+          0.0,
+          -3.274
+        ],
+        "quat": [
+          0.0,
+          -0.108207567826808,
+          0.0,
+          0.9941283228361452
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E1283993F",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayPile_01.et",
+      "blas": "blas/HayPile_01.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayPile_01.xob",
+      "local": {
+        "pos": [
+          4.698,
+          0.0,
+          -1.415
+        ],
+        "quat": [
+          -0.0,
+          -0.9975768170501069,
+          -0.0,
+          0.06957365941344157
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E12839968",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayPile_01.et",
+      "blas": "blas/HayPile_01.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayPile_01.xob",
+      "local": {
+        "pos": [
+          -5.58,
+          0.0,
+          0.337
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E12839979",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayPile_01.et",
+      "blas": "blas/HayPile_01.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayPile_01.xob",
+      "local": {
+        "pos": [
+          4.521,
+          0.004,
+          1.324
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E1283994C",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/LadderWooden_01_Long.et",
+      "blas": "blas/LadderWooden_01_Long.bvh",
+      "xob": "Assets/Props/Civilian/LadderWooden_01/LadderWooden_01_Long.xob",
+      "local": {
+        "pos": [
+          6.486,
+          0.0,
+          3.694
+        ],
+        "quat": [
+          -0.03980445697941702,
+          -0.7059855559461353,
+          -0.03980445697941702,
+          0.7059855559461353
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    },
+    {
+      "id": "5B18A24210F6E2D2/5B18A10E128399A2",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/SackUniversal_01.et",
+      "blas": "blas/SackUniversal_01.bvh",
+      "xob": "Assets/Props/Civilian/SackUniversal_01/SackUniversal_01.xob",
+      "local": {
+        "pos": [
+          -6.541,
+          -0.029,
+          2.159
+        ],
+        "quat": [
+          0.11182947564805275,
+          0.08318381507065552,
+          -0.009394514563259999,
+          0.9901951142995472
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18A24210F6E2D2"
+    }
+  ],
+  "notes": [
+    "5E68CCF15D1ADAAB: Prefabs/Structures/Agriculture/Barn/Barn_E_01/BuildingAddons/Probe_Barn_E_01.et has no mesh",
+    "5B18A24210F6E2D2/5B18A10E12839A8C: Assets/Props/Agricultural/MilkCan_01/MilkCan_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18A24210F6E2D2/5B18A10E12839ABD: Assets/Props/Agricultural/MilkCan_01/MilkCan_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18A24210F6E2D2/5B18A10E12839AE9: Assets/Props/Garbage/Tires/TireTracktor_01/TireTractor_01_single.xob has no collision chunk — no BLAS, no instance",
+    "5B18A24210F6E2D2/5B18A10E12839ACD: Assets/Props/Garbage/Cardboard/Cardboard_Pile_02.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1213,
+  "slug": "BrickPile_01_Large",
+  "resourceName": "Prefabs/Props/Construction/BrickPile/BrickPile_01_Large.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.44027979765087366,
+      -0.002655699849128723,
+      -0.5832504834979773
+    ],
+    "max": [
+      0.43837030068971217,
+      1.290813397616148,
+      0.6030955109745264
+    ]
+  },
+  "shellBvh": "blas/BrickPile_01_Large.bvh",
+  "instances": [
+    {
+      "id": "BrickPile_01_Large",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Construction/BrickPile/BrickPile_01_Large.et",
+      "blas": "blas/BrickPile_01_Large.bvh",
+      "xob": "Assets/Props/Construction/BrickPile_01/BrickPile_01_Large.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

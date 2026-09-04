@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 210,
+  "slug": "SignLarge_01_PublicCamp",
+  "resourceName": "Prefabs/Structures/Signs/Large/SignLarge_01_PublicCamp.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

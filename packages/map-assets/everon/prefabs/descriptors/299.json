@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 299,
+  "slug": "ClotheslinePole_01",
+  "resourceName": "Prefabs/Structures/Civilian/ClotheslinePole_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7811260223388672,
+      -0.8504862785339355,
+      -0.03285299986600876
+    ],
+    "max": [
+      0.785306990146637,
+      2.0745797157287598,
+      0.03285299986600876
+    ]
+  },
+  "shellBvh": "blas/ClotheslinePole_01.bvh",
+  "instances": [
+    {
+      "id": "ClotheslinePole_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Civilian/ClotheslinePole_01.et",
+      "blas": "blas/ClotheslinePole_01.bvh",
+      "xob": "Assets/Structures/Civilian/ClothesLine/ClotheslinePole_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

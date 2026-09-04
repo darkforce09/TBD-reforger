@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 829,
+  "slug": "T_trunk_debris_02",
+  "resourceName": "Prefabs/Vegetation/Tree/Debris/T_trunk_debris_02.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 351,
+  "slug": "Cardboard_03",
+  "resourceName": "Prefabs/Props/Garbage/Cardboard/Cardboard_03.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

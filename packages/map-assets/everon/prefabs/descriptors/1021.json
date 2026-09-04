@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1021,
+  "slug": "CzechHedgehog_01_painted",
+  "resourceName": "Prefabs/Props/Military/Fortification/CzechHedgehog_01_painted.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.8465520143508911,
+      -0.09521957704813744,
+      -0.8370850086212158
+    ],
+    "max": [
+      0.8622030019760132,
+      1.5244632634338275,
+      0.8082759976387024
+    ]
+  },
+  "shellBvh": "blas/CzechHedgehog_01.bvh",
+  "instances": [
+    {
+      "id": "CzechHedgehog_01_painted",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Military/Fortification/CzechHedgehog_01_painted.et",
+      "blas": "blas/CzechHedgehog_01.bvh",
+      "xob": "Assets/Props/Military/Fortification/CzechHedgehog_01/CzechHedgehog_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

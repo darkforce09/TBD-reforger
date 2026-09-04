@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 206,
+  "slug": "ConeTraffic_01_red",
+  "resourceName": "Prefabs/Props/Infrastructure/ConeTraffic/ConeTraffic_01_red.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.1670971045969054,
+      0.0006521940231323242,
+      -0.1737619936466217
+    ],
+    "max": [
+      0.16341689426917583,
+      0.5509881973266602,
+      0.1737619936466217
+    ]
+  },
+  "shellBvh": "blas/ConeTraffic_01.bvh",
+  "instances": [
+    {
+      "id": "ConeTraffic_01_red",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Infrastructure/ConeTraffic/ConeTraffic_01_red.et",
+      "blas": "blas/ConeTraffic_01.bvh",
+      "xob": "Assets/Props/Infrastructure/ConeTraffic_01/ConeTraffic_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

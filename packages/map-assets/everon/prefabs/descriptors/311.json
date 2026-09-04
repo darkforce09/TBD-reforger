@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 311,
+  "slug": "ConcreteRetainingWall_02_8m_grass",
+  "resourceName": "Prefabs/Structures/Walls/Concrete/ConcreteRetainingWall_02/ConcreteRetainingWall_02_8m_grass.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.999999899999999,
+      -2.466667056083679,
+      -2.7651077420450747
+    ],
+    "max": [
+      4.000000100000001,
+      4.001349091529846,
+      2.7651053755544126
+    ]
+  },
+  "shellBvh": "blas/ConcreteRetainingWall_02_8m_grass.bvh",
+  "instances": [
+    {
+      "id": "ConcreteRetainingWall_02_8m_grass",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/ConcreteRetainingWall_02/ConcreteRetainingWall_02_8m_grass.et",
+      "blas": "blas/ConcreteRetainingWall_02_8m_grass.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/ConcreteRetainingWall_02_8m_grass.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

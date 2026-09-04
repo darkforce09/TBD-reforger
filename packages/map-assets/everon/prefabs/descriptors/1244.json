@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1244,
+  "slug": "BoardMap_01",
+  "resourceName": "Prefabs/Structures/Civilian/BoardMap_01/BoardMap_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.315277338027954,
+      -1.0116273164749146,
+      -0.33229801058769226
+    ],
+    "max": [
+      1.3152844905853271,
+      2.3083276748657227,
+      0.35487499833106995
+    ]
+  },
+  "shellBvh": "blas/BoardMap_01.bvh",
+  "instances": [
+    {
+      "id": "BoardMap_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Civilian/BoardMap_01/BoardMap_01.et",
+      "blas": "blas/BoardMap_01.bvh",
+      "xob": "Assets/Structures/Civilian/BoardMap_01/BoardMap_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

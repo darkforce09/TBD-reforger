@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1404,
+  "slug": "SignVillage_02_SaintPhilippe",
+  "resourceName": "Prefabs/Structures/Signs/TownNames/SignVillage_Eden/SignVillage_02_SaintPhilippe.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.5659499764442444,
+      -0.6008769869804382,
+      -0.02305610044277273
+    ],
+    "max": [
+      0.576154709327966,
+      2.5171070098876953,
+      0.022164900467032567
+    ]
+  },
+  "shellBvh": "blas/SignVillage_02.bvh",
+  "instances": [
+    {
+      "id": "SignVillage_02_SaintPhilippe",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/TownNames/SignVillage_Eden/SignVillage_02_SaintPhilippe.et",
+      "blas": "blas/SignVillage_02.bvh",
+      "xob": "Assets/Structures/Signs/TownNames/SignVillage_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

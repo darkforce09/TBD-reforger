@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 846,
+  "slug": "SignLarge_01_ConcreteMixingPlant",
+  "resourceName": "Prefabs/Structures/Signs/Large/SignLarge_01_ConcreteMixingPlant.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

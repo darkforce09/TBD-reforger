@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 15,
+  "slug": "Castle_01_OuterWall_01_Corner",
+  "resourceName": "Prefabs/Structures/Cultural/Castles/Castle_01_OuterWall_01_Corner.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      0.0004572868347167969,
+      -7.526957988739014,
+      -1.6581320762634277
+    ],
+    "max": [
+      4.489204406738281,
+      8.606951713562012,
+      2.802553176879883
+    ]
+  },
+  "shellBvh": "blas/Castle_01_OuterWall_01_Corner.bvh",
+  "instances": [
+    {
+      "id": "Castle_01_OuterWall_01_Corner",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Castles/Castle_01_OuterWall_01_Corner.et",
+      "blas": "blas/Castle_01_OuterWall_01_Corner.bvh",
+      "xob": "Assets/Structures/Cultural/Castles/Castle_01/Castle_01_OuterWall_01_Corner.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

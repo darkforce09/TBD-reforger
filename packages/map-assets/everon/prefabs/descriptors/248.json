@@ -1,0 +1,160 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 248,
+  "slug": "BoatShed_01",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Sheds/BoatShed_01/BoatShed_01.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.4524480402469635,
+      -5.0,
+      -4.332231044769287
+    ],
+    "max": [
+      3.5844180583953857,
+      5.711510181427002,
+      4.330214977264404
+    ]
+  },
+  "shellBvh": "blas/BoatShed_01.bvh",
+  "instances": [
+    {
+      "id": "BoatShed_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Sheds/BoatShed_01/BoatShed_01.et",
+      "blas": "blas/BoatShed_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Sheds/BoatShed_01/BoatShed_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_door_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_BoatShed_01_A_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_BoatShed_01_A_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_BoatShed_01/Door_BoatShed_01_A_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          0.6523814797401428,
+          0.6889737248420715,
+          -4.027712821960449
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "58C49AFDC51AC141",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Sheds/BoatShed_01/HouseAddons/BoatShed_01_floor.et",
+      "blas": "blas/BoatShed_01_floor.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Sheds/BoatShed_01/BoatShed_01_floor.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_door_left_02",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_PierShed_01_A_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_PierShed_01_A_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_PierShed_01/Door_PierShed_01_A_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          1.7025712728500366,
+          0.6836817860603333,
+          4.017788410186768
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_door_right_02",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_PierShed_01_A_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_PierShed_01_A_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_PierShed_01/Door_PierShed_01_A_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -1.6940339803695679,
+          0.6836817860603333,
+          4.017725944519043
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    }
+  ],
+  "notes": [
+    "5E6C68E37020D6E2: Prefabs/Structures/Agriculture/Barn/Barn_E_01/BuildingAddons/Probe_Barn_E_01.et has no mesh"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 713,
+  "slug": "Castle_01_Bridge_Pillar",
+  "resourceName": "Prefabs/Structures/Cultural/Castles/Castle_01_Bridge_Pillar.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.01712703704834,
+      -6.515643119812012,
+      -9.710494995117188
+    ],
+    "max": [
+      2.0039801597595215,
+      0.3450758457183838,
+      9.710494041442871
+    ]
+  },
+  "shellBvh": "blas/Castle_01_Bridge_Pillar.bvh",
+  "instances": [
+    {
+      "id": "Castle_01_Bridge_Pillar",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Castles/Castle_01_Bridge_Pillar.et",
+      "blas": "blas/Castle_01_Bridge_Pillar.bvh",
+      "xob": "Assets/Structures/Cultural/Castles/Castle_01/Castle_01_Bridge_Pillar.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

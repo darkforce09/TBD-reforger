@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1246,
+  "slug": "t_picea_abies_3d_high",
+  "resourceName": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_3d_high.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -3.674370050430298,
+      -1.434959053993225,
+      -3.3849539756774902
+    ],
+    "max": [
+      3.6838319301605225,
+      29.803939819335938,
+      3.3792710304260254
+    ]
+  },
+  "shellBvh": "blas/t_picea_abies_3d_higher.bvh",
+  "instances": [
+    {
+      "id": "t_picea_abies_3d_high",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_3d_high.et",
+      "blas": "blas/t_picea_abies_3d_higher.bvh",
+      "xob": "Assets/Vegetation/Tree/Picea_Abies/t_picea_abies_3d_higher.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "t_picea_abies_3d_high/canopy",
+      "kind": "treeCanopy",
+      "prefab": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_3d_high.et",
+      "blas": "blas/t_picea_abies_3d_higher_canopy.bvh",
+      "xob": "Assets/Vegetation/Tree/Picea_Abies/t_picea_abies_3d_higher.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "t_picea_abies_3d_high"
+    }
+  ],
+  "notes": [
+    "t_picea_abies_3d_high/canopy: convex hull of the visual LOD0 (2641 verts) tagged Foliage — the COLL carries no Foliage triangle"
+  ]
+}

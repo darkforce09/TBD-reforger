@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1186,
+  "slug": "TentSmall_03_blue",
+  "resourceName": "Prefabs/Props/Recreation/Camp/TentSmall_03/TentSmall_03_blue.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.367580683901906,
+      -0.011869899928569794,
+      -2.7383179664611816
+    ],
+    "max": [
+      1.3333793561905622,
+      1.6457658112049103,
+      1.2827458381652832
+    ]
+  },
+  "shellBvh": "blas/TentSmall_03.bvh",
+  "instances": [
+    {
+      "id": "TentSmall_03_blue",
+      "kind": "shell",
+      "prefab": "Prefabs/Props/Recreation/Camp/TentSmall_03/TentSmall_03_blue.et",
+      "blas": "blas/TentSmall_03.bvh",
+      "xob": "Assets/Props/Recreation/Camp/TentSmall_03/TentSmall_03.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

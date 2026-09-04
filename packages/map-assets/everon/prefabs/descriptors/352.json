@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 352,
+  "slug": "Pier_Tires_02",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Tires_02.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.4198914766311646,
+      -1.2935459613800049,
+      0.6211341619491577
+    ],
+    "max": [
+      1.2205537557601929,
+      -0.18689000606536865,
+      1.3381648063659668
+    ]
+  },
+  "shellBvh": "blas/Pier_Tires_02.bvh",
+  "instances": [
+    {
+      "id": "Pier_Tires_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Tires_02.et",
+      "blas": "blas/Pier_Tires_02.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Tires_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

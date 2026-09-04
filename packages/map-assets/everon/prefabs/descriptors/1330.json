@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1330,
+  "slug": "Buoy_01_white",
+  "resourceName": "Prefabs/Props/Naval/Buoy_01_white.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.1383466999977827,
+      -52.691262405395506,
+      -0.15484560281038284
+    ],
+    "max": [
+      0.14685329981148243,
+      -2.6716624908447266,
+      0.12195440381765366
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "56DEE068B6AB2DC4",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Naval/Buoy_01_chain.et",
+      "blas": "blas/Buoy_01_chain.bvh",
+      "xob": "Assets/Props/Naval/Buoy_01/Buoy_01_chain.xob",
+      "local": {
+        "pos": [
+          0.0,
+          -2.693,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

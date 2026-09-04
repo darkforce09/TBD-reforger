@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1300,
+  "slug": "WaterSlide_01",
+  "resourceName": "Prefabs/Structures/Recreation/Beach/WaterSlide_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7209230065345764,
+      -1.854223370552063,
+      -3.2049660682678223
+    ],
+    "max": [
+      0.7209230065345764,
+      7.092341423034668,
+      5.75032901763916
+    ]
+  },
+  "shellBvh": "blas/WaterSlide_01.bvh",
+  "instances": [
+    {
+      "id": "WaterSlide_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Recreation/Beach/WaterSlide_01.et",
+      "blas": "blas/WaterSlide_01.bvh",
+      "xob": "Assets/Structures/Recreation/Beach/WaterSlide_01/WaterSlide_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

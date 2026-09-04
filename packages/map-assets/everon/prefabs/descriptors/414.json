@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 414,
+  "slug": "AmbientSounds_Everon",
+  "resourceName": "Prefabs/Sounds/Environment/AmbientSounds_Everon.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 620,
+  "slug": "HarborWinch_01",
+  "resourceName": "Prefabs/Props/Naval/HarborWinch_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.5942549705505371,
+      -0.0018970000091940165,
+      -0.6263219714164734
+    ],
+    "max": [
+      1.009956955909729,
+      1.4857219457626343,
+      0.62186598777771
+    ]
+  },
+  "shellBvh": "blas/HarborWinch_01.bvh",
+  "instances": [
+    {
+      "id": "HarborWinch_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Naval/HarborWinch_01.et",
+      "blas": "blas/HarborWinch_01.bvh",
+      "xob": "Assets/Props/Naval/HarborWinch_01/HarborWinch_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

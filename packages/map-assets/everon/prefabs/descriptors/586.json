@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 586,
+  "slug": "Hutch_02",
+  "resourceName": "Prefabs/Props/Civilian/Hutch_02.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.584984064102173,
+      0.0,
+      -0.5258576273918152
+    ],
+    "max": [
+      2.5759921073913574,
+      2.5783510208129883,
+      0.4933263957500458
+    ]
+  },
+  "shellBvh": "blas/Hutch_02.bvh",
+  "instances": [
+    {
+      "id": "Hutch_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/Hutch_02.et",
+      "blas": "blas/Hutch_02.bvh",
+      "xob": "Assets/Props/Civilian/Hutch_02/Hutch_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

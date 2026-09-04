@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1452,
+  "slug": "HayPile_01",
+  "resourceName": "Prefabs/Props/Agriculture/Farm/HayPile_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.97254878282547,
+      -0.0015040000434964895,
+      -1.5973801612854004
+    ],
+    "max": [
+      1.2936351299285889,
+      0.6958370208740234,
+      1.530966877937317
+    ]
+  },
+  "shellBvh": "blas/HayPile_01.bvh",
+  "instances": [
+    {
+      "id": "HayPile_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Farm/HayPile_01.et",
+      "blas": "blas/HayPile_01.bvh",
+      "xob": "Assets/Props/Agricultural/Hay/HayPile_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

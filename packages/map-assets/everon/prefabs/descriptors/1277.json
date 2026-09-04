@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1277,
+  "slug": "CargoContainer_01_10ft_Base",
+  "resourceName": "Prefabs/Props/Industrial/CargoContainers/CargoContainer_01/CargoContainer_01_10ft_Base.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.5097562236478552,
+      -0.9642268940806389,
+      -1.5406408309936523
+    ],
+    "max": [
+      1.5106438236543909,
+      3.5669379234313965,
+      1.536887156078592
+    ]
+  },
+  "shellBvh": "blas/CargoContainer_01_10ft.bvh",
+  "instances": [
+    {
+      "id": "CargoContainer_01_10ft_Base",
+      "kind": "shell",
+      "prefab": "Prefabs/Props/Industrial/CargoContainers/CargoContainer_01/CargoContainer_01_10ft_Base.et",
+      "blas": "blas/CargoContainer_01_10ft.bvh",
+      "xob": "Assets/Props/Industrial/CargoContainer_01/CargoContainer_01_10ft.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

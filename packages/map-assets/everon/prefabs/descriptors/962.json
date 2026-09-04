@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 962,
+  "slug": "StoneWall_01_start",
+  "resourceName": "Prefabs/Structures/Walls/Stone/StoneWall_01/StoneWall_01_start.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.25309765338897705,
+      -0.6678029894828796,
+      -0.7230585217475891
+    ],
+    "max": [
+      2.0971732139587402,
+      1.1418570280075073,
+      0.8068227767944336
+    ]
+  },
+  "shellBvh": "blas/StoneWall_01_start.bvh",
+  "instances": [
+    {
+      "id": "StoneWall_01_start",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Stone/StoneWall_01/StoneWall_01_start.et",
+      "blas": "blas/StoneWall_01_start.bvh",
+      "xob": "Assets/Structures/Walls/Stone/StoneWall_01_start.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

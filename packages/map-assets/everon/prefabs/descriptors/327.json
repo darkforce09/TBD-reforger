@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 327,
+  "slug": "PierConcrete_01_corner_30_inner",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/PierConcrete_01_corner_30_inner.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.16859425869876965,
+      -4.005904197692871,
+      -4.674215543248529
+    ],
+    "max": [
+      5.288398956250797,
+      4.496902048587799,
+      4.250450134277344
+    ]
+  },
+  "shellBvh": "blas/PierConcrete_01_corner_30_inner.bvh",
+  "instances": [
+    {
+      "id": "PierConcrete_01_corner_30_inner",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/PierConcrete_01_corner_30_inner.et",
+      "blas": "blas/PierConcrete_01_corner_30_inner.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/PierConcrete_01_corner_30_inner.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_bollard_001",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          2.356205940246582,
+          3.9772000312805176,
+          -2.9301226139068604
+        ],
+        "quat": [
+          0.0,
+          -0.13052610183575772,
+          0.0,
+          0.9914448732731242
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_short_wood_001",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Wood_Short_01.et",
+      "blas": "blas/Pier_Wood_Short_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Wood_Short_01.xob",
+      "local": {
+        "pos": [
+          2.868276357650757,
+          3.2820982933044434,
+          -3.410629987716675
+        ],
+        "quat": [
+          0.0,
+          0.9914448732731242,
+          0.0,
+          0.13052610183575772
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ]
+}

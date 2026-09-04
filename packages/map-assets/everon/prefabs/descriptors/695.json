@@ -1,0 +1,254 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 695,
+  "slug": "SilageStorage_E_02",
+  "resourceName": "Prefabs/Structures/Agriculture/Manure/SilageStorage_E_02/SilageStorage_E_02.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -9.68367804813385,
+      -1.143607008934021,
+      -16.449941888809207
+    ],
+    "max": [
+      9.604678048133854,
+      4.2090537643432615,
+      16.61445098686218
+    ]
+  },
+  "shellBvh": "blas/SilageStorage_E_02.bvh",
+  "instances": [
+    {
+      "id": "SilageStorage_E_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Agriculture/Manure/SilageStorage_E_02/SilageStorage_E_02.et",
+      "blas": "blas/SilageStorage_E_02.bvh",
+      "xob": "Assets/Structures/Agriculture/Manure/SilageStorage_E_02/SilageStorage_E_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "56A8B699108EC4B6",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/SilageWall_02/SilageWall_02_3m_B.et",
+      "blas": "blas/SilageWall_02_3m.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/SilageWall_02_3m.xob",
+      "local": {
+        "pos": [
+          -3.346,
+          -0.013,
+          -15.034
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "56A8B699108ED843",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/SilageWall_02/SilageWall_02_corner.et",
+      "blas": "blas/SilageWall_02_Corner.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/SilageWall_02_Corner.xob",
+      "local": {
+        "pos": [
+          -6.786,
+          0.01,
+          -13.579
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "56A8B699108F4831",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/SilageWall_02/SilageWall_02_corner.et",
+      "blas": "blas/SilageWall_02_Corner.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/SilageWall_02_Corner.xob",
+      "local": {
+        "pos": [
+          6.743,
+          0.01,
+          -13.566
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "56A8B699108F2322",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/SilageWall_02/SilageWall_02_12m_A.et",
+      "blas": "blas/SilageWall_02_12m.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/SilageWall_02_12m.xob",
+      "local": {
+        "pos": [
+          -8.293,
+          0.009,
+          3.119
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "56A8B699108F3ABD",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/SilageWall_02/SilageWall_02_12m_A.et",
+      "blas": "blas/SilageWall_02_12m.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/SilageWall_02_12m.xob",
+      "local": {
+        "pos": [
+          8.211,
+          -0.003,
+          3.104
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "56A8B699108FE72A",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/SilageWall_02/SilageWall_02_12m_B.et",
+      "blas": "blas/SilageWall_02_12m.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/SilageWall_02_12m.xob",
+      "local": {
+        "pos": [
+          -8.287,
+          0.006,
+          16.341
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "56A8B699108FE912",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/SilageWall_02/SilageWall_02_12m_B.et",
+      "blas": "blas/SilageWall_02_12m.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/SilageWall_02_12m.xob",
+      "local": {
+        "pos": [
+          8.214,
+          0.007,
+          -10.111
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "56A8B699108F8C8D",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/SilageWall_02/SilageWall_02_3m_A.et",
+      "blas": "blas/SilageWall_02_3m.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/SilageWall_02_3m.xob",
+      "local": {
+        "pos": [
+          -0.045,
+          -0.003,
+          -15.041
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "56A8B699108EC48A",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/SilageWall_02/SilageWall_02_pole.et",
+      "blas": "blas/SilageWall_02_Pole.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/SilageWall_02_Pole.xob",
+      "local": {
+        "pos": [
+          8.176,
+          -0.003,
+          16.333
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

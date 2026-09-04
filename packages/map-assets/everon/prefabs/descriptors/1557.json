@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1557,
+  "slug": "TableRecreation_01_red",
+  "resourceName": "Prefabs/Props/Furniture/TableRecreation_01/TableRecreation_01_red.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.6050000190734863,
+      0.00015100836753845215,
+      -0.7455000281333923
+    ],
+    "max": [
+      0.6050000190734863,
+      0.8999095764011145,
+      0.7455000281333923
+    ]
+  },
+  "shellBvh": "blas/TableRecreation_01.bvh",
+  "instances": [
+    {
+      "id": "TableRecreation_01_red",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/TableRecreation_01/TableRecreation_01_red.et",
+      "blas": "blas/TableRecreation_01.bvh",
+      "xob": "Assets/Props/Furniture/TableRecreation_01/TableRecreation_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

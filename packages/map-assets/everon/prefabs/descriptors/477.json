@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 477,
+  "slug": "SnowBreaker_E_01_Pair_B",
+  "resourceName": "Prefabs/Props/Infrastructure/SnowBreakers/SnowBreaker_E_01_Pair_B.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.8557282458406683,
+      -0.2149761818718908,
+      -1.2516381318157341
+    ],
+    "max": [
+      1.980194946545943,
+      1.6959708417295898,
+      1.108582080537777
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "5216C470CA801AD1",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Infrastructure/SnowBreakers/SnowBreaker_E_01_A.et",
+      "blas": "blas/SnowBreaker_E_01_A.bvh",
+      "xob": "Assets/Props/Infrastructure/SnowBreaker_E_01/SnowBreaker_E_01_A.xob",
+      "local": {
+        "pos": [
+          -0.923,
+          -0.036,
+          0.044
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.012374068593653215,
+          0.9999234382823714
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "5216C470CA801AF3",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Infrastructure/SnowBreakers/SnowBreaker_E_01_D.et",
+      "blas": "blas/SnowBreaker_E_01_D.bvh",
+      "xob": "Assets/Props/Infrastructure/SnowBreaker_E_01/SnowBreaker_E_01_D.xob",
+      "local": {
+        "pos": [
+          0.917,
+          -0.116,
+          -0.163
+        ],
+        "quat": [
+          2.0121199547332185e-7,
+          0.028340364039579676,
+          -0.0009166716292475132,
+          0.9995979109017724
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

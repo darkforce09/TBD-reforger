@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 204,
+  "slug": "SignStop_01_pole",
+  "resourceName": "Prefabs/Structures/Signs/Warnings/SignStop_01_pole.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.34900400042533875,
+      1.8899139655994404,
+      0.04134909901767969
+    ],
+    "max": [
+      0.3490041004253399,
+      2.587922066450119,
+      0.061349098570644855
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "socket_sign_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Warnings/SignStop_01.et",
+      "blas": "blas/Sign_Octagon_A.bvh",
+      "xob": "Assets/Structures/Signs/Warnings/Sign_Octagon_A.xob",
+      "local": {
+        "pos": [
+          0.0,
+          2.2389180660247803,
+          0.002363800071179867
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ]
+}

@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 197,
+  "slug": "Shed_02_line",
+  "resourceName": "Prefabs/Structures/Houses/Shed/Shed_02/Shed_02_line.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.243622064590454,
+      -1.8623204231262207,
+      -1.400259017944336
+    ],
+    "max": [
+      3.2911720275878906,
+      2.6957855224609375,
+      1.307850956916809
+    ]
+  },
+  "shellBvh": "blas/Shed_02_line.bvh",
+  "instances": [
+    {
+      "id": "Shed_02_line",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Houses/Shed/Shed_02/Shed_02_line.et",
+      "blas": "blas/Shed_02_line.bvh",
+      "xob": "Assets/Structures/Houses/Shed/Shed_02/Shed_02_line.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_win_72x55_01",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_Shed_02/Win_Shed_02_72x55_weathered.et",
+      "blas": "blas/Win_Shed_02_72x55_01_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_Shed_02_72x55_01_B.xob",
+      "local": {
+        "pos": [
+          -3.0823779106140137,
+          1.9182255268096924,
+          -0.20564259588718414
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win_72x55_01/socket_glass_60x52",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_60x52/Glass_60x52.et",
+      "blas": "blas/Glass_01_60x52.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_60x52/Glass_01_60x52.xob",
+      "local": {
+        "pos": [
+          -3.0823779106140137,
+          1.9185629268176854,
+          -0.205847295888816
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_win_72x55_01"
+    },
+    {
+      "id": "socket_door_ext_right_01",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/DoorSet_Shed_02_R_EXT_B_weathered.et",
+      "blas": "blas/DoorFrame_Shed_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Shed/DoorFrame_Shed_02.xob",
+      "local": {
+        "pos": [
+          -1.3470531702041626,
+          0.09413419663906097,
+          0.8228644728660583
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_ext_right_01/socket_door_shed_02_right_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Shed_02_EXT_COV_B.et",
+      "blas": "blas/Door_Shed_02_Right.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Shed/Door_Shed_02_Right.xob",
+      "local": {
+        "pos": [
+          -1.8301916718482971,
+          0.12330479733645916,
+          0.8751390725374222
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "socket_door_ext_right_01"
+    }
+  ],
+  "notes": [
+    "5E76AB7B04F56D25: Prefabs/Structures/Infrastructure/Naval/Houses/CottagePier_01/BuidlingAddons/Probe_CottagePier_01.et has no mesh"
+  ]
+}

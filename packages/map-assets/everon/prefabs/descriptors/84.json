@@ -1,0 +1,1416 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 84,
+  "slug": "ChurchSmall_E_01",
+  "resourceName": "Prefabs/Structures/Cultural/Churches/ChurchSmall_E_01/ChurchSmall_E_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -7.723316669464111,
+      -3.691730409860611,
+      -12.742690086364746
+    ],
+    "max": [
+      7.728203296661377,
+      23.503009796142578,
+      14.521547317504883
+    ]
+  },
+  "shellBvh": "blas/ChurchSmall_E_01.bvh",
+  "instances": [
+    {
+      "id": "ChurchSmall_E_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Churches/ChurchSmall_E_01/ChurchSmall_E_01.et",
+      "blas": "blas/ChurchSmall_E_01.bvh",
+      "xob": "Assets/Structures/Cultural/Church/ChurchSmall_E_01/ChurchSmall_E_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CDB2",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/Notebook_01_base.et",
+      "blas": "blas/Notebook_01_Single.bvh",
+      "xob": "Assets/Props/Civilian/Notebook_01/Notebook_01_Single.xob",
+      "local": {
+        "pos": [
+          1.391,
+          8.068,
+          5.107
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CC43",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Chest_01.et",
+      "blas": "blas/Chest_01.bvh",
+      "xob": "Assets/Props/Furniture/Chest_01/Chest_01.xob",
+      "local": {
+        "pos": [
+          -1.564,
+          4.102,
+          5.177
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CDC7",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/BoxWooden_01.et",
+      "blas": "blas/BoxWooden_01.bvh",
+      "xob": "Assets/Props/Crates/BoxWooden_01.xob",
+      "local": {
+        "pos": [
+          1.449,
+          8.073,
+          7.923
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CDDB",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/BoxWooden_01.et",
+      "blas": "blas/BoxWooden_01.bvh",
+      "xob": "Assets/Props/Crates/BoxWooden_01.xob",
+      "local": {
+        "pos": [
+          1.353,
+          11.959,
+          7.994
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CCEE",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Cultural/AltarChurch_01_small.et",
+      "blas": "blas/AltarChurch_01_small.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Cultural/AltarChurch_01_small.xob",
+      "local": {
+        "pos": [
+          0.043,
+          0.19,
+          -8.009
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4C340",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchChurch_Small_01.et",
+      "blas": "blas/BenchChurch_Small_01.bvh",
+      "xob": "Assets/Props/Furniture/BenchChurch_Small_01/BenchChurch_Small_01.xob",
+      "local": {
+        "pos": [
+          2.015,
+          0.19,
+          -5.618
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4C367",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchChurch_Small_01.et",
+      "blas": "blas/BenchChurch_Small_01.bvh",
+      "xob": "Assets/Props/Furniture/BenchChurch_Small_01/BenchChurch_Small_01.xob",
+      "local": {
+        "pos": [
+          -1.871,
+          0.19,
+          -5.618
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CC25",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchChurch_Small_01.et",
+      "blas": "blas/BenchChurch_Small_01.bvh",
+      "xob": "Assets/Props/Furniture/BenchChurch_Small_01/BenchChurch_Small_01.xob",
+      "local": {
+        "pos": [
+          -2.91,
+          4.097,
+          3.392
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CC33",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchChurch_Small_01.et",
+      "blas": "blas/BenchChurch_Small_01.bvh",
+      "xob": "Assets/Props/Furniture/BenchChurch_Small_01/BenchChurch_Small_01.xob",
+      "local": {
+        "pos": [
+          2.815,
+          4.097,
+          3.41
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CC88",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchChurch_Small_01.et",
+      "blas": "blas/BenchChurch_Small_01.bvh",
+      "xob": "Assets/Props/Furniture/BenchChurch_Small_01/BenchChurch_Small_01.xob",
+      "local": {
+        "pos": [
+          -1.871,
+          0.19,
+          -2.404
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CC96",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchChurch_Small_01.et",
+      "blas": "blas/BenchChurch_Small_01.bvh",
+      "xob": "Assets/Props/Furniture/BenchChurch_Small_01/BenchChurch_Small_01.xob",
+      "local": {
+        "pos": [
+          -1.871,
+          0.19,
+          -4.111
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CCA6",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchChurch_Small_01.et",
+      "blas": "blas/BenchChurch_Small_01.bvh",
+      "xob": "Assets/Props/Furniture/BenchChurch_Small_01/BenchChurch_Small_01.xob",
+      "local": {
+        "pos": [
+          -1.871,
+          0.19,
+          1.246
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CCB6",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchChurch_Small_01.et",
+      "blas": "blas/BenchChurch_Small_01.bvh",
+      "xob": "Assets/Props/Furniture/BenchChurch_Small_01/BenchChurch_Small_01.xob",
+      "local": {
+        "pos": [
+          -1.871,
+          0.19,
+          -0.614
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CCC3",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchChurch_Small_01.et",
+      "blas": "blas/BenchChurch_Small_01.bvh",
+      "xob": "Assets/Props/Furniture/BenchChurch_Small_01/BenchChurch_Small_01.xob",
+      "local": {
+        "pos": [
+          2.076,
+          0.19,
+          -2.404
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CCCF",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchChurch_Small_01.et",
+      "blas": "blas/BenchChurch_Small_01.bvh",
+      "xob": "Assets/Props/Furniture/BenchChurch_Small_01/BenchChurch_Small_01.xob",
+      "local": {
+        "pos": [
+          2.076,
+          0.19,
+          -0.614
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CCD7",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchChurch_Small_01.et",
+      "blas": "blas/BenchChurch_Small_01.bvh",
+      "xob": "Assets/Props/Furniture/BenchChurch_Small_01/BenchChurch_Small_01.xob",
+      "local": {
+        "pos": [
+          2.076,
+          0.19,
+          -4.111
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CCFA",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchChurch_Small_01.et",
+      "blas": "blas/BenchChurch_Small_01.bvh",
+      "xob": "Assets/Props/Furniture/BenchChurch_Small_01/BenchChurch_Small_01.xob",
+      "local": {
+        "pos": [
+          2.076,
+          0.19,
+          1.246
+        ],
+        "quat": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CC05",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Cultural/ChurchFont_01_decor.et",
+      "blas": "blas/ChurchFont_01_decor.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Cultural/ChurchFont_01_decor.xob",
+      "local": {
+        "pos": [
+          -1.682,
+          1.014,
+          6.453
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CD0F",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Cultural/PaintingCalvary_01/PaintingCalvary_01_v03.et",
+      "blas": "blas/PaintingCalvary_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Cultural/PaintingCalvary_01.xob",
+      "local": {
+        "pos": [
+          0.717,
+          8.109,
+          6.341
+        ],
+        "quat": [
+          0.6984748080559501,
+          -0.12503295509354617,
+          0.12712514641506892,
+          0.6930648597358882
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CD1E",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Cultural/PaintingCalvary_01/PaintingCalvary_01_v03.et",
+      "blas": "blas/PaintingCalvary_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Cultural/PaintingCalvary_01.xob",
+      "local": {
+        "pos": [
+          1.721,
+          8.545,
+          6.624
+        ],
+        "quat": [
+          0.02410413992224655,
+          0.7066958259665955,
+          -0.02410413992224655,
+          0.7066958259665956
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CDEE",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/Crate_01_red.et",
+      "blas": "blas/Crate_01.bvh",
+      "xob": "Assets/Props/Crates/Crate_01.xob",
+      "local": {
+        "pos": [
+          -1.334,
+          11.959,
+          8.048
+        ],
+        "quat": [
+          0.0,
+          -0.06935602025944897,
+          0.0,
+          0.997591971927286
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CDA2",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/SheetMusicBook_E_01_open_V1.et",
+      "blas": "blas/SheetMusicBook_01_open.bvh",
+      "xob": "Assets/Props/Civilian/SheetMusicBook_01/SheetMusicBook_01_open.xob",
+      "local": {
+        "pos": [
+          0.294,
+          11.959,
+          7.217
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "587EA0FF913A9975/587EA0FF9CD4CD9F",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/BasketWicker_01.et",
+      "blas": "blas/BasketWicker_01.bvh",
+      "xob": "Assets/Props/Civilian/BasketWicker_01/BasketWicker_01.xob",
+      "local": {
+        "pos": [
+          0.401,
+          8.083,
+          7.567
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "587EA0FF913A9975"
+    },
+    {
+      "id": "socket_win4_01",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_40x80_B.et",
+      "blas": "blas/Win_ChurchSmall_E_A_40x80_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_40x80_B.xob",
+      "local": {
+        "pos": [
+          4.823022842407227,
+          4.211898326873779,
+          5.4888014793396
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win4_01/5AD2CB0DF5DEA075",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_40x80_01.et",
+      "blas": "blas/Glass_ChurchSmall_E_40x80_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_40x80/Glass_ChurchSmall_E_40x80_01.xob",
+      "local": {
+        "pos": [
+          4.823022842407227,
+          4.211898326873779,
+          5.4888014793396
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win4_01"
+    },
+    {
+      "id": "socket_win3_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_124x196_B.et",
+      "blas": "blas/Win_ChurchSmall_E_A_124x196_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_124x196_B.xob",
+      "local": {
+        "pos": [
+          -1.3999999737279722e-6,
+          5.985551834106445,
+          8.753105163574219
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win3_01/5AD2CB0DDBBEF5BA",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_124x196_02.et",
+      "blas": "blas/Glass_ChurchSmall_E_124x196_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_124x196/Glass_ChurchSmall_E_124x196_02.xob",
+      "local": {
+        "pos": [
+          -1.3999999737279722e-6,
+          5.985551834106445,
+          8.753105163574219
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win3_01"
+    },
+    {
+      "id": "socket_win3_01/5AD2CB0DDBBEF58D",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_124x196_03.et",
+      "blas": "blas/Glass_ChurchSmall_E_124x196_03.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_124x196/Glass_ChurchSmall_E_124x196_03.xob",
+      "local": {
+        "pos": [
+          -1.3999999737279722e-6,
+          5.985551834106445,
+          8.753105163574219
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win3_01"
+    },
+    {
+      "id": "socket_win3_01/5AD2CB0DDBBEF5AF",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_124x196_01.et",
+      "blas": "blas/Glass_ChurchSmall_E_124x196_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_124x196/Glass_ChurchSmall_E_124x196_01.xob",
+      "local": {
+        "pos": [
+          -1.3999999737279722e-6,
+          5.985551834106445,
+          8.753105163574219
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win3_01"
+    },
+    {
+      "id": "socket_win3_01/5AD2CB0DDBBEEA71",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_124x196_04.et",
+      "blas": "blas/Glass_ChurchSmall_E_124x196_04.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_124x196/Glass_ChurchSmall_E_124x196_04.xob",
+      "local": {
+        "pos": [
+          -1.3999999737279722e-6,
+          5.985551834106445,
+          8.753105163574219
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win3_01"
+    },
+    {
+      "id": "socekt_shutter_left_03",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_shutter_left.et",
+      "blas": "blas/Win_ChurchSmall01_shutter_Left.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_ChurchSmall01_shutter_Left.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socekt_shutter_left_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_shutter_left.et",
+      "blas": "blas/Win_ChurchSmall01_shutter_Left.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_ChurchSmall01_shutter_Left.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socekt_shutter_left_02",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_shutter_left.et",
+      "blas": "blas/Win_ChurchSmall01_shutter_Left.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_ChurchSmall01_shutter_Left.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socekt_shutter_right_02",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_shutter_right.et",
+      "blas": "blas/Win_ChurchSmall01_shutter_Right.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_ChurchSmall01_shutter_Right.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socekt_shutter_right_03",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_shutter_right.et",
+      "blas": "blas/Win_ChurchSmall01_shutter_Right.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_ChurchSmall01_shutter_Right.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socekt_shutter_right_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_shutter_right.et",
+      "blas": "blas/Win_ChurchSmall01_shutter_Right.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_ChurchSmall01_shutter_Right.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_ladder_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Ladders/Ladder_ChurchSmall_E_435_B.et",
+      "blas": "blas/Ladder_ChurchSmall_E_435_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Ladders/Ladder_ChurchSmall_E/Ladder_ChurchSmall_E_435_B.xob",
+      "local": {
+        "pos": [
+          -8.999999749903509e-7,
+          11.959497451782227,
+          4.935163974761963
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_ladder_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Ladders/Ladder_ChurchSmall_E_435_B.et",
+      "blas": "blas/Ladder_ChurchSmall_E_435_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Ladders/Ladder_ChurchSmall_E/Ladder_ChurchSmall_E_435_B.xob",
+      "local": {
+        "pos": [
+          -1.7521522045135498,
+          8.068018913269043,
+          6.398313522338867
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_ext_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_ChurchSmall_E_01_left_EXT_COV.et",
+      "blas": "blas/ChurchSmall_door_left_E.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_ChurchSmall_01/ChurchSmall_door_left_E.xob",
+      "local": {
+        "pos": [
+          1.0179669335484505,
+          0.8078289224075306,
+          8.481772022790523
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_entry_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Entry/Entry_Direct_01.et",
+      "blas": "blas/ConcreteStairs_01_entry_3m.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Entry/ConcreteStairs_01_entry_3m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.2693032920360565,
+          9.121526718139648
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win1_03",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_118x319_B.et",
+      "blas": "blas/Win_ChurchSmall_E_A_118x319_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_118x319_B.xob",
+      "local": {
+        "pos": [
+          5.0817551612854,
+          4.039251804351807,
+          -4.085464000701904
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win1_03/5AD2CB0D26C4F742",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_118x319_02.et",
+      "blas": "blas/Glass_ChurchSmall_E_118x319_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_118x319/Glass_ChurchSmall_E_118x319_02.xob",
+      "local": {
+        "pos": [
+          5.0817551612854,
+          4.039251804351807,
+          -4.085464000701904
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win1_03"
+    },
+    {
+      "id": "socket_win1_03/5AD2CB0D26C4F765",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_118x319_01.et",
+      "blas": "blas/Glass_ChurchSmall_E_118x319_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_118x319/Glass_ChurchSmall_E_118x319_01.xob",
+      "local": {
+        "pos": [
+          5.0817551612854,
+          4.039251804351807,
+          -4.085464000701904
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win1_03"
+    },
+    {
+      "id": "socket_win1_02",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_118x319_B.et",
+      "blas": "blas/Win_ChurchSmall_E_A_118x319_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_118x319_B.xob",
+      "local": {
+        "pos": [
+          -5.072527885437012,
+          4.039251804351807,
+          -4.0991644859313965
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win1_02/5AD2CB0D26C4F742",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_118x319_02.et",
+      "blas": "blas/Glass_ChurchSmall_E_118x319_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_118x319/Glass_ChurchSmall_E_118x319_02.xob",
+      "local": {
+        "pos": [
+          -5.072527885437012,
+          4.039251804351807,
+          -4.0991644859313965
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win1_02"
+    },
+    {
+      "id": "socket_win1_02/5AD2CB0D26C4F765",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_118x319_01.et",
+      "blas": "blas/Glass_ChurchSmall_E_118x319_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_118x319/Glass_ChurchSmall_E_118x319_01.xob",
+      "local": {
+        "pos": [
+          -5.072527885437012,
+          4.039251804351807,
+          -4.0991644859313965
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win1_02"
+    },
+    {
+      "id": "socket_win1_01",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_118x319_B.et",
+      "blas": "blas/Win_ChurchSmall_E_A_118x319_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_118x319_B.xob",
+      "local": {
+        "pos": [
+          -5.072527885437012,
+          4.039251804351807,
+          1.0155056715011597
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win1_01/5AD2CB0D26C4F742",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_118x319_02.et",
+      "blas": "blas/Glass_ChurchSmall_E_118x319_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_118x319/Glass_ChurchSmall_E_118x319_02.xob",
+      "local": {
+        "pos": [
+          -5.072527885437012,
+          4.039251804351807,
+          1.0155056715011597
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win1_01"
+    },
+    {
+      "id": "socket_win1_01/5AD2CB0D26C4F765",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_118x319_01.et",
+      "blas": "blas/Glass_ChurchSmall_E_118x319_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_118x319/Glass_ChurchSmall_E_118x319_01.xob",
+      "local": {
+        "pos": [
+          -5.072527885437012,
+          4.039251804351807,
+          1.0155056715011597
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win1_01"
+    },
+    {
+      "id": "socket_win2_01",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_74x159_B.et",
+      "blas": "blas/Win_ChurchSmall_E_A_74x159_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_ChurchSmall_E_A/Win_ChurchSmall_E_A_74x159_B.xob",
+      "local": {
+        "pos": [
+          0.005096199922263622,
+          3.4137303829193115,
+          -12.016332626342773
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_win2_01/5AD2CB0DE722D47D",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_74x159_04.et",
+      "blas": "blas/Glass_ChurchSmall_E_74x159_04.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_74x159/Glass_ChurchSmall_E_74x159_04.xob",
+      "local": {
+        "pos": [
+          0.005096199922263622,
+          3.4137303829193115,
+          -12.016332626342773
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win2_01"
+    },
+    {
+      "id": "socket_win2_01/5AD2CB0DE722D43B",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_74x159_01.et",
+      "blas": "blas/Glass_ChurchSmall_E_74x159_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_74x159/Glass_ChurchSmall_E_74x159_01.xob",
+      "local": {
+        "pos": [
+          0.005096199922263622,
+          3.4137303829193115,
+          -12.016332626342773
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win2_01"
+    },
+    {
+      "id": "socket_win2_01/5AD2CB0DE722D419",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_74x159_02.et",
+      "blas": "blas/Glass_ChurchSmall_E_74x159_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_74x159/Glass_ChurchSmall_E_74x159_02.xob",
+      "local": {
+        "pos": [
+          0.005096199922263622,
+          3.4137303829193115,
+          -12.016332626342773
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win2_01"
+    },
+    {
+      "id": "socket_win2_01/5AD2CB0DE722D468",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_ChurchSmall_E/Glass_ChurchSmall_E_74x159_03.et",
+      "blas": "blas/Glass_ChurchSmall_E_74x159_03.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_ChurchSmall_E_74x159/Glass_ChurchSmall_E_74x159_03.xob",
+      "local": {
+        "pos": [
+          0.005096199922263622,
+          3.4137303829193115,
+          -12.016332626342773
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "socket_win2_01"
+    },
+    {
+      "id": "socket_door_ext_02",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_ChurchSmall_E_01_right_EXT_COV.et",
+      "blas": "blas/ChurchSmall_door_right_E.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_ChurchSmall_01/ChurchSmall_door_right_E.xob",
+      "local": {
+        "pos": [
+          -1.0179631039500237,
+          0.8078289224075306,
+          8.481772822790532
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    }
+  ],
+  "notes": [
+    "5218C7A69DD85563: Prefabs/Structures/Core/ProbeHouse_Base.et has no mesh",
+    "587EA0FF913A9975/587EA0FF9CD4CC7F: Assets/Props/Garbage/Cardboard/Cardboard_Pile_07.xob has no collision chunk — no BLAS, no instance",
+    "587EA0FF913A9975/587EA0FF9CD4CC55: Assets/Structures/BuildingsParts/Cultural/Crucifix_01.xob has no collision chunk — no BLAS, no instance",
+    "587EA0FF913A9975/587EA0FF9CD4CC6C: Assets/Props/Garbage/Medical/GarbageMedical_01/GarbageMedicalUS_02.xob has no collision chunk — no BLAS, no instance",
+    "587EA0FF913A9975/587EA0FF9CD4CD3B: Assets/Props/Furniture/PlantRoom_03/PlantRoom_03.xob has no collision chunk — no BLAS, no instance",
+    "587EA0FF913A9975/587EA0FF9CD4CDAE: Assets/Props/Civilian/PaintCan_01/PaintCan_01.xob has no collision chunk — no BLAS, no instance",
+    "587EA0FF913A9975/587EA0FF9CD4CDF5: Assets/Props/Garbage/Cardboard/Cardboard_Pile_05.xob has no collision chunk — no BLAS, no instance",
+    "587EA0FF913A9975/587EA0FF9CD4CDFF: Assets/Props/Garbage/Cardboard/Cardboard_Pile_08.xob has no collision chunk — no BLAS, no instance",
+    "587EA0FF913A9975/587EA0FF9CD4CC71: Assets/Props/Garbage/Cardboard/Cardboard_02.xob has no collision chunk — no BLAS, no instance",
+    "587EA0FF913A9975/587EA0FF9CD4CD29: Assets/Props/Garbage/Cardboard/Cardboard_02.xob has no collision chunk — no BLAS, no instance",
+    "socekt_shutter_left_03: socket socekt_shutter_left_03 not found in Assets/Structures/Cultural/Church/ChurchSmall_E_01/ChurchSmall_E_01.xob — prefab coords used",
+    "socekt_shutter_left_01: socket socekt_shutter_left_01 not found in Assets/Structures/Cultural/Church/ChurchSmall_E_01/ChurchSmall_E_01.xob — prefab coords used",
+    "socekt_shutter_left_02: socket socekt_shutter_left_02 not found in Assets/Structures/Cultural/Church/ChurchSmall_E_01/ChurchSmall_E_01.xob — prefab coords used",
+    "socekt_shutter_right_02: socket socekt_shutter_right_02 not found in Assets/Structures/Cultural/Church/ChurchSmall_E_01/ChurchSmall_E_01.xob — prefab coords used",
+    "socekt_shutter_right_03: socket socekt_shutter_right_03 not found in Assets/Structures/Cultural/Church/ChurchSmall_E_01/ChurchSmall_E_01.xob — prefab coords used",
+    "socekt_shutter_right_01: socket socekt_shutter_right_01 not found in Assets/Structures/Cultural/Church/ChurchSmall_E_01/ChurchSmall_E_01.xob — prefab coords used"
+  ]
+}

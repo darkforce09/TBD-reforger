@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 284,
+  "slug": "ShedMetal_03_v2",
+  "resourceName": "Prefabs/Structures/Industrial/Sheds/ShedMetal_03/ShedMetal_03_v2.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -5.440141677856445,
+      -3.6347310543060303,
+      -2.7417232990264893
+    ],
+    "max": [
+      5.796143531799316,
+      3.3471438884735107,
+      2.783233642578125
+    ]
+  },
+  "shellBvh": "blas/ShedMetal_03.bvh",
+  "instances": [
+    {
+      "id": "ShedMetal_03_v2",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Industrial/Sheds/ShedMetal_03/ShedMetal_03_v2.et",
+      "blas": "blas/ShedMetal_03.bvh",
+      "xob": "Assets/Structures/Industrial/Sheds/ShedMetal_03/ShedMetal_03.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "588EAD9CCA40DE05",
+      "kind": "furniture",
+      "prefab": "Prefabs/Structures/Industrial/Sheds/ShedMetal_03/ShedMetal_03_benches.et",
+      "blas": "blas/ShedMetal_03_benches.bvh",
+      "xob": "Assets/Structures/Industrial/Sheds/ShedMetal_03/ShedMetal_03_benches.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

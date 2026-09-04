@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1199,
+  "slug": "Castle_01_OuterWall_01_Skewed_01",
+  "resourceName": "Prefabs/Structures/Cultural/Castles/Castle_01_OuterWall_01_Skewed_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.046140000224113464,
+      -7.466580867767334,
+      -0.02904600091278553
+    ],
+    "max": [
+      15.44740104675293,
+      14.771417617797852,
+      2.932101011276245
+    ]
+  },
+  "shellBvh": "blas/Castle_01_OuterWall_05.bvh",
+  "instances": [
+    {
+      "id": "Castle_01_OuterWall_01_Skewed_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Castles/Castle_01_OuterWall_01_Skewed_01.et",
+      "blas": "blas/Castle_01_OuterWall_05.bvh",
+      "xob": "Assets/Structures/Cultural/Castles/Castle_01/Castle_01_OuterWall_05.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

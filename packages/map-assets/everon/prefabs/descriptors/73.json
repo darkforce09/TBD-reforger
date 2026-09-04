@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 73,
+  "slug": "b_rubus_idaeus_1s",
+  "resourceName": "Prefabs/Vegetation/Bush/b_rubus_idaeus_1s.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7758236179614588,
+      -0.3818713926137942,
+      -0.666871284703233
+    ],
+    "max": [
+      0.6455972585001941,
+      1.3366526042704971,
+      0.7461946562783923
+    ]
+  },
+  "shellBvh": "blas/B_Rubus_idaeus_1s.bvh",
+  "instances": [
+    {
+      "id": "b_rubus_idaeus_1s",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Bush/b_rubus_idaeus_1s.et",
+      "blas": "blas/B_Rubus_idaeus_1s.bvh",
+      "xob": "Assets/Vegetation/Bush/Rubus_Idaeus/B_Rubus_idaeus_1s.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

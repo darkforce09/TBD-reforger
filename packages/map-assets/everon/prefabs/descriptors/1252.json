@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1252,
+  "slug": "FuelTank_02_Base",
+  "resourceName": "Prefabs/Structures/Industrial/Containers/FuelTanks/FuelTank_02/FuelTank_02_Base.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.965458869934082,
+      -4.5,
+      -1.4214024543762207
+    ],
+    "max": [
+      6.1032538414001465,
+      3.1525421142578125,
+      1.4214015007019043
+    ]
+  },
+  "shellBvh": "blas/FuelTank_02.bvh",
+  "instances": [
+    {
+      "id": "FuelTank_02_Base",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Industrial/Containers/FuelTanks/FuelTank_02/FuelTank_02_Base.et",
+      "blas": "blas/FuelTank_02.bvh",
+      "xob": "Assets/Structures/Industrial/Containers/FuelTanks/FuelTank_02/FuelTank_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

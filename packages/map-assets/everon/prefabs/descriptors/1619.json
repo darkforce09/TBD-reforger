@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1619,
+  "slug": "ConcreteBridge_01_Pillar",
+  "resourceName": "Prefabs/Structures/Infrastructure/Bridges/ConcreteBridge_01/ConcreteBridge_01_Pillar.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.82503205537796,
+      -4.300042271614075,
+      -6.349997520446777
+    ],
+    "max": [
+      1.8583680987358093,
+      7.045157313346863,
+      6.400002999231219
+    ]
+  },
+  "shellBvh": "blas/ConcreteBridge_01_Pillar.bvh",
+  "instances": [
+    {
+      "id": "ConcreteBridge_01_Pillar",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Infrastructure/Bridges/ConcreteBridge_01/ConcreteBridge_01_Pillar.et",
+      "blas": "blas/ConcreteBridge_01_Pillar.bvh",
+      "xob": "Assets/Structures/Infrastructure/Bridges/ConcreteBridge_01/ConcreteBridge_01_Pillar.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1203,
+  "slug": "BarbedTape_Coil",
+  "resourceName": "Prefabs/Props/Military/Fortification/BarbedTape_Coil.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

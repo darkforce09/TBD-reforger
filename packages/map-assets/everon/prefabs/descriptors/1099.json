@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1099,
+  "slug": "PierCover_04",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/PierCover_04.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.928757905960083,
+      0.00532800005748868,
+      -0.07756499946117401
+    ],
+    "max": [
+      2.8854410648345947,
+      5.739275932312012,
+      0.07882200181484222
+    ]
+  },
+  "shellBvh": "blas/PierCover_04.bvh",
+  "instances": [
+    {
+      "id": "PierCover_04",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/PierCover_04.et",
+      "blas": "blas/PierCover_04.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/PierCover_04.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

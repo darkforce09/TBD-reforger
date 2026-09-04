@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1100,
+  "slug": "ConcreteWall_01_Pole",
+  "resourceName": "Prefabs/Structures/Walls/Concrete/ConcreteWall_01/ConcreteWall_01_Pole.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      0.0007751062512397766,
+      -0.8017868995666504,
+      -0.12395509995985776
+    ],
+    "max": [
+      0.21077509969472885,
+      2.9600131511688232,
+      0.12604490004014224
+    ]
+  },
+  "shellBvh": "blas/ConcreteWall_01_Pole.bvh",
+  "instances": [
+    {
+      "id": "ConcreteWall_01_Pole",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/ConcreteWall_01/ConcreteWall_01_Pole.et",
+      "blas": "blas/ConcreteWall_01_Pole.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/ConcreteWall_01_Pole.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

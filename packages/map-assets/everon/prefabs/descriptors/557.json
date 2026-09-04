@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 557,
+  "slug": "FireStation_E_01_hose_hanger",
+  "resourceName": "Prefabs/Structures/Services/Fire/FireStation_E_01/FireStation_E_01_hose_hanger.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.29373759031295776,
+      -0.009014399722218513,
+      -1.002655029296875
+    ],
+    "max": [
+      0.27921438217163086,
+      8.954007148742676,
+      1.0201770067214966
+    ]
+  },
+  "shellBvh": "blas/Firestation_hose_hanger.bvh",
+  "instances": [
+    {
+      "id": "FireStation_E_01_hose_hanger",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Services/Fire/FireStation_E_01/FireStation_E_01_hose_hanger.et",
+      "blas": "blas/Firestation_hose_hanger.bvh",
+      "xob": "Assets/Structures/Services/Fire/FireStation_E_01/Firestation_hose_hanger.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 225,
+  "slug": "BMP1_turret",
+  "resourceName": "Prefabs/Props/Wrecks/BMP1_wreck/BMP1_turret.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.8755813837051392,
+      -0.015047192573547363,
+      -0.872855544090271
+    ],
+    "max": [
+      0.8784745931625366,
+      0.7890588045120239,
+      2.192408561706543
+    ]
+  },
+  "shellBvh": "blas/BMP1_wreck_turret.bvh",
+  "instances": [
+    {
+      "id": "BMP1_turret",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Wrecks/BMP1_wreck/BMP1_turret.et",
+      "blas": "blas/BMP1_wreck_turret.bvh",
+      "xob": "Assets/Props/Wrecks/BMP1/BMP1_wreck_turret.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

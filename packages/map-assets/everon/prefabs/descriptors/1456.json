@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1456,
+  "slug": "StatueAnchor_01_stand",
+  "resourceName": "Prefabs/Structures/Cultural/Statues/StatueAnchor_01_stand.et",
+  "kind": "building",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

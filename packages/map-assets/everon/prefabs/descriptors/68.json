@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 68,
+  "slug": "Chest_01",
+  "resourceName": "Prefabs/Props/Furniture/Chest_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.3997700916362774,
+      -2.086162567138672e-7,
+      -0.1999148008708289
+    ],
+    "max": [
+      0.3997698916362751,
+      0.39835579693317413,
+      0.20000019396502466
+    ]
+  },
+  "shellBvh": "blas/Chest_01.bvh",
+  "instances": [
+    {
+      "id": "Chest_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Chest_01.et",
+      "blas": "blas/Chest_01.bvh",
+      "xob": "Assets/Props/Furniture/Chest_01/Chest_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

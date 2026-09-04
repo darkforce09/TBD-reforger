@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 536,
+  "slug": "ErodedEmbankment_01_dirt_wave",
+  "resourceName": "Prefabs/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_dirt_wave.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -7.938350200653076,
+      -1.211611032485962,
+      -2.1585469245910645
+    ],
+    "max": [
+      7.520124912261963,
+      1.8448870182037354,
+      6.305481910705566
+    ]
+  },
+  "shellBvh": "blas/ErodedEmbankment_01_dirt_wave.bvh",
+  "instances": [
+    {
+      "id": "ErodedEmbankment_01_dirt_wave",
+      "kind": "prop",
+      "prefab": "Prefabs/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_dirt_wave.et",
+      "blas": "blas/ErodedEmbankment_01_dirt_wave.bvh",
+      "xob": "Assets/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_dirt_wave.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

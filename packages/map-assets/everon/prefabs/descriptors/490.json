@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 490,
+  "slug": "Fountain_01",
+  "resourceName": "Prefabs/Structures/Cultural/Fountains/Fountain_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.5319340229034424,
+      -1.0,
+      -3.5349349975585938
+    ],
+    "max": [
+      3.5220279693603516,
+      2.231204032897949,
+      3.529932975769043
+    ]
+  },
+  "shellBvh": "blas/Fountain_01.bvh",
+  "instances": [
+    {
+      "id": "Fountain_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Fountains/Fountain_01.et",
+      "blas": "blas/Fountain_01.bvh",
+      "xob": "Assets/Structures/Cultural/Fountains/Fountain_01/Fountain_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

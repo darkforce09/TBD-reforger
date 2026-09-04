@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 900,
+  "slug": "BinInterior_01_base",
+  "resourceName": "Prefabs/Props/Garbage/Bins/BinInterior_01_base.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.18614810274372218,
+      -0.002518206834793091,
+      -0.1949610965085995
+    ],
+    "max": [
+      0.1903804987668991,
+      0.4781761020421982,
+      0.1949610965085995
+    ]
+  },
+  "shellBvh": "blas/BinInterior_01.bvh",
+  "instances": [
+    {
+      "id": "BinInterior_01_base",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Garbage/Bins/BinInterior_01_base.et",
+      "blas": "blas/BinInterior_01.bvh",
+      "xob": "Assets/Props/Garbage/Bins/BinInterior_01/BinInterior_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

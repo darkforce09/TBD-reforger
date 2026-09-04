@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 274,
+  "slug": "MarketStand_01_Umbrella",
+  "resourceName": "Prefabs/Props/Commercial/MarketStand_01_Umbrella.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

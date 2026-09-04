@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tbd.example/schema/blas-manifest.schema.json",
+  "title": "TBD Prefab BLAS Library Manifest",
+  "description": "T-090.12.2 — `prefabs/blas-manifest.json`: every BLAS file of the library with its byte size and triangle / kind counts, every prefab descriptor, the per-kind census and the `hot` prefetch set (the most-placed blocking prefabs, most first). Deterministic: `blas` sorted by path, `descriptors` by pid, no timestamps. Emitted by `cargo xtask map bvh-batch --all-prefabs`; Rust source of truth `map_engine_core::world::occluder::descriptor::BlasManifest`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "terrainId", "blas", "descriptors", "hot", "totals"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0.0" },
+    "terrainId": { "type": "string", "minLength": 1 },
+    "blas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "bytes", "tris", "kinds"],
+        "properties": {
+          "path": { "type": "string", "pattern": "^blas/.+\\.bvh$" },
+          "bytes": { "type": "integer", "minimum": 32 },
+          "tris": { "type": "integer", "minimum": 1 },
+          "kinds": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "minItems": 3, "maxItems": 3 }
+        }
+      }
+    },
+    "descriptors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pid", "path", "kind", "blocks", "canopy", "blas", "instanceCount", "instancesInWorld"],
+        "properties": {
+          "pid": { "type": "integer", "minimum": 0 },
+          "path": { "type": "string", "pattern": "^descriptors/[0-9]+\\.json$" },
+          "kind": { "type": "string", "minLength": 1 },
+          "blocks": { "type": "boolean" },
+          "canopy": { "type": "boolean" },
+          "blas": { "type": "array", "items": { "type": "string", "pattern": "^blas/.+\\.bvh$" } },
+          "instanceCount": { "type": "integer", "minimum": 0 },
+          "instancesInWorld": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "hot": { "type": "array", "items": { "type": "integer", "minimum": 0 } },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prefabs", "blocks", "canopy", "canopyHull", "blasFiles", "blasBytes", "byKind"],
+      "properties": {
+        "prefabs": { "type": "integer", "minimum": 0 },
+        "blocks": { "type": "integer", "minimum": 0 },
+        "canopy": { "type": "integer", "minimum": 0 },
+        "canopyHull": { "type": "integer", "minimum": 0 },
+        "blasFiles": { "type": "integer", "minimum": 0 },
+        "blasBytes": { "type": "integer", "minimum": 0 },
+        "byKind": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["prefabs", "blocks", "noMesh", "modelUnreadable", "noColl", "emptyColl", "unresolved", "bytes"],
+            "properties": {
+              "prefabs": { "type": "integer", "minimum": 0 },
+              "blocks": { "type": "integer", "minimum": 0 },
+              "noMesh": { "type": "integer", "minimum": 0 },
+              "modelUnreadable": { "type": "integer", "minimum": 0 },
+              "noColl": { "type": "integer", "minimum": 0 },
+              "emptyColl": { "type": "integer", "minimum": 0 },
+              "unresolved": { "type": "integer", "minimum": 0 },
+              "bytes": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

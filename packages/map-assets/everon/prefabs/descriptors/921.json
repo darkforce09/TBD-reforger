@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 921,
+  "slug": "PotatoCrop_01_Shortline",
+  "resourceName": "Prefabs/Vegetation/Vegetables/PotatoCrop_01_Shortline.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

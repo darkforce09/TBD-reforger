@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1182,
+  "slug": "BrickWall_02_Pole_orange",
+  "resourceName": "Prefabs/Structures/Walls/Brick/BrickWall_02/BrickWall_02_Pole_orange.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.003936007618904114,
+      -0.820602536201477,
+      -0.22718359325517667
+    ],
+    "max": [
+      0.42606399953365326,
+      2.1893534660339355,
+      0.2273183932484244
+    ]
+  },
+  "shellBvh": "blas/BrickWall_02_Pole.bvh",
+  "instances": [
+    {
+      "id": "BrickWall_02_Pole_orange",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Brick/BrickWall_02/BrickWall_02_Pole_orange.et",
+      "blas": "blas/BrickWall_02_Pole.bvh",
+      "xob": "Assets/Structures/Walls/Brick/BrickWall_02_Pole.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

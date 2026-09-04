@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 661,
+  "slug": "SawmillRail_01_10m",
+  "resourceName": "Prefabs/Structures/Infrastructure/Railways/SawmillRail_01/SawmillRail_01_10m.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.5042586885392666,
+      -0.4715682119131088,
+      -10.003210067749023
+    ],
+    "max": [
+      0.5401412881910801,
+      0.11898620426654816,
+      -0.0032100677490234375
+    ]
+  },
+  "shellBvh": "blas/SawmillRail_01_10m.bvh",
+  "instances": [
+    {
+      "id": "SawmillRail_01_10m",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Railways/SawmillRail_01/SawmillRail_01_10m.et",
+      "blas": "blas/SawmillRail_01_10m.bvh",
+      "xob": "Assets/Structures/Infrastructure/Railways/SawmillRail_01_10m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

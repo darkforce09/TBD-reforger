@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 17,
+  "slug": "BenchStadium_01",
+  "resourceName": "Prefabs/Props/Furniture/BenchStadium_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.0267341136932373,
+      -0.9784370064735413,
+      -0.9866899847984314
+    ],
+    "max": [
+      2.0267341136932373,
+      1.5591847896575928,
+      0.9931977987289429
+    ]
+  },
+  "shellBvh": "blas/BenchStadium_01.bvh",
+  "instances": [
+    {
+      "id": "BenchStadium_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchStadium_01.et",
+      "blas": "blas/BenchStadium_01.bvh",
+      "xob": "Assets/Props/Furniture/BenchStadium_01/BenchStadium_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

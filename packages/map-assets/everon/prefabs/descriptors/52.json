@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 52,
+  "slug": "SackUniversal_01_Pile",
+  "resourceName": "Prefabs/Props/Civilian/SackUniversal_01_Pile.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.8936907052993774,
+      -0.027667224407196045,
+      -0.7019154131412506
+    ],
+    "max": [
+      1.0611451603472233,
+      1.2251267731189728,
+      0.7799135744571686
+    ]
+  },
+  "shellBvh": "blas/SackUniversal_01_Pile.bvh",
+  "instances": [
+    {
+      "id": "SackUniversal_01_Pile",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/SackUniversal_01_Pile.et",
+      "blas": "blas/SackUniversal_01_Pile.bvh",
+      "xob": "Assets/Props/Civilian/SackUniversal_01/SackUniversal_01_Pile.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

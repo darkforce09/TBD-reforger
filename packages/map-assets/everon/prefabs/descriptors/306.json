@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 306,
+  "slug": "Castle_01_Stairs_01",
+  "resourceName": "Prefabs/Structures/Cultural/Castles/Castle_01_Stairs_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.3576314151287079,
+      -7.620373249053955,
+      0.008105278015136719
+    ],
+    "max": [
+      16.34958839416504,
+      5.9486517906188965,
+      2.902143955230713
+    ]
+  },
+  "shellBvh": "blas/Castle_01_Stairs_01.bvh",
+  "instances": [
+    {
+      "id": "Castle_01_Stairs_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Castles/Castle_01_Stairs_01.et",
+      "blas": "blas/Castle_01_Stairs_01.bvh",
+      "xob": "Assets/Structures/Cultural/Castles/Castle_01/Castle_01_Stairs_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

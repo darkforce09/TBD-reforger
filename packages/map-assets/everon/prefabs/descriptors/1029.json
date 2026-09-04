@@ -1,0 +1,183 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1029,
+  "slug": "Garage_E_01",
+  "resourceName": "Prefabs/Structures/Houses/Garage/Garage_E_01/Garage_E_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.45841646194458,
+      -1.1885731220245361,
+      -4.341177463531494
+    ],
+    "max": [
+      2.4605166912078857,
+      3.305461883544922,
+      5.4798264503479
+    ]
+  },
+  "shellBvh": "blas/Garage_E_01.bvh",
+  "instances": [
+    {
+      "id": "Garage_E_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Houses/Garage/Garage_E_01/Garage_E_01.et",
+      "blas": "blas/Garage_E_01.bvh",
+      "xob": "Assets/Structures/Houses/Garage/Garage_E_01/Garage_E_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_door_garage_02",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Garage_E_01_A_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_Garage_E_01_A_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Garage_E_01/Door_Garage_E_01_A_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          1.7299998998641968,
+          0.00021690000721719116,
+          2.989590883255005
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_garage_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Garage_E_01_A_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_Garage_E_01_A_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Garage_E_01/Door_Garage_E_01_A_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -1.7302452325820923,
+          0.00021690000721719116,
+          2.9895143508911133
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "5B18E6883A7C2E3C/5B18E4066275FFE7",
+      "kind": "furniture",
+      "prefab": "Prefabs/Structures/BuildingParts/Industrial/ToolRack_01_tool_01.et",
+      "blas": "blas/ToolRack_01_Tool_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Industrial/ToolRack_01/ToolRack_01_Tool_01.xob",
+      "local": {
+        "pos": [
+          -2.098,
+          0.003,
+          -0.547
+        ],
+        "quat": [
+          0.0,
+          -0.7199033328989116,
+          0.0,
+          0.6940743413216186
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords",
+      "parent": "5B18E6883A7C2E3C"
+    },
+    {
+      "id": "5B18E6883A7C2E3C/5B18E4066275C09A",
+      "kind": "glass",
+      "prefab": "Prefabs/Props/Civilian/BeerBottle_01_empty_green.et",
+      "blas": "blas/BeerBottle_01_Empty.bvh",
+      "xob": "Assets/Props/Civilian/BeerBottle_01/BeerBottle_01_Empty.xob",
+      "local": {
+        "pos": [
+          1.637,
+          0.003,
+          -3.863
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "5B18E6883A7C2E3C"
+    },
+    {
+      "id": "5B18E6883A7C2E3C/5B18E4066275C0C2",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/BoxWooden_01.et",
+      "blas": "blas/BoxWooden_01.bvh",
+      "xob": "Assets/Props/Crates/BoxWooden_01.xob",
+      "local": {
+        "pos": [
+          1.964,
+          0.003,
+          -1.937
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865475,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords",
+      "parent": "5B18E6883A7C2E3C"
+    }
+  ],
+  "notes": [
+    "5EE89DB4FCC3D7ED: Prefabs/Structures/Houses/Garage/Garage_E_01/HouseAddons/Probe_Garage_E_01.et has no mesh",
+    "5B18E6883A7C2E3C/5B18E4066275C0D7: Assets/Props/Civilian/PaintCan_01/PaintCan_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18E6883A7C2E3C/5B18E4066275FF83: Assets/Props/Civilian/PaintCan_01/PaintCan_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18E6883A7C2E3C/5B18E4066275FF90: Assets/Props/Garbage/Cardboard/Cardboard_Pile_03.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

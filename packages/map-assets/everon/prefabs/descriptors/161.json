@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 161,
+  "slug": "WoodPile_02_scattered",
+  "resourceName": "Prefabs/Props/Forest/WoodPile/WoodPile_02_scattered.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.4840011596679688,
+      -0.02490900084376335,
+      -1.9945080280303955
+    ],
+    "max": [
+      2.441333120688796,
+      1.0684330463409424,
+      1.8961272239685059
+    ]
+  },
+  "shellBvh": "blas/WoodPile_02_scattered.bvh",
+  "instances": [
+    {
+      "id": "WoodPile_02_scattered",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Forest/WoodPile/WoodPile_02_scattered.et",
+      "blas": "blas/WoodPile_02_scattered.bvh",
+      "xob": "Assets/Props/Forest/WoodPile_02/WoodPile_02_scattered.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

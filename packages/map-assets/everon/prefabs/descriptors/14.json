@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 14,
+  "slug": "TilePavement_01_Wide_End_Left",
+  "resourceName": "Prefabs/Structures/Infrastructure/Pavements/TilePavement_01/TilePavement_01_Wide_End_Left.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      0.06728494167327881,
+      -0.1477819993160665,
+      -1.9719202984124422
+    ],
+    "max": [
+      4.003816843032837,
+      0.15103199938312173,
+      1.9681167136877775
+    ]
+  },
+  "shellBvh": "blas/TilePavement_01_Wide_End_Left.bvh",
+  "instances": [
+    {
+      "id": "TilePavement_01_Wide_End_Left",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Pavements/TilePavement_01/TilePavement_01_Wide_End_Left.et",
+      "blas": "blas/TilePavement_01_Wide_End_Left.bvh",
+      "xob": "Assets/Structures/Infrastructure/Pavements/TilePavement_01/TilePavement_01_Wide_End_Left.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

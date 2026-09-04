@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1425,
+  "slug": "Henhouse_01",
+  "resourceName": "Prefabs/Structures/Agriculture/Henhouse/Henhouse_01/Henhouse_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.9258599877357483,
+      -0.9237610101699829,
+      -0.5209810137748718
+    ],
+    "max": [
+      2.370126962661743,
+      1.8570740222930908,
+      0.7196239829063416
+    ]
+  },
+  "shellBvh": "blas/Henhouse_01.bvh",
+  "instances": [
+    {
+      "id": "Henhouse_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Agriculture/Henhouse/Henhouse_01/Henhouse_01.et",
+      "blas": "blas/Henhouse_01.bvh",
+      "xob": "Assets/Structures/Agriculture/Henhouse_01/Henhouse_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

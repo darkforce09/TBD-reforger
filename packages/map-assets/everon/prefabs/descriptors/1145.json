@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1145,
+  "slug": "GraniteCliff_03",
+  "resourceName": "Prefabs/Rocks/Granite/GraniteCliff_03.et",
+  "kind": "rock",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -12.615922927856445,
+      -1.6028709411621094,
+      -5.942537784576416
+    ],
+    "max": [
+      13.364740371704102,
+      22.342660903930664,
+      8.2774076461792
+    ]
+  },
+  "shellBvh": "blas/GraniteCliff_03.bvh",
+  "instances": [
+    {
+      "id": "GraniteCliff_03",
+      "kind": "prop",
+      "prefab": "Prefabs/Rocks/Granite/GraniteCliff_03.et",
+      "blas": "blas/GraniteCliff_03.bvh",
+      "xob": "Assets/Rocks/Granite/GraniteCliff_03.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

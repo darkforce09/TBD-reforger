@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 780,
+  "slug": "SignGiveWay_01",
+  "resourceName": "Prefabs/Structures/Signs/Warnings/SignGiveWay_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.45899398683104664,
+      -0.4846396781504154,
+      0.03854299895465374
+    ],
+    "max": [
+      0.4537840032717213,
+      0.33014538884162903,
+      0.058542998507618904
+    ]
+  },
+  "shellBvh": "blas/Sign_TriangleUpsideDown_A.bvh",
+  "instances": [
+    {
+      "id": "SignGiveWay_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Warnings/SignGiveWay_01.et",
+      "blas": "blas/Sign_TriangleUpsideDown_A.bvh",
+      "xob": "Assets/Structures/Signs/Warnings/Sign_TriangleUpsideDown_A.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

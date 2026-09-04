@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1615,
+  "slug": "LobsterTrapWooden_02",
+  "resourceName": "Prefabs/Props/Naval/LobsterTrapWooden_02.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.46228620409965515,
+      -0.00107999995816499,
+      -0.34844619035720825
+    ],
+    "max": [
+      0.46083989553153515,
+      0.4356124997138977,
+      0.34395480155944824
+    ]
+  },
+  "shellBvh": "blas/LobsterTrapWooden_02.bvh",
+  "instances": [
+    {
+      "id": "LobsterTrapWooden_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Naval/LobsterTrapWooden_02.et",
+      "blas": "blas/LobsterTrapWooden_02.bvh",
+      "xob": "Assets/Props/Naval/FishingGear_01/LobsterTrapWooden_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

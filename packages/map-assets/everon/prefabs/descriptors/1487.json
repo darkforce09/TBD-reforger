@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1487,
+  "slug": "BarkBeetleTrap_E_01",
+  "resourceName": "Prefabs/Structures/Forest/BarkBeetleTrap_E_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.22925370116718113,
+      -0.3260430097579956,
+      -0.15215620398521423
+    ],
+    "max": [
+      0.2321463010739535,
+      1.6025868654251099,
+      0.15467359370086342
+    ]
+  },
+  "shellBvh": "blas/BarkBeetleTrap_E_01.bvh",
+  "instances": [
+    {
+      "id": "BarkBeetleTrap_E_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Forest/BarkBeetleTrap_E_01.et",
+      "blas": "blas/BarkBeetleTrap_E_01.bvh",
+      "xob": "Assets/Structures/Forest/BarkBeetleTraps/BarkBeetleTrap_E_01/BarkBeetleTrap_E_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

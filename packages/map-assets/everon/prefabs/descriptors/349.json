@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 349,
+  "slug": "SignStop_01",
+  "resourceName": "Prefabs/Structures/Signs/Warnings/SignStop_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.34900400042533875,
+      -0.3490041004253399,
+      0.038985298946499825
+    ],
+    "max": [
+      0.3490041004253399,
+      0.34900400042533875,
+      0.05898529849946499
+    ]
+  },
+  "shellBvh": "blas/Sign_Octagon_A.bvh",
+  "instances": [
+    {
+      "id": "SignStop_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Warnings/SignStop_01.et",
+      "blas": "blas/Sign_Octagon_A.bvh",
+      "xob": "Assets/Structures/Signs/Warnings/Sign_Octagon_A.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

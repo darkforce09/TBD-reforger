@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 518,
+  "slug": "WoodenPalletBox_01",
+  "resourceName": "Prefabs/Props/Industrial/Pallets/WoodenPalletBox_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.5640990138053894,
+      -0.020903000608086586,
+      -0.6645849943161011
+    ],
+    "max": [
+      0.5701249837875366,
+      0.988976001739502,
+      0.6563190221786499
+    ]
+  },
+  "shellBvh": "blas/WoodenPalletBox_01.bvh",
+  "instances": [
+    {
+      "id": "WoodenPalletBox_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Industrial/Pallets/WoodenPalletBox_01.et",
+      "blas": "blas/WoodenPalletBox_01.bvh",
+      "xob": "Assets/Props/Industrial/Pallets/WoodenPalletBox_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

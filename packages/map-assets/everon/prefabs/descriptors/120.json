@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 120,
+  "slug": "PipeRailing_01_6m",
+  "resourceName": "Prefabs/Structures/Walls/Pipe/PipeRailing_01/PipeRailing_01_6m.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

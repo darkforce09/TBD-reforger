@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 635,
+  "slug": "Lighting_Eden",
+  "resourceName": "Prefabs/World/Game/Eden/Lighting_Eden.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

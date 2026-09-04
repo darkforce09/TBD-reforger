@@ -1,0 +1,461 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1395,
+  "slug": "PierConcrete_01_20m",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/PierConcrete_01_20m.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -9.999999046325684,
+      -4.0059027671813965,
+      -4.7744849026203156
+    ],
+    "max": [
+      10.005485534667969,
+      7.883538439869881,
+      4.899746865034103
+    ]
+  },
+  "shellBvh": "blas/PierConcrete_01_20m.bvh",
+  "instances": [
+    {
+      "id": "PierConcrete_01_20m",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/PierConcrete_01_20m.et",
+      "blas": "blas/PierConcrete_01_20m.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/PierConcrete_01_20m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_wood_long_003",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.et",
+      "blas": "blas/Pier_Wood_Long_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.xob",
+      "local": {
+        "pos": [
+          5.133169174194336,
+          3.518564462661743,
+          -4.043807506561279
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_wood_long_004",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.et",
+      "blas": "blas/Pier_Wood_Long_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.xob",
+      "local": {
+        "pos": [
+          -4.823724746704102,
+          3.518564462661743,
+          -4.043807506561279
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_wood_long_002",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.et",
+      "blas": "blas/Pier_Wood_Long_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.xob",
+      "local": {
+        "pos": [
+          5.133169174194336,
+          3.518564462661743,
+          4.024347305297852
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_wood_long_001",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.et",
+      "blas": "blas/Pier_Wood_Long_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.xob",
+      "local": {
+        "pos": [
+          -4.823725700378418,
+          3.518564462661743,
+          4.024347305297852
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_chain_tires_001",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Tires_02.et",
+      "blas": "blas/Pier_Tires_02.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Tires_02.xob",
+      "local": {
+        "pos": [
+          4.741512298583984,
+          4.066190719604492,
+          3.3769452571868896
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_chain_tires_002",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Tires_02.et",
+      "blas": "blas/Pier_Tires_02.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Tires_02.xob",
+      "local": {
+        "pos": [
+          -4.705792427062988,
+          4.066190719604492,
+          3.3769452571868896
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_tire_001",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Tires_01.et",
+      "blas": "blas/Pier_Tires_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Tires_01.xob",
+      "local": {
+        "pos": [
+          -7.209328651428223,
+          4.063497066497803,
+          3.375307321548462
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_tire_004",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Tires_01.et",
+      "blas": "blas/Pier_Tires_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Tires_01.xob",
+      "local": {
+        "pos": [
+          7.242806434631348,
+          4.063497066497803,
+          3.375307321548462
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_tire_002",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Tires_01.et",
+      "blas": "blas/Pier_Tires_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Tires_01.xob",
+      "local": {
+        "pos": [
+          -2.200521230697632,
+          4.063497066497803,
+          3.375307321548462
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_tire_003",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Tires_01.et",
+      "blas": "blas/Pier_Tires_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Tires_01.xob",
+      "local": {
+        "pos": [
+          2.2375152111053467,
+          4.063497066497803,
+          3.375307321548462
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_bollard_004",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          7.242161273956299,
+          3.9772000312805176,
+          3.365043878555298
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_bollard_006",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          -7.2113494873046875,
+          3.9772000312805176,
+          -3.3907859325408936
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_bollard_002",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          -2.2019834518432617,
+          3.9725100994110107,
+          3.365043878555298
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_bollard_003",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          2.2354373931884766,
+          3.9618923664093018,
+          3.365043878555298
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_bollard_009",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          7.242161273956299,
+          3.9772000312805176,
+          -3.3907859325408936
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_bollard_007",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          -2.2019834518432617,
+          3.9872000217437744,
+          -3.3907859325408936
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_bollard_008",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          2.2354373931884766,
+          3.9872000217437744,
+          -3.3907859325408936
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_bollard_001",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          -7.2113494873046875,
+          3.9772000312805176,
+          3.365043878555298
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ]
+}

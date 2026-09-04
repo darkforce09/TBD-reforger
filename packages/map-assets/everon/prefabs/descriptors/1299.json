@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1299,
+  "slug": "WoodenWall_01_Pole",
+  "resourceName": "Prefabs/Structures/Walls/Wooden/WoodenWall_01/WoodenWall_01_Pole.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

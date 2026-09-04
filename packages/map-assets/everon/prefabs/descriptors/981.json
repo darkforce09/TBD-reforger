@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 981,
+  "slug": "SignDirection_Castle_01_left",
+  "resourceName": "Prefabs/Structures/Signs/Directions/SignDirection_Castle_01/SignDirection_Castle_01_left.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.5115602761507034,
+      -0.13846839778125286,
+      0.03330030106008053
+    ],
+    "max": [
+      0.7360396832227707,
+      0.16933159716427326,
+      0.05330030061304569
+    ]
+  },
+  "shellBvh": "blas/SignDirection_Eden_01_Left.bvh",
+  "instances": [
+    {
+      "id": "SignDirection_Castle_01_left",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Directions/SignDirection_Castle_01/SignDirection_Castle_01_left.et",
+      "blas": "blas/SignDirection_Eden_01_Left.bvh",
+      "xob": "Assets/Structures/Signs/Directions/SignDirection_Eden_01_Left.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

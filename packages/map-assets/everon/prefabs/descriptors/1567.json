@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1567,
+  "slug": "Rack_01_Long",
+  "resourceName": "Prefabs/Props/Furniture/Rack_01_Long.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.43216609954834,
+      -0.00037900000461377203,
+      -0.018306000158190727
+    ],
+    "max": [
+      0.015572999604046345,
+      2.190819025039673,
+      0.7325440049171448
+    ]
+  },
+  "shellBvh": "blas/Rack_01_Long.bvh",
+  "instances": [
+    {
+      "id": "Rack_01_Long",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/Rack_01_Long.et",
+      "blas": "blas/Rack_01_Long.bvh",
+      "xob": "Assets/Props/Furniture/Rack_01/Rack_01_Long.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

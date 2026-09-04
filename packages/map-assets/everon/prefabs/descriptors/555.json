@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 555,
+  "slug": "Lounger_01_red",
+  "resourceName": "Prefabs/Props/Recreation/Beach/Lounger_01/Lounger_01_red.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.3803099989891052,
+      -0.00442179199612891,
+      -1.0195316524931215
+    ],
+    "max": [
+      0.3803099989891052,
+      0.7679745370549371,
+      1.0136650204658508
+    ]
+  },
+  "shellBvh": "blas/Lounger_01.bvh",
+  "instances": [
+    {
+      "id": "Lounger_01_red",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Recreation/Beach/Lounger_01/Lounger_01_red.et",
+      "blas": "blas/Lounger_01.bvh",
+      "xob": "Assets/Props/Recreation/Beach/Lounger_01/Lounger_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

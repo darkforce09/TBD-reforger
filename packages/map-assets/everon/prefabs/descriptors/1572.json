@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1572,
+  "slug": "WoodenFence_03_2m",
+  "resourceName": "Prefabs/Structures/Walls/Wooden/WoodenFence_03/WoodenFence_03_2m.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.7881393432617188e-7,
+      -0.3186349868774414,
+      -0.048445701599121094
+    ],
+    "max": [
+      2.0080676078796387,
+      1.2077410221099854,
+      0.06048540212213993
+    ]
+  },
+  "shellBvh": "blas/WoodenFence_03_2m.bvh",
+  "instances": [
+    {
+      "id": "WoodenFence_03_2m",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Wooden/WoodenFence_03/WoodenFence_03_2m.et",
+      "blas": "blas/WoodenFence_03_2m.bvh",
+      "xob": "Assets/Structures/Walls/Wooden/WoodenFence_03_2m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

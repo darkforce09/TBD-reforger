@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 32,
+  "slug": "HarborRail_01_4m",
+  "resourceName": "Prefabs/Structures/Infrastructure/Railways/HarborRail_01/HarborRail_01_4m.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.000004600000011,
+      -0.0005158036947250366,
+      -0.07739019393920898
+    ],
+    "max": [
+      1.9999992847442627,
+      0.15549945831298828,
+      0.07739067077636719
+    ]
+  },
+  "shellBvh": "blas/HarborRail_01_4m.bvh",
+  "instances": [
+    {
+      "id": "HarborRail_01_4m",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Railways/HarborRail_01/HarborRail_01_4m.et",
+      "blas": "blas/HarborRail_01_4m.bvh",
+      "xob": "Assets/Structures/Infrastructure/Railways/HarborRail_01_4m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

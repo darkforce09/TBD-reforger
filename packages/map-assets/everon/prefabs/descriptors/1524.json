@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1524,
+  "slug": "t_alnus_glutinosa_3s",
+  "resourceName": "Prefabs/Vegetation/Tree/t_alnus_glutinosa/t_alnus_glutinosa_3s.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -5.8906784049768595,
+      -1.2494779825210571,
+      -6.603790622864212
+    ],
+    "max": [
+      5.715882671397543,
+      17.825593614362397,
+      6.377793112791491
+    ]
+  },
+  "shellBvh": "blas/T_Alnus_glutinosa_3s.bvh",
+  "instances": [
+    {
+      "id": "t_alnus_glutinosa_3s",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_alnus_glutinosa/t_alnus_glutinosa_3s.et",
+      "blas": "blas/T_Alnus_glutinosa_3s.bvh",
+      "xob": "Assets/Vegetation/Tree/Alnus_Glutinosa/T_Alnus_glutinosa_3s.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

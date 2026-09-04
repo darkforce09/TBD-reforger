@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1060,
+  "slug": "PipeRailing_01_Pole",
+  "resourceName": "Prefabs/Structures/Walls/Pipe/PipeRailing_01/PipeRailing_01_Pole.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.031208598986268044,
+      -1.9999674558639526,
+      -0.06943580182269216
+    ],
+    "max": [
+      0.0729913990944624,
+      0.9594324827194214,
+      0.06016420153900981
+    ]
+  },
+  "shellBvh": "blas/PipeRailing_01_Pole.bvh",
+  "instances": [
+    {
+      "id": "PipeRailing_01_Pole",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Pipe/PipeRailing_01/PipeRailing_01_Pole.et",
+      "blas": "blas/PipeRailing_01_Pole.bvh",
+      "xob": "Assets/Structures/Walls/Pipe/PipeRailing_01_Pole.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

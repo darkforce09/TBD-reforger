@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 905,
+  "slug": "PlasticVergePost_01",
+  "resourceName": "Prefabs/Structures/Signs/Traffic/VergePost/PlasticVergePost_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.057679999619722366,
+      -0.29733437299728394,
+      -0.05990070104598999
+    ],
+    "max": [
+      0.057679999619722366,
+      1.0441086292266846,
+      0.07499430328607559
+    ]
+  },
+  "shellBvh": "blas/PlasticVergePost_01.bvh",
+  "instances": [
+    {
+      "id": "PlasticVergePost_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Traffic/VergePost/PlasticVergePost_01.et",
+      "blas": "blas/PlasticVergePost_01.bvh",
+      "xob": "Assets/Structures/Signs/Traffic/PlasticVergePost_01/PlasticVergePost_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

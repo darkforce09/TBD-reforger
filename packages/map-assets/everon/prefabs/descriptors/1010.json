@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1010,
+  "slug": "NetHanger_01_stick_A",
+  "resourceName": "Prefabs/Props/Naval/NetHanger_01_stick_A.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

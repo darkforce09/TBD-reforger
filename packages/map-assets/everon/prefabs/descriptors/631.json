@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 631,
+  "slug": "T_trunk_debris_03",
+  "resourceName": "Prefabs/Vegetation/Tree/Debris/T_trunk_debris_03.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7048324942588806,
+      -0.06916080415248871,
+      -3.38785457611084
+    ],
+    "max": [
+      0.7444154620170593,
+      2.18211030960083,
+      6.491921424865723
+    ]
+  },
+  "shellBvh": "blas/T_trunk_debris_03.bvh",
+  "instances": [
+    {
+      "id": "T_trunk_debris_03",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/Debris/T_trunk_debris_03.et",
+      "blas": "blas/T_trunk_debris_03.bvh",
+      "xob": "Assets/Vegetation/Tree/TreeParts/T_trunk_debris_03.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

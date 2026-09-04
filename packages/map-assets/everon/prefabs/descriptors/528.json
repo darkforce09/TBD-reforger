@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 528,
+  "slug": "Junk_01_single_bathtub",
+  "resourceName": "Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_single_bathtub.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.4790199100971222,
+      0.00028380006551742554,
+      -1.1687897741794586
+    ],
+    "max": [
+      0.4735417068004608,
+      0.5685606896877289,
+      1.0091933012008667
+    ]
+  },
+  "shellBvh": "blas/Junk_01_bathtub.bvh",
+  "instances": [
+    {
+      "id": "Junk_01_single_bathtub",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_single_bathtub.et",
+      "blas": "blas/Junk_01_bathtub.bvh",
+      "xob": "Assets/Props/Garbage/Generic/Junk_01/Junk_01_bathtub.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

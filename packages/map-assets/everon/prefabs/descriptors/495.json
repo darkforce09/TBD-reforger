@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 495,
+  "slug": "WoodenWall_01_4m",
+  "resourceName": "Prefabs/Structures/Walls/Wooden/WoodenWall_01/WoodenWall_01_4m.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 626,
+  "slug": "Jerrycan_01",
+  "resourceName": "Prefabs/Props/Civilian/Jerrycan_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.07841300219297409,
+      0.0036279999185353518,
+      -0.18642830103635788
+    ],
+    "max": [
+      0.07841300219297409,
+      0.5169169902801514,
+      0.18322500586509705
+    ]
+  },
+  "shellBvh": "blas/Jerrycan_01.bvh",
+  "instances": [
+    {
+      "id": "Jerrycan_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/Jerrycan_01.et",
+      "blas": "blas/Jerrycan_01.bvh",
+      "xob": "Assets/Items/Fuel/Jerrycan_01/Jerrycan_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1393,
+  "slug": "PosterSet_02_V1",
+  "resourceName": "Prefabs/Props/Commercial/Posters/PosterSet_02_V1.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

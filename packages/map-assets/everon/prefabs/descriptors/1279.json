@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1279,
+  "slug": "PlankPile_01_Large",
+  "resourceName": "Prefabs/Props/Construction/PlankPile/PlankPile_01_Large.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.1330311298370361,
+      0.0,
+      -2.1143410205841064
+    ],
+    "max": [
+      1.0824748277664185,
+      1.2615729570388794,
+      2.1096410751342773
+    ]
+  },
+  "shellBvh": "blas/PlankPile_01_Large.bvh",
+  "instances": [
+    {
+      "id": "PlankPile_01_Large",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Construction/PlankPile/PlankPile_01_Large.et",
+      "blas": "blas/PlankPile_01_Large.bvh",
+      "xob": "Assets/Props/Construction/PlankPile_01/PlankPile_01_Large.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

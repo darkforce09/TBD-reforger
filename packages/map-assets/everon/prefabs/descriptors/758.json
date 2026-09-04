@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 758,
+  "slug": "Latrine_01",
+  "resourceName": "Prefabs/Structures/Civilian/Latrine_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.6911740303039551,
+      -1.1640291213989258,
+      -0.805216908454895
+    ],
+    "max": [
+      0.6619449853897095,
+      2.339294672012329,
+      0.9008181095123291
+    ]
+  },
+  "shellBvh": "blas/Latrine_01.bvh",
+  "instances": [
+    {
+      "id": "Latrine_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Civilian/Latrine_01.et",
+      "blas": "blas/Latrine_01.bvh",
+      "xob": "Assets/Structures/Civilian/Latrine_01/Latrine_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_door_ext_left_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Latrine_01_A_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_Latrine_01_A_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Latrine/Door_Latrine_01_A_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          0.4745733141899109,
+          0.01512099988758564,
+          0.642427921295166
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    }
+  ]
+}

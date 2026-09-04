@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 762,
+  "slug": "AshtrayStreet_01",
+  "resourceName": "Prefabs/Props/Civilian/AshtrayStreet_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.14548300206661224,
+      -0.0010166997089982033,
+      -0.14548300206661224
+    ],
+    "max": [
+      0.14548300206661224,
+      0.9227989912033081,
+      0.14548300206661224
+    ]
+  },
+  "shellBvh": "blas/AshtrayStreet_01.bvh",
+  "instances": [
+    {
+      "id": "AshtrayStreet_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/AshtrayStreet_01.et",
+      "blas": "blas/AshtrayStreet_01.bvh",
+      "xob": "Assets/Props/Civilian/AshtrayStreet_01/AshtrayStreet_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

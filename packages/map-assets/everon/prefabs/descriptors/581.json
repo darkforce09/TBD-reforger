@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 581,
+  "slug": "Beehive_01_green",
+  "resourceName": "Prefabs/Props/Agriculture/Beehive_01/Beehive_01_green.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.24274200201034546,
+      -0.06103511154651642,
+      -0.354328989982605
+    ],
+    "max": [
+      0.24874499440193176,
+      0.8501679301261902,
+      0.28106099367141724
+    ]
+  },
+  "shellBvh": "blas/Beehive_01.bvh",
+  "instances": [
+    {
+      "id": "Beehive_01_green",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Beehive_01/Beehive_01_green.et",
+      "blas": "blas/Beehive_01.bvh",
+      "xob": "Assets/Props/Agricultural/Beehive_01/Beehive_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

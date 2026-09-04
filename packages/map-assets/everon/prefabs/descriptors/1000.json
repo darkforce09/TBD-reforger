@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1000,
+  "slug": "StoneRetainingWall_01_4m_30_V2",
+  "resourceName": "Prefabs/Structures/Walls/Stone/StoneRetainingWall_01/StoneRetainingWall_01_4m_30_V2.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.46842622756958,
+      -2.4666669368743896,
+      -1.8473418951034546
+    ],
+    "max": [
+      1.9772319793701172,
+      4.010580062866211,
+      1.5121862888336182
+    ]
+  },
+  "shellBvh": "blas/StoneRetainingWall_01_4m_30.bvh",
+  "instances": [
+    {
+      "id": "StoneRetainingWall_01_4m_30_V2",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Stone/StoneRetainingWall_01/StoneRetainingWall_01_4m_30_V2.et",
+      "blas": "blas/StoneRetainingWall_01_4m_30.bvh",
+      "xob": "Assets/Structures/Walls/Stone/StoneRetainingWall_01_4m_30.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

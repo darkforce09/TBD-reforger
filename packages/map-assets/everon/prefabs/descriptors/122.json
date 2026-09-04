@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 122,
+  "slug": "House_Village_E_1I01_ruined",
+  "resourceName": "Prefabs/Structures/Houses/Village/House_Village_E_1I01/Dst/House_Village_E_1I01_ruined.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -5.060068130493164,
+      -4.370780944824219,
+      -6.073239326477051
+    ],
+    "max": [
+      4.900918006896973,
+      8.59618854522705,
+      6.267308712005615
+    ]
+  },
+  "shellBvh": "blas/House_Village_E_1I01_ruined.bvh",
+  "instances": [
+    {
+      "id": "House_Village_E_1I01_ruined",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Houses/Village/House_Village_E_1I01/Dst/House_Village_E_1I01_ruined.et",
+      "blas": "blas/House_Village_E_1I01_ruined.bvh",
+      "xob": "Assets/Structures/Houses/Village/House_Village_E_1I01/House_Village_E_1I01_ruined.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ],
+  "notes": [
+    "55D8AEAB1BD41619: Prefabs/Structures/Core/ProbeHouse_Base.et has no mesh"
+  ]
+}

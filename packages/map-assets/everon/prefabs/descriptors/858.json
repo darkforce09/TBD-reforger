@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 858,
+  "slug": "SoundWorld_Eden",
+  "resourceName": "Prefabs/Sounds/SoundWorld/SoundWorld_Eden.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

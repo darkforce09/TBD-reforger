@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 391,
+  "slug": "TirePile_01_medium",
+  "resourceName": "Prefabs/Props/Garbage/Tires/TirePile_01_medium.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.8754719495773315,
+      0.005357999820262194,
+      -1.605407953262329
+    ],
+    "max": [
+      2.149151086807251,
+      0.9528840184211731,
+      1.6835399866104126
+    ]
+  },
+  "shellBvh": "blas/TirePile_01_medium.bvh",
+  "instances": [
+    {
+      "id": "TirePile_01_medium",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Garbage/Tires/TirePile_01_medium.et",
+      "blas": "blas/TirePile_01_medium.bvh",
+      "xob": "Assets/Props/Garbage/Tires/TirePile_01/TirePile_01_medium.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

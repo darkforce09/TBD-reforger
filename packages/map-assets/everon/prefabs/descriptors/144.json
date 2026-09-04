@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 144,
+  "slug": "FlagPole_01_empty",
+  "resourceName": "Prefabs/Structures/Military/Flags/FlagPole_01/FlagPole_01_empty.et",
+  "kind": "building",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

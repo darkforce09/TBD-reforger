@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 112,
+  "slug": "SunshadeClosed_01_weight_redwhite",
+  "resourceName": "Prefabs/Props/Recreation/Beach/SunshadeClosed_01/SunshadeClosed_01_weight_redwhite.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": [],
+  "notes": [
+    "591C850C07830B30: Assets/Props/Recreation/Beach/SunshadeClosed_01/SunshadeClosed_01_Standing.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

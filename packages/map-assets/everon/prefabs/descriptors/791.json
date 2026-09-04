@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 791,
+  "slug": "Decal_CrossWalk_01",
+  "resourceName": "Prefabs/Decals/Markings/Decal_CrossWalk_01.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

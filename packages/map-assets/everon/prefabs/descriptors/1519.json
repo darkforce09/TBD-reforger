@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1519,
+  "slug": "t_betula_pendula_2f",
+  "resourceName": "Prefabs/Vegetation/Tree/t_betula_pendula/t_betula_pendula_2f.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -2.6517107635736465,
+      -0.4603079855442047,
+      -1.882542908191681
+    ],
+    "max": [
+      2.1164023727178574,
+      13.94493579864502,
+      2.2472010254859924
+    ]
+  },
+  "shellBvh": "blas/t_betula_pendula_2f.bvh",
+  "instances": [
+    {
+      "id": "t_betula_pendula_2f",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_betula_pendula/t_betula_pendula_2f.et",
+      "blas": "blas/t_betula_pendula_2f.bvh",
+      "xob": "Assets/Vegetation/Tree/Betula_Pendula/t_betula_pendula_2f.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 61,
+  "slug": "ContainerMetal_01_low_green",
+  "resourceName": "Prefabs/Props/Construction/ContainerMetal_01/ContainerMetal_01_low_green.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.0266060829162598,
+      -1.430511474609375e-6,
+      -1.7032077312469482
+    ],
+    "max": [
+      1.0266060829162598,
+      1.4956575632095337,
+      1.7032067775726318
+    ]
+  },
+  "shellBvh": "blas/MetalContainer_01_Low.bvh",
+  "instances": [
+    {
+      "id": "ContainerMetal_01_low_green",
+      "kind": "shell",
+      "prefab": "Prefabs/Props/Construction/ContainerMetal_01/ContainerMetal_01_low_green.et",
+      "blas": "blas/MetalContainer_01_Low.bvh",
+      "xob": "Assets/Props/Construction/ContainerMetal_01/MetalContainer_01_Low.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 872,
+  "slug": "ChairRecreation_01_white",
+  "resourceName": "Prefabs/Props/Furniture/ChairRecreation_01/ChairRecreation_01_white.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.24609999358654022,
+      -0.019158524473829264,
+      -0.30476507750133397
+    ],
+    "max": [
+      0.24609999358654022,
+      0.9671275783330202,
+      0.3057987252377701
+    ]
+  },
+  "shellBvh": "blas/ChairRecreation_01.bvh",
+  "instances": [
+    {
+      "id": "ChairRecreation_01_white",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/ChairRecreation_01/ChairRecreation_01_white.et",
+      "blas": "blas/ChairRecreation_01.bvh",
+      "xob": "Assets/Props/Furniture/ChairRecreation_01/ChairRecreation_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

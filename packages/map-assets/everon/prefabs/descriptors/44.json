@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 44,
+  "slug": "Castle_01_InnerWall_02",
+  "resourceName": "Prefabs/Structures/Cultural/Castles/Castle_01_InnerWall_02.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.04679400101304054,
+      -4.929333209991455,
+      -0.20273099839687347
+    ],
+    "max": [
+      15.986454963684082,
+      9.328866958618164,
+      1.0228400230407715
+    ]
+  },
+  "shellBvh": "blas/Castle_01_InnerWall_02.bvh",
+  "instances": [
+    {
+      "id": "Castle_01_InnerWall_02",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Castles/Castle_01_InnerWall_02.et",
+      "blas": "blas/Castle_01_InnerWall_02.bvh",
+      "xob": "Assets/Structures/Cultural/Castles/Castle_01/Castle_01_InnerWall_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

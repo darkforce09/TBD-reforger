@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1140,
+  "slug": "t_carpinus_betulus_3d",
+  "resourceName": "Prefabs/Vegetation/Tree/t_carpinus_betulus/t_carpinus_betulus_3d.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -7.936714172363281,
+      -1.2829409837722778,
+      -7.746203899383545
+    ],
+    "max": [
+      6.043707847595215,
+      21.570476531982422,
+      7.086316108703613
+    ]
+  },
+  "shellBvh": "blas/T_Carpinus_betulus_3d.bvh",
+  "instances": [
+    {
+      "id": "t_carpinus_betulus_3d",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_carpinus_betulus/t_carpinus_betulus_3d.et",
+      "blas": "blas/T_Carpinus_betulus_3d.bvh",
+      "xob": "Assets/Vegetation/Tree/Carpinus_Betulus/T_Carpinus_betulus_3d.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "t_carpinus_betulus_3d/canopy",
+      "kind": "treeCanopy",
+      "prefab": "Prefabs/Vegetation/Tree/t_carpinus_betulus/t_carpinus_betulus_3d.et",
+      "blas": "blas/T_Carpinus_betulus_3d_canopy.bvh",
+      "xob": "Assets/Vegetation/Tree/Carpinus_Betulus/T_Carpinus_betulus_3d.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "t_carpinus_betulus_3d"
+    }
+  ],
+  "notes": [
+    "t_carpinus_betulus_3d/canopy: convex hull of the visual LOD0 (1609 verts) tagged Foliage — the COLL carries no Foliage triangle"
+  ]
+}

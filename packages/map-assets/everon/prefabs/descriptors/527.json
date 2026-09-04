@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 527,
+  "slug": "StatueAnchor_01",
+  "resourceName": "Prefabs/Structures/Cultural/Statues/StatueAnchor_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.2412880659103394,
+      -0.05642835050821304,
+      -1.999456524848938
+    ],
+    "max": [
+      1.1766959428787231,
+      3.0349555015563965,
+      2.0842533111572266
+    ]
+  },
+  "shellBvh": "blas/StatueAnchor_01.bvh",
+  "instances": [
+    {
+      "id": "StatueAnchor_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Statues/StatueAnchor_01.et",
+      "blas": "blas/StatueAnchor_01.bvh",
+      "xob": "Assets/Structures/Cultural/Statues/StatueAnchor_01/StatueAnchor_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

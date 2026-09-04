@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 612,
+  "slug": "Tire_UAZ469",
+  "resourceName": "Prefabs/Props/VehicleParts/Tires/Tire_UAZ469.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

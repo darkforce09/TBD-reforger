@@ -1,0 +1,185 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1008,
+  "slug": "PierConcrete_01_corner_90",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/PierConcrete_01_corner_90.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -4.763428956270219,
+      -4.0059027671813965,
+      -4.76691797375679
+    ],
+    "max": [
+      5.4998321533203125,
+      7.883538439869881,
+      5.499323844909668
+    ]
+  },
+  "shellBvh": "blas/PierConcrete_01_corner_90.bvh",
+  "instances": [
+    {
+      "id": "PierConcrete_01_corner_90",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/PierConcrete_01_corner_90.et",
+      "blas": "blas/PierConcrete_01_corner_90.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/PierConcrete_01_corner_90.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_wood_long_001",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.et",
+      "blas": "blas/Pier_Wood_Long_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.xob",
+      "local": {
+        "pos": [
+          0.4656934142112732,
+          3.518564462661743,
+          -4.036240577697754
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_wood_long_002",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.et",
+      "blas": "blas/Pier_Wood_Long_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Wood_Long_01.xob",
+      "local": {
+        "pos": [
+          -4.032751560211182,
+          3.518564462661743,
+          1.047806978225708
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_bollard_003",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          -3.390279531478882,
+          3.994912624359131,
+          -1.9001402854919434
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_bollard_004",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          -3.3902783393859863,
+          3.9770708084106445,
+          3.109226942062378
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_bollard_002",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          -1.6245129108428955,
+          4.007909297943115,
+          -3.3907861709594727
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_bollard_001",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          3.384855270385742,
+          3.9819419384002686,
+          -3.3907854557037354
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ]
+}

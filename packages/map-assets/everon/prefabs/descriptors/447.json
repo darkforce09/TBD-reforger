@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 447,
+  "slug": "PierWooden_01_10m",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/PierWooden_01_10m.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7786740064620972,
+      -14.999999046325684,
+      -10.34000015258789
+    ],
+    "max": [
+      0.7857750058174133,
+      1.2667490243911743,
+      0.16807900369167328
+    ]
+  },
+  "shellBvh": "blas/PierWooden_01_10m.bvh",
+  "instances": [
+    {
+      "id": "PierWooden_01_10m",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/PierWooden_01_10m.et",
+      "blas": "blas/PierWooden_01_10m.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/PierWooden_01_10m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

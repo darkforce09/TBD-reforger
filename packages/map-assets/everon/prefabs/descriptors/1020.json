@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1020,
+  "slug": "StatueSoldier_02",
+  "resourceName": "Prefabs/Structures/Cultural/Statues/StatueSoldier_02/StatueSoldier_02.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7187550067901611,
+      -0.8830569982528687,
+      -0.7052509784698486
+    ],
+    "max": [
+      0.6947550177574158,
+      4.285995006561279,
+      0.7037829756736755
+    ]
+  },
+  "shellBvh": "blas/StatueSoldier_02.bvh",
+  "instances": [
+    {
+      "id": "StatueSoldier_02",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Statues/StatueSoldier_02/StatueSoldier_02.et",
+      "blas": "blas/StatueSoldier_02.bvh",
+      "xob": "Assets/Structures/Cultural/Statues/StatueSoldier_02/StatueSoldier_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 604,
+  "slug": "CalvarySmall_01",
+  "resourceName": "Prefabs/Structures/Cultural/Calvaries/CalvarySmall_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.39909879345213994,
+      -0.39730599522590637,
+      -0.35832101106643677
+    ],
+    "max": [
+      0.4004202089854516,
+      3.2855734825134277,
+      0.357681006193161
+    ]
+  },
+  "shellBvh": "blas/CalvarySmall_01.bvh",
+  "instances": [
+    {
+      "id": "CalvarySmall_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Cultural/Calvaries/CalvarySmall_01.et",
+      "blas": "blas/CalvarySmall_01.bvh",
+      "xob": "Assets/Structures/Cultural/Calvaries/CalvarySmall_01/CalvarySmall_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

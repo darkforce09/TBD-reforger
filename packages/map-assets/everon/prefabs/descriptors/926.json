@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 926,
+  "slug": "MooringBuoy_01",
+  "resourceName": "Prefabs/Props/Naval/MooringBuoy_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -10.090117834445643,
+      -25.609347950400547,
+      -10.075979232788086
+    ],
+    "max": [
+      10.0652494430542,
+      3.330426812171936,
+      10.079231262207031
+    ]
+  },
+  "shellBvh": "blas/MooringBuoy_01.bvh",
+  "instances": [
+    {
+      "id": "MooringBuoy_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Naval/MooringBuoy_01.et",
+      "blas": "blas/MooringBuoy_01.bvh",
+      "xob": "Assets/Props/Naval/MooringBuoy_01/MooringBuoy_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ],
+  "notes": [
+    "66369AC8479DACF4: Prefabs/Props/Naval/Buoy_01_lightsource_red.et has no mesh"
+  ]
+}

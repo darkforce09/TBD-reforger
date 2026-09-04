@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 233,
+  "slug": "AirMattress_01_RedStripes",
+  "resourceName": "Prefabs/Props/Recreation/Beach/AirMattress_01/AirMattress_01_RedStripes.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.31366571481339633,
+      -0.0031546615995727834,
+      -0.9760759614688703
+    ],
+    "max": [
+      0.32013431494124234,
+      0.1489462667145096,
+      0.9719849228858948
+    ]
+  },
+  "shellBvh": "blas/AirMattress_01.bvh",
+  "instances": [
+    {
+      "id": "AirMattress_01_RedStripes",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Recreation/Beach/AirMattress_01/AirMattress_01_RedStripes.et",
+      "blas": "blas/AirMattress_01.bvh",
+      "xob": "Assets/Props/Recreation/Beach/AirMattress_01/AirMattress_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 176,
+  "slug": "LG_Lake_01",
+  "resourceName": "Prefabs/WEGenerators/Water/Lake/LG_Lake_01.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

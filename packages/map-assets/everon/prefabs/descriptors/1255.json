@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1255,
+  "slug": "WaterTank_01_v1",
+  "resourceName": "Prefabs/Props/Agriculture/WaterTank_01_v1.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

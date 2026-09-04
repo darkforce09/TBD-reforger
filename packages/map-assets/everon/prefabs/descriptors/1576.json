@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1576,
+  "slug": "ConcreteRetainingWall_02_8m",
+  "resourceName": "Prefabs/Structures/Walls/Concrete/ConcreteRetainingWall_02/ConcreteRetainingWall_02_8m.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.999999899999999,
+      -2.4666658639907837,
+      -2.7651072883745655
+    ],
+    "max": [
+      4.000000100000001,
+      4.001347899436951,
+      2.765106782899238
+    ]
+  },
+  "shellBvh": "blas/ConcreteRetainingWall_02_8m.bvh",
+  "instances": [
+    {
+      "id": "ConcreteRetainingWall_02_8m",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/ConcreteRetainingWall_02/ConcreteRetainingWall_02_8m.et",
+      "blas": "blas/ConcreteRetainingWall_02_8m.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/ConcreteRetainingWall_02_8m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

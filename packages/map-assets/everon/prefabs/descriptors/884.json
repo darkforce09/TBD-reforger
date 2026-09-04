@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 884,
+  "slug": "PipeRailing_02_Corner_Wide",
+  "resourceName": "Prefabs/Structures/Walls/Pipe/PipeRailing_02/PipeRailing_02_Corner_Wide.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

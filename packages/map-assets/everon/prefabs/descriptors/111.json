@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 111,
+  "slug": "ContainerMetal_01_base",
+  "resourceName": "Prefabs/Props/Construction/ContainerMetal_01/ContainerMetal_01_base.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.038062334060669,
+      -0.0002295970916748047,
+      -2.0000007152557373
+    ],
+    "max": [
+      1.0380628108978271,
+      1.820034384727478,
+      2.0131664276123047
+    ]
+  },
+  "shellBvh": "blas/ContainerMetal_01.bvh",
+  "instances": [
+    {
+      "id": "ContainerMetal_01_base",
+      "kind": "shell",
+      "prefab": "Prefabs/Props/Construction/ContainerMetal_01/ContainerMetal_01_base.et",
+      "blas": "blas/ContainerMetal_01.bvh",
+      "xob": "Assets/Props/Construction/ContainerMetal_01/ContainerMetal_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

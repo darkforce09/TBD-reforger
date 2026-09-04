@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1486,
+  "slug": "MessageBoardSmall_01_frame",
+  "resourceName": "Prefabs/Structures/Civilian/MessageBoard/MessageBoardSmall_01/MessageBoardSmall_01_frame.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7046980261802673,
+      0.0,
+      -0.015403300523757935
+    ],
+    "max": [
+      0.7046980261802673,
+      1.1072490215301514,
+      0.15521669387817383
+    ]
+  },
+  "shellBvh": "blas/MessageBoardSmall_01_frame.bvh",
+  "instances": [
+    {
+      "id": "MessageBoardSmall_01_frame",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Civilian/MessageBoard/MessageBoardSmall_01/MessageBoardSmall_01_frame.et",
+      "blas": "blas/MessageBoardSmall_01_frame.bvh",
+      "xob": "Assets/Structures/Civilian/MessageBoardSmall_01/MessageBoardSmall_01_frame.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

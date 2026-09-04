@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1430,
+  "slug": "Grave_E_01_Covered",
+  "resourceName": "Prefabs/Structures/Cultural/Cemeteries/Graves/Grave_E_01_Covered.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7085321918129921,
+      -0.17499340092763305,
+      -1.2271145805716515
+    ],
+    "max": [
+      0.6160677894949913,
+      0.27598679810762405,
+      1.4148853793740273
+    ]
+  },
+  "shellBvh": "blas/Grave_E_01_Covered.bvh",
+  "instances": [
+    {
+      "id": "Grave_E_01_Covered",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Cultural/Cemeteries/Graves/Grave_E_01_Covered.et",
+      "blas": "blas/Grave_E_01_Covered.bvh",
+      "xob": "Assets/Structures/Cultural/Cemeteries/Graves/Grave_01/Grave_E_01_Covered.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

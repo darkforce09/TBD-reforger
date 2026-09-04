@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 438,
+  "slug": "StoneVergePost_01_D_V2",
+  "resourceName": "Prefabs/Structures/Signs/Traffic/VergePost/StoneVergePost_01_D_V2.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.16734080505557358,
+      -0.06335282325744629,
+      -0.1719138998305425
+    ],
+    "max": [
+      0.16614520060829818,
+      0.8742051720619202,
+      0.17068109626416117
+    ]
+  },
+  "shellBvh": "blas/StoneVergePost_01_D2.bvh",
+  "instances": [
+    {
+      "id": "StoneVergePost_01_D_V2",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Traffic/VergePost/StoneVergePost_01_D_V2.et",
+      "blas": "blas/StoneVergePost_01_D2.bvh",
+      "xob": "Assets/Structures/Signs/Traffic/StoneVergePost_01/StoneVergePost_01_D2.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

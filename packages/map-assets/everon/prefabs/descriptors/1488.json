@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1488,
+  "slug": "p_arctium_lappa_0s",
+  "resourceName": "Prefabs/Vegetation/Plant/Arctium_Lappa/p_arctium_lappa_0s.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.2207091581076384,
+      -4.023313522338867e-7,
+      -1.067450700327754
+    ],
+    "max": [
+      1.2547679413110018,
+      0.5552926063537598,
+      0.9318532962352037
+    ]
+  },
+  "shellBvh": "blas/p_Arctium_lappa_0s.bvh",
+  "instances": [
+    {
+      "id": "p_arctium_lappa_0s",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Plant/Arctium_Lappa/p_arctium_lappa_0s.et",
+      "blas": "blas/p_Arctium_lappa_0s.bvh",
+      "xob": "Assets/Vegetation/Plant/Arctium_lappa/p_Arctium_lappa_0s.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

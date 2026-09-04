@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 115,
+  "slug": "t_picea_abies_stump_03_forest",
+  "resourceName": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_stump_03_forest.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.9214751720428467,
+      -1.274832010269165,
+      -0.9362893104553223
+    ],
+    "max": [
+      1.2535607814788818,
+      2.024976968765259,
+      0.8493286967277527
+    ]
+  },
+  "shellBvh": "blas/t_picea_abies_stump_02.bvh",
+  "instances": [
+    {
+      "id": "t_picea_abies_stump_03_forest",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_stump_03_forest.et",
+      "blas": "blas/t_picea_abies_stump_02.bvh",
+      "xob": "Assets/Vegetation/Tree/Picea_Abies/t_picea_abies_stump_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

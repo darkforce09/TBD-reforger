@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 459,
+  "slug": "PierRail_01_V1",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/PierRail_01_V1.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      0.0001340000017080456,
+      -0.02718699909746647,
+      0.022474000230431557
+    ],
+    "max": [
+      5.992445945739746,
+      1.0440369844436646,
+      0.1525460034608841
+    ]
+  },
+  "shellBvh": "blas/PierRail_01.bvh",
+  "instances": [
+    {
+      "id": "PierRail_01_V1",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/PierRail_01_V1.et",
+      "blas": "blas/PierRail_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/PierRail_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

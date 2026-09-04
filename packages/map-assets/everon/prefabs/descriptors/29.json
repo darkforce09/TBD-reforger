@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 29,
+  "slug": "MetalWall_01_9m",
+  "resourceName": "Prefabs/Structures/Walls/Metal/MetalWall_01/MetalWall_01_9m.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      0.0007538795471191406,
+      -2.750699996948242,
+      -0.10000190149014543
+    ],
+    "max": [
+      8.999953746795654,
+      3.1100950241088867,
+      0.0999981015920639
+    ]
+  },
+  "shellBvh": "blas/MetalWall_01_9m.bvh",
+  "instances": [
+    {
+      "id": "MetalWall_01_9m",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Metal/MetalWall_01/MetalWall_01_9m.et",
+      "blas": "blas/MetalWall_01_9m.bvh",
+      "xob": "Assets/Structures/Walls/Metal/MetalWall_01_9m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

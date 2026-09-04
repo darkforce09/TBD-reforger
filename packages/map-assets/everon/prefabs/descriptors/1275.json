@@ -1,0 +1,231 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1275,
+  "slug": "Hotbed_01_Open",
+  "resourceName": "Prefabs/Structures/Agriculture/Hotbed/Hotbed_01/Hotbed_01_Open.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.1619466347256093,
+      0.0018725991249084473,
+      -0.6408476112410426
+    ],
+    "max": [
+      1.1621214347323985,
+      0.8001676201820374,
+      0.6397179961204529
+    ]
+  },
+  "shellBvh": "blas/Hotbed_01_open.bvh",
+  "instances": [
+    {
+      "id": "Hotbed_01_Open",
+      "kind": "furniture",
+      "prefab": "Prefabs/Structures/Agriculture/Hotbed/Hotbed_01/Hotbed_01_Open.et",
+      "blas": "blas/Hotbed_01_open.bvh",
+      "xob": "Assets/Structures/Agriculture/Hotbed_01/Hotbed_01_open.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_Glass_01_54x58_004",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x58/Glass_54x58.et",
+      "blas": "blas/Glass_01_54x58.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x58/Glass_01_54x58.xob",
+      "local": {
+        "pos": [
+          -0.29795539379119873,
+          0.6725350022315979,
+          0.2820655107498169
+        ],
+        "quat": [
+          0.6531806960093,
+          0.0,
+          0.0,
+          0.7572020723431802
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Glass_01_54x58_003",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x58/Glass_54x58.et",
+      "blas": "blas/Glass_01_54x58.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x58/Glass_01_54x58.xob",
+      "local": {
+        "pos": [
+          -0.29795530438423157,
+          0.5877673029899597,
+          -0.3063715994358063
+        ],
+        "quat": [
+          0.653383555803401,
+          0.0,
+          0.0,
+          0.7570270332066774
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Glass_01_54x58_005",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x58/Glass_54x58.et",
+      "blas": "blas/Glass_01_54x58.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x58/Glass_01_54x58.xob",
+      "local": {
+        "pos": [
+          0.3000277876853943,
+          0.6045582890510559,
+          -0.3080736994743347
+        ],
+        "quat": [
+          0.6494460842462746,
+          0.0,
+          0.0,
+          0.7604076430817754
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Glass_01_54x58_007",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x58/Glass_54x58.et",
+      "blas": "blas/Glass_01_54x58.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x58/Glass_01_54x58.xob",
+      "local": {
+        "pos": [
+          0.8539462089538574,
+          0.6045584082603455,
+          -0.3080736994743347
+        ],
+        "quat": [
+          0.6494460842462746,
+          0.0,
+          0.0,
+          0.7604076430817754
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Glass_01_54x58_006",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x58/Glass_54x58.et",
+      "blas": "blas/Glass_01_54x58.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x58/Glass_01_54x58.xob",
+      "local": {
+        "pos": [
+          0.3000277876853943,
+          0.6954336166381836,
+          0.27945131063461304
+        ],
+        "quat": [
+          0.6492378693656295,
+          0.0,
+          0.0,
+          0.7605854251703602
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Glass_01_54x58_008",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x58/Glass_54x58.et",
+      "blas": "blas/Glass_01_54x58.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x58/Glass_01_54x58.xob",
+      "local": {
+        "pos": [
+          0.8539460897445679,
+          0.6954333782196045,
+          0.2794511914253235
+        ],
+        "quat": [
+          0.6492378693656295,
+          0.0,
+          0.0,
+          0.7605854251703602
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Glass_01_54x58_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x58/Glass_54x58.et",
+      "blas": "blas/Glass_01_54x58.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x58/Glass_01_54x58.xob",
+      "local": {
+        "pos": [
+          -0.8518738150596619,
+          0.5877671837806702,
+          -0.3063715994358063
+        ],
+        "quat": [
+          0.653383555803401,
+          0.0,
+          0.0,
+          0.7570270332066774
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_Glass_01_54x58_002",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_54x58/Glass_54x58.et",
+      "blas": "blas/Glass_01_54x58.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_54x58/Glass_01_54x58.xob",
+      "local": {
+        "pos": [
+          -0.8518738150596619,
+          0.6725351810455322,
+          0.28206560015678406
+        ],
+        "quat": [
+          0.6531806960093,
+          0.0,
+          0.0,
+          0.7572020723431802
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ]
+}

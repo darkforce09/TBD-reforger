@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 630,
+  "slug": "ConcretePipe_01_Short_Pile",
+  "resourceName": "Prefabs/Props/Construction/ConcretePipe/ConcretePipe_01_Short_Pile.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.4514458179473877,
+      -0.0005820989608764648,
+      -1.013275384902954
+    ],
+    "max": [
+      2.5386295914649963,
+      1.4845858812332153,
+      1.0835986137390137
+    ]
+  },
+  "shellBvh": "blas/ConcretePipe_01_Short_Pile.bvh",
+  "instances": [
+    {
+      "id": "ConcretePipe_01_Short_Pile",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Construction/ConcretePipe/ConcretePipe_01_Short_Pile.et",
+      "blas": "blas/ConcretePipe_01_Short_Pile.bvh",
+      "xob": "Assets/Props/Construction/ConcretePipe_01/ConcretePipe_01_Short_Pile.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

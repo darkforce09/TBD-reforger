@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 741,
+  "slug": "SignMaxSpeed30_01",
+  "resourceName": "Prefabs/Structures/Signs/Warnings/SignMaxSpeed30_01.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

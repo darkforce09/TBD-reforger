@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1482,
+  "slug": "TilePavement_01_Narrow_4m_B",
+  "resourceName": "Prefabs/Structures/Infrastructure/Pavements/TilePavement_01/TilePavement_01_Narrow_4m_B.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.3863205909729004,
+      -0.14778100093826652,
+      -1.1988609477411956
+    ],
+    "max": [
+      4.458524465560913,
+      0.15103100100532174,
+      1.201139147626236
+    ]
+  },
+  "shellBvh": "blas/TilePavement_01_Narrow_4m_B.bvh",
+  "instances": [
+    {
+      "id": "TilePavement_01_Narrow_4m_B",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Pavements/TilePavement_01/TilePavement_01_Narrow_4m_B.et",
+      "blas": "blas/TilePavement_01_Narrow_4m_B.bvh",
+      "xob": "Assets/Structures/Infrastructure/Pavements/TilePavement_01/TilePavement_01_Narrow_4m_B.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

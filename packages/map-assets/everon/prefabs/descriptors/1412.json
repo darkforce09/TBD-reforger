@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1412,
+  "slug": "CultivatorWreck_01",
+  "resourceName": "Prefabs/Props/Agriculture/CultivatorWreck_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.4173961877822876,
+      0.003395974636077881,
+      -0.9225403070449829
+    ],
+    "max": [
+      1.2330868244171143,
+      1.5760149955749512,
+      1.154889702796936
+    ]
+  },
+  "shellBvh": "blas/CultivatorWreck_01.bvh",
+  "instances": [
+    {
+      "id": "CultivatorWreck_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/CultivatorWreck_01.et",
+      "blas": "blas/CultivatorWreck_01.bvh",
+      "xob": "Assets/Props/Agricultural/CultivatorWreck_01/CultivatorWreck_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

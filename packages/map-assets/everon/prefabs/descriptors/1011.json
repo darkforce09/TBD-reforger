@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1011,
+  "slug": "ProbeExteriorWater_Base",
+  "resourceName": "Prefabs/Structures/Core/ProbeExteriorWater_Base.et",
+  "kind": "building",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

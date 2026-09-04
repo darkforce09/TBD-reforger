@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1493,
+  "slug": "Scythe_01",
+  "resourceName": "Prefabs/Props/Civilian/Scythe_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.10868590325117111,
+      -0.004668999928981066,
+      -0.12715460360050201
+    ],
+    "max": [
+      0.10365115910951062,
+      1.7308149565060233,
+      0.6267951130867004
+    ]
+  },
+  "shellBvh": "blas/Scythe_01.bvh",
+  "instances": [
+    {
+      "id": "Scythe_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/Scythe_01.et",
+      "blas": "blas/Scythe_01.bvh",
+      "xob": "Assets/Props/Civilian/Scythe_01/Scythe_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1284,
+  "slug": "Duckboard_01",
+  "resourceName": "Prefabs/Props/Military/Camps/Duckboard_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.625,
+      7.003545761108398e-7,
+      -1.899999976158142
+    ],
+    "max": [
+      0.625,
+      0.10000070184469223,
+      1.899999976158142
+    ]
+  },
+  "shellBvh": "blas/Duckboard_01.bvh",
+  "instances": [
+    {
+      "id": "Duckboard_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Military/Camps/Duckboard_01.et",
+      "blas": "blas/Duckboard_01.bvh",
+      "xob": "Assets/Props/Military/Camps/Duckboard_01/Duckboard_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

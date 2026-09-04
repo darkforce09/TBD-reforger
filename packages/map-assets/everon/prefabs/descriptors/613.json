@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 613,
+  "slug": "CrashBarrier_01_4m_V2",
+  "resourceName": "Prefabs/Structures/Walls/Crashbarrier/CrashBarrier_01/CrashBarrier_01_4m_V2.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.004505000077188015,
+      -1.3660130500793457,
+      -0.433133989572525
+    ],
+    "max": [
+      4.005270004272461,
+      0.999180018901825,
+      0.024694999679923058
+    ]
+  },
+  "shellBvh": "blas/CrashBarrier_01_4m_V2.bvh",
+  "instances": [
+    {
+      "id": "CrashBarrier_01_4m_V2",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Crashbarrier/CrashBarrier_01/CrashBarrier_01_4m_V2.et",
+      "blas": "blas/CrashBarrier_01_4m_V2.bvh",
+      "xob": "Assets/Structures/Walls/Crashbarrier/CrashBarrier_01_4m_V2.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

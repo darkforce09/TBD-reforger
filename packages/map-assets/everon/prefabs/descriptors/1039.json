@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1039,
+  "slug": "AirfieldMark_01",
+  "resourceName": "Prefabs/Structures/Signs/Airfield/AirfieldMark_01/AirfieldMark_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.6691994890570641,
+      -0.37061402201652527,
+      -1.212046560831368
+    ],
+    "max": [
+      0.6692055240273476,
+      0.8046869933605194,
+      1.2308134464547038
+    ]
+  },
+  "shellBvh": "blas/AirfieldMark_01.bvh",
+  "instances": [
+    {
+      "id": "AirfieldMark_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Airfield/AirfieldMark_01/AirfieldMark_01.et",
+      "blas": "blas/AirfieldMark_01.bvh",
+      "xob": "Assets/Structures/Signs/Airfield/AirfieldMark_01/AirfieldMark_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

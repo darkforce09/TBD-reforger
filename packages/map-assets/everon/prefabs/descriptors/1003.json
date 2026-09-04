@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1003,
+  "slug": "Cart_01",
+  "resourceName": "Prefabs/Props/Civilian/Cart_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.4037129878997803,
+      0.0007689999765716493,
+      -0.9827292859554291
+    ],
+    "max": [
+      0.4037129878997803,
+      0.916450023651123,
+      0.4173240065574646
+    ]
+  },
+  "shellBvh": "blas/Cart_01.bvh",
+  "instances": [
+    {
+      "id": "Cart_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/Cart_01.et",
+      "blas": "blas/Cart_01.bvh",
+      "xob": "Assets/Props/Civilian/Cart_01/Cart_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

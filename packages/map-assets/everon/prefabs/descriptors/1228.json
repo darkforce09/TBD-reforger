@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1228,
+  "slug": "CurbsideWeeds_01_8m",
+  "resourceName": "Prefabs/Vegetation/Plant/CurbsideWeeds_01_8m.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

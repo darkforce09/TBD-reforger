@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 652,
+  "slug": "PlaygroundSphere_01",
+  "resourceName": "Prefabs/Structures/Civilian/SportGrounds/PlaygroundSphere_01.et",
+  "kind": "building",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 834,
+  "slug": "SoundSource_WaterFall_Large",
+  "resourceName": "Prefabs/Sounds/Sources/SoundSource_WaterFall_Large.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

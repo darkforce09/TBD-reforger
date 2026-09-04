@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 718,
+  "slug": "PedalBoat_01_red",
+  "resourceName": "Prefabs/Props/Recreation/Beach/PedalBoat_01/PedalBoat_01_red.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

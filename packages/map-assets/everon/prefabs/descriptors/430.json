@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 430,
+  "slug": "BlanketBeach_01_green",
+  "resourceName": "Prefabs/Props/Recreation/Beach/BlanketBeach_01/BlanketBeach_01_green.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.9801238891373999,
+      -0.0031763995066285133,
+      -0.8834283811873069
+    ],
+    "max": [
+      0.9695886890109308,
+      0.01802359987050295,
+      0.9073691809451452
+    ]
+  },
+  "shellBvh": "blas/BlanketBeach_01.bvh",
+  "instances": [
+    {
+      "id": "BlanketBeach_01_green",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Recreation/Beach/BlanketBeach_01/BlanketBeach_01_green.et",
+      "blas": "blas/BlanketBeach_01.bvh",
+      "xob": "Assets/Props/Recreation/Beach/BlanketBeach_01/BlanketBeach_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1106,
+  "slug": "PostOfficeBox_01_Stand",
+  "resourceName": "Prefabs/Props/Services/Post/PostOfficeBox_01_Stand.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.8158954083919525,
+      0.19609980285167694,
+      -0.4693177044391632
+    ],
+    "max": [
+      0.8113547116518021,
+      1.4669673442840576,
+      0.19170739874243736
+    ]
+  },
+  "shellBvh": "blas/PostOfficeBox_01_Stand.bvh",
+  "instances": [
+    {
+      "id": "PostOfficeBox_01_Stand",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Services/Post/PostOfficeBox_01_Stand.et",
+      "blas": "blas/PostOfficeBox_01_Stand.bvh",
+      "xob": "Assets/Props/Services/Post/PostOfficeBox/PostOfficeBox_01_Stand.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

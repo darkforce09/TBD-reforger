@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 67,
+  "slug": "PosterSingle_A3_Alcohol_V2",
+  "resourceName": "Prefabs/Props/Commercial/Posters/PosterSingle_A3_Alcohol_V2.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

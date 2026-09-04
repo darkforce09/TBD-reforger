@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 697,
+  "slug": "Wheelbarrow_01",
+  "resourceName": "Prefabs/Props/Civilian/Wheelbarrow_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.43320178985595703,
+      4.172325134277344e-7,
+      -1.1354345420870557
+    ],
+    "max": [
+      0.4292982220649719,
+      0.7031987181028366,
+      1.0480247139930725
+    ]
+  },
+  "shellBvh": "blas/Wheelbarrow_01.bvh",
+  "instances": [
+    {
+      "id": "Wheelbarrow_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/Wheelbarrow_01.et",
+      "blas": "blas/Wheelbarrow_01.bvh",
+      "xob": "Assets/Props/Civilian/Wheelbarrow_01/Wheelbarrow_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

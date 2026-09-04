@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 967,
+  "slug": "SignHeritage_01_NaturalReservation",
+  "resourceName": "Prefabs/Structures/Signs/Heritage/SignHeritage_01_NaturalReservation.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.21816399693489075,
+      -0.000044405460357666016,
+      -0.035120997577905655
+    ],
+    "max": [
+      0.2175160050392151,
+      2.1767700016498566,
+      0.0918009988963604
+    ]
+  },
+  "shellBvh": "blas/SignHeritage_01.bvh",
+  "instances": [
+    {
+      "id": "SignHeritage_01_NaturalReservation",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Signs/Heritage/SignHeritage_01_NaturalReservation.et",
+      "blas": "blas/SignHeritage_01.bvh",
+      "xob": "Assets/Structures/Signs/Heritage/SignHeritage_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

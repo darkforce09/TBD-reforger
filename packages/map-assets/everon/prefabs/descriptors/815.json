@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 815,
+  "slug": "MarsBoxContainer_01",
+  "resourceName": "Prefabs/Props/Industrial/Pallets/MarsBoxContainer_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.9738626047037542,
+      -0.0029774904251098633,
+      -0.6698310660818363
+    ],
+    "max": [
+      0.9615422897040844,
+      1.746925980248448,
+      0.7450293879956007
+    ]
+  },
+  "shellBvh": "blas/MarsBoxContainer_01.bvh",
+  "instances": [
+    {
+      "id": "MarsBoxContainer_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Props/Industrial/Pallets/MarsBoxContainer_01.et",
+      "blas": "blas/MarsBoxContainer_01.bvh",
+      "xob": "Assets/Props/Industrial/Pallets/MarsBoxContainer_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

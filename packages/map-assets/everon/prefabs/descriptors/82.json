@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 82,
+  "slug": "Chapel_01_base",
+  "resourceName": "Prefabs/Structures/Cultural/Chapels/Chapel_01/Chapel_01_base.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.302053451538086,
+      -1.3775405883789062,
+      -2.4131860733032227
+    ],
+    "max": [
+      2.337526559829712,
+      8.779142379760742,
+      2.258315086364746
+    ]
+  },
+  "shellBvh": "blas/Chapel_01.bvh",
+  "instances": [
+    {
+      "id": "Chapel_01_base",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Cultural/Chapels/Chapel_01/Chapel_01_base.et",
+      "blas": "blas/Chapel_01.bvh",
+      "xob": "Assets/Structures/Cultural/Chapels/Chapel_01/Chapel_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_door_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Arch_Chapel_01_LEFT_EXT_ST_B.et",
+      "blas": "blas/Door_Arch_Chapel_01_RIGHT_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Chapel_01/Door_Arch_Chapel_01_RIGHT_B.xob",
+      "local": {
+        "pos": [
+          -0.6409451961517334,
+          0.17094099521636963,
+          1.8323436975479126
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_01/socket_glass_44x122_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_44x122/Glass_44x122.et",
+      "blas": "blas/Glass_01_44x122.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_44x122/Glass_01_44x122.xob",
+      "local": {
+        "pos": [
+          0.25204217433929443,
+          1.9215829372406006,
+          1.7837861962616444
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_door_01"
+    },
+    {
+      "id": "socket_door_01/socket_glass_44x122_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_44x122/Glass_44x122.et",
+      "blas": "blas/Glass_01_44x122.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_44x122/Glass_01_44x122.xob",
+      "local": {
+        "pos": [
+          -0.21612119674682617,
+          1.9215829372406006,
+          1.7837861962616444
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "socket_door_01"
+    }
+  ],
+  "notes": [
+    "5218C7A7E2B8EF14: Prefabs/Structures/Core/ProbeHouse_Base.et has no mesh"
+  ]
+}

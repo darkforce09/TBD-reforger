@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 442,
+  "slug": "AsphaltPavement_01_Narrow_8m_30",
+  "resourceName": "Prefabs/Structures/Infrastructure/Pavements/AsphaltPavement_01/AsphaltPavement_01_Narrow_8m_30.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.390594482421875,
+      -0.14999988675117493,
+      -1.1090514659881592
+    ],
+    "max": [
+      7.491652488708496,
+      0.15793311595916748,
+      2.822613000869751
+    ]
+  },
+  "shellBvh": "blas/AsphaltPavement_01_Narrow_8m_30.bvh",
+  "instances": [
+    {
+      "id": "AsphaltPavement_01_Narrow_8m_30",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Pavements/AsphaltPavement_01/AsphaltPavement_01_Narrow_8m_30.et",
+      "blas": "blas/AsphaltPavement_01_Narrow_8m_30.bvh",
+      "xob": "Assets/Structures/Infrastructure/Pavements/AsphaltPavement_01/AsphaltPavement_01_Narrow_8m_30.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

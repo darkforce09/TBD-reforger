@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 454,
+  "slug": "Spring_01",
+  "resourceName": "Prefabs/Structures/Forest/Spring_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.5440134406089783,
+      -0.23132550716400146,
+      -0.4454191029071808
+    ],
+    "max": [
+      0.5298365950584412,
+      1.0707614421844482,
+      0.8033949136734009
+    ]
+  },
+  "shellBvh": "blas/Spring_01.bvh",
+  "instances": [
+    {
+      "id": "Spring_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Forest/Spring_01.et",
+      "blas": "blas/Spring_01.bvh",
+      "xob": "Assets/Structures/Forest/Spring/Spring_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 455,
+  "slug": "Junk_01_single_bricks",
+  "resourceName": "Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_single_bricks.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.7920867204666138,
+      -0.011496827006340027,
+      -1.7181247472763062
+    ],
+    "max": [
+      1.6428511142730713,
+      0.17391158640384674,
+      1.5563242435455322
+    ]
+  },
+  "shellBvh": "blas/Junk_01_bricks.bvh",
+  "instances": [
+    {
+      "id": "Junk_01_single_bricks",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_single_bricks.et",
+      "blas": "blas/Junk_01_bricks.bvh",
+      "xob": "Assets/Props/Garbage/Generic/Junk_01/Junk_01_bricks.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

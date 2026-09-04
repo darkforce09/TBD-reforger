@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 125,
+  "slug": "TrackSign_01_Curve_Small_triangle_green",
+  "resourceName": "Prefabs/Structures/Signs/Tourist/TrackSign_01/TrackSign_01_Curve_Small_triangle_green.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

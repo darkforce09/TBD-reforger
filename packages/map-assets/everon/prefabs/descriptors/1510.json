@@ -1,0 +1,405 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1510,
+  "slug": "Bunker_01_3fp",
+  "resourceName": "Prefabs/Structures/Military/Bunkers/Bunker_01/Bunker_01_3fp.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -6.848738670349122,
+      -5.422186424955726,
+      -3.3467299938201904
+    ],
+    "max": [
+      6.849811911582948,
+      3.8915319442749023,
+      2.970844030380249
+    ]
+  },
+  "shellBvh": "blas/Bunker_01_3fp.bvh",
+  "instances": [
+    {
+      "id": "Bunker_01_3fp",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Military/Bunkers/Bunker_01/Bunker_01_3fp.et",
+      "blas": "blas/Bunker_01_3fp.bvh",
+      "xob": "Assets/Structures/Military/Bunkers/Bunker_01/Bunker_01_3fp.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_door_ext_01",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Doorset_Bunker_01_A_RIGHT_EXT_B.et",
+      "blas": "blas/DoorFrame_Bunker_01_A_EXT_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Bunker_01/DoorFrame_Bunker_01_A_EXT_B.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.19999860227108002,
+          -0.45429959893226624
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_ext_01/socket_door_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Bunker_01_A_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_Bunker_01_A_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Bunker_01/Door_Bunker_01_A_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -0.5510792136192322,
+          0.19999860227108002,
+          -0.41120149940252304
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 0.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false,
+        "openedDistance": -1.3
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "socket_door_ext_01"
+    },
+    {
+      "id": "socket_door_firing_port_02",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Doorset_Bunker_01_B_SPE_B.et",
+      "blas": "blas/DoorFrame_Bunker_01_B_SPE_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Bunker_01/DoorFrame_Bunker_01_B_SPE_B.xob",
+      "local": {
+        "pos": [
+          0.0,
+          1.6677683591842651,
+          2.311410665512085
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_firing_port_02/socket_door_L_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Bunker_01_B_LEFT_SPE_COV_B.et",
+      "blas": "blas/Door_Bunker_01_B_LEFT_SPE_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Bunker_01/Door_Bunker_01_B_LEFT_SPE_COV_B.xob",
+      "local": {
+        "pos": [
+          -0.18378010392189026,
+          1.6677683591842651,
+          2.2732021659612656
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 0.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false,
+        "openedDistance": -0.35
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "socket_door_firing_port_02"
+    },
+    {
+      "id": "socket_door_firing_port_02/socket_door_R_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Bunker_01_B_RIGHT_SPE_COV_B.et",
+      "blas": "blas/Door_Bunker_01_B_RIGHT_SPE_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Bunker_01/Door_Bunker_01_B_RIGHT_SPE_COV_B.xob",
+      "local": {
+        "pos": [
+          0.18377119302749634,
+          1.6677683591842651,
+          2.2732021659612656
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 0.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false,
+        "openedDistance": 0.35
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "socket_door_firing_port_02"
+    },
+    {
+      "id": "socket_door_firing_port_01",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Doorset_Bunker_01_B_SPE_B.et",
+      "blas": "blas/DoorFrame_Bunker_01_B_SPE_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Bunker_01/DoorFrame_Bunker_01_B_SPE_B.xob",
+      "local": {
+        "pos": [
+          -1.8237757682800293,
+          1.6677683591842651,
+          1.4434492588043213
+        ],
+        "quat": [
+          0.0,
+          -0.5000009989755612,
+          0.0,
+          0.8660248270248613
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_firing_port_01/socket_door_L_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Bunker_01_B_LEFT_SPE_COV_B.et",
+      "blas": "blas/Door_Bunker_01_B_LEFT_SPE_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Bunker_01/Door_Bunker_01_B_LEFT_SPE_COV_B.xob",
+      "local": {
+        "pos": [
+          -1.8825758777313428,
+          1.6677683591842651,
+          1.2651866346679665
+        ],
+        "quat": [
+          0.0,
+          -0.5000009989755612,
+          0.0,
+          0.8660248270248613
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 0.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false,
+        "openedDistance": -0.35
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "socket_door_firing_port_01"
+    },
+    {
+      "id": "socket_door_firing_port_01/socket_door_R_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Bunker_01_B_RIGHT_SPE_COV_B.et",
+      "blas": "blas/Door_Bunker_01_B_RIGHT_SPE_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Bunker_01/Door_Bunker_01_B_RIGHT_SPE_COV_B.xob",
+      "local": {
+        "pos": [
+          -1.6988009636069092,
+          1.6677683591842651,
+          1.5834958189962438
+        ],
+        "quat": [
+          0.0,
+          -0.5000009989755612,
+          0.0,
+          0.8660248270248613
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 0.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false,
+        "openedDistance": 0.35
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "socket_door_firing_port_01"
+    },
+    {
+      "id": "socket_door_firing_port_03",
+      "kind": "doorFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Doorset_Bunker_01_B_SPE_B.et",
+      "blas": "blas/DoorFrame_Bunker_01_B_SPE_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Bunker_01/DoorFrame_Bunker_01_B_SPE_B.xob",
+      "local": {
+        "pos": [
+          1.8221240043640137,
+          1.6677683591842651,
+          1.4431023597717285
+        ],
+        "quat": [
+          0.0,
+          0.5000009989755612,
+          0.0,
+          0.8660248270248613
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_door_firing_port_03/socket_door_L_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Bunker_01_B_LEFT_SPE_COV_B.et",
+      "blas": "blas/Door_Bunker_01_B_LEFT_SPE_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Bunker_01/Door_Bunker_01_B_LEFT_SPE_COV_B.xob",
+      "local": {
+        "pos": [
+          1.6971447442615002,
+          1.6677683591842651,
+          1.5831566370348455
+        ],
+        "quat": [
+          0.0,
+          0.5000009989755612,
+          0.0,
+          0.8660248270248613
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 0.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false,
+        "openedDistance": -0.35
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "socket_door_firing_port_03"
+    },
+    {
+      "id": "socket_door_firing_port_03/socket_door_R_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Bunker_01_B_RIGHT_SPE_COV_B.et",
+      "blas": "blas/Door_Bunker_01_B_RIGHT_SPE_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Bunker_01/Door_Bunker_01_B_RIGHT_SPE_COV_B.xob",
+      "local": {
+        "pos": [
+          1.8809196583859338,
+          1.6677683591842651,
+          1.264847452706568
+        ],
+        "quat": [
+          0.0,
+          0.5000009989755612,
+          0.0,
+          0.8660248270248613
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 0.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false,
+        "openedDistance": 0.35
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "socket_door_firing_port_03"
+    },
+    {
+      "id": "socket_entry_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Entry/ConcreteStairs_02_Narrow.et",
+      "blas": "blas/ConcreteStairs_02_Narrow.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Entry/ConcreteStairs_02_Narrow.xob",
+      "local": {
+        "pos": [
+          -1.4487184286117554,
+          0.006167599931359291,
+          -2.0320842266082764
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_entry_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Entry/ConcreteStairs_02_Narrow.et",
+      "blas": "blas/ConcreteStairs_02_Narrow.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Entry/ConcreteStairs_02_Narrow.xob",
+      "local": {
+        "pos": [
+          1.449791669845581,
+          0.006167599931359291,
+          -2.0320842266082764
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ],
+  "notes": [
+    "5E6AB4A80E26C458: Prefabs/Structures/Military/Bunkers/Bunker_01/Probe_Bunker_01.et has no mesh"
+  ]
+}

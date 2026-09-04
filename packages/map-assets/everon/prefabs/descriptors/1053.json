@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1053,
+  "slug": "ConcreteTreepot_01",
+  "resourceName": "Prefabs/Structures/Infrastructure/Pavements/ConcreteTreepot_01/ConcreteTreepot_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.1434669489972293,
+      -0.16231569647789001,
+      -1.0175200218800455
+    ],
+    "max": [
+      1.1533329491503537,
+      0.14557528495788574,
+      1.011480021988973
+    ]
+  },
+  "shellBvh": "blas/ConcreteTreepot_01.bvh",
+  "instances": [
+    {
+      "id": "ConcreteTreepot_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Pavements/ConcreteTreepot_01/ConcreteTreepot_01.et",
+      "blas": "blas/ConcreteTreepot_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Pavements/ConcreteTreepot_01/ConcreteTreepot_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

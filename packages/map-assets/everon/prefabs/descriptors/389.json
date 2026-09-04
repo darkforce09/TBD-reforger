@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 389,
+  "slug": "ConcreteWall_01_6m_A_03_TICKEZAV",
+  "resourceName": "Prefabs/Structures/Walls/Concrete/ConcreteWall_01/ConcreteWall_01_6m_A_03_TICKEZAV.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      0.0013867616653442383,
+      -0.797777533531189,
+      -0.12611180543899536
+    ],
+    "max": [
+      6.0069499015808105,
+      2.950021982192993,
+      0.12491220235824585
+    ]
+  },
+  "shellBvh": "blas/ConcreteWall_01_6m_A.bvh",
+  "instances": [
+    {
+      "id": "ConcreteWall_01_6m_A_03_TICKEZAV",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/ConcreteWall_01/ConcreteWall_01_6m_A_03_TICKEZAV.et",
+      "blas": "blas/ConcreteWall_01_6m_A.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/ConcreteWall_01_6m_A.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 814,
+  "slug": "t_picea_abies_1f",
+  "resourceName": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_1f.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -1.2664817571640015,
+      -0.6306229829788208,
+      -1.305443823337555
+    ],
+    "max": [
+      1.492441177368164,
+      6.6755242347717285,
+      1.5296111702919006
+    ]
+  },
+  "shellBvh": "blas/t_picea_abies_1f.bvh",
+  "instances": [
+    {
+      "id": "t_picea_abies_1f",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_1f.et",
+      "blas": "blas/t_picea_abies_1f.bvh",
+      "xob": "Assets/Vegetation/Tree/Picea_Abies/t_picea_abies_1f.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

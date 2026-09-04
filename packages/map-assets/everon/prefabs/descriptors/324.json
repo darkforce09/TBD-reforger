@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 324,
+  "slug": "t_alnus_glutinosa_2f",
+  "resourceName": "Prefabs/Vegetation/Tree/t_alnus_glutinosa/t_alnus_glutinosa_2f.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -2.9238669872283936,
+      0.45156198740005493,
+      -2.965925931930542
+    ],
+    "max": [
+      2.761462926864624,
+      13.857280731201172,
+      2.8525209426879883
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "t_alnus_glutinosa_2f/canopy",
+      "kind": "treeCanopy",
+      "prefab": "Prefabs/Vegetation/Tree/t_alnus_glutinosa/t_alnus_glutinosa_2f.et",
+      "blas": "blas/T_Alnus_glutinosa_2f_canopy.bvh",
+      "xob": "Assets/Vegetation/Tree/Alnus_Glutinosa/T_Alnus_glutinosa_2f.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "t_alnus_glutinosa_2f"
+    }
+  ],
+  "notes": [
+    "t_alnus_glutinosa_2f/canopy: convex hull of the visual LOD0 (1852 verts) tagged Foliage — the COLL carries no Foliage triangle"
+  ]
+}

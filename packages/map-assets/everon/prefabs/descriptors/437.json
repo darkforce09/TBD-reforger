@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 437,
+  "slug": "GameProofFence_01_Pole",
+  "resourceName": "Prefabs/Structures/Walls/Net/GameProofFence_01/GameProofFence_01_Pole.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.06571300327777863,
+      -0.6708430051803589,
+      -1.2683945894241333
+    ],
+    "max": [
+      0.04493600130081177,
+      1.8594330549240112,
+      0.06724949926137924
+    ]
+  },
+  "shellBvh": "blas/GameProofFence_01_Pole.bvh",
+  "instances": [
+    {
+      "id": "GameProofFence_01_Pole",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Net/GameProofFence_01/GameProofFence_01_Pole.et",
+      "blas": "blas/GameProofFence_01_Pole.bvh",
+      "xob": "Assets/Structures/Walls/Net/GameProofFence_01_Pole.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

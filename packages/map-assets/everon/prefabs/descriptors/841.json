@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 841,
+  "slug": "CrateWooden_02_1x1x2",
+  "resourceName": "Prefabs/Props/Crates/CrateWooden_02/CrateWooden_02_1x1x2.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.5054016711656004,
+      0.002741199918091297,
+      -0.5000307705486193
+    ],
+    "max": [
+      0.5000474005937576,
+      1.9995172619819641,
+      0.5017691705143079
+    ]
+  },
+  "shellBvh": "blas/CrateWooden_02_1x1x2.bvh",
+  "instances": [
+    {
+      "id": "CrateWooden_02_1x1x2",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/CrateWooden_02/CrateWooden_02_1x1x2.et",
+      "blas": "blas/CrateWooden_02_1x1x2.bvh",
+      "xob": "Assets/Props/Crates/CrateWooden_02/CrateWooden_02_1x1x2.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

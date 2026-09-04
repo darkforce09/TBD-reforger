@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1520,
+  "slug": "BrickGate_01_House_Village_E_1I04",
+  "resourceName": "Prefabs/Structures/Walls/Brick/BrickGate_01/BrickGate_01_House_Village_E_1I04.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -2.500016212463379,
+      -3.0,
+      -0.19512300193309784
+    ],
+    "max": [
+      2.499983787536621,
+      4.15211820602417,
+      0.40333402156829834
+    ]
+  },
+  "shellBvh": "blas/BrickGate_01.bvh",
+  "instances": [
+    {
+      "id": "BrickGate_01_House_Village_E_1I04",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Brick/BrickGate_01/BrickGate_01_House_Village_E_1I04.et",
+      "blas": "blas/BrickGate_01.bvh",
+      "xob": "Assets/Structures/Walls/Brick/BrickGate_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

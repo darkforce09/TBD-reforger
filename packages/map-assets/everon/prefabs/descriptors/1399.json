@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1399,
+  "slug": "TransmitterTower_01",
+  "resourceName": "Prefabs/Structures/Infrastructure/Towers/TransmitterTower_01/TransmitterTower_01.et",
+  "kind": "building",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": [],
+  "notes": [
+    "5A42CACBB0302214: Prefabs/Structures/Infrastructure/Towers/TransmitterTower_01/TransmitterTower_01_lightentity.et has no mesh",
+    "5A42CACBB030224C: Prefabs/Structures/Infrastructure/Towers/TransmitterTower_01/TransmitterTower_01_lightentity.et has no mesh",
+    "5A02CED886A8B959: Prefabs/Structures/Infrastructure/Towers/TransmitterTower_01/TransmitterTower_01_light.et has no mesh",
+    "5A02CED8A2555854: Prefabs/Structures/Infrastructure/Towers/TransmitterTower_01/TransmitterTower_01_light.et has no mesh"
+  ]
+}

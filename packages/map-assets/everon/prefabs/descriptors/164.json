@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 164,
+  "slug": "MessageBoard_02",
+  "resourceName": "Prefabs/Structures/Civilian/MessageBoard/MessageBoard_02/MessageBoard_02.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

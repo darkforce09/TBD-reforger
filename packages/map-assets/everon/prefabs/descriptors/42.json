@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 42,
+  "slug": "GasTank_02_rusty",
+  "resourceName": "Prefabs/Props/Industrial/GasTank_02_rusty.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

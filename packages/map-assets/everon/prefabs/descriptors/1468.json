@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1468,
+  "slug": "t_sorbus_aucuparia_2w",
+  "resourceName": "Prefabs/Vegetation/Tree/t_sorbus_aucuparia/t_sorbus_aucuparia_2w.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -2.202587597050435,
+      -0.21393246948719025,
+      -1.4869356894942687
+    ],
+    "max": [
+      1.0672168742375099,
+      3.996540954512975,
+      1.898450354780464
+    ]
+  },
+  "shellBvh": "blas/T_Sorbus_Aucuparia_2w.bvh",
+  "instances": [
+    {
+      "id": "t_sorbus_aucuparia_2w",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Tree/t_sorbus_aucuparia/t_sorbus_aucuparia_2w.et",
+      "blas": "blas/T_Sorbus_Aucuparia_2w.bvh",
+      "xob": "Assets/Vegetation/Tree/Sorbus_Aucuparia/T_Sorbus_Aucuparia_2w.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

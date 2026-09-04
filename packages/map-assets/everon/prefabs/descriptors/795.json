@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 795,
+  "slug": "t_sorbus_aucuparia_1w",
+  "resourceName": "Prefabs/Vegetation/Tree/t_sorbus_aucuparia/t_sorbus_aucuparia_1w.et",
+  "kind": "tree",
+  "blocks": true,
+  "canopy": true,
+  "localBounds": {
+    "min": [
+      -2.0996429920196533,
+      0.38923999667167664,
+      -1.872135043144226
+    ],
+    "max": [
+      1.4002690315246582,
+      4.069459915161133,
+      1.2727409601211548
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "t_sorbus_aucuparia_1w/canopy",
+      "kind": "treeCanopy",
+      "prefab": "Prefabs/Vegetation/Tree/t_sorbus_aucuparia/t_sorbus_aucuparia_1w.et",
+      "blas": "blas/T_Sorbus_Aucuparia_1w_canopy.bvh",
+      "xob": "Assets/Vegetation/Tree/Sorbus_Aucuparia/T_Sorbus_Aucuparia_1w.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "t_sorbus_aucuparia_1w"
+    }
+  ],
+  "notes": [
+    "t_sorbus_aucuparia_1w/canopy: convex hull of the visual LOD0 (467 verts) tagged Foliage — the COLL carries no Foliage triangle"
+  ]
+}

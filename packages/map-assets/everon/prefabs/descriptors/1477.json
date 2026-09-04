@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1477,
+  "slug": "BenchWooden_02_Worn",
+  "resourceName": "Prefabs/Props/Furniture/BenchWooden_02_Worn.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.2000000476837158,
+      0.00017100000695791095,
+      -0.35320272578825385
+    ],
+    "max": [
+      1.2000000476837158,
+      1.0968949794769287,
+      0.27547169290483
+    ]
+  },
+  "shellBvh": "blas/BenchWooden_02.bvh",
+  "instances": [
+    {
+      "id": "BenchWooden_02_Worn",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Furniture/BenchWooden_02_Worn.et",
+      "blas": "blas/BenchWooden_02.bvh",
+      "xob": "Assets/Props/Furniture/BenchWooden_02/BenchWooden_02.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

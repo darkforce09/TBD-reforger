@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1107,
+  "slug": "BelfrySmall_01",
+  "resourceName": "Prefabs/Structures/Cultural/Calvaries/BelfrySmall_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.27462679147720337,
+      -0.1982734203338623,
+      -0.25064000487327576
+    ],
+    "max": [
+      0.27640122175216675,
+      2.153780221939087,
+      0.24903300404548645
+    ]
+  },
+  "shellBvh": "blas/BelfrySmall_01.bvh",
+  "instances": [
+    {
+      "id": "BelfrySmall_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Cultural/Calvaries/BelfrySmall_01.et",
+      "blas": "blas/BelfrySmall_01.bvh",
+      "xob": "Assets/Structures/Cultural/Calvaries/BelfrySmall_01/BelfrySmall_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

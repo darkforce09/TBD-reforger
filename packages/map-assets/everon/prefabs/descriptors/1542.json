@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1542,
+  "slug": "AsphaltPavement_01_Wide_4m_B",
+  "resourceName": "Prefabs/Structures/Infrastructure/Pavements/AsphaltPavement_01/AsphaltPavement_01_Wide_4m_B.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.3351302146911621,
+      -0.15000000223517418,
+      -1.9017952680587769
+    ],
+    "max": [
+      4.365222930908203,
+      0.15793311595916748,
+      1.9022871584165841
+    ]
+  },
+  "shellBvh": "blas/AsphaltPavement_01_Wide_4m.bvh",
+  "instances": [
+    {
+      "id": "AsphaltPavement_01_Wide_4m_B",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Pavements/AsphaltPavement_01/AsphaltPavement_01_Wide_4m_B.et",
+      "blas": "blas/AsphaltPavement_01_Wide_4m.bvh",
+      "xob": "Assets/Structures/Infrastructure/Pavements/AsphaltPavement_01/AsphaltPavement_01_Wide_4m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1522,
+  "slug": "Shed_01",
+  "resourceName": "Prefabs/Structures/Houses/Shed/Shed_01/Shed_01.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.704481840133667,
+      -1.416272759437561,
+      -1.387565016746521
+    ],
+    "max": [
+      1.871067762374878,
+      2.7145047187805176,
+      1.3147048950195312
+    ]
+  },
+  "shellBvh": "blas/Shed_01.bvh",
+  "instances": [
+    {
+      "id": "Shed_01",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Houses/Shed/Shed_01/Shed_01.et",
+      "blas": "blas/Shed_01.bvh",
+      "xob": "Assets/Structures/Houses/Shed/Shed_01/Shed_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_right_door",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_Shed_01_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_Shed_01_R_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_Shed/Door_Shed_01_R_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -1.0677516460418701,
+          0.0371364988386631,
+          1.085094690322876
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    }
+  ],
+  "notes": [
+    "5E76AB7DC2D8FA65: Prefabs/Structures/Infrastructure/Naval/Houses/CottagePier_01/BuidlingAddons/Probe_CottagePier_01.et has no mesh"
+  ]
+}

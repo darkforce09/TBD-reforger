@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 662,
+  "slug": "PierConcrete_01_flat",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/PierConcrete_01_flat.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -10.007640838623047,
+      -4.0,
+      -4.007640838623047
+    ],
+    "max": [
+      0.007641000207513571,
+      4.013876914978027,
+      4.007640838623047
+    ]
+  },
+  "shellBvh": "blas/PierConcrete_01_flat.bvh",
+  "instances": [
+    {
+      "id": "PierConcrete_01_flat",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/PierConcrete_01_flat.et",
+      "blas": "blas/PierConcrete_01_flat.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/PierConcrete_01_flat.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

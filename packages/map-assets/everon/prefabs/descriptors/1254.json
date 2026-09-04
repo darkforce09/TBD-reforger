@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1254,
+  "slug": "ShedMetal_02_LeftWall",
+  "resourceName": "Prefabs/Structures/Industrial/Sheds/ShedMetal_02/HouseAddons/ShedMetal_02_LeftWall.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.28427112102508545,
+      -1.8996936082839966,
+      -5.054574966430664
+    ],
+    "max": [
+      0.316028892993927,
+      4.145106315612793,
+      5.050531387329102
+    ]
+  },
+  "shellBvh": "blas/ShedMetal_02_left_side_wall.bvh",
+  "instances": [
+    {
+      "id": "ShedMetal_02_LeftWall",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Industrial/Sheds/ShedMetal_02/HouseAddons/ShedMetal_02_LeftWall.et",
+      "blas": "blas/ShedMetal_02_left_side_wall.bvh",
+      "xob": "Assets/Structures/Industrial/Sheds/ShedMetal_02/ShedMetal_02_left_side_wall.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 634,
+  "slug": "WoodenWall_02_2m",
+  "resourceName": "Prefabs/Structures/Walls/Wooden/WoodenWall_02/WoodenWall_02_2m.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -6.000000212225132e-6,
+      -1.0001909732818604,
+      -0.08780224621295929
+    ],
+    "max": [
+      2.038928985595703,
+      2.061034917831421,
+      0.0842759981751442
+    ]
+  },
+  "shellBvh": "blas/WoodenWall_02_2m.bvh",
+  "instances": [
+    {
+      "id": "WoodenWall_02_2m",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Wooden/WoodenWall_02/WoodenWall_02_2m.et",
+      "blas": "blas/WoodenWall_02_2m.bvh",
+      "xob": "Assets/Structures/Walls/Wooden/WoodenWall_02_2m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

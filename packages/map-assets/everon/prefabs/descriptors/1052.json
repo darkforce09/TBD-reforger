@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1052,
+  "slug": "Scarecrow_01",
+  "resourceName": "Prefabs/Props/Agriculture/Scarecrow_01/Scarecrow_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.68161541223526,
+      -0.5296825170516968,
+      -0.23879514343159647
+    ],
+    "max": [
+      0.9256396293640137,
+      1.9331899881362915,
+      0.1479074650634853
+    ]
+  },
+  "shellBvh": "blas/Scarecrow_01.bvh",
+  "instances": [
+    {
+      "id": "Scarecrow_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/Scarecrow_01/Scarecrow_01.et",
+      "blas": "blas/Scarecrow_01.bvh",
+      "xob": "Assets/Props/Agricultural/Scarecrow_01/Scarecrow_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ],
+  "notes": [
+    "5872C039DD2DA890: Assets/Props/Civilian/PotOld_01/PotOld_01.xob has no collision chunk — no BLAS, no instance"
+  ]
+}

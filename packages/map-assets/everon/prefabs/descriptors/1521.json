@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1521,
+  "slug": "WoodenFence_03_Pole",
+  "resourceName": "Prefabs/Structures/Walls/Wooden/WoodenFence_03/WoodenFence_03_Pole.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      0.0,
+      0.00004649162292480469,
+      -0.02500000037252903
+    ],
+    "max": [
+      0.07999999821186066,
+      1.205046534538269,
+      0.02500000037252903
+    ]
+  },
+  "shellBvh": "blas/WoodenFence_03_Pole.bvh",
+  "instances": [
+    {
+      "id": "WoodenFence_03_Pole",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Wooden/WoodenFence_03/WoodenFence_03_Pole.et",
+      "blas": "blas/WoodenFence_03_Pole.bvh",
+      "xob": "Assets/Structures/Walls/Wooden/WoodenFence_03_Pole.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

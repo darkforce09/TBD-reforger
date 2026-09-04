@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1462,
+  "slug": "WoodHolder_01",
+  "resourceName": "Prefabs/Props/Construction/WoodHolder_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.672902524471283,
+      -0.033291295170784,
+      -0.4733053147792816
+    ],
+    "max": [
+      0.6520784497261047,
+      1.1224696636199951,
+      0.4998326897621155
+    ]
+  },
+  "shellBvh": "blas/WoodHolder_01.bvh",
+  "instances": [
+    {
+      "id": "WoodHolder_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Construction/WoodHolder_01.et",
+      "blas": "blas/WoodHolder_01.bvh",
+      "xob": "Assets/Props/Construction/WoodHolder_01/WoodHolder_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

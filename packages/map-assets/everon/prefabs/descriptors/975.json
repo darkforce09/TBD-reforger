@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 975,
+  "slug": "PierWooden_01_25m_destroyed",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/PierWooden_01_25m_destroyed.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.779125988483429,
+      -14.999999046325684,
+      -11.689818382263184
+    ],
+    "max": [
+      0.8856559991836548,
+      1.3672640323638916,
+      11.897820472717285
+    ]
+  },
+  "shellBvh": "blas/PierWooden_01_destroyed_25m.bvh",
+  "instances": [
+    {
+      "id": "PierWooden_01_25m_destroyed",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/PierWooden_01_25m_destroyed.et",
+      "blas": "blas/PierWooden_01_destroyed_25m.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/PierWooden_01_destroyed_25m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

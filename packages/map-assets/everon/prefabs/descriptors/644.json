@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 644,
+  "slug": "Buoy_01_grounded",
+  "resourceName": "Prefabs/Props/Naval/Buoy_01_grounded.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

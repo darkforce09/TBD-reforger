@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 51,
+  "slug": "GravelPile_01_medium",
+  "resourceName": "Prefabs/Props/Construction/GravelPile_01/GravelPile_01_medium.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -4.130209922790527,
+      -0.08482000231742859,
+      -2.1744658946990967
+    ],
+    "max": [
+      4.867938041687012,
+      1.1597820520401,
+      2.6837120056152344
+    ]
+  },
+  "shellBvh": "blas/GravelPile_01_medium.bvh",
+  "instances": [
+    {
+      "id": "GravelPile_01_medium",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Construction/GravelPile_01/GravelPile_01_medium.et",
+      "blas": "blas/GravelPile_01_medium.bvh",
+      "xob": "Assets/Props/Construction/GravelPile_01/GravelPile_01_medium.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

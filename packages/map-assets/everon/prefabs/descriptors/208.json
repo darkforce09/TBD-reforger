@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 208,
+  "slug": "BrickWallOld_01_8m_A",
+  "resourceName": "Prefabs/Structures/Walls/Brick/BrickWallOld_01/BrickWallOld_01_8m_A.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.25,
+      -1.613106369972229,
+      -0.2505025863647461
+    ],
+    "max": [
+      7.800000190734863,
+      2.387667655944824,
+      0.2494973987340927
+    ]
+  },
+  "shellBvh": "blas/BrickWallOld_01_8m_A.bvh",
+  "instances": [
+    {
+      "id": "BrickWallOld_01_8m_A",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Brick/BrickWallOld_01/BrickWallOld_01_8m_A.et",
+      "blas": "blas/BrickWallOld_01_8m_A.bvh",
+      "xob": "Assets/Structures/Walls/Brick/BrickWallOld_01_8m_A.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

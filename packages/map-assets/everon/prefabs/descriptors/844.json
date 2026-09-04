@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 844,
+  "slug": "CargoContainer_01_20ft_blue",
+  "resourceName": "Prefabs/Props/Industrial/CargoContainers/CargoContainer_01/CargoContainer_01_20ft_blue.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.0428562134038657,
+      -0.9642268940806389,
+      -3.0756940841674805
+    ],
+    "max": [
+      3.0437436134088784,
+      3.5669379234313965,
+      3.077259063720703
+    ]
+  },
+  "shellBvh": "blas/CargoContainer_01_20ft.bvh",
+  "instances": [
+    {
+      "id": "CargoContainer_01_20ft_blue",
+      "kind": "shell",
+      "prefab": "Prefabs/Props/Industrial/CargoContainers/CargoContainer_01/CargoContainer_01_20ft_blue.et",
+      "blas": "blas/CargoContainer_01_20ft.bvh",
+      "xob": "Assets/Props/Industrial/CargoContainer_01/CargoContainer_01_20ft.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 175,
+  "slug": "BenchStreet_01_yellow_red",
+  "resourceName": "Prefabs/Props/Civilian/BenchStreet/StreetBench_01/BenchStreet_01_yellow_red.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.0004652437855894,
+      -0.0017168668284891497,
+      -0.8129507597595258
+    ],
+    "max": [
+      1.0009976437650094,
+      1.5013357324160967,
+      0.5081391628891034
+    ]
+  },
+  "shellBvh": "blas/BenchStreet_01.bvh",
+  "instances": [
+    {
+      "id": "BenchStreet_01_yellow_red",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Civilian/BenchStreet/StreetBench_01/BenchStreet_01_yellow_red.et",
+      "blas": "blas/BenchStreet_01.bvh",
+      "xob": "Assets/Props/Civilian/BenchStreet/BenchStreet_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

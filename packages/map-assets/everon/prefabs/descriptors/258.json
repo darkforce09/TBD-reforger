@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 258,
+  "slug": "WaterMill_01_old",
+  "resourceName": "Prefabs/Structures/Agriculture/WaterMill_01/WaterMill_01_old.et",
+  "kind": "building",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.07031600177288055,
+      -0.028463000431656837,
+      -3.626270055770874
+    ],
+    "max": [
+      7.6437578201293945,
+      4.214653015136719,
+      1.2288570404052734
+    ]
+  },
+  "shellBvh": "blas/WaterMill_01_old.bvh",
+  "instances": [
+    {
+      "id": "WaterMill_01_old",
+      "kind": "shell",
+      "prefab": "Prefabs/Structures/Agriculture/WaterMill_01/WaterMill_01_old.et",
+      "blas": "blas/WaterMill_01_old.bvh",
+      "xob": "Assets/Structures/Agriculture/WaterMill_01/WaterMill_01_old.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

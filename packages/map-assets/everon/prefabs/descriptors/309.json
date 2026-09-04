@@ -1,0 +1,1104 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 309,
+  "slug": "HarborCrane_01_multicolour",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Cranes/HarborCrane_01_multicolour.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -8.931501388549805,
+      -0.21458768844604492,
+      -7.043622016906738
+    ],
+    "max": [
+      8.161345481872559,
+      47.197139739990234,
+      18.900880813598633
+    ]
+  },
+  "shellBvh": "blas/HarborCrane_Bottom_01.bvh",
+  "instances": [
+    {
+      "id": "HarborCrane_01_multicolour",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Cranes/HarborCrane_01_multicolour.et",
+      "blas": "blas/HarborCrane_Bottom_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Cranes/HarborCrane_01/HarborCrane_Bottom_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_ladder_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Ladders/Ladder_HarborCrane_645_B.et",
+      "blas": "blas/Ladder_HarborCrane_645_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Ladders/Ladder_HarborCrane/Ladder_HarborCrane_645_B.xob",
+      "local": {
+        "pos": [
+          -2.871645450592041,
+          6.2682271003723145,
+          5.562676906585693
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Socket_ladder_03",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Ladders/Ladder_HarborCrane_180_B.et",
+      "blas": "blas/Ladder_HarborCrane_180_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Ladders/Ladder_HarborCrane/Ladder_HarborCrane_180_B.xob",
+      "local": {
+        "pos": [
+          -3.3594226837158203,
+          13.540560722351074,
+          2.267714738845825
+        ],
+        "quat": [
+          0.0,
+          0.8870117943672821,
+          0.0,
+          0.4617467668033359
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "Light_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Lights/LampTower_01.et",
+      "blas": "blas/LampTower_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Lights/LampTower_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Light_03",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Lights/LampTower_01.et",
+      "blas": "blas/LampTower_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Lights/LampTower_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Light_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Lights/LampTower_01.et",
+      "blas": "blas/LampTower_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Lights/LampTower_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "59B85B3227E1FECE",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Cranes/HarborCrane_01_turret_multicolour.et",
+      "blas": "blas/HarborCrane_Upper_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Cranes/HarborCrane_01/HarborCrane_Upper_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Glass_Cabin_05",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Cabin_01/Glass_Cabin_05.et",
+      "blas": "blas/Glass_01_cabin_05.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_Cabin/Glass_01_cabin_05.xob",
+      "local": {
+        "pos": [
+          3.000000106112566e-7,
+          14.82731819152832,
+          4.335827350616455
+        ],
+        "quat": [
+          0.07604136087082262,
+          0.07604136087082262,
+          -0.7030061958737729,
+          0.7030061958737727
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Glass_Cabin_08",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Cabin_01/Glass_Cabin_08.et",
+      "blas": "blas/Glass_01_cabin_08.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_Cabin/Glass_01_cabin_08.xob",
+      "local": {
+        "pos": [
+          -0.8879767060279846,
+          14.718976020812988,
+          4.002463340759277
+        ],
+        "quat": [
+          0.3056095384425944,
+          -0.19994492949011372,
+          -0.6376541424138107,
+          0.6782492387364732
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Glass_Cabin_11",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Cabin_01/Glass_Cabin_11.et",
+      "blas": "blas/Glass_01_cabin_11.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_Cabin/Glass_01_cabin_11.xob",
+      "local": {
+        "pos": [
+          -1.2336370944976807,
+          15.744836807250977,
+          3.4591121673583984
+        ],
+        "quat": [
+          0.5,
+          -0.5,
+          -0.5,
+          0.5
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Glass_Cabin_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Cabin_01/Glass_Cabin_02.et",
+      "blas": "blas/Glass_01_cabin_02.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_Cabin/Glass_01_cabin_02.xob",
+      "local": {
+        "pos": [
+          0.8879749178886414,
+          14.718978881835938,
+          4.002458572387695
+        ],
+        "quat": [
+          -0.19994329033584957,
+          0.30560852149077095,
+          -0.6782501704119378,
+          0.6376541527960721
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_ladder_05",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Ladders/Ladder_HarborCrane_379_B.et",
+      "blas": "blas/Ladder_HarborCrane_379_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Ladders/Ladder_HarborCrane/Ladder_HarborCrane_379_B.xob",
+      "local": {
+        "pos": [
+          2.4133076667785645,
+          21.687334060668945,
+          -0.03843089938163757
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_ladder_02",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Ladders/Ladder_HarborCrane_379_B.et",
+      "blas": "blas/Ladder_HarborCrane_379_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Ladders/Ladder_HarborCrane/Ladder_HarborCrane_379_B.xob",
+      "local": {
+        "pos": [
+          -1.1710340976715088,
+          18.235485076904297,
+          -3.08258318901062
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_ladder_04",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Ladders/Ladder_HarborCrane_379_B.et",
+      "blas": "blas/Ladder_HarborCrane_379_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Ladders/Ladder_HarborCrane/Ladder_HarborCrane_379_B.xob",
+      "local": {
+        "pos": [
+          -2.423764944076538,
+          21.687335968017578,
+          -0.03843089938163757
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Glass_Cabin_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Cabin_01/Glass_Cabin_01.et",
+      "blas": "blas/Glass_01_cabin_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_Cabin/Glass_01_cabin_01.xob",
+      "local": {
+        "pos": [
+          1.233639121055603,
+          15.744841575622559,
+          3.459111213684082
+        ],
+        "quat": [
+          0.0,
+          -0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Glass_Cabin_06",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Cabin_01/Glass_Cabin_06.et",
+      "blas": "blas/Glass_01_cabin_06.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_Cabin/Glass_01_cabin_06.xob",
+      "local": {
+        "pos": [
+          1.500000053056283e-6,
+          15.976186752319336,
+          4.994609832763672
+        ],
+        "quat": [
+          -0.2623116136670718,
+          -0.2623116136670718,
+          -0.6566525849605535,
+          0.6566525849605535
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Glass_Cabin_07",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Cabin_01/Glass_Cabin_07.et",
+      "blas": "blas/Glass_01_cabin_07.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_Cabin/Glass_01_cabin_07.xob",
+      "local": {
+        "pos": [
+          6.000000212225132e-7,
+          16.769027709960938,
+          4.404772758483887
+        ],
+        "quat": [
+          -0.22132605825617818,
+          -0.22132605825617818,
+          -0.6715763366414741,
+          0.6715763366414743
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_door_right",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_HarborCrane_01_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_HarborCrane_01_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_HarborCrane_01/Door_HarborCrane_01_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -1.2236385345458984,
+          14.321453094482422,
+          3.014826536178589
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Win_HarborCrane_01",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_HarborCrane_A/Win_HarborCrane_A_126x116.et",
+      "blas": "blas/Win_HarborCrane_A_126x116.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_HarborCrane/Win_HarborCrane_A_126x116.xob",
+      "local": {
+        "pos": [
+          -1.844789981842041,
+          16.704402923583984,
+          -4.552854537963867
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Win_HarborCrane_01/Socket_Glass_57x33_06",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_57x33/Glass_57x33.et",
+      "blas": "blas/Glass_01_57x33.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_57x33/Glass_01_57x33.xob",
+      "local": {
+        "pos": [
+          -2.153235971927643,
+          17.075754523277283,
+          -4.54805003805086
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE/Socket_Win_HarborCrane_01"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Win_HarborCrane_01/Socket_Glass_57x33_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_57x33/Glass_57x33.et",
+      "blas": "blas/Glass_01_57x33.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_57x33/Glass_01_57x33.xob",
+      "local": {
+        "pos": [
+          -2.153235971927643,
+          16.333050310611725,
+          -4.548049738164991
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE/Socket_Win_HarborCrane_01"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Win_HarborCrane_01/Socket_Glass_57x33_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_57x33/Glass_57x33.et",
+      "blas": "blas/Glass_01_57x33.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_57x33/Glass_01_57x33.xob",
+      "local": {
+        "pos": [
+          -1.5363426804542542,
+          16.333050310611725,
+          -4.548049437813461
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE/Socket_Win_HarborCrane_01"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Win_HarborCrane_01/Socket_Glass_57x33_04",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_57x33/Glass_57x33.et",
+      "blas": "blas/Glass_01_57x33.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_57x33/Glass_01_57x33.xob",
+      "local": {
+        "pos": [
+          -2.153235971927643,
+          16.70488942359225,
+          -4.548050337936729
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE/Socket_Win_HarborCrane_01"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Win_HarborCrane_01/Socket_Glass_57x33_05",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_57x33/Glass_57x33.et",
+      "blas": "blas/Glass_01_57x33.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_57x33/Glass_01_57x33.xob",
+      "local": {
+        "pos": [
+          -1.5363426804542542,
+          17.075754523277283,
+          -4.548049738164991
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE/Socket_Win_HarborCrane_01"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Win_HarborCrane_01/Socket_Glass_57x33_03",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_57x33/Glass_57x33.et",
+      "blas": "blas/Glass_01_57x33.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_57x33/Glass_01_57x33.xob",
+      "local": {
+        "pos": [
+          -1.5363426804542542,
+          16.70488942359225,
+          -4.54805003805086
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE/Socket_Win_HarborCrane_01"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Win_HarborCrane_02",
+      "kind": "windowFrame",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Win_HarborCrane_A/Win_HarborCrane_A_126x116.et",
+      "blas": "blas/Win_HarborCrane_A_126x116.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Win_HarborCrane/Win_HarborCrane_A_126x116.xob",
+      "local": {
+        "pos": [
+          1.8447924852371216,
+          16.704402923583984,
+          -4.552854537963867
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Win_HarborCrane_02/Socket_Glass_57x33_06",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_57x33/Glass_57x33.et",
+      "blas": "blas/Glass_01_57x33.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_57x33/Glass_01_57x33.xob",
+      "local": {
+        "pos": [
+          1.5363464951515198,
+          17.075754523277283,
+          -4.54805003805086
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE/Socket_Win_HarborCrane_02"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Win_HarborCrane_02/Socket_Glass_57x33_02",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_57x33/Glass_57x33.et",
+      "blas": "blas/Glass_01_57x33.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_57x33/Glass_01_57x33.xob",
+      "local": {
+        "pos": [
+          1.5363464951515198,
+          16.333050310611725,
+          -4.548049738164991
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE/Socket_Win_HarborCrane_02"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Win_HarborCrane_02/Socket_Glass_57x33_01",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_57x33/Glass_57x33.et",
+      "blas": "blas/Glass_01_57x33.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_57x33/Glass_01_57x33.xob",
+      "local": {
+        "pos": [
+          2.1532397866249084,
+          16.333050310611725,
+          -4.548049437813461
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE/Socket_Win_HarborCrane_02"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Win_HarborCrane_02/Socket_Glass_57x33_04",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_57x33/Glass_57x33.et",
+      "blas": "blas/Glass_01_57x33.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_57x33/Glass_01_57x33.xob",
+      "local": {
+        "pos": [
+          1.5363464951515198,
+          16.70488942359225,
+          -4.548050337936729
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE/Socket_Win_HarborCrane_02"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Win_HarborCrane_02/Socket_Glass_57x33_05",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_57x33/Glass_57x33.et",
+      "blas": "blas/Glass_01_57x33.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_57x33/Glass_01_57x33.xob",
+      "local": {
+        "pos": [
+          2.1532397866249084,
+          17.075754523277283,
+          -4.548049738164991
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE/Socket_Win_HarborCrane_02"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Win_HarborCrane_02/Socket_Glass_57x33_03",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_57x33/Glass_57x33.et",
+      "blas": "blas/Glass_01_57x33.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_57x33/Glass_01_57x33.xob",
+      "local": {
+        "pos": [
+          2.1532397866249084,
+          16.70488942359225,
+          -4.54805003805086
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE/Socket_Win_HarborCrane_02"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Glass_Cabin_10",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Cabin_01/Glass_Cabin_10.et",
+      "blas": "blas/Glass_01_cabin_10.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_Cabin/Glass_01_cabin_10.xob",
+      "local": {
+        "pos": [
+          -0.8875020742416382,
+          16.767892837524414,
+          4.093755722045898
+        ],
+        "quat": [
+          0.0825275520184176,
+          -0.40999581388849193,
+          -0.7022745348828775,
+          0.5761103309321907
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/5E0EE61723C73943",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/HazardBeacon_01/HazardBeacon_Holder_01.et",
+      "blas": "blas/HazardBeacon_Holder_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Electrical/HazardBeacon_01/HazardBeacon_Holder_01.xob",
+      "local": {
+        "pos": [
+          0.026,
+          45.677,
+          16.974
+        ],
+        "quat": [
+          -1.5848095757158822e-17,
+          0.9659258262890683,
+          0.25881904510252074,
+          5.914589856893349e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/5E0EE61723C7398D",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/HazardBeacon_01/HazardBeacon_Holder_01.et",
+      "blas": "blas/HazardBeacon_Holder_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Electrical/HazardBeacon_01/HazardBeacon_Holder_01.xob",
+      "local": {
+        "pos": [
+          0.026,
+          45.047,
+          18.065
+        ],
+        "quat": [
+          0.25881904510252074,
+          0.0,
+          0.0,
+          0.9659258262890683
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/5E0EE6175FC9057E",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/HazardBeacon_01/HazardBeacon_Holder_01.et",
+      "blas": "blas/HazardBeacon_Holder_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Electrical/HazardBeacon_01/HazardBeacon_Holder_01.xob",
+      "local": {
+        "pos": [
+          -0.079,
+          25.812,
+          -0.215
+        ],
+        "quat": [
+          -9.131753738655175e-19,
+          -0.9998887907725298,
+          -0.014913285602041432,
+          6.122553035614482e-17
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Glass_Cabin_03",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Cabin_01/Glass_Cabin_03.et",
+      "blas": "blas/Glass_01_cabin_03.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_Cabin/Glass_01_cabin_03.xob",
+      "local": {
+        "pos": [
+          0.8882330060005188,
+          15.743252754211426,
+          4.219570159912109
+        ],
+        "quat": [
+          0.07101846848262088,
+          0.35748897054442513,
+          -0.027274659294728415,
+          0.9308136795480751
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/socket_door_left",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_HarborCrane_01_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_HarborCrane_01_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_HarborCrane_01/Door_HarborCrane_01_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          1.2236391305923462,
+          14.321453094482422,
+          3.014826536178589
+        ],
+        "quat": [
+          0.0,
+          0.7071067811865474,
+          0.0,
+          0.7071067811865476
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/socket_hatch_01",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/HatchDoor_HarborCrane_RIGHT_EXT_COV_B.et",
+      "blas": "blas/HatchDoor_HarborCrane_01_L_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_HarborCrane_01/HatchDoor_HarborCrane_01_L_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          -1.1710351705551147,
+          18.27176856994629,
+          -4.319632053375244
+        ],
+        "quat": [
+          -0.5,
+          -0.5,
+          -0.5,
+          0.5
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -99.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Glass_126x116",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_135x55/Glass_135x55.et",
+      "blas": "blas/Glass_01_135x55.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_135x55/Glass_01_135x55.xob",
+      "local": {
+        "pos": [
+          3.2000000373955118e-6,
+          18.2084903717041,
+          1.172755479812622
+        ],
+        "quat": [
+          0.0,
+          0.9891322351556393,
+          -0.14702864134585833,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Light_04",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Lights/LampTower_01.et",
+      "blas": "blas/LampTower_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Lights/LampTower_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Light_05",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/BuildingParts/Lights/LampTower_01.et",
+      "blas": "blas/LampTower_01.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Lights/LampTower_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Glass_Cabin_04",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Cabin_01/Glass_Cabin_04.et",
+      "blas": "blas/Glass_01_cabin_04.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_Cabin/Glass_01_cabin_04.xob",
+      "local": {
+        "pos": [
+          0.8875017762184143,
+          16.76788902282715,
+          4.093755722045898
+        ],
+        "quat": [
+          -0.4099976941486418,
+          0.08252911825334847,
+          -0.5761108277736533,
+          0.7022728455202276
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    },
+    {
+      "id": "59B85B3227E1FECE/Socket_Glass_Cabin_09",
+      "kind": "glass",
+      "prefab": "Prefabs/Structures/BuildingParts/Windows/Glass_Cabin_01/Glass_Cabin_09.et",
+      "blas": "blas/Glass_01_cabin_09.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Windows/Glass_HarborCrane_Cabin/Glass_01_cabin_09.xob",
+      "local": {
+        "pos": [
+          -0.888232409954071,
+          15.743252754211426,
+          4.219570159912109
+        ],
+        "quat": [
+          0.30300276320793357,
+          -0.20256666086477787,
+          -0.6388976428357173,
+          0.6774702025723459
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket",
+      "parent": "59B85B3227E1FECE"
+    }
+  ],
+  "notes": [
+    "Light_02: socket Light_02 not found in Assets/Structures/Infrastructure/Naval/Cranes/HarborCrane_01/HarborCrane_Bottom_01.xob — prefab coords used",
+    "Light_03: socket Light_03 not found in Assets/Structures/Infrastructure/Naval/Cranes/HarborCrane_01/HarborCrane_Bottom_01.xob — prefab coords used",
+    "Light_01: socket Light_01 not found in Assets/Structures/Infrastructure/Naval/Cranes/HarborCrane_01/HarborCrane_Bottom_01.xob — prefab coords used",
+    "59B85B3227E1FECE/5E0EE61723C73943/5E0670C4B6BF785A: Assets/Structures/BuildingsParts/Electrical/HazardBeacon_01/HazardBeacon_01.xob has no collision chunk — no BLAS, no instance",
+    "59B85B3227E1FECE/5E0EE61723C73943/5E0670C4B6BF785A/5A0882CA93C16A09: Prefabs/Structures/BuildingParts/Eletrical/HazardBeacon_01/HazardBeacon_01_light.et has no mesh",
+    "59B85B3227E1FECE/5E0EE61723C7398D/5E0670C4B6BF785A: Assets/Structures/BuildingsParts/Electrical/HazardBeacon_01/HazardBeacon_01.xob has no collision chunk — no BLAS, no instance",
+    "59B85B3227E1FECE/5E0EE61723C7398D/5E0670C4B6BF785A/5A0882CA93C16A09: Prefabs/Structures/BuildingParts/Eletrical/HazardBeacon_01/HazardBeacon_01_light.et has no mesh",
+    "59B85B3227E1FECE/5E0EE6175FC9057E/5E0670C4B6BF785A: Assets/Structures/BuildingsParts/Electrical/HazardBeacon_01/HazardBeacon_01.xob has no collision chunk — no BLAS, no instance",
+    "59B85B3227E1FECE/5E0EE6175FC9057E/5E0670C4B6BF785A/5A0882CA93C16A09: Prefabs/Structures/BuildingParts/Eletrical/HazardBeacon_01/HazardBeacon_01_light.et has no mesh",
+    "59B85B3227E1FECE/Light_04: socket Light_04 not found in Assets/Structures/Infrastructure/Naval/Cranes/HarborCrane_01/HarborCrane_Upper_01.xob — prefab coords used",
+    "59B85B3227E1FECE/Light_05: socket Light_05 not found in Assets/Structures/Infrastructure/Naval/Cranes/HarborCrane_01/HarborCrane_Upper_01.xob — prefab coords used"
+  ]
+}

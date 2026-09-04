@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 742,
+  "slug": "MessageBoardSmall_01_pole_frame_filled_V2",
+  "resourceName": "Prefabs/Structures/Civilian/MessageBoard/Filled/MessageBoardSmall_01_pole_frame_filled_V2.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.7046981261802685,
+      0.897575318813324,
+      -0.0198040003888309
+    ],
+    "max": [
+      0.7046979261802662,
+      2.0048243403434753,
+      0.15081599401310086
+    ]
+  },
+  "shellBvh": "",
+  "instances": [
+    {
+      "id": "socket_board",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Civilian/MessageBoard/MessageBoardSmall_01/MessageBoardSmall_01_frame.et",
+      "blas": "blas/MessageBoardSmall_01_frame.bvh",
+      "xob": "Assets/Structures/Civilian/MessageBoardSmall_01/MessageBoardSmall_01_frame.xob",
+      "local": {
+        "pos": [
+          -1.0000000116860974e-7,
+          0.897575318813324,
+          -0.004400699865072966
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ]
+}

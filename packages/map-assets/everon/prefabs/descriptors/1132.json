@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1132,
+  "slug": "LoadoutManager_Editor",
+  "resourceName": "Prefabs/MP/Managers/Loadouts/LoadoutManager_Editor.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

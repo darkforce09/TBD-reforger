@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 629,
+  "slug": "ConcreteWall_01_6m_B_01_EVERONSK",
+  "resourceName": "Prefabs/Structures/Walls/Concrete/ConcreteWall_01/ConcreteWall_01_6m_B_01_EVERONSK.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      0.0029937028884887695,
+      -0.8035659790039062,
+      -0.12611180543899536
+    ],
+    "max": [
+      6.005733489990234,
+      2.9538869857788086,
+      0.12491220235824585
+    ]
+  },
+  "shellBvh": "blas/ConcreteWall_01_6m_B.bvh",
+  "instances": [
+    {
+      "id": "ConcreteWall_01_6m_B_01_EVERONSK",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Concrete/ConcreteWall_01/ConcreteWall_01_6m_B_01_EVERONSK.et",
+      "blas": "blas/ConcreteWall_01_6m_B.bvh",
+      "xob": "Assets/Structures/Walls/Concrete/ConcreteWall_01_6m_B.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

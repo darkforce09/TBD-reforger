@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 828,
+  "slug": "FootballNetFence_01_15m",
+  "resourceName": "Prefabs/Structures/Walls/Net/FootballNetFence_01/FootballNetFence_01_15m.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -7.925105094909668,
+      -3.018022060394287,
+      -0.2222049981355667
+    ],
+    "max": [
+      7.760684013366699,
+      6.733390808105469,
+      0.27069199085235596
+    ]
+  },
+  "shellBvh": "blas/FootballNetFence_01_15m.bvh",
+  "instances": [
+    {
+      "id": "FootballNetFence_01_15m",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Net/FootballNetFence_01/FootballNetFence_01_15m.et",
+      "blas": "blas/FootballNetFence_01_15m.bvh",
+      "xob": "Assets/Structures/Walls/Net/FootballNetFence_01/FootballNetFence_01_15m.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 318,
+  "slug": "UAZ469_wreck_static",
+  "resourceName": "Prefabs/Props/Wrecks/UAZ469_wreck/UAZ469_wreck_static.et",
+  "kind": "vehicle",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.162561058998108,
+      0.33001798391342163,
+      -1.852457046508789
+    ],
+    "max": [
+      1.1164590120315552,
+      1.9564769268035889,
+      2.2095508575439453
+    ]
+  },
+  "shellBvh": "blas/UAZ469_wreck_static.bvh",
+  "instances": [
+    {
+      "id": "UAZ469_wreck_static",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Wrecks/UAZ469_wreck/UAZ469_wreck_static.et",
+      "blas": "blas/UAZ469_wreck_static.bvh",
+      "xob": "Assets/Vehicles/Wheeled/UAZ469/UAZ469_wreck_static.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

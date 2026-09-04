@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 124,
+  "slug": "WeighingScale_01_green",
+  "resourceName": "Prefabs/Props/Agriculture/WeighingScale_01_green.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.30103679527019267,
+      -2.980232238769531e-7,
+      -1.022291660308838
+    ],
+    "max": [
+      0.3020677864551544,
+      0.9101656079292297,
+      0.5958843231201172
+    ]
+  },
+  "shellBvh": "blas/WeighingScale_01.bvh",
+  "instances": [
+    {
+      "id": "WeighingScale_01_green",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Agriculture/WeighingScale_01_green.et",
+      "blas": "blas/WeighingScale_01.bvh",
+      "xob": "Assets/Props/Agricultural/WeighingScale_01/WeighingScale_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

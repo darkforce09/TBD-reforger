@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1358,
+  "slug": "BasketWicker_01",
+  "resourceName": "Prefabs/Props/Civilian/BasketWicker_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.3128937976434827,
+      -0.00034999847412109375,
+      -0.3148274002596736
+    ],
+    "max": [
+      0.3211382133886218,
+      0.4471549987792969,
+      0.3106139898300171
+    ]
+  },
+  "shellBvh": "blas/BasketWicker_01.bvh",
+  "instances": [
+    {
+      "id": "BasketWicker_01",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Civilian/BasketWicker_01.et",
+      "blas": "blas/BasketWicker_01.bvh",
+      "xob": "Assets/Props/Civilian/BasketWicker_01/BasketWicker_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 88,
+  "slug": "Pallet_01_Pile",
+  "resourceName": "Prefabs/Props/Industrial/Pallets/Pallet_01_Pile.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.48926082253456116,
+      -0.0003606081008911133,
+      -0.7314091324806213
+    ],
+    "max": [
+      0.503028154373169,
+      0.9753954410552979,
+      0.7092890739440918
+    ]
+  },
+  "shellBvh": "blas/Pallet_01_Pile.bvh",
+  "instances": [
+    {
+      "id": "Pallet_01_Pile",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Industrial/Pallets/Pallet_01_Pile.et",
+      "blas": "blas/Pallet_01_Pile.bvh",
+      "xob": "Assets/Props/Industrial/Pallets/Pallet_01_Pile.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

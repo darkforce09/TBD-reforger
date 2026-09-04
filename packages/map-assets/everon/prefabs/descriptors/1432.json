@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1432,
+  "slug": "MapEntity_Everon",
+  "resourceName": "Prefabs/World/Game/Eden/MapEntity_Everon.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

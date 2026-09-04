@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1294,
+  "slug": "PostOfficeBox_01",
+  "resourceName": "Prefabs/Props/Services/Post/PostOfficeBox_01.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.38812100887298584,
+      0.9630118906497955,
+      0.024891793727874756
+    ],
+    "max": [
+      0.38812100887298584,
+      1.466967910528183,
+      0.3646697998046875
+    ]
+  },
+  "shellBvh": "blas/PostOfficeBox_01.bvh",
+  "instances": [
+    {
+      "id": "PostOfficeBox_01",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Services/Post/PostOfficeBox_01.et",
+      "blas": "blas/PostOfficeBox_01.bvh",
+      "xob": "Assets/Props/Services/Post/PostOfficeBox/PostOfficeBox_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

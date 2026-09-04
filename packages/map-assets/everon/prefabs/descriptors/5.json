@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 5,
+  "slug": "Crate_01_orange",
+  "resourceName": "Prefabs/Props/Crates/Crate_01_orange.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.3041916899383068,
+      -0.0029945001006126404,
+      -0.2058998985456455
+    ],
+    "max": [
+      0.3041916899383068,
+      0.22061630338430405,
+      0.20590679999440908
+    ]
+  },
+  "shellBvh": "blas/Crate_01.bvh",
+  "instances": [
+    {
+      "id": "Crate_01_orange",
+      "kind": "furniture",
+      "prefab": "Prefabs/Props/Crates/Crate_01_orange.et",
+      "blas": "blas/Crate_01.bvh",
+      "xob": "Assets/Props/Crates/Crate_01.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "low",
+      "source": "prefabCoords"
+    }
+  ]
+}

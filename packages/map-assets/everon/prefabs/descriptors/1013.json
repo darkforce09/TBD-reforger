@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1013,
+  "slug": "CableReelWooden_01",
+  "resourceName": "Prefabs/Props/Construction/CableReel/CableReelWooden_01.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 180,
+  "slug": "GraniteRock_03",
+  "resourceName": "Prefabs/Rocks/Granite/GraniteRock_03.et",
+  "kind": "rock",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -12.077506065368652,
+      -0.9253489971160889,
+      -5.863643169403076
+    ],
+    "max": [
+      12.646035194396973,
+      6.795482158660889,
+      10.766332626342773
+    ]
+  },
+  "shellBvh": "blas/GraniteRock_03.bvh",
+  "instances": [
+    {
+      "id": "GraniteRock_03",
+      "kind": "prop",
+      "prefab": "Prefabs/Rocks/Granite/GraniteRock_03.et",
+      "blas": "blas/GraniteRock_03.bvh",
+      "xob": "Assets/Rocks/Granite/GraniteRock_03.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

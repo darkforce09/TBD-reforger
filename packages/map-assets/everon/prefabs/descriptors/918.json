@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 918,
+  "slug": "PierConcrete_01_corner_30_outer",
+  "resourceName": "Prefabs/Structures/Infrastructure/Naval/Piers/PierConcrete_01_corner_30_outer.et",
+  "kind": "water",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -5.316861843061099,
+      -4.005904197692871,
+      -4.255352973937988
+    ],
+    "max": [
+      0.14013137188846692,
+      4.484040796756744,
+      4.6700568079732605
+    ]
+  },
+  "shellBvh": "blas/PierConcrete_01_corner_30_outer.bvh",
+  "instances": [
+    {
+      "id": "PierConcrete_01_corner_30_outer",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/PierConcrete_01_corner_30_outer.et",
+      "blas": "blas/PierConcrete_01_corner_30_outer.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/PierConcrete_01_corner_30_outer.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_tire_001",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Tires_01.et",
+      "blas": "blas/Pier_Tires_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Tires_01.xob",
+      "local": {
+        "pos": [
+          -2.3395445346832275,
+          4.059275150299072,
+          2.874997138977051
+        ],
+        "quat": [
+          0.0,
+          -0.13052610183575772,
+          0.0,
+          0.9914448732731242
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_bollard_001",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/SeaBollards/SeaBollard_01.et",
+      "blas": "blas/Sea_Bollard.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/SeaBollards/Sea_Bollard.xob",
+      "local": {
+        "pos": [
+          -2.3385024070739746,
+          3.964338779449463,
+          2.866316556930542
+        ],
+        "quat": [
+          0.0,
+          -0.13052610183575772,
+          0.0,
+          0.9914448732731242
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_short_wood_001",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Infrastructure/Naval/Piers/Pier_Wood_Short_01.et",
+      "blas": "blas/Pier_Wood_Short_01.bvh",
+      "xob": "Assets/Structures/Infrastructure/Naval/Piers/Pier_Wood_Short_01.xob",
+      "local": {
+        "pos": [
+          -2.8967392444610596,
+          3.2820990085601807,
+          3.4064712524414062
+        ],
+        "quat": [
+          0.0,
+          -0.13052610183575772,
+          0.0,
+          0.9914448732731242
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "xobSocket"
+    }
+  ]
+}

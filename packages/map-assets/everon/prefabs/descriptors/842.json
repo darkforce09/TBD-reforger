@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 842,
+  "slug": "TrenchOld_02_450cm_wood_forest",
+  "resourceName": "Prefabs/Structures/Military/Fortifications/Trenches/TrenchOld_02/TrenchOld_02_450cm_wood_forest.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -3.5409433841705322,
+      -0.18871699273586273,
+      -3.522233486175537
+    ],
+    "max": [
+      2.165778636932373,
+      1.2623209953308105,
+      3.4739348888397217
+    ]
+  },
+  "shellBvh": "blas/TrenchOld_02_450cm_forest.bvh",
+  "instances": [
+    {
+      "id": "TrenchOld_02_450cm_wood_forest",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Military/Fortifications/Trenches/TrenchOld_02/TrenchOld_02_450cm_wood_forest.et",
+      "blas": "blas/TrenchOld_02_450cm_forest.bvh",
+      "xob": "Assets/Structures/Military/Fortifications/Trenches/TrenchOld_01/TrenchOld_02_450cm_forest.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}

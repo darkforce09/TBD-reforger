@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 1292,
+  "slug": "SignDangerCurve_01_right",
+  "resourceName": "Prefabs/Structures/Signs/Warnings/SignDangerCurve_01_right.et",
+  "kind": "prop",
+  "blocks": false,
+  "reason": "no-coll",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

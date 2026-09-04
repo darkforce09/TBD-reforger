@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 355,
+  "slug": "T62_wreck",
+  "resourceName": "Prefabs/Props/Wrecks/T62_wreck/T62_wreck.et",
+  "kind": "vehicle",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.724431037902832,
+      -0.13873399794101715,
+      -3.5666229724884033
+    ],
+    "max": [
+      1.7096010446548462,
+      1.6598819494247437,
+      5.602294921875
+    ]
+  },
+  "shellBvh": "blas/T62_wreck_hull.bvh",
+  "instances": [
+    {
+      "id": "T62_wreck",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Wrecks/T62_wreck/T62_wreck.et",
+      "blas": "blas/T62_wreck_hull.bvh",
+      "xob": "Assets/Props/Wrecks/T62/T62_wreck_hull.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "Socket_T62_turret",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Wrecks/T62_wreck/T62_wreck_turret.et",
+      "blas": "blas/T62_wreck_turret.bvh",
+      "xob": "Assets/Props/Wrecks/T62/T62_wreck_turret.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ],
+  "notes": [
+    "Socket_T62_turret: socket Socket_T62_turret not found in Assets/Props/Wrecks/T62/T62_wreck_hull.xob — prefab coords used"
+  ]
+}

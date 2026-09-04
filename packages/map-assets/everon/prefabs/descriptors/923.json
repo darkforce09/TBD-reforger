@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 923,
+  "slug": "ProbeEnvCave_base",
+  "resourceName": "Prefabs/Structures/Core/ProbeEnvCave_base.et",
+  "kind": "building",
+  "blocks": false,
+  "reason": "no-mesh",
+  "canopy": false,
+  "shellBvh": "",
+  "instances": []
+}

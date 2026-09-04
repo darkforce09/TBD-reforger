@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 585,
+  "slug": "BrickWall_01_Gate",
+  "resourceName": "Prefabs/Structures/Walls/Brick/BrickWall_01/BrickWall_01_Gate.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      0.005555510520935059,
+      -1.4334457516670227,
+      -0.18843033676216514
+    ],
+    "max": [
+      6.95171719789505,
+      2.1499631999554385,
+      0.2731733373291245
+    ]
+  },
+  "shellBvh": "blas/BrickWall_01_Gate.bvh",
+  "instances": [
+    {
+      "id": "BrickWall_01_Gate",
+      "kind": "prop",
+      "prefab": "Prefabs/Structures/Walls/Brick/BrickWall_01/BrickWall_01_Gate.et",
+      "blas": "blas/BrickWall_01_Gate.bvh",
+      "xob": "Assets/Structures/Walls/Brick/BrickWall_01_Gate.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    },
+    {
+      "id": "socket_gate_Right",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_BrickWall_01_RIGHT_EXT_COV_B.et",
+      "blas": "blas/Door_BrickWall_01_RIGHT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_BrickWall_01/Door_BrickWall_01_RIGHT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          2.0198097229003906,
+          0.0,
+          -0.06247759982943535
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": 90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": false
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    },
+    {
+      "id": "socket_gate_Left",
+      "kind": "doorLeaf",
+      "prefab": "Prefabs/Structures/BuildingParts/Doors/Door_BrickWall_01_LEFT_EXT_COV_B.et",
+      "blas": "blas/Door_BrickWall_01_LEFT_EXT_COV_B.bvh",
+      "xob": "Assets/Structures/BuildingsParts/Doors/Door_BrickWall_01/Door_BrickWall_01_LEFT_EXT_COV_B.xob",
+      "local": {
+        "pos": [
+          5.515934467315674,
+          0.0,
+          -0.07108119875192642
+        ],
+        "quat": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "scale": 1.0
+      },
+      "door": {
+        "angleRangeDeg": -90.0,
+        "closedAngleDeg": 0.0,
+        "initialAngleDeg": 0.0,
+        "angleRangeExplicit": true
+      },
+      "cover": "full",
+      "source": "xobSocket"
+    }
+  ]
+}

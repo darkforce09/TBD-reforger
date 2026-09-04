@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 915,
+  "slug": "b_phragmites_australis_1b",
+  "resourceName": "Prefabs/Vegetation/Bush/b_phragmites_australis_1b.et",
+  "kind": "prop",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -0.8164973006288108,
+      -0.2889019846916199,
+      -0.5521006256556587
+    ],
+    "max": [
+      0.6600921163557797,
+      1.282768964767456,
+      0.7538797787428413
+    ]
+  },
+  "shellBvh": "blas/b_phragmites_australis_1b.bvh",
+  "instances": [
+    {
+      "id": "b_phragmites_australis_1b",
+      "kind": "tree",
+      "prefab": "Prefabs/Vegetation/Bush/b_phragmites_australis_1b.et",
+      "blas": "blas/b_phragmites_australis_1b.bvh",
+      "xob": "Assets/Vegetation/Bush/Phragmites_Australis/b_phragmites_australis_1b.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "full",
+      "source": "prefabCoords"
+    }
+  ]
+}

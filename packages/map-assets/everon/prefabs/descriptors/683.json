@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "prefabId": 683,
+  "slug": "M923A1_wreck_static",
+  "resourceName": "Prefabs/Props/Wrecks/M923A1_wreck/M923A1_wreck_static.et",
+  "kind": "vehicle",
+  "blocks": true,
+  "canopy": false,
+  "localBounds": {
+    "min": [
+      -1.4027550220489502,
+      0.007286965847015381,
+      -4.4833221435546875
+    ],
+    "max": [
+      1.8264985084533691,
+      2.7441627979278564,
+      3.7445871829986572
+    ]
+  },
+  "shellBvh": "blas/M923A1_wreck_static.bvh",
+  "instances": [
+    {
+      "id": "M923A1_wreck_static",
+      "kind": "prop",
+      "prefab": "Prefabs/Props/Wrecks/M923A1_wreck/M923A1_wreck_static.et",
+      "blas": "blas/M923A1_wreck_static.bvh",
+      "xob": "Assets/Vehicles/Wheeled/M923A1/M923A1_wreck_static.xob",
+      "local": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": 1.0
+      },
+      "cover": "none",
+      "source": "prefabCoords"
+    }
+  ]
+}
