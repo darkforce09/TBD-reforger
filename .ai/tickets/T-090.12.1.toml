@@ -3,7 +3,7 @@ kind = "work"
 title = "T-090.12.1 — World export v2: pitch, roll, scale rows"
 summary = "Chunk wire tuple widens to [pid,x,y,z,yaw,pitch,roll,scale] (5 or 8 wide); schema 1.1.0 + golden; converter reads pitchDeg/rollDeg/scale; resurrected full-export plugin writes scale; WorldChunk gains columns; farmhouse and garbage-container transform pins."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
 plan = "docs/plans/t-090_12_1_plan.md"
@@ -32,7 +32,10 @@ acceptance = [
     "Chunks rebuild through verify-phase with the row-length census by kind reported; 5-wide rows are byte-identical to today.",
     "Farmhouse world-row pin 88/88 within 2 cm; garbage-container row pitch -3.04 / roll -4.75; after 1b its scale is recorded and scaleSource is GetScale.",
 ]
+shipped_at = "30820a004"
 created_at = "2026-09-04T01:22:27Z"
+completed_at = "2026-09-04T13:19:41Z"
+estimated = ["tokens"]
 owns = [
     "tools/tbd-tools/src/world/build.rs",
     "packages/tbd-schema/schema/map-object-instance.schema.json",
