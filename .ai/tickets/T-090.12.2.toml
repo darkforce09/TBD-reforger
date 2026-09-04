@@ -3,7 +3,7 @@ kind = "work"
 title = "T-090.12.2 — BLAS library: --all-prefabs, descriptors, manifest"
 summary = "cargo xtask map bvh-batch --all-prefabs walks every prefab in prefabs.json.gz through the T-090.11.2 Walker, emits shared BLAS, a PrefabDescriptor per pid (blocks:false when nothing collides), a deterministic blas-manifest with a hot set, and cargo xtask verify blas-manifest."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
 plan = "docs/plans/t-090_12_2_plan.md"
@@ -31,7 +31,10 @@ acceptance = [
     "Every prefabs.json.gz pid has a descriptor; every listed BLAS parses and its byte size matches; the farmhouse descriptor reproduces the T-090.11 instance set.",
     "Emit is deterministic (a second run writes zero files); per-kind table, total bytes and the 20 largest BLAS are in the commit body.",
 ]
+shipped_at = "dd3c8a6b9"
 created_at = "2026-09-04T01:22:27Z"
+completed_at = "2026-09-04T05:05:08Z"
+estimated = ["tokens"]
 owns = [
     "xtask/src/map_blueprint/library.rs",
     "xtask/src/map_blueprint/library_tests.rs",
