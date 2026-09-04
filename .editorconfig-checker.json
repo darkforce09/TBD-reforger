@@ -17,6 +17,8 @@
     "\\.rdb$",
     "\\.ent$",
     "\\.meta$",
-    "\\.tbd-sat$"
+    "\\.tbd-sat$",
+    "\\.bvh$",
+    "\\.bvh\\.golden$"
   ]
 }

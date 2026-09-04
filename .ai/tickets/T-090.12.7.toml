@@ -20,6 +20,10 @@ requirement = [
     "New docs/website/frontend/pages/debug-world-los.md + INDEX.md rows and count; debug-building-viewer.md gains the T-090.11.6 URL flags.",
     "packages/map-assets/README.md rows for objects/ (chunks v2, prefabs.json.gz) and prefabs/ (blas, descriptors, blas-manifest).",
     "docs/mod/MCP_TOOLING.md: cargo xtask mcp wbcall + every EMCP_WB_TbdBlueprint action including world-parity; SHIPPED_HISTORY entries; hub status line; tbd-export README.",
+    "docs/mod/MCP_TOOLING.md also: wb_execute_action fires the full-export plugin after a compile; map world-los --pairs / --dem / --dump-misses replay lane.",
+    "docs/website/EDITOR_GATE_RUNBOOK.md: gate render-check --shot / --map-assets / --inject-js / --no-freeze, the dev-login seed, LoS button is pointerdown.",
+    "docs/specs/Mission_Creator_Architecture/t090_11_architectural_interiors.md: a collision-presets section (projectile layer policy, census, --all-layers).",
+    "docs/website/DEV_RUNBOOK.md: copy-export-profile --full stamps the Steam build id as workbenchVersion; packages/map-assets README: scale column, schemaVersion 1.1.0.",
 ]
 current_state = ["Not started."]
 approach = ["Read the T-090.12 commit bodies (Docs for Cursor lines) and the program plan doc; write the documents; sync INDEX and TAGS only if a spec doc is added."]

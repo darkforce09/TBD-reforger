@@ -28,7 +28,7 @@ verify = [
     "cargo clippy -p map-engine-core --all-targets --all-features -- -D warnings; cargo xtask verify file-length; cargo xtask ticket check",
 ]
 acceptance = [
-    "Farmhouse world-row pin 88/88 within 2 cm; garbage-container row carries pitch -3.04 / roll -4.75; compound door pin stays 3983/4000.",
+    "Farmhouse world-row pin 88/88 within 2 cm; garbage-container row carries pitch -3.04 / roll -4.75; compound door pin re-blessed 3983 -> 3998/4000 under the T-090.12.4 projectile layer policy.",
     "Two cell oracles pinned at measured agreement (bar 98% objects-only) with disagreement classes characterised in the commit body.",
     "Editor readout names the blocking object or reports objects not loaded; viewshed shows object-hidden and canopy-concealed cells progressively.",
 ]

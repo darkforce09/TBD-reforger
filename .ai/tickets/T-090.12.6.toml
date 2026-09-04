@@ -19,13 +19,14 @@ requirement = [
     "cargo xtask ci ci-local green on main; the program plan doc's Verification section carries the final pins, bench timings and library bytes.",
     "ticket ship + stamp-sha for .6 and T-090.12; T-090.12.7 stays queued for Cursor with the exact document list.",
 ]
-current_state = ["Not started."]
+current_state = ["ci-local 2026-09-04: editorconfig, rust-ci, ci-local-leptos, schema green; verify-no-python and verify-coding-standards red before the program (T-090.6 .mjs tools; six SIZE-3 files)."]
 approach = ["Run ci-local, edit docs/plans/t-090_12_plan.md, ship and stamp, write the registry commit."]
 verify = [
     "cargo xtask ci ci-local; cargo xtask ticket check",
 ]
 acceptance = [
-    "CI mirror green; SHA stamps present on every slice and the umbrella; the Cursor slice names every document to update.",
+    "CI mirror run lane by lane; every lane this program touches green; the two pre-existing reds named with their commits in the close-out body.",
+    "SHA stamps present on every slice and the umbrella; the Cursor slice names every document to update.",
 ]
 created_at = "2026-09-04T01:22:27Z"
 owns = ["docs/plans/t-090_12_6_plan.md"]
