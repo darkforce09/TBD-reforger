@@ -37,7 +37,7 @@ operable. Slot pick / marquee / entity drag need `WasmMissionDoc` + spatial inde
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
 test "$(basename "$(git rev-parse --show-toplevel)")" = "TBD-T-159"
 # Existing:
 #   smoke_editor.mjs — wheel still pass
@@ -58,7 +58,7 @@ Read CLAUDE.md first. Work in the WORKTREE at .ai/artifacts/worktrees/TBD-T-159/
 Implement **T-159.15.2** — Mission Creator camera pan + pointer foundation.
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
   test "$(basename "$(git rev-parse --show-toplevel)")" = "TBD-T-159"
   git status --porcelain
   git branch --show-current   # expect t-159-leptos-ui

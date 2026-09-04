@@ -1,6 +1,6 @@
 # T-159.22 — Claude Code handoff (outliner + asset palette)
 
-**CWD:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`  
+**CWD:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`  
 **Baseline:** `f02fed5a` / tag `T-159.21`  
 **Spec:** [`docs/platform/t159_22_outliner_asset_palette.md`](../../docs/platform/t159_22_outliner_asset_palette.md)
 

@@ -111,7 +111,7 @@ Read CLAUDE.md first. Work on main at repo root.
 Implement **T-068.9** — Registry worker + compat ingest (T-150 data).
 
 ═══ PREFLIGHT ═══
-  cd /var/home/Samuel/Projects/TBD-Reforger
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain
   git pull && git lfs pull

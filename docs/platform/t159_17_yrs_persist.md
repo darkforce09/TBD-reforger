@@ -40,7 +40,7 @@ Read CLAUDE.md first. Work in the WORKTREE at .ai/artifacts/worktrees/TBD-T-159/
 Implement **T-159.17** — yrsPersist (IDB) + warm editor session.
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
   test "$(basename "$(git rev-parse --show-toplevel)")" = "TBD-T-159"
   git status --porcelain
   git branch --show-current

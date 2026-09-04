@@ -4,7 +4,7 @@
 **Status:** `shipped` · **Tag:** `T-152.14` (+ hotfix `T-152.14.1` @ `75ccf5b1`)
 **Executor:** **claude-code** (Claude Code)
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §6.1 (S7, A2, A3, D13) · T-151.5/.8 contracts
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.14`**
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.14`**
 **Depends on:** T-152.11 audit (independent of .12/.13 — may run in parallel lane if sequencing allows)
 
 ## In one sentence
@@ -91,7 +91,7 @@ The per-instance frustum cull (`compute_cull.rs`, `cs_icon_cull` in `shader.wgsl
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 cargo clippy -p map-engine-render --target wasm32-unknown-unknown -- -D warnings
 cargo test -p map-engine-core        # G1–G5
@@ -120,12 +120,12 @@ Authority: this spec. **Do not edit docs/registry.**
 
 ```
 Read CLAUDE.md first. Work in the T-152 worktree:
-  /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.14** — tree glyph zoom-in guarantee (budget + handoff fix).
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   make wasm && cargo test -p map-engine-core 2>&1 | tail -3
 
 ═══ READ (in order — spec wins) ═══

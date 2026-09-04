@@ -4,7 +4,7 @@
 **Status:** `ready` (blocked until **T-152.5** PASS)  
 **Executor:** **grok-cursor**  
 **Authority:** T-152 program hub · [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md) §5 (town names / importance) · [`t090_10_map_engine_v2_implementation_plan.md`](../../../.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) row 12 (`locations` export)  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · tag **`T-152.6`**  
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · tag **`T-152.6`**  
 **Depends on:** **T-152.5** · blocks **T-152.8** (town labels)
 
 ## In one sentence
@@ -84,7 +84,7 @@ Town labels (**T-152.8**) need a stable **name + position + importance** feed. M
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 git lfs pull && make map-assets-link
 
 # Export (after spike script exists)
@@ -128,7 +128,7 @@ Registry; hub data row; schema index; `./scripts/ticket sync`.
 ## Grok Code prompt — T-152.6 (copy-paste)
 
 ```
-Read CLAUDE.md first. CWD: /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+Read CLAUDE.md first. CWD: /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.6** — locations export.
 

@@ -1,6 +1,6 @@
 # T-151.0 verify log — wasm packaging merge + engine batch list + editor dual mount
 
-- **Worktree** (`git rev-parse --show-toplevel`): `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`
+- **Worktree** (`git rev-parse --show-toplevel`): `/run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`
 - **Baseline HEAD** (parent of the T-151.0 commit): `16d19d288d6a02d99aa5170d2075c58b02b5dbe9`
   (spike `94261dd6` is an ancestor — `git merge-base --is-ancestor 94261dd6 HEAD` ✔)
 - **Branch:** `t-151-wgpu-spike` (never `main`; no slice branch created)

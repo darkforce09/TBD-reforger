@@ -77,7 +77,7 @@ Editor uses a procedural grid only; no manifest, no aligned tiles, no CI gate ty
 ### Automated (exit 0)
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger
+cd /run/media/system/Disk_2/Projects/TBD-Reforger
 
 # Registry + docs
 ./scripts/ticket sync

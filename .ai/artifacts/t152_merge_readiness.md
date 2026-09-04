@@ -40,7 +40,7 @@
 
 ```bash
 # From main repo checkout (not necessarily this worktree):
-cd /home/Samuel/Projects/TBD-Reforger
+cd /run/media/system/Disk_2/Projects/TBD-Reforger
 git fetch origin   # if needed
 git checkout main
 git merge ticket/T-152 -m "Merge ticket/T-152: map cartographic fidelity"

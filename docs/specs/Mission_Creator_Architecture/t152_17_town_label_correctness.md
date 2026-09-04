@@ -4,7 +4,7 @@
 **Status:** `shipped` · **Tag:** `T-152.17` @ `45e4d247`
 **Executor:** **claude-code** (Claude Code)
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §10 A8/A12 (S4, D10)
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.17`**
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.17`**
 **Depends on:** **T-152.12** (lane) · T-152.13 (font) · plays nicely with T-152.16 (heights get the hills/peaks)
 
 ## In one sentence
@@ -91,7 +91,7 @@ Audit A8/A12: `locations.json` = 60 rows (**town 23 · peak 17 · hill 16 · vil
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 node scripts/map-assets/export-locations.mjs --terrain everon    # regen (flags per actual CLI)
 node scripts/map-assets/verify-town-labels.mjs
 cargo test -p map-engine-core
@@ -120,12 +120,12 @@ Authority: this spec. **Do not edit docs/registry.**
 
 ```
 Read CLAUDE.md first. Work in the T-152 worktree:
-  /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.17** — town label correctness (settlement-only lane + kind hygiene).
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   git log --oneline -6   # expect .12/.13 (and ideally .16) shipped
   make wasm
 

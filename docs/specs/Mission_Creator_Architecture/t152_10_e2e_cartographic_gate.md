@@ -3,7 +3,7 @@
 **Ticket:** T-152 · **Slice:** T-152.10  
 **Status:** `ready` (blocked until **T-152.9** all Gn PASS)  
 **Executor:** **grok-cursor** (+ **human** operator sign-off for M-rows)  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · tag **`T-152.10`**  
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · tag **`T-152.10`**  
 **Depends on:** **T-152.0–.9** verify logs ALL PASS
 
 ## In one sentence
@@ -89,7 +89,7 @@ T-152 ships across **10+ slices** (parallel agents on `.0`–`.3`, Grok on `.4`�
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 git lfs pull && make map-assets-link
 
 # Master aggregator (implement in this slice)
@@ -133,7 +133,7 @@ Human operator runs **`make web`**, dev-login, open Mission Creator Everon, **Ma
 ## Grok Code prompt — T-152.10 (copy-paste)
 
 ```
-Read CLAUDE.md first. CWD: /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+Read CLAUDE.md first. CWD: /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.10** — E2E cartographic gate (assist operator; do not fake sign-off).
 

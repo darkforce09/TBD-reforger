@@ -415,7 +415,7 @@ Hub: [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.
 | **T-144.1** | shipped | `b1949182` — read-only A3 source analysis (R1–R6 PASS) |
 | **T-144.0** | shipped | cursor-docs spec + handoff |
 
-**External source:** `/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old`
+**External source:** `/run/media/system/Disk_2/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old`
 
 ---
 

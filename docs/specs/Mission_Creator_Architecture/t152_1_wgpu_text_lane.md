@@ -4,7 +4,7 @@
 **Status:** **queued**  
 **Executor:** claude-code *(implementing agent: **Grok 4.5 in Cursor**)*  
 **Authority:** [`t152_map_cartographic_fidelity_program.md`](t152_map_cartographic_fidelity_program.md)  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · **Branch:** `ticket/T-152`  
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · **Branch:** `ticket/T-152`  
 **Depends on:** T-152.0 shipped · **Blocks:** T-152.7, T-152.8, T-152.9, T-152.10 (label consumers)
 
 ---
@@ -88,7 +88,7 @@ Add a **Rust-owned text draw lane** in `map-engine-render` (SDF font atlas **or*
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
 cargo clippy -p map-engine-render --target wasm32-unknown-unknown -- -D warnings
@@ -127,7 +127,7 @@ Read CLAUDE.md first. Work in the WORKTREE (NOT main).
 Implement **T-152.1** — wgpu text lane (SDF or canvas-to-texture) + declutter helper.
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git branch --show-current    # expect ticket/T-152
   git status --porcelain       # empty @ T-152.0 shipped

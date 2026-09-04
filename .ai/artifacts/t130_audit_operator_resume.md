@@ -16,7 +16,7 @@
 **Status:** pending until registry + worktree land (see below).
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger
+cd /run/media/system/Disk_2/Projects/TBD-Reforger
 
 # 1) Apply T-130 registry block (see t130_SETUP_COMMANDS.md or agent commit T-130.0)
 
@@ -39,7 +39,7 @@ git worktree add .ai/artifacts/worktrees/TBD-T-130 ticket/T-130
 ### Session 1 — main (Track A)
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger
+cd /run/media/system/Disk_2/Projects/TBD-Reforger
 ./scripts/ticket prompt T-090
 ```
 

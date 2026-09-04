@@ -4,7 +4,7 @@
 [`t151_5_1_verify_log.md`](../../../.ai/artifacts/t151_5_1_verify_log.md) · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
-`/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
+`/run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
 **Baseline:** `0b7621ed` (tag **T-151.5** — verify log
 [`t151_5_verify_log.md`](../../../.ai/artifacts/t151_5_verify_log.md)).
 
@@ -125,7 +125,7 @@ Read CLAUDE.md first. Work in the WORKTREE at tbd-reforger-wgpu-spike/ (NOT main
 Implement **T-151.5.1** — forest mass / landcover fidelity (tighten green envelope vs tree glyphs).
 
 ═══ PREFLIGHT ═══
-  cd /var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain            # empty @ 0b7621ed+ (tag T-151.5)
   # Do NOT checkout branches; do NOT run ./scripts/ticket run

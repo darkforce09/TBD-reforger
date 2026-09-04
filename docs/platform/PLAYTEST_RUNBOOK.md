@@ -48,10 +48,10 @@ container. Agent shells are `debian:12` with glibc 2.36 and no C toolchain; `car
 ([`xtask/src/hostrun.rs`](../../xtask/src/hostrun.rs)). Neither means anything is broken.
 You are the host, so just run them.
 
-Repo root is `/home/Samuel/Projects/TBD-Reforger`. Every command below assumes you are there:
+Repo root is `/run/media/system/Disk_2/Projects/TBD-Reforger`. Every command below assumes you are there:
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger
+cd /run/media/system/Disk_2/Projects/TBD-Reforger
 ```
 
 ### 2.1 Code gates (5 min, alone)

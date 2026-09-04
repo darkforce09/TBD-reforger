@@ -4,7 +4,7 @@
 **Status:** `ready` (blocked until **T-152.3** icons shipped — bridge deck glyph uses atlas)  
 **Executor:** **grok-cursor** (Grok 4.5 in Cursor — **not** Claude Code)  
 **Authority:** T-152 program hub (`.0` — written by parallel agent) · [`t090_phased_object_import.md`](t090_phased_object_import.md) · [`t090_render_lod_contract.md`](t090_render_lod_contract.md)  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` (commit on `main` in worktree; tag **`T-152.4`**)  
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` (commit on `main` in worktree; tag **`T-152.4`**)  
 **Depends on:** **T-152.3** (icon atlas keys for `building-bridge` badge) · prior T-152.0–.3 **all Gn PASS**  
 **Baseline:** last shipped T-152.3 commit + verify log
 
@@ -107,7 +107,7 @@ Road strips already use `expand_polyline_strip` (`crates/map-engine-core/src/geo
 
 ```bash
 # Preflight
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 git lfs pull && make map-assets-link
 
 # Export (if G1/G2 fail — requires Workbench staged raw)
@@ -161,12 +161,12 @@ Authority: this spec. **Do not edit docs/registry.**
 
 ```
 Read CLAUDE.md first. Work in the T-152 worktree:
-  /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.4** — fence / pier / bridge cartographic vectors.
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain   # resolve or stash before ship
   git lfs pull && make map-assets-link

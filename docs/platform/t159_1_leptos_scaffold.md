@@ -43,7 +43,7 @@ Inherit hub L1–L8. Additionally:
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
 test "$(basename "$(git rev-parse --show-toplevel)")" = "TBD-T-159"
 cargo check -p website-leptos   # or whatever package name you chose — record exact name
 # React still builds:
@@ -62,7 +62,7 @@ Read CLAUDE.md first. Work in the WORKTREE at .ai/artifacts/worktrees/TBD-T-159/
 Implement **T-159.1** — Leptos app scaffold (workspace member).
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
   test "$(basename "$(git rev-parse --show-toplevel)")" = "TBD-T-159"
   git status --porcelain
   git branch --show-current   # expect t-159-leptos-ui

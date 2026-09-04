@@ -31,7 +31,7 @@ Cursor will **not** auto-load rules from `.ai/`. Do not move project rules into 
 
 | Item | Expected |
 |------|----------|
-| Workspace root | `/home/Samuel/Projects/TBD-Reforger` — monorepo layout |
+| Workspace root | `/run/media/system/Disk_2/Projects/TBD-Reforger` — monorepo layout |
 | Agent bible | [`CLAUDE.md`](../../CLAUDE.md) — §Status synced from registry |
 | Ticket registry | [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json) — `active_slice` + executor gate |
 | Root `.cursor/` | [`.cursor/rules/tbd-platform.mdc`](../../.cursor/rules/tbd-platform.mdc) (always-on platform rule) |
@@ -44,7 +44,7 @@ Ignore sibling archived folders outside the workspace (`TBD_Website`, `Arma refo
 
 ## Step 1 — Open workspace
 
-**File → Open Folder** → `/home/Samuel/Projects/TBD-Reforger`
+**File → Open Folder** → `/run/media/system/Disk_2/Projects/TBD-Reforger`
 
 Confirm key paths exist:
 

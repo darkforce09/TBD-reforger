@@ -1,6 +1,6 @@
 # T-152.11 — Claude Code handoff (analysis only)
 
-**CWD:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`  
+**CWD:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`  
 **Branch:** `ticket/T-152`  
 **Spec:** [`docs/specs/Mission_Creator_Architecture/t152_11_operator_fidelity_audit.md`](../../docs/specs/Mission_Creator_Architecture/t152_11_operator_fidelity_audit.md)
 

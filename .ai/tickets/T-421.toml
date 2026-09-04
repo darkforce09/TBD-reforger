@@ -14,7 +14,7 @@ THE ALWAYS-BLOCKER CLASS, and the most serious finding of the 2026-07-26 run. Fo
 `scripts/platform/wave.sh:517` asserts: 'cargo check/clippy do not need one because they emit no binary to run.' THAT REASONING IS WRONG. The exposure is not about RUNNING a binary. Cargo's freshness test is mtime-based over a `.fingerprint` directory that IS SHARED ACROSS WORKTREES, so a check step can return a verdict about a file it never opened.
 
 REPRO A -- same tree, mtime alone:
-  export CARGO_TARGET_DIR=/home/Samuel/Projects/TBD-Reforger/target
+  export CARGO_TARGET_DIR=/run/media/system/Disk_2/Projects/TBD-Reforger/target
   cp -p crates/map-engine-core/src/slot_line.rs /tmp/sl.orig
   printf '\nTHIS IS NOT RUST AND CANNOT COMPILE ###\n' >> crates/map-engine-core/src/slot_line.rs
   touch -r /tmp/sl.orig crates/map-engine-core/src/slot_line.rs     # keep the ORIGINAL mtime

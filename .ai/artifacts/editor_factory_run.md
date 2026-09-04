@@ -200,7 +200,7 @@ file). Per wave L, tickets from `awk -F'\t' '$1==L' docs/platform/wave_plan.tsv`
    **Every wave, full adversarial, Fable 5 — operator decision 2026-08-07; not tiered, not traded.**
 6. `bash scripts/platform/wave.sh verified $(git rev-parse HEAD)` · registry: wave tickets →
    shipped, verifier tickets filed (next free T-7xx) · `distrobox-host-exec sh -c 'cd
-   /home/Samuel/Projects/TBD-Reforger && ./scripts/ticket sync'` · update this file's table ·
+   /run/media/system/Disk_2/Projects/TBD-Reforger && ./scripts/ticket sync'` · update this file's table ·
    `echo L > docs/platform/factory_pack_wave`.
 7. Close commit staging EXPLICIT paths (registry, generated TICKET_* docs, CLAUDE.md, ROADMAP.md,
    this file, editor_verify/waveL.md, factory_pack_wave), subject

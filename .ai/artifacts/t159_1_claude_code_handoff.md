@@ -1,6 +1,6 @@
 # T-159.1 — Claude Code handoff (Leptos scaffold)
 
-**CWD:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`  
+**CWD:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`  
 **Branch:** `t-159-leptos-ui` (standing worktree — linear commits)  
 **Spec:** [`docs/platform/t159_1_leptos_scaffold.md`](../../docs/platform/t159_1_leptos_scaffold.md)  
 **Hub:** [`docs/platform/t159_leptos_ui_program.md`](../../docs/platform/t159_leptos_ui_program.md)

@@ -35,7 +35,7 @@ This slice is **long**. Parallel subagents are **encouraged** — not forbidden.
 
 **Shared header for all subagents:**
 ```text
-T-144.1 partial — read-only. ARMA=/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old
+T-144.1 partial — read-only. ARMA=/run/media/system/Disk_2/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old
 Write ONLY your assigned partial file. Cite path:line + symbols. Log rejects. No TBD-Reforger code/docs edits.
 Arcade 2012 source — not Eden 3D. Retail vs VBS guards matter.
 ```
@@ -56,8 +56,8 @@ Parent merges partials → validates uiMap.* hypothesis → writes §0–§11.
 
 | Repo | Path | Your access |
 |------|------|-------------|
-| **TBD-Reforger** (this) | `/home/Samuel/Projects/TBD-Reforger` | Write **`.ai/artifacts/t144_*` only** |
-| **Arma 3 source** (external) | `/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old` | **Read only — entire tree** |
+| **TBD-Reforger** (this) | `/run/media/system/Disk_2/Projects/TBD-Reforger` | Write **`.ai/artifacts/t144_*` only** |
+| **Arma 3 source** (external) | `/run/media/system/Disk_2/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old` | **Read only — entire tree** |
 
 **Scope:** You are **not** confined to `lib/UI/`. Follow the map pipeline wherever it goes: `landscape.*`, `world.cpp`, `cfg/`, texture loaders, visitor/tools, `extern/`. Operator expects **exhaustive** archaeology.
 
@@ -70,7 +70,7 @@ Parent merges partials → validates uiMap.* hypothesis → writes §0–§11.
 ### Step 1 — Orient
 
 ```bash
-ARMA=/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old
+ARMA=/run/media/system/Disk_2/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old
 ls "$ARMA"
 find "$ARMA/lib" -maxdepth 2 -type d | head -40
 ```
@@ -80,7 +80,7 @@ find "$ARMA/lib" -maxdepth 2 -type d | head -40
 `$ARMA` = full source root. Run queries under **`$ARMA`** (not only `$ARMA/lib`):
 
 ```bash
-ARMA=/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old
+ARMA=/run/media/system/Disk_2/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old
 
 # 1. Editor + 2D map displays
 rg -l "DisplayArcadeMap|DisplayMapEditor|MissionEditor|ArcadeMap" "$ARMA" --glob '*.{cpp,hpp,h,sqf}' 2>/dev/null | head -40

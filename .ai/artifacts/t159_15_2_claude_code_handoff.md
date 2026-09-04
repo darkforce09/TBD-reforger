@@ -1,6 +1,6 @@
 # T-159.15.2 — Claude Code handoff (camera pan)
 
-**CWD:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`  
+**CWD:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`  
 **Branch:** `t-159-leptos-ui` · **Baseline tag:** `T-159.15.1` (`a425936d`)  
 **Spec:** [`docs/platform/t159_15_2_camera_pan.md`](../../docs/platform/t159_15_2_camera_pan.md)  
 **Hub:** [`docs/platform/t159_leptos_ui_program.md`](../../docs/platform/t159_leptos_ui_program.md)

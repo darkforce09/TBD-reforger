@@ -4,7 +4,7 @@
 **Status:** `queued`
 **Executor:** **claude-code** (Claude Code)
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §7.3 (A11, S4)
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.13`**
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.13`**
 **Depends on:** T-152.12 (upright, alive text lane)
 **Blocks:** T-152.16, T-152.17 (readability acceptance)
 
@@ -79,7 +79,7 @@ Audit §7.3: `bake_ascii_atlas_rgba` builds a 16×6-cell, **8×8 px** atlas (128
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 cargo test -p map-engine-render     # G1–G4
 make wasm && ls -l apps/website/frontend/src/wasm/pkg/*_bg.wasm   # G5 vs prior size
@@ -107,12 +107,12 @@ Authority: this spec. **Do not edit docs/registry.**
 
 ```
 Read CLAUDE.md first. Work in the T-152 worktree:
-  /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.13** — readable text atlas (font fidelity).
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   git log --oneline -3   # expect T-152.12 shipped (upright text lane)
   make wasm
 

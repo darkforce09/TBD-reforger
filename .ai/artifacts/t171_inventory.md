@@ -163,7 +163,7 @@ Row format: file → wrong claim → correct claim. "PATH" = mechanical swap set
 ### D. .cursor/rules/
 - `application-code-forbidden.mdc` :3 globs `apps/website/**/*.go, apps/website/frontend/src/**/*.{ts,tsx}` → dead languages; retarget guard to `apps/website/api/src/**/*.rs`, `apps/website/frontend/src/**/*.rs` (+ keep mod globs); :20 `apps/website/internal/` (deleted) + old React-path wording → same retarget. **Collision note:** `apps/website/frontend/src` now = the LIVE Leptos SPA, no longer a deleted-React ghost.
 - `cursor-agent-workflow.mdc` :16 path list; :61 "Do not patch `.go`/`.ts`/`.c`" → `.rs`/`.c` reality; :92-94 STOP list `apps/website/internal/**` (deleted) + `apps/website/frontend/src/**` (reword: live Rust app code, Claude-owned).
-- `tbd-platform.mdc` :11 repo root `/home/Samuel/Projects/TBD-Reforger/` (checkout also mounts at `/var/home/...` — state $HOME-relative); :12 "never `apps/website/frontend/docs/`" → keep intent, reword "specs live in `docs/website/frontend/` — never under `apps/**/docs` (verify-doc-layout enforces)"; :18 `T-0xx` branch lore → main-only.
+- `tbd-platform.mdc` :11 repo root `/run/media/system/Disk_2/Projects/TBD-Reforger/` (checkout also mounts at `/var/home/...` — state $HOME-relative); :12 "never `apps/website/frontend/docs/`" → keep intent, reword "specs live in `docs/website/frontend/` — never under `apps/**/docs` (verify-doc-layout enforces)"; :18 `T-0xx` branch lore → main-only.
 - `claude-prompt-delivery.mdc` :42, :50 example headers using `worktree`/`ticket/T-092` branch flow → main-only examples.
 - `class-r-plans.mdc` :62/:76/:126-133 React-porting framing → mark historical (rule mechanics stay).
 

@@ -15,7 +15,7 @@ MECHANISM 1 — ARTIFACT CLOBBERING. Observed directly by T-334's agent: target/
 
 MECHANISM 2 — SHARED GATE DATABASE. wave.sh:93-105 (ensure_gate_db) hands every slice the same tbd_gate_it and deliberately does not drop it, while tests/registry_compat.rs:38-60 DELETEs and re-imports two FIXED modpack UUIDs. Two gates at once make each other fail. Three distinct symptoms observed by T-393's agent: registry_compat.rs:255 inserted 0 vs 10604; registry_compat.rs:511 (0,5) vs (16,7); an ETag assertion 200 vs 304. Deterministic repro, roughly 1 in 2:
   distrobox-host-exec env TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/tbd_gate_it?sslmode=disable \
-    bash -c 'B=/home/Samuel/Projects/TBD-Reforger/target/debug/deps/registry_compat-*; ("$B" &) ; "$B"'
+    bash -c 'B=/run/media/system/Disk_2/Projects/TBD-Reforger/target/debug/deps/registry_compat-*; ("$B" &) ; "$B"'
 One process fails, the other passes; run alone it always passes.
 
 Both are FALSE-RED rather than false-green, so they waste budget rather than hide bugs — which is why this is deferred rather than fixed. But false-red is the most expensive failure shape this program has: the honest response to a red gate is to go looking for a bug in your own diff, and an unattended fix agent will spend its entire retry budget doing exactly that.

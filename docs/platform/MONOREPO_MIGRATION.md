@@ -67,6 +67,6 @@ Git-tracked parity vs originals: website app files match (minus lifted trees); m
 1. Create GitHub repo `darkforce09/TBD-Reforger`
 2. Push monorepo `main`
 3. Archive old remotes (read-only)
-4. Point Cursor workspace at `/home/Samuel/Projects/TBD-Reforger/`
+4. Point Cursor workspace at `/run/media/system/Disk_2/Projects/TBD-Reforger/`
 5. Resume normal split: Cursor docs, Claude Code `executor: claude-code` slices
 6. Update staging server clone path on `192.168.0.140` after cutover (`deploy-staging.sh` rsyncs from monorepo root)

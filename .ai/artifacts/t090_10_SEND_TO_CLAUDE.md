@@ -1,6 +1,6 @@
 # Send-off — T-090.5.5 (tree / veg / prop glyphs)
 
-**CWD:** `/home/Samuel/Projects/TBD-Reforger` (`main`)
+**CWD:** `/run/media/system/Disk_2/Projects/TBD-Reforger` (`main`)
 
 **Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](t090_10_map_engine_v2_implementation_plan.md) §7 row T-090.5.5  
 **Spec:** [`docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md`](../../docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md)  

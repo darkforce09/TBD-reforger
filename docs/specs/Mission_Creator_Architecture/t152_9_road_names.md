@@ -3,7 +3,7 @@
 **Ticket:** T-152 · **Slice:** T-152.9  
 **Status:** `ready` (blocked until **T-152.1** text lane **and** **T-152.8** PASS)  
 **Executor:** **grok-cursor**  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · tag **`T-152.9`**  
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · tag **`T-152.9`**  
 **Depends on:** **T-152.1** · **T-152.8** (sequential per program) · `roads.json.gz` shipped (T-090.3.3)
 
 ## In one sentence
@@ -90,7 +90,7 @@ Spike **RoadEntity / `.topo` name attrs**; if empty ship **`road-names.json`** c
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 git lfs pull && make map-assets-link
 
 test -f .ai/artifacts/t152_9_road_name_spike.json || (echo 'G2 FAIL' && exit 1)
@@ -122,7 +122,7 @@ Registry; note curated vs exported path in hub; `./scripts/ticket sync`.
 ## Grok Code prompt — T-152.9 (copy-paste)
 
 ```
-Read CLAUDE.md first. CWD: /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+Read CLAUDE.md first. CWD: /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.9** — road names.
 

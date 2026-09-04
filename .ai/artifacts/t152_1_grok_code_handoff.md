@@ -2,7 +2,7 @@
 
 **Active slice:** T-152.1  
 **Implementing agent:** **Grok 4.5 in Cursor** (not Claude Code; do **not** `./scripts/ticket run`)  
-**CWD:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`  
+**CWD:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`  
 **Branch:** `ticket/T-152`  
 **Hub:** [`t152_map_cartographic_fidelity_program.md`](../../docs/specs/Mission_Creator_Architecture/t152_map_cartographic_fidelity_program.md)  
 **Spec:** [`t152_1_wgpu_text_lane.md`](../../docs/specs/Mission_Creator_Architecture/t152_1_wgpu_text_lane.md)
@@ -12,7 +12,7 @@
 ## Preflight
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 git rev-parse --abbrev-ref HEAD   # must be ticket/T-152
 test "$(basename "$(git rev-parse --show-toplevel)")" = "TBD-T-152"
 ```

@@ -1,6 +1,6 @@
 # T-159.18 — Claude Code handoff (select / LMB)
 
-**CWD:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`  
+**CWD:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`  
 **Baseline:** `60c6e7ea` / tag `T-159.17`  
 **Spec:** [`docs/platform/t159_18_select_tools.md`](../../docs/platform/t159_18_select_tools.md)
 

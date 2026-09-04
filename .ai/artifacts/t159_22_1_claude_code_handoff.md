@@ -1,6 +1,6 @@
 # T-159.22.1 — Claude Code handoff (undo granularity)
 
-**CWD:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`  
+**CWD:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`  
 **Baseline:** `0154b4e9` / tag `T-159.22`  
 **Spec:** [`docs/platform/t159_22_1_undo_granularity.md`](../../docs/platform/t159_22_1_undo_granularity.md)
 

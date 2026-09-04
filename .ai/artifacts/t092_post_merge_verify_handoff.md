@@ -15,7 +15,7 @@ Run **automated gates** on repo root **`main`**. Then **Workbench MCP** spawn ve
 ## 1. Automated (no Workbench)
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger
+cd /run/media/system/Disk_2/Projects/TBD-Reforger
 
 make db-up
 cd packages/tbd-schema && npm run validate

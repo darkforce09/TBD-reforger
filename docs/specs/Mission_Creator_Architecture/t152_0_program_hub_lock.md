@@ -4,7 +4,7 @@
 **Status:** **ready** (docs pass)  
 **Executor:** cursor-docs  
 **Authority:** [`t152_map_cartographic_fidelity_program.md`](t152_map_cartographic_fidelity_program.md)  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · **Branch:** `ticket/T-152`
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · **Branch:** `ticket/T-152`
 
 ---
 
@@ -81,7 +81,7 @@ T-151 shipped wgpu world vectors + placeholder glyphs but **no program ticket** 
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 HUB=docs/specs/Mission_Creator_Architecture
 test -f $HUB/t152_map_cartographic_fidelity_program.md
 for f in t152_0_program_hub_lock.md t152_1_wgpu_text_lane.md t152_2_reforger_icon_art.md \

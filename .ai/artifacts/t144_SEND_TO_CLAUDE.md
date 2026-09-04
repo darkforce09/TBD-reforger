@@ -1,8 +1,8 @@
 # Send-off — T-144.1 (Arma 3 map architecture study)
 
-**CWD:** `/home/Samuel/Projects/TBD-Reforger` (`main`)
+**CWD:** `/run/media/system/Disk_2/Projects/TBD-Reforger` (`main`)
 
-**External source (read-only):** `/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old`
+**External source (read-only):** `/run/media/system/Disk_2/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old`
 
 ```bash
 ./scripts/ticket prompt T-144 --slice T-144.1

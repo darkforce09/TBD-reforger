@@ -18,7 +18,7 @@ T-090 basemap work (Satellite + Map tiles, heuristic land-cover, `.topo` roads) 
 ## Source tree (read-only — outside monorepo)
 
 ```text
-/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old/
+/run/media/system/Disk_2/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old/
 ```
 
 **Do not commit to that repo.** Analysis artifacts live in **this** repo under `.ai/artifacts/`.
@@ -153,10 +153,10 @@ Read CLAUDE.md first (TBD-Reforger repo).
 Execute **T-144.1** — Arma 3 map architecture study (read-only, **exhaustive**).
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger
   git pull
   ./scripts/ticket brief T-144
-  ARMA=/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old
+  ARMA=/run/media/system/Disk_2/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old
   test -d "$ARMA/lib" && test -d "$ARMA/cfg" || exit 1
   # Orient the whole tree — not just lib/UI
   find "$ARMA" -maxdepth 2 -type d | head -60

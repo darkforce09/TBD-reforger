@@ -1,6 +1,6 @@
 # T-159.16 — Claude Code handoff (MissionDoc host)
 
-**CWD:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`  
+**CWD:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`  
 **Branch:** `t-159-leptos-ui` · **Baseline:** `ebcabe1d` / tag `T-159.15.2`  
 **Spec:** [`docs/platform/t159_16_mission_doc_host.md`](../../docs/platform/t159_16_mission_doc_host.md)
 

@@ -119,7 +119,7 @@ Read CLAUDE.md first. Work on main at repo root (NOT a spike worktree).
 Implement **T-150** — Universal Enfusion registry + compat export (mod-agnostic).
 
 ═══ PREFLIGHT ═══
-  cd /var/home/Samuel/Projects/TBD-Reforger
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain
   git pull && git lfs pull

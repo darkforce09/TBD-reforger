@@ -4,7 +4,7 @@
 **Status:** `ready`
 **Executor:** **claude-code** (Claude Code)
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §4 S3, §7
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.12`**
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.12`**
 **Depends on:** T-152.11 audit (shipped @ `a8a7a22c`)
 **Blocks:** T-152.13, T-152.16, T-152.17 (every visible-label slice)
 
@@ -95,7 +95,7 @@ No automated gate in .7–.10 ever exercised the GPU text path — all label gat
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
 cargo clippy -p map-engine-render --target wasm32-unknown-unknown -- -D warnings
@@ -128,12 +128,12 @@ Authority: this spec. **Do not edit docs/registry.**
 
 ```
 Read CLAUDE.md first. Work in the T-152 worktree:
-  /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.12** — text lane resurrection (16 B uniform) + upright orientation.
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   git status --porcelain   # expect the TextUniforms hotfix already in tree (engine.rs + shader.wgsl) — KEEP it
   make wasm
 

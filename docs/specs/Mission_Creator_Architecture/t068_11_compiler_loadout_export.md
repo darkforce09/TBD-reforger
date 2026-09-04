@@ -107,7 +107,7 @@ Read CLAUDE.md first. Work on main at repo root.
 Implement **T-068.11** — Compiled mod document loadout block incl. cargo (for T-068.12).
 
 ═══ PREFLIGHT ═══
-  cd /var/home/Samuel/Projects/TBD-Reforger
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git rev-parse T-068.15.1
   git rev-parse T-068.15.2

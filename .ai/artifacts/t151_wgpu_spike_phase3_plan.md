@@ -3,7 +3,7 @@
 
 **Executor:** this Cursor agent, in the spike worktree, per operator instruction ("We are executing…", "Let's build a game engine") — this overrides the default Claude-Code-owns-code split for this branch only. No Rust/TS is written until this plan is approved.
 
-**Working tree:** `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike` on branch `t-151-wgpu-spike` @ `209999fd` (verified: clean, contains the full yrs doc-core; `node_modules` absent; `src/wasm/pkg` unbuilt). All paths below are relative to that root. Main repo, registry, and `main` are untouched.
+**Working tree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike` on branch `t-151-wgpu-spike` @ `209999fd` (verified: clean, contains the full yrs doc-core; `node_modules` absent; `src/wasm/pkg` unbuilt). All paths below are relative to that root. Main repo, registry, and `main` are untouched.
 
 **Scope = exactly the four approved steps** of Phase 3's spine:
 1. Scaffold `crates/map-engine-render` (wgpu `webgpu`+`webgl` features, wasm-bindgen).

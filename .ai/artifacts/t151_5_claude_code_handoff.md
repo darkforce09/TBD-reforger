@@ -55,7 +55,7 @@ Deck oracle (`VITE_WORLDMAP_ENABLED=1`): glyphs via `treeStore` + `IconLayer` at
 ## Preflight
 
 ```bash
-cd /var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
 test "$(git rev-parse --show-toplevel)" = "$(pwd)"
 git status --porcelain
 git lfs pull && make map-assets-link

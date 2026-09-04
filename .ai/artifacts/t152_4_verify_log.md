@@ -2,7 +2,7 @@
 
 **Slice:** T-152.4  
 **Branch:** `ticket/T-152`  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`
 
 ## Summary
 

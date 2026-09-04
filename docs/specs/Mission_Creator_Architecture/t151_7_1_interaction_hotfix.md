@@ -3,7 +3,7 @@
 **Status:** **shipped** @ `fa6ad959` (tag **T-151.7.1**); follow-ups **T-151.7.2** @ `64c64d98` / `69ca1c08` · was ready · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
-`/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
+`/run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
 **Baseline:** `ab6bcb11` (tag **T-151.7** — verify log
 [`t151_7_verify_log.md`](../../../.ai/artifacts/t151_7_verify_log.md)).
 
@@ -105,7 +105,7 @@ Read CLAUDE.md first. Work in the WORKTREE at tbd-reforger-wgpu-spike/ (NOT main
 Implement **T-151.7.1** — interaction hotfix (selection tint / drag FPS / zoom-at-cursor).
 
 ═══ PREFLIGHT ═══
-  cd /var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain            # empty @ ab6bcb11+ (tag T-151.7)
   # Do NOT checkout branches; do NOT run ./scripts/ticket run

@@ -4,7 +4,7 @@
 **Status:** `deferred` · **Operator skip:** 2026-07-13 — no extractable icons; slice not run
 **Executor:** **claude-code** (Claude Code) — **OPERATOR-IN-LOOP: do not start headless**
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §6.4 (S9, A7, D2 WRONG_PATH)
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.18`**
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.18`**
 **Depends on:** operator presence (Workbench warm via `cargo xtask mod dev-bootstrap`)
 
 ## In one sentence
@@ -90,7 +90,7 @@ Audit §6.4 / ledger D2 = **WRONG_PATH**. T-152.2's single MCP search timed out 
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 scripts/mod/mcp-call.sh api_search "ping" || { echo "BLOCKED: Workbench not warm"; exit 1; }   # G1 pattern
 node scripts/map-assets/build-glyph-atlas.mjs   # actual rebuild entry per repo
 cargo xtask schema map-glyphs || cargo xtask ci schema-validate
@@ -118,12 +118,12 @@ Authority: this spec. **Do not edit docs/registry. OPERATOR MUST BE PRESENT (Wor
 
 ```
 Read CLAUDE.md first. Work in the T-152 worktree:
-  /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.18** — Reforger icon EXTRACT retry (operator-in-loop).
 
 ═══ PREFLIGHT (HARD GATE — NO FALLBACK) ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   scripts/mod/mcp-call.sh api_search "map icon" # must return JSON within 10 s
   # FAILURE ⇒ STOP THE SLICE. Report "blocked: Workbench not warm". DO NOT REDRAW ANYTHING.
 

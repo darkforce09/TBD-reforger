@@ -89,7 +89,7 @@ Read CLAUDE.md first. Work on main at repo root.
 Implement **T-068.15.2** — Arsenal capacity + cargo UI + seed (Leptos).
 
 ═══ PREFLIGHT ═══
-  cd /var/home/Samuel/Projects/TBD-Reforger
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger
   git rev-parse T-068.15.1   # must exist
   ./scripts/ticket brief T-068
 

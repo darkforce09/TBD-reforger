@@ -4,7 +4,7 @@
 **Status:** `shipped` · **Tag:** `T-152.21` @ `d5c746df`
 **Executor:** **claude-code** (Claude Code)
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §10 A4/A5 (P1–P3) · [`t090_render_lod_contract.md`](t090_render_lod_contract.md) (importanceZoom contract)
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.21`**
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.21`**
 **Depends on:** T-152.18 preferred (Reforger icon art) but not required — works with current atlas
 
 ## In one sentence
@@ -86,7 +86,7 @@ Audit A4/A5. Buildings draw as OBB fills from z ≥ −2.5 and get glyphs only a
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 cargo test -p map-engine-core     # G1–G4
 make wasm
@@ -115,12 +115,12 @@ Authority: this spec. **Do not edit docs/registry.**
 
 ```
 Read CLAUDE.md first. Work in the T-152 worktree:
-  /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.21** — landmark early visibility (importanceZoom wired).
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   make wasm && cargo test -p map-engine-core 2>&1 | tail -3
 
 ═══ READ (in order — spec wins) ═══

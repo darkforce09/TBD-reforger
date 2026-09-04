@@ -4,7 +4,7 @@
 **Status:** `ready` (blocked until **T-152.4** G1–G10 PASS · **T-152.2/.3** icon keys for hangar/tower)  
 **Executor:** **grok-cursor**  
 **Authority:** T-152 program hub · [`t090_1_2_5_2_water_topo_refine.md`](t090_1_2_5_2_water_topo_refine.md) · [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md)  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · tag **`T-152.5`**  
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · tag **`T-152.5`**  
 **Depends on:** **T-152.4** · **T-152.2/.3** (hangar + control-tower glyph keys) · **T-152.0–.3** PASS
 
 ## In one sentence
@@ -98,7 +98,7 @@ Runway centerlines already exist in `packages/map-assets/everon/objects/roads.js
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 git lfs pull && make map-assets-link
 
 # G1 runway census
@@ -138,12 +138,12 @@ Registry `T-152.5 → shipped`; hub airfield row; spike JSON link; `./scripts/ti
 ## Grok Code prompt — T-152.5 (copy-paste)
 
 ```
-Read CLAUDE.md first. CWD: /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+Read CLAUDE.md first. CWD: /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.5** — airfield symbology.
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   git lfs pull && make map-assets-link && make wasm
   Confirm t152_4_verify_log.md ALL PASS
 

@@ -15,7 +15,7 @@ T-160 is unrelated (GpuTimer idea) — do not reuse that id.
 ## Preflight
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-161
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-161
 git checkout t-161-ticket-xtask
 git status -sb
 ./scripts/ticket brief T-161

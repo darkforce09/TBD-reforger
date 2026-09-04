@@ -1,7 +1,7 @@
 # T-151.10 verify log — Fable 5 full-program audit (W0–W9)
 
 **Audit HEAD:** `1cbe3a56` (= tag `T-151.9` tip `58c8fcc3` + 2 Cursor docs commits `a7a93368`, `1cbe3a56`) ·
-**Worktree:** `tbd-reforger-wgpu-spike/` (`git rev-parse --show-toplevel` = `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`) ·
+**Worktree:** `tbd-reforger-wgpu-spike/` (`git rev-parse --show-toplevel` = `/run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`) ·
 **Date:** 2026-07-09/10 · **Executor:** Claude Code (Fable 5) ·
 **Report:** [`t151_10_fable_audit_report.md`](t151_10_fable_audit_report.md)
 

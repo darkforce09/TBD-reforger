@@ -3,7 +3,7 @@
 **Ticket:** T-152 · **Slice:** T-152.11  
 **Status:** `ready`  
 **Executor:** **claude-code** (analysis report only — **no application code**)  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152`  
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152`  
 **Depends on:** T-152.0–.10 shipped (automated); operator O1–O12 may still be open  
 **Blocks:** Remediation slices **T-152.12+** (filed after this audit returns)
 
@@ -208,7 +208,7 @@ Spike artifacts: [`.ai/artifacts/t152_6_locations_spike.json`](../../../.ai/arti
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 test -f .ai/artifacts/t152_11_fidelity_audit_report.md
 rg -n 'Provenance|Fix matrix|PROP_MIN_ZOOM|vs_text|Path B|tree|TREE' .ai/artifacts/t152_11_fidelity_audit_report.md
 # G7: ship commit must not touch engine/app source
@@ -237,7 +237,7 @@ Authority: this spec + handoff. **Do not edit application code. Do not edit regi
 ```
 Read CLAUDE.md first.
 
-CWD: /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+CWD: /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 Branch: ticket/T-152
 
 Implement **T-152.11** — Operator fidelity audit (ANALYSIS ONLY — no app code).

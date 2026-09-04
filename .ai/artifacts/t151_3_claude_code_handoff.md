@@ -8,7 +8,7 @@
 · **Program hub:**
 [`t151_wgpu_engine_program.md`](../../docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md)
 · **Working tree:** the standing worktree at `tbd-reforger-wgpu-spike/` (absolute:
-`/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`) @ `a51e9dcb` (tag **T-151.2**)
+`/run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`) @ `a51e9dcb` (tag **T-151.2**)
 or later — **never `main`**. Do **not** run `./scripts/ticket run`. Do **not** create or
 checkout slice branches — commit linearly on the worktree's current HEAD.
 
@@ -59,7 +59,7 @@ Five deliverables (Piece 2 opening from
 ## Preflight
 
 ```bash
-cd /var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
 test "$(git rev-parse --show-toplevel)" = "$(pwd)"
 git status --porcelain             # empty @ a51e9dcb+
 # Do NOT checkout or create branches; do NOT run ./scripts/ticket run

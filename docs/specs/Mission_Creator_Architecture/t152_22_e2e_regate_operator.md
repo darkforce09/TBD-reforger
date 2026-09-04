@@ -4,7 +4,7 @@
 **Status:** `shipped` (operator GO 2026-07-14 — see verify log)
 **Executor:** **human** (operator) — Claude Code assists with the automated half, cannot self-sign
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §6.5 (A14, A16, D12) · [`t152_10_e2e_cartographic_gate.md`](t152_10_e2e_cartographic_gate.md)
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.22`**
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.22`**
 **Depends on:** T-152.12–.21 all shipped (every remediation Gn PASS)
 
 ## In one sentence
@@ -73,7 +73,7 @@ O1 map loads (no blank/panic) · O2 fences visible @ new gate (≥ 1.5 per .15) 
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 # extended master (exact entry per .10's runner + additions)
 cargo xtask ci ci-local || true   # platform replay
 cargo test -p map-engine-core && cargo test -p map-engine-render && make wasm
@@ -103,12 +103,12 @@ Authority: this spec. **Operator drives; agent assists automated half only. Do n
 
 ```
 Read CLAUDE.md first. Work in the T-152 worktree:
-  /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Assist **T-152.22** — E2E re-gate + operator O1–O12 (executor: human).
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   git tag -l 'T-152.1*' 'T-152.2*'   # expect .12–.21 all tagged
   make wasm
 

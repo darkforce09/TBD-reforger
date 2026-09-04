@@ -2,7 +2,7 @@
 
 **Slice:** T-152.10  
 **Branch:** `ticket/T-152`  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`  
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`  
 **Date:** 2026-07-13  
 **Tip (pre-commit):** `0ff2eb007b13f6211681c5310ab50483c51da88e`
 

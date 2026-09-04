@@ -1,7 +1,7 @@
 # T-152.2 verify log — Reforger map icon art + atlas rebuild
 
 **Slice:** T-152.2  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`  
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`  
 **Branch:** `ticket/T-152`  
 **Date:** 2026-07-13
 

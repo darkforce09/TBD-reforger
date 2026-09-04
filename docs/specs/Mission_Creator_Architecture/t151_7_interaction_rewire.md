@@ -4,7 +4,7 @@
 [`t151_7_verify_log.md`](../../../.ai/artifacts/t151_7_verify_log.md) · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
-`/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
+`/run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
 **Baseline:** `033ff715` (tag **T-151.6** — verify log
 [`t151_6_verify_log.md`](../../../.ai/artifacts/t151_6_verify_log.md)).
 
@@ -125,7 +125,7 @@ Read CLAUDE.md first. Work in the WORKTREE at tbd-reforger-wgpu-spike/ (NOT main
 Implement **T-151.7** — interaction rewire + parity suite (ULP-0 camera on wgpu mount).
 
 ═══ PREFLIGHT ═══
-  cd /var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain            # empty @ 033ff715+ (tag T-151.6)
   # Do NOT checkout branches; do NOT run ./scripts/ticket run

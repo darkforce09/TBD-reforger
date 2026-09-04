@@ -4,7 +4,7 @@
 [`t151_7_3_verify_log.md`](../../../.ai/artifacts/t151_7_3_verify_log.md) · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
-`/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
+`/run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
 **Baseline:** `69ca1c08` (after **T-151.7.2**).
 
 **Shipped notes:** `SlotGpuBridge` on `RenderEngine`; `wgpuSlots.ts` **56** LOC; vitest
@@ -125,7 +125,7 @@ Read CLAUDE.md first. Work in the WORKTREE at tbd-reforger-wgpu-spike/ (NOT main
 Implement **T-151.7.3** — Rust collapse: move slot GPU bridge out of TypeScript.
 
 ═══ PREFLIGHT ═══
-  cd /var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain            # empty @ 69ca1c08+ (after T-151.7.2)
   # Do NOT checkout branches; do NOT run ./scripts/ticket run

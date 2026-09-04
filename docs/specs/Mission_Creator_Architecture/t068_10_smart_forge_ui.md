@@ -98,7 +98,7 @@ Read CLAUDE.md first. Work on main at repo root.
 Implement **T-068.10** — Smart Loadout Forge UI (wire T-068.9 worker into Arsenal).
 
 ═══ PREFLIGHT ═══
-  cd /var/home/Samuel/Projects/TBD-Reforger
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain
   git pull && git lfs pull

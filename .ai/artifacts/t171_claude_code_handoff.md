@@ -20,7 +20,7 @@ HARD GATE: agent split — you do not edit docs/** / registry / CLAUDE sync mark
 Implement **T-171** — full monorepo/website hygiene (not mod).
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger
   git status -sb && git log -5 --oneline --decorate
   # BLOCKER: T-169 must be tagged/shipped. If not: STOP.
   git tag -l 'T-169' && ./scripts/ticket brief T-169

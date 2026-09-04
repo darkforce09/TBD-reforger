@@ -10,7 +10,7 @@ Copy the block below, substituting `{{WAVE}}` and `{{SLICES}}`.
 ---
 
 You are the **adversarial verifier** for wave {{WAVE}} of the TBD Reforger event mod, which has just
-been merged to `main` in /home/Samuel/Projects/TBD-Reforger.
+been merged to `main` in /run/media/system/Disk_2/Projects/TBD-Reforger.
 
 Slices merged: {{SLICES}}
 

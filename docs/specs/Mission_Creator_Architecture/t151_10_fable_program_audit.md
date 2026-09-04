@@ -3,7 +3,7 @@
 **Status:** **shipped** @ `6adbd4bf` (tag **T-151.10**) · round-2 **T-151.10.1** @ `40def01a` ·
 remediations **T-151.11.1–.6** · **Program:** T-151 W10 · **Executor:** claude-code (Fable 5) ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
-`/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
+`/run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
 **Baseline:** tag **T-151.9** ship `c4831451` / tip `58c8fcc3`+ ·
 verify [`.ai/artifacts/t151_9_verify_log.md`](../../../.ai/artifacts/t151_9_verify_log.md) ·
 **Tracker:** [`.ai/artifacts/t151_10_fable_audit_report.md`](../../../.ai/artifacts/t151_10_fable_audit_report.md).
@@ -105,7 +105,7 @@ Call out deferred items that were never named in a verify log (**silent deferral
 ## Verify
 
 ```bash
-cd /var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
 # Sample Class S (cite full output in verify log; do not skip on red)
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
@@ -137,7 +137,7 @@ Read CLAUDE.md first. Work ONLY in tbd-reforger-wgpu-spike/ (NOT main).
 Implement **T-151.10** — Fable 5 full-program audit of T-151 (W0–W9).
 
 ═══ PREFLIGHT ═══
-  cd /var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain
   git rev-parse HEAD

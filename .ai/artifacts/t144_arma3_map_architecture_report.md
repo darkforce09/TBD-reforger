@@ -1,6 +1,6 @@
 # T-144.1 — Arma 3 2D mission-editor map: architecture study
 
-**Source:** `/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old` (read-only; `Arma3_2012.sln` era)
+**Source:** `/run/media/system/Disk_2/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old` (read-only; `Arma3_2012.sln` era)
 **Scope:** mission editor **2D map** — raster stack, coords, zoom/LOD, world objects, pick, height. Search log: [`t144_arma3_search_log.md`](t144_arma3_search_log.md). Verify: [`t144_verify_log.md`](t144_verify_log.md).
 
 **Provenance caveat (mandatory):** this tree is **Arma 3 ~2012 — pre-Eden**. The shipped 2D mission editor here is the classic **Arcade editor** (`DisplayArcadeMap`), the direct ancestor of the map view Eden (2016) later embedded. Everything below is engine ground truth for the RV-engine 2D map stack; statements about Eden itself are inference from this lineage and are flagged as such.

@@ -4,7 +4,7 @@
 [`t151_3_verify_log.md`](../../../.ai/artifacts/t151_3_verify_log.md) · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) (W3) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
-`/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
+`/run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
 **Baseline:** `a51e9dcb` (tag **T-151.2** — verify log
 [`t151_2_verify_log.md`](../../../.ai/artifacts/t151_2_verify_log.md)).
 
@@ -157,7 +157,7 @@ Read CLAUDE.md first. Work in the WORKTREE at tbd-reforger-wgpu-spike/ (NOT main
 Implement **T-151.3** — chunk residency + world spatial index + first world instances (W3).
 
 ═══ PREFLIGHT ═══
-  cd /var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain            # must be empty @ a51e9dcb+ (tag T-151.2)
   # Do NOT checkout or create branches; do NOT run ./scripts/ticket run

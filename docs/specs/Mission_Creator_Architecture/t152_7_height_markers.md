@@ -4,7 +4,7 @@
 **Status:** `ready` (blocked until **T-152.1** text lane **and** **T-152.6** PASS)  
 **Executor:** **grok-cursor**  
 **Authority:** T-152 program hub · [`t091_1_dem_loader.md`](t091_1_dem_loader.md) · [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md) (mountain labels)  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · tag **`T-152.7`**  
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · tag **`T-152.7`**  
 **Depends on:** **T-152.1** (text lane / SDF atlas) · **T-152.6** (parallel OK) · **not** T-152.8
 
 ## In one sentence
@@ -84,7 +84,7 @@ Everon DEM is committed (`packages/map-assets/everon/dem/everon-dem-16bit.png`, 
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 git lfs pull && make map-assets-link
 
 cargo test -p map-engine-core dem::peaks --all-features
@@ -116,7 +116,7 @@ Registry; hub annotation row; `./scripts/ticket sync`.
 ## Grok Code prompt — T-152.7 (copy-paste)
 
 ```
-Read CLAUDE.md first. CWD: /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+Read CLAUDE.md first. CWD: /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.7** — height markers.
 

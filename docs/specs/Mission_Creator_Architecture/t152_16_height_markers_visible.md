@@ -4,7 +4,7 @@
 **Status:** `shipped` · **Tag:** `T-152.16` @ `2a1c96e5`
 **Executor:** **claude-code** (Claude Code)
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §6.3 (S8, D9, A6)
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.16`**
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.16`**
 **Depends on:** **T-152.12** (alive+upright text lane) · T-152.13 (readable font)
 
 ## In one sentence
@@ -91,7 +91,7 @@ Audit §6.3. The consumer chain is wired and default-on, but: labels rode the de
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 node scripts/map-assets/export-height-labels.mjs --terrain everon   # regen (adjust flags to actual CLI)
 cargo test -p map-engine-core     # G1–G4 unit layer
 make wasm && cargo xtask ci schema-validate
@@ -120,12 +120,12 @@ Authority: this spec. **Do not edit docs/registry.**
 
 ```
 Read CLAUDE.md first. Work in the T-152 worktree:
-  /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.16** — height markers visible + credible.
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   git log --oneline -5   # expect T-152.12 (+ .13) shipped
   git lfs pull && make wasm
 

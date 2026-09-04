@@ -5,7 +5,7 @@
 shipped** (T-151.11.1–.6; tip `8237cda6`) · **Next:** operator sign-off
 ([`t151_operator_signoff.md`](../../../.ai/artifacts/t151_operator_signoff.md)) · polish list
 (next slice when filed) · then **T-069** · **Worktree:**
-`tbd-reforger-wgpu-spike/` (absolute: `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`)
+`tbd-reforger-wgpu-spike/` (absolute: `/run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`)
 — standing worktree; agents do **not** manage branches per slice. · **Spike shipped:** commits
 `152b3a12…94261dd6` (camera parity + render spine + 20M stress + byte-exact self-check, verify log
 [`t151_wgpu_spike_verify_log.md`](../../../.ai/artifacts/t151_wgpu_spike_verify_log.md)) ·
@@ -64,7 +64,7 @@ Every slice spec ends with a `§Claude Code prompt` block. All prompts share thi
 Read CLAUDE.md first. Work in the WORKTREE at tbd-reforger-wgpu-spike/ (NOT main).
 
 ═══ PREFLIGHT ═══
-  cd /var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain            # must be empty @ baseline SHA from prior slice tag/log
   # Do NOT checkout or create branches; do NOT run ./scripts/ticket run

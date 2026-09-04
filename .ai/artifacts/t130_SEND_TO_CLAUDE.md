@@ -3,7 +3,7 @@
 **Checkout:** `.ai/artifacts/worktrees/TBD-T-130` · **Branch:** `ticket/T-130`
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-130
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-130
 git merge main
 ./scripts/ticket brief T-130
 ./scripts/ticket prompt T-130

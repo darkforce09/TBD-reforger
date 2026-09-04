@@ -1,6 +1,6 @@
 # T-159.23 — Claude Code handoff (Attributes modal)
 
-**CWD:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`  
+**CWD:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`  
 **Baseline:** `ce73c5bc` / tag `T-159.22.1`  
 **Spec:** [`docs/platform/t159_23_attributes_modal.md`](../../docs/platform/t159_23_attributes_modal.md)
 

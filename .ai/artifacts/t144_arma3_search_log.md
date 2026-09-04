@@ -1,6 +1,6 @@
 # T-144.1 — Phase 0 search log (Arma 3 source discovery)
 
-**Tree:** `/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old` (read-only, 638 MB, 36 top-level dirs, `Arma3_2012.sln` era)
+**Tree:** `/run/media/system/Disk_2/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old` (read-only, 638 MB, 36 top-level dirs, `Arma3_2012.sln` era)
 **Method:** ≥6 independent `rg` strategies over the **entire** tree (not confined to `lib/UI/`), hit counts recorded, every candidate validated by (a) who instantiates it, (b) mission-editor-2D vs other surface, (c) compile guard in the retail config chain. Date: 2026-07-04.
 
 ---

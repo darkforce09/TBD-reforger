@@ -84,7 +84,7 @@ supersedes. Three of this band's best outcomes came from exactly that.
 ## 3. Mechanics — copy these
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger
+cd /run/media/system/Disk_2/Projects/TBD-Reforger
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target      # never /tmp (16 GB tmpfs)
 ```
 
@@ -129,7 +129,7 @@ git -c core.hooksPath=/dev/null push origin main               # plain push dies
 
 **Environment note:** this box runs the repo inside a container but `cargo xtask platform wave`, `cargo`, and
 `./scripts/ticket` are **host** binaries. From the container, prefix with
-`distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && PATH=$HOME/.cargo/bin:$PATH …'`.
+`distrobox-host-exec sh -c 'cd /run/media/system/Disk_2/Projects/TBD-Reforger && PATH=$HOME/.cargo/bin:$PATH …'`.
 Run natively if your shell is already the host — the wave driver detects and says so.
 
 ---

@@ -4,7 +4,7 @@
 **Status:** `deferred` · **Operator defer:** 2026-07-13 — Workbench extract not needed now; revisit future
 **Executor:** **claude-code** (Claude Code) — **OPERATOR-IN-LOOP: Workbench warm + Script Editor compile required**
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §9 (S6, D8, A9, A10)
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.19`**
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.19`**
 **Depends on:** operator presence · T-152.17 (locality/kind vocabulary settled, so Path A emits the final shape)
 
 ## In one sentence
@@ -92,7 +92,7 @@ Audit §9 scorecard. Towns 2/5: the Path A plugin is authored but has **never pr
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 scripts/mod/mcp-call.sh api_search "MapDescriptor" || { echo "BLOCKED: Workbench not warm"; exit 1; }
 make map-labels-everon
 make map-labels-everon   # byte-stability (G4)
@@ -122,12 +122,12 @@ Authority: this spec. **Do not edit docs/registry. OPERATOR MUST BE PRESENT.**
 
 ```
 Read CLAUDE.md first. Work in the T-152 worktree:
-  /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.19** — one-button Workbench label export (Path A E2E).
 
 ═══ PREFLIGHT (HARD GATE) ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   scripts/mod/mcp-call.sh api_search "Location" # JSON within 10 s or STOP (blocked report)
 
 ═══ READ (in order — spec wins) ═══

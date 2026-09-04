@@ -106,7 +106,7 @@ Read CLAUDE.md first. Work on main at repo root.
 Implement **T-068.15.1** — Export cargo capacity + default contents (resume WIP).
 
 ═══ PREFLIGHT ═══
-  cd /var/home/Samuel/Projects/TBD-Reforger
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain
   ./scripts/ticket brief T-068

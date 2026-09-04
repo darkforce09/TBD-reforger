@@ -4,7 +4,7 @@
 **Status:** `shipped` · **Tags:** `T-152.20` @ `4ec87d1b` · `T-152.20.1` @ `1a750cdd`
 **Executor:** **claude-code** (Claude Code)
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §10 A15 (O10)
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.20`**
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.20`**
 **Depends on:** none (parallel-safe; O10 in T-152.22 depends on this)
 
 ## In one sentence
@@ -71,7 +71,7 @@ Audit A15: `WorldClassToggles` defines **12** classes (`worldLayerPrefs.ts:20-38
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152/apps/website/frontend
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152/apps/website/frontend
 npm test && npm run build && npm run lint
 cd ../../.. && git diff --stat crates/   # expect empty
 ```
@@ -96,12 +96,12 @@ Authority: this spec. **Do not edit docs/registry.**
 
 ```
 Read CLAUDE.md first. Work in the T-152 worktree:
-  /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.20** — Mission Settings world-layer toggle completeness.
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152/apps/website/frontend
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152/apps/website/frontend
   npm ci --no-audit 2>/dev/null || npm install
 
 ═══ READ (in order — spec wins) ═══

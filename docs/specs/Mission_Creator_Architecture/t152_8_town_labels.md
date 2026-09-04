@@ -3,7 +3,7 @@
 **Ticket:** T-152 · **Slice:** T-152.8  
 **Status:** `ready` (blocked until **T-152.1** text lane **and** **T-152.6** locations export PASS)  
 **Executor:** **grok-cursor**  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · tag **`T-152.8`**  
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · tag **`T-152.8`**  
 **Depends on:** **T-152.6** (`locations.json`) · **T-152.1** (text lane) · **T-152.7** may ship parallel if text lane shared
 
 ## In one sentence
@@ -81,7 +81,7 @@ Render **town names** from `locations.json` on the cartographic map using the te
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 git lfs pull && make map-assets-link
 
 test -f packages/map-assets/everon/locations.json || (echo 'G1 FAIL: run T-152.6' && exit 1)
@@ -112,7 +112,7 @@ Registry; frontend map layer doc row; `./scripts/ticket sync`.
 ## Grok Code prompt — T-152.8 (copy-paste)
 
 ```
-Read CLAUDE.md first. CWD: /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+Read CLAUDE.md first. CWD: /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.8** — town labels.
 

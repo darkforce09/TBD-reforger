@@ -4,7 +4,7 @@
 **Status:** `shipped` · **Tag:** `T-152.15` @ `9518680e`
 **Executor:** **claude-code** (Claude Code)
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §5, §6.2 (S1, S2, A1, A13, D4–D6)
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.15`**
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.15`**
 **Depends on:** T-152.11 audit
 
 ## In one sentence
@@ -103,7 +103,7 @@ Audit §5/§6.2:
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 cargo clippy -p map-engine-render --target wasm32-unknown-unknown -- -D warnings
 cargo test -p map-engine-core      # G1–G6
@@ -134,12 +134,12 @@ Authority: this spec. **Do not edit docs/registry.**
 
 ```
 Read CLAUDE.md first. Work in the T-152 worktree:
-  /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 
 Implement **T-152.15** — fence/pier/bridge visibility + orientation remediation.
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   git lfs pull && make map-assets-link && make wasm
 
 ═══ READ (in order — spec wins) ═══

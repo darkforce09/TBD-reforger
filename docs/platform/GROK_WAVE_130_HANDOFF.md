@@ -7,7 +7,7 @@ is the entry point. Written 2026-08-08 after waves 127–129 closed under Opus/F
 
 Run the TBD-Reforger editor factory remediation program, **waves 130–141 of
 `docs/platform/wave_plan.tsv` (35 tickets)**, in plan order, start to finish, in
-`/home/Samuel/Projects/TBD-Reforger`.
+`/run/media/system/Disk_2/Projects/TBD-Reforger`.
 
 **Read first, in this order — they are the authority and the process lives in them, not in this
 prompt:**
@@ -48,7 +48,7 @@ report the parked mod half with three slices "READY TO LAND" — NEVER run
 
 **`cargo` is a host binary** (and there is no `make` any more — T-897 deleted the Makefile). This container has no `cc`/`gcc`; the host does. Route
 everything through
-`distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && CARGO_TARGET_DIR=<dir> cargo <cmd>'`.
+`distrobox-host-exec sh -c 'cd /run/media/system/Disk_2/Projects/TBD-Reforger && CARGO_TARGET_DIR=<dir> cargo <cmd>'`.
 
 ## NO-DEFERRAL REGIME — operator instruction, overrides EDITOR_VERIFY_BRIEF.md §Severity
 

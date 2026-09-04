@@ -3,7 +3,7 @@
 **Checkout:** repo root · **Branch:** `main` (or `ticket/T-090` if you prefer branch-per-ticket — brief says `ticket/T-090`)
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger
+cd /run/media/system/Disk_2/Projects/TBD-Reforger
 git checkout main && git pull
 ./scripts/ticket brief T-090
 ./scripts/ticket prompt T-090

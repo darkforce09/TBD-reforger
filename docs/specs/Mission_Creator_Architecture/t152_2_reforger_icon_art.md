@@ -4,7 +4,7 @@
 **Status:** **queued**  
 **Executor:** claude-code *(implementing agent: **Grok 4.5 in Cursor**)*  
 **Authority:** [`t152_map_cartographic_fidelity_program.md`](t152_map_cartographic_fidelity_program.md)  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · **Branch:** `ticket/T-152`  
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · **Branch:** `ticket/T-152`  
 **Depends on:** T-152.1 shipped · **Blocks:** T-152.3
 
 ---
@@ -96,7 +96,7 @@ Let **LANDMARK_SET** be:
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 test -f .ai/artifacts/t152_2_icon_discovery_spike.json
 cargo run -q -p tbd-tools --bin map -- build-glyph-atlas
 cargo xtask schema map-glyphs
@@ -131,7 +131,7 @@ Read CLAUDE.md first. Work in the WORKTREE (NOT main).
 Implement **T-152.2** — Reforger map icon discovery + LANDMARK_SET art + atlas rebuild.
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git branch --show-current    # ticket/T-152
   git status --porcelain

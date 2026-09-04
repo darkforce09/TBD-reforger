@@ -33,7 +33,7 @@ mutators). Without a doc host, slot pick, undo, IDB, and save cannot land.
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
 # Regression:
 #   smoke_editor.mjs · selfcheck_editor.mjs · smoke_pan_editor.mjs
 # New:
@@ -52,7 +52,7 @@ Read CLAUDE.md first. Work in the WORKTREE at .ai/artifacts/worktrees/TBD-T-159/
 Implement **T-159.16** — MissionDoc host in Leptos editor.
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
   test "$(basename "$(git rev-parse --show-toplevel)")" = "TBD-T-159"
   git status --porcelain
   git branch --show-current   # t-159-leptos-ui

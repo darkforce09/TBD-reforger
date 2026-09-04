@@ -2,7 +2,7 @@
 
 **Status:** **queued** · **Program:** Eden (unlocked after **T-151** W11 remediations;
 operator sign-off / polish may still run first) · **Executor:** claude-code · **Worktree:**
-`tbd-reforger-wgpu-spike/` (absolute: `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`;
+`tbd-reforger-wgpu-spike/` (absolute: `/run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`;
 do **not** touch `main`) · **Baseline:** tip `8237cda6` (T-151.11.6) · verify
 [`.ai/artifacts/t151_11_verify_log.md`](../../../.ai/artifacts/t151_11_verify_log.md) · **Audit:**
 [`t151_10_fable_program_audit.md`](t151_10_fable_program_audit.md).
@@ -105,7 +105,7 @@ Read CLAUDE.md first. Work in the WORKTREE at tbd-reforger-wgpu-spike/ (NOT main
 Implement **T-069** — Markers on map (W10).
 
 ═══ PREFLIGHT ═══
-  cd /var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain
   git rev-parse HEAD   # expect T-151.9 tip (58c8fcc3+)

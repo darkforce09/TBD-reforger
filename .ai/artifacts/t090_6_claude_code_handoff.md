@@ -3,7 +3,7 @@ Read CLAUDE.md first.
 Implement **T-090.6** — Geometry-aware placement audit (simplified 3D bounds).
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger
   git pull && git lfs pull && make map-assets-link
   ./scripts/ticket brief T-090
 

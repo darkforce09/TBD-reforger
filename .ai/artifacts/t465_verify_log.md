@@ -1,6 +1,6 @@
 # T-465 verify log — Wave 25 Class-R harden (T-447 false-green)
 
-**pwd:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/T-465`  
+**pwd:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/T-465`  
 **branch:** `slice/T-465`
 
 ## IT

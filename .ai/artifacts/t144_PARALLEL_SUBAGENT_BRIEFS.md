@@ -2,7 +2,7 @@
 
 **Parent agent:** orchestrates, synthesizes, commits. **Subagents:** read-only partials only.
 
-`ARMA=/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old`
+`ARMA=/run/media/system/Disk_2/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old`
 
 ---
 

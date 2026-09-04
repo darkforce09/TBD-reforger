@@ -2,7 +2,7 @@
 
 **Active slice:** T-152.12 (remediation ladder #1 — filed from the T-152.11 audit)
 **Implementing agent:** **Claude Code** (spec prompt block is `./scripts/ticket prompt`-extractable)
-**CWD:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`
+**CWD:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`
 **Branch:** `ticket/T-152`
 **Hub:** [`t152_map_cartographic_fidelity_program.md`](../../docs/specs/Mission_Creator_Architecture/t152_map_cartographic_fidelity_program.md) §Remediation ladder
 **Spec:** [`t152_12_text_lane_orientation.md`](../../docs/specs/Mission_Creator_Architecture/t152_12_text_lane_orientation.md)
@@ -11,7 +11,7 @@
 ## Preflight
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 git status --porcelain   # TextUniforms hotfix expected in tree (engine.rs + shader.wgsl) — KEEP
 make wasm
 ```

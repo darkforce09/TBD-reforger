@@ -67,8 +67,8 @@ can actually read and act on, not CPU.
 Nothing below is optional. Copy-paste each block.
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger
-export CARGO_TARGET_DIR=/home/Samuel/Projects/TBD-Reforger/target
+cd /run/media/system/Disk_2/Projects/TBD-Reforger
+export CARGO_TARGET_DIR=/run/media/system/Disk_2/Projects/TBD-Reforger/target
 ```
 
 **`CARGO_TARGET_DIR` is unset in every fresh shell.** Export it in every terminal you open. A
@@ -76,9 +76,9 @@ worktree that builds its own `target/` costs ~40 GB.
 
 ```bash
 # 1. Database, API, SPA. `cargo` is NOT usable in the container — it goes through the host bridge.
-distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && cargo xtask db up'
-nohup distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && cargo xtask mk rust-api'    > /tmp/api.log    2>&1 & disown
-nohup distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && cargo xtask mk leptos' > /tmp/leptos.log 2>&1 & disown
+distrobox-host-exec sh -c 'cd /run/media/system/Disk_2/Projects/TBD-Reforger && cargo xtask db up'
+nohup distrobox-host-exec sh -c 'cd /run/media/system/Disk_2/Projects/TBD-Reforger && cargo xtask mk rust-api'    > /tmp/api.log    2>&1 & disown
+nohup distrobox-host-exec sh -c 'cd /run/media/system/Disk_2/Projects/TBD-Reforger && cargo xtask mk leptos' > /tmp/leptos.log 2>&1 & disown
 # Wait ~40s, then confirm:
 curl -s -o /dev/null -w "api=%{http_code}\n" http://localhost:8080/healthz     # expect 200
 curl -s -o /dev/null -w "spa=%{http_code}\n" http://localhost:3000/            # expect 200
@@ -99,7 +99,7 @@ restart it. A stale API returns confident wrong answers that read as genuine def
 
 ```bash
 distrobox-host-exec pkill -f 'target-dev-api/debug/api' ; sleep 2
-nohup distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && cargo xtask mk rust-api' > /tmp/api.log 2>&1 & disown
+nohup distrobox-host-exec sh -c 'cd /run/media/system/Disk_2/Projects/TBD-Reforger && cargo xtask mk rust-api' > /tmp/api.log 2>&1 & disown
 ```
 
 **LEAVE `trunk serve` ON :3000 RUNNING.** Killing it before a gate is a retired ritual — T-396 made
@@ -142,7 +142,7 @@ Then promote and create worktrees:
 
 ```bash
 for t in T-245 T-247 T-248; do
-  distrobox-host-exec sh -c "cd /home/Samuel/Projects/TBD-Reforger && ./scripts/ticket set-status $t ready"
+  distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && ./scripts/ticket set-status $t ready"
   bash scripts/mod/slice-worktree.sh new $t          # subcommand is `new`, NOT `create`
 done
 git worktree list          # all three must show the same commit as main
@@ -166,17 +166,17 @@ the rules block — every line in it is a mistake that has actually happened.
 You are the slice agent for ticket **T-XXX** on the TBD-Reforger platform factory.
 
 WORKTREE — work ONLY here, never in the main checkout:
-  /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/T-XXX   (branch slice/T-XXX)
+  /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/T-XXX   (branch slice/T-XXX)
 
 FIRST TWO ACTIONS, before anything else:
   1. Run `pwd && git branch --show-current` and paste the output in your report. If it does not
      show the worktree path and slice/T-XXX, STOP and report that — do not start work.
-  2. export CARGO_TARGET_DIR=/home/Samuel/Projects/TBD-Reforger/target
+  2. export CARGO_TARGET_DIR=/run/media/system/Disk_2/Projects/TBD-Reforger/target
      It is unset in a fresh shell. A worktree building its own target/ costs ~40GB. Never override it
      FOR ORDINARY BUILDS — but see the next paragraph before you run your own server instance.
 
   3. IF YOU BUILD A BINARY YOU THEN RUN (an API instance, a CLI you exercise), USE A PRIVATE TARGET
-     DIR FOR IT: `CARGO_TARGET_DIR=/home/Samuel/Projects/TBD-Reforger/target-<slice>-api`.
+     DIR FOR IT: `CARGO_TARGET_DIR=/run/media/system/Disk_2/Projects/TBD-Reforger/target-<slice>-api`.
      MEASURED 2026-07-31 (T-581): two slices in one wave both built `website-api` into the shared
      `target/`. The second build printed "Blocking waiting for file lock" then "Finished" with NO
      `Compiling` line, and `target/debug/api` DID NOT CONTAIN THAT SLICE'S CODE. A full HTTP proof
@@ -187,7 +187,7 @@ FIRST TWO ACTIONS, before anything else:
      HTTP proof run**, and delete the private dir on cleanup.
 
 Read the full diagnosis — it is the handoff, there is no prior chat:
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/T-XXX
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/T-XXX
   python3 -c "import json;r=json.load(open('.ai/tickets/registry.json'));print(r['tickets'] and [t for t in r['tickets'] if t['id']=='T-XXX'][0]['summary'])"
 Then read docs/platform/PLATFORM_FACTORY.md — sections 'THE SIGNATURE DEFECT' and 'Known traps'.
 
@@ -215,7 +215,7 @@ report which file and why — do not widen silently. Siblings running right now 
 5. cargo / rustfmt / xtask / make / ./scripts/ticket DO NOT RUN IN THIS CONTAINER (glibc 2.36 vs
    host 2.39, E0463). Route each through distrobox-host-exec, passing env explicitly because it does
    NOT forward the environment:
-     distrobox-host-exec env CARGO_TARGET_DIR=/home/Samuel/Projects/TBD-Reforger/target sh -c 'cd <worktree> && cargo check -p <pkg>'
+     distrobox-host-exec env CARGO_TARGET_DIR=/run/media/system/Disk_2/Projects/TBD-Reforger/target sh -c 'cd <worktree> && cargo check -p <pkg>'
    BUT run `cargo xtask platform wave` DIRECTLY, never wrapped in distrobox-host-exec.
 6. GATE with: cargo xtask platform wave gate --slice T-XXX     (run from inside the worktree)
    Note: fmt/clippy hard-fail if they examined nothing. "REFUSING to pass — resolved to NO crate" or
@@ -279,7 +279,7 @@ and correct the ticket.
 ### Then verify its claims yourself — three commands, every time
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger
+cd /run/media/system/Disk_2/Projects/TBD-Reforger
 git log --oneline main..slice/T-XXX          # 1. Are there commits?
 git diff --stat main..slice/T-XXX            # 2. Do the files match what it said it changed?
 git -C .ai/artifacts/worktrees/T-XXX -c filter.lfs.process= -c filter.lfs.required=false status --porcelain
@@ -302,8 +302,8 @@ working.** Do not try to make it land them. Merge by hand — this is exactly wh
 internally, with every safety property preserved.
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger
-export CARGO_TARGET_DIR=/home/Samuel/Projects/TBD-Reforger/target
+cd /run/media/system/Disk_2/Projects/TBD-Reforger
+export CARGO_TARGET_DIR=/run/media/system/Disk_2/Projects/TBD-Reforger/target
 
 # 0. Prove the three slices are file-disjoint. Any output here means STOP.
 for t in T-245 T-247 T-248; do git diff --name-only main..slice/$t; done | sort | uniq -d
@@ -417,8 +417,8 @@ Edit `.ai/tickets/registry.json` directly (append an object with the same fields
 give it a nonempty `owns`, run `cargo xtask wave repack` (the compiler packs every open ticket), then:
 
 ```bash
-distrobox-host-exec sh -c "cd /home/Samuel/Projects/TBD-Reforger && ./scripts/ticket sync"
-distrobox-host-exec sh -c "cd /home/Samuel/Projects/TBD-Reforger && ./scripts/ticket check"   # must print "check OK"
+distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && ./scripts/ticket sync"
+distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && ./scripts/ticket check"   # must print "check OK"
 ```
 
 ---
@@ -428,9 +428,9 @@ distrobox-host-exec sh -c "cd /home/Samuel/Projects/TBD-Reforger && ./scripts/ti
 ```bash
 # 1. Mark the three shipped.
 for t in T-245 T-247 T-248; do
-  distrobox-host-exec sh -c "cd /home/Samuel/Projects/TBD-Reforger && ./scripts/ticket set-status $t shipped"
+  distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && ./scripts/ticket set-status $t shipped"
 done
-distrobox-host-exec sh -c "cd /home/Samuel/Projects/TBD-Reforger && ./scripts/ticket sync"
+distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && ./scripts/ticket sync"
 
 # 2. Commit the bookkeeping (registry + plan + the docs `sync` regenerated).
 git -c filter.lfs.process= -c filter.lfs.required=false add .ai/tickets docs/ CLAUDE.md
@@ -463,7 +463,7 @@ Co-Authored-By: Grok <noreply@x.ai>
 |---|---|
 | `cargo`, `rustfmt`, `xtask` **do not run in the container** (glibc 2.36 vs host 2.39) | Route through `distrobox-host-exec`. It does **not** forward env — pass it explicitly with `env VAR=…` |
 | `cargo xtask platform wave` **must NOT** be wrapped in `distrobox-host-exec` | It detects the bridge and all steps go red with a misleading error. Run it directly |
-| `CARGO_TARGET_DIR` unset in every fresh shell | `export CARGO_TARGET_DIR=/home/Samuel/Projects/TBD-Reforger/target` |
+| `CARGO_TARGET_DIR` unset in every fresh shell | `export CARGO_TARGET_DIR=/run/media/system/Disk_2/Projects/TBD-Reforger/target` |
 | `git status` / `git add` can abort — git-lfs absent while `filter.lfs.process` is set | `git -c filter.lfs.process= -c filter.lfs.required=false …` |
 | `git push` fails on the pre-push hook | `cargo xtask platform wave push` |
 | `slice-worktree.sh create` prints usage and exits 2 | The subcommand is **`new`** |

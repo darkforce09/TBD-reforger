@@ -4,7 +4,7 @@
 **Status:** **queued**  
 **Executor:** claude-code *(implementing agent: **Grok 4.5 in Cursor**)*  
 **Authority:** [`t152_map_cartographic_fidelity_program.md`](t152_map_cartographic_fidelity_program.md)  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · **Branch:** `ticket/T-152`  
+**Worktree:** `/run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · **Branch:** `ticket/T-152`  
 **Depends on:** T-152.2 shipped · **Blocks:** T-152.4
 
 ---
@@ -97,7 +97,7 @@ Expand **`badge_icon_key`** and **`rebuild_glyph_lookup_from_prefabs`** so **lan
 ## Verify
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
 cargo test -p map-engine-core --all-features
@@ -135,7 +135,7 @@ Read CLAUDE.md first. Work in the WORKTREE (NOT main).
 Implement **T-152.3** — wire landmark building glyphs in WorldResidency.
 
 ═══ PREFLIGHT ═══
-  cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
+  cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git branch --show-current
   git status --porcelain       # @ T-152.2 shipped
