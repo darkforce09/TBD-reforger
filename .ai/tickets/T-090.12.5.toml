@@ -3,7 +3,7 @@ kind = "work"
 title = "T-090.12.5 — Editor: object LOS verdict, viewshed wash, world-los bench"
 summary = "los_world.rs: ObjectVerdict, combine, format_combined, ObjectPass coarse-to-fine object wash stepped by the rAF loop; with_occluder accessor + occluder_host BLAS fetch by residency; /debug/world-los bench; routes.csv fixed; wiring tests and native goldens."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
 plan = "docs/plans/t-090_12_5_plan.md"
@@ -33,7 +33,10 @@ acceptance = [
     "Viewshed shows object-hidden and canopy-concealed cells progressively with the measured fill time on the forest cell in the commit body.",
     "The bench replays a parity fixture in-browser and the wasm agreement equals the native number; one URL per live-check state.",
 ]
+shipped_at = "4cc8e2149"
 created_at = "2026-09-04T01:22:27Z"
+completed_at = "2026-09-04T06:52:45Z"
+estimated = ["tokens"]
 owns = [
     "apps/website/frontend/src/editor/tools/los_world.rs",
     "apps/website/frontend/src/editor/tools/los_world_wasm.rs",
@@ -58,4 +61,7 @@ owns = [
 domain = "website"
 layer = "frontend"
 component = "mission_creator"
-surface = ["tools", "map_canvas"]
+surface = [
+    "tools",
+    "map_canvas",
+]
