@@ -64,6 +64,7 @@ mod label_gates;
 mod map_blueprint;
 mod map_ingest_blueprints;
 mod map_parity_report;
+mod map_world_los;
 mod mcp;
 mod mcp_daemon;
 mod mcp_netapi;
@@ -570,6 +571,14 @@ enum MapCmd {
     /// `Rigid::from_enfusion` (Y·X·Z, positive signs) wins.
     #[command(name = "rotation-pin")]
     RotationPin {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// T-090.12.3 — the world occluder on the committed catalogue: `--cell <cx_cy> [--census]
+    /// [--probe a b] [--bench N] [--pairs <world_parity.json>] [--glass-blocks]
+    /// [--foliage-blocks] [--proxy-only] [--min-agree F] [--dump-misses <jsonl>]`.
+    #[command(name = "world-los")]
+    WorldLos {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
@@ -1253,6 +1262,7 @@ fn run() -> Result<u8> {
             MapCmd::PakCat { args } => map_blueprint::run_pak_cat(&args),
             MapCmd::InstancesVerify { args } => map_blueprint::run_instances_verify(&args),
             MapCmd::RotationPin { args } => map_blueprint::run_rotation_pin(&args),
+            MapCmd::WorldLos { args } => map_world_los::run(&args),
         },
         TopCmd::Verify { cmd } => {
             let code = match cmd {

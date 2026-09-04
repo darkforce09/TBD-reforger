@@ -24,7 +24,7 @@ pub const FOLIAGE_K: f64 = 0.5;
 pub const PANE_MERGE_M: f64 = 0.005;
 
 /// Who owns a crossed triangle.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Owner {
     Shell,
     Instance(usize),
@@ -41,7 +41,7 @@ pub struct TraceEvent {
     pub tri: u32,
 }
 
-fn point_at(a: [f64; 3], b: [f64; 3], t: f64) -> [f64; 3] {
+pub(crate) fn point_at(a: [f64; 3], b: [f64; 3], t: f64) -> [f64; 3] {
     [
         a[0] + t * (b[0] - a[0]),
         a[1] + t * (b[1] - a[1]),
@@ -49,7 +49,7 @@ fn point_at(a: [f64; 3], b: [f64; 3], t: f64) -> [f64; 3] {
     ]
 }
 
-fn seg_len(a: [f64; 3], b: [f64; 3]) -> f64 {
+pub(crate) fn seg_len(a: [f64; 3], b: [f64; 3]) -> f64 {
     ((b[0] - a[0]).powi(2) + (b[1] - a[1]).powi(2) + (b[2] - a[2]).powi(2)).sqrt()
 }
 
@@ -84,6 +84,232 @@ pub fn segment_aabb_window(
         }
     }
     Some((t0, t1))
+}
+
+/// T-090.12.3 — every crossing of `instances` along `obs→tgt` within `[t_lo, t_hi]`, appended to
+/// `out` unsorted with `Owner::Instance(i)` = the index into `instances` (the world occluder
+/// re-keys them per placed row before merging).
+pub(crate) fn trace_instances(
+    instances: &[Instance],
+    obs: [f64; 3],
+    tgt: [f64; 3],
+    t_lo: f64,
+    t_hi: f64,
+    out: &mut Vec<TraceEvent>,
+) {
+    let mut hits: Vec<Hit> = Vec::new();
+    for (i, inst) in instances.iter().enumerate() {
+        let place = inst.placement();
+        let Some((p, q)) = local_segment(inst, &place, obs, tgt) else {
+            continue;
+        };
+        inst.blas.bvh.all_hits(
+            &inst.blas.verts,
+            &inst.blas.tris,
+            p,
+            q,
+            t_lo,
+            t_hi,
+            &mut hits,
+        );
+        out.extend(hits.drain(..).map(|h| TraceEvent {
+            t: h.t,
+            pos: point_at(obs, tgt, h.t),
+            kind: inst.blas.kind(h.tri),
+            owner: Owner::Instance(i),
+            tri: h.tri,
+        }));
+    }
+}
+
+/// T-090.12.3 — does any instance carry a `terminal` crossing on `obs→tgt` within `[t_lo, t_hi]`?
+pub(crate) fn blocked_instances_where(
+    instances: &[Instance],
+    obs: [f64; 3],
+    tgt: [f64; 3],
+    t_lo: f64,
+    t_hi: f64,
+    terminal: impl Fn(SurfaceKind) -> bool + Copy,
+) -> bool {
+    instances.iter().any(|inst| {
+        let place = inst.placement();
+        let Some((p, q)) = local_segment(inst, &place, obs, tgt) else {
+            return false;
+        };
+        inst.blas
+            .bvh
+            .any_hit_where(
+                &inst.blas.verts,
+                &inst.blas.tris,
+                &inst.blas.kinds,
+                p,
+                q,
+                t_lo,
+                t_hi,
+                terminal,
+            )
+            .is_some()
+    })
+}
+
+/// Sort by `(t, owner, tri)` and drop the shared-edge duplicates (one crossing, not two).
+pub(crate) fn sort_dedup_events(out: &mut Vec<TraceEvent>) {
+    out.sort_by(|a, b| {
+        a.t.total_cmp(&b.t)
+            .then(a.owner.cmp(&b.owner))
+            .then(a.tri.cmp(&b.tri))
+    });
+    out.dedup_by(|b, a| a.owner == b.owner && a.kind == b.kind && (a.t - b.t).abs() < 1e-9);
+}
+
+/// What an opaque crossing of `inst` is called.
+pub(crate) fn hit_kind_of(inst: &Instance) -> LosHitKind {
+    match inst.record.kind {
+        InstanceKind::DoorLeaf => LosHitKind::DoorLeaf,
+        InstanceKind::DoorFrame => LosHitKind::DoorFrame,
+        InstanceKind::WindowFrame | InstanceKind::Glass => LosHitKind::WindowFrame,
+        InstanceKind::Furniture => LosHitKind::Furniture,
+        InstanceKind::Tree | InstanceKind::TreeCanopy | InstanceKind::Prop => LosHitKind::Prop,
+        InstanceKind::Shell => LosHitKind::Solid,
+    }
+}
+
+/// The material-aware reduction of a sorted event list (T-090.12.3 extraction of the compound's
+/// `evaluate_los` walk, shared with the world occluder): opaque terminates and is named by
+/// `name`; glass adds [`GLASS_CONCEALMENT`] once per pane (two faces within [`PANE_MERGE_M`]
+/// merge); foliage conceals by the depth between its entry and exit crossings, `inside` seeding
+/// the instances the observer starts in (their first crossing is an exit); canopies still open
+/// when the ray ends close at `t_end`. Glass / foliage keys and `foliage_id` use the
+/// `Owner::Instance` index. Hits come back unsorted; see [`finish_concealment`].
+pub(crate) struct Reduced {
+    pub hits: Vec<LosHit>,
+    pub is_clear: bool,
+    /// Where the ray stopped (`1` when clear).
+    pub t_end: f64,
+    pub blocked_by_wall_id: Option<String>,
+    pub cover_furniture_id: Option<String>,
+    pub window_ids_traversed: Vec<String>,
+}
+
+pub(crate) fn reduce_events(
+    events: &[TraceEvent],
+    obs: [f64; 3],
+    tgt: [f64; 3],
+    mut inside: HashMap<usize, f64>,
+    name: &dyn Fn(&TraceEvent) -> (LosHitKind, String),
+    foliage_id: &dyn Fn(usize) -> String,
+) -> Reduced {
+    let mut r = Reduced {
+        hits: Vec::new(),
+        is_clear: true,
+        t_end: 1.0,
+        blocked_by_wall_id: None,
+        cover_furniture_id: None,
+        window_ids_traversed: Vec::new(),
+    };
+    let len = seg_len(obs, tgt);
+    let mut last_glass: HashMap<usize, f64> = HashMap::new();
+    for ev in events {
+        match ev.kind {
+            SurfaceKind::Opaque => {
+                let (kind, id) = name(ev);
+                match kind {
+                    LosHitKind::Wall => r.blocked_by_wall_id = Some(id.clone()),
+                    LosHitKind::Furniture => r.cover_furniture_id = Some(id.clone()),
+                    _ => {}
+                }
+                r.hits.push(LosHit {
+                    t: ev.t,
+                    pos: ev.pos,
+                    kind,
+                    id,
+                    concealment: 1.0,
+                });
+                r.is_clear = false;
+                r.t_end = ev.t;
+                break;
+            }
+            SurfaceKind::Glass => {
+                let Owner::Instance(i) = ev.owner else {
+                    continue;
+                };
+                if last_glass
+                    .get(&i)
+                    .is_some_and(|t_prev| (ev.t - t_prev) * len <= PANE_MERGE_M)
+                {
+                    continue;
+                }
+                last_glass.insert(i, ev.t);
+                let id = foliage_id(i);
+                r.window_ids_traversed.push(id.clone());
+                r.hits.push(LosHit {
+                    t: ev.t,
+                    pos: ev.pos,
+                    kind: LosHitKind::Glass,
+                    id,
+                    concealment: GLASS_CONCEALMENT,
+                });
+            }
+            SurfaceKind::Foliage => {
+                let Owner::Instance(i) = ev.owner else {
+                    continue;
+                };
+                match inside.remove(&i) {
+                    Some(t_in) => {
+                        r.hits
+                            .push(foliage_hit(foliage_id(i), obs, tgt, len, t_in, ev.t))
+                    }
+                    None => {
+                        inside.insert(i, ev.t);
+                    }
+                }
+            }
+        }
+    }
+    let mut open: Vec<(usize, f64)> = inside.into_iter().collect();
+    open.sort_by(|a, b| a.1.total_cmp(&b.1).then(a.0.cmp(&b.0)));
+    for (i, t_in) in open {
+        if t_in < r.t_end {
+            r.hits
+                .push(foliage_hit(foliage_id(i), obs, tgt, len, t_in, r.t_end));
+        }
+    }
+    r
+}
+
+/// Sort the hits by `(t, concealment)` and fold the pass-through concealments:
+/// `1 − Π(1 − cᵢ)`, or `1` when blocked.
+pub(crate) fn finish_concealment(hits: &mut [LosHit], is_clear: bool) -> f64 {
+    hits.sort_by(|a, b| {
+        a.t.total_cmp(&b.t)
+            .then(a.concealment.total_cmp(&b.concealment))
+    });
+    let mut pass = 1.0f64;
+    for h in hits.iter() {
+        if h.concealment < 1.0 {
+            pass *= 1.0 - h.concealment;
+        }
+    }
+    if is_clear { 1.0 - pass } else { 1.0 }
+}
+
+/// A foliage crossing of depth `(t_out − t_in) · len` at the entry point.
+fn foliage_hit(
+    id: String,
+    obs: [f64; 3],
+    tgt: [f64; 3],
+    len: f64,
+    t_in: f64,
+    t_out: f64,
+) -> LosHit {
+    let depth = ((t_out - t_in) * len).max(0.0);
+    LosHit {
+        t: t_in,
+        pos: point_at(obs, tgt, t_in),
+        kind: LosHitKind::Foliage,
+        id,
+        concealment: 1.0 - (-FOLIAGE_K * depth).exp(),
+    }
 }
 
 /// The instance's BLAS-space segment, or `None` when the world AABB cull rejects it.
@@ -132,36 +358,8 @@ impl CompoundBuilding {
             owner: Owner::Shell,
             tri: h.tri,
         }));
-        for (i, inst) in self.instances.iter().enumerate() {
-            let place = inst.placement();
-            let Some((p, q)) = local_segment(inst, &place, obs, tgt) else {
-                continue;
-            };
-            inst.blas.bvh.all_hits(
-                &inst.blas.verts,
-                &inst.blas.tris,
-                p,
-                q,
-                t_lo,
-                t_hi,
-                &mut hits,
-            );
-            out.extend(hits.drain(..).map(|h| TraceEvent {
-                t: h.t,
-                pos: point_at(obs, tgt, h.t),
-                kind: inst.blas.kind(h.tri),
-                owner: Owner::Instance(i),
-                tri: h.tri,
-            }));
-        }
-        out.sort_by(|a, b| {
-            a.t.total_cmp(&b.t)
-                .then(a.owner.cmp(&b.owner))
-                .then(a.tri.cmp(&b.tri))
-        });
-        // A ray through a shared edge is reported by both triangles at the same point: one
-        // crossing, not two (it would otherwise flip a foliage enter/exit pairing).
-        out.dedup_by(|b, a| a.owner == b.owner && a.kind == b.kind && (a.t - b.t).abs() < 1e-9);
+        trace_instances(&self.instances, obs, tgt, t_lo, t_hi, &mut out);
+        sort_dedup_events(&mut out);
         out
     }
 
@@ -195,37 +393,14 @@ impl CompoundBuilding {
         {
             return true;
         }
-        self.instances.iter().any(|inst| {
-            let place = inst.placement();
-            let Some((p, q)) = local_segment(inst, &place, obs, tgt) else {
-                return false;
-            };
-            inst.blas
-                .bvh
-                .any_hit_where(
-                    &inst.blas.verts,
-                    &inst.blas.tris,
-                    &inst.blas.kinds,
-                    p,
-                    q,
-                    t_lo,
-                    t_hi,
-                    SurfaceKind::is_terminal,
-                )
-                .is_some()
-        })
-    }
-
-    /// What an opaque crossing of instance `i` is called.
-    fn instance_hit_kind(inst: &Instance) -> LosHitKind {
-        match inst.record.kind {
-            InstanceKind::DoorLeaf => LosHitKind::DoorLeaf,
-            InstanceKind::DoorFrame => LosHitKind::DoorFrame,
-            InstanceKind::WindowFrame | InstanceKind::Glass => LosHitKind::WindowFrame,
-            InstanceKind::Furniture => LosHitKind::Furniture,
-            InstanceKind::Tree | InstanceKind::TreeCanopy | InstanceKind::Prop => LosHitKind::Prop,
-            InstanceKind::Shell => LosHitKind::Solid,
-        }
+        blocked_instances_where(
+            &self.instances,
+            obs,
+            tgt,
+            t_lo,
+            t_hi,
+            SurfaceKind::is_terminal,
+        )
     }
 
     /// Line of sight through the compound: the multi-hit walk of [`Self::trace`] with the
@@ -243,20 +418,10 @@ impl CompoundBuilding {
         tgt: [f64; 3],
     ) -> LosResult {
         let events = self.trace(obs, tgt);
-        let len = seg_len(obs, tgt);
-        let mut result = LosResult {
-            is_clear: true,
-            ..LosResult::default()
-        };
-        let mut hits: Vec<LosHit> = Vec::new();
-        // Foliage instances the ray is currently inside: instance → t of entry.
-        let mut inside: HashMap<usize, f64> = HashMap::new();
-        // Last accepted glass crossing per pane, to merge a collider's two faces.
-        let mut last_glass: HashMap<usize, f64> = HashMap::new();
         // Observer starting inside a foliage instance's box: its first crossing is an exit.
+        let mut inside: HashMap<usize, f64> = HashMap::new();
         for (i, inst) in self.instances.iter().enumerate() {
-            let has_foliage = inst.blas.kinds.contains(&SurfaceKind::Foliage);
-            if !has_foliage {
+            if !inst.blas.kinds.contains(&SurfaceKind::Foliage) {
                 continue;
             }
             let (lo, hi) = inst.world_aabb();
@@ -264,80 +429,29 @@ impl CompoundBuilding {
                 inside.insert(i, 0.0);
             }
         }
-        let mut t_end = 1.0f64;
-        for ev in &events {
-            match ev.kind {
-                SurfaceKind::Opaque => {
-                    let (kind, id) = match ev.owner {
-                        Owner::Shell => bp.map_or_else(
-                            || (LosHitKind::Solid, String::new()),
-                            |bp| bp.attribute_structural_hit(ev.pos),
-                        ),
-                        Owner::Instance(i) => {
-                            let inst = &self.instances[i];
-                            (Self::instance_hit_kind(inst), inst.record.id.clone())
-                        }
-                    };
-                    match kind {
-                        LosHitKind::Wall => result.blocked_by_wall_id = Some(id.clone()),
-                        LosHitKind::Furniture => result.cover_furniture_id = Some(id.clone()),
-                        _ => {}
-                    }
-                    hits.push(LosHit {
-                        t: ev.t,
-                        pos: ev.pos,
-                        kind,
-                        id,
-                        concealment: 1.0,
-                    });
-                    result.is_clear = false;
-                    t_end = ev.t;
-                    break;
-                }
-                SurfaceKind::Glass => {
-                    let Owner::Instance(i) = ev.owner else {
-                        continue;
-                    };
-                    if last_glass
-                        .get(&i)
-                        .is_some_and(|t_prev| (ev.t - t_prev) * len <= PANE_MERGE_M)
-                    {
-                        continue;
-                    }
-                    last_glass.insert(i, ev.t);
-                    let id = self.instances[i].record.id.clone();
-                    result.window_ids_traversed.push(id.clone());
-                    hits.push(LosHit {
-                        t: ev.t,
-                        pos: ev.pos,
-                        kind: LosHitKind::Glass,
-                        id,
-                        concealment: GLASS_CONCEALMENT,
-                    });
-                }
-                SurfaceKind::Foliage => {
-                    let Owner::Instance(i) = ev.owner else {
-                        continue;
-                    };
-                    match inside.remove(&i) {
-                        Some(t_in) => {
-                            hits.push(foliage_event(self, i, obs, tgt, len, t_in, ev.t));
-                        }
-                        None => {
-                            inside.insert(i, ev.t);
-                        }
-                    }
+        let name = |ev: &TraceEvent| -> (LosHitKind, String) {
+            match ev.owner {
+                Owner::Shell => bp.map_or_else(
+                    || (LosHitKind::Solid, String::new()),
+                    |bp| bp.attribute_structural_hit(ev.pos),
+                ),
+                Owner::Instance(i) => {
+                    let inst = &self.instances[i];
+                    (hit_kind_of(inst), inst.record.id.clone())
                 }
             }
-        }
-        // Canopies the ray is still inside when it ends (or when it was stopped).
-        let mut open: Vec<(usize, f64)> = inside.into_iter().collect();
-        open.sort_by(|a, b| a.1.total_cmp(&b.1).then(a.0.cmp(&b.0)));
-        for (i, t_in) in open {
-            if t_in < t_end {
-                hits.push(foliage_event(self, i, obs, tgt, len, t_in, t_end));
-            }
-        }
+        };
+        let id_of = |i: usize| self.instances[i].record.id.clone();
+        let reduced = reduce_events(&events, obs, tgt, inside, &name, &id_of);
+        let mut result = LosResult {
+            is_clear: reduced.is_clear,
+            blocked_by_wall_id: reduced.blocked_by_wall_id,
+            cover_furniture_id: reduced.cover_furniture_id,
+            window_ids_traversed: reduced.window_ids_traversed,
+            ..LosResult::default()
+        };
+        let mut hits = reduced.hits;
+        let t_end = reduced.t_end;
         // Open doors: the aperture is where the CLOSED leaf would have been.
         for inst in self
             .instances
@@ -359,38 +473,9 @@ impl CompoundBuilding {
                 });
             }
         }
-        hits.sort_by(|a, b| {
-            a.t.total_cmp(&b.t)
-                .then(a.concealment.total_cmp(&b.concealment))
-        });
-        let mut pass = 1.0f64;
-        for h in &hits {
-            if h.concealment < 1.0 {
-                pass *= 1.0 - h.concealment;
-            }
-        }
-        result.concealment = if result.is_clear { 1.0 - pass } else { 1.0 };
+        result.concealment = finish_concealment(&mut hits, result.is_clear);
         result.hits = hits;
         result
-    }
-}
-
-fn foliage_event(
-    c: &CompoundBuilding,
-    i: usize,
-    obs: [f64; 3],
-    tgt: [f64; 3],
-    len: f64,
-    t_in: f64,
-    t_out: f64,
-) -> LosHit {
-    let depth = ((t_out - t_in) * len).max(0.0);
-    LosHit {
-        t: t_in,
-        pos: point_at(obs, tgt, t_in),
-        kind: LosHitKind::Foliage,
-        id: c.instances[i].record.id.clone(),
-        concealment: 1.0 - (-FOLIAGE_K * depth).exp(),
     }
 }
 

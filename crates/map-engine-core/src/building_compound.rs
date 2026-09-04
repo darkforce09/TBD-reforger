@@ -360,6 +360,30 @@ impl CompoundBuilding {
         if !missing.is_empty() {
             return Err(CompoundError::MissingBlas(missing));
         }
+        self.instances
+            .extend(instances_from_records(records, blas_by_path)?);
+        Ok(())
+    }
+}
+
+/// T-090.12.3 — the records → [`Instance`] step of [`CompoundBuilding::append`] on its own: every
+/// record's BLAS resolved through `blas_by_path`, its rest placement and root bounds taken, a
+/// leaf's initial hinge state derived. Atomic like `append` (the world occluder expands a
+/// descriptor with it — a descriptor has no separate shell).
+pub fn instances_from_records(
+    records: &[InstanceRecord],
+    blas_by_path: &HashMap<String, Arc<BvhSidecar>>,
+) -> Result<Vec<Instance>, CompoundError> {
+    let mut missing: Vec<String> = Vec::new();
+    for r in records {
+        if !blas_by_path.contains_key(&r.blas) && !missing.contains(&r.blas) {
+            missing.push(r.blas.clone());
+        }
+    }
+    if !missing.is_empty() {
+        return Err(CompoundError::MissingBlas(missing));
+    }
+    {
         let mut staged = Vec::with_capacity(records.len());
         for r in records {
             let blas = Arc::clone(&blas_by_path[&r.blas]);
@@ -393,10 +417,11 @@ impl CompoundBuilding {
                 state,
             });
         }
-        self.instances.extend(staged);
-        Ok(())
+        Ok(staged)
     }
+}
 
+impl CompoundBuilding {
     /// Index of the instance with this id.
     #[must_use]
     pub fn instance_index(&self, id: &str) -> Option<usize> {

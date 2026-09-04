@@ -43,7 +43,7 @@ use super::manifest::{ObjectsManifest, narrow_cells, parse_objects_manifest};
 use super::obb::{
     BuildingPrefabInfo, FencePrefabInfo, building_prefab_lookup, fence_prefab_lookup, obb_corners,
 };
-use super::prefab::{PrefabEntry, build_prefab_maps, narrow_prefab_rows};
+use super::prefab::{PrefabEntry, PrefabRow, build_prefab_maps, narrow_prefab_rows};
 use super::store::{WorldError, bytes_to_json};
 
 /// No extra draw margin — residency preload covers fetch; draw cull is strict visible rect (T-151.8).
@@ -126,6 +126,15 @@ pub enum IngestOutcome {
 /// T-173 P3 — failed deliveries per chunk before an undelivered stub is cached.
 pub const FETCH_FAILURE_CAP: u8 = 3;
 
+/// T-090.12.3 — one residency change, in the order it happened.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ResidencyEvent {
+    /// A chunk was parsed and inserted (an empty stub counts; the mirror ignores it).
+    Inserted(String),
+    /// A chunk was evicted or invalidated.
+    Evicted(String),
+}
+
 /// Multi-chunk residency + LRU + world spatial index + building/glyph GPU-buffer composer.
 pub struct WorldResidency {
     manifest: Option<ObjectsManifest>,
@@ -166,6 +175,9 @@ pub struct WorldResidency {
     inflight: HashSet<String>,
     index: WorldSpatialIndex,
     eviction_log: Vec<String>,
+    /// T-090.12.3 — inserts / evictions / invalidations since the last `take_residency_events`,
+    /// in order, so a mirror (the world occluder) follows residency without a second chunk store.
+    residency_events: Vec<ResidencyEvent>,
 
     chunks_applied: u64,
     apply_frames: u64,
@@ -296,6 +308,7 @@ impl Default for WorldResidency {
             inflight: HashSet::new(),
             index: WorldSpatialIndex::default(),
             eviction_log: Vec::new(),
+            residency_events: Vec::new(),
             chunks_applied: 0,
             apply_frames: 0,
             max_apply_ms: 0.0,
@@ -776,6 +789,8 @@ impl WorldResidency {
         let (xs, ys) = deinterleave(&chunk.positions, chunk.count);
         self.index.insert_chunk(id, &xs, &ys, &chunk.cls_codes);
         self.building_counts.insert(id.to_string(), building_count);
+        self.residency_events
+            .push(ResidencyEvent::Inserted(id.to_string()));
         self.chunks.insert(id.to_string(), chunk);
         self.use_tick += 1;
         self.last_used.insert(id.to_string(), self.use_tick);
@@ -860,6 +875,8 @@ impl WorldResidency {
             self.inserted_seq.remove(&id);
             self.building_counts.remove(&id);
             self.index.remove_chunk(&id);
+            self.residency_events
+                .push(ResidencyEvent::Evicted(id.clone()));
             self.eviction_log.push(id);
             self.content_epoch += 1;
         }
@@ -1610,6 +1627,22 @@ impl WorldResidency {
         self.index.pick_rect(min_x, min_y, max_x, max_y, mask)
     }
 
+    /// T-090.12.3 — a resident chunk's parsed rows (`None` when not resident).
+    #[must_use]
+    pub fn chunk(&self, id: &str) -> Option<&WorldChunk> {
+        self.chunks.get(id)
+    }
+
+    /// T-090.12.3 — every catalogue prefab row (the occluder's proxy boxes + labels).
+    pub fn prefab_rows(&self) -> impl Iterator<Item = &PrefabRow> {
+        self.prefab_by_id.values().map(|e| &e.row)
+    }
+
+    /// T-090.12.3 — drain the inserts / evictions since the last call, in order.
+    pub fn take_residency_events(&mut self) -> Vec<ResidencyEvent> {
+        std::mem::take(&mut self.residency_events)
+    }
+
     /// Resident chunk ids (sorted) — parity/debug surface.
     #[must_use]
     pub fn resident_chunk_ids(&self) -> Vec<String> {
@@ -1671,6 +1704,8 @@ impl WorldResidency {
     /// as a permanent empty stub (tree-glyph zoom probes need real instance rows).
     pub fn invalidate_chunk(&mut self, id: &str) {
         if self.chunks.remove(id).is_some() {
+            self.residency_events
+                .push(ResidencyEvent::Evicted(id.to_string()));
             self.index.remove_chunk(id);
             self.building_counts.remove(id);
             self.last_used.remove(id);

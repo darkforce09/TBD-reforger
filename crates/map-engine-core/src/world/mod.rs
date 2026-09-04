@@ -42,6 +42,7 @@ pub use cartographic_strip::{
     compose_pier_strip, obb_long_axis_endpoints, pack_cartographic_strips,
     strip_world_width_at_midpoint,
 };
+pub use chunk::{WorldChunk, parse_chunk};
 pub use chunk_math::{
     Bbox, ChunkRect, TerrainSizeM, chunk_id, chunk_ids_for_rect, chunk_ids_for_viewport,
     chunk_rect_for_bbox, expand_bbox, expand_chunk_rect, preload_margin_m,
@@ -86,7 +87,7 @@ pub use prefab::{PrefabEntry, PrefabRow, build_prefab_maps, narrow_prefab_rows};
 pub use regions::{LandCoverRegion, parse_regions_payload};
 pub use residency::{
     APPLY_BUDGET_MS, BUILDING_MIN_ZOOM, FETCH_FAILURE_CAP, IngestOutcome, LRU_MIN_CHUNKS,
-    WorldResidency,
+    ResidencyEvent, WorldResidency,
 };
 pub use road_labels::{
     ROAD_NAME_DECLUTTER_BASE_M, ROAD_NAME_LONG_SEGMENT_M, ROAD_NAME_MAX_ON_SCREEN,

@@ -222,7 +222,7 @@ pub fn compound_wash(
 
 /// The raster itself: every cell's eye point inside the disc, `blocked(obs, eye_point)`
 /// deciding `Hidden`.
-fn wash_band(
+pub fn wash_band(
     level_index: usize,
     eye_y: f64,
     obs: [f64; 3],
