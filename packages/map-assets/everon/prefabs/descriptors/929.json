@@ -92,30 +92,6 @@
       "parent": "5B18CC60F9286FD6"
     },
     {
-      "id": "5B18CC60F9286FD6/5B18CC60A69601AB",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_01.et",
-      "blas": "blas/LightSwitch_01.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_01.xob",
-      "local": {
-        "pos": [
-          0.995,
-          2.414,
-          2.25
-        ],
-        "quat": [
-          0.0,
-          1.0,
-          0.0,
-          6.123233995736766e-17
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "5B18CC60F9286FD6"
-    },
-    {
       "id": "5B18CC60F9286FD6/5B18CC60A6960184",
       "kind": "furniture",
       "prefab": "Prefabs/Props/Furniture/BunkBed_01_Double.et",
@@ -530,6 +506,7 @@
     "59F4E6F615E240C3: Prefabs/Structures/Core/ProbeHouse_Base.et has no mesh",
     "5B18CC60F9286FD6/5B18CC60A6960003: Assets/Props/Furniture/CoatRack_01/CoatRack_01.xob has no collision chunk — no BLAS, no instance",
     "5B18CC60F9286FD6/5B18CC60A696015A: Assets/Props/Furniture/LightWall_01/LightWall_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18CC60F9286FD6/5B18CC60A69601AB: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_01.xob has no collision chunk — no BLAS, no instance",
     "5B18CC60F9286FD6/5B18CC60A69601CA: Assets/Props/Furniture/LightTable_01/LightTable_01.xob has no collision chunk — no BLAS, no instance"
   ]
 }

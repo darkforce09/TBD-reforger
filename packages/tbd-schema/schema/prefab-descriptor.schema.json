@@ -13,7 +13,7 @@
     "resourceName": { "type": "string", "minLength": 1 },
     "kind": { "type": "string", "minLength": 1 },
     "blocks": { "type": "boolean" },
-    "reason": { "type": "string", "enum": ["no-mesh", "model-unreadable", "no-coll", "empty-coll", "unresolved"] },
+    "reason": { "type": "string", "enum": ["no-mesh", "model-unreadable", "no-coll", "empty-coll", "no-fire-geo", "unresolved"] },
     "canopy": { "type": "boolean" },
     "localBounds": {
       "type": "object",

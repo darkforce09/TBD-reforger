@@ -104,7 +104,7 @@ pub fn run_xob_inspect(args: &[String]) -> Result<u8> {
         fs::write(p, &data).with_context(|| p.display().to_string())?;
         println!("  saved {} bytes → {}", data.len(), p.display());
     }
-    let asset = decode_asset(&target, &data, &overrides);
+    let asset = decode_asset(&target, &data, &overrides, super::batch::LayerPolicy::All);
     println!(
         "xob-inspect {target}: {} bytes · {} node records · record layers {:?}",
         data.len(),

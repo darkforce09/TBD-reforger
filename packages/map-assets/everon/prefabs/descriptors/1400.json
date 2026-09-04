@@ -525,30 +525,6 @@
       "parent": "58687E15B650D505"
     },
     {
-      "id": "58687E15B650D505/58687E15B70435ED",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          0.555,
-          1.506,
-          2.009
-        ],
-        "quat": [
-          0.0,
-          1.0,
-          0.0,
-          6.123233995736766e-17
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "58687E15B650D505"
-    },
-    {
       "id": "58687E15B650D505/58687E15B7043409",
       "kind": "glass",
       "prefab": "Prefabs/Props/Civilian/BeerBottle_01_group.et",
@@ -821,6 +797,7 @@
   "notes": [
     "59F2D56D5069E23C: Prefabs/Structures/Core/ProbeHouse_Base.et has no mesh",
     "58687E15B650D505/58687E15B70435FB: Assets/Props/Furniture/LightWall_01/LightWall_01.xob has no collision chunk — no BLAS, no instance",
+    "58687E15B650D505/58687E15B70435ED: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
     "58687E15B650D505/58687E15B704351E: Assets/Props/Garbage/Cardboard/Cardboard_Pile_05.xob has no collision chunk — no BLAS, no instance",
     "58687E15B650D505/58687E15B704355C: Assets/Props/Civilian/Broom_01/Broom_01.xob has no collision chunk — no BLAS, no instance",
     "58687E15B650D505/58687E15B704342A: Assets/Props/Civilian/Bucket_01/Bucket_01.xob has no collision chunk — no BLAS, no instance"

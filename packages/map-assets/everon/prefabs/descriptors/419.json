@@ -378,54 +378,6 @@
       "parent": "58687E2FF241E52A"
     },
     {
-      "id": "58687E2FF241E52A/58687E2FFC9D1C81",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          1.641,
-          1.507,
-          3.011
-        ],
-        "quat": [
-          -0.0,
-          -1.0,
-          -0.0,
-          6.123233995736766e-17
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "58687E2FF241E52A"
-    },
-    {
-      "id": "58687E2FF241E52A/58687E2FFC9D1C8C",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          0.689,
-          1.568,
-          -4.095
-        ],
-        "quat": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "58687E2FF241E52A"
-    },
-    {
       "id": "58687E2FF241E52A/58687E2FFC9D1346",
       "kind": "glass",
       "prefab": "Prefabs/Props/Civilian/BeerBottle_01_group.et",
@@ -900,6 +852,8 @@
     "58687E2FF241E52A/58687E2FFC9D1304: Assets/Props/Civilian/PaintCan_01/PaintCan_01.xob has no collision chunk — no BLAS, no instance",
     "58687E2FF241E52A/58687E2FFC9D1332: Assets/Props/Civilian/PaintCan_01/PaintCan_01.xob has no collision chunk — no BLAS, no instance",
     "58687E2FF241E52A/58687E2FFC9D1363: Assets/Props/Garbage/Cardboard/Cardboard_Pile_03.xob has no collision chunk — no BLAS, no instance",
+    "58687E2FF241E52A/58687E2FFC9D1C81: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "58687E2FF241E52A/58687E2FFC9D1C8C: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
     "58687E2FF241E52A/58687E2FFC9D13CC: Assets/Props/Civilian/Bucket_01/Bucket_01.xob has no collision chunk — no BLAS, no instance",
     "58687E2FF241E52A/58687E2FFC9D1377: Assets/Props/Garbage/Cardboard/Cardboard_02.xob has no collision chunk — no BLAS, no instance",
     "58687E2FF241E52A/58687E2FFC9D13E8: Assets/Props/Civilian/WateringCan_01/WateringCan_01.xob has no collision chunk — no BLAS, no instance",

@@ -4,10 +4,10 @@
   "blas": [
     {
       "path": "blas/ATCPanel_E_01.bvh",
-      "bytes": 36160,
-      "tris": 841,
+      "bytes": 28164,
+      "tris": 589,
       "kinds": [
-        841,
+        589,
         0,
         0
       ]
@@ -24,10 +24,10 @@
     },
     {
       "path": "blas/AirfieldMark_01.bvh",
-      "bytes": 3380,
-      "tris": 84,
+      "bytes": 2264,
+      "tris": 56,
       "kinds": [
-        84,
+        56,
         0,
         0
       ]
@@ -104,117 +104,27 @@
     },
     {
       "path": "blas/AshtrayStreet_01.bvh",
-      "bytes": 11768,
-      "tris": 316,
+      "bytes": 10180,
+      "tris": 264,
       "kinds": [
-        316,
+        264,
         0,
         0
       ]
     },
     {
       "path": "blas/AsphaltPavement_01_Narrow_4m.bvh",
-      "bytes": 1976,
-      "tris": 56,
+      "bytes": 1380,
+      "tris": 36,
       "kinds": [
-        56,
+        36,
         0,
         0
       ]
     },
     {
       "path": "blas/AsphaltPavement_01_Narrow_4m_30.bvh",
-      "bytes": 5060,
-      "tris": 140,
-      "kinds": [
-        140,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/AsphaltPavement_01_Narrow_4m_90.bvh",
-      "bytes": 4276,
-      "tris": 122,
-      "kinds": [
-        122,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/AsphaltPavement_01_Narrow_8m.bvh",
-      "bytes": 1976,
-      "tris": 56,
-      "kinds": [
-        56,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/AsphaltPavement_01_Narrow_8m_30.bvh",
-      "bytes": 4272,
-      "tris": 128,
-      "kinds": [
-        128,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/AsphaltPavement_01_Narrow_End_Left.bvh",
-      "bytes": 3288,
-      "tris": 88,
-      "kinds": [
-        88,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/AsphaltPavement_01_Narrow_End_Right.bvh",
-      "bytes": 3324,
-      "tris": 90,
-      "kinds": [
-        90,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/AsphaltPavement_01_Narrow_Entry_4m.bvh",
-      "bytes": 1664,
-      "tris": 48,
-      "kinds": [
-        48,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/AsphaltPavement_01_Wide_4m.bvh",
-      "bytes": 1976,
-      "tris": 56,
-      "kinds": [
-        56,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/AsphaltPavement_01_Wide_4m_30.bvh",
-      "bytes": 3628,
-      "tris": 100,
-      "kinds": [
-        100,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/AsphaltPavement_01_Wide_4m_90.bvh",
-      "bytes": 3344,
+      "bytes": 3736,
       "tris": 96,
       "kinds": [
         96,
@@ -223,51 +133,141 @@
       ]
     },
     {
-      "path": "blas/AsphaltPavement_01_Wide_8m.bvh",
-      "bytes": 2040,
-      "tris": 56,
+      "path": "blas/AsphaltPavement_01_Narrow_4m_90.bvh",
+      "bytes": 3176,
+      "tris": 80,
       "kinds": [
-        56,
+        80,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/AsphaltPavement_01_Narrow_8m.bvh",
+      "bytes": 1380,
+      "tris": 36,
+      "kinds": [
+        36,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/AsphaltPavement_01_Narrow_8m_30.bvh",
+      "bytes": 3268,
+      "tris": 84,
+      "kinds": [
+        84,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/AsphaltPavement_01_Narrow_End_Left.bvh",
+      "bytes": 2300,
+      "tris": 60,
+      "kinds": [
+        60,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/AsphaltPavement_01_Narrow_End_Right.bvh",
+      "bytes": 2300,
+      "tris": 60,
+      "kinds": [
+        60,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/AsphaltPavement_01_Narrow_Entry_4m.bvh",
+      "bytes": 1132,
+      "tris": 28,
+      "kinds": [
+        28,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/AsphaltPavement_01_Wide_4m.bvh",
+      "bytes": 1380,
+      "tris": 36,
+      "kinds": [
+        36,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/AsphaltPavement_01_Wide_4m_30.bvh",
+      "bytes": 2636,
+      "tris": 68,
+      "kinds": [
+        68,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/AsphaltPavement_01_Wide_4m_90.bvh",
+      "bytes": 2516,
+      "tris": 66,
+      "kinds": [
+        66,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/AsphaltPavement_01_Wide_8m.bvh",
+      "bytes": 1380,
+      "tris": 36,
+      "kinds": [
+        36,
         0,
         0
       ]
     },
     {
       "path": "blas/AsphaltPavement_01_Wide_8m_30.bvh",
-      "bytes": 4528,
-      "tris": 128,
+      "bytes": 3268,
+      "tris": 84,
       "kinds": [
-        128,
+        84,
         0,
         0
       ]
     },
     {
       "path": "blas/AsphaltPavement_01_Wide_End_Left.bvh",
-      "bytes": 3648,
-      "tris": 98,
+      "bytes": 2660,
+      "tris": 70,
       "kinds": [
-        98,
+        70,
         0,
         0
       ]
     },
     {
       "path": "blas/AsphaltPavement_01_Wide_End_Right.bvh",
-      "bytes": 3520,
-      "tris": 98,
+      "bytes": 2660,
+      "tris": 70,
       "kinds": [
-        98,
+        70,
         0,
         0
       ]
     },
     {
       "path": "blas/AsphaltPavement_01_Wide_Entry_4m.bvh",
-      "bytes": 1664,
-      "tris": 48,
+      "bytes": 1132,
+      "tris": 28,
       "kinds": [
-        48,
+        28,
         0,
         0
       ]
@@ -354,20 +354,20 @@
     },
     {
       "path": "blas/BarGate_01.bvh",
-      "bytes": 5228,
-      "tris": 140,
+      "bytes": 4304,
+      "tris": 112,
       "kinds": [
-        140,
+        112,
         0,
         0
       ]
     },
     {
       "path": "blas/BarGate_01_bar.bvh",
-      "bytes": 7880,
-      "tris": 230,
+      "bytes": 4468,
+      "tris": 116,
       "kinds": [
-        230,
+        116,
         0,
         0
       ]
@@ -384,40 +384,40 @@
     },
     {
       "path": "blas/BarkBeetleTrap_E_01.bvh",
-      "bytes": 2948,
-      "tris": 84,
+      "bytes": 2552,
+      "tris": 72,
       "kinds": [
-        84,
+        72,
         0,
         0
       ]
     },
     {
       "path": "blas/Barn_E_02.bvh",
-      "bytes": 52860,
-      "tris": 1412,
+      "bytes": 39732,
+      "tris": 956,
       "kinds": [
-        1412,
+        956,
         0,
         0
       ]
     },
     {
       "path": "blas/Barn_E_03.bvh",
-      "bytes": 134292,
-      "tris": 3634,
+      "bytes": 123300,
+      "tris": 3236,
       "kinds": [
-        3634,
+        3236,
         0,
         0
       ]
     },
     {
       "path": "blas/Barn_E_03_Wall_01.bvh",
-      "bytes": 6288,
-      "tris": 184,
+      "bytes": 5956,
+      "tris": 172,
       "kinds": [
-        184,
+        172,
         0,
         0
       ]
@@ -444,20 +444,20 @@
     },
     {
       "path": "blas/BasketWicker_01.bvh",
-      "bytes": 5312,
-      "tris": 147,
+      "bytes": 3392,
+      "tris": 83,
       "kinds": [
-        147,
+        83,
         0,
         0
       ]
     },
     {
       "path": "blas/BasketWicker_01_wood.bvh",
-      "bytes": 8204,
-      "tris": 229,
+      "bytes": 5924,
+      "tris": 159,
       "kinds": [
-        229,
+        159,
         0,
         0
       ]
@@ -474,40 +474,40 @@
     },
     {
       "path": "blas/Bathtub_02.bvh",
-      "bytes": 18876,
-      "tris": 534,
+      "bytes": 14896,
+      "tris": 394,
       "kinds": [
-        534,
+        394,
         0,
         0
       ]
     },
     {
       "path": "blas/BedDouble_01.bvh",
-      "bytes": 7264,
-      "tris": 192,
+      "bytes": 6268,
+      "tris": 156,
       "kinds": [
-        192,
+        156,
         0,
         0
       ]
     },
     {
       "path": "blas/BedDouble_02.bvh",
-      "bytes": 14912,
-      "tris": 399,
+      "bytes": 13660,
+      "tris": 363,
       "kinds": [
-        399,
+        363,
         0,
         0
       ]
     },
     {
       "path": "blas/BedMedical_01.bvh",
-      "bytes": 14768,
-      "tris": 385,
+      "bytes": 13248,
+      "tris": 337,
       "kinds": [
-        385,
+        337,
         0,
         0
       ]
@@ -584,11 +584,11 @@
     },
     {
       "path": "blas/BeerBottle_01_Group.bvh",
-      "bytes": 4512,
-      "tris": 108,
+      "bytes": 3984,
+      "tris": 92,
       "kinds": [
         0,
-        108,
+        92,
         0
       ]
     },
@@ -624,40 +624,40 @@
     },
     {
       "path": "blas/BenchChurch_02_Long.bvh",
-      "bytes": 9624,
-      "tris": 262,
+      "bytes": 8896,
+      "tris": 238,
       "kinds": [
-        262,
+        238,
         0,
         0
       ]
     },
     {
       "path": "blas/BenchChurch_02_Long_Front.bvh",
-      "bytes": 4588,
-      "tris": 124,
+      "bytes": 4320,
+      "tris": 112,
       "kinds": [
-        124,
+        112,
         0,
         0
       ]
     },
     {
       "path": "blas/BenchChurch_02_Short.bvh",
-      "bytes": 7540,
-      "tris": 204,
+      "bytes": 6876,
+      "tris": 180,
       "kinds": [
-        204,
+        180,
         0,
         0
       ]
     },
     {
       "path": "blas/BenchChurch_02_Short_Simple.bvh",
-      "bytes": 6652,
-      "tris": 180,
+      "bytes": 5860,
+      "tris": 156,
       "kinds": [
-        180,
+        156,
         0,
         0
       ]
@@ -674,40 +674,40 @@
     },
     {
       "path": "blas/BenchDrill_01.bvh",
-      "bytes": 6476,
-      "tris": 172,
+      "bytes": 5876,
+      "tris": 148,
       "kinds": [
-        172,
+        148,
         0,
         0
       ]
     },
     {
       "path": "blas/BenchDrill_01_table.bvh",
-      "bytes": 5028,
-      "tris": 132,
+      "bytes": 4696,
+      "tris": 120,
       "kinds": [
-        132,
+        120,
         0,
         0
       ]
     },
     {
       "path": "blas/BenchIndustrial_01.bvh",
-      "bytes": 10916,
-      "tris": 264,
+      "bytes": 10456,
+      "tris": 252,
       "kinds": [
-        264,
+        252,
         0,
         0
       ]
     },
     {
       "path": "blas/BenchKitchen_01.bvh",
-      "bytes": 3264,
-      "tris": 92,
+      "bytes": 2600,
+      "tris": 68,
       "kinds": [
-        92,
+        68,
         0,
         0
       ]
@@ -724,10 +724,10 @@
     },
     {
       "path": "blas/BenchKitchen_01_corner.bvh",
-      "bytes": 12592,
-      "tris": 346,
+      "bytes": 8152,
+      "tris": 194,
       "kinds": [
-        346,
+        194,
         0,
         0
       ]
@@ -744,10 +744,10 @@
     },
     {
       "path": "blas/BenchOffice_01.bvh",
-      "bytes": 3772,
-      "tris": 108,
+      "bytes": 3108,
+      "tris": 84,
       "kinds": [
-        108,
+        84,
         0,
         0
       ]
@@ -784,30 +784,30 @@
     },
     {
       "path": "blas/BenchWooden_01.bvh",
-      "bytes": 4032,
-      "tris": 112,
+      "bytes": 3100,
+      "tris": 76,
       "kinds": [
-        112,
+        76,
         0,
         0
       ]
     },
     {
       "path": "blas/BenchWooden_02.bvh",
-      "bytes": 15584,
-      "tris": 416,
+      "bytes": 14000,
+      "tris": 368,
       "kinds": [
-        416,
+        368,
         0,
         0
       ]
     },
     {
       "path": "blas/BenchWooden_03.bvh",
-      "bytes": 4252,
-      "tris": 122,
+      "bytes": 3920,
+      "tris": 110,
       "kinds": [
-        122,
+        110,
         0,
         0
       ]
@@ -884,10 +884,10 @@
     },
     {
       "path": "blas/BoardMap_01.bvh",
-      "bytes": 9952,
-      "tris": 264,
+      "bytes": 7904,
+      "tris": 200,
       "kinds": [
-        264,
+        200,
         0,
         0
       ]
@@ -914,20 +914,20 @@
     },
     {
       "path": "blas/BoatWreck_01.bvh",
-      "bytes": 54188,
-      "tris": 1478,
+      "bytes": 37520,
+      "tris": 908,
       "kinds": [
-        1478,
+        908,
         0,
         0
       ]
     },
     {
       "path": "blas/Bookshelf_01.bvh",
-      "bytes": 11008,
-      "tris": 296,
+      "bytes": 10612,
+      "tris": 284,
       "kinds": [
-        296,
+        284,
         0,
         0
       ]
@@ -954,10 +954,10 @@
     },
     {
       "path": "blas/Bookshelf_02.bvh",
-      "bytes": 6668,
-      "tris": 173,
+      "bytes": 6336,
+      "tris": 161,
       "kinds": [
-        173,
+        161,
         0,
         0
       ]
@@ -984,10 +984,10 @@
     },
     {
       "path": "blas/BoothNews_E_01.bvh",
-      "bytes": 52896,
-      "tris": 1448,
+      "bytes": 42568,
+      "tris": 1119,
       "kinds": [
-        1448,
+        1119,
         0,
         0
       ]
@@ -1114,90 +1114,90 @@
     },
     {
       "path": "blas/BrickWallOld_01_2m.bvh",
-      "bytes": 3072,
-      "tris": 82,
+      "bytes": 2212,
+      "tris": 54,
       "kinds": [
-        82,
+        54,
         0,
         0
       ]
     },
     {
       "path": "blas/BrickWallOld_01_4m_A.bvh",
-      "bytes": 3072,
-      "tris": 82,
+      "bytes": 2212,
+      "tris": 54,
       "kinds": [
-        82,
+        54,
         0,
         0
       ]
     },
     {
       "path": "blas/BrickWallOld_01_4m_B.bvh",
-      "bytes": 3072,
-      "tris": 82,
+      "bytes": 2212,
+      "tris": 54,
       "kinds": [
-        82,
+        54,
         0,
         0
       ]
     },
     {
       "path": "blas/BrickWallOld_01_8m_A.bvh",
-      "bytes": 6140,
-      "tris": 164,
+      "bytes": 4420,
+      "tris": 108,
       "kinds": [
-        164,
+        108,
         0,
         0
       ]
     },
     {
       "path": "blas/BrickWallOld_01_8m_B.bvh",
-      "bytes": 6076,
-      "tris": 164,
+      "bytes": 4420,
+      "tris": 108,
       "kinds": [
-        164,
+        108,
         0,
         0
       ]
     },
     {
       "path": "blas/BrickWallOld_01_D.bvh",
-      "bytes": 5048,
-      "tris": 138,
+      "bytes": 3884,
+      "tris": 96,
       "kinds": [
-        138,
+        96,
         0,
         0
       ]
     },
     {
       "path": "blas/BrickWallOld_01_End.bvh",
-      "bytes": 2936,
-      "tris": 80,
+      "bytes": 2208,
+      "tris": 56,
       "kinds": [
-        80,
+        56,
         0,
         0
       ]
     },
     {
       "path": "blas/BrickWallOld_01_Pole.bvh",
-      "bytes": 1396,
-      "tris": 38,
+      "bytes": 1064,
+      "tris": 26,
       "kinds": [
-        38,
+        26,
         0,
         0
       ]
     },
     {
       "path": "blas/BrickWallOld_01_Start.bvh",
-      "bytes": 4744,
-      "tris": 138,
+      "bytes": 3680,
+      "tris": 98,
       "kinds": [
-        138,
+        98,
         0,
         0
       ]
@@ -1334,30 +1334,30 @@
     },
     {
       "path": "blas/BridgeRailingConcrete_01_pole.bvh",
-      "bytes": 2192,
-      "tris": 62,
+      "bytes": 1796,
+      "tris": 50,
       "kinds": [
-        62,
+        50,
         0,
         0
       ]
     },
     {
       "path": "blas/BridgeRailingConcrete_01_pole_small.bvh",
-      "bytes": 1168,
-      "tris": 32,
+      "bytes": 836,
+      "tris": 20,
       "kinds": [
-        32,
+        20,
         0,
         0
       ]
     },
     {
       "path": "blas/BunkBed_01.bvh",
-      "bytes": 5920,
-      "tris": 160,
+      "bytes": 5652,
+      "tris": 148,
       "kinds": [
-        160,
+        148,
         0,
         0
       ]
@@ -1414,10 +1414,10 @@
     },
     {
       "path": "blas/BusShed_E_01.bvh",
-      "bytes": 23544,
-      "tris": 588,
+      "bytes": 20144,
+      "tris": 482,
       "kinds": [
-        588,
+        482,
         0,
         0
       ]
@@ -1474,10 +1474,10 @@
     },
     {
       "path": "blas/CabinetMetal_02.bvh",
-      "bytes": 3108,
-      "tris": 76,
+      "bytes": 2776,
+      "tris": 64,
       "kinds": [
-        76,
+        64,
         0,
         0
       ]
@@ -1494,30 +1494,30 @@
     },
     {
       "path": "blas/CalvaryLarge_02.bvh",
-      "bytes": 16616,
-      "tris": 462,
+      "bytes": 15420,
+      "tris": 418,
       "kinds": [
-        462,
+        418,
         0,
         0
       ]
     },
     {
       "path": "blas/CalvarySmall_01.bvh",
-      "bytes": 6212,
-      "tris": 178,
+      "bytes": 5312,
+      "tris": 144,
       "kinds": [
-        178,
+        144,
         0,
         0
       ]
     },
     {
       "path": "blas/CalvarySmall_02.bvh",
-      "bytes": 11988,
-      "tris": 340,
+      "bytes": 11252,
+      "tris": 308,
       "kinds": [
-        340,
+        308,
         0,
         0
       ]
@@ -1594,10 +1594,10 @@
     },
     {
       "path": "blas/CargoContainer_02_20ft.bvh",
-      "bytes": 20028,
-      "tris": 548,
+      "bytes": 18024,
+      "tris": 464,
       "kinds": [
-        548,
+        464,
         0,
         0
       ]
@@ -1664,40 +1664,40 @@
     },
     {
       "path": "blas/CartSawmill_01_log.bvh",
-      "bytes": 38736,
-      "tris": 1096,
+      "bytes": 38016,
+      "tris": 1080,
       "kinds": [
-        1096,
+        1080,
         0,
         0
       ]
     },
     {
       "path": "blas/CartSawmill_01_support.bvh",
-      "bytes": 12548,
-      "tris": 356,
+      "bytes": 12216,
+      "tris": 344,
       "kinds": [
-        356,
+        344,
         0,
         0
       ]
     },
     {
       "path": "blas/CartSawmill_01_transport.bvh",
-      "bytes": 12908,
-      "tris": 364,
+      "bytes": 12448,
+      "tris": 352,
       "kinds": [
-        364,
+        352,
         0,
         0
       ]
     },
     {
       "path": "blas/Cart_01.bvh",
-      "bytes": 34440,
-      "tris": 954,
+      "bytes": 28528,
+      "tris": 802,
       "kinds": [
-        954,
+        802,
         0,
         0
       ]
@@ -1714,10 +1714,10 @@
     },
     {
       "path": "blas/Castle_01_Bridge.bvh",
-      "bytes": 43236,
-      "tris": 1158,
+      "bytes": 41896,
+      "tris": 1098,
       "kinds": [
-        1158,
+        1098,
         0,
         0
       ]
@@ -1734,10 +1734,10 @@
     },
     {
       "path": "blas/Castle_01_InnerWall_01.bvh",
-      "bytes": 30236,
-      "tris": 868,
+      "bytes": 24300,
+      "tris": 658,
       "kinds": [
-        868,
+        658,
         0,
         0
       ]
@@ -1824,20 +1824,20 @@
     },
     {
       "path": "blas/Castle_01_OuterWall_04.bvh",
-      "bytes": 23068,
-      "tris": 650,
+      "bytes": 18028,
+      "tris": 474,
       "kinds": [
-        650,
+        474,
         0,
         0
       ]
     },
     {
       "path": "blas/Castle_01_OuterWall_05.bvh",
-      "bytes": 41972,
-      "tris": 1219,
+      "bytes": 27972,
+      "tris": 738,
       "kinds": [
-        1219,
+        738,
         0,
         0
       ]
@@ -1854,10 +1854,10 @@
     },
     {
       "path": "blas/Castle_01_Stairs_01.bvh",
-      "bytes": 13084,
-      "tris": 372,
+      "bytes": 12032,
+      "tris": 344,
       "kinds": [
-        372,
+        344,
         0,
         0
       ]
@@ -1874,30 +1874,30 @@
     },
     {
       "path": "blas/ChairOffice_01.bvh",
-      "bytes": 14544,
-      "tris": 400,
+      "bytes": 5544,
+      "tris": 104,
       "kinds": [
-        400,
+        104,
         0,
         0
       ]
     },
     {
       "path": "blas/ChairOld_01.bvh",
-      "bytes": 12476,
-      "tris": 348,
+      "bytes": 7888,
+      "tris": 176,
       "kinds": [
-        348,
+        176,
         0,
         0
       ]
     },
     {
       "path": "blas/ChairOld_02.bvh",
-      "bytes": 10532,
-      "tris": 292,
+      "bytes": 8068,
+      "tris": 196,
       "kinds": [
-        292,
+        196,
         0,
         0
       ]
@@ -1914,10 +1914,10 @@
     },
     {
       "path": "blas/ChairSchool_01.bvh",
-      "bytes": 25744,
-      "tris": 728,
+      "bytes": 23152,
+      "tris": 632,
       "kinds": [
-        728,
+        632,
         0,
         0
       ]
@@ -1934,20 +1934,20 @@
     },
     {
       "path": "blas/Chair_03.bvh",
-      "bytes": 14664,
-      "tris": 416,
+      "bytes": 13616,
+      "tris": 392,
       "kinds": [
-        416,
+        392,
         0,
         0
       ]
     },
     {
       "path": "blas/Chandelier_01.bvh",
-      "bytes": 32372,
-      "tris": 892,
+      "bytes": 29908,
+      "tris": 826,
       "kinds": [
-        812,
+        746,
         80,
         0
       ]
@@ -1974,10 +1974,10 @@
     },
     {
       "path": "blas/Chapel_01.bvh",
-      "bytes": 64568,
-      "tris": 1743,
+      "bytes": 61812,
+      "tris": 1641,
       "kinds": [
-        1743,
+        1641,
         0,
         0
       ]
@@ -2054,10 +2054,10 @@
     },
     {
       "path": "blas/Church_01.bvh",
-      "bytes": 813500,
-      "tris": 22374,
+      "bytes": 802416,
+      "tris": 22042,
       "kinds": [
-        22374,
+        22042,
         0,
         0
       ]
@@ -2204,50 +2204,50 @@
     },
     {
       "path": "blas/ConcreteBridge_01_Narrow.bvh",
-      "bytes": 7176,
-      "tris": 198,
+      "bytes": 6052,
+      "tris": 162,
       "kinds": [
-        198,
+        162,
         0,
         0
       ]
     },
     {
       "path": "blas/ConcreteBridge_01_Narrow_long.bvh",
-      "bytes": 7176,
-      "tris": 198,
+      "bytes": 6052,
+      "tris": 162,
       "kinds": [
-        198,
+        162,
         0,
         0
       ]
     },
     {
       "path": "blas/ConcreteBridge_01_Pillar.bvh",
-      "bytes": 1760,
-      "tris": 48,
+      "bytes": 1556,
+      "tris": 36,
       "kinds": [
-        48,
+        36,
         0,
         0
       ]
     },
     {
       "path": "blas/ConcreteBridge_01_Pillar_narrow.bvh",
-      "bytes": 1824,
-      "tris": 48,
+      "bytes": 1428,
+      "tris": 36,
       "kinds": [
-        48,
+        36,
         0,
         0
       ]
     },
     {
       "path": "blas/ConcreteBridge_01_Wide.bvh",
-      "bytes": 7112,
-      "tris": 198,
+      "bytes": 6052,
+      "tris": 162,
       "kinds": [
-        198,
+        162,
         0,
         0
       ]
@@ -2314,10 +2314,10 @@
     },
     {
       "path": "blas/ConcretePanel_01_stack.bvh",
-      "bytes": 4720,
-      "tris": 128,
+      "bytes": 4124,
+      "tris": 108,
       "kinds": [
-        128,
+        108,
         0,
         0
       ]
@@ -2334,20 +2334,20 @@
     },
     {
       "path": "blas/ConcretePipe_01_Short_Pile.bvh",
-      "bytes": 70864,
-      "tris": 2062,
+      "bytes": 69312,
+      "tris": 2016,
       "kinds": [
-        2062,
+        2016,
         0,
         0
       ]
     },
     {
       "path": "blas/ConcretePlant_E_01.bvh",
-      "bytes": 151688,
-      "tris": 3751,
+      "bytes": 110984,
+      "tris": 2358,
       "kinds": [
-        3751,
+        2358,
         0,
         0
       ]
@@ -2564,70 +2564,70 @@
     },
     {
       "path": "blas/ConcreteTreepot_01.bvh",
-      "bytes": 1464,
-      "tris": 40,
+      "bytes": 1132,
+      "tris": 28,
       "kinds": [
-        40,
+        28,
         0,
         0
       ]
     },
     {
       "path": "blas/ConcreteWall_01_3m.bvh",
-      "bytes": 1352,
-      "tris": 40,
+      "bytes": 1020,
+      "tris": 28,
       "kinds": [
-        40,
+        28,
         0,
         0
       ]
     },
     {
       "path": "blas/ConcreteWall_01_6m_A.bvh",
-      "bytes": 2408,
-      "tris": 72,
+      "bytes": 2076,
+      "tris": 60,
       "kinds": [
-        72,
+        60,
         0,
         0
       ]
     },
     {
       "path": "blas/ConcreteWall_01_6m_B.bvh",
-      "bytes": 2408,
-      "tris": 72,
+      "bytes": 2076,
+      "tris": 60,
       "kinds": [
-        72,
+        60,
         0,
         0
       ]
     },
     {
       "path": "blas/ConcreteWall_01_6m_D_A.bvh",
-      "bytes": 7152,
-      "tris": 200,
+      "bytes": 6232,
+      "tris": 176,
       "kinds": [
-        200,
+        176,
         0,
         0
       ]
     },
     {
       "path": "blas/ConcreteWall_01_6m_D_B.bvh",
-      "bytes": 6464,
-      "tris": 166,
+      "bytes": 5212,
+      "tris": 130,
       "kinds": [
-        166,
+        130,
         0,
         0
       ]
     },
     {
       "path": "blas/ConcreteWall_01_D.bvh",
-      "bytes": 2668,
-      "tris": 76,
+      "bytes": 2272,
+      "tris": 64,
       "kinds": [
-        76,
+        64,
         0,
         0
       ]
@@ -2684,40 +2684,40 @@
     },
     {
       "path": "blas/ControlTower_01.bvh",
-      "bytes": 198672,
-      "tris": 5350,
+      "bytes": 142524,
+      "tris": 3459,
       "kinds": [
-        5350,
+        3459,
         0,
         0
       ]
     },
     {
       "path": "blas/CoolingBoxShop_01.bvh",
-      "bytes": 19812,
-      "tris": 506,
+      "bytes": 18288,
+      "tris": 454,
       "kinds": [
-        466,
-        40,
+        434,
+        20,
         0
       ]
     },
     {
       "path": "blas/CotMilitary_USSR_01.bvh",
-      "bytes": 34012,
-      "tris": 944,
+      "bytes": 32364,
+      "tris": 896,
       "kinds": [
-        944,
+        896,
         0,
         0
       ]
     },
     {
       "path": "blas/CottagePier_01.bvh",
-      "bytes": 105432,
-      "tris": 2875,
+      "bytes": 103100,
+      "tris": 2783,
       "kinds": [
-        2875,
+        2783,
         0,
         0
       ]
@@ -2734,30 +2734,30 @@
     },
     {
       "path": "blas/CounterPostOffice_01_corner.bvh",
-      "bytes": 9428,
-      "tris": 262,
+      "bytes": 8636,
+      "tris": 238,
       "kinds": [
-        262,
+        238,
         0,
         0
       ]
     },
     {
       "path": "blas/CounterPostOffice_01_doors.bvh",
-      "bytes": 10500,
-      "tris": 276,
+      "bytes": 10104,
+      "tris": 264,
       "kinds": [
-        276,
+        264,
         0,
         0
       ]
     },
     {
       "path": "blas/CounterPostOffice_01_window.bvh",
-      "bytes": 7676,
-      "tris": 212,
+      "bytes": 7344,
+      "tris": 200,
       "kinds": [
-        212,
+        200,
         0,
         0
       ]
@@ -2834,10 +2834,10 @@
     },
     {
       "path": "blas/CrashBarrier_01_End.bvh",
-      "bytes": 1372,
-      "tris": 34,
+      "bytes": 976,
+      "tris": 22,
       "kinds": [
-        34,
+        22,
         0,
         0
       ]
@@ -2924,30 +2924,30 @@
     },
     {
       "path": "blas/CultivatorWreck_01.bvh",
-      "bytes": 90752,
-      "tris": 2537,
+      "bytes": 87488,
+      "tris": 2458,
       "kinds": [
-        2537,
+        2458,
         0,
         0
       ]
     },
     {
       "path": "blas/CultivatorWreck_01_B.bvh",
-      "bytes": 64620,
-      "tris": 1788,
+      "bytes": 61708,
+      "tris": 1722,
       "kinds": [
-        1788,
+        1722,
         0,
         0
       ]
     },
     {
       "path": "blas/CupboardOld_01_large.bvh",
-      "bytes": 19132,
-      "tris": 526,
+      "bytes": 18660,
+      "tris": 502,
       "kinds": [
-        526,
+        502,
         0,
         0
       ]
@@ -2974,20 +2974,20 @@
     },
     {
       "path": "blas/CupboardOld_01_medium.bvh",
-      "bytes": 17544,
-      "tris": 496,
+      "bytes": 16880,
+      "tris": 472,
       "kinds": [
-        460,
+        436,
         36,
         0
       ]
     },
     {
       "path": "blas/CupboardOld_01_small.bvh",
-      "bytes": 3584,
-      "tris": 96,
+      "bytes": 3188,
+      "tris": 84,
       "kinds": [
-        96,
+        84,
         0,
         0
       ]
@@ -3184,20 +3184,20 @@
     },
     {
       "path": "blas/CzechHedgehog_01.bvh",
-      "bytes": 2892,
-      "tris": 69,
+      "bytes": 1832,
+      "tris": 33,
       "kinds": [
-        69,
+        33,
         0,
         0
       ]
     },
     {
       "path": "blas/Davit_01.bvh",
-      "bytes": 31632,
-      "tris": 873,
+      "bytes": 25200,
+      "tris": 649,
       "kinds": [
-        873,
+        649,
         0,
         0
       ]
@@ -3214,10 +3214,10 @@
     },
     {
       "path": "blas/DeckChair_01.bvh",
-      "bytes": 9700,
-      "tris": 268,
+      "bytes": 8436,
+      "tris": 220,
       "kinds": [
-        268,
+        220,
         0,
         0
       ]
@@ -3234,20 +3234,20 @@
     },
     {
       "path": "blas/DeerStand_01.bvh",
-      "bytes": 16384,
-      "tris": 422,
+      "bytes": 16116,
+      "tris": 410,
       "kinds": [
-        422,
+        410,
         0,
         0
       ]
     },
     {
       "path": "blas/DeskSchool_01.bvh",
-      "bytes": 12796,
-      "tris": 348,
+      "bytes": 10612,
+      "tris": 276,
       "kinds": [
-        348,
+        276,
         0,
         0
       ]
@@ -3294,10 +3294,10 @@
     },
     {
       "path": "blas/DogHouse_01.bvh",
-      "bytes": 4400,
-      "tris": 119,
+      "bytes": 4000,
+      "tris": 103,
       "kinds": [
-        119,
+        103,
         0,
         0
       ]
@@ -3534,10 +3534,10 @@
     },
     {
       "path": "blas/DoorFrame_Villa_E_A_EXT_B.bvh",
-      "bytes": 10272,
-      "tris": 288,
+      "bytes": 9352,
+      "tris": 264,
       "kinds": [
-        288,
+        264,
         0,
         0
       ]
@@ -3664,10 +3664,10 @@
     },
     {
       "path": "blas/Door_Arch_Chapel_01_RIGHT_B.bvh",
-      "bytes": 8680,
-      "tris": 248,
+      "bytes": 7692,
+      "tris": 220,
       "kinds": [
-        248,
+        220,
         0,
         0
       ]
@@ -3744,50 +3744,50 @@
     },
     {
       "path": "blas/Door_BrickWall_02_LEFT_EXT_COV_B.bvh",
-      "bytes": 9244,
-      "tris": 252,
+      "bytes": 8976,
+      "tris": 240,
       "kinds": [
-        252,
+        240,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_BrickWall_02_RIGHT_EXT_COV_B.bvh",
-      "bytes": 9116,
-      "tris": 252,
+      "bytes": 8848,
+      "tris": 240,
       "kinds": [
-        252,
+        240,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_Bunker_01_A_RIGHT_EXT_COV_B.bvh",
-      "bytes": 9792,
-      "tris": 256,
+      "bytes": 9460,
+      "tris": 244,
       "kinds": [
-        256,
+        244,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_Bunker_01_B_LEFT_SPE_COV_B.bvh",
-      "bytes": 5780,
-      "tris": 164,
+      "bytes": 5448,
+      "tris": 152,
       "kinds": [
-        164,
+        152,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_Bunker_01_B_RIGHT_SPE_COV_B.bvh",
-      "bytes": 5688,
-      "tris": 160,
+      "bytes": 5292,
+      "tris": 148,
       "kinds": [
-        160,
+        148,
         0,
         0
       ]
@@ -3824,20 +3824,20 @@
     },
     {
       "path": "blas/Door_ConcretePlant_E_01_LEFT_EXT_ST_B.bvh",
-      "bytes": 1612,
-      "tris": 44,
+      "bytes": 1152,
+      "tris": 32,
       "kinds": [
-        44,
+        32,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_ConcretePlant_E_01_RIGHT_EXT_ST_B.bvh",
-      "bytes": 1612,
-      "tris": 44,
+      "bytes": 1152,
+      "tris": 32,
       "kinds": [
-        44,
+        32,
         0,
         0
       ]
@@ -3884,10 +3884,10 @@
     },
     {
       "path": "blas/Door_FactoryHall_E_01_Garage_RIGHT_EXT_COV_B.bvh",
-      "bytes": 1084,
-      "tris": 28,
+      "bytes": 752,
+      "tris": 16,
       "kinds": [
-        28,
+        16,
         0,
         0
       ]
@@ -3914,10 +3914,10 @@
     },
     {
       "path": "blas/Door_FactoryHall_E_01_elevator_Left_COV_B.bvh",
-      "bytes": 14144,
-      "tris": 398,
+      "bytes": 13876,
+      "tris": 386,
       "kinds": [
-        398,
+        386,
         0,
         0
       ]
@@ -3944,20 +3944,20 @@
     },
     {
       "path": "blas/Door_Fuelstation_A_LEFT_EXT_COV_B_01.bvh",
-      "bytes": 1484,
-      "tris": 44,
+      "bytes": 1152,
+      "tris": 32,
       "kinds": [
-        44,
+        32,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_Fuelstation_A_RIGHT_EXT_COV_B_01.bvh",
-      "bytes": 1484,
-      "tris": 44,
+      "bytes": 1152,
+      "tris": 32,
       "kinds": [
-        44,
+        32,
         0,
         0
       ]
@@ -4014,50 +4014,50 @@
     },
     {
       "path": "blas/Door_Garage_E_03_A_LEFT_EXT_COV_B.bvh",
-      "bytes": 956,
-      "tris": 24,
+      "bytes": 560,
+      "tris": 12,
       "kinds": [
-        24,
+        12,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_Garage_E_03_A_RIGHT_EXT_COV_B.bvh",
-      "bytes": 892,
-      "tris": 24,
+      "bytes": 560,
+      "tris": 12,
       "kinds": [
-        24,
+        12,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_Garage_E_05_A_LEFT_EXT_COV_B.bvh",
-      "bytes": 3700,
-      "tris": 98,
+      "bytes": 3368,
+      "tris": 86,
       "kinds": [
-        98,
+        86,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_Garage_E_05_A_RIGHT_EXT_COV_B.bvh",
-      "bytes": 7012,
-      "tris": 186,
+      "bytes": 6680,
+      "tris": 174,
       "kinds": [
-        186,
+        174,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_Greenhouse_01_Right.bvh",
-      "bytes": 5416,
-      "tris": 152,
+      "bytes": 4828,
+      "tris": 140,
       "kinds": [
-        152,
+        140,
         0,
         0
       ]
@@ -4144,10 +4144,10 @@
     },
     {
       "path": "blas/Door_House_Town_E_2l02_E_A_Right_INT_ST_B.bvh",
-      "bytes": 2272,
-      "tris": 64,
+      "bytes": 1940,
+      "tris": 52,
       "kinds": [
-        64,
+        52,
         0,
         0
       ]
@@ -4214,20 +4214,20 @@
     },
     {
       "path": "blas/Door_Latrine_01_A_LEFT_EXT_COV_B.bvh",
-      "bytes": 10508,
-      "tris": 282,
+      "bytes": 10240,
+      "tris": 270,
       "kinds": [
-        282,
+        270,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_Lightbeacon_LEFT_EXT_COV_B.bvh",
-      "bytes": 2040,
-      "tris": 56,
+      "bytes": 1580,
+      "tris": 44,
       "kinds": [
-        56,
+        44,
         0,
         0
       ]
@@ -4284,20 +4284,20 @@
     },
     {
       "path": "blas/Door_Mountain_A_LEFT_EXT_COV_B.bvh",
-      "bytes": 3276,
-      "tris": 91,
+      "bytes": 2236,
+      "tris": 60,
       "kinds": [
-        91,
+        60,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_Mountain_A_RIGHT_EXT_COV_B.bvh",
-      "bytes": 3736,
-      "tris": 108,
+      "bytes": 2480,
+      "tris": 68,
       "kinds": [
-        108,
+        68,
         0,
         0
       ]
@@ -4384,10 +4384,10 @@
     },
     {
       "path": "blas/Door_PrisonCell_E_A_Left_INT_ST_B.bvh",
-      "bytes": 16292,
-      "tris": 452,
+      "bytes": 15960,
+      "tris": 440,
       "kinds": [
-        452,
+        440,
         0,
         0
       ]
@@ -4414,60 +4414,60 @@
     },
     {
       "path": "blas/Door_Services_E_A_Left_UNI_ST_B.bvh",
-      "bytes": 10084,
-      "tris": 276,
+      "bytes": 8232,
+      "tris": 216,
       "kinds": [
-        276,
+        216,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_Services_E_A_Right_UNI_ST_B.bvh",
-      "bytes": 10148,
-      "tris": 276,
+      "bytes": 8232,
+      "tris": 216,
       "kinds": [
-        276,
+        216,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_Shed_01_R_EXT_COV_B.bvh",
-      "bytes": 2064,
-      "tris": 56,
+      "bytes": 1732,
+      "tris": 44,
       "kinds": [
-        56,
+        44,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_Shed_02_Right.bvh",
-      "bytes": 7424,
-      "tris": 192,
+      "bytes": 7156,
+      "tris": 180,
       "kinds": [
-        192,
+        180,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_ShopModern_E_bars_LEFT_A.bvh",
-      "bytes": 6400,
-      "tris": 176,
+      "bytes": 5876,
+      "tris": 164,
       "kinds": [
-        176,
+        164,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_ShopModern_E_bars_RIGHT_A.bvh",
-      "bytes": 6764,
-      "tris": 188,
+      "bytes": 6368,
+      "tris": 176,
       "kinds": [
-        188,
+        176,
         0,
         0
       ]
@@ -4494,10 +4494,10 @@
     },
     {
       "path": "blas/Door_Villa_E_A_RIGHT_EXT_ST_B.bvh",
-      "bytes": 6772,
-      "tris": 196,
+      "bytes": 6440,
+      "tris": 184,
       "kinds": [
-        196,
+        184,
         0,
         0
       ]
@@ -4764,20 +4764,20 @@
     },
     {
       "path": "blas/Door_hayloft_woodgate_LEFT_EXT_COV_B.bvh",
-      "bytes": 7656,
-      "tris": 208,
+      "bytes": 7196,
+      "tris": 196,
       "kinds": [
-        208,
+        196,
         0,
         0
       ]
     },
     {
       "path": "blas/Door_hayloft_woodgate_RIGHT_EXT_COV_B.bvh",
-      "bytes": 7072,
-      "tris": 192,
+      "bytes": 6612,
+      "tris": 180,
       "kinds": [
-        192,
+        180,
         0,
         0
       ]
@@ -4924,10 +4924,10 @@
     },
     {
       "path": "blas/EngineCrane_01.bvh",
-      "bytes": 24120,
-      "tris": 633,
+      "bytes": 22804,
+      "tris": 597,
       "kinds": [
-        633,
+        597,
         0,
         0
       ]
@@ -4994,20 +4994,20 @@
     },
     {
       "path": "blas/FactoryHall_E_01.bvh",
-      "bytes": 453696,
-      "tris": 11732,
+      "bytes": 453532,
+      "tris": 11726,
       "kinds": [
-        11732,
+        11726,
         0,
         0
       ]
     },
     {
       "path": "blas/FarmHouse_E_1L01.bvh",
-      "bytes": 154948,
-      "tris": 4012,
+      "bytes": 123084,
+      "tris": 2883,
       "kinds": [
-        4012,
+        2883,
         0,
         0
       ]
@@ -5024,80 +5024,80 @@
     },
     {
       "path": "blas/Faucet_02.bvh",
-      "bytes": 45456,
-      "tris": 1294,
+      "bytes": 43220,
+      "tris": 1234,
       "kinds": [
-        1294,
+        1234,
         0,
         0
       ]
     },
     {
       "path": "blas/FeedRack_01_B.bvh",
-      "bytes": 26024,
-      "tris": 696,
+      "bytes": 24780,
+      "tris": 668,
       "kinds": [
-        696,
+        668,
         0,
         0
       ]
     },
     {
       "path": "blas/FeedRack_02.bvh",
-      "bytes": 119232,
-      "tris": 3415,
+      "bytes": 114068,
+      "tris": 3243,
       "kinds": [
-        3415,
+        3243,
         0,
         0
       ]
     },
     {
       "path": "blas/FileOffice_01_Double.bvh",
-      "bytes": 6168,
-      "tris": 152,
+      "bytes": 5564,
+      "tris": 124,
       "kinds": [
-        152,
+        124,
         0,
         0
       ]
     },
     {
       "path": "blas/FileOffice_01_Open.bvh",
-      "bytes": 5084,
-      "tris": 140,
+      "bytes": 4548,
+      "tris": 116,
       "kinds": [
-        140,
+        116,
         0,
         0
       ]
     },
     {
       "path": "blas/FileOffice_01_Single.bvh",
-      "bytes": 3148,
-      "tris": 74,
+      "bytes": 2752,
+      "tris": 62,
       "kinds": [
-        74,
+        62,
         0,
         0
       ]
     },
     {
       "path": "blas/FileOffice_01_Stack.bvh",
-      "bytes": 9252,
-      "tris": 226,
+      "bytes": 8188,
+      "tris": 186,
       "kinds": [
-        226,
+        186,
         0,
         0
       ]
     },
     {
       "path": "blas/FireExtinguisherBox_01.bvh",
-      "bytes": 9024,
-      "tris": 215,
+      "bytes": 8244,
+      "tris": 188,
       "kinds": [
-        215,
+        188,
         0,
         0
       ]
@@ -5114,30 +5114,30 @@
     },
     {
       "path": "blas/FireStation_E_01.bvh",
-      "bytes": 148924,
-      "tris": 3996,
+      "bytes": 110860,
+      "tris": 2619,
       "kinds": [
-        3996,
+        2619,
         0,
         0
       ]
     },
     {
       "path": "blas/Firestation_Handrail_roof.bvh",
-      "bytes": 24972,
-      "tris": 748,
+      "bytes": 23728,
+      "tris": 720,
       "kinds": [
-        748,
+        720,
         0,
         0
       ]
     },
     {
       "path": "blas/Firestation_hose_hanger.bvh",
-      "bytes": 25016,
-      "tris": 662,
+      "bytes": 23836,
+      "tris": 634,
       "kinds": [
-        662,
+        634,
         0,
         0
       ]
@@ -5204,30 +5204,30 @@
     },
     {
       "path": "blas/FishingNet_02.bvh",
-      "bytes": 33008,
-      "tris": 896,
+      "bytes": 29540,
+      "tris": 786,
       "kinds": [
-        896,
+        786,
         0,
         0
       ]
     },
     {
       "path": "blas/FishingNet_03.bvh",
-      "bytes": 32404,
-      "tris": 911,
+      "bytes": 29916,
+      "tris": 821,
       "kinds": [
-        911,
+        821,
         0,
         0
       ]
     },
     {
       "path": "blas/FishingRope_01.bvh",
-      "bytes": 8472,
-      "tris": 246,
+      "bytes": 8140,
+      "tris": 234,
       "kinds": [
-        246,
+        234,
         0,
         0
       ]
@@ -5394,10 +5394,10 @@
     },
     {
       "path": "blas/FootballNetFence_01_15m.bvh",
-      "bytes": 6992,
-      "tris": 187,
+      "bytes": 6468,
+      "tris": 175,
       "kinds": [
-        187,
+        175,
         0,
         0
       ]
@@ -5424,10 +5424,10 @@
     },
     {
       "path": "blas/FridgeSmall_01.bvh",
-      "bytes": 4372,
-      "tris": 114,
+      "bytes": 3976,
+      "tris": 102,
       "kinds": [
-        114,
+        102,
         0,
         0
       ]
@@ -5464,30 +5464,30 @@
     },
     {
       "path": "blas/FuelStation_E_01_building.bvh",
-      "bytes": 32120,
-      "tris": 772,
+      "bytes": 26340,
+      "tris": 575,
       "kinds": [
-        772,
+        575,
         0,
         0
       ]
     },
     {
       "path": "blas/FuelStation_E_01_building_small.bvh",
-      "bytes": 27436,
-      "tris": 662,
+      "bytes": 21168,
+      "tris": 444,
       "kinds": [
-        662,
+        444,
         0,
         0
       ]
     },
     {
       "path": "blas/FuelStation_E_01_fuelnozzle.bvh",
-      "bytes": 2664,
-      "tris": 76,
+      "bytes": 2396,
+      "tris": 64,
       "kinds": [
-        76,
+        64,
         0,
         0
       ]
@@ -5514,100 +5514,100 @@
     },
     {
       "path": "blas/FuelStation_E_01_roof.bvh",
-      "bytes": 9860,
-      "tris": 253,
+      "bytes": 8080,
+      "tris": 201,
       "kinds": [
-        253,
+        201,
         0,
         0
       ]
     },
     {
       "path": "blas/FuelStation_E_01_tankpistol.bvh",
-      "bytes": 6840,
-      "tris": 188,
+      "bytes": 6276,
+      "tris": 166,
       "kinds": [
-        156,
+        134,
         32,
         0
       ]
     },
     {
       "path": "blas/FuelTank_01.bvh",
-      "bytes": 47732,
-      "tris": 1341,
+      "bytes": 38228,
+      "tris": 989,
       "kinds": [
-        1332,
-        9,
+        983,
+        6,
         0
       ]
     },
     {
       "path": "blas/FuelTank_02.bvh",
-      "bytes": 38044,
-      "tris": 996,
+      "bytes": 33952,
+      "tris": 853,
       "kinds": [
-        990,
+        847,
         6,
         0
       ]
     },
     {
       "path": "blas/FuelTank_02_Pump.bvh",
-      "bytes": 42724,
-      "tris": 1138,
+      "bytes": 36952,
+      "tris": 934,
       "kinds": [
-        1132,
+        928,
         6,
         0
       ]
     },
     {
       "path": "blas/FuelTank_03.bvh",
-      "bytes": 246512,
-      "tris": 6772,
+      "bytes": 223928,
+      "tris": 5948,
       "kinds": [
-        6772,
+        5948,
         0,
         0
       ]
     },
     {
       "path": "blas/GameProofFence_01_5m.bvh",
-      "bytes": 10600,
-      "tris": 300,
+      "bytes": 8876,
+      "tris": 240,
       "kinds": [
-        300,
+        240,
         0,
         0
       ]
     },
     {
       "path": "blas/GameProofFence_01_5m_D.bvh",
-      "bytes": 17704,
-      "tris": 482,
+      "bytes": 13432,
+      "tris": 340,
       "kinds": [
-        482,
+        340,
         0,
         0
       ]
     },
     {
       "path": "blas/GameProofFence_01_D.bvh",
-      "bytes": 6224,
-      "tris": 172,
+      "bytes": 4400,
+      "tris": 106,
       "kinds": [
-        172,
+        106,
         0,
         0
       ]
     },
     {
       "path": "blas/GameProofFence_01_D_02.bvh",
-      "bytes": 6428,
-      "tris": 178,
+      "bytes": 5036,
+      "tris": 130,
       "kinds": [
-        178,
+        130,
         0,
         0
       ]
@@ -5624,30 +5624,30 @@
     },
     {
       "path": "blas/GameProofFence_01_Stairs.bvh",
-      "bytes": 44000,
-      "tris": 1256,
+      "bytes": 39276,
+      "tris": 1076,
       "kinds": [
-        1256,
+        1076,
         0,
         0
       ]
     },
     {
       "path": "blas/GarageMilitary_E_01.bvh",
-      "bytes": 477364,
-      "tris": 12717,
+      "bytes": 423724,
+      "tris": 10725,
       "kinds": [
-        12717,
+        10725,
         0,
         0
       ]
     },
     {
       "path": "blas/Garage_E_01.bvh",
-      "bytes": 11732,
-      "tris": 334,
+      "bytes": 8632,
+      "tris": 212,
       "kinds": [
-        334,
+        212,
         0,
         0
       ]
@@ -5658,16 +5658,6 @@
       "tris": 1824,
       "kinds": [
         1824,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/GarbageAmmunition_USSR_01.bvh",
-      "bytes": 2420,
-      "tris": 68,
-      "kinds": [
-        68,
         0,
         0
       ]
@@ -5714,60 +5704,60 @@
     },
     {
       "path": "blas/GarbageStack_01_Short.bvh",
-      "bytes": 18188,
-      "tris": 488,
+      "bytes": 17920,
+      "tris": 476,
       "kinds": [
-        488,
+        476,
         0,
         0
       ]
     },
     {
       "path": "blas/GateCollectiveFarm_01.bvh",
-      "bytes": 10968,
-      "tris": 286,
+      "bytes": 9584,
+      "tris": 246,
       "kinds": [
-        286,
+        246,
         0,
         0
       ]
     },
     {
       "path": "blas/GateCollectiveFarm_02.bvh",
-      "bytes": 10360,
-      "tris": 256,
+      "bytes": 8976,
+      "tris": 216,
       "kinds": [
-        256,
+        216,
         0,
         0
       ]
     },
     {
       "path": "blas/GateCollectiveFarm_03.bvh",
-      "bytes": 10872,
-      "tris": 280,
+      "bytes": 9876,
+      "tris": 244,
       "kinds": [
-        280,
+        244,
         0,
         0
       ]
     },
     {
       "path": "blas/GateCollectiveFarm_04.bvh",
-      "bytes": 7552,
-      "tris": 192,
+      "bytes": 6428,
+      "tris": 156,
       "kinds": [
-        192,
+        156,
         0,
         0
       ]
     },
     {
       "path": "blas/GeneratorPortable_USSR_01.bvh",
-      "bytes": 61920,
-      "tris": 1784,
+      "bytes": 61460,
+      "tris": 1772,
       "kinds": [
-        1784,
+        1772,
         0,
         0
       ]
@@ -7604,20 +7594,20 @@
     },
     {
       "path": "blas/GraveFence_E_01.bvh",
-      "bytes": 21824,
-      "tris": 544,
+      "bytes": 20956,
+      "tris": 508,
       "kinds": [
-        544,
+        508,
         0,
         0
       ]
     },
     {
       "path": "blas/GraveFence_E_02.bvh",
-      "bytes": 27484,
-      "tris": 660,
+      "bytes": 26360,
+      "tris": 624,
       "kinds": [
-        660,
+        624,
         0,
         0
       ]
@@ -7764,10 +7754,10 @@
     },
     {
       "path": "blas/GreenHouse_01.bvh",
-      "bytes": 72320,
-      "tris": 2026,
+      "bytes": 65756,
+      "tris": 1798,
       "kinds": [
-        2026,
+        1798,
         0,
         0
       ]
@@ -7804,50 +7794,50 @@
     },
     {
       "path": "blas/GuardHouse_03.bvh",
-      "bytes": 193552,
-      "tris": 5345,
+      "bytes": 162244,
+      "tris": 4215,
       "kinds": [
-        5345,
+        4215,
         0,
         0
       ]
     },
     {
       "path": "blas/Guitar_01.bvh",
-      "bytes": 7696,
-      "tris": 222,
+      "bytes": 6080,
+      "tris": 176,
       "kinds": [
-        222,
+        176,
         0,
         0
       ]
     },
     {
       "path": "blas/Hangar_01.bvh",
-      "bytes": 149392,
-      "tris": 3811,
+      "bytes": 137992,
+      "tris": 3449,
       "kinds": [
-        3811,
+        3449,
         0,
         0
       ]
     },
     {
       "path": "blas/HarborCrane_Bottom_01.bvh",
-      "bytes": 344572,
-      "tris": 9205,
+      "bytes": 295196,
+      "tris": 7479,
       "kinds": [
-        9205,
+        7479,
         0,
         0
       ]
     },
     {
       "path": "blas/HarborCrane_Upper_01.bvh",
-      "bytes": 184216,
-      "tris": 4801,
+      "bytes": 151484,
+      "tris": 3640,
       "kinds": [
-        4801,
+        3640,
         0,
         0
       ]
@@ -7884,10 +7874,10 @@
     },
     {
       "path": "blas/HarborWinch_01.bvh",
-      "bytes": 66016,
-      "tris": 1827,
+      "bytes": 64900,
+      "tris": 1799,
       "kinds": [
-        1827,
+        1799,
         0,
         0
       ]
@@ -7904,10 +7894,10 @@
     },
     {
       "path": "blas/HatchDoor_Lightbeacon_L_EXT_COV_B.bvh",
-      "bytes": 1480,
-      "tris": 40,
+      "bytes": 1148,
+      "tris": 28,
       "kinds": [
-        40,
+        28,
         0,
         0
       ]
@@ -7954,50 +7944,50 @@
     },
     {
       "path": "blas/Hayloft_E_01_metal.bvh",
-      "bytes": 93088,
-      "tris": 2528,
+      "bytes": 73708,
+      "tris": 1836,
       "kinds": [
-        2528,
+        1836,
         0,
         0
       ]
     },
     {
       "path": "blas/Hayloft_E_01_wood.bvh",
-      "bytes": 109180,
-      "tris": 3014,
+      "bytes": 91820,
+      "tris": 2358,
       "kinds": [
-        3014,
+        2358,
         0,
         0
       ]
     },
     {
       "path": "blas/HaystackDryer_01_folded.bvh",
-      "bytes": 9684,
-      "tris": 270,
+      "bytes": 9256,
+      "tris": 260,
       "kinds": [
-        270,
+        260,
         0,
         0
       ]
     },
     {
       "path": "blas/HaystackSmall_01.bvh",
-      "bytes": 29052,
-      "tris": 835,
+      "bytes": 27024,
+      "tris": 757,
       "kinds": [
         0,
         0,
-        835
+        757
       ]
     },
     {
       "path": "blas/HazardBeacon_Holder_01.bvh",
-      "bytes": 2288,
-      "tris": 51,
+      "bytes": 2024,
+      "tris": 43,
       "kinds": [
-        51,
+        43,
         0,
         0
       ]
@@ -8024,17 +8014,27 @@
     },
     {
       "path": "blas/HookMetal_01.bvh",
-      "bytes": 3976,
-      "tris": 112,
+      "bytes": 2848,
+      "tris": 72,
       "kinds": [
-        112,
+        72,
         0,
         0
       ]
     },
     {
       "path": "blas/Hotbed_01.bvh",
-      "bytes": 14696,
+      "bytes": 14236,
+      "tris": 388,
+      "kinds": [
+        388,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/Hotbed_01_half_open.bvh",
+      "bytes": 15144,
       "tris": 400,
       "kinds": [
         400,
@@ -8043,71 +8043,61 @@
       ]
     },
     {
-      "path": "blas/Hotbed_01_half_open.bvh",
-      "bytes": 16536,
-      "tris": 448,
-      "kinds": [
-        424,
-        24,
-        0
-      ]
-    },
-    {
       "path": "blas/Hotbed_01_open.bvh",
-      "bytes": 17588,
-      "tris": 476,
+      "bytes": 15668,
+      "tris": 412,
       "kinds": [
-        452,
-        24,
+        412,
+        0,
         0
       ]
     },
     {
       "path": "blas/HouseAddon_Garage_E_01.bvh",
-      "bytes": 20512,
-      "tris": 548,
+      "bytes": 16600,
+      "tris": 412,
       "kinds": [
-        548,
+        412,
         0,
         0
       ]
     },
     {
       "path": "blas/HouseAddon_ShedMetal_01_Long.bvh",
-      "bytes": 14688,
-      "tris": 374,
+      "bytes": 10544,
+      "tris": 232,
       "kinds": [
-        374,
+        232,
         0,
         0
       ]
     },
     {
       "path": "blas/HouseAddon_ShedMetal_01_Short.bvh",
-      "bytes": 10884,
-      "tris": 282,
+      "bytes": 7936,
+      "tris": 184,
       "kinds": [
-        282,
+        184,
         0,
         0
       ]
     },
     {
       "path": "blas/HouseAddon_Shed_E_01.bvh",
-      "bytes": 30988,
-      "tris": 838,
+      "bytes": 23028,
+      "tris": 558,
       "kinds": [
-        838,
+        558,
         0,
         0
       ]
     },
     {
       "path": "blas/HouseAddon_Workshop_E_01.bvh",
-      "bytes": 21840,
-      "tris": 586,
+      "bytes": 16684,
+      "tris": 422,
       "kinds": [
-        586,
+        422,
         0,
         0
       ]
@@ -8124,10 +8114,10 @@
     },
     {
       "path": "blas/HouseRuin_01_BrickPile_Small.bvh",
-      "bytes": 57584,
-      "tris": 1655,
+      "bytes": 49488,
+      "tris": 1367,
       "kinds": [
-        1655,
+        1367,
         0,
         0
       ]
@@ -8154,10 +8144,10 @@
     },
     {
       "path": "blas/HouseRuin_01_Corner_Stairs.bvh",
-      "bytes": 67832,
-      "tris": 1913,
+      "bytes": 45320,
+      "tris": 1116,
       "kinds": [
-        1913,
+        1116,
         0,
         0
       ]
@@ -8204,10 +8194,10 @@
     },
     {
       "path": "blas/House_Mountain_E_1I01.bvh",
-      "bytes": 148220,
-      "tris": 3900,
+      "bytes": 147724,
+      "tris": 3882,
       "kinds": [
-        3900,
+        3882,
         0,
         0
       ]
@@ -8224,80 +8214,80 @@
     },
     {
       "path": "blas/House_Prefab_2I01.bvh",
-      "bytes": 143456,
-      "tris": 3841,
+      "bytes": 117316,
+      "tris": 2853,
       "kinds": [
-        3841,
+        2853,
         0,
         0
       ]
     },
     {
       "path": "blas/House_Prefab_2I01_Railing_Metal.bvh",
-      "bytes": 46308,
-      "tris": 1164,
+      "bytes": 45008,
+      "tris": 1110,
       "kinds": [
-        1164,
+        1110,
         0,
         0
       ]
     },
     {
       "path": "blas/House_Prefab_2I01_Railing_Wood.bvh",
-      "bytes": 18596,
-      "tris": 484,
+      "bytes": 16772,
+      "tris": 418,
       "kinds": [
-        484,
+        418,
         0,
         0
       ]
     },
     {
       "path": "blas/House_Prefab_2I02t.bvh",
-      "bytes": 138068,
-      "tris": 3687,
+      "bytes": 116624,
+      "tris": 2915,
       "kinds": [
-        3687,
+        2915,
         0,
         0
       ]
     },
     {
       "path": "blas/House_Town_E_2I01.bvh",
-      "bytes": 214296,
-      "tris": 5914,
+      "bytes": 162436,
+      "tris": 4102,
       "kinds": [
-        5914,
+        4102,
         0,
         0
       ]
     },
     {
       "path": "blas/House_Town_E_2I02.bvh",
-      "bytes": 163788,
-      "tris": 4355,
+      "bytes": 126576,
+      "tris": 3032,
       "kinds": [
-        4355,
+        3032,
         0,
         0
       ]
     },
     {
       "path": "blas/House_Town_E_2I02_v2.bvh",
-      "bytes": 164880,
-      "tris": 4390,
+      "bytes": 127732,
+      "tris": 3067,
       "kinds": [
-        4390,
+        3067,
         0,
         0
       ]
     },
     {
       "path": "blas/House_Town_E_2I03.bvh",
-      "bytes": 288520,
-      "tris": 7558,
+      "bytes": 229840,
+      "tris": 5631,
       "kinds": [
-        7558,
+        5631,
         0,
         0
       ]
@@ -8324,70 +8314,70 @@
     },
     {
       "path": "blas/House_Village_E_1I02.bvh",
-      "bytes": 60544,
-      "tris": 1667,
+      "bytes": 43548,
+      "tris": 1040,
       "kinds": [
-        1667,
+        1040,
         0,
         0
       ]
     },
     {
       "path": "blas/House_Village_E_1I03.bvh",
-      "bytes": 128900,
-      "tris": 3563,
+      "bytes": 98944,
+      "tris": 2437,
       "kinds": [
-        3563,
+        2437,
         0,
         0
       ]
     },
     {
       "path": "blas/House_Village_E_1I04sf.bvh",
-      "bytes": 84328,
-      "tris": 2188,
+      "bytes": 64724,
+      "tris": 1464,
       "kinds": [
-        2188,
+        1464,
         0,
         0
       ]
     },
     {
       "path": "blas/House_Village_E_1I04sr.bvh",
-      "bytes": 86576,
-      "tris": 2253,
+      "bytes": 66752,
+      "tris": 1520,
       "kinds": [
-        2253,
+        1520,
         0,
         0
       ]
     },
     {
       "path": "blas/House_Village_E_1I04t.bvh",
-      "bytes": 87764,
-      "tris": 2273,
+      "bytes": 66916,
+      "tris": 1540,
       "kinds": [
-        2273,
+        1540,
         0,
         0
       ]
     },
     {
       "path": "blas/House_Village_E_1I05s.bvh",
-      "bytes": 81088,
-      "tris": 2222,
+      "bytes": 63152,
+      "tris": 1566,
       "kinds": [
-        2222,
+        1566,
         0,
         0
       ]
     },
     {
       "path": "blas/House_Village_E_1I05t.bvh",
-      "bytes": 80512,
-      "tris": 2222,
+      "bytes": 62960,
+      "tris": 1566,
       "kinds": [
-        2222,
+        1566,
         0,
         0
       ]
@@ -8404,50 +8394,50 @@
     },
     {
       "path": "blas/House_Village_E_1I08t.bvh",
-      "bytes": 110492,
-      "tris": 2984,
+      "bytes": 90204,
+      "tris": 2280,
       "kinds": [
-        2984,
+        2280,
         0,
         0
       ]
     },
     {
       "path": "blas/House_Village_E_1L01.bvh",
-      "bytes": 91484,
-      "tris": 2401,
+      "bytes": 67280,
+      "tris": 1557,
       "kinds": [
-        2393,
+        1549,
         8,
         0
       ]
     },
     {
       "path": "blas/House_Village_E_1L02t.bvh",
-      "bytes": 116808,
-      "tris": 3121,
+      "bytes": 87488,
+      "tris": 2059,
       "kinds": [
-        3117,
-        4,
+        2059,
+        0,
         0
       ]
     },
     {
       "path": "blas/House_Village_E_1L03t.bvh",
-      "bytes": 171404,
-      "tris": 4544,
+      "bytes": 135000,
+      "tris": 3306,
       "kinds": [
-        4537,
+        3299,
         7,
         0
       ]
     },
     {
       "path": "blas/House_Wooden_E_1I01.bvh",
-      "bytes": 59472,
-      "tris": 1545,
+      "bytes": 45104,
+      "tris": 1050,
       "kinds": [
-        1545,
+        1050,
         0,
         0
       ]
@@ -8514,10 +8504,10 @@
     },
     {
       "path": "blas/Junk_01_bricks.bvh",
-      "bytes": 17388,
-      "tris": 460,
+      "bytes": 16784,
+      "tris": 432,
       "kinds": [
-        460,
+        432,
         0,
         0
       ]
@@ -8534,10 +8524,10 @@
     },
     {
       "path": "blas/Junk_01_mattress.bvh",
-      "bytes": 5684,
-      "tris": 164,
+      "bytes": 3196,
+      "tris": 74,
       "kinds": [
-        164,
+        74,
         0,
         0
       ]
@@ -8614,117 +8604,17 @@
     },
     {
       "path": "blas/Kitchen_02.bvh",
-      "bytes": 28332,
-      "tris": 756,
+      "bytes": 25996,
+      "tris": 660,
       "kinds": [
-        756,
+        660,
         0,
         0
       ]
     },
     {
       "path": "blas/LadderWooden_01.bvh",
-      "bytes": 5152,
-      "tris": 144,
-      "kinds": [
-        144,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/LadderWooden_01_Long.bvh",
-      "bytes": 6884,
-      "tris": 180,
-      "kinds": [
-        180,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/Ladder_ChurchSmall_E_435_B.bvh",
-      "bytes": 5260,
-      "tris": 140,
-      "kinds": [
-        140,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/Ladder_Garage_02_555_B.bvh",
-      "bytes": 11616,
-      "tris": 304,
-      "kinds": [
-        304,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/Ladder_HarborCrane_180_B.bvh",
-      "bytes": 4896,
-      "tris": 128,
-      "kinds": [
-        128,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/Ladder_HarborCrane_379_B.bvh",
-      "bytes": 7788,
-      "tris": 204,
-      "kinds": [
-        204,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/Ladder_HarborCrane_645_B.bvh",
-      "bytes": 13184,
-      "tris": 352,
-      "kinds": [
-        352,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/Ladder_Metal_900_B.bvh",
-      "bytes": 25724,
-      "tris": 684,
-      "kinds": [
-        684,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/Ladder_Office_E_01_317.bvh",
-      "bytes": 6568,
-      "tris": 168,
-      "kinds": [
-        168,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/Ladder_Silo_02_1472_B.bvh",
-      "bytes": 44048,
-      "tris": 1280,
-      "kinds": [
-        1280,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/Ladder_Wooden_456_B.bvh",
-      "bytes": 4900,
+      "bytes": 4948,
       "tris": 132,
       "kinds": [
         132,
@@ -8733,31 +8623,131 @@
       ]
     },
     {
-      "path": "blas/LampFluorescent_01.bvh",
-      "bytes": 1168,
-      "tris": 32,
+      "path": "blas/LadderWooden_01_Long.bvh",
+      "bytes": 6104,
+      "tris": 168,
       "kinds": [
-        32,
+        168,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/Ladder_ChurchSmall_E_435_B.bvh",
+      "bytes": 4928,
+      "tris": 128,
+      "kinds": [
+        128,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/Ladder_Garage_02_555_B.bvh",
+      "bytes": 11156,
+      "tris": 292,
+      "kinds": [
+        292,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/Ladder_HarborCrane_180_B.bvh",
+      "bytes": 4372,
+      "tris": 116,
+      "kinds": [
+        116,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/Ladder_HarborCrane_379_B.bvh",
+      "bytes": 7328,
+      "tris": 192,
+      "kinds": [
+        192,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/Ladder_HarborCrane_645_B.bvh",
+      "bytes": 13044,
+      "tris": 340,
+      "kinds": [
+        340,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/Ladder_Metal_900_B.bvh",
+      "bytes": 25136,
+      "tris": 672,
+      "kinds": [
+        672,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/Ladder_Office_E_01_317.bvh",
+      "bytes": 6172,
+      "tris": 156,
+      "kinds": [
+        156,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/Ladder_Silo_02_1472_B.bvh",
+      "bytes": 43652,
+      "tris": 1268,
+      "kinds": [
+        1268,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/Ladder_Wooden_456_B.bvh",
+      "bytes": 4568,
+      "tris": 120,
+      "kinds": [
+        120,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/LampFluorescent_01.bvh",
+      "bytes": 772,
+      "tris": 20,
+      "kinds": [
+        20,
         0,
         0
       ]
     },
     {
       "path": "blas/LampFluorescent_01_Dst_01.bvh",
-      "bytes": 1352,
-      "tris": 40,
+      "bytes": 1020,
+      "tris": 28,
       "kinds": [
-        40,
+        28,
         0,
         0
       ]
     },
     {
       "path": "blas/LampFluorescent_01_Dst_02.bvh",
-      "bytes": 1352,
-      "tris": 40,
+      "bytes": 1148,
+      "tris": 28,
       "kinds": [
-        40,
+        28,
         0,
         0
       ]
@@ -8814,30 +8804,30 @@
     },
     {
       "path": "blas/LampStreetE_03_addon.bvh",
-      "bytes": 4368,
-      "tris": 120,
+      "bytes": 2840,
+      "tris": 64,
       "kinds": [
-        112,
-        8,
+        64,
+        0,
         0
       ]
     },
     {
       "path": "blas/LampTower_01.bvh",
-      "bytes": 22936,
-      "tris": 636,
+      "bytes": 21252,
+      "tris": 582,
       "kinds": [
-        566,
+        512,
         70,
         0
       ]
     },
     {
       "path": "blas/Lathe_01.bvh",
-      "bytes": 50312,
-      "tris": 1386,
+      "bytes": 48204,
+      "tris": 1326,
       "kinds": [
-        1386,
+        1326,
         0,
         0
       ]
@@ -8854,10 +8844,10 @@
     },
     {
       "path": "blas/Latrine_01.bvh",
-      "bytes": 20172,
-      "tris": 501,
+      "bytes": 17932,
+      "tris": 437,
       "kinds": [
-        501,
+        437,
         0,
         0
       ]
@@ -8874,10 +8864,10 @@
     },
     {
       "path": "blas/LifeBuoy_01_stand.bvh",
-      "bytes": 4472,
-      "tris": 120,
+      "bytes": 4012,
+      "tris": 108,
       "kinds": [
-        120,
+        108,
         0,
         0
       ]
@@ -8894,50 +8884,50 @@
     },
     {
       "path": "blas/LightBeacon_01.bvh",
-      "bytes": 45960,
-      "tris": 1241,
+      "bytes": 36712,
+      "tris": 923,
       "kinds": [
-        1209,
+        891,
         32,
         0
       ]
     },
     {
       "path": "blas/LightCeiling_02.bvh",
-      "bytes": 10476,
-      "tris": 289,
+      "bytes": 6648,
+      "tris": 173,
       "kinds": [
-        289,
+        173,
         0,
         0
       ]
     },
     {
       "path": "blas/LightIndustrial_01.bvh",
-      "bytes": 5032,
-      "tris": 144,
+      "bytes": 3864,
+      "tris": 94,
       "kinds": [
-        116,
+        66,
         28,
         0
       ]
     },
     {
       "path": "blas/LightIndustrial_02.bvh",
-      "bytes": 8396,
-      "tris": 220,
+      "bytes": 6672,
+      "tris": 160,
       "kinds": [
-        178,
+        118,
         42,
         0
       ]
     },
     {
       "path": "blas/LightIndustrial_03.bvh",
-      "bytes": 5248,
-      "tris": 150,
+      "bytes": 4080,
+      "tris": 104,
       "kinds": [
-        90,
+        44,
         60,
         0
       ]
@@ -8953,31 +8943,11 @@
       ]
     },
     {
-      "path": "blas/LightSwitch_01.bvh",
-      "bytes": 492,
-      "tris": 12,
-      "kinds": [
-        12,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/LightSwitch_02.bvh",
-      "bytes": 492,
-      "tris": 12,
-      "kinds": [
-        12,
-        0,
-        0
-      ]
-    },
-    {
       "path": "blas/LighthouseMedium_01.bvh",
-      "bytes": 300976,
-      "tris": 8099,
+      "bytes": 243216,
+      "tris": 6162,
       "kinds": [
-        8099,
+        6162,
         0,
         0
       ]
@@ -8994,10 +8964,10 @@
     },
     {
       "path": "blas/LighthouseSmall_01.bvh",
-      "bytes": 241992,
-      "tris": 6766,
+      "bytes": 191720,
+      "tris": 5040,
       "kinds": [
-        6766,
+        5040,
         0,
         0
       ]
@@ -9014,11 +8984,11 @@
     },
     {
       "path": "blas/Lighthouse_Light_Main.bvh",
-      "bytes": 20752,
-      "tris": 592,
+      "bytes": 18044,
+      "tris": 508,
       "kinds": [
         432,
-        160,
+        76,
         0
       ]
     },
@@ -9054,20 +9024,20 @@
     },
     {
       "path": "blas/LobsterTrapWooden_01.bvh",
-      "bytes": 920,
-      "tris": 24,
+      "bytes": 588,
+      "tris": 12,
       "kinds": [
-        24,
+        12,
         0,
         0
       ]
     },
     {
       "path": "blas/LobsterTrapWooden_02.bvh",
-      "bytes": 2692,
-      "tris": 76,
+      "bytes": 1664,
+      "tris": 38,
       "kinds": [
-        76,
+        38,
         0,
         0
       ]
@@ -9084,10 +9054,10 @@
     },
     {
       "path": "blas/Lounger_01.bvh",
-      "bytes": 21096,
-      "tris": 580,
+      "bytes": 18924,
+      "tris": 520,
       "kinds": [
-        580,
+        520,
         0,
         0
       ]
@@ -9124,20 +9094,20 @@
     },
     {
       "path": "blas/ManurePile_01.bvh",
-      "bytes": 52132,
-      "tris": 1491,
+      "bytes": 47944,
+      "tris": 1365,
       "kinds": [
-        1491,
+        1365,
         0,
         0
       ]
     },
     {
       "path": "blas/MarketStand_01.bvh",
-      "bytes": 11180,
-      "tris": 292,
+      "bytes": 7936,
+      "tris": 184,
       "kinds": [
-        292,
+        184,
         0,
         0
       ]
@@ -9194,10 +9164,10 @@
     },
     {
       "path": "blas/MeetingTable_01.bvh",
-      "bytes": 8356,
-      "tris": 228,
+      "bytes": 4984,
+      "tris": 120,
       "kinds": [
-        228,
+        120,
         0,
         0
       ]
@@ -9224,10 +9194,10 @@
     },
     {
       "path": "blas/MessageBoard_01.bvh",
-      "bytes": 12748,
-      "tris": 331,
+      "bytes": 10404,
+      "tris": 257,
       "kinds": [
-        331,
+        257,
         0,
         0
       ]
@@ -9244,10 +9214,10 @@
     },
     {
       "path": "blas/MetalWall_01_3m.bvh",
-      "bytes": 2676,
-      "tris": 68,
+      "bytes": 2280,
+      "tris": 56,
       "kinds": [
-        68,
+        56,
         0,
         0
       ]
@@ -9264,20 +9234,20 @@
     },
     {
       "path": "blas/MetalWall_01_3m_End.bvh",
-      "bytes": 3288,
-      "tris": 88,
+      "bytes": 2892,
+      "tris": 76,
       "kinds": [
-        88,
+        76,
         0,
         0
       ]
     },
     {
       "path": "blas/MetalWall_01_9m.bvh",
-      "bytes": 2612,
-      "tris": 68,
+      "bytes": 2280,
+      "tris": 56,
       "kinds": [
-        68,
+        56,
         0,
         0
       ]
@@ -9314,50 +9284,50 @@
     },
     {
       "path": "blas/MirrorBathroom_02.bvh",
-      "bytes": 6240,
-      "tris": 160,
+      "bytes": 5520,
+      "tris": 144,
       "kinds": [
-        158,
+        142,
         2,
         0
       ]
     },
     {
       "path": "blas/Monument_01.bvh",
-      "bytes": 13940,
-      "tris": 402,
+      "bytes": 12776,
+      "tris": 360,
       "kinds": [
-        402,
+        360,
         0,
         0
       ]
     },
     {
       "path": "blas/MooringBuoy_01.bvh",
-      "bytes": 41984,
-      "tris": 1145,
+      "bytes": 34820,
+      "tris": 912,
       "kinds": [
-        1129,
+        896,
         16,
         0
       ]
     },
     {
       "path": "blas/MountainHotel_01.bvh",
-      "bytes": 295036,
-      "tris": 7793,
+      "bytes": 231368,
+      "tris": 5501,
       "kinds": [
-        7793,
+        5501,
         0,
         0
       ]
     },
     {
       "path": "blas/MunicipalOffice_E_01.bvh",
-      "bytes": 225904,
-      "tris": 6250,
+      "bytes": 223616,
+      "tris": 6172,
       "kinds": [
-        6250,
+        6172,
         0,
         0
       ]
@@ -9374,10 +9344,10 @@
     },
     {
       "path": "blas/NetFence_01_2m.bvh",
-      "bytes": 1776,
-      "tris": 48,
+      "bytes": 1508,
+      "tris": 36,
       "kinds": [
-        48,
+        36,
         0,
         0
       ]
@@ -9394,20 +9364,20 @@
     },
     {
       "path": "blas/NetFence_01_2m_End.bvh",
-      "bytes": 2332,
-      "tris": 60,
+      "bytes": 1936,
+      "tris": 48,
       "kinds": [
-        60,
+        48,
         0,
         0
       ]
     },
     {
       "path": "blas/NetFence_01_4m.bvh",
-      "bytes": 2696,
-      "tris": 72,
+      "bytes": 2428,
+      "tris": 60,
       "kinds": [
-        72,
+        60,
         0,
         0
       ]
@@ -9424,10 +9394,10 @@
     },
     {
       "path": "blas/NetFence_01_Pole_Metal.bvh",
-      "bytes": 1348,
-      "tris": 36,
+      "bytes": 1080,
+      "tris": 24,
       "kinds": [
-        36,
+        24,
         0,
         0
       ]
@@ -9454,20 +9424,20 @@
     },
     {
       "path": "blas/NetFence_03_2m.bvh",
-      "bytes": 2508,
-      "tris": 62,
+      "bytes": 2176,
+      "tris": 50,
       "kinds": [
-        62,
+        50,
         0,
         0
       ]
     },
     {
       "path": "blas/NetFence_03_4m.bvh",
-      "bytes": 2508,
-      "tris": 62,
+      "bytes": 2176,
+      "tris": 50,
       "kinds": [
-        62,
+        50,
         0,
         0
       ]
@@ -9484,10 +9454,10 @@
     },
     {
       "path": "blas/NetFence_03_8m.bvh",
-      "bytes": 3536,
-      "tris": 88,
+      "bytes": 3268,
+      "tris": 76,
       "kinds": [
-        88,
+        76,
         0,
         0
       ]
@@ -9514,20 +9484,20 @@
     },
     {
       "path": "blas/NetFence_04_2m.bvh",
-      "bytes": 1740,
-      "tris": 44,
+      "bytes": 1472,
+      "tris": 32,
       "kinds": [
-        44,
+        32,
         0,
         0
       ]
     },
     {
       "path": "blas/NetFence_04_4m.bvh",
-      "bytes": 1740,
-      "tris": 44,
+      "bytes": 1536,
+      "tris": 32,
       "kinds": [
-        44,
+        32,
         0,
         0
       ]
@@ -9544,20 +9514,20 @@
     },
     {
       "path": "blas/NetFence_04_8m.bvh",
-      "bytes": 2232,
-      "tris": 56,
+      "bytes": 2028,
+      "tris": 44,
       "kinds": [
-        56,
+        44,
         0,
         0
       ]
     },
     {
       "path": "blas/NetFence_04_D.bvh",
-      "bytes": 2156,
-      "tris": 60,
+      "bytes": 1760,
+      "tris": 48,
       "kinds": [
-        60,
+        48,
         0,
         0
       ]
@@ -9714,10 +9684,10 @@
     },
     {
       "path": "blas/Office_E_01.bvh",
-      "bytes": 212136,
-      "tris": 5700,
+      "bytes": 208684,
+      "tris": 5606,
       "kinds": [
-        5700,
+        5606,
         0,
         0
       ]
@@ -9744,20 +9714,20 @@
     },
     {
       "path": "blas/PaintingBig_01.bvh",
-      "bytes": 1232,
-      "tris": 32,
+      "bytes": 836,
+      "tris": 20,
       "kinds": [
-        30,
+        18,
         2,
         0
       ]
     },
     {
       "path": "blas/PaintingBig_02.bvh",
-      "bytes": 1224,
-      "tris": 30,
+      "bytes": 828,
+      "tris": 18,
       "kinds": [
-        30,
+        18,
         0,
         0
       ]
@@ -9784,50 +9754,50 @@
     },
     {
       "path": "blas/PaintingOval_01.bvh",
-      "bytes": 12552,
-      "tris": 360,
+      "bytes": 10908,
+      "tris": 316,
       "kinds": [
-        330,
+        286,
         30,
         0
       ]
     },
     {
       "path": "blas/PaintingOval_02.bvh",
-      "bytes": 12616,
-      "tris": 360,
+      "bytes": 11228,
+      "tris": 316,
       "kinds": [
-        330,
+        286,
         30,
         0
       ]
     },
     {
       "path": "blas/PaintingSmall_01.bvh",
-      "bytes": 1352,
-      "tris": 40,
+      "bytes": 1084,
+      "tris": 28,
       "kinds": [
-        38,
+        26,
         2,
         0
       ]
     },
     {
       "path": "blas/PaintingSmall_02.bvh",
-      "bytes": 1104,
-      "tris": 32,
+      "bytes": 836,
+      "tris": 20,
       "kinds": [
-        30,
+        18,
         2,
         0
       ]
     },
     {
       "path": "blas/PalletFuel_01.bvh",
-      "bytes": 13752,
-      "tris": 360,
+      "bytes": 13548,
+      "tris": 348,
       "kinds": [
-        360,
+        348,
         0,
         0
       ]
@@ -9854,10 +9824,10 @@
     },
     {
       "path": "blas/Pallet_01_Pile.bvh",
-      "bytes": 56164,
-      "tris": 1494,
+      "bytes": 55960,
+      "tris": 1482,
       "kinds": [
-        1494,
+        1482,
         0,
         0
       ]
@@ -9924,10 +9894,10 @@
     },
     {
       "path": "blas/PicnicTable_01.bvh",
-      "bytes": 8612,
-      "tris": 222,
+      "bytes": 7756,
+      "tris": 198,
       "kinds": [
-        222,
+        198,
         0,
         0
       ]
@@ -10094,40 +10064,40 @@
     },
     {
       "path": "blas/PierRail_01.bvh",
-      "bytes": 3680,
-      "tris": 96,
+      "bytes": 3284,
+      "tris": 84,
       "kinds": [
-        96,
+        84,
         0,
         0
       ]
     },
     {
       "path": "blas/PierShed_01.bvh",
-      "bytes": 195644,
-      "tris": 4930,
+      "bytes": 145740,
+      "tris": 3252,
       "kinds": [
-        4930,
+        3252,
         0,
         0
       ]
     },
     {
       "path": "blas/PierWooden_01_10m.bvh",
-      "bytes": 50508,
-      "tris": 1356,
+      "bytes": 43440,
+      "tris": 1136,
       "kinds": [
-        1356,
+        1136,
         0,
         0
       ]
     },
     {
       "path": "blas/PierWooden_01_25m.bvh",
-      "bytes": 83112,
-      "tris": 2202,
+      "bytes": 69692,
+      "tris": 1774,
       "kinds": [
-        2202,
+        1774,
         0,
         0
       ]
@@ -10144,30 +10114,30 @@
     },
     {
       "path": "blas/PierWooden_01_destroyed_25m.bvh",
-      "bytes": 53452,
-      "tris": 1444,
+      "bytes": 36020,
+      "tris": 810,
       "kinds": [
-        1444,
+        810,
         0,
         0
       ]
     },
     {
       "path": "blas/PierWooden_02_bridge.bvh",
-      "bytes": 138388,
-      "tris": 3844,
+      "bytes": 107576,
+      "tris": 2728,
       "kinds": [
-        3844,
+        2728,
         0,
         0
       ]
     },
     {
       "path": "blas/PierWooden_02_pier.bvh",
-      "bytes": 119604,
-      "tris": 3428,
+      "bytes": 77468,
+      "tris": 1932,
       "kinds": [
-        3428,
+        1932,
         0,
         0
       ]
@@ -10184,20 +10154,20 @@
     },
     {
       "path": "blas/Pier_02.bvh",
-      "bytes": 13092,
-      "tris": 356,
+      "bytes": 10160,
+      "tris": 240,
       "kinds": [
-        356,
+        240,
         0,
         0
       ]
     },
     {
       "path": "blas/Pier_03.bvh",
-      "bytes": 25676,
-      "tris": 678,
+      "bytes": 20756,
+      "tris": 494,
       "kinds": [
-        678,
+        494,
         0,
         0
       ]
@@ -10214,70 +10184,70 @@
     },
     {
       "path": "blas/Pier_Stairs01.bvh",
-      "bytes": 4136,
-      "tris": 112,
+      "bytes": 3640,
+      "tris": 94,
       "kinds": [
-        112,
+        94,
         0,
         0
       ]
     },
     {
       "path": "blas/Pier_Stairs02.bvh",
-      "bytes": 4860,
-      "tris": 132,
+      "bytes": 4168,
+      "tris": 110,
       "kinds": [
-        132,
+        110,
         0,
         0
       ]
     },
     {
       "path": "blas/Pier_Tires_01.bvh",
-      "bytes": 12896,
-      "tris": 384,
+      "bytes": 11296,
+      "tris": 320,
       "kinds": [
-        384,
+        320,
         0,
         0
       ]
     },
     {
       "path": "blas/Pier_Tires_02.bvh",
-      "bytes": 29928,
-      "tris": 864,
+      "bytes": 26824,
+      "tris": 768,
       "kinds": [
-        864,
+        768,
         0,
         0
       ]
     },
     {
       "path": "blas/Pier_Wood_Broken_01.bvh",
-      "bytes": 4644,
-      "tris": 124,
+      "bytes": 3452,
+      "tris": 84,
       "kinds": [
-        124,
+        84,
         0,
         0
       ]
     },
     {
       "path": "blas/Pier_Wood_Long_01.bvh",
-      "bytes": 3484,
-      "tris": 90,
+      "bytes": 3088,
+      "tris": 78,
       "kinds": [
-        90,
+        78,
         0,
         0
       ]
     },
     {
       "path": "blas/Pier_Wood_Short_01.bvh",
-      "bytes": 2032,
-      "tris": 56,
+      "bytes": 1760,
+      "tris": 40,
       "kinds": [
-        56,
+        40,
         0,
         0
       ]
@@ -10384,110 +10354,110 @@
     },
     {
       "path": "blas/PlaygroundClimber_01.bvh",
-      "bytes": 8868,
-      "tris": 248,
+      "bytes": 8124,
+      "tris": 208,
       "kinds": [
-        248,
+        208,
         0,
         0
       ]
     },
     {
       "path": "blas/PlaygroundClimber_02.bvh",
-      "bytes": 6196,
-      "tris": 186,
+      "bytes": 4368,
+      "tris": 120,
       "kinds": [
-        186,
+        120,
         0,
         0
       ]
     },
     {
       "path": "blas/PlaygroundSlide_01.bvh",
-      "bytes": 23116,
-      "tris": 650,
+      "bytes": 16744,
+      "tris": 456,
       "kinds": [
-        650,
+        456,
         0,
         0
       ]
     },
     {
       "path": "blas/PlowWreck_01.bvh",
-      "bytes": 24892,
-      "tris": 605,
+      "bytes": 24040,
+      "tris": 585,
       "kinds": [
-        605,
+        585,
         0,
         0
       ]
     },
     {
       "path": "blas/PoleFence_01_3m.bvh",
-      "bytes": 6624,
-      "tris": 192,
+      "bytes": 6036,
+      "tris": 180,
       "kinds": [
-        192,
+        180,
         0,
         0
       ]
     },
     {
       "path": "blas/PoleFence_01_3m_D.bvh",
-      "bytes": 12020,
-      "tris": 356,
+      "bytes": 11560,
+      "tris": 344,
       "kinds": [
-        356,
+        344,
         0,
         0
       ]
     },
     {
       "path": "blas/PoleFence_01_3m_End.bvh",
-      "bytes": 9164,
-      "tris": 268,
+      "bytes": 8640,
+      "tris": 256,
       "kinds": [
-        268,
+        256,
         0,
         0
       ]
     },
     {
       "path": "blas/PoleFence_01_6m.bvh",
-      "bytes": 16532,
-      "tris": 500,
+      "bytes": 16072,
+      "tris": 488,
       "kinds": [
-        500,
+        488,
         0,
         0
       ]
     },
     {
       "path": "blas/PoleFence_01_6m_A.bvh",
-      "bytes": 16532,
-      "tris": 500,
+      "bytes": 16072,
+      "tris": 488,
       "kinds": [
-        500,
+        488,
         0,
         0
       ]
     },
     {
       "path": "blas/PoleFence_01_6m_B.bvh",
-      "bytes": 17092,
-      "tris": 516,
+      "bytes": 16568,
+      "tris": 504,
       "kinds": [
-        516,
+        504,
         0,
         0
       ]
     },
     {
       "path": "blas/PoleFence_01_D.bvh",
-      "bytes": 6128,
-      "tris": 176,
+      "bytes": 5540,
+      "tris": 164,
       "kinds": [
-        176,
+        164,
         0,
         0
       ]
@@ -10504,27 +10474,17 @@
     },
     {
       "path": "blas/PoleFence_02_8m_A.bvh",
-      "bytes": 15292,
-      "tris": 438,
+      "bytes": 14768,
+      "tris": 426,
       "kinds": [
-        438,
+        426,
         0,
         0
       ]
     },
     {
       "path": "blas/PoleFence_02_8m_B.bvh",
-      "bytes": 16164,
-      "tris": 462,
-      "kinds": [
-        462,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/PoleFence_02_8m_C.bvh",
-      "bytes": 15760,
+      "bytes": 15640,
       "tris": 450,
       "kinds": [
         450,
@@ -10533,21 +10493,31 @@
       ]
     },
     {
-      "path": "blas/PoleFence_02_8m_D.bvh",
-      "bytes": 22068,
-      "tris": 636,
+      "path": "blas/PoleFence_02_8m_C.bvh",
+      "bytes": 15236,
+      "tris": 438,
       "kinds": [
-        636,
+        438,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/PoleFence_02_8m_D.bvh",
+      "bytes": 21544,
+      "tris": 624,
+      "kinds": [
+        624,
         0,
         0
       ]
     },
     {
       "path": "blas/PoleFence_02_D.bvh",
-      "bytes": 13968,
-      "tris": 400,
+      "bytes": 13380,
+      "tris": 388,
       "kinds": [
-        400,
+        388,
         0,
         0
       ]
@@ -10594,20 +10564,20 @@
     },
     {
       "path": "blas/PortableCabin_door_bar_02.bvh",
-      "bytes": 3940,
-      "tris": 100,
+      "bytes": 3480,
+      "tris": 88,
       "kinds": [
-        100,
+        88,
         0,
         0
       ]
     },
     {
       "path": "blas/PortableCabin_window_bar_01.bvh",
-      "bytes": 20660,
-      "tris": 596,
+      "bytes": 20328,
+      "tris": 584,
       "kinds": [
-        596,
+        584,
         0,
         0
       ]
@@ -10634,10 +10604,10 @@
     },
     {
       "path": "blas/PotIndustrial_01.bvh",
-      "bytes": 11072,
-      "tris": 293,
+      "bytes": 9900,
+      "tris": 258,
       "kinds": [
-        293,
+        258,
         0,
         0
       ]
@@ -10674,40 +10644,40 @@
     },
     {
       "path": "blas/Rack_01_Long.bvh",
-      "bytes": 11404,
-      "tris": 300,
+      "bytes": 10880,
+      "tris": 288,
       "kinds": [
-        300,
+        288,
         0,
         0
       ]
     },
     {
       "path": "blas/Rack_01_Short.bvh",
-      "bytes": 11020,
-      "tris": 300,
+      "bytes": 10560,
+      "tris": 288,
       "kinds": [
-        300,
+        288,
         0,
         0
       ]
     },
     {
       "path": "blas/Rack_02.bvh",
-      "bytes": 4028,
-      "tris": 108,
+      "bytes": 3632,
+      "tris": 96,
       "kinds": [
-        108,
+        96,
         0,
         0
       ]
     },
     {
       "path": "blas/Rack_03.bvh",
-      "bytes": 9360,
-      "tris": 230,
+      "bytes": 9092,
+      "tris": 218,
       "kinds": [
-        230,
+        218,
         0,
         0
       ]
@@ -10744,10 +10714,10 @@
     },
     {
       "path": "blas/RadiatorSpiral_01_Wall.bvh",
-      "bytes": 6512,
-      "tris": 182,
+      "bytes": 6116,
+      "tris": 170,
       "kinds": [
-        182,
+        170,
         0,
         0
       ]
@@ -10764,10 +10734,10 @@
     },
     {
       "path": "blas/RakeManure_01.bvh",
-      "bytes": 3440,
-      "tris": 96,
+      "bytes": 2640,
+      "tris": 64,
       "kinds": [
-        96,
+        64,
         0,
         0
       ]
@@ -10794,10 +10764,10 @@
     },
     {
       "path": "blas/RoadBlock_01.bvh",
-      "bytes": 25928,
-      "tris": 704,
+      "bytes": 24484,
+      "tris": 668,
       "kinds": [
-        704,
+        668,
         0,
         0
       ]
@@ -10814,10 +10784,10 @@
     },
     {
       "path": "blas/SackTruck_01.bvh",
-      "bytes": 16468,
-      "tris": 450,
+      "bytes": 15752,
+      "tris": 438,
       "kinds": [
-        450,
+        438,
         0,
         0
       ]
@@ -10834,10 +10804,10 @@
     },
     {
       "path": "blas/SackUniversal_01_Pile.bvh",
-      "bytes": 14548,
-      "tris": 415,
+      "bytes": 12824,
+      "tris": 355,
       "kinds": [
-        415,
+        355,
         0,
         0
       ]
@@ -10934,10 +10904,10 @@
     },
     {
       "path": "blas/Sawmill_E_01_SmallSaw.bvh",
-      "bytes": 13024,
-      "tris": 336,
+      "bytes": 12104,
+      "tris": 312,
       "kinds": [
-        336,
+        312,
         0,
         0
       ]
@@ -10954,20 +10924,20 @@
     },
     {
       "path": "blas/Scarecrow_01.bvh",
-      "bytes": 10652,
-      "tris": 300,
+      "bytes": 9924,
+      "tris": 276,
       "kinds": [
-        300,
+        276,
         0,
         0
       ]
     },
     {
       "path": "blas/Scythe_01.bvh",
-      "bytes": 9288,
-      "tris": 264,
+      "bytes": 7228,
+      "tris": 188,
       "kinds": [
-        264,
+        188,
         0,
         0
       ]
@@ -10984,20 +10954,20 @@
     },
     {
       "path": "blas/SewingMachine_01.bvh",
-      "bytes": 55992,
-      "tris": 1488,
+      "bytes": 54804,
+      "tris": 1452,
       "kinds": [
-        1488,
+        1452,
         0,
         0
       ]
     },
     {
       "path": "blas/ShedMetal_02.bvh",
-      "bytes": 75148,
-      "tris": 2012,
+      "bytes": 70152,
+      "tris": 1816,
       "kinds": [
-        2012,
+        1816,
         0,
         0
       ]
@@ -11034,10 +11004,10 @@
     },
     {
       "path": "blas/ShedMetal_02_short.bvh",
-      "bytes": 43348,
-      "tris": 1172,
+      "bytes": 40280,
+      "tris": 1048,
       "kinds": [
-        1172,
+        1048,
         0,
         0
       ]
@@ -11054,100 +11024,100 @@
     },
     {
       "path": "blas/ShedMetal_03.bvh",
-      "bytes": 32424,
-      "tris": 844,
+      "bytes": 29424,
+      "tris": 754,
       "kinds": [
-        844,
+        754,
         0,
         0
       ]
     },
     {
       "path": "blas/ShedMetal_03_benches.bvh",
-      "bytes": 23744,
-      "tris": 644,
+      "bytes": 22556,
+      "tris": 608,
       "kinds": [
-        644,
+        608,
         0,
         0
       ]
     },
     {
       "path": "blas/Shed_01.bvh",
-      "bytes": 21756,
-      "tris": 571,
+      "bytes": 17924,
+      "tris": 436,
       "kinds": [
-        571,
+        436,
         0,
         0
       ]
     },
     {
       "path": "blas/Shed_02_big_V1.bvh",
-      "bytes": 70508,
-      "tris": 1913,
+      "bytes": 65032,
+      "tris": 1719,
       "kinds": [
-        1913,
+        1719,
         0,
         0
       ]
     },
     {
       "path": "blas/Shed_02_big_V2.bvh",
-      "bytes": 58624,
-      "tris": 1578,
+      "bytes": 54484,
+      "tris": 1406,
       "kinds": [
-        1578,
+        1406,
         0,
         0
       ]
     },
     {
       "path": "blas/Shed_02_line.bvh",
-      "bytes": 63700,
-      "tris": 1751,
+      "bytes": 58168,
+      "tris": 1561,
       "kinds": [
-        1751,
+        1561,
         0,
         0
       ]
     },
     {
       "path": "blas/Shed_02_small.bvh",
-      "bytes": 46004,
-      "tris": 1254,
+      "bytes": 41708,
+      "tris": 1118,
       "kinds": [
-        1254,
+        1118,
         0,
         0
       ]
     },
     {
       "path": "blas/Shed_02_square.bvh",
-      "bytes": 40244,
-      "tris": 1085,
+      "bytes": 37000,
+      "tris": 977,
       "kinds": [
-        1085,
+        977,
         0,
         0
       ]
     },
     {
       "path": "blas/Shed_03.bvh",
-      "bytes": 11620,
-      "tris": 290,
+      "bytes": 9376,
+      "tris": 222,
       "kinds": [
-        290,
+        222,
         0,
         0
       ]
     },
     {
       "path": "blas/Shed_03_wide.bvh",
-      "bytes": 16164,
-      "tris": 406,
+      "bytes": 13776,
+      "tris": 322,
       "kinds": [
-        406,
+        322,
         0,
         0
       ]
@@ -11164,40 +11134,40 @@
     },
     {
       "path": "blas/ShelfBarracks_01.bvh",
-      "bytes": 16484,
-      "tris": 388,
+      "bytes": 15168,
+      "tris": 352,
       "kinds": [
-        388,
+        352,
         0,
         0
       ]
     },
     {
       "path": "blas/ShelfDecorative_01.bvh",
-      "bytes": 42696,
-      "tris": 1224,
+      "bytes": 42492,
+      "tris": 1212,
       "kinds": [
-        1224,
+        1212,
         0,
         0
       ]
     },
     {
       "path": "blas/ShelfOld_01.bvh",
-      "bytes": 19144,
-      "tris": 520,
+      "bytes": 18684,
+      "tris": 508,
       "kinds": [
-        520,
+        508,
         0,
         0
       ]
     },
     {
       "path": "blas/ShelfOld_01_small.bvh",
-      "bytes": 10736,
-      "tris": 298,
+      "bytes": 9640,
+      "tris": 260,
       "kinds": [
-        298,
+        260,
         0,
         0
       ]
@@ -11214,40 +11184,40 @@
     },
     {
       "path": "blas/ShelfShop_02.bvh",
-      "bytes": 4152,
-      "tris": 120,
+      "bytes": 3820,
+      "tris": 108,
       "kinds": [
-        120,
+        108,
         0,
         0
       ]
     },
     {
       "path": "blas/ShelfUniversal_01_corner.bvh",
-      "bytes": 7920,
-      "tris": 216,
+      "bytes": 7128,
+      "tris": 192,
       "kinds": [
-        216,
+        192,
         0,
         0
       ]
     },
     {
       "path": "blas/ShelfUniversal_01_narrow.bvh",
-      "bytes": 4472,
-      "tris": 120,
+      "bytes": 4140,
+      "tris": 108,
       "kinds": [
-        120,
+        108,
         0,
         0
       ]
     },
     {
       "path": "blas/ShelfUniversal_01_wide.bvh",
-      "bytes": 4708,
-      "tris": 132,
+      "bytes": 4440,
+      "tris": 120,
       "kinds": [
-        132,
+        120,
         0,
         0
       ]
@@ -11274,20 +11244,20 @@
     },
     {
       "path": "blas/ShoeCabinetOld_01.bvh",
-      "bytes": 3908,
-      "tris": 108,
+      "bytes": 3576,
+      "tris": 96,
       "kinds": [
-        108,
+        96,
         0,
         0
       ]
     },
     {
       "path": "blas/ShoeCabinet_01.bvh",
-      "bytes": 1564,
-      "tris": 42,
+      "bytes": 1168,
+      "tris": 30,
       "kinds": [
-        42,
+        30,
         0,
         0
       ]
@@ -11324,20 +11294,20 @@
     },
     {
       "path": "blas/ShoppingBasket_01.bvh",
-      "bytes": 2600,
-      "tris": 72,
+      "bytes": 2268,
+      "tris": 60,
       "kinds": [
-        72,
+        60,
         0,
         0
       ]
     },
     {
       "path": "blas/ShoppingCart_01.bvh",
-      "bytes": 18736,
-      "tris": 518,
+      "bytes": 18468,
+      "tris": 506,
       "kinds": [
-        518,
+        506,
         0,
         0
       ]
@@ -12154,10 +12124,10 @@
     },
     {
       "path": "blas/SignHeritage_01.bvh",
-      "bytes": 3580,
-      "tris": 100,
+      "bytes": 2848,
+      "tris": 72,
       "kinds": [
-        100,
+        72,
         0,
         0
       ]
@@ -12274,20 +12244,20 @@
     },
     {
       "path": "blas/SignMountainHotel_01_hornik.bvh",
-      "bytes": 5416,
-      "tris": 152,
+      "bytes": 4556,
+      "tris": 124,
       "kinds": [
-        152,
+        124,
         0,
         0
       ]
     },
     {
       "path": "blas/SignMountainHotel_01_panorama.bvh",
-      "bytes": 5752,
-      "tris": 160,
+      "bytes": 5292,
+      "tris": 148,
       "kinds": [
-        160,
+        148,
         0,
         0
       ]
@@ -12304,50 +12274,50 @@
     },
     {
       "path": "blas/SignRoofttop_Office_E_01.bvh",
-      "bytes": 42760,
-      "tris": 1186,
+      "bytes": 39900,
+      "tris": 1112,
       "kinds": [
-        1186,
+        1112,
         0,
         0
       ]
     },
     {
       "path": "blas/SignVillage_02.bvh",
-      "bytes": 3436,
-      "tris": 90,
+      "bytes": 2580,
+      "tris": 66,
       "kinds": [
-        90,
+        66,
         0,
         0
       ]
     },
     {
       "path": "blas/SignWall3D_GroceryStore_01.bvh",
-      "bytes": 5220,
-      "tris": 148,
+      "bytes": 3900,
+      "tris": 108,
       "kinds": [
-        148,
+        108,
         0,
         0
       ]
     },
     {
       "path": "blas/SignWall3D_Pub_01.bvh",
-      "bytes": 32944,
-      "tris": 934,
+      "bytes": 32612,
+      "tris": 922,
       "kinds": [
-        934,
+        922,
         0,
         0
       ]
     },
     {
       "path": "blas/SignWall3D_Pub_02.bvh",
-      "bytes": 43508,
-      "tris": 1229,
+      "bytes": 38572,
+      "tris": 1063,
       "kinds": [
-        1229,
+        1063,
         0,
         0
       ]
@@ -12474,10 +12444,10 @@
     },
     {
       "path": "blas/SilageWall_01_5m_D.bvh",
-      "bytes": 26132,
-      "tris": 750,
+      "bytes": 25340,
+      "tris": 726,
       "kinds": [
-        750,
+        726,
         0,
         0
       ]
@@ -12494,10 +12464,10 @@
     },
     {
       "path": "blas/SilageWall_01_D.bvh",
-      "bytes": 17408,
-      "tris": 498,
+      "bytes": 16944,
+      "tris": 482,
       "kinds": [
-        498,
+        482,
         0,
         0
       ]
@@ -12564,50 +12534,50 @@
     },
     {
       "path": "blas/Silo_02.bvh",
-      "bytes": 249256,
-      "tris": 7020,
+      "bytes": 236360,
+      "tris": 6649,
       "kinds": [
-        7020,
+        6649,
         0,
         0
       ]
     },
     {
       "path": "blas/SinkIndustrial_01.bvh",
-      "bytes": 9912,
-      "tris": 274,
+      "bytes": 9708,
+      "tris": 262,
       "kinds": [
-        274,
+        262,
         0,
         0
       ]
     },
     {
       "path": "blas/SinkOld_01.bvh",
-      "bytes": 20348,
-      "tris": 574,
+      "bytes": 19824,
+      "tris": 562,
       "kinds": [
-        574,
+        562,
         0,
         0
       ]
     },
     {
       "path": "blas/Sink_02.bvh",
-      "bytes": 21304,
-      "tris": 599,
+      "bytes": 19976,
+      "tris": 551,
       "kinds": [
-        599,
+        551,
         0,
         0
       ]
     },
     {
       "path": "blas/Slipway_Cradle_01.bvh",
-      "bytes": 49464,
-      "tris": 1206,
+      "bytes": 40140,
+      "tris": 906,
       "kinds": [
-        1206,
+        906,
         0,
         0
       ]
@@ -12644,20 +12614,20 @@
     },
     {
       "path": "blas/SnowBreaker_E_01_B.bvh",
-      "bytes": 8352,
-      "tris": 224,
+      "bytes": 7432,
+      "tris": 200,
       "kinds": [
-        224,
+        200,
         0,
         0
       ]
     },
     {
       "path": "blas/SnowBreaker_E_01_D.bvh",
-      "bytes": 9088,
-      "tris": 240,
+      "bytes": 8040,
+      "tris": 216,
       "kinds": [
-        240,
+        216,
         0,
         0
       ]
@@ -12674,10 +12644,10 @@
     },
     {
       "path": "blas/SnowBreaker_E_01_Stack_D.bvh",
-      "bytes": 21728,
-      "tris": 576,
+      "bytes": 21064,
+      "tris": 552,
       "kinds": [
-        576,
+        552,
         0,
         0
       ]
@@ -12704,30 +12674,30 @@
     },
     {
       "path": "blas/Sofa_02.bvh",
-      "bytes": 20960,
-      "tris": 558,
+      "bytes": 18712,
+      "tris": 486,
       "kinds": [
-        558,
+        486,
         0,
         0
       ]
     },
     {
       "path": "blas/Spring_01.bvh",
-      "bytes": 5432,
-      "tris": 147,
+      "bytes": 4492,
+      "tris": 118,
       "kinds": [
-        147,
+        118,
         0,
         0
       ]
     },
     {
       "path": "blas/StablePlate_01.bvh",
-      "bytes": 5008,
-      "tris": 144,
+      "bytes": 4676,
+      "tris": 132,
       "kinds": [
-        144,
+        132,
         0,
         0
       ]
@@ -12764,10 +12734,10 @@
     },
     {
       "path": "blas/StatueFIA_01_big.bvh",
-      "bytes": 13736,
-      "tris": 402,
+      "bytes": 13008,
+      "tris": 378,
       "kinds": [
-        402,
+        378,
         0,
         0
       ]
@@ -13074,20 +13044,20 @@
     },
     {
       "path": "blas/StoveIndustrial_01.bvh",
-      "bytes": 25832,
-      "tris": 658,
+      "bytes": 25500,
+      "tris": 646,
       "kinds": [
-        658,
+        646,
         0,
         0
       ]
     },
     {
       "path": "blas/StoveTiled_01.bvh",
-      "bytes": 12000,
-      "tris": 334,
+      "bytes": 11528,
+      "tris": 310,
       "kinds": [
-        334,
+        310,
         0,
         0
       ]
@@ -13144,10 +13114,10 @@
     },
     {
       "path": "blas/SurveyMarker_E_01_ring.bvh",
-      "bytes": 10944,
-      "tris": 320,
+      "bytes": 9344,
+      "tris": 256,
       "kinds": [
-        320,
+        256,
         0,
         0
       ]
@@ -13194,20 +13164,20 @@
     },
     {
       "path": "blas/T_Alnus_glutinosa_2s.bvh",
-      "bytes": 39056,
-      "tris": 1109,
+      "bytes": 30192,
+      "tris": 821,
       "kinds": [
-        1041,
+        753,
         0,
         68
       ]
     },
     {
       "path": "blas/T_Alnus_glutinosa_3s.bvh",
-      "bytes": 50460,
-      "tris": 1470,
+      "bytes": 37888,
+      "tris": 1028,
       "kinds": [
-        1380,
+        938,
         0,
         90
       ]
@@ -13234,30 +13204,30 @@
     },
     {
       "path": "blas/T_Carpinus_betulus_1f.bvh",
-      "bytes": 10596,
-      "tris": 310,
+      "bytes": 8108,
+      "tris": 224,
       "kinds": [
-        292,
+        206,
         0,
         18
       ]
     },
     {
       "path": "blas/T_Carpinus_betulus_2f.bvh",
-      "bytes": 38784,
-      "tris": 1124,
+      "bytes": 28180,
+      "tris": 741,
       "kinds": [
-        1106,
+        723,
         0,
         18
       ]
     },
     {
       "path": "blas/T_Carpinus_betulus_2s.bvh",
-      "bytes": 47440,
-      "tris": 1356,
+      "bytes": 36924,
+      "tris": 982,
       "kinds": [
-        1326,
+        952,
         0,
         30
       ]
@@ -13284,10 +13254,10 @@
     },
     {
       "path": "blas/T_Carpinus_betulus_3f.bvh",
-      "bytes": 46680,
-      "tris": 1358,
+      "bytes": 34344,
+      "tris": 896,
       "kinds": [
-        1324,
+        862,
         0,
         34
       ]
@@ -13304,10 +13274,10 @@
     },
     {
       "path": "blas/T_Populus_nigra_3s.bvh",
-      "bytes": 52960,
-      "tris": 1490,
+      "bytes": 41852,
+      "tris": 1104,
       "kinds": [
-        1456,
+        1070,
         0,
         34
       ]
@@ -13384,10 +13354,10 @@
     },
     {
       "path": "blas/TableKitchen_01.bvh",
-      "bytes": 21568,
-      "tris": 591,
+      "bytes": 17940,
+      "tris": 483,
       "kinds": [
-        591,
+        483,
         0,
         0
       ]
@@ -13424,10 +13394,10 @@
     },
     {
       "path": "blas/TableSaw_01.bvh",
-      "bytes": 29580,
-      "tris": 818,
+      "bytes": 28720,
+      "tris": 790,
       "kinds": [
-        818,
+        790,
         0,
         0
       ]
@@ -13444,10 +13414,10 @@
     },
     {
       "path": "blas/TableToilet_01.bvh",
-      "bytes": 4204,
-      "tris": 116,
+      "bytes": 3076,
+      "tris": 76,
       "kinds": [
-        116,
+        76,
         0,
         0
       ]
@@ -13464,10 +13434,10 @@
     },
     {
       "path": "blas/TableWorkshop_01.bvh",
-      "bytes": 10836,
-      "tris": 292,
+      "bytes": 9432,
+      "tris": 232,
       "kinds": [
-        292,
+        232,
         0,
         0
       ]
@@ -13684,27 +13654,17 @@
     },
     {
       "path": "blas/TinWall_01_3m.bvh",
-      "bytes": 4360,
-      "tris": 120,
+      "bytes": 4092,
+      "tris": 108,
       "kinds": [
-        120,
+        108,
         0,
         0
       ]
     },
     {
       "path": "blas/TinWall_01_6m_A.bvh",
-      "bytes": 10652,
-      "tris": 292,
-      "kinds": [
-        292,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/TinWall_01_6m_B.bvh",
-      "bytes": 10184,
+      "bytes": 10256,
       "tris": 280,
       "kinds": [
         280,
@@ -13713,11 +13673,21 @@
       ]
     },
     {
-      "path": "blas/TinWall_01_6m_C.bvh",
-      "bytes": 12588,
-      "tris": 340,
+      "path": "blas/TinWall_01_6m_B.bvh",
+      "bytes": 9852,
+      "tris": 268,
       "kinds": [
-        340,
+        268,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/TinWall_01_6m_C.bvh",
+      "bytes": 12256,
+      "tris": 328,
+      "kinds": [
+        328,
         0,
         0
       ]
@@ -13844,10 +13814,10 @@
     },
     {
       "path": "blas/TowelRack_01.bvh",
-      "bytes": 2892,
-      "tris": 76,
+      "bytes": 2496,
+      "tris": 64,
       "kinds": [
-        76,
+        64,
         0,
         0
       ]
@@ -13874,30 +13844,30 @@
     },
     {
       "path": "blas/TrenchOld_01_6m_end.bvh",
-      "bytes": 60656,
-      "tris": 1688,
+      "bytes": 51744,
+      "tris": 1382,
       "kinds": [
-        1688,
+        1382,
         0,
         0
       ]
     },
     {
       "path": "blas/TrenchOld_01_6m_end_forest.bvh",
-      "bytes": 60656,
-      "tris": 1688,
+      "bytes": 51744,
+      "tris": 1382,
       "kinds": [
-        1688,
+        1382,
         0,
         0
       ]
     },
     {
       "path": "blas/TrenchOld_01_6m_forest.bvh",
-      "bytes": 89056,
-      "tris": 2440,
+      "bytes": 76552,
+      "tris": 1983,
       "kinds": [
-        2440,
+        1983,
         0,
         0
       ]
@@ -13914,60 +13884,60 @@
     },
     {
       "path": "blas/TrenchOld_01_roof_1m.bvh",
-      "bytes": 30072,
-      "tris": 880,
+      "bytes": 27252,
+      "tris": 812,
       "kinds": [
-        880,
+        812,
         0,
         0
       ]
     },
     {
       "path": "blas/TrenchOld_01_roof_2m.bvh",
-      "bytes": 57332,
-      "tris": 1700,
+      "bytes": 53324,
+      "tris": 1596,
       "kinds": [
-        1700,
+        1596,
         0,
         0
       ]
     },
     {
       "path": "blas/TrenchOld_01_roof_4m.bvh",
-      "bytes": 109100,
-      "tris": 3228,
+      "bytes": 102460,
+      "tris": 3052,
       "kinds": [
-        3228,
+        3052,
         0,
         0
       ]
     },
     {
       "path": "blas/TrenchOld_02_450cm_forest.bvh",
-      "bytes": 71864,
-      "tris": 1976,
+      "bytes": 62216,
+      "tris": 1653,
       "kinds": [
-        1976,
+        1653,
         0,
         0
       ]
     },
     {
       "path": "blas/TrenchOld_02_450cm_metal.bvh",
-      "bytes": 80276,
-      "tris": 2251,
+      "bytes": 70268,
+      "tris": 1907,
       "kinds": [
-        2251,
+        1907,
         0,
         0
       ]
     },
     {
       "path": "blas/Trough_01.bvh",
-      "bytes": 9208,
-      "tris": 224,
+      "bytes": 8748,
+      "tris": 212,
       "kinds": [
-        224,
+        212,
         0,
         0
       ]
@@ -13984,10 +13954,10 @@
     },
     {
       "path": "blas/UAZ469_wreck_static.bvh",
-      "bytes": 77420,
-      "tris": 2199,
+      "bytes": 71420,
+      "tris": 1989,
       "kinds": [
-        2199,
+        1989,
         0,
         0
       ]
@@ -14004,10 +13974,10 @@
     },
     {
       "path": "blas/Urinal_01.bvh",
-      "bytes": 13256,
-      "tris": 366,
+      "bytes": 12332,
+      "tris": 338,
       "kinds": [
-        366,
+        338,
         0,
         0
       ]
@@ -14064,20 +14034,20 @@
     },
     {
       "path": "blas/VehicleGarbage_01_pile_large.bvh",
-      "bytes": 38268,
-      "tris": 1056,
+      "bytes": 36844,
+      "tris": 1006,
       "kinds": [
-        1056,
+        1006,
         0,
         0
       ]
     },
     {
       "path": "blas/VehicleGarbage_01_pile_medium.bvh",
-      "bytes": 27544,
-      "tris": 763,
+      "bytes": 26404,
+      "tris": 726,
       "kinds": [
-        763,
+        726,
         0,
         0
       ]
@@ -14114,10 +14084,10 @@
     },
     {
       "path": "blas/Villa_E_2I01.bvh",
-      "bytes": 212500,
-      "tris": 5608,
+      "bytes": 155832,
+      "tris": 3660,
       "kinds": [
-        5608,
+        3660,
         0,
         0
       ]
@@ -14144,20 +14114,20 @@
     },
     {
       "path": "blas/WallMap_01.bvh",
-      "bytes": 2624,
-      "tris": 64,
+      "bytes": 2292,
+      "tris": 52,
       "kinds": [
-        64,
+        52,
         0,
         0
       ]
     },
     {
       "path": "blas/WallMap_01_Vertical.bvh",
-      "bytes": 2688,
-      "tris": 64,
+      "bytes": 2292,
+      "tris": 52,
       "kinds": [
-        64,
+        52,
         0,
         0
       ]
@@ -14174,10 +14144,10 @@
     },
     {
       "path": "blas/Wardrobe_02.bvh",
-      "bytes": 4152,
-      "tris": 120,
+      "bytes": 3884,
+      "tris": 108,
       "kinds": [
-        120,
+        108,
         0,
         0
       ]
@@ -14204,10 +14174,10 @@
     },
     {
       "path": "blas/WaterMill_01_old.bvh",
-      "bytes": 131652,
-      "tris": 3626,
+      "bytes": 118496,
+      "tris": 3206,
       "kinds": [
-        3626,
+        3206,
         0,
         0
       ]
@@ -14224,20 +14194,20 @@
     },
     {
       "path": "blas/WaterTower_01.bvh",
-      "bytes": 24724,
-      "tris": 658,
+      "bytes": 19936,
+      "tris": 512,
       "kinds": [
-        658,
+        512,
         0,
         0
       ]
     },
     {
       "path": "blas/WeighingScale_01.bvh",
-      "bytes": 17268,
-      "tris": 468,
+      "bytes": 14884,
+      "tris": 388,
       "kinds": [
-        468,
+        388,
         0,
         0
       ]
@@ -14254,50 +14224,50 @@
     },
     {
       "path": "blas/WeightStation_01_platform.bvh",
-      "bytes": 22612,
-      "tris": 624,
+      "bytes": 22088,
+      "tris": 612,
       "kinds": [
-        624,
+        612,
         0,
         0
       ]
     },
     {
       "path": "blas/WeightStation_01_scale.bvh",
-      "bytes": 31152,
-      "tris": 866,
+      "bytes": 30692,
+      "tris": 854,
       "kinds": [
-        866,
+        854,
         0,
         0
       ]
     },
     {
       "path": "blas/Wheelbarrow_01.bvh",
-      "bytes": 19828,
-      "tris": 556,
+      "bytes": 18228,
+      "tris": 492,
       "kinds": [
-        556,
+        492,
         0,
         0
       ]
     },
     {
       "path": "blas/WinCasement_Historical_A_72x225_10_LEFT_B.bvh",
-      "bytes": 4016,
-      "tris": 110,
+      "bytes": 3648,
+      "tris": 96,
       "kinds": [
-        110,
+        96,
         0,
         0
       ]
     },
     {
       "path": "blas/WinCasement_Historical_A_72x225_10_RIGHT_B.bvh",
-      "bytes": 3952,
-      "tris": 110,
+      "bytes": 3648,
+      "tris": 96,
       "kinds": [
-        110,
+        96,
         0,
         0
       ]
@@ -14324,30 +14294,30 @@
     },
     {
       "path": "blas/Win_Bars_A_130x182_B.bvh",
-      "bytes": 37932,
-      "tris": 1084,
+      "bytes": 37536,
+      "tris": 1072,
       "kinds": [
-        1084,
+        1072,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_Bars_A_195x182_B.bvh",
-      "bytes": 52212,
-      "tris": 1492,
+      "bytes": 51880,
+      "tris": 1480,
       "kinds": [
-        1492,
+        1480,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_Bars_A_70x72_B.bvh",
-      "bytes": 22220,
-      "tris": 636,
+      "bytes": 21632,
+      "tris": 624,
       "kinds": [
-        636,
+        624,
         0,
         0
       ]
@@ -14414,21 +14384,21 @@
     },
     {
       "path": "blas/Win_ChurchSmall_E_A_118x319_B.bvh",
-      "bytes": 7488,
-      "tris": 195,
+      "bytes": 6632,
+      "tris": 171,
       "kinds": [
-        195,
+        171,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_ChurchSmall_E_A_124x196_B.bvh",
-      "bytes": 33892,
-      "tris": 923,
+      "bytes": 33040,
+      "tris": 903,
       "kinds": [
         0,
-        923,
+        903,
         0
       ]
     },
@@ -14444,10 +14414,10 @@
     },
     {
       "path": "blas/Win_ChurchSmall_E_A_74x159_B.bvh",
-      "bytes": 21232,
-      "tris": 539,
+      "bytes": 20124,
+      "tris": 519,
       "kinds": [
-        539,
+        519,
         0,
         0
       ]
@@ -14534,10 +14504,10 @@
     },
     {
       "path": "blas/Win_Counter_150x142_12_B.bvh",
-      "bytes": 6500,
-      "tris": 180,
+      "bytes": 5236,
+      "tris": 132,
       "kinds": [
-        180,
+        132,
         0,
         0
       ]
@@ -14694,77 +14664,57 @@
     },
     {
       "path": "blas/Win_HouseWooden_E_A_100x142_B.bvh",
-      "bytes": 10572,
-      "tris": 284,
+      "bytes": 10304,
+      "tris": 272,
       "kinds": [
-        284,
+        272,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_HouseWooden_E_A_100x182_B.bvh",
-      "bytes": 10316,
-      "tris": 284,
+      "bytes": 10240,
+      "tris": 272,
       "kinds": [
-        284,
+        272,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_HouseWooden_E_A_130x142_B.bvh",
-      "bytes": 5504,
-      "tris": 150,
+      "bytes": 5108,
+      "tris": 138,
       "kinds": [
-        150,
+        138,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_HouseWooden_E_A_130x142_M1.bvh",
-      "bytes": 4716,
-      "tris": 130,
+      "bytes": 4384,
+      "tris": 118,
       "kinds": [
-        130,
+        118,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_HouseWooden_E_A_130x72_B.bvh",
-      "bytes": 5008,
-      "tris": 134,
+      "bytes": 4612,
+      "tris": 122,
       "kinds": [
-        134,
+        122,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_HouseWooden_E_A_150x142_B.bvh",
-      "bytes": 6388,
-      "tris": 180,
-      "kinds": [
-        180,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/Win_HouseWooden_E_A_150x182_B.bvh",
-      "bytes": 10372,
-      "tris": 274,
-      "kinds": [
-        274,
-        0,
-        0
-      ]
-    },
-    {
-      "path": "blas/Win_HouseWooden_E_A_150x72_B.bvh",
-      "bytes": 5960,
+      "bytes": 6056,
       "tris": 168,
       "kinds": [
         168,
@@ -14773,91 +14723,111 @@
       ]
     },
     {
-      "path": "blas/Win_HouseWooden_E_A_150x72_M1.bvh",
-      "bytes": 5168,
-      "tris": 144,
+      "path": "blas/Win_HouseWooden_E_A_150x182_B.bvh",
+      "bytes": 9912,
+      "tris": 262,
       "kinds": [
-        144,
+        262,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/Win_HouseWooden_E_A_150x72_B.bvh",
+      "bytes": 5628,
+      "tris": 156,
+      "kinds": [
+        156,
+        0,
+        0
+      ]
+    },
+    {
+      "path": "blas/Win_HouseWooden_E_A_150x72_M1.bvh",
+      "bytes": 4836,
+      "tris": 132,
+      "kinds": [
+        132,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_HouseWooden_E_A_195x72_B.bvh",
-      "bytes": 8212,
-      "tris": 226,
+      "bytes": 7752,
+      "tris": 214,
       "kinds": [
-        226,
+        214,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_HouseWooden_E_A_195x72_M1.bvh",
-      "bytes": 7356,
-      "tris": 202,
+      "bytes": 7024,
+      "tris": 190,
       "kinds": [
-        202,
+        190,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_HouseWooden_E_A_70x182_B.bvh",
-      "bytes": 4116,
-      "tris": 116,
+      "bytes": 3784,
+      "tris": 104,
       "kinds": [
-        116,
+        104,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_HouseWooden_E_A_70x72_B.bvh",
-      "bytes": 4124,
-      "tris": 108,
+      "bytes": 3792,
+      "tris": 96,
       "kinds": [
-        108,
+        96,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_HouseWooden_E_A_70x72_M3.bvh",
-      "bytes": 4524,
-      "tris": 124,
+      "bytes": 4192,
+      "tris": 112,
       "kinds": [
-        124,
+        112,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_HouseWooden_E_A_90x142_B.bvh",
-      "bytes": 7240,
-      "tris": 198,
+      "bytes": 6780,
+      "tris": 186,
       "kinds": [
-        198,
+        186,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_HouseWooden_E_A_90x142_M1.bvh",
-      "bytes": 6256,
-      "tris": 174,
+      "bytes": 5796,
+      "tris": 162,
       "kinds": [
-        174,
+        162,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_HouseWooden_E_A_90x72_M1.bvh",
-      "bytes": 3260,
-      "tris": 92,
+      "bytes": 3056,
+      "tris": 80,
       "kinds": [
-        92,
+        80,
         0,
         0
       ]
@@ -15054,30 +15024,30 @@
     },
     {
       "path": "blas/Win_Services_E_A_UNI_135x300_111_B.bvh",
-      "bytes": 8116,
-      "tris": 228,
+      "bytes": 5868,
+      "tris": 156,
       "kinds": [
-        228,
+        156,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_Services_E_A_UNI_45x300_111_B.bvh",
-      "bytes": 5656,
-      "tris": 168,
+      "bytes": 5324,
+      "tris": 156,
       "kinds": [
-        168,
+        156,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_Services_E_A_UNI_68x300_111_B.bvh",
-      "bytes": 8180,
-      "tris": 228,
+      "bytes": 5868,
+      "tris": 156,
       "kinds": [
-        228,
+        156,
         0,
         0
       ]
@@ -15094,10 +15064,10 @@
     },
     {
       "path": "blas/Win_Shed_02_142x90_01_B.bvh",
-      "bytes": 9816,
-      "tris": 278,
+      "bytes": 9356,
+      "tris": 266,
       "kinds": [
-        278,
+        266,
         0,
         0
       ]
@@ -15204,30 +15174,30 @@
     },
     {
       "path": "blas/Win_Workshop_E_A_100x72_2_B_metal.bvh",
-      "bytes": 4608,
-      "tris": 126,
+      "bytes": 4276,
+      "tris": 114,
       "kinds": [
-        126,
+        114,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_Workshop_E_A_150x72_2_B_metal.bvh",
-      "bytes": 7244,
-      "tris": 204,
+      "bytes": 6912,
+      "tris": 192,
       "kinds": [
-        204,
+        192,
         0,
         0
       ]
     },
     {
       "path": "blas/Win_Workshop_E_A_195x142_2_B_metal.bvh",
-      "bytes": 4412,
-      "tris": 116,
+      "bytes": 4208,
+      "tris": 104,
       "kinds": [
-        116,
+        104,
         0,
         0
       ]
@@ -15314,10 +15284,10 @@
     },
     {
       "path": "blas/Win_village_e_a_138x191_666_B.bvh",
-      "bytes": 9424,
-      "tris": 262,
+      "bytes": 9220,
+      "tris": 250,
       "kinds": [
-        262,
+        250,
         0,
         0
       ]
@@ -15494,10 +15464,10 @@
     },
     {
       "path": "blas/WoodHolder_01.bvh",
-      "bytes": 8040,
-      "tris": 224,
+      "bytes": 7644,
+      "tris": 212,
       "kinds": [
-        224,
+        212,
         0,
         0
       ]
@@ -15564,40 +15534,40 @@
     },
     {
       "path": "blas/WoodPile_01_A.bvh",
-      "bytes": 72296,
-      "tris": 2032,
+      "bytes": 71112,
+      "tris": 2000,
       "kinds": [
-        2032,
+        2000,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodPile_01_B.bvh",
-      "bytes": 69436,
-      "tris": 1966,
+      "bytes": 68508,
+      "tris": 1934,
       "kinds": [
-        1966,
+        1934,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodPile_01_End_A.bvh",
-      "bytes": 73388,
-      "tris": 2136,
+      "bytes": 66996,
+      "tris": 1918,
       "kinds": [
-        2136,
+        1918,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodPile_01_End_B.bvh",
-      "bytes": 93876,
-      "tris": 2662,
+      "bytes": 93068,
+      "tris": 2622,
       "kinds": [
-        2662,
+        2622,
         0,
         0
       ]
@@ -15634,120 +15604,120 @@
     },
     {
       "path": "blas/WoodPile_02_end_B.bvh",
-      "bytes": 26520,
-      "tris": 744,
+      "bytes": 25068,
+      "tris": 700,
       "kinds": [
-        744,
+        700,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodPile_02_scattered.bvh",
-      "bytes": 63876,
-      "tris": 1792,
+      "bytes": 61240,
+      "tris": 1716,
       "kinds": [
-        1792,
+        1716,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFenceOld_01_2m.bvh",
-      "bytes": 4112,
-      "tris": 96,
+      "bytes": 3844,
+      "tris": 84,
       "kinds": [
-        96,
+        84,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFenceOld_01_4m.bvh",
-      "bytes": 6856,
-      "tris": 150,
+      "bytes": 6396,
+      "tris": 138,
       "kinds": [
-        150,
+        138,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFenceOld_01_4m_D.bvh",
-      "bytes": 5316,
-      "tris": 116,
+      "bytes": 4856,
+      "tris": 104,
       "kinds": [
-        116,
+        104,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFenceOld_01_8m.bvh",
-      "bytes": 12132,
-      "tris": 277,
+      "bytes": 11672,
+      "tris": 265,
       "kinds": [
-        277,
+        265,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFenceOld_01_end.bvh",
-      "bytes": 3964,
-      "tris": 100,
+      "bytes": 3828,
+      "tris": 92,
       "kinds": [
-        100,
+        92,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFenceOld_01_start.bvh",
-      "bytes": 2556,
-      "tris": 63,
+      "bytes": 2288,
+      "tris": 51,
       "kinds": [
-        63,
+        51,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFence_01_2m.bvh",
-      "bytes": 8548,
-      "tris": 246,
+      "bytes": 8216,
+      "tris": 234,
       "kinds": [
-        246,
+        234,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFence_01_4m.bvh",
-      "bytes": 15052,
-      "tris": 429,
+      "bytes": 14848,
+      "tris": 417,
       "kinds": [
-        429,
+        417,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFence_01_4m_D.bvh",
-      "bytes": 18220,
-      "tris": 500,
+      "bytes": 16764,
+      "tris": 452,
       "kinds": [
-        500,
+        452,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFence_01_8m.bvh",
-      "bytes": 25560,
-      "tris": 696,
+      "bytes": 24716,
+      "tris": 684,
       "kinds": [
-        696,
+        684,
         0,
         0
       ]
@@ -15764,40 +15734,40 @@
     },
     {
       "path": "blas/WoodenFence_02_2m.bvh",
-      "bytes": 9544,
-      "tris": 264,
+      "bytes": 9212,
+      "tris": 252,
       "kinds": [
-        264,
+        252,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFence_02_4m.bvh",
-      "bytes": 16820,
-      "tris": 468,
+      "bytes": 16424,
+      "tris": 456,
       "kinds": [
-        468,
+        456,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFence_02_4m_D.bvh",
-      "bytes": 10564,
-      "tris": 286,
+      "bytes": 10232,
+      "tris": 274,
       "kinds": [
-        286,
+        274,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFence_02_8m.bvh",
-      "bytes": 32976,
-      "tris": 912,
+      "bytes": 32452,
+      "tris": 900,
       "kinds": [
-        912,
+        900,
         0,
         0
       ]
@@ -15814,40 +15784,40 @@
     },
     {
       "path": "blas/WoodenFence_03_2m.bvh",
-      "bytes": 9448,
-      "tris": 258,
+      "bytes": 8988,
+      "tris": 246,
       "kinds": [
-        258,
+        246,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFence_03_4m.bvh",
-      "bytes": 17980,
-      "tris": 494,
+      "bytes": 17520,
+      "tris": 482,
       "kinds": [
-        494,
+        482,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFence_03_4m_D.bvh",
-      "bytes": 20300,
-      "tris": 557,
+      "bytes": 19176,
+      "tris": 521,
       "kinds": [
-        557,
+        521,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFence_03_8m.bvh",
-      "bytes": 35684,
-      "tris": 980,
+      "bytes": 35032,
+      "tris": 968,
       "kinds": [
-        980,
+        968,
         0,
         0
       ]
@@ -15864,40 +15834,40 @@
     },
     {
       "path": "blas/WoodenFence_04_2m.bvh",
-      "bytes": 30176,
-      "tris": 864,
+      "bytes": 29972,
+      "tris": 852,
       "kinds": [
-        864,
+        852,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFence_04_4m.bvh",
-      "bytes": 29720,
-      "tris": 822,
+      "bytes": 29388,
+      "tris": 810,
       "kinds": [
-        822,
+        810,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFence_04_4m_D.bvh",
-      "bytes": 32632,
-      "tris": 908,
+      "bytes": 31112,
+      "tris": 860,
       "kinds": [
-        908,
+        860,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenFence_04_8m.bvh",
-      "bytes": 124700,
-      "tris": 3542,
+      "bytes": 124240,
+      "tris": 3530,
       "kinds": [
-        3542,
+        3530,
         0,
         0
       ]
@@ -15914,10 +15884,10 @@
     },
     {
       "path": "blas/WoodenPalletBox_01.bvh",
-      "bytes": 9492,
-      "tris": 220,
+      "bytes": 7768,
+      "tris": 160,
       "kinds": [
-        220,
+        160,
         0,
         0
       ]
@@ -15934,20 +15904,20 @@
     },
     {
       "path": "blas/WoodenRural_01_4m.bvh",
-      "bytes": 15564,
-      "tris": 436,
+      "bytes": 14832,
+      "tris": 408,
       "kinds": [
-        436,
+        408,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenRural_01_8m.bvh",
-      "bytes": 39452,
-      "tris": 1100,
+      "bytes": 36672,
+      "tris": 1008,
       "kinds": [
-        1100,
+        1008,
         0,
         0
       ]
@@ -15974,100 +15944,100 @@
     },
     {
       "path": "blas/WoodenStairs_01.bvh",
-      "bytes": 2600,
-      "tris": 56,
+      "bytes": 2204,
+      "tris": 44,
       "kinds": [
-        56,
+        44,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenWall_02_2m.bvh",
-      "bytes": 20180,
-      "tris": 562,
+      "bytes": 18860,
+      "tris": 522,
       "kinds": [
-        562,
+        522,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenWall_02_4m_A.bvh",
-      "bytes": 44428,
-      "tris": 1268,
+      "bytes": 42632,
+      "tris": 1200,
       "kinds": [
-        1268,
+        1200,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenWall_02_4m_B.bvh",
-      "bytes": 36400,
-      "tris": 1016,
+      "bytes": 34220,
+      "tris": 948,
       "kinds": [
-        1016,
+        948,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenWall_02_8m_A.bvh",
-      "bytes": 69948,
-      "tris": 1967,
+      "bytes": 66624,
+      "tris": 1843,
       "kinds": [
-        1967,
+        1843,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenWall_02_8m_B.bvh",
-      "bytes": 83312,
-      "tris": 2368,
+      "bytes": 79004,
+      "tris": 2220,
       "kinds": [
-        2368,
+        2220,
         0,
         0
       ]
     },
     {
       "path": "blas/WoodenWall_02_D.bvh",
-      "bytes": 36284,
-      "tris": 1016,
+      "bytes": 32968,
+      "tris": 900,
       "kinds": [
-        1016,
+        900,
         0,
         0
       ]
     },
     {
       "path": "blas/Workbench_01.bvh",
-      "bytes": 15764,
-      "tris": 423,
+      "bytes": 15088,
+      "tris": 387,
       "kinds": [
-        423,
+        387,
         0,
         0
       ]
     },
     {
       "path": "blas/Workbench_02.bvh",
-      "bytes": 7972,
-      "tris": 212,
+      "bytes": 7384,
+      "tris": 200,
       "kinds": [
-        212,
+        200,
         0,
         0
       ]
     },
     {
       "path": "blas/Workbench_Vice_01.bvh",
-      "bytes": 3192,
-      "tris": 88,
+      "bytes": 2728,
+      "tris": 72,
       "kinds": [
-        88,
+        72,
         0,
         0
       ]
@@ -16114,20 +16084,20 @@
     },
     {
       "path": "blas/b_Juniperus_communis_1s.bvh",
-      "bytes": 7728,
-      "tris": 210,
+      "bytes": 7036,
+      "tris": 192,
       "kinds": [
-        178,
+        160,
         0,
         32
       ]
     },
     {
       "path": "blas/b_Juniperus_communis_2s.bvh",
-      "bytes": 10188,
-      "tris": 268,
+      "bytes": 9148,
+      "tris": 252,
       "kinds": [
-        218,
+        202,
         0,
         50
       ]
@@ -16304,40 +16274,40 @@
     },
     {
       "path": "blas/t_betula_pendula_1sw.bvh",
-      "bytes": 14188,
-      "tris": 389,
+      "bytes": 13924,
+      "tris": 381,
       "kinds": [
-        337,
+        329,
         0,
         52
       ]
     },
     {
       "path": "blas/t_betula_pendula_2f.bvh",
-      "bytes": 35316,
-      "tris": 980,
+      "bytes": 28992,
+      "tris": 766,
       "kinds": [
-        932,
+        718,
         0,
         48
       ]
     },
     {
       "path": "blas/t_betula_pendula_2s.bvh",
-      "bytes": 34120,
-      "tris": 946,
+      "bytes": 27028,
+      "tris": 702,
       "kinds": [
-        892,
+        648,
         0,
         54
       ]
     },
     {
       "path": "blas/t_betula_pendula_2sd.bvh",
-      "bytes": 42912,
-      "tris": 1242,
+      "bytes": 36308,
+      "tris": 1008,
       "kinds": [
-        1242,
+        1008,
         0,
         0
       ]
@@ -16364,60 +16334,60 @@
     },
     {
       "path": "blas/t_betula_pendula_2t.bvh",
-      "bytes": 30724,
-      "tris": 860,
+      "bytes": 25148,
+      "tris": 660,
       "kinds": [
-        810,
+        610,
         0,
         50
       ]
     },
     {
       "path": "blas/t_betula_pendula_3f.bvh",
-      "bytes": 31304,
-      "tris": 879,
+      "bytes": 26056,
+      "tris": 702,
       "kinds": [
-        827,
+        650,
         0,
         52
       ]
     },
     {
       "path": "blas/t_betula_pendula_3s.bvh",
-      "bytes": 37868,
-      "tris": 1070,
+      "bytes": 31692,
+      "tris": 846,
       "kinds": [
-        986,
+        762,
         0,
         84
       ]
     },
     {
       "path": "blas/t_betula_pendula_3sw.bvh",
-      "bytes": 72476,
-      "tris": 2078,
+      "bytes": 55840,
+      "tris": 1506,
       "kinds": [
-        2008,
+        1436,
         0,
         70
       ]
     },
     {
       "path": "blas/t_betula_pendula_stem.bvh",
-      "bytes": 11464,
-      "tris": 324,
+      "bytes": 8672,
+      "tris": 235,
       "kinds": [
-        324,
+        235,
         0,
         0
       ]
     },
     {
       "path": "blas/t_betula_pendula_stump_01.bvh",
-      "bytes": 27368,
-      "tris": 778,
+      "bytes": 22404,
+      "tris": 614,
       "kinds": [
-        778,
+        614,
         0,
         0
       ]
@@ -16444,50 +16414,50 @@
     },
     {
       "path": "blas/t_picea_abies_1f.bvh",
-      "bytes": 7528,
-      "tris": 203,
+      "bytes": 7260,
+      "tris": 191,
       "kinds": [
-        169,
+        157,
         0,
         34
       ]
     },
     {
       "path": "blas/t_picea_abies_1s.bvh",
-      "bytes": 8564,
-      "tris": 229,
+      "bytes": 8360,
+      "tris": 217,
       "kinds": [
-        195,
+        183,
         0,
         34
       ]
     },
     {
       "path": "blas/t_picea_abies_2d.bvh",
-      "bytes": 31376,
-      "tris": 902,
+      "bytes": 28500,
+      "tris": 793,
       "kinds": [
-        878,
+        769,
         0,
         24
       ]
     },
     {
       "path": "blas/t_picea_abies_2s.bvh",
-      "bytes": 22940,
-      "tris": 641,
+      "bytes": 22404,
+      "tris": 617,
       "kinds": [
-        607,
+        583,
         0,
         34
       ]
     },
     {
       "path": "blas/t_picea_abies_3d.bvh",
-      "bytes": 28332,
-      "tris": 817,
+      "bytes": 27004,
+      "tris": 769,
       "kinds": [
-        817,
+        769,
         0,
         0
       ]
@@ -16504,20 +16474,20 @@
     },
     {
       "path": "blas/t_picea_abies_3d_fallen.bvh",
-      "bytes": 31412,
-      "tris": 917,
+      "bytes": 29332,
+      "tris": 840,
       "kinds": [
-        917,
+        840,
         0,
         0
       ]
     },
     {
       "path": "blas/t_picea_abies_3d_higher.bvh",
-      "bytes": 27884,
-      "tris": 817,
+      "bytes": 27068,
+      "tris": 769,
       "kinds": [
-        817,
+        769,
         0,
         0
       ]
@@ -16534,40 +16504,40 @@
     },
     {
       "path": "blas/t_picea_abies_3f.bvh",
-      "bytes": 8076,
-      "tris": 220,
+      "bytes": 6752,
+      "tris": 176,
       "kinds": [
-        184,
+        140,
         0,
         36
       ]
     },
     {
       "path": "blas/t_picea_abies_3f_higher.bvh",
-      "bytes": 8272,
-      "tris": 234,
+      "bytes": 6948,
+      "tris": 190,
       "kinds": [
-        202,
+        158,
         0,
         32
       ]
     },
     {
       "path": "blas/t_picea_abies_3s.bvh",
-      "bytes": 23956,
-      "tris": 673,
+      "bytes": 22976,
+      "tris": 653,
       "kinds": [
-        639,
+        619,
         0,
         34
       ]
     },
     {
       "path": "blas/t_picea_abies_stump_01.bvh",
-      "bytes": 16264,
-      "tris": 466,
+      "bytes": 13472,
+      "tris": 362,
       "kinds": [
-        466,
+        362,
         0,
         0
       ]
@@ -16614,70 +16584,70 @@
     },
     {
       "path": "blas/t_pinus_sylvestris_2f.bvh",
-      "bytes": 14864,
-      "tris": 440,
+      "bytes": 11076,
+      "tris": 300,
       "kinds": [
-        390,
+        250,
         0,
         50
       ]
     },
     {
       "path": "blas/t_pinus_sylvestris_2s.bvh",
-      "bytes": 27888,
-      "tris": 780,
+      "bytes": 23120,
+      "tris": 620,
       "kinds": [
-        742,
+        582,
         0,
         38
       ]
     },
     {
       "path": "blas/t_pinus_sylvestris_3f.bvh",
-      "bytes": 15828,
-      "tris": 462,
+      "bytes": 12412,
+      "tris": 344,
       "kinds": [
-        434,
+        316,
         0,
         28
       ]
     },
     {
       "path": "blas/t_pinus_sylvestris_3f_higher.bvh",
-      "bytes": 15636,
-      "tris": 462,
+      "bytes": 12540,
+      "tris": 344,
       "kinds": [
-        434,
+        316,
         0,
         28
       ]
     },
     {
       "path": "blas/t_pinus_sylvestris_3s.bvh",
-      "bytes": 19340,
-      "tris": 552,
+      "bytes": 14300,
+      "tris": 376,
       "kinds": [
-        518,
+        342,
         0,
         34
       ]
     },
     {
       "path": "blas/t_pinus_sylvestris_3w.bvh",
-      "bytes": 96612,
-      "tris": 2736,
+      "bytes": 63256,
+      "tris": 1572,
       "kinds": [
-        2678,
+        1514,
         0,
         58
       ]
     },
     {
       "path": "blas/t_pinus_sylvestris_3x.bvh",
-      "bytes": 16316,
-      "tris": 478,
+      "bytes": 11372,
+      "tris": 304,
       "kinds": [
-        452,
+        278,
         0,
         26
       ]
@@ -16694,20 +16664,20 @@
     },
     {
       "path": "blas/t_salix_fragilis_2s.bvh",
-      "bytes": 58404,
-      "tris": 1654,
+      "bytes": 36368,
+      "tris": 866,
       "kinds": [
-        1606,
+        818,
         0,
         48
       ]
     },
     {
       "path": "blas/t_salix_fragilis_3s.bvh",
-      "bytes": 67540,
-      "tris": 1911,
+      "bytes": 52452,
+      "tris": 1400,
       "kinds": [
-        1869,
+        1358,
         0,
         42
       ]
@@ -16824,30 +16794,30 @@
     },
     {
       "path": "blas/win_garage_e_02_1300x1400_444_B.bvh",
-      "bytes": 6916,
-      "tris": 196,
+      "bytes": 6648,
+      "tris": 184,
       "kinds": [
-        196,
+        184,
         0,
         0
       ]
     },
     {
       "path": "blas/win_garage_e_02_4400x1100_0_B.bvh",
-      "bytes": 10172,
-      "tris": 276,
+      "bytes": 9968,
+      "tris": 264,
       "kinds": [
-        276,
+        264,
         0,
         0
       ]
     },
     {
       "path": "blas/win_garage_e_02_4400x1100_88_B.bvh",
-      "bytes": 5996,
-      "tris": 156,
+      "bytes": 5792,
+      "tris": 144,
       "kinds": [
-        156,
+        144,
         0,
         0
       ]
@@ -16951,7 +16921,6 @@
         "blas/CrateWooden_01.bvh",
         "blas/Shelf_01_Long.bvh",
         "blas/AshtrayStreet_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/LampFluorescent_01.bvh",
         "blas/RadioSmall_01.bvh",
         "blas/Notebook_01_Stack.bvh",
@@ -16964,7 +16933,7 @@
         "blas/SackTruck_01.bvh",
         "blas/CabinetCardFile_01.bvh"
       ],
-      "instanceCount": 49,
+      "instanceCount": 47,
       "instancesInWorld": 5
     },
     {
@@ -17813,7 +17782,6 @@
         "blas/CabinetMetal_01.bvh",
         "blas/TableWorkshop_01.bvh",
         "blas/StepLadderWooden_01_Open.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/LightIndustrial_02.bvh",
         "blas/BeerBottle_01_Group.bvh",
         "blas/HayBale_01_square_big.bvh",
@@ -17834,7 +17802,7 @@
         "blas/Glass_01_74x126.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 77,
+      "instanceCount": 76,
       "instancesInWorld": 3
     },
     {
@@ -18539,7 +18507,6 @@
         "blas/AshtrayStreet_01.bvh",
         "blas/StepladderWooden_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/Kitchen_01.bvh",
         "blas/WallMap_01_Vertical.bvh",
@@ -18587,7 +18554,7 @@
         "blas/Desk_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 321,
+      "instanceCount": 305,
       "instancesInWorld": 4
     },
     {
@@ -18807,7 +18774,6 @@
         "blas/WoodKindling_Crate_01.bvh",
         "blas/Cupboard_01_B.bvh",
         "blas/TableSmall_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/Suitcase_01.bvh",
         "blas/Workbench_01.bvh",
         "blas/Cupboard_01_C.bvh",
@@ -18842,7 +18808,7 @@
         "blas/LadderWooden_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 182,
+      "instanceCount": 170,
       "instancesInWorld": 9
     },
     {
@@ -18985,7 +18951,6 @@
         "blas/FileOffice_01_Double.bvh",
         "blas/WoodKindling_Crate_01.bvh",
         "blas/CoatRack_02.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/WoodLog_01_D.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/Sawmill_E_01_SmallSaw.bvh",
@@ -19019,7 +18984,7 @@
         "blas/DoorFrame_Village_E_A_EXT_B.bvh",
         "blas/Door_Village_E_A_RIGHT_EXT_COV_B.bvh"
       ],
-      "instanceCount": 159,
+      "instanceCount": 157,
       "instancesInWorld": 2
     },
     {
@@ -19121,7 +19086,6 @@
         "blas/ShelfShop_02.bvh",
         "blas/MessageBoardSmall_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/PaintingSmall_02.bvh",
         "blas/Freezer_01.bvh",
         "blas/SignIndustrial_25x40_01_Cleanliness.bvh",
@@ -19155,7 +19119,7 @@
         "blas/SinkIndustrial_01.bvh",
         "blas/Wardrobe_01.bvh"
       ],
-      "instanceCount": 358,
+      "instanceCount": 343,
       "instancesInWorld": 2
     },
     {
@@ -19248,7 +19212,7 @@
         "blas/t_betula_pendula_0_canopy.bvh"
       ],
       "instanceCount": 1,
-      "instancesInWorld": 16450
+      "instancesInWorld": 16433
     },
     {
       "pid": 156,
@@ -19482,7 +19446,6 @@
         "blas/CoatRack_02.bvh",
         "blas/BenchKitchen_01.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01.bvh",
         "blas/BedDouble_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
@@ -19525,7 +19488,7 @@
         "blas/Glass_01_32x140.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 151,
+      "instanceCount": 143,
       "instancesInWorld": 16
     },
     {
@@ -19587,7 +19550,6 @@
         "blas/Desk_01.bvh",
         "blas/Shelf_01_Long.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/Kitchen_01.bvh",
         "blas/BedDouble_01.bvh",
@@ -19632,7 +19594,7 @@
         "blas/Wardrobe_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 194,
+      "instanceCount": 181,
       "instancesInWorld": 38
     },
     {
@@ -19777,7 +19739,7 @@
         "blas/t_pinus_sylvestris_3f_higher.bvh"
       ],
       "instanceCount": 1,
-      "instancesInWorld": 12035
+      "instancesInWorld": 12032
     },
     {
       "pid": 185,
@@ -19900,7 +19862,6 @@
         "blas/CrateWooden_01.bvh",
         "blas/BenchChurch_02_Short_Simple.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BenchChurch_02_Short.bvh",
         "blas/Suitcase_01.bvh",
         "blas/Litter_01_small.bvh",
@@ -19922,7 +19883,7 @@
         "blas/Door_Wood_Historical_Big_LEFT_EXT_COV_B.bvh",
         "blas/Door_Wood_Historical_Big_RIGHT_EXT_COV_B.bvh"
       ],
-      "instanceCount": 187,
+      "instanceCount": 183,
       "instancesInWorld": 1
     },
     {
@@ -20235,7 +20196,6 @@
         "blas/ShelfShop_02.bvh",
         "blas/MessageBoardSmall_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/PaintingSmall_02.bvh",
         "blas/Freezer_01.bvh",
         "blas/SignIndustrial_25x40_01_Cleanliness.bvh",
@@ -20269,7 +20229,7 @@
         "blas/SinkIndustrial_01.bvh",
         "blas/Wardrobe_01.bvh"
       ],
-      "instanceCount": 358,
+      "instanceCount": 343,
       "instancesInWorld": 1
     },
     {
@@ -20409,7 +20369,6 @@
         "blas/CoatRack_02.bvh",
         "blas/AshtrayStreet_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BedDouble_01.bvh",
         "blas/Suitcase_01.bvh",
         "blas/BinInterior_01.bvh",
@@ -20463,7 +20422,7 @@
         "blas/LadderWooden_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 322,
+      "instanceCount": 300,
       "instancesInWorld": 7
     },
     {
@@ -20697,7 +20656,6 @@
         "blas/CoatRack_02.bvh",
         "blas/BenchKitchen_01.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01.bvh",
         "blas/BedDouble_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
@@ -20737,7 +20695,7 @@
         "blas/Glass_01_30x42.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 137,
+      "instanceCount": 129,
       "instancesInWorld": 6
     },
     {
@@ -21029,7 +20987,6 @@
         "blas/CrateWooden_01.bvh",
         "blas/BenchChurch_02_Short_Simple.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BenchChurch_02_Short.bvh",
         "blas/Suitcase_01.bvh",
         "blas/Litter_01_small.bvh",
@@ -21051,7 +21008,7 @@
         "blas/Door_Wood_Historical_Big_LEFT_EXT_COV_B.bvh",
         "blas/Door_Wood_Historical_Big_RIGHT_EXT_COV_B.bvh"
       ],
-      "instanceCount": 186,
+      "instanceCount": 182,
       "instancesInWorld": 1
     },
     {
@@ -21467,7 +21424,6 @@
         "blas/Cupboard_01_B.bvh",
         "blas/CoatRack_02.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/MessageBoardSmall_01.bvh",
         "blas/Stove_01.bvh",
         "blas/PaintingBig_01.bvh",
@@ -21525,7 +21481,7 @@
         "blas/Win_ShopHouse_E_A_420x275_2_B.bvh",
         "blas/Glass_01_200x260.bvh"
       ],
-      "instanceCount": 203,
+      "instanceCount": 186,
       "instancesInWorld": 1
     },
     {
@@ -21614,7 +21570,7 @@
         "blas/ConcreteKerb_01_8m_v2.bvh"
       ],
       "instanceCount": 1,
-      "instancesInWorld": 303
+      "instancesInWorld": 302
     },
     {
       "pid": 298,
@@ -22083,7 +22039,6 @@
         "blas/Suitcase_01.bvh",
         "blas/ChairSchool_01.bvh",
         "blas/CoatRack_03.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/Notebook_01_Single.bvh",
         "blas/Bed_02.bvh",
         "blas/Stove_01.bvh",
@@ -22114,7 +22069,7 @@
         "blas/Fridge_01.bvh",
         "blas/House_Prefab_2I01_Railing_Wood.bvh"
       ],
-      "instanceCount": 166,
+      "instanceCount": 150,
       "instancesInWorld": 4
     },
     {
@@ -22338,7 +22293,6 @@
         "blas/Desk_01.bvh",
         "blas/Cupboard_01_B.bvh",
         "blas/MeetingTable_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/WallMap_01_Vertical.bvh",
         "blas/CoatRack_03.bvh",
@@ -22376,7 +22330,7 @@
         "blas/Glass_01_122x42.bvh",
         "blas/ConcreteStairs_02_Narrow.bvh"
       ],
-      "instanceCount": 407,
+      "instanceCount": 387,
       "instancesInWorld": 6
     },
     {
@@ -22438,7 +22392,6 @@
         "blas/TableSmall_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BedDouble_01.bvh",
         "blas/BenchWooden_01.bvh",
         "blas/Suitcase_01.bvh",
@@ -22491,7 +22444,7 @@
         "blas/Door_Village_E_A_RIGHT_EXT_COV_B.bvh",
         "blas/Win_village_e_a_195x142_3_B.bvh"
       ],
-      "instanceCount": 262,
+      "instanceCount": 248,
       "instancesInWorld": 26
     },
     {
@@ -22678,7 +22631,6 @@
         "blas/BenchKitchen_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
         "blas/ShoeCabinetOld_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/TowelRack_01.bvh",
         "blas/ShowerCurtains_01.bvh",
         "blas/Suitcase_01.bvh",
@@ -22723,7 +22675,7 @@
         "blas/Wardrobe_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 239,
+      "instanceCount": 224,
       "instancesInWorld": 12
     },
     {
@@ -22857,7 +22809,6 @@
         "blas/CabinetMetal_02.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
         "blas/ShoeCabinetOld_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/TowelRack_01.bvh",
         "blas/BunkBed_02.bvh",
@@ -22900,7 +22851,7 @@
         "blas/Wardrobe_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 358,
+      "instanceCount": 344,
       "instancesInWorld": 1
     },
     {
@@ -23292,7 +23243,6 @@
         "blas/SocketElectrical_01.bvh",
         "blas/WoodKindling_Crate_01.bvh",
         "blas/Crate_01.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/Dresser_01.bvh",
         "blas/CabinetCardFile_01.bvh",
         "blas/CoatRack_04.bvh",
@@ -23308,7 +23258,7 @@
         "blas/Door_Village_E_A_RIGHT_EXT_COV_B.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 41,
+      "instanceCount": 37,
       "instancesInWorld": 6
     },
     {
@@ -23599,7 +23549,6 @@
         "blas/Crate_01.bvh",
         "blas/SinkOld_01.bvh",
         "blas/StepladderWooden_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/StoveTiled_01.bvh",
         "blas/BenchWooden_01.bvh",
         "blas/TableOld_01.bvh",
@@ -23632,7 +23581,7 @@
         "blas/Door_Village_E_A_LEFT_EXT_ST_B.bvh",
         "blas/Glass_01_32x140.bvh"
       ],
-      "instanceCount": 146,
+      "instanceCount": 140,
       "instancesInWorld": 13
     },
     {
@@ -23654,7 +23603,6 @@
         "blas/ToolRack_01_Tool_02.bvh",
         "blas/Jerrycan_01.bvh",
         "blas/Workbench_02.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01_Group.bvh",
         "blas/LawnMower_01.bvh",
         "blas/Crate_01.bvh",
@@ -23671,7 +23619,7 @@
         "blas/Door_Garage_E_01_A_RIGHT_EXT_COV_B.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 36,
+      "instanceCount": 34,
       "instancesInWorld": 11
     },
     {
@@ -24175,7 +24123,6 @@
         "blas/CoatRack_02.bvh",
         "blas/BenchKitchen_01.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01.bvh",
         "blas/BedDouble_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
@@ -24218,7 +24165,7 @@
         "blas/Glass_01_32x140.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 141,
+      "instanceCount": 133,
       "instancesInWorld": 5
     },
     {
@@ -24625,7 +24572,6 @@
         "blas/CabinetMetal_02.bvh",
         "blas/MessageBoardSmall_01.bvh",
         "blas/BinInterior_01.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/NoticeBoardCork_01.bvh",
         "blas/BunkBed_01_Double.bvh",
         "blas/Chair_01.bvh",
@@ -24641,7 +24587,7 @@
         "blas/Win_village_e_a_150x72_2_B.bvh",
         "blas/Glass_01_60x52.bvh"
       ],
-      "instanceCount": 220,
+      "instanceCount": 208,
       "instancesInWorld": 2
     },
     {
@@ -24676,7 +24622,6 @@
         "blas/Wheelbarrow_01.bvh",
         "blas/WoodKindling_Crate_01.bvh",
         "blas/Crate_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BinInterior_01.bvh",
         "blas/Workbench_01.bvh",
         "blas/Chair_01.bvh",
@@ -24695,7 +24640,7 @@
         "blas/Glass_01_54x126.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 63,
+      "instanceCount": 57,
       "instancesInWorld": 11
     },
     {
@@ -24749,7 +24694,6 @@
         "blas/CrateWooden_01.bvh",
         "blas/StepladderWooden_01.bvh",
         "blas/RakeManure_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/TowelRack_01.bvh",
         "blas/ChairRecreation_01.bvh",
         "blas/LightIndustrial_02.bvh",
@@ -24770,7 +24714,7 @@
         "blas/SackUniversal_01.bvh",
         "blas/StablePlate_01.bvh"
       ],
-      "instanceCount": 257,
+      "instanceCount": 252,
       "instancesInWorld": 3
     },
     {
@@ -25108,7 +25052,6 @@
         "blas/Typewriter_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
         "blas/BinInterior_01.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/Workbench_01.bvh",
         "blas/PaintingBig_01.bvh",
         "blas/Dresser_01.bvh",
@@ -25137,7 +25080,7 @@
         "blas/Win_Office_E_195x142_2_B_openR.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 224,
+      "instanceCount": 211,
       "instancesInWorld": 6
     },
     {
@@ -25434,7 +25377,6 @@
         "blas/CoatRack_02.bvh",
         "blas/AshtrayStreet_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BedDouble_01.bvh",
         "blas/Suitcase_01.bvh",
         "blas/BinInterior_01.bvh",
@@ -25488,7 +25430,7 @@
         "blas/LadderWooden_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 322,
+      "instanceCount": 300,
       "instancesInWorld": 10
     },
     {
@@ -25621,7 +25563,6 @@
         "blas/CabinetMetal_02.bvh",
         "blas/MessageBoardSmall_01.bvh",
         "blas/BinInterior_01.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/NoticeBoardCork_01.bvh",
         "blas/BunkBed_01_Double.bvh",
         "blas/Chair_01.bvh",
@@ -25637,7 +25578,7 @@
         "blas/Win_village_e_a_130x142_2_B.bvh",
         "blas/Glass_01_54x126.bvh"
       ],
-      "instanceCount": 220,
+      "instanceCount": 208,
       "instancesInWorld": 2
     },
     {
@@ -26078,7 +26019,6 @@
         "blas/Cupboard_01_B.bvh",
         "blas/TableSmall_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BedDouble_01.bvh",
         "blas/FlowerpotPelargonia_01.bvh",
         "blas/Chandelier_01.bvh",
@@ -26142,7 +26082,7 @@
         "blas/Win_Villa_E_A_195x100_3_B.bvh",
         "blas/Glass_01_54x83.bvh"
       ],
-      "instanceCount": 280,
+      "instanceCount": 264,
       "instancesInWorld": 7
     },
     {
@@ -26262,7 +26202,6 @@
         "blas/CoatRack_02.bvh",
         "blas/BenchKitchen_01.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01.bvh",
         "blas/BedDouble_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
@@ -26304,7 +26243,7 @@
         "blas/Glass_01_30x42.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 139,
+      "instanceCount": 131,
       "instancesInWorld": 9
     },
     {
@@ -26475,7 +26414,6 @@
         "blas/Door_Garage_E_01_A_LEFT_EXT_COV_B.bvh",
         "blas/BoxWooden_01.bvh",
         "blas/Jerrycan_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01.bvh",
         "blas/Crate_01.bvh",
         "blas/RadioSmall_01.bvh",
@@ -26490,7 +26428,7 @@
         "blas/Door_Garage_E_01_A_RIGHT_EXT_COV_B.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 26,
+      "instanceCount": 25,
       "instancesInWorld": 32
     },
     {
@@ -26612,7 +26550,6 @@
         "blas/CoatRack_02.bvh",
         "blas/StepladderWooden_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/Kitchen_01.bvh",
         "blas/BedDouble_01.bvh",
@@ -26667,7 +26604,7 @@
         "blas/Door_Village_E_A_RIGHT_INT_ST_B.bvh",
         "blas/Glass_01_102x58.bvh"
       ],
-      "instanceCount": 170,
+      "instanceCount": 160,
       "instancesInWorld": 7
     },
     {
@@ -26851,7 +26788,6 @@
         "blas/LampFluorescent_01.bvh",
         "blas/ShelfShop_01.bvh",
         "blas/FireExtinguisher_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/CardboardBoxStack_01.bvh",
         "blas/Crate_01.bvh",
         "blas/DoorFrame_fuelstation_A_EXT_B_01.bvh",
@@ -26860,7 +26796,7 @@
         "blas/Glass_01_198x190.bvh",
         "blas/Glass_01_211x98.bvh"
       ],
-      "instanceCount": 27,
+      "instanceCount": 26,
       "instancesInWorld": 5
     },
     {
@@ -27237,7 +27173,6 @@
         "blas/TableSmall_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
         "blas/ShoeCabinetOld_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01.bvh",
         "blas/StoveTiled_01.bvh",
         "blas/BenchWooden_01.bvh",
@@ -27268,7 +27203,7 @@
         "blas/ConcreteStairs_02_Narrow.bvh",
         "blas/Door_Village_E_A_RIGHT_EXT_COV_B.bvh"
       ],
-      "instanceCount": 154,
+      "instanceCount": 145,
       "instancesInWorld": 40
     },
     {
@@ -27540,7 +27475,6 @@
         "blas/RadiatorCastIron_01_130.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
         "blas/PaintingSmall_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/Suitcase_01.bvh",
         "blas/CoatRack_03.bvh",
         "blas/Stove_01.bvh",
@@ -27571,7 +27505,7 @@
         "blas/Wardrobe_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 146,
+      "instanceCount": 135,
       "instancesInWorld": 1
     },
     {
@@ -27609,7 +27543,6 @@
         "blas/Desk_01.bvh",
         "blas/Cupboard_01_B.bvh",
         "blas/MeetingTable_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/WallMap_01_Vertical.bvh",
         "blas/CoatRack_03.bvh",
@@ -27662,7 +27595,7 @@
         "blas/Glass_01_122x42.bvh",
         "blas/ConcreteStairs_02_Narrow.bvh"
       ],
-      "instanceCount": 392,
+      "instanceCount": 372,
       "instancesInWorld": 1
     },
     {
@@ -27713,7 +27646,6 @@
         "blas/CoatRack_02.bvh",
         "blas/StepladderWooden_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/Kitchen_01.bvh",
         "blas/BedDouble_01.bvh",
@@ -27770,7 +27702,7 @@
         "blas/Win_village_e_a_195x142_3_B.bvh",
         "blas/Glass_01_54x126.bvh"
       ],
-      "instanceCount": 180,
+      "instanceCount": 170,
       "instancesInWorld": 16
     },
     {
@@ -27997,12 +27929,10 @@
       "pid": 694,
       "path": "descriptors/694.json",
       "kind": "prop",
-      "blocks": true,
+      "blocks": false,
       "canopy": false,
-      "blas": [
-        "blas/GarbageAmmunition_USSR_01.bvh"
-      ],
-      "instanceCount": 1,
+      "blas": [],
+      "instanceCount": 0,
       "instancesInWorld": 1
     },
     {
@@ -28464,7 +28394,6 @@
         "blas/WoodKindling_Crate_01.bvh",
         "blas/Crate_01.bvh",
         "blas/Cupboard_01_B.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/PaintingBig_01.bvh",
         "blas/Dresser_01.bvh",
         "blas/Chair_01.bvh",
@@ -28492,7 +28421,7 @@
         "blas/Win_woodenhouse_70x72.bvh",
         "blas/Glass_01_54x55.bvh"
       ],
-      "instanceCount": 63,
+      "instanceCount": 59,
       "instancesInWorld": 12
     },
     {
@@ -28598,7 +28527,6 @@
         "blas/CoatRack_02.bvh",
         "blas/BenchKitchen_01.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01.bvh",
         "blas/BedDouble_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
@@ -28640,7 +28568,7 @@
         "blas/Glass_01_30x42.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 139,
+      "instanceCount": 131,
       "instancesInWorld": 7
     },
     {
@@ -28677,7 +28605,7 @@
         "blas/ConcretePanel_01_V2.bvh"
       ],
       "instanceCount": 1,
-      "instancesInWorld": 130
+      "instancesInWorld": 129
     },
     {
       "pid": 740,
@@ -29049,7 +28977,6 @@
         "blas/CoatRack_02.bvh",
         "blas/AshtrayStreet_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BedDouble_01.bvh",
         "blas/Suitcase_01.bvh",
         "blas/BinInterior_01.bvh",
@@ -29103,7 +29030,7 @@
         "blas/LadderWooden_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 322,
+      "instanceCount": 300,
       "instancesInWorld": 1
     },
     {
@@ -29229,7 +29156,6 @@
         "blas/ShelfShop_02.bvh",
         "blas/MessageBoardSmall_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/PaintingSmall_02.bvh",
         "blas/Freezer_01.bvh",
         "blas/SignIndustrial_25x40_01_Cleanliness.bvh",
@@ -29263,7 +29189,7 @@
         "blas/SinkIndustrial_01.bvh",
         "blas/Wardrobe_01.bvh"
       ],
-      "instanceCount": 358,
+      "instanceCount": 343,
       "instancesInWorld": 1
     },
     {
@@ -29286,7 +29212,7 @@
         "blas/TinWall_01_6m_C.bvh"
       ],
       "instanceCount": 1,
-      "instancesInWorld": 131
+      "instancesInWorld": 130
     },
     {
       "pid": 776,
@@ -29438,7 +29364,7 @@
         "blas/ConcreteKerb_01_4m_v2.bvh"
       ],
       "instanceCount": 1,
-      "instancesInWorld": 266
+      "instancesInWorld": 264
     },
     {
       "pid": 789,
@@ -30124,7 +30050,6 @@
         "blas/WoodKindling_Crate_01.bvh",
         "blas/Cupboard_01_B.bvh",
         "blas/TableSmall_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/Suitcase_01.bvh",
         "blas/Workbench_01.bvh",
         "blas/Cupboard_01_C.bvh",
@@ -30159,7 +30084,7 @@
         "blas/LadderWooden_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 182,
+      "instanceCount": 170,
       "instancesInWorld": 8
     },
     {
@@ -30216,7 +30141,6 @@
         "blas/CabinetMetal_02.bvh",
         "blas/MessageBoardSmall_01.bvh",
         "blas/BinInterior_01.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/NoticeBoardCork_01.bvh",
         "blas/BunkBed_01_Double.bvh",
         "blas/Chair_01.bvh",
@@ -30232,7 +30156,7 @@
         "blas/Win_village_e_a_150x72_2_B.bvh",
         "blas/Glass_01_60x52.bvh"
       ],
-      "instanceCount": 220,
+      "instanceCount": 208,
       "instancesInWorld": 6
     },
     {
@@ -30778,7 +30702,6 @@
         "blas/CrateWooden_01.bvh",
         "blas/StepladderWooden_01.bvh",
         "blas/RakeManure_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/MarsBox_01.bvh",
         "blas/LightIndustrial_02.bvh",
         "blas/BeerBottle_01_Group.bvh",
@@ -30799,7 +30722,7 @@
         "blas/SackUniversal_01.bvh",
         "blas/StablePlate_01.bvh"
       ],
-      "instanceCount": 315,
+      "instanceCount": 310,
       "instancesInWorld": 4
     },
     {
@@ -31110,7 +31033,6 @@
         "blas/CoatRack_02.bvh",
         "blas/StepladderWooden_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/Stove_01.bvh",
         "blas/PaintingBig_01.bvh",
         "blas/Dresser_01.bvh",
@@ -31157,7 +31079,7 @@
         "blas/Win_ShopHouse_E_A_420x275_2_B.bvh",
         "blas/Glass_01_200x260.bvh"
       ],
-      "instanceCount": 162,
+      "instanceCount": 145,
       "instancesInWorld": 3
     },
     {
@@ -31409,7 +31331,6 @@
         "blas/Cottage_E_01.bvh",
         "blas/BinInterior_01.bvh",
         "blas/MirrorBathroom_01.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/BunkBed_01_Double.bvh",
         "blas/Chair_01.bvh",
         "blas/Armchair_01.bvh",
@@ -31422,7 +31343,7 @@
         "blas/Door_Village_E_A_RIGHT_EXT_COV_B.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 21,
+      "instanceCount": 20,
       "instancesInWorld": 34
     },
     {
@@ -31491,7 +31412,6 @@
         "blas/BinInterior_01.bvh",
         "blas/ChairSchool_01.bvh",
         "blas/CoatRack_03.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/NoticeBoardCork_01.bvh",
         "blas/Dresser_01.bvh",
         "blas/Shelf_01.bvh",
@@ -31515,7 +31435,7 @@
         "blas/Win_village_e_a_170x182_2_B.bvh",
         "blas/Glass_01_74x165.bvh"
       ],
-      "instanceCount": 113,
+      "instanceCount": 108,
       "instancesInWorld": 1
     },
     {
@@ -31606,7 +31526,6 @@
         "blas/Chair_01.bvh",
         "blas/TowelRack_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/PaintingSmall_02.bvh",
         "blas/Freezer_01.bvh",
         "blas/Dresser_01.bvh",
@@ -31636,7 +31555,7 @@
         "blas/Wardrobe_01.bvh",
         "blas/SignWall3D_Pub_01.bvh"
       ],
-      "instanceCount": 370,
+      "instanceCount": 355,
       "instancesInWorld": 1
     },
     {
@@ -31721,7 +31640,7 @@
         "blas/StoneWall_01_8m_End.bvh"
       ],
       "instanceCount": 1,
-      "instancesInWorld": 511
+      "instancesInWorld": 510
     },
     {
       "pid": 945,
@@ -31987,7 +31906,6 @@
         "blas/CoatRack_02.bvh",
         "blas/BenchKitchen_01.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01.bvh",
         "blas/BedDouble_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
@@ -32027,7 +31945,7 @@
         "blas/Glass_01_30x42.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 137,
+      "instanceCount": 129,
       "instancesInWorld": 3
     },
     {
@@ -32154,7 +32072,7 @@
       "canopy": false,
       "blas": [],
       "instanceCount": 0,
-      "instancesInWorld": 63
+      "instancesInWorld": 62
     },
     {
       "pid": 975,
@@ -32246,7 +32164,6 @@
         "blas/MeetingTable_01.bvh",
         "blas/TableSmall_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/NoticeBoardCork_01.bvh",
         "blas/Stove_01.bvh",
         "blas/PaintingBig_01.bvh",
@@ -32314,7 +32231,7 @@
         "blas/Win_ControlTower_A_260x230_1_M2.bvh",
         "blas/Glass_01_260x230_M2.bvh"
       ],
-      "instanceCount": 314,
+      "instanceCount": 290,
       "instancesInWorld": 1
     },
     {
@@ -32430,7 +32347,6 @@
         "blas/Urinal_01.bvh",
         "blas/Desk_01_long.bvh",
         "blas/Door_Village_E_A_LEFT_INT_COV_B.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/WallMap_01_Vertical.bvh",
         "blas/NoticeBoardCork_01.bvh",
@@ -32452,7 +32368,7 @@
         "blas/FirstAidBox_01.bvh",
         "blas/CabinetCardFile_01.bvh"
       ],
-      "instanceCount": 214,
+      "instanceCount": 200,
       "instancesInWorld": 3
     },
     {
@@ -32511,7 +32427,6 @@
         "blas/CoatRack_02.bvh",
         "blas/BenchKitchen_01.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01.bvh",
         "blas/BedDouble_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
@@ -32553,7 +32468,7 @@
         "blas/Glass_01_30x42.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 149,
+      "instanceCount": 141,
       "instancesInWorld": 4
     },
     {
@@ -32767,7 +32682,6 @@
         "blas/Typewriter_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
         "blas/BinInterior_01.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/Workbench_01.bvh",
         "blas/PaintingBig_01.bvh",
         "blas/Dresser_01.bvh",
@@ -32810,7 +32724,7 @@
         "blas/Win_Office_E_195x142_2_B_openR.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 229,
+      "instanceCount": 216,
       "instancesInWorld": 3
     },
     {
@@ -32984,10 +32898,8 @@
         "blas/CoatRack_02.bvh",
         "blas/StepladderWooden_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BedDouble_01.bvh",
         "blas/TowelRack_01.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/LawnMower_01.bvh",
         "blas/Crate_01.bvh",
         "blas/Workbench_01.bvh",
@@ -33025,7 +32937,7 @@
         "blas/Fridge_01.bvh",
         "blas/House_Prefab_2I01_Railing_Metal.bvh"
       ],
-      "instanceCount": 156,
+      "instanceCount": 144,
       "instancesInWorld": 3
     },
     {
@@ -33600,7 +33512,6 @@
         "blas/Cupboard_01_B.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BedDouble_01.bvh",
         "blas/FlowerpotPelargonia_01.bvh",
         "blas/Suitcase_01.bvh",
@@ -33655,7 +33566,7 @@
         "blas/Glass_01_88x154.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 182,
+      "instanceCount": 172,
       "instancesInWorld": 6
     },
     {
@@ -33834,7 +33745,6 @@
         "blas/BeerBottle_01_Group.bvh",
         "blas/BinInterior_01.bvh",
         "blas/ChairSchool_01.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/Cupboard_01_C.bvh",
         "blas/Notebook_01_Single.bvh",
         "blas/Bed_02.bvh",
@@ -33877,7 +33787,7 @@
         "blas/Door_Garage_E_05_A_RIGHT_EXT_COV_B.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 163,
+      "instanceCount": 148,
       "instancesInWorld": 4
     },
     {
@@ -34181,7 +34091,7 @@
         "blas/b_corylus_avellana_1l.bvh"
       ],
       "instanceCount": 1,
-      "instancesInWorld": 54312
+      "instancesInWorld": 54311
     },
     {
       "pid": 1092,
@@ -34530,7 +34440,6 @@
         "blas/MeetingTable_01.bvh",
         "blas/CoatRack_02.bvh",
         "blas/AshtrayStreet_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/ChairSchool_01.bvh",
         "blas/CoatRack_03.bvh",
@@ -34558,7 +34467,7 @@
         "blas/Win_FactoryHall_E_340x340_999999_M1.bvh",
         "blas/Glass_01_109x109_M1.bvh"
       ],
-      "instanceCount": 891,
+      "instanceCount": 882,
       "instancesInWorld": 1
     },
     {
@@ -34631,7 +34540,6 @@
         "blas/Kitchen_01.bvh",
         "blas/StepLadderWooden_01_Open.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/BedDouble_01.bvh",
         "blas/TowelRack_01.bvh",
@@ -34679,7 +34587,7 @@
         "blas/Desk_01.bvh",
         "blas/Wardrobe_01.bvh"
       ],
-      "instanceCount": 269,
+      "instanceCount": 251,
       "instancesInWorld": 29
     },
     {
@@ -34864,7 +34772,6 @@
         "blas/BoxWooden_01.bvh",
         "blas/WoodKindling_Crate_01.bvh",
         "blas/Crate_01.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/Workbench_01.bvh",
         "blas/Cart_01.bvh",
         "blas/TableWorkshop_01.bvh",
@@ -34873,7 +34780,7 @@
         "blas/SackUniversal_01.bvh",
         "blas/UtilityBoxExt_01_S.bvh"
       ],
-      "instanceCount": 50,
+      "instanceCount": 46,
       "instancesInWorld": 4
     },
     {
@@ -34977,7 +34884,6 @@
         "blas/Desk_01.bvh",
         "blas/Shelf_01_Long.bvh",
         "blas/CabinetMetal_02.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/WallMap_01_Vertical.bvh",
         "blas/TowelRack_01.bvh",
         "blas/BenchWooden_01.bvh",
@@ -35013,7 +34919,7 @@
         "blas/Wardrobe_01.bvh",
         "blas/ConcreteStairs_02_Narrow.bvh"
       ],
-      "instanceCount": 451,
+      "instanceCount": 433,
       "instancesInWorld": 1
     },
     {
@@ -35272,7 +35178,7 @@
         "blas/t_betula_pendula_1f_canopy.bvh"
       ],
       "instanceCount": 1,
-      "instancesInWorld": 9090
+      "instancesInWorld": 9089
     },
     {
       "pid": 1153,
@@ -35770,7 +35676,6 @@
         "blas/Workbench_02.bvh",
         "blas/PlankPile_01_Medium.bvh",
         "blas/CrateWooden_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/WallMap_01_Vertical.bvh",
         "blas/TowelRack_01.bvh",
@@ -35800,7 +35705,7 @@
         "blas/Win_village_e_a_170x182_2_B.bvh",
         "blas/Glass_01_74x165.bvh"
       ],
-      "instanceCount": 178,
+      "instanceCount": 174,
       "instancesInWorld": 5
     },
     {
@@ -35950,7 +35855,6 @@
         "blas/Workbench_02.bvh",
         "blas/StepladderWooden_01.bvh",
         "blas/CabinetMetal_02.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/NoticeBoardCork_01.bvh",
         "blas/Cart_01.bvh",
         "blas/Rack_03.bvh",
@@ -35964,7 +35868,7 @@
         "blas/Win_village_e_a_170x182_2_B.bvh",
         "blas/Glass_01_74x165.bvh"
       ],
-      "instanceCount": 38,
+      "instanceCount": 34,
       "instancesInWorld": 5
     },
     {
@@ -36054,7 +35958,6 @@
         "blas/StepladderWooden_01.bvh",
         "blas/StepLadderWooden_01_Open.bvh",
         "blas/ShoeCabinetOld_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01.bvh",
         "blas/StoveTiled_01.bvh",
         "blas/TowelRack_01.bvh",
@@ -36105,7 +36008,7 @@
         "blas/Win_village_e_a_195x142_3_B.bvh",
         "blas/Glass_01_54x126.bvh"
       ],
-      "instanceCount": 181,
+      "instanceCount": 170,
       "instancesInWorld": 26
     },
     {
@@ -36286,7 +36189,6 @@
         "blas/WoodKindling_Crate_01.bvh",
         "blas/Crate_01.bvh",
         "blas/Cupboard_01_B.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/PaintingBig_01.bvh",
         "blas/Dresser_01.bvh",
         "blas/Chair_01.bvh",
@@ -36315,7 +36217,7 @@
         "blas/Win_woodenhouse_70x72.bvh",
         "blas/Glass_01_54x55.bvh"
       ],
-      "instanceCount": 64,
+      "instanceCount": 60,
       "instancesInWorld": 36
     },
     {
@@ -36565,7 +36467,6 @@
         "blas/BenchKitchen_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
         "blas/ShoeCabinetOld_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/TowelRack_01.bvh",
         "blas/ShowerCurtains_01.bvh",
         "blas/Suitcase_01.bvh",
@@ -36610,7 +36511,7 @@
         "blas/Wardrobe_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 239,
+      "instanceCount": 224,
       "instancesInWorld": 1
     },
     {
@@ -36725,7 +36626,7 @@
         "blas/t_pinus_sylvestris_2f.bvh"
       ],
       "instanceCount": 1,
-      "instancesInWorld": 17224
+      "instancesInWorld": 17223
     },
     {
       "pid": 1246,
@@ -36863,7 +36764,6 @@
         "blas/ShelfShop_02.bvh",
         "blas/MessageBoardSmall_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/PaintingSmall_02.bvh",
         "blas/Freezer_01.bvh",
         "blas/SignIndustrial_25x40_01_Cleanliness.bvh",
@@ -36897,7 +36797,7 @@
         "blas/SinkIndustrial_01.bvh",
         "blas/Wardrobe_01.bvh"
       ],
-      "instanceCount": 358,
+      "instanceCount": 343,
       "instancesInWorld": 2
     },
     {
@@ -37307,7 +37207,7 @@
         "blas/t_picea_abies_3f_higher.bvh"
       ],
       "instanceCount": 1,
-      "instancesInWorld": 41014
+      "instancesInWorld": 41003
     },
     {
       "pid": 1289,
@@ -37350,7 +37250,6 @@
         "blas/SocketElectrical_01.bvh",
         "blas/WoodKindling_Crate_01.bvh",
         "blas/Crate_01.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/Dresser_01.bvh",
         "blas/CabinetCardFile_01.bvh",
         "blas/CoatRack_04.bvh",
@@ -37366,7 +37265,7 @@
         "blas/Door_Village_E_A_RIGHT_EXT_COV_B.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 41,
+      "instanceCount": 37,
       "instancesInWorld": 8
     },
     {
@@ -37472,7 +37371,6 @@
         "blas/WoodKindling_Crate_01.bvh",
         "blas/Cupboard_01_B.bvh",
         "blas/TableSmall_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/Suitcase_01.bvh",
         "blas/Workbench_01.bvh",
         "blas/Cupboard_01_C.bvh",
@@ -37507,7 +37405,7 @@
         "blas/LadderWooden_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 182,
+      "instanceCount": 170,
       "instancesInWorld": 20
     },
     {
@@ -37540,7 +37438,7 @@
       "canopy": false,
       "blas": [],
       "instanceCount": 0,
-      "instancesInWorld": 212
+      "instancesInWorld": 211
     },
     {
       "pid": 1300,
@@ -37700,7 +37598,6 @@
         "blas/Wheelbarrow_01.bvh",
         "blas/WoodKindling_Crate_01.bvh",
         "blas/Crate_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BinInterior_01.bvh",
         "blas/Workbench_01.bvh",
         "blas/Chair_01.bvh",
@@ -37719,7 +37616,7 @@
         "blas/Glass_01_54x126.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 63,
+      "instanceCount": 57,
       "instancesInWorld": 16
     },
     {
@@ -37796,7 +37693,6 @@
         "blas/CrateWooden_01.bvh",
         "blas/StepladderWooden_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/ShelfShop_02.bvh",
         "blas/MessageBoardSmall_01.bvh",
@@ -37833,7 +37729,7 @@
         "blas/Wardrobe_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 318,
+      "instanceCount": 307,
       "instancesInWorld": 7
     },
     {
@@ -37867,7 +37763,6 @@
         "blas/Jerrycan_01.bvh",
         "blas/Workbench_02.bvh",
         "blas/CabinetMetal_02.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/TowelRack_01.bvh",
         "blas/Cart_01.bvh",
         "blas/Crate_01.bvh",
@@ -37878,7 +37773,7 @@
         "blas/FirstAidBox_01.bvh",
         "blas/CabinetCardFile_01.bvh"
       ],
-      "instanceCount": 54,
+      "instanceCount": 50,
       "instancesInWorld": 23
     },
     {
@@ -38028,7 +37923,6 @@
         "blas/ShelfShop_02.bvh",
         "blas/MessageBoardSmall_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/PaintingSmall_02.bvh",
         "blas/Freezer_01.bvh",
         "blas/SignIndustrial_25x40_01_Cleanliness.bvh",
@@ -38062,7 +37956,7 @@
         "blas/SinkIndustrial_01.bvh",
         "blas/Wardrobe_01.bvh"
       ],
-      "instanceCount": 358,
+      "instanceCount": 343,
       "instancesInWorld": 1
     },
     {
@@ -38346,7 +38240,6 @@
         "blas/RadiatorCastIron_01_130.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
         "blas/PaintingSmall_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/Suitcase_01.bvh",
         "blas/CoatRack_03.bvh",
         "blas/Stove_01.bvh",
@@ -38377,7 +38270,7 @@
         "blas/Wardrobe_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 146,
+      "instanceCount": 135,
       "instancesInWorld": 21
     },
     {
@@ -38643,7 +38536,6 @@
         "blas/CrateWooden_01.bvh",
         "blas/BenchChurch_02_Short_Simple.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BenchChurch_02_Short.bvh",
         "blas/Suitcase_01.bvh",
         "blas/Litter_01_small.bvh",
@@ -38665,7 +38557,7 @@
         "blas/Door_Wood_Historical_Big_LEFT_EXT_COV_B.bvh",
         "blas/Door_Wood_Historical_Big_RIGHT_EXT_COV_B.bvh"
       ],
-      "instanceCount": 187,
+      "instanceCount": 183,
       "instancesInWorld": 1
     },
     {
@@ -38734,7 +38626,7 @@
         "blas/Pallet_01.bvh"
       ],
       "instanceCount": 1,
-      "instancesInWorld": 226
+      "instancesInWorld": 225
     },
     {
       "pid": 1369,
@@ -38975,7 +38867,6 @@
         "blas/ShelfShop_02.bvh",
         "blas/MessageBoardSmall_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/PaintingSmall_02.bvh",
         "blas/Freezer_01.bvh",
         "blas/SignIndustrial_25x40_01_Cleanliness.bvh",
@@ -39006,7 +38897,7 @@
         "blas/BeerBottle_01.bvh",
         "blas/Wardrobe_01.bvh"
       ],
-      "instanceCount": 370,
+      "instanceCount": 355,
       "instancesInWorld": 1
     },
     {
@@ -39212,7 +39103,6 @@
         "blas/ToolRack_01_Tool_02.bvh",
         "blas/Workbench_02.bvh",
         "blas/CrateWooden_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01_Group.bvh",
         "blas/Crate_01.bvh",
         "blas/Rack_03.bvh",
@@ -39222,7 +39112,7 @@
         "blas/LadderWooden_01.bvh",
         "blas/Door_Garage_E_01_A_RIGHT_EXT_COV_B.bvh"
       ],
-      "instanceCount": 33,
+      "instanceCount": 32,
       "instancesInWorld": 18
     },
     {
@@ -39400,7 +39290,6 @@
         "blas/Shelf_01_Long.bvh",
         "blas/Cupboard_01_B.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BedDouble_01.bvh",
         "blas/Suitcase_01.bvh",
         "blas/BinInterior_01.bvh",
@@ -39441,7 +39330,7 @@
         "blas/Wardrobe_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 175,
+      "instanceCount": 161,
       "instancesInWorld": 16
     },
     {
@@ -39552,7 +39441,7 @@
         "blas/TinWall_01_3m.bvh"
       ],
       "instanceCount": 1,
-      "instancesInWorld": 66
+      "instancesInWorld": 67
     },
     {
       "pid": 1421,
@@ -39697,7 +39586,6 @@
         "blas/MeetingTable_01.bvh",
         "blas/StepladderWooden_01.bvh",
         "blas/CabinetCardFile_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BenchWooden_01.bvh",
         "blas/ChairSchool_01.bvh",
         "blas/Notebook_01_Single.bvh",
@@ -39722,7 +39610,7 @@
         "blas/ConcreteStairs_04.bvh",
         "blas/UtilityBoxExt_01_S.bvh"
       ],
-      "instanceCount": 223,
+      "instanceCount": 211,
       "instancesInWorld": 1
     },
     {
@@ -40371,7 +40259,6 @@
         "blas/Kitchen_01.bvh",
         "blas/CoatRack_02.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/BedDouble_01.bvh",
         "blas/Suitcase_01.bvh",
@@ -40419,7 +40306,7 @@
         "blas/Wardrobe_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 360,
+      "instanceCount": 349,
       "instancesInWorld": 8
     },
     {
@@ -40521,7 +40408,6 @@
         "blas/ShowerCurtains_01.bvh",
         "blas/Cupboard_01_B.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BinInterior_01.bvh",
         "blas/BenchWooden_02.bvh",
         "blas/Workbench_01.bvh",
@@ -40557,7 +40443,7 @@
         "blas/Door_Industrial_A_RIGHT_EXT_COV_B.bvh",
         "blas/Door_Industrial_A_LEFT_EXT_COV_B.bvh"
       ],
-      "instanceCount": 140,
+      "instanceCount": 134,
       "instancesInWorld": 3
     },
     {
@@ -40743,7 +40629,6 @@
         "blas/HayBale_01_square_big.bvh",
         "blas/BoxWooden_01.bvh",
         "blas/StepladderWooden_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
         "blas/CrateWooden_01.bvh",
@@ -40756,7 +40641,7 @@
         "blas/SackTruck_01.bvh",
         "blas/SackUniversal_01.bvh"
       ],
-      "instanceCount": 98,
+      "instanceCount": 97,
       "instancesInWorld": 4
     },
     {
@@ -40887,7 +40772,6 @@
         "blas/WoodKindling_Crate_01.bvh",
         "blas/Crate_01.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BinInterior_01.bvh",
         "blas/Sofa_01.bvh",
         "blas/Dresser_01.bvh",
@@ -40916,7 +40800,7 @@
         "blas/Win_village_e_a_70x47_1_B.bvh",
         "blas/Glass_01_61x35.bvh"
       ],
-      "instanceCount": 97,
+      "instanceCount": 92,
       "instancesInWorld": 29
     },
     {
@@ -41037,7 +40921,7 @@
         "blas/AsphaltPavement_01_Wide_4m_90.bvh"
       ],
       "instanceCount": 1,
-      "instancesInWorld": 132
+      "instancesInWorld": 131
     },
     {
       "pid": 1518,
@@ -41327,7 +41211,6 @@
         "blas/CabinetMetal_02.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
         "blas/ShoeCabinetOld_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/FileOffice_01_Stack.bvh",
         "blas/BeerBottle_01.bvh",
         "blas/TowelRack_01.bvh",
@@ -41381,7 +41264,7 @@
         "blas/Desk_01.bvh",
         "blas/Fridge_01.bvh"
       ],
-      "instanceCount": 376,
+      "instanceCount": 362,
       "instancesInWorld": 1
     },
     {
@@ -41603,7 +41486,6 @@
         "blas/CoatRack_02.bvh",
         "blas/StepLadderWooden_01_Open.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/NoticeBoardCork_01.bvh",
         "blas/Stove_01.bvh",
         "blas/PaintingBig_01.bvh",
@@ -41647,7 +41529,7 @@
         "blas/Win_ShopHouse_E_A_420x275_2_B.bvh",
         "blas/Glass_01_200x260.bvh"
       ],
-      "instanceCount": 200,
+      "instanceCount": 183,
       "instancesInWorld": 3
     },
     {
@@ -41812,7 +41694,6 @@
         "blas/ShelfShop_02.bvh",
         "blas/MessageBoardSmall_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
-        "blas/LightSwitch_01.bvh",
         "blas/PaintingSmall_02.bvh",
         "blas/Freezer_01.bvh",
         "blas/SignIndustrial_25x40_01_Cleanliness.bvh",
@@ -41846,7 +41727,7 @@
         "blas/SinkIndustrial_01.bvh",
         "blas/Wardrobe_01.bvh"
       ],
-      "instanceCount": 358,
+      "instanceCount": 343,
       "instancesInWorld": 1
     },
     {
@@ -42152,7 +42033,6 @@
         "blas/CoatRack_02.bvh",
         "blas/BenchKitchen_01.bvh",
         "blas/UtilityBoxExt_01_M.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01.bvh",
         "blas/BedDouble_01.bvh",
         "blas/BeerBottle_01_Group.bvh",
@@ -42194,7 +42074,7 @@
         "blas/Door_Village_E_A_RIGHT_EXT_COV_B.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 151,
+      "instanceCount": 143,
       "instancesInWorld": 4
     },
     {
@@ -42259,7 +42139,6 @@
         "blas/WoodKindling_Crate_01.bvh",
         "blas/Crate_01.bvh",
         "blas/CabinetMetal_02.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/BeerBottle_01_Group.bvh",
         "blas/BinInterior_01.bvh",
         "blas/NoticeBoardCork_01.bvh",
@@ -42271,7 +42150,7 @@
         "blas/Glass_01_74x126.bvh",
         "blas/ConcreteStairs_01_entry_2m.bvh"
       ],
-      "instanceCount": 25,
+      "instanceCount": 24,
       "instancesInWorld": 26
     },
     {
@@ -42523,7 +42402,6 @@
         "blas/WoodKindling_01.bvh",
         "blas/Armchair_02.bvh",
         "blas/FireExtinguisher_01.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/Safe_01.bvh",
         "blas/Rack_03.bvh",
         "blas/AnimalHide_01.bvh",
@@ -42545,7 +42423,7 @@
         "blas/Fridge_01.bvh",
         "blas/SignMountainHotel_01_panorama.bvh"
       ],
-      "instanceCount": 400,
+      "instanceCount": 392,
       "instancesInWorld": 1
     },
     {
@@ -42801,7 +42679,6 @@
         "blas/Cupboard_01_B.bvh",
         "blas/CoatRack_02.bvh",
         "blas/RadiatorCastIron_01_130.bvh",
-        "blas/LightSwitch_02.bvh",
         "blas/Stove_01.bvh",
         "blas/PaintingBig_01.bvh",
         "blas/Dresser_01.bvh",
@@ -42847,7 +42724,7 @@
         "blas/Win_ShopHouse_E_A_420x275_2_B.bvh",
         "blas/Glass_01_200x260.bvh"
       ],
-      "instanceCount": 199,
+      "instanceCount": 182,
       "instancesInWorld": 4
     },
     {
@@ -43005,11 +42882,11 @@
   ],
   "totals": {
     "prefabs": 1623,
-    "blocks": 1323,
+    "blocks": 1322,
     "canopy": 51,
     "canopyHull": 14,
-    "blasFiles": 1690,
-    "blasBytes": 32237264,
+    "blasFiles": 1687,
+    "blasBytes": 29891592,
     "byKind": {
       "building": {
         "prefabs": 287,
@@ -43019,17 +42896,19 @@
         "noColl": 10,
         "emptyColl": 0,
         "unresolved": 0,
-        "bytes": 19558668
+        "noFireGeo": 0,
+        "bytes": 18024040
       },
       "prop": {
         "prefabs": 1166,
-        "blocks": 885,
+        "blocks": 884,
         "noMesh": 44,
         "modelUnreadable": 0,
         "noColl": 236,
         "emptyColl": 0,
         "unresolved": 1,
-        "bytes": 6787312
+        "noFireGeo": 1,
+        "bytes": 6519696
       },
       "rock": {
         "prefabs": 53,
@@ -43039,6 +42918,7 @@
         "noColl": 0,
         "emptyColl": 0,
         "unresolved": 0,
+        "noFireGeo": 0,
         "bytes": 1227708
       },
       "tree": {
@@ -43049,7 +42929,8 @@
         "noColl": 0,
         "emptyColl": 0,
         "unresolved": 0,
-        "bytes": 1292016
+        "noFireGeo": 0,
+        "bytes": 1064420
       },
       "vehicle": {
         "prefabs": 13,
@@ -43059,7 +42940,8 @@
         "noColl": 2,
         "emptyColl": 0,
         "unresolved": 0,
-        "bytes": 702072
+        "noFireGeo": 0,
+        "bytes": 679404
       },
       "water": {
         "prefabs": 53,
@@ -43069,7 +42951,8 @@
         "noColl": 4,
         "emptyColl": 0,
         "unresolved": 0,
-        "bytes": 2669488
+        "noFireGeo": 0,
+        "bytes": 2376324
       }
     }
   }

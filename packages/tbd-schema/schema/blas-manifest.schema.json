@@ -67,6 +67,7 @@
               "noColl": { "type": "integer", "minimum": 0 },
               "emptyColl": { "type": "integer", "minimum": 0 },
               "unresolved": { "type": "integer", "minimum": 0 },
+              "noFireGeo": { "type": "integer", "minimum": 0 },
               "bytes": { "type": "integer", "minimum": 0 }
             }
           }

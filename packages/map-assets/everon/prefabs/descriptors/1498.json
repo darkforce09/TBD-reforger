@@ -1381,30 +1381,6 @@
       "parent": "5B18AA6D2EB5631D"
     },
     {
-      "id": "5B18AA6D2EB5631D/5B18AA6F71A2F53C",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          9.678,
-          1.229,
-          8.062
-        ],
-        "quat": [
-          -0.0,
-          -1.0,
-          -0.0,
-          6.123233995736766e-17
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "5B18AA6D2EB5631D"
-    },
-    {
       "id": "5B18AA6D2EB5631D/5B18AA6F71A2F508",
       "kind": "glass",
       "prefab": "Prefabs/Props/Civilian/BeerBottle_01_brown.et",
@@ -2398,6 +2374,7 @@
     "5B18AA6D2EB5631D/5B18AA6F71A2F8B1: Assets/Props/Civilian/Ashtray_01/Ashtray_01_Full.xob has no collision chunk — no BLAS, no instance",
     "5B18AA6D2EB5631D/5B18AA6F71A2F521: Assets/Props/Garbage/Tires/TireTracktor_01/TireTractor_01_single.xob has no collision chunk — no BLAS, no instance",
     "5B18AA6D2EB5631D/5B18AA6F71A2F6D5: Assets/Props/Garbage/Tires/TireTracktor_01/TireTractor_01_single.xob has no collision chunk — no BLAS, no instance",
+    "5B18AA6D2EB5631D/5B18AA6F71A2F53C: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
     "5B18AA6D2EB5631D/5B18AA6F71A2F540: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_03.xob has no collision chunk — no BLAS, no instance"
   ]
 }

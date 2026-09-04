@@ -7,10 +7,12 @@
 //! - `--bench N`           N random eye-height segments in the cell: µs / segment
 //! - `--pairs <json>`      replay a `world-parity` oracle (T-090.12.4): agree / phantom / missed
 //!   per policy, bucketed by the engine's hit prefab kind; `--min-agree F` exits 1 below it
+//! - `--dem`               also replay the `clearWorld` column: objects ∧ the 2 m DEM (terrain
+//!   sampled every metre along the pair through the editor's `DemManifest` sampler)
 //!
 //! Usage: `--cell <cx_cy> [--assets packages/map-assets/everon] [--census] [--probe a b]
 //!         [--bench N] [--pairs <json>] [--glass-blocks] [--foliage-blocks] [--proxy-only]
-//!         [--min-agree F] [--dump-misses <jsonl>]`
+//!         [--min-agree F] [--dump-misses <jsonl>] [--dem]`
 
 use std::collections::{BTreeMap, HashMap};
 use std::fs;
@@ -20,6 +22,7 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
 use map_engine_core::bvh::BvhSidecar;
+use map_engine_core::dem::sample::{DemManifest, sample_elevation_meters};
 use map_engine_core::world::occluder::{
     BlockPolicy, PrefabDescriptor, WorldOccluder, WorldVerdict,
 };
@@ -123,6 +126,73 @@ fn parse_point(s: &str) -> Result<[f64; 3]> {
 /// One oracle pair: `[ox, oy, oz, tx, ty, tz, clearEnts, clearWorld, hitPrefabSlug]` (engine frame).
 pub type WorldPair = (f64, f64, f64, f64, f64, f64, bool, bool, String);
 
+/// The terrain half of the `clearWorld` column: the committed 16-bit DEM behind the editor's own
+/// `DemManifest` sampler (`dem::sample`, Class R), so the CLI and the LOS tool read the same
+/// heights. 2 m pixels — fine terrain detail the engine's `WORLD` trace sees is below this
+/// resolution, which is the documented caveat on the world-inclusive number.
+pub struct Dem {
+    pub m: DemManifest,
+    pub raster: Vec<u16>,
+    pub w: usize,
+    pub h: usize,
+}
+
+/// Load `<assets>/manifest.json` + its `dem.path` PNG (16-bit grey, big-endian rows).
+pub fn load_dem(assets: &Path) -> Result<Dem> {
+    let manifest: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(assets.join("manifest.json")).context("terrain manifest.json")?,
+    )?;
+    let rel = manifest["dem"]["path"]
+        .as_str()
+        .context("manifest.dem.path")?
+        .to_string();
+    let dec = png::Decoder::new(fs::File::open(assets.join(&rel)).with_context(|| rel.clone())?);
+    let mut reader = dec.read_info()?;
+    let mut data = vec![0u8; reader.output_buffer_size()];
+    let info = reader.next_frame(&mut data)?;
+    let (w, h) = (info.width as usize, info.height as usize);
+    let mut raster = vec![0u16; w * h];
+    for (i, px) in raster.iter_mut().enumerate() {
+        *px = u16::from_be_bytes([data[i * 2], data[i * 2 + 1]]);
+    }
+    let m = DemManifest {
+        min_x: manifest["worldBounds"][0].as_f64().unwrap_or(0.0),
+        min_y: manifest["worldBounds"][1].as_f64().unwrap_or(0.0),
+        max_x: manifest["worldBounds"][2].as_f64().unwrap_or(0.0),
+        max_y: manifest["worldBounds"][3].as_f64().unwrap_or(0.0),
+        width_px: w,
+        height_px: h,
+        flip_x: manifest["dem"]["axisFlip"]["x"].as_bool().unwrap_or(false),
+        flip_z: manifest["dem"]["axisFlip"]["z"].as_bool().unwrap_or(false),
+        height_min_m: manifest["dem"]["heightRangeMinM"].as_f64().unwrap_or(0.0),
+        height_max_m: manifest["dem"]["heightRangeMaxM"].as_f64().unwrap_or(0.0),
+    };
+    Ok(Dem { m, raster, w, h })
+}
+
+impl Dem {
+    /// Ground height (m ASL) at engine `(x, z_north)`, `None` off the raster.
+    #[must_use]
+    pub fn ground(&self, x: f64, z: f64) -> Option<f64> {
+        sample_elevation_meters(x, z, &self.m, &self.raster, self.w, self.h)
+    }
+
+    /// Does the terrain cut the segment? Interior samples every metre (the endpoints stand on
+    /// their own ground and are skipped); blocked when the surface rises above the line.
+    #[must_use]
+    pub fn blocks(&self, obs: [f64; 3], tgt: [f64; 3]) -> bool {
+        let d = [tgt[0] - obs[0], tgt[1] - obs[1], tgt[2] - obs[2]];
+        let len = (d[0] * d[0] + d[1] * d[1] + d[2] * d[2]).sqrt();
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let n = (len.ceil() as usize).max(2);
+        (1..n).any(|i| {
+            let t = i as f64 / n as f64;
+            let p = [obs[0] + d[0] * t, obs[1] + d[1] * t, obs[2] + d[2] * t];
+            self.ground(p[0], p[2]).is_some_and(|g| g > p[1])
+        })
+    }
+}
+
 /// One oracle file of the `world-parity` action.
 #[derive(serde::Deserialize)]
 pub struct WorldParityFile {
@@ -143,6 +213,15 @@ pub struct ReplayReport {
     pub provisional: usize,
     /// Disagreements bucketed by the engine's hit prefab slug (empty = engine clear).
     pub by_hit: BTreeMap<String, (usize, usize)>,
+    /// `--dem`: the world-inclusive column (`clearWorld` = objects ∧ terrain). `world_n == 0`
+    /// when no DEM was given.
+    pub world_n: usize,
+    pub world_agree: usize,
+    /// Model world-blocked, engine world-clear — split by which half blocked in the model.
+    pub world_phantom_terrain: usize,
+    pub world_phantom_objects: usize,
+    /// Model world-clear, engine world-blocked.
+    pub world_missed: usize,
 }
 
 impl ReplayReport {
@@ -154,6 +233,16 @@ impl ReplayReport {
             self.agree as f64 / self.n as f64
         }
     }
+
+    /// World-inclusive agreement (`0` without `--dem`).
+    #[must_use]
+    pub fn world_agreement(&self) -> f64 {
+        if self.world_n == 0 {
+            0.0
+        } else {
+            self.world_agree as f64 / self.world_n as f64
+        }
+    }
 }
 
 /// Replay every pair through `blocked` under `policy` against the `ENTS` (objects-only) column.
@@ -162,20 +251,36 @@ pub fn replay(
     file: &WorldParityFile,
     policy: BlockPolicy,
     misses: &mut Vec<String>,
+    dem: Option<&Dem>,
 ) -> ReplayReport {
     let mut r = ReplayReport {
         n: file.pairs.len(),
         ..ReplayReport::default()
     };
-    for (ox, oy, oz, tx, ty, tz, clear_ents, _clear_world, hit) in &file.pairs {
+    for (ox, oy, oz, tx, ty, tz, clear_ents, clear_world, hit) in &file.pairs {
         let obs = [*ox, *oy, *oz];
         let tgt = [*tx, *ty, *tz];
         let blocked = occ.blocked(obs, tgt, policy);
-        let verdict = occ.evaluate_los(obs, tgt).verdict;
+        let los = occ.evaluate_los(obs, tgt);
+        let verdict = los.verdict;
         if verdict == WorldVerdict::Provisional {
             r.provisional += 1;
         }
         let model_clear = !blocked;
+        let terrain = dem.map(|d| d.blocks(obs, tgt));
+        if let Some(terrain_blocked) = terrain {
+            r.world_n += 1;
+            let model_world_clear = model_clear && !terrain_blocked;
+            if model_world_clear == *clear_world {
+                r.world_agree += 1;
+            } else if model_world_clear {
+                r.world_missed += 1;
+            } else if terrain_blocked {
+                r.world_phantom_terrain += 1;
+            } else {
+                r.world_phantom_objects += 1;
+            }
+        }
         if model_clear == *clear_ents {
             r.agree += 1;
         } else {
@@ -188,8 +293,29 @@ pub fn replay(
                 e.0 += 1;
             }
             if misses.len() < 4000 {
+                // The model's side of the disagreement: which placed prefab (and which surface
+                // of it) the model stopped at, so phantoms can be bucketed by cause.
+                let model = los.blocker.as_ref().map_or_else(
+                    || "null".to_string(),
+                    |b| {
+                        format!(
+                            "{{\"pid\":{},\"label\":\"{}\",\"kind\":\"{}\",\"surface\":\"{:?}\",\"t\":{:.4},\"chunk\":\"{}\",\"row\":{},\"inner\":\"{:?}\",\"fidelity\":\"{:?}\"}}",
+                            b.pid,
+                            occ.label_of(b.pid).unwrap_or("?"),
+                            occ.kind_of(b.pid).unwrap_or("?"),
+                            b.kind,
+                            b.t,
+                            b.chunk,
+                            b.row,
+                            b.inner,
+                            b.fidelity,
+                        )
+                    },
+                );
+                let terrain = terrain.map_or("null".to_string(), |b| b.to_string());
                 misses.push(format!(
-                    "{{\"obs\":[{ox},{oy},{oz}],\"tgt\":[{tx},{ty},{tz}],\"engineClear\":{clear_ents},\"modelClear\":{model_clear},\"hit\":\"{hit}\"}}"
+                    "{{\"obs\":[{ox},{oy},{oz}],\"tgt\":[{tx},{ty},{tz}],\"engineClear\":{clear_ents},\"modelClear\":{model_clear},\"engineWorldClear\":{clear_world},\"terrainBlocked\":{terrain},\"hit\":\"{hit}\",\"concealment\":{:.3},\"model\":{model}}}",
+                    los.concealment
                 ));
             }
         }
@@ -206,6 +332,7 @@ pub fn run(args: &[String]) -> Result<u8> {
     let mut pairs: Option<PathBuf> = None;
     let mut policy = BlockPolicy::VISION;
     let mut min_agree: Option<f64> = None;
+    let mut want_dem = false;
     let mut dump: Option<PathBuf> = None;
     let mut i = 0;
     while i < args.len() {
@@ -250,13 +377,17 @@ pub fn run(args: &[String]) -> Result<u8> {
                 min_agree = Some(args[i + 1].parse().context("--min-agree <F>")?);
                 i += 2;
             }
+            "--dem" => {
+                want_dem = true;
+                i += 1;
+            }
             "--dump-misses" if i + 1 < args.len() => {
                 dump = Some(PathBuf::from(&args[i + 1]));
                 i += 2;
             }
             other => {
                 eprintln!(
-                    "world-los: unknown arg {other} (usage: --cell <cx_cy> [--assets <dir>] [--census] [--probe a b] [--bench N] [--pairs <json>] [--glass-blocks] [--foliage-blocks] [--proxy-only] [--min-agree F] [--dump-misses <jsonl>])"
+                    "world-los: unknown arg {other} (usage: --cell <cx_cy> [--assets <dir>] [--census] [--probe a b] [--bench N] [--pairs <json>] [--glass-blocks] [--foliage-blocks] [--proxy-only] [--min-agree F] [--dump-misses <jsonl>] [--dem])"
                 );
                 return Ok(1);
             }
@@ -366,7 +497,23 @@ pub fn run(args: &[String]) -> Result<u8> {
             &fs::read_to_string(&path).with_context(|| path.display().to_string())?,
         )?;
         let mut misses = Vec::new();
-        let r = replay(&occ, &file, policy, &mut misses);
+        let dem = if want_dem {
+            Some(load_dem(&assets)?)
+        } else {
+            None
+        };
+        let r = replay(&occ, &file, policy, &mut misses, dem.as_ref());
+        if r.world_n > 0 {
+            println!(
+                "  world (objects ∧ 2 m DEM): {}/{} agree ({:.2} %) · phantom terrain {} · phantom objects {} · missed {}",
+                r.world_agree,
+                r.world_n,
+                r.world_agreement() * 100.0,
+                r.world_phantom_terrain,
+                r.world_phantom_objects,
+                r.world_missed
+            );
+        }
         println!(
             "  parity cell {:?} seed {}: {}/{} agree ({:.2} %) · phantom (model-blocked/engine-clear) {} · missed (model-clear/engine-blocked) {} · provisional {} · policy {policy:?}",
             file.cell,

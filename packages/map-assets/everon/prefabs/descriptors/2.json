@@ -772,54 +772,6 @@
       "parent": "5B20ACED1D206A6F"
     },
     {
-      "id": "5B20ACED1D206A6F/5B18BE720DF26D09",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          -2.887,
-          1.436,
-          2.294
-        ],
-        "quat": [
-          -0.0,
-          -1.0,
-          -0.0,
-          6.123233995736766e-17
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "5B20ACED1D206A6F"
-    },
-    {
-      "id": "5B20ACED1D206A6F/5B18BE720DF26D14",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          -2.715,
-          1.436,
-          2.294
-        ],
-        "quat": [
-          -0.0,
-          -1.0,
-          -0.0,
-          6.123233995736766e-17
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "5B20ACED1D206A6F"
-    },
-    {
       "id": "5B20ACED1D206A6F/5B18BE720DF26D42",
       "kind": "furniture",
       "prefab": "Prefabs/Props/Crates/Crate_01_brown.et",
@@ -1215,6 +1167,8 @@
     "5B20ACED1D206A6F/5B18BE720DF26EA3: Assets/Props/Civilian/PaintCan_01/PaintCan_01.xob has no collision chunk — no BLAS, no instance",
     "5B20ACED1D206A6F/5B18BE720DF26EAD: Assets/Props/Civilian/PaintCan_01/PaintCan_01.xob has no collision chunk — no BLAS, no instance",
     "5B20ACED1D206A6F/5B18BE720DF26D3E: Assets/Props/Industrial/GasTank_02/GasTank_02.xob has no collision chunk — no BLAS, no instance",
+    "5B20ACED1D206A6F/5B18BE720DF26D09: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "5B20ACED1D206A6F/5B18BE720DF26D14: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
     "5B20ACED1D206A6F/5E0670E4DF30D340: Assets/Props/Commercial/Posters/PosterSingle_A1.xob has no collision chunk — no BLAS, no instance",
     "5B20ACED1D206A6F/5B18BE720DF26D66: Assets/Props/Civilian/Broom_01/Broom_01.xob has no collision chunk — no BLAS, no instance",
     "5B20ACED1D206A6F/5E0670E4DF30D338: Assets/Props/Commercial/Posters/PosterSingle_A1.xob has no collision chunk — no BLAS, no instance",

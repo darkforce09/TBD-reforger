@@ -1298,126 +1298,6 @@
       "parent": "5AF2BE3A3DEA8CCB"
     },
     {
-      "id": "5AF2BE3A3DEA8CCB/5AF2BE3A0901B546",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          -1.182,
-          1.641,
-          0.72
-        ],
-        "quat": [
-          0.0,
-          0.7071067811865475,
-          0.0,
-          0.7071067811865476
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "5AF2BE3A3DEA8CCB"
-    },
-    {
-      "id": "5AF2BE3A3DEA8CCB/5AF2BE3A0901B549",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          -3.506,
-          1.692,
-          -0.024
-        ],
-        "quat": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "5AF2BE3A3DEA8CCB"
-    },
-    {
-      "id": "5AF2BE3A3DEA8CCB/5AF2BE3A0901B554",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          -3.878,
-          1.649,
-          3.323
-        ],
-        "quat": [
-          0.0,
-          0.7071067811865475,
-          0.0,
-          0.7071067811865476
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "5AF2BE3A3DEA8CCB"
-    },
-    {
-      "id": "5AF2BE3A3DEA8CCB/5AF2BE3A0901B561",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          -3.543,
-          1.648,
-          -0.224
-        ],
-        "quat": [
-          -0.0,
-          -1.0,
-          -0.0,
-          6.123233995736766e-17
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "5AF2BE3A3DEA8CCB"
-    },
-    {
-      "id": "5AF2BE3A3DEA8CCB/5AF2BE3A0901B57F",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          3.622,
-          1.666,
-          5.1
-        ],
-        "quat": [
-          0.0,
-          -0.7071067811865475,
-          0.0,
-          0.7071067811865476
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "5AF2BE3A3DEA8CCB"
-    },
-    {
       "id": "5AF2BE3A3DEA8CCB/5AF2BE3A0901B510",
       "kind": "prop",
       "prefab": "Prefabs/Props/Garbage/Bins/BinInterior_01_red.et",
@@ -2364,6 +2244,11 @@
     "5AF2BE3A3DEA8CCB/5AF2BE3A0901B4DF: Assets/Props/Civilian/Ashtray_01/Ashtray_01_Full.xob has no collision chunk — no BLAS, no instance",
     "5AF2BE3A3DEA8CCB/5AF2BE3A09009FD8: Assets/Structures/BuildingsParts/Misc/ChimneyPlug_01.xob has no collision chunk — no BLAS, no instance",
     "5AF2BE3A3DEA8CCB/5AF2BE3A0901B480: Assets/Structures/BuildingsParts/Misc/TvAntenna_02.xob has no collision chunk — no BLAS, no instance",
+    "5AF2BE3A3DEA8CCB/5AF2BE3A0901B546: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "5AF2BE3A3DEA8CCB/5AF2BE3A0901B549: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "5AF2BE3A3DEA8CCB/5AF2BE3A0901B554: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "5AF2BE3A3DEA8CCB/5AF2BE3A0901B561: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "5AF2BE3A3DEA8CCB/5AF2BE3A0901B57F: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
     "5AF2BE3A3DEA8CCB/5AF2BE3A0901B501: Assets/Structures/BuildingsParts/Heating/StoveColumn_01.xob has no collision chunk — no BLAS, no instance",
     "5AF2BE3A3DEA8CCB/5AF2BE3A0901B536: Assets/Props/Furniture/LightCeiling_01/LightCeiling_01.xob has no collision chunk — no BLAS, no instance",
     "5AF2BE3A3DEA8CCB/5AF2BE3A0901B53A: Assets/Props/Furniture/LightCeiling_01/LightCeiling_01.xob has no collision chunk — no BLAS, no instance",

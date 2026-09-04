@@ -404,30 +404,6 @@
       "parent": "58EA8658C574D24C"
     },
     {
-      "id": "58EA8658C574D24C/58EA8658FA03457A",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_Base.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          -0.497,
-          1.415,
-          1.246
-        ],
-        "quat": [
-          -0.0,
-          -1.0,
-          -0.0,
-          6.123233995736766e-17
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "58EA8658C574D24C"
-    },
-    {
       "id": "58EA8658C574D24C/58EA8658FA034584",
       "kind": "furniture",
       "prefab": "Prefabs/Props/Crates/CardboardBoxStack_01.et",
@@ -676,6 +652,7 @@
     "58EA8658C574D24C/58EA8658FA03452C: Assets/Props/Civilian/PaintCan_01/PaintCan_01.xob has no collision chunk — no BLAS, no instance",
     "58EA8658C574D24C/58EA8658FA03455F: Assets/Props/Civilian/PaintCan_01/PaintCan_01.xob has no collision chunk — no BLAS, no instance",
     "58EA8658C574D24C/58EA8658FA034566: Assets/Props/Garbage/Cardboard/Cardboard_01.xob has no collision chunk — no BLAS, no instance",
+    "58EA8658C574D24C/58EA8658FA03457A: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
     "5218A82FF3F2F81A: Prefabs/Structures/Core/ProbeHouse_Base.et has no mesh"
   ]
 }

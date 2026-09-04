@@ -142,6 +142,7 @@ fn descriptors_carry_blocks_reasons_kinds_and_canopy() {
         only_kinds: vec![],
         limit: None,
         hot: 3,
+        layer_policy: crate::map_blueprint::batch::LayerPolicy::All,
     };
     let lib = build_library(&source, &rows, &census, &opts).unwrap();
     let d = |pid: u32| lib.descriptors.iter().find(|d| d.prefab_id == pid).unwrap();
@@ -204,6 +205,7 @@ fn blas_dedup_by_stem_manifest_entries_and_hot_order() {
         only_kinds: vec![],
         limit: None,
         hot: 2,
+        layer_policy: crate::map_blueprint::batch::LayerPolicy::All,
     };
     let lib = build_library(&source, &rows, &census, &opts).unwrap();
     // Box, Box_Red and Shed share one model → one BLAS; Tree and Trunk have their own.
@@ -252,6 +254,7 @@ fn write_is_schema_valid_and_deterministic() {
         only_kinds: vec![],
         limit: None,
         hot: 3,
+        layer_policy: crate::map_blueprint::batch::LayerPolicy::All,
     };
     let lib = build_library(&source, &rows, &census, &opts).unwrap();
     let out = dir.join("prefabs");
@@ -294,6 +297,7 @@ fn only_kind_and_limit_select_rows() {
         only_kinds: vec!["tree".into()],
         limit: Some(1),
         hot: 3,
+        layer_policy: crate::map_blueprint::batch::LayerPolicy::All,
     };
     let lib = build_library(&source, &rows, &census, &opts).unwrap();
     assert_eq!(lib.descriptors.len(), 1);

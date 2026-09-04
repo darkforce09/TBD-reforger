@@ -83,8 +83,24 @@ pub struct Asset {
     pub kinds: Vec<SurfaceKind>,
     /// Per COLL record: layer-preset name (or `?`).
     pub layers: Vec<String>,
+    /// Per COLL triangle: emitted into the sidecar under the [`LayerPolicy`] (false = a record
+    /// on a preset projectiles do not collide with).
+    pub kept: Vec<bool>,
+    /// Per COLL record: `(preset, tris kept, tris dropped)`.
+    pub layer_census: Vec<(String, usize, usize)>,
     pub sidecar_bytes: Option<Vec<u8>>,
     pub node_count: usize,
+}
+
+/// Which COLL records a BLAS is built from (T-090.12.4).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum LayerPolicy {
+    /// Every record — the physics shells included (the T-090.11 emit).
+    All,
+    /// Only records whose layer preset stops a projectile
+    /// ([`preset_stops_projectile`]): what the engine's `Projectile` trace sees.
+    #[default]
+    Projectile,
 }
 
 impl Asset {
@@ -93,10 +109,19 @@ impl Asset {
         self.sidecar_bytes.is_some()
     }
 
+    /// Triangles the sidecar carries (the [`LayerPolicy`] survivors).
+    #[must_use]
+    pub fn kept_tris(&self) -> usize {
+        self.kept.iter().filter(|k| **k).count()
+    }
+
     #[must_use]
     pub fn kind_counts(&self) -> (usize, usize, usize) {
         let mut n = (0, 0, 0);
-        for k in &self.kinds {
+        for (k, keep) in self.kinds.iter().zip(&self.kept) {
+            if !keep {
+                continue;
+            }
             match k {
                 SurfaceKind::Opaque => n.0 += 1,
                 SurfaceKind::Glass => n.1 += 1,
@@ -152,7 +177,12 @@ pub fn classify_kinds(
 }
 
 /// Decode one XOB (bytes already read) into an [`Asset`].
-pub fn decode_asset(path: &str, data: &[u8], overrides: &[(u16, SurfaceKind)]) -> Asset {
+pub fn decode_asset(
+    path: &str,
+    data: &[u8],
+    overrides: &[(u16, SurfaceKind)],
+    policy: LayerPolicy,
+) -> Asset {
     let stem = Path::new(path)
         .file_stem()
         .map(|s| s.to_string_lossy().into_owned())
@@ -167,14 +197,65 @@ pub fn decode_asset(path: &str, data: &[u8], overrides: &[(u16, SurfaceKind)]) -
         Some(m) => classify_kinds(m, nodes.as_ref(), overrides),
         None => (Vec::new(), Vec::new()),
     };
+    // The policy decides per record; a `--kind` override on a record keeps it (the operator
+    // has looked at it), an unknown preset is kept.
+    let (kept, layer_census) = match &coll {
+        Some(m) => {
+            let keep_rec: Vec<bool> = (0..layers.len())
+                .map(|rec| {
+                    policy == LayerPolicy::All
+                        || overrides.iter().any(|(r, _)| usize::from(*r) == rec)
+                        || super::surface_kind::preset_stops_projectile(&layers[rec]) != Some(false)
+                })
+                .collect();
+            let kept: Vec<bool> = (0..m.tris.len())
+                .map(|t| {
+                    keep_rec
+                        .get(m.tri_submesh[t] as usize)
+                        .copied()
+                        .unwrap_or(true)
+                })
+                .collect();
+            let mut census: Vec<(String, usize, usize)> =
+                layers.iter().map(|l| (l.clone(), 0, 0)).collect();
+            for (t, keep) in kept.iter().enumerate() {
+                let rec = m.tri_submesh[t] as usize;
+                if let Some(c) = census.get_mut(rec) {
+                    if *keep {
+                        c.1 += 1;
+                    } else {
+                        c.2 += 1;
+                    }
+                }
+            }
+            (kept, census)
+        }
+        None => (Vec::new(), Vec::new()),
+    };
     let sidecar_bytes = coll.as_ref().and_then(|m| {
         let verts_f32 = quantize_verts(&m.verts);
         if verts_f32.iter().flatten().any(|c| !c.is_finite()) || m.tris.is_empty() {
             return None;
         }
+        let tris: Vec<[u32; 3]> = m
+            .tris
+            .iter()
+            .zip(&kept)
+            .filter(|(_, k)| **k)
+            .map(|(t, _)| *t)
+            .collect();
+        let kinds_kept: Vec<SurfaceKind> = kinds
+            .iter()
+            .zip(&kept)
+            .filter(|(_, k)| **k)
+            .map(|(k, _)| *k)
+            .collect();
+        if tris.is_empty() {
+            return None;
+        }
         let lifted = lift_verts(&verts_f32);
-        let bvh = Bvh::build(&lifted, &m.tris);
-        let bytes = emit_bytes(&verts_f32, &m.tris, &kinds, &bvh);
+        let bvh = Bvh::build(&lifted, &tris);
+        let bytes = emit_bytes(&verts_f32, &tris, &kinds_kept, &bvh);
         BvhSidecar::parse(&bytes).ok().map(|_| bytes)
     });
     Asset {
@@ -185,6 +266,8 @@ pub fn decode_asset(path: &str, data: &[u8], overrides: &[(u16, SurfaceKind)]) -
         nodes,
         kinds,
         layers,
+        kept,
+        layer_census,
         sidecar_bytes,
     }
 }
@@ -193,6 +276,7 @@ pub fn decode_asset(path: &str, data: &[u8], overrides: &[(u16, SurfaceKind)]) -
 pub struct AssetCache<'a> {
     source: &'a dyn AssetSource,
     overrides_for: Option<(String, Vec<(u16, SurfaceKind)>)>,
+    policy: LayerPolicy,
     by_path: HashMap<String, Rc<Asset>>,
     stems: HashMap<String, String>,
 }
@@ -202,9 +286,20 @@ impl<'a> AssetCache<'a> {
         Self {
             source,
             overrides_for: None,
+            policy: LayerPolicy::default(),
             by_path: HashMap::new(),
             stems: HashMap::new(),
         }
+    }
+
+    /// The record policy for every decode from now on (set before the first `load`).
+    pub fn set_policy(&mut self, policy: LayerPolicy) {
+        self.policy = policy;
+    }
+
+    #[must_use]
+    pub fn policy(&self) -> LayerPolicy {
+        self.policy
     }
 
     /// `--kind` overrides apply to one XOB (the shell).
@@ -225,7 +320,7 @@ impl<'a> AssetCache<'a> {
             Some((p, o)) if *p == key => o,
             _ => &[],
         };
-        let mut asset = decode_asset(xob_path, &data, overrides);
+        let mut asset = decode_asset(xob_path, &data, overrides, self.policy);
         // Two different models with the same file stem would collide under blas/.
         if let Some(other) = self.stems.get(&asset.stem)
             && other != &key
@@ -598,6 +693,7 @@ pub fn run_bvh_batch(args: &[String]) -> Result<u8> {
     let mut scene: Option<PathBuf> = None;
     let mut overrides: Vec<(u16, SurfaceKind)> = Vec::new();
     let mut dry_run = false;
+    let mut all_layers = false;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
@@ -639,6 +735,10 @@ pub fn run_bvh_batch(args: &[String]) -> Result<u8> {
                 dry_run = true;
                 i += 1;
             }
+            "--all-layers" => {
+                all_layers = true;
+                i += 1;
+            }
             other => {
                 eprintln!(
                     "bvh-batch: unknown arg {other} (usage: --prefab <Prefabs/…/X.et> [--slug <s>] [--out <dir>] \
@@ -662,6 +762,9 @@ pub fn run_bvh_batch(args: &[String]) -> Result<u8> {
         .mesh
         .clone()
         .with_context(|| format!("{prefab}: no MeshObject in its chain — not a building"))?;
+    if all_layers {
+        walker.assets.set_policy(LayerPolicy::All);
+    }
     if !overrides.is_empty() {
         walker.assets.set_overrides(&shell_xob, overrides);
     }

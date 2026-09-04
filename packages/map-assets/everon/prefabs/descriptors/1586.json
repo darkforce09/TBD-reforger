@@ -260,30 +260,6 @@
       "parent": "5856DEABC01D8B2C"
     },
     {
-      "id": "5856DEABC01D8B2C/5856DEABC1ACB8BD",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          0.624,
-          1.454,
-          2.217
-        ],
-        "quat": [
-          0.0,
-          1.0,
-          0.0,
-          6.123233995736766e-17
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "5856DEABC01D8B2C"
-    },
-    {
       "id": "5856DEABC01D8B2C/5856DEABC1ACB886",
       "kind": "glass",
       "prefab": "Prefabs/Props/Civilian/BeerBottle_01_group.et",
@@ -625,6 +601,7 @@
   "notes": [
     "59F4C44F4D8955F1: Prefabs/Structures/Core/ProbeHouse_Base.et has no mesh",
     "5856DEABC01D8B2C/5856DEABC1ACBF3B: Assets/Props/Furniture/CoatRack_01/CoatRack_01.xob has no collision chunk — no BLAS, no instance",
+    "5856DEABC01D8B2C/5856DEABC1ACB8BD: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
     "5856DEABC01D8B2C/5856DEABC1ACBE63: Assets/Structures/BuildingsParts/Heating/StoveColumn_01.xob has no collision chunk — no BLAS, no instance",
     "5856DEABC01D8B2C/5856DEABC1ACBF12: Assets/Props/Civilian/Bucket_01/Bucket_01.xob has no collision chunk — no BLAS, no instance",
     "5856DEABC01D8B2C/5856DEABC1ACBF7A: Assets/Props/Civilian/Ashtray_01/Ashtray_01_Full.xob has no collision chunk — no BLAS, no instance"

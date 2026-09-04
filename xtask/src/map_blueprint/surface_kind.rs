@@ -56,6 +56,54 @@ pub fn kind_for_layer(layer: &str) -> Option<SurfaceKind> {
     }
 }
 
+/// Does a collider on this layer preset stop a projectile? The Workbench collision-layer table
+/// (BIKI "Arma Reforger: Collision Layer"): presets that carry the FireGeometry layer —
+/// `FireGeo`, every `*Fire*` preset (`BuildingFire`, `FireView`, `TreeFireView`, `RockFireView`,
+/// `PropFireView`, `GlassFire`, …), `Wheel`, the terrain — do; the plain Static / Dynamic
+/// presets (`Building`, `Tree`, `Prop`, `PropView`, `Door`, `Ladder`, `Vehicle`, the character
+/// layers, `Debris`, …) are the character / vehicle physics shells bullets pass through — the
+/// coarse trunk box beside a tree's fire trunk, the 6 m box around a pole fence. `Foliage` /
+/// `Bush` (soft, concealment) and `Glass*` (a pane) keep their soft kinds. `None` = an unknown
+/// name, kept (no opinion). Pinned by the T-090.12.4 oracle: dropping the static shells took
+/// the village cell from 97.9 % to the measured number in that commit.
+#[must_use]
+pub fn preset_stops_projectile(layer: &str) -> Option<bool> {
+    let l = layer.to_ascii_lowercase();
+    if l.contains("fire") || l == "wheel" || l == "terrain" {
+        return Some(true);
+    }
+    if l == "foliage" || l == "bush" || l.starts_with("glass") {
+        return Some(true);
+    }
+    const STATIC_OR_DYNAMIC: &[&str] = &[
+        "building",
+        "tree",
+        "treepart",
+        "prop",
+        "propview",
+        "door",
+        "ladder",
+        "vehicle",
+        "character",
+        "characterai",
+        "charnocollide",
+        "debris",
+        "interaction",
+        "main",
+        "cover",
+        "projectile",
+        "weapon",
+        "item",
+        "itemview",
+        "static",
+        "dynamic",
+    ];
+    if STATIC_OR_DYNAMIC.contains(&l.as_str()) {
+        return Some(false);
+    }
+    None
+}
+
 /// Parse a `--kind <record>=<kind>` override.
 pub fn parse_kind_override(s: &str) -> Option<(u16, SurfaceKind)> {
     let (rec, kind) = s.split_once('=')?;
@@ -72,6 +120,44 @@ pub fn parse_kind_override(s: &str) -> Option<(u16, SurfaceKind)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn projectile_presets_follow_the_collision_layer_table() {
+        for fire in [
+            "FireGeo",
+            "FireView",
+            "BuildingFire",
+            "BuildingFireView",
+            "TreeFireView",
+            "RockFireView",
+            "PropFireView",
+            "GlassFire",
+            "Wheel",
+            "Terrain",
+        ] {
+            assert_eq!(preset_stops_projectile(fire), Some(true), "{fire}");
+        }
+        for shell in [
+            "Building",
+            "Tree",
+            "Prop",
+            "PropView",
+            "Door",
+            "Ladder",
+            "Vehicle",
+            "Debris",
+            "TreePart",
+            "CharNoCollide",
+        ] {
+            assert_eq!(preset_stops_projectile(shell), Some(false), "{shell}");
+        }
+        // Soft layers keep their soft kinds; panes stay panes.
+        for soft in ["Foliage", "Bush", "Glass"] {
+            assert_eq!(preset_stops_projectile(soft), Some(true), "{soft}");
+        }
+        assert_eq!(preset_stops_projectile("?"), None);
+        assert_eq!(preset_stops_projectile("SomethingNew"), None);
+    }
 
     #[test]
     fn gamemat_stems_classify() {

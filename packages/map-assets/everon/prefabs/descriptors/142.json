@@ -1433,54 +1433,6 @@
       "parent": "5B18DEEF3FBB8F29"
     },
     {
-      "id": "5B18DEEF3FBB8F29/5B18DBF02262BA9B",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          -10.358,
-          1.302,
-          6.46
-        ],
-        "quat": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "5B18DEEF3FBB8F29"
-    },
-    {
-      "id": "5B18DEEF3FBB8F29/5B18DBF02262BAEB",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          -7.993,
-          1.288,
-          12.631
-        ],
-        "quat": [
-          0.0,
-          -0.7071067811865475,
-          0.0,
-          0.7071067811865476
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "5B18DEEF3FBB8F29"
-    },
-    {
       "id": "5B18DEEF3FBB8F29/5B18DBF02262BAF4",
       "kind": "prop",
       "prefab": "Prefabs/Props/Forest/WoodPile/WoodLog_01_D.et",
@@ -3875,6 +3827,8 @@
     "5B18DEEF3FBB8F29/5B18DBF02262BA21: Assets/Structures/BuildingsParts/Lights/LampIndustrial_02.xob has no collision chunk — no BLAS, no instance",
     "5B18DEEF3FBB8F29/5B18DBF02262BA32: Assets/Structures/BuildingsParts/Lights/LampIndustrial_02.xob has no collision chunk — no BLAS, no instance",
     "5B18DEEF3FBB8F29/5B18DBF02262BA11: Assets/Structures/BuildingsParts/Lights/LampIndustrial_01.xob has no collision chunk — no BLAS, no instance",
+    "5B18DEEF3FBB8F29/5B18DBF02262BA9B: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "5B18DEEF3FBB8F29/5B18DBF02262BAEB: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
     "5B18DEEF3FBB8F29/5B18DBF02262B965: Assets/Structures/BuildingsParts/Heating/StoveColumn_01.xob has no collision chunk — no BLAS, no instance",
     "5B18DEEF3FBB8F29/5B18DBF02262B999: Assets/Props/Civilian/Fan_01/Fan_01.xob has no collision chunk — no BLAS, no instance",
     "5B18DEEF3FBB8F29/5B18DBF02262B9E9: Assets/Props/Furniture/LightTable_02/LightTable_02.xob has no collision chunk — no BLAS, no instance",

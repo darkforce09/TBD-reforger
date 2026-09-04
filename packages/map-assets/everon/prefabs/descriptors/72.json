@@ -477,30 +477,6 @@
       "parent": "5B18B8A1619D2B23"
     },
     {
-      "id": "5B18B8A1619D2B23/5B18AA6C53AF5165",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          8.225,
-          1.351,
-          -8.054
-        ],
-        "quat": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "5B18B8A1619D2B23"
-    },
-    {
       "id": "5B18B8A1619D2B23/5B18AA6C53AF5177",
       "kind": "prop",
       "prefab": "Prefabs/Structures/BuildingParts/Lights/LightIndustrial_02.et",
@@ -1901,6 +1877,7 @@
   ],
   "notes": [
     "5B18B8A1619D2B23/5B18AA6C53AF5106: Assets/Props/Garbage/Tires/TireTracktor_01/TireTractor_01_single.xob has no collision chunk — no BLAS, no instance",
+    "5B18B8A1619D2B23/5B18AA6C53AF5165: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
     "5B18B8A1619D2B23/5B18AA6C53AF51B0: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_03.xob has no collision chunk — no BLAS, no instance",
     "Socket_fan_01: Assets/Structures/BuildingsParts/Electrical/ExhaustFanMetal_01.xob has no collision chunk — no BLAS, no instance",
     "Socket_fan_02: Assets/Structures/BuildingsParts/Electrical/ExhaustFanMetal_01.xob has no collision chunk — no BLAS, no instance",

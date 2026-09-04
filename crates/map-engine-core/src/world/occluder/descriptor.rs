@@ -132,6 +132,10 @@ pub struct KindTotals {
     pub no_coll: u32,
     pub empty_coll: u32,
     pub unresolved: u32,
+    /// Collision exists but every record sits on a preset projectiles pass through
+    /// (T-090.12.4 layer policy).
+    #[serde(default)]
+    pub no_fire_geo: u32,
     /// Bytes of the BLAS files first referenced by this kind's descriptors.
     pub bytes: u64,
 }

@@ -4,44 +4,9 @@
   "slug": "GarbageAmmunition_USSR_01",
   "resourceName": "Prefabs/Props/Garbage/Military/Ammo/GarbageAmmunition_USSR_01.et",
   "kind": "prop",
-  "blocks": true,
+  "blocks": false,
+  "reason": "no-fire-geo",
   "canopy": false,
-  "localBounds": {
-    "min": [
-      -0.28500538505613804,
-      4.00003045797348e-7,
-      -0.2979959868825972
-    ],
-    "max": [
-      0.32092458568513393,
-      0.005526400171220303,
-      0.2987279868684709
-    ]
-  },
-  "shellBvh": "blas/GarbageAmmunition_USSR_01.bvh",
-  "instances": [
-    {
-      "id": "GarbageAmmunition_USSR_01",
-      "kind": "prop",
-      "prefab": "Prefabs/Props/Garbage/Military/Ammo/GarbageAmmunition_USSR_01.et",
-      "blas": "blas/GarbageAmmunition_USSR_01.bvh",
-      "xob": "Assets/Props/Garbage/Military/Ammo/GarbageAmmo_01/GarbageAmmunition_USSR_01.xob",
-      "local": {
-        "pos": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "quat": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords"
-    }
-  ]
+  "shellBvh": "",
+  "instances": []
 }

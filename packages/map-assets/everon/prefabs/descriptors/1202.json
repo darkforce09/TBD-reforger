@@ -372,102 +372,6 @@
       "parent": "58586B863A04CF4E"
     },
     {
-      "id": "58586B863A04CF4E/58586B863B70A3AA",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          0.019,
-          1.263,
-          -3.074
-        ],
-        "quat": [
-          0.0,
-          0.7071067811865475,
-          0.0,
-          0.7071067811865476
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "58586B863A04CF4E"
-    },
-    {
-      "id": "58586B863A04CF4E/58586B863B70A3BC",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          -4.495,
-          1.318,
-          -3.438
-        ],
-        "quat": [
-          0.0,
-          0.7071067811865475,
-          0.0,
-          0.7071067811865476
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "58586B863A04CF4E"
-    },
-    {
-      "id": "58586B863A04CF4E/58586B863B70A3C7",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          4.001,
-          1.301,
-          -0.28
-        ],
-        "quat": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "58586B863A04CF4E"
-    },
-    {
-      "id": "58586B863A04CF4E/58586B863B70A3F3",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_02.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          3.799,
-          1.301,
-          -0.28
-        ],
-        "quat": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "58586B863A04CF4E"
-    },
-    {
       "id": "58586B863A04CF4E/58586B863B70A38D",
       "kind": "prop",
       "prefab": "Prefabs/Props/Civilian/NoticeBoardCork_01.et",
@@ -956,6 +860,10 @@
     "58586B863A04CF4E/58586B863B70A3EA: Assets/Props/Furniture/LightWall_01/LightWall_01.xob has no collision chunk — no BLAS, no instance",
     "58586B863A04CF4E/58586B863B70A24F: Assets/Props/Industrial/BarrelFuel_01/BarrelFuel_01_closed.xob has no collision chunk — no BLAS, no instance",
     "58586B863A04CF4E/58586B863B70A25C: Assets/Props/Industrial/BarrelFuel_01/BarrelFuel_01_closed.xob has no collision chunk — no BLAS, no instance",
+    "58586B863A04CF4E/58586B863B70A3AA: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "58586B863A04CF4E/58586B863B70A3BC: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "58586B863A04CF4E/58586B863B70A3C7: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "58586B863A04CF4E/58586B863B70A3F3: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
     "58586B863A04CF4E/58586B863B70A27B: Assets/Props/Industrial/BarrelMetal_01/BarrelMetal_01.xob has no collision chunk — no BLAS, no instance",
     "58586B863A04CF4E/58586B863B70AC9C: Assets/Props/Civilian/Bucket_01/Bucket_01.xob has no collision chunk — no BLAS, no instance",
     "58586B863A04CF4E/58586B863B70AC8A: Assets/Props/Garbage/Cardboard/Cardboard_02.xob has no collision chunk — no BLAS, no instance"

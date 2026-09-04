@@ -125,6 +125,8 @@ pub struct LibraryOptions {
     pub only_kinds: Vec<String>,
     pub limit: Option<usize>,
     pub hot: usize,
+    /// Which COLL records reach the BLAS (default: the projectile presets).
+    pub layer_policy: super::batch::LayerPolicy,
 }
 
 /// The emitted library, in memory.
@@ -207,6 +209,8 @@ fn no_block_reason(walker: &mut Walker, path: &str, root: Option<&Asset>) -> &'s
         (Some(_), None) => "model-unreadable",
         (Some(_), Some(a)) => match &a.coll {
             Some(m) if m.tris.is_empty() => "empty-coll",
+            // Collision exists, but every record sits on a preset projectiles pass through.
+            Some(m) if !m.tris.is_empty() && a.kept_tris() == 0 => "no-fire-geo",
             _ => "no-coll",
         },
     }
@@ -220,6 +224,7 @@ pub fn build_library(
     opts: &LibraryOptions,
 ) -> Result<Library> {
     let mut walker = Walker::new(source);
+    walker.assets.set_policy(opts.layer_policy);
     let mut descriptors: Vec<PrefabDescriptor> = Vec::new();
     let mut blas: BTreeMap<String, Vec<u8>> = BTreeMap::new();
     let mut canopy_hull = 0u32;
@@ -412,6 +417,42 @@ pub fn build_library(
         opts.hot,
         canopy_hull,
     )?;
+    // T-090.12.4 — the layer-policy census: per preset, triangles kept / dropped and the meshes
+    // the policy emptied (their prefabs carry `blocks: false`, reason `no-fire-geo`).
+    {
+        let mut by_preset: BTreeMap<String, (usize, usize, usize)> = BTreeMap::new();
+        let mut emptied = 0usize;
+        let mut with_drops = 0usize;
+        for a in walker.assets.loaded() {
+            let mut dropped_here = false;
+            for (preset, kept, dropped) in &a.layer_census {
+                let e = by_preset.entry(preset.clone()).or_default();
+                e.0 += kept;
+                e.1 += dropped;
+                if *dropped > 0 {
+                    e.2 += 1;
+                    dropped_here = true;
+                }
+            }
+            if dropped_here {
+                with_drops += 1;
+            }
+            if a.coll.as_ref().is_some_and(|m| !m.tris.is_empty()) && a.kept_tris() == 0 {
+                emptied += 1;
+            }
+        }
+        eprintln!(
+            "layer policy {:?}: {} meshes lost records, {} emptied",
+            walker.assets.policy(),
+            with_drops,
+            emptied
+        );
+        for (preset, (kept, dropped, meshes)) in &by_preset {
+            eprintln!(
+                "  {preset:<18} kept {kept:>8} tris · dropped {dropped:>8} tris · in {meshes} meshes"
+            );
+        }
+    }
     Ok(Library {
         descriptors,
         blas,
@@ -454,6 +495,7 @@ fn assemble_manifest(
                 Some("model-unreadable") => kt.model_unreadable += 1,
                 Some("no-coll") => kt.no_coll += 1,
                 Some("empty-coll") => kt.empty_coll += 1,
+                Some("no-fire-geo") => kt.no_fire_geo += 1,
                 _ => kt.unresolved += 1,
             }
         }

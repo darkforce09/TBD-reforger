@@ -127,7 +127,7 @@ fn walker_places_door_set_window_and_furniture_from_fixtures() {
         "socket_door_left_01",
         "socket_win_01",
         "socket_win_02",
-        "Building",
+        "BuildingFire",
         "UTM_BD_House",
         "{B}Common/Materials/Game/wood.gamemat",
         "{C}Common/Materials/Game/glass.gamemat",
@@ -152,7 +152,7 @@ fn walker_places_door_set_window_and_furniture_from_fixtures() {
     let frame_strings = [
         "Scene_Root",
         "socket_door_LEFT",
-        "Door",
+        "DoorFireView",
         "{D}Common/Materials/Game/wood.gamemat",
     ];
     let frame_nodes = [
@@ -172,7 +172,7 @@ fn walker_places_door_set_window_and_furniture_from_fixtures() {
         wrap_xob(&synth_head(
             &[
                 "Scene_Root",
-                "Door",
+                "DoorFireView",
                 "{E}Common/Materials/Game/wood.gamemat",
             ],
             &[rec(0, [0.0; 3], [0.0, 0.0, 0.0, 1.0], none, none)],
@@ -190,7 +190,7 @@ fn walker_places_door_set_window_and_furniture_from_fixtures() {
                 "Scene_Root",
                 "socket_glass_001",
                 "socket_glass_002",
-                "Building",
+                "BuildingFire",
                 "{F}Common/Materials/Game/wood.gamemat",
             ],
             &[
@@ -226,7 +226,7 @@ fn walker_places_door_set_window_and_furniture_from_fixtures() {
         wrap_xob(&synth_head(
             &[
                 "Scene_Root",
-                "Prop",
+                "PropFireView",
                 "{H}Common/Materials/Game/wood.gamemat",
             ],
             &[rec(0, [0.0; 3], [0.0, 0.0, 0.0, 1.0], none, none)],
@@ -386,4 +386,88 @@ fn walker_places_door_set_window_and_furniture_from_fixtures() {
         .join("packages/tbd-schema/schema/building-instances.schema.json");
     validate_instances(&file, &schema).expect("schema-valid instances");
     fs::remove_dir_all(&dir).unwrap();
+}
+
+/// T-090.12.4 — the layer policy: a `Tree` physics box beside a `FireGeo` trunk box — the
+/// projectile policy emits the fire record only, the census says which was dropped, and a mesh
+/// with nothing but physics shells has no sidecar at all (`no-fire-geo`); `All` keeps both.
+#[test]
+fn layer_policy_keeps_fire_records_and_drops_physics_shells() {
+    use crate::map_blueprint::batch::{LayerPolicy, decode_asset};
+    use crate::map_blueprint::xob_nodes::XobNode;
+    use crate::map_blueprint::xob_nodes::tests::{synth_head, wrap_xob};
+    use map_engine_core::bvh::{BvhSidecar, SurfaceKind};
+    let none = 0xFFFFu16;
+    let rec = |name_idx: u32| XobNode {
+        name_idx,
+        pos: [0.0; 3],
+        quat: [0.0, 0.0, 0.0, 1.0],
+        next_sibling: none,
+        first_child: none,
+    };
+    let strings = [
+        "Scene_Root",
+        "Tree",
+        "FireGeo",
+        "{T}Common/Materials/Game/Tree/tree_picea_abies.gamemat",
+    ];
+    let mut coll = crate::map_blueprint::xob::tests::coll_box_record_with_material(
+        [0.0, 2.0, 0.0],
+        [0.6, 2.0, 0.6],
+        1,
+        3,
+    );
+    coll.extend_from_slice(
+        &crate::map_blueprint::xob::tests::coll_box_record_with_material(
+            [0.0, 2.0, 0.0],
+            [0.2, 2.0, 0.2],
+            2,
+            3,
+        ),
+    );
+    let xob = crate::map_blueprint::xob::tests::with_coll(
+        wrap_xob(&synth_head(&strings, &[rec(0)])),
+        &coll,
+    );
+    let projectile = decode_asset("Assets/t.xob", &xob, &[], LayerPolicy::Projectile);
+    assert_eq!(projectile.layers, vec!["Tree", "FireGeo"]);
+    assert_eq!(projectile.kept_tris(), 12, "only the FireGeo box");
+    assert_eq!(
+        projectile.layer_census,
+        vec![("Tree".to_string(), 0, 12), ("FireGeo".to_string(), 12, 0)]
+    );
+    let sc = BvhSidecar::parse(projectile.sidecar_bytes.as_ref().unwrap()).unwrap();
+    assert_eq!(sc.tris.len(), 12);
+    assert_eq!(projectile.kind_counts(), (12, 0, 0));
+    let all = decode_asset("Assets/t.xob", &xob, &[], LayerPolicy::All);
+    assert_eq!(all.kept_tris(), 24);
+    assert_eq!(
+        BvhSidecar::parse(all.sidecar_bytes.as_ref().unwrap())
+            .unwrap()
+            .tris
+            .len(),
+        24
+    );
+    // A `--kind` override on a record keeps it regardless of its preset.
+    let overridden = decode_asset(
+        "Assets/t.xob",
+        &xob,
+        &[(0, SurfaceKind::Opaque)],
+        LayerPolicy::Projectile,
+    );
+    assert_eq!(overridden.kept_tris(), 24);
+    // Physics shells only: no sidecar (the library says `no-fire-geo`).
+    let shell_only = crate::map_blueprint::xob::tests::with_coll(
+        wrap_xob(&synth_head(&["Scene_Root", "Building"], &[rec(0)])),
+        &crate::map_blueprint::xob::tests::coll_box_record_with_material(
+            [0.0, 1.0, 0.0],
+            [1.0, 1.0, 1.0],
+            1,
+            0xFFFF,
+        ),
+    );
+    let a = decode_asset("Assets/s.xob", &shell_only, &[], LayerPolicy::Projectile);
+    assert!(!a.has_collision());
+    assert_eq!(a.kept_tris(), 0);
+    assert!(a.coll.as_ref().is_some_and(|m| !m.tris.is_empty()));
 }

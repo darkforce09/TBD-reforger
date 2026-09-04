@@ -101,6 +101,7 @@ pub fn run(args: &[String]) -> Result<u8> {
     let mut limit: Option<usize> = None;
     let mut hot = DEFAULT_HOT;
     let mut dry_run = false;
+    let mut all_layers = false;
     let mut paks: Option<PathBuf> = None;
     let mut extract: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
@@ -126,6 +127,10 @@ pub fn run(args: &[String]) -> Result<u8> {
             }
             "--dry-run" => {
                 dry_run = true;
+                i += 1;
+            }
+            "--all-layers" => {
+                all_layers = true;
                 i += 1;
             }
             "--paks" if i + 1 < args.len() => {
@@ -161,6 +166,11 @@ pub fn run(args: &[String]) -> Result<u8> {
         only_kinds,
         limit,
         hot,
+        layer_policy: if all_layers {
+            super::batch::LayerPolicy::All
+        } else {
+            super::batch::LayerPolicy::Projectile
+        },
     };
     let lib = build_library(&source, &rows, &census, &opts)?;
     print_report(&lib, &census, &terrain);

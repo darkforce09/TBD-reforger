@@ -25,7 +25,9 @@ fn assets() -> PathBuf {
 /// descriptor (root shell + every architectural instance, furniture dropped as in the compound
 /// pin, doors closed) placed by a synthetic chunk row at a yaw, every local oracle pair mapped
 /// through that row's transform. The chunk-row transform + TLAS + trace pipeline must reproduce
-/// the compound's (4000, 3983, 0, 17) exactly.
+/// the compound's (4000, 3998, 0, 2) exactly — T-090.12.4 re-blessed from (4000, 3983, 0, 17):
+/// the projectile layer policy drops the shell's `Building` physics mesh, and 15 of the 17
+/// door-inclusive misses were that mesh disagreeing with the `FireView` fire geometry.
 #[test]
 fn farmhouse_descriptor_placed_at_a_yaw_replays_the_door_parity_fixture() {
     let prefabs = assets().join("prefabs");
@@ -35,10 +37,12 @@ fn farmhouse_descriptor_placed_at_a_yaw_replays_the_door_parity_fixture() {
     assert_eq!(d.slug, "FarmHouse_E_1L01_Wood");
     let mut d = d;
     d.instances.retain(|i| i.kind != InstanceKind::Furniture);
+    // T-090.12.4 — 133 → 121: the twelve `LightSwitch_02` records sit on the `Prop` preset
+    // (no fire geometry) and left the descriptor with the projectile layer policy.
     assert_eq!(
         d.instances.len(),
-        133,
-        "root shell + 132 architectural records"
+        121,
+        "root shell + 120 architectural records"
     );
     let mut occ = WorldOccluder::new(
         512.0,
@@ -97,7 +101,7 @@ fn farmhouse_descriptor_placed_at_a_yaw_replays_the_door_parity_fixture() {
     };
     assert_eq!(
         replay("FarmHouse_E_1L01_Wood_parity_doors.json"),
-        (4000, 3983, 0, 17)
+        (4000, 3998, 0, 2)
     );
     assert_eq!(
         replay("FarmHouse_E_1L01_Wood_parity.json"),
@@ -128,27 +132,103 @@ fn cell_18_0_loads_with_no_proxy_rows_and_names_the_farmhouse() {
     assert!(r.blocker.as_ref().is_some_and(|b| b.pid == 132), "{r:?}");
 }
 
-/// The world-parity pins (T-090.12.4): both cells replayed at their measured agreement. Ignored
-/// until the Workbench oracle fixtures land in xtask/tests/fixtures/.
+/// The world-parity pins (T-090.12.4): both Workbench oracle cells (4000 seeded pairs each,
+/// `EPhysicsLayerPresets.Projectile`, `ENTS` column) replayed through `blocked` under the vision
+/// policy on the committed chunks + library, pinned at the measured numbers. Bar: ≥ 98 %.
+/// Measured 2026-09-04 (scale re-export + projectile layer policy): village 18_0 3971/4000
+/// (99.28 %, 12 phantom / 17 missed), forest 16_2 3977/4000 (99.42 %, 11 / 12). Before the
+/// layer policy the same cells scored 3917 and 3897; before the scale re-export 3807 and 3813.
 #[test]
-#[ignore = "T-090.12.4b: needs xtask/tests/fixtures/world_parity_18_0.json from the Workbench world-parity action"]
 fn world_parity_cell_18_0_is_pinned() {
     let (occ, _) = load_cell(&assets(), "18_0").unwrap();
     let file: WorldParityFile =
         serde_json::from_str(&fs::read_to_string(fixture("world_parity_18_0.json")).unwrap())
             .unwrap();
-    let r = replay(&occ, &file, BlockPolicy::VISION, &mut Vec::new());
+    assert_eq!(file.pairs.len(), 4000);
+    let r = replay(&occ, &file, BlockPolicy::VISION, &mut Vec::new(), None);
+    assert_eq!(
+        (r.n, r.agree, r.phantom, r.missed, r.provisional),
+        (4000, 3971, 12, 17, 0),
+        "{r:?}"
+    );
     assert!(r.agreement() >= 0.98, "{r:?}");
 }
 
 #[test]
-#[ignore = "T-090.12.4b: needs xtask/tests/fixtures/world_parity_forest.json from the Workbench world-parity action"]
 fn world_parity_forest_cell_is_pinned() {
     let file: WorldParityFile =
         serde_json::from_str(&fs::read_to_string(fixture("world_parity_forest.json")).unwrap())
             .unwrap();
     let cell = format!("{}_{}", file.cell[0], file.cell[1]);
+    assert_eq!(cell, "16_2");
     let (occ, _) = load_cell(&assets(), &cell).unwrap();
-    let r = replay(&occ, &file, BlockPolicy::VISION, &mut Vec::new());
+    let r = replay(&occ, &file, BlockPolicy::VISION, &mut Vec::new(), None);
+    assert_eq!(
+        (r.n, r.agree, r.phantom, r.missed, r.provisional),
+        (4000, 3977, 11, 12, 0),
+        "{r:?}"
+    );
     assert!(r.agreement() >= 0.98, "{r:?}");
+}
+
+/// The engine's foliage semantics, pinned the other way round: making canopy terminal
+/// (`--foliage-blocks`) is far worse on both cells, so the vision policy (foliage as
+/// concealment) is the one that matches `Projectile`.
+#[test]
+fn foliage_as_a_blocker_disagrees_with_the_projectile_trace() {
+    let file: WorldParityFile =
+        serde_json::from_str(&fs::read_to_string(fixture("world_parity_forest.json")).unwrap())
+            .unwrap();
+    let (occ, _) = load_cell(&assets(), "16_2").unwrap();
+    let foliage = BlockPolicy {
+        foliage_blocks: true,
+        ..BlockPolicy::VISION
+    };
+    let r = replay(&occ, &file, foliage, &mut Vec::new(), None);
+    assert!(r.agreement() < 0.90, "{r:?}");
+    assert!(
+        r.phantom > 500,
+        "canopy blocks the engine never sees: {r:?}"
+    );
+}
+
+/// The world-inclusive column (`clearWorld` = objects ∧ terrain) against the committed 2 m DEM,
+/// reported with its resolution caveat: a floor, not an exact pin (the engine's `WORLD` trace
+/// sees terrain detail below 2 m). Skips — loudly — when the DEM is an LFS pointer (CI's
+/// selective pull), so the objects-only pins above are the ones that must always run.
+#[test]
+fn world_parity_world_column_clears_its_floor_when_the_dem_is_present() {
+    let dem = match load_dem(&assets()) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("world column skipped: DEM not decodable here ({e})");
+            return;
+        }
+    };
+    for (name, cell, floor) in [
+        ("world_parity_18_0.json", "18_0", 0.96),
+        ("world_parity_forest.json", "16_2", 0.94),
+    ] {
+        let file: WorldParityFile =
+            serde_json::from_str(&fs::read_to_string(fixture(name)).unwrap()).unwrap();
+        let (occ, _) = load_cell(&assets(), cell).unwrap();
+        let r = replay(
+            &occ,
+            &file,
+            BlockPolicy::VISION,
+            &mut Vec::new(),
+            Some(&dem),
+        );
+        assert_eq!(r.world_n, 4000);
+        assert!(
+            r.world_agreement() >= floor,
+            "{cell}: world {}/{} ({:.2} %) phantom terrain {} objects {} missed {}",
+            r.world_agree,
+            r.world_n,
+            r.world_agreement() * 100.0,
+            r.world_phantom_terrain,
+            r.world_phantom_objects,
+            r.world_missed
+        );
+    }
 }

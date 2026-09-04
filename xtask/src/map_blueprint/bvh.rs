@@ -453,7 +453,7 @@ mod tests {
         let sc = BvhSidecar::parse(&golden).expect("golden sidecar parses");
         assert_eq!(
             (sc.verts.len(), sc.tris.len(), sc.bvh.node_count()),
-            (3170, 4012, 1521),
+            (3170, 2883, 1125),
             "sidecar shape drifted"
         );
 
@@ -489,7 +489,10 @@ mod compound_tests {
     /// (doors closed — the editor's `InitialAngle 0`; furniture excluded because the Workbench
     /// world places the furniture composition beside the building, not under it, so the oracle
     /// never traced it) replayed against the 4000-pair door-inclusive oracle of T-090.11.3.
-    /// Measured 2026-09-04: 3983/4000 agree; the shell alone scores 3965 with 20
+    /// Measured 2026-09-04: 3983/4000 agree (re-blessed to 3998/4000 the same day under the
+    /// T-090.12.4 projectile layer policy, which drops the shell's `Building` physics mesh in
+    /// favour of its `FireView` fire geometry — 15 of the 17 phantoms were that mesh); the
+    /// shell alone scored 3965 with 20
     /// model-clear/engine-blocked pairs — every one of them a closed door leaf, all recovered
     /// here (0 left); the 17 model-blocked/engine-clear pairs are 15 the shell already had on
     /// this larger oracle (roof ridge / eave skims at y ≈ 8.3 m and rays starting inside a
@@ -517,7 +520,9 @@ mod compound_tests {
         );
         let (c, kept, dropped) =
             load_compound(&instances, shell, &["furniture".to_string()], false).expect("compound");
-        assert_eq!((kept, dropped), (132, 49));
+        // T-090.12.4 — 132 → 120: the projectile layer policy left the twelve `LightSwitch_02`
+        // props (Prop preset, no fire geometry) out of the instance set.
+        assert_eq!((kept, dropped), (120, 49));
         assert_eq!(c.doors().count(), 7);
         assert!(c.doors().all(|d| d.state == DoorState::Closed));
 
@@ -540,8 +545,9 @@ mod compound_tests {
         };
         assert_eq!(
             replay("FarmHouse_E_1L01_Wood_parity_doors.json"),
-            (4000, 3983, 0, 17),
-            "door-inclusive parity drifted (was 3983/4000, 0 missed blocks, 17 phantoms)"
+            (4000, 3998, 0, 2),
+            "door-inclusive parity drifted (T-090.12.4: 3998/4000, 0 missed blocks, 2 phantoms — \
+             3983/4000 with the Building physics mesh in the shell before the layer policy)"
         );
         // The T-090.6 oracle (doors and glass excluded) is untouched by the instances.
         assert_eq!(

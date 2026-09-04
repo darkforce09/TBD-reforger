@@ -7660,198 +7660,6 @@
       "parent": "571E8AC0DE6E282A"
     },
     {
-      "id": "571E8AC0DE6E282A/571E8ACDB624A925",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_Base.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          -10.524,
-          4.686,
-          -7.292
-        ],
-        "quat": [
-          0.0,
-          -0.7071067811865475,
-          0.0,
-          0.7071067811865476
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "571E8AC0DE6E282A"
-    },
-    {
-      "id": "571E8AC0DE6E282A/571E8ACDB624A92E",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_Base.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          -5.284,
-          4.701,
-          -5.449
-        ],
-        "quat": [
-          -0.0,
-          -1.0,
-          -0.0,
-          6.123233995736766e-17
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "571E8AC0DE6E282A"
-    },
-    {
-      "id": "571E8AC0DE6E282A/571E8ACDB624A946",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_Base.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          3.003,
-          4.683,
-          -5.449
-        ],
-        "quat": [
-          -0.0,
-          -1.0,
-          -0.0,
-          6.123233995736766e-17
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "571E8AC0DE6E282A"
-    },
-    {
-      "id": "571E8AC0DE6E282A/571E8ACDB624A95D",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_Base.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          0.055,
-          4.683,
-          -5.449
-        ],
-        "quat": [
-          -0.0,
-          -1.0,
-          -0.0,
-          6.123233995736766e-17
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "571E8AC0DE6E282A"
-    },
-    {
-      "id": "571E8AC0DE6E282A/571E8ACDB624A973",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_Base.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          7.723,
-          4.645,
-          -5.449
-        ],
-        "quat": [
-          -0.0,
-          -1.0,
-          -0.0,
-          6.123233995736766e-17
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "571E8AC0DE6E282A"
-    },
-    {
-      "id": "571E8AC0DE6E282A/571E8ACDB624A97C",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_Base.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          4.762,
-          4.606,
-          -2.1
-        ],
-        "quat": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "571E8AC0DE6E282A"
-    },
-    {
-      "id": "571E8AC0DE6E282A/571E8ACDB624AA83",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_Base.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          -6.42,
-          1.222,
-          -0.232
-        ],
-        "quat": [
-          0.0,
-          0.7071067811865475,
-          0.0,
-          0.7071067811865476
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "571E8AC0DE6E282A"
-    },
-    {
-      "id": "571E8AC0DE6E282A/571E8ACDB624AA95",
-      "kind": "prop",
-      "prefab": "Prefabs/Structures/BuildingParts/Eletrical/LightSwitch_Base.et",
-      "blas": "blas/LightSwitch_02.bvh",
-      "xob": "Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob",
-      "local": {
-        "pos": [
-          -6.324,
-          4.652,
-          -2.46
-        ],
-        "quat": [
-          0.0,
-          -0.7071067811865475,
-          0.0,
-          0.7071067811865476
-        ],
-        "scale": 1.0
-      },
-      "cover": "none",
-      "source": "prefabCoords",
-      "parent": "571E8AC0DE6E282A"
-    },
-    {
       "id": "571E8AC0DE6E282A/571C8715CFB63122",
       "kind": "furniture",
       "prefab": "Prefabs/Props/Furniture/Safe_01.et",
@@ -9782,6 +9590,14 @@
     "571E8AC0DE6E282A/571A9D747874EDAD: Assets/Props/Forest/DeerSkull_01/DeerSkull_01_board.xob has no collision chunk — no BLAS, no instance",
     "571E8AC0DE6E282A/571E8ACCE0E97317: Assets/Props/Civilian/Bucket_01/Bucket_01.xob has no collision chunk — no BLAS, no instance",
     "571E8AC0DE6E282A/5DF69086CE40DBAA: Assets/Props/Civilian/Bucket_01/Bucket_01.xob has no collision chunk — no BLAS, no instance",
+    "571E8AC0DE6E282A/571E8ACDB624A925: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "571E8AC0DE6E282A/571E8ACDB624A92E: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "571E8AC0DE6E282A/571E8ACDB624A946: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "571E8AC0DE6E282A/571E8ACDB624A95D: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "571E8AC0DE6E282A/571E8ACDB624A973: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "571E8AC0DE6E282A/571E8ACDB624A97C: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "571E8AC0DE6E282A/571E8ACDB624AA83: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
+    "571E8AC0DE6E282A/571E8ACDB624AA95: Assets/Structures/BuildingsParts/Electrical/LightSwitch/LightSwitch_02.xob has no collision chunk — no BLAS, no instance",
     "571E8AC0DE6E282A/571C8715CFB6311B: Assets/Props/Furniture/Chair_02/Chair_02.xob has no collision chunk — no BLAS, no instance",
     "571E8AC0DE6E282A/571C8715CFB6338B: Assets/Props/Furniture/Chair_02/Chair_02.xob has no collision chunk — no BLAS, no instance",
     "571E8AC0DE6E282A/571C8715CFB633B4: Assets/Props/Furniture/Chair_02/Chair_02.xob has no collision chunk — no BLAS, no instance",
