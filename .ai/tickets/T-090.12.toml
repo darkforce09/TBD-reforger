@@ -3,7 +3,7 @@ kind = "work"
 title = "T-090.12 — Every building, every object: world-scale BVH LOS"
 summary = "Umbrella for six slices plus a docs slice: chunk rows with pitch/roll/scale, BLAS descriptors for every prefab, a chunked WorldOccluder (TLAS + DDA + compounds), a cell-scoped Workbench oracle, and terrain-and-object LOS plus viewshed in the mission editor."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
 plan = "docs/plans/t-090_12_plan.md"
@@ -32,7 +32,10 @@ acceptance = [
     "Two cell oracles pinned at measured agreement (bar 98% objects-only) with disagreement classes characterised in the commit body.",
     "Editor readout names the blocking object or reports objects not loaded; viewshed shows object-hidden and canopy-concealed cells progressively.",
 ]
+shipped_at = "f9558f428"
 created_at = "2026-09-04T01:22:27Z"
+completed_at = "2026-09-04T13:36:57Z"
+estimated = ["tokens"]
 owns = ["docs/plans/t-090_12_plan.md"]
 
 [scope]
