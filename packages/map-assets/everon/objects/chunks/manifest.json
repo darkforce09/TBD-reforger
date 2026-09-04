@@ -53,7 +53,7 @@
       "cx": 2,
       "cy": 11,
       "path": "objects/chunks/2_11.json.gz",
-      "instanceCount": 6926
+      "instanceCount": 6925
     },
     {
       "cx": 2,
@@ -461,7 +461,7 @@
       "cx": 7,
       "cy": 16,
       "path": "objects/chunks/7_16.json.gz",
-      "instanceCount": 4933
+      "instanceCount": 4913
     },
     {
       "cx": 7,
@@ -575,7 +575,7 @@
       "cx": 8,
       "cy": 18,
       "path": "objects/chunks/8_18.json.gz",
-      "instanceCount": 7165
+      "instanceCount": 7164
     },
     {
       "cx": 8,
@@ -773,7 +773,7 @@
       "cx": 10,
       "cy": 10,
       "path": "objects/chunks/10_10.json.gz",
-      "instanceCount": 2790
+      "instanceCount": 2789
     },
     {
       "cx": 10,
@@ -1049,7 +1049,7 @@
       "cx": 12,
       "cy": 14,
       "path": "objects/chunks/12_14.json.gz",
-      "instanceCount": 3496
+      "instanceCount": 3495
     },
     {
       "cx": 12,
@@ -1217,7 +1217,7 @@
       "cx": 14,
       "cy": 4,
       "path": "objects/chunks/14_4.json.gz",
-      "instanceCount": 7241
+      "instanceCount": 7239
     },
     {
       "cx": 14,
@@ -1397,7 +1397,7 @@
       "cx": 16,
       "cy": 1,
       "path": "objects/chunks/16_1.json.gz",
-      "instanceCount": 3772
+      "instanceCount": 3769
     },
     {
       "cx": 16,
@@ -1493,7 +1493,7 @@
       "cx": 17,
       "cy": 5,
       "path": "objects/chunks/17_5.json.gz",
-      "instanceCount": 6357
+      "instanceCount": 6356
     },
     {
       "cx": 17,
@@ -1535,13 +1535,13 @@
       "cx": 18,
       "cy": 0,
       "path": "objects/chunks/18_0.json.gz",
-      "instanceCount": 3783
+      "instanceCount": 3778
     },
     {
       "cx": 18,
       "cy": 1,
       "path": "objects/chunks/18_1.json.gz",
-      "instanceCount": 6234
+      "instanceCount": 6232
     },
     {
       "cx": 18,
@@ -1613,13 +1613,13 @@
       "cx": 19,
       "cy": 1,
       "path": "objects/chunks/19_1.json.gz",
-      "instanceCount": 4761
+      "instanceCount": 4756
     },
     {
       "cx": 19,
       "cy": 2,
       "path": "objects/chunks/19_2.json.gz",
-      "instanceCount": 3759
+      "instanceCount": 3758
     },
     {
       "cx": 19,

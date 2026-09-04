@@ -228,7 +228,8 @@ mod tests {
             1623
         );
 
-        // 315 chunk files; ΣInstances = 1,216,109.
+        // 315 chunk files; ΣInstances = 1,216,066 (T-090.12.1b: the 2026-09-04 Workbench
+        // re-export with scale; 1,216,109 before it).
         let mut chunk_files: Vec<String> = std::fs::read_dir(objects.join("chunks"))
             .unwrap()
             .filter_map(|e| {
@@ -247,7 +248,7 @@ mod tests {
                     .unwrap(),
             );
         }
-        assert_eq!(total, 1_216_109);
+        assert_eq!(total, 1_216_066);
 
         // 887 road segments (roads.json.gz refreshed from the latest roads export at 9ae81694c;
         // was 888) · 36 forest regions.

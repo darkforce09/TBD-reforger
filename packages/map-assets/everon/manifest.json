@@ -72,7 +72,7 @@
     "typeInventoryPath": "objects/type-inventory.json",
     "prefabsPath": "objects/prefabs.json.gz",
     "prefabCount": 1623,
-    "instanceCount": 1216109,
+    "instanceCount": 1216066,
     "chunksPath": "objects/chunks",
     "chunkSizeM": 512,
     "roadsPath": "objects/roads.json.gz",
@@ -84,7 +84,7 @@
       "P4_rocks",
       "P5_props"
     ],
-    "exportedAt": "2026-07-04T23:43:38.437Z",
+    "exportedAt": "2026-09-04T12:59:23.149Z",
     "regionsPath": "objects/forest-regions.json.gz",
     "densityPath": "objects/density",
     "densityCellM": 8,
@@ -102,8 +102,9 @@
         "prop": 3
       }
     },
-    "transforms": "yaw+pitch+roll",
-    "scaleSource": "absent"
+    "transforms": "yaw+pitch+roll+scale",
+    "scaleSource": "GetScale",
+    "workbenchVersion": "Arma Reforger Tools (Steam build 24870687)"
   },
   "anchors": [],
   "precision": {

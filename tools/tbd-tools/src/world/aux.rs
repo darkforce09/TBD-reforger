@@ -1042,6 +1042,17 @@ pub fn copy_world_export_profile(
             return Ok(1);
         }
         std::fs::copy(&src_meta, &dest_meta)?;
+        // T-090.12.1b — provenance: when the plugin wrote no `workbenchVersion`, stamp the Steam
+        // build id of the Workbench that produced the export (`appmanifest_1874910.acf` above the
+        // profile's `steamapps/` — Arma Reforger Tools). `build-objects --patch-manifest` copies
+        // it into `objects.workbenchVersion`; a Workbench outside Steam leaves the key absent.
+        if meta_doc.get("workbenchVersion").is_none()
+            && let Some(build) = steam_build_id(&src_meta)
+        {
+            let mut doc = meta_doc.clone();
+            doc["workbenchVersion"] = json!(format!("Arma Reforger Tools (Steam build {build})"));
+            std::fs::write(&dest_meta, serde_json::to_string_pretty(&doc)? + "\n")?;
+        }
         let stamp = json!({
             "terrain": terrain,
             "stagedAt": iso_from_system_time(std::time::SystemTime::now()),
@@ -1080,6 +1091,20 @@ pub fn copy_world_export_profile(
 }
 
 /* ─────────────────────────── raw-u16-to-dem-png (T-091.0) ─────────────────────────── */
+
+/// The `buildid` of Arma Reforger Tools from the Steam app manifest that owns `path`
+/// (`…/steamapps/appmanifest_1874910.acf`), `None` outside a Steam library.
+fn steam_build_id(path: &Path) -> Option<String> {
+    let steamapps = path
+        .ancestors()
+        .find(|a| a.file_name().is_some_and(|n| n == "steamapps"))?;
+    let acf = std::fs::read_to_string(steamapps.join("appmanifest_1874910.acf")).ok()?;
+    acf.lines().find_map(|l| {
+        let l = l.trim();
+        let rest = l.strip_prefix("\"buildid\"")?;
+        Some(rest.trim().trim_matches('"').to_string())
+    })
+}
 
 pub fn raw_u16_to_dem_png(raster_path: &Path, meta_path: &Path, out_path: &Path) -> Result<u8> {
     let meta: Value = serde_json::from_str(&std::fs::read_to_string(meta_path)?)?;
