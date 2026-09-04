@@ -12,6 +12,10 @@
  *   parity  -- engine LOS oracle pairs (prefabs/debug/<slug>_parity.json; `maxEntities` = samples)
  *   dump    -- raw voxel scan, zero interpretation (TBD_BuildingVoxelDump;
  *             prefabs/dumps/<slug>_voxels.jsonl; consumed by `cargo xtask map blueprint-from-voxels`)
+ *   world-parity -- T-090.12.4 cell-scoped LOS oracle (TBD_WorldTraceParity; `cx`, `cy`, `seed`,
+ *             `maxEntities` = samples; writes prefabs/debug/world_parity_<cx>_<cy>.json, replayed by
+ *             `cargo xtask map world-los --pairs`). A stale, uncompiled handler answers
+ *             "unknown action" -- that is the detection.
  */
 
 class EMCP_WB_TbdBlueprintRequest : JsonApiStruct
@@ -19,6 +23,10 @@ class EMCP_WB_TbdBlueprintRequest : JsonApiStruct
 	string action;
 	string filter;
 	int maxEntities;
+	// "world-parity" action: chunk cell + RNG seed (T-090.12.4).
+	int cx;
+	int cy;
+	int seed;
 	// "probe" action: LOCAL-frame segment endpoints.
 	float ax;
 	float ay;
@@ -32,6 +40,9 @@ class EMCP_WB_TbdBlueprintRequest : JsonApiStruct
 		RegV("action");
 		RegV("filter");
 		RegV("maxEntities");
+		RegV("cx");
+		RegV("cy");
+		RegV("seed");
 		RegV("ax");
 		RegV("ay");
 		RegV("az");
@@ -39,6 +50,9 @@ class EMCP_WB_TbdBlueprintRequest : JsonApiStruct
 		RegV("by");
 		RegV("bz");
 		maxEntities = 512;
+		cx = -1;
+		cy = -1;
+		seed = 1;
 	}
 }
 
@@ -85,6 +99,8 @@ class EMCP_WB_TbdBlueprint : NetApiHandler
 				Vector(req.ax, req.ay, req.az), Vector(req.bx, req.by, req.bz));
 		else if (req.action == "dump")
 			result = TBD_BuildingVoxelDump.Execute(filter);
+		else if (req.action == "world-parity")
+			result = TBD_WorldTraceParity.Execute(req.cx, req.cy, req.maxEntities, req.seed);
 
 		if (result != "")
 		{
@@ -97,7 +113,7 @@ class EMCP_WB_TbdBlueprint : NetApiHandler
 		}
 
 		resp.status = "error";
-		resp.message = "unknown action '" + req.action + "' (expected: recon | extract | parity | probe | dump)";
+		resp.message = "unknown action '" + req.action + "' (expected: recon | extract | parity | probe | dump | world-parity)";
 		return resp;
 	}
 }
