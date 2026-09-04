@@ -266,8 +266,22 @@ pub fn verify_phase(terrain: &str, phase: &str) -> Result<u8> {
             for (i, row) in rows.iter().enumerate() {
                 if !v_instance.is_valid(row) {
                     errs.push(format!("chunk {key}[{i}]: {}", first_err(&v_instance, row)));
-                } else if row.as_array().map(Vec::len) != Some(5) || !row[0].is_number() {
-                    errs.push(format!("chunk {key}[{i}]: not a 5-number tuple"));
+                } else {
+                    // T-090.12.1 — rows are exactly 5 or 8 numbers; an 8-wide row must carry a
+                    // non-trivial pitch / roll / scale (trivial trailers are written 5-wide).
+                    let n = row.as_array().map_or(0, Vec::len);
+                    let num = |k: usize| row[k].as_f64();
+                    if !(n == 5 || n == 8) || !row[0].is_number() {
+                        errs.push(format!("chunk {key}[{i}]: not a 5- or 8-number tuple"));
+                    } else if n == 8
+                        && num(5) == Some(0.0)
+                        && num(6) == Some(0.0)
+                        && num(7) == Some(1.0)
+                    {
+                        errs.push(format!(
+                            "chunk {key}[{i}]: 8-wide row with trivial trailers (must be 5-wide)"
+                        ));
+                    }
                 }
             }
         }

@@ -138,7 +138,7 @@
     }
   },
   "needsReview": {
-    "prefabTypes": 459,
+    "prefabTypes": 443,
     "prefabs": [
       {
         "resourceName": "{AF4BFBE29028A9FD}Prefabs/Vegetation/Bush/b_corylus_avellana_1l.et",
@@ -641,11 +641,6 @@
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
-        "resourceName": "{4923E218F59644B9}Prefabs/Props/Wrecks/BoatWreck_01/BoatWreck_01.et",
-        "instanceCount": 84,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
         "resourceName": "{D5C3CF5996B43A27}Prefabs/Props/Civilian/BasketWicker_01.et",
         "instanceCount": 84,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
@@ -1111,11 +1106,6 @@
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
-        "resourceName": "{1A1CE09F7BCA6650}Prefabs/Props/Wrecks/S105_wreck/S105_wreck_static.et",
-        "instanceCount": 30,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
         "resourceName": "{F7E3B5AB8E8D8B48}Prefabs/Props/Furniture/DeckChair_01/DeckChair_01_ochre.et",
         "instanceCount": 30,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
@@ -1391,11 +1381,6 @@
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
-        "resourceName": "{AE300E34EA8FF40C}Prefabs/Props/Wrecks/Ural4320_wreck/Ural4320_wreck_static.et",
-        "instanceCount": 16,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
         "resourceName": "{0DB0D75A16764A2C}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_octa_begonia_pink.et",
         "instanceCount": 15,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
@@ -1611,16 +1596,6 @@
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
-        "resourceName": "{3386EAA823BE462E}Prefabs/Props/Wrecks/UAZ469_wreck/UAZ469_wreck_static.et",
-        "instanceCount": 8,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
-        "resourceName": "{388B774519BD6294}Prefabs/Props/Wrecks/T62_wreck/T62_wreck.et",
-        "instanceCount": 8,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
         "resourceName": "{557A010795C5F817}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_short_begonia_pink.et",
         "instanceCount": 8,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
@@ -1666,11 +1641,6 @@
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
-        "resourceName": "{6BE5C753730DBFED}Prefabs/Props/Wrecks/M923A1_wreck/M923A1_wreck_static.et",
-        "instanceCount": 7,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
         "resourceName": "{8CAC93B6377EC1D4}Prefabs/Props/Decorations/Flowerpots/FlowerpotPelargonia_01_Base.et",
         "instanceCount": 7,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
@@ -1691,11 +1661,6 @@
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
-        "resourceName": "{25B265F3E7CBDFC8}Prefabs/Props/Wrecks/BMP1_wreck/BMP1_wreck.et",
-        "instanceCount": 6,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
         "resourceName": "{34DE29A80B16FA24}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_short_Tagetes_orange.et",
         "instanceCount": 6,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
@@ -1712,11 +1677,6 @@
       },
       {
         "resourceName": "{627F29E940C7A12A}Prefabs/Props/Civilian/CarrierFood_01/CarrierFood_01.et",
-        "instanceCount": 6,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
-        "resourceName": "{654B33C808C4D93E}Prefabs/Props/Wrecks/M151A2_wreck/M151A2_wreck_static.et",
         "instanceCount": 6,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
@@ -1777,11 +1737,6 @@
       },
       {
         "resourceName": "{A207D307DC01E409}Prefabs/Props/Commercial/SignPub_01_V2.et",
-        "instanceCount": 5,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
-        "resourceName": "{B90E5414AB7C325B}Prefabs/Props/Wrecks/BTR70_Wreck/BTR70_wreck_static.et",
         "instanceCount": 5,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
@@ -1873,11 +1828,6 @@
       {
         "resourceName": "{F513D99A28A5E5E3}Prefabs/Props/Recreation/Beach/PedalBoat_01/PedalBoat_01_blue.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
-        "resourceName": "{2B24356C351A2538}Prefabs/Props/Wrecks/M113_wreck/M113_wreck.et",
-        "instanceCount": 3,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
@@ -2002,11 +1952,6 @@
       },
       {
         "resourceName": "{88FAE04EF7115814}Prefabs/Props/Civilian/BeerBottle_01_green.et",
-        "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
-        "resourceName": "{90299A76FC1AE10F}Prefabs/Props/Wrecks/T62_wreck/T62_wreck_turret.et",
         "instanceCount": 2,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
@@ -2166,11 +2111,6 @@
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
-        "resourceName": "{284EEB32BE47DCB2}Prefabs/Props/Wrecks/BMP1_wreck/BMP1_turret.et",
-        "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
         "resourceName": "{2A4F8F868370FD59}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_short_begonia_base.et",
         "instanceCount": 1,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
@@ -2252,11 +2192,6 @@
       },
       {
         "resourceName": "{66B93BC296E2F977}Prefabs/Systems/Radio/RadioBroadcastManager_Everon.et",
-        "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
-        "resourceName": "{6BDDFE9FA1D4B2F0}Prefabs/Props/Wrecks/UAZ469_wreck/UAZ469_wreck.et",
         "instanceCount": 1,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
@@ -2376,11 +2311,6 @@
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
-        "resourceName": "{D99955DFCF7D3962}Prefabs/Props/Wrecks/CannonWreck_01/CannonWreck_01.et",
-        "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
         "resourceName": "{DC22AFC5AB59E001}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_short_Empty.et",
         "instanceCount": 1,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
@@ -2406,11 +2336,6 @@
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
-        "resourceName": "{EB084C400AABD1D3}Prefabs/Props/Wrecks/M151A2_wreck/M151A2_wreck.et",
-        "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
         "resourceName": "{F1C5AA461DC6ECCE}Prefabs/Props/Civilian/PotOld_01.et",
         "instanceCount": 1,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
@@ -2422,11 +2347,6 @@
       },
       {
         "resourceName": "{F70A3289977E44EA}Prefabs/Sounds/Sources/SoundSource_WaterFall_Medium.et",
-        "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
-      },
-      {
-        "resourceName": "{F9B96527E16549AB}Prefabs/Props/Wrecks/M998_wreck/M998_wreck_static.et",
         "instanceCount": 1,
         "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },

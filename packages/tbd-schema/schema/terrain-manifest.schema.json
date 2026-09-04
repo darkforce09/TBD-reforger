@@ -171,6 +171,20 @@
         "regionsPath": { "type": "string" },
         "importPhaseMax": { "type": "string" },
         "importPhaseShipped": { "type": "array", "items": { "type": "string" } },
+        "transforms": {
+          "type": "string",
+          "enum": ["yaw", "yaw+pitch+roll", "yaw+pitch+roll+scale"],
+          "description": "T-090.12.1 (objects schemaVersion 1.1.0): what a chunk row can carry beyond its position. `yaw` = the 5-wide v1 tuple only; `yaw+pitch+roll` = 8-wide rows exist but the export carried no scale (every scale is 1); `yaw+pitch+roll+scale` = the v2 full-export plugin wrote GetScale()."
+        },
+        "scaleSource": {
+          "type": "string",
+          "enum": ["absent", "GetScale"],
+          "description": "T-090.12.1: where the per-row scale came from — `absent` (pre-v2 export, unit scale assumed everywhere) or `GetScale` (the full-export plugin v2)."
+        },
+        "workbenchVersion": {
+          "type": "string",
+          "description": "T-090.12.1: the Workbench build that produced the world export, copied from the export meta when the plugin wrote one (omitted otherwise)."
+        },
         "typeInventoryPath": {
           "type": "string",
           "description": "Relative path to type-inventory.json — exact prefab/instance counts (T-090.2)."

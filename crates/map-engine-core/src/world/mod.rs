@@ -46,8 +46,8 @@ pub use chunk_math::{
     chunk_rect_for_bbox, expand_bbox, expand_chunk_rect, preload_margin_m,
 };
 pub use classify::{
-    NO_CLASS, OVERSIZED_HALF_EXTENT_M, RENDER_CLASS_CODES, class_code, narrow_instance_row,
-    render_class_for_prefab,
+    InstanceRowV2, NO_CLASS, OVERSIZED_HALF_EXTENT_M, RENDER_CLASS_CODES, class_code,
+    narrow_instance_row, narrow_instance_row_v2, render_class_for_prefab,
 };
 pub use density_ladder::{
     density_grid_dims, density_texel_sum_for_draw_ids, exact_tree_count, exact_tree_count_chunk,

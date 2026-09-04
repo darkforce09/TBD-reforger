@@ -4,7 +4,7 @@
 //! identical sorts), gzip level 9 (flate2 — the N5 one-time re-encode swaps the committed gz
 //! container bytes; decompressed content is the proven-equal contract).
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
@@ -12,6 +12,7 @@ use anyhow::{Result, bail};
 use serde_json::{Map, Value, json};
 
 use super::classify::{Classifier, load_rules, stream_raw_entities};
+use super::jsval::{chunk_row_values, round3, trailers_trivial};
 use super::jsval::{js_normalize, js_num, norm_heading, round2};
 use super::pak::PakVfs;
 use super::topo::{TOPO_AIRFIELD, TOPO_RIVER, TOPO_ROAD_A, TOPO_ROAD_B, TOPO_STREAM, decode_topo};
@@ -56,7 +57,15 @@ pub fn phase_kinds(phase: &str) -> Option<&'static [&'static str]> {
         "P2_trees" => &["building", "tree", "water"],
         "P3_vegetation" => &["building", "tree", "water", "vegetation"],
         "P4_rocks" => &["building", "tree", "water", "vegetation", "rock"],
-        "P5_props" => &["building", "tree", "water", "vegetation", "rock", "prop"],
+        "P5_props" => &[
+            "building",
+            "tree",
+            "water",
+            "vegetation",
+            "rock",
+            "prop",
+            "vehicle",
+        ],
         _ => return None,
     })
 }
@@ -92,7 +101,17 @@ fn pretty_nl(v: &Value) -> String {
     serde_json::to_string_pretty(v).expect("json") + "\n"
 }
 
-type ChunkRow = (usize, f64, f64, f64, f64);
+/// One partitioned chunk row (T-090.12.1: full transform; trivial trailers are written 5-wide).
+struct ChunkRow {
+    id: usize,
+    x: f64,
+    y: f64,
+    z: f64,
+    rot: f64,
+    pitch: f64,
+    roll: f64,
+    scale: f64,
+}
 
 struct KeptRow {
     resource_name: String,
@@ -101,6 +120,11 @@ struct KeptRow {
     y: f64,
     z: f64,
     rot: f64,
+    /// T-090.12.1 — `pitchDeg` / `rollDeg` (round2; the export has carried them since T-090.3)
+    /// and `scale` (round3; written by the v2 exporter only, else `1.0`).
+    pitch: f64,
+    roll: f64,
+    scale: f64,
 }
 
 pub struct BuildSummary {
@@ -179,6 +203,8 @@ pub fn build_world_objects_opt(
     let mut no_prefab_classes: Vec<(String, u64)> = Vec::new();
     let mut no_prefab_idx: HashMap<String, usize> = HashMap::new();
     let mut out_of_bounds = 0u64;
+    // T-090.12.1 — how many raw rows carried a `scale` key (0 for a pre-v2 export).
+    let mut rows_with_scale = 0u64;
     let mut kept: Vec<KeptRow> = Vec::new();
     let density_phase = phase_kind_set.contains("tree");
     let rock_in_phase = phase_kind_set.contains("rock");
@@ -252,6 +278,16 @@ pub fn build_world_objects_opt(
             out_of_bounds += 1;
             return;
         }
+        // T-090.12.1 — the full transform. `-0` rounds to +0 so a flat entity stays 5-wide.
+        let pitch = round2(row["pitchDeg"].as_f64().unwrap_or(0.0));
+        let roll = round2(row["rollDeg"].as_f64().unwrap_or(0.0));
+        let scale = match row["scale"].as_f64() {
+            Some(s) if s.is_finite() && s > 0.0 => {
+                rows_with_scale += 1;
+                round3(s)
+            }
+            _ => 1.0,
+        };
         kept.push(KeptRow {
             resource_name: rn.to_string(),
             kind: cls.kind.clone(),
@@ -259,6 +295,9 @@ pub fn build_world_objects_opt(
             y,
             z: round2(row["y"].as_f64().unwrap_or(0.0)),
             rot: norm_heading(heading),
+            pitch,
+            roll,
+            scale,
         });
         if let Some(he) = row["halfExtentsM"].as_array()
             && he.len() == 3
@@ -389,21 +428,33 @@ pub fn build_world_objects_opt(
     for k in &kept {
         let cx = cell_of(k.x, CHUNK_SIZE_M, world_size_m);
         let cy = cell_of(k.y, CHUNK_SIZE_M, world_size_m);
-        chunks.entry(chunk_key(cx, cy)).or_default().push((
-            prefab_id_by_name[k.resource_name.as_str()],
-            k.x,
-            k.y,
-            k.z,
-            k.rot,
-        ));
+        chunks.entry(chunk_key(cx, cy)).or_default().push(ChunkRow {
+            id: prefab_id_by_name[k.resource_name.as_str()],
+            x: k.x,
+            y: k.y,
+            z: k.z,
+            rot: k.rot,
+            pitch: k.pitch,
+            roll: k.roll,
+            scale: k.scale,
+        });
     }
     for list in chunks.values_mut() {
         list.sort_by(|a, b| {
-            a.1.partial_cmp(&b.1)
+            a.x.partial_cmp(&b.x)
                 .unwrap()
-                .then(a.2.partial_cmp(&b.2).unwrap())
-                .then(a.0.cmp(&b.0))
+                .then(a.y.partial_cmp(&b.y).unwrap())
+                .then(a.id.cmp(&b.id))
         });
+    }
+    // T-090.12.1 — the row-width census (reported, and the manifest's `transforms` word).
+    let mut rows_wide = 0u64;
+    let mut rows_wide_by_kind: BTreeMap<String, u64> = BTreeMap::new();
+    for k in &kept {
+        if !trailers_trivial(k.pitch, k.roll, k.scale) {
+            rows_wide += 1;
+            *rows_wide_by_kind.entry(k.kind.clone()).or_default() += 1;
+        }
     }
     let mut sorted_chunk_keys: Vec<String> = chunks.keys().cloned().collect();
     sorted_chunk_keys.sort_by_key(|k| {
@@ -435,14 +486,17 @@ pub fn build_world_objects_opt(
         let list = &chunks[key];
         let rows: Vec<Value> = list
             .iter()
-            .map(|(id, x, y, z, rot)| {
-                Value::Array(vec![
-                    js_num(*id as f64),
-                    js_num(*x),
-                    js_num(*y),
-                    js_num(*z),
-                    js_num(*rot),
-                ])
+            .map(|r| {
+                Value::Array(chunk_row_values(
+                    r.id as f64,
+                    r.x,
+                    r.y,
+                    r.z,
+                    r.rot,
+                    r.pitch,
+                    r.roll,
+                    r.scale,
+                ))
             })
             .collect();
         let doc = json!({ "instances": rows });
@@ -567,7 +621,7 @@ pub fn build_world_objects_opt(
     let mut inst_by_prefab = vec![0u64; prefabs.len()];
     for list in chunks.values() {
         for row in list {
-            inst_by_prefab[row.0] += 1;
+            inst_by_prefab[row.id] += 1;
         }
     }
     // T-278: this was a local 8-kind array missing T-244's `vehicle`, so the
@@ -704,8 +758,36 @@ pub fn build_world_objects_opt(
         let set = |obj: &mut Map<String, Value>, k: &str, v: Value| {
             obj.insert(k.to_string(), v);
         };
-        set(obj, "schemaVersion", json!("1.0.0"));
+        // T-090.12.1 — objects schemaVersion 1.1.0: chunk rows carry [.., pitch, roll, scale] when
+        // non-trivial. `transforms` names what every row can carry, `scaleSource` whether the
+        // export provided a scale at all (a pre-v2 export is unit scale everywhere), and
+        // `workbenchVersion` is copied from the export meta when the plugin wrote one.
+        set(obj, "schemaVersion", json!("1.1.0"));
         set(obj, "format", json!("catalog-v1"));
+        set(
+            obj,
+            "transforms",
+            json!(if rows_with_scale > 0 {
+                "yaw+pitch+roll+scale"
+            } else {
+                "yaw+pitch+roll"
+            }),
+        );
+        set(
+            obj,
+            "scaleSource",
+            json!(if rows_with_scale > 0 {
+                "GetScale"
+            } else {
+                "absent"
+            }),
+        );
+        match export_meta["workbenchVersion"].as_str() {
+            Some(v) => set(obj, "workbenchVersion", json!(v)),
+            None => {
+                obj.remove("workbenchVersion");
+            }
+        }
         set(obj, "prefabsPath", json!("objects/prefabs.json.gz"));
         set(obj, "prefabCount", json!(prefabs.len()));
         set(obj, "instanceCount", json!(total_instances));
@@ -749,6 +831,14 @@ pub fn build_world_objects_opt(
         std::fs::write(&manifest_path, pretty_nl(&manifest))?;
     }
 
+    // T-090.12.1 — the row-width census: rows carrying a non-trivial transform trailer.
+    if !quiet {
+        println!(
+            "build-world-objects: transforms — {rows_wide} of {} rows 8-wide (by kind {:?}) · {rows_with_scale} raw rows carried scale",
+            kept.len(),
+            rows_wide_by_kind
+        );
+    }
     // ---- summary + ops log ----
     let mut top_classes = no_prefab_classes.clone();
     top_classes.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
@@ -758,6 +848,7 @@ pub fn build_world_objects_opt(
         "stagedAt": staged_at,
         "rawLineCount": line_count,
         "rawUniqueResourceNames": raw_census.len(),
+        "transforms": { "rowsWide": rows_wide, "rowsWideByKind": rows_wide_by_kind, "rowsWithScale": rows_with_scale },
         "noPrefab": {
             "count": no_prefab_count,
             "topClassNames": top_classes.iter().take(10).map(|(cn, c)| json!({ "className": cn, "count": c })).collect::<Vec<_>>(),
@@ -1132,6 +1223,25 @@ pub fn build_roads_from_topo_opt(
 
 #[cfg(test)]
 mod tests {
+    /// T-090.12.1 — the P5 filter admits T-244's `vehicle` kind: without it a rebuild from the
+    /// staged export silently dropped the 13 wreck prefabs (176 instances) the committed
+    /// catalogue carries since T-594, and E6 could never have matched the committed artifacts.
+    #[test]
+    fn p5_admits_the_vehicle_lane() {
+        let p5 = super::phase_kinds("P5_props").unwrap();
+        assert!(p5.contains(&"vehicle"), "{p5:?}");
+        for k in super::super::INSTANCE_KINDS {
+            if k == "road" || k == "utility" {
+                continue;
+            }
+            assert!(
+                p5.contains(&k),
+                "P5 must admit every instance kind: missing {k}"
+            );
+        }
+        assert!(!super::phase_kinds("P4_rocks").unwrap().contains(&"vehicle"));
+    }
+
     use super::*;
     use std::fs;
 

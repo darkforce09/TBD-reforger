@@ -554,7 +554,9 @@ enum MapCmd {
     },
     /// T-090.11.3 — match every `xobSocket` instance against a Workbench recon dump
     /// (`--instances <slug>.instances.json --recon <slug>_children.json`); exit 1 on any
-    /// mismatch over 2 cm / 1° or an unmatched instance.
+    /// mismatch over 2 cm / 1° or an unmatched instance. T-090.12.1: `--world-row --chunk
+    /// <cx_cy.json.gz> --prefabs <prefabs.json.gz>` also places every matched child through the
+    /// committed chunk row and compares with the recon worldPos (the wire-v2 transform pin).
     #[command(name = "instances-verify")]
     InstancesVerify {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]

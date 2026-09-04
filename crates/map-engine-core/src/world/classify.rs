@@ -72,6 +72,45 @@ pub fn narrow_instance_row(row: &Value) -> Option<(f64, f64, f64, f64, f64)> {
     Some((pid, x, y, z, rot))
 }
 
+/// T-090.12.1 — one chunk row with the full transform (`objects` schemaVersion 1.1.0). A 5-wide
+/// v1 row reads back with `pitch = roll = 0`, `scale = 1`; an 8-wide row carries what the
+/// converter wrote. Angles are Enfusion `GetAngles()` degrees (pitch about X, heading about Y =
+/// `rot`, roll about Z); `scale` is the entity's uniform scale.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct InstanceRowV2 {
+    pub pid: f64,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub rot: f64,
+    pub pitch: f64,
+    pub roll: f64,
+    pub scale: f64,
+}
+
+/// [`narrow_instance_row`] plus the optional trailing `pitchDeg, rollDeg, scale` (elements
+/// 5..8). The first five follow the v1 rule exactly (same accept / reject / default decisions);
+/// a trailer that is absent or non-finite takes its identity value, and a non-positive scale is
+/// identity too (a row can never collapse an object to nothing).
+#[must_use]
+pub fn narrow_instance_row_v2(row: &Value) -> Option<InstanceRowV2> {
+    let (pid, x, y, z, rot) = narrow_instance_row(row)?;
+    let arr = row.as_array()?;
+    let pitch = finite(arr.get(5)).unwrap_or(0.0);
+    let roll = finite(arr.get(6)).unwrap_or(0.0);
+    let scale = finite(arr.get(7)).filter(|s| *s > 0.0).unwrap_or(1.0);
+    Some(InstanceRowV2 {
+        pid,
+        x,
+        y,
+        z,
+        rot,
+        pitch,
+        roll,
+        scale,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -150,6 +189,47 @@ mod tests {
         assert_eq!(
             narrow_instance_row(&json!([3, 1.0, 2.0, "x", "y"])),
             Some((3.0, 1.0, 2.0, 0.0, 0.0))
+        );
+    }
+
+    #[test]
+    fn narrow_instance_row_v2_reads_trailers_and_defaults() {
+        // v1 row: identity trailers.
+        assert_eq!(
+            narrow_instance_row_v2(&json!([9, 512.0, 700.25, 41.3, 90])),
+            Some(InstanceRowV2 {
+                pid: 9.0,
+                x: 512.0,
+                y: 700.25,
+                z: 41.3,
+                rot: 90.0,
+                pitch: 0.0,
+                roll: 0.0,
+                scale: 1.0
+            })
+        );
+        // v2 row: trailers land verbatim.
+        assert_eq!(
+            narrow_instance_row_v2(&json!([14, 900.0, 950.0, 52.0, 47.25, -3.5, 1.25, 1.15])),
+            Some(InstanceRowV2 {
+                pid: 14.0,
+                x: 900.0,
+                y: 950.0,
+                z: 52.0,
+                rot: 47.25,
+                pitch: -3.5,
+                roll: 1.25,
+                scale: 1.15
+            })
+        );
+        // Non-number / non-positive trailers fall back to identity, never reject the row.
+        let r = narrow_instance_row_v2(&json!([14, 1.0, 2.0, 3.0, 4.0, "x", null, 0])).unwrap();
+        assert_eq!((r.pitch, r.roll, r.scale), (0.0, 0.0, 1.0));
+        // The first five keep the v1 verdict exactly.
+        assert_eq!(narrow_instance_row_v2(&json!([9, 1.0])), None);
+        assert_eq!(
+            narrow_instance_row_v2(&json!([3, 1.0, 2.0])).map(|r| (r.z, r.rot, r.scale)),
+            Some((0.0, 0.0, 1.0))
         );
     }
 

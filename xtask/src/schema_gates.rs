@@ -3363,7 +3363,7 @@ pub fn validate_all() -> Result<u8> {
         check(&format!("instance[{i}]"), &v_mo_instance, row);
     }
 
-    println!("Map object chunk sample (T-090.3.1 — all-number 5-tuples):");
+    println!("Map object chunk sample (T-090.3.1 / T-090.12.1 — all-number 5- or 8-tuples):");
     let chunk = read_json(&mo.join("map-object-chunk-sample.json"))?;
     for (i, row) in chunk["chunk"]["instances"]
         .as_array()

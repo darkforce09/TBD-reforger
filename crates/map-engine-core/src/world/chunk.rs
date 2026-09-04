@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 use serde_json::Value;
 
-use super::classify::{NO_CLASS, narrow_instance_row};
+use super::classify::{NO_CLASS, narrow_instance_row_v2};
 use super::prefab::PrefabEntry;
 
 /// SoA for one parsed chunk. Numeric columns are **truncated to `count`** — the JS master
@@ -23,6 +23,12 @@ pub struct WorldChunk {
     pub prefab_idx: Vec<u16>,
     pub rotations: Vec<f32>,
     pub z: Vec<f32>,
+    /// T-090.12.1 — full-transform columns (`objects` schemaVersion 1.1.0): pitch / roll in
+    /// Enfusion `GetAngles()` degrees and the uniform scale per row; identity (`0`, `0`, `1`)
+    /// for every v1 5-wide row, so every pre-v2 reader of the columns above is unaffected.
+    pub pitch: Vec<f32>,
+    pub roll: Vec<f32>,
+    pub scale: Vec<f32>,
     pub cls_codes: Vec<u8>,
     /// Render-class code → row indices (encounter order), the `rowsByClass` gather lists.
     pub rows_by_class: HashMap<u8, Vec<u32>>,
@@ -58,14 +64,18 @@ pub fn parse_chunk(
     let mut prefab_idx: Vec<u16> = Vec::with_capacity(n);
     let mut rotations: Vec<f32> = Vec::with_capacity(n);
     let mut z: Vec<f32> = Vec::with_capacity(n);
+    let mut pitch: Vec<f32> = Vec::with_capacity(n);
+    let mut roll: Vec<f32> = Vec::with_capacity(n);
+    let mut scale: Vec<f32> = Vec::with_capacity(n);
     let mut cls_codes: Vec<u8> = Vec::with_capacity(n);
     let mut rows_by_class: HashMap<u8, Vec<u32>> = HashMap::new();
     let mut count: u32 = 0;
 
     for inst in instances {
-        let Some((pid, x, y, zv, rot)) = narrow_instance_row(inst) else {
+        let Some(row) = narrow_instance_row_v2(inst) else {
             continue;
         };
+        let (pid, x, y, zv, rot) = (row.pid, row.x, row.y, row.z, row.rot);
         let i = count;
         count += 1;
         positions.push(x as f32);
@@ -73,6 +83,9 @@ pub fn parse_chunk(
         prefab_idx.push(pid as u16);
         rotations.push(rot as f32);
         z.push(zv as f32);
+        pitch.push(row.pitch as f32);
+        roll.push(row.roll as f32);
+        scale.push(row.scale as f32);
         let code = prefab_by_id
             .get(&pid.to_bits())
             .map_or(NO_CLASS, |e| e.code);
@@ -91,6 +104,9 @@ pub fn parse_chunk(
         prefab_idx,
         rotations,
         z,
+        pitch,
+        roll,
+        scale,
         cls_codes,
         rows_by_class,
     })
@@ -169,9 +185,13 @@ mod tests {
         let chunk_raw = golden("map-object-chunk-sample.json");
         let c = parse_chunk("1_1", chunk_raw.get("chunk").unwrap(), &by_id).unwrap();
 
-        assert_eq!(c.count, 3);
-        assert_eq!(c.prefab_idx, vec![9u16, 14, 18]);
-        assert_eq!(c.positions.len(), 6);
+        // T-090.12.1: the golden gained one 8-wide row (3 → 4 rows; the v2 branch pin).
+        assert_eq!(c.count, 4);
+        assert_eq!(c.prefab_idx, vec![9u16, 14, 14, 18]);
+        assert_eq!(c.positions.len(), 8);
+        assert_eq!(c.pitch, vec![0.0_f32, 0.0, -3.5, 0.0]);
+        assert_eq!(c.roll, vec![0.0_f32, 0.0, 1.25, 0.0]);
+        assert_eq!(c.scale, vec![1.0_f32, 1.0, 1.15, 1.0]);
         // rows_by_class is internally consistent: every gathered index carries that code.
         for (&code, rows) in &c.rows_by_class {
             assert_ne!(code, NO_CLASS);
@@ -179,5 +199,33 @@ mod tests {
                 assert_eq!(c.cls_codes[i as usize], code);
             }
         }
+    }
+
+    /// T-090.12.1 — a mixed 5-/8-wide payload: the v1 columns are byte-identical to the v1
+    /// parse (same casts, same order), the new columns default to identity on 5-wide rows.
+    #[test]
+    fn parse_chunk_v2_columns_default_to_identity_on_v1_rows() {
+        let (by_id, _) = build_prefab_maps(vec![PrefabRow {
+            prefab_id: 14.0,
+            kind: "tree".into(),
+            class: "conifer".into(),
+            ..Default::default()
+        }]);
+        let raw = json!({ "instances": [
+            [14, 800.5, 900.0, 55.0, 47.25],
+            [14, 900.0, 950.0, 52.0, 47.25, -3.5, 1.25, 1.15],
+            [14, 901.0, 951.0, 52.0, 47.25, 0, 0, 0.5],
+        ]});
+        let c = parse_chunk("1_1", &raw, &by_id).unwrap();
+        assert_eq!(c.count, 3);
+        assert_eq!(
+            c.positions,
+            vec![800.5_f32, 900.0, 900.0, 950.0, 901.0, 951.0]
+        );
+        assert_eq!(c.rotations, vec![47.25_f32; 3]);
+        assert_eq!(c.pitch, vec![0.0_f32, -3.5, 0.0]);
+        assert_eq!(c.roll, vec![0.0_f32, 1.25, 0.0]);
+        assert_eq!(c.scale, vec![1.0_f32, 1.15, 0.5]);
+        assert_eq!(c.rows_by_class.get(&1), Some(&vec![0u32, 1, 2]));
     }
 }

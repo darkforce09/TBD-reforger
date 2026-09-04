@@ -491,15 +491,29 @@ pub fn map_object_golden() -> Result<u8> {
             errs.push("chunk-sample: empty instances".into());
         }
         let mut prev: Option<Vec<f64>> = None;
+        let mut wide = 0usize;
         for (i, row) in rows.iter().enumerate() {
+            // T-090.12.1 (objects schemaVersion 1.1.0): rows are exactly 5 or 8 numbers; an 8-wide row
+            // must carry a non-trivial pitch / roll / scale (the converter writes trivial trailers
+            // as a 5-wide row, so a padded row would be a canonicality bug in the emitter).
             let nums: Option<Vec<f64>> = row
                 .as_array()
+                .filter(|a| a.iter().all(Value::is_number))
                 .map(|a| a.iter().filter_map(Value::as_f64).collect());
-            let Some(t) = nums.filter(|t| t.len() == 5 && row.as_array().map(Vec::len) == Some(5))
-            else {
-                errs.push(format!("chunk-sample[{i}]: not an all-number 5-tuple"));
+            let Some(t) = nums.filter(|t| t.len() == 5 || t.len() == 8) else {
+                errs.push(format!(
+                    "chunk-sample[{i}]: not an all-number 5- or 8-tuple"
+                ));
                 continue;
             };
+            if t.len() == 8 {
+                wide += 1;
+                if t[5] == 0.0 && t[6] == 0.0 && t[7] == 1.0 {
+                    errs.push(format!(
+                        "chunk-sample[{i}]: 8-wide row with trivial pitch/roll/scale (must be 5-wide)"
+                    ));
+                }
+            }
             if v_instance.iter_errors(row).next().is_some() {
                 errs.push(format!("chunk-sample[{i}]: schema invalid"));
             }
@@ -528,6 +542,12 @@ pub fn map_object_golden() -> Result<u8> {
             }
             prev = Some(t);
         }
+        if wide == 0 {
+            errs.push(
+                "chunk-sample: no 8-wide row (T-090.12.1 full-transform branch needs golden coverage)"
+                    .into(),
+            );
+        }
         if !arr(&prefabs_sample)
             .iter()
             .any(|p| p["render"]["importanceZoom"].is_number())
@@ -536,7 +556,7 @@ pub fn map_object_golden() -> Result<u8> {
         }
         gates.push(Gate {
             id: "S11",
-            label: "chunk golden — 5-tuple rows, bounds, sort order, importanceZoom coverage",
+            label: "chunk golden — 5/8-tuple rows, canonical trailers, bounds, sort order, importanceZoom coverage",
             errs,
         });
     }

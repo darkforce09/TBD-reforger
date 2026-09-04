@@ -33,6 +33,7 @@ mod synth;
 mod types;
 mod verify;
 mod walls;
+mod world_row;
 mod xob;
 mod xob_nodes;
 

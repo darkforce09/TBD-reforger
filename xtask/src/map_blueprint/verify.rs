@@ -40,6 +40,9 @@ const MATCH_CAP_M: f64 = 1.5;
 pub struct ReconFile {
     pub slug: String,
     pub root_angles: [f64; 3],
+    /// T-090.12.1 — the building's absolute origin (the world-row pin locates its chunk row).
+    #[serde(default)]
+    pub root_world_pos: Option<[f64; 3]>,
     pub children: Vec<ReconChild>,
 }
 
@@ -68,6 +71,9 @@ pub struct ReconChild {
     /// World `[pitch, yaw, roll]`.
     #[serde(default)]
     pub angles_deg: Option<[f64; 3]>,
+    /// Absolute world origin of the child (T-090.12.1 world-row pin).
+    #[serde(default)]
+    pub world_pos: Option<[f64; 3]>,
     /// `DoorComponent` params on a leaf.
     #[serde(default)]
     pub door: Option<ReconDoor>,
@@ -394,9 +400,25 @@ pub fn load(instances: &PathBuf, recon: &PathBuf) -> Result<(InstancesFile, Reco
 pub fn run_instances_verify(args: &[String]) -> Result<u8> {
     let mut instances: Option<PathBuf> = None;
     let mut recon: Option<PathBuf> = None;
+    // T-090.12.1 — `--world-row --chunk <cx_cy.json.gz> --prefabs <prefabs.json.gz>`.
+    let mut world_row = false;
+    let mut chunk: Option<PathBuf> = None;
+    let mut prefabs: Option<PathBuf> = None;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
+            "--world-row" => {
+                world_row = true;
+                i += 1;
+            }
+            "--chunk" if i + 1 < args.len() => {
+                chunk = Some(PathBuf::from(&args[i + 1]));
+                i += 2;
+            }
+            "--prefabs" if i + 1 < args.len() => {
+                prefabs = Some(PathBuf::from(&args[i + 1]));
+                i += 2;
+            }
             "--instances" if i + 1 < args.len() => {
                 instances = Some(PathBuf::from(&args[i + 1]));
                 i += 2;
@@ -407,7 +429,7 @@ pub fn run_instances_verify(args: &[String]) -> Result<u8> {
             }
             other => {
                 eprintln!(
-                    "instances-verify: unknown arg {other} (usage: --instances <slug>.instances.json --recon <slug>_children.json)"
+                    "instances-verify: unknown arg {other} (usage: --instances <slug>.instances.json --recon <slug>_children.json [--world-row --chunk <cx_cy.json.gz> --prefabs <prefabs.json.gz>])"
                 );
                 return Ok(1);
             }
@@ -488,7 +510,15 @@ pub fn run_instances_verify(args: &[String]) -> Result<u8> {
             c.depth, c.size, c.rel_pos, c.angles_deg
         );
     }
-    Ok(u8::from(!report.ok()))
+    // T-090.12.1 — the committed chunk row must place every matched child on its recon worldPos.
+    let mut world_ok = true;
+    if world_row {
+        let chunk = chunk.context("--world-row needs --chunk <cx_cy.json.gz>")?;
+        let prefabs = prefabs.context("--world-row needs --prefabs <prefabs.json.gz>")?;
+        let rep = super::world_row::run_world_row(&chunk, &prefabs, &file, &dump, &report)?;
+        world_ok = rep.ok();
+    }
+    Ok(u8::from(!(report.ok() && world_ok)))
 }
 
 #[cfg(test)]
@@ -530,6 +560,7 @@ mod tests {
             pivot_id: String::new(),
             local_pos: None,
             angles_deg: None,
+            world_pos: None,
             door: None,
         }
     }
@@ -631,6 +662,7 @@ mod tests {
         let recon = ReconFile {
             slug: "T".into(),
             root_angles: [0.0, root_yaw, 0.0],
+            root_world_pos: None,
             children: vec![
                 child(
                     1,

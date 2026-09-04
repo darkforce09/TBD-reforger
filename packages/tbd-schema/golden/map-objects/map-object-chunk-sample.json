@@ -1,5 +1,5 @@
 {
-  "description": "T-090.3.1 golden for one objects/chunks/{cx}_{cy}.json.gz payload (gunzipped). `chunk` mirrors the production file content byte-shape: {instances: [[prefabId, x, y, z, rotationDeg], ...]} — all-number 5-tuples (map-object-instance chunk wire branch), sorted by (x, y, prefabId). prefabIds pair with map-object-prefabs-sample.json (bundle isolation, S6). cx=1 means x ∈ [512, 1024): the 512.0 row pins the half-open floor partition (G6) — x exactly on the boundary belongs to THIS chunk, never cell 0.",
+  "description": "T-090.3.1 golden for one objects/chunks/{cx}_{cy}.json.gz payload (gunzipped). `chunk` mirrors the production file content byte-shape: {instances: [[prefabId, x, y, z, rotationDeg], ...]} — all-number tuples (map-object-instance chunk wire branch), sorted by (x, y, prefabId). prefabIds pair with map-object-prefabs-sample.json (bundle isolation, S6). cx=1 means x ∈ [512, 1024): the 512.0 row pins the half-open floor partition (G6) — x exactly on the boundary belongs to THIS chunk, never cell 0. T-090.12.1 (objects schemaVersion 1.1.0): the 8-wide row [.., pitchDeg, rollDeg, scale] pins the full-transform branch — trailers are written only when non-trivial, so the other rows stay 5-wide.",
   "terrainId": "everon",
   "chunkSizeM": 512,
   "cx": 1,
@@ -8,6 +8,7 @@
     "instances": [
       [9, 512.0, 700.25, 41.3, 90],
       [14, 800.5, 900.0, 55.0, 47.25],
+      [14, 900.0, 950.0, 52.0, 47.25, -3.5, 1.25, 1.15],
       [18, 1023.999, 640.0, 60.1, 359.5]
     ]
   }

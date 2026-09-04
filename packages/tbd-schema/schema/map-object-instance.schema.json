@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/map-object-instance/v1.json",
   "title": "TBD Map Object Instance (catalog v1 placement row)",
-  "description": "One placed object. Compact: references its prefab by index; never duplicates kind/class/resourceName/bounds (resolve via prefabs[prefabId]). T-090.2. Three equivalent encodings: an expanded object (golden/readability), a legacy id-first positional array [id, prefabId, x, y, z?, rotationDeg?], or the T-090.3.1 chunk wire tuple [prefabId, x, y, z, rotationDeg] (all numbers; id derived as {cx}_{cy}:{index}). Discriminator: element 0 string = legacy tuple, element 0 number = chunk tuple.",
+  "description": "One placed object. Compact: references its prefab by index; never duplicates kind/class/resourceName/bounds (resolve via prefabs[prefabId]). T-090.2. Three equivalent encodings: an expanded object (golden/readability), a legacy id-first positional array [id, prefabId, x, y, z?, rotationDeg?], or the chunk wire tuple — [prefabId, x, y, z, rotationDeg] (T-090.3.1) or, since objects schemaVersion 1.1.0 (T-090.12.1), [prefabId, x, y, z, rotationDeg, pitchDeg, rollDeg, scale] (all numbers; id derived as {cx}_{cy}:{index}). Discriminator: element 0 string = legacy tuple, element 0 number = chunk tuple.",
   "oneOf": [
     {
       "type": "object",
@@ -17,6 +17,7 @@
         "rotationDeg": { "type": "number" },
         "pitchDeg": { "type": "number" },
         "rollDeg": { "type": "number" },
+        "scale": { "type": "number", "exclusiveMinimum": 0 },
         "tags": { "type": "array", "items": { "type": "string" } }
       }
     },
@@ -37,15 +38,22 @@
     },
     {
       "type": "array",
-      "description": "Chunk wire tuple v2 [prefabId, x, y, z, rotationDeg] (T-090.3.1, plan §3.2) — all numbers, exactly 5. Instance id is derived from chunk file + index ({cx}_{cy}:{index}), unique by construction (G5). Written by objects/chunks/{cx}_{cy}.json.gz only.",
+      "description": "Chunk wire tuple [prefabId, x, y, z, rotationDeg] (T-090.3.1, plan §3.2) or, since objects schemaVersion 1.1.0 (T-090.12.1), [prefabId, x, y, z, rotationDeg, pitchDeg, rollDeg, scale] — all numbers, exactly 5 or 8 wide (never 6 or 7). The trailing three are written only when non-trivial (pitchDeg != 0 or rollDeg != 0 or scale != 1 after rounding: angles 2 dp, scale 3 dp); a reader missing them assumes 0, 0, 1. Angle order is Enfusion GetAngles(): pitch about X, heading about Y (rotationDeg), roll about Z; scale is the entity's uniform GetScale(). Instance id is derived from chunk file + index ({cx}_{cy}:{index}), unique by construction (G5). Written by objects/chunks/{cx}_{cy}.json.gz only.",
       "minItems": 5,
-      "maxItems": 5,
+      "maxItems": 8,
+      "oneOf": [
+        { "maxItems": 5 },
+        { "minItems": 8 }
+      ],
       "prefixItems": [
         { "type": "integer", "minimum": 0 },
         { "type": "number" },
         { "type": "number" },
         { "type": "number" },
-        { "type": "number" }
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number", "exclusiveMinimum": 0 }
       ],
       "items": false
     }
