@@ -229,7 +229,7 @@ function loadDemHeightfield(customPath, waterDir) {
     join(waterDir, '../terrain/everon-dem-16bit.png'),
     join(waterDir, 'everon-dem-16bit.png'),
     resolve(process.cwd(), 'packages/map-assets/everon/dem/everon-dem-16bit.png'),
-    '/home/Samuel/Projects/TBD-Reforger/packages/map-assets/everon/dem/everon-dem-16bit.png',
+    '/run/media/system/Disk_2/Projects/TBD-Reforger/packages/map-assets/everon/dem/everon-dem-16bit.png',
   ].filter(Boolean);
 
   for (const demPath of candidates) {
