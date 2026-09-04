@@ -19,6 +19,7 @@ use crate::editor::tools::select_tool::EngineHandle;
 
 use super::bridge::{publish_engine, BridgeHandle};
 use super::fetch::{fetch_bytes, fetch_text};
+use super::occluder_host::OccluderHost;
 
 const FETCH_CONCURRENCY: usize = 12;
 const ATLAS_WEBP: &str = "/map-assets/glyphs/atlas/world-glyphs.webp";
@@ -61,6 +62,8 @@ pub struct WorldHost {
     /// `inflight_empty` ride along because the sticky mid-hydration building guard can flip on the
     /// last chunk's arrival without the revision advancing in that same pass.
     last_pushed: Option<(u64, bool, bool)>,
+    /// T-090.12.5 — the world occluder mirror + its descriptor / BLAS fetches.
+    occluder: OccluderHost,
 }
 
 impl WorldHost {
@@ -81,6 +84,7 @@ impl WorldHost {
             landcover_mesh: None,
             landcover_shown: false,
             last_pushed: None,
+            occluder: OccluderHost::new(),
         }
     }
 
@@ -128,6 +132,8 @@ impl WorldHost {
 
         if let Some(bytes) = fetch_bytes(&format!("{base}/{prefabs}")).await {
             let _ = self.residency.load_prefabs_gz(&bytes);
+            // T-090.12.5 — size the occluder from the residency and prefetch the hot set.
+            self.occluder.init(&base, &self.residency).await;
         }
         done();
         if let Some(idx) = fetch_text(&format!("{base}/{chunks}/manifest.json")).await {
@@ -205,7 +211,9 @@ impl WorldHost {
         }
         let drained = self.drain(engine, bridge);
         let pushed = self.push_to_engine(engine, bridge);
-        roads_changed || landcover_changed || fetched || drained || pushed
+        // T-090.12.5 — mirror residency into the occluder and fetch what its chunks wait for.
+        let occluded = self.occluder.run_viewport(&mut self.residency).await;
+        roads_changed || landcover_changed || fetched || drained || pushed || occluded
     }
 
     /// T-173 P6/H7 — push the per-user [`WorldLayerPrefs`] into the residency (glyph/fence/airfield
@@ -229,6 +237,18 @@ impl WorldHost {
             e.set_world_layer_visible("townLabels", p.town_labels);
             e.set_world_layer_visible("roadNames", p.road_names);
         }
+    }
+
+    /// T-090.12.5 — the live world occluder (the LOS tool's object layer reads it).
+    #[must_use]
+    pub fn occluder(&self) -> &map_engine_core::world::occluder::WorldOccluder {
+        self.occluder.occluder()
+    }
+
+    /// The occluder host itself (fetch bookkeeping: the failed set).
+    #[must_use]
+    pub fn occluder_host(&self) -> &super::OccluderHost {
+        &self.occluder
     }
 
     /// T-173 H5 — the loaded road segments (for the road-name label placement host). Empty until

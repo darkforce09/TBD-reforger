@@ -1323,6 +1323,9 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                             );
                                         }
                                     }
+                                    // T-090.12.5 — start the object wash over the fresh raster; the
+                                    // rAF loop steps it under its budget and re-uploads the merge.
+                                    crate::editor::tools::los_world_wasm::start_object_wash();
                                 } else {
                                     // LoS RAY: first click sets the observer, second completes
                                     // the shot (Decision 2's two-click capture). Session-local

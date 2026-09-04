@@ -1633,6 +1633,20 @@ impl WorldResidency {
         self.chunks.get(id)
     }
 
+    /// T-090.12.3 — the terrain extent the residency was configured with.
+    #[must_use]
+    pub fn terrain(&self) -> TerrainSizeM {
+        self.terrain
+    }
+
+    /// T-090.12.3 — the chunk size (the manifest's, else the default).
+    #[must_use]
+    pub fn chunk_size_m(&self) -> f64 {
+        self.manifest
+            .as_ref()
+            .map_or(super::manifest::DEFAULT_CHUNK_SIZE_M, |m| m.chunk_size_m)
+    }
+
     /// T-090.12.3 — every catalogue prefab row (the occluder's proxy boxes + labels).
     pub fn prefab_rows(&self) -> impl Iterator<Item = &PrefabRow> {
         self.prefab_by_id.values().map(|e| &e.row)

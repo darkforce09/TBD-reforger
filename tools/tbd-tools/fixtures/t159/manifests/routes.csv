@@ -10,6 +10,8 @@ path,component,fullBleed,chromeless,router_auth
 /announcements,AnnouncementsPage,true,false,none
 /announcements/:id,AnnouncementsPage,true,false,none
 /auth/callback,AuthCallbackPage,false,false,none
+/debug/building-viewer,BuildingViewerPage,true,true,none
+/debug/world-los,WorldLosPage,true,true,none
 /deployments,DeploymentsPage,true,false,none
 /events,EventSchedulePage,true,false,none
 /events/:id,EventHubPage,true,false,none

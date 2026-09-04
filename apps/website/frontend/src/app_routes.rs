@@ -105,6 +105,10 @@ pub fn AppRoutes() -> impl IntoView {
                 path=path!("/debug/building-viewer")
                 view=crate::pages::debug::building_viewer::BuildingViewerPage
             />
+            <Route
+                path=path!("/debug/world-los")
+                view=crate::pages::debug::world_los::WorldLosPage
+            />
             <Route path=path!("/settings") view=SettingsPage />
             <Route path=path!("/admin/events") view=crate::pages::admin::event_manager::EventManagerPage />
             <Route path=path!("/admin/approvals") view=MissionApprovalsPage />

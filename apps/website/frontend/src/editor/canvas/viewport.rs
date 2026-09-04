@@ -84,6 +84,8 @@ pub(crate) fn start_raf(
         if let Some(e) = guard.as_mut() {
             let _ = e.render();
             e.poll(); // ★ T-159.15.1: drain readback map_async so the next submit can't double-map
+                      // T-090.12.5 — advance the viewshed's object wash under its per-frame budget.
+            crate::editor::tools::los_world_wasm::tick_object_wash(e);
             frames += 1;
             // T-670 — publish the screen scale for the status-bar readout (and, through it, the
             // T-667 scale bar). Read every frame so a wheel-zoom shows on the very next frame
@@ -116,8 +118,9 @@ pub(crate) fn start_raf(
                     let rf_ms = stats["render_cpu_ms_ema"].as_f64().unwrap_or(0.0);
                     let rf_eq = if rf_ms > 0.0 { 1000.0 / rf_ms } else { 0.0 };
                     debug_hud.set(format!(
-                        "z {:.2} · c{chunks} · glyph {glyphs} · {fps:.0} FPS · rf {rf_ms:.2}ms ({rf_eq:.0} eq)",
-                        e.zoom()
+                        "z {:.2} · c{chunks} · glyph {glyphs} · {fps:.0} FPS · rf {rf_ms:.2}ms ({rf_eq:.0} eq){}",
+                        e.zoom(),
+                        crate::editor::tools::los_world_wasm::hud_suffix()
                     ));
                     frames = 0;
                     last_sample = now;

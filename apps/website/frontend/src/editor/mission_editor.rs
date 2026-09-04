@@ -1571,6 +1571,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                         if let Some(e) = engine.borrow_mut().as_mut() {
                             e.viewshed_clear();
                         }
+                        // T-090.12.5 — the object wash goes with the lane.
+                        #[cfg(target_arch = "wasm32")]
+                        crate::editor::tools::los_world_wasm::cancel_object_wash();
                     }
                 });
             }
@@ -2317,6 +2320,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                             *engine.borrow_mut() = Some(eng);
                             register_self_checks(engine.clone());
                             register_editor_cam(engine.clone(), map_host.clone());
+                            // T-090.12.5 — the object-wash progress bridge (headless probes).
+                            #[cfg(target_arch = "wasm32")]
+                            crate::editor::tools::los_world_wasm::register_object_wash_hook();
                             register_slot_stats(engine.clone());
                             // T-173 P6 — let the Mission Settings render-pref controls reach the
                             // live engine + host.
@@ -3176,6 +3182,10 @@ mod t643_los_wiring;
 #[cfg(test)]
 #[path = "mission_editor_tests/t644_viewshed_wiring.rs"]
 mod t644_viewshed_wiring;
+// T-090.12.5 — the LOS object layer wiring (object wash start / tick / cancel, overlay verdict).
+#[cfg(test)]
+#[path = "mission_editor_tests/t090_12_world_los_wiring.rs"]
+mod t090_12_world_los_wiring;
 
 /// T-644 (wave 110) — source pins for the LoS button's SUB-MODE TOGGLE in `eden_toolbelt`: the ONE
 /// LoS button re-click toggles Ray ⇆ Viewshed (`LosMode::toggled`) while LoS is already active, and

@@ -165,6 +165,14 @@ pub static ROUTES: &[RouteDef] = &[
         auth: "none",
     },
     RouteDef {
+        // Debug bench — URL-only: the world occluder around a map point (T-090.12.5).
+        path: "/debug/world-los",
+        component: "WorldLosPage",
+        full_bleed: true,
+        chromeless: true,
+        auth: "none",
+    },
+    RouteDef {
         path: "/settings",
         component: "SettingsPage",
         full_bleed: false,

@@ -27,7 +27,7 @@ use crate::world::prefab::PrefabRow;
 
 use super::dda::cells_on_segment;
 use super::descriptor::{Bounds3, PrefabDescriptor};
-use super::placed::ChunkOccluder;
+use super::placed::{ChunkOccluder, WorldInstance};
 use super::tlas::Candidate;
 
 /// Default BLAS byte budget before least-recently-traced sidecars are dropped.
@@ -666,6 +666,30 @@ impl WorldOccluder {
         let mut v: Vec<String> = self.chunks.keys().cloned().collect();
         v.sort();
         v
+    }
+
+    /// A resident chunk's rows (engine frame).
+    #[must_use]
+    pub fn chunk_rows(&self, id: &str) -> Option<&[WorldInstance]> {
+        self.chunks.get(id).map(|c| c.rows.as_slice())
+    }
+
+    /// A resident chunk's current world boxes, parallel to its rows (`NO_BOX` = no geometry).
+    #[must_use]
+    pub fn chunk_boxes(&self, id: &str) -> Option<&[([f64; 3], [f64; 3])]> {
+        self.chunks.get(id).map(|c| c.boxes.as_slice())
+    }
+
+    /// The descriptor of a pid, once fetched.
+    #[must_use]
+    pub fn descriptor_of(&self, pid: u16) -> Option<&Arc<PrefabDescriptor>> {
+        self.descriptors.get(&pid)
+    }
+
+    /// Whether a pid's descriptor said it never blocks.
+    #[must_use]
+    pub fn is_no_block(&self, pid: u16) -> bool {
+        self.no_block.contains(&pid)
     }
 
     /// Rows of a resident chunk placed as proxies (their descriptor is not expanded).

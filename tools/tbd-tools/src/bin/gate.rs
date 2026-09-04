@@ -89,6 +89,23 @@ enum Cmd {
         /// `http://127.0.0.1:8080` when omitted — required for `--seed-auth` to fully hydrate.
         #[arg(long)]
         api_proxy: Option<String>,
+        /// T-090.12.5 — write a full-viewport PNG of the page AFTER `--assert-js` settled (the
+        /// live-check evidence rig: one URL + one probe script = one screenshot).
+        #[arg(long)]
+        shot: Option<PathBuf>,
+        /// T-090.12.5 — serve `/map-assets/` from this directory (the editor smokes' passthrough);
+        /// without it the SPA fallback answers every asset fetch with index.html.
+        #[arg(long)]
+        map_assets: Option<PathBuf>,
+        /// T-090.12.5 — a JS file evaluated on every new document BEFORE the SPA boots (peer of
+        /// `--seed-auth` for a caller-built seed, e.g. a real dev-login session).
+        #[arg(long)]
+        inject_js: Option<PathBuf>,
+        /// T-090.12.5 — skip the determinism freeze (fixed clock / seeded RNG) so a probe can
+        /// measure real wall time (the frozen `performance.now` would collapse a budgeted rAF
+        /// pass into one frame). Screenshots taken this way are NOT golden-comparable.
+        #[arg(long, default_value_t = false)]
+        no_freeze: bool,
     },
     /// Static SPA server with COOP/COEP (serve.mjs CLI port)
     Serve {
@@ -141,6 +158,10 @@ fn main() -> ExitCode {
                 port,
                 debug_port,
                 api_proxy,
+                shot,
+                map_assets,
+                inject_js,
+                no_freeze,
             } => {
                 smokes::render_check(&smokes::RenderCheckArgs {
                     dir,
@@ -151,6 +172,10 @@ fn main() -> ExitCode {
                     port,
                     debug_port,
                     api_proxy,
+                    shot,
+                    map_assets,
+                    inject_js,
+                    no_freeze,
                 })
                 .await
             }

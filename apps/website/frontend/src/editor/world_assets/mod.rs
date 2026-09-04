@@ -8,6 +8,9 @@ mod dem_vectors;
 mod fetch;
 mod forest_mass;
 mod labels;
+mod occluder_host;
+pub use fetch::{fetch_bytes, fetch_text};
+pub use occluder_host::OccluderHost;
 mod satellite;
 mod tbd_sat;
 mod world_host;
@@ -24,7 +27,7 @@ use crate::editor::tools::select_tool::EngineHandle;
 
 use bridge::{new_bridge, publish, publish_engine, BridgeHandle};
 use dem_vectors::DemVectors;
-use fetch::{fetch_bytes, fetch_bytes_streamed};
+use fetch::fetch_bytes_streamed;
 use forest_mass::ForestMassHost;
 use world_host::WorldHost;
 
@@ -165,6 +168,33 @@ pub fn fly_to(x: f64, y: f64, zoom: f64) {
         }
         flush_viewport(host, engine);
     });
+}
+
+/// T-090.12.5 — run `f` on the live world occluder (the LOS tool's object layer). `None` before
+/// the engine mounts or while `flush_viewport` has the host taken for an async pass — the
+/// callers then read "objects not loaded" rather than a fake clear.
+pub fn with_occluder<R>(
+    f: impl FnOnce(&map_engine_core::world::occluder::WorldOccluder) -> R,
+) -> Option<R> {
+    RENDER_CTX.with(|c| {
+        let ctx = c.borrow();
+        let (_, host) = ctx.as_ref()?;
+        let guard = host.try_borrow().ok()?;
+        let mh = guard.as_ref()?;
+        Some(f(mh.world.occluder()))
+    })
+}
+
+/// Peer of [`with_occluder`] for the host's fetch bookkeeping (the smoke bridge reads the
+/// failed set); the same `None` semantics.
+pub fn with_occluder_host<R>(f: impl FnOnce(&OccluderHost) -> R) -> Option<R> {
+    RENDER_CTX.with(|c| {
+        let ctx = c.borrow();
+        let (_, host) = ctx.as_ref()?;
+        let guard = host.try_borrow().ok()?;
+        let mh = guard.as_ref()?;
+        Some(f(mh.world.occluder_host()))
+    })
 }
 
 /// T-762 — the already-parsed town / named-location index from `LabelHost` boot

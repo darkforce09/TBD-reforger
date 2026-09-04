@@ -536,6 +536,9 @@ pub struct ProjectedShot {
     pub total_m: f64,
     /// The blocking point's screen pixel, `None` unless blocked. A marker dot on the line.
     pub block_px: Option<(f64, f64)>,
+    /// T-090.12.5 — the object layer's verdict (`NotLoaded` until the wasm overlay attaches
+    /// it through `los_world::apply_objects`, which also moves `block_px` to the nearer block).
+    pub objects: super::los_world::ObjectVerdict,
     /// Stable key: the shot's two world endpoints quantised to 0.1 m (T-727) — ties the DOM nodes to
     /// WHERE the shot is, so re-placing the target never retains a stale panel.
     pub key: String,
@@ -595,6 +598,7 @@ where
         verdict,
         total_m,
         block_px,
+        objects: super::los_world::ObjectVerdict::NotLoaded,
         key: world_key(shot.obs_x, shot.obs_y, shot.tgt_x, shot.tgt_y),
     }
 }
@@ -1004,12 +1008,17 @@ pub fn LosOverlay(
             let (mut shots, mut panels) = (Vec::new(), Vec::new());
             if let Some(shot) = state.shot {
                 let profile = build_profile(&shot);
-                let proj = project_shot(
+                let mut proj = project_shot(
                     &shot,
                     &profile,
                     EYE_HEIGHT_OBSERVER_M,
                     EYE_HEIGHT_TARGET_M,
                     &project,
+                );
+                // T-090.12.5 — the object layer: terrain ∧ objects, marker at the nearer block.
+                crate::editor::tools::los_world::apply_objects(
+                    &mut proj,
+                    crate::editor::tools::los_world_wasm::object_verdict(&shot),
                 );
                 let chart = profile_chart(
                     &profile,
@@ -1065,7 +1074,7 @@ pub fn LosOverlay(
                         y1=move || format!("{:.1}", shot.obs_py)
                         x2=move || format!("{:.1}", shot.tgt_px)
                         y2=move || format!("{:.1}", shot.tgt_py)
-                        class=los_line_class(shot.verdict)
+                        class=los_line_class(crate::editor::tools::los_world::styling_of(&shot))
                         stroke-width="1.5"
                     />
                     // Observer dot.
@@ -1081,7 +1090,7 @@ pub fn LosOverlay(
                         cx=move || format!("{:.1}", shot.tgt_px)
                         cy=move || format!("{:.1}", shot.tgt_py)
                         r="3"
-                        class=los_dot_class(shot.verdict)
+                        class=los_dot_class(crate::editor::tools::los_world::styling_of(&shot))
                         stroke-width="1.5"
                     />
                     // Blocking-point marker (only when blocked).
@@ -1109,14 +1118,20 @@ pub fn LosOverlay(
                     // dot. Positioned in CSS px from the projected target pixel.
                     let left = shot.tgt_px + 12.0;
                     let top = shot.tgt_py - PANEL_H_PX - 28.0;
-                    let verdict_text = format_verdict(shot.verdict, shot.total_m);
+                    // T-090.12.5 — terrain ∧ objects: the header names the nearer blocker (or the
+                    // canopy concealment / "objects not loaded"); styling follows the pair.
+                    let style = crate::editor::tools::los_world::styling_of(&shot);
+                    let verdict_text = crate::editor::tools::los_world::format_combined(
+                        &crate::editor::tools::los_world::combine(shot.verdict, shot.objects.clone()),
+                        shot.total_m,
+                    );
                     view! {
                         <div
                             data-los-panel
                             class="absolute rounded-lg border border-white/10 bg-surface-container-lowest/85 px-2 py-1.5 shadow-xl backdrop-blur-xl"
                             style=format!("left:{left:.1}px;top:{top:.1}px;width:{:.0}px", PANEL_W_PX + 16.0)
                         >
-                            <div class=los_header_class(shot.verdict)>
+                            <div class=los_header_class(style)>
                                 {verdict_text}
                             </div>
                             <svg
@@ -1128,7 +1143,7 @@ pub fn LosOverlay(
                                 <polyline
                                     points=chart.line.clone()
                                     fill="none"
-                                    class=los_line_class(shot.verdict)
+                                    class=los_line_class(style)
                                     stroke-width="1.5"
                                     stroke-dasharray="3 3"
                                 />

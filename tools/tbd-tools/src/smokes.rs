@@ -3605,6 +3605,16 @@ pub struct RenderCheckArgs {
     /// session (`user` from localStorage, `/me` fails → `access_token` None → signed-out UI).
     /// `None` defaults to [`BACKEND`] so probes reach a live API when one is on :8080.
     pub api_proxy: Option<String>,
+    /// T-090.12.5 — full-viewport PNG written after `assert_js` settled (`None` = no shot). The
+    /// screenshot is evidence only: it never affects the verdict.
+    pub shot: Option<std::path::PathBuf>,
+    /// T-090.12.5 — `/map-assets/` passthrough root (`None` = the SPA fallback answers assets).
+    pub map_assets: Option<std::path::PathBuf>,
+    /// T-090.12.5 — extra pre-boot inject (a JS file), evaluated on every new document after
+    /// the freeze and the optional `--seed-auth` seed.
+    pub inject_js: Option<std::path::PathBuf>,
+    /// T-090.12.5 — leave the clock and RNG alone (wall-time measurements; never goldens).
+    pub no_freeze: bool,
 }
 
 pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
@@ -3613,13 +3623,35 @@ pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
     } else {
         None
     };
-    let mut injects: Vec<&str> = vec![crate::inject::FREEZE_SRC];
+    let mut injects: Vec<&str> = if a.no_freeze {
+        Vec::new()
+    } else {
+        vec![crate::inject::FREEZE_SRC]
+    };
     if let Some(s) = seed.as_deref() {
+        injects.push(s);
+    }
+    let extra = match &a.inject_js {
+        Some(p) => Some(
+            std::fs::read_to_string(p)
+                .map_err(|e| anyhow!("read --inject-js {}: {e}", p.display()))?,
+        ),
+        None => None,
+    };
+    if let Some(s) = extra.as_deref() {
         injects.push(s);
     }
     // T-339 — thread a real proxy (CLI `--api-proxy`, else the standard :8080 backend).
     let api_proxy = a.api_proxy.clone().or_else(|| Some(BACKEND.to_string()));
-    let h = Harness::new(&a.dir, a.port, a.debug_port, None, api_proxy, &injects).await?;
+    let h = Harness::new(
+        &a.dir,
+        a.port,
+        a.debug_port,
+        a.map_assets.clone(),
+        api_proxy,
+        &injects,
+    )
+    .await?;
     let run = async {
         let url = h.url(&a.path);
         h.page.navigate(&url).await?;
@@ -3643,6 +3675,11 @@ pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
             None => None,
         };
         let assert_ok = assert_value.as_ref().map(assert_js_ok);
+        if let Some(path) = &a.shot {
+            let png = h.page.screenshot().await?;
+            std::fs::write(path, &png)
+                .map_err(|e| anyhow!("write screenshot {}: {e}", path.display()))?;
+        }
         h.page.close().await;
 
         let found = if a.expect.is_empty() {
