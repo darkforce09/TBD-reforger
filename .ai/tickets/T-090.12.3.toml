@@ -3,7 +3,7 @@ kind = "work"
 title = "T-090.12.3 — WorldOccluder: TLAS, chunk DDA, compounds, world-los CLI"
 summary = "world/occluder: AabbTlas per chunk, 2-D chunk DDA, WorldInstance rows, descriptor expansion into instance lists, proxy fallback with Fidelity, Coverage, BlockPolicy, BLAS byte cap; trace_parts/reduce_events extracted from the compound; residency accessors; cargo xtask map world-los census/probe/bench."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
 plan = "docs/plans/t-090_12_3_plan.md"
@@ -37,7 +37,10 @@ acceptance = [
     "Compound tests and the (4000, 3983, 0, 17) door-parity replay are unchanged after the trace_parts / reduce_events extraction.",
     "world-los --census lists every chunk's kinds and pending pids; --bench on the densest tree cell reports microseconds per ray and memory_bytes.",
 ]
+shipped_at = "ff92c69aa"
 created_at = "2026-09-04T01:22:27Z"
+completed_at = "2026-09-04T05:21:54Z"
+estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/world/occluder/mod.rs",
     "crates/map-engine-core/src/world/occluder/tlas.rs",
