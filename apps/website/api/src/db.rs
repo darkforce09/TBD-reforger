@@ -227,6 +227,42 @@ mod tests {
         let _ = handle.await;
     }
 
+    /// T-940.5 acceptance — `TBD_DB_POOL_MAX_CONNECTIONS=3` must yield a pool whose max is 3 and
+    /// unset must yield 25. `connect` performs its first connection eagerly, so this needs a live
+    /// database and reads `TEST_DATABASE_URL` exactly like every DB-backed suite under `tests/`
+    /// (unset = the harness's skip path; the gate and `db test-it` both provide a database). It
+    /// only opens pools and reads their options — no migration, no writes — so it needs no
+    /// scratch-name guard.
+    #[tokio::test]
+    async fn pool_max_connections_follows_env_override() {
+        let Ok(url) = std::env::var("TEST_DATABASE_URL") else {
+            eprintln!("skip: TEST_DATABASE_URL unset");
+            return;
+        };
+        // SAFETY: this is the only test in the binary that touches `TBD_DB_POOL_*`; both writes
+        // happen on this thread, every reader is Rust `std::env` (internally locked), and nothing
+        // in the process calls `getenv` from C during the window.
+        unsafe { std::env::set_var("TBD_DB_POOL_MAX_CONNECTIONS", "3") };
+        let overridden = connect(&url).await;
+        unsafe { std::env::remove_var("TBD_DB_POOL_MAX_CONNECTIONS") };
+        let overridden = overridden.expect("connect with TBD_DB_POOL_MAX_CONNECTIONS=3");
+        let unset = connect(&url)
+            .await
+            .expect("connect with TBD_DB_POOL_MAX_CONNECTIONS unset");
+        assert_eq!(
+            overridden.options().get_max_connections(),
+            3,
+            "TBD_DB_POOL_MAX_CONNECTIONS=3 must yield a pool max of 3"
+        );
+        assert_eq!(
+            unset.options().get_max_connections(),
+            25,
+            "unset TBD_DB_POOL_MAX_CONNECTIONS must yield the default 25"
+        );
+        overridden.close().await;
+        unset.close().await;
+    }
+
     async fn wait_until(mut pred: impl FnMut() -> bool, budget: Duration) {
         let start = tokio::time::Instant::now();
         while !pred() {
