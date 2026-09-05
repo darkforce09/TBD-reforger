@@ -6,13 +6,6 @@
   "git_base": "main",
   "tickets": [
     {
-      "id": "T-311",
-      "title": "Leaderboard ORDER BY lacks tie-breaker; paging unstable",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t311_leaderboard_tiebreak.md",
-      "branch": "ticket/T-311"
-    },
-    {
       "id": "T-305",
       "title": "pak.rs seeks data_start plus offset; offsets are absolute",
       "status": "ready",
@@ -51,7 +44,7 @@
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_4_z_placement_audit.md",
       "branch": "ticket/T-090"
     },
     {

@@ -8,7 +8,6 @@
 
 ## Ready
 
-- **T-311** (7020) — Leaderboard ORDER BY lacks tie-breaker; paging unstable [ready] — None of the five ORDER BY arms in handlers/telemetry/leaderboards.rs:47-51 has a tie-breaker, so LIMIT/OFFSET paging returns an unstable row set once T-194's golden introduces 4-way ties. Append `, lt.discord_id ASC` to each arm and test paging.
 - **T-305** (7030) — pak.rs seeks data_start plus offset; offsets are absolute [ready] — read_file/read_raw in tools/tbd-tools/src/world/pak.rs seek data_start + entry.offset, but entry offsets are absolute from the pak start; every `enf extract` read is shifted by 56 bytes. Seek entry.offset directly, pinned by a fixture test.
 - **T-298** (7040) — Gate tbd-tools density tests in CI [ready] — `cargo test -p tbd-tools --lib density::` passes on main today (2 tests, 2026-09-05) but no CI lane runs it; add the tbd-tools lib tests to ci.yml and pin the corner-partition invariant with a seeded randomized test.
 - **T-943** (7050) — platform wave push deadlocks on large LFS ranges [ready] — cmd_push's LFS guard pipes every path of a commit into git check-attr without draining stdout; a commit touching 1,691 files wedges both processes forever, and on a host with git-lfs the guard refuses a legitimate push.

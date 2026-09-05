@@ -155,13 +155,12 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 > the lowest-ordered `ready` program, not the program in flight.
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-934**
+**Latest shipped:** **T-311**
 
 **ACTIVE NOW:** **T-154** — T-154.1 (Rust/wgpu 3D arsenal doll (T-151-adjacent 3D pipeline spike)). Slice spec: `docs/specs/Mission_Creator_Architecture/t154_1_doll_polish.md`.
 
 **Next (by order):**
 - **T-940** — Website platform: events, telemetry, admin, content (`queued`)
-- **T-311** — Leaderboard ORDER BY lacks tie-breaker; paging unstable (`ready`)
 - **T-305** — pak.rs seeks data_start plus offset; offsets are absolute (`ready`)
 - **T-298** — Gate tbd-tools density tests in CI (`ready`)
 - **T-943** — platform wave push deadlocks on large LFS ranges (`ready`)
@@ -170,6 +169,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-090** — Map visualization program (`ready`)
 - **T-935** — Map binary storage — hybrid rkyv + POD (`queued`)
 - **T-277** — 27.4% of the map catalogue is unclassified (`ready`)
+- **T-149** — Forest mass polygon smoothing (`ready`)
 <!-- ticket-sync:status:end -->
 
 **Shipped history — every slice, sha and tag — lives in**

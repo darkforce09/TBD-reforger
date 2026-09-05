@@ -3,12 +3,12 @@ kind = "work"
 title = "Leaderboard ORDER BY lacks tie-breaker; paging unstable"
 summary = "None of the five ORDER BY arms in handlers/telemetry/leaderboards.rs:47-51 has a tie-breaker, so LIMIT/OFFSET paging returns an unstable row set once T-194's golden introduces 4-way ties. Append `, lt.discord_id ASC` to each arm and test paging."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7020
 spec = "docs/specs/ideas/t311_leaderboard_tiebreak.md"
 plan = "docs/plans/t-311_plan.md"
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope.  | 2026-09-05: proposed scope website/backend/http_api written into the body; the frozen note is kept verbatim for the operator."
+notes = "needs-operator: frozen unmappable Scope.  | 2026-09-05: proposed scope website/backend/http_api written into the body; operator approved the proposed scope 2026-09-05 (\"Approve all six\"); shipped by wave 248."
 priority = 2
 main_goal = "Paging any leaderboard category yields every row exactly once in a stable order."
 context = [
@@ -32,7 +32,10 @@ acceptance = [
     "Paging the leaderboard across tied rows yields every row exactly once in a stable order.",
     "Each category's SQL still comes only from the whitelist; no user string reaches ORDER BY.",
 ]
+shipped_at = "7094bc2b0"
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-05T16:34:27Z"
+estimated = ["tokens"]
 owns = ["apps/website/api/src/handlers/telemetry/leaderboards.rs"]
 
 [scope]

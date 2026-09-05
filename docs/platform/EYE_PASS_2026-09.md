@@ -6,3 +6,4 @@ One line per shipped job, appended at each wave close. Run on `cargo xtask mk le
 
 | Wave | Ticket | What to check | How | Result |
 |---|---|---|---|---|
+| 248 | T-311 | Leaderboard paging is stable across tied scores | Seed the golden (`apps/website/api/seeds/content_golden.sql`), open Leaderboards → Missions, page with limit 2: ranks 1–6 read Dev Operator, Rhodes, Vance, Okafor, Brandt, Kessler; no name appears on two pages. Restart the dev API first (the running one predates the slice). | |
