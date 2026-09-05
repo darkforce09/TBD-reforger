@@ -3,12 +3,19 @@
 //! The migration pipeline is a single frozen `migrations/0001_initial_schema.sql`
 //! (the Go GORM-AutoMigrate + raw-SQL schema, proven byte-equal by gate G2). sqlx
 //! embeds it at compile time via `migrate!`; future schema changes add new files.
+//!
+//! T-940.5 — the pool is tuned from [`DbPoolConfig`] (`TBD_DB_POOL_*`). The type lives
+//! here, beside its only consumer, rather than in `config.rs`: that file sits 19 lines
+//! under the SIZE-3 cap of `cargo xtask verify file-length`, and the allowlist is never
+//! extended. `config.rs` re-exports it so `config::DbPoolConfig` resolves.
 
 use std::future::Future;
 use std::time::Duration;
 
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use tokio::task::JoinHandle;
+
+use crate::config::ConfigError;
 
 /// Startup connection retry budget (mirrors `db.Open`: 10 attempts, linear backoff).
 const CONNECT_ATTEMPTS: u32 = 10;
@@ -23,17 +30,149 @@ pub const LEADERBOARD_REFRESH_INTERVAL_ENV: &str = "LEADERBOARD_REFRESH_INTERVAL
 /// Default scheduled refresh interval: 15 minutes.
 pub const DEFAULT_LEADERBOARD_REFRESH_SECS: u64 = 15 * 60;
 
-/// Connect to Postgres, tuning the pool and retrying the initial connection with
-/// linear backoff (Postgres can briefly refuse connections just after reporting ready).
-///
-/// Mirrors `db.Open`: MaxOpen 25, ConnMaxLifetime 30m, ConnMaxIdleTime 5m.
-pub async fn connect(database_url: &str) -> Result<PgPool, sqlx::Error> {
-    let opts = PgPoolOptions::new()
-        .max_connections(25)
-        .idle_timeout(Duration::from_secs(5 * 60))
-        .max_lifetime(Duration::from_secs(30 * 60))
-        .acquire_timeout(Duration::from_secs(30));
+/// Env var: pool ceiling (whole number ≥ 1). Default 25.
+pub const DB_POOL_MAX_CONNECTIONS_ENV: &str = "TBD_DB_POOL_MAX_CONNECTIONS";
+/// Env var: seconds a connection may sit idle before the pool closes it. Default 300 (5m).
+pub const DB_POOL_IDLE_TIMEOUT_ENV: &str = "TBD_DB_POOL_IDLE_TIMEOUT_SECS";
+/// Env var: seconds a connection may live before the pool retires it. Default 1800 (30m).
+pub const DB_POOL_MAX_LIFETIME_ENV: &str = "TBD_DB_POOL_MAX_LIFETIME_SECS";
+/// Env var: seconds a caller waits for a free connection before `PoolTimedOut`. Default 30.
+pub const DB_POOL_ACQUIRE_TIMEOUT_ENV: &str = "TBD_DB_POOL_ACQUIRE_TIMEOUT_SECS";
 
+/// sqlx pool tuning — T-940.5. Read from `TBD_DB_POOL_*` by [`DbPoolConfig::from_env`].
+///
+/// The defaults are the literals this file carried until T-940.5 (`db.Open`'s MaxOpen 25,
+/// ConnMaxIdleTime 5m, ConnMaxLifetime 30m; acquire 30s), so an unset environment builds
+/// exactly the pool it built before and `cargo xtask db test-it` timing is unchanged.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DbPoolConfig {
+    /// Pool ceiling; at least 1. A pool that can never hand out a connection would make
+    /// every query wait out `acquire_timeout_secs` and then fail, so `0` is refused at boot.
+    pub max_connections: u32,
+    /// Idle reap, seconds.
+    pub idle_timeout_secs: u64,
+    /// Lifetime cap, seconds.
+    pub max_lifetime_secs: u64,
+    /// Acquire wait, seconds.
+    pub acquire_timeout_secs: u64,
+}
+
+impl Default for DbPoolConfig {
+    fn default() -> Self {
+        Self {
+            max_connections: 25,
+            idle_timeout_secs: 5 * 60,
+            max_lifetime_secs: 30 * 60,
+            acquire_timeout_secs: 30,
+        }
+    }
+}
+
+impl DbPoolConfig {
+    /// Read the four `TBD_DB_POOL_*` variables from the process environment.
+    ///
+    /// Unset or blank = default. Anything else must be a whole number (and ≥ 1 for the
+    /// ceiling); a value that is not one is a [`ConfigError::MalformedValue`] naming the
+    /// variable, so startup stops there instead of running on a silently-defaulted pool —
+    /// the `get_env_int` behaviour this deliberately does not share.
+    pub fn from_env() -> Result<Self, ConfigError> {
+        Self::from_lookup(|key| std::env::var(key).ok())
+    }
+
+    /// Pure core of [`Self::from_env`]: `lookup` stands in for the process environment, so
+    /// the parse rules are unit-tested without mutating it.
+    pub fn from_lookup(lookup: impl Fn(&str) -> Option<String>) -> Result<Self, ConfigError> {
+        const SECS: &str = "expected a whole number of seconds";
+        let d = Self::default();
+        Ok(Self {
+            max_connections: parse_pool_var(
+                DB_POOL_MAX_CONNECTIONS_ENV,
+                &lookup,
+                d.max_connections,
+                "expected a whole number of connections, at least 1",
+                |n| *n >= 1,
+            )?,
+            idle_timeout_secs: parse_pool_var(
+                DB_POOL_IDLE_TIMEOUT_ENV,
+                &lookup,
+                d.idle_timeout_secs,
+                SECS,
+                |_| true,
+            )?,
+            max_lifetime_secs: parse_pool_var(
+                DB_POOL_MAX_LIFETIME_ENV,
+                &lookup,
+                d.max_lifetime_secs,
+                SECS,
+                |_| true,
+            )?,
+            acquire_timeout_secs: parse_pool_var(
+                DB_POOL_ACQUIRE_TIMEOUT_ENV,
+                &lookup,
+                d.acquire_timeout_secs,
+                SECS,
+                |_| true,
+            )?,
+        })
+    }
+}
+
+/// One `TBD_DB_POOL_*` variable: unset / blank → `fallback`; otherwise it must parse as `T`
+/// and satisfy `valid`, or the error carries the variable name and the raw value verbatim.
+fn parse_pool_var<T: std::str::FromStr>(
+    key: &'static str,
+    lookup: &impl Fn(&str) -> Option<String>,
+    fallback: T,
+    reason: &'static str,
+    valid: impl Fn(&T) -> bool,
+) -> Result<T, ConfigError> {
+    let Some(raw) = lookup(key) else {
+        return Ok(fallback);
+    };
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Ok(fallback);
+    }
+    match trimmed.parse::<T>() {
+        Ok(v) if valid(&v) => Ok(v),
+        _ => Err(ConfigError::MalformedValue(key, raw, reason)),
+    }
+}
+
+/// The [`PgPoolOptions`] a [`DbPoolConfig`] describes — the one place the four knobs meet sqlx.
+pub fn pool_options(cfg: &DbPoolConfig) -> PgPoolOptions {
+    PgPoolOptions::new()
+        .max_connections(cfg.max_connections)
+        .idle_timeout(Duration::from_secs(cfg.idle_timeout_secs))
+        .max_lifetime(Duration::from_secs(cfg.max_lifetime_secs))
+        .acquire_timeout(Duration::from_secs(cfg.acquire_timeout_secs))
+}
+
+/// Connect to Postgres with the pool tuned from `TBD_DB_POOL_*` ([`DbPoolConfig::from_env`]),
+/// retrying the initial connection with linear backoff (Postgres can briefly refuse
+/// connections just after reporting ready).
+///
+/// A variable that does not parse fails HERE, before any connection attempt, as
+/// [`sqlx::Error::Configuration`] wrapping the [`ConfigError`] that names it — so the API
+/// binary's `db::connect(&cfg.database_url)?` stops startup with that message, and every
+/// caller that opens a pool without loading [`crate::config::Config`] (`import-registry`,
+/// the integration suites) gets the same guard.
+pub async fn connect(database_url: &str) -> Result<PgPool, sqlx::Error> {
+    connect_with_options(database_url, env_pool_options()?).await
+}
+
+/// The [`PgPoolOptions`] [`connect`] builds: [`DbPoolConfig::from_env`] through
+/// [`pool_options`], a malformed variable surfaced as [`sqlx::Error::Configuration`].
+fn env_pool_options() -> Result<PgPoolOptions, sqlx::Error> {
+    DbPoolConfig::from_env()
+        .map(|cfg| pool_options(&cfg))
+        .map_err(|e| sqlx::Error::Configuration(e.into()))
+}
+
+async fn connect_with_options(
+    database_url: &str,
+    opts: PgPoolOptions,
+) -> Result<PgPool, sqlx::Error> {
     let mut last_err: Option<sqlx::Error> = None;
     for attempt in 1..=CONNECT_ATTEMPTS {
         match opts.clone().connect(database_url).await {
@@ -49,9 +188,12 @@ pub async fn connect(database_url: &str) -> Result<PgPool, sqlx::Error> {
 
 /// Build a pool that connects lazily (on first use). Used by tests/harnesses that
 /// exercise code paths not reaching the DB, without requiring a live server.
+///
+/// Deliberately NOT env-tuned: a harness pool must neither change shape nor fail to build
+/// because the developer's shell happens to export a `TBD_DB_POOL_*` value.
 pub fn connect_lazy(database_url: &str) -> Result<PgPool, sqlx::Error> {
     PgPoolOptions::new()
-        .max_connections(25)
+        .max_connections(DbPoolConfig::default().max_connections)
         .connect_lazy(database_url)
 }
 
@@ -225,6 +367,174 @@ mod tests {
 
         handle.abort();
         let _ = handle.await;
+    }
+
+    // ── T-940.5: DbPoolConfig ────────────────────────────────────────────────────────
+
+    /// Shared by the two tests that mutate `TBD_DB_POOL_*`: `connect` reads all four
+    /// variables, so two such tests interleaving would read each other's values.
+    static POOL_ENV: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+    fn lookup_of<'a>(pairs: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<String> + 'a {
+        move |key| {
+            pairs
+                .iter()
+                .find(|(k, _)| *k == key)
+                .map(|(_, v)| (*v).to_string())
+        }
+    }
+
+    fn tuned() -> DbPoolConfig {
+        DbPoolConfig {
+            max_connections: 3,
+            idle_timeout_secs: 7,
+            max_lifetime_secs: 11,
+            acquire_timeout_secs: 13,
+        }
+    }
+
+    /// Pins the defaults to the literals `connect` carried before T-940.5 — a changed
+    /// default is a changed production pool AND a changed `db test-it` profile.
+    #[test]
+    fn pool_config_defaults_are_the_pre_t940_5_literals() {
+        let unset = DbPoolConfig::from_lookup(|_| None).expect("all unset parses");
+        assert_eq!(unset, DbPoolConfig::default());
+        assert_eq!(
+            unset,
+            DbPoolConfig {
+                max_connections: 25,
+                idle_timeout_secs: 300,
+                max_lifetime_secs: 1800,
+                acquire_timeout_secs: 30,
+            }
+        );
+    }
+
+    #[test]
+    fn pool_config_reads_each_override() {
+        let cfg = DbPoolConfig::from_lookup(lookup_of(&[
+            (DB_POOL_MAX_CONNECTIONS_ENV, "3"),
+            (DB_POOL_IDLE_TIMEOUT_ENV, " 7 "),
+            (DB_POOL_MAX_LIFETIME_ENV, "11"),
+            (DB_POOL_ACQUIRE_TIMEOUT_ENV, "13\n"),
+        ]))
+        .expect("valid overrides parse");
+        assert_eq!(cfg, tuned());
+    }
+
+    #[test]
+    fn pool_config_blank_means_default() {
+        let cfg = DbPoolConfig::from_lookup(lookup_of(&[
+            (DB_POOL_MAX_CONNECTIONS_ENV, ""),
+            (DB_POOL_ACQUIRE_TIMEOUT_ENV, "  "),
+        ]))
+        .expect("blank = unset");
+        assert_eq!(cfg, DbPoolConfig::default());
+    }
+
+    #[test]
+    fn pool_config_rejects_each_malformed_value_naming_the_variable() {
+        for (key, bad) in [
+            (DB_POOL_MAX_CONNECTIONS_ENV, "abc"),
+            (DB_POOL_MAX_CONNECTIONS_ENV, "0"),
+            (DB_POOL_MAX_CONNECTIONS_ENV, "-1"),
+            (DB_POOL_MAX_CONNECTIONS_ENV, "2.5"),
+            (DB_POOL_IDLE_TIMEOUT_ENV, "5m"),
+            (DB_POOL_MAX_LIFETIME_ENV, "-30"),
+            (DB_POOL_ACQUIRE_TIMEOUT_ENV, "thirty"),
+        ] {
+            let err = DbPoolConfig::from_lookup(lookup_of(&[(key, bad)]))
+                .expect_err(&format!("{key}={bad:?} must be refused"));
+            assert!(
+                matches!(&err, ConfigError::MalformedValue(k, v, _) if *k == key && v == bad),
+                "{key}={bad:?}: {err:?}"
+            );
+            let msg = err.to_string();
+            assert!(msg.contains(key), "{msg:?} must name {key}");
+            assert!(
+                msg.contains(&format!("{bad:?}")),
+                "{msg:?} must quote {bad:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn pool_options_carry_every_knob() {
+        let opts = pool_options(&tuned());
+        assert_eq!(opts.get_max_connections(), 3);
+        assert_eq!(opts.get_idle_timeout(), Some(Duration::from_secs(7)));
+        assert_eq!(opts.get_max_lifetime(), Some(Duration::from_secs(11)));
+        assert_eq!(opts.get_acquire_timeout(), Duration::from_secs(13));
+    }
+
+    #[test]
+    fn pool_options_default_pins_the_db_open_literals() {
+        let opts = pool_options(&DbPoolConfig::default());
+        assert_eq!(opts.get_max_connections(), 25);
+        assert_eq!(opts.get_idle_timeout(), Some(Duration::from_secs(5 * 60)));
+        assert_eq!(opts.get_max_lifetime(), Some(Duration::from_secs(30 * 60)));
+        assert_eq!(opts.get_acquire_timeout(), Duration::from_secs(30));
+    }
+
+    #[tokio::test]
+    async fn lazy_pool_keeps_the_default_ceiling() {
+        let pool = connect_lazy("postgres://t9405-lazy/unused").expect("lazy pool");
+        assert_eq!(pool.options().get_max_connections(), 25);
+    }
+
+    /// Acceptance 2 at the `connect` boundary: a non-numeric value refuses to open the pool
+    /// — before any connection attempt (nothing listens on :1, and no retry budget is spent)
+    /// — with an error naming the variable.
+    #[tokio::test]
+    async fn connect_refuses_a_non_numeric_pool_var_naming_it() {
+        let _env = POOL_ENV.lock().await;
+        // SAFETY: see `env_override_yields_a_pool_max_of_3_and_unset_25`.
+        unsafe { std::env::set_var(DB_POOL_ACQUIRE_TIMEOUT_ENV, "abc") };
+        let res = connect("postgres://t9405:t9405@127.0.0.1:1/t9405_no_such_db").await;
+        unsafe { std::env::remove_var(DB_POOL_ACQUIRE_TIMEOUT_ENV) };
+        let err = res.expect_err("TBD_DB_POOL_ACQUIRE_TIMEOUT_SECS=abc must refuse to open a pool");
+        assert!(matches!(err, sqlx::Error::Configuration(_)), "{err:?}");
+        let msg = err.to_string();
+        assert!(
+            msg.contains(DB_POOL_ACQUIRE_TIMEOUT_ENV) && msg.contains("\"abc\""),
+            "{msg:?} must name the variable and quote the value"
+        );
+    }
+
+    /// T-940.5 acceptance — `TBD_DB_POOL_MAX_CONNECTIONS=3` yields a pool whose max is 3, and
+    /// unset yields 25. Builds the very [`PgPoolOptions`] [`connect`] would open with
+    /// ([`env_pool_options`]) into a lazy pool, so the proof needs no database and reads no
+    /// `TEST_DATABASE_URL` (the T-542/T-558 pin forbids that outside `tests/common`); the
+    /// eager `.connect()` in `connect_with_options` is unchanged from before T-940.5.
+    #[tokio::test]
+    async fn env_override_yields_a_pool_max_of_3_and_unset_25() {
+        let _env = POOL_ENV.lock().await;
+        // SAFETY: the two tests that touch `TBD_DB_POOL_*` serialise on `POOL_ENV`; both writes
+        // happen on this thread, every reader is Rust `std::env` (internally locked), and
+        // nothing in the process calls `getenv` from C during the window.
+        unsafe { std::env::set_var(DB_POOL_MAX_CONNECTIONS_ENV, "3") };
+        let overridden = env_pool_options();
+        unsafe { std::env::remove_var(DB_POOL_MAX_CONNECTIONS_ENV) };
+        let unset = env_pool_options();
+        let url = "postgres://t9405-env/unused";
+        let overridden = overridden
+            .expect("TBD_DB_POOL_MAX_CONNECTIONS=3 parses")
+            .connect_lazy(url)
+            .expect("lazy pool");
+        let unset = unset
+            .expect("unset parses")
+            .connect_lazy(url)
+            .expect("lazy pool");
+        assert_eq!(
+            overridden.options().get_max_connections(),
+            3,
+            "TBD_DB_POOL_MAX_CONNECTIONS=3 must yield a pool max of 3"
+        );
+        assert_eq!(
+            unset.options().get_max_connections(),
+            25,
+            "unset TBD_DB_POOL_MAX_CONNECTIONS must yield the default 25"
+        );
     }
 
     async fn wait_until(mut pred: impl FnMut() -> bool, budget: Duration) {

@@ -21,11 +21,20 @@
 //! accumulate another `DISCORD_BOT_TOKEN`: a setting nobody consumes, which
 //! looks configured and does nothing.
 //!
+//! The four `TBD_DB_POOL_*` knobs (T-940.5) are read by [`DbPoolConfig::from_env`] inside
+//! `db::connect`, at pool open, not by [`Config::load`]: `Config` carries no field nobody
+//! consumes (the T-279 rule above), and the binary hands `connect` a URL, not a `Config`.
+//! A malformed value is a [`ConfigError::MalformedValue`] naming the variable.
+//!
 //! [`handlers::admin::send_rcon`]: crate::handlers::admin::send_rcon
 
 use std::env;
 use std::net::IpAddr;
 use std::path::Path;
+
+/// T-940.5 — pool tuning from `TBD_DB_POOL_*`. Defined beside its only consumer in [`crate::db`]
+/// (this file sits 19 lines under the SIZE-3 cap; allowlists are never extended) and re-exported.
+pub use crate::db::DbPoolConfig;
 
 /// Default body cap for `POST /missions/:id/versions` (256 MB), matching Go.
 const DEFAULT_MISSION_VERSION_MAX_BODY_BYTES: i64 = 256 << 20;
@@ -107,6 +116,10 @@ pub enum ConfigError {
     /// would send the operator reading all of them. Carries the entry verbatim (T-625).
     #[error("{0} entry {1:?} is malformed: {2}")]
     MalformedEntry(&'static str, String, &'static str),
+    /// A scalar variable that is set but does not parse (T-940.5 `TBD_DB_POOL_*`). Carries the
+    /// value verbatim, `{:?}`-quoted, for the reason [`Self::MalformedEntry`] does (`"5m"`).
+    #[error("{0} value {1:?} is malformed: {2}")]
+    MalformedValue(&'static str, String, &'static str),
 }
 
 /// One trusted reverse proxy: a bare address (`127.0.0.1`) or a CIDR block (`10.0.0.0/8`).
