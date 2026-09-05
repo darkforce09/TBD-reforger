@@ -456,8 +456,7 @@ mod tests {
         };
         let rejected = get_leaderboards(State(state.clone()), bearer(), Query(query))
             .await
-            .err()
-            .expect("an unknown category must be rejected, never ordered by");
+            .expect_err("an unknown category must be rejected, never ordered by");
         assert_eq!(rejected.into_response().status(), StatusCode::BAD_REQUEST);
 
         for category in CATEGORIES {
