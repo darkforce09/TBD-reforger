@@ -25,3 +25,11 @@ edit, in-editor play button.
 - 2026-09-05 Rate limits (claude.ai session cap) cut the planning agents three times and two slice
   agents once; resumed with context intact each time. Planning wave ran sequentially for that
   reason; slice waves stay at 3.
+- 2026-09-05 Wave 248 first full gate on merged main: FAIL on three steps, none in the slices'
+  own code paths. `clippy xtask+tbd-tools` — 17 lints in `xtask/map_blueprint/*` untouched since
+  2026-08-29 (pre-existing trunk red; completion agent on main). `test xtask+tbd-tools` — two
+  registry pins broken by the command center's own bookkeeping (`active_slice` is not an on-disk
+  key → T-945 filed; T-257 dropped from T-212's deps → restored) — fixed in `021a711eb`.
+  `test api` — T-311's in-crate DB test tripped the T-542 "no raw TEST_DATABASE_URL under src/"
+  pin, which `--slice` gates do not run (completion agent moves it to `tests/`). Lesson recorded:
+  the command center runs `cargo test -p xtask` after every registry edit before dispatch.
