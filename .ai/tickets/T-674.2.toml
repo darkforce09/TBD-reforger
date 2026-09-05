@@ -3,8 +3,10 @@ kind = "work"
 title = "T-674 Enfusion reader"
 summary = "Enfusion mod reader half of T-674: bind wire slot-identity fields and squad leaderSlotId from the compiled mission document."
 class = "feature"
-status = "queued"
-order = 4310
+status = "ready"
+order = 7270
+plan = "docs/plans/t-674_2_plan.md"
+spec = "docs/specs/existing/t674_slot_identity_wire.md"
 executor = "claude-code"
 parent = "T-674"
 main_goal = "Deserialize T-674 identity keys in the mod loader and expose them to spawn runtime."
@@ -16,6 +18,44 @@ citations = [
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c",
+]
+
+depends_on = [
+    "T-674.1",
+]
+
+context = [
+    "T-674 closes the T-216 ledger gap: callsign, rank, stance, unitName, tag and squad leaderSlotId compile silently dropped today.",
+    "T-674.1 emits them at schemaVersion 1.3; this slice binds them in the mod loader and applies them at spawn.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
+]
+
+requirement = [
+    "TBD_MissionSlotStruct gains the five slot keys and the group leaderSlotId; TBD_MissionLoader binds them from the compiled document.",
+    "TBD_SpawnManager applies callsign, rank, unitName and the stance spawn pose; TBD_MissionValidator accepts schemaVersion 1.3.",
+    "No edits under packages/tbd-schema (T-706 owns widening).",
+]
+
+current_state = [
+    "Word-boundary stance in apps/mod is zero hits; the loader has no identity fields; the validator lists understood versions at TBD_MissionValidator.c:42.",
+    "Salvage commit 113108a1 (salvage/t853-dropped/T-674) holds an unreviewed attempt shared with T-675.",
+]
+
+approach = [
+    "Add struct fields, loader binding and the validator 1.3 entry; apply identity in SpawnManager; stance via the Enfusion character pose call.",
+    "Reuse the salvage tag only where it matches this scope; packs after T-674.1 (order 4311).",
+]
+
+verify = [
+    "cargo xtask mod compile",
+    "cargo xtask platform wave gate --slice T-674.2",
+]
+
+acceptance = [
+    "A 1.3 mission loads without validator refusal and each spawned body carries its authored callsign, rank, unitName and stance; squad leader resolves from leaderSlotId.",
+    "Missions without identity keys behave exactly as before; in-game checks sit on the human checklist.",
 ]
 
 [scope]

@@ -1,0 +1,56 @@
+id = "T-939.5"
+kind = "work"
+title = "Faction catalog: squad templates from compositions and defaults"
+summary = "The faction catalog lists squad templates: the document's Compositions plus compiled-in defaults per faction; placing one creates the squad with its slots in one operation."
+class = "feature"
+status = "ready"
+order = 7900
+spec = "docs/specs/audit_2026_09/t939_editor_usability.md"
+plan = "docs/plans/t-939_5_plan.md"
+executor = "claude-code"
+priority = 1
+parent = "T-939"
+main_goal = "Authors place a whole squad from the catalog instead of building it slot by slot."
+context = [
+    "Anchor 2026-09-04: arsenal/asset_catalog.rs has zero squad rows (:321 and :460 drop *_base.et); the Compositions palette at panels/dock_right.rs:63-92 (T-650) lists from the doc.",
+    "No compositions table exists in apps/website/api (handlers, migrations), so shipped defaults compile into the frontend instead of a seed file.",
+    "Related, not re-minted: T-309 faction squads, T-141 slot naming, T-070 vehicles placeable.",
+]
+requirement = [
+    "New arsenal/squad_templates.rs (registered in arsenal/mod.rs): SquadTemplate {name, faction, roles} with defaults per shipped faction and a from_composition adapter.",
+    "asset_catalog.rs exposes a Squads section per faction merging the defaults with the document's Compositions.",
+    "dock_right.rs places a squad template as one doc-store operation creating the squad and its slots with role-named callsigns.",
+    "Placing a template never overwrites an existing squad name; a numeric suffix is appended.",
+]
+current_state = ["The catalog carries no squad rows; Compositions are placeable only from their own palette mode."]
+approach = [
+    "Verify on main: a test asserting the catalog for a shipped faction yields zero squad rows; paste the red.",
+    "Write squad_templates.rs with unit tests (defaults per faction, adapter, suffixing); merge into the catalog; wire placement in dock_right.rs.",
+    "Perturbation: drop the suffix logic; the naming test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-939.5",
+]
+acceptance = [
+    "Every shipped faction shows at least one squad template in the catalog; document Compositions appear beside them.",
+    "Placing a template creates the squad and its slots; one Ctrl+Z removes all of them.",
+    "Placing the same template twice yields distinct squad names.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/frontend/src/editor/arsenal/asset_catalog.rs",
+    "apps/website/frontend/src/editor/arsenal/squad_templates.rs",
+    "apps/website/frontend/src/editor/arsenal/mod.rs",
+    "apps/website/frontend/src/editor/panels/dock_right.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = [
+    "asset_browser",
+    "dock_right",
+]

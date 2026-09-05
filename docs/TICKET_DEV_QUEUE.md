@@ -4,3 +4,659 @@
 # Developer Queue
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
+
+## T-311 — Leaderboard ORDER BY lacks tie-breaker; paging unstable
+
+- **Slice spec:** `docs/specs/ideas/t311_leaderboard_tiebreak.md`
+- **Program hub:** `docs/specs/ideas/t311_leaderboard_tiebreak.md`
+- **Branch:** `ticket/T-311`
+- **Targets:** 
+- **Summary:** None of the five ORDER BY arms in handlers/telemetry/leaderboards.rs:47-51 has a tie-breaker, so LIMIT/OFFSET paging returns an unstable row set once T-194's golden introduces 4-way ties. Append `, lt.discord_id ASC` to each arm and test paging.
+
+## T-305 — pak.rs seeks data_start plus offset; offsets are absolute
+
+- **Slice spec:** `docs/specs/ideas/t305_pak_offset.md`
+- **Program hub:** `docs/specs/ideas/t305_pak_offset.md`
+- **Branch:** `ticket/T-305`
+- **Targets:** 
+- **Summary:** read_file/read_raw in tools/tbd-tools/src/world/pak.rs seek data_start + entry.offset, but entry offsets are absolute from the pak start; every `enf extract` read is shifted by 56 bytes. Seek entry.offset directly, pinned by a fixture test.
+
+## T-298 — Gate tbd-tools density tests in CI
+
+- **Slice spec:** `docs/specs/ideas/t298_tbd_tools_gate.md`
+- **Program hub:** `docs/specs/ideas/t298_tbd_tools_gate.md`
+- **Branch:** `ticket/T-298`
+- **Targets:** 
+- **Summary:** `cargo test -p tbd-tools --lib density::` passes on main today (2 tests, 2026-09-05) but no CI lane runs it; add the tbd-tools lib tests to ci.yml and pin the corner-partition invariant with a seeded randomized test.
+
+## T-943 — platform wave push deadlocks on large LFS ranges
+
+- **Slice spec:** `docs/specs/factory/t943_push_guard_deadlock.md`
+- **Program hub:** `docs/specs/factory/t943_push_guard_deadlock.md`
+- **Branch:** `ticket/T-943`
+- **Targets:** 
+- **Summary:** cmd_push's LFS guard pipes every path of a commit into git check-attr without draining stdout; a commit touching 1,691 files wedges both processes forever, and on a host with git-lfs the guard refuses a legitimate push.
+
+## T-300 — Shared CARGO_TARGET_DIR serves unmerged slice binaries
+
+- **Slice spec:** `docs/specs/ideas/t300_shared_target.md`
+- **Program hub:** `docs/specs/ideas/t300_shared_target.md`
+- **Branch:** `ticket/T-300`
+- **Targets:** 
+- **Summary:** A binary built inside a slice worktree counts as fresh for a main-checkout build under the shared CARGO_TARGET_DIR, so run-style lanes can execute unmerged code; run-only binaries get their own target and preflight checks the build stamp.
+
+## T-924 — Gate verdict receipt required at land
+
+- **Slice spec:** `docs/specs/ideas/t924_gate_verdict.md`
+- **Program hub:** `docs/specs/ideas/t924_gate_verdict.md`
+- **Branch:** `ticket/T-924`
+- **Targets:** 
+- **Summary:** platform wave gate writes a verdict file (HEAD sha plus verdict) and platform wave land refuses a landing ticket without a fresh one. Forward-only: future lands only, no backfill, existing tickets stay green untouched.
+
+## T-277 — 27.4% of the map catalogue is unclassified
+
+- **Slice spec:** `docs/specs/ideas/t277_prefab_classify.md`
+- **Program hub:** `docs/specs/ideas/t277_prefab_classify.md`
+- **Branch:** `ticket/T-277`
+- **Targets:** 
+- **Summary:** 444 of 1,623 everon prefabs fall through to prefab-classify.json's fallback rule; vegetation and utility count zero and the road census is zero against 888 shipped road segments. Append rules until fallback is under 5% and the census matches.
+
+## T-149 — Forest mass polygon smoothing
+
+- **Slice spec:** `docs/specs/ideas/t149_forest_smooth.md`
+- **Program hub:** `docs/specs/ideas/t149_forest_smooth.md`
+- **Branch:** `ticket/T-149`
+- **Targets:** 
+- **Summary:** Upgrade the V1 blocky Path B forest hulls: sample the existing 8 m TBDD density grid and apply Chaikin smoothing to the marching-squares rings before the forest-regions emit so forest edges read as natural cartography.
+
+## T-676 — Trigger activation and effects — the Enfusion runtime
+
+- **Slice spec:** `docs/specs/existing/t676_trigger_runtime.md`
+- **Program hub:** `docs/specs/existing/t676_trigger_runtime.md`
+- **Branch:** `ticket/T-676`
+- **Targets:** 
+- **Summary:** Trigger activation and effects — the Enfusion runtime
+
+## T-677 — Waypoints — group movement orders
+
+- **Slice spec:** `docs/specs/existing/t677_waypoint_runtime.md`
+- **Program hub:** `docs/specs/existing/t677_waypoint_runtime.md`
+- **Branch:** `ticket/T-677`
+- **Targets:** 
+- **Summary:** Waypoints — group movement orders
+
+## T-678 — Group AI state: combat mode, behaviour, formation, speed
+
+- **Slice spec:** `docs/specs/existing/t678_group_ai_state.md`
+- **Program hub:** `docs/specs/existing/t678_group_ai_state.md`
+- **Branch:** `ticket/T-678`
+- **Targets:** 
+- **Summary:** Group AI state: combat mode, behaviour, formation, speed
+
+## T-673 — Marker style and Area markers — the $defs/marker widening
+
+- **Slice spec:** `docs/specs/existing/t673_marker_style_reader.md`
+- **Program hub:** `docs/specs/existing/t673_marker_style_reader.md`
+- **Branch:** `ticket/T-673`
+- **Targets:** 
+- **Summary:** Marker style and Area markers — the $defs/marker widening
+
+## T-212 — Typed per-side objectives with attributes
+
+- **Slice spec:** `docs/specs/existing/t212_typed_objectives.md`
+- **Program hub:** `docs/specs/existing/t212_typed_objectives.md`
+- **Branch:** `ticket/T-212`
+- **Targets:** 
+- **Summary:** Objectives as typed, placed, per-side entities with one uniform attribute spine
+
+## T-680 — Vehicle states: lock, fuel, ammo
+
+- **Slice spec:** `docs/specs/existing/t680_vehicle_states.md`
+- **Program hub:** `docs/specs/existing/t680_vehicle_states.md`
+- **Branch:** `ticket/T-680`
+- **Targets:** 
+- **Summary:** Vehicle states: lock, fuel, ammo
+
+## T-681 — Entity states: health, allow-damage, show-model, size, stamina
+
+- **Slice spec:** `docs/specs/existing/t681_entity_states.md`
+- **Program hub:** `docs/specs/existing/t681_entity_states.md`
+- **Branch:** `ticket/T-681`
+- **Targets:** 
+- **Summary:** Entity states: health, allow-damage, show-model, size, stamina
+
+## T-682 — Environment readers: fog, wind, view distance
+
+- **Slice spec:** `docs/specs/existing/t682_environment_readers.md`
+- **Program hub:** `docs/specs/existing/t682_environment_readers.md`
+- **Branch:** `ticket/T-682`
+- **Targets:** 
+- **Summary:** Environment readers: fog, wind, view distance
+
+## T-684 — Mission parameters as first-class document objects
+
+- **Slice spec:** `docs/specs/existing/t684_mission_params.md`
+- **Program hub:** `docs/specs/existing/t684_mission_params.md`
+- **Branch:** `ticket/T-684`
+- **Targets:** 
+- **Summary:** Mission parameters as first-class document objects
+
+## T-685 — Zone volumes: height bounds capture counts and owner
+
+- **Slice spec:** `docs/specs/existing/t685_zone_volumes.md`
+- **Program hub:** `docs/specs/existing/t685_zone_volumes.md`
+- **Branch:** `ticket/T-685`
+- **Targets:** 
+- **Summary:** Zones become volumes: min/max height, attacker and defender counts, starting owner
+
+## T-689 — Play-area enforcement gains a vehicle-class axis: the aircraft exemption
+
+- **Slice spec:** `docs/specs/existing/t689_play_area_vehicle_axis.md`
+- **Program hub:** `docs/specs/existing/t689_play_area_vehicle_axis.md`
+- **Branch:** `ticket/T-689`
+- **Targets:** 
+- **Summary:** Play-area enforcement gains a vehicle-class axis: the aircraft exemption
+
+## T-702 — Whole-terrain zone — one zone sized to the map
+
+- **Slice spec:** `docs/specs/existing/t702_whole_terrain_zone.md`
+- **Program hub:** `docs/specs/existing/t702_whole_terrain_zone.md`
+- **Branch:** `ticket/T-702`
+- **Targets:** 
+- **Summary:** 3DEN-MISC-001 E11: one command authors a play-area boundary polygon covering the terrain exactly from terrain_bounds.
+
+## T-705 — Player gadget flags — map, compass, watch, GPS, radio
+
+- **Slice spec:** `docs/specs/existing/t705_gadget_flags.md`
+- **Program hub:** `docs/specs/existing/t705_gadget_flags.md`
+- **Branch:** `ticket/T-705`
+- **Targets:** 
+- **Summary:** Player gadget flags — map, compass, watch, GPS, radio
+
+## T-654 — Conditional inclusion: variant-gated document subtrees
+
+- **Slice spec:** `docs/specs/existing/t654_variant_inclusion.md`
+- **Program hub:** `docs/specs/existing/t654_variant_inclusion.md`
+- **Branch:** `ticket/T-654`
+- **Targets:** 
+- **Summary:** Conditional inclusion: variant-gated document subtrees
+
+## T-679 — Placement scatter: radius and area shape
+
+- **Slice spec:** `docs/specs/existing/t679_placement_scatter.md`
+- **Program hub:** `docs/specs/existing/t679_placement_scatter.md`
+- **Branch:** `ticket/T-679`
+- **Targets:** 
+- **Summary:** Placement scatter: radius and area shape
+
+## T-299 — Single-faction compile ships a phantom opfor
+
+- **Slice spec:** `docs/specs/ideas/t299_phantom_opfor.md`
+- **Program hub:** `docs/specs/ideas/t299_phantom_opfor.md`
+- **Branch:** `ticket/T-299`
+- **Targets:** 
+- **Summary:** flatten pads a stub opposing faction (flatten.rs:2470-2472) to satisfy the schema's two-faction rule, so every single-faction mission shows an unplayable side in briefing and ORBAT. Let the schema permit one faction and stop padding.
+
+## T-310 — Arsenal attachments never reach the compiled document
+
+- **Slice spec:** `docs/specs/ideas/t310_arsenal_attachments.md`
+- **Program hub:** `docs/specs/ideas/t310_arsenal_attachments.md`
+- **Branch:** `ticket/T-310`
+- **Targets:** 
+- **Summary:** T-197 persists weapon attachment edges in SlotLoadoutV2 but flatten's mod_slot_loadout reads only weapon/optic/magazine and the schema gear block has no list; add gear.attachments[], emit it, and mount it in TBD_LoadoutEquipHelper.c.
+
+## T-290 — Nine dead flatten fields mod never reads
+
+- **Slice spec:** `docs/specs/ideas/t290_dead_flatten_fields.md`
+- **Program hub:** `docs/specs/ideas/t290_dead_flatten_fields.md`
+- **Branch:** `ticket/T-290`
+- **Targets:** 
+- **Summary:** meta.author/templateId/playerRange, the environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds and the orbat block are emitted but never read by the mod; add readers where cheap and annotate the rest in an emit ledger.
+
+## T-291 — Resolve five schema fields implemented on no surface
+
+- **Slice spec:** `docs/specs/ideas/t291_orphan_schema_fields.md`
+- **Program hub:** `docs/specs/ideas/t291_orphan_schema_fields.md`
+- **Branch:** `ticket/T-291`
+- **Targets:** 
+- **Summary:** environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem.
+
+## T-242 — Emit T-216 slot deltas through flatten
+
+- **Slice spec:** `docs/specs/ideas/t242_t216_deltas.md`
+- **Program hub:** `docs/specs/ideas/t242_t216_deltas.md`
+- **Branch:** `ticket/T-242`
+- **Targets:** 
+- **Summary:** The T-216 schema deltas (slot tag/callsign/rank/stance, group leaderSlotId, root vehicles $def) are all declared in mission.schema.json today, but flatten drops the four slot fields (DIAG_DROP_SLOT_*); emit them and pin with schema-validated goldens.
+
+## T-133 — OFCR timed objectives
+
+- **Slice spec:** `docs/platform/tbd_north_star_backlog.md`
+- **Program hub:** `docs/platform/tbd_north_star_backlog.md`
+- **Branch:** `ticket/T-133`
+- **Targets:** 
+- **Summary:** Objectives that evaluate at mission time T+N: the T-936.2 task model gains a schedule (delay, window), the tasks panel edits it, and TBD_TaskStateMachine.c fires the transition on the mission clock.
+
+## T-301 — Briefing kit lists 7 of 13 gear fields
+
+- **Slice spec:** `docs/specs/ideas/t301_briefing_kit.md`
+- **Program hub:** `docs/specs/ideas/t301_briefing_kit.md`
+- **Branch:** `ticket/T-301`
+- **Targets:** 
+- **Summary:** TBD_BriefingData.BuildKit (UI/TBD_BriefingData.c:519) lists seven gear fields; T-182's launcher, handgun and throwable never appear on the briefing screen. Add them while keeping pants/boots/handwear hidden.
+
+## T-302 — Prove T-182 weapon equip on a live body
+
+- **Slice spec:** `docs/specs/ideas/t302_weapon_equip_boot.md`
+- **Program hub:** `docs/specs/ideas/t302_weapon_equip_boot.md`
+- **Branch:** `ticket/T-302`
+- **Targets:** 
+- **Summary:** T-182's slot-indexed weapon equip compiles but was never observed in game; add a per-slot equip result log, a headless world-boot assertion that four authored weapons land in four slots, and a human checklist item.
+
+## T-304 — RegistryScan never reads weapon weight; 32 wrong rows
+
+- **Slice spec:** `docs/specs/ideas/t304_registry_scan_weight.md`
+- **Program hub:** `docs/specs/ideas/t304_registry_scan_weight.md`
+- **Branch:** `ticket/T-304`
+- **Targets:** 
+- **Summary:** TBD_RegistryScan ReadPhysAttrsPass treats SCR_WeaponAttachmentsStorageComponent as storage so weapon weight is never read (0/107), and its class-keyed foreach picks hash order over derivation depth, so 32 rows carry Item_Base.et's 0.01 kg.
+
+## T-139 — Lobby loadout visual preview
+
+- **Slice spec:** `docs/platform/tbd_north_star_backlog.md`
+- **Program hub:** `docs/platform/tbd_north_star_backlog.md`
+- **Branch:** `ticket/T-139`
+- **Targets:** 
+- **Summary:** In-game lobby kit preview: a TBD_LoadoutPreview widget renders the selected slot's gear as an icon grid (stretch: 2D mannequin) beside the slot list in TBD_LobbyScreen; layout file under UI/layouts.
+
+## T-257 — Undo scope misses loadouts, items, objectives, markers
+
+- **Slice spec:** `docs/specs/ideas/t257_undo_scope.md`
+- **Program hub:** `docs/specs/ideas/t257_undo_scope.md`
+- **Branch:** `ticket/T-257`
+- **Targets:** 
+- **Summary:** hydrate clears loadouts, items, objectives and markers but store.rs expand_scope covers slots, squads, factions and editor_layers only, so those roots become non-undoable the day something mutates them. Add them to the UndoManager scope with a test per root.
+
+## T-190 — Two tabs on one mission clobber each other
+
+- **Slice spec:** `docs/specs/ideas/t190_tab_clobber.md`
+- **Program hub:** `docs/specs/ideas/t190_tab_clobber.md`
+- **Branch:** `ticket/T-190`
+- **Targets:** 
+- **Summary:** Two tabs on one mission write one IndexedDB key; the last debounce wins and the reload prompt blames server drift. Detect the second tab, merge through the CRDT, and give the conflict modal counts, timestamps and a destructive marker.
+
+## T-932 — Parked briefing markers survive server save/reload
+
+- **Slice spec:** `docs/specs/existing/t932_parked_markers_persist.md`
+- **Program hub:** `docs/specs/existing/t932_parked_markers_persist.md`
+- **Branch:** `ticket/T-932`
+- **Targets:** 
+- **Summary:** T-826 parking: pendingBriefingMarkers drop on server JSON save/reload before first faction mint
+
+## T-930 — Vehicle first-paint disc until moved
+
+- **Slice spec:** `docs/specs/existing/t930_vehicle_first_paint.md`
+- **Program hub:** `docs/specs/existing/t930_vehicle_first_paint.md`
+- **Branch:** `ticket/T-930`
+- **Targets:** 
+- **Summary:** Vehicle first-paint disc until moved — W210 eye-pass
+
+## T-704 — Command palette over every editor command
+
+- **Slice spec:** `docs/specs/ideas/t704_command_palette.md`
+- **Program hub:** `docs/specs/ideas/t704_command_palette.md`
+- **Branch:** `ticket/T-704`
+- **Targets:** 
+- **Summary:** Alt+Space opens a fuzzy palette over every top-strip and toolbelt command, ranked by usage frequency stored per browser; Esc closes; Enter runs the command through its existing handler.
+
+## T-142 — MC shell layout polish
+
+- **Slice spec:** `docs/platform/tbd_north_star_backlog.md`
+- **Program hub:** `docs/platform/tbd_north_star_backlog.md`
+- **Branch:** `ticket/T-142`
+- **Targets:** 
+- **Summary:** Toolbelt placement, Attributes modal grouping and stub-tool visibility — layout UX without full T-082 field parity; no document-write changes.
+
+## T-157 — Mission Create visual overhaul
+
+- **Slice spec:** `docs/specs/ideas/t157_mission_create.md`
+- **Program hub:** `docs/specs/ideas/t157_mission_create.md`
+- **Branch:** `ticket/T-157`
+- **Targets:** 
+- **Summary:** The New Mission dialog gets a visual map picker with terrain thumbnails and a modset selection; time, weather and max players leave the dialog because they are editor settings.
+
+## T-158 — Editor shell UX consolidation
+
+- **Slice spec:** `docs/specs/ideas/t158_editor_shell.md`
+- **Program hub:** `docs/specs/ideas/t158_editor_shell.md`
+- **Branch:** `ticket/T-158`
+- **Targets:** 
+- **Summary:** Consolidate the two Settings entry points into one, wire the top-bar buttons that are still inert, and remove the redundant left-dock Assets tab now that the right dock is the asset surface.
+
+## T-129 — Building floor selector
+
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md`
+- **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md`
+- **Branch:** `ticket/T-129`
+- **Targets:** 
+- **Summary:** Per-building floor slice in the Mission Creator map: a floor selector tool derives storey bands from the occluder BVH heights and clips the building render to the chosen floor so placement inside multi-floor buildings is unambiguous.
+
+## T-131 — Route planner tool
+
+- **Slice spec:** `docs/platform/tbd_north_star_backlog.md`
+- **Program hub:** `docs/platform/tbd_north_star_backlog.md`
+- **Branch:** `ticket/T-131`
+- **Targets:** 
+- **Summary:** Mission Creator tool that plans routes on the exported road graph: click waypoints, snap to road segments, show distance and an elevation profile. Not runtime convoy AI.
+
+## T-141 — Procedural slot naming
+
+- **Slice spec:** `docs/platform/tbd_north_star_backlog.md`
+- **Program hub:** `docs/platform/tbd_north_star_backlog.md`
+- **Branch:** `ticket/T-141`
+- **Targets:** 
+- **Summary:** Adjective/nickname word packs generate slot display names on creation; a manual override wins and survives renumbering. Builds on T-071 ORBAT numbering.
+
+## T-146 — Asset Browser Data Wiring
+
+- **Slice spec:** `docs/specs/existing/t146_asset_browser_data_wiring.md`
+- **Program hub:** `docs/specs/existing/t146_asset_browser_data_wiring.md`
+- **Branch:** `ticket/T-146`
+- **Targets:** 
+- **Summary:** Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred.
+
+## T-143 — Water mask placement guard and exact hydrology
+
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
+- **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
+- **Branch:** `ticket/T-143`
+- **Targets:** 
+- **Summary:** Ship the T-935.9 water mask to the editor: a placement guard refuses units in the ocean and warns in lakes; pak.rs (fixed by T-305) reads Eden water entities so the vector layer becomes exact instead of the appearance classifier.
+
+## T-135 — Mission modset manager
+
+- **Slice spec:** `docs/platform/tbd_north_star_backlog.md`
+- **Program hub:** `docs/platform/tbd_north_star_backlog.md`
+- **Branch:** `ticket/T-135`
+- **Targets:** 
+- **Summary:** Per-mission Workshop modset presets validated against registry aliases at export: a workshop_sync service resolves mod metadata, the modpacks page edits presets, and export refuses a mission whose registry aliases are not covered by its preset.
+
+## T-309 — FactionDoc squad level for Apply Template
+
+- **Slice spec:** `docs/specs/ideas/t309_faction_doc_squads.md`
+- **Program hub:** `docs/specs/ideas/t309_faction_doc_squads.md`
+- **Branch:** `ticket/T-309`
+- **Targets:** 
+- **Summary:** Preserve squads through Apply Template: add a squad level to faction-library.schema.json and FactionDoc (core/dto.rs:745), then both sides of the editor ops — orbat_apply_faction and faction_doc_from_side_core — so save-as-template then Apply round-trips N squads.
+
+## T-140 — Mission client payload budget
+
+- **Slice spec:** `docs/platform/tbd_north_star_backlog.md`
+- **Program hub:** `docs/platform/tbd_north_star_backlog.md`
+- **Branch:** `ticket/T-140`
+- **Targets:** 
+- **Summary:** Measure compiled mission size against slot and entity counts, define a console-safe budget, and make compile report a payload-budget diagnostic with a server-only-bulk policy for what exceeds it.
+
+## T-136 — 3D AAR / OCAP-style replay
+
+- **Slice spec:** `docs/platform/tbd_north_star_backlog.md`
+- **Program hub:** `docs/platform/tbd_north_star_backlog.md`
+- **Branch:** `ticket/T-136`
+- **Targets:** 
+- **Summary:** Post-event replay: T-940.13 telemetry events → a replay endpoint returning a per-match timeline → a map scrubber page with unit positions over time; aar_replay_url on deployments links to it.
+
+## T-295 — Realtime collaborative editing
+
+- **Slice spec:** `docs/specs/ideas/t295_realtime_collab.md`
+- **Program hub:** `docs/specs/ideas/t295_realtime_collab.md`
+- **Branch:** `ticket/T-295`
+- **Targets:** 
+- **Summary:** Axum websocket at /missions/{id}/sync relays yrs updates and awareness between clients; the editor's collab_sync.rs applies remote updates into the local doc; POST /versions gains edit-since-load concurrency (base version id → 409).
+
+## T-132 — Multiplayer MC + visual git
+
+- **Slice spec:** `docs/platform/tbd_north_star_backlog.md`
+- **Program hub:** `docs/platform/tbd_north_star_backlog.md`
+- **Branch:** `ticket/T-132`
+- **Targets:** 
+- **Summary:** Visual mission diff/review UI over the T-295 sync: doc/diff.rs computes entity-level changes between two versions and a mission_diff page renders added, removed, moved and changed slots and vehicles for review before publish.
+
+## T-138 — One-command self-host setup via xtask
+
+- **Slice spec:** `docs/platform/tbd_north_star_backlog.md`
+- **Program hub:** `docs/platform/tbd_north_star_backlog.md`
+- **Branch:** `ticket/T-138`
+- **Targets:** 
+- **Summary:** `cargo xtask setup all` checks deps, writes .env, runs db up, migrate and seed, and optionally pulls map assets (git lfs pull) — the fork-friendly install story, in Rust, no shell script.
+
+## T-294 — Arland has a manifest and no object data
+
+- **Slice spec:** `docs/specs/ideas/t294_arland_objects.md`
+- **Program hub:** `docs/specs/ideas/t294_arland_objects.md`
+- **Branch:** `ticket/T-294`
+- **Targets:** 
+- **Summary:** terrain-registry.json declares arland queued with P1 only; packages/map-assets/arland holds a 756-byte manifest and zero objects. Run the export-terrain gate for arland: the operator exports from Workbench, the agent stages, builds and records P1.
+
+## T-905 — Split 37 T-159 frontend SIZE-3 allowlist files
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-905`
+- **Targets:** 
+- **Summary:** Split T-159 frontend SIZE-3 files (37) the T-899 allowlist is holding
+
+## T-906 — Split 7 T-145 API SIZE-3 allowlist files
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-906`
+- **Targets:** 
+- **Summary:** Split T-145 API SIZE-3 files (7) the T-899 allowlist is holding
+
+## T-907 — Split 11 map-engine SIZE-3 allowlist files
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-907`
+- **Targets:** 
+- **Summary:** Split map-engine SIZE-3 files (11) the T-899 allowlist is holding
+
+## T-908 — Split 8 xtask/tools SIZE-3 allowlist files
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-908`
+- **Targets:** 
+- **Summary:** Split xtask/tools SIZE-3 files (8) the T-899 allowlist is holding
+
+## T-933 — leptos-gates v-suite goldens break pre-close exit-0
+
+- **Slice spec:** `docs/specs/existing/t933_leptos_gates_exit.md`
+- **Program hub:** `docs/specs/existing/t933_leptos_gates_exit.md`
+- **Branch:** `ticket/T-933`
+- **Targets:** 
+- **Summary:** mk leptos-gates exits non-zero after editor-suite 20/20 because v-suite SPA goldens mass-fail
+
+## T-816 — Armed composition hint open; one Esc clears both layers wrongly
+
+- **Slice spec:** `docs/specs/existing/t816_esc_hint_layer.md`
+- **Program hub:** `docs/specs/existing/t816_esc_hint_layer.md`
+- **Branch:** `ticket/T-816`
+- **Targets:** 
+- **Summary:** Esc with an armed composition and the Controls Hint open clears both in one press
+
+## T-817 — Grid labels lag ~1.4s on stationary wheel zoom
+
+- **Slice spec:** `docs/specs/existing/t817_grid_label_zoom_lag.md`
+- **Program hub:** `docs/specs/existing/t817_grid_label_zoom_lag.md`
+- **Branch:** `ticket/T-817`
+- **Targets:** 
+- **Summary:** Grid labels lag up to ~1.4s on wheel zoom with a stationary pointer
+
+## T-820 — Catalog failure generic cause; chips visible wrongly
+
+- **Slice spec:** `docs/specs/existing/t820_catalog_failure_cause.md`
+- **Program hub:** `docs/specs/existing/t820_catalog_failure_cause.md`
+- **Branch:** `ticket/T-820`
+- **Targets:** 
+- **Summary:** Catalog failure view shows the generic cause with chips visible where no-modpack should fire
+
+## T-821 — Save version prefill static; second save 409s
+
+- **Slice spec:** `docs/specs/existing/t821_save_version_prefill.md`
+- **Program hub:** `docs/specs/existing/t821_save_version_prefill.md`
+- **Branch:** `ticket/T-821`
+- **Targets:** 
+- **Summary:** Save Version prefill is a static 0.1.0 — no auto-bump, second save 409s
+
+## T-822 — Outliner dblclick must not open asset picker under Attributes
+
+- **Slice spec:** `docs/specs/existing/t822_outliner_dblclick_bubble.md`
+- **Program hub:** `docs/specs/existing/t822_outliner_dblclick_bubble.md`
+- **Branch:** `ticket/T-822`
+- **Targets:** 
+- **Summary:** Outliner dblclick bubbles into the map container — asset picker opens under Attributes
+
+## T-823 — OBJ readout must count vehicles or rename honestly
+
+- **Slice spec:** `docs/specs/existing/t823_obj_readout_vehicles.md`
+- **Program hub:** `docs/specs/existing/t823_obj_readout_vehicles.md`
+- **Branch:** `ticket/T-823`
+- **Targets:** 
+- **Summary:** OBJ readout counts slots only — placed vehicles are invisible to it
+
+## T-824 — Placed zones must render visibly at rest on map
+
+- **Slice spec:** `docs/specs/existing/t824_zone_render_at_rest.md`
+- **Program hub:** `docs/specs/existing/t824_zone_render_at_rest.md`
+- **Branch:** `ticket/T-824`
+- **Targets:** 
+- **Summary:** Placed zones are not visible on the map — investigate and fix the render (repro-first)
+
+## T-827 — Validation chip red under 4.5:1 live-effective
+
+- **Slice spec:** `docs/specs/existing/t827_validation_chip_contrast.md`
+- **Program hub:** `docs/specs/existing/t827_validation_chip_contrast.md`
+- **Branch:** `ticket/T-827`
+- **Targets:** 
+- **Summary:** Validation chip red measures 4.0-4.3:1 over the live glass — passes only by plate-calc
+
+## T-828 — Marker captions drift when zoom changes without rebind
+
+- **Slice spec:** `docs/specs/existing/t828_marker_caption_drift.md`
+- **Program hub:** `docs/specs/existing/t828_marker_caption_drift.md`
+- **Branch:** `ticket/T-828`
+- **Targets:** 
+- **Summary:** Marker captions are world-frozen at bind-time zoom — drift past 40px until a rebind
+
+## T-830 — Outliner rows cramped; density pass on layer tree
+
+- **Slice spec:** `docs/specs/existing/t830_outliner_density.md`
+- **Program hub:** `docs/specs/existing/t830_outliner_density.md`
+- **Branch:** `ticket/T-830`
+- **Targets:** 
+- **Summary:** Outliner rows are too cramped — density pass on the layer tree
+
+## T-831 — Per-side marker authoring audit then explicit UI
+
+- **Slice spec:** `docs/specs/existing/t831_per_side_markers_audit.md`
+- **Program hub:** `docs/specs/existing/t831_per_side_markers_audit.md`
+- **Branch:** `ticket/T-831`
+- **Targets:** 
+- **Summary:** Per-side markers: author for each side, visible only to that side (Arma 3 model) — establish what exists first
+
+## T-833 — Rotation ring: relative delta plus live preview
+
+- **Slice spec:** `docs/specs/existing/t833_rotation_ring_relative.md`
+- **Program hub:** `docs/specs/existing/t833_rotation_ring_relative.md`
+- **Branch:** `ticket/T-833`
+- **Targets:** 
+- **Summary:** Rotation widget: relative drag delta (not absolute aim) + live per-frame preview
+
+## T-834 — Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar
+
+- **Slice spec:** `docs/specs/existing/t834_wave205_residue.md`
+- **Program hub:** `docs/specs/existing/t834_wave205_residue.md`
+- **Branch:** `ticket/T-834`
+- **Targets:** 
+- **Summary:** Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar
+
+## T-837 — Vehicles cannot be deleted — slots can, vehicles cannot
+
+- **Slice spec:** `docs/specs/existing/t837_vehicle_delete.md`
+- **Program hub:** `docs/specs/existing/t837_vehicle_delete.md`
+- **Branch:** `ticket/T-837`
+- **Targets:** 
+- **Summary:** Vehicles cannot be deleted — slots can, vehicles cannot
+
+## T-838 — Map markers selectable; outliner lists; dblclick opens Attributes
+
+- **Slice spec:** `docs/specs/existing/t838_marker_select_outliner.md`
+- **Program hub:** `docs/specs/existing/t838_marker_select_outliner.md`
+- **Branch:** `ticket/T-838`
+- **Targets:** 
+- **Summary:** Markers select on the map and list in the outliner; double-click opens marker Attributes
+
+## T-839 — Retire floating Select/Ruler/LoS bottom-centre pill
+
+- **Slice spec:** `docs/specs/existing/t839_retire_floating_pill.md`
+- **Program hub:** `docs/specs/existing/t839_retire_floating_pill.md`
+- **Branch:** `ticket/T-839`
+- **Targets:** 
+- **Summary:** The floating Select/Ruler/LoS pill still exists — decision 1 said it dies
+
+## T-841 — Type picker popover translucent; make opaque panel
+
+- **Slice spec:** `docs/specs/existing/t841_type_picker_opaque.md`
+- **Program hub:** `docs/specs/existing/t841_type_picker_opaque.md`
+- **Branch:** `ticket/T-841`
+- **Targets:** 
+- **Summary:** The Type picker popover is translucent — text blurs over the map; make it an opaque panel
+
+## T-845 — A selected vehicle looks identical to an unselected one
+
+- **Slice spec:** `docs/specs/existing/t845_selected_vehicle_treatment.md`
+- **Program hub:** `docs/specs/existing/t845_selected_vehicle_treatment.md`
+- **Branch:** `ticket/T-845`
+- **Targets:** 
+- **Summary:** A selected vehicle looks identical to an unselected one
+
+## T-848 — Group to must use exclusive ORBAT membership
+
+- **Slice spec:** `docs/specs/existing/t848_group_to_exclusive_orbat.md`
+- **Program hub:** `docs/specs/existing/t848_group_to_exclusive_orbat.md`
+- **Branch:** `ticket/T-848`
+- **Targets:** 
+- **Summary:** Connect ▸ Group to must mean exclusive ORBAT squad membership — not stackable connection edges
+
+## T-849 — Add ungroup leave-squad verb without deleting slot
+
+- **Slice spec:** `docs/specs/existing/t849_ungroup_verb.md`
+- **Program hub:** `docs/specs/existing/t849_ungroup_verb.md`
+- **Branch:** `ticket/T-849`
+- **Targets:** 
+- **Summary:** Ungroup / leave-squad — no editor verb to take a slot out of a squad without deleting it
+
+## T-850 — Squad tether must follow drag on auto-grouped units
+
+- **Slice spec:** `docs/specs/existing/t850_squad_tether_drag.md`
+- **Program hub:** `docs/specs/existing/t850_squad_tether_drag.md`
+- **Branch:** `ticket/T-850`
+- **Targets:** 
+- **Summary:** T-801 eye-pass: squad tether did not follow drag on same-squad (auto-grouped) units
+
+## T-926 — Vehicle Attributes Transform/Position tab
+
+- **Slice spec:** `docs/specs/existing/t926_vehicle_transform_tab.md`
+- **Program hub:** `docs/specs/existing/t926_vehicle_transform_tab.md`
+- **Branch:** `ticket/T-926`
+- **Targets:** 
+- **Summary:** Vehicle Attributes need Transform/Position parity (X/Y/Z + Heading at minimum); T-818 only shipped Heading/Cargo/Crew
+
+## T-927 — Editor chrome dblclick leak to map
+
+- **Slice spec:** `docs/specs/existing/t927_chrome_dblclick_leak.md`
+- **Program hub:** `docs/specs/existing/t927_chrome_dblclick_leak.md`
+- **Branch:** `ticket/T-927`
+- **Targets:** 
+- **Summary:** Chrome docks/Attributes/top bar leak map dblclick — W210 eye-pass

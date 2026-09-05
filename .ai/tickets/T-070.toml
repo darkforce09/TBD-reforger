@@ -3,10 +3,11 @@ kind = "work"
 title = "Vehicles placeable"
 summary = "Drag vehicles from palette onto map with crew hooks."
 class = "feature"
-status = "idea"
+status = "cancelled"
+order = 6439
 executor = "claude-code"
+notes = "2026-09-05 cancelled: vehicles are placeable from the palette today — T-818 (shipped 22f3b137) moved the vehicle crew/heading/cargo editor into the Attributes modal and T-819 (shipped 00eea875) hides crewed figures; apps/website/frontend/src/editor/panels/vehicles_panel.rs placed_vehicles_panel exists."
 depends_on = ["T-068"]
-estimated = ["scope"]
 
 [scope]
 domain = "website"

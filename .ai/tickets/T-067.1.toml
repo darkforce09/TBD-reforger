@@ -1,23 +1,53 @@
 id = "T-067.1"
 kind = "work"
-title = "Lazy chunk residency @ 1M"
-summary = "Evict cold chunks from slotsById; reload from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M."
-class = "feature"
-status = "idea"
 parent = "T-111"
-context = ["T-067 shipped bulk paste and 512m chunk scaffolding; CPU viewport cull deferred."]
-requirement = [
-    "Evict cold chunks from slotsById and caches; Y.Doc stays authoritative.",
-    "Load chunk slots on viewport enter via yieldToUi.",
-    "Save/Export compiles md.entities.slots in worker without full store materialization.",
+title = "Byte-budget chunk eviction at 1M objects"
+summary = "WorldResidency evicts by chunk count (cap = max(64, 3 × pinned)); at 1M objects resident bytes plus BLAS/descriptor caches exceed browser memory. Add a byte budget in world/eviction.rs, evict caches with their chunks, reload on viewport re-entry."
+class = "feature"
+status = "ready"
+order = 8270
+priority = 2
+spec = "docs/specs/ideas/t067_1_chunk_eviction.md"
+plan = "docs/plans/t-067_1_plan.md"
+executor = "claude-code"
+main_goal = "Resident chunk bytes plus caches stay under a configured budget on a 1M-object terrain."
+notes = "2026-09-05: body rewritten for the Rust port (slotsById / Y.Doc / spatialChunks.ts were the React era). world_host.rs is shared with T-935.13 → depends_on it; world/mod.rs is shared with T-131 → different waves. residency.rs is an allowlisted SIZE-3 file: call sites only."
+context = [
+    "Anchor 2026-09-05: world/residency.rs:16 LRU cap = max(LRU_MIN_CHUNKS 64, 3 × pinned), pinned never evicted; eviction_log :1670; frames_over_budget (:185) is a time budget, not bytes.",
+    "world_host.rs:42 owns the WorldResidency and the occluder/label caches; nothing evicts those caches when a chunk leaves.",
 ]
-current_state = ["Dormant spatialChunks.ts scaffolding; full rbush pick unchanged."]
-approach = ["Optional IDB v3 spatial chunk keys per t067 spec §Deferred."]
-citations = [
-    "t067_spatial_chunks.md §Deferred",
-    "T-111 program summary",
+requirement = [
+    "New world/eviction.rs (registered in world/mod.rs): EvictionPolicy {byte_budget, per-chunk bytes} choosing LRU victims until under budget; pinned chunks never evicted.",
+    "residency.rs calls the policy from set_viewport and end_apply_frame (call sites only).",
+    "world_host.rs drops occluder and label cache entries for evicted chunk ids and reloads on viewport re-entry.",
+]
+current_state = [
+    "Eviction is count-based; caches outlive their chunks; a 1M-object terrain can exceed the wasm heap while every chunk count is legal.",
+]
+approach = [
+    "Write eviction.rs with tests on synthetic chunk sizes (budget respected, pinned kept, LRU order).",
+    "Wire the call sites; wasm test: evicting a chunk removes its occluder cache entry.",
+    "Perturbation: ignore the budget; the budget test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features world::eviction",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-067.1",
+]
+acceptance = [
+    "Resident chunk bytes plus caches stay under the configured budget while panning the everon world.",
+    "Re-entering a viewport reloads its chunks and caches without a full rebuild; pinned chunks are never evicted.",
+]
+depends_on = ["T-935.13"]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "crates/map-engine-core/src/world/residency.rs",
+    "crates/map-engine-core/src/world/eviction.rs",
+    "crates/map-engine-core/src/world/mod.rs",
+    "apps/website/frontend/src/editor/world_assets/world_host.rs",
 ]
 
 [scope]
-domain = "repo"
-layer = "docs"
+domain = "engine"
+layer = "world"

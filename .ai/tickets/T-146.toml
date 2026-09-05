@@ -3,16 +3,19 @@ kind = "work"
 title = "Asset Browser Data Wiring"
 summary = "Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred."
 class = "feature"
-status = "queued"
-order = 1470
+status = "ready"
+order = 8050
+spec = "docs/specs/existing/t146_asset_browser_data_wiring.md"
+plan = "docs/plans/t-146_plan.md"
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope. "
+notes = "Scope resolved 2026-09-05: website.frontend.mission_creator / asset_browser (was frozen unmappable)."
 depends_on = ["T-150"]
 main_goal = "Wire T-150 universal registry export into asset catalog for map drag-place."
 context = [
     "Depends on T-150 universal registry export before browser wiring.",
     "T-809 shipped per-faction tree absorbing part of this scope.",
     "gap_analysis partial: live catalog tree exists; Eden F1 parity gap remains.",
+    "T-150 is shipped: dock_right.rs holds registry_items (raw /registry rows, RegistryItem from core/dto.rs) that build_catalog_tree already consumes.",
 ]
 requirement = [
     "Hook T-150 registry items into Asset Browser for map drag-place.",
@@ -23,6 +26,14 @@ current_state = [
     "notes flag frozen unmappable Scope; needs operator resolution.",
 ]
 approach = ["Extend catalog from T-150 export rows; reuse palette-drag place path."]
+verify = [
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-146",
+]
+acceptance = [
+    "Vehicles and crates from the T-150 registry rows appear in the Asset Browser tree and drag-place onto the map like characters.",
+    "Search, the per-faction tree and the empty-state copy keep working unchanged.",
+]
 citations = [
     "t150_universal_registry_export.md",
     "gap_analysis RIGHT-MODE partial",
@@ -31,5 +42,7 @@ citations = [
 owns = ["apps/website/frontend/src/editor/arsenal/asset_catalog.rs"]
 
 [scope]
-domain = "repo"
-layer = "docs"
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["asset_browser"]

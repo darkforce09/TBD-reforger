@@ -1,13 +1,49 @@
 id = "T-135"
 kind = "work"
 title = "Mission modset manager"
-summary = "Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan."
+summary = "Per-mission Workshop modset presets validated against registry aliases at export: a workshop_sync service resolves mod metadata, the modpacks page edits presets, and export refuses a mission whose registry aliases are not covered by its preset."
 class = "feature"
-status = "idea"
+status = "ready"
+order = 8180
 spec = "docs/platform/tbd_north_star_backlog.md"
+plan = "docs/plans/t-135_plan.md"
 executor = "claude-code"
+notes = "2026-09-05: T-092 is shipped (dependency kept). Executor claude-code; scope website/backend/http_api (was repo/docs). Files: handlers/content/modpacks.rs, pages/public/modpacks.rs."
+priority = 3
 depends_on = ["T-092"]
+main_goal = "A mission names its modset and cannot export with mods its preset does not carry."
+context = [
+    "Anchor 2026-09-05: handlers/content/modpacks.rs (list :241, current :262, create :275) carries the T-271 workshop fields; pages/public/modpacks.rs renders them.",
+    "No per-mission preset exists and export never checks mod coverage; registry aliases come from services/registry_import.rs.",
+]
+requirement = [
+    "New services/workshop_sync.rs (registered in services/mod.rs): resolve workshop ids to {name, version, dependencies} through the existing http_retry, cached in modpack_mods.",
+    "modpacks.rs handlers gain per-mission preset attach/detach; the frontend page edits presets and shows the attached mission count.",
+    "Export validation: a mission referencing a registry alias whose mod is absent from its preset fails naming the alias.",
+]
+current_state = ["Modpacks are global; missions do not reference one; export never checks mod coverage."]
+approach = [
+    "Service, then handlers, then page, each with tests; the validator hooks into the existing compile diagnostics path.",
+    "Perturbation: remove an alias's mod from the preset fixture; the validation test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p website-api modpacks",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask platform wave gate --slice T-135",
+]
+acceptance = [
+    "A mission can be attached to a modset preset and the modpacks page shows it.",
+    "Exporting a mission whose mods are not covered by its preset fails naming the missing alias.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "apps/website/api/src/handlers/content/modpacks.rs",
+    "apps/website/api/src/services/workshop_sync.rs",
+    "apps/website/api/src/services/mod.rs",
+    "apps/website/frontend/src/pages/public/modpacks.rs",
+]
 
 [scope]
-domain = "repo"
-layer = "docs"
+domain = "website"
+layer = "backend"
+component = "http_api"

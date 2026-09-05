@@ -1,0 +1,50 @@
+id = "T-940.4"
+kind = "work"
+title = "Telemetry ingest accepts flat counters; mod emits nested"
+summary = "Match-results ingest reads the mod's flat top-level counters as well as the nested per-player counters, and the mod's results reporter emits the nested shape, so no death or kill is dropped."
+class = "bug"
+status = "ready"
+order = 7770
+spec = "docs/specs/audit_2026_09/t940_website_platform.md"
+plan = "docs/plans/t-940_4_plan.md"
+executor = "claude-code"
+priority = 0
+parent = "T-940"
+main_goal = "Every counter the mod sends is stored."
+context = [
+    "Anchor 2026-09-04: handlers/telemetry/telemetry.rs:594-598 ignores top-level deaths (documented at :579-592, still data loss); the mod emitter is Backend/TBD_ResultsReporter.c.",
+    "Operator authorization: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
+    "tests/deployments_combat.rs is the T-393 golden for nested counters. telemetry.rs is shared with T-940.13, which packs later.",
+    "Related, not re-minted: T-136 AAR replay.",
+]
+requirement = [
+    "telemetry.rs folds flat top-level counters into the nested structure when the nested block is absent; both shapes yield identical stored rows.",
+    "TBD_ResultsReporter.c emits the nested counters block while keeping the flat fields for one release.",
+    "deployments_combat.rs gains a flat-payload golden case and a both-shapes-equal case.",
+]
+current_state = ["Flat deaths are discarded; the reporter emits only the flat shape."]
+approach = [
+    "Verify on main: a test posting the reporter's flat payload stores deaths = 0; paste the red.",
+    "Add the fold in telemetry.rs; add the nested emit in the reporter; extend the golden; compile the mod.",
+    "Perturbation: skip the fold for kills; the flat golden must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask db test-it",
+    "cargo xtask mod compile",
+    "cargo xtask platform wave gate --slice T-940.4",
+]
+acceptance = [
+    "A flat payload from the current mod build stores the same counters as its nested equivalent.",
+    "The mod compiles and its emitted JSON contains the nested block (in-game check on the human checklist).",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/api/src/handlers/telemetry/telemetry.rs",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c",
+    "apps/website/api/tests/deployments_combat.rs",
+]
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

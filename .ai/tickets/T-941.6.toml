@@ -1,0 +1,48 @@
+id = "T-941.6"
+kind = "work"
+title = "Account-link code moves off public chat"
+summary = "The #tbd link code exchange is consumed before broadcast and answered over the private server-to-client path, so link codes never appear in public chat."
+class = "bug"
+status = "ready"
+order = 7630
+spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
+plan = "docs/plans/t-941_6_plan.md"
+executor = "claude-code"
+priority = 1
+parent = "T-941"
+main_goal = "Link codes are never visible to other players."
+context = [
+    "Anchor 2026-09-04: Gamemode/TBD_AdminCommands.c:41 handles the chat command; Backend/TBD_IdentityLink.c exposes #tbd link <code> and #tbd link status (TBD_PlayerIdentity.c:10 documents it).",
+    "Operator authorization: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
+    "Related, not re-minted: T-393 (shipped) identity link on the API side.",
+]
+requirement = [
+    "TBD_AdminCommands.c: the link command is consumed before broadcast; the echo is suppressed and the reply goes through SendPrivateMessage.",
+    "TBD_IdentityLink.c: the code goes to the backend from the server and is never echoed; status replies are private.",
+    "No chat filtering beyond the command itself: a bare code typed without the prefix is ordinary chat.",
+]
+current_state = ["The command line with the code reaches public chat before handling."]
+approach = [
+    "Verify on main: read :41 and the IdentityLink handler; record as defect evidence (no script unit test lane).",
+    "Consume and suppress; reply privately; compile; boot.",
+    "Perturbation: call a misspelled private-message method; mod compile must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mod compile",
+    "cargo xtask mod world-boot",
+    "cargo xtask platform wave gate --slice T-941.6",
+]
+acceptance = [
+    "The mod compiles and boots.",
+    "Checklist: typing #tbd link ABC123 shows nothing to other players and a private confirmation to the sender; #tbd link status replies privately.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c",
+]
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "backend"

@@ -1,0 +1,39 @@
+id = "T-937"
+kind = "program"
+title = "Editor data layer: id arrays, undo, persist"
+summary = "Fixes the audit's S2 findings in the mission editor data layer: native YArray id lists, gesture-grouped undo with a depth cap, a materialize side-key cache, surfaced save errors with hidden-tab flush, and payload schema hardening."
+class = "bug"
+status = "queued"
+order = 7699
+priority = 0
+spec = "docs/specs/audit_2026_09/t937_editor_data_layer.md"
+plan = "docs/plans/t-937_plan.md"
+executor = "claude-code"
+children = [
+    "T-937.1",
+    "T-937.2",
+    "T-937.3",
+    "T-937.4",
+    "T-937.5",
+]
+main_goal = "Editor state survives concurrent edits, undoes per gesture, never drops a save silently, and rejects malformed payloads before the API does."
+context = [
+    "Master audit S2 (2026-09-04), verified against main @ 072988d57: store.rs:5162-5191 Any::Array id lists; :350-371 ZeroClock undo; :740-820 materialize; persist.rs:827-832, :952-957, :815-826; payload schema :42-43.",
+    "crates/map-engine-core/src/doc/store.rs (14728 lines) is shared by T-937.1/.2/.3; they chain through depends_on and pack one per wave.",
+    "Existing tickets referenced, not re-minted: T-257 undo scope, T-295 realtime collaboration, T-190 second tab, T-132 visual diff.",
+]
+requirement = [
+    "Every slice verifies its defect on main with a failing test before coding and pastes the red verbatim.",
+    "Class-R oracle byte-parity fixtures stay green through all three store.rs slices.",
+    "No file-length allowlist grows; new logic goes into the new files each slice names.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask platform wave gate --slice T-937.N   # per child",
+    "cargo xtask mk ci-local-leptos",
+]
+acceptance = [
+    "Concurrent slot-id appends from two peers both survive; a drag undoes in one step; a failed save is visible in the UI.",
+    "A payload with an unknown slot key, a duplicate slot id, or more than 8388608 bytes is refused in the editor with a named reason.",
+]
+created_at = "2026-09-05T02:09:02Z"

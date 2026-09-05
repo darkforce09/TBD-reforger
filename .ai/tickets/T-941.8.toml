@@ -1,0 +1,51 @@
+id = "T-941.8"
+kind = "work"
+parent = "T-941"
+title = "Vehicles spawn fuelled with inventory"
+summary = "Spawned vehicles receive full fuel and a per-class default cargo, overridden by roster fuel or inventory fields when present; crew seating stays with T-675.2 in the same file."
+class = "feature"
+status = "ready"
+order = 7650
+priority = 1
+spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
+plan = "docs/plans/t-941_8_plan.md"
+executor = "claude-code"
+main_goal = "Mission vehicles are usable the moment they spawn."
+context = [
+    "Queued T-675.2 covers reading vehicles[] and crew spawn from authored seats; fuel and inventory are not covered there, so this slice adds them.",
+    "Gamemode/TBD_SpawnManager.c is also owned by T-941.2 and T-675.2; this slice packs after both.",
+    "Operator authorization: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
+    "Related, not re-minted: T-070 vehicles placeable, T-675.2 vehicle reader, T-302 equip verify.",
+]
+requirement = [
+    "TBD_SpawnManager.c: after a vehicle spawns, fuel is set to full and cargo filled from a script-side default table keyed by vehicle class.",
+    "Roster fuel or inventory fields, when the wire carries them, override the defaults.",
+    "A missing cargo prefab logs one warning naming the prefab and the vehicle still spawns.",
+]
+current_state = [
+    "Vehicles spawn with engine-default fuel and no cargo.",
+]
+approach = [
+    "Verify on main: read the vehicle spawn path in TBD_SpawnManager.c; record as defect evidence (no script unit test lane).",
+    "Add fuel and cargo application with the default table; compile; boot.",
+    "Perturbation: call a misspelled fuel API; mod compile must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mod compile",
+    "cargo xtask mod world-boot",
+    "cargo xtask platform wave gate --slice T-941.8",
+]
+acceptance = [
+    "The mod compiles and boots.",
+    "Checklist: a roster vehicle spawns fuelled with its class cargo; an unknown cargo prefab produces one warning and the vehicle still spawns.",
+]
+depends_on = ["T-941.2"]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+]
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "gamemode"

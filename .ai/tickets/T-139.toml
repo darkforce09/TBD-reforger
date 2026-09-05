@@ -1,16 +1,52 @@
 id = "T-139"
 kind = "work"
 title = "Lobby loadout visual preview"
-summary = "In-game lobby: kit preview (icon grid → 2D mannequin → stretch 3D). After T-068.13 production slot picker."
+summary = "In-game lobby kit preview: a TBD_LoadoutPreview widget renders the selected slot's gear as an icon grid (stretch: 2D mannequin) beside the slot list in TBD_LobbyScreen; layout file under UI/layouts."
 class = "feature"
-status = "idea"
+status = "ready"
+order = 7690
+priority = 3
 spec = "docs/platform/tbd_north_star_backlog.md"
-executor = "workbench"
+plan = "docs/plans/t-139_plan.md"
+executor = "claude-code"
+main_goal = "A player sees the kit before taking the slot."
+notes = "2026-09-05: executor workbench → claude-code under operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist. T-068.13 is cancelled (dropped), T-114 shipped (kept); TBD_LobbyScreen.c is shared with T-941.2 → depends_on it."
+context = [
+    "Anchor 2026-09-05: UI/Lobby/TBD_LobbyScreen.c:56 class TBD_LobbyScreen : TBD_ShellScreen; layouts live in apps/mod/tbd-framework/UI/layouts/ (TBD_ScreenShell.layout, TBD_ListRow.layout).",
+    "T-941.2 edits the lobby screen (deploy holders, reopen path) and packs earlier.",
+]
+requirement = [
+    "New UI/Lobby/TBD_LoadoutPreview.c: builds an icon grid from the slot's 13 gear fields using the registry icon path; empty fields are skipped.",
+    "New UI/layouts/TBD_LoadoutPreview.layout hosted by TBD_LobbyScreen beside the slot list; updates on slot selection.",
+    "No network traffic: the preview reads the already-replicated lobby data.",
+]
+current_state = [
+    "The lobby shows slot names only; a player cannot see the kit before taking the slot.",
+]
+approach = [
+    "Widget plus layout; hook the selection change in TBD_LobbyScreen.c; mod compile; checklist item.",
+    "Log line `[TBD][LoadoutPreview] slot=<n> items=<k>` on each refresh for the checklist and the boot lane.",
+]
+verify = [
+    "cargo xtask mod compile",
+    "cargo xtask platform wave gate --slice T-139",
+]
+acceptance = [
+    "Selecting a slot in the lobby shows its kit as icons within a frame; switching slots updates the grid.",
+    "Slots with empty gear fields show only the present items.",
+]
 depends_on = [
-    "T-068.13",
     "T-114",
+    "T-941.2",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LoadoutPreview.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c",
+    "apps/mod/tbd-framework/UI/layouts/TBD_LoadoutPreview.layout",
 ]
 
 [scope]
-domain = "repo"
-layer = "docs"
+domain = "mod"
+layer = "scripts"
+component = "ui"

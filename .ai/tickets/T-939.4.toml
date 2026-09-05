@@ -1,0 +1,57 @@
+id = "T-939.4"
+kind = "work"
+parent = "T-939"
+title = "Arrange tools in context menu with shortcuts"
+summary = "Align and distribute appear in the canvas context menu and get keyboard chords in the editor keydown, with the top-strip Arrange menu as the shared source of entries."
+class = "feature"
+status = "ready"
+order = 7890
+priority = 2
+spec = "docs/specs/audit_2026_09/t939_editor_usability.md"
+plan = "docs/plans/t-939_4_plan.md"
+executor = "claude-code"
+main_goal = "Arrange tools are reachable by right-click and by keyboard."
+context = [
+    "Anchor 2026-09-04: panels/top_strip.rs:249-252 holds the Arrange menu (T-645), gated on selection >= 1 at :378-380; panels/context_menu.rs lacks these entries.",
+    "The editor keymap is the wasm keydown closure in editor/mission_editor.rs (allowlisted SIZE-3 file); new arms stay thin callers of shared invokers.",
+    "No file collides with T-939.1; depends_on keeps this slice after it so the context menu builds on the settled multi-select behaviour.",
+    "Related, not re-minted: T-704 command palette.",
+]
+requirement = [
+    "top_strip.rs exposes the Arrange entries as one shared list (label, chord, invoker) consumed by both menus.",
+    "context_menu.rs shows an Arrange submenu when the selection holds two or more entities.",
+    "mission_editor.rs keydown gains chords for align left/right/top/bottom and distribute horizontal/vertical as thin callers.",
+    "help_modal.rs lists the new chords.",
+]
+current_state = [
+    "Arrange lives only in the top-strip menu; no context-menu entry; no chord; no help row.",
+]
+approach = [
+    "Verify on main: a test asserting the context menu has no Arrange entry and the keydown ignores the align chord; paste the red.",
+    "Extract the entry list in top_strip.rs; render it in context_menu.rs; add the keydown arms; add the help rows.",
+    "Perturbation: drop one chord arm; the keydown test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-939.4",
+]
+acceptance = [
+    "Right-clicking a multi-selection shows an Arrange submenu whose entries match the top-strip menu.",
+    "Each Arrange chord performs the same operation as its menu entry and appears in the help modal.",
+    "With a single entity selected the submenu is hidden and the chords are inert.",
+]
+depends_on = ["T-939.1"]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/frontend/src/editor/panels/context_menu.rs",
+    "apps/website/frontend/src/editor/panels/top_strip.rs",
+    "apps/website/frontend/src/editor/panels/help_modal.rs",
+    "apps/website/frontend/src/editor/mission_editor.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["top_strip", "map_canvas"]

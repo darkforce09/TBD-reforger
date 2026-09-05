@@ -3,11 +3,44 @@ kind = "work"
 title = "Resolve five schema fields implemented on no surface"
 summary = "environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem."
 class = "feature"
-status = "idea"
+status = "ready"
+order = 7550
+spec = "docs/specs/ideas/t291_orphan_schema_fields.md"
+plan = "docs/plans/t-291_plan.md"
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope. "
-owns = ["crates/map-engine-core/src/mission/flatten.rs"]
+notes = "needs-operator: frozen unmappable Scope.  | 2026-09-05: proposed scope engine/core written into the body; note kept verbatim for the operator. flatten.rs is shared with T-674.1/T-675.1/T-936.1/T-242/T-299/T-310/T-290 → packs between them. Operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist."
+priority = 3
+main_goal = "Every declared contract field is either implemented end to end or documented editor-only."
+context = [
+    "Anchor 2026-09-05: flatten.rs:2104 treats respawn/spectatorPolicy as absent (trimmed); no reader for windDirDeg, color, radio, layers or nightVision in apps/mod.",
+    "Spectator/ ships TBD_SpectatorCamera/Component/Controller.c with no policy input; a control whose value goes nowhere misleads authors.",
+]
+requirement = [
+    "settings.spectatorPolicy and settings.nightVision are emitted by flatten and read by TBD_FrameworkManager.c and TBD_SpectatorController.c.",
+    "environment.windDirDeg is emitted and applied in the weather setup in TBD_FrameworkManager.c.",
+    "factions[].color, roles[].radio and layers[] are either emitted with a named reader or marked editor-only in the flatten emit ledger.",
+]
+current_state = ["Five declared fields have zero implementation on any surface; spectatorPolicy is dead although the Spectator subsystem shipped."]
+approach = [
+    "flatten emit plus golden for the three runtime fields; then the two mod readers; then ledger annotations for the rest.",
+    "Perturbation: trim spectatorPolicy again; the emit test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features mission::flatten",
+    "cargo xtask mod compile",
+    "cargo xtask platform wave gate --slice T-291",
+]
+acceptance = [
+    "spectatorPolicy, nightVision and windDirDeg authored in the editor reach the compiled document and the running mission.",
+    "color, radio and layers are each either read by a named file or documented editor-only in the ledger.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "crates/map-engine-core/src/mission/flatten.rs",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorController.c",
+]
 
 [scope]
-domain = "repo"
-layer = "docs"
+domain = "engine"
+layer = "core"

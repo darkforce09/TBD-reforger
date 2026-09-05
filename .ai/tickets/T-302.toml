@@ -1,30 +1,46 @@
 id = "T-302"
 kind = "work"
-title = "T-182 weapon equip unverified in game"
-summary = "T-182's weapon equip is compiled and reasoned but never observed in game"
+title = "Prove T-182 weapon equip on a live body"
+summary = "T-182's slot-indexed weapon equip compiles but was never observed in game; add a per-slot equip result log, a headless world-boot assertion that four authored weapons land in four slots, and a human checklist item."
 class = "chore"
-status = "idea"
+status = "ready"
+order = 7670
+spec = "docs/specs/ideas/t302_weapon_equip_boot.md"
+plan = "docs/plans/t-302_plan.md"
 executor = "claude-code"
-main_goal = "Slot-indexed weapon equip compiles but no weapon has been seen landing in slot 1 on a live body."
-context = ["T-182 implemented slot-indexed weapon equip using CanInsertItemInStorage/TryInsertItemInStorage with a CanReplaceItem/TryReplaceItem fallback, deliberately NOT WeaponSlotComponent.SetWeapon (no vanilla script calls it, so its inventory/replication bookkeeping is unproven)."]
-requirement = ["Boot a mission with a four-weapon loadout and confirm all four are carried and none replaces another."]
-current_state = [
-    "NONE of it has been observed on a live body — no weapon has been seen landing in slot 1.",
-    "All of that compiles and passes the mod gate.",
+notes = "Operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist. TBD_LoadoutEquipHelper.c is shared with T-310, which packs in a later wave."
+priority = 1
+main_goal = "A four-weapon loadout is observed carried, slot by slot, on a live body and in the headless boot log."
+context = [
+    "T-182 uses CanInsertItemInStorage/TryInsertItemInStorage with a CanReplaceItem fallback, deliberately not WeaponSlotComponent.SetWeapon; nothing has confirmed a weapon in slot 1.",
+    "Anchor 2026-09-05: Gamemode/TBD_LoadoutEquipHelper.c:20-36 documents the phases; xtask/src/mod_world_boot.rs:32 run() boots a world and greps sentinels.",
 ]
+requirement = [
+    "TBD_LoadoutEquipHelper.c logs one `[TBD][Equip] slot=<n> weapon=<res> result=<ok|replaced|failed>` line per weapon row.",
+    "mod_world_boot.rs asserts the four-weapon fixture produces four ok lines and zero replaced lines.",
+    "The human checklist names the mission, the slot and the four weapons to inspect.",
+]
+current_state = ["The equip helper has no per-slot result log; the world-boot lane greps existing sentinels only, so a silent replace would pass."]
 approach = [
-    "The reasoning is sound and cites vanilla precedent: SCR_InventoryStorageManagerComponent.EquipWeapon resolves its target from what the character is HOLDING rather than from the loadout, which is exactly the rifle-vs-launcher contention that",
-    "made a blind equip dangerous. It also re-scoped incumbent capture and the worn-verify from 'the weapon in hand' to 'this slot', so four weapon rows cannot all claim the same",
-    "incumbent and race to delete it.",
+    "Add the log line at the end of each weapon-row equip; add a four-weapon fixture loadout to the boot mission.",
+    "Extend the world-boot grep with the four expected lines; perturbation: expect five lines, red, restore, touch, green.",
 ]
-verify = ["Boot a mission with a four-weapon loadout and confirm all four are carried and none replaces another."]
-citations = [
-    "T-182",
-    "SCR_InventoryStorageManagerComponent.EquipWeapon",
-    "WeaponSlotComponent.SetWeapon",
+verify = [
+    "cargo xtask mod compile",
+    "cargo xtask mod world-boot   # exact subcommand per xtask/src/mod_world_boot.rs",
+    "cargo xtask platform wave gate --slice T-302",
 ]
-estimated = ["scope"]
+acceptance = [
+    "The headless boot log shows four ok equip lines for the fixture slot and no replaced line.",
+    "A human on the checklist sees all four weapons carried in game, none replacing another.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c",
+    "xtask/src/mod_world_boot.rs",
+]
 
 [scope]
 domain = "mod"
 layer = "scripts"
+component = "gamemode"

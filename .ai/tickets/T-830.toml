@@ -3,8 +3,10 @@ kind = "work"
 title = "Outliner rows cramped; density pass on layer tree"
 summary = "Outliner rows are too cramped — density pass on the layer tree"
 class = "chore"
-status = "queued"
-order = 5120
+status = "ready"
+order = 8420
+spec = "docs/specs/existing/t830_outliner_density.md"
+plan = "docs/plans/t-830_plan.md"
 executor = "claude-code"
 notes = """
 operator eye-pass wave-204; candidate for the T-825 session or standalone
@@ -43,6 +45,11 @@ verify = [
     "Row height padding increased measurably; tools hidden until hover or active.",
     "No truncation of typical names at 240px dock width.",
     "Windowing rename flags drop-target Alt-click affordances still work.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "Outliner rows gain measurable height and padding; row tools appear on hover or active only; typical names fit at 240px.",
+    "Windowing (threshold 50), rename, drop-target and Alt-click affordances still work.",
 ]
 citations = [
     "wave-204 operator eye-pass",

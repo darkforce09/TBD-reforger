@@ -1,0 +1,51 @@
+id = "T-935"
+kind = "program"
+title = "Map binary storage — hybrid rkyv + POD"
+summary = "Replace gz-JSON/PNG map assets with a hybrid layout: raw #[repr(C)] POD for bulk GPU data (chunks, DEM, density), rkyv archives for structured metadata (roads, labels, water, buildings, catalog), mipmapped containers for satellite and bathymetry."
+class = "feature"
+status = "queued"
+order = 7089
+priority = 1
+spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
+plan = "docs/plans/t-935_plan.md"
+executor = "claude-code"
+children = [
+    "T-935.1",
+    "T-935.2",
+    "T-935.3",
+    "T-935.4",
+    "T-935.5",
+    "T-935.6",
+    "T-935.7",
+    "T-935.8",
+    "T-935.9",
+    "T-935.10",
+    "T-935.11",
+    "T-935.12",
+    "T-935.13",
+]
+main_goal = "Every map asset the editor boots from is a binary the loader casts or accesses zero-copy; gz-JSON and PNG-DEM decode paths are deleted after cutover."
+context = [
+    "Operator spec 2026-09-04 (map-storage-spec): hybrid rkyv for complex metadata + raw #[repr(C)] POD for bulk GPU data; flatbuffers considered and rejected.",
+    "audit.md Finding 1.4 (apps/website/audit.md:117-124): main-thread gzip-JSON chunk ingest in residency.rs:716-737 and chunk.rs:46-97; fix = flat binary ingest.",
+    "Anchors 2026-09-04: rkyv nowhere; bytemuck only in map-engine-render; flate2 + serde_json are `world` feature deps of map-engine-core (Cargo.toml:33,45,48).",
+    "Assets today: 315 chunk .json.gz (22 MB), dem PNG 71.9 MB LFS, sat .tbd-sat 152 MB LFS, 1623 descriptor JSON (19 MB), 1690 .bvh LFS.",
+]
+requirement = [
+    "T-935.1 is the single source of every format definition; emitters (tools, xtask) and loaders (core, frontend) import it, never redefine it.",
+    "Dual emission until T-935.13: every slice keeps the shipped JSON/PNG path readable; the cutover slice deletes gz-JSON emit and flate2.",
+    "Owns are file-disjoint per wave; two slices needing one file pack in different waves (T-935.11 after .3, .12 after .2-.11, .13 after .12).",
+    "Correction to the operator sketch: the POD carries yaw, pitch, roll, scale (T-090.12.1 put them on the wire), so it is 32 B not 24 B.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask platform wave gate --slice T-935.N   # per child",
+    "cargo xtask ci verify-terrain-strict   # at .12 and .13",
+    "cargo xtask map world-los --cell 18_0 --probe 9350,15,280 9380,15,290   # at .3, .8, .13",
+]
+acceptance = [
+    "Everon boots from .bin/.rkyv/.dem/.tbd-bath/.tbd-sat only; no gz-JSON chunk, roads, prefabs or regions fetch remains in the frontend.",
+    "Byte-parity tests prove every binary decode equals the JSON decode it replaces on the committed everon data.",
+    "Before/after byte sizes and boot timings are recorded in the T-935.13 commit body.",
+]
+created_at = "2026-09-05T01:34:37Z"

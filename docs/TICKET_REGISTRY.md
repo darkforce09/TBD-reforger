@@ -75,7 +75,6 @@
 | T-087 | 870 | deferred | work | CMS rich text editor | Rich text editor for announcements and CMS content. |
 | T-088 | 880 | deferred | work | Multi-server picker | Select among multiple game servers in intel views. |
 | T-089 | 890 | cancelled | work | Mission title PATCH sync | Mission title PATCH sync |
-| T-090 | 900 | ready | program | Map visualization program | Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane. |
 | T-091 | 910 | shipped | program | DEM + auto Z | T-091 complete @ dde589e — DEM export (.0), loader (.1), Z UX (.2). Hub: t090_091_map_terrain_program.md. |
 | T-092 | 920 | shipped | program | Spawn transform parity + mod mission compile | T-092 complete @ `a73224f2` — schema 1.2 optional `y`, spawn policy (T-092.1 @ `4eefc169`), flatten + GET /api/v1/missions/:id/compiled (T-092.2). wb_play E2E PASS 2026-07-04. Unblocks T-071 + T-068.13. Hub: t092_spawn_transform_program.md. |
 | T-093 | 930 | deferred | work | Continuous autosave polish | Background autosave UX and conflict handling polish. |
@@ -90,7 +89,6 @@
 | T-117 | 1170 | shipped | work | Mission upload + validation UI | Web UI for mission upload and schema validation (API exists). |
 | T-118 | 1180 | shipped | work | Event ORBAT + identity linking UI | Event ORBAT + identity linking UI |
 | T-119 | 1190 | shipped | work | Framework MVP remainder | SHIPPED (closed 2026-07-26 by audit). Delivered by T-181: loadouts (TBD_LoadoutEquipComponent.c, T-068.12), safe start (TBD_SafestartManager.c 1143 lines, T-181.17/.33), boundary (TBD_ZoneRegistry.c + TBD_PlayAreaComponent.c, T-181.18), admin commands (TBD_AdminCommands.c + AdminService + AdminScreen, T-181.11.2). All four M1 items present. |
-| T-120 | 1200 | queued | work | Staging soak + golden mission smoke | Pinned game/mod version soak; golden-mission smoke on staging server. |
 | T-121 | 1210 | deferred | work | Terrain DEM export automation | Follow-ons: Arland re-export, optional game-mode heightmap fallback. MCP hardening shipped @ e7e7232 (mcp-call/daemon/consume/selftest). Core GetSurfaceY plugin shipped in T-091.0. Spec: t121_terrain_dem_export_automation.md. |
 | T-122 | 1220 | shipped | work | Codebase audit hotfix (single bundle) | Shipped @ f131770 (tag T-122) — 37/41 audit findings; T1/T3/T8/T15 deferred. Spec: docs/platform/CODEBASE_AUDIT_2026.md. |
 | T-123 | 1230 | shipped | program | Documentation standards rollout (full program) | Shipped @ 169e47d — full DOCUMENTATION_STANDARDS.md program: in-code @contract/@route/@authority tags (Go/TS/Enfusion), schema codegen (Go+TS via make schema-codegen), Go-side editor-payload validation in CreateVersion, contracts.yml CI gates. Slices T-123.0–.6. Hub: t123_documentation_standards_rollout.md. |
@@ -101,7 +99,6 @@
 | T-128 | 1280 | shipped | work | Fable audit — doc link repair + staging honesty | Shipped (tag T-128): P0 handoff/ticket link depths, STAGING-SERVER + MILESTONES + build-plan T-092 gate honesty (deploy smoke skip-guarded), apps/mod + apps/website README monorepo rewrite, orphan frontend/docs deleted, floor picker T-126→T-129 renumber, extended docs/** link sweep. Log: .ai/artifacts/t128_doc_link_repair_log.md. Spec: docs/platform/t128_doc_link_repair.md. |
 | T-130 | 1300 | shipped | program | Fable audit — remainder (OPEN + PARTIAL) | Shipped @ 90c9f261 (tag T-130). Batch 1: backend hygiene, Discord, CI. Batch 2: mod exporters, MC UX, mission archive/delete. T-130.7 doc nits. Hub: docs/platform/t130_fable_audit_remainder.md. |
 | T-144 | 1440 | shipped | program | Arma 3 map architecture study | A3 2D Arcade map architecture study @ `b1949182` — live GLandscape draw, no basemap tiles; pivot T-090 to export+vectors. Report: .ai/artifacts/t144_arma3_map_architecture_report.md. |
-| T-146 | 1470 | queued | work | Asset Browser Data Wiring | Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred. |
 | T-147 | 1480 | cancelled | work | Simplified Squad Connections | CANCELLED (2026-07-26 audit). Already ABSORBED by T-180.4 per its own summary, but left deferred so it still appears in status sweeps. |
 | T-148 | 1490 | cancelled | work | Shift+Drag Rotation Tool | CANCELLED — exact duplicate of T-073 (Shift + map rotation). Both were queued with identical scope. |
 | T-145 | 1495 | shipped | work | Rust/Wasm Doc Core (Yjs replacement) | Rewrite the Go backend to Rust (Axum + sqlx) and move the mission document core into a Rust/wasm yrs doc. The F1->F4 flip made the yrs wasm doc authoritative and removed yjs + y-indexeddb from the app. |
@@ -122,7 +119,6 @@
 | T-167 | 1640 | shipped | work | Leptos smart Arsenal port (paper-doll + compat Forge) | Leptos Smart Arsenal: compat pickers, SVG paper-doll, Faction Manager. |
 | T-168 | 1650 | shipped | work | Leptos ORBAT tree in the left dock | Leptos ORBAT tree in the left dock |
 | T-169 | 1660 | shipped | work | Leptos VirtualOutliner at mission scale | Windowed VirtualOutliner for Editor Layers and ORBAT at mission scale. |
-| T-170 | 1670 | queued | work | Prod default flip to Leptos SPA | Prod default flip to Leptos SPA |
 | T-171 | 1680 | shipped | work | Monorepo / website hygiene (full pass) | Nest apps/website api and frontend; rename crates; purge dead Go and Vite. |
 | T-172 | 1690 | shipped | work | Leptos SPA + Mission Creator bug bash | Leptos SPA + Mission Creator bug bash |
 | T-173 | 1700 | shipped | work | Leptos SPA + Mission Creator performance pass | Leptos MC performance pass on release serve path; beats React pan/zoom and restores render prefs. |
@@ -613,7 +609,6 @@
 | T-637 | 4220 | shipped | work | Dock density and the 240px equalisation | Dock density and the 240px equalisation |
 | T-632 | 4230 | cancelled | work | Right dock tab strip overflows; MANAGE is clipped | Right dock tab strip overflows; MANAGE is clipped |
 | T-652 | 4240 | deferred | work | Rocks are not rendered | Rocks are not rendered |
-| T-673 | 4300 | queued | work | Marker style and Area markers — the $defs/marker widening | Marker style and Area markers — the $defs/marker widening |
 | T-707 | 4300 | deferred | work | wave.sh test-split comment transposes its own measurement | wave.sh test-split comment transposes its own measurement |
 | T-708 | 4301 | deferred | work | capture shot: hang-fallback latency regressed 25s to 130s | capture shot: hang-fallback latency regressed 25s to 130s |
 | T-709 | 4302 | deferred | work | capture zoomsweep lost the per-zoom console error tap | capture zoomsweep lost the per-zoom console error tap |
@@ -624,11 +619,6 @@
 | T-714 | 4307 | deferred | work | Contour re-march hitch: 0.66-1.3 s per rung crossing | Contour re-march hitch: 0.66-1.3 s native per rung crossing (est 1-4 s wasm) |
 | T-715 | 4308 | deferred | work | Hidden-layer slots vanish from Outliner/ORBAT docks instead of dimming | Hidden-layer slots vanish from Outliner/ORBAT docks instead of dimming |
 | T-716 | 4309 | deferred | work | Context menu honesty: Go Here, multi-select, keydown field hijack | Context menu honesty: Go Here goes elsewhere; enabled rows dead on multi-select; keydown hijacks fields |
-| T-674 | 4310 | queued | program | T-216 follow-on: slot identity reaches the wire | Four attribute ids — `ATTR-FIELD-OBJ-CALLSIGN`, `-OBJ-RANK`, `-OBJ-STANCE`, `-OBJ-UNIT-NAME` — plus the two TBD-only keys `tag` and `leaderSlotId`. `OBJ-UNIT-NAME` rides this slice rather than standing alone; the sweep says so explicitly. THE CONTRACT DELTA IS ALREADY WRITTEN OUT at `crates/map-engine-core/src/mission/flatten.rs`:2620-2632 — five `$defs/slot` / `$defs/group` keys. T-216 is `shipped`, but it shipped THE LEDGER AND ITS TRIPWIRE, not the fix: flatten.rs:2584-2649 enumerates six author-facing values the compile silently drops (a squad's leaderSlotId, a slot's tag / callsign / rank / stance, and the entire vehicle roster) and records that `make verify-t180` stayed green throughout BECAUSE NOT ONE OF ITS 22 TESTS CHECKED. `stance` additionally needs an Enfusion spawn-pose call — word-boundary `stance` in apps/mod is ZERO (the 39-file `grep -rl stance` result is every hit being the substring inside `instance`). Widening `/compiled` without care 500s every mission. Related: T-242. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.
-
-EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
-
-SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema. |
 | T-717 | 4310 | deferred | work | Continue-without-map before hydrate resurrects the boot overlay forever | Continue-without-map before hydrate resurrects the boot overlay forever |
 | T-718 | 4311 | deferred | work | Slot removal crew residue; picker flags; undo Alt lies | Crew residue: scrub seats on slot removal; seat-picker honesty; undo-step and Alt comment falsities |
 | T-719 | 4312 | deferred | work | Debug HUD: invisible under DockRight; AltGr chords spuriously toggle it | Debug HUD: invisible under DockRight; AltGr chords spuriously toggle it |
@@ -639,11 +629,6 @@ SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This t
 | T-724 | 4317 | shipped | work | ATTR-OPEN residue: objects zones need dblclick attributes not picker | ATTR-OPEN-001 residue: objects and zones still cannot open Attributes; dblclick on them opens the picker |
 | T-725 | 4318 | deferred | work | Zoom labels lag; northings under bar; hide Failed scale fallback | Furniture polish: zoom channel lags 1s on still-pointer wheel; northings hide under the bar; Failed-state fallback |
 | T-726 | 4319 | shipped | work | Window-Esc pile-up: route every Esc listener through the modal stack | Window-Esc pile-up: route every Esc listener through the modal stack |
-| T-675 | 4320 | queued | program | Vehicle roster reaches game — T-076 compile half | Cross-boundary compile half split from T-076 so crew UI could ship separately.
-Closes the sixth T-216 drop-ledger row: top-level vehicles[] with seats and crew refs.
-T-706 already widened the schema; this program emits and reads the roster.
-Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
- |
 | T-727 | 4320 | shipped | work | Grid-ref For keyed on text strands labels | Grid-ref labels strand off their lines — For keyed on text retains stale positions |
 | T-728 | 4321 | deferred | work | Save-composition affordance reads a channel selection never bumps | Save-composition affordance reads a channel selection never bumps |
 | T-729 | 4322 | deferred | work | Owner-line materialize per frame; zones mislabels triggers | Owner-line overlay runs a full materialize per frame; zones panel mislabels trigger drafts |
@@ -652,18 +637,7 @@ Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
 | T-732 | 4325 | shipped | work | Atomic batch mutations: one undo per multi-entity op | Atomic batch mutations: one undo step for multi-entity ops (third instance of the family) |
 | T-733 | 4326 | shipped | work | Merge Mission menu Ctrl+M; garrison building accessor | Merge Mission wiring: menu item + Ctrl+M binding; garrison building-at-point accessor |
 | T-734 | 4327 | deferred | work | Validation panel: full-compile cost, wasm panic, seam pin | Validation panel at scale: per-edit full compile, wasm panic honesty, seam pin |
-| T-676 | 4330 | queued | work | Trigger activation and effects — the Enfusion runtime | Trigger activation and effects — the Enfusion runtime |
-| T-677 | 4340 | queued | work | Waypoints — group movement orders | Waypoints — group movement orders |
-| T-678 | 4350 | queued | work | Group AI state: combat mode, behaviour, formation, speed | Group AI state: combat mode, behaviour, formation, speed |
-| T-679 | 4360 | queued | work | Placement scatter: radius and area shape | Placement scatter: radius and area shape |
-| T-680 | 4370 | queued | work | Vehicle states: lock, fuel, ammo | Vehicle states: lock, fuel, ammo |
-| T-681 | 4380 | queued | work | Entity states: health, allow-damage, show-model, size, stamina | Entity states: health, allow-damage, show-model, size, stamina |
-| T-682 | 4390 | queued | work | Environment readers: fog, wind, view distance | Environment readers: fog, wind, view distance |
-| T-685 | 4400 | queued | work | Zone volumes: height bounds capture counts and owner | Zones become volumes: min/max height, attacker and defender counts, starting owner |
-| T-689 | 4410 | queued | work | Play-area enforcement gains a vehicle-class axis: the aircraft exemption | Play-area enforcement gains a vehicle-class axis: the aircraft exemption |
 | T-687 | 4420 | cancelled | work | OFCRA loadout inheritance — operator rejected | Loadout templates with inheritance: a default block, per-role deep merge, and an explicit remove verb |
-| T-212 | 4430 | queued | work | Typed per-side objectives with attributes | Objectives as typed, placed, per-side entities with one uniform attribute spine |
-| T-684 | 4440 | queued | work | Mission parameters as first-class document objects | Mission parameters as first-class document objects |
 | T-691 | 4450 | shipped | work | Editor preferences, separated from mission settings | Editor preferences, separated from mission settings |
 | T-692 | 4460 | shipped | work | Help menu and Controls Hint overlay | Editor help surface — Help menu and a Controls Hint overlay |
 | T-693 | 4470 | shipped | work | Merge another mission into this one | Merge another mission into this one |
@@ -675,11 +649,8 @@ Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
 | T-699 | 4530 | shipped | work | Loadout buffer — copy, apply, and strip-everything | Loadout buffer — copy, apply, and strip-everything |
 | T-700 | 4540 | shipped | work | Small-UI: numeric nudge, search box, tooltips | Small-UI idioms — numeric nudge, one shared search box, tree tooltips |
 | T-701 | 4550 | shipped | work | Editor-only visibility override — hide without deleting | 3den E9. An editor-local hidden flag that never compiles, so a maker can declutter a dense area while authoring. Distinct from T-665 layer visibility: that is per-layer, this is per-entity. Eden Layer attributes carry Enable Visibility for exactly this. |
-| T-702 | 4560 | queued | work | Whole-terrain zone — one zone sized to the map | 3DEN-MISC-001 E11: one command authors a play-area boundary polygon covering the terrain exactly from terrain_bounds. |
 | T-703 | 4570 | shipped | work | Keybinding collision test | Keybinding collision test |
-| T-705 | 4590 | queued | work | Player gadget flags — map, compass, watch, GPS, radio | Player gadget flags — map, compass, watch, GPS, radio |
 | T-706 | 4600 | shipped | work | Widen mission.schema.json once for the whole editor program | Widen mission.schema.json once for the whole editor program |
-| T-654 | 4610 | queued | work | Conditional inclusion: variant-gated document subtrees | Conditional inclusion: variant-gated document subtrees |
 | T-735 | 4611 | shipped | work | Loadout import checker fails OPEN; blind guard pin | Loadout import schema checker fails OPEN in three forms; its guard pin is blind to all three |
 | T-736 | 4612 | shipped | work | Wave-112 pins weaker than claim: spelling, tail | Two wave-112 pins do not constrain what they claim (spelling blacklist; tail-in-loop blind) |
 | T-737 | 4613 | shipped | work | Import refusals drop RowError key row identity | Import refusals drop RowError.key, so the author cannot tell which row failed |
@@ -761,56 +732,30 @@ Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
 | T-813 | 4950 | shipped | work | Multi-edit differing blur stamps empty; field Escape also closes modal | Multi-edit differing field: focus+blur with zero typing wipes the field across the selection; field Escape also closes the modal |
 | T-814 | 4960 | shipped | work | Transients survive external dialog open; Esc pile-up; open-order dismissal wrong | Transients survive dialogs opened outside the strip; one Esc closes two layers; Esc dismisses the hidden dialog under the visual top |
 | T-815 | 4970 | shipped | work | ORBAT squad rename unfocused; delete two T787 probe library missions | ORBAT squad-rename input opens unfocused; two T787 probe missions left in the dev library |
-| T-816 | 4980 | queued | work | Armed composition hint open; one Esc clears both layers wrongly | Esc with an armed composition and the Controls Hint open clears both in one press |
-| T-817 | 4990 | queued | work | Grid labels lag ~1.4s on stationary wheel zoom | Grid labels lag up to ~1.4s on wheel zoom with a stationary pointer |
 | T-818 | 5000 | shipped | work | Vehicle editor into Attributes modal; Placed strip dies | Vehicle crew/heading/cargo editor moves into the vehicle Attributes modal; the right-dock Placed strip dies |
 | T-819 | 5010 | shipped | work | Crewed slots hide from map while assigned | Crewed slots render inside the vehicle — figures leave the map while assigned |
-| T-820 | 5020 | queued | work | Catalog failure generic cause; chips visible wrongly | Catalog failure view shows the generic cause with chips visible where no-modpack should fire |
-| T-821 | 5030 | queued | work | Save version prefill static; second save 409s | Save Version prefill is a static 0.1.0 — no auto-bump, second save 409s |
-| T-822 | 5040 | queued | work | Outliner dblclick must not open asset picker under Attributes | Outliner dblclick bubbles into the map container — asset picker opens under Attributes |
-| T-823 | 5050 | queued | work | OBJ readout must count vehicles or rename honestly | OBJ readout counts slots only — placed vehicles are invisible to it |
-| T-824 | 5060 | queued | work | Placed zones must render visibly at rest on map | Placed zones are not visible on the map — investigate and fix the render (repro-first) |
-| T-825 | 5070 | queued | work | Design session scopes universal outliner list Attributes edit rule | PROGRAM: everything placed is an outliner citizen; all editing is Attributes; the right dock only places |
+| T-825 | 5070 | deferred | work | Design session scopes universal outliner list Attributes edit rule | PROGRAM: everything placed is an outliner citizen; all editing is Attributes; the right dock only places |
 | T-826 | 5080 | shipped | work | Markers store side without minting phantom factions | Markers stop declaring sides — placing a marker must not mint a faction |
-| T-827 | 5090 | queued | work | Validation chip red under 4.5:1 live-effective | Validation chip red measures 4.0-4.3:1 over the live glass — passes only by plate-calc |
-| T-828 | 5100 | queued | work | Marker captions drift when zoom changes without rebind | Marker captions are world-frozen at bind-time zoom — drift past 40px until a rebind |
 | T-829 | 5110 | deferred | work | v5_orbatWindowed smoke fails under verifier harness | Gate smoke virtual-outliner v5_orbatWindowed fails deterministically under the verifier harness — config-sensitive smoke |
-| T-830 | 5120 | queued | work | Outliner rows cramped; density pass on layer tree | Outliner rows are too cramped — density pass on the layer tree |
-| T-831 | 5130 | queued | work | Per-side marker authoring audit then explicit UI | Per-side markers: author for each side, visible only to that side (Arma 3 model) — establish what exists first |
 | T-832 | 5140 | shipped | work | Slot yaw hardcoded zero — map heading never renders | Slots render no heading on the map — yaw never reaches the glyph lane |
-| T-833 | 5150 | queued | work | Rotation ring: relative delta plus live preview | Rotation widget: relative drag delta (not absolute aim) + live per-frame preview |
-| T-834 | 5160 | queued | work | Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar | Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar |
 | T-835 | 5170 | deferred | work | No-Widget button should show select-cursor glyph | The No-Widget button wears the select-cursor glyph, not a 'none' symbol |
 | T-836 | 5180 | shipped | work | Seed vehicles lack veh aliases — T-425 refuse | Seeded vehicles cannot compile — no veh: alias in kit-aliases.json (T-425 refuse fires) |
-| T-837 | 5190 | queued | work | Vehicles cannot be deleted — slots can, vehicles cannot | Vehicles cannot be deleted — slots can, vehicles cannot |
-| T-838 | 5200 | queued | work | Map markers selectable; outliner lists; dblclick opens Attributes | Markers select on the map and list in the outliner; double-click opens marker Attributes |
-| T-839 | 5210 | queued | work | Retire floating Select/Ruler/LoS bottom-centre pill | The floating Select/Ruler/LoS pill still exists — decision 1 said it dies |
 | T-840 | 5220 | deferred | work | Draft chip saved just now on boot before edit | The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit |
-| T-841 | 5230 | queued | work | Type picker popover translucent; make opaque panel | The Type picker popover is translucent — text blurs over the map; make it an opaque panel |
 | T-842 | 5240 | shipped | work | World glyph clamp-not-wrap breaks tree prop text rotation | The clamp-not-wrap heading defect is live on the world lanes too (trees/props/text) |
 | T-843 | 5250 | shipped | work | Editor suite red; rect smokes never run automated | The editor smoke suite is red and nothing automated runs it — two rect smokes are dead guards |
 | T-844 | 5260 | deferred | work | Vehicle delete no-op; fold into T-837 | Delete does nothing to a selected vehicle — delete_selection partitions comments and slots only |
-| T-845 | 5270 | queued | work | A selected vehicle looks identical to an unselected one | A selected vehicle looks identical to an unselected one |
 | T-846 | 5280 | deferred | work | role_notice query is written on editor denial but never read | role_notice query is written on editor denial but never read |
 | T-847 | 5290 | deferred | work | push_drag_preview Class-R pins omit bind_squad_link_preview | push_drag_preview Class-R pins omit bind_squad_link_preview |
-| T-848 | 5300 | queued | work | Group to must use exclusive ORBAT membership | Connect ▸ Group to must mean exclusive ORBAT squad membership — not stackable connection edges |
-| T-849 | 5310 | queued | work | Add ungroup leave-squad verb without deleting slot | Ungroup / leave-squad — no editor verb to take a slot out of a squad without deleting it |
-| T-850 | 5320 | queued | work | Squad tether must follow drag on auto-grouped units | T-801 eye-pass: squad tether did not follow drag on same-squad (auto-grouped) units |
 | T-851 | 5330 | deferred | work | Delete orphaned placed_vehicles_panel after T-818 removed the Placed strip | Delete orphaned placed_vehicles_panel after T-818 removed the Placed strip |
 | T-852 | 5340 | deferred | work | Attributes modal paint should use modal_stack::z_class instead of hard-coded z-50 | Attributes modal paint should use modal_stack::z_class instead of hard-coded z-50 |
 | T-853 | 5345 | shipped | work | Shell to xtask: delete Makefile, hard-zero gate | Kill the shell: port all tooling to xtask, delete make, hard-zero the gate |
 | T-854 | 5350 | shipped | work | T-853 port: verify-t437-destroy-inert-diagnostics -> verify t437 | T-853 port: verify-t437-destroy-inert-diagnostics -> verify t437 |
-| T-926 | 5350 | queued | work | Vehicle Attributes Transform/Position tab | Vehicle Attributes need Transform/Position parity (X/Y/Z + Heading at minimum); T-818 only shipped Heading/Cargo/Crew |
 | T-855 | 5360 | shipped | work | T-853 port: remote-log-grep -> mod remote-logs | T-853 port: remote-log-grep -> mod remote-logs |
-| T-927 | 5360 | queued | work | Editor chrome dblclick leak to map | Chrome docks/Attributes/top bar leak map dblclick — W210 eye-pass |
 | T-856 | 5370 | shipped | work | T-853 port: tbd-spawn-determinism -> mod spawn-determinism | T-853 port: tbd-spawn-determinism -> mod spawn-determinism |
-| T-930 | 5370 | queued | work | Vehicle first-paint disc until moved | Vehicle first-paint disc until moved — W210 eye-pass |
 | T-857 | 5380 | shipped | work | T-853 port: mcp-wb-logs -> mcp wb-logs | T-853 port: mcp-wb-logs -> mcp wb-logs |
 | T-931 | 5380 | deferred | work | Seat zoom viz deferred | Seat zoom viz (glyphs/numbers/crewed occupancy) — operator deferred not now |
 | T-858 | 5390 | shipped | work | T-853 port: deploy-website -> deploy website | T-853 port: deploy-website -> deploy website |
-| T-932 | 5390 | queued | work | Parked briefing markers survive server save/reload | T-826 parking: pendingBriefingMarkers drop on server JSON save/reload before first faction mint |
 | T-859 | 5400 | shipped | work | T-853 port: manual-test -> mod manual-test | T-853 port: manual-test -> mod manual-test |
-| T-933 | 5400 | queued | work | leptos-gates v-suite goldens break pre-close exit-0 | mk leptos-gates exits non-zero after editor-suite 20/20 because v-suite SPA goldens mass-fail |
 | T-860 | 5410 | shipped | work | T-853 port: mcp-call -> mcp call | T-853 port: mcp-call -> mcp call |
 | T-861 | 5420 | shipped | work | T-853 port: setup-server-profile -> setup server-profile | T-853 port: setup-server-profile -> setup server-profile |
 | T-862 | 5430 | shipped | work | T-853 port: fetch-vanilla-source -> fetch vanilla-source | T-853 port: fetch-vanilla-source -> fetch vanilla-source |
@@ -856,10 +801,6 @@ Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
 | T-902 | 5820 | shipped | work | T-853 Phase 6: wave.sh verdict diff then delete | T-853 Phase 6: retire wave.sh — the verdict diff, then the deletion |
 | T-903 | 5830 | shipped | work | T-853 Phase 6: delete hostrun.sh — it dies with wave.sh | T-853 Phase 6: delete hostrun.sh — it dies with wave.sh |
 | T-904 | 5840 | shipped | work | T-853 Phase 7b: flip the ratchet to a HARD ZERO | T-853 Phase 7b: flip the ratchet to a HARD ZERO |
-| T-905 | 5850 | queued | work | Split 37 T-159 frontend SIZE-3 allowlist files | Split T-159 frontend SIZE-3 files (37) the T-899 allowlist is holding |
-| T-906 | 5860 | queued | work | Split 7 T-145 API SIZE-3 allowlist files | Split T-145 API SIZE-3 files (7) the T-899 allowlist is holding |
-| T-907 | 5870 | queued | work | Split 11 map-engine SIZE-3 allowlist files | Split map-engine SIZE-3 files (11) the T-899 allowlist is holding |
-| T-908 | 5880 | queued | work | Split 8 xtask/tools SIZE-3 allowlist files | Split xtask/tools SIZE-3 files (8) the T-899 allowlist is holding |
 | T-909 | 5890 | deferred | work | T-468 still regex-walks ci.yml run: — not T-901 serde_norway | T-468 still regex-walks ci.yml run: — not T-901 serde_norway |
 | T-910 | 5900 | deferred | work | Uppercase extensions bypass case-sensitive language ban | Language ban extension match is case-sensitive (.SH/.PY/.MK without shebang stay green) |
 | T-911 | 5910 | shipped | program | Ticket registry redesign — per-file split + typed schema | Split the ticket monolith into one TOML file per parent and per existing slice_plan/slices key, then type Scope/Status (encoding C). Phase 1 is a byte-identical JSON emit vs the committed monolith (set-equality of ids, not a hardcoded parent count). Phase 2 types the schema. Wave lockfile and metrics producers are T-912+, not this program. |
@@ -877,48 +818,112 @@ Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
 | T-923 | 6030 | shipped | work | wave close writes the marker commit itself | platform wave close writes the marker commit itself: subject self-checked against wave_close_subject_ok and oracle 1 before committing, then wave repack and an auto-committed lock refresh. Dirty tree refuses; --dry-run prints the subject and stops. |
 | T-925 | 6040 | shipped | work | Close-selection semantics: the ceremony is unreachable live | wave close targets the oldest pending emptied label: the ship-hook repack records a fully-shipped wave's label and frozen ticket set in the lock, close validates and closes exactly that set, and open waves number past pending labels. |
 | T-934 | 6100 | shipped | program | Website reorganization — audit.md §3/§4 | Restructure flat 73-file frontend into core/shell/pages/editor, decompose mission_editor/editor_ops/arsenal monoliths, extract gestures via EditorGestureContext, nest backend handlers by domain. |
-| T-070 | — | idea | work | Vehicles placeable | Drag vehicles from palette onto map with crew hooks. |
-| T-080 | — | idea | work | Connection / sync UI | Entity connection lines and sync group authoring. |
-| T-081 | — | idea | work | Transform widget + snap grid | On-map transform gizmo and snap grid. |
-| T-111 | — | idea | program | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
-| T-129 | — | idea | work | Building floor selector | Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.) |
-| T-131 | — | idea | work | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
-| T-132 | — | idea | work | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
-| T-133 | — | idea | work | OFCR timed objectives | Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph. |
-| T-135 | — | idea | work | Mission modset manager | Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan. |
-| T-136 | — | idea | work | 3D AAR / OCAP-style replay | Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built. |
-| T-137 | — | idea | work | Discord platform rework | Discord structure + bot flows: slot confirm, reminders, AAR links. Complements T-118 website slotting; mostly ops/human. |
-| T-138 | — | idea | work | One-command self-host install | Single script: deps check, .env, db-up, migrate, seed, optional map-assets fetch (git lfs pull for DEM+bundle; optional GitHub Release tarball for tile pyramids after slim-LFS @ 2026-07) — fork-friendly community install story. |
-| T-139 | — | idea | work | Lobby loadout visual preview | In-game lobby: kit preview (icon grid → 2D mannequin → stretch 3D). After T-068.13 production slot picker. |
-| T-140 | — | idea | work | Mission client payload budget | Spike: compiled mission size vs slot count; max entities for console; server-only bulk vs client sync policy. Post T-092. |
-| T-141 | — | idea | work | Procedural slot naming | Adjective/nickname word packs for auto slot display names; manual override wins. After T-071 ORBAT numbering. |
-| T-142 | — | idea | work | MC shell layout polish | Toolbelt placement, Attributes modal grouping, stub tool visibility — layout UX without full T-082 field parity. |
-| T-143 | — | idea | work | Perfect water — exact hydrology + water placement guard | Perfect water — exact hydrology + water placement guard |
-| T-149 | — | idea | work | Forest Mass Polygon Smoothing | Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography. |
-| T-157 | — | idea | work | Mission Create visual overhaul | Visual map picker with thumbnails, modset selection, remove time/weather/max players from menu. |
-| T-158 | — | idea | work | Editor shell UX consolidation | Consolidate Settings buttons, wire up top bar, remove redundant Assets tab. |
-| T-190 | — | idea | work | Two browser tabs on one mission silently clobber each other | Two browser tabs on one mission silently clobber each other |
-| T-238 | — | idea | work | Add ticket check to CI | make ticket-check exists but grep of .github/workflows for ticket returns nothing, so nothing prevents the registry drifting again. |
-| T-242 | — | idea | work | Add vehicle and entity inventory to the entity schema | Add vehicle and entity inventory to the entity schema |
-| T-257 | — | idea | work | Markers and objectives will be non-undoable the day they land | hydrate clears loadouts, items, objectives and markers (store.rs:1102-1120) but those four roots are not in the UndoManager expand_scope (store.rs:101-106). Harmless today because nothing mutates them — a silent trap for the marker and objective work. |
-| T-277 | — | idea | work | 27.4% of the shipped map catalogue is unclassified | 27.4% of the shipped map catalogue is unclassified |
-| T-290 | — | idea | work | Nine dead flatten fields mod never reads | meta.author, meta.templateId, meta.playerRange, the whole environment block, factions[].tickets, orbat[].type.
-winConditions.mode, flow.briefingSeconds (advisory only), and the entire orbat block (parity-check only).
-Either add mod readers or annotate them non-consumed so the next audit does not re-derive this.
+| T-070 | 6439 | cancelled | work | Vehicles placeable | Drag vehicles from palette onto map with crew hooks. |
+| T-080 | 6440 | cancelled | work | Connection / sync UI | Entity connection lines and sync group authoring. |
+| T-081 | 6441 | cancelled | work | Transform widget + snap grid | On-map transform gizmo and snap grid. |
+| T-137 | 6442 | deferred | work | Discord platform rework | Discord structure + bot flows: slot confirm, reminders, AAR links. Complements T-118 website slotting; mostly ops/human. |
+| T-238 | 6443 | cancelled | work | Add ticket check to CI | make ticket-check exists but grep of .github/workflows for ticket returns nothing, so nothing prevents the registry drifting again. |
+| T-940 | 6999 | queued | program | Website platform: events, telemetry, admin, content | Fixes the audit's S5 findings in apps/website/api: waitlist seats, registration tombstones and no_show, schedule cascades, flat telemetry counters, pool config, audit stream, users pager, vehicle mutations, wiki features, mortar ballistics, rcon actions, reservation tiers and telemetry events. |
+| T-311 | 7020 | ready | work | Leaderboard ORDER BY lacks tie-breaker; paging unstable | None of the five ORDER BY arms in handlers/telemetry/leaderboards.rs:47-51 has a tie-breaker, so LIMIT/OFFSET paging returns an unstable row set once T-194's golden introduces 4-way ties. Append `, lt.discord_id ASC` to each arm and test paging. |
+| T-305 | 7030 | ready | work | pak.rs seeks data_start plus offset; offsets are absolute | read_file/read_raw in tools/tbd-tools/src/world/pak.rs seek data_start + entry.offset, but entry offsets are absolute from the pak start; every `enf extract` read is shifted by 56 bytes. Seek entry.offset directly, pinned by a fixture test. |
+| T-298 | 7040 | ready | work | Gate tbd-tools density tests in CI | `cargo test -p tbd-tools --lib density::` passes on main today (2 tests, 2026-09-05) but no CI lane runs it; add the tbd-tools lib tests to ci.yml and pin the corner-partition invariant with a seeded randomized test. |
+| T-943 | 7050 | ready | work | platform wave push deadlocks on large LFS ranges | cmd_push's LFS guard pipes every path of a commit into git check-attr without draining stdout; a commit touching 1,691 files wedges both processes forever, and on a host with git-lfs the guard refuses a legitimate push. |
+| T-300 | 7060 | ready | work | Shared CARGO_TARGET_DIR serves unmerged slice binaries | A binary built inside a slice worktree counts as fresh for a main-checkout build under the shared CARGO_TARGET_DIR, so run-style lanes can execute unmerged code; run-only binaries get their own target and preflight checks the build stamp. |
+| T-924 | 7070 | ready | work | Gate verdict receipt required at land | platform wave gate writes a verdict file (HEAD sha plus verdict) and platform wave land refuses a landing ticket without a fresh one. Forward-only: future lands only, no backfill, existing tickets stay green untouched. |
+| T-090 | 7079 | ready | program | Map visualization program | Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane. |
+| T-935 | 7089 | queued | program | Map binary storage — hybrid rkyv + POD | Replace gz-JSON/PNG map assets with a hybrid layout: raw #[repr(C)] POD for bulk GPU data (chunks, DEM, density), rkyv archives for structured metadata (roads, labels, water, buildings, catalog), mipmapped containers for satellite and bathymetry. |
+| T-277 | 7110 | ready | work | 27.4% of the map catalogue is unclassified | 444 of 1,623 everon prefabs fall through to prefab-classify.json's fallback rule; vegetation and utility count zero and the road census is zero against 888 shipped road segments. Append rules until fallback is under 5% and the census matches. |
+| T-149 | 7170 | ready | work | Forest mass polygon smoothing | Upgrade the V1 blocky Path B forest hulls: sample the existing 8 m TBDD density grid and apply Chaikin smoothing to the marching-squares rings before the forest-regions emit so forest edges read as natural cartography. |
+| T-676 | 7260 | ready | work | Trigger activation and effects — the Enfusion runtime | Trigger activation and effects — the Enfusion runtime |
+| T-677 | 7290 | ready | work | Waypoints — group movement orders | Waypoints — group movement orders |
+| T-678 | 7300 | ready | work | Group AI state: combat mode, behaviour, formation, speed | Group AI state: combat mode, behaviour, formation, speed |
+| T-673 | 7310 | ready | work | Marker style and Area markers — the $defs/marker widening | Marker style and Area markers — the $defs/marker widening |
+| T-212 | 7320 | ready | work | Typed per-side objectives with attributes | Objectives as typed, placed, per-side entities with one uniform attribute spine |
+| T-680 | 7330 | ready | work | Vehicle states: lock, fuel, ammo | Vehicle states: lock, fuel, ammo |
+| T-681 | 7340 | ready | work | Entity states: health, allow-damage, show-model, size, stamina | Entity states: health, allow-damage, show-model, size, stamina |
+| T-682 | 7350 | ready | work | Environment readers: fog, wind, view distance | Environment readers: fog, wind, view distance |
+| T-684 | 7360 | ready | work | Mission parameters as first-class document objects | Mission parameters as first-class document objects |
+| T-685 | 7370 | ready | work | Zone volumes: height bounds capture counts and owner | Zones become volumes: min/max height, attacker and defender counts, starting owner |
+| T-689 | 7380 | ready | work | Play-area enforcement gains a vehicle-class axis: the aircraft exemption | Play-area enforcement gains a vehicle-class axis: the aircraft exemption |
+| T-702 | 7390 | ready | work | Whole-terrain zone — one zone sized to the map | 3DEN-MISC-001 E11: one command authors a play-area boundary polygon covering the terrain exactly from terrain_bounds. |
+| T-705 | 7400 | ready | work | Player gadget flags — map, compass, watch, GPS, radio | Player gadget flags — map, compass, watch, GPS, radio |
+| T-654 | 7410 | ready | work | Conditional inclusion: variant-gated document subtrees | Conditional inclusion: variant-gated document subtrees |
+| T-679 | 7420 | ready | work | Placement scatter: radius and area shape | Placement scatter: radius and area shape |
+| T-674 | 7430 | queued | program | T-216 follow-on: slot identity reaches the wire | Four attribute ids — `ATTR-FIELD-OBJ-CALLSIGN`, `-OBJ-RANK`, `-OBJ-STANCE`, `-OBJ-UNIT-NAME` — plus the two TBD-only keys `tag` and `leaderSlotId`. `OBJ-UNIT-NAME` rides this slice rather than standing alone; the sweep says so explicitly. THE CONTRACT DELTA IS ALREADY WRITTEN OUT at `crates/map-engine-core/src/mission/flatten.rs`:2620-2632 — five `$defs/slot` / `$defs/group` keys. T-216 is `shipped`, but it shipped THE LEDGER AND ITS TRIPWIRE, not the fix: flatten.rs:2584-2649 enumerates six author-facing values the compile silently drops (a squad's leaderSlotId, a slot's tag / callsign / rank / stance, and the entire vehicle roster) and records that `make verify-t180` stayed green throughout BECAUSE NOT ONE OF ITS 22 TESTS CHECKED. `stance` additionally needs an Enfusion spawn-pose call — word-boundary `stance` in apps/mod is ZERO (the 39-file `grep -rl stance` result is every hit being the substring inside `instance`). Widening `/compiled` without care 500s every mission. Related: T-242. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.
+
+EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
+
+SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema. |
+| T-675 | 7440 | queued | program | Vehicle roster reaches game — T-076 compile half | Cross-boundary compile half split from T-076 so crew UI could ship separately.
+Closes the sixth T-216 drop-ledger row: top-level vehicles[] with seats and crew refs.
+T-706 already widened the schema; this program emits and reads the roster.
+Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
  |
-| T-291 | — | idea | work | Resolve five schema fields implemented on no surface | environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem. |
-| T-294 | — | idea | work | Only one of two registered terrains has object data | terrain-registry.json declares everon (active, all five phases shipped) and arland (queued, P1 only) but arland has only a 756-byte manifest and zero object data. |
-| T-295 | — | idea | work | Realtime collaborative editing | Realtime collaborative editing |
-| T-298 | — | idea | work | tbd-tools density::corner_partition_identity fails on main | tbd-tools density::corner_partition_identity fails on main |
-| T-299 | — | idea | work | Every single-faction compile ships a phantom, unplayable opfor | Every single-faction compile ships a phantom, unplayable opfor |
-| T-300 | — | idea | work | Shared CARGO_TARGET_DIR lets a main-checkout build serve unmerged slice code | Shared CARGO_TARGET_DIR lets a main-checkout build serve unmerged slice code |
-| T-301 | — | idea | work | Briefing kit lists 7 of 13 gear fields | Briefing kit list shows 7 of 13 gear fields — an RPG is invisible on the planning screen |
-| T-302 | — | idea | work | T-182 weapon equip unverified in game | T-182's weapon equip is compiled and reasoned but never observed in game |
-| T-304 | — | idea | work | RegistryScan weapon weight never read, 32 wrong | TBD_RegistryScan ReadPhysAttrsPass: weapon weight never read, and 32 rows carry WRONG weights |
-| T-305 | — | idea | work | pak.rs seeks wrong offset — absolute not relative | pak.rs reads at the wrong offset — entry offsets are absolute, not relative to data_start |
-| T-309 | — | idea | work | FactionDoc squad level for Apply Template | Preserve squads through Apply Template — needs a squad level in FactionDoc |
-| T-310 | — | idea | work | Arsenal attachments never reach the compiled document | Arsenal attachments never reach the compiled document |
-| T-311 | — | idea | work | Leaderboard ORDER BY has no tie-breaker, so paging is unstable | Leaderboard ORDER BY has no tie-breaker, so paging is unstable |
-| T-653 | — | idea | work | Preserve the three headless editor-screenshot findings | Preserve the three headless editor-screenshot findings |
-| T-704 | — | idea | work | Command palette over every editor command | Command palette over every editor command |
-| T-924 | — | idea | work | Gate verdict receipt required at land | platform wave gate writes a verdict file (HEAD sha plus verdict) and platform wave land refuses a landing ticket without a fresh one. Forward-only: future lands only, no backfill, existing tickets stay green untouched. |
+| T-936 | 7449 | queued | program | Mission logic the audit found missing | Win/loss framework, task state machine with HUD, editable radio nets, weather timeline, audio emitters, dynamic spawn modules and tactical graphics — schema, core flatten, editor panels and Enfusion runtime for each. |
+| T-299 | 7480 | ready | work | Single-faction compile ships a phantom opfor | flatten pads a stub opposing faction (flatten.rs:2470-2472) to satisfy the schema's two-faction rule, so every single-faction mission shows an unplayable side in briefing and ORBAT. Let the schema permit one faction and stop padding. |
+| T-310 | 7490 | ready | work | Arsenal attachments never reach the compiled document | T-197 persists weapon attachment edges in SlotLoadoutV2 but flatten's mod_slot_loadout reads only weapon/optic/magazine and the schema gear block has no list; add gear.attachments[], emit it, and mount it in TBD_LoadoutEquipHelper.c. |
+| T-290 | 7540 | ready | work | Nine dead flatten fields mod never reads | meta.author/templateId/playerRange, the environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds and the orbat block are emitted but never read by the mod; add readers where cheap and annotate the rest in an emit ledger. |
+| T-291 | 7550 | ready | work | Resolve five schema fields implemented on no surface | environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem. |
+| T-242 | 7560 | ready | work | Emit T-216 slot deltas through flatten | The T-216 schema deltas (slot tag/callsign/rank/stance, group leaderSlotId, root vehicles $def) are all declared in mission.schema.json today, but flatten drops the four slot fields (DIAG_DROP_SLOT_*); emit them and pin with schema-validated goldens. |
+| T-133 | 7570 | ready | work | OFCR timed objectives | Objectives that evaluate at mission time T+N: the T-936.2 task model gains a schedule (delay, window), the tasks panel edits it, and TBD_TaskStateMachine.c fires the transition on the mission clock. |
+| T-941 | 7579 | queued | program | Enfusion mod lifecycle: safestart, lobby, screens, HUD | Fixes the audit's S6 findings in apps/mod/tbd-framework: safestart armed through LOBBY and BRIEFING, once-only deploy on BRIEFING, END and DEBRIEF screens, an objective HUD, spectator clamp, private link codes, radio fallback and fuelled vehicles. |
+| T-301 | 7660 | ready | work | Briefing kit lists 7 of 13 gear fields | TBD_BriefingData.BuildKit (UI/TBD_BriefingData.c:519) lists seven gear fields; T-182's launcher, handgun and throwable never appear on the briefing screen. Add them while keeping pants/boots/handwear hidden. |
+| T-302 | 7670 | ready | work | Prove T-182 weapon equip on a live body | T-182's slot-indexed weapon equip compiles but was never observed in game; add a per-slot equip result log, a headless world-boot assertion that four authored weapons land in four slots, and a human checklist item. |
+| T-304 | 7680 | ready | work | RegistryScan never reads weapon weight; 32 wrong rows | TBD_RegistryScan ReadPhysAttrsPass treats SCR_WeaponAttachmentsStorageComponent as storage so weapon weight is never read (0/107), and its class-keyed foreach picks hash order over derivation depth, so 32 rows carry Item_Base.et's 0.01 kg. |
+| T-139 | 7690 | ready | work | Lobby loadout visual preview | In-game lobby kit preview: a TBD_LoadoutPreview widget renders the selected slot's gear as an icon grid (stretch: 2D mannequin) beside the slot list in TBD_LobbyScreen; layout file under UI/layouts. |
+| T-937 | 7699 | queued | program | Editor data layer: id arrays, undo, persist | Fixes the audit's S2 findings in the mission editor data layer: native YArray id lists, gesture-grouped undo with a depth cap, a materialize side-key cache, surfaced save errors with hidden-tab flush, and payload schema hardening. |
+| T-257 | 7750 | ready | work | Undo scope misses loadouts, items, objectives, markers | hydrate clears loadouts, items, objectives and markers but store.rs expand_scope covers slots, squads, factions and editor_layers only, so those roots become non-undoable the day something mutates them. Add them to the UndoManager scope with a test per root. |
+| T-190 | 7760 | ready | work | Two tabs on one mission clobber each other | Two tabs on one mission write one IndexedDB key; the last debounce wins and the reload prompt blames server drift. Detect the second tab, merge through the CRDT, and give the conflict modal counts, timestamps and a destructive marker. |
+| T-932 | 7780 | ready | work | Parked briefing markers survive server save/reload | T-826 parking: pendingBriefingMarkers drop on server JSON save/reload before first faction mint |
+| T-930 | 7790 | ready | work | Vehicle first-paint disc until moved | Vehicle first-paint disc until moved — W210 eye-pass |
+| T-938 | 7799 | queued | program | Engine and wasm performance | Closes the audit's S3 render and geometry findings: pooled lane buffers, measured chunk-crossing uploads, GPU culling for every icon lane, BVH section cuts with a sparse HeightField, frame-sliced viewsheds, and a wasm memory budget guard. |
+| T-939 | 7859 | queued | program | Editor usability: selection, gizmo, arrange, templates | Fixes the audit's S4 findings in the mission editor UI: outliner multi-select drag, batch faction and squad reassign, a Z gizmo, Arrange shortcuts, squad templates, canvas diagnostics with connection wires, vehicle-panel virtualization and Ctrl+F search. |
+| T-704 | 7940 | ready | work | Command palette over every editor command | Alt+Space opens a fuzzy palette over every top-strip and toolbelt command, ranked by usage frequency stored per browser; Esc closes; Enter runs the command through its existing handler. |
+| T-142 | 7950 | ready | work | MC shell layout polish | Toolbelt placement, Attributes modal grouping and stub-tool visibility — layout UX without full T-082 field parity; no document-write changes. |
+| T-157 | 7960 | ready | work | Mission Create visual overhaul | The New Mission dialog gets a visual map picker with terrain thumbnails and a modset selection; time, weather and max players leave the dialog because they are editor settings. |
+| T-158 | 7970 | ready | work | Editor shell UX consolidation | Consolidate the two Settings entry points into one, wire the top-bar buttons that are still inert, and remove the redundant left-dock Assets tab now that the right dock is the asset surface. |
+| T-129 | 7980 | ready | work | Building floor selector | Per-building floor slice in the Mission Creator map: a floor selector tool derives storey bands from the occluder BVH heights and clips the building render to the chosen floor so placement inside multi-floor buildings is unambiguous. |
+| T-131 | 7990 | ready | work | Route planner tool | Mission Creator tool that plans routes on the exported road graph: click waypoints, snap to road segments, show distance and an elevation profile. Not runtime convoy AI. |
+| T-141 | 8000 | ready | work | Procedural slot naming | Adjective/nickname word packs generate slot display names on creation; a manual override wins and survives renumbering. Builds on T-071 ORBAT numbering. |
+| T-146 | 8050 | ready | work | Asset Browser Data Wiring | Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred. |
+| T-143 | 8070 | ready | work | Water mask placement guard and exact hydrology | Ship the T-935.9 water mask to the editor: a placement guard refuses units in the ocean and warns in lakes; pak.rs (fixed by T-305) reads Eden water entities so the vector layer becomes exact instead of the appearance classifier. |
+| T-135 | 8180 | ready | work | Mission modset manager | Per-mission Workshop modset presets validated against registry aliases at export: a workshop_sync service resolves mod metadata, the modpacks page edits presets, and export refuses a mission whose registry aliases are not covered by its preset. |
+| T-309 | 8190 | ready | work | FactionDoc squad level for Apply Template | Preserve squads through Apply Template: add a squad level to faction-library.schema.json and FactionDoc (core/dto.rs:745), then both sides of the editor ops — orbat_apply_faction and faction_doc_from_side_core — so save-as-template then Apply round-trips N squads. |
+| T-140 | 8200 | ready | work | Mission client payload budget | Measure compiled mission size against slot and entity counts, define a console-safe budget, and make compile report a payload-budget diagnostic with a server-only-bulk policy for what exceeds it. |
+| T-136 | 8210 | ready | work | 3D AAR / OCAP-style replay | Post-event replay: T-940.13 telemetry events → a replay endpoint returning a per-match timeline → a map scrubber page with unit positions over time; aar_replay_url on deployments links to it. |
+| T-295 | 8220 | ready | work | Realtime collaborative editing | Axum websocket at /missions/{id}/sync relays yrs updates and awareness between clients; the editor's collab_sync.rs applies remote updates into the local doc; POST /versions gains edit-since-load concurrency (base version id → 409). |
+| T-132 | 8230 | ready | work | Multiplayer MC + visual git | Visual mission diff/review UI over the T-295 sync: doc/diff.rs computes entity-level changes between two versions and a mission_diff page renders added, removed, moved and changed slots and vehicles for review before publish. |
+| T-138 | 8240 | ready | work | One-command self-host setup via xtask | `cargo xtask setup all` checks deps, writes .env, runs db up, migrate and seed, and optionally pulls map assets (git lfs pull) — the fork-friendly install story, in Rust, no shell script. |
+| T-294 | 8250 | ready | work | Arland has a manifest and no object data | terrain-registry.json declares arland queued with P1 only; packages/map-assets/arland holds a 756-byte manifest and zero objects. Run the export-terrain gate for arland: the operator exports from Workbench, the agent stages, builds and records P1. |
+| T-653 | 8260 | ready | work | Preserve the three headless editor-screenshot findings | Document in EDITOR_GATE_RUNBOOK.md and KB-002 the three non-obvious headless screenshot fixes: writable XDG_CACHE_HOME for fontconfig, --use-angle=vulkan only, and canvas.toDataURL capture (Page.captureScreenshot returns a black map). |
+| T-111 | 8269 | queued | program | Lazy chunk residency @ 1M | Program for T-067.1: byte-budget chunk eviction with cache eviction and reload on viewport re-entry, so a 1M-object terrain stays within browser memory. Spec: t067_spatial_chunks.md §Deferred. |
+| T-905 | 8280 | ready | work | Split 37 T-159 frontend SIZE-3 allowlist files | Split T-159 frontend SIZE-3 files (37) the T-899 allowlist is holding |
+| T-906 | 8290 | ready | work | Split 7 T-145 API SIZE-3 allowlist files | Split T-145 API SIZE-3 files (7) the T-899 allowlist is holding |
+| T-907 | 8300 | ready | work | Split 11 map-engine SIZE-3 allowlist files | Split map-engine SIZE-3 files (11) the T-899 allowlist is holding |
+| T-908 | 8310 | ready | work | Split 8 xtask/tools SIZE-3 allowlist files | Split xtask/tools SIZE-3 files (8) the T-899 allowlist is holding |
+| T-933 | 8320 | ready | work | leptos-gates v-suite goldens break pre-close exit-0 | mk leptos-gates exits non-zero after editor-suite 20/20 because v-suite SPA goldens mass-fail |
+| T-816 | 8330 | ready | work | Armed composition hint open; one Esc clears both layers wrongly | Esc with an armed composition and the Controls Hint open clears both in one press |
+| T-817 | 8340 | ready | work | Grid labels lag ~1.4s on stationary wheel zoom | Grid labels lag up to ~1.4s on wheel zoom with a stationary pointer |
+| T-820 | 8350 | ready | work | Catalog failure generic cause; chips visible wrongly | Catalog failure view shows the generic cause with chips visible where no-modpack should fire |
+| T-821 | 8360 | ready | work | Save version prefill static; second save 409s | Save Version prefill is a static 0.1.0 — no auto-bump, second save 409s |
+| T-822 | 8370 | ready | work | Outliner dblclick must not open asset picker under Attributes | Outliner dblclick bubbles into the map container — asset picker opens under Attributes |
+| T-823 | 8380 | ready | work | OBJ readout must count vehicles or rename honestly | OBJ readout counts slots only — placed vehicles are invisible to it |
+| T-824 | 8390 | ready | work | Placed zones must render visibly at rest on map | Placed zones are not visible on the map — investigate and fix the render (repro-first) |
+| T-827 | 8400 | ready | work | Validation chip red under 4.5:1 live-effective | Validation chip red measures 4.0-4.3:1 over the live glass — passes only by plate-calc |
+| T-828 | 8410 | ready | work | Marker captions drift when zoom changes without rebind | Marker captions are world-frozen at bind-time zoom — drift past 40px until a rebind |
+| T-830 | 8420 | ready | work | Outliner rows cramped; density pass on layer tree | Outliner rows are too cramped — density pass on the layer tree |
+| T-831 | 8430 | ready | work | Per-side marker authoring audit then explicit UI | Per-side markers: author for each side, visible only to that side (Arma 3 model) — establish what exists first |
+| T-833 | 8440 | ready | work | Rotation ring: relative delta plus live preview | Rotation widget: relative drag delta (not absolute aim) + live per-frame preview |
+| T-834 | 8450 | ready | work | Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar | Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar |
+| T-837 | 8460 | ready | work | Vehicles cannot be deleted — slots can, vehicles cannot | Vehicles cannot be deleted — slots can, vehicles cannot |
+| T-838 | 8470 | ready | work | Map markers selectable; outliner lists; dblclick opens Attributes | Markers select on the map and list in the outliner; double-click opens marker Attributes |
+| T-839 | 8480 | ready | work | Retire floating Select/Ruler/LoS bottom-centre pill | The floating Select/Ruler/LoS pill still exists — decision 1 said it dies |
+| T-841 | 8490 | ready | work | Type picker popover translucent; make opaque panel | The Type picker popover is translucent — text blurs over the map; make it an opaque panel |
+| T-845 | 8500 | ready | work | A selected vehicle looks identical to an unselected one | A selected vehicle looks identical to an unselected one |
+| T-848 | 8510 | ready | work | Group to must use exclusive ORBAT membership | Connect ▸ Group to must mean exclusive ORBAT squad membership — not stackable connection edges |
+| T-849 | 8520 | ready | work | Add ungroup leave-squad verb without deleting slot | Ungroup / leave-squad — no editor verb to take a slot out of a squad without deleting it |
+| T-850 | 8530 | ready | work | Squad tether must follow drag on auto-grouped units | T-801 eye-pass: squad tether did not follow drag on same-squad (auto-grouped) units |
+| T-926 | 8540 | ready | work | Vehicle Attributes Transform/Position tab | Vehicle Attributes need Transform/Position parity (X/Y/Z + Heading at minimum); T-818 only shipped Heading/Cargo/Crew |
+| T-927 | 8550 | ready | work | Editor chrome dblclick leak to map | Chrome docks/Attributes/top bar leak map dblclick — W210 eye-pass |
+| T-120 | 8570 | queued | work | Staging soak + golden mission smoke | Pinned game/mod version soak; golden-mission smoke on staging server. |
+| T-170 | 8580 | queued | work | Prod default flip to Leptos SPA | Prod default flip to Leptos SPA |

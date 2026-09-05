@@ -3,8 +3,10 @@ kind = "work"
 title = "Vehicle states: lock, fuel, ammo"
 summary = "Vehicle states: lock, fuel, ammo"
 class = "chore"
-status = "queued"
-order = 4370
+status = "ready"
+order = 7330
+spec = "docs/specs/existing/t680_vehicle_states.md"
+plan = "docs/plans/t-680_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row
@@ -24,6 +26,7 @@ context = [
     "Three ATTR-FIELD-OBJ-LOCK, -OBJ-FUEL, -OBJ-AMMO ids; no Enfusion reader today.",
     "Successor to shipped T-215; keep separate from T-076 placement tickets.",
     "Schema widening split to T-706; this ticket is mod reader plus editor UI.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
 ]
 requirement = [
     "Read lock, fuel, ammo mission attributes in TBD_VehicleState.c at runtime.",
@@ -40,6 +43,11 @@ approach = [
 verify = [
     "scripts/mod/compile.sh clean headless tbd-framework compile with new reader.",
     "Runtime applies lock fuel ammo from mission payload on vehicle spawn.",
+    "cargo xtask mod compile",
+]
+acceptance = [
+    "Spawned vehicles honour authored lock, fuel and ammo values; unset attributes leave engine defaults.",
+    "No packages/tbd-schema edits; compile clean.",
 ]
 citations = [
     "T-215 vehicle attribute predecessor",
@@ -47,7 +55,10 @@ citations = [
     "T-076 placement separate ticket",
 ]
 estimated = ["scope"]
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c"]
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+]
 
 [scope]
 domain = "mod"

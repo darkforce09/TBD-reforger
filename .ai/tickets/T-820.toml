@@ -3,8 +3,10 @@ kind = "work"
 title = "Catalog failure generic cause; chips visible wrongly"
 summary = "Catalog failure view shows the generic cause with chips visible where no-modpack should fire"
 class = "bug"
-status = "queued"
-order = 5020
+status = "ready"
+order = 8350
+spec = "docs/specs/existing/t820_catalog_failure_cause.md"
+plan = "docs/plans/t-820_plan.md"
 executor = "claude-code"
 notes = """
 wave203 verifier; uncertainty stated — repro-first ticket
@@ -42,6 +44,11 @@ approach = [
 verify = [
     "is_current false real browser: No modpack is configured named chips hidden.",
     "Restore modpack: Retry repopulates catalog tree.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "With no current modpack the catalog failure view names No modpack is configured and hides the chips; Retry repopulates once a modpack is set.",
+    "If the defect is headless-only, the report carries the real-browser evidence and no code changes.",
 ]
 citations = [
     "wave203.md MINOR",

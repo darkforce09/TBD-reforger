@@ -1,0 +1,52 @@
+id = "T-937.1"
+kind = "work"
+title = "Native YArray for slotIds and entityIds"
+summary = "squad.slotIds and layer.entityIds move from Any::Array clone-rewrites (store.rs:5162-5191) to native YArray with a hydrate-time migration; Class-R oracle parity and collaborative undo stay intact."
+class = "bug"
+status = "ready"
+order = 7700
+spec = "docs/specs/audit_2026_09/t937_editor_data_layer.md"
+plan = "docs/plans/t-937_1_plan.md"
+executor = "claude-code"
+priority = 0
+parent = "T-937"
+main_goal = "Id lists in squads and layers are real CRDT arrays that survive concurrent edits and undo."
+context = [
+    "Anchor 2026-09-04: store.rs:5162 retain_ids and :5171-5191 append_id linear-scan and clone-rewrite the whole Any::Array on every append; concurrent edits and undo lose entries.",
+    "Master audit S2 rates this O(N^2) plus collaboration loss; priority 0 because concurrent appends can drop slot ids from a squad.",
+    "store.rs is shared with T-937.2 and T-937.3; the three slices serialize through depends_on, this one first.",
+]
+requirement = [
+    "New crates/map-engine-core/src/doc/id_arrays.rs (registered in doc/mod.rs): read, append, retain and move helpers over a yrs array of ids, with unit tests.",
+    "store.rs hydrate migrates any legacy Any::Array value to the array type once; reading either form yields the same Vec<String> in order.",
+    "Class-R oracle byte-parity tests (they scrub their own source) stay green; only these two keys change representation.",
+    "Every existing append_id and retain_ids caller in store.rs routes through id_arrays; no file outside owns changes.",
+]
+current_state = [
+    "store.rs:5171-5191 append_id reads the array, clones it into a Vec, pushes, writes the whole array back; retain_ids at :5162 rewrites likewise.",
+    "No yrs array is used for id lists; a concurrent append from two peers keeps only the last writer's copy.",
+]
+approach = [
+    "Verify the defect on main: a unit test appending from two synced peers concurrently must lose one id; paste the red output verbatim.",
+    "Implement id_arrays.rs; migrate in hydrate; switch every store.rs caller; run the oracle parity suite unchanged.",
+    "Perturbation: skip the migration branch in hydrate; the legacy-document test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask platform wave gate --slice T-937.1",
+]
+acceptance = [
+    "Two peers appending slot ids concurrently both keep their entries after sync; undo removes only the local append.",
+    "A legacy document with Any::Array id lists hydrates once and reads back identical ids in the same order.",
+    "Class-R oracle parity fixtures are unchanged and green.",
+]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "crates/map-engine-core/src/doc/store.rs",
+    "crates/map-engine-core/src/doc/id_arrays.rs",
+    "crates/map-engine-core/src/doc/mod.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "core"

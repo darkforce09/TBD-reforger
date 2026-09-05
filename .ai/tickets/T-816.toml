@@ -3,8 +3,10 @@ kind = "work"
 title = "Armed composition hint open; one Esc clears both layers wrongly"
 summary = "Esc with an armed composition and the Controls Hint open clears both in one press"
 class = "bug"
-status = "queued"
-order = 4980
+status = "ready"
+order = 8330
+spec = "docs/specs/existing/t816_esc_hint_layer.md"
+plan = "docs/plans/t-816_plan.md"
 executor = "claude-code"
 notes = """
 wave201 verifier NIT-1; owns spans eden_top_strip.rs/ui.rs/mission_editor.rs — pack owns-aware
@@ -42,6 +44,11 @@ verify = [
     "Armed composition hint open Esc1 closes ONLY hint arm panel armed-hint stay.",
     "Esc2 clears the arm.",
     "Every press one layer.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "With a composition armed and the Controls Hint open, the first Esc closes only the hint and the second clears the arm; every press peels one layer.",
+    "The T-814 one-layer ladder for modal_stack dialogs is unchanged.",
 ]
 citations = [
     "wave201 NIT-1 verifier",

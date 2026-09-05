@@ -1,0 +1,56 @@
+id = "T-939.2"
+kind = "work"
+parent = "T-939"
+title = "Attributes: batch faction and squad reassign"
+summary = "The Attributes modal gains a faction selector and an editable squad picker that apply to every selected slot in one undo group through a new reassign operation."
+class = "feature"
+status = "ready"
+order = 7870
+priority = 2
+spec = "docs/specs/audit_2026_09/t939_editor_usability.md"
+plan = "docs/plans/t-939_2_plan.md"
+executor = "claude-code"
+main_goal = "Authors move many slots to another faction or squad from one dialog."
+context = [
+    "Anchor 2026-09-04: panels/attributes_modal.rs:1864-1872 shows the squad read-only; faction appears only as asset-id text at :1546-1607 and :1749-1842.",
+    "Depends on T-937.2 (undo groups, state/operations/batch.rs): the batch applies inside with_batch so one Ctrl+Z reverts it.",
+    "state/operations.rs is shared with T-937.2 and T-937.5; this slice packs after them.",
+    "Related, not re-minted: T-309 faction squads, T-141 slot naming.",
+]
+requirement = [
+    "New state/operations/reassign.rs (registered in state/operations.rs): reassign_slots(ids, target) moving slot ids between squad slotIds lists and updating side keys.",
+    "attributes_modal.rs: a faction selector listing the mission's factions and a squad picker for the chosen faction; both act on the whole selection.",
+    "Slots leaving a squad never delete it implicitly; an emptied squad stays.",
+    "A squad of another faction is refused with a named reason in the modal.",
+]
+current_state = [
+    "attributes_modal.rs:1864-1872 renders the squad name as text; no faction control; no multi-slot operation exists under state/operations/.",
+]
+approach = [
+    "Verify on main: a test asserting the modal offers no faction control and no squad control; paste the red.",
+    "Write reassign.rs with unit tests over a doc fixture (moves, refusal, side-key update); mount the controls; wrap the apply in with_batch.",
+    "Perturbation: skip the side-key update in reassign_slots; its test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-939.2",
+]
+acceptance = [
+    "Selecting five slots and choosing another faction moves all five; the outliner shows them under the new faction.",
+    "One Ctrl+Z after a batch reassign restores every moved slot.",
+    "Choosing a squad from a different faction is refused with a visible reason.",
+]
+depends_on = ["T-937.2"]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/frontend/src/editor/panels/attributes_modal.rs",
+    "apps/website/frontend/src/editor/state/operations/reassign.rs",
+    "apps/website/frontend/src/editor/state/operations.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["attr_panel", "ops_undo"]

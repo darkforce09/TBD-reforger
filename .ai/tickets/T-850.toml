@@ -3,8 +3,10 @@ kind = "work"
 title = "Squad tether must follow drag on auto-grouped units"
 summary = "T-801 eye-pass: squad tether did not follow drag on same-squad (auto-grouped) units"
 class = "bug"
-status = "queued"
-order = 5320
+status = "ready"
+order = 8530
+spec = "docs/specs/existing/t850_squad_tether_drag.md"
+plan = "docs/plans/t-850_plan.md"
 executor = "claude-code"
 notes = """
 operator W208 eye-pass; T-801 follow-on; may depend on clean membership (T-848)
@@ -41,6 +43,12 @@ verify = [
     "Mid-drag screenshot tether endpoint within 4px of dragged sprite centre.",
     "Auto-grouped same-squad single-drag case passes.",
     "Auto-grouped same-squad 2-selected-drag case passes.",
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "Mid-drag the squad tether endpoint stays within 4px of the dragged sprite centre for auto-grouped single and two-selected drags.",
+    "Behaviour is proven on the release build the operator uses.",
 ]
 citations = [
     "wave208 operator eye-pass",

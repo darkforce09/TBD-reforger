@@ -1,0 +1,64 @@
+id = "T-936.2"
+kind = "work"
+parent = "T-936"
+title = "Task state machine with HUD markers"
+summary = "Authored tasks (primary|secondary|optional) with states assigned|succeeded|failed live in the schema, a core tasks.rs model and a tasks panel; TBD_TaskStateMachine.c syncs transitions with T-676 triggers and TBD_TaskHud.c draws markers."
+class = "feature"
+status = "ready"
+order = 7460
+priority = 1
+spec = "docs/specs/audit_2026_09/t936_mission_logic.md"
+plan = "docs/plans/t-936_2_plan.md"
+executor = "claude-code"
+main_goal = "Tasks have tiers and a real state machine in the editor, the compiled document and the game HUD."
+context = [
+    "Master audit S1: no task state machine exists; audit-verified confirms zero trigger runtime under Scripts/Game/TBD — T-676 adds it and this slice consumes its completion events.",
+    "mission.schema.json:1208 uses task only as an enum value; there is no tasks block, tier or state anywhere in the schema.",
+    "Objectives/TBD_ObjectiveRegistry.c already fires endOn triggers; task states must not duplicate objective logic (T-212 owns objective authoring).",
+    "mission.schema.json, mission/mod.rs, extensions.rs and panels/mod.rs are shared with T-936.1; this slice packs in a later wave.",
+]
+requirement = [
+    "Schema: top-level tasks array; items {id, title, tier: primary|secondary|optional, state: assigned|succeeded|failed, triggerId?, markerId?, description?}, additionalProperties false; goldens updated.",
+    "New mission/tasks.rs (registered in mission/mod.rs): typed model, transition table (assigned to succeeded or failed only), validator registered in extensions.rs AUTHORED_BLOCKS.",
+    "New panels/tasks_panel.rs (registered in panels/mod.rs): list with tier, trigger and marker pickers; undoable operations.",
+    "New Objectives/TBD_TaskStateMachine.c: server-authoritative state per task; T-676 trigger completion drives transitions; replicated to clients; illegal transitions logged and ignored.",
+    "New UI/TBD_TaskHud.c: one HUD marker per assigned task via the existing marker icon path; hidden once succeeded or failed.",
+]
+current_state = [
+    "No tasks vocabulary in the schema; no tasks module under mission/; nothing under Objectives/ or UI/ tracks task state or draws task markers.",
+]
+approach = [
+    "Verify on main: a payload carrying tasks flattens without them (AUTHORED_BLOCKS lacks tasks); paste the red.",
+    "Add schema plus golden; write tasks.rs with a test per legal and illegal transition; register in extensions.rs; build the panel.",
+    "Write the state machine subscribing to T-676 completion events; write the HUD; compile the mod.",
+    "Perturbation: allow succeeded to assigned in the transition table; the illegal-transition test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask ci schema-validate",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask mod compile",
+    "cargo xtask platform wave gate --slice T-936.2",
+]
+acceptance = [
+    "A mission with three tiers of tasks flattens to a tasks block; each task starts assigned and reaches exactly one terminal state in-game (checklist).",
+    "The tasks panel adds, edits, reorders and undoes tasks; the HUD shows only assigned tasks.",
+]
+depends_on = ["T-936.1", "T-676"]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "packages/tbd-schema/schema/mission.schema.json",
+    "crates/map-engine-core/src/mission/tasks.rs",
+    "crates/map-engine-core/src/mission/mod.rs",
+    "crates/map-engine-core/src/mission/extensions.rs",
+    "apps/website/frontend/src/editor/panels/tasks_panel.rs",
+    "apps/website/frontend/src/editor/panels/mod.rs",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_TaskHud.c",
+]
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "objectives"

@@ -1,0 +1,56 @@
+id = "T-939.6"
+kind = "work"
+parent = "T-939"
+title = "Canvas: error badges and connection wires"
+summary = "Validation findings render as badges on the offending entities and connections render as wires between endpoints, both in a new diagnostics overlay layered over the canvas."
+class = "feature"
+status = "ready"
+order = 7910
+priority = 2
+spec = "docs/specs/audit_2026_09/t939_editor_usability.md"
+plan = "docs/plans/t-939_6_plan.md"
+executor = "claude-code"
+main_goal = "Authors see validation problems and connections where the entities are."
+context = [
+    "Anchor 2026-09-04: canvas/overlays.rs:654-655 states connections have no map glyph; ConnectionsPanelOverlay at :679 lists them only in a panel.",
+    "Validation findings exist in editor state (validation surface) but never reach the canvas.",
+    "Depends on T-939.3: both slices edit overlays.rs and canvas/mod.rs, so this one packs later.",
+    "Related, not re-minted: T-080 connection UI.",
+]
+requirement = [
+    "New canvas/diagnostics_overlay.rs (registered in canvas/mod.rs): badge placement per entity id, wire geometry per connection, hover tooltip text.",
+    "overlays.rs mounts the diagnostics overlay above the gizmo layer; badges and wires respect layer hidden state.",
+    "Clicking a badge selects the entity and opens the matching validation entry.",
+    "Wires draw only when both endpoints are resident; a dangling end draws a badge instead.",
+]
+current_state = [
+    "No badge glyph and no wire glyph exist; connections are panel-only per overlays.rs:654-655.",
+]
+approach = [
+    "Verify on main: a test asserting the overlay tree renders no badge for a slot with a validation finding; paste the red.",
+    "Write diagnostics_overlay.rs with unit tests for badge placement and wire endpoints; mount it in overlays.rs.",
+    "Perturbation: skip hidden-layer filtering; its test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-939.6",
+]
+acceptance = [
+    "An entity with a validation finding shows a badge on the canvas; clicking it selects the entity.",
+    "A connection between two placed entities draws a wire; hiding either layer hides the wire.",
+    "A connection with a missing endpoint shows a badge instead of a wire.",
+]
+depends_on = ["T-939.3"]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/frontend/src/editor/canvas/overlays.rs",
+    "apps/website/frontend/src/editor/canvas/diagnostics_overlay.rs",
+    "apps/website/frontend/src/editor/canvas/mod.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["map_canvas", "validation"]

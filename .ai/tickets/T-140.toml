@@ -1,13 +1,46 @@
 id = "T-140"
 kind = "work"
 title = "Mission client payload budget"
-summary = "Spike: compiled mission size vs slot count; max entities for console; server-only bulk vs client sync policy. Post T-092."
+summary = "Measure compiled mission size against slot and entity counts, define a console-safe budget, and make compile report a payload-budget diagnostic with a server-only-bulk policy for what exceeds it."
 class = "feature"
-status = "idea"
+status = "ready"
+order = 8200
 spec = "docs/platform/tbd_north_star_backlog.md"
+plan = "docs/plans/t-140_plan.md"
 executor = "claude-code"
+notes = "2026-09-05: T-092 is shipped (dependency kept). mission/mod.rs is shared with T-936.2 (tasks.rs registration) → packs later. Scope engine/core (was repo/docs)."
+priority = 3
 depends_on = ["T-092"]
+main_goal = "Every compile reports its payload against a named client budget before a console finds the ceiling."
+context = [
+    "Anchor 2026-09-05: mission/compile.rs compile_payload (:156), compile_export (:321), version_body (:408) emit the document with no size accounting.",
+    "Console clients have a hard payload ceiling nobody has measured; large ORBATs will find it in production.",
+]
+requirement = [
+    "New mission/payload_budget.rs (registered in mission/mod.rs): measure(payload) → {bytes, slots, entities, vehicles} plus a budget table (client-sync vs server-only-bulk).",
+    "compile_export attaches a PAYLOAD-BUDGET diagnostic (info/warn/error) with the numbers; no document shape change.",
+    "A fixture at 1×, 4× and 16× the largest committed golden pins the size curve in a test.",
+]
+current_state = ["No size accounting exists; compile emits whatever the editor holds."]
+approach = [
+    "Write payload_budget.rs with the measurement and thresholds; call it from compile_export; test the curve on scaled goldens.",
+    "Perturbation: halve the error threshold in a test copy; the curve test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features mission::payload_budget",
+    "cargo xtask platform wave gate --slice T-140",
+]
+acceptance = [
+    "Every compile reports bytes, slot and entity counts against a named budget.",
+    "A mission over the client-sync budget carries an error diagnostic naming the server-only-bulk policy.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "crates/map-engine-core/src/mission/compile.rs",
+    "crates/map-engine-core/src/mission/payload_budget.rs",
+    "crates/map-engine-core/src/mission/mod.rs",
+]
 
 [scope]
-domain = "repo"
-layer = "docs"
+domain = "engine"
+layer = "core"

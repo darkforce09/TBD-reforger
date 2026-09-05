@@ -1,0 +1,60 @@
+id = "T-935.8"
+kind = "work"
+parent = "T-935"
+title = "Building blueprint archive and occluder loader"
+summary = "xtask map-blueprint emits prefabs/building_blueprints.rkyv (1623 descriptors + BLAS index + golden blueprint levels); occluder_host.rs loads one archive instead of 1623 descriptor JSON fetches when manifest.buildings is present."
+class = "feature"
+status = "ready"
+order = 7150
+priority = 1
+spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
+plan = "docs/plans/t-935_8_plan.md"
+executor = "claude-code"
+main_goal = "Occluder boot is one archive fetch plus BLAS sidecars; blueprint levels are zero-copy for viewshed and LOS."
+context = [
+    "Anchor 2026-09-04: occluder_host.rs:52/107/134 fetches blas-manifest.json, prefabs/descriptors/*.json (1623, 19 MB), *.bvh (1690 LFS); descriptor.rs:52, bvh_sidecar.rs:219, building_blueprint.rs define the shapes.",
+    "xtask/src/map_blueprint/{library.rs:579-596, library_cli.rs, batch.rs, bvh.rs} produce descriptors, BLAS sidecars and the 6 golden blueprints under prefabs/buildings/.",
+    "Full blueprint extraction for all 1623 prefabs is a Workbench pass the operator runs; this slice archives what is on disk and prints that command.",
+]
+requirement = [
+    "New xtask/src/map_blueprint/archive_emit.rs: build BuildingBlueprintArchive from descriptors/*.json + blas-manifest.json + prefabs/buildings/*.json; write prefabs/building_blueprints.rkyv.",
+    "library_cli.rs gains an `archive` subcommand; mod.rs registers the module; output prints prefab count, blueprint-level count, and the Workbench batch command for the remainder.",
+    "occluder_host.rs: when manifest.buildings.archive is Some, one fetch + access_checked replaces the descriptor fan-out; .bvh fetches take their index from the archive.",
+    "descriptor.rs and building_blueprint.rs gain from_archived constructors equal to the JSON parse (parity test on all 1623 descriptors and 6 blueprints).",
+]
+current_state = [
+    "apps/website/frontend/src/editor/world_assets/occluder_host.rs:52 fetches blas-manifest.json, :107 one descriptor JSON per prefab, :134 the .bvh sidecars.",
+    "xtask/src/map_blueprint/library.rs:579-596 writes descriptors; library_cli.rs has no archive command; crates/map-engine-core/src/building_blueprint.rs parses blueprint JSON only.",
+]
+approach = [
+    "archive_emit.rs: load descriptors, BLAS entries, golden blueprint levels; fill BuildingBlueprintArchive {descriptors, blas_index, blueprints}; to_bytes; write.",
+    "library_cli.rs `archive --terrain everon`; print counts and the exact Workbench batch command for prefabs without levels (operator runs it; not a deferral).",
+    "descriptor.rs + building_blueprint.rs: from_archived; occluder_host.rs: archive branch; JSON branch kept until T-935.13.",
+    "Perturbation: skip the BLAS index in from_archived; occluder parity test red; restore, touch, green.",
+    "LOS regression: world-los on cell 18_0 unchanged (manifest has no buildings block yet).",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features building",
+    "cargo xtask map-blueprint archive --terrain everon",
+    "cargo xtask map world-los --cell 18_0 --probe 9350,15,280 9380,15,290",
+    "cargo xtask platform wave gate --slice T-935.8",
+]
+acceptance = [
+    "building_blueprints.rkyv holds all 1623 descriptors, the BLAS index and the 6 golden blueprints; access_checked validates it.",
+    "The occluder host boots from one fetch instead of 1623 when the manifest points at the archive.",
+    "world-los on cell 18_0 is unchanged from main.",
+]
+depends_on = ["T-935.1"]
+created_at = "2026-09-05T01:34:37Z"
+owns = [
+    "xtask/src/map_blueprint/archive_emit.rs",
+    "xtask/src/map_blueprint/library_cli.rs",
+    "xtask/src/map_blueprint/mod.rs",
+    "apps/website/frontend/src/editor/world_assets/occluder_host.rs",
+    "crates/map-engine-core/src/world/occluder/descriptor.rs",
+    "crates/map-engine-core/src/building_blueprint.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "world"

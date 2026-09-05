@@ -3,8 +3,8 @@ kind = "work"
 title = "T-090.12.7 — Docs pass: LOS tool, world-los bench, map-assets, MCP"
 summary = "Cursor documentation pass: mission-editor.md LOS + viewshed section, new debug-world-los.md + INDEX rows, map-assets README objects/prefabs rows, MCP_TOOLING wbcall + TbdBlueprint actions, SHIPPED_HISTORY T-090.11/T-090.12 entries, program hub status line, tbd-export README."
 class = "docs"
-status = "queued"
-order = 900
+status = "ready"
+order = 7080
 spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
 plan = "docs/plans/t-090_12_7_plan.md"
 executor = "cursor-docs"
@@ -27,12 +27,8 @@ requirement = [
 ]
 current_state = ["Not started."]
 approach = ["Read the T-090.12 commit bodies (Docs for Cursor lines) and the program plan doc; write the documents; sync INDEX and TAGS only if a spec doc is added."]
-verify = [
-    "cargo xtask ci schema-validate (citations); cargo xtask ticket check",
-]
-acceptance = [
-    "Every path in the requirement list is updated and links resolve; no generated TICKET_*.md is hand-edited.",
-]
+verify = ["cargo xtask ci schema-validate (citations); cargo xtask ticket check"]
+acceptance = ["Every path in the requirement list is updated and links resolve; no generated TICKET_*.md is hand-edited."]
 created_at = "2026-09-04T01:22:27Z"
 owns = [
     "docs/website/frontend/pages/mission-editor.md",

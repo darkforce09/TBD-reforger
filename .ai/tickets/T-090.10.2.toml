@@ -3,15 +3,22 @@ kind = "work"
 title = "T-090.10 — Map Engine v2 (A3-aligned render spine)"
 summary = "Delete legacy map-view branches and tiles/map fallback after vector parity sign-off from T-090.5.4 and T-090.8.1."
 class = "feature"
-status = "queued"
-order = 900
+status = "ready"
+order = 8060
 spec = "docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md"
+plan = "docs/plans/t-090_10_2_plan.md"
 executor = "claude-code"
+depends_on = [
+    "T-090.5.4",
+    "T-090.8.1",
+]
 parent = "T-090"
 main_goal = "Retire raster map pyramid fallback; map style becomes pure vector layers only."
 context = [
     "T-090.10.1 plan defines legacy retirement slice after visual parity.",
     "T-090.5.1 scaffold dual-writes basemapView shim for rollback until this slice.",
+    "Rust anchors (the TS names are gone): world_assets/mod.rs:91,403 view == map; satellite.rs:652 load_map_basemap tiles/map; settings_modal.rs:1574; engine.rs:154 basemap_mode.",
+    "T-090.5.4 and T-090.8.1 are shipped, so the parity gate this slice waited on is met.",
 ]
 requirement = [
     "Delete map-view branches in useTerrainBasemapLayer and BasemapView type.",
@@ -23,6 +30,17 @@ approach = [
     "Gate on visual parity after T-090.5.4 plus T-090.8.1 per implementation plan §7 row.",
     "Freeze legacy cartographic build scripts; touch terrainManifest.ts per plan.",
 ]
+verify = [
+    "cargo xtask mk leptos-gates",
+    "cargo test -p map-engine-render",
+    "cargo xtask ci schema-validate",
+    "cargo xtask verify terrain-manifest",
+    "rg -n 'tiles/map|load_map_basemap' apps/website/frontend/src crates/map-engine-render/src prints nothing",
+]
+acceptance = [
+    "No map-view branch remains in world_assets, settings or the engine stats; the style toggle offers vector layers only.",
+    "manifest tiles.map is gone, the terrain-manifest schema no longer requires it, and every listed gate is green.",
+]
 citations = [
     "t090_10 implementation plan §7",
     "t090_10_map_engine_v2.md",
@@ -30,8 +48,12 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "crates/map-engine-render",
-    "apps/website/frontend/src/world_assets",
+    "apps/website/frontend/src/editor/world_assets/mod.rs",
+    "apps/website/frontend/src/editor/world_assets/satellite.rs",
+    "apps/website/frontend/src/editor/panels/settings_modal.rs",
+    "crates/map-engine-render/src/engine.rs",
+    "packages/map-assets/everon/manifest.json",
+    "packages/tbd-schema/schema/terrain-manifest.schema.json",
 ]
 
 [scope]

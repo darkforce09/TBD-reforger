@@ -1,0 +1,57 @@
+id = "T-940.10"
+kind = "work"
+title = "Mortar ballistics crate for API and offline frontend"
+summary = "A new tbd-ballistics crate models elevation delta, drag, wind, dispersion and battery solutions; the API service and the mortar page both call it, so the page works offline."
+class = "feature"
+status = "ready"
+order = 8140
+spec = "docs/specs/audit_2026_09/t940_website_platform.md"
+plan = "docs/plans/t-940_10_plan.md"
+executor = "claude-code"
+priority = 2
+parent = "T-940"
+main_goal = "Mortar solutions are physically credible and computed on the client too."
+context = [
+    "Anchor 2026-09-04: services/mortar.rs:51-60 uses a vacuum model with GRAVITY and a per-charge muzzle table; error handling at :20-49 is sound.",
+    "pages/public/mortar.rs calls the API over HTTP for every solution.",
+    "services/mod.rs is untouched (mortar.rs is already registered); the root Cargo.toml gains the workspace member and both app crates the dependency.",
+]
+requirement = [
+    "New crates/tbd-ballistics (Cargo.toml, src/lib.rs, workspace member): solve(target, charge table, env) with elevation delta, quadratic drag, wind, dispersion ellipse and battery sheaf; wasm-clean.",
+    "services/mortar.rs delegates to the crate; API responses keep their shape and gain dispersion.",
+    "pages/public/mortar.rs computes locally through the crate and shows dispersion and battery rows; the API path remains for saved fire missions.",
+]
+current_state = ["Vacuum model in the API; the frontend is fully online."]
+approach = [
+    "Verify on main: a test with a 100 m elevation delta returns the flat-ground solution; paste the red.",
+    "Write the crate with unit tests against a published range table; add it to both Cargo.toml files; delegate; rebuild the page.",
+    "Perturbation: zero the drag term; the table test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p tbd-ballistics",
+    "cargo xtask db test-it",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-940.10",
+]
+acceptance = [
+    "A solution with the target 100 m above the gun differs from the flat solution by the crate's elevation correction.",
+    "The mortar page produces a solution with the network disabled.",
+    "The API and the page agree on the same inputs to one mil.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/api/src/services/mortar.rs",
+    "crates/tbd-ballistics/Cargo.toml",
+    "crates/tbd-ballistics/src/lib.rs",
+    "Cargo.toml",
+    "Cargo.lock",
+    "apps/website/api/Cargo.toml",
+    "apps/website/frontend/Cargo.toml",
+    "apps/website/frontend/src/pages/public/mortar.rs",
+]
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "services"

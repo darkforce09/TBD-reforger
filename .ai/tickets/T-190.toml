@@ -1,39 +1,50 @@
 id = "T-190"
 kind = "work"
-title = "Two browser tabs on one mission silently clobber each other"
-summary = "Two browser tabs on one mission silently clobber each other"
+title = "Two tabs on one mission clobber each other"
+summary = "Two tabs on one mission write one IndexedDB key; the last debounce wins and the reload prompt blames server drift. Detect the second tab, merge through the CRDT, and give the conflict modal counts, timestamps and a destructive marker."
 class = "bug"
-status = "idea"
+status = "ready"
+order = 7760
+spec = "docs/specs/ideas/t190_tab_clobber.md"
+plan = "docs/plans/t-190_plan.md"
 executor = "claude-code"
-notes = "UX review F-32 evidence + verified conflict-prompt copy in .ai/artifacts/editor_hostile_ux_review.md section F-32 Owns widens to mission_hydrate.rs + the conflict modal arm in mission_editor.rs (wave-7 neighbours re-checked, no collision)."
+notes = "UX review F-32 evidence + verified conflict-prompt copy in .ai/artifacts/editor_hostile_ux_review.md section F-32 Owns widens to mission_hydrate.rs + the conflict modal arm in mission_editor.rs (wave-7 neighbours re-checked, no collision). | 2026-09-05: T-222 dependency is shipped (kept). persist.rs is shared with T-937.4 and T-295, mission_editor.rs with T-704 → this packs after T-937.4 and before T-295. The Rust port's files are state/persist.rs and state/hydrate.rs (mission_hydrate.rs no longer exists)."
+priority = 1
 depends_on = ["T-222"]
-main_goal = "yrs_persist.rs:60-69 is a bare whole-blob put that never reads and merges."
-context = ["RESCOPED 2026-08-09 from the UX review (F-32, verified repro):"]
+main_goal = "Two tabs on one mission never lose each other's edits silently."
+context = [
+    "UX review F-32 verified repro: tab B deleted all → OBJ0 while tab A held OBJ9; both wrote the same key; no warning in either tab.",
+    "Anchor 2026-09-05: persist.rs saves a whole blob without read-merge; hydrate.rs:220-239 sets `conflict` for mission_editor.rs ConflictInfo; no BroadcastChannel or navigator.locks in the repo.",
+]
 requirement = [
-    "FIX SCOPE WIDENED:",
-    "detect the second tab at open (BroadcastChannel or storage lock) and say so in-tab;",
-    "conflict modal gains object counts + timestamps on both options and marks the destructive one.",
+    "New state/tab_lock.rs (registered in state/mod.rs): BroadcastChannel per mission id announces presence; a second tab shows a read-only banner until the first closes.",
+    "persist.rs reads the stored blob and applies it as a yrs update before writing, so two tabs converge instead of clobbering.",
+    "The conflict modal shows object counts and timestamps for both options and marks 'Load server version' as destructive.",
 ]
-current_state = [
-    "yrs_persist.rs:60-69 is a bare whole-blob put that never reads and merges.",
-    "There is no BroadcastChannel, storage listener, navigator.locks or SharedWorker anywhere in the repo.",
-    "Whichever tab's five-second debounce fires last wins.",
-    "The CRDT can merge and is never asked to.",
-    "two tabs on one mission diverge silently (tab B deleted all -> OBJ0 while tab A held OBJ9;",
-    "both write the same per-account IndexedDB key; no warning in either tab).",
-    "The reload conflict prompt DID fire —",
-    "'Saved version v0.2.0 on the server differs from your local copy. Which version should win? [Keep local copy][Load server version]' —",
-    "but it (a) never says 'Load server version' destroys local work,",
-    "(b) offers no counts/timestamps to compare,",
-    "(c) misattributes a two-tab divergence to server drift.",
+current_state = ["Whichever tab's debounce fires last wins; the CRDT can merge and is never asked to; the reload prompt offers no counts or timestamps."]
+approach = [
+    "Verify on main with a wasm test: two stores writing one key end with the last write; paste the red.",
+    "Add tab_lock.rs; read-merge-write in persist.rs; extend ConflictInfo in hydrate.rs and the modal arm in mission_editor.rs (call site only).",
+    "Perturbation: skip the merge; the convergence test goes red; restore, touch, green.",
 ]
-citations = [
-    "UX review F-32 verified repro",
-    "mission_hydrate.rs conflict modal arm",
-    "mission_editor.rs conflict modal arm",
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-190",
 ]
-estimated = ["scope"]
-owns = ["apps/website/frontend/src/editor/state/persist.rs"]
+acceptance = [
+    "A second tab on the same mission is told so and cannot silently overwrite the first.",
+    "Edits from two tabs converge to one document containing both sets of changes.",
+    "The conflict prompt names counts and timestamps and marks the destructive choice.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "apps/website/frontend/src/editor/state/persist.rs",
+    "apps/website/frontend/src/editor/state/hydrate.rs",
+    "apps/website/frontend/src/editor/state/tab_lock.rs",
+    "apps/website/frontend/src/editor/state/mod.rs",
+    "apps/website/frontend/src/editor/mission_editor.rs",
+]
 
 [scope]
 domain = "website"

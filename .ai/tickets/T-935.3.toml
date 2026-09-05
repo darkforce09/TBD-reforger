@@ -1,0 +1,59 @@
+id = "T-935.3"
+kind = "work"
+parent = "T-935"
+title = "Loader ingests chunk .bin via bytemuck cast_slice"
+summary = "WorldResidency gains ingest_chunk_bin: TBDC header check, bytemuck::cast_slice into ObjectInstancePod, SoA WorldChunk fill without JSON or gzip; world_host fetches {cx}_{cy}.bin whenever manifest.objects.binary.chunks is present."
+class = "feature"
+status = "ready"
+order = 7180
+priority = 1
+spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
+plan = "docs/plans/t-935_3_plan.md"
+executor = "claude-code"
+main_goal = "Chunk ingest on the main thread is a header check plus a cast, not a gzip inflate plus serde parse."
+context = [
+    "audit.md Finding 1.4 (apps/website/audit.md:117-124): main-thread gzip-JSON chunk ingest in residency.rs:716-737 and chunk.rs:46-97; fix = flat binary ingest.",
+    "Anchor 2026-09-04: world_host.rs:426 fetches chunks, manifest read at :99; residency.rs is allowlisted SIZE-3 (3137 lines) — growth here is call sites only, at most 40 lines.",
+]
+requirement = [
+    "New crates/map-engine-core/src/world/chunk_bin.rs: `parse_chunk_bin(&[u8]) -> Result<WorldChunk>` validates magic, version, count, length; rejects short or misaligned buffers; cast_slice for rows.",
+    "residency.rs: `ingest_chunk_bin(cx, cy, &[u8])` delegating to chunk_bin with the same residency bookkeeping as the gz path; at most 40 added lines.",
+    "world_host.rs: when manifest.objects.binary.chunks is Some, fetch the .bin via fetch_bytes and call ingest_chunk_bin; otherwise keep the gz path byte-for-byte.",
+    "Misaligned fetch buffers are copied into a Vec<u32>-aligned buffer before the cast; never unwrap on cast failure.",
+]
+current_state = [
+    "crates/map-engine-core/src/world/residency.rs:716-737 inflates gzip and parses JSON rows on the main thread for every chunk.",
+    "apps/website/frontend/src/editor/world_assets/world_host.rs:426 builds objects/chunks/{cx}_{cy}.json.gz URLs from manifest chunksPath; no binary branch.",
+    "crates/map-engine-core/src/world/chunk.rs:46-97 is the only WorldChunk constructor from external data.",
+]
+approach = [
+    "Write chunk_bin.rs: parse TbdcHeader, check count x 32 == payload length, cast_slice (copy to aligned Vec if needed), fill the SoA columns like chunk.rs does.",
+    "Unit tests: hand-built two-row buffer round-trips; truncated payload, wrong magic, wrong version each return Err.",
+    "residency.rs: add ingest_chunk_bin next to the gz ingest (:716) reusing its post-parse bookkeeping; register `pub mod chunk_bin` where residency is declared.",
+    "world_host.rs: branch at :426 on manifest.objects.binary; fill the {cx}_{cy} pattern; dual path stays until T-935.13.",
+    "Perturbation: make parse_chunk_bin skip the length check; the truncated-buffer test must go red; restore, touch, green.",
+    "Regression: world-los on cell 18_0 must return the same hits as before this slice (manifest still has no binary block).",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask map world-los --cell 18_0 --probe 9350,15,280 9380,15,290",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-935.3",
+]
+acceptance = [
+    "A chunk .bin ingests into a WorldChunk whose columns equal the gz decode; corrupt buffers are Err, never a panic.",
+    "residency.rs grows by at most 40 lines; the file-length gate stays green.",
+    "world-los output on cell 18_0 is unchanged from main before this slice.",
+]
+depends_on = ["T-935.1", "T-935.2"]
+created_at = "2026-09-05T01:34:37Z"
+owns = [
+    "crates/map-engine-core/src/world/residency.rs",
+    "crates/map-engine-core/src/world/chunk_bin.rs",
+    "crates/map-engine-core/src/world/mod.rs",
+    "apps/website/frontend/src/editor/world_assets/world_host.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "world"

@@ -3,8 +3,10 @@ kind = "work"
 title = "Waypoints — group movement orders"
 summary = "Waypoints — group movement orders"
 class = "chore"
-status = "queued"
-order = 4340
+status = "ready"
+order = 7290
+spec = "docs/specs/existing/t677_waypoint_runtime.md"
+plan = "docs/plans/t-677_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row
@@ -26,6 +28,7 @@ context = [
     "Nine ATTR-FIELD-WP ids plus six interaction connection keys.",
     "Gate is no AI subject: SpawnManager spawns bodies AI disabled.",
     "Schema split T-706; shares AI gate exactly with T-678 group state.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
 ]
 requirement = [
     "Waypoint runtime commands groups once AI units exist as subjects.",
@@ -44,6 +47,11 @@ approach = [
 verify = [
     "Waypoint orders reach AI-enabled group at runtime.",
     "No packages/tbd-schema edits in this slice.",
+    "cargo xtask mod compile",
+]
+acceptance = [
+    "Groups with AI-enabled subjects follow their authored waypoints in order with the nine WP attribute semantics applied.",
+    "The AI spawn gate opens only for waypointed groups; no packages/tbd-schema edits; compile clean.",
 ]
 citations = [
     "TBD_SpawnManager AI disabled spawn",
@@ -51,7 +59,10 @@ citations = [
     "T-706 schema widening split",
 ]
 estimated = ["scope"]
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c"]
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+]
 
 [scope]
 domain = "mod"

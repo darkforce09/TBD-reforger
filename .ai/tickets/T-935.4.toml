@@ -1,0 +1,59 @@
+id = "T-935.4"
+kind = "work"
+parent = "T-935"
+title = "DEM raw elevation.dem emitter and streamed loader"
+summary = "tbd-tools emits dem/elevation.dem (TBDE header + raw u16 LE grid) from the same u16 source as the PNG; the frontend streams it into one Vec<u16> with lazy metre conversion, no PNG decode."
+class = "feature"
+status = "ready"
+order = 7130
+priority = 1
+spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
+plan = "docs/plans/t-935_4_plan.md"
+executor = "claude-code"
+main_goal = "The DEM boots from a raw u16 grid the loader streams straight into its final buffer; the PNG decoder is bypassed."
+context = [
+    "Anchor 2026-09-04: tools/tbd-tools/src/world/aux.rs:1109 raw-u16-to-dem-png; frontend mod.rs:619 loads the DEM PNG via fetch_bytes_streamed; core dem/png_decode.rs:58-79 decodes it.",
+    "Everon DEM is 6400x6400 u16 (manifest dem: encoding uint16-linear, heightRange -204.78..375.53); PNG is 71.9 MB LFS; raw grid is 81.9 MB with zero decode.",
+]
+requirement = [
+    "aux.rs: emit dem/elevation.dem = TbdeHeader {width, height, scale_m, offset_m} + width x height u16 little-endian, holding the same values the PNG encodes.",
+    "New crates/map-engine-core/src/dem/raw.rs: `RawDem { header, samples: Vec<u16> }` with parse, `sample_u16(x, y)`, `metres(x, y)` = offset_m + v x scale_m computed lazily.",
+    "New frontend dem_load.rs: streams elevation.dem via fetch_bytes_streamed into the sample Vec exactly once when manifest.dem.raw is Some; the PNG path stays otherwise.",
+    "One allocation: streamed bytes land in the final Vec<u16> (chunked LE decode); no RGBA, no f32 grid, no intermediate copies.",
+]
+current_state = [
+    "tools/tbd-tools/src/world/aux.rs:1109 converts the raw u16 grid into a 16-bit PNG; nothing writes a raw grid.",
+    "apps/website/frontend/src/editor/world_assets/mod.rs:619 fetches the PNG streamed; crates/map-engine-core/src/dem/png_decode.rs:58-79 decodes it into the DEM store through several full-grid copies.",
+    "crates/map-engine-core/src/dem/mod.rs declares png_decode only; no raw module.",
+]
+approach = [
+    "aux.rs: beside :1109 add `write_elevation_dem(path, width, height, min_m, max_m, &[u16])` with scale_m = (max - min) / 65535, offset_m = min; PNG emit untouched.",
+    "dem/raw.rs: TbdeHeader parse, LE decode into Vec<u16> (cast when aligned, chunked copy otherwise), lazy metre accessor; register `pub mod raw` in dem/mod.rs.",
+    "dem_load.rs: `load_dem(manifest)` picks raw when manifest.dem.raw is Some, else the existing PNG loader at mod.rs:619; register the module in world_assets/mod.rs.",
+    "Test: encode a 4x3 grid to PNG and to .dem, load both, assert identical u16 samples and metres within 1e-6.",
+    "Perturbation: swap width and height in the header read; the 4x3 test fails; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features dem",
+    "cargo test -p tbd-tools elevation_dem",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-935.4",
+]
+acceptance = [
+    "elevation.dem decodes to the same u16 grid as the PNG (synthetic grid test plus an everon spot check).",
+    "The raw loader allocates the sample Vec once; no PNG decoder runs when manifest.dem.raw is present.",
+    "With the manifest unchanged the PNG path boots identically.",
+]
+depends_on = ["T-935.1"]
+created_at = "2026-09-05T01:34:37Z"
+owns = [
+    "tools/tbd-tools/src/world/aux.rs",
+    "crates/map-engine-core/src/dem/raw.rs",
+    "crates/map-engine-core/src/dem/mod.rs",
+    "apps/website/frontend/src/editor/world_assets/dem_load.rs",
+    "apps/website/frontend/src/editor/world_assets/mod.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "core"

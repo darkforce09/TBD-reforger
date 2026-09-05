@@ -1,0 +1,48 @@
+id = "T-941.7"
+kind = "work"
+title = "Radio: script fallback when the backbone is missing"
+summary = "When GetBackbone() is null the tuner falls back to a script-side channel table so radios still tune, logs one actionable warning, and the deferred world edit goes on the operator checklist."
+class = "bug"
+status = "ready"
+order = 7640
+spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
+plan = "docs/plans/t-941_7_plan.md"
+executor = "claude-code"
+priority = 1
+parent = "T-941"
+main_goal = "Radios work on worlds without a RadioManagerEntity."
+context = [
+    "Anchor 2026-09-04: Radio/TBD_RadioTuner.c:49-51 NO_BACKBONE enum, :142-143 set when GetBackbone() is null; TBD_RadioComponent.c:135 boot warning; TBD_Dev_POC.ent lacks RadioManagerEntity.",
+    "Operator deferral, quoted: RadioManagerEntity world edit — deferred by operator 2026-09-04. This slice ships the script fallback and the checklist only.",
+    "Operator authorization: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
+]
+requirement = [
+    "TBD_RadioTuner.c: NO_BACKBONE selects a script-side channel table (the mission's radioPlan when present, else defaults) instead of refusing to tune.",
+    "TBD_RadioComponent.c:135 warning names the world, the entity to add and the fallback in use, once per boot.",
+    "The plan's operator checklist lists the Workbench steps for the deferred world edit.",
+]
+current_state = ["NO_BACKBONE leaves radios untunable; the warning does not say what to add."]
+approach = [
+    "Verify on main: read :142-143 and :135; record as defect evidence (no script unit test lane).",
+    "Add the fallback table and tune path; reword the warning; compile; boot on the POC world.",
+    "Perturbation: return the wrong type from the fallback lookup; mod compile must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mod compile",
+    "cargo xtask mod world-boot",
+    "cargo xtask platform wave gate --slice T-941.7",
+]
+acceptance = [
+    "The mod compiles and boots on TBD_Dev_POC with radios tunable and one warning line naming RadioManagerEntity.",
+    "Checklist: two players tune the same fallback channel and hear each other; the warning appears once.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioTuner.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioComponent.c",
+]
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "radio"

@@ -1,0 +1,59 @@
+id = "T-935.9"
+kind = "work"
+parent = "T-935"
+title = "Water vectors rkyv and bathymetry TBDB container"
+summary = "tbd-tools map emits water/water_vectors.rkyv from the staging vector export and water/bathymetry.tbd-bath (TBDB, u16 depth + u8 mask, mip chain) from the two staging rasters; a new runtime loader exposes the water mask for placement guards."
+class = "feature"
+status = "ready"
+order = 7200
+priority = 1
+spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
+plan = "docs/plans/t-935_9_plan.md"
+executor = "claude-code"
+main_goal = "Water is a first-class binary asset: vectors zero-copy, bathymetry castable, and a mask query any placement guard can call."
+context = [
+    "Anchor 2026-09-04: staging (gitignored) packages/map-assets/everon/staging/water/TBD_InlandWaterExport_{mask,depth}.txt (328 MB each) + TBD_InlandWaterExport_vectors.json; no water loader exists anywhere.",
+    "Packs after T-935.7 (map/mod.rs, bin/map.rs) and T-935.3 (core world/mod.rs); registers its subcommand through map/mod.rs only.",
+]
+requirement = [
+    "New tools/tbd-tools/src/map/water_emit.rs: `map water` parses the vectors JSON into WaterVectorsArchive {lakes, rivers, ponds with surface_y} and writes water/water_vectors.rkyv.",
+    "Same command rasterises the two .txt grids into TBDB: header + per level u16 depth then u8 mask, mip_count levels halving to 1 px; deterministic bytes.",
+    "New crates/map-engine-core/src/world/water.rs: TBDB parse (cast_slice), `is_water(x, z)`, `depth_m(x, z)`, mip selection; vector accessors via access_checked.",
+    "New frontend water.rs: fetch both when manifest.water is Some; export `WaterMask::is_water` publicly for placement guards; registered in world_assets/mod.rs.",
+]
+current_state = [
+    "No code reads the staging water exports; there is no water module in crates/map-engine-core/src/world or in apps/website/frontend/src/editor/world_assets.",
+    "tools/tbd-tools/src/map/mod.rs lists map modules (unified, carto, labels_emit after T-935.7); no water module.",
+]
+approach = [
+    "water_emit.rs: stream the .txt rasters line by line (never fully in memory); write level 0, then downsample per level (max depth, any-water mask).",
+    "map/mod.rs: `pub mod water_emit` plus its subcommand entry through the existing map subcommand table.",
+    "core water.rs: TbdbHeader parse, level offsets computed from the header, cast_slice on depth, byte slice on mask; tests on a 4x4 synthetic grid with 3 mips.",
+    "frontend water.rs: fetch, parse, `WaterMask::is_water`; register in world_assets/mod.rs and core world/mod.rs.",
+    "Perturbation: flip the mask polarity in the downsample; the mip test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features water",
+    "cargo test -p tbd-tools water_emit",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-935.9",
+]
+acceptance = [
+    "water_vectors.rkyv and bathymetry.tbd-bath for everon are produced from staging by one command with a printed size summary.",
+    "WaterMask::is_water answers from the container without decoding rasters; mip levels agree with level 0 on synthetic data.",
+    "The frontend water module builds into the editor and activates only when manifest.water is present.",
+]
+depends_on = ["T-935.1", "T-935.3", "T-935.7"]
+created_at = "2026-09-05T01:34:37Z"
+owns = [
+    "tools/tbd-tools/src/map/water_emit.rs",
+    "tools/tbd-tools/src/map/mod.rs",
+    "apps/website/frontend/src/editor/world_assets/water.rs",
+    "apps/website/frontend/src/editor/world_assets/mod.rs",
+    "crates/map-engine-core/src/world/water.rs",
+    "crates/map-engine-core/src/world/mod.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "world"

@@ -3,8 +3,10 @@ kind = "work"
 title = "Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar"
 summary = "Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar"
 class = "docs"
-status = "queued"
-order = 5160
+status = "ready"
+order = 8450
+spec = "docs/specs/existing/t834_wave205_residue.md"
+plan = "docs/plans/t-834_plan.md"
 executor = "claude-code"
 notes = """
 wave205 verifier NIT batch; pure cleanup
@@ -24,6 +26,7 @@ context = [
     "Wave205 NITs: two stale pre-renumber digit map comments.",
     "widget_is_rotate dead after barrier reconciliation.",
     "Absorbs T-835 no-widget glyph and T-840 draft chip.",
+    "Anchors: widget_is_rotate at mission_editor.rs:799; the Placing a hint string is dock_right.rs:3888 (now owned).",
 ]
 requirement = [
     "Comments match one two three digit map.",
@@ -40,6 +43,11 @@ verify = [
     "Comments match one two three map.",
     "widget_is_rotate absent dispatch and all call sites.",
     "Hint reads Placing an Attack marker or reworded.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "The two doc comments match the 1/2/3 digit map; widget_is_rotate is gone from the dispatch struct and every call site.",
+    "The picker hint reads Placing an Attack marker; the T-835 glyph and T-840 draft-chip acceptances are delivered.",
 ]
 citations = [
     "wave205.md NIT batch",
@@ -51,6 +59,7 @@ estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/editor/panels/top_strip.rs",
     "apps/website/frontend/src/editor/mission_editor.rs",
+    "apps/website/frontend/src/editor/panels/dock_right.rs",
 ]
 
 [scope]

@@ -1,0 +1,52 @@
+id = "T-935.10"
+kind = "work"
+parent = "T-935"
+title = "Satellite TBDS v2 with rkyv index"
+summary = "map unified emits .tbd-sat version 2: fixed header plus an rkyv TbdSatIndexV2 (mip levels, tile offsets, lengths, format) followed by tile payloads; tbd_sat.rs reads v1 and v2 via HTTP Range."
+class = "feature"
+status = "ready"
+order = 7160
+priority = 1
+spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
+plan = "docs/plans/t-935_10_plan.md"
+executor = "claude-code"
+main_goal = "The satellite container index is a validated rkyv archive, and the committed v1 file keeps loading."
+context = [
+    "Anchor 2026-09-04: tools/tbd-tools/src/map/unified.rs writes TBDS v1 (everon-sat.tbd-sat, 152 MB LFS, manifest encoding tbd-sat-v1, mipCount 14); frontend tbd_sat.rs reads it via HTTP Range.",
+    "v1 stays valid: the reader dispatches on the header version so everon keeps working until T-935.13 regenerates the container.",
+]
+requirement = [
+    "unified.rs: `--container-version 2` (default 2) writes header {magic TBDS, version 2, index_len u32} + rkyv TbdSatIndexV2 + tiles; v1 writer retained behind `--container-version 1`.",
+    "tbd_sat.rs: Range-read the first 64 KB, parse version; v2 uses access_checked on the index; v1 path unchanged; tile Range math shared.",
+    "Round-trip test: 3-mip synthetic container in v1 and v2; both readers return identical tiles; a corrupt index is Err.",
+]
+current_state = [
+    "tools/tbd-tools/src/map/unified.rs writes a v1 header with a hand-packed tile table; apps/website/frontend/src/editor/world_assets/tbd_sat.rs parses that table byte by byte.",
+]
+approach = [
+    "unified.rs: build TbdSatIndexV2 {base_w, base_h, tile_px, levels: Vec<{w_tiles, h_tiles, tiles: Vec<{offset u64, len u32, format u8}>}>}; write header, index bytes, tiles.",
+    "tbd_sat.rs: version switch; v2 index through map_engine_core::world::binary::archives; v1 decoder untouched.",
+    "Perturbation: write index_len one byte short; the v2 round-trip test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p tbd-tools unified",
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-935.10",
+]
+acceptance = [
+    "A v2 container built from the everon source renders identically to the committed v1 file at every mip.",
+    "The reader accepts both versions; the committed v1 everon-sat.tbd-sat loads unchanged.",
+]
+depends_on = ["T-935.1"]
+created_at = "2026-09-05T01:34:37Z"
+owns = [
+    "tools/tbd-tools/src/map/unified.rs",
+    "apps/website/frontend/src/editor/world_assets/tbd_sat.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "world_render"
+surface = ["satellite"]

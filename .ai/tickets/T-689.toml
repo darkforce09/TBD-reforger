@@ -3,8 +3,10 @@ kind = "work"
 title = "Play-area enforcement gains a vehicle-class axis: the aircraft exemption"
 summary = "Play-area enforcement gains a vehicle-class axis: the aircraft exemption"
 class = "feature"
-status = "queued"
-order = 4410
+status = "ready"
+order = 7380
+plan = "docs/plans/t-689_plan.md"
+spec = "docs/specs/existing/t689_play_area_vehicle_axis.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)
@@ -25,6 +27,7 @@ context = [
     "U6 framework_synthesis ranked eight of sixteen; needs mod-side read.",
     "FNF v4 play-zone AIR flag false; aircraft may leave play area deliberately.",
     "Schema widening split T-706; pairs with T-685 same zoneRules reader.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
 ]
 requirement = [
     "Authored field on boundary base_protection zones for vehicle class penalty axis.",
@@ -44,6 +47,7 @@ approach = [
 verify = [
     "Headless mod compile clean with vehicle-class axis reader in owns.",
     "Aircraft exemption behaviour reachable from authored zoneRules payload.",
+    "cargo xtask mod compile",
 ]
 citations = [
     "framework_synthesis U6 play-area",
@@ -51,7 +55,16 @@ citations = [
     "T-685 T-706 zoneRules",
 ]
 estimated = ["scope"]
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c"]
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c",
+]
+
+acceptance = [
+    "Boundary and base-protection zones carry a vehicle-class penalty axis; aircraft leave the play area unpenalised when the author says so.",
+    "graceSeconds, warnEverySeconds and penalty defaults unchanged; no packages/tbd-schema edits; compile clean.",
+]
 
 [scope]
 domain = "mod"

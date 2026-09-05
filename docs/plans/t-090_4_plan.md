@@ -15,6 +15,9 @@ Offline tool in `tools/tbd-tools/src/world`: for each catalog instance under
 thresholds. Missing `z` is a warn, never a fabricated value. Emit a machine- and
 human-readable report keyed by object id/kind so T-090.6 can consume the deltas.
 
+Files: new `tools/tbd-tools/src/world/z_audit.rs` (registered in `world/mod.rs`, subcommand in `bin/world.rs`); committed outputs `objects/z-audit.json` (per-kind summary) and `z-audit-failures.json`; the full per-instance dump stays in gitignored `staging/audit/`.
+T-090.3 is deferred — the catalog is the shipped T-090.12 chunks. Shares `mod.rs`/`bin/world.rs` with T-090.6, so T-090.6 packs into a later wave.
+
 ## Risks
 
 Blocked on the T-090.3 export and the T-091 DEM actually being present; 16-bit DEM

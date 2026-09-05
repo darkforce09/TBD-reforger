@@ -1,29 +1,45 @@
 id = "T-298"
 kind = "work"
-title = "tbd-tools density::corner_partition_identity fails on main"
-summary = "tbd-tools density::corner_partition_identity fails on main"
-class = "bug"
-status = "idea"
+title = "Gate tbd-tools density tests in CI"
+summary = "`cargo test -p tbd-tools --lib density::` passes on main today (2 tests, 2026-09-05) but no CI lane runs it; add the tbd-tools lib tests to ci.yml and pin the corner-partition invariant with a seeded randomized test."
+class = "chore"
+status = "ready"
+order = 7040
+spec = "docs/specs/ideas/t298_tbd_tools_gate.md"
+plan = "docs/plans/t-298_plan.md"
 executor = "claude-code"
-main_goal = "corner_partition_identity fails on clean main (401 RHS); CI never tests tbd-tools density because gates scope to enf:: only."
+notes = "2026-09-05 re-anchored: the failing assertion could not be pasted because `cargo test -p tbd-tools --lib density::` passes on main (2 passed, 0 failed). T-238 is cancelled (ticket check already at ci.yml:237), so no ci.yml collision remains. density.rs is shared with T-149 and T-935.5; T-149 packs later."
+priority = 2
+main_goal = "A regression in the density partition invariant fails CI instead of rotting unseen."
 context = [
-    "This is the density-grid code behind the map-object catalogue (625 TBDD grids, 8m cells), so a broken partition invariant is not cosmetic.",
-    "pairs with T-297 (cargo fmt --all is ungated over the same crate).",
+    "Original report: corner_partition_identity failed on clean main with 401 on the right-hand side; ci.yml:68 runs website-api and :115 website-frontend only.",
+    "Re-run 2026-09-05 read-only: encode_decode_round_trip_and_fixture and corner_partition_identity both pass; nothing in CI would notice if they did not.",
 ]
-requirement = ["Fix the test or the code, and add tbd-tools to a gate so it cannot rot again —"]
-current_state = [
-    "`cargo test -p tbd-tools --lib density::` fails on clean main: corner_partition_identity asserts a partition invariant and gets 401 on the right-hand side.",
-    "It is pre-existing and invisible because CI never tests this crate — ci.yml:68 runs website-api and :115 runs website-frontend,",
-    "and the mod wave gate only runs `-p tbd-tools --lib enf::`, which excludes density.",
+requirement = [
+    "ci.yml gains a `cargo test -p tbd-tools --lib` step so density:: and world:: tests run on every push.",
+    "density.rs gains a seeded randomized partition test over many grids so the invariant cannot regress silently.",
+    "The mod wave gate keeps its enf:: scope; the new lane is CI-side.",
 ]
-verify = ["cargo test -p tbd-tools --lib density::"]
-citations = [
-    "T-297",
-    "ci.yml:68",
-    "ci.yml:115",
+current_state = ["No CI lane tests tbd-tools; the mod wave gate runs `-p tbd-tools --lib enf::` only, which excludes density."]
+approach = [
+    "Add the step beside the website-api test step in ci.yml (after the toolchain cache); if mk_ci_tasks.rs generates it, change the generator.",
+    "Write the seeded randomized partition test in density.rs.",
+    "Perturbation: break the partition sum by one in the test's oracle; red; restore, touch, green.",
 ]
-estimated = ["scope"]
+verify = [
+    "cargo test -p tbd-tools --lib density::",
+    "cargo xtask platform wave gate --slice T-298",
+]
+acceptance = [
+    "A push that breaks the density partition invariant fails CI in the tbd-tools step.",
+    "The randomized partition test passes on main and appears in the CI log.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "tools/tbd-tools/src/density.rs",
+    ".github/workflows/ci.yml",
+]
 
 [scope]
 domain = "repo"
-layer = "xtask"
+layer = "ci"

@@ -1,18 +1,53 @@
 id = "T-132"
 kind = "work"
 title = "Multiplayer MC + visual git"
-summary = "Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap."
+summary = "Visual mission diff/review UI over the T-295 sync: doc/diff.rs computes entity-level changes between two versions and a mission_diff page renders added, removed, moved and changed slots and vehicles for review before publish."
 class = "feature"
-status = "idea"
+status = "ready"
+order = 8230
+priority = 3
 spec = "docs/platform/tbd_north_star_backlog.md"
+plan = "docs/plans/t-132_plan.md"
 executor = "claude-code"
-depends_on = [
-    "T-062",
-    "T-066",
+main_goal = "A reviewer sees exactly what changed between two mission versions, on a list and on the map."
+notes = "2026-09-05: T-062/T-066 are shipped and dropped from depends_on; T-295 is the real precondition. pages/missions/ does not exist — the page goes under pages/public/ per the existing tree. The co-editing half of the original summary is T-295."
+context = [
+    "ADR-3 defers multiplayer v1; the co-editing half lands under T-295 (packs earlier); this ticket is the visual-git half.",
+    "Anchor 2026-09-05: no diff module in crates/map-engine-core/src/doc/; pages/public/mod.rs registers deployments, leaderboards, modpacks.",
 ]
-estimated = ["scope"]
+requirement = [
+    "New doc/diff.rs (registered in doc/mod.rs): diff(a, b) over slots, squads, vehicles, markers → {added, removed, moved, changed} keyed by uid.",
+    "New pages/public/mission_diff.rs (registered in pages/public/mod.rs): two-version picker, change list, map overlay of moved entities.",
+    "Self-diff is empty; swapping versions swaps added and removed.",
+]
+current_state = [
+    "No diff exists; review happens by loading versions one at a time.",
+]
+approach = [
+    "Diff engine with golden-based tests first; then the page with wasm tests.",
+    "Perturbation: ignore moves; the moved-entity test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features doc::diff",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-132",
+]
+acceptance = [
+    "A reviewer can pick two versions and see every added, removed, moved and changed entity.",
+    "Self-diff is empty; swapping versions swaps added and removed.",
+]
+depends_on = ["T-295"]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "apps/website/frontend/src/pages/public/mission_diff.rs",
+    "apps/website/frontend/src/pages/public/mod.rs",
+    "crates/map-engine-core/src/doc/diff.rs",
+    "crates/map-engine-core/src/doc/mod.rs",
+]
 
 [scope]
 domain = "website"
 layer = "frontend"
-component = "mission_creator"
+component = "site_pages"
+surface = ["missions"]

@@ -3,9 +3,10 @@ kind = "work"
 title = "Connection / sync UI"
 summary = "Entity connection lines and sync group authoring."
 class = "feature"
-status = "idea"
+status = "cancelled"
+order = 6440
 executor = "claude-code"
-estimated = ["scope"]
+notes = "absorbed by T-939.6 (connection wires + sync UI)"
 
 [scope]
 domain = "website"

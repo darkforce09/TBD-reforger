@@ -9,7 +9,7 @@ an entity in Workbench — what/where/size/tactical/trust. The schema slice pinn
 
 ## Approach
 
-Wire the resolver in `apps/website/frontend/src/world_assets` to produce
+Wire the resolver in `apps/website/frontend/src/editor/world_assets` (new `resolved.rs`, registered in `mod.rs`; prefab data from `world_host.rs`) to produce
 `ResolvedWorldObject` exactly as
 `packages/tbd-schema/schema/map-object-resolved.schema.json` defines it — prefab +
 instance join, required typed fields (type, label, position, bounds, tactical

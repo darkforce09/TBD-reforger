@@ -1,0 +1,44 @@
+id = "T-941"
+kind = "program"
+title = "Enfusion mod lifecycle: safestart, lobby, screens, HUD"
+summary = "Fixes the audit's S6 findings in apps/mod/tbd-framework: safestart armed through LOBBY and BRIEFING, once-only deploy on BRIEFING, END and DEBRIEF screens, an objective HUD, spectator clamp, private link codes, radio fallback and fuelled vehicles."
+class = "bug"
+status = "queued"
+order = 7579
+priority = 0
+spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
+plan = "docs/plans/t-941_plan.md"
+executor = "claude-code"
+children = [
+    "T-941.1",
+    "T-941.2",
+    "T-941.3",
+    "T-941.4",
+    "T-941.5",
+    "T-941.6",
+    "T-941.7",
+    "T-941.8",
+]
+main_goal = "A mission runs from lobby to debrief without damage before go-live, with on-screen objectives and results, and without leaking link codes."
+context = [
+    "Master audit S6 (2026-09-04), verified against main @ 072988d57: TBD_SafestartManager.c:252-265, TBD_LobbyScreen.c:211-212/:492-507, TBD_UILayouts.c:28-31, TBD_ObjectivesComponent.c:813, TBD_SpectatorComponent.c:61-62, TBD_AdminCommands.c:41, TBD_RadioTuner.c:142-143.",
+    "Operator authorization, quoted: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
+    "Operator deferral, quoted: RadioManagerEntity world edit — deferred by operator 2026-09-04. T-941.7 ships the script fallback and a checklist only.",
+    "The TickCountdown-loop claim is false (false_claims.md; :389-417 has three exits) and gets no ticket. Gamemode/TBD_SpawnManager.c is shared by .2, .8 and queued T-675.2.",
+    "Existing tickets referenced, not re-minted: T-675.2 vehicle reader (crew), T-311 leaderboard tie-breaker, T-136 AAR replay, T-393 (shipped) identity link, T-070 vehicles placeable.",
+]
+requirement = [
+    "Every slice records the defect evidence from the anchor lines on main, compiles with cargo xtask mod compile, and runs the world-boot lane.",
+    "Every slice's in-game behaviour is a MANUAL checklist in its spec block; no slice claims in-game verification from the gate alone.",
+    "Perturbation for script slices: a deliberate type or name break must turn the compile gate red, then restore and touch.",
+]
+verify = [
+    "cargo xtask mod compile",
+    "cargo xtask mod world-boot",
+    "cargo xtask platform wave gate --slice T-941.N   # per child",
+]
+acceptance = [
+    "No damage before go-live; one body per claimed slot on BRIEFING; END and DEBRIEF screens with a scoreboard; objectives on the HUD.",
+    "Spectator range is bounded; link codes never reach public chat; radios tune without a backbone; vehicles spawn fuelled with cargo.",
+]
+created_at = "2026-09-05T02:33:18Z"

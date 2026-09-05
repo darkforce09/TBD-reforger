@@ -3,8 +3,10 @@ kind = "work"
 title = "Mission parameters as first-class document objects"
 summary = "Mission parameters as first-class document objects"
 class = "bug"
-status = "queued"
-order = 4440
+status = "ready"
+order = 7360
+spec = "docs/specs/existing/t684_mission_params.md"
+plan = "docs/plans/t-684_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Ranked 16 of 16 by framework_synthesis.md C.5; filed as `idea` deliberately. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)
@@ -26,6 +28,7 @@ context = [
     "B9 framework_synthesis C.5 ranks last of sixteen; weakest evidence in set.",
     "OFCRA twenty-nine Params versus FNF v4 single PerformanceTweaks parameter.",
     "Promoted idea to queued 2026-08-02; FNF-DTAS parameter bugs prove drift bites.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
 ]
 requirement = [
     "Named launch parameters with title, values, default, consuming symbol at boot.",
@@ -43,6 +46,11 @@ approach = [
 verify = [
     "Headless compile clean with TBD_MissionParams.c parameter selection reader.",
     "Launch-time parameter choice reaches mod without re-baking authored mission.",
+    "cargo xtask mod compile",
+]
+acceptance = [
+    "A mission with authored launch parameters exposes them at launch and the chosen values reach the mod without re-baking the mission.",
+    "Missions without parameters behave as before; no packages/tbd-schema edits; compile clean.",
 ]
 citations = [
     "framework_synthesis B9 rank sixteen",
@@ -50,7 +58,10 @@ citations = [
     "T-706 schema widening split",
 ]
 estimated = ["scope"]
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionParams.c"]
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionParams.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+]
 
 [scope]
 domain = "mod"

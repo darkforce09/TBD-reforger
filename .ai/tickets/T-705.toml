@@ -3,8 +3,10 @@ kind = "work"
 title = "Player gadget flags — map, compass, watch, GPS, radio"
 summary = "Player gadget flags — map, compass, watch, GPS, radio"
 class = "feature"
-status = "queued"
-order = 4590
+status = "ready"
+order = 7400
+spec = "docs/specs/existing/t705_gadget_flags.md"
+plan = "docs/plans/t-705_plan.md"
 executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---
@@ -21,6 +23,8 @@ context = [
     "NEW-W1 five screenshot rows Edit General States.",
     "Eden scenario decides which player gadgets are available.",
     "Schema widening split to T-706; this Enfusion reader plus editor UI.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
+    "T-706 is shipped, so the gadget-flag schema fields exist; this slice is dispatchable.",
 ]
 requirement = [
     "Read map compass watch GPS radio gadget flags at runtime.",
@@ -35,14 +39,24 @@ approach = [
     "Implement reader in TBD_GadgetFlags.c after T-706 ships.",
     "scripts/mod/compile.sh headless compile verified no Workbench.",
 ]
-verify = ["MissionLoader reads each gadget flag when schema fields exist."]
+verify = [
+    "MissionLoader reads each gadget flag when schema fields exist.",
+    "cargo xtask mod compile",
+]
+acceptance = [
+    "Map, compass, watch, GPS and radio availability follow the authored flags for every player; unset flags keep today's defaults.",
+    "No packages/tbd-schema edits; compile clean.",
+]
 citations = [
     "T-706 schema widening split",
     "NEW-W1 General States",
     "TBD_GadgetFlags.c reader",
 ]
 estimated = ["scope"]
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c"]
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+]
 
 [scope]
 domain = "mod"

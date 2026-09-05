@@ -3,8 +3,10 @@ kind = "work"
 title = "T-675 engine flatten emit"
 summary = "Flatten emit half of T-675: project authored vehicle roster onto top-level vehicles[] in the compiled document."
 class = "feature"
-status = "queued"
-order = 4320
+status = "ready"
+order = 7250
+plan = "docs/plans/t-675_1_plan.md"
+spec = "docs/specs/existing/t675_vehicle_roster_wire.md"
 executor = "claude-code"
 parent = "T-675"
 main_goal = "Emit top-level vehicles[] roster rows the mod crew-spawn reader can consume."
@@ -14,6 +16,41 @@ citations = [
     "T-706 schema widening shipped",
 ]
 owns = ["crates/map-engine-core/src/mission/flatten.rs"]
+
+depends_on = [
+    "T-674.1",
+]
+
+context = [
+    "T-675 closes the T-216 ledger sixth row: the authored vehicle roster (top-level vehicles[] with seats and crew refs) is dropped by flatten today.",
+    "T-706 already widened mission.schema.json for vehicles[]; this slice is the compile-boundary emit only; T-675.2 reads it in the mod.",
+]
+
+requirement = [
+    "Project the authored roster onto top-level vehicles[] rows (id, prefab, position, heading, seats with slot refs) at schemaVersion 1.3.",
+    "Rows with a missing prefab or dangling slot refs drop whole with a ledger-style note; the entities[] alias path stays untouched (T-200 defect).",
+]
+
+current_state = [
+    "flatten.rs emits no vehicles[]; the ledger at flatten.rs:2584-2649 pins the drop; T-674.1 lands the 1.3 bump first on the same file.",
+    "Salvage commit 113108a1 overlaps T-674; check subsumption before reuse.",
+]
+
+approach = [
+    "Add the roster projection beside the slot emit in crates/map-engine-core/src/mission/flatten.rs with golden coverage in the existing flatten tests.",
+    "Packs after T-674.1 (shared flatten.rs); reuse its 1.3 gate rather than a second bump.",
+]
+
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask ci schema-validate",
+    "cargo xtask platform wave gate --slice T-675.1",
+]
+
+acceptance = [
+    "A compiled mission with authored vehicles carries a schema-valid vehicles[] with seats and crew refs; missions without vehicles compile byte-identical to before.",
+    "The ledger tripwire test for the sixth row goes red under perturbation and green after restore.",
+]
 
 [scope]
 domain = "engine"

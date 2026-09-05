@@ -1,30 +1,51 @@
 id = "T-300"
 kind = "work"
-title = "Shared CARGO_TARGET_DIR lets a main-checkout build serve unmerged slice code"
-summary = "Shared CARGO_TARGET_DIR lets a main-checkout build serve unmerged slice code"
+title = "Shared CARGO_TARGET_DIR serves unmerged slice binaries"
+summary = "A binary built inside a slice worktree counts as fresh for a main-checkout build under the shared CARGO_TARGET_DIR, so run-style lanes can execute unmerged code; run-only binaries get their own target and preflight checks the build stamp."
 class = "bug"
-status = "idea"
+status = "ready"
+order = 7060
+spec = "docs/specs/ideas/t300_shared_target.md"
+plan = "docs/plans/t-300_plan.md"
 executor = "claude-code"
-main_goal = "Shared CARGO_TARGET_DIR lets a main-checkout `make api` serve unmerged slice code built in another worktree."
+notes = "2026-09-05 re-anchored: scripts/platform/wave.sh is gone; live code is xtask/src/wave/mod.rs (Ctx::cargo_target_dir :241) and xtask/src/platform_preflight.rs (:398-403). Shares wave/mod.rs with T-924, which packs in a later wave."
+priority = 1
+main_goal = "No run lane launched from the main checkout ever executes a binary that a slice worktree built."
 context = [
-    "Found by T-192's agent during wave 1.",
-    "scripts/platform/wave.sh points every worktree at the main checkout's target/ — necessary, because a per-worktree target is ~44GB and eight of them exhaust 129GB free by the third slice.",
+    "Found by T-192's agent in wave 1: `make api` on :8080 served unmerged slice code after a worktree build; `cargo clean -p website-api` fixed it.",
+    "Anchor 2026-09-05: wave/mod.rs:241 Ctx::cargo_target_dir exports one shared dir for every worktree; platform_preflight.rs:398-403 only asserts the variable is set.",
 ]
-requirement = ["Options: give run-only binaries a separate target dir, use sccache instead of a shared dir, or make the preflight assert the running API's build hash matches main."]
+requirement = [
+    "Run-style lanes (api serve, world-boot, smoke) build into a dedicated `<CARGO_TARGET_DIR>/run-main` target so worktree fingerprints never satisfy them.",
+    "Preflight reads a build stamp (sha + checkout path) next to each run binary and goes red with a named fix when it disagrees with HEAD.",
+    "Check, test and clippy keep the shared dir; no per-worktree targets (44 GB each).",
+]
 current_state = [
-    "The sharp edge: cargo considered a binary built inside a worktree fresh for a build launched from the main checkout,",
-    "so `make api` came up on :8080 serving UNMERGED slice code.",
-    "The agent caught it, ran `cargo clean -p website-api`, and verified :8080 served main again.",
-    "Risk during an 8-wide wave: any gate or smoke that RUNS a binary (rather than check/test/clippy, which recompile per fingerprint)",
-    "can execute another slice's unmerged work and report a result about code that is not on main.",
+    "Ctx::cargo_target_dir points every worktree and the main checkout at one target; nothing records who built a run binary.",
+    "platform_preflight.rs step 4 checks CARGO_TARGET_DIR is set and non-empty, nothing more.",
 ]
-approach = ["Do not simply revert to per-worktree targets — that trades a subtle bug for a certain disk exhaustion."]
-citations = [
-    "T-192 wave 1",
-    "scripts/platform/wave.sh",
+approach = [
+    "Add Ctx::run_target_dir in wave/mod.rs; run lanes export it as CARGO_TARGET_DIR and write `tbd-built-from` (sha, path) beside the binary.",
+    "Preflight step 4 compares the stamp with `git rev-parse HEAD` and names the stale checkout on mismatch.",
+    "Perturbation: stamp a wrong sha; preflight must go red; restore, touch, green.",
 ]
-estimated = ["scope"]
+verify = [
+    "cargo test -p xtask wave:: platform_preflight",
+    "cargo xtask platform preflight",
+    "cargo xtask platform wave gate --slice T-300",
+]
+acceptance = [
+    "A binary built in a worktree is never executed by a main-checkout run lane; the run target is separate.",
+    "Preflight names the stale binary and the checkout that built it when the stamp disagrees with HEAD.",
+    "Disk use grows by one extra target, not one per worktree.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "xtask/src/wave/mod.rs",
+    "xtask/src/platform_preflight.rs",
+]
 
 [scope]
 domain = "repo"
 layer = "xtask"
+component = "wave"

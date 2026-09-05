@@ -3,8 +3,10 @@ kind = "work"
 title = "Per-side marker authoring audit then explicit UI"
 summary = "Per-side markers: author for each side, visible only to that side (Arma 3 model) — establish what exists first"
 class = "audit"
-status = "queued"
-order = 5130
+status = "ready"
+order = 8430
+spec = "docs/specs/existing/t831_per_side_markers_audit.md"
+plan = "docs/plans/t-831_plan.md"
 executor = "claude-code"
 notes = """
 operator requirement wave-204; audit-first; game half = parked T-673
@@ -43,6 +45,11 @@ verify = [
     "Author BLUFOR and OPFOR marker each on own side briefing in export.",
     "Editor displays and authors both sides sets distinctly.",
     "T-673 named as runtime enforcement half.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "The audit records how the active side is switched and what each side briefing exports; a side selector on the Markers surface authors per side.",
+    "BLUFOR and OPFOR markers export on their own side briefings; T-673 is named as the runtime half.",
 ]
 citations = [
     "wave-204 operator requirement",

@@ -3,8 +3,10 @@ kind = "work"
 title = "Group AI state: combat mode, behaviour, formation, speed"
 summary = "Group AI state: combat mode, behaviour, formation, speed"
 class = "chore"
-status = "queued"
-order = 4350
+status = "ready"
+order = 7300
+plan = "docs/plans/t-678_plan.md"
+spec = "docs/specs/existing/t678_group_ai_state.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row
@@ -27,6 +29,7 @@ context = [
     "Four GRP attrs: combat mode behaviour formation speed mode.",
     "Same AI gate as T-677; sweep says ship together or not at all.",
     "Schema split T-706; $defs/group closed so widening plus reader.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
 ]
 requirement = [
     "Enfusion reader for four group AI state attribute ids.",
@@ -45,6 +48,7 @@ approach = [
 verify = [
     "Group state attrs read from mission payload at runtime.",
     "No packages/tbd-schema edits in this slice.",
+    "cargo xtask mod compile",
 ]
 citations = [
     "T-677 waypoint shared gate",
@@ -53,6 +57,11 @@ citations = [
 ]
 estimated = ["scope"]
 owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c"]
+
+acceptance = [
+    "Combat mode, behaviour, formation and speed mode from the payload are applied to AI-enabled groups after spawn.",
+    "Groups without the attrs behave as before; no packages/tbd-schema edits; compile clean.",
+]
 
 [scope]
 domain = "mod"

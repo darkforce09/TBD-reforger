@@ -1,0 +1,53 @@
+id = "T-940.3"
+kind = "work"
+parent = "T-940"
+title = "Reschedule cascades to event missions; delete hides schedule"
+summary = "Rescheduling an event shifts every event_missions.start_time by the same delta, and soft-deleting a mission hides its schedule entries and withdraws their registrations instead of orphaning them."
+class = "bug"
+status = "ready"
+order = 8100
+priority = 1
+spec = "docs/specs/audit_2026_09/t940_website_platform.md"
+plan = "docs/plans/t-940_3_plan.md"
+executor = "claude-code"
+main_goal = "Event and mission schedules never disagree after an edit."
+context = [
+    "Anchor 2026-09-04: events.rs:1338-1340 reschedules the event only; no UPDATE event_missions exists in events.rs.",
+    "handlers/missions/missions.rs:816 delete_mission is already a soft delete (deleted_at); event_missions rows keep pointing at hidden missions.",
+    "Depends on T-940.2 (events.rs). Related, not re-minted: T-139 lobby preview.",
+]
+requirement = [
+    "New migration 0024_event_missions_sync.sql: hidden_at on event_missions plus an index on event_missions(mission_id).",
+    "The reschedule handler applies the start delta to every event_missions row of the event in the same transaction.",
+    "delete_mission sets hidden_at on its event_missions rows and withdraws their registrations with a system reason.",
+    "Schedule listings exclude hidden rows.",
+]
+current_state = [
+    "Reschedule touches events only; delete_mission leaves event_missions and registrations untouched.",
+]
+approach = [
+    "Verify on main: an integration test rescheduling by two hours leaves event_missions.start_time unchanged; paste the red.",
+    "Write the migration; cascade in both handlers; filter listings.",
+    "Perturbation: apply the delta to the first mission only; the multi-mission test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask db test-it",
+    "cargo xtask platform wave gate --slice T-940.3",
+]
+acceptance = [
+    "Rescheduling an event with three missions shifts all three start times by the same delta.",
+    "Soft-deleting a mission hides its schedule entries and marks their registrations withdrawn.",
+    "Listing an event's missions never shows a hidden entry.",
+]
+depends_on = ["T-940.2"]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/api/src/handlers/events/events.rs",
+    "apps/website/api/src/handlers/missions/missions.rs",
+    "apps/website/api/migrations/0024_event_missions_sync.sql",
+]
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

@@ -8,38 +8,135 @@
 
 ## Ready
 
-- **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-311** (7020) — Leaderboard ORDER BY lacks tie-breaker; paging unstable [ready] — None of the five ORDER BY arms in handlers/telemetry/leaderboards.rs:47-51 has a tie-breaker, so LIMIT/OFFSET paging returns an unstable row set once T-194's golden introduces 4-way ties. Append `, lt.discord_id ASC` to each arm and test paging.
+- **T-305** (7030) — pak.rs seeks data_start plus offset; offsets are absolute [ready] — read_file/read_raw in tools/tbd-tools/src/world/pak.rs seek data_start + entry.offset, but entry offsets are absolute from the pak start; every `enf extract` read is shifted by 56 bytes. Seek entry.offset directly, pinned by a fixture test.
+- **T-298** (7040) — Gate tbd-tools density tests in CI [ready] — `cargo test -p tbd-tools --lib density::` passes on main today (2 tests, 2026-09-05) but no CI lane runs it; add the tbd-tools lib tests to ci.yml and pin the corner-partition invariant with a seeded randomized test.
+- **T-943** (7050) — platform wave push deadlocks on large LFS ranges [ready] — cmd_push's LFS guard pipes every path of a commit into git check-attr without draining stdout; a commit touching 1,691 files wedges both processes forever, and on a host with git-lfs the guard refuses a legitimate push.
+- **T-300** (7060) — Shared CARGO_TARGET_DIR serves unmerged slice binaries [ready] — A binary built inside a slice worktree counts as fresh for a main-checkout build under the shared CARGO_TARGET_DIR, so run-style lanes can execute unmerged code; run-only binaries get their own target and preflight checks the build stamp.
+- **T-924** (7070) — Gate verdict receipt required at land [ready] — platform wave gate writes a verdict file (HEAD sha plus verdict) and platform wave land refuses a landing ticket without a fresh one. Forward-only: future lands only, no backfill, existing tickets stay green untouched.
+- **T-090** (7079) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-277** (7110) — 27.4% of the map catalogue is unclassified [ready] — 444 of 1,623 everon prefabs fall through to prefab-classify.json's fallback rule; vegetation and utility count zero and the road census is zero against 888 shipped road segments. Append rules until fallback is under 5% and the census matches.
+- **T-149** (7170) — Forest mass polygon smoothing [ready] — Upgrade the V1 blocky Path B forest hulls: sample the existing 8 m TBDD density grid and apply Chaikin smoothing to the marching-squares rings before the forest-regions emit so forest edges read as natural cartography.
+- **T-676** (7260) — Trigger activation and effects — the Enfusion runtime [ready] — Trigger activation and effects — the Enfusion runtime
+- **T-677** (7290) — Waypoints — group movement orders [ready] — Waypoints — group movement orders
+- **T-678** (7300) — Group AI state: combat mode, behaviour, formation, speed [ready] — Group AI state: combat mode, behaviour, formation, speed
+- **T-673** (7310) — Marker style and Area markers — the $defs/marker widening [ready] — Marker style and Area markers — the $defs/marker widening
+- **T-212** (7320) — Typed per-side objectives with attributes [ready] — Objectives as typed, placed, per-side entities with one uniform attribute spine
+- **T-680** (7330) — Vehicle states: lock, fuel, ammo [ready] — Vehicle states: lock, fuel, ammo
+- **T-681** (7340) — Entity states: health, allow-damage, show-model, size, stamina [ready] — Entity states: health, allow-damage, show-model, size, stamina
+- **T-682** (7350) — Environment readers: fog, wind, view distance [ready] — Environment readers: fog, wind, view distance
+- **T-684** (7360) — Mission parameters as first-class document objects [ready] — Mission parameters as first-class document objects
+- **T-685** (7370) — Zone volumes: height bounds capture counts and owner [ready] — Zones become volumes: min/max height, attacker and defender counts, starting owner
+- **T-689** (7380) — Play-area enforcement gains a vehicle-class axis: the aircraft exemption [ready] — Play-area enforcement gains a vehicle-class axis: the aircraft exemption
+- **T-702** (7390) — Whole-terrain zone — one zone sized to the map [ready] — 3DEN-MISC-001 E11: one command authors a play-area boundary polygon covering the terrain exactly from terrain_bounds.
+- **T-705** (7400) — Player gadget flags — map, compass, watch, GPS, radio [ready] — Player gadget flags — map, compass, watch, GPS, radio
+- **T-654** (7410) — Conditional inclusion: variant-gated document subtrees [ready] — Conditional inclusion: variant-gated document subtrees
+- **T-679** (7420) — Placement scatter: radius and area shape [ready] — Placement scatter: radius and area shape
+- **T-299** (7480) — Single-faction compile ships a phantom opfor [ready] — flatten pads a stub opposing faction (flatten.rs:2470-2472) to satisfy the schema's two-faction rule, so every single-faction mission shows an unplayable side in briefing and ORBAT. Let the schema permit one faction and stop padding.
+- **T-310** (7490) — Arsenal attachments never reach the compiled document [ready] — T-197 persists weapon attachment edges in SlotLoadoutV2 but flatten's mod_slot_loadout reads only weapon/optic/magazine and the schema gear block has no list; add gear.attachments[], emit it, and mount it in TBD_LoadoutEquipHelper.c.
+- **T-290** (7540) — Nine dead flatten fields mod never reads [ready] — meta.author/templateId/playerRange, the environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds and the orbat block are emitted but never read by the mod; add readers where cheap and annotate the rest in an emit ledger.
+- **T-291** (7550) — Resolve five schema fields implemented on no surface [ready] — environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem.
+- **T-242** (7560) — Emit T-216 slot deltas through flatten [ready] — The T-216 schema deltas (slot tag/callsign/rank/stance, group leaderSlotId, root vehicles $def) are all declared in mission.schema.json today, but flatten drops the four slot fields (DIAG_DROP_SLOT_*); emit them and pin with schema-validated goldens.
+- **T-133** (7570) — OFCR timed objectives [ready] — Objectives that evaluate at mission time T+N: the T-936.2 task model gains a schedule (delay, window), the tasks panel edits it, and TBD_TaskStateMachine.c fires the transition on the mission clock.
+- **T-301** (7660) — Briefing kit lists 7 of 13 gear fields [ready] — TBD_BriefingData.BuildKit (UI/TBD_BriefingData.c:519) lists seven gear fields; T-182's launcher, handgun and throwable never appear on the briefing screen. Add them while keeping pants/boots/handwear hidden.
+- **T-302** (7670) — Prove T-182 weapon equip on a live body [ready] — T-182's slot-indexed weapon equip compiles but was never observed in game; add a per-slot equip result log, a headless world-boot assertion that four authored weapons land in four slots, and a human checklist item.
+- **T-304** (7680) — RegistryScan never reads weapon weight; 32 wrong rows [ready] — TBD_RegistryScan ReadPhysAttrsPass treats SCR_WeaponAttachmentsStorageComponent as storage so weapon weight is never read (0/107), and its class-keyed foreach picks hash order over derivation depth, so 32 rows carry Item_Base.et's 0.01 kg.
+- **T-139** (7690) — Lobby loadout visual preview [ready] — In-game lobby kit preview: a TBD_LoadoutPreview widget renders the selected slot's gear as an icon grid (stretch: 2D mannequin) beside the slot list in TBD_LobbyScreen; layout file under UI/layouts.
+- **T-257** (7750) — Undo scope misses loadouts, items, objectives, markers [ready] — hydrate clears loadouts, items, objectives and markers but store.rs expand_scope covers slots, squads, factions and editor_layers only, so those roots become non-undoable the day something mutates them. Add them to the UndoManager scope with a test per root.
+- **T-190** (7760) — Two tabs on one mission clobber each other [ready] — Two tabs on one mission write one IndexedDB key; the last debounce wins and the reload prompt blames server drift. Detect the second tab, merge through the CRDT, and give the conflict modal counts, timestamps and a destructive marker.
+- **T-932** (7780) — Parked briefing markers survive server save/reload [ready] — T-826 parking: pendingBriefingMarkers drop on server JSON save/reload before first faction mint
+- **T-930** (7790) — Vehicle first-paint disc until moved [ready] — Vehicle first-paint disc until moved — W210 eye-pass
+- **T-704** (7940) — Command palette over every editor command [ready] — Alt+Space opens a fuzzy palette over every top-strip and toolbelt command, ranked by usage frequency stored per browser; Esc closes; Enter runs the command through its existing handler.
+- **T-142** (7950) — MC shell layout polish [ready] — Toolbelt placement, Attributes modal grouping and stub-tool visibility — layout UX without full T-082 field parity; no document-write changes.
+- **T-157** (7960) — Mission Create visual overhaul [ready] — The New Mission dialog gets a visual map picker with terrain thumbnails and a modset selection; time, weather and max players leave the dialog because they are editor settings.
+- **T-158** (7970) — Editor shell UX consolidation [ready] — Consolidate the two Settings entry points into one, wire the top-bar buttons that are still inert, and remove the redundant left-dock Assets tab now that the right dock is the asset surface.
+- **T-129** (7980) — Building floor selector [ready] — Per-building floor slice in the Mission Creator map: a floor selector tool derives storey bands from the occluder BVH heights and clips the building render to the chosen floor so placement inside multi-floor buildings is unambiguous.
+- **T-131** (7990) — Route planner tool [ready] — Mission Creator tool that plans routes on the exported road graph: click waypoints, snap to road segments, show distance and an elevation profile. Not runtime convoy AI.
+- **T-141** (8000) — Procedural slot naming [ready] — Adjective/nickname word packs generate slot display names on creation; a manual override wins and survives renumbering. Builds on T-071 ORBAT numbering.
+- **T-146** (8050) — Asset Browser Data Wiring [ready] — Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred.
+- **T-143** (8070) — Water mask placement guard and exact hydrology [ready] — Ship the T-935.9 water mask to the editor: a placement guard refuses units in the ocean and warns in lakes; pak.rs (fixed by T-305) reads Eden water entities so the vector layer becomes exact instead of the appearance classifier.
+- **T-135** (8180) — Mission modset manager [ready] — Per-mission Workshop modset presets validated against registry aliases at export: a workshop_sync service resolves mod metadata, the modpacks page edits presets, and export refuses a mission whose registry aliases are not covered by its preset.
+- **T-309** (8190) — FactionDoc squad level for Apply Template [ready] — Preserve squads through Apply Template: add a squad level to faction-library.schema.json and FactionDoc (core/dto.rs:745), then both sides of the editor ops — orbat_apply_faction and faction_doc_from_side_core — so save-as-template then Apply round-trips N squads.
+- **T-140** (8200) — Mission client payload budget [ready] — Measure compiled mission size against slot and entity counts, define a console-safe budget, and make compile report a payload-budget diagnostic with a server-only-bulk policy for what exceeds it.
+- **T-136** (8210) — 3D AAR / OCAP-style replay [ready] — Post-event replay: T-940.13 telemetry events → a replay endpoint returning a per-match timeline → a map scrubber page with unit positions over time; aar_replay_url on deployments links to it.
+- **T-295** (8220) — Realtime collaborative editing [ready] — Axum websocket at /missions/{id}/sync relays yrs updates and awareness between clients; the editor's collab_sync.rs applies remote updates into the local doc; POST /versions gains edit-since-load concurrency (base version id → 409).
+- **T-132** (8230) — Multiplayer MC + visual git [ready] — Visual mission diff/review UI over the T-295 sync: doc/diff.rs computes entity-level changes between two versions and a mission_diff page renders added, removed, moved and changed slots and vehicles for review before publish.
+- **T-138** (8240) — One-command self-host setup via xtask [ready] — `cargo xtask setup all` checks deps, writes .env, runs db up, migrate and seed, and optionally pulls map assets (git lfs pull) — the fork-friendly install story, in Rust, no shell script.
+- **T-294** (8250) — Arland has a manifest and no object data [ready] — terrain-registry.json declares arland queued with P1 only; packages/map-assets/arland holds a 756-byte manifest and zero objects. Run the export-terrain gate for arland: the operator exports from Workbench, the agent stages, builds and records P1.
+- **T-653** (8260) — Preserve the three headless editor-screenshot findings [ready] — Document in EDITOR_GATE_RUNBOOK.md and KB-002 the three non-obvious headless screenshot fixes: writable XDG_CACHE_HOME for fontconfig, --use-angle=vulkan only, and canvas.toDataURL capture (Page.captureScreenshot returns a black map).
+- **T-905** (8280) — Split 37 T-159 frontend SIZE-3 allowlist files [ready] — Split T-159 frontend SIZE-3 files (37) the T-899 allowlist is holding
+- **T-906** (8290) — Split 7 T-145 API SIZE-3 allowlist files [ready] — Split T-145 API SIZE-3 files (7) the T-899 allowlist is holding
+- **T-907** (8300) — Split 11 map-engine SIZE-3 allowlist files [ready] — Split map-engine SIZE-3 files (11) the T-899 allowlist is holding
+- **T-908** (8310) — Split 8 xtask/tools SIZE-3 allowlist files [ready] — Split xtask/tools SIZE-3 files (8) the T-899 allowlist is holding
+- **T-933** (8320) — leptos-gates v-suite goldens break pre-close exit-0 [ready] — mk leptos-gates exits non-zero after editor-suite 20/20 because v-suite SPA goldens mass-fail
+- **T-816** (8330) — Armed composition hint open; one Esc clears both layers wrongly [ready] — Esc with an armed composition and the Controls Hint open clears both in one press
+- **T-817** (8340) — Grid labels lag ~1.4s on stationary wheel zoom [ready] — Grid labels lag up to ~1.4s on wheel zoom with a stationary pointer
+- **T-820** (8350) — Catalog failure generic cause; chips visible wrongly [ready] — Catalog failure view shows the generic cause with chips visible where no-modpack should fire
+- **T-821** (8360) — Save version prefill static; second save 409s [ready] — Save Version prefill is a static 0.1.0 — no auto-bump, second save 409s
+- **T-822** (8370) — Outliner dblclick must not open asset picker under Attributes [ready] — Outliner dblclick bubbles into the map container — asset picker opens under Attributes
+- **T-823** (8380) — OBJ readout must count vehicles or rename honestly [ready] — OBJ readout counts slots only — placed vehicles are invisible to it
+- **T-824** (8390) — Placed zones must render visibly at rest on map [ready] — Placed zones are not visible on the map — investigate and fix the render (repro-first)
+- **T-827** (8400) — Validation chip red under 4.5:1 live-effective [ready] — Validation chip red measures 4.0-4.3:1 over the live glass — passes only by plate-calc
+- **T-828** (8410) — Marker captions drift when zoom changes without rebind [ready] — Marker captions are world-frozen at bind-time zoom — drift past 40px until a rebind
+- **T-830** (8420) — Outliner rows cramped; density pass on layer tree [ready] — Outliner rows are too cramped — density pass on the layer tree
+- **T-831** (8430) — Per-side marker authoring audit then explicit UI [ready] — Per-side markers: author for each side, visible only to that side (Arma 3 model) — establish what exists first
+- **T-833** (8440) — Rotation ring: relative delta plus live preview [ready] — Rotation widget: relative drag delta (not absolute aim) + live per-frame preview
+- **T-834** (8450) — Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar [ready] — Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar
+- **T-837** (8460) — Vehicles cannot be deleted — slots can, vehicles cannot [ready] — Vehicles cannot be deleted — slots can, vehicles cannot
+- **T-838** (8470) — Map markers selectable; outliner lists; dblclick opens Attributes [ready] — Markers select on the map and list in the outliner; double-click opens marker Attributes
+- **T-839** (8480) — Retire floating Select/Ruler/LoS bottom-centre pill [ready] — The floating Select/Ruler/LoS pill still exists — decision 1 said it dies
+- **T-841** (8490) — Type picker popover translucent; make opaque panel [ready] — The Type picker popover is translucent — text blurs over the map; make it an opaque panel
+- **T-845** (8500) — A selected vehicle looks identical to an unselected one [ready] — A selected vehicle looks identical to an unselected one
+- **T-848** (8510) — Group to must use exclusive ORBAT membership [ready] — Connect ▸ Group to must mean exclusive ORBAT squad membership — not stackable connection edges
+- **T-849** (8520) — Add ungroup leave-squad verb without deleting slot [ready] — Ungroup / leave-squad — no editor verb to take a slot out of a squad without deleting it
+- **T-850** (8530) — Squad tether must follow drag on auto-grouped units [ready] — T-801 eye-pass: squad tether did not follow drag on same-squad (auto-grouped) units
+- **T-926** (8540) — Vehicle Attributes Transform/Position tab [ready] — Vehicle Attributes need Transform/Position parity (X/Y/Z + Heading at minimum); T-818 only shipped Heading/Cargo/Crew
+- **T-927** (8550) — Editor chrome dblclick leak to map [ready] — Chrome docks/Attributes/top bar leak map dblclick — W210 eye-pass
 
 ## Next queued (top 10)
 
-- **T-120** (1200) — Staging soak + golden mission smoke [queued] — Pinned game/mod version soak; golden-mission smoke on staging server.
-- **T-146** (1470) — Asset Browser Data Wiring [queued] — Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred.
-- **T-170** (1670) — Prod default flip to Leptos SPA [queued] — Prod default flip to Leptos SPA
-- **T-673** (4300) — Marker style and Area markers — the $defs/marker widening [queued] — Marker style and Area markers — the $defs/marker widening
-- **T-674** (4310) — T-216 follow-on: slot identity reaches the wire [queued] — Four attribute ids — `ATTR-FIELD-OBJ-CALLSIGN`, `-OBJ-RANK`, `-OBJ-STANCE`, `-OBJ-UNIT-NAME` — plus the two TBD-only keys `tag` and `leaderSlotId`. `OBJ-UNIT-NAME` rides this slice rather than standing alone; the sweep says so explicitly. THE CONTRACT DELTA IS ALREADY WRITTEN OUT at `crates/map-engine-core/src/mission/flatten.rs`:2620-2632 — five `$defs/slot` / `$defs/group` keys. T-216 is `shipped`, but it shipped THE LEDGER AND ITS TRIPWIRE, not the fix: flatten.rs:2584-2649 enumerates six author-facing values the compile silently drops (a squad's leaderSlotId, a slot's tag / callsign / rank / stance, and the entire vehicle roster) and records that `make verify-t180` stayed green throughout BECAUSE NOT ONE OF ITS 22 TESTS CHECKED. `stance` additionally needs an Enfusion spawn-pose call — word-boundary `stance` in apps/mod is ZERO (the 39-file `grep -rl stance` result is every hit being the substring inside `instance`). Widening `/compiled` without care 500s every mission. Related: T-242. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.
+- **T-940** (6999) — Website platform: events, telemetry, admin, content [queued] — Fixes the audit's S5 findings in apps/website/api: waitlist seats, registration tombstones and no_show, schedule cascades, flat telemetry counters, pool config, audit stream, users pager, vehicle mutations, wiki features, mortar ballistics, rcon actions, reservation tiers and telemetry events.
+- **T-935** (7089) — Map binary storage — hybrid rkyv + POD [queued] — Replace gz-JSON/PNG map assets with a hybrid layout: raw #[repr(C)] POD for bulk GPU data (chunks, DEM, density), rkyv archives for structured metadata (roads, labels, water, buildings, catalog), mipmapped containers for satellite and bathymetry.
+- **T-674** (7430) — T-216 follow-on: slot identity reaches the wire [queued] — Four attribute ids — `ATTR-FIELD-OBJ-CALLSIGN`, `-OBJ-RANK`, `-OBJ-STANCE`, `-OBJ-UNIT-NAME` — plus the two TBD-only keys `tag` and `leaderSlotId`. `OBJ-UNIT-NAME` rides this slice rather than standing alone; the sweep says so explicitly. THE CONTRACT DELTA IS ALREADY WRITTEN OUT at `crates/map-engine-core/src/mission/flatten.rs`:2620-2632 — five `$defs/slot` / `$defs/group` keys. T-216 is `shipped`, but it shipped THE LEDGER AND ITS TRIPWIRE, not the fix: flatten.rs:2584-2649 enumerates six author-facing values the compile silently drops (a squad's leaderSlotId, a slot's tag / callsign / rank / stance, and the entire vehicle roster) and records that `make verify-t180` stayed green throughout BECAUSE NOT ONE OF ITS 22 TESTS CHECKED. `stance` additionally needs an Enfusion spawn-pose call — word-boundary `stance` in apps/mod is ZERO (the 39-file `grep -rl stance` result is every hit being the substring inside `instance`). Widening `/compiled` without care 500s every mission. Related: T-242. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.
 
 EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
 
 SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema.
-- **T-675** (4320) — Vehicle roster reaches game — T-076 compile half [queued] — Cross-boundary compile half split from T-076 so crew UI could ship separately.
+- **T-675** (7440) — Vehicle roster reaches game — T-076 compile half [queued] — Cross-boundary compile half split from T-076 so crew UI could ship separately.
 Closes the sixth T-216 drop-ledger row: top-level vehicles[] with seats and crew refs.
 T-706 already widened the schema; this program emits and reads the roster.
 Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
 
-- **T-676** (4330) — Trigger activation and effects — the Enfusion runtime [queued] — Trigger activation and effects — the Enfusion runtime
-- **T-677** (4340) — Waypoints — group movement orders [queued] — Waypoints — group movement orders
-- **T-678** (4350) — Group AI state: combat mode, behaviour, formation, speed [queued] — Group AI state: combat mode, behaviour, formation, speed
-- **T-679** (4360) — Placement scatter: radius and area shape [queued] — Placement scatter: radius and area shape
+- **T-936** (7449) — Mission logic the audit found missing [queued] — Win/loss framework, task state machine with HUD, editable radio nets, weather timeline, audio emitters, dynamic spawn modules and tactical graphics — schema, core flatten, editor panels and Enfusion runtime for each.
+- **T-941** (7579) — Enfusion mod lifecycle: safestart, lobby, screens, HUD [queued] — Fixes the audit's S6 findings in apps/mod/tbd-framework: safestart armed through LOBBY and BRIEFING, once-only deploy on BRIEFING, END and DEBRIEF screens, an objective HUD, spectator clamp, private link codes, radio fallback and fuelled vehicles.
+- **T-937** (7699) — Editor data layer: id arrays, undo, persist [queued] — Fixes the audit's S2 findings in the mission editor data layer: native YArray id lists, gesture-grouped undo with a depth cap, a materialize side-key cache, surfaced save errors with hidden-tab flush, and payload schema hardening.
+- **T-938** (7799) — Engine and wasm performance [queued] — Closes the audit's S3 render and geometry findings: pooled lane buffers, measured chunk-crossing uploads, GPU culling for every icon lane, BVH section cuts with a sparse HeightField, frame-sliced viewsheds, and a wasm memory budget guard.
+- **T-939** (7859) — Editor usability: selection, gizmo, arrange, templates [queued] — Fixes the audit's S4 findings in the mission editor UI: outliner multi-select drag, batch faction and squad reassign, a Z gizmo, Arrange shortcuts, squad templates, canvas diagnostics with connection wires, vehicle-panel virtualization and Ctrl+F search.
+- **T-111** (8269) — Lazy chunk residency @ 1M [queued] — Program for T-067.1: byte-budget chunk eviction with cache eviction and reload on viewport re-entry, so a 1M-object terrain stays within browser memory. Spec: t067_spatial_chunks.md §Deferred.
 
 ## Dependency graph (scoped)
 
 ```mermaid
 flowchart LR
+  T092[T-092] --> T071[T-071]
+  T177[T-177] --> T071[T-071]
   T118[T-118] --> T114[T-114]
-  T114[T-114] --> T120[T-120]
-  T115[T-115] --> T120[T-120]
-  T117[T-117] --> T120[T-120]
-  T150[T-150] --> T146[T-146]
-  T159[T-159] --> T170[T-170]
+  T079[T-079] --> T676[T-676]
+  T677[T-677] --> T678[T-678]
   T069[T-069] --> T673[T-673]
+  T685[T-685] --> T212[T-212]
+  T241[T-241] --> T212[T-212]
+  T685[T-685] --> T689[T-689]
+  T076[T-076] --> T675[T-675]
+  T115[T-115] --> T133[T-133]
+  T114[T-114] --> T139[T-139]
+  T222[T-222] --> T190[T-190]
+  T135[T-135] --> T157[T-157]
+  T071[T-071] --> T141[T-141]
+  T150[T-150] --> T146[T-146]
+  T305[T-305] --> T143[T-143]
+  T092[T-092] --> T135[T-135]
+  T092[T-092] --> T140[T-140]
+  T190[T-190] --> T295[T-295]
+  T295[T-295] --> T132[T-132]
 ```

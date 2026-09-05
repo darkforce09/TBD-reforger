@@ -1,0 +1,44 @@
+id = "T-940.5"
+kind = "work"
+title = "DB pool size and timeouts from config"
+summary = "Pool max connections, idle timeout, max lifetime and acquire timeout come from environment-backed config with the current values as defaults, documented in .env.example."
+class = "chore"
+status = "ready"
+order = 7000
+spec = "docs/specs/audit_2026_09/t940_website_platform.md"
+plan = "docs/plans/t-940_5_plan.md"
+executor = "claude-code"
+priority = 1
+parent = "T-940"
+main_goal = "Operators tune the pool without a rebuild."
+context = ["Anchor 2026-09-04: db.rs:31 max_connections(25); :32-34 idle, lifetime and acquire timeouts are fixed literals; config.rs has no pool fields."]
+requirement = [
+    "config.rs: DbPoolConfig {max_connections, idle_timeout_secs, max_lifetime_secs, acquire_timeout_secs} parsed from TBD_DB_POOL_* with today's literals as defaults.",
+    "db.rs builds the pool from DbPoolConfig; an invalid value fails startup with an error naming the variable.",
+    ".env.example documents the four variables with their defaults.",
+]
+current_state = ["Four literals in db.rs; nothing in config.rs or .env.example."]
+approach = [
+    "Verify on main: a test setting TBD_DB_POOL_MAX_CONNECTIONS=3 observes a pool max of 25; paste the red.",
+    "Add the config struct with parse tests; thread it into db.rs; document the variables.",
+    "Perturbation: ignore the env override; the parse test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask db test-it",
+    "cargo xtask platform wave gate --slice T-940.5",
+]
+acceptance = [
+    "Setting TBD_DB_POOL_MAX_CONNECTIONS=3 yields a pool whose max is 3; unset yields 25.",
+    "A non-numeric value stops startup with a message naming the variable.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/api/src/db.rs",
+    "apps/website/api/src/config.rs",
+    "apps/website/api/.env.example",
+]
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "db"

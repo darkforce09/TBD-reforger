@@ -3,8 +3,10 @@ kind = "work"
 title = "Marker captions drift when zoom changes without rebind"
 summary = "Marker captions are world-frozen at bind-time zoom — drift past 40px until a rebind"
 class = "bug"
-status = "queued"
-order = 5100
+status = "ready"
+order = 8410
+spec = "docs/specs/existing/t828_marker_caption_drift.md"
+plan = "docs/plans/t-828_plan.md"
 executor = "claude-code"
 notes = """
 wave204 verifier; the icon half is the in-file template
@@ -42,6 +44,12 @@ approach = [
 verify = [
     "Zoom 5.6 to 1.06 m/px continuously with no doc changes.",
     "Every caption stays within 40px of its marker at every sampled frame.",
+    "cargo test -p map-engine-render",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "During a continuous 5.6 to 1.06 m/px zoom with no doc changes every caption stays within 40px of its marker.",
+    "Captions and icons share one transform source; no rebind dependency remains.",
 ]
 citations = [
     "wave204.md MINOR filing",

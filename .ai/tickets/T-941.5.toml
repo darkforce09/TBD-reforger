@@ -1,0 +1,43 @@
+id = "T-941.5"
+kind = "work"
+title = "Spectator range default and server clamp"
+summary = "The spectator max range defaults to a finite value and the server clamps every client request to its configured maximum, so 0 no longer means unlimited."
+class = "bug"
+status = "ready"
+order = 7620
+spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
+plan = "docs/plans/t-941_5_plan.md"
+executor = "claude-code"
+priority = 1
+parent = "T-941"
+main_goal = "Spectators cannot see farther than the server allows."
+context = [
+    "Anchor 2026-09-04: Spectator/TBD_SpectatorComponent.c:61-62 m_fHostMaxRangeM attribute defaults to 0 meaning unlimited (comment :56-60).",
+    "Operator authorization: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
+]
+requirement = [
+    "Default m_fHostMaxRangeM = 2000; 0 is treated as the default, never unlimited; the authority clamps every requested range.",
+    "The :56-60 comment states the new semantics with the T-941.5 date.",
+]
+current_state = ["0 means unlimited; client requests are not clamped by the authority."]
+approach = [
+    "Verify on main: read :56-62; record as defect evidence (no script unit test lane).",
+    "Change the default and add the clamp; compile; boot.",
+    "Perturbation: clamp against a string literal; mod compile must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mod compile",
+    "cargo xtask mod world-boot",
+    "cargo xtask platform wave gate --slice T-941.5",
+]
+acceptance = [
+    "The mod compiles and boots.",
+    "Checklist: a spectator requesting 10 km on a 2 km server is held at 2 km; an unset attribute yields 2 km.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c"]
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "spectator"

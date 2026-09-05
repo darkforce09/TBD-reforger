@@ -3,8 +3,10 @@ kind = "work"
 title = "Validation chip red under 4.5:1 live-effective"
 summary = "Validation chip red measures 4.0-4.3:1 over the live glass — passes only by plate-calc"
 class = "bug"
-status = "queued"
-order = 5090
+status = "ready"
+order = 8400
+spec = "docs/specs/existing/t827_validation_chip_contrast.md"
+plan = "docs/plans/t-827_plan.md"
 executor = "claude-code"
 notes = """
 wave204 verifier; measurement methodology matters — live-effective, not plate-calc
@@ -42,6 +44,11 @@ approach = [
 verify = [
     "Live-effective contrast >=4.5:1 on all four screenshot samples.",
     "Plate-calc contrast stays >=4.5:1 after plate change.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "The validation chip count text measures at least 4.5:1 live-effective on all four map backgrounds.",
+    "The plate-calc contrast also stays at or above 4.5:1 and the count keeps the error colour.",
 ]
 citations = [
     "wave204.md MINOR filing",

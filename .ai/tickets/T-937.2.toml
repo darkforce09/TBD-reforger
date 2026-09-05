@@ -1,0 +1,56 @@
+id = "T-937.2"
+kind = "work"
+parent = "T-937"
+title = "Undo grouping per gesture with batch groups"
+summary = "Undo steps group per user gesture (capture window) plus explicit begin/end batch groups from operations, under a bounded undo depth; the decision superseding the store.rs:350-371 Yjs-parity comment is recorded."
+class = "bug"
+status = "ready"
+order = 7710
+priority = 1
+spec = "docs/specs/audit_2026_09/t937_editor_data_layer.md"
+plan = "docs/plans/t-937_2_plan.md"
+executor = "claude-code"
+main_goal = "One gesture or one batch operation is one undo step, and the undo stack has a ceiling."
+context = [
+    "Anchor 2026-09-04: store.rs:361-371 UndoOptions{capture_timeout_millis: 0, timestamp: ZeroClock}; :350-360 calls this deliberate Yjs parity (T-159.22.1). No depth cap exists.",
+    "Master audit S2: every transaction becomes an undo step; a sixty-tick drag needs sixty undos; unbounded history pins garbage.",
+    "T-257 owns undo scope semantics (what undo touches); this slice changes grouping and depth only and keeps T-257's rules.",
+    "store.rs is shared with T-937.1 (earlier) and T-937.3 (later); this slice packs between them.",
+]
+requirement = [
+    "New crates/map-engine-core/src/doc/undo_groups.rs (registered in doc/mod.rs): gesture window (default 300 ms, real clock on wasm, injectable in tests), begin_group/end_group, depth cap 200.",
+    "store.rs:350-371 comment replaced by the recorded decision: grouping supersedes Yjs parity, dated, naming this ticket and the rationale.",
+    "New apps/website/frontend/src/editor/state/operations/batch.rs (registered in operations.rs): with_batch(label, f) wrapping paste, delete-selection and align in one group.",
+    "Depth cap drops the oldest group; a test proves 201 groups leave 200 undoable with the earliest gone.",
+]
+current_state = [
+    "store.rs:361-371 constructs UndoOptions with capture_timeout 0 and ZeroClock; no group API exists; operations.rs exposes single-operation helpers only.",
+]
+approach = [
+    "Verify on main: a test applying three position operations within 50 ms needs three undos; paste the red.",
+    "Write undo_groups.rs; thread it through the UndoOptions construction in store.rs; expose begin/end on the store; write batch.rs and use it from one existing multi-op path.",
+    "Perturbation: set the gesture window to 0 in undo_groups.rs; the grouping test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask platform wave gate --slice T-937.2",
+]
+acceptance = [
+    "A drag gesture producing many transactions undoes in one step; two edits separated by more than the window undo separately.",
+    "Paste and delete-selection undo as single groups; the undo stack never exceeds the configured depth.",
+    "The Yjs-parity comment is replaced by a dated decision naming this ticket.",
+]
+depends_on = ["T-937.1"]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "crates/map-engine-core/src/doc/store.rs",
+    "crates/map-engine-core/src/doc/undo_groups.rs",
+    "crates/map-engine-core/src/doc/mod.rs",
+    "apps/website/frontend/src/editor/state/operations/batch.rs",
+    "apps/website/frontend/src/editor/state/operations.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "core"

@@ -1,0 +1,48 @@
+id = "T-940"
+kind = "program"
+title = "Website platform: events, telemetry, admin, content"
+summary = "Fixes the audit's S5 findings in apps/website/api: waitlist seats, registration tombstones and no_show, schedule cascades, flat telemetry counters, pool config, audit stream, users pager, vehicle mutations, wiki features, mortar ballistics, rcon actions, reservation tiers and telemetry events."
+class = "bug"
+status = "queued"
+order = 6999
+priority = 0
+spec = "docs/specs/audit_2026_09/t940_website_platform.md"
+plan = "docs/plans/t-940_plan.md"
+executor = "claude-code"
+children = [
+    "T-940.1",
+    "T-940.2",
+    "T-940.3",
+    "T-940.4",
+    "T-940.5",
+    "T-940.6",
+    "T-940.7",
+    "T-940.8",
+    "T-940.9",
+    "T-940.10",
+    "T-940.11",
+    "T-940.12",
+    "T-940.13",
+]
+main_goal = "Event, telemetry, admin and content data on the website stays consistent, complete and operator-tunable."
+context = [
+    "Master audit S5 (2026-09-04), verified against main @ 072988d57: events.rs:2042-2053, :2037-2041, :1338-1340; telemetry.rs:579-598; db.rs:31-34; audit.rs:161; admin.rs:60-61, :668-673; app.rs:628; wiki.rs:47/:208; mortar.rs:51-60.",
+    "Two claims are false and get no ticket (false_claims.md): capacity check (already fixed by T-227) and wiki parser limits (real gap is missing features).",
+    "handlers/events/events.rs is shared by .1/.2/.3/.12 and chains through depends_on; telemetry.rs by .4/.13; admin.rs by .7/.11; wiki.rs by .8/.9; dto.rs by .2/.8/.12; services/mod.rs by .6/.9.",
+    "Existing tickets referenced, not re-minted: T-136 AAR replay, T-135 modset manager, T-311 leaderboard tie-breaker, T-301 briefing kit, T-302 equip verify, T-304 registry scan, T-139 lobby preview, T-393 (shipped).",
+]
+requirement = [
+    "Every slice verifies its defect on main with a failing integration test before coding and pastes the red verbatim.",
+    "Migrations are numbered from 0022 upward; a slice takes the next free number at ship time if an earlier wave used its planned one.",
+    "Every schema change is mirrored in models/ and, where the frontend reads it, in apps/website/frontend/src/core/dto.rs.",
+]
+verify = [
+    "cargo xtask db test-it",
+    "cargo xtask platform wave gate --slice T-940.N   # per child",
+    "cargo xtask mk ci-local-leptos   # slices touching the frontend",
+]
+acceptance = [
+    "A promoted registrant holds a seat; withdrawals and no-shows are recorded; reschedules and deletes keep event_missions consistent.",
+    "No telemetry counter is dropped; audit rows stream live; admins page through users, mutate vehicles, edit richer wiki pages, kick and change map.",
+]
+created_at = "2026-09-05T02:33:18Z"

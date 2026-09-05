@@ -1,15 +1,50 @@
 id = "T-141"
 kind = "work"
 title = "Procedural slot naming"
-summary = "Adjective/nickname word packs for auto slot display names; manual override wins. After T-071 ORBAT numbering."
+summary = "Adjective/nickname word packs generate slot display names on creation; a manual override wins and survives renumbering. Builds on T-071 ORBAT numbering."
 class = "feature"
-status = "idea"
+status = "ready"
+order = 8000
 spec = "docs/platform/tbd_north_star_backlog.md"
+plan = "docs/plans/t-141_plan.md"
 executor = "claude-code"
+notes = "2026-09-05: T-071 is shipped (dependency kept). orbat_manager.rs lives at apps/website/frontend/src/pages/operations/ (not editor/panels) and only reads names; the creation call site is state/operations/entity.rs orbat_add_slot. state/operations.rs is shared with T-143 → different waves."
+priority = 3
 depends_on = ["T-071"]
-estimated = ["scope"]
+main_goal = "New slots get readable, distinct, deterministic names that a manual rename always overrides."
+context = [
+    "Anchor 2026-09-05: entity.rs orbat_add_slot (:2135) creates a slot with a role and a numbered callsign; no display-name generator exists.",
+    "T-071 (shipped) numbers slots per squad; display names are still the role string.",
+]
+requirement = [
+    "New state/operations/slot_naming.rs (registered in state/operations.rs): deterministic name from (squad seed, slot index, role) over two word packs.",
+    "orbat_add_slot assigns the generated name; a manual rename sets an override flag that renumbering never clears.",
+    "Names are wire-safe strings (schema wireSafeString).",
+]
+current_state = ["Slot display names default to the role; nothing procedural exists; overrides have no flag."]
+approach = [
+    "Write slot_naming.rs as a pure generator with tests (determinism, uniqueness within a squad, wire-safety).",
+    "Call it from orbat_add_slot; set the override flag on rename.",
+    "Perturbation: ignore the seed; the determinism test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-141",
+]
+acceptance = [
+    "New slots get readable distinct names; recreating the same squad yields the same names.",
+    "A manually renamed slot keeps its name through renumbering and reorder.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "apps/website/frontend/src/editor/state/operations/slot_naming.rs",
+    "apps/website/frontend/src/editor/state/operations.rs",
+    "apps/website/frontend/src/editor/state/operations/entity.rs",
+]
 
 [scope]
 domain = "website"
 layer = "frontend"
 component = "mission_creator"
+surface = ["ops_undo"]

@@ -3,10 +3,11 @@ kind = "work"
 title = "Editor chrome dblclick leak to map"
 summary = "Chrome docks/Attributes/top bar leak map dblclick — W210 eye-pass"
 class = "bug"
-status = "queued"
-order = 5360
+status = "ready"
+order = 8550
+spec = "docs/specs/existing/t927_chrome_dblclick_leak.md"
+plan = "docs/plans/t-927_plan.md"
 executor = "claude-code"
-created_at = "2026-08-19T15:28:38Z"
 notes = """
 WAVE-210 OPERATOR EYE-PASS. Double-clicking editor chrome (docks, Attributes modal, top bar) behaves like a map canvas dblclick (opens place picker / Attributes-on-entity paths). pointerdown is stopped in places but native dblclick still reaches the canvas handler.
 
@@ -21,21 +22,25 @@ requirement = [
     "Dblclick on docks Attributes overlay and top strip must not trigger map dblclick handlers.",
     "Map canvas dblclick place/Attributes paths remain intact.",
 ]
-current_state = [
-    "Chrome stops pointerdown in several places; native dblclick still reaches canvas.",
-]
+current_state = ["Chrome stops pointerdown in several places; native dblclick still reaches canvas."]
 approach = [
     "Stop dblclick propagation on chrome surfaces or gate canvas dblclick on target.",
     "Cover docks Attributes top strip at minimum.",
 ]
 verify = [
-    "Dblclick docks Attributes top strip produces no map place-picker or unintended Attributes open.",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-927",
+]
+acceptance = [
+    "Dblclick on docks, Attributes overlay and top strip produces no map place-picker or unintended Attributes open.",
     "Canvas empty-ground and entity dblclick still work.",
 ]
 citations = [
     "wave210 operator eye-pass",
     "mission_editor.rs dblclick handler",
 ]
+created_at = "2026-08-19T15:28:38Z"
 estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/editor/mission_editor.rs",

@@ -3,9 +3,11 @@ kind = "work"
 title = "Discord platform rework"
 summary = "Discord structure + bot flows: slot confirm, reminders, AAR links. Complements T-118 website slotting; mostly ops/human."
 class = "feature"
-status = "idea"
+status = "deferred"
+order = 6442
 spec = "docs/platform/tbd_north_star_backlog.md"
 executor = "human"
+notes = "deferred by operator 2026-09-04: \"T-137 Discord platform rework (executor=human)\""
 depends_on = ["T-118"]
 
 [scope]

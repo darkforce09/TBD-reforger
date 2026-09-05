@@ -1,13 +1,53 @@
 id = "T-133"
 kind = "work"
 title = "OFCR timed objectives"
-summary = "Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph."
+summary = "Objectives that evaluate at mission time T+N: the T-936.2 task model gains a schedule (delay, window), the tasks panel edits it, and TBD_TaskStateMachine.c fires the transition on the mission clock."
 class = "feature"
-status = "idea"
+status = "ready"
+order = 7570
+priority = 3
 spec = "docs/platform/tbd_north_star_backlog.md"
+plan = "docs/plans/t-133_plan.md"
 executor = "claude-code"
-depends_on = ["T-115"]
+main_goal = "An objective scheduled for T+N minutes stays inactive until then and evaluates afterwards."
+notes = "2026-09-05: T-115 shipped (kept); all three owned files are created by T-936.2 → depends_on it. Operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist. Scope engine/core (was repo/docs)."
+context = [
+    "Anchor 2026-09-05: T-936.2 creates mission/tasks.rs, panels/tasks_panel.rs and Objectives/TBD_TaskStateMachine.c and packs earlier; T-115 (shipped) is the capture/destroy/hold base.",
+    "Timed checks are the OFCR pattern: an objective that only counts after T+N minutes.",
+]
+requirement = [
+    "tasks.rs gains schedule {startAfterS, windowS} with validation (window > 0, start within mission length).",
+    "tasks_panel.rs edits the schedule with undoable operations.",
+    "TBD_TaskStateMachine.c evaluates scheduled tasks on the mission clock and logs each transition with the time.",
+]
+current_state = [
+    "Tasks (once T-936.2 lands) transition only on trigger completion; no time dimension exists.",
+]
+approach = [
+    "Model plus validator tests; panel with wasm tests; state machine with a headless boot log line.",
+    "Perturbation: window validation off; the validator test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features mission::tasks",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mod compile",
+    "cargo xtask platform wave gate --slice T-133",
+]
+acceptance = [
+    "An objective scheduled at T+10 min stays inactive before then and evaluates afterwards, visibly in the log.",
+    "Invalid schedules are refused in the panel with the reason.",
+]
+depends_on = [
+    "T-115",
+    "T-936.2",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "crates/map-engine-core/src/mission/tasks.rs",
+    "apps/website/frontend/src/editor/panels/tasks_panel.rs",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c",
+]
 
 [scope]
-domain = "repo"
-layer = "docs"
+domain = "engine"
+layer = "core"

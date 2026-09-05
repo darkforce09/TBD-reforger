@@ -1,10 +1,13 @@
 id = "T-111"
 kind = "program"
 title = "Lazy chunk residency @ 1M"
-summary = "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred."
-status = "idea"
+summary = "Program for T-067.1: byte-budget chunk eviction with cache eviction and reload on viewport re-entry, so a 1M-object terrain stays within browser memory. Spec: t067_spatial_chunks.md §Deferred."
+status = "queued"
+order = 8269
 spec = "docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md"
+plan = "docs/plans/t-111_plan.md"
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope. "
+notes = "needs-operator: frozen unmappable Scope.  | 2026-09-05: proposed scope engine/world written into the program and its child T-067.1; the frozen note is kept verbatim for the operator. depends_on T-067 is shipped (kept)."
 depends_on = ["T-067"]
 children = ["T-067.1"]
+created_at = "2026-09-05T03:30:00Z"

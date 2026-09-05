@@ -1,0 +1,56 @@
+id = "T-937.5"
+kind = "work"
+parent = "T-937"
+title = "Payload item schemas, duplicate slot guard, 8 MB ceiling"
+summary = "mission-editor-payload.schema.json gets item schemas for slots and editorLayers, the editor refuses duplicate slot ids on one callsign, and the editor enforces the 8388608-byte ceiling with a size readout."
+class = "bug"
+status = "ready"
+order = 7740
+priority = 1
+spec = "docs/specs/audit_2026_09/t937_editor_data_layer.md"
+plan = "docs/plans/t-937_5_plan.md"
+executor = "claude-code"
+main_goal = "Malformed, duplicated or oversize payloads are refused in the editor with a named reason."
+context = [
+    "Anchor 2026-09-04: mission-editor-payload.schema.json:42 slots and :43 editorLayers are bare arrays; nothing constrains their items.",
+    "Anchor: mission.schema.json:6 pins 8388608 bytes; enforced only in api contract/validate.rs:359,749; the editor ceiling mission_library.rs:1452 UPLOAD_MAX_BYTES is 64<<20.",
+    "Duplicate slot ids under one callsign pass every editor layer today; the API rejects late with a generic error.",
+    "Packs after T-937.3 so the duplicate guard can use slot_exists and the id_arrays helpers.",
+]
+requirement = [
+    "Payload schema: slots items reference the slot definition and editorLayers items the layer definition, additionalProperties false; golden fixture updated.",
+    "New apps/website/frontend/src/editor/state/operations/slot_ids.rs (registered in operations.rs): duplicate_slot_ids(doc) -> Vec<(callsign, id)>; the save path refuses with a message naming them.",
+    "mission_library.rs:1452 UPLOAD_MAX_BYTES becomes 8388608 from one shared constant; the library shows current bytes against the ceiling before upload.",
+]
+current_state = [
+    "Schema items are unconstrained; no duplicate-id guard exists; the editor ceiling is 64 MiB versus the 8 MiB the API enforces.",
+]
+approach = [
+    "Verify on main: a payload with a slot item {bogus: 1} validates; paste the red.",
+    "Edit the payload schema and golden; write slot_ids.rs with tests; change the ceiling and add the readout; run schema-validate.",
+    "Perturbation: drop the callsign key from the duplicate check; its test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask ci schema-validate",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask platform wave gate --slice T-937.5",
+]
+acceptance = [
+    "A payload whose slot item carries an unknown key fails validation; valid payloads still pass.",
+    "Saving with two identical slot ids under one callsign is refused with a message naming both.",
+    "The library refuses uploads above 8388608 bytes and shows the size against that ceiling.",
+]
+depends_on = ["T-937.3"]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "packages/tbd-schema/schema/mission-editor-payload.schema.json",
+    "apps/website/frontend/src/editor/library/mission_library.rs",
+    "apps/website/frontend/src/editor/state/operations/slot_ids.rs",
+    "apps/website/frontend/src/editor/state/operations.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["validation"]

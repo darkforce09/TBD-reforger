@@ -1,0 +1,45 @@
+id = "T-941.1"
+kind = "work"
+title = "Safestart armed during LOBBY and BRIEFING"
+summary = "The safestart damage shield arms for LOBBY and BRIEFING as well as SAFE_START, so bodies auto-deployed during the lobby window cannot be hurt before the mission goes live."
+class = "bug"
+status = "ready"
+order = 7580
+spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
+plan = "docs/plans/t-941_1_plan.md"
+executor = "claude-code"
+priority = 0
+parent = "T-941"
+main_goal = "Nobody takes damage before the mission goes live."
+context = [
+    "Anchor 2026-09-04: Gamemode/TBD_SafestartManager.c:252-265 arms only for SAFE_START (deliberate per :248-250); LOBBY auto-deploy (~250 ms, TBD_SpawnManager m_bAutoDeploy) puts bodies in the world.",
+    "Operator authorization: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
+    "The TickCountdown-loop claim is false (false_claims.md); :389-417 has three exits and is not touched.",
+]
+requirement = [
+    "TBD_SafestartManager.c: the arm predicate covers LOBBY, BRIEFING and SAFE_START; disarm happens once on LIVE.",
+    "The :248-250 comment becomes a dated decision naming T-941.1 and the lobby auto-deploy window.",
+    "Stage transitions LOBBY to BRIEFING to SAFE_START keep the shield up without re-applying it per body.",
+]
+current_state = ["Shield up only in SAFE_START; players standing in the world during LOBBY and BRIEFING are damageable."]
+approach = [
+    "Verify on main: read :252-265 and record the armed stage set in the report as the defect evidence (no script unit test lane exists).",
+    "Widen the predicate; update the comment; compile; run the boot lane.",
+    "Perturbation: compare the stage to a string literal; mod compile must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mod compile",
+    "cargo xtask mod world-boot",
+    "cargo xtask platform wave gate --slice T-941.1",
+]
+acceptance = [
+    "The mod compiles and the boot lane passes with the widened predicate.",
+    "Checklist: a player deployed during LOBBY takes no damage from a grenade; damage resumes after GoLive.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c"]
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "gamemode"

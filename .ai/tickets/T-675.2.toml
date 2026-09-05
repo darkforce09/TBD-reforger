@@ -3,8 +3,10 @@ kind = "work"
 title = "T-675 Enfusion reader"
 summary = "Enfusion mod reader half of T-675: load wire vehicles[] roster and drive crew spawn from authored seats."
 class = "feature"
-status = "queued"
-order = 4320
+status = "ready"
+order = 7280
+plan = "docs/plans/t-675_2_plan.md"
+spec = "docs/specs/existing/t675_vehicle_roster_wire.md"
 executor = "claude-code"
 parent = "T-675"
 main_goal = "Read compiled vehicles[] roster in the mod and spawn crew from authored seats."
@@ -16,6 +18,42 @@ citations = [
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionVehicleStruct.c",
+]
+
+depends_on = [
+    "T-675.1",
+    "T-674.2",
+]
+
+context = [
+    "Reader half of T-675: the compiled vehicles[] roster (T-675.1) must reach the mod and drive crew spawn from authored seats.",
+    "T-674.2 lands the loader identity binding and the validator 1.3 entry first on the same files.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
+]
+
+requirement = [
+    "TBD_MissionLoader binds vehicles[] into a roster struct (new TBD_MissionVehicleStruct.c); TBD_SpawnManager spawns each vehicle and seats the referenced slots.",
+    "An unknown prefab or unresolved slot ref logs and skips that row; no packages/tbd-schema edits.",
+]
+
+current_state = [
+    "The loader has no vehicles[] field and SpawnManager spawns bodies only; the T-076 crew UI ships with nothing consuming it in game.",
+    "Salvage commit 113108a1 is shared with T-674; check overlap before reuse.",
+]
+
+approach = [
+    "Add the struct and loader binding, then spawn vehicles and seat crew in SpawnManager after body spawn; packs after T-674.2 and T-675.1 (order 4321).",
+]
+
+verify = [
+    "cargo xtask mod compile",
+    "cargo xtask platform wave gate --slice T-675.2",
+]
+
+acceptance = [
+    "A mission with an authored roster spawns its vehicles with crew seated as authored; rosterless missions spawn exactly as before.",
+    "Headless compile clean; in-game seating verification sits on the human checklist.",
 ]
 
 [scope]

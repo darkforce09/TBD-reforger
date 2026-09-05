@@ -3,8 +3,10 @@ kind = "work"
 title = "Vehicles cannot be deleted — slots can, vehicles cannot"
 summary = "Vehicles cannot be deleted — slots can, vehicles cannot"
 class = "bug"
-status = "queued"
-order = 5190
+status = "ready"
+order = 8460
+spec = "docs/specs/existing/t837_vehicle_delete.md"
+plan = "docs/plans/t-837_plan.md"
 executor = "claude-code"
 notes = """
 operator eye-pass wave-205; census XFORM-DEL-001; coordinates with T-819 — wave 210/211 packing
@@ -24,6 +26,7 @@ context = [
     "Wave-205 eye-pass: placed vehicle cannot be deleted; slots delete fine via Del and menu.",
     "Census XFORM-DEL-001 lead; T-800 seed made browser-testable and it fails.",
     "Wave-145 prune lesson: vehicle ids live in ctx.selection.",
+    "Anchors: delete_selection is operations/entity.rs:64 (operations.rs is a 45-line re-export root); the PLACED VEHICLES rows are outliner_tree.rs:1129-1139.",
 ]
 requirement = [
     "AUDIT FIRST: delete_selection Del, context menu Delete, outliner PLACED VEHICLES row.",
@@ -43,6 +46,11 @@ verify = [
     "Place vehicle select map or outliner Del gone from map outliner compiled export.",
     "One undo restores vehicle WITH its crew assignments.",
     "T-844 delete_selection vehicle partition acceptance delivered.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "Del, the context menu and the outliner row each remove a selected vehicle from map, outliner and compiled export in one undo step.",
+    "Undo restores the vehicle with its crew assignments; crewed slots reappear on delete.",
 ]
 citations = [
     "wave-205 eye-pass XFORM-DEL-001",
@@ -53,9 +61,10 @@ citations = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/website/frontend/src/editor/state/operations.rs",
+    "apps/website/frontend/src/editor/state/operations/entity.rs",
     "apps/website/frontend/src/editor/mission_editor.rs",
     "apps/website/frontend/src/editor/panels/context_menu.rs",
+    "apps/website/frontend/src/editor/panels/outliner_tree.rs",
 ]
 
 [scope]

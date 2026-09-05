@@ -1,0 +1,52 @@
+id = "T-940.11"
+kind = "work"
+parent = "T-940"
+title = "RCON kick and change-map through the host agent"
+summary = "The host agent bridge gains kick and change-map actions with a strict argument grammar; admin.rs maps those rcon commands to them instead of returning 503."
+class = "feature"
+status = "ready"
+order = 8150
+priority = 1
+spec = "docs/specs/audit_2026_09/t940_website_platform.md"
+plan = "docs/plans/t-940_11_plan.md"
+executor = "claude-code"
+main_goal = "Admins kick players and change maps from the website."
+context = [
+    "Anchor 2026-09-04: handlers/admin/admin.rs:668-673 agent_action_for maps Restart to Some and ChangeMap|Kick|Custom to None, giving 503 RCON_ACTION_UNSUPPORTED (:765-771).",
+    "services/game_agent.rs is the T-289 socket bridge (a bash filter behind tbd-reforger-agent.sock); admin.rs:537-559 documents its safety model.",
+    "Depends on T-940.7 (admin.rs). Ban stays a database action (parse_rcon_command:498-510), not an rcon action.",
+    "The host-side filter script is not in this repo; its required grammar goes on the plan's operator checklist.",
+]
+requirement = [
+    "game_agent.rs: AgentAction::Kick{player_id} and ChangeMap{scenario_id} with strict validation (numeric id; scenario from the server's known list).",
+    "admin.rs agent_action_for maps ChangeMap and Kick to the new actions; Custom stays 503.",
+    "Every dispatched action is audited with the admin id and arguments.",
+]
+current_state = [
+    "Only Restart crosses the bridge.",
+]
+approach = [
+    "Verify on main: an integration test posting rcon kick gets 503; paste the red.",
+    "Extend the action enum and its wire encoding with tests; map the commands; audit the dispatch.",
+    "Perturbation: accept a non-numeric player id; the validation test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask db test-it",
+    "cargo xtask platform wave gate --slice T-940.11",
+]
+acceptance = [
+    "Posting rcon kick 12 dispatches Kick{12} to the agent and returns 202; a non-numeric id returns 400.",
+    "Posting rcon change_map with a known scenario dispatches ChangeMap; an unknown scenario returns 400.",
+    "Custom commands still return 503 RCON_ACTION_UNSUPPORTED.",
+]
+depends_on = ["T-940.7"]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/api/src/handlers/admin/admin.rs",
+    "apps/website/api/src/services/game_agent.rs",
+]
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

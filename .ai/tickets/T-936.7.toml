@@ -1,0 +1,59 @@
+id = "T-936.7"
+kind = "work"
+parent = "T-936"
+title = "Tactical graphics: phase lines, boundaries, curved arrows"
+summary = "A tacticalGraphics block (phase_line|boundary|axis_of_advance|curved_arrow polylines with label, side and style) extends the marker vocabulary; the canvas draws and edits them and tactical_graphics.rs validates them."
+class = "feature"
+status = "ready"
+order = 7530
+priority = 2
+spec = "docs/specs/audit_2026_09/t936_mission_logic.md"
+plan = "docs/plans/t-936_7_plan.md"
+executor = "claude-code"
+main_goal = "Authors draw phase lines, boundaries and arrows on the map and they reach the compiled document."
+context = [
+    "Anchor 2026-09-04: mission.schema.json:1171 $defs/marker is additionalProperties false with a closed 64-icon enum; T-673 (queued) adds color, fill, rotation and shape to markers.",
+    "Depends on T-673 so styles reuse its color and fill vocabulary; T-673 also owns mission.schema.json, so this packs after it and after T-936.6.",
+    "T-132 visual diff and T-673 markers are related, not duplicated: this slice adds multi-point graphics, not point markers.",
+]
+requirement = [
+    "Schema: top-level tacticalGraphics [{id, kind: phase_line|boundary|axis_of_advance|curved_arrow, points: [[x, z]...] minItems 2, label?, sideKey?, style?}], additionalProperties false.",
+    "New mission/tactical_graphics.rs (registered in mission/mod.rs): model, validator (point count per kind, finite coordinates); registered in extensions.rs AUTHORED_BLOCKS.",
+    "New canvas/tactical_graphics.rs (registered in canvas/mod.rs): draws each kind (Catmull-Rom for curved arrows), vertex drag editing, selection; undoable operations.",
+    "Rendering goes through the existing overlay layer; no new render lane in map-engine-render.",
+]
+current_state = [
+    "Markers are single points with an icon; no polyline or arrow graphic exists in the schema, the canvas or the compiled document.",
+]
+approach = [
+    "Verify on main: a payload carrying tacticalGraphics flattens without it; paste the red.",
+    "Add schema and golden; write the core model with tests; register; build the canvas module with a draw tool per kind.",
+    "Perturbation: accept one point for a phase line; the validator test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask ci schema-validate",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-936.7",
+]
+acceptance = [
+    "A mission with one graphic of each kind flattens to a tacticalGraphics block that validates; the canvas draws all four kinds.",
+    "Dragging a vertex updates the graphic and undoes in one step; a graphic with too few points is refused.",
+]
+depends_on = ["T-673", "T-936.6"]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "packages/tbd-schema/schema/mission.schema.json",
+    "apps/website/frontend/src/editor/canvas/tactical_graphics.rs",
+    "apps/website/frontend/src/editor/canvas/mod.rs",
+    "crates/map-engine-core/src/mission/tactical_graphics.rs",
+    "crates/map-engine-core/src/mission/mod.rs",
+    "crates/map-engine-core/src/mission/extensions.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["map_canvas"]

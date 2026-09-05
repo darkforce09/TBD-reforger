@@ -11,16 +11,16 @@
 <!-- ticket-sync:next:start -->
 ### Recommended next work (auto-generated)
 
+- **T-940** — Website platform: events, telemetry, admin, content (queued)
+- **T-311** — Leaderboard ORDER BY lacks tie-breaker; paging unstable (ready)
+- **T-305** — pak.rs seeks data_start plus offset; offsets are absolute (ready)
+- **T-298** — Gate tbd-tools density tests in CI (ready)
+- **T-943** — platform wave push deadlocks on large LFS ranges (ready)
+- **T-300** — Shared CARGO_TARGET_DIR serves unmerged slice binaries (ready)
+- **T-924** — Gate verdict receipt required at land (ready)
 - **T-090** — Map visualization program (ready)
-- **T-120** — Staging soak + golden mission smoke (queued)
-- **T-146** — Asset Browser Data Wiring (queued)
-- **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-673** — Marker style and Area markers — the $defs/marker widening (queued)
-- **T-674** — T-216 follow-on: slot identity reaches the wire (queued)
-- **T-675** — Vehicle roster reaches game — T-076 compile half (queued)
-- **T-676** — Trigger activation and effects — the Enfusion runtime (queued)
-- **T-677** — Waypoints — group movement orders (queued)
-- **T-678** — Group AI state: combat mode, behaviour, formation, speed (queued)
+- **T-935** — Map binary storage — hybrid rkyv + POD (queued)
+- **T-277** — 27.4% of the map catalogue is unclassified (ready)
 <!-- ticket-sync:next:end -->
 
 ---

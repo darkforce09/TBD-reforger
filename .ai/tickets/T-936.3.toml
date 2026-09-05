@@ -1,0 +1,56 @@
+id = "T-936.3"
+kind = "work"
+parent = "T-936"
+title = "Editable radio nets and frequencies"
+summary = "A radio panel authors radioPlan nets (id, label, freqMHz, assignments) into the document; flatten.rs derive_radio_plan (:1927-1960) fills defaults only when nothing is authored; a core radio_plan.rs validates ranges and collisions."
+class = "feature"
+status = "ready"
+order = 7470
+priority = 1
+spec = "docs/specs/audit_2026_09/t936_mission_logic.md"
+plan = "docs/plans/t-936_3_plan.md"
+executor = "claude-code"
+main_goal = "Authors see and set radio nets; derivation is only the default."
+context = [
+    "Anchor 2026-09-04: flatten.rs:1927-1960 derive_radio_plan synthesizes NET_FREQ_BASE_MHZ + STEP x index (T-203); :1876 states the editor has no radio UI and no radioPlan in the payload.",
+    "mission.schema.json already defines $defs/radioPlan and $defs/net (:481 required id, label, freqMHz; freqMHz minimum 30); Radio/TBD_RadioPlan.c parses it in the mod.",
+    "flatten.rs is shared with T-936.1 (earlier) and T-674.1/T-675.1/T-290/T-291; panels/mod.rs, mission/mod.rs and extensions.rs with T-936.1/.2; packs after T-936.1.",
+]
+requirement = [
+    "New mission/radio_plan.rs (registered in mission/mod.rs): authored-net model, range and duplicate-frequency validation, the net cap flatten.rs:1392 enforces; registered in extensions.rs AUTHORED_BLOCKS.",
+    "flatten.rs:1927-1960 derive_radio_plan runs only when no authored radioPlan is present; authored nets pass through unchanged; the default output stays byte-identical.",
+    "New panels/radio_panel.rs (registered in panels/mod.rs): net list with label, frequency and squad or faction assignment; undoable operations; a Reset-to-derived action.",
+    "No schema change: the existing $defs/radioPlan and $defs/net shapes are the contract.",
+]
+current_state = [
+    "Frequencies are invisible to authors; every mission gets base + step x index; Radio/TBD_RadioPlan.c consumes whatever flatten derived.",
+]
+approach = [
+    "Verify on main: a payload carrying radioPlan flattens to the derived plan, not the authored one; paste the red.",
+    "Write radio_plan.rs with tests; gate derive_radio_plan; build the panel; confirm the Class-R fixtures are unchanged.",
+    "Perturbation: drop the duplicate-frequency check; its test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-936.3",
+]
+acceptance = [
+    "An authored net list reaches the compiled document unchanged; a mission without one gets today's derived plan byte-for-byte.",
+    "Two nets on one frequency or a frequency outside the schema range are refused in the panel with a message.",
+]
+depends_on = ["T-936.1"]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "apps/website/frontend/src/editor/panels/radio_panel.rs",
+    "apps/website/frontend/src/editor/panels/mod.rs",
+    "crates/map-engine-core/src/mission/radio_plan.rs",
+    "crates/map-engine-core/src/mission/mod.rs",
+    "crates/map-engine-core/src/mission/extensions.rs",
+    "crates/map-engine-core/src/mission/flatten.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "core"

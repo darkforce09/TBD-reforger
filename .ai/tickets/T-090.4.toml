@@ -4,7 +4,7 @@ title = "T-090.4 — Z placement audit (buried / floating objects)"
 summary = "T-090.4 — Z placement audit (buried / floating objects)"
 class = "audit"
 status = "ready"
-order = 900
+order = 8010
 spec = "docs/specs/Mission_Creator_Architecture/t090_4_z_placement_audit.md"
 plan = "docs/plans/t-090_4_plan.md"
 executor = "claude-code"
@@ -13,6 +13,7 @@ main_goal = "Phase A: offline tool compares each exported map object's pivot Z a
 context = [
     "Enfusion map objects export with pivots at ground, roof or model center, so the basemap can render props at wrong heights across 1M+ Eden objects.",
     "Phase A is the cheap full-catalog screen: one DEM sample per object, detect only, no auto-fix (geometry-aware Phase B is T-090.6).",
+    "T-090.3 is deferred; the catalog this audit reads is the shipped T-090.12 objects/chunks/*.json.gz plus prefabs.json.gz (world_host.rs loads them).",
 ]
 requirement = [
     "Compare each exported object's pivot Z against the T-091 DEM at (x, y) with per-kind warn/fail thresholds.",
@@ -36,8 +37,11 @@ acceptance = [
 ]
 estimated = ["scope"]
 owns = [
-    "tools/tbd-tools/src/world",
-    "packages/map-assets/everon/objects",
+    "tools/tbd-tools/src/world/z_audit.rs",
+    "tools/tbd-tools/src/world/mod.rs",
+    "tools/tbd-tools/src/bin/world.rs",
+    "packages/map-assets/everon/objects/z-audit.json",
+    "packages/map-assets/everon/objects/z-audit-failures.json",
 ]
 
 [scope]

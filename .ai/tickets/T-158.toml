@@ -1,13 +1,50 @@
 id = "T-158"
 kind = "work"
 title = "Editor shell UX consolidation"
-summary = "Consolidate Settings buttons, wire up top bar, remove redundant Assets tab."
+summary = "Consolidate the two Settings entry points into one, wire the top-bar buttons that are still inert, and remove the redundant left-dock Assets tab now that the right dock is the asset surface."
 class = "feature"
-status = "idea"
-executor = "cursor-docs"
-estimated = ["scope"]
+status = "ready"
+order = 7970
+spec = "docs/specs/ideas/t158_editor_shell.md"
+plan = "docs/plans/t-158_plan.md"
+executor = "claude-code"
+notes = "2026-09-05: executor claude-code (UI code, not docs). Packs after T-142 and T-939.x on top_strip.rs; dock_left.rs is shared with T-939.x too."
+priority = 3
+main_goal = "One Settings entry, no inert top-bar buttons, no duplicate Assets tab."
+context = [
+    "Anchor 2026-09-05: dock_left.rs:897-908 documents the Hierarchy/Layers/Assets/History/Settings tab set partly mirrored by the strip; top_strip.rs:84 lists History (disabled) · Undo/Redo · Save · Export · Settings.",
+    "T-818 moved asset editing to the right dock; T-142 packs earlier on top_strip.rs.",
+]
+requirement = [
+    "One Settings entry (top-strip gear) opens the Mission Settings dialog; the dock duplicate is removed.",
+    "Every top-strip button is wired or removed; none renders inert.",
+    "The left dock's Assets tab is removed; its search lives in the right dock.",
+]
+current_state = ["Two Settings buttons, a disabled History button, and an Assets tab that duplicates the right dock."]
+approach = [
+    "Inventory the strip and dock tabs with a wasm test that lists them; remove and rewire; the test pins the final set.",
+    "Perturbation: re-add the Assets tab; the tab-set test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-158",
+]
+acceptance = [
+    "The editor has one Settings entry, no inert top-bar buttons and no left-dock Assets tab.",
+    "Every removed control's function is reachable elsewhere and named in the report.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "apps/website/frontend/src/editor/panels/dock_left.rs",
+    "apps/website/frontend/src/editor/panels/top_strip.rs",
+]
 
 [scope]
 domain = "website"
 layer = "frontend"
 component = "mission_creator"
+surface = [
+    "dock_left",
+    "top_strip",
+]

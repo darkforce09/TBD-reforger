@@ -6,11 +6,592 @@
   "git_base": "main",
   "tickets": [
     {
+      "id": "T-311",
+      "title": "Leaderboard ORDER BY lacks tie-breaker; paging unstable",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t311_leaderboard_tiebreak.md",
+      "branch": "ticket/T-311"
+    },
+    {
+      "id": "T-305",
+      "title": "pak.rs seeks data_start plus offset; offsets are absolute",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t305_pak_offset.md",
+      "branch": "ticket/T-305"
+    },
+    {
+      "id": "T-298",
+      "title": "Gate tbd-tools density tests in CI",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t298_tbd_tools_gate.md",
+      "branch": "ticket/T-298"
+    },
+    {
+      "id": "T-943",
+      "title": "platform wave push deadlocks on large LFS ranges",
+      "status": "ready",
+      "spec": "docs/specs/factory/t943_push_guard_deadlock.md",
+      "branch": "ticket/T-943"
+    },
+    {
+      "id": "T-300",
+      "title": "Shared CARGO_TARGET_DIR serves unmerged slice binaries",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t300_shared_target.md",
+      "branch": "ticket/T-300"
+    },
+    {
+      "id": "T-924",
+      "title": "Gate verdict receipt required at land",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t924_gate_verdict.md",
+      "branch": "ticket/T-924"
+    },
+    {
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "branch": "ticket/T-090"
+    },
+    {
+      "id": "T-277",
+      "title": "27.4% of the map catalogue is unclassified",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t277_prefab_classify.md",
+      "branch": "ticket/T-277"
+    },
+    {
+      "id": "T-149",
+      "title": "Forest mass polygon smoothing",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t149_forest_smooth.md",
+      "branch": "ticket/T-149"
+    },
+    {
+      "id": "T-676",
+      "title": "Trigger activation and effects \u2014 the Enfusion runtime",
+      "status": "ready",
+      "spec": "docs/specs/existing/t676_trigger_runtime.md",
+      "branch": "ticket/T-676"
+    },
+    {
+      "id": "T-677",
+      "title": "Waypoints \u2014 group movement orders",
+      "status": "ready",
+      "spec": "docs/specs/existing/t677_waypoint_runtime.md",
+      "branch": "ticket/T-677"
+    },
+    {
+      "id": "T-678",
+      "title": "Group AI state: combat mode, behaviour, formation, speed",
+      "status": "ready",
+      "spec": "docs/specs/existing/t678_group_ai_state.md",
+      "branch": "ticket/T-678"
+    },
+    {
+      "id": "T-673",
+      "title": "Marker style and Area markers \u2014 the $defs/marker widening",
+      "status": "ready",
+      "spec": "docs/specs/existing/t673_marker_style_reader.md",
+      "branch": "ticket/T-673"
+    },
+    {
+      "id": "T-212",
+      "title": "Typed per-side objectives with attributes",
+      "status": "ready",
+      "spec": "docs/specs/existing/t212_typed_objectives.md",
+      "branch": "ticket/T-212"
+    },
+    {
+      "id": "T-680",
+      "title": "Vehicle states: lock, fuel, ammo",
+      "status": "ready",
+      "spec": "docs/specs/existing/t680_vehicle_states.md",
+      "branch": "ticket/T-680"
+    },
+    {
+      "id": "T-681",
+      "title": "Entity states: health, allow-damage, show-model, size, stamina",
+      "status": "ready",
+      "spec": "docs/specs/existing/t681_entity_states.md",
+      "branch": "ticket/T-681"
+    },
+    {
+      "id": "T-682",
+      "title": "Environment readers: fog, wind, view distance",
+      "status": "ready",
+      "spec": "docs/specs/existing/t682_environment_readers.md",
+      "branch": "ticket/T-682"
+    },
+    {
+      "id": "T-684",
+      "title": "Mission parameters as first-class document objects",
+      "status": "ready",
+      "spec": "docs/specs/existing/t684_mission_params.md",
+      "branch": "ticket/T-684"
+    },
+    {
+      "id": "T-685",
+      "title": "Zone volumes: height bounds capture counts and owner",
+      "status": "ready",
+      "spec": "docs/specs/existing/t685_zone_volumes.md",
+      "branch": "ticket/T-685"
+    },
+    {
+      "id": "T-689",
+      "title": "Play-area enforcement gains a vehicle-class axis: the aircraft exemption",
+      "status": "ready",
+      "spec": "docs/specs/existing/t689_play_area_vehicle_axis.md",
+      "branch": "ticket/T-689"
+    },
+    {
+      "id": "T-702",
+      "title": "Whole-terrain zone \u2014 one zone sized to the map",
+      "status": "ready",
+      "spec": "docs/specs/existing/t702_whole_terrain_zone.md",
+      "branch": "ticket/T-702"
+    },
+    {
+      "id": "T-705",
+      "title": "Player gadget flags \u2014 map, compass, watch, GPS, radio",
+      "status": "ready",
+      "spec": "docs/specs/existing/t705_gadget_flags.md",
+      "branch": "ticket/T-705"
+    },
+    {
+      "id": "T-654",
+      "title": "Conditional inclusion: variant-gated document subtrees",
+      "status": "ready",
+      "spec": "docs/specs/existing/t654_variant_inclusion.md",
+      "branch": "ticket/T-654"
+    },
+    {
+      "id": "T-679",
+      "title": "Placement scatter: radius and area shape",
+      "status": "ready",
+      "spec": "docs/specs/existing/t679_placement_scatter.md",
+      "branch": "ticket/T-679"
+    },
+    {
+      "id": "T-299",
+      "title": "Single-faction compile ships a phantom opfor",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t299_phantom_opfor.md",
+      "branch": "ticket/T-299"
+    },
+    {
+      "id": "T-310",
+      "title": "Arsenal attachments never reach the compiled document",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t310_arsenal_attachments.md",
+      "branch": "ticket/T-310"
+    },
+    {
+      "id": "T-290",
+      "title": "Nine dead flatten fields mod never reads",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t290_dead_flatten_fields.md",
+      "branch": "ticket/T-290"
+    },
+    {
+      "id": "T-291",
+      "title": "Resolve five schema fields implemented on no surface",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t291_orphan_schema_fields.md",
+      "branch": "ticket/T-291"
+    },
+    {
+      "id": "T-242",
+      "title": "Emit T-216 slot deltas through flatten",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t242_t216_deltas.md",
+      "branch": "ticket/T-242"
+    },
+    {
+      "id": "T-133",
+      "title": "OFCR timed objectives",
+      "status": "ready",
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-133"
+    },
+    {
+      "id": "T-301",
+      "title": "Briefing kit lists 7 of 13 gear fields",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t301_briefing_kit.md",
+      "branch": "ticket/T-301"
+    },
+    {
+      "id": "T-302",
+      "title": "Prove T-182 weapon equip on a live body",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t302_weapon_equip_boot.md",
+      "branch": "ticket/T-302"
+    },
+    {
+      "id": "T-304",
+      "title": "RegistryScan never reads weapon weight; 32 wrong rows",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t304_registry_scan_weight.md",
+      "branch": "ticket/T-304"
+    },
+    {
+      "id": "T-139",
+      "title": "Lobby loadout visual preview",
+      "status": "ready",
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-139"
+    },
+    {
+      "id": "T-257",
+      "title": "Undo scope misses loadouts, items, objectives, markers",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t257_undo_scope.md",
+      "branch": "ticket/T-257"
+    },
+    {
+      "id": "T-190",
+      "title": "Two tabs on one mission clobber each other",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t190_tab_clobber.md",
+      "branch": "ticket/T-190"
+    },
+    {
+      "id": "T-932",
+      "title": "Parked briefing markers survive server save/reload",
+      "status": "ready",
+      "spec": "docs/specs/existing/t932_parked_markers_persist.md",
+      "branch": "ticket/T-932"
+    },
+    {
+      "id": "T-930",
+      "title": "Vehicle first-paint disc until moved",
+      "status": "ready",
+      "spec": "docs/specs/existing/t930_vehicle_first_paint.md",
+      "branch": "ticket/T-930"
+    },
+    {
+      "id": "T-704",
+      "title": "Command palette over every editor command",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t704_command_palette.md",
+      "branch": "ticket/T-704"
+    },
+    {
+      "id": "T-142",
+      "title": "MC shell layout polish",
+      "status": "ready",
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-142"
+    },
+    {
+      "id": "T-157",
+      "title": "Mission Create visual overhaul",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t157_mission_create.md",
+      "branch": "ticket/T-157"
+    },
+    {
+      "id": "T-158",
+      "title": "Editor shell UX consolidation",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t158_editor_shell.md",
+      "branch": "ticket/T-158"
+    },
+    {
+      "id": "T-129",
+      "title": "Building floor selector",
+      "status": "ready",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md",
+      "branch": "ticket/T-129"
+    },
+    {
+      "id": "T-131",
+      "title": "Route planner tool",
+      "status": "ready",
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-131"
+    },
+    {
+      "id": "T-141",
+      "title": "Procedural slot naming",
+      "status": "ready",
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-141"
+    },
+    {
+      "id": "T-146",
+      "title": "Asset Browser Data Wiring",
+      "status": "ready",
+      "spec": "docs/specs/existing/t146_asset_browser_data_wiring.md",
+      "branch": "ticket/T-146"
+    },
+    {
+      "id": "T-143",
+      "title": "Water mask placement guard and exact hydrology",
+      "status": "ready",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
+      "branch": "ticket/T-143"
+    },
+    {
+      "id": "T-135",
+      "title": "Mission modset manager",
+      "status": "ready",
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-135"
+    },
+    {
+      "id": "T-309",
+      "title": "FactionDoc squad level for Apply Template",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t309_faction_doc_squads.md",
+      "branch": "ticket/T-309"
+    },
+    {
+      "id": "T-140",
+      "title": "Mission client payload budget",
+      "status": "ready",
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-140"
+    },
+    {
+      "id": "T-136",
+      "title": "3D AAR / OCAP-style replay",
+      "status": "ready",
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-136"
+    },
+    {
+      "id": "T-295",
+      "title": "Realtime collaborative editing",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t295_realtime_collab.md",
+      "branch": "ticket/T-295"
+    },
+    {
+      "id": "T-132",
+      "title": "Multiplayer MC + visual git",
+      "status": "ready",
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-132"
+    },
+    {
+      "id": "T-138",
+      "title": "One-command self-host setup via xtask",
+      "status": "ready",
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-138"
+    },
+    {
+      "id": "T-294",
+      "title": "Arland has a manifest and no object data",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t294_arland_objects.md",
+      "branch": "ticket/T-294"
+    },
+    {
+      "id": "T-653",
+      "title": "Preserve the three headless editor-screenshot findings",
+      "status": "ready",
+      "spec": "docs/specs/ideas/t653_headless_screenshot.md",
+      "branch": "ticket/T-653"
+    },
+    {
+      "id": "T-905",
+      "title": "Split 37 T-159 frontend SIZE-3 allowlist files",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-905"
+    },
+    {
+      "id": "T-906",
+      "title": "Split 7 T-145 API SIZE-3 allowlist files",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-906"
+    },
+    {
+      "id": "T-907",
+      "title": "Split 11 map-engine SIZE-3 allowlist files",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-907"
+    },
+    {
+      "id": "T-908",
+      "title": "Split 8 xtask/tools SIZE-3 allowlist files",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-908"
+    },
+    {
+      "id": "T-933",
+      "title": "leptos-gates v-suite goldens break pre-close exit-0",
+      "status": "ready",
+      "spec": "docs/specs/existing/t933_leptos_gates_exit.md",
+      "branch": "ticket/T-933"
+    },
+    {
+      "id": "T-816",
+      "title": "Armed composition hint open; one Esc clears both layers wrongly",
+      "status": "ready",
+      "spec": "docs/specs/existing/t816_esc_hint_layer.md",
+      "branch": "ticket/T-816"
+    },
+    {
+      "id": "T-817",
+      "title": "Grid labels lag ~1.4s on stationary wheel zoom",
+      "status": "ready",
+      "spec": "docs/specs/existing/t817_grid_label_zoom_lag.md",
+      "branch": "ticket/T-817"
+    },
+    {
+      "id": "T-820",
+      "title": "Catalog failure generic cause; chips visible wrongly",
+      "status": "ready",
+      "spec": "docs/specs/existing/t820_catalog_failure_cause.md",
+      "branch": "ticket/T-820"
+    },
+    {
+      "id": "T-821",
+      "title": "Save version prefill static; second save 409s",
+      "status": "ready",
+      "spec": "docs/specs/existing/t821_save_version_prefill.md",
+      "branch": "ticket/T-821"
+    },
+    {
+      "id": "T-822",
+      "title": "Outliner dblclick must not open asset picker under Attributes",
+      "status": "ready",
+      "spec": "docs/specs/existing/t822_outliner_dblclick_bubble.md",
+      "branch": "ticket/T-822"
+    },
+    {
+      "id": "T-823",
+      "title": "OBJ readout must count vehicles or rename honestly",
+      "status": "ready",
+      "spec": "docs/specs/existing/t823_obj_readout_vehicles.md",
+      "branch": "ticket/T-823"
+    },
+    {
+      "id": "T-824",
+      "title": "Placed zones must render visibly at rest on map",
+      "status": "ready",
+      "spec": "docs/specs/existing/t824_zone_render_at_rest.md",
+      "branch": "ticket/T-824"
+    },
+    {
+      "id": "T-827",
+      "title": "Validation chip red under 4.5:1 live-effective",
+      "status": "ready",
+      "spec": "docs/specs/existing/t827_validation_chip_contrast.md",
+      "branch": "ticket/T-827"
+    },
+    {
+      "id": "T-828",
+      "title": "Marker captions drift when zoom changes without rebind",
+      "status": "ready",
+      "spec": "docs/specs/existing/t828_marker_caption_drift.md",
+      "branch": "ticket/T-828"
+    },
+    {
+      "id": "T-830",
+      "title": "Outliner rows cramped; density pass on layer tree",
+      "status": "ready",
+      "spec": "docs/specs/existing/t830_outliner_density.md",
+      "branch": "ticket/T-830"
+    },
+    {
+      "id": "T-831",
+      "title": "Per-side marker authoring audit then explicit UI",
+      "status": "ready",
+      "spec": "docs/specs/existing/t831_per_side_markers_audit.md",
+      "branch": "ticket/T-831"
+    },
+    {
+      "id": "T-833",
+      "title": "Rotation ring: relative delta plus live preview",
+      "status": "ready",
+      "spec": "docs/specs/existing/t833_rotation_ring_relative.md",
+      "branch": "ticket/T-833"
+    },
+    {
+      "id": "T-834",
+      "title": "Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar",
+      "status": "ready",
+      "spec": "docs/specs/existing/t834_wave205_residue.md",
+      "branch": "ticket/T-834"
+    },
+    {
+      "id": "T-837",
+      "title": "Vehicles cannot be deleted \u2014 slots can, vehicles cannot",
+      "status": "ready",
+      "spec": "docs/specs/existing/t837_vehicle_delete.md",
+      "branch": "ticket/T-837"
+    },
+    {
+      "id": "T-838",
+      "title": "Map markers selectable; outliner lists; dblclick opens Attributes",
+      "status": "ready",
+      "spec": "docs/specs/existing/t838_marker_select_outliner.md",
+      "branch": "ticket/T-838"
+    },
+    {
+      "id": "T-839",
+      "title": "Retire floating Select/Ruler/LoS bottom-centre pill",
+      "status": "ready",
+      "spec": "docs/specs/existing/t839_retire_floating_pill.md",
+      "branch": "ticket/T-839"
+    },
+    {
+      "id": "T-841",
+      "title": "Type picker popover translucent; make opaque panel",
+      "status": "ready",
+      "spec": "docs/specs/existing/t841_type_picker_opaque.md",
+      "branch": "ticket/T-841"
+    },
+    {
+      "id": "T-845",
+      "title": "A selected vehicle looks identical to an unselected one",
+      "status": "ready",
+      "spec": "docs/specs/existing/t845_selected_vehicle_treatment.md",
+      "branch": "ticket/T-845"
+    },
+    {
+      "id": "T-848",
+      "title": "Group to must use exclusive ORBAT membership",
+      "status": "ready",
+      "spec": "docs/specs/existing/t848_group_to_exclusive_orbat.md",
+      "branch": "ticket/T-848"
+    },
+    {
+      "id": "T-849",
+      "title": "Add ungroup leave-squad verb without deleting slot",
+      "status": "ready",
+      "spec": "docs/specs/existing/t849_ungroup_verb.md",
+      "branch": "ticket/T-849"
+    },
+    {
+      "id": "T-850",
+      "title": "Squad tether must follow drag on auto-grouped units",
+      "status": "ready",
+      "spec": "docs/specs/existing/t850_squad_tether_drag.md",
+      "branch": "ticket/T-850"
+    },
+    {
+      "id": "T-926",
+      "title": "Vehicle Attributes Transform/Position tab",
+      "status": "ready",
+      "spec": "docs/specs/existing/t926_vehicle_transform_tab.md",
+      "branch": "ticket/T-926"
+    },
+    {
+      "id": "T-927",
+      "title": "Editor chrome dblclick leak to map",
+      "status": "ready",
+      "spec": "docs/specs/existing/t927_chrome_dblclick_leak.md",
+      "branch": "ticket/T-927"
     }
   ]
 }

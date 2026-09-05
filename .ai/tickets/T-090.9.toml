@@ -4,7 +4,7 @@ title = "T-090.9 — World-object interaction (hover, inspect, filter, legend)"
 summary = "T-090.9 — World-object interaction (hover, inspect, filter, legend)"
 class = "feature"
 status = "ready"
-order = 900
+order = 8040
 spec = "docs/specs/Mission_Creator_Architecture/t090_9_world_object_interaction.md"
 plan = "docs/plans/t-090_9_plan.md"
 executor = "claude-code"
@@ -13,6 +13,7 @@ main_goal = "Static world objects become read-only context you can interrogate �
 context = [
     "Static world objects render as pixels today; mission makers cannot interrogate them.",
     "Edits to terrain props stay Workbench-only (N7 locked) and Deck GPU picking stays disabled.",
+    "T-090.5 is deferred; the live render is the T-090.12 world_host lane and picking uses WorldSpatialIndex (map-engine-core world/index.rs).",
 ]
 requirement = [
     "Hover tooltip, click-to-inspect panel with Ask AI about this object, taxonomy filter and search, a legend and a Z-trust badge — read-only.",
@@ -33,7 +34,9 @@ acceptance = [
 ]
 estimated = ["scope"]
 owns = [
-    "apps/website/frontend/src/world_assets",
+    "apps/website/frontend/src/editor/world_assets/pick.rs",
+    "apps/website/frontend/src/editor/world_assets/inspect.rs",
+    "apps/website/frontend/src/editor/world_assets/mod.rs",
     "apps/website/frontend/src/editor/mission_editor.rs",
 ]
 

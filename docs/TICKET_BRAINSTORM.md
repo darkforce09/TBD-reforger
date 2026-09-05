@@ -9,7 +9,6 @@
 
 - **T-068** (deferred) — Virtual Arsenal (registry + loadout export) [] — Cargo ladder shipped (T-068.15.1 @ 85acbb13 → .15.2 @ 4fb156b7 → T-068.11 @ c66494c6 → T-068.12 @ 0be53e16). T-068.13 LOBBY picker moved to T-181.9.1; LOBBY slot picker → T-068.14 Phase-2 E2E. Hub: t068_virtual_arsenal_program.md + t068_15_cargo_program.md. BLOCKED: the only remaining slice is T-068.14 (executor: human) — a live two-client E2E on a dedicated server. Not agent-actionable; moved off `ready` on 2026-07-26 so the fleet does not pick it up.
 - **T-181** (deferred) — TBD Framework — Arma-3-parity event mod (factory + spine) [] — Rebuild the Arma 3 mission workflow inside Reforger: website Mission Creator = Eden, compiled mission JSON = the .pbo, and the mod supplies everything Reforger does NOT ship (lobby, briefing, slotting, spawn, spectator, admin). Stage 1 FACTORY shipped: host-aware execution, a 1.3s headless Enfusion compile gate on the native dedicated server (no Workbench), a mechanical CRF symbol index (266 files / 71,606 LOC), and a capability matrix whose UNTRIAGED gate turns a forgotten capability into a build error. Stage 2 is the TBD-owned event spine (ONE LIFE + admin respawn; macOS-methodology UI on Aegis tokens). CRF is an Arma-Public-License ORACLE — indexed, never vendored. ABSORBS T-068.13. BLOCKED: the only remaining slice is T-181.16 (executor: human) — a live two-client E2E on a dedicated server. Not agent-actionable; moved off `ready` on 2026-07-26 so the fleet does not pick it up.
-- **T-111** (idea) — Lazy chunk residency @ 1M [] — T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred.
 
 ## work
 
@@ -50,6 +49,7 @@
 - **T-730** (deferred) — LoS asymmetric clear, SnapReadout overlap, dead ViewshedState [] — LoS sub-mode residue: asymmetric clear, SnapReadout in the cursed corner, write-only ViewshedState
 - **T-731** (deferred) — ROW_ACTIVE border-t skews virtual tree by 1px [] — ROW_ACTIVE border-t skews the virtual tree window by 1px per selected row
 - **T-734** (deferred) — Validation panel: full-compile cost, wasm panic, seam pin [] — Validation panel at scale: per-edit full compile, wasm panic honesty, seam pin
+- **T-825** (deferred) — Design session scopes universal outliner list Attributes edit rule [] — PROGRAM: everything placed is an outliner citizen; all editing is Attributes; the right dock only places
 - **T-829** (deferred) — v5_orbatWindowed smoke fails under verifier harness [] — Gate smoke virtual-outliner v5_orbatWindowed fails deterministically under the verifier harness — config-sensitive smoke
 - **T-835** (deferred) — No-Widget button should show select-cursor glyph [] — The No-Widget button wears the select-cursor glyph, not a 'none' symbol
 - **T-840** (deferred) — Draft chip saved just now on boot before edit [] — The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit
@@ -62,47 +62,4 @@
 - **T-893** (deferred) — T-853 wave 228: deploy db bash-port RED-arm harness [] — T-853 wave 228: commit bash↔port RED-arm harness for deploy db ports
 - **T-909** (deferred) — T-468 still regex-walks ci.yml run: — not T-901 serde_norway [] — T-468 still regex-walks ci.yml run: — not T-901 serde_norway
 - **T-910** (deferred) — Uppercase extensions bypass case-sensitive language ban [] — Language ban extension match is case-sensitive (.SH/.PY/.MK without shebang stay green)
-- **T-070** (idea) — Vehicles placeable [] — Drag vehicles from palette onto map with crew hooks.
-- **T-080** (idea) — Connection / sync UI [] — Entity connection lines and sync group authoring.
-- **T-081** (idea) — Transform widget + snap grid [] — On-map transform gizmo and snap grid.
-- **T-129** (idea) — Building floor selector [] — Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.)
-- **T-131** (idea) — Route planner tool [] — MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5.
-- **T-132** (idea) — Multiplayer MC + visual git [] — Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap.
-- **T-133** (idea) — OFCR timed objectives [] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
-- **T-135** (idea) — Mission modset manager [] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
-- **T-136** (idea) — 3D AAR / OCAP-style replay [] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
-- **T-137** (idea) — Discord platform rework [] — Discord structure + bot flows: slot confirm, reminders, AAR links. Complements T-118 website slotting; mostly ops/human.
-- **T-138** (idea) — One-command self-host install [] — Single script: deps check, .env, db-up, migrate, seed, optional map-assets fetch (git lfs pull for DEM+bundle; optional GitHub Release tarball for tile pyramids after slim-LFS @ 2026-07) — fork-friendly community install story.
-- **T-139** (idea) — Lobby loadout visual preview [] — In-game lobby: kit preview (icon grid → 2D mannequin → stretch 3D). After T-068.13 production slot picker.
-- **T-140** (idea) — Mission client payload budget [] — Spike: compiled mission size vs slot count; max entities for console; server-only bulk vs client sync policy. Post T-092.
-- **T-141** (idea) — Procedural slot naming [] — Adjective/nickname word packs for auto slot display names; manual override wins. After T-071 ORBAT numbering.
-- **T-142** (idea) — MC shell layout polish [] — Toolbelt placement, Attributes modal grouping, stub tool visibility — layout UX without full T-082 field parity.
-- **T-143** (idea) — Perfect water — exact hydrology + water placement guard [] — Perfect water — exact hydrology + water placement guard
-- **T-149** (idea) — Forest Mass Polygon Smoothing [] — Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography.
-- **T-157** (idea) — Mission Create visual overhaul [] — Visual map picker with thumbnails, modset selection, remove time/weather/max players from menu.
-- **T-158** (idea) — Editor shell UX consolidation [] — Consolidate Settings buttons, wire up top bar, remove redundant Assets tab.
-- **T-190** (idea) — Two browser tabs on one mission silently clobber each other [] — Two browser tabs on one mission silently clobber each other
-- **T-238** (idea) — Add ticket check to CI [] — make ticket-check exists but grep of .github/workflows for ticket returns nothing, so nothing prevents the registry drifting again.
-- **T-242** (idea) — Add vehicle and entity inventory to the entity schema [] — Add vehicle and entity inventory to the entity schema
-- **T-257** (idea) — Markers and objectives will be non-undoable the day they land [] — hydrate clears loadouts, items, objectives and markers (store.rs:1102-1120) but those four roots are not in the UndoManager expand_scope (store.rs:101-106). Harmless today because nothing mutates them — a silent trap for the marker and objective work.
-- **T-277** (idea) — 27.4% of the shipped map catalogue is unclassified [] — 27.4% of the shipped map catalogue is unclassified
-- **T-290** (idea) — Nine dead flatten fields mod never reads [] — meta.author, meta.templateId, meta.playerRange, the whole environment block, factions[].tickets, orbat[].type.
-winConditions.mode, flow.briefingSeconds (advisory only), and the entire orbat block (parity-check only).
-Either add mod readers or annotate them non-consumed so the next audit does not re-derive this.
-
-- **T-291** (idea) — Resolve five schema fields implemented on no surface [] — environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem.
-- **T-294** (idea) — Only one of two registered terrains has object data [] — terrain-registry.json declares everon (active, all five phases shipped) and arland (queued, P1 only) but arland has only a 756-byte manifest and zero object data.
-- **T-295** (idea) — Realtime collaborative editing [] — Realtime collaborative editing
-- **T-298** (idea) — tbd-tools density::corner_partition_identity fails on main [] — tbd-tools density::corner_partition_identity fails on main
-- **T-299** (idea) — Every single-faction compile ships a phantom, unplayable opfor [] — Every single-faction compile ships a phantom, unplayable opfor
-- **T-300** (idea) — Shared CARGO_TARGET_DIR lets a main-checkout build serve unmerged slice code [] — Shared CARGO_TARGET_DIR lets a main-checkout build serve unmerged slice code
-- **T-301** (idea) — Briefing kit lists 7 of 13 gear fields [] — Briefing kit list shows 7 of 13 gear fields — an RPG is invisible on the planning screen
-- **T-302** (idea) — T-182 weapon equip unverified in game [] — T-182's weapon equip is compiled and reasoned but never observed in game
-- **T-304** (idea) — RegistryScan weapon weight never read, 32 wrong [] — TBD_RegistryScan ReadPhysAttrsPass: weapon weight never read, and 32 rows carry WRONG weights
-- **T-305** (idea) — pak.rs seeks wrong offset — absolute not relative [] — pak.rs reads at the wrong offset — entry offsets are absolute, not relative to data_start
-- **T-309** (idea) — FactionDoc squad level for Apply Template [] — Preserve squads through Apply Template — needs a squad level in FactionDoc
-- **T-310** (idea) — Arsenal attachments never reach the compiled document [] — Arsenal attachments never reach the compiled document
-- **T-311** (idea) — Leaderboard ORDER BY has no tie-breaker, so paging is unstable [] — Leaderboard ORDER BY has no tie-breaker, so paging is unstable
-- **T-653** (idea) — Preserve the three headless editor-screenshot findings [] — Preserve the three headless editor-screenshot findings
-- **T-704** (idea) — Command palette over every editor command [] — Command palette over every editor command
-- **T-924** (idea) — Gate verdict receipt required at land [] — platform wave gate writes a verdict file (HEAD sha plus verdict) and platform wave land refuses a landing ticket without a fresh one. Forward-only: future lands only, no backfill, existing tickets stay green untouched.
+- **T-137** (deferred) — Discord platform rework [] — Discord structure + bot flows: slot confirm, reminders, AAR links. Complements T-118 website slotting; mostly ops/human.

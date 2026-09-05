@@ -3,8 +3,10 @@ kind = "work"
 title = "Trigger activation and effects — the Enfusion runtime"
 summary = "Trigger activation and effects — the Enfusion runtime"
 class = "chore"
-status = "queued"
-order = 4330
+status = "ready"
+order = 7260
+spec = "docs/specs/existing/t676_trigger_runtime.md"
+plan = "docs/plans/t-676_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row
@@ -25,6 +27,7 @@ context = [
     "Twelve ATTR-FIELD-TRG ids except geometry palette half in T-079.",
     "zoneRules 16 keys lack ATTR id; closest existing trigger semantics.",
     "Schema split to T-706; this ticket is Enfusion runtime only.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
 ]
 requirement = [
     "Activation model: condition repeat timeout owner side in TriggerRuntime.",
@@ -43,6 +46,11 @@ approach = [
 verify = [
     "Trigger runtime activates zones per mission payload attrs.",
     "No packages/tbd-schema edits in this slice.",
+    "cargo xtask mod compile",
+]
+acceptance = [
+    "TBD_TriggerRuntime activates authored triggers per condition, repeat, timeout and owner side and fires their effects at runtime.",
+    "zoneRules keys keep today's semantics; no packages/tbd-schema edits; headless compile clean.",
 ]
 citations = [
     "T-079 zone geometry palette",

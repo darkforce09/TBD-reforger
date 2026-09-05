@@ -1,0 +1,55 @@
+id = "T-940.9"
+kind = "work"
+parent = "T-940"
+title = "Wiki: headings, links, images, tables, checklists, revisions"
+summary = "A new wiki_markup service parses H3 and deeper headings, links, images, tables and checklists; pages keep revisions in a new table and the frontend renders the new blocks."
+class = "feature"
+status = "ready"
+order = 8130
+priority = 2
+spec = "docs/specs/audit_2026_09/t940_website_platform.md"
+plan = "docs/plans/t-940_9_plan.md"
+executor = "claude-code"
+main_goal = "Wiki pages carry the structure authors need and keep history."
+context = [
+    "Anchor 2026-09-04: handlers/content/wiki.rs parses a minimal subset (no H3+, links, images, tables, checklists); no revisions table exists.",
+    "The audit's parser-limits claim was false as worded (false_claims.md); the real gap is the missing features.",
+    "Depends on T-940.8 (wiki.rs). services/mod.rs is shared with T-940.6; this slice packs after it.",
+]
+requirement = [
+    "New services/wiki_markup.rs (registered in services/mod.rs): block parser producing a typed AST for headings to H6, links, images, tables and checklists, with unit goldens.",
+    "New migration 0026_wiki_revisions.sql: wiki_revisions(page_id, revision, body, author_id, created_at); every save inserts one.",
+    "wiki.rs renders through the new parser and exposes GET revisions; pages/public/wiki.rs renders every block type and a revision list.",
+]
+current_state = [
+    "Minimal inline parser in wiki.rs; saves overwrite; no revision route or view.",
+]
+approach = [
+    "Verify on main: a test rendering a level-three heading yields a paragraph, not a heading; paste the red.",
+    "Write the parser with goldens; write the migration; wire the handler and the page.",
+    "Perturbation: drop table parsing; its golden must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask db test-it",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-940.9",
+]
+acceptance = [
+    "Each new block type renders on the public wiki page from a fixture document.",
+    "Saving a page twice yields two revisions and the page lists both.",
+]
+depends_on = ["T-940.8"]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/api/src/handlers/content/wiki.rs",
+    "apps/website/api/src/services/wiki_markup.rs",
+    "apps/website/api/src/services/mod.rs",
+    "apps/website/frontend/src/pages/public/wiki.rs",
+    "apps/website/api/migrations/0026_wiki_revisions.sql",
+]
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

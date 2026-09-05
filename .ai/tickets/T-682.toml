@@ -3,8 +3,10 @@ kind = "work"
 title = "Environment readers: fog, wind, view distance"
 summary = "Environment readers: fog, wind, view distance"
 class = "chore"
-status = "queued"
-order = 4390
+status = "ready"
+order = 7350
+spec = "docs/specs/existing/t682_environment_readers.md"
+plan = "docs/plans/t-682_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row
@@ -24,6 +26,8 @@ context = [
     "Three SCN-FOG, SCN-WIND, SCN-VIEW-DIST attrs refused by eden_chrome test.",
     "author_env enforces mod reader before editor control; test at :4624.",
     "T-193 removed view-distance controls; T-663 cleans dead DTO fields.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
+    "eden_chrome.rs is gone; author_env and its ordering test now live in apps/website/frontend/src/editor/panels/env.rs.",
 ]
 requirement = [
     "Ship TBD_EnvironmentReader.c before any editor fog wind view control.",
@@ -40,6 +44,11 @@ approach = [
 verify = [
     "Headless compile clean; environment attrs applied at mission boot.",
     "eden_chrome environment-carried test passes after mod reader ships.",
+    "cargo xtask mod compile",
+]
+acceptance = [
+    "Fog, wind and view distance from the payload are applied at mission boot by TBD_EnvironmentReader; missions without them boot unchanged.",
+    "No packages/tbd-schema edits; compile clean; the env.rs author_env ordering test still passes.",
 ]
 citations = [
     "eden_chrome.rs author_env test",
@@ -47,7 +56,11 @@ citations = [
     "T-706 schema widening split",
 ]
 estimated = ["scope"]
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EnvironmentReader.c"]
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EnvironmentReader.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "crates/map-engine-core/src/mission/flatten.rs",
+]
 
 [scope]
 domain = "mod"

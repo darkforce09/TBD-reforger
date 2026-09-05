@@ -1,0 +1,49 @@
+id = "T-938.1"
+kind = "work"
+title = "Slot and cluster lane GPU buffer pool"
+summary = "upload_slot_role_lane (engine.rs:4907-4924) stops calling create_buffer_init per call; a new buffer_pool.rs keeps persistent buffers per lane, writes with queue.write_buffer and grows on demand across all seven call sites."
+class = "feature"
+status = "ready"
+order = 7800
+spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
+plan = "docs/plans/t-938_1_plan.md"
+executor = "claude-code"
+priority = 2
+parent = "T-938"
+main_goal = "Lane uploads reuse GPU buffers; a gesture tick allocates nothing."
+context = [
+    "Anchor 2026-09-04: engine.rs:4907 fn upload_slot_role_lane, :4921 bytes.to_vec(), :4924 create_buffer_init on every call; call sites 4565/4577/4610/4627/4642/4693/4870; no pool.",
+    "Master audit S3 cites engine.rs:4024-4039; that range is cluster packing which feeds upload_cluster_lane (:4626) and then this function.",
+    "engine.rs is shared with T-938.3, which depends on this slice and packs later.",
+]
+requirement = [
+    "New crates/map-engine-render/src/buffer_pool.rs (registered in lib.rs): LanePool keyed by lane id, write(device, queue, lane, bytes) -> &Buffer, capacity doubling, usage flags preserved.",
+    "engine.rs:4907-4924 writes through the pool; the to_vec copy at :4921 is removed; all seven call sites keep their signatures.",
+    "Pool unit tests: growth keeps content, capacity never shrinks, a smaller write reuses the buffer.",
+    "edition-2024 rustfmt for map-engine-render.",
+]
+current_state = ["Every gesture tick allocates a fresh wgpu buffer per lane and copies the bytes twice; bind groups are rebuilt each time."]
+approach = [
+    "Verify on main: count buffer creations across two consecutive equal-size uploads with a test-only counter; paste the red.",
+    "Write buffer_pool.rs; route upload_slot_role_lane through it; rebuild the bind group only when the buffer object changes.",
+    "Perturbation: make grow allocate at the old size; the growth test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-render",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask platform wave gate --slice T-938.1",
+]
+acceptance = [
+    "Repeated lane uploads of equal size allocate zero new buffers; a larger upload allocates once and later smaller uploads reuse it.",
+    "Rendered slots and clusters are unchanged across all seven lanes.",
+]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "crates/map-engine-render/src/engine.rs",
+    "crates/map-engine-render/src/buffer_pool.rs",
+    "crates/map-engine-render/src/lib.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "render"

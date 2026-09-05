@@ -8,10 +8,15 @@ T-706 already widened the schema; this program emits and reads the roster.
 Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
 """
 status = "queued"
-order = 4320
+order = 7440
+plan = "docs/plans/t-675_plan.md"
+spec = "docs/specs/existing/t675_vehicle_roster_wire.md"
 executor = "claude-code"
 notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row — WAVE-A DISPATCH PIN: owns extends to crates/map-engine-core/src/mission/flatten.rs (the emit half; T-674 first, T-675 after it reports) AND the TBD_MissionValidator.c SCHEMA_1_3 allowlist bump rides whichever of these first emits 1.3 (schema description names this). T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-675 salvage/t853-dropped/T-675` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other."
-depends_on = ["T-076"]
+depends_on = [
+    "T-076",
+    "T-675.2",
+]
 children = [
     "T-675.1",
     "T-675.2",
@@ -21,6 +26,7 @@ context = [
     "T-216 ledger sixth drop: vehicles[] at document root.",
     "Schema widening shipped in T-706; emit and reader remain.",
     "Salvage commit 113108a1 shared with T-674; worktree dropped T-853.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
 ]
 requirement = [
     "T-675.1 emits top-level vehicles[] from flatten compile boundary.",
@@ -43,3 +49,13 @@ citations = [
     "T-216 drop ledger sixth row",
 ]
 owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c"]
+
+verify = [
+    "cargo xtask mod compile",
+    "cargo xtask platform wave gate --slice T-675",
+]
+
+acceptance = [
+    "With T-675.1 and T-675.2 shipped, a compiled mission with an authored vehicle roster spawns crewed vehicles seated as the author set.",
+    "The T-216 ledger sixth row reads closed in flatten.rs; no packages/tbd-schema edits; compile clean.",
+]

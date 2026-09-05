@@ -1,0 +1,52 @@
+id = "T-939.1"
+kind = "work"
+title = "Outliner: multi-select drag between layers"
+summary = "The outliner drags the whole multi-selection at once: begin_layer_slot_drag takes the selected id set, the drop applies one grouped move, and the drag ghost shows the row count."
+class = "feature"
+status = "ready"
+order = 7860
+spec = "docs/specs/audit_2026_09/t939_editor_usability.md"
+plan = "docs/plans/t-939_1_plan.md"
+executor = "claude-code"
+priority = 2
+parent = "T-939"
+main_goal = "Dragging one selected outliner row moves every selected row."
+context = [
+    "Anchor 2026-09-04: panels/outliner_tree.rs:1110 begin_layer_slot_drag(one String); peers :1022, :664, :1101 each carry a single id, so a multi-selection drag moves one row.",
+    "panels/mod.rs registers the new module; it is also owned by T-936.1 and the wave packer keeps the two apart.",
+    "Related, not re-minted: T-704 command palette, T-142/T-157/T-158 shell.",
+]
+requirement = [
+    "New panels/outliner_drag.rs (registered in panels/mod.rs): DragSet {anchor, ids} plus drop planning that keeps relative order and rejects drops into a dragged row.",
+    "outliner_tree.rs:1110 and its three peers pass the selection set when the pressed row is selected, else the single row.",
+    "The drop applies inside one doc-store transaction so a single undo reverts the whole move.",
+    "The drag ghost shows the row count when more than one row moves.",
+]
+current_state = ["outliner_tree.rs carries a single String through begin_layer_slot_drag; the multi-selection is ignored on drag."]
+approach = [
+    "Verify on main: a test dragging with two selected rows moves only one; paste the red verbatim.",
+    "Write outliner_drag.rs with unit tests for order and self-drop rejection; thread DragSet through the four call sites.",
+    "Perturbation: drop the ids tail in DragSet again; the two-row test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-939.1",
+]
+acceptance = [
+    "Dragging a selected row with three rows selected moves all three in their original relative order.",
+    "One Ctrl+Z after a multi-row drop restores every moved row.",
+    "Dragging an unselected row moves only that row, as today.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/frontend/src/editor/panels/outliner_tree.rs",
+    "apps/website/frontend/src/editor/panels/outliner_drag.rs",
+    "apps/website/frontend/src/editor/panels/mod.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["outliner"]

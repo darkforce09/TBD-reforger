@@ -1,0 +1,52 @@
+id = "T-938.3"
+kind = "work"
+parent = "T-938"
+title = "GPU cull for all icon lanes"
+summary = "Compute culling extends from WorldTrees (engine.rs:1812-1816) to every icon lane; the per-frame CPU count_icons_in_frustum (icon_cull_gpu.rs:226) moves behind a debug flag; shader.wgsl:315 uses a per-workgroup reduce."
+class = "feature"
+status = "ready"
+order = 7820
+priority = 2
+spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
+plan = "docs/plans/t-938_3_plan.md"
+executor = "claude-code"
+main_goal = "Every icon lane culls on the GPU without a per-frame CPU scan or a single hot atomic."
+context = [
+    "Anchor 2026-09-04: engine.rs:1812-1816 do_compute_trees requires !tree_icons_20.is_empty(); every other lane culls on the CPU.",
+    "Anchor: icon_cull_gpu.rs:226 count_icons_in_frustum runs before early-outs on every encode_cull (compute_cull.rs:79 linear); shader.wgsl:315 one atomicAdd per visible icon.",
+    "Depends on T-938.1: culled lanes write into pooled buffers; engine.rs is shared, so this packs later.",
+]
+requirement = [
+    "engine.rs: each icon lane opts into compute cull through the same gate as trees; the CPU cull path remains only as the no-compute fallback.",
+    "icon_cull_gpu.rs:226 runs only when the existing debug HUD flag is on; otherwise the visible count comes from the GPU readback.",
+    "shader.wgsl:315: workgroup-local counter reduced once per workgroup, then one atomicAdd per workgroup.",
+    "A test proves GPU visible counts equal the CPU reference on a fixture frustum.",
+]
+current_state = [
+    "Trees alone use compute cull; every frame pays a CPU frustum scan of all icons plus one global atomic per visible icon.",
+]
+approach = [
+    "Verify on main: assert with a test-only counter that the CPU count runs with the debug flag off; paste the red.",
+    "Generalise do_compute_trees into a per-lane gate; gate the CPU count; rewrite the shader reduction; compare counts on the fixture.",
+    "Perturbation: remove the workgroup barrier before the reduce; the count-equality test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-render",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask platform wave gate --slice T-938.3",
+]
+acceptance = [
+    "With compute available no icon lane culls on the CPU, and the per-frame CPU scan is skipped unless the debug flag is on.",
+    "Visible counts from the shader equal the CPU reference on the fixture; frame output is unchanged.",
+]
+depends_on = ["T-938.1"]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "crates/map-engine-render/src/engine.rs",
+    "crates/map-engine-render/src/icon_cull_gpu.rs",
+    "crates/map-engine-render/src/shader.wgsl",
+]
+
+[scope]
+domain = "engine"
+layer = "render"

@@ -1,0 +1,54 @@
+id = "T-940.13"
+kind = "work"
+parent = "T-940"
+title = "Combat, medical and vehicle telemetry events"
+summary = "A telemetry-events JSON schema defines combat, medical and vehicle events; ingest validates and stores them in a new table so the AAR replay (T-136) has data to play."
+class = "feature"
+status = "ready"
+order = 8170
+priority = 2
+spec = "docs/specs/audit_2026_09/t940_website_platform.md"
+plan = "docs/plans/t-940_13_plan.md"
+executor = "claude-code"
+main_goal = "Per-event combat telemetry is stored, not just end-of-match counters."
+context = [
+    "Anchor 2026-09-04: handlers/telemetry/deployments.rs:83 AAR is an external link; ingest stores only per-player counters (telemetry.rs, models/telemetry.rs).",
+    "Depends on T-940.4 (telemetry.rs). Pairs with existing T-136 AAR replay, which consumes the table and owns the in-game capture side; T-136 is not re-minted.",
+    "Schema gates: cargo xtask ci schema-validate must stay green with the new schema file.",
+]
+requirement = [
+    "New packages/tbd-schema/schema/telemetry-events.schema.json: envelope {t, kind, actor, target, pos, data} with kinds combat.hit/kill, medical.down/revive/heal, vehicle.enter/exit/destroy.",
+    "New migration 0028_telemetry_events.sql: match_events(match_id, t, kind, actor, target, pos, data jsonb) with an index on (match_id, t).",
+    "telemetry.rs accepts an events array on match results, validates it against the schema, and bulk-inserts; models/telemetry.rs gains the row type.",
+    "An unknown kind is rejected with the offending index in the error and nothing is stored.",
+]
+current_state = [
+    "No events schema, table, model or ingest path.",
+]
+approach = [
+    "Verify on main: a test posting results with an events array stores zero events; paste the red.",
+    "Write the schema and its golden fixture; write the migration; add validation and insert with tests.",
+    "Perturbation: accept an unknown kind; the reject test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask ci schema-validate",
+    "cargo xtask db test-it",
+    "cargo xtask platform wave gate --slice T-940.13",
+]
+acceptance = [
+    "A results payload with fifty valid events stores fifty rows queryable by match and time.",
+    "A payload with one invalid event is rejected naming its index and stores nothing.",
+]
+depends_on = ["T-940.4"]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/api/src/handlers/telemetry/telemetry.rs",
+    "apps/website/api/src/models/telemetry.rs",
+    "apps/website/api/migrations/0028_telemetry_events.sql",
+    "packages/tbd-schema/schema/telemetry-events.schema.json",
+]
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

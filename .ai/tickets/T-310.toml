@@ -1,34 +1,49 @@
 id = "T-310"
 kind = "work"
 title = "Arsenal attachments never reach the compiled document"
-summary = "Arsenal attachments never reach the compiled document"
-class = "chore"
-status = "idea"
+summary = "T-197 persists weapon attachment edges in SlotLoadoutV2 but flatten's mod_slot_loadout reads only weapon/optic/magazine and the schema gear block has no list; add gear.attachments[], emit it, and mount it in TBD_LoadoutEquipHelper.c."
+class = "bug"
+status = "ready"
+order = 7490
+spec = "docs/specs/ideas/t310_arsenal_attachments.md"
+plan = "docs/plans/t-310_plan.md"
 executor = "claude-code"
-main_goal = "Emit weapon attachments through flatten.rs and mission.schema.json gear so compiled documents match Arsenal UI picks."
+notes = "2026-09-05: flatten.rs and mission.schema.json are shared with T-242/T-299/T-936.x, TBD_LoadoutEquipHelper.c with T-302 → later wave. Operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist."
+priority = 2
+main_goal = "A suppressor picked in the Arsenal is on the spawned weapon."
 context = [
-    "T-197 wired attachment edges into the Arsenal UI and they persist in SlotLoadoutV2,",
-    "but flatten.rs mod_slot_loadout reads only reads only weapon/optic/magazine,",
+    "T-197 wired attachment edges into the Arsenal UI; T-193 deleted two controls in the same wave for exactly this defect class; T-197's commit body acknowledged it but filed no ticket.",
+    "Anchor 2026-09-05: flatten.rs:1497 mod_slot_loadout, :1537-1538 optic/magazine only; mission.schema.json gear (:375) is additionalProperties:false over 13 strings; TBD_LoadoutEquipHelper.c:20-25 mounts optic/magazine.",
 ]
 requirement = [
-    "Needs a schema shape for weapon attachments plus flatten emission plus a mod reader —",
-    "TBD_LoadoutEquipHelper.c:21-25 already mounts optic/magazine into SCR_WeaponAttachmentsStorageComponent,",
-    "which is the same storage attachments would use.",
+    "mission.schema.json gear gains optional attachments: array of wireSafeString resource names; codegen regenerated.",
+    "flatten emits gear.attachments from the SlotLoadoutV2 edges; a golden with a suppressor pins it.",
+    "TBD_LoadoutEquipHelper.c mounts each attachment into the weapon's attachment storage after optic/magazine, logging per item.",
 ]
-current_state = [
-    "mission.schema.json gear is additionalProperties:false over 13 STRING fields with no place for a list.",
-    "So an author picks a suppressor, sees it in the picker, sees it counted in the weight readout — and the player spawns without it.",
-    "This is the exact defect class T-193 deleted two controls for in the same wave.",
-    "T-197's commit body acknowledged it but filed no ticket, which CLAUDE.md's HARD GATE says is not permission.",
+current_state = ["An author picks a suppressor, sees it in the picker and the weight readout, and the player spawns without it."]
+approach = [
+    "Verify on main: compile a loadout with an attachment; paste the compiled gear without it.",
+    "Schema plus golden; flatten emit; mod reader; mod compile.",
+    "Perturbation: skip the emit; the golden test goes red; restore, touch, green.",
 ]
-citations = [
-    "T-197 Arsenal UI",
-    "T-193 same wave",
-    "flatten.rs mod_slot_loadout",
-    "mission.schema.json gear",
-    "TBD_LoadoutEquipHelper.c:21-25",
+verify = [
+    "cargo test -p map-engine-core --all-features mission::flatten",
+    "cargo xtask ci schema-validate",
+    "cargo xtask ci schema-codegen",
+    "cargo xtask mod compile",
+    "cargo xtask platform wave gate --slice T-310",
+]
+acceptance = [
+    "A suppressor picked in the Arsenal appears in the compiled gear and on the spawned weapon.",
+    "Loadouts without attachments compile byte-identically to today.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "crates/map-engine-core/src/mission/flatten.rs",
+    "packages/tbd-schema/schema/mission.schema.json",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c",
 ]
 
 [scope]
-domain = "repo"
-layer = "docs"
+domain = "engine"
+layer = "core"

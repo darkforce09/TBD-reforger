@@ -1,0 +1,53 @@
+id = "T-935.5"
+kind = "work"
+parent = "T-935"
+title = "Density TBDD decode via cast_slice, bit-exact"
+summary = "Replace the per-byte TBDD decode loop with a header parse plus bytemuck::cast_slice; a Class-R byte-parity test proves bit-exact output against the old loop on all 625 everon density tiles."
+class = "feature"
+status = "ready"
+order = 7100
+priority = 1
+spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
+plan = "docs/plans/t-935_5_plan.md"
+executor = "claude-code"
+main_goal = "Forest density tiles decode by cast, and the existing 625 tiles stay valid byte for byte."
+context = [
+    "Anchor 2026-09-04: crates/map-engine-core/src/geometry/tbdd.rs:51 decode_tbdd is a byte loop; tools/tbd-tools/src/density.rs:24 emits TBDD; 625 objects/density/*.bin committed; forest_mass.rs:108 loads them.",
+    "Brief rule: Class-R byte-parity tests scrub their own source — the reference loop lives inside the test module, never in production code.",
+]
+requirement = [
+    "decode_tbdd validates the TBDD header through a #[repr(C)] Pod header type, then casts the payload with bytemuck::cast_slice; on-disk layout unchanged.",
+    "Class-R test: decode every packages/map-assets/everon/objects/density/*.bin with the old loop (kept verbatim under cfg(test)) and the new decode; assert identical output.",
+    "density.rs keeps writing identical bytes; add an emit -> decode round-trip test on a synthetic tile.",
+    "Unaligned input is copied into an aligned Vec before the cast; short payloads return Err, never panic.",
+]
+current_state = [
+    "crates/map-engine-core/src/geometry/tbdd.rs:51 decode_tbdd walks the payload byte by byte assembling each cell.",
+    "tools/tbd-tools/src/density.rs:24 writes the TBDD header and cells with manual byte pushes.",
+]
+approach = [
+    "Copy the current loop into `mod parity_reference` under cfg(test) before touching anything; the Class-R test scrubs its own source per the brief.",
+    "Define the header as a Pod struct in tbdd.rs (reusing world::binary helpers where they fit); parse header, cast the rest.",
+    "density.rs: no byte changes; add the round-trip test.",
+    "Perturbation: off-by-one the header length; the Class-R test goes red on everon tiles; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features tbdd",
+    "cargo test -p tbd-tools density",
+    "cargo xtask platform wave gate --slice T-935.5",
+]
+acceptance = [
+    "All 625 everon density tiles decode bit-identically to the previous loop.",
+    "decode_tbdd contains no per-byte assembly loop in production code.",
+    "forest_mass.rs and every other caller compiles unchanged.",
+]
+depends_on = ["T-935.1"]
+created_at = "2026-09-05T01:34:37Z"
+owns = [
+    "crates/map-engine-core/src/geometry/tbdd.rs",
+    "tools/tbd-tools/src/density.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "core"

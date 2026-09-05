@@ -3,8 +3,10 @@ kind = "work"
 title = "Placed zones must render visibly at rest on map"
 summary = "Placed zones are not visible on the map — investigate and fix the render (repro-first)"
 class = "bug"
-status = "queued"
-order = 5060
+status = "ready"
+order = 8390
+spec = "docs/specs/existing/t824_zone_render_at_rest.md"
+plan = "docs/plans/t-824_plan.md"
 executor = "claude-code"
 notes = """
 operator eye-pass wave-203; repro-first — do not assume the mechanism
@@ -23,6 +25,7 @@ context = [
     "Wave-203 eye-pass: placed zone not visible on map at rest.",
     "Zone drawing works draw moves zone count; render visibility unprobed.",
     "Measure browser at rest and selected at two to three zooms first.",
+    "Lane sites if the render is missing: engine.rs (draw_order rebind tail) and mission_editor.rs:1977 after_doc_change — both owned.",
 ]
 requirement = [
     "Circle and polygon zones visibly rendered at rest not selection-only.",
@@ -36,6 +39,12 @@ approach = ["Investigate gating before code; T-760 template draw_order rebind ta
 verify = [
     "Placed circle and polygon visible at rest at swept zooms.",
     "Visibility toggles round-trip; zone count chip matches render.",
+    "cargo xtask mk leptos-gates",
+    "cargo test -p map-engine-render",
+]
+acceptance = [
+    "Placed circle and polygon zones are visible at rest at every swept zoom, not only while selected.",
+    "Visibility toggles round-trip and the zone count chip matches what renders.",
 ]
 citations = [
     "wave-203 operator eye-pass",
@@ -47,6 +56,8 @@ estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/editor/panels/zones_panel.rs",
     "crates/map-engine-render/src/scene.rs",
+    "crates/map-engine-render/src/engine.rs",
+    "apps/website/frontend/src/editor/mission_editor.rs",
 ]
 
 [scope]

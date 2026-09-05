@@ -1,40 +1,47 @@
 id = "T-242"
 kind = "work"
-title = "Add vehicle and entity inventory to the entity schema"
-summary = "Add vehicle and entity inventory to the entity schema"
+title = "Emit T-216 slot deltas through flatten"
+summary = "The T-216 schema deltas (slot tag/callsign/rank/stance, group leaderSlotId, root vehicles $def) are all declared in mission.schema.json today, but flatten drops the four slot fields (DIAG_DROP_SLOT_*); emit them and pin with schema-validated goldens."
 class = "feature"
-status = "idea"
+status = "ready"
+order = 7560
+spec = "docs/specs/ideas/t242_t216_deltas.md"
+plan = "docs/plans/t-242_plan.md"
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope. "
-main_goal = "Add vehicle and entity inventory to the entity schema; re-scope what remains against CURRENT schema before dispatching it."
+notes = "needs-operator: frozen unmappable Scope.  | 2026-09-05 re-scope: schema side verified landed (slot callsign :411, rank :416, stance :429, tag :439; group leaderSlotId :312; vehicles :105); the residual is the flatten emit (flatten.rs:699-702 DIAG_DROP_SLOT_*). leaderSlotId emission belongs to T-674.1. apps/website/api/src/contract/generated/ is codegen (DO NOT EDIT) — verify = cargo xtask ci schema-codegen. mission.schema.json and flatten.rs are shared with T-936.x, T-299 and T-310 → later wave. Proposed scope schema/mission; note kept verbatim for the operator."
+priority = 2
+main_goal = "Authored slot tag, callsign, rank and stance reach the compiled document and validate."
 context = [
-    "== STALE IN PART, corrected 2026-07-26 by the command center after T-215 (wave 5) contradicted it and was right ==",
-    "THIS TICKET'S PREMISE IS OUT OF DATE.",
-    "T-198 landed it in commit 2070eecdd, 'vehicle and crate inventory gets a home on $defs/entity'.",
-    "CONSEQUENCE: T-215 needed no schema change for vehicle cargo and did it, emitting $defs/entityInventory verbatim.",
-    "The command center briefed T-215 off this stale summary and was corrected by the agent -- do not repeat that.",
-    "== ORIGINAL SUMMARY BELOW ==",
+    "Premise history: T-198 landed $defs/entityInventory (commit 2070eecdd); T-215 needed no schema change for vehicle cargo — do not re-brief off the stale summary.",
+    "Anchor 2026-09-05: mission.schema.json declares slot callsign :411, rank :416, stance :429, tag :439, group leaderSlotId :312, vehicles :105; flatten.rs:699-702 drops the four slot fields.",
 ]
 requirement = [
-    "Re-scope what remains of this ticket against the CURRENT schema before dispatching it.",
-    "WHAT IS STILL OPEN AND WAS NOT INVALIDATED: see T-216's schema deltas ($defs/slot needs tag/callsign/rank/stance,",
-    "$defs/group needs leaderSlotId, the document root needs a vehicles $def) -- those are DIFFERENT objects and remain closed.",
+    "flatten emits slot tag, callsign, rank and stance when authored; the DIAG_DROP_SLOT_* diagnostics are retired.",
+    "Goldens with the four fields validate against mission.schema.json and the codegen is regenerated, never hand-edited.",
+    "leaderSlotId emission stays with T-674.1; this ticket does not touch it.",
 ]
-current_state = [
-    "It claims `$defs/entity` is {alias,x,z,headingDeg,faction} with NO INVENTORY MODEL.",
-    "On main today it is {alias, x, z, headingDeg, faction, INVENTORY}, and `$defs/entityInventory` exists ([{item,qty}], no container key -- 'the container IS the entity').",
-    "$defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) with no inventory model.",
-    "The editor's vehicle row is {id,resourceName,position,squadId} (store.rs:527-548), also with no cargo.",
-    "Vehicle inventory has no representation on any of the three surfaces.",
+current_state = ["The schema declares the deltas; the compile silently drops the four slot values, so authored rank, stance, callsign and tag never reach the mod."]
+approach = [
+    "Verify on main: a golden with rank set compiles without it; paste the diagnostic.",
+    "Emit the four fields in the slot writer; update goldens; run schema-validate and schema-codegen.",
+    "Perturbation: drop one field from the emit; the golden test goes red; restore, touch, green.",
 ]
-citations = [
-    "T-198 commit 2070eecdd",
-    "T-215 wave 5",
-    "T-216 schema deltas",
-    "mission.schema.json:376-387",
+verify = [
+    "cargo test -p map-engine-core --all-features mission::flatten",
+    "cargo xtask ci schema-validate",
+    "cargo xtask ci schema-codegen",
+    "cargo xtask platform wave gate --slice T-242",
 ]
-owns = ["crates/map-engine-core/src/doc/store.rs"]
+acceptance = [
+    "Authored slot tag, callsign, rank and stance appear in the compiled document and validate.",
+    "No DIAG_DROP_SLOT_* diagnostic remains; generated contract files match the schema.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "crates/map-engine-core/src/mission/flatten.rs",
+    "packages/tbd-schema/schema/mission.schema.json",
+]
 
 [scope]
-domain = "repo"
-layer = "docs"
+domain = "schema"
+layer = "mission"

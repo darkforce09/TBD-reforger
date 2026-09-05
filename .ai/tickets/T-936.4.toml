@@ -1,0 +1,60 @@
+id = "T-936.4"
+kind = "work"
+parent = "T-936"
+title = "Dynamic weather timeline: schema, editor, runtime"
+summary = "A weatherTimeline of keyframes (minute offset, preset, wind, fog) joins the static environment.weatherPreset; a timeline panel authors it, weather.rs validates it, and TBD_WeatherRuntime.c applies keyframes in-game."
+class = "feature"
+status = "ready"
+order = 7500
+priority = 2
+spec = "docs/specs/audit_2026_09/t936_mission_logic.md"
+plan = "docs/plans/t-936_4_plan.md"
+executor = "claude-code"
+main_goal = "Weather changes over mission time exactly as the author keyframed it."
+context = [
+    "mission.schema.json:190 environment.weatherPreset is a single static string (panels/env.rs edits it); nothing changes weather over mission time.",
+    "Master audit S1 lists dynamic weather among the missing mission logic; no weather script exists under Scripts/Game/TBD/Gamemode.",
+    "mission.schema.json, mission/mod.rs, extensions.rs and panels/mod.rs are shared with T-936.1/.2/.3; packs after T-936.2.",
+]
+requirement = [
+    "Schema: top-level weatherTimeline {keyframes: [{atMinutes, weatherPreset, windDirDeg?, fog?}]}, strictly increasing atMinutes, additionalProperties false; goldens updated.",
+    "New mission/weather.rs (registered in mission/mod.rs): model plus validator (ordering, preset vocabulary shared with environment); registered in extensions.rs AUTHORED_BLOCKS.",
+    "New panels/weather_timeline.rs (registered in panels/mod.rs): keyframe list with add, edit, delete, reorder; undoable operations.",
+    "New Gamemode/TBD_WeatherRuntime.c: server applies each keyframe at its offset through the world's weather manager; clients follow replication; logs each transition.",
+]
+current_state = [
+    "Weather is one preset per mission; no timeline block, no panel, no runtime script.",
+]
+approach = [
+    "Verify on main: a payload carrying weatherTimeline flattens without it; paste the red.",
+    "Add schema and golden; write weather.rs with ordering tests; register; build the panel; write the runtime; compile the mod.",
+    "Perturbation: accept equal atMinutes in the validator; the ordering test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask ci schema-validate",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask mod compile",
+    "cargo xtask platform wave gate --slice T-936.4",
+]
+acceptance = [
+    "A mission with three keyframes flattens to a weatherTimeline block; the runtime applies them at the authored offsets (checklist).",
+    "Out-of-order keyframes are refused in the panel; a mission without a timeline flattens byte-identically to today.",
+]
+depends_on = ["T-936.2"]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "packages/tbd-schema/schema/mission.schema.json",
+    "apps/website/frontend/src/editor/panels/weather_timeline.rs",
+    "apps/website/frontend/src/editor/panels/mod.rs",
+    "crates/map-engine-core/src/mission/weather.rs",
+    "crates/map-engine-core/src/mission/mod.rs",
+    "crates/map-engine-core/src/mission/extensions.rs",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_WeatherRuntime.c",
+]
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "gamemode"

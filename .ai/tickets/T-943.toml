@@ -1,0 +1,47 @@
+id = "T-943"
+kind = "work"
+title = "platform wave push deadlocks on large LFS ranges"
+summary = "cmd_push's LFS guard pipes every path of a commit into git check-attr without draining stdout; a commit touching 1,691 files wedges both processes forever, and on a host with git-lfs the guard refuses a legitimate push."
+class = "bug"
+status = "ready"
+order = 7050
+spec = "docs/specs/factory/t943_push_guard_deadlock.md"
+plan = "docs/plans/t-943_plan.md"
+executor = "claude-code"
+priority = 1
+main_goal = "cargo xtask platform wave push works on every range, including LFS-heavy ones, on a host that has git-lfs."
+context = [
+    "2026-09-04: `platform wave push` sat 10 min inside git check-attr (state S) on origin/main..HEAD, 28 commits, one adding 1,691 prefabs/blas/*.bvh.",
+    "The operator killed it and pushed with plain git push origin main; git-lfs 3.7.1 is installed on this host, so the hook path works.",
+]
+requirement = [
+    "lfs_paths_in_range must write check-attr stdin from a thread while reading stdout, so a diff list over the 64 KB pipe buffer cannot deadlock.",
+    "When git-lfs is available on PATH, push normally (with hooks) instead of --no-verify, and skip the LFS refusal: the guard exists only for the container without git-lfs.",
+    "Keep the fail-closed behaviour for the no-git-lfs case, byte-for-byte message included.",
+]
+current_state = [
+    "xtask/src/wave/push.rs:152-166 spawns check-attr with piped stdin and stdout, write_all's the whole list, then wait_with_output — parent blocks on write once the child's stdout pipe (64 KB) fills.",
+    "xtask/src/wave/push.rs:208-232 refuses whenever any path resolves to filter: lfs regardless of whether git-lfs exists; :234 always pushes --no-verify.",
+]
+approach = [
+    "Writer thread feeds list.stdout into check-attr stdin and drops it; caller reads via wait_with_output.",
+    "Unit test pushes a >64 KB path list through a stub check-attr and must finish; perturbation = inline write_all times out.",
+    "Probe `git lfs version`: present → plain `git push origin main` with hooks; absent → existing guard + --no-verify.",
+]
+verify = [
+    "cargo test -p xtask wave::push",
+    "cargo xtask platform wave push   # on a range containing LFS objects, on this host",
+    "cargo xtask platform wave gate --slice T-943",
+]
+acceptance = [
+    "A push over a commit touching thousands of LFS files completes without the operator killing check-attr.",
+    "On this host the push uploads LFS objects through the normal hook path and the remote clone is intact.",
+    "Without git-lfs the guard still refuses --no-verify over LFS content with the same message.",
+]
+created_at = "2026-09-04T21:47:41Z"
+owns = ["xtask/src/wave/push.rs"]
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "wave"

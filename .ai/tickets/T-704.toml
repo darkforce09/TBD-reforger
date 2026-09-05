@@ -1,36 +1,56 @@
 id = "T-704"
 kind = "work"
 title = "Command palette over every editor command"
-summary = "Command palette over every editor command"
+summary = "Alt+Space opens a fuzzy palette over every top-strip and toolbelt command, ranked by usage frequency stored per browser; Esc closes; Enter runs the command through its existing handler."
 class = "feature"
-status = "idea"
+status = "ready"
+order = 7940
+spec = "docs/specs/ideas/t704_command_palette.md"
+plan = "docs/plans/t-704_plan.md"
 executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---
 
 3den E2 (3DEN-TOOL-013/014). Fuzzy search over every menu command, ALT+SPACE. The largest of the 3den slices and the highest ceiling — it directly answers T-668 complaint that the chrome is hard to navigate, and 3den own version learns from usage frequency. Filed as `idea` because it is a product call, not a scoping question: it changes how the editor is driven.
 
-missing=0"""
-main_goal = "Fuzzy command palette over every editor menu command ALT+SPACE."
+missing=0
+
+2026-09-05: promoted from idea by command-center decision; panels/mod.rs is shared with T-936.2 and mission_editor.rs with T-190 → packs after both."""
+priority = 2
+main_goal = "Every editor command is reachable by typing its name, with frequent ones first."
 context = [
-    "3den E2 3DEN-TOOL-013/014 largest 3den slice highest ceiling.",
-    "Answers T-668 chrome hard to navigate complaint.",
-    "Filed idea product call changes how editor is driven.",
+    "3den E2 3DEN-TOOL-013/014: the largest 3den slice with the highest ceiling; answers the T-668 chrome-navigation complaint.",
+    "Anchor 2026-09-05: no palette exists; commands live in panels/top_strip.rs Cmd enum (:105) and the toolbelt; export hotkeys in state/commands_hotkeys.rs.",
 ]
 requirement = [
-    "Fuzzy search over every menu command ALT+SPACE.",
-    "Usage-frequency learning per 3den own version.",
+    "New panels/command_palette.rs (registered in panels/mod.rs): modal_stack-governed overlay, fuzzy match over CommandEntry {id, label, hotkey, run}.",
+    "Alt+Space toggles it; Enter runs; Esc closes; usage counts in localStorage rank ties.",
+    "Every command reachable from the top strip and toolbelt is listed; a test asserts the count matches the source enums.",
 ]
-current_state = ["No command palette exists in editor chrome today."]
-approach = ["Product decision before scoping; not factory-dispatchable yet."]
-verify = ["Deferred until promoted from idea status."]
-citations = [
-    "3DEN-TOOL-013/014 command palette",
-    "T-668 chrome navigation",
+current_state = ["No command palette exists in the editor chrome."]
+approach = [
+    "Build the entry list from the existing Cmd enums (no duplicated handlers); mount the overlay from mission_editor.rs (call site only).",
+    "wasm tests: fuzzy ranking, Alt+Space toggle, coverage count.",
+    "Perturbation: drop one command from the list; the coverage test goes red; restore, touch, green.",
 ]
-estimated = ["scope"]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-704",
+]
+acceptance = [
+    "Alt+Space shows a palette listing every editor command; typing narrows it; Enter runs the chosen command.",
+    "Frequently used commands rise to the top across sessions in the same browser.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "apps/website/frontend/src/editor/panels/command_palette.rs",
+    "apps/website/frontend/src/editor/panels/mod.rs",
+    "apps/website/frontend/src/editor/mission_editor.rs",
+]
 
 [scope]
 domain = "website"
 layer = "frontend"
 component = "mission_creator"
+surface = ["layout_chrome"]

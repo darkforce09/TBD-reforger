@@ -3,9 +3,10 @@ kind = "work"
 title = "Split 7 T-145 API SIZE-3 allowlist files"
 summary = "Split T-145 API SIZE-3 files (7) the T-899 allowlist is holding"
 class = "feature"
-status = "queued"
-order = 5860
+status = "ready"
+order = 8290
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
+plan = "docs/plans/t-906_plan.md"
 executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---
@@ -31,8 +32,20 @@ current_state = [
     "seven website-api src files over 1000 lines on T-899 allowlist.",
     "faction_library.rs generated expires 2027-08-13 do-not-split.",
 ]
-approach = ["Split each listed website-api file over 1000 lines."]
-verify = ["Split them; drop the SIZE-3 rows."]
+approach = [
+    "Split each listed website-api file over 1000 lines.",
+    "Split pattern: stem.rs keeps its public surface and declares submodules in a new stem/ directory named by responsibility (no _part2 names); parent mod.rs untouched.",
+    "All four split tickets own .coding-standards-allowlist.yaml, so they pack into different waves; one slice per band.",
+]
+verify = [
+    "Split them; drop the SIZE-3 rows.",
+    "cargo xtask verify file-length",
+    "cargo xtask platform wave gate --slice T-906",
+]
+acceptance = [
+    "The seven live website-api files are at or under 1000 lines with their SIZE-3 rows removed; contract/generated/faction_library.rs and its row are untouched.",
+    "API behaviour unchanged: workspace tests and the slice gate are green.",
+]
 citations = [
     "T-899 SIZE-3 allowlist",
     "t853_shell_to_xtask_waves.md",
@@ -47,6 +60,7 @@ owns = [
     "apps/website/api/src/handlers/auth/oauth.rs",
     "apps/website/api/src/handlers/telemetry/telemetry.rs",
     "apps/website/api/src/services/mission_compile.rs",
+    ".coding-standards-allowlist.yaml",
 ]
 
 [scope]

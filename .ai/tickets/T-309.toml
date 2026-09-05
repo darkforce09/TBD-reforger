@@ -1,32 +1,49 @@
 id = "T-309"
 kind = "work"
 title = "FactionDoc squad level for Apply Template"
-summary = "Preserve squads through Apply Template — needs a squad level in FactionDoc"
+summary = "Preserve squads through Apply Template: add a squad level to faction-library.schema.json and FactionDoc (core/dto.rs:745), then both sides of the editor ops — orbat_apply_faction and faction_doc_from_side_core — so save-as-template then Apply round-trips N squads."
 class = "bug"
-status = "idea"
+status = "ready"
+order = 8190
+spec = "docs/specs/ideas/t309_faction_doc_squads.md"
+plan = "docs/plans/t-309_plan.md"
 executor = "claude-code"
-notes = "The real fix T-217 could not make. FactionDoc is flat (roles[] + vehicles[]) with no squad level, and faction-library.schema.json is additionalProperties:false with required [side,name,roles,vehicles]; dto.rs:386 mirrors it flat. So save-as-template followed by Apply cannot round-trip N squads — T-217 made it refuse loudly instead of collapsing silently, which is correct but is not the feature. Needs: a squad level in faction-library.schema.json + FactionDoc, then BOTH sides of editor_ops — orbat_apply_faction and the flattening faction_doc_from_side_core. Until then, Apply is single-squad-only by contract."
-main_goal = "Add a squad level to faction-library.schema.json and FactionDoc so save-as-template followed by Apply round-trips N squads."
-context = ["The real fix T-217 could not make."]
+notes = "The real fix T-217 could not make. FactionDoc is flat (roles[] + vehicles[]) with no squad level, and faction-library.schema.json is additionalProperties:false with required [side,name,roles,vehicles]; dto.rs:386 mirrors it flat. So save-as-template followed by Apply cannot round-trip N squads — T-217 made it refuse loudly instead of collapsing silently, which is correct but is not the feature. Needs: a squad level in faction-library.schema.json + FactionDoc, then BOTH sides of editor_ops — orbat_apply_faction and the flattening faction_doc_from_side_core. Until then, Apply is single-squad-only by contract. | 2026-09-05: T-217 shipped. dto lives at apps/website/frontend/src/core/dto.rs (:745), not frontend/src/dto.rs; both ops are in state/operations/entity.rs (:2353, :2913), which T-141 also owns → different waves."
+priority = 2
+main_goal = "Save-as-template followed by Apply round-trips N squads with roles and vehicles intact."
+context = [
+    "T-217 (shipped) refuses multi-squad Apply loudly instead of collapsing silently; the feature itself is still missing.",
+    "Anchor 2026-09-05: faction-library.schema.json is additionalProperties:false, required [side,name,roles,vehicles]; core/dto.rs:745 FactionDoc is flat; entity.rs:2353 orbat_apply_faction, :2913 faction_doc_from_side_core.",
+]
 requirement = [
-    "Needs: a squad level in faction-library.schema.json + FactionDoc,",
-    "then BOTH sides of editor_ops — orbat_apply_faction and the flattening faction_doc_from_side_core.",
+    "faction-library.schema.json gains optional squads[] {callsign, roles[], vehicles[]}; flat roles/vehicles stay valid for old templates.",
+    "FactionDoc gains squads; faction_doc_from_side_core emits per-squad groups; orbat_apply_faction recreates N squads.",
+    "A round-trip test: three squads → template → apply → three squads with the same roles and vehicles.",
 ]
-current_state = [
-    "FactionDoc is flat (roles[] + vehicles[]) with no squad level,",
-    "and faction-library.schema.json is additionalProperties:false with required [side,name,roles,vehicles]; dto.rs:386 mirrors it flat.",
-    "So save-as-template followed by Apply cannot round-trip N squads —",
-    "T-217 made it refuse loudly instead of collapsing silently, which is correct but is not the feature.",
-    "Until then, Apply is single-squad-only by contract.",
+current_state = ["Apply is single-squad-only by contract; multi-squad templates are refused."]
+approach = [
+    "Schema plus golden first (schema-validate); then the dto; then both ops with the round-trip test.",
+    "Perturbation: drop the squads emit; the round-trip test goes red; restore, touch, green.",
 ]
-citations = [
-    "T-217 refuse loudly",
-    "faction-library.schema.json",
-    "dto.rs:386 FactionDoc",
-    "orbat_apply_faction",
-    "faction_doc_from_side_core",
+verify = [
+    "cargo xtask ci schema-validate",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-309",
+]
+acceptance = [
+    "Save-as-template then Apply round-trips N squads with roles and vehicles intact.",
+    "Old flat templates still load and apply as one squad.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "packages/tbd-schema/schema/faction-library.schema.json",
+    "apps/website/frontend/src/core/dto.rs",
+    "apps/website/frontend/src/editor/state/operations/entity.rs",
 ]
 
 [scope]
-domain = "repo"
-layer = "docs"
+domain = "website"
+layer = "frontend"
+component = "site_pages"
+surface = ["orbat"]

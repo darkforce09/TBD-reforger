@@ -3,8 +3,10 @@ kind = "work"
 title = "Grid labels lag ~1.4s on stationary wheel zoom"
 summary = "Grid labels lag up to ~1.4s on wheel zoom with a stationary pointer"
 class = "bug"
-status = "queued"
-order = 4990
+status = "ready"
+order = 8340
+spec = "docs/specs/existing/t817_grid_label_zoom_lag.md"
+plan = "docs/plans/t-817_plan.md"
 executor = "claude-code"
 notes = """
 wave201 verifier NIT-2; single-file eden_toolbelt.rs
@@ -43,6 +45,11 @@ verify = [
     "Scripted wheel zoom pointer stationary: labels correct within one frame settling.",
     "Labels <=2px vs CUR-unproject oracle; no over 100ms stale window.",
     "Pan behaviour unchanged after wheel zoom fix.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "Wheel zoom with a stationary pointer relabels the grid within one frame of settling; labels stay within 2px of the unproject oracle.",
+    "Pan behaviour and the T-793 quantised For key are unchanged.",
 ]
 citations = [
     "wave201.md NIT-2",

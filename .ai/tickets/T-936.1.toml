@@ -1,0 +1,64 @@
+id = "T-936.1"
+kind = "work"
+title = "Win conditions: authored modes, editor card, evaluator"
+summary = "The editor authors winConditions (mode attrition|objective|extraction|vip|timeout with params) that compile_payload carries and flatten passes through instead of hardcoding attrition; a new evaluator script drives extraction and vip endings."
+class = "feature"
+status = "ready"
+order = 7450
+spec = "docs/specs/audit_2026_09/t936_mission_logic.md"
+plan = "docs/plans/t-936_1_plan.md"
+executor = "claude-code"
+priority = 1
+parent = "T-936"
+main_goal = "Mission authors choose the win rule in the editor and the game honours it."
+context = [
+    "Anchor 2026-09-04: flatten.rs:2573-2582 hardcodes mode attrition and derives end_on from slot-holding factions; :2249 lists winConditions among synthesized blocks; the editor never authors it.",
+    "mission.schema.json:8 already requires winConditions; $defs/winConditions (:1132) is {mode: free string, endOn: enum[5]}; Objectives/TBD_ObjectiveRegistry.c:40,239-247 drives the endOn triggers today.",
+    "The in-editor Play scenario dry run is deferred by operator 2026-09-04; this slice ships authoring and runtime, not a dry run.",
+    "flatten.rs is also owned by T-674.1, T-675.1, T-290, T-291 and T-936.3; this slice packs in a different wave from each.",
+]
+requirement = [
+    "mission.schema.json $defs/winConditions: mode becomes enum attrition|objective|extraction|vip|timeout with per-mode params (extractionZoneId, vipSlotId, timeoutMinutes); endOn unchanged; goldens still validate.",
+    "New mission/extensions.rs (registered in mission/mod.rs): AUTHORED_BLOCKS key list plus typed validators; compile.rs:156 compile_payload copies listed keys verbatim; flatten emits them via a serde-flattened ExtensionBlocks field.",
+    "New mission/win_conditions.rs: parse and validate the authored block; flatten.rs:2573-2582 uses it when present, else today's attrition/end_on bytes (parity fixtures stay green).",
+    "New panels/win_conditions_card.rs (registered in panels/mod.rs): mode picker, per-mode fields, endOn checklist; every edit is an undoable doc-store operation.",
+    "New Gamemode/TBD_WinConditionEvaluator.c: evaluates extraction and vip modes, maps objective and timeout to the registry's existing endOn triggers, ends the mission once.",
+    "mission-editor-payload.schema.json declares winConditions and documents the AUTHORED_BLOCKS passthrough; its top level stays open per its own :50 rationale.",
+]
+current_state = ["flatten.rs:2573-2582 is a struct literal with a mode string literal; compile.rs:156 compile_payload carries no winConditions; no editor card; no evaluator script under Gamemode/."]
+approach = [
+    "Verify on main: a payload carrying winConditions {mode: vip} flattens to mode attrition; paste the red test output verbatim.",
+    "Add the schema enum and params; write extensions.rs and win_conditions.rs with unit tests; wire compile.rs and flatten.rs; run the Class-R parity suite.",
+    "Build the card; mount it in panels/mod.rs beside the mission settings cards; write the evaluator; compile the mod.",
+    "Perturbation: invert the timeout comparison in win_conditions.rs; its unit test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask ci schema-validate",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask mod compile",
+    "cargo xtask platform wave gate --slice T-936.1",
+]
+acceptance = [
+    "A mission authored with mode vip flattens to a winConditions block carrying vip and its params; a mission without one flattens byte-identically to today.",
+    "The Win conditions card round-trips add, edit and undo; saving and reloading keeps the authored block.",
+    "The evaluator script compiles and ends the mission exactly once when the configured condition is met (in-game behaviour on the human checklist).",
+]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "packages/tbd-schema/schema/mission.schema.json",
+    "packages/tbd-schema/schema/mission-editor-payload.schema.json",
+    "crates/map-engine-core/src/mission/flatten.rs",
+    "crates/map-engine-core/src/mission/compile.rs",
+    "crates/map-engine-core/src/mission/extensions.rs",
+    "crates/map-engine-core/src/mission/win_conditions.rs",
+    "crates/map-engine-core/src/mission/mod.rs",
+    "apps/website/frontend/src/editor/panels/win_conditions_card.rs",
+    "apps/website/frontend/src/editor/panels/mod.rs",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_WinConditionEvaluator.c",
+]
+
+[scope]
+domain = "engine"
+layer = "core"

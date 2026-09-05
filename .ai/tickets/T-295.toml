@@ -1,22 +1,56 @@
 id = "T-295"
 kind = "work"
 title = "Realtime collaborative editing"
-summary = "Realtime collaborative editing"
+summary = "Axum websocket at /missions/{id}/sync relays yrs updates and awareness between clients; the editor's collab_sync.rs applies remote updates into the local doc; POST /versions gains edit-since-load concurrency (base version id → 409)."
 class = "feature"
-status = "idea"
+status = "ready"
+order = 8220
+priority = 2
+spec = "docs/specs/ideas/t295_realtime_collab.md"
+plan = "docs/plans/t-295_plan.md"
 executor = "claude-code"
-depends_on = ["T-222"]
-main_goal = "No websocket or yrs-sync exists; server POST /versions is bare INSERT with semver-only 409, not edit-since-load concurrency."
-current_state = [
-    "yrs is wired to IndexedDB only; apply_update has two callers.",
-    "No websocket anywhere — axum is built without the ws feature and there is no yrs-sync or awareness dependency.",
-    "The server has no optimistic concurrency: POST /versions is a bare INSERT and the only 409 means you reused a semver, not someone edited since you loaded.",
+main_goal = "Two browsers editing one mission converge live, and a stale save is refused instead of overwriting."
+notes = "2026-09-05: T-222 is shipped (dropped in favour of T-190, which this builds on). realtime/ is a new directory registered in api/src/lib.rs; persist.rs and state/mod.rs are shared with T-937.4 and T-190 → packs after both."
+context = [
+    "Anchor 2026-09-05: yrs is wired to IndexedDB only; api/Cargo.toml:27 axum 0.8.9 without the ws feature; no realtime module; app.rs:751/:757 versions routes.",
+    "POST /versions is a bare INSERT whose only 409 is a reused semver; T-190 (packs earlier) adds the read-merge-write path in persist.rs this reuses.",
 ]
-estimated = ["scope"]
-owns = ["apps/website/frontend/src/editor/state/persist.rs"]
+requirement = [
+    "New api/src/realtime/{mod.rs, yrs_sync.rs} (registered in lib.rs): per-mission room, websocket relay of yrs update and awareness frames, session-cookie auth.",
+    "New frontend state/collab_sync.rs (registered in state/mod.rs): connects on editor open, applies remote updates, sends local ones; persist.rs debounce unchanged.",
+    "POST /missions/{id}/versions takes base_version_id; mismatch returns 409 with the current head.",
+]
+current_state = [
+    "No websocket anywhere; no yrs-sync dependency; the only 409 is a reused semver.",
+]
+approach = [
+    "Server room and relay with an integration test (two clients converge); then client sync; then the concurrency check.",
+    "Perturbation: drop the base_version check; the 409 test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p website-api realtime",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-295",
+]
+acceptance = [
+    "Two browsers editing one mission see each other's changes within a second and converge to one document.",
+    "Saving a version over a newer head is refused with 409 naming the head.",
+]
+depends_on = ["T-190"]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "apps/website/frontend/src/editor/state/persist.rs",
+    "apps/website/frontend/src/editor/state/collab_sync.rs",
+    "apps/website/frontend/src/editor/state/mod.rs",
+    "apps/website/api/src/app.rs",
+    "apps/website/api/Cargo.toml",
+    "apps/website/api/src/lib.rs",
+    "apps/website/api/src/realtime/mod.rs",
+    "apps/website/api/src/realtime/yrs_sync.rs",
+]
 
 [scope]
 domain = "website"
-layer = "frontend"
-component = "mission_creator"
-surface = ["doc_store"]
+layer = "backend"
+component = "realtime"

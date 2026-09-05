@@ -1,34 +1,45 @@
 id = "T-304"
 kind = "work"
-title = "RegistryScan weapon weight never read, 32 wrong"
-summary = "TBD_RegistryScan ReadPhysAttrsPass: weapon weight never read, and 32 rows carry WRONG weights"
+title = "RegistryScan never reads weapon weight; 32 wrong rows"
+summary = "TBD_RegistryScan ReadPhysAttrsPass treats SCR_WeaponAttachmentsStorageComponent as storage so weapon weight is never read (0/107), and its class-keyed foreach picks hash order over derivation depth, so 32 rows carry Item_Base.et's 0.01 kg."
 class = "bug"
-status = "idea"
+status = "ready"
+order = 7680
+spec = "docs/specs/ideas/t304_registry_scan_weight.md"
+plan = "docs/plans/t-304_plan.md"
 executor = "claude-code"
-notes = "executor: workbench."
-main_goal = "Weapon weight is never read (0/107 weapons have weight_kg) and 32 rows carry Item_Base.et's generic 0.01kg — worse than absent."
-context = ["Found by T-206 while proving the pak data is readable offline."]
-requirement = ["Do not patch the 32 values by hand while the scanner bug stands; the next export silently reverts them."]
-current_state = [
-    "Two defects in ReadPhysAttrsPass.",
-    "(1) Weapon weight is never read at all: on weapons ItemPhysAttributes hangs off SCR_WeaponAttachmentsStorageComponent, whose name ends in StorageComponent, so the pass sets isStorage=true/isInvItem=false and reads only m_fMaxWeight/MaxCumulativeVolume, never touching",
-    "Attributes.ItemPhysAttributes.",
-    "Rifle_AK74_base.et plainly serializes Weight 3.07 / ItemVolume 1500.",
-    "That is the entire reason weight_kg is present on 0 of 107 weapons.",
-    "(2) `foreach (string cls, array<BaseContainer> bucket : comps)` iterates a map keyed by component CLASS.",
-    "The doc comment claims 'leaf override wins — buckets are most-derived-first', which holds WITHIN a bucket but not ACROSS classes, so the winner is hash order, not derivation depth.",
-    "32 rows consequently carry Item_Base.et's generic Weight 0.01 instead of the real value: Part_M252_Barrel 14.2kg -> 0.01, Part_NSV_Tripod 16kg -> 0.01, Part_2B14_BasePlate 17kg -> 0.01, Radio_R107M 18.5kg -> 0.01, Part_M3_Tripod",
-    "19.96kg -> 0.01.",
-    "Those are WORSE THAN ABSENT — they will silently poison any cargo-budget work.",
+notes = "executor: workbench. | 2026-09-05: executor = claude-code under operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist. Re-running the scan stays the operator's Workbench step (MANUAL). Both copies of TBD_RegistryScan.c (tbd-framework, tbd-export) are owned and must stay identical."
+priority = 1
+main_goal = "The next Workbench scan writes a real weight_kg for all 107 weapons and the 32 poisoned rows."
+context = [
+    "Found by T-206 (deferred) while proving pak data is readable offline; Rifle_AK74_base.et serializes Weight 3.07 / ItemVolume 1500 that the scanner never reads.",
+    "Anchor 2026-09-05: apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_RegistryScan.c:324-432 four `foreach (string cls, array<BaseContainer> bucket : comps)` loops keyed by class.",
 ]
-citations = [
-    "T-206",
-    "ReadPhysAttrsPass",
-    "Rifle_AK74_base.et",
-    "Item_Base.et generic 0.01",
+requirement = [
+    "ReadPhysAttrsPass reads Attributes.ItemPhysAttributes on weapons even when the component name ends in StorageComponent.",
+    "Across component classes the most-derived bucket wins, never hash order; a comment pins the rule and an assertion guards it.",
+    "No registry value is patched by hand; the next export would revert it.",
 ]
-estimated = ["scope"]
+current_state = ["weight_kg present on 0 of 107 weapons; 32 rows (Part_M252_Barrel 14.2 kg, Radio_R107M 18.5 kg, Part_M3_Tripod 19.96 kg) carry 0.01 kg."]
+approach = [
+    "Verify on main by reading the pass and the registry rows named above; paste the 0.01 rows.",
+    "Fix the isStorage/isInvItem split; sort buckets by derivation depth before the foreach; mirror into tbd-export's copy.",
+    "Mod compile gates; the operator re-runs the Workbench scan and diffs the 32 rows (MANUAL).",
+]
+verify = [
+    "cargo xtask mod compile",
+    "cargo xtask platform wave gate --slice T-304",
+]
+acceptance = [
+    "After the next Workbench scan every one of the 107 weapons has a weight_kg and the 32 rows carry their real weights.",
+    "The two TBD_RegistryScan.c copies are byte-identical and no registry value was edited by hand.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_RegistryScan.c",
+    "apps/mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryScan.c",
+]
 
 [scope]
 domain = "mod"
-layer = "scripts"
+layer = "workbench"

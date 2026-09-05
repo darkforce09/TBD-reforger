@@ -3,8 +3,10 @@ kind = "work"
 title = "A selected vehicle looks identical to an unselected one"
 summary = "A selected vehicle looks identical to an unselected one"
 class = "bug"
-status = "queued"
-order = 5270
+status = "ready"
+order = 8500
+spec = "docs/specs/existing/t845_selected_vehicle_treatment.md"
+plan = "docs/plans/t-845_plan.md"
 executor = "claude-code"
 notes = """
 operator eye-pass wave-207; T-808 lane family; pairs naturally with the wave-210 vehicle set
@@ -42,6 +44,13 @@ verify = [
     "Select vehicle crop differs measurably ring tint comment slot method.",
     "Deselect returns neutral silhouette; three vehicles exactly one changes.",
     "Heading kind survive selection; no re-pack on selection change measure.",
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p map-engine-render",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "A selected vehicle is visibly ringed or tinted; deselect returns the neutral silhouette; with three vehicles exactly one changes.",
+    "Heading and kind survive selection and no re-pack happens on selection change.",
 ]
 citations = [
     "operator eye-pass wave-207",

@@ -4,7 +4,7 @@ title = "Staging soak + golden mission smoke"
 summary = "Pinned game/mod version soak; golden-mission smoke on staging server."
 class = "feature"
 status = "queued"
-order = 1200
+order = 8570
 executor = "human"
 depends_on = [
     "T-114",

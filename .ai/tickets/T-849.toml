@@ -3,8 +3,10 @@ kind = "work"
 title = "Add ungroup leave-squad verb without deleting slot"
 summary = "Ungroup / leave-squad — no editor verb to take a slot out of a squad without deleting it"
 class = "bug"
-status = "queued"
-order = 5310
+status = "ready"
+order = 8520
+spec = "docs/specs/existing/t849_ungroup_verb.md"
+plan = "docs/plans/t-849_plan.md"
 executor = "claude-code"
 notes = """
 operator W208 eye-pass; pairs with T-848
@@ -40,6 +42,12 @@ verify = [
     "After auto-place into squad Ungroup leaves slot on map.",
     "No SQUAD_LINKS tether to old leader after Ungroup.",
     "Slot survives can Group to or refile again.",
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "After auto-placement into a squad, Ungroup leaves the slot on the map with no tether to the old leader.",
+    "The slot survives and can be grouped or refiled again.",
 ]
 citations = [
     "wave208 operator eye-pass",

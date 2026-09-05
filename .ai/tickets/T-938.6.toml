@@ -1,0 +1,54 @@
+id = "T-938.6"
+kind = "work"
+parent = "T-938"
+title = "Wasm memory budget guard with HUD readout"
+summary = "A new memory_budget.rs tracks measured peak bytes per world asset, raises the satellite mip floor before the wasm heap would exceed the budget, and shows live usage in the debug HUD."
+class = "feature"
+status = "ready"
+order = 7850
+priority = 1
+spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
+plan = "docs/plans/t-938_6_plan.md"
+executor = "claude-code"
+main_goal = "The editor degrades satellite detail instead of running out of wasm memory."
+context = [
+    "Master audit S3: satellite L0 is 655 MB RGBA; the DEM decode peak (~400 MB) is delivered by T-935.4 (raw .dem), not here.",
+    "Depends on T-935.13: budgets are measured against the binary asset formats, not the gz-JSON and PNG paths being deleted.",
+    "satellite.rs is the only loader this slice edits; it gains a mip floor the budget can raise.",
+]
+requirement = [
+    "New apps/website/frontend/src/editor/world_assets/memory_budget.rs (registered in world_assets/mod.rs): per-asset registered peak, total budget (default 1536 MB, query-param override), reserve(bytes) -> Decision.",
+    "satellite.rs consults the budget before loading a mip level; a Degrade decision raises the mip floor by one and logs it.",
+    "Debug HUD row: reserved bytes against the budget and the current satellite floor.",
+    "Measured peaks per asset on everon are recorded in the ticket report.",
+]
+current_state = [
+    "No budget exists: each loader allocates independently and the first out-of-memory aborts the wasm instance.",
+]
+approach = [
+    "Verify on main: load everon with a 512 MB browser heap cap; paste the abort.",
+    "Write memory_budget.rs; wire satellite.rs; add the HUD row; measure each asset.",
+    "Perturbation: make reserve never return Degrade; the floor test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-938.6",
+]
+acceptance = [
+    "Loading everon under a budget smaller than full satellite L0 raises the mip floor instead of aborting.",
+    "The HUD shows reserved bytes against the budget and the current floor.",
+]
+depends_on = ["T-935.13"]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "apps/website/frontend/src/editor/world_assets/memory_budget.rs",
+    "apps/website/frontend/src/editor/world_assets/mod.rs",
+    "apps/website/frontend/src/editor/world_assets/satellite.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "world_render"
+surface = ["satellite"]

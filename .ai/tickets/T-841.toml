@@ -3,8 +3,10 @@ kind = "work"
 title = "Type picker popover translucent; make opaque panel"
 summary = "The Type picker popover is translucent — text blurs over the map; make it an opaque panel"
 class = "bug"
-status = "queued"
-order = 5230
+status = "ready"
+order = 8490
+spec = "docs/specs/existing/t841_type_picker_opaque.md"
+plan = "docs/plans/t-841_plan.md"
 executor = "claude-code"
 notes = """
 operator eye-pass wave-206; small; pairs with T-827 methodology
@@ -43,6 +45,11 @@ verify = [
     "Popover computed background is fully opaque.",
     "Option text contrast greater or equal 4.5:1 live.",
     "No other picker behavior changes.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "The Type picker popover computed background is fully opaque and option text measures at least 4.5:1 live.",
+    "No other picker behaviour changes.",
 ]
 citations = [
     "wave-206 operator eye-pass",

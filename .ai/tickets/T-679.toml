@@ -3,8 +3,10 @@ kind = "work"
 title = "Placement scatter: radius and area shape"
 summary = "Placement scatter: radius and area shape"
 class = "chore"
-status = "queued"
-order = 4360
+status = "ready"
+order = 7420
+spec = "docs/specs/existing/t679_placement_scatter.md"
+plan = "docs/plans/t-679_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row
@@ -24,6 +26,7 @@ context = [
     "Three ids: OBJ placement radius shape GRP placement radius.",
     "$defs/slot and $defs/group closed; one key each plus spawn reader.",
     "Schema split T-706; cheapest coherent widening in workbench program.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
 ]
 requirement = [
     "Scatter spawn within placement radius per slot and group attrs.",
@@ -42,6 +45,11 @@ approach = [
 verify = [
     "Spawn scatters bodies within authored placement radius.",
     "No packages/tbd-schema edits in this slice.",
+    "cargo xtask mod compile",
+]
+acceptance = [
+    "Slots and groups with a placement radius spawn scattered inside the authored radius and shape; zero radius spawns exactly as before.",
+    "No packages/tbd-schema edits; compile clean.",
 ]
 citations = [
     "closed slot and group defs",
@@ -49,7 +57,10 @@ citations = [
     "cheapest workbench widening slice",
 ]
 estimated = ["scope"]
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c"]
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+]
 
 [scope]
 domain = "mod"

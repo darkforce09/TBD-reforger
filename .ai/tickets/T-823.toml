@@ -3,8 +3,10 @@ kind = "work"
 title = "OBJ readout must count vehicles or rename honestly"
 summary = "OBJ readout counts slots only — placed vehicles are invisible to it"
 class = "chore"
-status = "queued"
-order = 5050
+status = "ready"
+order = 8380
+spec = "docs/specs/existing/t823_obj_readout_vehicles.md"
+plan = "docs/plans/t-823_plan.md"
 executor = "claude-code"
 notes = """
 wave203 verifier; wording-vs-count decision, small
@@ -36,6 +38,11 @@ approach = ["Decide rename vs entity count; document honest exclusion if renamed
 verify = [
     "Place vehicle: readout includes it OR renamed so exclusion is honest.",
     "WEST EAST IND TOTAL chips unchanged after fix.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "The readout either counts placed vehicles or is renamed SLOTS with the exclusion documented; the choice is pinned in the ticket.",
+    "WEST, EAST, IND and TOTAL chips keep their slot semantics.",
 ]
 citations = [
     "wave203.md NIT",

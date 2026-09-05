@@ -1,0 +1,55 @@
+id = "T-935.6"
+kind = "work"
+parent = "T-935"
+title = "Roads: rkyv emit and zero-copy loader"
+summary = "build-roads emits roads/road_network.rkyv (RoadNetworkArchive) beside objects/roads.json.gz; store.rs sniffs gzip magic versus rkyv so roads.rs loads either source into the same road network."
+class = "feature"
+status = "ready"
+order = 7190
+priority = 1
+spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
+plan = "docs/plans/t-935_6_plan.md"
+executor = "claude-code"
+main_goal = "The road network loads through access_checked with no JSON parse, and the JSON path still works until cutover."
+context = [
+    "Anchor 2026-09-04: tools/tbd-tools/src/world/build.rs build-roads :1106-1183 writes objects/roads.json.gz; core roads.rs:28 parses it; store.rs:50/110/120 wires it; world_host.rs:146 fetches it.",
+    "Packs after T-935.2 because both need tools/tbd-tools/src/world/mod.rs; world_host.rs (the URL switch) is T-935.11's job.",
+]
+requirement = [
+    "New tools/tbd-tools/src/world/roads_emit.rs: convert the road model to RoadNetworkArchive {segments: id, road_class u8, width_m f32, centerline Vec<[f32;2]>} and write rkyv bytes.",
+    "bin/world.rs: build-roads runs roads_emit after the existing JSON emit (dual emission); `pub mod roads_emit` in world/mod.rs.",
+    "roads.rs: `from_archive(&ArchivedRoadNetworkArchive)` yields the same in-memory network as the JSON parse; store.rs sniffs gzip magic 1f 8b versus rkyv.",
+    "Parity test on everon: JSON roads versus archive roads equal (segment count, ids, classes, widths, points bit-equal).",
+]
+current_state = [
+    "tools/tbd-tools/src/world/build.rs:1106-1183 builds roads and writes gz JSON only; bin/world.rs dispatches build-roads.",
+    "crates/map-engine-core/src/world/roads.rs:28 parses road JSON; store.rs:50/110/120 loads roads from bytes with no format switch.",
+]
+approach = [
+    "roads_emit.rs: `write_road_network_rkyv(path, &RoadModel)` using to_bytes from map_engine_core::world::binary::archives; register in world/mod.rs.",
+    "bin/world.rs: after build-roads returns, call roads_emit with the same model; print both output paths.",
+    "roads.rs + store.rs: archive constructor and the magic sniff so callers pass bytes without knowing the format.",
+    "Perturbation: drop the last centerline point in from_archive; parity test red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features roads",
+    "cargo test -p tbd-tools roads_emit",
+    "cargo xtask platform wave gate --slice T-935.6",
+]
+acceptance = [
+    "roads/road_network.rkyv for everon loads through access_checked and equals the JSON road network.",
+    "store.rs accepts gzip-JSON or rkyv bytes transparently; the frontend still fetches JSON until T-935.11/.13.",
+]
+depends_on = ["T-935.1", "T-935.2"]
+created_at = "2026-09-05T01:34:37Z"
+owns = [
+    "tools/tbd-tools/src/world/roads_emit.rs",
+    "tools/tbd-tools/src/world/mod.rs",
+    "tools/tbd-tools/src/bin/world.rs",
+    "crates/map-engine-core/src/world/store.rs",
+    "crates/map-engine-core/src/world/roads.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "world"

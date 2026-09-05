@@ -3,8 +3,10 @@ kind = "work"
 title = "Zone volumes: height bounds capture counts and owner"
 summary = "Zones become volumes: min/max height, attacker and defender counts, starting owner"
 class = "feature"
-status = "queued"
-order = 4400
+status = "ready"
+order = 7370
+spec = "docs/specs/existing/t685_zone_volumes.md"
+plan = "docs/plans/t-685_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)
@@ -24,6 +26,7 @@ context = [
     "U1 framework_synthesis C.2 ranked ten of sixteen; WOG WMT_Task_Point evidence.",
     "TBD zones today are 2D circle or polygon; shape carries no height.",
     "Schema widening split T-706; ticket is Enfusion reader plus editor UI.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
 ]
 requirement = [
     "Min/max height volume semantics; CaptureCount DefCount Owner from WOG evidence.",
@@ -43,6 +46,11 @@ approach = [
 verify = [
     "Headless mod compile clean with zone volume reader in owns path.",
     "Zone inspector shows min max height and capture defender counts when UI lands.",
+    "cargo xtask mod compile",
+]
+acceptance = [
+    "Zones with min/max height, capture and defender counts and starting owner apply those semantics at runtime; existing zoneRules keys keep their behaviour.",
+    "The zone inspector shows the three numeric fields and the side picker; no packages/tbd-schema edits; compile clean.",
 ]
 citations = [
     "framework_synthesis U1 WMT_Task_Point",
@@ -50,7 +58,12 @@ citations = [
     "T-706 schema widening split",
 ]
 estimated = ["scope"]
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneVolume.c"]
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneVolume.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",
+    "apps/website/frontend/src/editor/panels/zones_panel.rs",
+]
 
 [scope]
 domain = "mod"

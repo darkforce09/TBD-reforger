@@ -3,8 +3,10 @@ kind = "work"
 title = "Marker style and Area markers — the $defs/marker widening"
 summary = "Marker style and Area markers — the $defs/marker widening"
 class = "chore"
-status = "queued"
-order = 4300
+status = "ready"
+order = 7310
+spec = "docs/specs/existing/t673_marker_style_reader.md"
+plan = "docs/plans/t-673_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-673 salvage/t853-dropped/T-673` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other.
@@ -25,6 +27,7 @@ context = [
     "$defs/marker closed at x z icon label; six attrs contract-blocked.",
     "Schema widening split to T-706; this ticket is mod reader only.",
     "Must ship after T-069 authors four schema-carried marker fields.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
 ]
 requirement = [
     "Read six MRK attribute ids in TBD_MarkerData and TBD_MarkerClient.",
@@ -43,6 +46,11 @@ approach = [
 verify = [
     "Marker runtime reads six attrs from mission payload at spawn.",
     "No edits under packages/tbd-schema in this slice.",
+    "cargo xtask mod compile",
+]
+acceptance = [
+    "TBD_MarkerData and TBD_MarkerClient read size, rotation, shape, brush, color and alpha from the mission payload at spawn; icon-only markers render unchanged.",
+    "packages/tbd-schema untouched; the headless compile is clean.",
 ]
 citations = [
     "T-069 marker schema fields",

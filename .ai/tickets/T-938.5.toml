@@ -1,0 +1,51 @@
+id = "T-938.5"
+kind = "work"
+title = "Viewsheds sliced across frames with caps"
+summary = "Building viewsheds (building_viewshed.rs:251-268) and terrain viewsheds (dem/sample.rs:492-535) run as cancellable jobs sliced across frames under radius and cell caps, scheduled by a new viewshed_scheduler.rs that los_tool::place_viewshed calls."
+class = "feature"
+status = "ready"
+order = 7840
+spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
+plan = "docs/plans/t-938_5_plan.md"
+executor = "claude-code"
+priority = 2
+parent = "T-938"
+main_goal = "Placing a viewshed never freezes the editor and never runs unbounded."
+context = [
+    "Anchor 2026-09-04: building_viewshed.rs:251-268 wash_band via level_wash :156-175 and level_wash_compound :180-195; defaults :37-41 r=25 m, cell 0.25 — about 31k synchronous raycasts per level.",
+    "Anchor: dem/sample.rs:492-500 OVERSAMPLE=2.0, loop :500-535, O((R/C)^2) with no radius clamp.",
+    "Call path: canvas/gestures.rs:1293-1325 -> los_tool::place_viewshed (:904). los_tool.rs is SIZE-3 allowlisted: call-site edits only, no new logic there.",
+]
+requirement = [
+    "building_viewshed.rs and dem/sample.rs expose resumable batch iterators plus a cancel token; caps radius <= 400 m and cells <= 250k, refused with a message.",
+    "New apps/website/frontend/src/editor/tools/viewshed_scheduler.rs (registered in tools/mod.rs): one active job per tool, animation-frame batches <= 4 ms, cancel on new placement.",
+    "los_tool.rs:904 place_viewshed submits to the scheduler; nothing else changes in that file.",
+    "Sliced results are bit-identical to the synchronous path on a fixture (test).",
+]
+current_state = ["Placement blocks the wasm thread for the whole raycast sweep; oversize radii are accepted without limit."]
+approach = [
+    "Verify on main: time place_viewshed at r=25 on a golden building; paste the blocking duration.",
+    "Refactor the two loops into batch iterators; write the scheduler; re-point the call site.",
+    "Perturbation: make the batch iterator skip its last row; the fixture equality test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask platform wave gate --slice T-938.5",
+]
+acceptance = [
+    "Placing a viewshed never blocks a frame longer than the batch budget; a second placement cancels the first.",
+    "Sliced results equal the synchronous results on the fixture; out-of-cap requests are refused with a message.",
+]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "crates/map-engine-core/src/building_viewshed.rs",
+    "crates/map-engine-core/src/dem/sample.rs",
+    "apps/website/frontend/src/editor/tools/viewshed_scheduler.rs",
+    "apps/website/frontend/src/editor/tools/mod.rs",
+    "apps/website/frontend/src/editor/tools/los_tool.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "core"

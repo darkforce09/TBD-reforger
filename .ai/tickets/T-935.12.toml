@@ -1,0 +1,59 @@
+id = "T-935.12"
+kind = "work"
+parent = "T-935"
+title = "Manifest schema, golden chunk .bin, gates, LFS rules"
+summary = "terrain-manifest and map-object-instance schemas gain the objects.binary block; golden map-object-chunk-sample.bin is checked by golden_gate and schema_gates; .gitattributes routes *.bin *.rkyv *.dem *.tbd-bath through LFS."
+class = "feature"
+status = "ready"
+order = 7220
+priority = 1
+spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
+plan = "docs/plans/t-935_12_plan.md"
+executor = "claude-code"
+main_goal = "The binary formats are schema-described, golden-gated and LFS-routed before the cutover commit lands."
+context = [
+    "Anchor 2026-09-04: packages/tbd-schema/schema/{terrain-manifest.schema.json, map-object-instance.schema.json:38-51}; golden/map-objects/map-object-chunk-sample.json; gates schema_gates.rs:3366, golden_gate.rs:483; .gitattributes:3-6.",
+    "Packs after every emitter and loader slice (.2-.11) so the gates check real formats, and before T-935.13 so the cutover commit is gated.",
+]
+requirement = [
+    "terrain-manifest.schema.json: optional objects.binary {container, containerVersion, pod, podBytes, chunks, prefabs, roads, regions, typeInventory}, dem.raw, labels, water, buildings blocks matching manifest.rs.",
+    "map-object-instance.schema.json: document the binary row (32 B POD field order) beside the JSON row; golden map-object-chunk-sample.bin emitted from the golden JSON by the T-935.2 emitter.",
+    "golden_gate.rs: decode the golden .bin and compare with the golden JSON decode; schema_gates.rs: verify-terrain-strict validates the new blocks and rejects dangling binary paths.",
+    ".gitattributes: *.bin, *.rkyv, *.dem, *.tbd-bath under packages/map-assets are LFS; existing rules untouched.",
+]
+current_state = [
+    "packages/tbd-schema/schema/map-object-instance.schema.json:38-51 describes JSON rows only; terrain-manifest.schema.json has no binary fields.",
+    "xtask/src/golden_gate.rs:483 compares the golden chunk JSON; xtask/src/schema_gates.rs:3366 validates manifests; .gitattributes:3-6 lists the LFS rules (png, tbd-sat, bvh).",
+]
+approach = [
+    "Schemas: add the optional blocks with descriptions and enum-pinned container and pod names; run schema-validate.",
+    "Golden: emit map-object-chunk-sample.bin from map-object-chunk-sample.json with the T-935.2 emitter; add the LFS rules first, then commit it.",
+    "golden_gate.rs: binary golden check; schema_gates.rs: binary path existence in verify-terrain-strict; perturbation = flip one byte in the golden .bin, gate red.",
+    "Confirm routing with `git check-attr filter` on one path per extension.",
+]
+verify = [
+    "cargo xtask ci schema-validate",
+    "cargo xtask ci verify map-object-golden",
+    "cargo xtask ci verify-terrain-strict",
+    "cargo xtask platform wave gate --slice T-935.12",
+]
+acceptance = [
+    "The golden .bin is gated: a flipped byte fails verify map-object-golden.",
+    "verify-terrain-strict accepts the everon manifest with and without objects.binary and rejects dangling binary paths.",
+    "git check-attr reports filter lfs for .bin, .rkyv, .dem and .tbd-bath under packages/map-assets.",
+]
+depends_on = ["T-935.2", "T-935.3", "T-935.4", "T-935.5", "T-935.6", "T-935.7", "T-935.8", "T-935.9", "T-935.10", "T-935.11"]
+created_at = "2026-09-05T01:34:37Z"
+owns = [
+    "packages/tbd-schema/schema/terrain-manifest.schema.json",
+    "packages/tbd-schema/schema/map-object-instance.schema.json",
+    "packages/tbd-schema/golden/map-objects/map-object-chunk-sample.bin",
+    "xtask/src/golden_gate.rs",
+    "xtask/src/schema_gates.rs",
+    ".gitattributes",
+]
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

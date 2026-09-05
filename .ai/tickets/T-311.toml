@@ -1,20 +1,41 @@
 id = "T-311"
 kind = "work"
-title = "Leaderboard ORDER BY has no tie-breaker, so paging is unstable"
-summary = "Leaderboard ORDER BY has no tie-breaker, so paging is unstable"
+title = "Leaderboard ORDER BY lacks tie-breaker; paging unstable"
+summary = "None of the five ORDER BY arms in handlers/telemetry/leaderboards.rs:47-51 has a tie-breaker, so LIMIT/OFFSET paging returns an unstable row set once T-194's golden introduces 4-way ties. Append `, lt.discord_id ASC` to each arm and test paging."
 class = "bug"
-status = "idea"
+status = "ready"
+order = 7020
+spec = "docs/specs/ideas/t311_leaderboard_tiebreak.md"
+plan = "docs/plans/t-311_plan.md"
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope. "
-main_goal = "None of five leaderboard ORDER BY arms has a tie-breaker so LIMIT/OFFSET paging is unstable."
-context = ["T-194's content golden introduces 4-way ties in team_kills, missions_played and command_win_rate, so this is now reachable with the committed seed."]
-requirement = ["Fix: append `, lt.discord_id ASC` to each arm."]
-current_state = ["handlers/leaderboards.rs:44-50 — none of the five ORDER BY arms has a tie-breaker, so with LIMIT/OFFSET the row SET is unstable, not merely the order within it."]
-citations = [
-    "handlers/leaderboards.rs:44-50",
-    "T-194 content golden ties",
+notes = "needs-operator: frozen unmappable Scope.  | 2026-09-05: proposed scope website/backend/http_api written into the body; the frozen note is kept verbatim for the operator."
+priority = 2
+main_goal = "Paging any leaderboard category yields every row exactly once in a stable order."
+context = [
+    "T-194's content golden creates 4-way ties in team_kills, missions_played and command_win_rate, so the instability is reachable with the committed seed.",
+    "Anchor 2026-09-05: leaderboards.rs:44 whitelist comment, :47-51 five arms (kd, command_win, missions, longest_kill, team_kills), :91 push(order).",
 ]
+requirement = [
+    "Every whitelist arm ends with `, lt.discord_id ASC` so equal scores page deterministically.",
+    "An integration test pages the T-194 golden with LIMIT 2 across a tie and sees each row exactly once.",
+]
+current_state = ["With LIMIT/OFFSET over tied rows Postgres may repeat a row across pages and skip another; the row SET is unstable, not only its order."]
+approach = [
+    "Verify on main: the paging test over the golden fails or flakes; paste the red.",
+    "Append the tie-breaker to the five strings; perturbation: drop it from one arm, red, restore, touch, green.",
+]
+verify = [
+    "cargo test -p website-api leaderboards",
+    "cargo xtask platform wave gate --slice T-311",
+]
+acceptance = [
+    "Paging the leaderboard across tied rows yields every row exactly once in a stable order.",
+    "Each category's SQL still comes only from the whitelist; no user string reaches ORDER BY.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = ["apps/website/api/src/handlers/telemetry/leaderboards.rs"]
 
 [scope]
-domain = "repo"
-layer = "docs"
+domain = "website"
+layer = "backend"
+component = "http_api"

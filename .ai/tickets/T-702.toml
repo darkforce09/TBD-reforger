@@ -3,8 +3,10 @@ kind = "work"
 title = "Whole-terrain zone — one zone sized to the map"
 summary = "3DEN-MISC-001 E11: one command authors a play-area boundary polygon covering the terrain exactly from terrain_bounds."
 class = "feature"
-status = "queued"
-order = 4560
+status = "ready"
+order = 7390
+spec = "docs/specs/existing/t702_whole_terrain_zone.md"
+plan = "docs/plans/t-702_plan.md"
 executor = "claude-code"
 notes = "T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-702 salvage/t853-dropped/T-702` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other."
 main_goal = "One button authors a whole-terrain Play Area zone from terrain_bounds with undo."
@@ -30,6 +32,11 @@ approach = [
 verify = [
     "terrain_rect_ring golden vs terrain_bounds for both terrains.",
     "One undo step; Play Area selected after creation.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "The Zones-panel button authors one Play Area boundary polygon matching terrain_bounds exactly, selected with Attributes open, in one undo step.",
+    "terrain_rect_ring golden matches terrain_bounds for both terrains; the begin_zone_draw path is unchanged.",
 ]
 citations = [
     "3den_sweep E11 3DEN-MISC-001",
@@ -39,7 +46,7 @@ citations = [
 estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/editor/panels/zones_panel.rs",
-    "apps/website/frontend/src/editor/state/operations.rs",
+    "apps/website/frontend/src/editor/state/operations/entity.rs",
 ]
 
 [scope]

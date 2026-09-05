@@ -1,13 +1,47 @@
 id = "T-294"
 kind = "work"
-title = "Only one of two registered terrains has object data"
-summary = "terrain-registry.json declares everon (active, all five phases shipped) and arland (queued, P1 only) but arland has only a 756-byte manifest and zero object data."
+title = "Arland has a manifest and no object data"
+summary = "terrain-registry.json declares arland queued with P1 only; packages/map-assets/arland holds a 756-byte manifest and zero objects. Run the export-terrain gate for arland: the operator exports from Workbench, the agent stages, builds and records P1."
 class = "feature"
-status = "idea"
+status = "ready"
+order = 8250
+spec = "docs/specs/ideas/t294_arland_objects.md"
+plan = "docs/plans/t-294_plan.md"
 executor = "claude-code"
-estimated = ["scope"]
-owns = ["packages/map-assets/arland"]
+notes = "2026-09-05: emitted object files (objects/chunks/*.json.gz, prefabs.json.gz, roads.json.gz) are pipeline artifacts under packages/map-assets/arland/objects/ that owns cannot enumerate by name; the report lists them. MANUAL = the operator's Workbench export (runbook text from xtask/src/gate_export_terrain.rs:58-85)."
+priority = 2
+main_goal = "arland ships a P1 object set and a manifest that validates, produced by the same pipeline as everon."
+context = [
+    "Anchor 2026-09-05: packages/map-assets/terrain-registry.json:16-19 arland entry; packages/map-assets/arland/ contains manifest.json only.",
+    "xtask/src/gate_export_terrain.rs:58-85 prints the operator runbook; the Workbench full-world export is a human step, everything after copy-export-profile is agent work.",
+]
+requirement = [
+    "arland/manifest.json gains objects.schemaVersion, transforms and P1 counts in everon's shape.",
+    "`cargo xtask map export-terrain arland --phase P1` runs end to end once the staged raw export exists.",
+    "arland objects are produced by build-objects and listed in the report; LFS rules apply unchanged.",
+]
+current_state = ["arland: manifest only; no objects/, dem/ or satellite/. The gate's runbook is everon-shaped and arland has never been exported."]
+approach = [
+    'Operator: Workbench > Plugins > TBD > "Export TBD World Objects (full)" on arland, then `world copy-export-profile --terrain arland --full`.',
+    "Agent: run the gate, fix everon-only assumptions in gate_export_terrain.rs, fill manifest.json.",
+    "Perturbation: point the gate at a missing staging dir; it refuses with the runbook; restore, touch, green.",
+]
+verify = [
+    "cargo xtask map export-terrain arland --phase P1",
+    "cargo xtask ci verify terrain-manifest",
+    "cargo xtask platform wave gate --slice T-294",
+]
+acceptance = [
+    "The gate runs for arland and the manifest validates under verify terrain-manifest.",
+    "arland objects exist on disk with non-zero chunk and prefab counts recorded in manifest.json.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "packages/map-assets/arland/manifest.json",
+    "xtask/src/gate_export_terrain.rs",
+]
 
 [scope]
 domain = "repo"
 layer = "xtask"
+component = "gates"

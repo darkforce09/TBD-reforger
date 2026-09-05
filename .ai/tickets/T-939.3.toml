@@ -1,0 +1,56 @@
+id = "T-939.3"
+kind = "work"
+title = "Canvas: Z gizmo arm and vertical drag"
+summary = "The transform gizmo gains a Z arm: dragging it changes the selection's height with snapping and a metre readout, through the existing gesture pipeline and translate operation."
+class = "feature"
+status = "ready"
+order = 7880
+spec = "docs/specs/audit_2026_09/t939_editor_usability.md"
+plan = "docs/plans/t-939_3_plan.md"
+executor = "claude-code"
+priority = 2
+parent = "T-939"
+main_goal = "Authors set entity height by dragging a Z handle on the canvas."
+context = [
+    "Anchor 2026-09-04: canvas/overlays.rs:172-198 draws Translate X/Y arms only; :200-210 draws a flat rotate ring; the gizmo enum is total over these variants.",
+    "canvas/gestures.rs owns pointer gestures; z is already stored per entity (chunk z column, slot z attribute).",
+    "overlays.rs and canvas/mod.rs are also owned by T-939.6, which packs after this slice.",
+]
+requirement = [
+    "New canvas/gizmo_z.rs (registered in canvas/mod.rs): Z arm geometry, hit test, screen-dy-to-metres at camera scale, snap step, readout text.",
+    "overlays.rs draws the Z arm and the height readout; gestures.rs routes a Z-arm press to the new drag.",
+    "The drag writes z through the existing translate operation path so undo and collaboration see one operation per gesture.",
+    "Shift held during the drag disables snapping.",
+]
+current_state = ["No Z variant in the gizmo enum; no vertical drag gesture; z is editable only through the attributes fields."]
+approach = [
+    "Verify on main: a test asserting hit-testing above the gizmo origin returns None and the enum has no Z variant; paste the red.",
+    "Write gizmo_z.rs with unit tests for dy-to-metres and snapping; add the enum variant and draw call; route the gesture.",
+    "Perturbation: invert the dy sign in gizmo_z.rs; its unit test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-939.3",
+]
+acceptance = [
+    "Dragging the Z arm upward raises the selected entity; the readout shows the new height in metres.",
+    "Snapping applies by default and is suspended while Shift is held.",
+    "One Ctrl+Z reverts a whole Z drag.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/frontend/src/editor/canvas/overlays.rs",
+    "apps/website/frontend/src/editor/canvas/gestures.rs",
+    "apps/website/frontend/src/editor/canvas/gizmo_z.rs",
+    "apps/website/frontend/src/editor/canvas/mod.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = [
+    "map_canvas",
+    "tools",
+]

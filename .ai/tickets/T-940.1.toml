@@ -1,0 +1,49 @@
+id = "T-940.1"
+kind = "work"
+title = "Waitlist promotion assigns a seat, re-checks capacity"
+summary = "Promoting a waitlisted registration picks a free ORBAT slot inside the same transaction, re-checks capacity, and refuses the promotion with a 409 when no seat is free."
+class = "bug"
+status = "ready"
+order = 8080
+spec = "docs/specs/audit_2026_09/t940_website_platform.md"
+plan = "docs/plans/t-940_1_plan.md"
+executor = "claude-code"
+priority = 0
+parent = "T-940"
+main_goal = "A promoted registrant always holds a real seat."
+context = [
+    "Anchor 2026-09-04: handlers/events/events.rs:2042-2053 promotes with UPDATE ... SET state='registered' only, leaving slot_id NULL.",
+    "Capacity at registration time is already enforced (T-227 shipped, events.rs:1768-1798); promotion bypasses it.",
+    "events.rs is shared with T-940.2/.3/.12; this slice packs first. Migration 0022 is the next free number today.",
+    "Related, not re-minted: T-139 lobby preview, T-309 faction squads.",
+]
+requirement = [
+    "New migration 0022_waitlist_seat.sql: partial unique index on event_registrations (event_mission_id, slot_id) where state = 'registered' and slot_id is not null.",
+    "The promotion handler selects the first free orbat slot with FOR UPDATE SKIP LOCKED, sets slot_id and state together, and returns 409 EVENT_FULL when none is free.",
+    "The response body carries the assigned slot so the client can render it.",
+]
+current_state = ["events.rs:2042-2053 is a single UPDATE with no slot selection and no capacity check on promotion."]
+approach = [
+    "Verify on main: an integration test promoting into a full mission succeeds with slot_id NULL; paste the red.",
+    "Write the migration; rewrite the promotion as one transaction; add the 409 path and the slot in the response.",
+    "Perturbation: drop the FOR UPDATE clause; the concurrent-promotion test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask db test-it",
+    "cargo xtask platform wave gate --slice T-940.1",
+]
+acceptance = [
+    "Promoting a waitlisted registration yields a registered row with a non-null slot that no other registered row shares.",
+    "Promoting when every slot is taken returns 409 EVENT_FULL and leaves the row waitlisted.",
+    "Two concurrent promotions for the last seat yield exactly one registered row.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/api/src/handlers/events/events.rs",
+    "apps/website/api/migrations/0022_waitlist_seat.sql",
+]
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

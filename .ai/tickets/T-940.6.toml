@@ -1,0 +1,50 @@
+id = "T-940.6"
+kind = "work"
+title = "Audit log: LISTEN/NOTIFY stream and missing rows"
+summary = "The audit-log stream is pushed by Postgres NOTIFY instead of a 2 s poll, and a trigger writes audit rows for event create, mission delete and slot kick without touching the event handlers."
+class = "feature"
+status = "ready"
+order = 7010
+spec = "docs/specs/audit_2026_09/t940_website_platform.md"
+plan = "docs/plans/t-940_6_plan.md"
+executor = "claude-code"
+priority = 1
+parent = "T-940"
+main_goal = "Admins see audit events as they happen, including the three missing kinds."
+context = [
+    "Anchor 2026-09-04: handlers/admin/audit.rs:161 polls every 2 s (route app.rs:728); no audit rows exist for event create, mission delete or slot kick.",
+    "events.rs is owned by T-940.1/.2/.3/.12; this slice does not edit it: the rows come from a trigger in the migration plus the services layer.",
+    "services/mod.rs is shared with T-940.9 and packs before it.",
+]
+requirement = [
+    "New migration 0025_audit_notify.sql: trigger function inserting audit rows on events insert, missions deleted_at set, event_registrations kicked; pg_notify('audit_log') per row.",
+    "New services/audit_notify.rs (registered in services/mod.rs): PgListener wrapper yielding audit ids as a stream, reconnecting with backoff.",
+    "audit.rs streams from audit_notify; the poll remains only as a fallback while the listener is down.",
+]
+current_state = ["2 s poll in audit.rs; no trigger; no listener; three action kinds unaudited."]
+approach = [
+    "Verify on main: an integration test creating an event finds no audit row; paste the red.",
+    "Write the migration and the listener; switch the stream; keep the poll as fallback.",
+    "Perturbation: drop the mission-delete branch from the trigger; its test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask db test-it",
+    "cargo xtask platform wave gate --slice T-940.6",
+]
+acceptance = [
+    "Creating an event, soft-deleting a mission and kicking a slot each produce an audit row.",
+    "A streaming client receives a new row within one second of its insert without polling.",
+    "With the listener down the stream falls back to polling and recovers when it returns.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/api/src/handlers/admin/audit.rs",
+    "apps/website/api/src/services/audit_notify.rs",
+    "apps/website/api/src/services/mod.rs",
+    "apps/website/api/migrations/0025_audit_notify.sql",
+]
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "services"

@@ -10,8 +10,8 @@ and without re-enabling Deck GPU picking.
 
 ## Approach
 
-Build the interaction layer in `apps/website/frontend/src/world_assets` +
-`apps/website/frontend/src/mission_editor.rs`: CPU-side picking over the worker's
+Build the interaction layer in `apps/website/frontend/src/editor/world_assets` (new `pick.rs` + `inspect.rs`, registered in `mod.rs`) +
+`apps/website/frontend/src/editor/mission_editor.rs` (mount only — new code goes in the new files): CPU-side picking over the worker's
 spatial index per the picking authority, tooltip + read-only inspect panel fed by
 the T-090.7 resolver, filter/legend driven by the taxonomy, and the Z-trust badge
 from the T-090.4/.6 audit flags. Editor FPS budget respected — no per-frame
@@ -19,7 +19,7 @@ full-catalog scans.
 
 ## Risks
 
-Depends on T-090.5 render and the T-090.7 resolver being live; picking at 1M
+T-090.5 is deferred — the live render is the T-090.12 `world_host.rs` lane; the picking authority is `WorldSpatialIndex` (`crates/map-engine-core/src/world/index.rs:35`). Packs after T-090.7 (shared `mod.rs`); picking at 1M
 objects can wreck frame time if the spatial index is bypassed; scope creep toward
 editing terrain props is explicitly forbidden (move/delete/edit remain
 Workbench-only). AI panel wiring must degrade gracefully when the AI surface is

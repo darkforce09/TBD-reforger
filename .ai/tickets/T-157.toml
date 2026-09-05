@@ -1,13 +1,52 @@
 id = "T-157"
 kind = "work"
 title = "Mission Create visual overhaul"
-summary = "Visual map picker with thumbnails, modset selection, remove time/weather/max players from menu."
+summary = "The New Mission dialog gets a visual map picker with terrain thumbnails and a modset selection; time, weather and max players leave the dialog because they are editor settings."
 class = "feature"
-status = "idea"
-executor = "cursor-docs"
-estimated = ["scope"]
+status = "ready"
+order = 7960
+priority = 3
+spec = "docs/specs/ideas/t157_mission_create.md"
+plan = "docs/plans/t-157_plan.md"
+executor = "claude-code"
+main_goal = "New Mission is a terrain-card picker plus modset choice, and creates the same document as before."
+notes = "2026-09-05: executor cursor-docs → claude-code (UI code). The dialog lives in editor/library/ (create_dialog.rs, mission_library.rs), not under pages/. The modset select needs T-135's presets → depends_on."
+context = [
+    "Anchor 2026-09-05: editor/library/create_dialog.rs and mission_library.rs:8 CreateMissionDialog (New Mission button, Ctrl+N); mission_overview.rs:97 shows Max Players; no terrain thumbnails exist.",
+    "T-135 (packs earlier) adds the modset presets the picker lists.",
+]
+requirement = [
+    "New editor/library/map_picker.rs (registered in library/mod.rs): terrain cards with a thumbnail from the terrain manifest and a name; keyboard selectable.",
+    "create_dialog.rs uses the picker and a modset select; time, weather and max-players fields are removed from the dialog.",
+    "Creating a mission writes the same document as today for the chosen terrain.",
+]
+current_state = [
+    "The dialog is a form with a terrain dropdown plus time, weather and max-players fields that duplicate editor settings.",
+]
+approach = [
+    "Picker with wasm tests (renders every registered terrain, selection round-trips); dialog rewire; document digest test.",
+    "Perturbation: the picker skips a terrain; the coverage test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-157",
+]
+acceptance = [
+    "New Mission shows terrain cards with thumbnails and a modset choice; no time, weather or max-players fields.",
+    "A mission created through the new dialog opens in the editor exactly as before.",
+]
+depends_on = ["T-135"]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "apps/website/frontend/src/editor/library/create_dialog.rs",
+    "apps/website/frontend/src/editor/library/mission_library.rs",
+    "apps/website/frontend/src/editor/library/map_picker.rs",
+    "apps/website/frontend/src/editor/library/mod.rs",
+]
 
 [scope]
 domain = "website"
 layer = "frontend"
-component = "mission_creator"
+component = "site_pages"
+surface = ["missions"]

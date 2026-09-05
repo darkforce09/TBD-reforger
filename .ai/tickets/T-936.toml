@@ -1,0 +1,44 @@
+id = "T-936"
+kind = "program"
+title = "Mission logic the audit found missing"
+summary = "Win/loss framework, task state machine with HUD, editable radio nets, weather timeline, audio emitters, dynamic spawn modules and tactical graphics — schema, core flatten, editor panels and Enfusion runtime for each."
+class = "feature"
+status = "queued"
+order = 7449
+priority = 1
+spec = "docs/specs/audit_2026_09/t936_mission_logic.md"
+plan = "docs/plans/t-936_plan.md"
+executor = "claude-code"
+children = [
+    "T-936.1",
+    "T-936.2",
+    "T-936.3",
+    "T-936.4",
+    "T-936.5",
+    "T-936.6",
+    "T-936.7",
+]
+main_goal = "Mission authors define win rules, tasks, radio, weather, audio, spawns and tactical graphics in the editor and the framework runs them."
+context = [
+    "Master audit S1 (2026-09-04) lists custom win/loss, task state machine, radio frequency UI, dynamic weather, positional audio, dynamic spawn/garrison and tactical graphics as absent.",
+    "Anchors: flatten.rs:2573-2582 hardcoded attrition; :1927-1960 synthesized radio plan; :2249 winConditions synthesized; mission.schema.json:8 requires winConditions, :80 radioPlan, :190 weatherPreset, :1171 closed marker $defs.",
+    "Ticketed elsewhere, not re-minted: T-675 vehicles, T-676 triggers, T-677 waypoints, T-678 group AI, T-674 slot identity, T-673 markers, T-212 objectives, T-299 phantom opfor.",
+    "The in-editor Play scenario dry run is deferred by operator 2026-09-04 and appears in no slice.",
+]
+requirement = [
+    "T-936.1 adds mission/extensions.rs: the AUTHORED_BLOCKS list that compile.rs carries verbatim and flatten emits; later slices register there and never edit compile.rs or flatten.rs (T-936.3 excepted).",
+    "Every slice keeps flattening byte-identical when its block is absent; the Class-R parity fixtures prove it.",
+    "All slices share mission.schema.json, mission/mod.rs and extensions.rs, so they chain through depends_on and pack one per wave.",
+    "Mod scripts are edited by claude-code and gated by cargo xtask mod compile; in-game behaviour goes on the human checklist.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask ci schema-validate",
+    "cargo xtask mod compile",
+    "cargo xtask platform wave gate --slice T-936.N   # per child",
+]
+acceptance = [
+    "A mission authored with every new block flattens, validates against mission.schema.json and runs in the framework with each runtime script active.",
+    "Missions without any new block flatten byte-identically to today's output.",
+]
+created_at = "2026-09-05T02:09:02Z"

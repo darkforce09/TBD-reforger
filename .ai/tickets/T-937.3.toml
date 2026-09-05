@@ -1,0 +1,51 @@
+id = "T-937.3"
+kind = "work"
+parent = "T-937"
+title = "Materialize side-key cache and slot_exists fast path"
+summary = "materialize() (store.rs:740-820) caches per-slot side keys and string reads instead of resolving each slot from scratch; operations/entity.rs:1885 gets a slot_exists fast path that does not drop hidden slots."
+class = "bug"
+status = "ready"
+order = 7720
+priority = 1
+spec = "docs/specs/audit_2026_09/t937_editor_data_layer.md"
+plan = "docs/plans/t-937_3_plan.md"
+executor = "claude-code"
+main_goal = "Existence checks are O(1) and correct for hidden slots; materialize resolves each side key once."
+context = [
+    "Anchor 2026-09-04: store.rs:745-764 caches layer/hidden, but :772-812 runs read_position, read_str x3, read_stance and resolve_slot_side_key per slot on every call.",
+    "Anchor: operations/entity.rs:1885 slot_attrs_exists answers existence via materialize; the same file warns at :1795 and :1847 that materialize drops hidden slots.",
+    "store.rs is shared with T-937.1 and T-937.2; this slice packs after both.",
+]
+requirement = [
+    "store.rs: a side-key cache keyed by slot id, invalidated by the store's existing change observer; materialize reads through it.",
+    "store.rs: slot_exists(id) -> bool consulting the raw map, hidden or not, without materializing.",
+    "operations/entity.rs:1885 uses slot_exists; the warning comments at :1795 and :1847 point to it.",
+    "A test asserts materialize over 500 slots performs at most one side-key resolution per distinct side.",
+]
+current_state = [
+    "store.rs:772-812 resolves every slot with no memo; entity.rs:1885 materializes the whole document to answer a boolean and misses hidden slots.",
+]
+approach = [
+    "Verify on main: a test with a hidden slot shows slot_attrs_exists returning false for an existing slot; paste the red.",
+    "Add the cache and slot_exists in store.rs; switch entity.rs; count resolutions with a test-only counter.",
+    "Perturbation: skip cache invalidation on side change; the stale-side test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask platform wave gate --slice T-937.3",
+]
+acceptance = [
+    "Existence checks answer true for hidden slots and never materialize the document.",
+    "materialize resolves each distinct side key once per call and returns output identical to today's.",
+]
+depends_on = ["T-937.2"]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "crates/map-engine-core/src/doc/store.rs",
+    "apps/website/frontend/src/editor/state/operations/entity.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "core"

@@ -1,0 +1,55 @@
+id = "T-939.8"
+kind = "work"
+parent = "T-939"
+title = "Ctrl+F focuses document search"
+summary = "Ctrl+F in the editor focuses the existing document search in the left dock, opening the dock if collapsed, and Escape returns focus to the canvas."
+class = "feature"
+status = "ready"
+order = 7930
+priority = 2
+spec = "docs/specs/audit_2026_09/t939_editor_usability.md"
+plan = "docs/plans/t-939_8_plan.md"
+executor = "claude-code"
+main_goal = "Document search is reachable from the keyboard."
+context = [
+    "Anchor 2026-09-04: panels/dock_left.rs:134-144 holds search_document (T-697) but no key reaches it; the keydown closure in mission_editor.rs has no f arm.",
+    "Depends on T-939.4: both slices edit mission_editor.rs and help_modal.rs, so this one packs later.",
+    "Related, not re-minted: T-704 command palette.",
+]
+requirement = [
+    "mission_editor.rs keydown: Ctrl+F and Cmd+F prevent the browser default and call a focus_search invoker.",
+    "dock_left.rs exposes focus_search: expands the dock when collapsed, focuses the input, selects its text.",
+    "Escape inside the search input returns focus to the canvas without clearing the query.",
+    "help_modal.rs lists the chord.",
+]
+current_state = [
+    "No keyboard path to search_document; Ctrl+F opens the browser find bar.",
+]
+approach = [
+    "Verify on main: a test dispatching Ctrl+F asserts the search input is not focused; paste the red.",
+    "Add the invoker in dock_left.rs; add the arm in mission_editor.rs; add the help row.",
+    "Perturbation: drop preventDefault; the test asserting the event is consumed must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-939.8",
+]
+acceptance = [
+    "Ctrl+F with the dock collapsed opens the dock and focuses the search input with its text selected.",
+    "Escape in the search input returns focus to the canvas and keeps the query.",
+    "The chord appears in the help modal.",
+]
+depends_on = ["T-939.4"]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/frontend/src/editor/panels/dock_left.rs",
+    "apps/website/frontend/src/editor/panels/help_modal.rs",
+    "apps/website/frontend/src/editor/mission_editor.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["dock_left"]

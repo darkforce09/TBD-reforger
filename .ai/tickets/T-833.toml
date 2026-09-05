@@ -3,8 +3,10 @@ kind = "work"
 title = "Rotation ring: relative delta plus live preview"
 summary = "Rotation widget: relative drag delta (not absolute aim) + live per-frame preview"
 class = "bug"
-status = "queued"
-order = 5150
+status = "ready"
+order = 8440
+spec = "docs/specs/existing/t833_rotation_ring_relative.md"
+plan = "docs/plans/t-833_plan.md"
 executor = "claude-code"
 notes = """
 wave205 verifier; operator decision; comment currently lies about the behavior | operator decided (c) 2026-08-10; default about-centre, Ctrl = individual; pack with/after W207 heading render | REVISED at the wave-207 eye-pass: relative-delta + live preview; supersedes T-648 no-preview note; now depends on the T-808 facing point (shipped W207) to be legible
@@ -42,6 +44,11 @@ verify = [
     "Press ring one seventy degrees from facing release unmoved: unchanged.",
     "Drag thirty degrees from any grab: heading changes exactly thirty.",
     "Glyph facing tracks cursor mid-gesture slots vehicles single multi.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "Pressing the ring 170 degrees off the facing and releasing unmoved changes nothing; dragging 30 degrees changes heading by exactly 30.",
+    "Facing preview tracks the cursor mid-gesture for slots and vehicles, single and multi; Ctrl-drag turns each unit in place.",
 ]
 citations = [
     "wave205.md MINOR measured behavior",

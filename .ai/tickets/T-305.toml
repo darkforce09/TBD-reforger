@@ -1,28 +1,40 @@
 id = "T-305"
 kind = "work"
-title = "pak.rs seeks wrong offset — absolute not relative"
-summary = "pak.rs reads at the wrong offset — entry offsets are absolute, not relative to data_start"
-class = "feature"
-status = "idea"
+title = "pak.rs seeks data_start plus offset; offsets are absolute"
+summary = "read_file/read_raw in tools/tbd-tools/src/world/pak.rs seek data_start + entry.offset, but entry offsets are absolute from the pak start; every `enf extract` read is shifted by 56 bytes. Seek entry.offset directly, pinned by a fixture test."
+class = "bug"
+status = "ready"
+order = 7030
+spec = "docs/specs/ideas/t305_pak_offset.md"
+plan = "docs/plans/t-305_plan.md"
 executor = "claude-code"
-main_goal = "`enf extract` reads shifted bytes because pak.rs seeks `data_start + entry.offset` but entry offsets are ABSOLUTE from the start of the pak."
-context = ["Found by T-206."]
-requirement = ["Fix read_file/read_raw to seek `entry.offset` directly, not `data_start + entry.offset`."]
-current_state = [
-    "tools/tbd-tools/src/world/pak.rs read_file/read_raw seek `data_start + entry.offset`, but entry offsets are ABSOLUTE from the start of the pak.",
-    "Measured over 300 compressed entries: 300/300 inflate correctly at `entry.offset`, only 3/300 at `data_start + offset`.",
-    "Uncompressed reads come back rotated by exactly 56 bytes, which is data_start in every shipped pak.",
-    "`enf extract` goes through this path, so anything built on it is reading shifted bytes.",
+notes = "Shares pak.rs with T-143 (water placement guard), which packs in a later wave. T-206 is deferred; its 300/300 probe evidence is cited, not depended on."
+priority = 1
+main_goal = "Every pak entry read through pak.rs returns exactly the bytes its entry table describes."
+context = [
+    "Found by T-206 while proving pak data is readable offline: 300/300 compressed entries inflate at entry.offset, only 3/300 at data_start + offset.",
+    "Anchor 2026-09-05: pak.rs:249 (read_file) and :285 (read_raw) both seek SeekFrom::Start(r.data_start + u64::from(r.entry.offset)).",
 ]
-approach = ["The pak reader is otherwise sound — the T-206 probe used it to resolve all 1,857 registry prefabs with zero misses once the offset was corrected."]
-verify = ["Measured over 300 compressed entries: 300/300 inflate correctly at `entry.offset`, only 3/300 at `data_start + offset`."]
-citations = [
-    "T-206",
-    "tools/tbd-tools pak.rs",
-    "enf extract",
+requirement = [
+    "read_file and read_raw seek entry.offset directly; data_start stays in the parsed header for diagnostics only.",
+    "A unit test over a synthetic two-entry pak with data_start = 56 proves both reads return the stored bytes.",
 ]
-estimated = ["scope"]
+current_state = ["Uncompressed reads come back rotated by exactly 56 bytes, the data_start of every shipped pak; `enf extract` goes through this path."]
+approach = [
+    "Verify on main: write the synthetic-pak test first; it fails with rotated bytes; paste the red.",
+    "Change both seeks; perturbation: re-add data_start to one seek, the test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p tbd-tools --lib world::pak",
+    "cargo xtask platform wave gate --slice T-305",
+]
+acceptance = [
+    "A pak entry read through read_file equals the bytes the entry table describes, compressed or not.",
+    "The synthetic-pak test stays green and fails if either seek regains the data_start term.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = ["tools/tbd-tools/src/world/pak.rs"]
 
 [scope]
 domain = "repo"
-layer = "xtask"
+layer = "tools"

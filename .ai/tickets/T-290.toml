@@ -1,30 +1,48 @@
 id = "T-290"
 kind = "work"
 title = "Nine dead flatten fields mod never reads"
-summary = """
-meta.author, meta.templateId, meta.playerRange, the whole environment block, factions[].tickets, orbat[].type.
-winConditions.mode, flow.briefingSeconds (advisory only), and the entire orbat block (parity-check only).
-Either add mod readers or annotate them non-consumed so the next audit does not re-derive this.
-"""
+summary = "meta.author/templateId/playerRange, the environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds and the orbat block are emitted but never read by the mod; add readers where cheap and annotate the rest in an emit ledger."
 class = "audit"
-status = "idea"
+status = "ready"
+order = 7540
+spec = "docs/specs/ideas/t290_dead_flatten_fields.md"
+plan = "docs/plans/t-290_plan.md"
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope. "
+notes = "needs-operator: frozen unmappable Scope.  | 2026-09-05: proposed scope engine/core written into the body; note kept verbatim for the operator. flatten.rs is shared with T-674.1/T-675.1/T-936.1 and T-291/T-242/T-299/T-310 → packs after them (pack_last kept). Operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist."
+priority = 3
+main_goal = "Every emitted flatten field is read by a named mod file or marked non-consumed with a reason."
 context = [
     "Idea audit owning the flatten emit ledger; pack_last sole occupant of factory wave 15.",
     "Operator-frozen unmappable scope; notes flag needs-operator triage.",
+    "Anchor 2026-09-05: flatten.rs:1728-1858 briefingSeconds (advisory), :2249 synthesized meta fields; readers live in Backend/TBD_MissionLoader.c and TBD_MissionValidator.c.",
 ]
-requirement = ["Add mod readers or annotate nine dead outputs non-consumed so audits do not re-derive."]
-current_state = ["Nine fields listed in summary: meta.*, environment, factions.tickets, orbat.type, winConditions.mode, briefingSeconds, whole orbat."]
-approach = ["Wire Enfusion readers per field or document non-consumed status in the emit ledger."]
-citations = [
-    "TICKET_REGISTRY.md T-290 field list",
-    "T-912.1 pack_last wave 15",
-    "PLATFORM_FACTORY.md wave 15",
+requirement = [
+    "flatten.rs gains an EMIT_LEDGER table (field, consumer or non-consumed, ticket) with a test that every emitted top-level key appears in it.",
+    "TBD_MissionLoader.c reads meta.author, meta.templateId and winConditions.mode into the loaded struct; TBD_MissionValidator.c warns on an unknown mode.",
+    "The remaining fields are annotated non-consumed with the reason.",
 ]
-owns = ["crates/map-engine-core/src/mission/flatten.rs"]
+current_state = ["Nine fields listed in the summary are emitted and unread; nothing records that, so every audit re-derives it."]
+approach = [
+    "Ledger plus test first; then the three cheap readers; then annotations.",
+    "Perturbation: remove a ledger row; the coverage test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features mission::flatten",
+    "cargo xtask mod compile",
+    "cargo xtask platform wave gate --slice T-290",
+]
+acceptance = [
+    "Every emitted field is either read by a named mod file or marked non-consumed with a reason in the ledger.",
+    "meta.author, meta.templateId and winConditions.mode are visible in the loaded mission struct.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "crates/map-engine-core/src/mission/flatten.rs",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c",
+]
 pack_last = true
 
 [scope]
-domain = "repo"
-layer = "docs"
+domain = "engine"
+layer = "core"

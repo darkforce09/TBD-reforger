@@ -3,8 +3,10 @@ kind = "work"
 title = "Group to must use exclusive ORBAT membership"
 summary = "Connect ▸ Group to must mean exclusive ORBAT squad membership — not stackable connection edges"
 class = "bug"
-status = "queued"
-order = 5300
+status = "ready"
+order = 8510
+spec = "docs/specs/existing/t848_group_to_exclusive_orbat.md"
+plan = "docs/plans/t-848_plan.md"
 executor = "claude-code"
 notes = '''
 operator W208 eye-pass; supersedes treating CONN Group as ORBAT; related shipped T-672 (connection graph) + T-647 (Ctrl+drag regroup)
@@ -23,6 +25,7 @@ context = [
     "One rifleman two blue lines two squad nodes operator one squad at a time.",
     "Group to Sync to arm context_menu editor_ops add_connection ConnectionKind Group not ORBAT.",
     "ORBAT slot.squadId squad.slotIds separate from connection-graph edges both read blue lines.",
+    "Anchors: add_connection store.rs:2125; move_slot_to_squad store.rs:974 (not place_orbat.rs); arm_connect/complete_connect operations/entity.rs:1302/1338.",
 ]
 requirement = [
     "Group to performs exclusive ORBAT regroup move_slot_to_squad one squad at a time.",
@@ -44,6 +47,12 @@ verify = [
     "Repeating Group to onto C moves A from B to C exclusive.",
     "Sync to explicit pass fail matrix in verify log.",
     "Unassigned source Group to squad or clear refusal toast.",
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "Group to from A onto squad-leader B puts A in B squad only; repeating onto C moves A from B to C; no second tether-like line.",
+    "Sync to has a pass/fail matrix in the report; an unassigned source can Group to a squad or gets a clear refusal toast.",
 ]
 citations = [
     "wave208 operator eye-pass",
@@ -54,7 +63,7 @@ citations = [
 estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/editor/panels/context_menu.rs",
-    "apps/website/frontend/src/editor/state/operations.rs",
+    "apps/website/frontend/src/editor/state/operations/entity.rs",
     "crates/map-engine-core/src/doc/store.rs",
     "crates/map-engine-core/src/doc/place_orbat.rs",
 ]

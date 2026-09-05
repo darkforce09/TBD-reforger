@@ -3,13 +3,14 @@ kind = "work"
 title = "Add ticket check to CI"
 summary = "make ticket-check exists but grep of .github/workflows for ticket returns nothing, so nothing prevents the registry drifting again."
 class = "chore"
-status = "idea"
+status = "cancelled"
+order = 6443
 executor = "claude-code"
+notes = "2026-09-05 cancelled: already in CI — .github/workflows/ci.yml:237 runs `cargo xtask ticket check --strict` (fetch-depth 0 since T-914, ci.yml:211); the ticket's grep predates that job."
 depends_on = [
     "T-273",
     "T-237",
 ]
-estimated = ["scope"]
 owns = [".github/workflows/ci.yml"]
 
 [scope]

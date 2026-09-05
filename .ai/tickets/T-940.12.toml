@@ -1,0 +1,56 @@
+id = "T-940.12"
+kind = "work"
+parent = "T-940"
+title = "Reservation tiers for event signups"
+summary = "Events define reservation tiers (member, guest, open) with per-tier seat counts and opening times; signup honours the caller's tier and the event hub shows tier availability."
+class = "feature"
+status = "ready"
+order = 8160
+priority = 2
+spec = "docs/specs/audit_2026_09/t940_website_platform.md"
+plan = "docs/plans/t-940_12_plan.md"
+executor = "claude-code"
+main_goal = "Members get first access to seats without manual gatekeeping."
+context = [
+    "The audit lists reservation tiers as missing; registration today is first-come with a capacity check only (events.rs:1768-1798).",
+    "Depends on T-940.3 (events.rs, models/event.rs); core/dto.rs is shared with T-940.2/.8 and this slice packs after them.",
+    "pages/operations/event_hub.rs is the signup surface. Related, not re-minted: T-139 lobby preview, T-309 faction squads.",
+]
+requirement = [
+    "New migration 0027_reservation_tiers.sql: event_reservation_tiers(event_id, tier, seats, opens_at) with a check constraint on tier.",
+    "Registration resolves the caller's tier from role membership, refuses before opens_at, counts seats per tier; overflow falls to the open tier once it is open.",
+    "models/event.rs and core/dto.rs carry the tiers; event_hub.rs shows each tier with remaining seats and opening time, and why a tier is closed.",
+]
+current_state = [
+    "No tier table, no tier logic, no tier UI.",
+]
+approach = [
+    "Verify on main: an integration test registering a guest before the guest tier opens succeeds; paste the red.",
+    "Write the migration; add tier resolution and counting to the register handler; mirror the model and DTO; render the hub.",
+    "Perturbation: skip the opens_at check; its test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask db test-it",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-940.12",
+]
+acceptance = [
+    "A guest registering before the guest tier opens is refused with a named reason and the opening time.",
+    "A member registers into the member tier while guest seats stay closed; exhausted member seats overflow to open seats once open.",
+    "The event hub shows remaining seats per tier.",
+]
+depends_on = ["T-940.3"]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/api/src/handlers/events/events.rs",
+    "apps/website/api/src/models/event.rs",
+    "apps/website/frontend/src/core/dto.rs",
+    "apps/website/api/migrations/0027_reservation_tiers.sql",
+    "apps/website/frontend/src/pages/operations/event_hub.rs",
+]
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

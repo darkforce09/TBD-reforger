@@ -1,0 +1,53 @@
+id = "T-941.3"
+kind = "work"
+title = "END and DEBRIEF screens with scoreboard"
+summary = "New End and Debrief screens with layouts show the result banner and a per-faction scoreboard; the framework manager opens them on the END and DEBRIEF stages and closes them on transition."
+class = "feature"
+status = "ready"
+order = 7600
+spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
+plan = "docs/plans/t-941_3_plan.md"
+executor = "claude-code"
+priority = 0
+parent = "T-941"
+main_goal = "Players see the outcome and scores instead of a bare stage change."
+context = [
+    "Anchor 2026-09-04: UI/TBD_UILayouts.c:28,31 registers only SCREEN_SHELL and LIST_ROW; stage hooks exist in Gamemode/TBD_FrameworkManager.c:1022,1123,1162,1295.",
+    "Layouts live in apps/mod/tbd-framework/UI/layouts/ (TBD_ScreenShell.layout, TBD_ListRow.layout); Scripts/Game/TBD/UI/End/ is a new directory.",
+    "Operator authorization: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
+    "Related, not re-minted: T-311 leaderboard tie-breaker; Backend/TBD_ResultsReporter.c already collects per-player counters.",
+]
+requirement = [
+    "TBD_UILayouts.c registers END_SCREEN and DEBRIEF_SCREEN paths; the two .layout files reuse the shell and list-row widgets.",
+    "UI/End/TBD_EndScreen.c shows the winning faction and end reason; UI/End/TBD_DebriefScreen.c shows a scoreboard from the results reporter's counters, sortable by kills.",
+    "TBD_FrameworkManager.c opens each screen in its stage hook and closes it on the next stage; screens never block a stage change.",
+]
+current_state = ["No END or DEBRIEF UI; the stage hooks exist with no screen."]
+approach = [
+    "Verify on main: read TBD_UILayouts.c:28-31 and the four stage hooks; record as defect evidence (no script unit test lane).",
+    "Write the layouts; write the two screens; register; hook; compile; boot.",
+    "Perturbation: reference a missing widget name in TBD_EndScreen.c; mod compile must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mod compile",
+    "cargo xtask mod world-boot",
+    "cargo xtask platform wave gate --slice T-941.3",
+]
+acceptance = [
+    "The mod compiles and boots with both screens registered.",
+    "Checklist: on END the banner names the winner and reason; on DEBRIEF the scoreboard lists every player with kills and deaths; both close on the next stage.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_UILayouts.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/UI/End/TBD_EndScreen.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/UI/End/TBD_DebriefScreen.c",
+    "apps/mod/tbd-framework/UI/layouts/TBD_EndScreen.layout",
+    "apps/mod/tbd-framework/UI/layouts/TBD_DebriefScreen.layout",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",
+]
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "ui"

@@ -1,0 +1,65 @@
+id = "T-935.1"
+kind = "work"
+title = "world::binary — POD, containers, rkyv archives"
+summary = "Add the `binary` feature to map-engine-core: 32-byte ObjectInstancePod, TBDC/TBDE/TBDB headers, rkyv 0.8 archive types for roads, labels, water, catalog, regions, buildings, satellite index, optional manifest blocks, checked access and round-trip tests."
+class = "feature"
+status = "ready"
+order = 7090
+spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
+plan = "docs/plans/t-935_1_plan.md"
+executor = "claude-code"
+priority = 1
+parent = "T-935"
+main_goal = "Every binary map format has one authoritative Rust definition in map-engine-core that emitters and loaders share."
+context = [
+    "Operator spec 2026-09-04: hybrid rkyv (metadata) + raw #[repr(C)] POD (bulk GPU data); flatbuffers rejected. This slice is the foundation every other T-935 slice depends on.",
+    "Anchor 2026-09-04: rkyv is used nowhere; bytemuck only in crates/map-engine-render/Cargo.toml:21; GPU Pod structs only in map-engine-render/src/scene.rs:32/47/72.",
+    "The operator's 24 B sketch dropped pitch/roll/scale; T-090.12.1 put them on the wire (manifest objects.schemaVersion 1.1.0, transforms yaw+pitch+roll+scale), so the POD is 32 B.",
+]
+requirement = [
+    "Feature `binary` in crates/map-engine-core/Cargo.toml: rkyv 0.8 with bytecheck validation, bytemuck with derive; no flate2 or serde_json pulled by this feature.",
+    "ObjectInstancePod: #[repr(C)] Pod+Zeroable {x,y,z,yaw,pitch,roll,scale: f32, prefab_id: u16, class_code: u8, _pad: u8}; size_of == 32, align 4, little-endian on disk.",
+    "Headers TBDC (chunk container), TBDE (DEM), TBDB (bathymetry): 32-byte #[repr(C)] Pod structs, field order without padding, magic + version u16, per spec section 3.",
+    "rkyv archives per spec section 4: RoadNetworkArchive, MapLabelsArchive, WaterVectorsArchive, PrefabCatalogArchive, ForestRegionsArchive, BuildingBlueprintArchive, TbdSatIndexV2; `access_checked::<T>(&[u8])` wraps rkyv::access with validation.",
+    "manifest.rs gains serde(default) optional blocks: objects.binary, dem.raw, labels, water, buildings, satellite unified encoding tbd-sat-v2; absent blocks parse exactly as today.",
+    "Round-trip unit test for every header and archive; a truncated or bit-flipped buffer is an Err from access_checked or parse, never a panic.",
+]
+current_state = [
+    "crates/map-engine-core/Cargo.toml:33,45,48: the `world` feature pulls flate2 + serde_json(float_roundtrip); no rkyv, no bytemuck anywhere in the crate.",
+    "crates/map-engine-core/src/world/chunk.rs:20: WorldChunk SoA (positions, prefab_idx u16, rotations, z, pitch, roll, scale, cls_codes u8, rows_by_class) — the shape the POD must round-trip.",
+    "crates/map-engine-core/src/world/mod.rs declares the world submodules; no `binary` module exists. manifest.rs:11/24 defines the manifest structs with no binary fields.",
+]
+approach = [
+    "Add feature `binary` (dep:rkyv 0.8 + bytecheck, dep:bytemuck derive) to crates/map-engine-core/Cargo.toml; `world` enables `binary` so existing consumers (frontend, xtask) get the types without Cargo changes.",
+    "Create crates/map-engine-core/src/world/binary/mod.rs (pub mod pod, chunk_container, archives; access_checked) and register `pub mod binary` behind cfg(feature) in world/mod.rs.",
+    "pod.rs: ObjectInstancePod with compile-time size/align assertions. chunk_container.rs: TbdcHeader, TbdeHeader, TbdbHeader, magic consts, `parse(&[u8]) -> Result<(&Header, &[u8])>`.",
+    "archives.rs: the rkyv types from spec section 4 with derive(Archive, Serialize, Deserialize) and bytecheck; `to_bytes` and `access_checked` helpers.",
+    "manifest.rs: add the optional blocks from spec section 5 with serde(default); existing everon manifest.json must still parse identically (test).",
+    "Tests: build each value, serialize, access_checked, compare; flip one byte in a relative pointer and assert Err. Run only with --all-features.",
+    "Perturbation: change _pad to [u8;2] so size becomes 36, paste the red const-assert, restore, `touch` the file, re-run green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask ci verify file-length",
+    "cargo xtask platform wave gate --slice T-935.1",
+]
+acceptance = [
+    "map-engine-core builds with and without `binary`; size_of ObjectInstancePod == 32 is enforced at compile time.",
+    "Every archive and header round-trips byte-for-byte in tests; corrupt buffers return Err from access_checked.",
+    "The committed everon manifest.json parses unchanged with the new optional fields absent.",
+    "No emitter or loader is touched: downstream slices .2-.13 import these types unchanged.",
+]
+created_at = "2026-09-05T01:34:37Z"
+owns = [
+    "crates/map-engine-core/Cargo.toml",
+    "crates/map-engine-core/src/world/mod.rs",
+    "crates/map-engine-core/src/world/manifest.rs",
+    "crates/map-engine-core/src/world/binary/mod.rs",
+    "crates/map-engine-core/src/world/binary/pod.rs",
+    "crates/map-engine-core/src/world/binary/chunk_container.rs",
+    "crates/map-engine-core/src/world/binary/archives.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "core"

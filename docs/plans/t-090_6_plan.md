@@ -17,6 +17,8 @@ corners/edges, and classify above/buried/inside with per-kind thresholds. Overla
 detection against neighbor OBBs via a spatial grid over
 `packages/map-assets/everon/objects`.
 
+Files: new `tools/tbd-tools/src/world/placement_audit.rs` (registered in `world/mod.rs`, subcommand in `bin/world.rs`); rewrites `objects/z-audit.json` with OBB classes and adds `z-audit-workbench.json` for the spot-check set. Packs after T-090.4 (shared `mod.rs`/`bin/world.rs`).
+
 ## Risks
 
 The axis remap and rotation handedness come from the T-090.3.0 spike — applying

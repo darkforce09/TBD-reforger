@@ -3,8 +3,10 @@ kind = "work"
 title = "Map markers selectable; outliner lists; dblclick opens Attributes"
 summary = "Markers select on the map and list in the outliner; double-click opens marker Attributes"
 class = "docs"
-status = "queued"
-order = 5200
+status = "ready"
+order = 8470
+spec = "docs/specs/existing/t838_marker_select_outliner.md"
+plan = "docs/plans/t-838_plan.md"
 executor = "claude-code"
 notes = """
 the T-825 marker extraction; operator stated the rule three times — priority; owns collide with T-819 (mission_editor/editor_ops) — pack 210/211 accordingly
@@ -24,6 +26,7 @@ context = [
     "Operator rule third statement wave-205: cannot select markers by map click.",
     "Right panel only for seeing what is available; dock only places.",
     "Actionable marker half of T-825; markers now render T-790 pickable targets.",
+    "Anchors: pick_comment lane at mission_editor.rs:53; selection ops in operations/entity.rs (set_selection_ids :4772).",
 ]
 requirement = [
     "Map-click selects marker via wave-145 COMMENT pick path into ctx.selection.",
@@ -43,6 +46,11 @@ verify = [
     "Click map marker glyph selected outliner row highlights.",
     "Dblclick marker Attributes opens with icon caption position.",
     "Del deletes marker one undo; dock marker tab retains ONLY picker.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "Clicking a marker glyph selects it and highlights its outliner row; double-click opens marker Attributes with icon, caption and position.",
+    "Del removes a marker in one undo step; the dock marker tab keeps only the picker.",
 ]
 citations = [
     "wave-205 operator rule third",
@@ -54,7 +62,7 @@ citations = [
 estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/editor/mission_editor.rs",
-    "apps/website/frontend/src/editor/state/operations.rs",
+    "apps/website/frontend/src/editor/state/operations/entity.rs",
     "apps/website/frontend/src/editor/panels/outliner_tree.rs",
 ]
 

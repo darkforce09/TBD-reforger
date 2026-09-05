@@ -3,8 +3,10 @@ kind = "work"
 title = "Save version prefill static; second save 409s"
 summary = "Save Version prefill is a static 0.1.0 — no auto-bump, second save 409s"
 class = "bug"
-status = "queued"
-order = 5030
+status = "ready"
+order = 8360
+spec = "docs/specs/existing/t821_save_version_prefill.md"
+plan = "docs/plans/t-821_plan.md"
 executor = "claude-code"
 notes = """
 wave203 verifier; refutes a T-789 summary claim — measured
@@ -24,6 +26,7 @@ context = [
     "WAVE-203 verifier MINOR PRE-EXISTING; init line untouched by band waves.",
     "T-789 summary claimed 0.1.0 to 0.2.0 auto-bump correct today refuted.",
     "save_semver set only mission_editor 2763 static or dialog on input.",
+    "save_semver lives in mission_editor.rs (:1012 init, :2694 dialog); save_now is commands_hotkeys.rs:955 — both files owned.",
 ]
 requirement = [
     "Prefill from mission persisted latest version plus patch-bump on reopen.",
@@ -42,6 +45,11 @@ approach = [
 verify = [
     "Save 0.1.0 reopen prefill 0.1.1 or chosen scheme no 409 accept default.",
     "Manual semver input still overrides prefill default.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "Reopening Save after a 0.1.0 save prefills 0.1.1 (or the pinned scheme) and accepting the default does not 409.",
+    "A manually typed semver still overrides the prefill.",
 ]
 citations = [
     "mission_editor.rs 2763 save_semver init",
@@ -50,7 +58,10 @@ citations = [
     "wave203.md MINOR PRE-EXISTING",
 ]
 estimated = ["scope"]
-owns = ["apps/website/frontend/src/editor/state/commands_hotkeys.rs"]
+owns = [
+    "apps/website/frontend/src/editor/state/commands_hotkeys.rs",
+    "apps/website/frontend/src/editor/mission_editor.rs",
+]
 
 [scope]
 domain = "website"

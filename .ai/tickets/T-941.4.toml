@@ -1,0 +1,51 @@
+id = "T-941.4"
+kind = "work"
+parent = "T-941"
+title = "Objective HUD and capture bar replace chat"
+summary = "An objective HUD with a capture bar shows objective state and capture progress; the objectives component replicates state to it instead of pumping private chat messages."
+class = "feature"
+status = "ready"
+order = 7610
+priority = 1
+spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
+plan = "docs/plans/t-941_4_plan.md"
+executor = "claude-code"
+main_goal = "Objective state is on screen, not in the chat log."
+context = [
+    "Anchor 2026-09-04: Objectives/TBD_ObjectivesComponent.c:813 chat.SendPrivateMessage(text, playerId) is the per-player pump (:32 documents the channel).",
+    "Depends on T-941.3: the HUD lands after the screens and registers its layout through its own constant, leaving TBD_UILayouts.c to .3. UI/Hud/ is a new directory.",
+    "Operator authorization: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
+]
+requirement = [
+    "New UI/Hud/TBD_ObjectiveHud.c and UI/layouts/TBD_ObjectiveHud.layout: objective list with state icons and a capture bar bound to the local player's contested objective.",
+    "TBD_ObjectivesComponent.c replicates objective state and capture progress to clients and drops the chat pump; chat keeps only the objective-complete line.",
+]
+current_state = [
+    "All objective feedback is chat text; no HUD element exists.",
+]
+approach = [
+    "Verify on main: read :813 and the message call sites; record as defect evidence (no script unit test lane).",
+    "Write the HUD and layout; replace the pump with replicated state; compile; boot.",
+    "Perturbation: bind the bar to a missing widget name; mod compile must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mod compile",
+    "cargo xtask mod world-boot",
+    "cargo xtask platform wave gate --slice T-941.4",
+]
+acceptance = [
+    "The mod compiles and boots with the HUD script loaded.",
+    "Checklist: entering a capture zone fills the bar; objective completion updates the HUD icon; no per-tick chat messages appear.",
+]
+depends_on = ["T-941.3"]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/TBD_ObjectiveHud.c",
+    "apps/mod/tbd-framework/UI/layouts/TBD_ObjectiveHud.layout",
+]
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "objectives"

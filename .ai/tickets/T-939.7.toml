@@ -1,0 +1,49 @@
+id = "T-939.7"
+kind = "work"
+title = "Vehicles panel virtualization, memoized outliner flatten"
+summary = "The vehicles panel renders through the same virtual list as slots above the threshold, and the outliner flattens its tree once per document change instead of on every render."
+class = "bug"
+status = "ready"
+order = 7920
+spec = "docs/specs/audit_2026_09/t939_editor_usability.md"
+plan = "docs/plans/t-939_7_plan.md"
+executor = "claude-code"
+priority = 2
+parent = "T-939"
+main_goal = "Large missions keep the outliner and vehicles panel responsive."
+context = [
+    "Anchor 2026-09-04: panels/outliner.rs:39 VIRTUAL_SLOT_THRESHOLD=50 gates only virtual_tree (outliner_tree.rs:1245, :1369); panels/vehicles_panel.rs:231-276 maps every row with collect_view.",
+    "outliner_tree.rs is owned by T-939.1 and is not touched here.",
+    "Related, not re-minted: T-070 vehicles placeable, T-675.2 vehicle reader.",
+]
+requirement = [
+    "vehicles_panel.rs renders rows through the virtual list when the count exceeds VIRTUAL_SLOT_THRESHOLD.",
+    "outliner.rs memoizes the flattened tree keyed on the document version; renders reuse it until the next change.",
+    "Selection and hover changes never trigger a re-flatten.",
+]
+current_state = ["vehicles_panel.rs:231-276 collect_view over all rows; outliner.rs flattens on every render."]
+approach = [
+    "Verify on main: a test counting flatten calls across two selection changes shows two; paste the red.",
+    "Add the memo in outliner.rs; route vehicles_panel.rs through the virtual list.",
+    "Perturbation: drop the memo key; the call-count test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-939.7",
+]
+acceptance = [
+    "With 500 vehicles the panel mounts only the visible rows plus overscan.",
+    "Two selection changes cause zero re-flattens; one document edit causes exactly one.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/frontend/src/editor/panels/vehicles_panel.rs",
+    "apps/website/frontend/src/editor/panels/outliner.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["outliner"]

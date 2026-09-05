@@ -3,13 +3,42 @@ kind = "work"
 title = "Gate verdict receipt required at land"
 summary = "platform wave gate writes a verdict file (HEAD sha plus verdict) and platform wave land refuses a landing ticket without a fresh one. Forward-only: future lands only, no backfill, existing tickets stay green untouched."
 class = "chore"
-status = "idea"
+status = "ready"
+order = 7070
+spec = "docs/specs/ideas/t924_gate_verdict.md"
+plan = "docs/plans/t-924_plan.md"
 executor = "claude-code"
-notes = "Same refuse-without-receipt shape as the T-913.2 token receipt — closes the hole where nothing mechanical stops landing an ungated slice. Motivating incident 2026-08-14: a gate silently refused from the wrong cwd, exit masked by a pipe, slice merged before the miss was caught by hand. Operator parked this 2026-08-16 pending appetite; the no-backfill rule is what keeps adoption cheap."
+notes = "Same refuse-without-receipt shape as the T-913.2 token receipt — closes the hole where nothing mechanical stops landing an ungated slice. Motivating incident 2026-08-14: a gate silently refused from the wrong cwd, exit masked by a pipe, slice merged before the miss was caught by hand. Operator parked this 2026-08-16 pending appetite; the no-backfill rule is what keeps adoption cheap. | 2026-09-05: owns narrowed from the wave/ directory to gate.rs, land.rs, new verdict.rs and mod.rs; shares wave/mod.rs with T-300 → packs after it."
+priority = 2
+main_goal = "Nothing mechanical lets an ungated or stale-gated slice land."
+context = [
+    "Motivating incident 2026-08-14: a gate silently refused from the wrong cwd, exit masked by a pipe; the slice merged before the miss was caught by hand.",
+    "Anchor 2026-09-05: gate.rs gate_slice (:97) and cmd_gate (:247) return a u8; land.rs cmd_land (:14) never asks whether a gate ran.",
+]
+requirement = [
+    "New wave/verdict.rs (registered in wave/mod.rs): write/read .ai/artifacts/verdicts/<slice>.json {sha, verdict, at}; sha = slice HEAD at gate time.",
+    "cmd_gate writes the receipt on every run; cmd_land refuses when the receipt is missing, not green, or its sha is not the landing HEAD.",
+    "Forward-only: no backfill; already-shipped tickets are untouched.",
+]
+current_state = ["Nothing mechanical stops landing an ungated slice; the gate result lives only in the terminal."]
+approach = [
+    "verdict.rs with tests (round-trip, stale sha); gate writes; land refuses with a named fix.",
+    "Perturbation: land ignores a stale sha; the refusal test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p xtask wave::verdict wave::land",
+    "cargo xtask platform wave gate --slice T-924",
+]
+acceptance = [
+    "Landing a slice whose last gate ran on a different sha, or never ran, is refused with the fix named.",
+    "A gated slice lands as before; nothing changes for already-shipped tickets.",
+]
 created_at = "2026-08-16T03:15:21Z"
-estimated = ["scope"]
 owns = [
-    "xtask/src/wave",
+    "xtask/src/wave/gate.rs",
+    "xtask/src/wave/land.rs",
+    "xtask/src/wave/verdict.rs",
+    "xtask/src/wave/mod.rs",
 ]
 
 [scope]

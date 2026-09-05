@@ -1,0 +1,56 @@
+id = "T-940.2"
+kind = "work"
+parent = "T-940"
+title = "Registrations: withdrawn tombstone, no_show writer, unlinked attendance"
+summary = "Withdrawing keeps the registration as a withdrawn tombstone, match results mark absent registrants no_show and record attendance for players without a linked account, and the DTOs carry the new states."
+class = "bug"
+status = "ready"
+order = 8090
+priority = 1
+spec = "docs/specs/audit_2026_09/t940_website_platform.md"
+plan = "docs/plans/t-940_2_plan.md"
+executor = "claude-code"
+main_goal = "Attendance history survives withdrawals and unlinked players."
+context = [
+    "Anchor 2026-09-04: events.rs:2037-2041 DELETE FROM event_registrations on withdraw; models/event.rs:56 defines no_show with no writer; pages/public/deployments.rs:55 renders it.",
+    "Depends on T-940.1 (events.rs). apps/website/frontend/src/core/dto.rs is the frontend R-api golden mirror of models/event.rs.",
+    "Related, not re-minted: T-393 (shipped) identity link, T-311 leaderboard tie-breaker.",
+]
+requirement = [
+    "New migration 0023_registration_tombstones.sql: withdrawn_at on event_registrations plus an unlinked_attendance table keyed by (event_mission_id, arma_id).",
+    "Withdraw sets state = 'withdrawn' and withdrawn_at, freeing the seat; the seat index ignores withdrawn rows.",
+    "A no_show writer runs when match results arrive: registered players absent from the results become no_show.",
+    "Result players without a linked user are stored in unlinked_attendance and reconciled when they later link.",
+    "models/event.rs and core/dto.rs expose withdrawn_at and the attendance states identically.",
+]
+current_state = [
+    "Withdraw hard-deletes; no_show is an enum value nobody writes; unlinked players vanish from attendance.",
+]
+approach = [
+    "Verify on main: an integration test withdrawing then listing registrations shows no row; paste the red.",
+    "Write the migration; change the withdraw handler; add the no_show writer on the results path; write the unlinked rows; mirror the DTOs.",
+    "Perturbation: make the writer skip absent players; the no_show test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask db test-it",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask platform wave gate --slice T-940.2",
+]
+acceptance = [
+    "A withdrawn registration remains listable as withdrawn with a timestamp, and its seat is reusable.",
+    "After match results, a registered player absent from them is no_show; an unlinked result player has an attendance row.",
+    "The frontend DTO golden matches the API model for the new fields.",
+]
+depends_on = ["T-940.1"]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/api/src/handlers/events/events.rs",
+    "apps/website/api/src/models/event.rs",
+    "apps/website/frontend/src/core/dto.rs",
+    "apps/website/api/migrations/0023_registration_tombstones.sql",
+]
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

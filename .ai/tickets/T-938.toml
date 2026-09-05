@@ -1,0 +1,41 @@
+id = "T-938"
+kind = "program"
+title = "Engine and wasm performance"
+summary = "Closes the audit's S3 render and geometry findings: pooled lane buffers, measured chunk-crossing uploads, GPU culling for every icon lane, BVH section cuts with a sparse HeightField, frame-sliced viewsheds, and a wasm memory budget guard."
+class = "feature"
+status = "queued"
+order = 7799
+priority = 2
+spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
+plan = "docs/plans/t-938_plan.md"
+executor = "claude-code"
+children = [
+    "T-938.1",
+    "T-938.2",
+    "T-938.3",
+    "T-938.4",
+    "T-938.5",
+    "T-938.6",
+]
+main_goal = "The editor stops allocating per frame, culls on the GPU, slices heavy geometry work, and degrades instead of running out of wasm memory."
+context = [
+    "Master audit S3 (2026-09-04), verified against main @ 072988d57: engine.rs:4907-4924 per-call buffers; :1812-1816 trees-only compute cull; icon_cull_gpu.rs:226; shader.wgsl:315; building_section.rs:46,81,292; building_viewshed.rs:251-268; dem/sample.rs:492-535.",
+    "The DEM decode peak (~400 MB, png_decode.rs:58-79 + world_assets/mod.rs:620-626) is delivered by T-935.4 (raw .dem); no slice here.",
+    "world_host.rs:454-525 chunk-crossing burst is UNVERIFIED; T-938.2 measures before changing anything.",
+    "crates/map-engine-render/src/engine.rs is shared by T-938.1 and T-938.3; they chain and pack one per wave.",
+]
+requirement = [
+    "Each slice records a before/after number (allocations, triangles visited, blocking milliseconds, or bytes) in its report.",
+    "Rendering and geometry output stay bit-identical to the current paths on the fixtures each slice names.",
+    "edition-2024 rustfmt applies to map-engine-render; no file-length allowlist grows.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p map-engine-render",
+    "cargo xtask platform wave gate --slice T-938.N   # per child",
+]
+acceptance = [
+    "Steady-state gestures and chunk crossings allocate no new GPU buffers; every icon lane culls on the GPU when compute is available.",
+    "Section cuts and viewsheds never block a frame beyond the batch budget; loading everon under a tight budget degrades satellite detail instead of aborting.",
+]
+created_at = "2026-09-05T02:09:02Z"

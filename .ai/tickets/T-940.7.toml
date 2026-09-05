@@ -1,0 +1,47 @@
+id = "T-940.7"
+kind = "work"
+title = "Users list: server page metadata and admin pager"
+summary = "list_users returns page, per_page and total alongside the rows, honours per_page up to the max, and the admin personnel page renders a pager instead of the silent first 20."
+class = "bug"
+status = "ready"
+order = 8110
+spec = "docs/specs/audit_2026_09/t940_website_platform.md"
+plan = "docs/plans/t-940_7_plan.md"
+executor = "claude-code"
+priority = 1
+parent = "T-940"
+main_goal = "Admins can reach every user from the personnel page."
+context = [
+    "Anchor 2026-09-04: handlers/mod.rs:42-45 PageParams::bounds defaults to 20, max 100; admin.rs:60-61 uses it with no metadata; pages/admin/personnel.rs shows one page.",
+    "handlers/mod.rs is shared by every handler and is not edited; the change lives in admin.rs and the page. admin.rs is shared with T-940.11, which packs later.",
+]
+requirement = [
+    "admin.rs list_users responds with {items, page, per_page, total}; the change is confined to the admin response type.",
+    "personnel.rs renders previous/next and a per-page selector, keeping the query in the URL.",
+]
+current_state = ["Bare array of 20 users; no pager."]
+approach = [
+    "Verify on main: an integration test with 25 users asserts the response carries no total; paste the red.",
+    "Add the metadata; build the pager.",
+    "Perturbation: return total = items.len(); the 25-user test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask db test-it",
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-940.7",
+]
+acceptance = [
+    "With 25 users the first page reports total 25 and the pager reaches the 25th user.",
+    "per_page=100 returns 100 rows; per_page=500 is clamped to 100.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/api/src/handlers/admin/admin.rs",
+    "apps/website/frontend/src/pages/admin/personnel.rs",
+]
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

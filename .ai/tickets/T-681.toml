@@ -3,8 +3,10 @@ kind = "work"
 title = "Entity states: health, allow-damage, show-model, size, stamina"
 summary = "Entity states: health, allow-damage, show-model, size, stamina"
 class = "chore"
-status = "queued"
-order = 4380
+status = "ready"
+order = 7340
+spec = "docs/specs/existing/t681_entity_states.md"
+plan = "docs/plans/t-681_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row
@@ -24,6 +26,7 @@ context = [
     "Five OBJ attribute ids; entities[] has no consumer on shipped builds.",
     "mission.schema.json:72 documents zero readers for entities array today.",
     "OBJ-STAMINA needs Reforger per-character stamina API answer first.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
 ]
 requirement = [
     "Apply health allow-damage show-model size stamina in TBD_EntityState.c.",
@@ -40,6 +43,11 @@ approach = [
 verify = [
     "Headless scripts/mod/compile.sh clean with TBD_EntityState.c changes.",
     "Entity state attributes applied when entities[] consumer exists at runtime.",
+    "cargo xtask mod compile",
+]
+acceptance = [
+    "Entities with authored health, allow-damage, show-model, size and stamina apply those states at spawn; the stamina API answer is recorded in the plan.",
+    "No packages/tbd-schema edits; compile clean.",
 ]
 citations = [
     "mission.schema.json entities consumer",
@@ -47,7 +55,11 @@ citations = [
     "OBJ-STAMINA unresolved API gate",
 ]
 estimated = ["scope"]
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c"]
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+]
 
 [scope]
 domain = "mod"

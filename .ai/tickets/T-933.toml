@@ -3,10 +3,11 @@ kind = "work"
 title = "leptos-gates v-suite goldens break pre-close exit-0"
 summary = "mk leptos-gates exits non-zero after editor-suite 20/20 because v-suite SPA goldens mass-fail"
 class = "bug"
-status = "queued"
-order = 5400
+status = "ready"
+order = 8320
+spec = "docs/specs/existing/t933_leptos_gates_exit.md"
+plan = "docs/plans/t-933_plan.md"
 executor = "claude-code"
-created_at = "2026-08-19T17:29:12Z"
 notes = """
 WAVE-211 VERIFIER MAJOR F2 (wave211.md). T-843 option (b) requires cargo xtask mk leptos-gates as editor pre-close. Live evidence: gate editor-suite exits 0 (20/20 incl. rect smokes + v5_orbatWindowed); then gate v-suite verify mass-fails SPA goldens (~4/25) so the composite mk leptos-gates exit is non-zero. Pre-close evidence for wave 211 close is editor-suite 20/20 (+ doctor), not composite exit-0.
 
@@ -21,17 +22,22 @@ requirement = [
     "Pre-close command the recipe names exits 0 when editor-suite is green.",
     "Docs and xtask comments agree on editor vs v-suite lanes.",
 ]
-current_state = [
-    "mk leptos-gates = doctor + editor-suite + v-suite verify; v-suite fails independently.",
-]
-approach = [
-    "Refresh SPA goldens or split leptos-gates recipe so rect pre-close is editor-suite-only.",
-]
+current_state = ["mk leptos-gates = doctor + editor-suite + v-suite verify; v-suite fails independently."]
+approach = ["Refresh SPA goldens or split leptos-gates recipe so rect pre-close is editor-suite-only."]
 verify = [
     "Named pre-close exits 0 on main when editor-suite 20/20.",
     "EDITOR_FACTORY_FOR_CURSOR.md matches the live command.",
+    "cargo xtask mk leptos-gates exits 0 on main with editor-suite 20/20",
 ]
-citations = ["wave211.md F2", "T-843 option b"]
+acceptance = [
+    "The pre-close command the recipe names exits 0 on main when the editor suite is 20/20.",
+    "EDITOR_FACTORY_FOR_CURSOR.md and the gate runbook match the live command.",
+]
+citations = [
+    "wave211.md F2",
+    "T-843 option b",
+]
+created_at = "2026-08-19T17:29:12Z"
 estimated = ["scope"]
 owns = [
     "xtask/src/mk_build.rs",

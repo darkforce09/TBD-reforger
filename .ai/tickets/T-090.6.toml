@@ -4,7 +4,7 @@ title = "T-090.6 — Geometry-aware placement audit (simplified 3D bounds)"
 summary = "T-090.6 — Geometry-aware placement audit (simplified 3D bounds)"
 class = "audit"
 status = "ready"
-order = 900
+order = 8020
 spec = "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md"
 plan = "docs/plans/t-090_6_plan.md"
 executor = "claude-code"
@@ -29,8 +29,11 @@ acceptance = [
     "Fully automated; no manual eyeballing of 1M objects.",
 ]
 owns = [
-    "tools/tbd-tools/src/world",
-    "packages/map-assets/everon/objects",
+    "tools/tbd-tools/src/world/placement_audit.rs",
+    "tools/tbd-tools/src/world/mod.rs",
+    "tools/tbd-tools/src/bin/world.rs",
+    "packages/map-assets/everon/objects/z-audit.json",
+    "packages/map-assets/everon/objects/z-audit-workbench.json",
 ]
 
 [scope]

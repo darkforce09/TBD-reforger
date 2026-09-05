@@ -1,0 +1,57 @@
+id = "T-935.2"
+kind = "work"
+parent = "T-935"
+title = "Compiler dual-emits objects/chunks/{cx}_{cy}.bin"
+summary = "tbd-tools build-objects writes a TBDC-framed 32 B POD .bin beside every chunk .json.gz; a test decodes both for all 315 everon chunks and asserts identical columns."
+class = "feature"
+status = "ready"
+order = 7120
+priority = 1
+spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
+plan = "docs/plans/t-935_2_plan.md"
+executor = "claude-code"
+main_goal = "Every everon chunk exists as a .bin whose decoded columns equal the .json.gz decode exactly."
+context = [
+    "Anchor 2026-09-04: tools/tbd-tools/src/world/build.rs build-objects :135-520 writes chunks at :503 as gzip-9 JSON; 315 chunks, 22 MB under packages/map-assets/everon/objects/chunks.",
+    "Dual emission keeps the gz-JSON readable by the shipped loader until T-935.13 cuts over (spec section 7 migration order).",
+]
+requirement = [
+    "New tools/tbd-tools/src/world/binary_emit.rs: `write_chunk_bin(path, cx, cy, rows)` writes TbdcHeader + N x ObjectInstancePod, little-endian, uncompressed.",
+    "build.rs calls it next to the gz write at :503 so one run produces both files; the manifest is untouched here (T-935.12/.13 own it).",
+    "Test: for every committed everon chunk, decode the emitted .bin via cast_slice and the .json.gz via chunk.rs; assert f32 bit-equality, ids, class codes.",
+    "tools/tbd-tools/Cargo.toml enables map-engine-core feature `binary`; edition-2024 rustfmt; generated .bin files are not committed (LFS rules land in T-935.12).",
+]
+current_state = [
+    "tools/tbd-tools/src/world/build.rs:503 serialises each chunk to JSON rows (5 or 8 numbers) and gzips it; no binary path exists.",
+    "tools/tbd-tools/src/world/mod.rs lists the world submodules; no binary_emit module.",
+    "crates/map-engine-core/src/world/chunk.rs:46-97 parses JSON rows into SoA columns — the reference decode for the parity test.",
+]
+approach = [
+    "Add `pub mod binary_emit` to tools/tbd-tools/src/world/mod.rs; implement write_chunk_bin with ObjectInstancePod and TbdcHeader from map_engine_core::world::binary.",
+    "In the build.rs chunk loop (:503), after the gz write, call write_chunk_bin with the same rows; prefab_id from the u16 prefab index, class_code from the class byte.",
+    "Parity test in binary_emit.rs (cfg(test)): iterate packages/map-assets/everon/objects/chunks/*.json.gz, emit to a tempdir, decode both, compare column by column.",
+    "Perturbation: swap yaw and pitch in the emitter; the parity test must go red on real everon data; restore, touch, green.",
+    "Run the existing build-objects subcommand once to confirm a .bin appears beside each .json.gz; leave generated data files uncommitted.",
+]
+verify = [
+    "cargo test -p tbd-tools binary_emit",
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask platform wave gate --slice T-935.2",
+]
+acceptance = [
+    "One build-objects run produces objects/chunks/{cx}_{cy}.bin for all 315 chunks; each file is 32 + 32 x N bytes.",
+    "The parity test proves the .bin decode equals the .json.gz decode for every everon chunk.",
+    "Shipped loaders still read .json.gz unchanged; nothing under apps/ or crates/ is modified.",
+]
+depends_on = ["T-935.1"]
+created_at = "2026-09-05T01:34:37Z"
+owns = [
+    "tools/tbd-tools/src/world/binary_emit.rs",
+    "tools/tbd-tools/src/world/build.rs",
+    "tools/tbd-tools/src/world/mod.rs",
+    "tools/tbd-tools/Cargo.toml",
+]
+
+[scope]
+domain = "repo"
+layer = "tools"

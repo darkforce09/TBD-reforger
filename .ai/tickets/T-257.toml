@@ -1,14 +1,40 @@
 id = "T-257"
 kind = "work"
-title = "Markers and objectives will be non-undoable the day they land"
-summary = "hydrate clears loadouts, items, objectives and markers (store.rs:1102-1120) but those four roots are not in the UndoManager expand_scope (store.rs:101-106). Harmless today because nothing mutates them — a silent trap for the marker and objective work."
-class = "feature"
-status = "idea"
+title = "Undo scope misses loadouts, items, objectives, markers"
+summary = "hydrate clears loadouts, items, objectives and markers but store.rs expand_scope covers slots, squads, factions and editor_layers only, so those roots become non-undoable the day something mutates them. Add them to the UndoManager scope with a test per root."
+class = "bug"
+status = "ready"
+order = 7750
+spec = "docs/specs/ideas/t257_undo_scope.md"
+plan = "docs/plans/t-257_plan.md"
 executor = "claude-code"
-estimated = ["scope"]
+notes = "2026-09-05: shares crates/map-engine-core/src/doc/store.rs with T-937.1/.2/.3 → packs in a later wave than those."
+priority = 2
+main_goal = "Every document root the editor can mutate is undoable before the first mutator lands."
+context = [
+    "Anchor 2026-09-05: doc/store.rs:372-375 expand_scope(slots, squads, factions, editor_layers); root fields :87-106 include vehicles (undo-scoped since T-180.2) and markers.",
+    "Harmless today because nothing mutates the four roots; T-936.2 tasks and the marker work will.",
+]
+requirement = [
+    "expand_scope covers loadouts, items, objectives and markers; a test per root proves mutate-then-undo round-trips.",
+    "The hydrate clear of the four roots stays outside history (same transaction origin as today).",
+]
+current_state = ["Four roots are cleared on hydrate but not undo-scoped; a mutation there would be permanent."]
+approach = [
+    "Verify on main: write the four undo round-trip tests; they fail; paste the red.",
+    "Add the four expand_scope calls; perturbation: drop one, its test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features doc::store",
+    "cargo xtask platform wave gate --slice T-257",
+]
+acceptance = [
+    "A mutation on any of the four roots is undoable and redoable; hydrate remains outside history.",
+    "Slots, squads, factions, editor_layers and vehicles behave exactly as before.",
+]
+created_at = "2026-09-05T03:30:00Z"
 owns = ["crates/map-engine-core/src/doc/store.rs"]
 
 [scope]
-domain = "website"
-layer = "frontend"
-component = "mission_creator"
+domain = "engine"
+layer = "core"

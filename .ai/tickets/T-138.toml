@@ -1,12 +1,48 @@
 id = "T-138"
 kind = "work"
-title = "One-command self-host install"
-summary = "Single script: deps check, .env, db-up, migrate, seed, optional map-assets fetch (git lfs pull for DEM+bundle; optional GitHub Release tarball for tile pyramids after slim-LFS @ 2026-07) — fork-friendly community install story."
+title = "One-command self-host setup via xtask"
+summary = "`cargo xtask setup all` checks deps, writes .env, runs db up, migrate and seed, and optionally pulls map assets (git lfs pull) — the fork-friendly install story, in Rust, no shell script."
 class = "chore"
-status = "idea"
+status = "ready"
+order = 8240
 spec = "docs/platform/tbd_north_star_backlog.md"
+plan = "docs/plans/t-138_plan.md"
 executor = "claude-code"
+notes = "2026-09-05: executor claude-code; the installer is an xtask subcommand because the brief forbids committed .sh/.py/.mjs. Scope repo/xtask/deploy."
+priority = 2
+main_goal = "A fresh clone reaches a running API and frontend with one command plus Docker."
+context = [
+    "Anchor 2026-09-05: xtask/src/main.rs already exposes db, seed-announcement (:367) and migrate-v2 (:1034) subcommands; docs/website/DEV_RUNBOOK.md 'Start everything' (:7) is a manual list.",
+    "Fresh clones follow the runbook by hand; there is no dependency check and no single entry point.",
+]
+requirement = [
+    "New xtask/src/setup_all.rs (registered in main.rs): deps check (docker, psql, git-lfs, trunk), .env from .env.example if absent, db up, migrate, seed, optional --map-assets lfs pull.",
+    "Idempotent: a second run reports every step as already satisfied; a missing dependency is named with an install hint.",
+    "DEV_RUNBOOK.md 'Start everything' points at the one command and keeps the manual list as fallback.",
+]
+current_state = ["No `setup` subcommand exists; the runbook's manual sequence is the only install path."]
+approach = [
+    "Write setup_all.rs as a Step list {name, check, run}; unit-test the planner with a fake environment.",
+    "Wire `setup all` into main.rs; document in the runbook.",
+    "Perturbation: make the deps check ignore a missing tool; the planner test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p xtask setup_all",
+    "cargo xtask setup all --dry-run",
+    "cargo xtask platform wave gate --slice T-138",
+]
+acceptance = [
+    "A fresh clone reaches a running API and frontend with one command plus Docker.",
+    "A second run is a no-op that lists every step as satisfied; a missing dependency is named with an install hint.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "xtask/src/setup_all.rs",
+    "xtask/src/main.rs",
+    "docs/website/DEV_RUNBOOK.md",
+]
 
 [scope]
 domain = "repo"
-layer = "docs"
+layer = "xtask"
+component = "deploy"

@@ -1,0 +1,46 @@
+id = "T-938.4"
+kind = "work"
+title = "Section cut via BVH and sparse HeightField"
+summary = "section_at_owned (building_section.rs:292) queries the building's occl.bvh by y-interval instead of every triangle, and HeightField (:46, :66-83) becomes a sparse tiled grid instead of a 2048-squared Option<f64> allocation."
+class = "feature"
+status = "ready"
+order = 7830
+spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
+plan = "docs/plans/t-938_4_plan.md"
+executor = "claude-code"
+priority = 2
+parent = "T-938"
+main_goal = "Section cuts visit only BVH candidates and HeightField memory scales with touched cells."
+context = [
+    "Anchor 2026-09-04: building_section.rs:292 iterates every triangle per cut; occl.bvh sidecars (bvh_sidecar.rs:219) are loaded but unused here.",
+    "Anchor: building_section.rs:46 MAX_PLAN_DIM=2048, :81 vec![None; cols*rows] of Option<f64> (16 B each) — up to 67 MB per level.",
+]
+requirement = [
+    "New crates/map-engine-core/src/building_section_index.rs (registered in lib.rs): y-interval query over the existing BVH returning candidate triangle ids.",
+    "building_section.rs:292 uses the index; a test proves the cut polygon equals the brute-force cut on the six golden buildings.",
+    "HeightField stores f32 with a NaN sentinel in tiles allocated on first write; the :46 cap stays; memory is proportional to touched tiles.",
+]
+current_state = ["Every section cut is O(triangles); every HeightField::empty allocates the full plan up front."]
+approach = [
+    "Verify on main: count triangles visited per cut and bytes allocated per HeightField on a golden building; paste the numbers.",
+    "Write the index; switch section_at_owned; rewrite HeightField storage behind its existing accessors.",
+    "Perturbation: collapse the y-interval to zero height; the golden equality test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask platform wave gate --slice T-938.4",
+]
+acceptance = [
+    "Section cuts on the six golden buildings equal the brute-force result while visiting only BVH candidates.",
+    "An empty HeightField allocates no plan cells; a plan touching one percent of cells uses about one percent of today's memory.",
+]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "crates/map-engine-core/src/building_section.rs",
+    "crates/map-engine-core/src/building_section_index.rs",
+    "crates/map-engine-core/src/lib.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "core"

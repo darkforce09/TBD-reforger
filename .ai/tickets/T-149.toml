@@ -1,11 +1,48 @@
 id = "T-149"
 kind = "work"
-title = "Forest Mass Polygon Smoothing"
-summary = "Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography."
+title = "Forest mass polygon smoothing"
+summary = "Upgrade the V1 blocky Path B forest hulls: sample the existing 8 m TBDD density grid and apply Chaikin smoothing to the marching-squares rings before the forest-regions emit so forest edges read as natural cartography."
 class = "feature"
-status = "idea"
-notes = "needs-operator: frozen unmappable Scope. "
+status = "ready"
+order = 7170
+spec = "docs/specs/ideas/t149_forest_smooth.md"
+plan = "docs/plans/t-149_plan.md"
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope.  | 2026-09-05: proposed scope repo/tools written into the body; note kept verbatim for the operator. density.rs is shared with T-298 and T-935.5, build.rs with T-935.x → packs after them."
+priority = 3
+main_goal = "Forest region edges are curved, not stair-stepped, with bounded area drift."
+context = [
+    "Anchor 2026-09-05: tools/tbd-tools/src/density.rs:24 writes TBDD grids (625 per terrain, 8 m cells); build.rs:593 emits forest-regions, :916 box-blurs the tree channel into a canopy field.",
+    "The shipped hulls are raw marching-squares output — visibly blocky at forest edges.",
+]
+requirement = [
+    "New tools/tbd-tools/src/world/forest_smooth.rs (registered in world/mod.rs): Chaikin (two iterations, corner-preserving option) over closed rings.",
+    "The forest-regions emit in build.rs runs the smoother before writing; vertex count and area drift are reported per region.",
+    "density.rs exposes the 8 m grid read the smoother samples; the TBDD format is unchanged.",
+]
+current_state = ["Hulls are emitted unsmoothed; there is no post-processing stage between marching squares and forest-regions.json.gz."]
+approach = [
+    "Write forest_smooth.rs with tests: a square ring rounds, area drift under 3%, a 3-point ring stays valid.",
+    "Call it from the forest-regions emit; measure on everon locally; paste before/after vertex counts.",
+    "Perturbation: zero iterations; the rounding test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p tbd-tools --lib world::forest_smooth",
+    "cargo xtask ci verify map-object-golden",
+    "cargo xtask platform wave gate --slice T-149",
+]
+acceptance = [
+    "Forest region edges are curved, not stair-stepped, with under 3% area drift per region.",
+    "The TBDD density format and its readers are unchanged.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "tools/tbd-tools/src/density.rs",
+    "tools/tbd-tools/src/world/forest_smooth.rs",
+    "tools/tbd-tools/src/world/mod.rs",
+    "tools/tbd-tools/src/world/build.rs",
+]
 
 [scope]
 domain = "repo"
-layer = "docs"
+layer = "tools"

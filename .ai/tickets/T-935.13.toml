@@ -1,0 +1,60 @@
+id = "T-935.13"
+kind = "work"
+parent = "T-935"
+title = "Cutover: everon rebuilt binary, gz-JSON emit deleted"
+summary = "Rebuild everon with every new emitter, point manifest.json at the binary assets, make the frontend default to binary, delete gz-JSON chunk emit and flate2 from the `world` feature; record before/after sizes and boot timings in the commit body."
+class = "feature"
+status = "ready"
+order = 7230
+priority = 1
+spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
+plan = "docs/plans/t-935_13_plan.md"
+executor = "claude-code"
+main_goal = "Everon boots from binary assets only, with the JSON emit and its dependencies gone and the gain measured."
+context = [
+    "Anchor 2026-09-04: everon today — 315 chunk .json.gz (22 MB), dem PNG 71.9 MB, prefabs/roads/forest-regions .json.gz, type-inventory.json; flate2 is a `world` dep (Cargo.toml:33,45,48).",
+    "Final slice: every emitter, loader, schema and gate from .1-.12 is on main; the manifest flip is the only switch the frontend reads.",
+]
+requirement = [
+    "Run all emitters (build-objects, build-roads, elevation.dem, labels-rkyv, water, map-blueprint archive, unified v2); commit the regenerated everon assets through LFS.",
+    "packages/map-assets/everon/manifest.json and objects/chunks/manifest.json: fill objects.binary, dem.raw, labels, water, buildings, tbd-sat-v2; delete the gz-JSON chunk and catalog files.",
+    "build.rs: remove the gz-JSON chunk writer; crates/map-engine-core/Cargo.toml: drop flate2 from `world`; frontend mod.rs: binary loaders default, JSON branches removed.",
+    "Commit body lists before/after bytes per asset class and cold-boot timings (chunks, DEM, labels, occluders) from the editor perf log.",
+    "The DEM PNG and descriptor JSON stay: they are emitter inputs for tbd-tools and xtask, not runtime fetches.",
+]
+current_state = [
+    "After T-935.12 every loader has a dormant binary branch; the everon manifest still names json.gz and PNG paths, so the editor boots from JSON.",
+    "tools/tbd-tools/src/world/build.rs:503 still writes gz-JSON chunks beside the .bin; flate2 remains a `world` feature dependency.",
+]
+approach = [
+    "Measure before: byte sizes per asset class and boot timings on everon; paste into the plan and commit body.",
+    "Regenerate everon with each emitter; the data files (objects/chunks/*.bin, *.rkyv, elevation.dem, water/*, building_blueprints.rkyv, everon-sat v2) are emitter outputs, never hand-edited.",
+    "Edit both manifests; delete objects/chunks/*.json.gz and prefabs, roads, forest-regions .json.gz.",
+    "Remove gz emit from build.rs and flate2 from Cargo.toml `world`; frontend mod.rs: binary default.",
+    "Gates: verify-terrain-strict, world-los on cell 18_0 identical to the pre-cutover run, leptos-gates; measure after; write the commit body.",
+]
+verify = [
+    "cargo xtask ci verify-terrain-strict",
+    "cargo xtask map world-los --cell 18_0 --probe 9350,15,280 9380,15,290",
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-935.13",
+]
+acceptance = [
+    "Everon boots from binary assets only; no json.gz fetch appears in the editor network log.",
+    "world-los results on cell 18_0 match the pre-cutover run exactly.",
+    "flate2 is gone from map-engine-core's `world` feature; the commit body carries before/after sizes and boot timings.",
+]
+depends_on = ["T-935.12"]
+created_at = "2026-09-05T01:34:37Z"
+owns = [
+    "packages/map-assets/everon/manifest.json",
+    "packages/map-assets/everon/objects/chunks/manifest.json",
+    "crates/map-engine-core/Cargo.toml",
+    "apps/website/frontend/src/editor/world_assets/mod.rs",
+    "tools/tbd-tools/src/world/build.rs",
+]
+
+[scope]
+domain = "repo"
+layer = "tools"

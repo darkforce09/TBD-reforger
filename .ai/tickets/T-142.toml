@@ -1,14 +1,52 @@
 id = "T-142"
 kind = "work"
 title = "MC shell layout polish"
-summary = "Toolbelt placement, Attributes modal grouping, stub tool visibility — layout UX without full T-082 field parity."
+summary = "Toolbelt placement, Attributes modal grouping and stub-tool visibility — layout UX without full T-082 field parity; no document-write changes."
 class = "feature"
-status = "idea"
+status = "ready"
+order = 7950
 spec = "docs/platform/tbd_north_star_backlog.md"
+plan = "docs/plans/t-142_plan.md"
 executor = "claude-code"
-estimated = ["scope"]
+notes = "2026-09-05: executor claude-code (UI code, not docs). top_strip.rs and attributes_modal.rs are shared with T-939.2/.4/.8 and with T-158 → packs after T-939.x and before T-158."
+priority = 3
+main_goal = "The editor shell reads predictably: one toolbelt home, grouped attributes, honest stub tools."
+context = [
+    "Anchor 2026-09-05: panels/top_strip.rs hosts History · Undo/Redo · Save · Export · Settings (:84) plus the T-192 RowMirror; panels/attributes_modal.rs renders fields as one flat list.",
+    "Stub tools render as live buttons; the T-668 UX review counts them as chrome noise.",
+]
+requirement = [
+    "Toolbelt sits under the top strip as one row; stub tools render disabled with a 'not yet' tooltip, never hidden.",
+    "Attributes modal groups fields under Identity / Position / Gear / Crew headers with the same field set as today.",
+    "No document write changes; layout only.",
+]
+current_state = ["Toolbelt placement differs between docks; attribute fields are one flat list; stub tools look live."]
+approach = [
+    "Group the modal fields; move the toolbelt row in top_strip.rs; add the disabled state for stub tools.",
+    "wasm tests: field digest before/after grouping identical; a stub tool click is a no-op.",
+    "Perturbation: hide a stub tool; the visibility test goes red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-142",
+]
+acceptance = [
+    "The toolbelt sits in one predictable place; stub tools are visibly disabled with an explanation.",
+    "The Attributes modal shows the same fields grouped under four headers and writes the same document.",
+]
+created_at = "2026-09-05T03:30:00Z"
+owns = [
+    "apps/website/frontend/src/editor/panels/top_strip.rs",
+    "apps/website/frontend/src/editor/panels/attributes_modal.rs",
+]
 
 [scope]
 domain = "website"
 layer = "frontend"
 component = "mission_creator"
+surface = [
+    "top_strip",
+    "toolbelt",
+    "attr_panel",
+]

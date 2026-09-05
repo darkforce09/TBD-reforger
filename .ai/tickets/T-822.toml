@@ -3,8 +3,10 @@ kind = "work"
 title = "Outliner dblclick must not open asset picker under Attributes"
 summary = "Outliner dblclick bubbles into the map container — asset picker opens under Attributes"
 class = "bug"
-status = "queued"
-order = 5040
+status = "ready"
+order = 8370
+spec = "docs/specs/existing/t822_outliner_dblclick_bubble.md"
+plan = "docs/plans/t-822_plan.md"
 executor = "claude-code"
 notes = """
 wave203 verifier; pre-existing, widened by the placed-vehicle rows
@@ -37,6 +39,11 @@ approach = ["composedPath or closest check on dblclick target against dock subtr
 verify = [
     "Outliner-row dblclick opens ONLY Attributes no picker under it.",
     "Map-ground dblclick still opens the asset picker.",
+    "cargo xtask mk leptos-gates",
+]
+acceptance = [
+    "Double-clicking an outliner row opens only Attributes; no asset picker appears beneath it.",
+    "Double-clicking map ground still opens the asset picker.",
 ]
 citations = [
     "wave203.md MINOR NIT",

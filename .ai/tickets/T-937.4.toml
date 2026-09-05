@@ -1,0 +1,52 @@
+id = "T-937.4"
+kind = "work"
+title = "Persist: surface save errors, flush on hide"
+summary = "Save failures in persist.rs become a toast plus a status chip instead of console.warn; a visibilitychange-hidden flush with a shorter debounce joins the fire-and-forget pagehide save; note_unreadable gets a bounded retry."
+class = "bug"
+status = "ready"
+order = 7730
+spec = "docs/specs/audit_2026_09/t937_editor_data_layer.md"
+plan = "docs/plans/t-937_4_plan.md"
+executor = "claude-code"
+priority = 0
+parent = "T-937"
+main_goal = "No save failure is silent, and switching tabs never leaves edits unsaved."
+context = [
+    "Anchor 2026-09-04: persist.rs:827-832 turns any save_state_as error (quota included) into console.warn and returns; the author never learns the save was dropped.",
+    "Anchor: persist.rs:952-957 on_hide spawns the save fire-and-forget on pagehide; :252, :461 and :815-826 note_unreadable lock saving out until reload.",
+    "Priority 0: a silently dropped save is data loss.",
+]
+requirement = [
+    "New apps/website/frontend/src/editor/state/save_status.rs (registered in state/mod.rs): SaveStatus signal {Saved, Saving, Failed(reason), Unreadable(retries)}, a status chip component, a toast on Failed.",
+    "persist.rs run_save reports every Err into SaveStatus; a quota failure is named as such in the message.",
+    "persist.rs listens to visibilitychange; on hidden it flushes immediately; the idle debounce is at most 1 s.",
+    "note_unreadable retries the read three times with backoff before locking out; the chip offers Retry in the locked state.",
+]
+current_state = ["persist.rs has no error surface, a pagehide-only hook at :952-957, and a permanent lockout at :815-826."]
+approach = [
+    "Verify on main: a test forcing save_state_as to Err shows no observable state change; paste the red.",
+    "Write save_status.rs; thread the signal through persist.rs; add the visibilitychange listener beside pagehide; add the retry loop.",
+    "Perturbation: swallow the Err again in run_save; the status test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-937.4",
+]
+acceptance = [
+    "A failed save shows a toast and a Failed chip naming the reason; a quota failure names quota.",
+    "Switching tabs flushes pending edits within the shortened debounce; a reload afterwards shows them.",
+    "An unreadable store retries three times before showing a lockout with a Retry action.",
+]
+created_at = "2026-09-05T02:09:02Z"
+owns = [
+    "apps/website/frontend/src/editor/state/persist.rs",
+    "apps/website/frontend/src/editor/state/save_status.rs",
+    "apps/website/frontend/src/editor/state/mod.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["doc_store"]

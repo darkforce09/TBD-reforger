@@ -3,10 +3,11 @@ kind = "work"
 title = "Vehicle Attributes Transform/Position tab"
 summary = "Vehicle Attributes need Transform/Position parity (X/Y/Z + Heading at minimum); T-818 only shipped Heading/Cargo/Crew"
 class = "feature"
-status = "queued"
-order = 5350
+status = "ready"
+order = 8540
+spec = "docs/specs/existing/t926_vehicle_transform_tab.md"
+plan = "docs/plans/t-926_plan.md"
 executor = "claude-code"
-created_at = "2026-08-19T15:28:33Z"
 notes = """
 WAVE-210 OPERATOR EYE-PASS (2026-08-11/19). T-818 ACCEPTANCE only required Heading/Cargo/Crew in Attributes — those shipped and are visible. Operator new product ask: vehicle Attributes should also expose Transform/Position parity with slot Attributes (at minimum Position X/Y/Z + Heading). Not a silent T-818 fail.
 
@@ -32,19 +33,23 @@ approach = [
     "Reuse existing number_field / Transform commit seams where safe.",
 ]
 verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-926",
+]
+acceptance = [
     "Placed vehicle Attributes shows Position X Y Z and Heading.",
     "Editing those fields updates vehicle pose in the mission document.",
-    "Heading/Cargo/Crew from T-818 still present and functional.",
+    "Heading, Cargo and Crew from T-818 still present and functional.",
 ]
 citations = [
     "wave210 operator eye-pass",
     "T-818 Heading Cargo Crew only",
     "attributes.rs vehicle body",
 ]
+created_at = "2026-08-19T15:28:33Z"
 estimated = ["scope"]
-owns = [
-    "apps/website/frontend/src/editor/panels/attributes_modal.rs",
-]
+owns = ["apps/website/frontend/src/editor/panels/attributes_modal.rs"]
 
 [scope]
 domain = "website"

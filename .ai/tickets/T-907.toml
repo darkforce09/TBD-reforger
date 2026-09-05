@@ -3,15 +3,17 @@ kind = "work"
 title = "Split 11 map-engine SIZE-3 allowlist files"
 summary = "Split map-engine SIZE-3 files (11) the T-899 allowlist is holding"
 class = "docs"
-status = "queued"
-order = 5870
+status = "ready"
+order = 8300
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
+plan = "docs/plans/t-907_plan.md"
 executor = "claude-code"
 main_goal = "Split 11 T-899-allowlisted map-engine SIZE-3 files; drop allowlist rows."
 context = [
     "T-899 allowlisted 11 map-engine-core and map-engine-render files over 1000 lines.",
     "Not dispatched in T-853 waves 234-235.",
     "Not the registry-split program.",
+    "draw_order.rs is already 487 lines — only its row drops; residency.rs (3137 lines) and slots_gpu.rs carry Class-R byte-parity tests that scrub their own source.",
 ]
 requirement = [
     "Do not raise the SIZE-3 threshold.",
@@ -21,8 +23,21 @@ current_state = [
     "Eleven map-engine src files over 1000 lines on T-899 allowlist.",
     "Each entry carries reason and expiry from T-899 walk.",
 ]
-approach = ["Split each listed map-engine file over 1000 lines."]
-verify = ["Split them; drop the SIZE-3 rows."]
+approach = [
+    "Split each listed map-engine file over 1000 lines.",
+    "Split pattern: stem.rs keeps its public surface and declares submodules in a new stem/ directory named by responsibility (no _part2 names); parent mod.rs untouched.",
+    "All four split tickets own .coding-standards-allowlist.yaml, so they pack into different waves; one slice per band.",
+]
+verify = [
+    "Split them; drop the SIZE-3 rows.",
+    "cargo xtask verify file-length",
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p map-engine-render",
+]
+acceptance = [
+    "Every listed map-engine file is at or under 1000 lines and its SIZE-3 row is gone; byte-parity and golden tests still pass unchanged.",
+    "No public item moves crate or path; both crates test green with --all-features.",
+]
 citations = [
     "T-899 SIZE-3 allowlist",
     "t853_shell_to_xtask_waves.md",
@@ -42,6 +57,7 @@ owns = [
     "crates/map-engine-render/src/draw_order.rs",
     "crates/map-engine-render/src/engine.rs",
     "crates/map-engine-render/src/scene.rs",
+    ".coding-standards-allowlist.yaml",
 ]
 
 [scope]

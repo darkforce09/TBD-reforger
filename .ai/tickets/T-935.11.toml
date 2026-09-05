@@ -1,0 +1,56 @@
+id = "T-935.11"
+kind = "work"
+parent = "T-935"
+title = "Prefab catalog, forest regions, type inventory to rkyv"
+summary = "tbd-tools emits objects/prefabs.rkyv, objects/forest-regions.rkyv and objects/type-inventory.rkyv; prefab.rs and regions.rs load the archives; world_host.rs fetches every objects.* archive (roads included) when manifest.objects.binary lists it."
+class = "feature"
+status = "ready"
+order = 7210
+priority = 1
+spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
+plan = "docs/plans/t-935_11_plan.md"
+executor = "claude-code"
+main_goal = "Every catalog-shaped objects asset has an rkyv archive and a frontend fetch branch keyed on the manifest."
+context = [
+    "Anchor 2026-09-04: build.rs writes prefabs :479, forest-regions :593, type-inventory :746; core prefab.rs:15/33, regions.rs:10 parse them; world_host.rs fetches prefabs :133, roads :146, regions :156.",
+    "Packs after T-935.3 (world_host.rs), T-935.2 (build.rs) and T-935.6 (tools world/mod.rs, store.rs sniff), so this slice flips the frontend fetches for all four archives.",
+]
+requirement = [
+    "New tools/tbd-tools/src/world/catalog_emit.rs: PrefabCatalogArchive (prefabs + type inventory) and ForestRegionsArchive writers, called from build.rs beside each JSON write.",
+    "prefab.rs and regions.rs: from_archive constructors equal to the JSON parse; parity test on everon.",
+    "world_host.rs: fetch prefabs, regions, roads and type inventory archives when manifest.objects.binary names them; JSON fetches otherwise.",
+]
+current_state = [
+    "tools/tbd-tools/src/world/build.rs:479 writes prefabs.json.gz, :593 forest-regions.json.gz, :746 type-inventory.json; no archive output.",
+    "apps/website/frontend/src/editor/world_assets/world_host.rs:133/146/156 fetch prefabs, roads, regions as gz JSON; crates prefab.rs:15/33 and regions.rs:10 are JSON-only.",
+]
+approach = [
+    "catalog_emit.rs: two writers; build.rs calls them after each JSON write; `pub mod catalog_emit` in tools world/mod.rs.",
+    "prefab.rs / regions.rs: from_archive; the type inventory becomes a field of PrefabCatalogArchive (class code table + counts).",
+    "world_host.rs: per asset choose the archive URL when manifest.objects.binary names it and hand bytes to store.rs (magic sniff from T-935.6).",
+    "Perturbation: shuffle prefab order in from_archive; parity red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features catalog",
+    "cargo test -p tbd-tools catalog_emit",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-935.11",
+]
+acceptance = [
+    "prefabs.rkyv, forest-regions.rkyv and type-inventory.rkyv for everon parse to the same structures as their JSON sources.",
+    "world_host.rs has an archive branch for every objects.* asset it fetches; JSON stays default until T-935.13.",
+]
+depends_on = ["T-935.1", "T-935.2", "T-935.3", "T-935.6"]
+created_at = "2026-09-05T01:34:37Z"
+owns = [
+    "tools/tbd-tools/src/world/catalog_emit.rs",
+    "tools/tbd-tools/src/world/mod.rs",
+    "tools/tbd-tools/src/world/build.rs",
+    "crates/map-engine-core/src/world/prefab.rs",
+    "crates/map-engine-core/src/world/regions.rs",
+    "apps/website/frontend/src/editor/world_assets/world_host.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "world"

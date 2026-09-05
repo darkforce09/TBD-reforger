@@ -1,0 +1,58 @@
+id = "T-935.7"
+kind = "work"
+parent = "T-935"
+title = "Labels: locations, height labels, road names to rkyv"
+summary = "tbd-tools map emits locations/map_labels.rkyv (MapLabelsArchive: towns, height_labels, road_names) from the three JSON files; labels.rs loads the archive through access_checked when manifest.labels is present."
+class = "feature"
+status = "ready"
+order = 7140
+priority = 1
+spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
+plan = "docs/plans/t-935_7_plan.md"
+executor = "claude-code"
+main_goal = "One archive fetch replaces three JSON label fetches with identical rendered labels."
+context = [
+    "Anchor 2026-09-04: packages/map-assets/everon/{locations.json, height-labels.json, road-names.json}; frontend labels.rs:70/76 fetches them; core locations.rs:12 and road_labels.rs:66 parse them.",
+    "T-935.9 (water) packs later and registers its subcommand through map/mod.rs; bin/map.rs is edited here only.",
+]
+requirement = [
+    "New tools/tbd-tools/src/map/labels_emit.rs: `map labels-rkyv` reads the three JSON files and writes MapLabelsArchive {towns, height_labels, road_names}.",
+    "locations.rs and road_labels.rs gain from_archive constructors yielding the same structures as the JSON parsers.",
+    "labels.rs: one fetch_bytes of map_labels.rkyv replaces three text fetches when manifest.labels is Some; JSON path otherwise.",
+    "Parity test: everon JSON parse equals archive parse for all three label sets.",
+]
+current_state = [
+    "apps/website/frontend/src/editor/world_assets/labels.rs:70/76 fetches locations.json, height-labels.json and road-names.json as text and parses them with serde_json.",
+    "crates/map-engine-core/src/world/locations.rs:12 and road_labels.rs:66 define the JSON shapes; no binary constructors.",
+    "tools/tbd-tools/src/bin/map.rs has no labels subcommand; tools/tbd-tools/src/map/mod.rs lists the map modules.",
+]
+approach = [
+    "labels_emit.rs: read the three files through the core types, build MapLabelsArchive, to_bytes, write; `pub mod labels_emit` in map/mod.rs.",
+    "bin/map.rs: `labels-rkyv --terrain <dir>` subcommand calling labels_emit; prints output size.",
+    "locations.rs / road_labels.rs: from_archive; labels.rs: manifest.labels branch with a single fetch.",
+    "Perturbation: drop road_names in from_archive; parity test red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features labels",
+    "cargo test -p tbd-tools labels_emit",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-935.7",
+]
+acceptance = [
+    "map_labels.rkyv holds towns, height labels and road names for everon and parses to the same structures as the three JSON files.",
+    "The label layer renders identically from either source.",
+]
+depends_on = ["T-935.1"]
+created_at = "2026-09-05T01:34:37Z"
+owns = [
+    "tools/tbd-tools/src/map/labels_emit.rs",
+    "tools/tbd-tools/src/map/mod.rs",
+    "tools/tbd-tools/src/bin/map.rs",
+    "apps/website/frontend/src/editor/world_assets/labels.rs",
+    "crates/map-engine-core/src/world/locations.rs",
+    "crates/map-engine-core/src/world/road_labels.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "world"

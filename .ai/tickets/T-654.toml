@@ -3,8 +3,10 @@ kind = "work"
 title = "Conditional inclusion: variant-gated document subtrees"
 summary = "Conditional inclusion: variant-gated document subtrees"
 class = "bug"
-status = "queued"
-order = 4610
+status = "ready"
+order = 7410
+spec = "docs/specs/existing/t654_variant_inclusion.md"
+plan = "docs/plans/t-654_plan.md"
 executor = "claude-code"
 notes = """
 not factory-dispatchable; no owns, no wave row T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-654 salvage/t853-dropped/T-654` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other.
@@ -27,6 +29,7 @@ context = [
     "FNF v3 Eden layers abandoned at v4; salvage conditional inclusion not layers.",
     "Schema widening split to T-706; this ticket Enfusion reader plus editor UI.",
     "T-853 2026-08-12 dropped worktree unmerged ten days; commit recoverable salvage tag.",
+    "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
 ]
 requirement = [
     "Implement variant predicate reader in TBD_MissionLoader.c without schema edits.",
@@ -39,7 +42,14 @@ current_state = [
     "Executor corrected workbench to claude-code; .c routes Fable per model-routing.",
 ]
 approach = ["Redo from salvage redo/T-654 branch; check T-674 T-675 same commit overlap."]
-verify = ["MissionLoader emits subtree only when selected variant predicate matches."]
+verify = [
+    "MissionLoader emits subtree only when selected variant predicate matches.",
+    "cargo xtask mod compile",
+]
+acceptance = [
+    "Entity subtrees carrying a variant predicate spawn only when the selected variant matches; missions without predicates spawn everything as before.",
+    "Mode presets (day/night, player-count bands) select at launch; no packages/tbd-schema edits; compile clean.",
+]
 citations = [
     "T-706 schema widening split",
     "FNF v4 mode architecture",
