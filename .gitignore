@@ -53,3 +53,6 @@ target-*/
 /dist-gate-frontend/
 /target-gate-trunk/
 /.ai/artifacts/last-verified
+
+# LANG-1/2/3 hard zero: the two legacy raster tools stay on disk for the mod author, out of git (T-165.8 moved the pipeline to Rust)
+apps/mod/tbd-export/tools/*.mjs
