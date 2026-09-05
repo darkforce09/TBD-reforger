@@ -134,8 +134,10 @@ mod tests {
     fn box_room_yields_single_ground_slab() {
         let d = synth::box_room(6.0, 4.0, 2.6, 0.15);
         let m = d.meta();
-        let mut p = Params::default();
-        p.min_floor_y = -0.5 - m.origin[1];
+        let p = Params {
+            min_floor_y: -0.5 - m.origin[1],
+            ..Default::default()
+        };
         let v = analyze(&d.y_down, m.dims, m.cell, m.span[1], &p);
         assert_eq!(
             v.floors.len(),
@@ -161,8 +163,10 @@ mod tests {
     fn gable_slope_field_flags_roof_planes() {
         let d = synth::gable_box(6.0, 4.0, 2.6, 4.2, 0.15);
         let m = d.meta();
-        let mut p = Params::default();
-        p.min_floor_y = -0.5 - m.origin[1];
+        let p = Params {
+            min_floor_y: -0.5 - m.origin[1],
+            ..Default::default()
+        };
         let v = analyze(&d.y_down, m.dims, m.cell, m.span[1], &p);
         // Mid-span roof cells slope ~ (ridge-eave)/(depth/2) = 1.6/2.0 = 0.8.
         let (ix, iz) = (m.dims[0] / 2, m.dims[2] / 4);

@@ -490,8 +490,7 @@ pub(crate) mod tests {
         assert_eq!(entries[0].offset, 12 + 11 + 8);
         // A DATA-relative offset (below the payload start) is rejected by name.
         let mut bad = img.clone();
-        let file_off = bad.len() - 40 - 3 * 0; // FILE chunk is last; find its entry record
-        let _ = file_off;
+        // FILE chunk is last; find its entry record by searching from the end.
         let needle = (12u32 + 11 + 8).to_le_bytes();
         let at = bad
             .windows(4)

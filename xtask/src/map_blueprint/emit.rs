@@ -288,8 +288,10 @@ mod tests {
     fn box_room_blueprint_passes_the_schema_contract() {
         let d = synth::box_room(6.0, 4.0, 2.6, 0.15);
         let m = d.meta().clone();
-        let mut p = Params::default();
-        p.min_floor_y = -0.5 - m.origin[1];
+        let p = Params {
+            min_floor_y: -0.5 - m.origin[1],
+            ..Default::default()
+        };
         let v = slabs::analyze(&d.y_down, m.dims, m.cell, m.span[1], &p);
         let lo = v.floors[0];
         let hi = v.eave.max(lo + p.top_band_min_m);

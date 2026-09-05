@@ -826,7 +826,7 @@ mod tests {
             entry[0]
         );
         // The underside faces −y: nothing enters marching up.
-        assert!(dump.y_up.get(&(ix, iz)).is_none());
+        assert!(!dump.y_up.contains_key(&(ix, iz)));
     }
 
     #[test]

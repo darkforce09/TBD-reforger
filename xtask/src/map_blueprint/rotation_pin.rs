@@ -354,9 +354,9 @@ mod tests {
         let angles = [14.991, 90.532, -90.279];
         let m = RIGID_HYPOTHESIS.matrix(angles);
         let r = Rigid::from_enfusion([0.0; 3], angles, 1.0);
-        for i in 0..3 {
-            for j in 0..3 {
-                assert!((m[i][j] - r.m[i][j]).abs() < 1e-12, "{i}{j}");
+        for (i, row) in m.iter().enumerate() {
+            for (j, mij) in row.iter().enumerate() {
+                assert!((*mij - r.m[i][j]).abs() < 1e-12, "{i}{j}");
             }
         }
         let back = RIGID_HYPOTHESIS.decompose(&m);

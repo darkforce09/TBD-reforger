@@ -286,7 +286,7 @@ fn build_bands(
     if vert.ridge - last_hi >= p.attic_min_rise_m {
         let mut dbg = debugs.as_deref_mut().map(|_| walls::BandDebug::default());
         let bw = walls::extract_band(dump, vert, last_hi, vert.ridge, algo, p, dbg.as_mut());
-        if let (Some(sink), Some(d)) = (debugs.as_deref_mut(), dbg) {
+        if let (Some(sink), Some(d)) = (debugs, dbg) {
             sink.push(d);
         }
         println!(
@@ -330,8 +330,10 @@ pub(crate) mod tests {
     fn gable_mezzanine_bands_plate_and_knee_wall() {
         let d = synth::gable_mezzanine();
         let m = d.meta().clone();
-        let mut p = Params::default();
-        p.min_floor_y = -0.5 - m.origin[1];
+        let p = Params {
+            min_floor_y: -0.5 - m.origin[1],
+            ..Default::default()
+        };
         let vert = slabs::analyze(&d.y_down, m.dims, m.cell, m.span[1], &p);
         assert_eq!(
             vert.floors.len(),

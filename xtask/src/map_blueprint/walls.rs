@@ -167,7 +167,7 @@ fn segments_band(
             mass_grid.set(ix, iz, true);
         }
     }
-    if let Some(dbg) = debug.as_deref_mut() {
+    if let Some(dbg) = debug {
         dbg.graze_vetoed = vetoed;
         dbg.mass_cells = mass_grid.count();
     }
@@ -835,8 +835,10 @@ mod tests {
 
     fn vertical(d: &VoxelDump) -> VerticalScan {
         let m = d.meta();
-        let mut p = Params::default();
-        p.min_floor_y = -0.5 - m.origin[1];
+        let p = Params {
+            min_floor_y: -0.5 - m.origin[1],
+            ..Default::default()
+        };
         slabs::analyze(&d.y_down, m.dims, m.cell, m.span[1], &p)
     }
 

@@ -95,8 +95,10 @@ mod tests {
 
     fn analyzed(d: &VoxelDump) -> (VerticalScan, DumpMeta, Params) {
         let m = d.meta().clone();
-        let mut p = Params::default();
-        p.min_floor_y = -0.5 - m.origin[1];
+        let p = Params {
+            min_floor_y: -0.5 - m.origin[1],
+            ..Default::default()
+        };
         let v = slabs::analyze(&d.y_down, m.dims, m.cell, m.span[1], &p);
         (v, m, p)
     }
@@ -220,8 +222,10 @@ mod tests {
             tick: 0,
         };
         // Pin the pitch: this micro-grid is designed around 4-fine-cell blocks.
-        let mut p = Params::default();
-        p.roof_cell_m = 0.4;
+        let p = Params {
+            roof_cell_m: 0.4,
+            ..Default::default()
+        };
         let g = build(&vert, &meta, &p).expect("two roof blocks survive");
         assert_eq!((g.nx, g.nz), (2, 2));
         assert_eq!(g.heights_m[0], None, "stoop dropped by the ground filter");
@@ -229,8 +233,10 @@ mod tests {
         assert_eq!(g.heights_m[1], Some(3.0));
         assert_eq!(g.heights_m[3], Some(3.0));
 
-        let mut pe = Params::default();
-        pe.roof_erode_cells = 1;
+        let pe = Params {
+            roof_erode_cells: 1,
+            ..Default::default()
+        };
         assert!(
             build(&vert, &meta, &pe).is_none(),
             "one erosion pass clears the 2×2 survivors ⇒ no grid at all"
