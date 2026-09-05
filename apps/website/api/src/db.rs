@@ -158,14 +158,21 @@ pub fn pool_options(cfg: &DbPoolConfig) -> PgPoolOptions {
 /// caller that opens a pool without loading [`crate::config::Config`] (`import-registry`,
 /// the integration suites) gets the same guard.
 pub async fn connect(database_url: &str) -> Result<PgPool, sqlx::Error> {
-    let cfg = DbPoolConfig::from_env().map_err(|e| sqlx::Error::Configuration(e.into()))?;
-    connect_with(database_url, &cfg).await
+    connect_with_options(database_url, env_pool_options()?).await
 }
 
-/// [`connect`] with an explicit [`DbPoolConfig`] — for a caller that already holds one.
-pub async fn connect_with(database_url: &str, cfg: &DbPoolConfig) -> Result<PgPool, sqlx::Error> {
-    let opts = pool_options(cfg);
+/// The [`PgPoolOptions`] [`connect`] builds: [`DbPoolConfig::from_env`] through
+/// [`pool_options`], a malformed variable surfaced as [`sqlx::Error::Configuration`].
+fn env_pool_options() -> Result<PgPoolOptions, sqlx::Error> {
+    DbPoolConfig::from_env()
+        .map(|cfg| pool_options(&cfg))
+        .map_err(|e| sqlx::Error::Configuration(e.into()))
+}
 
+async fn connect_with_options(
+    database_url: &str,
+    opts: PgPoolOptions,
+) -> Result<PgPool, sqlx::Error> {
     let mut last_err: Option<sqlx::Error> = None;
     for attempt in 1..=CONNECT_ATTEMPTS {
         match opts.clone().connect(database_url).await {
@@ -481,7 +488,7 @@ mod tests {
     #[tokio::test]
     async fn connect_refuses_a_non_numeric_pool_var_naming_it() {
         let _env = POOL_ENV.lock().await;
-        // SAFETY: see `pool_max_connections_follows_env_override`.
+        // SAFETY: see `env_override_yields_a_pool_max_of_3_and_unset_25`.
         unsafe { std::env::set_var(DB_POOL_ACQUIRE_TIMEOUT_ENV, "abc") };
         let res = connect("postgres://t9405:t9405@127.0.0.1:1/t9405_no_such_db").await;
         unsafe { std::env::remove_var(DB_POOL_ACQUIRE_TIMEOUT_ENV) };
@@ -494,29 +501,30 @@ mod tests {
         );
     }
 
-    /// T-940.5 acceptance — `TBD_DB_POOL_MAX_CONNECTIONS=3` must yield a pool whose max is 3 and
-    /// unset must yield 25. `connect` performs its first connection eagerly, so this needs a live
-    /// database and reads `TEST_DATABASE_URL` exactly like every DB-backed suite under `tests/`
-    /// (unset = the harness's skip path; the gate and `db test-it` both provide a database). It
-    /// only opens pools and reads their options — no migration, no writes — so it needs no
-    /// scratch-name guard.
+    /// T-940.5 acceptance — `TBD_DB_POOL_MAX_CONNECTIONS=3` yields a pool whose max is 3, and
+    /// unset yields 25. Builds the very [`PgPoolOptions`] [`connect`] would open with
+    /// ([`env_pool_options`]) into a lazy pool, so the proof needs no database and reads no
+    /// `TEST_DATABASE_URL` (the T-542/T-558 pin forbids that outside `tests/common`); the
+    /// eager `.connect()` in `connect_with_options` is unchanged from before T-940.5.
     #[tokio::test]
-    async fn pool_max_connections_follows_env_override() {
-        let Ok(url) = std::env::var("TEST_DATABASE_URL") else {
-            eprintln!("skip: TEST_DATABASE_URL unset");
-            return;
-        };
+    async fn env_override_yields_a_pool_max_of_3_and_unset_25() {
         let _env = POOL_ENV.lock().await;
         // SAFETY: the two tests that touch `TBD_DB_POOL_*` serialise on `POOL_ENV`; both writes
         // happen on this thread, every reader is Rust `std::env` (internally locked), and
         // nothing in the process calls `getenv` from C during the window.
         unsafe { std::env::set_var(DB_POOL_MAX_CONNECTIONS_ENV, "3") };
-        let overridden = connect(&url).await;
+        let overridden = env_pool_options();
         unsafe { std::env::remove_var(DB_POOL_MAX_CONNECTIONS_ENV) };
-        let overridden = overridden.expect("connect with TBD_DB_POOL_MAX_CONNECTIONS=3");
-        let unset = connect(&url)
-            .await
-            .expect("connect with TBD_DB_POOL_MAX_CONNECTIONS unset");
+        let unset = env_pool_options();
+        let url = "postgres://t9405-env/unused";
+        let overridden = overridden
+            .expect("TBD_DB_POOL_MAX_CONNECTIONS=3 parses")
+            .connect_lazy(url)
+            .expect("lazy pool");
+        let unset = unset
+            .expect("unset parses")
+            .connect_lazy(url)
+            .expect("lazy pool");
         assert_eq!(
             overridden.options().get_max_connections(),
             3,
@@ -527,8 +535,6 @@ mod tests {
             25,
             "unset TBD_DB_POOL_MAX_CONNECTIONS must yield the default 25"
         );
-        overridden.close().await;
-        unset.close().await;
     }
 
     async fn wait_until(mut pred: impl FnMut() -> bool, budget: Duration) {
