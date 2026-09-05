@@ -1,0 +1,48 @@
+id = "T-945"
+kind = "work"
+title = "Ticket encoding: support active_slice on disk"
+summary = "Programs cannot record which slice is active: active_slice is read by schema gate 10 but is not in ENCODING_C_KEYS or ALLOWED_NEW, so the on-disk key test rejects it and the gate falls back to a hard-coded T-090.1.2.5."
+class = "chore"
+status = "queued"
+order = 8910
+priority = 2
+spec = "docs/specs/factory/t945_active_slice_encoding.md"
+plan = "docs/plans/t-945_plan.md"
+executor = "claude-code"
+main_goal = "A program ticket can name its active slice on disk and schema gate 10 reads it."
+context = [
+    "Found closing wave 248: T-090 gained active_slice = T-090.4 in 36f65687e; xtask tickets_store::tests::on_disk_keys_are_mapped_or_allowed_new rejected it (unmapped key).",
+    "xtask/src/schema_gates.rs:1549 defaults active_slice to T-090.1.2.5 when the loaded registry has none; the loader drops unknown keys.",
+]
+requirement = [
+    "Add active_slice to ALLOWED_NEW, TicketFile and .ai/tickets/schema.json in one commit (the test's own instruction).",
+    "T-090.toml sets active_slice = T-090.4 and the hub header names it; gate 10 passes without the fallback.",
+]
+current_state = [
+    "Key removed from T-090.toml; hub header names both T-090.4 and the fallback string so gate 10 stays green.",
+]
+approach = [
+    "Widen ALLOWED_NEW + TicketFile + schema.json; perturbation: drop the key from ALLOWED_NEW, the on-disk key test goes red, restore, touch, green.",
+    "Remove the hard-coded fallback in schema_gates.rs:1549 in favour of a refusal naming the missing field.",
+]
+verify = [
+    "cargo test -p xtask -- tickets_store schema_gates",
+    "cargo xtask ticket check",
+    "cargo xtask platform wave gate --slice T-945",
+]
+acceptance = [
+    "T-090.toml carries active_slice and ticket check plus the on-disk key test both pass.",
+    "Schema gate 10 reads the field from the registry and rejects a hub header that names another slice.",
+]
+depends_on = []
+created_at = "2026-09-05T16:59:46Z"
+owns = [
+    "xtask/src/tickets_store.rs",
+    "xtask/src/schema_gates.rs",
+    ".ai/tickets/schema.json",
+]
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "tickets"

@@ -44,7 +44,7 @@
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t090_4_z_placement_audit.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "branch": "ticket/T-090"
     },
     {

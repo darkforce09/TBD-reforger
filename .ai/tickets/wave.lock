@@ -62,55 +62,55 @@ tickets = ["T-685", "T-679", "T-936.2"]
 
 [[waves]]
 n = 261
-tickets = ["T-212", "T-689", "T-936.3"]
+tickets = ["T-689", "T-936.3", "T-133"]
 
 [[waves]]
 n = 262
-tickets = ["T-705", "T-299", "T-133"]
+tickets = ["T-705", "T-299", "T-941.2"]
 
 [[waves]]
 n = 263
-tickets = ["T-654", "T-310", "T-941.2"]
+tickets = ["T-654", "T-310", "T-941.4"]
 
 [[waves]]
 n = 264
-tickets = ["T-936.4", "T-291", "T-941.4"]
+tickets = ["T-936.4", "T-291", "T-941.5"]
 
 [[waves]]
 n = 265
-tickets = ["T-936.5", "T-941.5", "T-941.6"]
+tickets = ["T-936.5", "T-941.6", "T-941.7"]
 
 [[waves]]
 n = 266
-tickets = ["T-936.6", "T-941.7", "T-941.8"]
+tickets = ["T-936.6", "T-941.8", "T-301"]
 
 [[waves]]
 n = 267
-tickets = ["T-936.7", "T-301", "T-302"]
+tickets = ["T-936.7", "T-302", "T-304"]
 
 [[waves]]
 n = 268
-tickets = ["T-242", "T-304", "T-139"]
+tickets = ["T-242", "T-139", "T-937.1"]
 
 [[waves]]
 n = 269
-tickets = ["T-937.1", "T-937.4", "T-940.4"]
+tickets = ["T-937.2", "T-937.4", "T-940.4"]
 
 [[waves]]
 n = 270
-tickets = ["T-937.2", "T-190", "T-938.1"]
+tickets = ["T-937.3", "T-190", "T-938.1"]
 
 [[waves]]
 n = 271
-tickets = ["T-937.3", "T-938.2", "T-938.3"]
-
-[[waves]]
-n = 272
 tickets = ["T-937.5", "T-257", "T-930"]
 
 [[waves]]
+n = 272
+tickets = ["T-212", "T-932", "T-938.2"]
+
+[[waves]]
 n = 273
-tickets = ["T-932", "T-938.4", "T-938.5"]
+tickets = ["T-938.3", "T-938.4", "T-938.5"]
 
 [[waves]]
 n = 274
@@ -206,7 +206,7 @@ tickets = ["T-838", "T-849", "T-944"]
 
 [[waves]]
 n = 297
-tickets = ["T-839"]
+tickets = ["T-839", "T-945"]
 
 [[waves]]
 n = 298
@@ -1086,6 +1086,7 @@ T-933 = ["xtask/src/mk_build.rs", "docs/platform/EDITOR_FACTORY_FOR_CURSOR.md", 
 "T-941.8" = ["apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c"]
 T-943 = ["xtask/src/wave/push.rs"]
 T-944 = ["apps/website/api/src/handlers/admin/audit.rs", "apps/website/api/src/services/audit_notify.rs", "apps/website/api/tests/audit_notify.rs"]
+T-945 = ["xtask/src/tickets_store.rs", "xtask/src/schema_gates.rs", ".ai/tickets/schema.json"]
 
 [depends_on]
 "T-067.1" = ["T-935.13"]
@@ -1160,7 +1161,7 @@ T-190 = ["T-222"]
 T-201 = ["T-241"]
 T-209 = ["T-186"]
 T-211 = ["T-241"]
-T-212 = ["T-685", "T-241"]
+T-212 = ["T-685", "T-241", "T-257"]
 T-213 = ["T-257"]
 T-237 = ["T-273"]
 T-238 = ["T-273", "T-237"]

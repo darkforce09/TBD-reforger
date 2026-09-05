@@ -45,15 +45,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** platform wave gate writes a verdict file (HEAD sha plus verdict) and platform wave land refuses a landing ticket without a fresh one. Forward-only: future lands only, no backfill, existing tickets stay green untouched.
 
-## T-090 — Map visualization program
-
-- **Active slice:** `T-090.4`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_4_z_placement_audit.md`
-- **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
-- **Branch:** `ticket/T-090`
-- **Targets:** 
-- **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-
 ## T-277 — 27.4% of the map catalogue is unclassified
 
 - **Slice spec:** `docs/specs/ideas/t277_prefab_classify.md`
