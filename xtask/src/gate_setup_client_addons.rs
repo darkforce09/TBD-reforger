@@ -39,8 +39,20 @@ impl Paths {
 /// Entry for `xtask setup client-addons`.
 pub fn run() -> Result<u8> {
     let root = find_repo_root()?;
+    run_in(&root)
+}
+
+/// `run` with the repo root injected: reads `$HOME` from the process, walks for nothing.
+///
+/// Split out so the `$HOME` test does not have to `set_current_dir` into a throwaway root to make
+/// `find_repo_root` land there. That chdir is process-wide: every other test thread walking from
+/// the cwd at that instant (`map_blueprint::tests::fixture`, `map_world_los` pins) resolved the
+/// throwaway root — which carries a `.ai/tickets/ROOT` marker — and failed with NotFound. Measured
+/// 2026-09-05, wave 248 full gate, `test xtask+tbd-tools`: reproducible 2/2 in the gate's cold
+/// target dir, never in isolation.
+pub fn run_in(root: &Path) -> Result<u8> {
     let home = std::env::var("HOME").context("HOME is unset (bash set -u would fail)")?;
-    run_with_root(&root, Path::new(&home))
+    run_with_root(root, Path::new(&home))
 }
 
 /// Testable entry that does not walk for the repo root or read `$HOME` from the process.
@@ -194,14 +206,13 @@ mod tests {
         let _path = PathGuard::prepend_dir(Path::new("/usr/bin"));
 
         let prev_home = std::env::var_os("HOME");
-        let prev_cwd = std::env::current_dir().unwrap();
-        // SAFETY: under ENV_LOCK; restored below.
+        // SAFETY: under ENV_LOCK; restored below. The root is INJECTED (`run_in`), never reached
+        // by chdir: `set_current_dir` is process-wide and made concurrent `find_repo_root`
+        // callers in other test threads resolve this throwaway root (see `run_in`).
         unsafe {
             std::env::set_var("HOME", &home);
         }
-        std::env::set_current_dir(&root).unwrap();
-        let code = run().unwrap();
-        std::env::set_current_dir(&prev_cwd).unwrap();
+        let code = run_in(&root).unwrap();
         match prev_home {
             Some(v) => unsafe { std::env::set_var("HOME", v) },
             None => unsafe { std::env::remove_var("HOME") },

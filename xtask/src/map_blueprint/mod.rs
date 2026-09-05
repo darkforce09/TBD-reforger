@@ -314,11 +314,10 @@ fn build_bands(
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
-    use crate::root::find_repo_root;
 
     pub(crate) fn fixture(name: &str) -> std::path::PathBuf {
-        find_repo_root()
-            .expect("repo root")
+        // Compile-time root, not the cwd walk: see `root::built_repo_root` for the race.
+        crate::root::built_repo_root()
             .join("xtask/tests/fixtures")
             .join(name)
     }

@@ -16,9 +16,8 @@ use crate::map_blueprint::tests::fixture;
 use crate::map_parity_report::ParityFile;
 
 fn assets() -> PathBuf {
-    crate::root::find_repo_root()
-        .unwrap()
-        .join("packages/map-assets/everon")
+    // Compile-time root, not the cwd walk: see `root::built_repo_root` for the race.
+    crate::root::built_repo_root().join("packages/map-assets/everon")
 }
 
 /// The T-090.11.4 door-parity oracle replayed through the WORLD occluder: the committed farmhouse

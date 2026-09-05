@@ -33,3 +33,12 @@ edit, in-editor play button.
   `test api` — T-311's in-crate DB test tripped the T-542 "no raw TEST_DATABASE_URL under src/"
   pin, which `--slice` gates do not run (completion agent moves it to `tests/`). Lesson recorded:
   the command center runs `cargo test -p xtask` after every registry edit before dispatch.
+- 2026-09-05 Wave 248 full gate, second run (after the machine restart): 30/31 PASS, red on
+  `test xtask+tbd-tools` — `map_world_los::tests::world_parity_world_column_clears_its_floor_when_the_dem_is_present`
+  NotFound on a fixture that exists. A cwd race, not a slice defect: wave/land tests
+  `set_current_dir` into throwaway roots carrying `.ai/tickets/ROOT` (under their own lock), and
+  `gate_setup_client_addons::run_reads_home_env` did the same with no lock; every fixture helper
+  walking `find_repo_root()` from the cwd at that instant resolved the throwaway root. 3/4 red in
+  the gate's cold `target-gate-tools`, never in isolation, never in the warm cache. Fix (command
+  center, harness): `root::built_repo_root()` from `CARGO_MANIFEST_DIR` for the fixture/asset
+  helpers, and `run_in(root)` so the HOME test injects its root instead of chdir. 3/3 green after.
