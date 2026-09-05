@@ -1,4 +1,7 @@
 //! Audit console — Rust port of `handlers/audit.go` (list + CSV + SSE stream, admin).
+//!
+//! T-940.6: the SSE stream is pushed by Postgres NOTIFY (`services::audit_notify`); the 2 s poll
+//! survives only as the fallback while that listener is down.
 
 use std::borrow::Cow;
 use std::convert::Infallible;
@@ -7,16 +10,19 @@ use std::time::Duration;
 use async_stream::stream;
 use axum::extract::{Query, State};
 use axum::http::{HeaderName, header};
-use axum::response::sse::{Event, Sse};
+use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{IntoResponse, Json, Response};
+use futures::Stream;
 use serde::Deserialize;
 use serde_json::{Value, json};
-use sqlx::QueryBuilder;
+use sqlx::{PgPool, QueryBuilder};
+use tokio::sync::broadcast;
 
 use crate::error::ApiError;
 use crate::handlers::PageParams;
 use crate::middleware::AdminUser;
 use crate::models::AuditLog;
+use crate::services::{AuditNotify, AuditSignal};
 use crate::state::AppState;
 
 /// Neutralise CSV formula injection for spreadsheet consumers (Excel / Sheets).
@@ -149,33 +155,106 @@ pub async fn export_audit_logs_csv(
         .into_response())
 }
 
-/// `GET /api/v1/admin/audit-logs/stream` — terminal-style live feed (SSE poll @ 2s).
+/// Fallback cadence for the live feed. Before T-940.6 the stream woke on this interval
+/// unconditionally; now the ticker reaches the database only while the `audit_log` listener
+/// (`services::audit_notify`) is down.
+pub const AUDIT_POLL_FALLBACK: Duration = Duration::from_secs(2);
+
+/// Rows per catch-up SELECT; a longer burst is drained page by page before the stream waits again.
+const CATCH_UP_PAGE: i64 = 100;
+
+const NEW_ROWS_SQL: &str = "SELECT id, severity, actor_id, COALESCE(actor_name, '') AS actor_name, action, message, COALESCE(target_type, '') AS target_type, COALESCE(target_id, '') AS target_id, metadata, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM audit_logs WHERE id > $1 ORDER BY id ASC LIMIT $2";
+
+/// Every `audit_logs` row committed after this call, in id order.
+///
+/// Pushed: the 0025 trigger raises `pg_notify('audit_log', id)` per insert, `notify` fans it out,
+/// and each [`AuditSignal::Row`] / [`AuditSignal::Resync`] triggers one `id > last_id` fetch — a
+/// burst is coalesced into one query. Polled: the `poll_every` ticker runs the same fetch, but only
+/// while [`AuditNotify::is_listening`] is false, so a client on a healthy listener costs the
+/// database nothing between rows. The subscription and the tail snapshot are taken before this
+/// returns, so a row committed after the call is never missed.
+pub async fn audit_row_stream(
+    pool: PgPool,
+    notify: AuditNotify,
+    poll_every: Duration,
+) -> impl Stream<Item = AuditLog> + Send {
+    // Subscribe BEFORE reading the tail: a row that commits in between is announced and fetched
+    // rather than lost behind the snapshot.
+    let mut rx = notify.subscribe();
+    let mut last_id: i64 = sqlx::query_scalar("SELECT COALESCE(max(id), 0) FROM audit_logs")
+        .fetch_one(&pool)
+        .await
+        .unwrap_or(0);
+    stream! {
+        let mut ticker = tokio::time::interval(poll_every);
+        ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+        ticker.tick().await; // consume the immediate first tick
+        let mut closed = false;
+        loop {
+            let fetch = tokio::select! {
+                sig = rx.recv(), if !closed => match sig {
+                    Ok(AuditSignal::Row(_) | AuditSignal::Resync) => true,
+                    Ok(AuditSignal::Down) => false,
+                    Err(broadcast::error::RecvError::Lagged(_)) => true,
+                    Err(broadcast::error::RecvError::Closed) => {
+                        closed = true;
+                        false
+                    }
+                },
+                _ = ticker.tick() => !notify.is_listening(),
+            };
+            if !fetch {
+                continue;
+            }
+            // A burst announces one row at a time: drain what is already queued, query once.
+            while matches!(
+                rx.try_recv(),
+                Ok(_) | Err(broadcast::error::TryRecvError::Lagged(_))
+            ) {}
+            loop {
+                let rows: Vec<AuditLog> = match sqlx::query_as(NEW_ROWS_SQL)
+                    .bind(last_id)
+                    .bind(CATCH_UP_PAGE)
+                    .fetch_all(&pool)
+                    .await
+                {
+                    Ok(rows) => rows,
+                    Err(e) => {
+                        tracing::warn!(error = %e, "audit stream fetch failed; will retry");
+                        Vec::new()
+                    }
+                };
+                let page_full = rows.len() as i64 == CATCH_UP_PAGE;
+                for r in rows {
+                    last_id = r.id;
+                    yield r;
+                }
+                if !page_full {
+                    break;
+                }
+            }
+        }
+    }
+}
+
+/// `GET /api/v1/admin/audit-logs/stream` — terminal-style live feed. Pushed by Postgres NOTIFY
+/// (T-940.6); polls every [`AUDIT_POLL_FALLBACK`] only while the listener is down.
 ///
 /// @route GET /api/v1/admin/audit-logs/stream
 pub async fn stream_audit_logs(State(state): State<AppState>, _a: AdminUser) -> Response {
-    let pool = state.pool.clone();
+    let notify = AuditNotify::for_pool(&state.pool);
+    let rows = audit_row_stream(state.pool.clone(), notify, AUDIT_POLL_FALLBACK).await;
     let body = stream! {
-        // Start from the current tail so the client only sees new events.
-        let mut last_id: i64 = sqlx::query_scalar("SELECT COALESCE(max(id), 0) FROM audit_logs")
-            .fetch_one(&pool).await.unwrap_or(0);
-        let mut ticker = tokio::time::interval(Duration::from_secs(2));
-        ticker.tick().await; // consume the immediate first tick
-        loop {
-            ticker.tick().await;
-            let rows: Vec<AuditLog> = sqlx::query_as(
-                "SELECT id, severity, actor_id, COALESCE(actor_name, '') AS actor_name, action, message, COALESCE(target_type, '') AS target_type, COALESCE(target_id, '') AS target_id, metadata, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM audit_logs WHERE id > $1 ORDER BY id ASC LIMIT 100",
-            ).bind(last_id).fetch_all(&pool).await.unwrap_or_default();
-            for r in &rows {
-                if let Ok(js) = serde_json::to_string(r) {
-                    yield Ok::<Event, Infallible>(Event::default().data(js));
-                }
-                last_id = r.id;
+        for await row in rows {
+            if let Ok(js) = serde_json::to_string(&row) {
+                yield Ok::<Event, Infallible>(Event::default().data(js));
             }
         }
     };
     (
         [(HeaderName::from_static("x-accel-buffering"), "no")],
-        Sse::new(body),
+        // The feed is silent between rows now; the comment ping keeps idle proxies from cutting it.
+        Sse::new(body).keep_alive(KeepAlive::default()),
     )
         .into_response()
 }
