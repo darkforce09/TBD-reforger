@@ -927,3 +927,4 @@ Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
 | T-927 | 8550 | ready | work | Editor chrome dblclick leak to map | Chrome docks/Attributes/top bar leak map dblclick — W210 eye-pass |
 | T-120 | 8570 | queued | work | Staging soak + golden mission smoke | Pinned game/mod version soak; golden-mission smoke on staging server. |
 | T-170 | 8580 | queued | work | Prod default flip to Leptos SPA | Prod default flip to Leptos SPA |
+| T-944 | 8900 | queued | work | Audit stream: id-order race and half-open socket | The NOTIFY-driven audit stream fetches id > last_id, so a row whose transaction commits after a higher id was already streamed is never delivered; a half-open socket keeps is_listening() true so the poll fallback never engages. |

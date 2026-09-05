@@ -5,6 +5,7 @@ title = "Reschedule cascades to event missions; delete hides schedule"
 summary = "Rescheduling an event shifts every event_missions.start_time by the same delta, and soft-deleting a mission hides its schedule entries and withdraws their registrations instead of orphaning them."
 class = "bug"
 status = "ready"
+notes = "2026-09-05 wave 248 (T-940.6): mission.delete and event.slot_kick audit rows carry actor_id NULL (missions.rs:836, events.rs:2214 stamp no actor); this slice SET LOCALs app.actor_id before the soft-delete / slot clear."
 order = 8100
 priority = 1
 spec = "docs/specs/audit_2026_09/t940_website_platform.md"

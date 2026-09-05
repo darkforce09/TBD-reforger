@@ -1,0 +1,49 @@
+id = "T-944"
+kind = "work"
+title = "Audit stream: id-order race and half-open socket"
+summary = "The NOTIFY-driven audit stream fetches id > last_id, so a row whose transaction commits after a higher id was already streamed is never delivered; a half-open socket keeps is_listening() true so the poll fallback never engages."
+class = "bug"
+status = "queued"
+order = 8900
+priority = 2
+spec = "docs/specs/audit_2026_09/t944_audit_stream_race.md"
+plan = "docs/plans/t-944_plan.md"
+executor = "claude-code"
+main_goal = "Every committed audit row reaches an open stream exactly once, even under concurrent writers or a silent network loss."
+context = [
+    "Found by the T-940.6 slice report (wave 248, landed f5f7abc10) and disclosed, not fixed, because a fix widens the stream contract.",
+    "handlers/admin/audit.rs:166 keeps the old poll's id > last_id watermark; services/audit_notify.rs:262 only notices a closed socket.",
+]
+requirement = [
+    "A row committed late (lower id than the watermark) is still streamed once, e.g. by keying on NOTIFY payload ids and a short reconciliation window on xmin/committed_at.",
+    "The listener detects a half-open connection within a bounded time (TCP keepalive or an application heartbeat) and the ticker falls back to polling meanwhile.",
+]
+current_state = [
+    "Repro race: session A BEGIN + INSERT audit_logs (hold); session B insert+commit; stream yields B; A commits; A's NOTIFY id <= last_id is skipped.",
+    "Repro half-open: iptables -I INPUT -p tcp --sport 5434 -j DROP with a stream open; is_listening() stays true until the kernel times out.",
+]
+approach = [
+    "Deliver by NOTIFY payload id regardless of watermark, dedupe with a small ring of recently streamed ids; reconcile committed_at gaps on Resync.",
+    "Add a periodic LISTEN heartbeat (SELECT 1 on the listener connection) with a deadline; on miss mark Down and redial.",
+    "Integration tests for both repros in tests/audit_notify.rs; perturbation: revert each fix, red, restore, touch, green.",
+]
+verify = [
+    "TBD_IT_BASE_DB=tbd_slice_t944_it cargo xtask db test-it",
+    "cargo xtask platform wave gate --slice T-944",
+]
+acceptance = [
+    "A late-committing audit row is streamed exactly once; no row is skipped or duplicated across a concurrent-writer test.",
+    "With the DB socket silently dropped, the stream falls back to polling within the heartbeat deadline and recovers after redial.",
+]
+depends_on = ["T-940.6"]
+created_at = "2026-09-05T16:47:42Z"
+owns = [
+    "apps/website/api/src/handlers/admin/audit.rs",
+    "apps/website/api/src/services/audit_notify.rs",
+    "apps/website/api/tests/audit_notify.rs",
+]
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "services"

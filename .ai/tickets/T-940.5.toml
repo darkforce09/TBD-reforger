@@ -3,7 +3,7 @@ kind = "work"
 title = "DB pool size and timeouts from config"
 summary = "Pool max connections, idle timeout, max lifetime and acquire timeout come from environment-backed config with the current values as defaults, documented in .env.example."
 class = "chore"
-status = "ready"
+status = "shipped"
 order = 7000
 spec = "docs/specs/audit_2026_09/t940_website_platform.md"
 plan = "docs/plans/t-940_5_plan.md"
@@ -31,7 +31,10 @@ acceptance = [
     "Setting TBD_DB_POOL_MAX_CONNECTIONS=3 yields a pool whose max is 3; unset yields 25.",
     "A non-numeric value stops startup with a message naming the variable.",
 ]
+shipped_at = "8fc66b589"
 created_at = "2026-09-05T02:33:18Z"
+completed_at = "2026-09-05T16:46:49Z"
+estimated = ["tokens"]
 owns = [
     "apps/website/api/src/db.rs",
     "apps/website/api/src/config.rs",

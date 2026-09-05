@@ -4,6 +4,7 @@ title = "Waitlist promotion assigns a seat, re-checks capacity"
 summary = "Promoting a waitlisted registration picks a free ORBAT slot inside the same transaction, re-checks capacity, and refuses the promotion with a 409 when no seat is free."
 class = "bug"
 status = "ready"
+notes = "2026-09-05 wave 248 (T-940.6): trigger-written event.create audit rows carry actor_id NULL / actor_name '' because events.rs stamps no actor; this slice SET LOCALs app.actor_id in its transactions so the trigger resolves the actor."
 order = 8080
 spec = "docs/specs/audit_2026_09/t940_website_platform.md"
 plan = "docs/plans/t-940_1_plan.md"
