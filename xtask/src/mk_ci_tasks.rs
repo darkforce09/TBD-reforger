@@ -182,6 +182,28 @@ pub static TASKS: &[Task] = &[
         lane: Lane::Ci,
         steps: &[sh!("cd apps/website/api && cargo test")],
     },
+    // T-298 — the tbd-tools half of what T-901 did for website-api above, and it exists for the
+    // same mechanical reason: ci.yml cannot carry a bare `cargo test -p tbd-tools --lib` step,
+    // because `verify ci-shell` refuses any `run:` that is not `cargo xtask` or on its short
+    // pre-cargo allowlist (`verify_ci_shell_rules.rs is_allowlisted`). So the command lives here
+    // and the workflow names the task.
+    //
+    // WHAT WAS MISSING: nothing in .github/ ran tbd-tools at all — `grep -n tbd-tools
+    // .github/workflows/ci.yml` on 9aa2acb23 returned one COMMENT (line 78) and no step. The wave
+    // gate's `test xtask+tbd-tools` (wave/gate.rs) runs these tests locally and `mod_wave.rs`
+    // scopes its own run to `--lib enf::`, so on push the density grid was checked by nobody:
+    // `density::tests::corner_partition_identity` sat red from T-176 to T-597, four weeks.
+    //
+    // `--lib`, not a bare `cargo test`: the unit tests (density:: + world::, 57 of them) are the
+    // subject, and the six bin targets would drag the CDP/MCP/asset harnesses into a lane that is
+    // supposed to need no DB, no LFS and no browser.
+    Task {
+        name: "tbd-tools-test",
+        help: "T-298: cargo test -p tbd-tools --lib (density:: + world:: unit tests; no DB/LFS)",
+        group: "build",
+        lane: Lane::Ci,
+        steps: &[sh!("cargo test -p tbd-tools --lib")],
+    },
     // ── map lane ────────────────────────────────────────────────────────────────────────────
     Task {
         name: "map-water-everon",
