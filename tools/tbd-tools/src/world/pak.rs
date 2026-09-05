@@ -4,8 +4,14 @@
 //! Format: `FORM` (u32BE) + size + `PAC1`; then chunks `[magic u32BE][size u32BE][payload]`
 //! (HEAD skipped, DATA = payload start recorded, FILE = recursive entry tree: u8 kind,
 //! u8 nameLen, name; dir → u32LE childCount + children; file → u32LE offset/compressedLen/
-//! decompressedLen, 6 B skip, u8 compressed, 5 B skip). Read = seek dataStart+offset,
-//! inflate when compressed.
+//! decompressedLen, 6 B skip, u8 compressed, 5 B skip). Read = seek `offset`, inflate when
+//! compressed.
+//!
+//! T-305 — entry offsets are **absolute from the pak start**, not relative to the DATA payload.
+//! The port carried `dataStart + offset` over from the JS reader, which rotated every read by 56
+//! bytes (the `data_start` of every shipped pak); T-206 measured 300/300 compressed entries
+//! inflating at `entry.offset` and only 3/300 at `data_start + offset`. `data_start` is still
+//! parsed and reported via [`PakVfs::entry_data_start`], but it is part of no seek.
 
 use std::collections::HashMap;
 use std::io::Read as _;
@@ -246,7 +252,8 @@ impl PakVfs {
             r.entry.decompressed_len
         } as usize;
         let mut f = std::fs::File::open(&r.pak_path)?;
-        f.seek(SeekFrom::Start(r.data_start + u64::from(r.entry.offset)))?;
+        // T-305: entry offsets are ABSOLUTE from the pak start — do not add `data_start`.
+        f.seek(SeekFrom::Start(u64::from(r.entry.offset)))?;
         let mut buf = vec![0u8; read_len];
         f.read_exact(&mut buf).context("truncated pak read")?;
         if r.entry.compressed {
@@ -294,7 +301,8 @@ impl PakVfs {
             r.entry.decompressed_len
         } as usize;
         let mut f = std::fs::File::open(&r.pak_path)?;
-        f.seek(SeekFrom::Start(r.data_start + u64::from(r.entry.offset)))?;
+        // T-305: entry offsets are ABSOLUTE from the pak start — do not add `data_start`.
+        f.seek(SeekFrom::Start(u64::from(r.entry.offset)))?;
         let mut buf = vec![0u8; read_len];
         f.read_exact(&mut buf)?;
         Ok((buf, r.entry.decompressed_len))
