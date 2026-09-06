@@ -129,6 +129,143 @@ mod tests {
     use super::*;
     use map_engine_core::geometry::tbdd::{decode_tbdd, encode_tbdd};
 
+    /// The 625 committed everon density tiles (`objects/density/*.bin`), sorted.
+    ///
+    /// A missing or short corpus is a FAILURE, never a skip: the T-935.5 acceptance is *all 625*
+    /// tiles, and "the directory was not there" is the shape of a green run that examined nothing.
+    fn everon_density_tiles() -> Vec<std::path::PathBuf> {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../packages/map-assets/everon/objects/density");
+        let rd = std::fs::read_dir(&dir)
+            .unwrap_or_else(|e| panic!("T-935.5: {} could not be read ({e})", dir.display()));
+        let mut files: Vec<std::path::PathBuf> = rd
+            .map(|e| e.expect("density dir entry").path())
+            .filter(|p| p.extension().is_some_and(|x| x == "bin"))
+            .collect();
+        files.sort();
+        assert_eq!(
+            files.len(),
+            625,
+            "expected 625 everon density tiles in {}, found {}",
+            dir.display(),
+            files.len()
+        );
+        files
+    }
+
+    /// T-935.5 main goal — **the 625 committed tiles stay valid byte for byte**.
+    ///
+    /// Decode each tile with the new `cast_slice` decoder and re-emit it through the *unchanged*
+    /// `encode_tbdd`; the result must be the file, byte for byte. This is the independent half of
+    /// the parity pin in `map_engine_core::geometry::tbdd`: that one proves the two decoders agree
+    /// with each other, this one proves the pair still agrees with what is on disk — the emitter
+    /// and the decoder could have drifted together and neither test alone would notice.
+    #[test]
+    fn committed_everon_tiles_survive_decode_then_re_emit_byte_for_byte() {
+        let mut nonzero = 0u64;
+        for path in &everon_density_tiles() {
+            let on_disk = std::fs::read(path).expect("read density tile");
+            assert_eq!(
+                on_disk.len(),
+                TBDD_FILE_BYTES,
+                "{} is {} B, not TBDD_FILE_BYTES ({TBDD_FILE_BYTES}) — a `vers…` prefix here means \
+                 this checkout holds an LFS POINTER, not the payload",
+                path.display(),
+                on_disk.len()
+            );
+            let g = decode_tbdd(&on_disk).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+            assert_eq!(
+                (g.cols, g.rows, g.cell_m, g.version),
+                (DENSITY_COLS, DENSITY_ROWS, DENSITY_CELL_M, TBDD_VERSION),
+                "{} header disagrees with this module's constants",
+                path.display()
+            );
+            assert_eq!(g.channels.len(), DENSITY_CHANNELS.len());
+            let refs: Vec<&[u16]> = g.channels.iter().map(Vec::as_slice).collect();
+            let re_emitted = encode_tbdd(DENSITY_CELL_M, DENSITY_COLS, DENSITY_ROWS, &refs);
+            if re_emitted != on_disk {
+                let at = re_emitted
+                    .iter()
+                    .zip(&on_disk)
+                    .position(|(a, b)| a != b)
+                    .unwrap_or_else(|| on_disk.len().min(re_emitted.len()));
+                panic!(
+                    "T-935.5: {} changed on decode→encode at byte {at} ({} B out vs {} B on disk)",
+                    path.display(),
+                    re_emitted.len(),
+                    on_disk.len()
+                );
+            }
+            nonzero += g
+                .channels
+                .iter()
+                .flatten()
+                .filter(|v| **v != 0)
+                .count()
+                .try_into()
+                .unwrap_or(u64::MAX);
+        }
+        assert!(
+            nonzero > 0,
+            "every cell in all 625 tiles is zero — the round trip above compared nothing but \
+             padding"
+        );
+    }
+
+    /// T-935.5 — a synthetic tile emitted through this module's own pipeline (accumulate → blur →
+    /// slice → `encode_tbdd`) decodes back to exactly the corner values that were sliced, and the
+    /// bytes match a header/payload string spelled out independently of `encode_tbdd`.
+    #[test]
+    fn synthetic_tile_emit_decode_round_trip() {
+        let world = 1024.0; // two 512 m chunks per side
+        let pts: Vec<(f64, f64)> = (0..4096)
+            .map(|i| (f64::from(i * 13 % 1024), f64::from(i * 29 % 1024)))
+            .collect();
+        let (raw, size) = accumulate_corners(pts.iter().copied(), world);
+        let blurred = box_blur_corners(&raw, size, CANOPY_KERNEL_RADIUS_CELLS);
+        let tree = slice_chunk_corners(&blurred, size, 1, 0);
+        let rock = slice_chunk_corners(&raw, size, 1, 0);
+        assert!(
+            tree.iter().any(|v| *v != 0) && rock.iter().any(|v| *v != 0),
+            "the synthetic tile is all zeros — it would round-trip vacuously"
+        );
+
+        let buf = encode_tbdd(DENSITY_CELL_M, DENSITY_COLS, DENSITY_ROWS, &[&tree, &rock]);
+        assert_eq!(buf.len(), TBDD_FILE_BYTES);
+
+        // Independent byte oracle: the layout spelled from this module's constants, not from
+        // `encode_tbdd`'s body.
+        let mut want = Vec::with_capacity(TBDD_FILE_BYTES);
+        want.extend_from_slice(b"TBDD");
+        want.extend_from_slice(&TBDD_VERSION.to_le_bytes());
+        want.extend_from_slice(&DENSITY_CELL_M.to_le_bytes());
+        want.extend_from_slice(&DENSITY_COLS.to_le_bytes());
+        want.extend_from_slice(&DENSITY_ROWS.to_le_bytes());
+        want.push(u8::try_from(DENSITY_CHANNELS.len()).expect("2 channels"));
+        want.extend_from_slice(&[0, 0, 0]);
+        for ch in [&tree, &rock] {
+            for v in ch {
+                want.extend_from_slice(&v.to_le_bytes());
+            }
+        }
+        assert_eq!(want.len(), TBDD_HEADER_BYTES + 2 * tree.len() * 2);
+        assert_eq!(buf, want, "the emitted TBDD layout moved");
+
+        let g = decode_tbdd(&buf).expect("decode");
+        assert_eq!(
+            (g.cols, g.rows, g.cell_m),
+            (DENSITY_COLS, DENSITY_ROWS, DENSITY_CELL_M)
+        );
+        assert_eq!(
+            g.channels[0], tree,
+            "tree channel did not survive the round trip"
+        );
+        assert_eq!(
+            g.channels[1], rock,
+            "rock channel did not survive the round trip"
+        );
+    }
+
     /// S13-style synthetic round-trip + the committed fixture decodes with our constants.
     #[test]
     fn encode_decode_round_trip_and_fixture() {

@@ -47,7 +47,15 @@ world = [
 # "all multi-byte fields on disk are little-endian" — the Pod side gets the same guarantee from the
 # `target_endian` const assert in `binary::pod`.
 # Deliberately NO flate2 and NO serde_json: binary formats are the thing that replaces gzip-JSON.
-binary = ["dep:rkyv", "dep:bytemuck"]
+#
+# T-935.5: `bytemuck` LEFT this list and became an unconditional dependency below. `binary` is now
+# rkyv only. `geometry::tbdd` is NOT feature-gated (`geometry/mod.rs`) and its only shipped caller
+# is `forest_mass.rs` in the SPA, which links this crate as
+# `default-features = false, features = ["mission", "blueprint"]` — so the moment `decode_tbdd`
+# casts with bytemuck, an optional bytemuck is a build failure for the SPA and for `website-api`
+# (`features = ["mission"]`). Proof: `cargo tree -p map-engine-core -i bytemuck` → "did not match
+# any packages" featureless, and the same command with `--features binary` prints v1.25.0.
+binary = ["dep:rkyv"]
 # `blueprint` (building-blueprint structs + LOS attribution over the `bvh` raycaster) stands alone
 # so the Leptos SPA can link it without pulling `world`'s flate2/serde_json parser stack into the
 # wasm bundle. Needs `bvh` (zero-dep) since T-090.6 step 3: evaluate_los raycasts the COLL sidecar.
@@ -81,10 +89,13 @@ rkyv = { version = "0.8.18", optional = true, default-features = false, features
 ] }
 # T-935.1 Tier 1 — `#[derive(Pod, Zeroable)]` for the POD + the three container headers.
 # `min_const_generics` lets the derive cover the headers' `reserved: [u8; N]` tails.
-bytemuck = { version = "1", optional = true, features = [
-    "derive",
-    "min_const_generics",
-] }
+#
+# NOT optional since T-935.5: `geometry::tbdd::decode_tbdd` casts the density payload with
+# `bytemuck::cast_slice`, and `geometry` is compiled by every consumer regardless of features
+# (`website-api` takes `["mission"]`, the SPA takes `["mission", "blueprint"]` with default
+# features off). It is a compile-time-only dependency for those two — `Pod`/`Zeroable` are marker
+# traits and every call inlines to a pointer cast — so the wasm bundle does not grow.
+bytemuck = { version = "1", features = ["derive", "min_const_generics"] }
 earcutr = "0.5.0"
 
 [dev-dependencies]
