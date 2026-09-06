@@ -361,3 +361,5 @@ edit, in-editor play button.
   collides with the operator's `trunk serve` over the same `dist/`; stop the server first). Exit 1,
   21 fail / 22 pass — and **byte-identical to the pre-merge run: 97 failing oracle paths, `diff`
   empty.** Pre-existing drifted oracles, no regression from this wave.
+
+- 2026-09-06 **WAVE 244 CLOSED** — T-935.13 everon binary cutover (T-985 hot-set + T-993 sat-v2 folded; dem.raw UNFILLED; prefabs/descriptors/ kept; flate2 kept; gz-JSON kept as emitter input) and T-673 Enfusion marker style reader (six MRK attrs; Rpc style packed as xs trailer). Membership differs from the lock: T-677 was not dispatched (operator: two seats). GATE: PASS (base `46d8ea65b`, cold `tbd_wave244_cold_*`: 35 tables / 38 missions / 22 migrations). Wave-level `mod compile` OK (11333 classes). Verifier: no findings. UNREAD: deleted rotationDeg/brush/color/alpha; re-pinned shape 32→34 and size 0→3 (T-681 kept).

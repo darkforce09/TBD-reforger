@@ -1,15 +1,16 @@
 id = "T-935.13"
 kind = "work"
-parent = "T-935"
 title = "Cutover: everon rebuilt binary, gz-JSON emit deleted"
 summary = "Rebuild everon with every new emitter, point manifest.json at the binary assets, make the frontend default to binary, delete gz-JSON chunk emit and flate2 from the `world` feature; record before/after sizes and boot timings in the commit body."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7230
-priority = 1
 spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
 plan = "docs/plans/t-935_13_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = ["T-935.12"]
+parent = "T-935"
 main_goal = "Everon boots from binary assets only, with the JSON emit and its dependencies gone and the gain measured."
 context = [
     "Anchor 2026-09-04: everon today — 315 chunk .json.gz (22 MB), dem PNG 71.9 MB, prefabs/roads/forest-regions .json.gz, type-inventory.json; flate2 is a `world` dep (Cargo.toml:33,45,48).",
@@ -49,8 +50,10 @@ acceptance = [
     "prefabs/descriptors/ remain; the 1322 blocking prefabs are not forced onto the archive. T-985 hot-set and T-993 sat-v2 boot are in this slice.",
     "flate2 remains wherever gzip decode is still required; commit body carries before/after sizes and the dem.raw-unfilled note.",
 ]
-depends_on = ["T-935.12"]
+shipped_at = "84db01f94"
 created_at = "2026-09-05T01:34:37Z"
+completed_at = "2026-09-06T18:12:47Z"
+estimated = ["tokens"]
 owns = [
     "apps/website/frontend/src/editor/world_assets/mod.rs",
     "apps/website/frontend/src/editor/world_assets/world_host.rs",

@@ -11,7 +11,6 @@
 - **T-090** (7079) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-677** (7290) — Waypoints — group movement orders [ready] — Waypoints — group movement orders
 - **T-678** (7300) — Group AI state: combat mode, behaviour, formation, speed [ready] — Group AI state: combat mode, behaviour, formation, speed
-- **T-673** (7310) — Marker style and Area markers — the $defs/marker widening [ready] — Marker style and Area markers — the $defs/marker widening
 - **T-212** (7320) — Typed per-side objectives with attributes [ready] — Objectives as typed, placed, per-side entities with one uniform attribute spine
 - **T-680** (7330) — Vehicle states: lock, fuel, ammo [ready] — Vehicle states: lock, fuel, ammo
 - **T-681** (7340) — Entity states: health, allow-damage, show-model, size, stamina [ready] — Entity states: health, allow-damage, show-model, size, stamina
@@ -112,7 +111,6 @@ flowchart LR
   T177[T-177] --> T071[T-071]
   T118[T-118] --> T114[T-114]
   T677[T-677] --> T678[T-678]
-  T069[T-069] --> T673[T-673]
   T685[T-685] --> T212[T-212]
   T241[T-241] --> T212[T-212]
   T257[T-257] --> T212[T-212]

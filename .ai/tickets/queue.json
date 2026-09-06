@@ -27,13 +27,6 @@
       "branch": "ticket/T-678"
     },
     {
-      "id": "T-673",
-      "title": "Marker style and Area markers \u2014 the $defs/marker widening",
-      "status": "ready",
-      "spec": "docs/specs/existing/t673_marker_style_reader.md",
-      "branch": "ticket/T-673"
-    },
-    {
       "id": "T-212",
       "title": "Typed per-side objectives with attributes",
       "status": "ready",

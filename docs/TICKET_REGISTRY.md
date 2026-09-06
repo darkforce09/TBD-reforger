@@ -837,7 +837,7 @@
 | T-676 | 7260 | shipped | work | Trigger activation and effects — the Enfusion runtime | Trigger activation and effects — the Enfusion runtime |
 | T-677 | 7290 | ready | work | Waypoints — group movement orders | Waypoints — group movement orders |
 | T-678 | 7300 | ready | work | Group AI state: combat mode, behaviour, formation, speed | Group AI state: combat mode, behaviour, formation, speed |
-| T-673 | 7310 | ready | work | Marker style and Area markers — the $defs/marker widening | Marker style and Area markers — the $defs/marker widening |
+| T-673 | 7310 | shipped | work | Marker style and Area markers — the $defs/marker widening | Marker style and Area markers — the $defs/marker widening |
 | T-212 | 7320 | ready | work | Typed per-side objectives with attributes | Objectives as typed, placed, per-side entities with one uniform attribute spine |
 | T-680 | 7330 | ready | work | Vehicle states: lock, fuel, ammo | Vehicle states: lock, fuel, ammo |
 | T-681 | 7340 | ready | work | Entity states: health, allow-damage, show-model, size, stamina | Entity states: health, allow-damage, show-model, size, stamina |

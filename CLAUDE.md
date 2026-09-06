@@ -165,11 +165,11 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-935** — Map binary storage — hybrid rkyv + POD (`queued`)
 - **T-677** — Waypoints — group movement orders (`ready`)
 - **T-678** — Group AI state: combat mode, behaviour, formation, speed (`ready`)
-- **T-673** — Marker style and Area markers — the $defs/marker widening (`ready`)
 - **T-212** — Typed per-side objectives with attributes (`ready`)
 - **T-680** — Vehicle states: lock, fuel, ammo (`ready`)
 - **T-681** — Entity states: health, allow-damage, show-model, size, stamina (`ready`)
 - **T-682** — Environment readers: fog, wind, view distance (`ready`)
+- **T-684** — Mission parameters as first-class document objects (`ready`)
 <!-- ticket-sync:status:end -->
 
 **Shipped history — every slice, sha and tag — lives in**

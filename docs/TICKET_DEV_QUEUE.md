@@ -21,14 +21,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** Group AI state: combat mode, behaviour, formation, speed
 
-## T-673 — Marker style and Area markers — the $defs/marker widening
-
-- **Slice spec:** `docs/specs/existing/t673_marker_style_reader.md`
-- **Program hub:** `docs/specs/existing/t673_marker_style_reader.md`
-- **Branch:** `ticket/T-673`
-- **Targets:** 
-- **Summary:** Marker style and Area markers — the $defs/marker widening
-
 ## T-212 — Typed per-side objectives with attributes
 
 - **Slice spec:** `docs/specs/existing/t212_typed_objectives.md`
