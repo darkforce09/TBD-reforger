@@ -2,15 +2,15 @@
  * TBD_WorldFullExportPlugin.c - the single-JSONL full-world export the objects pipeline reads.
  *
  * T-090.12.1 resurrects the T-090.3.1 "Export TBD World Objects (full)" plugin (deleted in the
- * MapExport modularisation) — `copy-export-profile --full` + `world build-objects` consume
+ * MapExport modularisation) - `copy-export-profile --full` + `world build-objects` consume
  * exactly this pair of files:
  *
  *   $profile:TBD_WorldExport_full.jsonl        one entity per line, every entity in the terrain
- *   $profile:TBD_WorldExport_full_meta.json    written LAST — the completion sentinel
+ *   $profile:TBD_WorldExport_full_meta.json    written LAST - the completion sentinel
  *
  * Row v2 (exportVersion 2): {resourceName, className, x, y, z, headingDeg, pitchDeg, rollDeg,
  * scale, halfExtentsM}. Angles are GetAngles() = (pitch about X, HEADING about Y, roll about Z)
- * — the S6 rule the converter pins. `scale` is the entity's uniform GetScale() (<= 0.001 reads
+ * - the S6 rule the converter pins. `scale` is the entity's uniform GetScale() (<= 0.001 reads
  * as 1.0, the vegetation exporters' rule); it is the one field the July 2026 export lacked.
  *
  * Menu: Workbench > Plugins > TBD > "Export TBD World Objects (full)"
@@ -22,7 +22,7 @@ class TBD_WorldFullExportPlugin : WorkbenchPlugin
 	protected static const float CELL_M = 512.0;
 	protected static const float Y_MIN  = -1000.0; // AABB vertical span (covers Everon -204..375 m)
 	protected static const float Y_MAX  = 2000.0;
-	protected static const int   FLUSH  = 8000;    // buffered-write threshold (chars) — DEM plugin idiom
+	protected static const int   FLUSH  = 8000;    // buffered-write threshold (chars) - DEM plugin idiom
 	protected static const int   EXPORT_VERSION = 2;
 
 	protected static const string TAG = "[TBD][WorldFull]";
@@ -72,7 +72,7 @@ class TBD_WorldFullExportPlugin : WorkbenchPlugin
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Partition formula — MUST agree with the host side (tools/tbd-tools geometry::cell_of):
+	//! Partition formula - MUST agree with the host side (tools/tbd-tools geometry::cell_of):
 	//! clamp(floor(coord / 512), 0, cells-1). coord == worldSize lands in the last cell.
 	protected int CellIndex(float coord, int cells)
 	{
@@ -118,7 +118,7 @@ class TBD_WorldFullExportPlugin : WorkbenchPlugin
 		int cells = Math.Ceil(worldSize / CELL_M);
 		Print(string.Format("%1 terrain %2 m -> %3 x %3 cell passes (exportVersion %4)", TAG, worldSize, cells, EXPORT_VERSION));
 
-		// Stale sentinel must die BEFORE any writing — a crashed run must never look complete.
+		// Stale sentinel must die BEFORE any writing - a crashed run must never look complete.
 		FileIO.DeleteFile(OUT_META);
 
 		FileHandle f = FileIO.OpenFile(OUT_JSONL, FileMode.WRITE);
@@ -171,7 +171,7 @@ class TBD_WorldFullExportPlugin : WorkbenchPlugin
 					float hy = (bmax2[1] - bmin[1]) * 0.5;
 					float hz = (bmax2[2] - bmin[2]) * 0.5;
 
-					// T-090.12.1 — uniform scale (forest-generator trees are the non-unit case).
+					// T-090.12.1 - uniform scale (forest-generator trees are the non-unit case).
 					float scale = e.GetScale();
 					if (scale <= 0.001)
 						scale = 1.0;
@@ -203,7 +203,7 @@ class TBD_WorldFullExportPlugin : WorkbenchPlugin
 						{
 							f.Close();
 							FileIO.DeleteFile(OUT_JSONL);
-							Print(TAG + " ABORTED: JSONL write failed — partial file deleted.", LogLevel.ERROR);
+							Print(TAG + " ABORTED: JSONL write failed - partial file deleted.", LogLevel.ERROR);
 							return;
 						}
 						buf = "";
@@ -218,17 +218,17 @@ class TBD_WorldFullExportPlugin : WorkbenchPlugin
 		if (!jsonlOk)
 		{
 			FileIO.DeleteFile(OUT_JSONL);
-			Print(TAG + " ABORTED: JSONL write failed — partial file deleted.", LogLevel.ERROR);
+			Print(TAG + " ABORTED: JSONL write failed - partial file deleted.", LogLevel.ERROR);
 			return;
 		}
 
 		int elapsedMs = System.GetTickCount() - tick0;
 
-		// Meta LAST — completion sentinel for copy-export-profile --full.
+		// Meta LAST - completion sentinel for copy-export-profile --full.
 		FileHandle mh = FileIO.OpenFile(OUT_META, FileMode.WRITE);
 		if (!mh)
 		{
-			Print(TAG + " cannot open meta " + OUT_META + " — export UNSEALED (copy will refuse)", LogLevel.ERROR);
+			Print(TAG + " cannot open meta " + OUT_META + " - export UNSEALED (copy will refuse)", LogLevel.ERROR);
 			return;
 		}
 		string mj = "{\n";
@@ -251,9 +251,9 @@ class TBD_WorldFullExportPlugin : WorkbenchPlugin
 		if (!metaOk)
 		{
 			FileIO.DeleteFile(OUT_META);
-			Print(TAG + " meta write failed — export UNSEALED (copy will refuse).", LogLevel.ERROR);
+			Print(TAG + " meta write failed - export UNSEALED (copy will refuse).", LogLevel.ERROR);
 			return;
 		}
-		Print(string.Format("%1 DONE — kept %2 (withPrefab %3, withScale %4, aabbHits %5, oob %6) in %7 ms", TAG, kept, withPrefab, withScale, aabbHits, outOfBounds, elapsedMs));
+		Print(string.Format("%1 DONE - kept %2 (withPrefab %3, withScale %4, aabbHits %5, oob %6) in %7 ms", TAG, kept, withPrefab, withScale, aabbHits, outOfBounds, elapsedMs));
 	}
 }

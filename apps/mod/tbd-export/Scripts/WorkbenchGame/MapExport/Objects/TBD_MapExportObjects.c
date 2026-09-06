@@ -224,7 +224,7 @@ class TBD_MapExportObjects
 						continue;
 
 					vector ang = e.GetAngles();
-					// T-090.12.1 — uniform scale (<= 0.001 reads as 1.0, the vegetation exporters' rule).
+					// T-090.12.1 - uniform scale (<= 0.001 reads as 1.0, the vegetation exporters' rule).
 					float scale = e.GetScale();
 					if (scale <= 0.001)
 						scale = 1.0;

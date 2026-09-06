@@ -175,7 +175,7 @@ class TBD_BlueprintRecon
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! T-090.11.3 — per-child fields the offline pipeline validates against: full angles, the
+	//! T-090.11.3 - per-child fields the offline pipeline validates against: full angles, the
 	//! parent-relative origin, world bounds, and (via the entity SOURCE, which prefab-nested
 	//! children keep even when GetPrefabData() is empty) the prefab resource, the hierarchy
 	//! PivotID, the MeshObject model and the DoorComponent / SlidingDoorComponent params.
