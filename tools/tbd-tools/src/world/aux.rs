@@ -8,6 +8,8 @@ use std::io::BufRead as _;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
+use map_engine_core::dem::raw as dem_raw;
+use map_engine_core::world::binary::chunk_container::TbdeHeader;
 use serde_json::{Map, Value, json};
 
 use super::build::CHUNK_SIZE_M;
@@ -1106,6 +1108,48 @@ fn steam_build_id(path: &Path) -> Option<String> {
     })
 }
 
+/// The plugin's fixed V4 encoding range (`TBD_MapExportDEM.c` `DEFAULT_HMIN`/`DEFAULT_HMAX`), used
+/// when a meta file predates the `heightRange*` keys. Everon's shipped manifest carries exactly
+/// these, so the `.dem` a re-export writes stays comparable with the committed PNG.
+const DEM_DEFAULT_MIN_M: f64 = -204.78;
+const DEM_DEFAULT_MAX_M: f64 = 375.53;
+
+/// T-935.4 — write `dem/elevation.dem`: a `TBDE` header (spec §3.2) then `width * height` `u16`
+/// samples little-endian, row-major, row 0 = north edge.
+///
+/// The samples are written **verbatim** — the same quantised values the 16-bit PNG carries — so the
+/// two files decode to the identical grid and only the container differs. `min_m` / `max_m` are the
+/// encoding range the plugin quantised against; the header stores them as `scale_m =
+/// (max - min) / 65535` and `offset_m = min`, both `f32` (spec §3.2), which is where the only
+/// precision difference from the manifest's `f64` height range comes from.
+///
+/// # Errors
+/// When the grid does not match `width * height`, when those overflow `usize`, or on write failure.
+pub fn write_elevation_dem(
+    path: &Path,
+    width: u32,
+    height: u32,
+    min_m: f64,
+    max_m: f64,
+    samples: &[u16],
+) -> Result<()> {
+    // `as f32` here and nowhere else: the format stores the range in f32, so the narrowing is
+    // named at the boundary instead of hiding inside the header constructor's caller.
+    #[allow(clippy::cast_possible_truncation)]
+    let header = TbdeHeader::new(width, height, min_m as f32, max_m as f32);
+    let expected = header
+        .sample_count()
+        .with_context(|| format!("TBDE {width}x{height} overflows usize"))?;
+    anyhow::ensure!(
+        samples.len() == expected,
+        "TBDE {width}x{height} needs {expected} samples, got {}",
+        samples.len()
+    );
+    let bytes = dem_raw::to_bytes(&header, samples);
+    std::fs::write(path, &bytes).with_context(|| format!("write {}", path.display()))?;
+    Ok(())
+}
+
 pub fn raw_u16_to_dem_png(raster_path: &Path, meta_path: &Path, out_path: &Path) -> Result<u8> {
     let meta: Value = serde_json::from_str(&std::fs::read_to_string(meta_path)?)?;
     let (w, h) = (
@@ -1190,6 +1234,26 @@ pub fn raw_u16_to_dem_png(raster_path: &Path, meta_path: &Path, out_path: &Path)
         }
     }
     println!("OK  IHDR bitDepth=16 colorType=0 dims match; round-trip pixels OK");
+
+    // T-935.4 dual emission (spec §7 wave 2): the same `raster` also goes out as
+    // `dem/elevation.dem` beside the PNG. Both are written every run until T-935.13 flips the
+    // manifest — the loader picks by `manifest.dem.raw`, so deleting either write before then
+    // blinds one reader. Nothing above this line changed.
+    let dem_path = out_path.with_file_name("elevation.dem");
+    let (min_m, max_m) = (
+        meta["heightRangeMinM"]
+            .as_f64()
+            .unwrap_or(DEM_DEFAULT_MIN_M),
+        meta["heightRangeMaxM"]
+            .as_f64()
+            .unwrap_or(DEM_DEFAULT_MAX_M),
+    );
+    write_elevation_dem(&dem_path, w as u32, h as u32, min_m, max_m, &raster)?;
+    let dem_len = std::fs::metadata(&dem_path)?.len();
+    println!(
+        "Wrote {} ({dem_len} bytes; TBDE {w}x{h} u16 LE, range [{min_m}, {max_m}] m)",
+        dem_path.display()
+    );
     Ok(0)
 }
 
@@ -1317,4 +1381,242 @@ pub fn catalog_sap_cells(terrain: &str) -> Result<u8> {
         GRID * CELL_PX
     );
     Ok(0)
+}
+
+#[cfg(test)]
+mod elevation_dem_tests {
+    use std::path::PathBuf;
+
+    use map_engine_core::dem::png_decode::decode_png_gray16;
+    use map_engine_core::dem::raw::RawDem;
+    use map_engine_core::world::binary::chunk_container::HEADER_BYTES;
+
+    use super::*;
+
+    /// A distinct, non-square grid: a width/height swap anywhere in the emit or the read is a
+    /// different file, and both `u16` endpoints are present.
+    const W: u32 = 4;
+    const H: u32 = 3;
+    fn grid() -> Vec<u16> {
+        vec![
+            0, 1, 65535, 32768, 40000, 7, 60000, 100, 12345, 2, 511, 65534,
+        ]
+    }
+
+    fn tmpdir(tag: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("t935-4-{tag}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("tempdir");
+        dir
+    }
+
+    /// The emitter's frame: 32-byte header, then exactly `2 * width * height` bytes, and the file
+    /// reads back through the loader's own parser as the samples that went in.
+    #[test]
+    fn write_elevation_dem_frames_the_grid_and_round_trips() {
+        let dir = tmpdir("frame");
+        let p = dir.join("elevation.dem");
+        let s = grid();
+        write_elevation_dem(&p, W, H, -204.78, 375.53, &s).expect("write");
+
+        let bytes = std::fs::read(&p).expect("read");
+        assert_eq!(
+            bytes.len(),
+            HEADER_BYTES + 2 * (W as usize) * (H as usize),
+            "file length must be 32 + 2 x width x height"
+        );
+        assert_eq!(&bytes[..4], b"TBDE");
+        // The wire layout, byte for byte: version, flags, width, height, then sample 0 LE.
+        assert_eq!(&bytes[4..6], &1_u16.to_le_bytes());
+        assert_eq!(&bytes[6..8], &0_u16.to_le_bytes());
+        assert_eq!(&bytes[8..12], &W.to_le_bytes());
+        assert_eq!(&bytes[12..16], &H.to_le_bytes());
+        assert_eq!(&bytes[HEADER_BYTES..HEADER_BYTES + 2], &s[0].to_le_bytes());
+        // …and sample 2 (65535) proves the payload is LE, not BE.
+        assert_eq!(
+            &bytes[HEADER_BYTES + 4..HEADER_BYTES + 6],
+            &65535_u16.to_le_bytes()
+        );
+
+        let dem = RawDem::parse(&bytes).expect("parse");
+        assert_eq!((dem.width(), dem.height()), (W, H));
+        assert_eq!(dem.samples, s);
+        #[allow(clippy::cast_possible_truncation)]
+        let want_scale = ((375.53_f64 - -204.78_f64) as f32) / 65535.0;
+        assert_eq!(dem.header.offset_m, -204.78_f64 as f32);
+        assert!(
+            (dem.header.scale_m - want_scale).abs() <= f32::EPSILON,
+            "{} vs {want_scale}",
+            dem.header.scale_m
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A sample count that disagrees with the header dims is refused, and nothing is written — the
+    /// alternative is a file whose header lies about its own payload.
+    #[test]
+    fn write_elevation_dem_refuses_a_grid_that_is_not_width_times_height() {
+        let dir = tmpdir("mismatch");
+        let p = dir.join("elevation.dem");
+        let err = write_elevation_dem(&p, W, H, 0.0, 1.0, &grid()[..11]).expect_err("must refuse");
+        assert!(
+            format!("{err:#}").contains("needs 12 samples, got 11"),
+            "{err:#}"
+        );
+        assert!(!p.exists(), "nothing may be written for a rejected grid");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// **The dual-emission acceptance test.** One `raw_u16_to_dem_png` run over a synthetic ASCII
+    /// raster must write both files, and the `.dem` must decode to exactly the grid the `.png`
+    /// decodes to — through the two independent decoders, not through the emitter's own memory.
+    #[test]
+    fn raw_u16_to_dem_png_also_emits_elevation_dem_with_the_same_grid() {
+        let dir = tmpdir("dual");
+        let s = grid();
+        let raster = dir.join("heightmap.txt");
+        std::fs::write(
+            &raster,
+            s.chunks(W as usize)
+                .map(|row| row.iter().map(u16::to_string).collect::<Vec<_>>().join(" "))
+                .collect::<Vec<_>>()
+                .join("\n")
+                + "\n",
+        )
+        .expect("raster");
+        let meta = dir.join("meta.json");
+        std::fs::write(
+            &meta,
+            serde_json::to_string(&json!({
+                "widthPx": W, "heightPx": H,
+                "heightRangeMinM": -204.78, "heightRangeMaxM": 375.53,
+            }))
+            .expect("meta json"),
+        )
+        .expect("meta");
+        let png = dir.join("everon-dem-16bit.png");
+
+        assert_eq!(
+            raw_u16_to_dem_png(&raster, &meta, &png).expect("convert"),
+            0,
+            "the converter must succeed"
+        );
+
+        let dem_path = dir.join("elevation.dem");
+        assert!(png.exists(), "the PNG emit must be untouched");
+        assert!(dem_path.exists(), "elevation.dem must be written beside it");
+
+        let (png_raster, pw, ph) =
+            decode_png_gray16(&std::fs::read(&png).expect("read png")).expect("png decode");
+        let dem = RawDem::parse(&std::fs::read(&dem_path).expect("read dem")).expect("dem parse");
+        assert_eq!((dem.width(), dem.height()), (pw, ph), "dims must agree");
+        assert_eq!(dem.samples, png_raster, "the two files must carry one grid");
+        assert_eq!(dem.samples, s, "…and it must be the raster's own values");
+        // The header carries the meta's range, so a reader needs no manifest to get metres.
+        assert_eq!(dem.header.offset_m, -204.78_f64 as f32);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A meta without the `heightRange*` keys falls back to the plugin's fixed V4 range rather
+    /// than quantising against 0..0 and flattening the terrain.
+    #[test]
+    fn elevation_dem_falls_back_to_the_v4_range_when_meta_omits_it() {
+        let dir = tmpdir("v4");
+        let s = grid();
+        let raster = dir.join("heightmap.txt");
+        std::fs::write(
+            &raster,
+            s.iter().map(u16::to_string).collect::<Vec<_>>().join(" "),
+        )
+        .expect("raster");
+        let meta = dir.join("meta.json");
+        std::fs::write(
+            &meta,
+            serde_json::to_string(&json!({ "widthPx": W, "heightPx": H })).expect("meta json"),
+        )
+        .expect("meta");
+        let png = dir.join("d.png");
+        assert_eq!(
+            raw_u16_to_dem_png(&raster, &meta, &png).expect("convert"),
+            0
+        );
+        let dem = RawDem::parse(&std::fs::read(dir.join("elevation.dem")).expect("read"))
+            .expect("dem parse");
+        assert_eq!(dem.header.offset_m, DEM_DEFAULT_MIN_M as f32);
+        assert_eq!(
+            dem.header.scale_m,
+            ((DEM_DEFAULT_MAX_M - DEM_DEFAULT_MIN_M) as f32) / 65535.0
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// **The everon spot check.** Decodes the committed 6400x6400 DEM PNG, emits the `.dem` from
+    /// its raster and re-reads it, asserting all 40,960,000 samples are identical and metres agree
+    /// to within the `f32` rounding of the header's scale/offset.
+    ///
+    /// `#[ignore]` because `packages/map-assets/**/*.png` is git-LFS: in a slice worktree the file
+    /// on disk is a 133-byte pointer, and a test that reads one would be red for a reason that has
+    /// nothing to do with this code. Run it where the payload is hydrated:
+    /// `cargo test -p tbd-tools elevation_dem -- --ignored --nocapture`.
+    #[test]
+    #[ignore = "needs the git-lfs everon DEM payload; run explicitly with -- --ignored"]
+    fn everon_elevation_dem_matches_the_shipped_png() {
+        use map_engine_core::dem::sample::uint16_to_meters;
+
+        let root = repo_root();
+        let png = root.join("packages/map-assets/everon/dem/everon-dem-16bit.png");
+        let bytes = std::fs::read(&png).unwrap_or_else(|e| panic!("{}: {e}", png.display()));
+        assert!(
+            bytes.len() > 1_000_000,
+            "{} is {} bytes — this is the git-lfs pointer, not the DEM; \
+             `git lfs pull --include {}` first",
+            png.display(),
+            bytes.len(),
+            png.display()
+        );
+        let (raster, w, h) = decode_png_gray16(&bytes).expect("png decode");
+        assert_eq!((w, h), (6400, 6400), "everon DEM dims");
+
+        let manifest: Value = serde_json::from_str(
+            &std::fs::read_to_string(root.join("packages/map-assets/everon/manifest.json"))
+                .expect("manifest"),
+        )
+        .expect("manifest json");
+        let min_m = manifest["dem"]["heightRangeMinM"].as_f64().expect("min");
+        let max_m = manifest["dem"]["heightRangeMaxM"].as_f64().expect("max");
+
+        let dir = tmpdir("everon");
+        let p = dir.join("elevation.dem");
+        write_elevation_dem(&p, w, h, min_m, max_m, &raster).expect("write");
+        let on_disk = std::fs::read(&p).expect("read");
+        assert_eq!(
+            on_disk.len(),
+            HEADER_BYTES + 2 * 6400 * 6400,
+            "everon .dem is 32 + 81,920,000 bytes"
+        );
+        let dem = RawDem::parse(&on_disk).expect("parse");
+        assert_eq!(
+            dem.samples, raster,
+            "all 40,960,000 samples must be identical"
+        );
+
+        let mut worst = 0.0_f64;
+        for y in 0..h {
+            for x in 0..w {
+                let v = raster[(y * w + x) as usize];
+                let png_m = uint16_to_meters(f64::from(v), min_m, max_m) as f32;
+                let raw_m = dem.metres(x, y).expect("in range");
+                worst = worst.max((f64::from(raw_m) - f64::from(png_m)).abs());
+            }
+        }
+        println!(
+            "everon spot check: {}x{} samples bit-identical; worst metre delta {worst:e} m \
+             (quantisation step {} m)",
+            w,
+            h,
+            (max_m - min_m) / 65535.0
+        );
+        assert!(worst <= 1e-4, "worst metre delta {worst}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
