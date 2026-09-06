@@ -41,11 +41,16 @@ use super::glyph_math::{
 use super::index::WorldSpatialIndex;
 use super::lod_gates::{INSTANCE_BUDGET, class_visible};
 use super::manifest::{ObjectsManifest, narrow_cells, parse_objects_manifest};
-use super::obb::{
-    BuildingPrefabInfo, FencePrefabInfo, building_prefab_lookup, fence_prefab_lookup, obb_corners,
-};
-use super::prefab::{PrefabEntry, PrefabRow, build_prefab_maps, narrow_prefab_rows};
+use super::obb::{BuildingPrefabInfo, FencePrefabInfo, obb_corners};
+use super::prefab::{PrefabEntry, PrefabRow};
+use super::prefab_load::{PrefabTables, tables_from_bytes, tables_from_json};
 use super::store::{WorldError, bytes_to_json};
+// T-935.14 — the JSON-side narrowers moved to `prefab_load` with the derivation that used them;
+// the test modules below still drive them directly as independent oracles.
+#[cfg(test)]
+use super::obb::{building_prefab_lookup, fence_prefab_lookup};
+#[cfg(test)]
+use super::prefab::narrow_prefab_rows;
 
 /// No extra draw margin — residency preload covers fetch; draw cull is strict visible rect (T-151.8).
 /// Referenced by Class S tests / verify log; must stay 0.
@@ -561,42 +566,47 @@ impl WorldResidency {
     /// Load + narrow `prefabs.json.gz`: the class table (`has_oversized`) and the u16-keyed
     /// building footprint lookup. Returns the prefab count.
     ///
+    /// T-935.14 moved the derivation itself to [`prefab_load::tables_from_json`] (this file is
+    /// SIZE-3 allowlisted, and the archive lane needed the same tail); behaviour is unchanged, and
+    /// this stays the entry point for callers that know they hold JSON.
+    ///
     /// # Errors
     /// [`WorldError::Gzip`]/[`WorldError::Json`] on a bad payload.
     pub fn load_prefabs_gz(&mut self, bytes: &[u8]) -> Result<usize, WorldError> {
-        let raw = bytes_to_json(bytes)?;
-        let (by_id, has_oversized) = build_prefab_maps(narrow_prefab_rows(&raw));
-        self.prefab_by_id = by_id;
-        self.has_oversized = has_oversized;
-        self.building_by_u16.clear();
-        for (bits, info) in building_prefab_lookup(&raw) {
-            let pid = f64::from_bits(bits);
-            if (0.0..65536.0).contains(&pid) && pid.fract() == 0.0 {
-                self.building_by_u16.insert(pid as u16, info);
-            }
-        }
-        // T-152.21 — cache the smallest importanceZoom so the badge lane's outer guard is O(1).
-        self.min_importance_zoom = self
-            .building_by_u16
-            .values()
-            .filter_map(|b| b.importance_zoom)
-            .fold(None, |acc, v| Some(acc.map_or(v, |a: f64| a.min(v))));
-        // T-175 A5 — the full sorted-dedup breakpoint set (static after prefab load) feeds the glyph
-        // compose memo's importance activation index, so a fine zoom only busts the badge memo when
-        // it crosses a landmark override (not every zoom tick). Today this is just `[-4.0]`.
-        {
-            let mut bp: Vec<f64> = self
-                .building_by_u16
-                .values()
-                .filter_map(|b| b.importance_zoom)
-                .collect();
-            bp.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-            bp.dedup();
-            self.importance_breakpoints = bp;
-        }
-        self.fence_by_u16 = fence_prefab_lookup(&raw);
-        self.rebuild_glyph_lookup_from_prefabs();
+        let tables = tables_from_json(&bytes_to_json(bytes)?);
+        self.apply_prefab_tables(tables);
         Ok(self.prefab_by_id.len())
+    }
+
+    /// T-935.14 — load the prefab catalogue from **either** source, sniffing which one arrived:
+    /// gzip magic routes to the JSON path above, anything else to the validating rkyv reader
+    /// ([`prefab_load::tables_from_bytes`], the same shape as `WorldStore::load_roads`). Returns
+    /// the prefab count.
+    ///
+    /// `terrain` is the world the caller believes it is loading. The archive records the terrain it
+    /// was built for and refuses a caller that disagrees — without it, everon's catalogue loaded for
+    /// arland would resolve every prefab id against the wrong table and still *find* one.
+    ///
+    /// # Errors
+    /// [`WorldError::EmptyPayload`] on a zero-length buffer; [`WorldError::Gzip`]/
+    /// [`WorldError::Json`] from the JSON route; [`WorldError::Archive`] from the rkyv route.
+    pub fn load_prefabs(&mut self, bytes: &[u8], terrain: &str) -> Result<usize, WorldError> {
+        let tables = tables_from_bytes(bytes, terrain)?;
+        self.apply_prefab_tables(tables);
+        Ok(self.prefab_by_id.len())
+    }
+
+    /// The post-parse half of a prefab load, shared by the JSON and archive paths so the two can
+    /// never drift: assign the four tables plus the two fields derived from them, then rebuild the
+    /// glyph lookup (which reads `prefab_by_id` and the atlas key map).
+    fn apply_prefab_tables(&mut self, tables: PrefabTables) {
+        self.prefab_by_id = tables.by_id;
+        self.has_oversized = tables.has_oversized;
+        self.building_by_u16 = tables.building_by_u16;
+        self.fence_by_u16 = tables.fence_by_u16;
+        self.min_importance_zoom = tables.min_importance_zoom;
+        self.importance_breakpoints = tables.importance_breakpoints;
+        self.rebuild_glyph_lookup_from_prefabs();
     }
 
     /// Load the chunk-index (`objects/chunks/manifest.json`) `cells[]` → the existing-chunk id set

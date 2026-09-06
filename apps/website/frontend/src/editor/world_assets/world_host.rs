@@ -158,21 +158,21 @@ impl WorldHost {
         // still get its archives. An empty string is "the block does not name one" — every field
         // of `ObjectsBinaryBlock` is `serde(default)`.
         let named = |p: &String| (!p.is_empty()).then(|| p.clone());
+        let prefabs_bin = objects_bin.as_ref().and_then(|b| named(&b.prefabs));
         let roads_bin = objects_bin.as_ref().and_then(|b| named(&b.roads));
         let regions_bin = objects_bin.as_ref().and_then(|b| named(&b.regions));
 
-        if let Some(bytes) = fetch_bytes(&format!("{base}/{prefabs}")).await {
-            // T-935.11 — this fetch has NO archive branch, and that is a reported gap rather than
-            // an oversight: `objects.binary.prefabs` names a `PrefabCatalogArchive`
-            // (`map_engine_core::world::catalog_from_bytes` reads it, everon-pinned), but the only
-            // consumer here is `WorldResidency`, whose prefab state is private and is derived from
-            // the JSON `Value` (`building_prefab_lookup` / `fence_prefab_lookup` / the glyph
-            // lookup). Feeding it the archive needs a `WorldResidency::load_prefabs` sniff in
-            // `residency.rs`, which T-935.11 does not own. Adding a fetch that could not reach the
-            // residency would be a fast path that cannot fire, so the JSON stays the only route
-            // until that method exists.
-            let _ = self.residency.load_prefabs_gz(&bytes);
-            // T-090.12.5 — size the occluder from the residency and prefetch the hot set.
+        // T-935.14 — prefabs: the archive when the manifest names one, the gz JSON otherwise. The
+        // branch T-935.11 could not add is live now that `WorldResidency::load_prefabs` exists to
+        // receive the bytes; before it, a fetch here would have handed the archive to nothing.
+        if self
+            .load_prefabs(&base, terrain, prefabs_bin.as_deref(), prefabs)
+            .await
+        {
+            // T-090.12.5 — size the occluder from the residency and prefetch the hot set. Gated on
+            // a loaded catalogue rather than (T-935.11 and earlier) a successful *fetch*: the
+            // occluder sizes itself from `residency.prefab_rows()`, so a payload that arrived and
+            // did not decode used to send it over an empty table.
             self.occluder.init(&base, &self.residency).await;
         }
         done();
@@ -200,6 +200,40 @@ impl WorldHost {
         done();
         self.ready = true;
         true
+    }
+
+    /// T-935.14 — load the prefab catalogue, archive first when `objects.binary.prefabs` names one.
+    ///
+    /// Returns whether a catalogue is loaded. Same fallback contract as
+    /// [`load_roads`](Self::load_roads): the archive is *preferred*, not required, and a named
+    /// archive that will not fetch or will not decode falls through to the `.json.gz` path — which
+    /// is the route that has always worked and stays the default until T-935.13 puts the block in
+    /// the manifest. No committed manifest names one today, so this fetch is not yet made on any
+    /// live boot; the branch is proven by `map-engine-core`'s everon parity pin, which drives the
+    /// same `load_prefabs` entry point over real archive bytes.
+    ///
+    /// Both routes go through `WorldResidency::load_prefabs`, which sniffs gzip-versus-rkyv on the
+    /// bytes rather than trusting the URL, so a mislabelled file decodes as what it is. `terrain`
+    /// is the directory these bytes were fetched from and the archive records the terrain it was
+    /// built for: a disagreement is refused rather than resolved against the wrong catalogue.
+    async fn load_prefabs(
+        &mut self,
+        base: &str,
+        terrain: &str,
+        bin: Option<&str>,
+        json: &str,
+    ) -> bool {
+        if let Some(path) = bin {
+            if let Some(bytes) = fetch_bytes(&format!("{base}/{path}")).await {
+                if self.residency.load_prefabs(&bytes, terrain).is_ok() {
+                    return true;
+                }
+            }
+        }
+        match fetch_bytes(&format!("{base}/{json}")).await {
+            Some(bytes) => self.residency.load_prefabs(&bytes, terrain).is_ok(),
+            None => false,
+        }
     }
 
     /// T-935.11 — load the road network, archive first when the manifest names one.

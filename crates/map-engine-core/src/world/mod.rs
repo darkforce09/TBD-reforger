@@ -34,6 +34,12 @@ mod manifest;
 mod obb;
 pub mod occluder;
 mod prefab;
+/// T-935.14 — the residency's prefab tables, built from **either** `objects/prefabs.json.gz` or
+/// `objects/prefabs.rkyv`. Lives beside [`prefab`] (the reader it calls) rather than inside
+/// [`residency`] because `residency.rs` is an allowlisted SIZE-3 file and takes only the call site
+/// — the same split T-935.3 used for [`chunk_bin`]. Not re-exported: the SPA reaches it through
+/// [`WorldResidency::load_prefabs`], which is the only thing that can act on the result.
+mod prefab_load;
 mod regions;
 mod residency;
 mod road_labels;
