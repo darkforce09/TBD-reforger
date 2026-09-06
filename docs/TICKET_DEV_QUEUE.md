@@ -13,14 +13,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** platform wave gate writes a verdict file (HEAD sha plus verdict) and platform wave land refuses a landing ticket without a fresh one. Forward-only: future lands only, no backfill, existing tickets stay green untouched.
 
-## T-277 — 27.4% of the map catalogue is unclassified
-
-- **Slice spec:** `docs/specs/ideas/t277_prefab_classify.md`
-- **Program hub:** `docs/specs/ideas/t277_prefab_classify.md`
-- **Branch:** `ticket/T-277`
-- **Targets:** 
-- **Summary:** 444 of 1,623 everon prefabs fall through to prefab-classify.json's fallback rule; vegetation and utility count zero and the road census is zero against 888 shipped road segments. Append rules until fallback is under 5% and the census matches.
-
 ## T-149 — Forest mass polygon smoothing
 
 - **Slice spec:** `docs/specs/ideas/t149_forest_smooth.md`

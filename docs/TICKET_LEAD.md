@@ -10,7 +10,6 @@
 
 - **T-924** (7070) — Gate verdict receipt required at land [ready] — platform wave gate writes a verdict file (HEAD sha plus verdict) and platform wave land refuses a landing ticket without a fresh one. Forward-only: future lands only, no backfill, existing tickets stay green untouched.
 - **T-090** (7079) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-277** (7110) — 27.4% of the map catalogue is unclassified [ready] — 444 of 1,623 everon prefabs fall through to prefab-classify.json's fallback rule; vegetation and utility count zero and the road census is zero against 888 shipped road segments. Append rules until fallback is under 5% and the census matches.
 - **T-149** (7170) — Forest mass polygon smoothing [ready] — Upgrade the V1 blocky Path B forest hulls: sample the existing 8 m TBDD density grid and apply Chaikin smoothing to the marching-squares rings before the forest-regions emit so forest edges read as natural cartography.
 - **T-676** (7260) — Trigger activation and effects — the Enfusion runtime [ready] — Trigger activation and effects — the Enfusion runtime
 - **T-677** (7290) — Waypoints — group movement orders [ready] — Waypoints — group movement orders

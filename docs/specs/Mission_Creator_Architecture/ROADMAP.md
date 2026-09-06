@@ -15,12 +15,12 @@
 - **T-924** — Gate verdict receipt required at land (ready)
 - **T-090** — Map visualization program (ready)
 - **T-935** — Map binary storage — hybrid rkyv + POD (queued)
-- **T-277** — 27.4% of the map catalogue is unclassified (ready)
 - **T-149** — Forest mass polygon smoothing (ready)
 - **T-676** — Trigger activation and effects — the Enfusion runtime (ready)
 - **T-677** — Waypoints — group movement orders (ready)
 - **T-678** — Group AI state: combat mode, behaviour, formation, speed (ready)
 - **T-673** — Marker style and Area markers — the $defs/marker widening (ready)
+- **T-212** — Typed per-side objectives with attributes (ready)
 <!-- ticket-sync:next:end -->
 
 ---

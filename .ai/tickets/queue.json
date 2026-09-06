@@ -20,13 +20,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-277",
-      "title": "27.4% of the map catalogue is unclassified",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t277_prefab_classify.md",
-      "branch": "ticket/T-277"
-    },
-    {
       "id": "T-149",
       "title": "Forest mass polygon smoothing",
       "status": "ready",

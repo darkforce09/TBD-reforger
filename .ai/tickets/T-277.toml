@@ -3,7 +3,7 @@ kind = "work"
 title = "27.4% of the map catalogue is unclassified"
 summary = "444 of 1,623 everon prefabs fall through to prefab-classify.json's fallback rule; vegetation and utility count zero and the road census is zero against 888 shipped road segments. Append rules until fallback is under 5% and the census matches."
 class = "chore"
-status = "ready"
+status = "shipped"
 order = 7110
 spec = "docs/specs/ideas/t277_prefab_classify.md"
 plan = "docs/plans/t-277_plan.md"
@@ -36,6 +36,7 @@ acceptance = [
     "Every appended rule carries gameplay, spatial and render.iconKey and the schema gates pass.",
 ]
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-06T01:53:20Z"
 owns = ["packages/tbd-schema/rules/prefab-classify.json"]
 
 [scope]
