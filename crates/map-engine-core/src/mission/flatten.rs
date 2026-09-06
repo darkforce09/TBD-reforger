@@ -334,7 +334,9 @@ pub struct ModNet {
     /// so the failure mode is a silently empty plan, not a parse error.
     #[serde(rename = "freqMHz")]
     pub freq_mhz: f64,
-    /// Always set. Every derived net belongs to exactly one side — see [`derive_radio_plan`].
+    /// Always set on the derived plan. Authored nets may omit it (unscoped / shared); empty
+    /// skips the key so a document with no faction still validates.
+    #[serde(skip_serializing_if = "String::is_empty")]
     pub faction: String,
     /// `"long"` on command nets, ABSENT on squad nets. Never `"short"` — see
     /// [`derive_radio_plan`].
@@ -768,8 +770,8 @@ pub struct ModMissionDocument {
     /// the key (legal — `entities` is not in the schema's top-level `required`).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub entities: Vec<ModEntity>,
-    /// T-203 — derived, never authored (nothing in the editor authors nets yet). `None`
-    /// omits the key entirely; see [`derive_radio_plan`].
+    /// T-203 derivation when the payload authors no `radioPlan`; T-936.3 pass-through when it
+    /// does. `None` omits the key entirely; see [`resolve_radio_plan`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub radio_plan: Option<ModRadioPlan>,
     pub zones: Vec<ModZone>,
@@ -1392,6 +1394,14 @@ struct EditorPayload {
     /// its own one-liner here and a row there, and touches nothing else.
     #[serde(rename = "winConditions")]
     win_conditions: Option<serde_json::Value>,
+    /// T-936.2 / T-946.35 — the authored `tasks[]` block. Named field so
+    /// [`Self::authored_blocks_root`] can hand it to `ExtensionBlocks::from_payload`. Without this
+    /// field serde drops the key and `/compiled` never emits `tasks`.
+    tasks: Option<serde_json::Value>,
+    /// T-936.3 — the authored `radioPlan` block. Document-modelled: [`resolve_radio_plan`] uses it
+    /// in place of [`derive_radio_plan`].
+    #[serde(rename = "radioPlan")]
+    radio_plan: Option<serde_json::Value>,
 }
 
 impl EditorPayload {
@@ -1405,6 +1415,12 @@ impl EditorPayload {
         let mut root = serde_json::Map::new();
         if let Some(v) = &self.win_conditions {
             root.insert("winConditions".to_string(), v.clone());
+        }
+        if let Some(v) = &self.tasks {
+            root.insert("tasks".to_string(), v.clone());
+        }
+        if let Some(v) = &self.radio_plan {
+            root.insert("radioPlan".to_string(), v.clone());
         }
         serde_json::Value::Object(root)
     }
@@ -2561,17 +2577,17 @@ fn apply_timeout_to_flow(
 
 /// Derive `radioPlan.nets[]` from the ORBAT this compile just built (T-203).
 ///
-/// ── Where this comes from, since nothing authors it ──────────────────────────────────
-/// The editor has no radio UI: there is no `radioPlan` anywhere in the editor payload, in
-/// `mission-editor-payload.schema.json`, or in the document core. So this is DERIVED, and
-/// the only honest thing to derive it from is the structure the compile already knows —
-/// factions and their squads. That is not a shape invented here: it is the shape every
+/// Runs ONLY when the payload authors no `radioPlan` — see [`resolve_radio_plan`]. An authored
+/// list passes through unchanged; this function is the default, and its output must stay
+/// byte-identical to the T-203 allocation.
+///
+/// ── Where the default comes from ─────────────────────────────────────────────────────
+/// The only honest thing to derive a missing plan from is the structure the compile already
+/// knows — factions and their squads. That is not a shape invented here: it is the shape every
 /// committed golden mission authors by hand (`bridgehead-at-levie.json`,
 /// `last-stand-at-montfort.json`, `slot-loadout-coverage.json` — one command net per side
 /// plus one net per squad), and the shape `docs/mod/tbd-reforger-platform-build-plan.md`
-/// §C2 describes ("a squad leader spawns already tuned to `cmd` + own squad net"). When the
-/// editor learns to author nets, an authored plan replaces this whole function; the seam is
-/// the single `derive_radio_plan(...)` call in [`flatten_to_mod_document`].
+/// §C2 describes ("a squad leader spawns already tuned to `cmd` + own squad net").
 ///
 /// ── The frequencies are an ALLOCATION, not a doctrine ────────────────────────────────
 /// Nothing in this repo can tell the compiler what frequency a net should be on, so it does
@@ -2613,6 +2629,32 @@ fn apply_timeout_to_flow(
 /// expresses "common channel", so emitting one would be handing both sides a frequency on a
 /// guess. Every faction key here is one the document declares, which is also what
 /// `TBD_RadioPlan.Fault` cross-checks before serving a net to anyone.
+fn resolve_radio_plan(
+    authored: Option<&crate::mission::radio_plan::AuthoredRadioPlan>,
+    sources: &[RadioNetSource],
+) -> Option<ModRadioPlan> {
+    if let Some(plan) = authored {
+        return Some(mod_plan_from_authored(plan));
+    }
+    derive_radio_plan(sources)
+}
+
+fn mod_plan_from_authored(plan: &crate::mission::radio_plan::AuthoredRadioPlan) -> ModRadioPlan {
+    ModRadioPlan {
+        nets: plan
+            .nets
+            .iter()
+            .map(|n| ModNet {
+                id: n.id.clone(),
+                label: n.label.clone(),
+                freq_mhz: n.freq_mhz,
+                faction: n.faction.clone().unwrap_or_default(),
+                range: n.range.clone(),
+            })
+            .collect(),
+    }
+}
+
 fn derive_radio_plan(sources: &[RadioNetSource]) -> Option<ModRadioPlan> {
     let mut nets: Vec<ModNet> = Vec::new();
     let mut used_ids: HashSet<String> = HashSet::new();
@@ -3682,7 +3724,7 @@ pub fn flatten_to_mod_document(
         orbat,
         slots: doc_slots,
         entities,
-        radio_plan: derive_radio_plan(&radio_sources),
+        radio_plan: resolve_radio_plan(authored_blocks.radio_plan.as_ref(), &radio_sources),
         zones,
         flow,
         // T-936.1 — the AUTHORED block when the payload carries one, else the derivation this
@@ -5924,6 +5966,63 @@ mod tests {
         assert_eq!(nets[0].label, "N".repeat(MOD_MAX_LABEL_CHARS));
         // An unnamed faction falls back to its key, so the label is never a bare " Command".
         assert_eq!(nets[1].label, "opfor Command");
+    }
+
+    /// T-936.3 — an authored `radioPlan` must reach the wire instead of the T-203 allocation.
+    ///
+    /// Until this slice, `derive_radio_plan` always ran. A payload could carry
+    /// `freqMHz: 41` and the compiled document still said `30.0`.
+    #[test]
+    fn an_authored_radio_plan_reaches_the_wire_unchanged() {
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["radioPlan"] = serde_json::json!({
+            "nets": [{
+                "id": "net:blufor_tac",
+                "label": "Tactical",
+                "freqMHz": 41.0,
+                "faction": "blufor",
+                "range": "long"
+            }]
+        });
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        let wire = serde_json::to_value(&doc).expect("wire");
+        let nets = &wire["radioPlan"]["nets"];
+        assert_eq!(
+            nets.as_array().map(Vec::len),
+            Some(1),
+            "authored plan is one net, not the derived ORBAT plan: {nets}"
+        );
+        assert_eq!(nets[0]["id"], "net:blufor_tac");
+        assert_eq!(nets[0]["label"], "Tactical");
+        assert_eq!(
+            nets[0]["freqMHz"], 41.0,
+            "the authored frequency must survive, not NET_FREQ_BASE_MHZ: {nets}"
+        );
+        assert_eq!(nets[0]["faction"], "blufor");
+        assert_eq!(nets[0]["range"], "long");
+    }
+
+    /// T-946.35 — `EditorPayload::authored_blocks_root` must copy `tasks[]` so `/compiled`
+    /// does not drop a block `compile_payload` already promoted. Wave 245's probe failed
+    /// here: the payload carried tasks, flatten's named fields did not, the carrier never
+    /// saw the key.
+    #[test]
+    fn authored_tasks_survive_flatten_to_mod_document() {
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["tasks"] = serde_json::json!([{
+            "id": "t-pri",
+            "title": "Seize the hill",
+            "tier": "primary",
+            "state": "assigned"
+        }]);
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        let wire = serde_json::to_value(&doc).expect("wire");
+        assert_eq!(
+            wire["tasks"][0]["id"], "t-pri",
+            "tasks[] must survive flatten_to_mod_document, not vanish at authored_blocks_root: {wire:#}"
+        );
+        assert_eq!(wire["tasks"][0]["tier"], "primary");
+        assert_eq!(wire["tasks"].as_array().map(Vec::len), Some(1));
     }
 
     // ── T-200 kit substitutions ──────────────────────────────────────────────────────────

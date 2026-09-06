@@ -12,6 +12,9 @@ pub mod extensions;
 pub mod flatten;
 pub mod kit;
 pub mod orbat;
+/// T-936.3 — the authored `radioPlan` block: nets, frequencies, duplicate/range gates, and the
+/// validator [`extensions::AUTHORED_BLOCKS`] registers for it.
+pub mod radio_plan;
 /// T-936.2 — the authored `tasks[]` block: tiers, the assigned→succeeded|failed table, and the
 /// validator [`extensions::AUTHORED_BLOCKS`] registers for it.
 pub mod tasks;
