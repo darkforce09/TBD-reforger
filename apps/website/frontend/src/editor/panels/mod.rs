@@ -22,4 +22,9 @@ pub mod top_strip;
 // T-655 — mission validation panel.
 pub mod validation_panel;
 pub mod vehicles_panel;
+// T-936.1 — the Win conditions card: mode picker, per-mode field, endOn checklist. Its section
+// belongs beside `settings_modal::render_flow_section` in the Mission Settings dialog; that mount
+// is one line in `settings_modal.rs`, which is outside T-936.1's owned files. See the card's own
+// header.
+pub mod win_conditions_card;
 pub mod zones_panel;
