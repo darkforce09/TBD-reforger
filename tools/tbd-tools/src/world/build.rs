@@ -13,6 +13,7 @@ use serde_json::{Map, Value, json};
 
 use super::binary_emit;
 use super::classify::{Classifier, load_rules, stream_raw_entities};
+use super::forest_smooth;
 use super::jsval::{chunk_row_values, round3, trailers_trivial};
 use super::jsval::{js_normalize, js_num, norm_heading, round2};
 use super::pak::PakVfs;
@@ -585,7 +586,15 @@ pub fn build_world_objects_opt(
                 class: classify.classify(&k.resource_name).class,
             })
             .collect();
-        let derived = derive_forest_regions(&trees, world_size_m, terrain);
+        let mut derived = derive_forest_regions(&trees, world_size_m, terrain);
+        // T-149 — the rings out of `trace_rings` are raw marching-squares output on the 32 m
+        // region lattice: 100% of their segments are axis-aligned. Round them against the 8 m
+        // canopy field (the same `tree_canopy` grid the TBDD tiles above were sliced from) before
+        // they are written. `smooth_regions` reports per-region vertex counts and area drift.
+        let canopy =
+            |x: f64, y: f64| f64::from(density::sample_corners(&tree_canopy, tree_size, x, y));
+        let smoothed = forest_smooth::smooth_regions(&mut derived.regions, Some(&canopy));
+        forest_smooth::log_reports(terrain, &smoothed);
         let mut regions_doc = Map::new();
         regions_doc.insert("schemaVersion".into(), json!("1.0.0"));
         regions_doc.insert("terrainId".into(), json!(terrain));

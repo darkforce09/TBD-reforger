@@ -36,12 +36,41 @@ pub fn corner_grid_size(world_size_m: f64) -> usize {
     (world_size_m / f64::from(DENSITY_CELL_M)).floor() as usize + 1
 }
 
-/// Global corner index of a coordinate (half-open window [corner-16, corner+16)).
+/// Global corner index of a coordinate on a grid of `n` corners per side (half-open window
+/// [corner-cell/2, corner+cell/2); a coordinate outside the world clamps into the edge corner).
+///
+/// T-149 split this out of `corner_of` so `sample_corners` can index a grid it was **handed**
+/// rather than one it re-derives from a world size: the two could disagree, and a sampler that
+/// silently reads the wrong corner is the signature defect in miniature.
+fn corner_index(coord: f64, n: usize) -> usize {
+    let g = ((coord + f64::from(DENSITY_CELL_M) / 2.0) / f64::from(DENSITY_CELL_M)).floor() as i64;
+    g.clamp(0, n as i64 - 1) as usize
+}
+
+/// Global corner index of a coordinate (half-open window [corner-4, corner+4) at 8 m cells).
 #[must_use]
 pub fn corner_of(coord: f64, world_size_m: f64) -> usize {
-    let n = corner_grid_size(world_size_m) as i64;
-    let g = ((coord + f64::from(DENSITY_CELL_M) / 2.0) / f64::from(DENSITY_CELL_M)).floor() as i64;
-    g.clamp(0, n - 1) as usize
+    corner_index(coord, corner_grid_size(world_size_m))
+}
+
+/// T-149 — read the 8 m corner grid at a world position: the value of the corner
+/// [`corner_of`] would assign `(x, y)` to, on a `size`×`size` grid produced by
+/// [`accumulate_corners`] (optionally through [`box_blur_corners`], which preserves the shape).
+///
+/// This is the read the forest-ring smoother (`world::forest_smooth`) samples: the Path B rings
+/// are quantised to the 32 m region lattice, and this grid is the only 4×-finer evidence the
+/// exporter holds about where the canopy boundary actually runs inside a boundary cell.
+///
+/// **Read-only — the TBDD format, its header and its writers are untouched.** Out-of-world
+/// coordinates clamp into the edge corner (same rule as `corner_of`), and a grid shorter than
+/// `size * size` reads 0 rather than panicking, so a mis-sized grid degrades to "no evidence"
+/// instead of taking the exporter down.
+#[must_use]
+pub fn sample_corners(grid: &[u32], size: usize, x: f64, y: f64) -> u32 {
+    if size == 0 || grid.len() < size * size {
+        return 0;
+    }
+    grid[corner_index(y, size) * size + corner_index(x, size)]
 }
 
 /// Accumulate a global corner grid from instance positions (u32 counts — clamped to u16 only at
@@ -306,6 +335,65 @@ mod tests {
         // agree with any cell size including a wrong one — an assertion that cannot fail. A flat
         // 1601 is the thing a reader can check against the T-178 Class-R pin of the same number.
         assert_eq!(corner_grid_size(world), 1601);
+    }
+
+    /// T-149 — `sample_corners` reads the corner `corner_of` assigns, at the half-open window
+    /// boundary and outside the world, and never panics on a short grid.
+    ///
+    /// The oracle is deliberately NOT `grid[corner_of(y)*n + corner_of(x)]` for every case —
+    /// that would just restate the body. The first block pins hand-computed indices against the
+    /// window rule in the module header (corner g owns [8g-4, 8g+4)), so it reds if the window
+    /// moves; the agreement sweep afterwards is the separate claim that the two entry points
+    /// cannot drift apart.
+    #[test]
+    fn sample_corners_reads_the_corner_of_a_world_position() {
+        let world = 1024.0;
+        let n = corner_grid_size(world);
+        assert_eq!(n, 129, "1024 m at 8 m cells is 129 corners per side");
+        // Distinct value per corner so a wrong index cannot alias onto the right answer, and
+        // deliberately not symmetric in x/y so a transposed index reds.
+        let grid: Vec<u32> = (0..n * n).map(|k| k as u32 + 1).collect();
+        let at = |gx: usize, gy: usize| grid[gy * n + gx];
+
+        // Hand-computed from the window rule, not from `corner_of`.
+        assert_eq!(sample_corners(&grid, n, 0.0, 0.0), at(0, 0));
+        assert_eq!(
+            sample_corners(&grid, n, 3.99, 0.0),
+            at(0, 0),
+            "[-4, 4) is corner 0"
+        );
+        assert_eq!(
+            sample_corners(&grid, n, 4.0, 0.0),
+            at(1, 0),
+            "4.0 opens corner 1"
+        );
+        assert_eq!(sample_corners(&grid, n, 8.0, 12.0), at(1, 2));
+        assert_eq!(
+            sample_corners(&grid, n, 12.0, 8.0),
+            at(2, 1),
+            "x and y are not transposed"
+        );
+        // Outside the world clamps into the edge corner, like `corner_of`.
+        assert_eq!(sample_corners(&grid, n, -500.0, -500.0), at(0, 0));
+        assert_eq!(
+            sample_corners(&grid, n, world + 500.0, world + 500.0),
+            at(n - 1, n - 1)
+        );
+
+        // The two entry points agree everywhere, so neither can be moved alone.
+        for k in 0..400u32 {
+            let x = f64::from(k) * 2.57 - 40.0;
+            let y = f64::from(k) * 1.31 - 40.0;
+            assert_eq!(
+                sample_corners(&grid, n, x, y),
+                grid[corner_of(y, world) * n + corner_of(x, world)],
+                "sample_corners disagreed with corner_of at ({x}, {y})"
+            );
+        }
+
+        // A grid that is not `size * size` reads 0 instead of panicking or reading past the end.
+        assert_eq!(sample_corners(&grid[..n * n - 1], n, 0.0, 0.0), 0);
+        assert_eq!(sample_corners(&[], 0, 0.0, 0.0), 0);
     }
 
     /// T-298 — SplitMix64, the reference constant set, inlined.
