@@ -1,0 +1,11 @@
+id = "T-974"
+kind = "work"
+title = "TBDD per-byte ban matches two literal spellings"
+summary = "tbdd.rs bans the strings u16_le and from_le_bytes with a bracket. A shift-or assembler or from_le_bytes with try_into passes. Ban the shape, scoped to the decode body."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T03:43:51Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
