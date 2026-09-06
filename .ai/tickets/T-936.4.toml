@@ -52,6 +52,7 @@ owns = [
     "crates/map-engine-core/src/mission/mod.rs",
     "crates/map-engine-core/src/mission/extensions.rs",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_WeatherRuntime.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_WeatherRuntime.c",
 ]
 
 [scope]
