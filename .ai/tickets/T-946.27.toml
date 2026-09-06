@@ -1,0 +1,12 @@
+id = "T-946.27"
+kind = "work"
+title = "Mod compile is unrunnable in a slice worktree"
+summary = "mirror_lockstep fails in every slice worktree with 19 EnfusionMCP scripts reported export-only. They are untracked, so they exist only in the main checkout and the walker cannot see an ignored tree. A wave-243 slice copied them in by hand."
+class = "chore"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T16:22:18Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"

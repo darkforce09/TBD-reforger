@@ -1,0 +1,12 @@
+id = "T-946.30"
+kind = "work"
+title = "terrain_bounds_of element names lie, and place_composition believes them"
+summary = "terrain_bounds_of returns [minX, minY, maxX, maxY] but named them [x0, y0, width, height], and place_composition passes b[2], b[3] as width/height. Correct only because every terrain is anchored at (0,0); a shifted terrain mis-stamps every composition."
+class = "chore"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T16:22:18Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
