@@ -72,6 +72,37 @@ pub struct ModSlot {
     /// Optional Arsenal loadout (T-068.11) — omitted when the editor slot carries none.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub loadout: Option<ModSlotLoadout>,
+    /// **T-674 — the per-seat identity block (schemaVersion 1.3).** The five T-180.1 values the
+    /// compile used to discard in silence: this seat's own `callsign` (NOT the squad's — that one
+    /// is `group_callsign` above, and the T-216 ledger exists because the two get confused), its
+    /// `rank`, its spawn `stance`, its `unit_name` and its `tag`.
+    ///
+    /// Every one is `Option` and skipped when `None`, because `$defs/slot` closes with
+    /// `additionalProperties: false` **and** types all five as either `wireSafeString`
+    /// (`minLength: 1`) or a closed enum. An empty string is therefore a schema violation, and a
+    /// schema violation at this boundary is **HTTP 500 from `GET /missions/:id/compiled`** in front
+    /// of a game server (`validated_compiled_body`, `handlers/missions.rs`). So a value that cannot
+    /// be represented is DROPPED WHOLE and reported as a diagnostic — never coerced, never blanked.
+    /// [`emit_wire_safe_identity`] and [`emit_enum_identity`] are the two gates.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub callsign: Option<String>,
+    /// `$defs/slot.rank` — one of [`SLOT_RANKS`], the schema's own ladder, in the schema's own
+    /// spelling. Case-folded from the author's (`"Sergeant"` → `"sergeant"`); anything off the
+    /// ladder drops.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rank: Option<String>,
+    /// `$defs/slot.stance` — one of [`SLOT_STANCES`].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stance: Option<String>,
+    /// `$defs/slot.unitName`. `rename_all = "camelCase"` above spells this `unitName` on the wire —
+    /// the mod binds this block by field NAME through `JsonLoadContext`, which ignores keys it does
+    /// not recognise, so the casing is the contract (the `freqMHz` trap on [`ModNet`]).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unit_name: Option<String>,
+    /// `$defs/slot.tag` — the TBD-only slot tag, mirroring the ORBAT-slot `tag` the events path
+    /// already carries (T-010).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
 }
 
 /// Per-slot loadout block (mission.schema.json `slot.loadout`): fixed gear + container
@@ -175,6 +206,22 @@ pub struct ModOrbatGroup {
     #[serde(rename = "type")]
     pub kind: String,
     pub roles: Vec<ModOrbatRole>,
+    /// **T-674 — which slot leads this squad (schemaVersion 1.3).** Carries `slots[].uid`, the
+    /// durable identity, because `slots[].id` is derived and shifts under role renames, reorders
+    /// and deletes.
+    ///
+    /// It lives HERE and not on `ModSlot`, per W120 M-4: a leader is a PER-SQUAD fact, so one copy
+    /// on the group cannot disagree with itself, whereas N denormalised copies on the seats could —
+    /// and no schema could catch that. The editor already authors it once per squad, at
+    /// `/editor/squads/*/leaderSlotId`.
+    ///
+    /// **This struct is NOT `rename_all = "camelCase"`** (`kind` is hand-renamed to `type` above),
+    /// so the wire key is spelled out explicitly. Leaving it to default would emit `leader_slot_id`,
+    /// which `$defs/group`'s `additionalProperties: false` rejects — a 500 at `/compiled` — and
+    /// which the mod's name-bound `JsonLoadContext` reader would ignore even if it validated. Same
+    /// trap [`ModNet::freq_mhz`] documents.
+    #[serde(rename = "leaderSlotId", skip_serializing_if = "Option::is_none")]
+    pub leader_slot_id: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -677,30 +724,149 @@ pub const DIAG_DROP_SLOT_CALLSIGN: &str = "COMPILE-DROP-SLOT-CALLSIGN";
 pub const DIAG_DROP_SLOT_RANK: &str = "COMPILE-DROP-SLOT-RANK";
 /// Stable rule id: a slot's authored `stance` is dropped.
 pub const DIAG_DROP_SLOT_STANCE: &str = "COMPILE-DROP-SLOT-STANCE";
+/// Stable rule id: a slot's authored `unitName` is dropped (T-674 — the fifth identity key, which
+/// joined the emit set with this ticket and therefore joined the drop channel with it).
+pub const DIAG_DROP_SLOT_UNIT_NAME: &str = "COMPILE-DROP-SLOT-UNIT-NAME";
 /// Stable rule id: the authored vehicle ROSTER (top-level `vehicles[]`, seats + crew) is dropped.
 pub const DIAG_DROP_VEHICLE_ROSTER: &str = "COMPILE-DROP-VEHICLE-ROSTER";
 
 /// Every diagnostic rule id this compile can emit, in emission order. The single source of truth a
 /// consumer (the panel legend, a smoke harness, the `/compiled` response header) enumerates rather
 /// than re-listing.
-pub const COMPILE_DIAGNOSTIC_RULE_IDS: [&str; 6] = [
+///
+/// **T-674 changed what these six MEAN, and left the ids alone on purpose.** Before the emit they
+/// fired because flatten had nowhere to put the value; now they fire only when the value cannot be
+/// represented on the wire — off the `$defs/slot` enum, carrying a `wireSafeString`-forbidden
+/// control byte, the wrong JSON type, or (for a leader) naming a seat that is not in the squad. The
+/// id is what a consumer routes on and what the `/compiled` rules header publishes, so it stays
+/// stable across that meaning change; the MESSAGE is what says why, and every message was rewritten.
+pub const COMPILE_DIAGNOSTIC_RULE_IDS: [&str; 7] = [
     DIAG_DROP_SQUAD_LEADER,
     DIAG_DROP_SLOT_TAG,
     DIAG_DROP_SLOT_CALLSIGN,
     DIAG_DROP_SLOT_RANK,
     DIAG_DROP_SLOT_STANCE,
+    DIAG_DROP_SLOT_UNIT_NAME,
     DIAG_DROP_VEHICLE_ROSTER,
 ];
 
-/// The four slot-identity keys read as raw JSON, paired with the rule that reports each one's loss.
+/// The five slot-identity keys read as raw JSON, paired with the rule that reports each one's loss.
 /// Ordered so the emitted findings are deterministic (`tag`, `callsign`, `rank`, `stance` — the
-/// T-216 ledger's own order).
-const SLOT_IDENTITY_DROPS: [(&str, &str); 4] = [
+/// T-216 ledger's own order — then `unitName`, which T-674 added).
+const SLOT_IDENTITY_DROPS: [(&str, &str); 5] = [
     ("tag", DIAG_DROP_SLOT_TAG),
     ("callsign", DIAG_DROP_SLOT_CALLSIGN),
     ("rank", DIAG_DROP_SLOT_RANK),
     ("stance", DIAG_DROP_SLOT_STANCE),
+    ("unitName", DIAG_DROP_SLOT_UNIT_NAME),
 ];
+
+/* ══════════════════ T-674 — the emit gates for the identity keys ══════════════════ */
+
+/// `mission.schema.json#/$defs/slot/properties/rank/enum`, in the schema's own order.
+///
+/// **This array IS the contract and the coupling is held by a test, not by the type system** — the
+/// same `url_guard` pattern [`WEATHER_PRESETS`] uses. `$defs/slot` closes with
+/// `additionalProperties: false` and types `rank` as this closed enum, so emitting a value that is
+/// not in the schema's list is **HTTP 500 from `GET /missions/:id/compiled`**, in front of a game
+/// server rather than the author. `the_identity_enums_are_the_schema_s_own` asserts this array
+/// equals the schema's, read out of the committed `mission.schema.json`, so a ladder edited on one
+/// side alone is a test failure in the same commit.
+///
+/// TBD's own ladder, not an engine identifier: the mod maps these onto whatever rank type Reforger
+/// exposes when the T-674.2 reader lands.
+const SLOT_RANKS: [&str; 7] = [
+    "private",
+    "corporal",
+    "sergeant",
+    "lieutenant",
+    "captain",
+    "major",
+    "colonel",
+];
+
+/// `mission.schema.json#/$defs/slot/properties/stance/enum` — the initial spawn pose. Same
+/// schema-read coupling as [`SLOT_RANKS`]; `doc/store.rs` authors exactly these three spellings.
+const SLOT_STANCES: [&str; 3] = ["stand", "crouch", "prone"];
+
+/// A `wireSafeString` identity value (`callsign` / `unitName` / `tag` / `leaderSlotId`), or `None`
+/// when the compile must drop it whole.
+///
+/// Four ways to be `None`, and the fourth is the one that matters:
+///
+/// 1. **Not a string.** These are read as raw [`serde_json::Value`] because the T-216 ledger forbids
+///    typing them (see [`SlotIn`]), so a stored `"tag": [1, 2]` is legal and must stay legal.
+/// 2. **Blank.** `$defs/slot` gives every one of them `minLength: 1`, so `""` is a schema violation,
+///    and a whitespace-only value is one the author did not really set ([`is_authored`]).
+/// 3. **Wire-unsafe.** `wireSafeString` is `^[^\x00-\x1F\x7F]*$`. A TAB in a callsign shifts every
+///    column of the mod's tab-separated roster wire and makes a seat unselectable (T-181.43).
+/// 4. **…and it drops WHOLE rather than being repaired.** Deleting the offending character would
+///    ship a roster that reads differently from the author's editor with nobody told — the explicit
+///    "no silent repair" rule in [`crate::mission::wire_safety`]. Dropping whole is also what keeps
+///    `save_scan_agrees_with_the_compiled_schema` true without widening the save-time scan: a
+///    payload that scan accepts still cannot produce a `/compiled` rejection for this cause,
+///    because the unsafe value never reaches the document.
+///
+/// The value is emitted VERBATIM when it passes — not trimmed. `wireSafeString` permits leading and
+/// trailing spaces, and silently reshaping a name somebody typed is the repair this module refuses.
+fn emit_wire_safe_identity(v: &serde_json::Value) -> Option<String> {
+    let s = v.as_str()?;
+    if s.trim().is_empty() || s.bytes().any(is_wire_unsafe) {
+        return None;
+    }
+    Some(s.to_string())
+}
+
+/// An enum-typed identity value (`rank` / `stance`) resolved to the SCHEMA'S OWN spelling, or `None`
+/// when the compile must drop it whole.
+///
+/// Trimmed and matched case-insensitively, then emitted as the canonical token from `allowed` —
+/// never as the author's casing. Both halves are load-bearing:
+///
+/// * The editor's ORBAT library authors capitalised ranks (`doc/place_orbat.rs` and
+///   `doc/apply_faction.rs` write `"Sergeant"` / `"Corporal"`), while the schema's enum is
+///   lowercase. An exact-match gate would therefore drop EVERY rank the editor's own library
+///   produces — a mechanism that cannot fire, which is worse than no mechanism.
+/// * Emitting the author's `"Sergeant"` instead of `"sergeant"` is a schema violation and so a 500
+///   at `/compiled`. The canonical token is the contract; the casing is not the author's to choose.
+///
+/// Case-folding an enum TOKEN is not the silent repair [`emit_wire_safe_identity`] refuses: it
+/// preserves the author's meaning exactly (the same rung of the ladder), whereas a free-text name is
+/// the value itself. A value off the ladder entirely (`"Lance Corporal"`) is not foldable onto any
+/// rung, so it drops whole and is reported.
+fn emit_enum_identity(v: &serde_json::Value, allowed: &[&str]) -> Option<String> {
+    let raw = v.as_str()?.trim();
+    allowed
+        .iter()
+        .find(|token| token.eq_ignore_ascii_case(raw))
+        .map(|token| (*token).to_string())
+}
+
+/// Why an authored identity value could not be carried — the clause the diagnostic message reads
+/// out, so the finding tells the author what to change instead of what the platform has not built.
+///
+/// Only ever called on a value that IS authored ([`is_authored`]) and that its gate refused, so the
+/// blank rung cannot be reached from here.
+fn identity_drop_reason(key: &str, value: &serde_json::Value) -> &'static str {
+    if !value.is_string() {
+        return "the authored value is not a string";
+    }
+    match key {
+        "rank" => {
+            "it is not one of the ranks `$defs/slot.rank` declares \
+                   (private, corporal, sergeant, lieutenant, captain, major, colonel)"
+        }
+        "stance" => {
+            "it is not one of the poses `$defs/slot.stance` declares \
+                     (stand, crouch, prone)"
+        }
+        _ => {
+            "it carries a control character, which `wireSafeString` forbids — a tab or newline \
+              here shifts every column of the mod's tab-separated roster wire and makes a seat \
+              unselectable"
+        }
+    }
+}
 
 /// Accumulates the compile's [`Finding`]s during the one document walk.
 ///
@@ -764,14 +930,24 @@ impl DiagnosticAcc {
 
     /// The squad leader designation, dropped. `Warning`, not `Info`: nothing on the wire says who
     /// leads, so the game server picks one — a behavioural difference, not a cosmetic one.
-    fn squad_leader_dropped(&mut self, squad_index: usize, sq: &SquadIn, leader: &str) {
+    ///
+    /// T-674 landed the emit, so this now fires only when the designation cannot be carried:
+    /// `reason` says which of the gates in [`emit_wire_safe_identity`] refused it, or that it names
+    /// a seat this squad does not hold.
+    fn squad_leader_dropped(
+        &mut self,
+        squad_index: usize,
+        sq: &SquadIn,
+        leader: &str,
+        reason: &str,
+    ) {
         self.push(
             DIAG_DROP_SQUAD_LEADER,
             Severity::Warning,
             format!(
-                "Squad {} designates slot {leader} as its leader, and the compile drops it — \
-                 `mission.schema.json` declares `$defs/group.leaderSlotId` but the flatten does \
-                 not emit it yet (T-674), so the game server chooses a leader for you.",
+                "Squad {} designates slot {leader} as its leader and the compile drops it: \
+                 {reason}. `$defs/group.leaderSlotId` cannot carry it, so the game server chooses \
+                 a leader for you.",
                 display_squad(sq)
             ),
             format!("/editor/squads/{squad_index}/leaderSlotId"),
@@ -779,8 +955,12 @@ impl DiagnosticAcc {
         );
     }
 
-    /// One of the four per-seat identity keys, dropped. `Info`: the seat still spawns in the right
+    /// One of the five per-seat identity keys, dropped. `Info`: the seat still spawns in the right
     /// place with the right kit; what is lost is how it is LABELLED.
+    ///
+    /// T-674 landed the emit, so this now fires only when the value cannot be carried — `reason`
+    /// names which gate refused it, so the author can act on it instead of being told the platform
+    /// has not got round to the feature.
     fn slot_identity_dropped(
         &mut self,
         rule_id: &'static str,
@@ -788,14 +968,16 @@ impl DiagnosticAcc {
         slot_index: usize,
         sl: &SlotIn,
         value: &serde_json::Value,
+        reason: &str,
     ) {
         self.push(
             rule_id,
             Severity::Info,
             format!(
-                "Slot {} authors {key} {}, and the compile drops it — `mission.schema.json` \
-                 declares `$defs/slot.{key}` but the flatten does not emit it yet (T-674), so \
-                 the game server never sees this seat's {key}.",
+                "Slot {} authors {key} {} and the compile drops it: {reason}. \
+                 `mission.schema.json` closes `$defs/slot`, so an unrepresentable {key} would be \
+                 a 500 at `/compiled` rather than a seat label — the game server never sees this \
+                 seat's {key}.",
                 display_slot(sl),
                 render_authored(value)
             ),
@@ -1006,16 +1188,23 @@ struct SlotIn {
     position: PositionIn,
     /// The editor `SlotLoadoutV2` dict (T-068.10/.15.2) — mapped by [`mod_slot_loadout`].
     loadout: Option<serde_json::Value>,
-    /// T-690 — the four T-180.1 per-seat identity keys, READ but never emitted (T-674 lands the
-    /// emit). All four are `serde_json::Value` for the reason [`SquadIn::leader_slot_id`] states:
-    /// the T-216 ledger forbids typing them, because a typed field would turn a stored
-    /// `"stance": 5` — legal and ignored today — into a permanent 400 at save.
+    /// T-690 / T-674 — the five T-180.1 per-seat identity keys. All five stay
+    /// `serde_json::Value` **even now that they are emitted**, for the reason
+    /// [`SquadIn::leader_slot_id`] states: the T-216 ledger forbids typing them, because a typed
+    /// field would turn a stored `"stance": 5` — legal and ignored today — into a permanent 400 at
+    /// save. Typing them here would narrow [`scan_editor_payload_types`]'s accept set, which that
+    /// function's own contract forbids. The narrowing happens at EMIT instead
+    /// ([`emit_wire_safe_identity`] / [`emit_enum_identity`]), where a value that cannot be carried
+    /// is dropped and reported rather than rejecting the whole payload.
     tag: serde_json::Value,
     /// The SEAT's callsign (T-180.1 identity), which is a different field from the squad's — the
     /// squad's is what reaches the wire as `slots[].groupCallsign`.
     callsign: serde_json::Value,
     rank: serde_json::Value,
     stance: serde_json::Value,
+    /// T-674 — `$defs/slot.unitName`, the fifth identity key. Read here for the first time with
+    /// this ticket; `rename_all = "camelCase"` on this struct binds it to the payload's `unitName`.
+    unit_name: serde_json::Value,
 }
 
 #[derive(Debug, Default, Clone, serde::Deserialize)]
@@ -2288,6 +2477,12 @@ pub fn flatten_to_mod_document(
     let mut radio_sources: Vec<RadioNetSource> = Vec::new();
     let mut substitutions = SubstitutionAcc::default();
     let mut any_y = false;
+    // T-674 — set the moment ANY identity key or leaderSlotId actually reaches the document, which
+    // is what the schemaVersion bump below is a statement about. Deliberately not "any identity key
+    // was AUTHORED": a mission whose every identity value was dropped by the gates carries nothing
+    // 1.3-shaped, so declaring 1.3 for it would tell the mod's validator to reject a document that
+    // is byte-for-byte a 1.1/1.2 one.
+    let mut any_identity = false;
 
     for f in &ed.factions {
         let faction_key = slug_key(&f.key, "faction");
@@ -2308,16 +2503,48 @@ pub fn flatten_to_mod_document(
             }
             rows.sort_by_key(|s| s.index); // stable
 
-            // T-690 — this squad REACHES the wire (it has rows), so a leader designation it
-            // authored is a value the compile is about to discard. Emitted here rather than over
-            // `ed.squads` wholesale: a squad no faction claims contributes nothing to the document,
-            // and reporting a loss for a group that was never going to ship is noise.
+            // T-674 — this squad REACHES the wire (it has rows), so resolve the leader it
+            // designated onto `$defs/group.leaderSlotId`. Resolved here rather than over
+            // `ed.squads` wholesale for the reason T-690's diagnostic used: a squad no faction
+            // claims contributes nothing to the document, so neither its leader nor a report about
+            // it belongs in one.
+            //
+            // The MEMBERSHIP check is the half a `wireSafeString` gate alone would miss. The schema
+            // types this key as a string and nothing more; it cannot express "must name one of THIS
+            // group's seats". An id that resolves to nothing is a dangling reference the T-674.2
+            // reader would silently fall back from — the same outcome as never emitting it, but
+            // with the wire claiming otherwise. `rows` is exactly the set of seats about to become
+            // this group's `slots[]` entries, and `ModSlot::uid` is `sl.id` verbatim, so this is the
+            // reference the reader will actually resolve against.
+            let mut leader_slot_id: Option<String> = None;
             if is_authored(&sq.leader_slot_id) {
-                diagnostics.squad_leader_dropped(
-                    squad_pos.get(sq.id.as_str()).copied().unwrap_or(0),
-                    sq,
-                    &render_authored(&sq.leader_slot_id),
-                );
+                let reason = match emit_wire_safe_identity(&sq.leader_slot_id) {
+                    None if !sq.leader_slot_id.is_string() => Some(
+                        "the authored value is not a string, and `leaderSlotId` carries a slot id",
+                    ),
+                    None => Some(
+                        "it carries a control character, which `$defs/group.leaderSlotId` \
+                         (`wireSafeString`) forbids — a tab or newline here shifts every column of \
+                         the mod's tab-separated roster wire",
+                    ),
+                    Some(id) if !rows.iter().any(|sl| sl.id == id) => Some(
+                        "no seat in this squad has that id, so the reference would dangle on the \
+                         wire and the mod would fall back to picking a leader anyway",
+                    ),
+                    Some(id) => {
+                        any_identity = true;
+                        leader_slot_id = Some(id);
+                        None
+                    }
+                };
+                if let Some(reason) = reason {
+                    diagnostics.squad_leader_dropped(
+                        squad_pos.get(sq.id.as_str()).copied().unwrap_or(0),
+                        sq,
+                        &render_authored(&sq.leader_slot_id),
+                        reason,
+                    );
+                }
             }
 
             // callsign → name → squad id → literal. The id rung keeps two unnamed
@@ -2386,6 +2613,44 @@ pub fn flatten_to_mod_document(
                     None
                 };
 
+                // T-674 — the five identity keys, resolved through their gates BEFORE the struct
+                // literal so a dropped one can be reported with the reason it was dropped. Ordered
+                // as `SLOT_IDENTITY_DROPS` (the T-216 ledger's own order) so the findings a payload
+                // produces are deterministic.
+                let authored_identity: [&serde_json::Value; 5] =
+                    [&sl.tag, &sl.callsign, &sl.rank, &sl.stance, &sl.unit_name];
+                let mut emitted: [Option<String>; 5] = [None, None, None, None, None];
+                for (i, (key, rule_id)) in SLOT_IDENTITY_DROPS.into_iter().enumerate() {
+                    let value = authored_identity[i];
+                    // A blank / absent / null value is not authored, so there is nothing to emit
+                    // and nothing to report — the rule T-200 applies to an empty `assetId` and
+                    // `wire_safety` applies to a blank callsign. Reporting them would bury the real
+                    // findings under one line per empty seat.
+                    if !is_authored(value) {
+                        continue;
+                    }
+                    let resolved = match key {
+                        "rank" => emit_enum_identity(value, &SLOT_RANKS),
+                        "stance" => emit_enum_identity(value, &SLOT_STANCES),
+                        _ => emit_wire_safe_identity(value),
+                    };
+                    match resolved {
+                        Some(v) => {
+                            any_identity = true;
+                            emitted[i] = Some(v);
+                        }
+                        None => diagnostics.slot_identity_dropped(
+                            rule_id,
+                            key,
+                            slot_pos.get(sl.id.as_str()).copied().unwrap_or(0),
+                            sl,
+                            value,
+                            identity_drop_reason(key, value),
+                        ),
+                    }
+                }
+                let [tag, slot_callsign, rank, stance, unit_name] = emitted;
+
                 doc_slots.push(ModSlot {
                     id: format!("{faction_key}:{callsign}:{role}:{occurrence}"),
                     uid: sl.id.clone(),
@@ -2398,25 +2663,15 @@ pub fn flatten_to_mod_document(
                     y,
                     heading_deg: normalize_heading(sl.position.rotation),
                     loadout: sl.loadout.as_ref().and_then(mod_slot_loadout),
+                    // The SEAT's callsign, which is not `group_callsign` above. The T-216 ledger
+                    // exists because those two share a word; they are two fields and this is the
+                    // one that reached the wire zero times before T-674.
+                    callsign: slot_callsign,
+                    rank,
+                    stance,
+                    unit_name,
+                    tag,
                 });
-
-                // T-690 — the seat is now on the wire, and these four authored keys are not. One
-                // finding per key the author actually set (see `is_authored`: a blank is not a
-                // finding), in the ledger's own order so the list is deterministic.
-                let authored_identity: [&serde_json::Value; 4] =
-                    [&sl.tag, &sl.callsign, &sl.rank, &sl.stance];
-                for (i, (key, rule_id)) in SLOT_IDENTITY_DROPS.into_iter().enumerate() {
-                    let value = authored_identity[i];
-                    if is_authored(value) {
-                        diagnostics.slot_identity_dropped(
-                            rule_id,
-                            key,
-                            slot_pos.get(sl.id.as_str()).copied().unwrap_or(0),
-                            sl,
-                            value,
-                        );
-                    }
-                }
 
                 if !centroids.contains_key(&faction_key) {
                     centroids.insert(faction_key.clone(), (0.0, 0.0, 0));
@@ -2432,6 +2687,7 @@ pub fn flatten_to_mod_document(
                 callsign,
                 kind: "rifle_squad".to_string(),
                 roles,
+                leader_slot_id,
             });
         }
 
@@ -2465,7 +2721,28 @@ pub fn flatten_to_mod_document(
         return Err(CompileError::NoSlots);
     }
 
-    let schema_version = if any_y { "1.2" } else { "1.1" }.to_string();
+    // T-674 — the version the compiled document DECLARES, highest rung first.
+    //
+    // 1.3 is claimed only when an identity key or a `leaderSlotId` ACTUALLY REACHED the document
+    // (`any_identity` is set at the emit sites, never where the value is read), because the bump is
+    // a statement about the bytes and nothing else. It is also the ONE place that decides it: T-675
+    // and T-676 land the remaining 1.3 emits on this same function and set the same flag rather
+    // than adding a second rung, which is the reuse the plan asks for.
+    //
+    // ⚠ THE MOD'S VALIDATOR DOES NOT ACCEPT "1.3" ON ANY SHIPPED BUILD. `TBD_MissionValidator`
+    // hardcodes SCHEMA_1_0/1_1/1_2 and `CheckSchemaVersion` refuses anything else, so a document
+    // that declares 1.3 is rejected server-side and the server parks in LOADING. The allowlist bump
+    // is T-674.2's (the reader slice), and `mission.schema.json`'s own `schemaVersion` description
+    // says it must land with the first slice that emits 1.3 — this one. Until it does, a mission
+    // that authors an identity value compiles to a document today's mod build will not load.
+    let schema_version = if any_identity {
+        "1.3"
+    } else if any_y {
+        "1.2"
+    } else {
+        "1.1"
+    }
+    .to_string();
 
     // Schema requires ≥ 2 factions; pad a stub opposing faction for single-faction drafts.
     if factions.len() < 2 {
@@ -3060,8 +3337,13 @@ mod tests {
     const MISSION_SCHEMA_RAW: &str =
         include_str!("../../../../packages/tbd-schema/schema/mission.schema.json");
 
-    /// A saved payload that authors all six T-180 values, each with a distinctive value so a
-    /// failure message names the thing that moved.
+    /// A saved payload that authors all six T-180 values plus T-674's `unitName`, each with a
+    /// distinctive value so a failure message names the thing that moved.
+    ///
+    /// `rank` is `"sergeant"` — a rung of the `$defs/slot.rank` ladder — because this fixture's job
+    /// is to prove each value's FATE, and a value the emit gates would refuse anyway could not
+    /// distinguish "dropped because nothing emits it" from "dropped because it is unrepresentable".
+    /// The gates get their own fixtures in the T-674 block at the end of this module.
     const LEDGER_FIXTURE: &str = r#"{
       "schemaVersion": 1,
       "map": {"terrain": "everon", "bounds": [0, 0, 12800, 12800]},
@@ -3078,7 +3360,8 @@ mod tests {
                     "slotIds": ["s1", "s2"], "leaderSlotId": "s2", "vehicleIds": ["v1"]}],
         "slots": [
           {"id": "s1", "squadId": "sq1", "index": 0, "role": "RFL", "tag": "MEDIC-TAG",
-           "stance": "prone", "callsign": "Alpha-One-Actual", "rank": "Lance Corporal",
+           "stance": "prone", "callsign": "Alpha-One-Actual", "rank": "sergeant",
+           "unitName": "Sgt. Reyes",
            "position": {"x": 1.0, "y": 2.0, "z": 0, "rotation": 0}},
           {"id": "s2", "squadId": "sq1", "index": 1, "role": "SL",
            "position": {"x": 3.0, "y": 4.0, "z": 0, "rotation": 0}}
@@ -3185,65 +3468,46 @@ mod tests {
                 value: "Alpha",
                 fate: Fate::Reaches("/slots/0/groupCallsign"),
             },
-            // T-706 opened `leaderSlotId` (and the four slot-identity keys below); flatten still
-            // drops them (ModSlot/ModGroup carry no such fields). Each is a pending emit landing
-            // with T-674, tracked as such until the roster reader ships. W120 M-4: leaderSlotId now
-            // lives on `$defs/group` ONLY (a per-squad fact, authored once at
-            // /editor/squads/*/leaderSlotId), so `owners` is GROUP, tightened from GROUP_OR_SLOT.
+            // T-706 opened `leaderSlotId` and the slot-identity keys below; **T-674 landed the
+            // emit**, so all six moved from `DeclaredPendingEmit` to `Reaches` — the transition the
+            // pending state exists to force. W120 M-4: leaderSlotId lives on `$defs/group` ONLY (a
+            // per-squad fact, authored once at /editor/squads/*/leaderSlotId), so it is asserted at
+            // the ORBAT group and NOT denormalised onto the seats.
             LedgerRow {
                 what: "squad leaderSlotId (T-180.1/.2 — who leads; on $defs/group per W120 M-4)",
                 authored_at: "/editor/squads/0/leaderSlotId",
                 value: "s2",
-                fate: Fate::DeclaredPendingEmit {
-                    scope: "",
-                    owners: GROUP,
-                    wire_key: "leaderSlotId",
-                    emit_ticket: "T-674",
-                },
+                fate: Fate::Reaches("/orbat/blufor/groups/0/leaderSlotId"),
             },
             LedgerRow {
                 what: "slot tag",
                 authored_at: "/editor/slots/0/tag",
                 value: "MEDIC-TAG",
-                fate: Fate::DeclaredPendingEmit {
-                    scope: "/slots",
-                    owners: SLOT,
-                    wire_key: "tag",
-                    emit_ticket: "T-674",
-                },
+                fate: Fate::Reaches("/slots/0/tag"),
             },
             LedgerRow {
                 what: "slot callsign (T-180.1 identity — NOT the squad's)",
                 authored_at: "/editor/slots/0/callsign",
                 value: "Alpha-One-Actual",
-                fate: Fate::DeclaredPendingEmit {
-                    scope: "/slots",
-                    owners: SLOT,
-                    wire_key: "callsign",
-                    emit_ticket: "T-674",
-                },
+                fate: Fate::Reaches("/slots/0/callsign"),
             },
             LedgerRow {
                 what: "slot rank (T-180.1 identity)",
                 authored_at: "/editor/slots/0/rank",
-                value: "Lance Corporal",
-                fate: Fate::DeclaredPendingEmit {
-                    scope: "/slots",
-                    owners: SLOT,
-                    wire_key: "rank",
-                    emit_ticket: "T-674",
-                },
+                value: "sergeant",
+                fate: Fate::Reaches("/slots/0/rank"),
             },
             LedgerRow {
                 what: "slot stance",
                 authored_at: "/editor/slots/0/stance",
                 value: "prone",
-                fate: Fate::DeclaredPendingEmit {
-                    scope: "/slots",
-                    owners: SLOT,
-                    wire_key: "stance",
-                    emit_ticket: "T-674",
-                },
+                fate: Fate::Reaches("/slots/0/stance"),
+            },
+            LedgerRow {
+                what: "slot unitName (T-674 — the fifth identity key)",
+                authored_at: "/editor/slots/0/unitName",
+                value: "Sgt. Reyes",
+                fate: Fate::Reaches("/slots/0/unitName"),
             },
             // T-706 opened the top-level `vehicles` roster (`document root + $defs/vehicle`,
             // seats/crew refs on the wire), distinct from the payload's own editor `vehicles`
@@ -3439,21 +3703,50 @@ mod tests {
 
         // The `callsign` confusion, stated sharply. Two different fields share one name:
         //   * the SQUAD's, which reaches the wire twice — `orbat.*.groups[].callsign` and
-        //     `slots[].groupCallsign` — and accounts for the `callsign` word saturating this file
-        //     (67 matching lines at both 5432cca1 and HEAD; the ticket's old "43" figure was
-        //     already stale pre-wave);
-        //   * the SLOT's (T-180.1 identity), which reaches it zero times.
-        // The slot-`callsign` row above is `DeclaredPendingEmit` (T-706 opened `$defs/slot.callsign`;
-        // flatten does not emit it yet) and scopes its key search to `/slots` precisely because the
-        // SQUAD's callsign legitimately occupies the name elsewhere; these three lines pin that
-        // premise so the scope cannot quietly become an excuse.
+        //     `slots[].groupCallsign` — and accounts for the `callsign` word saturating this file;
+        //   * the SLOT's (T-180.1 identity), which reached it zero times until T-674 and now
+        //     reaches it at `slots[].callsign` and NOWHERE ELSE.
+        // Both halves are asserted, because the failure this guards is the two being conflated: a
+        // seat labelled with its squad's callsign reads as working and is wrong.
         assert_eq!(wire["orbat"]["blufor"]["groups"][0]["callsign"], "Alpha");
         assert_eq!(wire["slots"][0]["groupCallsign"], "Alpha");
+        assert_eq!(wire["slots"][0]["callsign"], "Alpha-One-Actual");
         let wire_text = serde_json::to_string(&wire).expect("compiled document serialises");
-        assert!(
-            !wire_text.contains("Alpha-One-Actual"),
-            "the per-slot callsign reached the wire under some other key"
+        assert_eq!(
+            wire_text.matches("Alpha-One-Actual").count(),
+            1,
+            "the per-slot callsign must occupy exactly its own key — a second occurrence means it \
+             also leaked somewhere it does not belong"
         );
+
+        // The CONTRACT half of the six rows that just moved to `Reaches`. `Reaches` proves the
+        // value is on the wire; it says nothing about whether the schema allows it there — and
+        // `$defs/slot` / `$defs/group` both close with `additionalProperties: false`, so a key the
+        // schema does not declare is HTTP 500 at `GET /missions/:id/compiled`, in front of a game
+        // server rather than the author. Read out of the committed `mission.schema.json`, not
+        // restated: this is the same premise the `Blocked` rows check in the opposite direction.
+        for (owner, key) in [
+            (SLOT[0], "callsign"),
+            (SLOT[0], "rank"),
+            (SLOT[0], "stance"),
+            (SLOT[0], "unitName"),
+            (SLOT[0], "tag"),
+            (GROUP[0], "leaderSlotId"),
+        ] {
+            let obj = schema
+                .pointer(owner)
+                .unwrap_or_else(|| panic!("mission.schema.json has no object at {owner:?}"));
+            assert_eq!(
+                obj.get("additionalProperties"),
+                Some(&serde_json::Value::Bool(false)),
+                "{owner:?} is no longer closed — the emit below would validate for the wrong reason"
+            );
+            assert!(
+                obj.get("properties").and_then(|p| p.get(key)).is_some(),
+                "flatten emits {key:?} but mission.schema.json {owner:?} does not declare it — \
+                 every compiled mission carrying it would 500 at /compiled"
+            );
+        }
 
         // Vehicles (T-425): ride `entities[]` as `$defs/entity` (alias/x/z/headingDeg/faction/
         // inventory). The top-level `vehicles` key is editor-payload only — not on the compiled
@@ -3910,18 +4203,25 @@ mod tests {
         assert_eq!(
             keys,
             [
+                "callsign",
                 "faction",
                 "groupCallsign",
                 "headingDeg",
                 "id",
                 "kit",
+                "rank",
                 "role",
+                "stance",
+                "tag",
                 "uid",
+                "unitName",
                 "x",
                 "z",
             ],
             "the compiled slot shape changed. `y` and `loadout` are conditional and this \
-             fixture authors neither; everything else here is unconditional."
+             fixture authors neither; everything else here is unconditional. The five identity \
+             keys arrived with T-674 — before it every one of them was silently discarded and no \
+             test noticed, which is the loss this pin exists to make impossible a second time."
         );
 
         let mut top: Vec<&str> = wire
@@ -5985,9 +6285,15 @@ mod tests {
         );
 
         // Seed one: the clean verdict above is about an input this test can move.
+        //
+        // The seed is a rank that is NOT on the `$defs/slot.rank` ladder. Since T-674 a
+        // representable rank is EMITTED and produces no finding — `"Corporal"`, the old seed, now
+        // case-folds onto `corporal` and reaches the wire — so an unrepresentable one is what still
+        // exercises the drop channel. `identity_values_the_wire_cannot_carry_drop_whole` covers the
+        // gate itself; this is only the anti-vacuity witness for the empty verdict above.
         let seeded = FIXTURE.replace(
             r#""id": "s2", "squadId": "sq1", "index": 1, "role": "TL""#,
-            r#""id": "s2", "squadId": "sq1", "index": 1, "role": "TL", "rank": "Corporal""#,
+            r#""id": "s2", "squadId": "sq1", "index": 1, "role": "TL", "rank": "Lance Corporal""#,
         );
         assert_ne!(seeded, FIXTURE, "the seed must actually change the fixture");
         let dirty = flatten_to_mod_document(&meta(), seeded.as_bytes()).expect("compiles");
@@ -6003,23 +6309,79 @@ mod tests {
         );
     }
 
-    /// Every one of the T-216 ledger's six silently-discarded values is now a diagnostic.
+    /// A payload authoring one UNREPRESENTABLE value per drop rule, so every id in
+    /// [`COMPILE_DIAGNOSTIC_RULE_IDS`] is reachable and each one's finding can be inspected.
     ///
-    /// [`LEDGER_FIXTURE`] is the ledger's OWN payload — it authors all six deliberately, and the
-    /// ledger test above asserts (row by row, against `mission.schema.json`) that none of them
-    /// reaches the wire. So the two tests are halves of one statement: the ledger proves the values
-    /// are lost, this proves the loss is no longer silent.
+    /// Before T-674 the ledger fixture served this purpose, because flatten dropped all six values
+    /// unconditionally. Now that they are emitted, a fixture of representable values fires NOTHING,
+    /// so the drop channel needs inputs the wire genuinely cannot carry:
+    ///
+    /// * `tag` / `callsign` / `unitName` carry a TAB, a BEL and a DEL — `\t`, `\u0007` and `\u007f`
+    ///   here are JSON escapes inside a Rust raw string, so the parsed values hold real control
+    ///   bytes, which is what `wireSafeString` forbids (the T-181.42 callsign exactly).
+    /// * `rank` and `stance` name rungs that are not on their `$defs/slot` ladders.
+    /// * `leaderSlotId` names a seat this squad does not hold — a reference that would dangle.
+    /// * the vehicle roster is authored, and no top-level `vehicles[]` is emitted (T-675).
+    const DROP_FIXTURE: &str = r#"{
+      "schemaVersion": 1,
+      "map": {"terrain": "everon", "bounds": [0, 0, 12800, 12800]},
+      "vehicles": [
+        {"id": "v1",
+         "resourceName": "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et",
+         "position": {"x": 100.5, "y": 200.5, "z": 3.0, "rotation": 45.0},
+         "squadId": "sq1"}
+      ],
+      "editor": {
+        "factions": [{"id": "f1", "key": "BLUFOR", "name": "US Army", "squadIds": ["sq1"]}],
+        "squads": [{"id": "sq1", "factionId": "f1", "callsign": "Alpha", "name": "Alpha 1-1",
+                    "slotIds": ["s1"], "leaderSlotId": "sNope"}],
+        "slots": [
+          {"id": "s1", "squadId": "sq1", "index": 0, "role": "RFL",
+           "tag": "MEDIC\tTAG", "callsign": "Alpha\u0007One", "rank": "Lance Corporal",
+           "stance": "kneeling", "unitName": "Sgt.\u007fReyes",
+           "position": {"x": 1.0, "y": 2.0, "z": 0, "rotation": 0}}
+        ],
+        "editorLayers": []
+      }
+    }"#;
+
+    /// Every drop rule this compile declares is REACHABLE, and each finding carries the four parts
+    /// a consumer routes on.
+    ///
+    /// Before T-674 this was "the six silently-discarded values are each a diagnostic" over
+    /// [`LEDGER_FIXTURE`], and the two tests were halves of one statement: the ledger proved the
+    /// values were lost, this proved the loss was no longer silent. The emit changed what the rules
+    /// MEAN — a value is dropped now only when the wire cannot carry it — so the fixture changed
+    /// with them. The pairing is intact: the ledger proves each value now REACHES the wire, and
+    /// this proves the drop channel is still live for the ones that cannot.
     #[test]
-    fn the_six_dropped_values_each_become_a_diagnostic() {
-        let doc = flatten_to_mod_document(&meta(), LEDGER_FIXTURE.as_bytes()).expect("compiles");
+    fn every_drop_rule_fires_over_a_fixture_built_to_trip_it() {
+        let doc = flatten_to_mod_document(&meta(), DROP_FIXTURE.as_bytes()).expect("compiles");
         let ids: Vec<&str> = doc.diagnostics.iter().map(|f| f.rule_id).collect();
         for expected in COMPILE_DIAGNOSTIC_RULE_IDS {
             assert!(
                 ids.contains(&expected),
-                "{expected} never fired over the T-216 ledger fixture, which authors all six \
-                 values by construction; got: {ids:?}"
+                "{expected} never fired over a fixture that authors an unrepresentable value for \
+                 every rule by construction; got: {ids:?}"
             );
         }
+        // ...and NOTHING was emitted for those seven values, so the document stays at the version
+        // it would have had without them. A finding beside a key that reached the wire anyway
+        // would be the worst of both.
+        let wire = serde_json::to_value(&doc).expect("serialises");
+        assert_eq!(wire["schemaVersion"], "1.1");
+        for key in ["callsign", "rank", "stance", "unitName", "tag"] {
+            assert!(
+                wire["slots"][0].get(key).is_none(),
+                "an unrepresentable {key} reached the wire and was reported dropped"
+            );
+        }
+        assert!(
+            wire["orbat"]["blufor"]["groups"][0]
+                .get("leaderSlotId")
+                .is_none(),
+            "a dangling leaderSlotId reached the wire"
+        );
 
         // ...and each finding names the entity that owns it (the T-657 `subject_id` vocabulary,
         // reused rather than re-invented: it is the panel's click-to-select key).
@@ -6034,6 +6396,7 @@ mod tests {
         assert_eq!(owner(DIAG_DROP_SLOT_CALLSIGN).as_deref(), Some("s1"));
         assert_eq!(owner(DIAG_DROP_SLOT_RANK).as_deref(), Some("s1"));
         assert_eq!(owner(DIAG_DROP_SLOT_STANCE).as_deref(), Some("s1"));
+        assert_eq!(owner(DIAG_DROP_SLOT_UNIT_NAME).as_deref(), Some("s1"));
         assert_eq!(owner(DIAG_DROP_VEHICLE_ROSTER).as_deref(), Some("v1"));
 
         // The four parts the ticket asks for, on EVERY finding: a severity, a stable rule id, the
@@ -6225,4 +6588,334 @@ mod tests {
         assert!(by_id(DIAG_DROP_SLOT_RANK).contains("an object"));
         assert!(by_id(DIAG_DROP_SLOT_TAG).contains("an array"));
     }
+
+    /* ══════════════ T-674 — slot identity + squad leader reach the compiled wire ══════════════ */
+
+    /// One squad that designates its leader, a first seat carrying all five identity keys, and a
+    /// second seat carrying none. Every value is distinct so a failure message names the thing
+    /// that moved, and the second seat is the "must not gain empty keys" witness.
+    const IDENTITY_FIXTURE: &str = r#"{
+      "schemaVersion": 1,
+      "map": {"terrain": "everon", "bounds": [0, 0, 12800, 12800]},
+      "editor": {
+        "factions": [{"id": "f1", "key": "BLUFOR", "name": "US Army", "squadIds": ["sq1"]}],
+        "squads": [{"id": "sq1", "factionId": "f1", "callsign": "Alpha", "name": "Alpha 1-1",
+                    "slotIds": ["s1", "s2"], "leaderSlotId": "s2"}],
+        "slots": [
+          {"id": "s1", "squadId": "sq1", "index": 0, "role": "RFL", "tag": "MEDIC-TAG",
+           "stance": "prone", "callsign": "Alpha-One-Actual", "rank": "Sergeant",
+           "unitName": "Sgt. Reyes",
+           "position": {"x": 1.0, "y": 2.0, "z": 0, "rotation": 0}},
+          {"id": "s2", "squadId": "sq1", "index": 1, "role": "SL",
+           "position": {"x": 3.0, "y": 4.0, "z": 0, "rotation": 0}}
+        ],
+        "editorLayers": []
+      }
+    }"#;
+
+    /// The ticket's acceptance, asserted on the SERIALIZED document rather than on the struct —
+    /// what the game server is handed is the whole point, and a `serde` rename is exactly the kind
+    /// of mistake a struct-level assertion cannot see.
+    #[test]
+    fn slot_identity_and_squad_leader_reach_the_compiled_wire() {
+        let doc = flatten_to_mod_document(&meta(), IDENTITY_FIXTURE.as_bytes()).expect("compiles");
+        let wire = serde_json::to_value(&doc).expect("serialises");
+
+        assert_eq!(wire["schemaVersion"], "1.3");
+        let s0 = &wire["slots"][0];
+        assert_eq!(s0["callsign"], "Alpha-One-Actual");
+        // `"Sergeant"` in, `"sergeant"` out: the editor's ORBAT library authors capitalised ranks
+        // (doc/place_orbat.rs, doc/apply_faction.rs) and `$defs/slot.rank` declares lowercase ones.
+        // Emitting the author's casing would be a schema violation and so a 500 at /compiled.
+        assert_eq!(s0["rank"], "sergeant");
+        assert_eq!(s0["stance"], "prone");
+        assert_eq!(s0["unitName"], "Sgt. Reyes");
+        assert_eq!(s0["tag"], "MEDIC-TAG");
+        // The seat's own callsign did not displace the squad's — the T-216 confusion, pinned.
+        assert_eq!(s0["groupCallsign"], "Alpha");
+        // On the GROUP, not the seat (W120 M-4): one copy of a per-squad fact.
+        assert_eq!(wire["orbat"]["blufor"]["groups"][0]["leaderSlotId"], "s2");
+        assert!(
+            !any_object_has_key(&wire["slots"], "leaderSlotId"),
+            "leaderSlotId was denormalised onto the seats — N copies that can disagree, which is \
+             what W120 M-4 rejected"
+        );
+
+        // A seat that authored nothing must not GAIN keys. `$defs/slot` types all five as
+        // `minLength: 1` or a closed enum, so an empty-string default would 500 /compiled for
+        // every mission whose seats are plain.
+        let s1 = &wire["slots"][1];
+        for key in ["callsign", "rank", "stance", "unitName", "tag"] {
+            assert!(s1.get(key).is_none(), "seat 2 authored no {key}");
+        }
+        // Nothing was reported dropped, because nothing was.
+        assert!(
+            doc.diagnostics.is_empty(),
+            "every authored value reached the wire, so there is nothing to report; got {:?}",
+            doc.diagnostics
+        );
+    }
+
+    /// **The gates, one refused value at a time.** Each row authors ONE unrepresentable value on an
+    /// otherwise-clean seat and asserts the key is absent from the wire and reported — never
+    /// coerced, never blanked, never partially repaired.
+    ///
+    /// The blank rows are the other direction: a value the author did not really set produces no
+    /// key AND no finding, so a mission of empty seats does not drown its author in noise.
+    ///
+    /// Seeded onto [`STRIPPED_IDENTITY_FIXTURE`], not [`IDENTITY_FIXTURE`]: `SlotIn` derives
+    /// `Deserialize`, and serde REFUSES a duplicate struct field, so a seed that prepended a second
+    /// `callsign` would fail the parse rather than override the first — the compile would error and
+    /// the gate would never be reached.
+    #[test]
+    fn identity_values_the_wire_cannot_carry_drop_whole() {
+        // (label, key, authored JSON literal, expected rule id or None for "no finding either")
+        let cases: &[(&str, &str, &str, Option<&str>)] = &[
+            // wireSafeString — a control byte anywhere in the string. `\t`, `\n` and `\u007f` are
+            // JSON escapes inside a Rust raw string, so the parsed values hold real control bytes
+            // (the T-181.42 callsign exactly).
+            (
+                "tab in callsign",
+                "callsign",
+                r#""Alpha\tActual""#,
+                Some(DIAG_DROP_SLOT_CALLSIGN),
+            ),
+            (
+                "newline in unitName",
+                "unitName",
+                r#""Sgt.\nReyes""#,
+                Some(DIAG_DROP_SLOT_UNIT_NAME),
+            ),
+            (
+                "DEL in tag",
+                "tag",
+                r#""ME\u007fDIC""#,
+                Some(DIAG_DROP_SLOT_TAG),
+            ),
+            // Enum-gated after trim: off the ladder entirely.
+            (
+                "rank off the ladder",
+                "rank",
+                r#""Lance Corporal""#,
+                Some(DIAG_DROP_SLOT_RANK),
+            ),
+            (
+                "stance off the enum",
+                "stance",
+                r#""kneeling""#,
+                Some(DIAG_DROP_SLOT_STANCE),
+            ),
+            // Wrong JSON type — legal in a stored payload (the T-216 ledger forbids typing these
+            // fields), so it must drop rather than refuse the compile.
+            ("numeric stance", "stance", "5", Some(DIAG_DROP_SLOT_STANCE)),
+            ("array tag", "tag", "[1, 2]", Some(DIAG_DROP_SLOT_TAG)),
+            // Not authored: no key, and no finding either.
+            ("empty callsign", "callsign", r#""""#, None),
+            ("whitespace tag", "tag", r#""   ""#, None),
+            ("null rank", "rank", "null", None),
+        ];
+
+        for (label, key, literal, rule) in cases {
+            let payload = STRIPPED_IDENTITY_FIXTURE.replace(
+                r#""id": "s1", "squadId": "sq1", "index": 0, "role": "RFL","#,
+                &format!(
+                    r#""id": "s1", "squadId": "sq1", "index": 0, "role": "RFL", "{key}": {literal},"#
+                ),
+            );
+            assert_ne!(
+                payload, STRIPPED_IDENTITY_FIXTURE,
+                "{label}: the seed must change the fixture"
+            );
+            // The precheck must still accept it — `scan_editor_payload_types`' own contract is
+            // that it cannot reject a payload that compiles today, and these all compile.
+            assert!(
+                scan_editor_payload_types(payload.as_bytes()).is_empty(),
+                "{label}: the save-time precheck must still accept this payload"
+            );
+            let doc = flatten_to_mod_document(&meta(), payload.as_bytes())
+                .unwrap_or_else(|e| panic!("{label}: must still compile: {e}"));
+            let wire = serde_json::to_value(&doc).expect("serialises");
+
+            assert!(
+                wire["slots"][0].get(*key).is_none(),
+                "{label}: {key} reached the wire as {:?} — an unrepresentable value must drop \
+                 WHOLE, not be trimmed, blanked or coerced",
+                wire["slots"][0][*key]
+            );
+            let ids: Vec<&str> = doc.diagnostics.iter().map(|f| f.rule_id).collect();
+            match rule {
+                Some(expected) => assert_eq!(
+                    ids,
+                    vec![*expected],
+                    "{label}: expected exactly one finding naming the refused value"
+                ),
+                None => assert!(
+                    ids.is_empty(),
+                    "{label}: a value the author never set is not a finding; got {ids:?}"
+                ),
+            }
+        }
+    }
+
+    /// A leader designation that names a seat this squad does not hold never reaches the wire.
+    ///
+    /// `$defs/group.leaderSlotId` is typed `wireSafeString` and nothing more — the schema cannot
+    /// express "must name one of THIS group's seats". So the check lives here or nowhere, and
+    /// nowhere means the T-674.2 reader resolves a dangling id, finds no body and silently falls
+    /// back to picking a leader — the same outcome as never emitting, with the wire claiming
+    /// otherwise.
+    #[test]
+    fn a_dangling_squad_leader_never_reaches_the_wire() {
+        for (label, leader) in [
+            ("names no seat at all", "sNope"),
+            // `s4` is a real editor slot id in FIXTURE terms but not one of THIS squad's; here the
+            // squad holds s1 and s2 only.
+            ("names a seat in another squad", "s4"),
+        ] {
+            let payload = IDENTITY_FIXTURE.replace(
+                r#""leaderSlotId": "s2""#,
+                &format!(r#""leaderSlotId": "{leader}""#),
+            );
+            assert_ne!(
+                payload, IDENTITY_FIXTURE,
+                "{label}: the seed must change the fixture"
+            );
+            let doc = flatten_to_mod_document(&meta(), payload.as_bytes()).expect("compiles");
+            let wire = serde_json::to_value(&doc).expect("serialises");
+            assert!(
+                wire["orbat"]["blufor"]["groups"][0]
+                    .get("leaderSlotId")
+                    .is_none(),
+                "{label}: a dangling leader reached the wire"
+            );
+            assert!(
+                doc.diagnostics
+                    .iter()
+                    .any(|f| f.rule_id == DIAG_DROP_SQUAD_LEADER),
+                "{label}: the drop was silent"
+            );
+        }
+
+        // And the emitted id is the DURABLE identity: it equals `slots[].uid` (the editor's own slot
+        // id), not the derived `slots[].id`, which shifts under role renames, reorders and deletes.
+        let doc = flatten_to_mod_document(&meta(), IDENTITY_FIXTURE.as_bytes()).expect("compiles");
+        let wire = serde_json::to_value(&doc).expect("serialises");
+        let leader = wire["orbat"]["blufor"]["groups"][0]["leaderSlotId"]
+            .as_str()
+            .expect("leaderSlotId emitted");
+        assert!(
+            doc.slots.iter().any(|s| s.uid == leader),
+            "leaderSlotId {leader:?} resolves against no slot uid"
+        );
+        assert!(
+            !doc.slots.iter().any(|s| s.id == leader),
+            "leaderSlotId is carrying the DERIVED slots[].id — it must carry uid, or a role rename \
+             silently re-points the squad's leader"
+        );
+    }
+
+    /// **The enum gates are the schema's own lists, read out of `mission.schema.json`.**
+    ///
+    /// `$defs/slot` closes with `additionalProperties: false` and types `rank`/`stance` as closed
+    /// enums, so a token this module accepts that the schema does not declare is HTTP 500 at
+    /// `GET /missions/:id/compiled` for every mission that authors it — in front of a game server,
+    /// not the author. The coupling cannot be held by the type system (this crate cannot name a
+    /// JSON Schema), so it is held here: the same `url_guard` pattern
+    /// `weather_preset_list_matches_the_row_enum` uses for `WEATHER_PRESETS`.
+    #[test]
+    fn the_identity_enums_are_the_schema_s_own() {
+        let schema: serde_json::Value =
+            serde_json::from_str(MISSION_SCHEMA_RAW).expect("mission.schema.json parses");
+        for (key, ours) in [
+            ("rank", SLOT_RANKS.as_slice()),
+            ("stance", SLOT_STANCES.as_slice()),
+        ] {
+            let declared: Vec<&str> = schema["$defs"]["slot"]["properties"][key]["enum"]
+                .as_array()
+                .unwrap_or_else(|| panic!("$defs/slot.{key} declares no enum"))
+                .iter()
+                .map(|v| v.as_str().expect("enum tokens are strings"))
+                .collect();
+            assert_eq!(
+                ours, declared,
+                "the {key} ladder in flatten.rs and the one in mission.schema.json have drifted — \
+                 a token on only one side is either a value that can never be authored or a 500 at \
+                 /compiled"
+            );
+        }
+    }
+
+    /// **1.3 is claimed for the BYTES, not for the intent.** The bump names a widening the mod's
+    /// validator must allowlist before it will load the document at all, so declaring it over a
+    /// document that carries nothing 1.3-shaped would make a plain mission unloadable for free.
+    #[test]
+    fn schema_version_bumps_to_1_3_only_when_an_identity_key_emits() {
+        let version = |payload: &str| -> String {
+            flatten_to_mod_document(&meta(), payload.as_bytes())
+                .expect("compiles")
+                .schema_version
+        };
+
+        // A mission that authors none of it is untouched: FIXTURE has one slot with elevation.
+        assert_eq!(version(FIXTURE), "1.2");
+        // Every identity value refused by the gates ⇒ nothing 1.3-shaped on the wire ⇒ no bump,
+        // even though the author set all six. This is the half that separates "emitted" from
+        // "authored", and it is the one a naive `if is_authored(...)` would get wrong.
+        assert_eq!(version(DROP_FIXTURE), "1.1");
+        // ...and each of the six on its own is enough, because each one alone puts a 1.3 key on
+        // the wire. Seeded onto the bare second seat so nothing else changes.
+        for (key, literal) in [
+            ("callsign", r#""Actual""#),
+            ("rank", r#""corporal""#),
+            ("stance", r#""crouch""#),
+            ("unitName", r#""Cpl. Vega""#),
+            ("tag", r#""SL""#),
+        ] {
+            let payload = STRIPPED_IDENTITY_FIXTURE.replace(
+                r#""id": "s2", "squadId": "sq1", "index": 1, "role": "SL","#,
+                &format!(
+                    r#""id": "s2", "squadId": "sq1", "index": 1, "role": "SL", "{key}": {literal},"#
+                ),
+            );
+            assert_ne!(
+                payload, STRIPPED_IDENTITY_FIXTURE,
+                "{key}: the seed must change the fixture"
+            );
+            assert_eq!(
+                version(&payload),
+                "1.3",
+                "{key} alone must bump the version"
+            );
+        }
+        // The leader designation counts too — it is a 1.3 key like the other five.
+        assert_eq!(
+            version(&STRIPPED_IDENTITY_FIXTURE.replace(
+                r#""slotIds": ["s1", "s2"]"#,
+                r#""slotIds": ["s1", "s2"], "leaderSlotId": "s2""#,
+            )),
+            "1.3"
+        );
+        // The stripped fixture itself carries nothing 1.3-shaped — the anti-vacuity witness for
+        // every row above, which would all pass if it did.
+        assert_eq!(version(STRIPPED_IDENTITY_FIXTURE), "1.1");
+    }
+
+    /// [`IDENTITY_FIXTURE`] with every identity key and the leader designation removed — the
+    /// baseline the `schemaVersion` rows above seed ONE value onto.
+    const STRIPPED_IDENTITY_FIXTURE: &str = r#"{
+      "schemaVersion": 1,
+      "map": {"terrain": "everon", "bounds": [0, 0, 12800, 12800]},
+      "editor": {
+        "factions": [{"id": "f1", "key": "BLUFOR", "name": "US Army", "squadIds": ["sq1"]}],
+        "squads": [{"id": "sq1", "factionId": "f1", "callsign": "Alpha", "name": "Alpha 1-1",
+                    "slotIds": ["s1", "s2"]}],
+        "slots": [
+          {"id": "s1", "squadId": "sq1", "index": 0, "role": "RFL",
+           "position": {"x": 1.0, "y": 2.0, "z": 0, "rotation": 0}},
+          {"id": "s2", "squadId": "sq1", "index": 1, "role": "SL",
+           "position": {"x": 3.0, "y": 4.0, "z": 0, "rotation": 0}}
+        ],
+        "editorLayers": []
+      }
+    }"#;
 }
