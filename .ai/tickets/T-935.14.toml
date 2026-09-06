@@ -1,15 +1,16 @@
 id = "T-935.14"
 kind = "work"
-parent = "T-935"
 title = "The prefab archive has no residency reader"
 summary = "T-935.11 shipped objects/prefabs.rkyv and a checked reader for it, but every frontend prefab consumer goes through load_prefabs_gz, which only understands gzipped JSON. The archive is unreachable until the residency can ingest it."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7215
-priority = 1
 spec = "docs/specs/Mission_Creator_Architecture/t935_14_prefab_residency_reader.md"
 plan = "docs/plans/t-935_14_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = ["T-935.11"]
+parent = "T-935"
 main_goal = "The prefab catalogue archive reaches the residency, so the fetch branch T-935.11 could not add becomes live code."
 context = [
     "T-935.11 shipped catalog_from_bytes with everon parity, terrain and census checks, and no caller.",
@@ -38,8 +39,10 @@ acceptance = [
     "The archive lane and the JSON lane build an identical residency for everon: same rows in order, same building and fence lookups, same glyph table.",
     "world_host has an archive branch for prefabs alongside roads and regions, and JSON remains the default.",
 ]
-depends_on = ["T-935.11"]
+shipped_at = "fc19f80f9"
 created_at = "2026-09-06T12:10:00Z"
+completed_at = "2026-09-06T12:27:57Z"
+estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/world/prefab_load.rs",
     "crates/map-engine-core/src/world/residency.rs",

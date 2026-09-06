@@ -1,15 +1,27 @@
 id = "T-935.12"
 kind = "work"
-parent = "T-935"
 title = "Manifest schema, golden chunk .bin, gates, LFS rules"
 summary = "terrain-manifest and map-object-instance schemas gain the objects.binary block; golden map-object-chunk-sample.bin is checked by golden_gate and schema_gates; .gitattributes routes *.bin *.rkyv *.dem *.tbd-bath through LFS."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7220
-priority = 1
 spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
 plan = "docs/plans/t-935_12_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = [
+    "T-935.2",
+    "T-935.3",
+    "T-935.4",
+    "T-935.5",
+    "T-935.6",
+    "T-935.7",
+    "T-935.8",
+    "T-935.9",
+    "T-935.10",
+    "T-935.11",
+]
+parent = "T-935"
 main_goal = "The binary formats are schema-described, golden-gated and LFS-routed before the cutover commit lands."
 context = [
     "Anchor 2026-09-04: packages/tbd-schema/schema/{terrain-manifest.schema.json, map-object-instance.schema.json:38-51}; golden/map-objects/map-object-chunk-sample.json; gates schema_gates.rs:3366, golden_gate.rs:483; .gitattributes:3-6.",
@@ -42,8 +54,10 @@ acceptance = [
     "verify-terrain-strict accepts the everon manifest with and without objects.binary and rejects dangling binary paths.",
     "git check-attr reports filter lfs for .bin, .rkyv, .dem and .tbd-bath under packages/map-assets.",
 ]
-depends_on = ["T-935.2", "T-935.3", "T-935.4", "T-935.5", "T-935.6", "T-935.7", "T-935.8", "T-935.9", "T-935.10", "T-935.11"]
+shipped_at = "69508bacc"
 created_at = "2026-09-05T01:34:37Z"
+completed_at = "2026-09-06T12:28:27Z"
+estimated = ["tokens"]
 owns = [
     "packages/tbd-schema/schema/terrain-manifest.schema.json",
     "packages/tbd-schema/schema/map-object-instance.schema.json",
