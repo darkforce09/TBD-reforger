@@ -1,0 +1,12 @@
+id = "T-946.8"
+kind = "work"
+title = "146 tickets predate created_at and cannot ship"
+summary = "The ship gate requires created_at and will not invent one, but 146 ticket files predate the field, so each refuses at ship time until hand-stamped. Backfill them from each file's first commit."
+class = "chore"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T08:42:26Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
