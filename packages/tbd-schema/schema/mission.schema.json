@@ -303,12 +303,12 @@
         "placementRadius": {
           "type": "number",
           "minimum": 0,
-          "description": "T-679 (ATTR-FIELD-GRP-PLACEMENT-RADIUS, schemaVersion 1.3). Metres: the group's members are scattered within this radius of its authored position at spawn (0/absent = exact placement). On the wire only — the scatter reader lands under T-679; the 2D top-down editor is the surface where the scatter circle is drawable."
+          "description": "T-679 (ATTR-FIELD-GRP-PLACEMENT-RADIUS, schemaVersion 1.3). Metres: the group's members are scattered within this radius of its authored position at spawn (0/absent = exact placement). READ SINCE T-679 (2026-09-07) by `TBD_PlacementScatter.c`. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader. Group scatter is a shared offset because groups have no authored x/z on the wire. The 2D top-down editor is the surface where the scatter circle is drawable."
         },
         "placementShape": {
           "type": "string",
           "enum": ["circle", "square"],
-          "description": "T-679 (ATTR-FIELD-OBJ-SHAPE applied to a group, schemaVersion 1.3). Scatter area shape for `placementRadius`. On the wire only — lands under T-679."
+          "description": "T-679 (ATTR-FIELD-OBJ-SHAPE applied to a group, schemaVersion 1.3). Scatter area shape for `placementRadius`. READ SINCE T-679 (2026-09-07) by `TBD_PlacementScatter.c`. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
         },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
@@ -449,12 +449,12 @@
         "placementRadius": {
           "type": "number",
           "minimum": 0,
-          "description": "T-679 (ATTR-FIELD-OBJ-PLACEMENT-RADIUS, schemaVersion 1.3). Metres: this slot is scattered within this radius of its authored (x, z) at spawn (0/absent = exact). On the wire only — the scatter reader lands under T-679."
+          "description": "T-679 (ATTR-FIELD-OBJ-PLACEMENT-RADIUS, schemaVersion 1.3). Metres: this slot is scattered within this radius of its authored (x, z) at spawn (0/absent = exact). READ SINCE T-679 (2026-09-07) by `TBD_PlacementScatter.c` (`ForSlot` from SpawnSlotBody). Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
         },
         "placementShape": {
           "type": "string",
           "enum": ["circle", "square"],
-          "description": "T-679 (ATTR-FIELD-OBJ-SHAPE, schemaVersion 1.3). Scatter area shape for this slot's `placementRadius`. On the wire only — lands under T-679."
+          "description": "T-679 (ATTR-FIELD-OBJ-SHAPE, schemaVersion 1.3). Scatter area shape for this slot's `placementRadius`. READ SINCE T-679 (2026-09-07) by `TBD_PlacementScatter.c`. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
         },
         "gadgets": {
           "$ref": "#/$defs/gadgetFlags",
@@ -706,30 +706,30 @@
         "attackerCount": {
           "type": "integer",
           "minimum": 0,
-          "description": "T-685 (schemaVersion 1.3). `objective_capture`. How many attackers must be inside to make progress — WOG's `_CaptureCount` (observed 4x128 / 1x16 / 2x6 / 3x5 across 166 instances). TBD's `contestable: bool` is the degenerate 1-vs-1 case of this + `defenderCount`. On the wire only — no reader on any shipped build; the objective reader lands under T-685."
+          "description": "T-685 (schemaVersion 1.3). `objective_capture`. How many attackers must be inside to make progress — WOG's `_CaptureCount` (observed 4x128 / 1x16 / 2x6 / 3x5 across 166 instances). TBD's `contestable: bool` is the degenerate 1-vs-1 case of this + `defenderCount`. READ SINCE T-685 (2026-09-07) by `TBD_ZoneVolume.c` / `TBD_MissionZoneRulesStruct` bind / `TBD_ObjectivesComponent.c` apply. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader. Absent ⇒ 1; authored 0 turns the count gate off."
         },
         "defenderCount": {
           "type": "integer",
           "minimum": 0,
-          "description": "T-685 (schemaVersion 1.3). `objective_capture` / `objective_hold_until`. How many defenders must be inside to HOLD — WOG's `_DefCount` (observed 3x129 / 1x17 / 2x8 / 0x5). On the wire only — lands under T-685."
+          "description": "T-685 (schemaVersion 1.3). `objective_capture` / `objective_hold_until`. How many defenders must be inside to HOLD — WOG's `_DefCount` (observed 3x129 / 1x17 / 2x8 / 0x5). READ SINCE T-685 (2026-09-07) by `TBD_ZoneVolume.c` / loader bind / `TBD_ObjectivesComponent.c`. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
         },
         "advantagePercent": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "T-685 (schemaVersion 1.3). `objective_capture`. The numeric advantage (percent) one side needs before capture progresses — WOG's `_AdvantagePercent` (observed 2x72 / 0x67 / 4x14 / 3x13). On the wire only — lands under T-685."
+          "description": "T-685 (schemaVersion 1.3). `objective_capture`. The numeric advantage (percent) one side needs before capture progresses — WOG's `_AdvantagePercent` (observed 2x72 / 0x67 / 4x14 / 3x13). READ SINCE T-685 (2026-09-07) by `TBD_ZoneVolume.c` / loader bind / `TBD_ObjectivesComponent.c`. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
         },
         "minHeight": {
           "type": "number",
-          "description": "T-685 (schemaVersion 1.3). The objective volume's LOWER bound, metres ABOVE TERRAIN (AGL), evaluated at each tested ENTITY's own ground position — not ASL, and not anchored to the zone centre. AXIS + EVALUATION POINT stated because a slope makes the two readings diverge by tens of metres, which is precisely the behaviour these bounds exist for: a small negative min (WOG's `_MinHeight` = -5 INVARIANT across all 166 instances) reaches basements-in under the entity, while a bounded max excludes aircraft overhead — both judged per-entity, so a POLYGON zone needs no separate height anchor (each entity supplies its own terrain reference). Together with `maxHeight` this makes an objective a 3D VOLUME rather than a flat footprint. On the wire only — the volume reader lands under T-685."
+          "description": "T-685 (schemaVersion 1.3). The objective volume's LOWER bound, metres ABOVE TERRAIN (AGL), evaluated at each tested ENTITY's own ground position — not ASL, and not anchored to the zone centre. AXIS + EVALUATION POINT stated because a slope makes the two readings diverge by tens of metres, which is precisely the behaviour these bounds exist for: a small negative min (WOG's `_MinHeight` = -5 INVARIANT across all 166 instances) reaches basements-in under the entity, while a bounded max excludes aircraft overhead — both judged per-entity, so a POLYGON zone needs no separate height anchor (each entity supplies its own terrain reference). Together with `maxHeight` this makes an objective a 3D VOLUME rather than a flat footprint. READ SINCE T-685 (2026-09-07) by `TBD_ZoneVolume.c` (AGL at each entity's own ground). Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
         },
         "maxHeight": {
           "type": "number",
-          "description": "T-685 (schemaVersion 1.3). The objective volume's UPPER bound, metres ABOVE TERRAIN (AGL), evaluated at each tested ENTITY's own ground position (same axis and evaluation point as `minHeight` — AGL per-entity, not ASL, not anchored to the zone centre; WOG's `_MaxHeight`, observed 30x137 / 15x16 / 20x13, is read as excluding aircraft). On the wire only — lands under T-685."
+          "description": "T-685 (schemaVersion 1.3). The objective volume's UPPER bound, metres ABOVE TERRAIN (AGL), evaluated at each tested ENTITY's own ground position (same axis and evaluation point as `minHeight` — AGL per-entity, not ASL, not anchored to the zone centre; WOG's `_MaxHeight`, observed 30x137 / 15x16 / 20x13, is read as excluding aircraft). READ SINCE T-685 (2026-09-07) by `TBD_ZoneVolume.c` / loader bind / `TBD_ObjectivesComponent.c`. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
         },
         "startingOwner": {
           "$ref": "#/$defs/factionKey",
-          "description": "T-685 (schemaVersion 1.3). Which faction holds this objective at round start — WOG's `_Owner` (observed 1x70 / 0x65 / 2x30 / 4x1). Constrained to `factionKey` — it names a `factions[].key`. On the wire only — lands under T-685."
+          "description": "T-685 (schemaVersion 1.3). Which faction holds this objective at round start — WOG's `_Owner` (observed 1x70 / 0x65 / 2x30 / 4x1). Constrained to `factionKey` — it names a `factions[].key`. READ SINCE T-685 (2026-09-07) by `TBD_ZoneVolume.c` / loader bind / `TBD_ObjectivesComponent.c`. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
         },
         "vehicleClasses": {
           "type": "array",

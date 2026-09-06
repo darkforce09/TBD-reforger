@@ -2448,42 +2448,11 @@ struct UnreadField {
 /// reader on any shipped build"; when that stops being true this table is what fails.
 const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
     // T-212 / T-685 — objectives[] typed entities + capture/defend/height rules on zoneRules.
-    UnreadField {
-        name: "attackerCount",
-        expected: 0,
-        ticket: "T-685",
-        why: "clean",
-    },
-    UnreadField {
-        name: "defenderCount",
-        expected: 0,
-        ticket: "T-685",
-        why: "clean",
-    },
-    UnreadField {
-        name: "advantagePercent",
-        expected: 0,
-        ticket: "T-685",
-        why: "clean",
-    },
-    UnreadField {
-        name: "minHeight",
-        expected: 0,
-        ticket: "T-685",
-        why: "clean",
-    },
-    UnreadField {
-        name: "maxHeight",
-        expected: 0,
-        ticket: "T-685",
-        why: "clean",
-    },
-    UnreadField {
-        name: "startingOwner",
-        expected: 0,
-        ticket: "T-685",
-        why: "clean",
-    },
+    // T-685 — zone volume / counts / owner: RETIRED 2026-09-07. `attackerCount` /
+    // `defenderCount` / `advantagePercent` / `minHeight` / `maxHeight` / `startingOwner`
+    // gained identifiers when TBD_ZoneVolume.c + TBD_MissionZoneRulesStruct bind landed.
+    // Baselines were 0, so they retire rather than re-pin. Flatten still omits the keys
+    // (T-946.36); hand-staged 1.3 JSON reaches the reader.
     // T-689 — play-area vehicle-class filter (zoneRules.vehicleClasses). This is T-689's ONLY
     // field, nested in TBD_MissionZoneRulesStruct which the mod ALREADY binds
     // (TBD_MissionLoader.c) — so a T-689 reader adds one member and no covered identifier moves.
@@ -2547,19 +2516,10 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
     // were 0, so they retire rather than re-pin. T-677 already retired waypoint `speedMode` /
     // `behaviour` (identifier count is global); group-level defaults for those two now live
     // in the same GroupState reader.
-    // T-679 — placement scatter (slot + group).
-    UnreadField {
-        name: "placementRadius",
-        expected: 0,
-        ticket: "T-679",
-        why: "clean",
-    },
-    UnreadField {
-        name: "placementShape",
-        expected: 0,
-        ticket: "T-679",
-        why: "clean",
-    },
+    // T-679 — placement scatter: RETIRED 2026-09-07. `placementRadius` / `placementShape`
+    // gained identifiers when TBD_PlacementScatter.c landed (second GetRawJson pass, ForSlot
+    // from SpawnSlotBody). Baselines were 0, so they retire rather than re-pin. Flatten still
+    // omits the keys (T-946.36); hand-staged 1.3 JSON reaches the reader.
     // T-680 — vehicle states: RETIRED 2026-09-06. `lock` / `fuel` / `ammo` gained readers when
     // TBD_VehicleState.c landed (second JsonLoadContext pass over vehicles[], applied from
     // TBD_SpawnManager after SeatAuthoredCrews). Baselines were 0, so they retire rather than
@@ -2590,12 +2550,14 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
     // `shape` collides with the EXISTING zone-shape reader (`TBD_MissionShapeStruct`, the circle/
     // polygon zone geometry) PLUS T-673's marker.shape glyph selector. Re-pinned 32 -> 34
     // (2026-09-06, wave 244) rather than deleted: the 32 zone-geometry identifiers are still a
-    // tripwire. T-673 added 2 marker.shape identifiers.
+    // tripwire. T-673 added 2 marker.shape identifiers. Re-pinned 34 -> 36 (2026-09-07,
+    // wave 248): T-679's `TBD_PlacementScatter.Scatter` takes a local parameter named `shape`
+    // (two identifiers in tbd-framework) — unrelated to marker.shape / zone geometry.
     UnreadField {
         name: "shape",
-        expected: 34,
+        expected: 36,
         ticket: "T-673",
-        why: "existing zone-shape reader (TBD_MissionShapeStruct circle/polygon geometry), a different field from marker.shape; re-pinned 32 -> 34 after T-673",
+        why: "existing zone-shape reader (TBD_MissionShapeStruct circle/polygon geometry), a different field from marker.shape; T-679 Scatter local parameter added 2; re-pinned 34 -> 36 after T-679",
     },
     // `area` collides with the loadout-area (`LoadoutArea`) identifier family — NOT a marker reader.
     // Measured 13 (gate semantics, comments+strings stripped): TBD_LoadoutEquipHelper 7 +
@@ -2773,8 +2735,8 @@ mod unread_wire_field_tests {
     }
 
     /// The fire-once proof, MEASURED, not assumed. Drop a synthetic reader of a CLEAN field
-    /// (baseline 0) into a scratch mod tree and confirm the count rises to 1 — i.e. the day T-679
-    /// lands a `placementRadius` reader, `unread_wire_field_failures` trips. Without this, "asserts ZERO
+    /// (baseline 0) into a scratch mod tree and confirm the count rises to 1 — i.e. the day T-689
+    /// lands a `vehicleClasses` reader, `unread_wire_field_failures` trips. Without this, "asserts ZERO
     /// readers" could be a check that never notices a reader at all.
     #[test]
     fn unread_gate_fires_when_a_reader_appears() {
@@ -2784,21 +2746,21 @@ mod unread_wire_field_tests {
         fs::create_dir_all(&scripts).expect("scratch mod tree");
         // A plausible future reader: a struct member bound by JsonLoadContext (maps by name).
         fs::write(
-            scripts.join("TBD_FutureScatterReader.c"),
-            "class TBD_FutureScatterStruct { float placementRadius; }\n",
+            scripts.join("TBD_FuturePlayAreaReader.c"),
+            "class TBD_FuturePlayAreaStruct { string vehicleClasses; }\n",
         )
         .expect("write reader");
 
         assert_eq!(
-            count_mod_readers(&dir, "placementRadius").expect("count"),
+            count_mod_readers(&dir, "vehicleClasses").expect("count"),
             1,
-            "a placementRadius identifier in a .c file must be counted as a reader"
+            "a vehicleClasses identifier in a .c file must be counted as a reader"
         );
         let f = unread_wire_field_failures(&dir).expect("scan scratch");
         assert!(
             f.iter()
-                .any(|m| m.contains("'placementRadius'") && m.contains("T-679")),
-            "the gate must fail and name placementRadius + its ticket once a reader appears; got {f:#?}"
+                .any(|m| m.contains("'vehicleClasses'") && m.contains("T-689")),
+            "the gate must fail and name vehicleClasses + its ticket once a reader appears; got {f:#?}"
         );
         let _ = fs::remove_dir_all(&dir);
     }
