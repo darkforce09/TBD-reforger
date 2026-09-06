@@ -408,10 +408,25 @@ impl TbdbHeader {
         }
     }
 
-    /// Dimensions of level `level`, or `None` past `mip_count`.
+    /// Dimensions of level `level`, or `None` past `mip_count` — or past what a `u32` can shift.
+    ///
+    /// T-946: `self.mip_count` comes off the wire, and `u32 >> 32` is not 0, it is a PANIC in a
+    /// debug build and a masked shift (`>> 0`, i.e. the wrong level's dimensions) in a release
+    /// one. The wave 240 verifier reached this from `Bathymetry::from_bytes` with `mip_count = 40`
+    /// on a corrupt `.tbd-bath`:
+    ///
+    /// ```text
+    /// panicked at chunk_container.rs:418:15: attempt to shift right with overflow
+    /// ```
+    ///
+    /// The workspace sets no release overflow-checks, so the SHIPPED wasm takes the masked branch
+    /// and a placement guard reads level 40 as if it were level 8. A header that claims more
+    /// levels than a `u32` has bits is not describing a pyramid, so it gets `None` like any other
+    /// level past the end — the callers already treat `None` as "refuse", and the container's own
+    /// `validate` rejects the file before this is reached on the normal path.
     #[must_use]
     pub fn level_dims(&self, level: u16) -> Option<(u32, u32)> {
-        if level >= self.mip_count {
+        if level >= self.mip_count || u32::from(level) >= u32::BITS {
             return None;
         }
         let shift = u32::from(level);
@@ -689,6 +704,32 @@ mod tests {
             .expect_err("an empty payload cannot satisfy 2^27 instances");
         println!("── instances(&[]) ── {err}");
         assert!(matches!(err, BinaryError::LengthMismatch { .. }));
+    }
+
+    /// T-946 — a header claiming more levels than a `u32` has bits must not shift past the end.
+    ///
+    /// `mip_count` is wire data. `u32 >> 32` panics in a debug build and MASKS in a release one,
+    /// and this workspace sets no release overflow-checks — so the shipped wasm would have read
+    /// level 40 as if it were level 8 and handed a placement guard the wrong dimensions. Found by
+    /// the wave 240 verifier reaching this from `Bathymetry::from_bytes` on a corrupt `.tbd-bath`.
+    #[test]
+    fn a_level_past_the_shift_width_is_none_not_a_panic() {
+        let head = TbdbHeader::new(12_800, 12_800, 40, 0.1);
+        // Everything inside both bounds still answers.
+        assert_eq!(head.level_dims(0), Some((12_800, 12_800)));
+        assert!(head.level_dims(31).is_some(), "31 is the last legal shift");
+        // Past the shift width: refused, not wrapped, not panicking.
+        for level in [32_u16, 33, 39] {
+            println!("── level {level} ── {:?}", head.level_dims(level));
+            assert_eq!(
+                head.level_dims(level),
+                None,
+                "level {level} shifts a u32 by >= 32"
+            );
+            assert_eq!(head.level_span(level), None, "and its span goes with it");
+        }
+        // And past mip_count, as before.
+        assert_eq!(head.level_dims(40), None);
     }
 
     #[test]

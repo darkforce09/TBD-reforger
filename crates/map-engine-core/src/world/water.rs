@@ -226,6 +226,22 @@ impl Bathymetry {
                 actual: raw_len,
             });
         }
+        // T-946 — A SUFFIX MUST BE EXACTLY ITS SUFFIX, and this is a placement-guard input.
+        //
+        // `<` alone accepts anything at least long enough, and the levels are then indexed FROM
+        // THE FRONT of `payload`. So a 206 that starts at the wrong offset — or a server that
+        // ignores `Range` and sends a longer body from byte 0 — is read as if it began at
+        // `first_level`, and every texel lands in the wrong level. The wave 240 verifier drove
+        // exactly that: an all-water 16x16 terrain read through a mis-started 206 answered
+        // `known_dry` for 8 of 16 probes. A mask that says DRY over open water is the one answer
+        // a placement guard must never get, so the length is now an equality.
+        if payload.len() != bytes {
+            return Err(BinaryError::LengthMismatch {
+                what: "TBDB",
+                expected: bytes,
+                actual: payload.len(),
+            });
+        }
         if !bytes.is_multiple_of(4) {
             return Err(BinaryError::LengthMismatch {
                 what: "TBDB",
@@ -817,6 +833,35 @@ mod tests {
         for (target, want) in [(0.5, 0_u16), (1.0, 0), (2.0, 1), (100.0, 2)] {
             assert_eq!(m.level_for_texel_size_m(target), want, "{target} m");
         }
+    }
+
+    /// T-946 — an OVER-LONG suffix is refused too, because it means the bytes do not start where
+    /// the reader thinks they do.
+    ///
+    /// The levels are indexed from the front of the payload, so a 206 that begins at the wrong
+    /// offset, or a server that ignores `Range` and returns the whole file, is read as though it
+    /// began at `first_level`: every texel lands in the wrong level. The wave 240 verifier drove
+    /// an all-water terrain through a mis-started 206 and got `known_dry` for half its probes.
+    #[test]
+    fn a_suffix_longer_than_its_level_is_refused() {
+        let whole = synth(W, H, MIPS, &[(1, 2, 30)]);
+        let header = TbdbHeader::new(W, H, MIPS, SCALE);
+        let (skip, bytes) = payload_span(&header, 1).expect("span");
+        let payload = &whole[size_of::<TbdbHeader>() + skip..];
+        assert_eq!(payload.len(), bytes, "the fixture's own suffix is exact");
+        assert!(Bathymetry::from_level_suffix(header, 1, payload).is_ok());
+
+        // The whole payload handed over as if it were level 1's suffix — the mis-started 206.
+        let from_zero = &whole[size_of::<TbdbHeader>()..];
+        assert!(
+            from_zero.len() > bytes,
+            "the fixture must actually be longer: {} vs {bytes}",
+            from_zero.len()
+        );
+        let err = Bathymetry::from_level_suffix(header, 1, from_zero)
+            .expect_err("a body that does not start at first_level must not be read");
+        println!("── over-long suffix ── {err}");
+        assert!(matches!(err, BinaryError::LengthMismatch { .. }));
     }
 
     #[test]
