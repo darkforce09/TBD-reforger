@@ -1197,7 +1197,55 @@ pub fn cmd_check(root: &Path, registry: &serde_json::Value, strict: bool) -> Res
 /// Callers must not mutate the registry on `Err`. Prefer this over `process::exit`
 /// so unit tests can assert refusal without killing the test process.
 pub fn require_check_ok(root: &Path, registry: &Value, context: &str) -> Result<()> {
-    let errors = check(root, registry, false);
+    require_check_ok_inner(root, registry, context, false)
+}
+
+/// The marker every `wave_lock` error carries when a repack — and only a repack — is the fix.
+const REPACK_FIXES_IT: &str = "run `cargo xtask wave repack`";
+
+/// `require_check_ok` for the BATCH-SHIP window, where the lock is stale ON PURPOSE.
+///
+/// T-946 shipped `ticket ship --no-repack` so a wave's ids can ship together and ONE repack at the
+/// end sees the whole set landed (a per-id repack re-packs the wave smaller between ships, so it
+/// never empties and `wave --close` has nothing to close). Measured 2026-09-06, the first
+/// production run of that path: the second ship refused, because ship's own preflight is this
+/// function and the lock was stale — exactly as `--no-repack` had just left it.
+///
+/// ```text
+/// ERROR: wave.lock wave 0 is stale — missing ["T-305"], extra []: run `cargo xtask wave repack`
+/// ERROR: wave.lock wave 236 lists T-305 (shipped, executor claude-code) — not dispatchable; …
+/// xtask: refusing ship T-298: ticket check failed (2 error(s))
+/// ```
+///
+/// So the batch waives EXACTLY the errors whose own text names a repack as the fix, and nothing
+/// else: a schema break, a bad status, a missing plan still refuse. The waiver is the narrowest
+/// thing that can be true — "the lock lags the tickets" is the state `--no-repack` announces, and
+/// the deferred repack is what resolves it.
+pub fn require_check_ok_deferring_repack(
+    root: &Path,
+    registry: &Value,
+    context: &str,
+) -> Result<()> {
+    require_check_ok_inner(root, registry, context, true)
+}
+
+fn require_check_ok_inner(
+    root: &Path,
+    registry: &Value,
+    context: &str,
+    defer_repack: bool,
+) -> Result<()> {
+    let mut errors = check(root, registry, false);
+    if defer_repack {
+        let before = errors.len();
+        errors.retain(|e| !e.contains(REPACK_FIXES_IT));
+        let waived = before - errors.len();
+        if waived > 0 {
+            eprintln!(
+                "note: {waived} wave.lock staleness error(s) waived for {context} (--no-repack);                  the end-of-wave `cargo xtask wave repack` resolves them"
+            );
+        }
+    }
     if errors.is_empty() {
         return Ok(());
     }

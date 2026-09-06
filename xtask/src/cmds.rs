@@ -628,7 +628,13 @@ pub fn cmd_ship_opt(root: &Path, registry: &mut Value, id: &str, refresh: bool) 
     // T-237: refuse to mark shipped when the registry fails ticket check
     // (including Draft 2020-12 .ai/tickets/schema.json). Check runs first so a
     // red registry never gets a status write + sync.
-    require_check_ok(root, registry, &format!("ship {id}"))?;
+    if refresh {
+        require_check_ok(root, registry, &format!("ship {id}"))?;
+    } else {
+        // T-946: the batch window leaves the lock stale on purpose; waive only the errors whose
+        // own text names a repack as the fix (see `require_check_ok_deferring_repack`).
+        crate::check::require_check_ok_deferring_repack(root, registry, &format!("ship {id}"))?;
+    }
 
     // Typed op (T-916.1): status→shipped preserving shipped_at + order (the SHA stays
     // hand-edited — T-913.1: completed_at rides the same mutation, `shipped_at` stays a bare
@@ -1845,6 +1851,72 @@ mod tests {
     /// the next ship runs (see `numbering_and_carry` in `wave_lock`). The command center now ships
     /// the wave's ids — each still followed by its own `stamp-sha`, the lifecycle is unchanged —
     /// and repacks ONCE at the end, where the whole set is visible at the same instant.
+    /// T-946 follow-up — the stale lock `--no-repack` leaves must not refuse the NEXT ship, and
+    /// nothing else may be waived with it.
+    ///
+    /// The first production run of the batch path failed exactly here: ship's preflight is
+    /// `require_check_ok`, so the second ship refused over the lock staleness that `--no-repack`
+    /// had just deliberately created —
+    /// `ERROR: wave.lock wave 0 is stale — missing ["T-305"] … refusing ship T-298`. The waiver
+    /// drops only errors whose own text names a repack as the fix.
+    #[test]
+    fn the_stale_lock_left_by_no_repack_is_waived_for_the_next_ship_and_nothing_else_is() {
+        let root = scratch_registry("ship-batch-waiver");
+        let mut registry = load_registry(&root).expect("scratch registry loads");
+        crate::wave_lock::repack_quiet(&root).expect("baseline lock");
+
+        cmd_ship_opt(&root, &mut registry, "T-002", false).expect("batch ship");
+        let registry = load_registry(&root).expect("reload after ship");
+
+        // The lock now lags the tickets, exactly as --no-repack announced.
+        let plain = require_check_ok(&root, &registry, "ship NEXT")
+            .expect_err("a stale lock must still refuse the ordinary path");
+        let plain = format!("{plain:#}");
+        println!("── plain require_check_ok ── {plain}");
+
+        let deferred =
+            crate::check::require_check_ok_deferring_repack(&root, &registry, "ship NEXT");
+        let raw = crate::check::check(&root, &registry, false);
+        let lock: Vec<&String> = raw
+            .iter()
+            .filter(|e| e.contains("run `cargo xtask wave repack`"))
+            .collect();
+        let other: Vec<&String> = raw
+            .iter()
+            .filter(|e| !e.contains("run `cargo xtask wave repack`"))
+            .collect();
+        println!(
+            "── repack-fixable ── {}\n── everything else ── {}",
+            lock.len(),
+            other.len()
+        );
+        assert!(
+            lock.len() == 2 && lock.iter().all(|e| e.contains("wave.lock")),
+            "the fixture must carry the stale-lock pair --no-repack creates: {raw:?}"
+        );
+        assert!(
+            !other.is_empty(),
+            "and at least one error the waiver must NOT touch — here the unstamped ship: {raw:?}"
+        );
+        // The waiver is exactly the difference between the two counts: nothing more, nothing less.
+        let deferred_msg = format!(
+            "{:#}",
+            deferred.expect_err("the unstamped ship still refuses")
+        );
+        println!("── deferring ── {deferred_msg}");
+        assert!(
+            deferred_msg.contains(&format!("({} error(s))", other.len())),
+            "deferring must drop the {} lock error(s) and keep the other {}: {deferred_msg}",
+            lock.len(),
+            other.len()
+        );
+        assert!(
+            plain.contains(&format!("({} error(s))", raw.len())),
+            "and the ordinary path still counts them all: {plain}"
+        );
+        let _ = fs::remove_dir_all(&root);
+    }
+
     #[test]
     fn ship_no_repack_leaves_the_lock_untouched_until_the_next_repack() {
         let root = scratch_registry("ship-no-repack");
