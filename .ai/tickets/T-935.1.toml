@@ -49,8 +49,10 @@ acceptance = [
     "The committed everon manifest.json parses unchanged with the new optional fields absent.",
     "No emitter or loader is touched: downstream slices .2-.13 import these types unchanged.",
 ]
+shipped_at = "7fbf92e18"
 created_at = "2026-09-05T01:34:37Z"
 completed_at = "2026-09-06T01:53:11Z"
+estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/Cargo.toml",
     "crates/map-engine-core/src/world/mod.rs",
