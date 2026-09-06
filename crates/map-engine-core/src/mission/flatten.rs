@@ -3142,12 +3142,15 @@ pub fn flatten_to_mod_document(
     // vehicle roster and T-676 lands `editorTriggers` on this same function, both setting the same
     // flag rather than adding a second rung, which is the reuse the plan asks for.
     //
-    // ⚠ THE MOD'S VALIDATOR DOES NOT ACCEPT "1.3" ON ANY SHIPPED BUILD. `TBD_MissionValidator`
-    // hardcodes SCHEMA_1_0/1_1/1_2 and `CheckSchemaVersion` refuses anything else, so a document
-    // that declares 1.3 is rejected server-side and the server parks in LOADING. The allowlist bump
-    // is T-674.2's (the reader slice), and `mission.schema.json`'s own `schemaVersion` description
-    // says it must land with the first slice that emits 1.3 — this one. Until it does, a mission
-    // that authors an identity value compiles to a document today's mod build will not load.
+    // ⚠ WAS: "the mod's validator does not accept 1.3 on any shipped build" — T-674 wrote that when
+    // it was true and the allowlist bump was still ahead of it. **T-674.2 landed it.** Both copies
+    // of `TBD_MissionValidator` (tbd-framework AND tbd-export) now declare `SCHEMA_1_3` and
+    // `CheckSchemaVersion` accepts it beside 1.1/1.2, so a document that declares 1.3 loads. The
+    // note is corrected rather than deleted because a stale "this will not load" over a version
+    // latch is the kind of comment a later slice steers by.
+    //
+    // `mission.schema.json`'s own `schemaVersion` description still carries the pre-T-674 wording
+    // ("flatten.rs still emits 1.1/1.2"); that file is outside this slice's owns.
     let schema_version = if any_1_3_key {
         "1.3"
     } else if any_y {
