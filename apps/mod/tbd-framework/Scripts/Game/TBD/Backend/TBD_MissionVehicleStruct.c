@@ -128,6 +128,17 @@ class TBD_MissionVehicleTwin
 	bool claimed;       //!< True once a roster row has taken it. One-shot, so two rows cannot share one entity.
 }
 
+//! One seat whose `GetInVehicle` was accepted, held until the deferred pass can ask the engine
+//! whether the body actually ended up inside. See `TBD_MissionVehicleRoster.VerifySeatedCrews`.
+class TBD_MissionVehiclePendingSeat
+{
+	IEntity body;      //!< The slot body that was told to get in.
+	IEntity vehicle;   //!< The vehicle it was told to get into.
+	string slotKey;    //!< The slot's durable key, for the log line.
+	string vehicleLabel; //!< The roster row's label, for the log line.
+	string role;       //!< The authored seat role, for the log line.
+}
+
 //! T-675.2 -- the roster reader: the entities[] index, the anti-double-spawn join, crew seating, and
 //! the census that proves one authored vehicle produced exactly one world vehicle.
 class TBD_MissionVehicleRoster
@@ -141,8 +152,20 @@ class TBD_MissionVehicleRoster
 	//! stand HERE in XZ", and terrain height is not the question.
 	protected static const float CENSUS_Y_M = 300.0;
 
+	//! How long to wait before asking the engine whether the accepted seats actually took.
+	//!
+	//! MEASURED, not guessed: `GetInVehicle` returns true in the requesting frame but
+	//! `GetVehicleIn` still answers null there, so a same-frame check reports every seat as
+	//! deferred (four of four on the roster fixture). One second is ~4x `TBD_SpawnManager`'s own
+	//! 250 ms settle tick and well inside the headless boot's settle window, so the verdict lands in
+	//! the same boot log as the request.
+	protected static const int SEAT_VERIFY_DELAY_MS = 1000;
+
 	//! Every `entities[]` row that spawned, in wire order. Rebuilt on each `SpawnMissionEntities`.
 	protected static ref array<ref TBD_MissionVehicleTwin> s_aTwins;
+
+	//! Seats accepted by this pass, awaiting the deferred verification. Rebuilt on each pass.
+	protected static ref array<ref TBD_MissionVehiclePendingSeat> s_aPendingSeats;
 
 	// ---- census scratch. Static because `QueryEntitiesByAABB` takes a plain function pointer, the
 	// same reason `TBD_ObjectiveRegistry.s_QueryResource` is static. Never read outside a query. ----
@@ -242,10 +265,12 @@ class TBD_MissionVehicleRoster
 		if (!roster || roster.Count() == 0)
 			return;
 
+		s_aPendingSeats = new array<ref TBD_MissionVehiclePendingSeat>();
+
 		int joined = 0;
 		int spawned = 0;
 		int skipped = 0;
-		int seated = 0;
+		int seatsAccepted = 0;
 		int seatSkips = 0;
 		int doubles = 0;
 
@@ -295,16 +320,21 @@ class TBD_MissionVehicleRoster
 			}
 
 			int rowSkips;
-			seated += SeatCrew(spawner, veh, body, rowSkips);
+			seatsAccepted += SeatCrew(spawner, veh, body, rowSkips);
 			seatSkips += rowSkips;
 		}
 
-		Print(string.Format("[TBD][Vehicles] roster done rows=%1 joined=%2 spawned=%3 skipped=%4 seated=%5 seatSkips=%6 censusFailures=%7",
-			roster.Count(), joined, spawned, skipped, seated, seatSkips, doubles));
+		Print(string.Format("[TBD][Vehicles] roster done rows=%1 joined=%2 spawned=%3 skipped=%4 seatsAccepted=%5 seatSkips=%6 censusFailures=%7",
+			roster.Count(), joined, spawned, skipped, seatsAccepted, seatSkips, doubles));
 
 		if (doubles > 0)
 			Print(string.Format("[TBD][Vehicles] %1 roster row(s) FAILED the world census -- an authored vehicle reached the world more than once",
 				doubles), LogLevel.ERROR);
+
+		// The line above reports what was REQUESTED. The verdict on what actually happened comes
+		// from the engine a second later; arm it only when there is something to check.
+		if (s_aPendingSeats.Count() > 0)
+			GetGame().GetCallqueue().CallLater(VerifySeatedCrews, SEAT_VERIFY_DELAY_MS, false);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -378,12 +408,16 @@ class TBD_MissionVehicleRoster
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Seat every slot this roster row names. Returns how many bodies were seated; `skipped` counts
-	//! the seats that could not be, each of which has already logged its own reason.
+	//! Seat every slot this roster row names.
+	//!
+	//! Returns how many seats the engine ACCEPTED; `skipped` counts the ones that could not be
+	//! requested at all, each of which has logged its own reason. Accepted is deliberately not
+	//! called seated: only `VerifySeatedCrews`, a second later, can say a body is in the vehicle,
+	//! and conflating the two is the signature defect this program was opened over.
 	protected static int SeatCrew(TBD_SpawnManager spawner, TBD_MissionVehicleStruct veh, IEntity vehicle, out int skipped)
 	{
 		skipped = 0;
-		int seated = 0;
+		int accepted = 0;
 		if (veh.CrewCount() == 0)
 			return 0;
 
@@ -396,12 +430,12 @@ class TBD_MissionVehicleRoster
 			}
 
 			if (SeatOne(spawner, veh, vehicle, seat))
-				seated++;
+				accepted++;
 			else
 				skipped++;
 		}
 
-		return seated;
+		return accepted;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -410,6 +444,9 @@ class TBD_MissionVehicleRoster
 	//! Every failure is REPORTED and skips only that seat: a seat that cannot be filled must never
 	//! cost the rest of the crew their places, and a silently dropped crew plan is the T-216 failure
 	//! this program exists to close.
+	//!
+	//! Returns whether the engine ACCEPTED the seat -- never whether the body ended up in the
+	//! vehicle. Only the deferred `VerifySeatedCrews` pass can answer that.
 	protected static bool SeatOne(TBD_SpawnManager spawner, TBD_MissionVehicleStruct veh, IEntity vehicle, TBD_MissionVehicleSeatStruct seat)
 	{
 		if (seat.slotId.IsEmpty())
@@ -466,19 +503,99 @@ class TBD_MissionVehicleRoster
 			return false;
 		}
 
-		// The resolved compartment is passed as the custom slot, so the authored station is the one
-		// taken -- `MoveInVehicle` would otherwise pick the first free compartment of the type and an
-		// authored ordinal would read as applied while being ignored.
-		if (!access.MoveInVehicle(vehicle, type, false, compartment))
+		// FORCE TELEPORT, AND THIS WAS MEASURED, NOT ASSUMED.
+		//
+		// `MoveInVehicle` was the obvious call and it is the WRONG one here: it returns true for a
+		// request it has merely accepted, and the character then has to WALK to the door and play the
+		// get-in animation. Slot bodies have their AI disabled at spawn (`DisableBodyAI`), so that
+		// walk never happens and the crew would stand beside the vehicle forever while the log said
+		// "seated". Measured on a headless boot of the roster fixture: four seats accepted, zero of
+		// them inside the vehicle -- see the slice report.
+		//
+		// `GetInVehicle(..., forceTeleport = true, ...)` is the immediate form and is what an
+		// AUTHORED crew plan means: the crew START in the vehicle, they do not run to it at mission
+		// load. `doorInfoIndex` is ignored under force teleport (engine doc), so -1 is passed to say
+		// "no door", and the door is left as authored rather than animated shut behind a teleport.
+		// The resolved compartment is passed explicitly, so the authored station is the one taken.
+		if (!access.GetInVehicle(vehicle, compartment, true, -1, ECloseDoorAfterActions.LEAVE_OPEN, false))
 		{
-			Print(string.Format("[TBD][Vehicles] %1 seat slot=%2 role='%3' -- MoveInVehicle refused the compartment",
+			Print(string.Format("[TBD][Vehicles] %1 seat slot=%2 role='%3' -- GetInVehicle refused the compartment",
 				veh.Label(), slot.Key(), seat.role), LogLevel.WARNING);
 			return false;
 		}
 
-		Print(string.Format("[TBD][Vehicles] %1 seated slot=%2 role='%3' index=%4 compartmentType=%5",
+		// A true from the call above says the REQUEST was ACCEPTED. It does not say the body is in the
+		// vehicle, and reporting the first as the second is exactly how a dead mechanism reads as a
+		// working one. Measured on the headless roster fixture: `GetVehicleIn` answers null in the
+		// requesting frame for every one of four accepted seats, force teleport included -- the
+		// engine attaches the occupant later. So the seat is queued for the deferred pass, which asks
+		// the engine itself, and nothing calls it seated until the engine says so.
+		QueuePendingSeat(body, vehicle, slot.Key(), veh.Label(), seat.role);
+
+		Print(string.Format("[TBD][Vehicles] %1 seat accepted slot=%2 role='%3' index=%4 compartmentType=%5 -- awaiting engine confirmation",
 			veh.Label(), slot.Key(), seat.role, seat.index, type));
 		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Hold one accepted seat for the deferred verification pass.
+	protected static void QueuePendingSeat(IEntity body, IEntity vehicle, string slotKey, string vehicleLabel, string role)
+	{
+		if (!s_aPendingSeats)
+			s_aPendingSeats = new array<ref TBD_MissionVehiclePendingSeat>();
+
+		TBD_MissionVehiclePendingSeat pending = new TBD_MissionVehiclePendingSeat();
+		pending.body = body;
+		pending.vehicle = vehicle;
+		pending.slotKey = slotKey;
+		pending.vehicleLabel = vehicleLabel;
+		pending.role = role;
+		s_aPendingSeats.Insert(pending);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! THE SEATING PROOF. Ask the engine, one second after the requests, which bodies are actually in
+	//! the vehicle they were told to get into.
+	//!
+	//! `GetVehicleIn` is the engine's own answer and it is compared against the SPECIFIC vehicle the
+	//! seat named, not merely "some vehicle" -- a crewman in the wrong vehicle is the failure this is
+	//! for, and "is he in a vehicle at all" could not see it. A seat that never confirms is reported
+	//! at WARNING with its slot and role, because an authored crew plan that silently did nothing is
+	//! the T-216 failure this program exists to close.
+	static void VerifySeatedCrews()
+	{
+		if (!s_aPendingSeats || s_aPendingSeats.Count() == 0)
+			return;
+
+		int confirmed = 0;
+		int unconfirmed = 0;
+		foreach (TBD_MissionVehiclePendingSeat pending : s_aPendingSeats)
+		{
+			if (!pending || !pending.body || !pending.vehicle)
+			{
+				unconfirmed++;
+				continue;
+			}
+
+			if (SCR_CompartmentAccessComponent.GetVehicleIn(pending.body) == pending.vehicle)
+			{
+				confirmed++;
+				continue;
+			}
+
+			unconfirmed++;
+			Print(string.Format("[TBD][Vehicles] %1 slot=%2 role='%3' -- accepted but the engine STILL does not report the body in this vehicle after %4 ms; the authored crew plan did not take effect for this seat",
+				pending.vehicleLabel, pending.slotKey, pending.role, SEAT_VERIFY_DELAY_MS), LogLevel.WARNING);
+		}
+
+		LogLevel level = LogLevel.NORMAL;
+		if (unconfirmed > 0)
+			level = LogLevel.WARNING;
+
+		Print(string.Format("[TBD][Vehicles] seating verified inVehicle=%1 of %2 accepted (%3 unconfirmed after %4 ms)",
+			confirmed, s_aPendingSeats.Count(), unconfirmed, SEAT_VERIFY_DELAY_MS), level);
+
+		s_aPendingSeats = null;
 	}
 
 	//------------------------------------------------------------------------------------------------
