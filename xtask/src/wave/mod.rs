@@ -81,6 +81,8 @@ pub mod status;
 pub mod test_cmd;
 pub mod touch;
 pub mod trunk;
+/// T-924 — the gate verdict receipt `land` refuses to merge without.
+pub mod verdict;
 
 /// `sed -n '2,40p' "$0"` — the historical header, printed verbatim on an unknown command.
 ///
