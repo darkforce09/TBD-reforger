@@ -1026,6 +1026,9 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		// already put in the world rather than spawning a second copy of it, then seats the slots it
 		// names. A rosterless mission returns on the first line and behaves exactly as before.
 		TBD_MissionVehicleRoster.SeatAuthoredCrews(this);
+		// T-680 -- authored lock / fuel / ammo. Vehicles exist only after the roster
+		// join-or-spawn above; unset attributes are sentinels and leave engine defaults.
+		TBD_VehicleState.ApplySpawned();
 
 		if (built <= 0)
 			return;
