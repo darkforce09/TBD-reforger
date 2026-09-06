@@ -223,6 +223,11 @@ pub struct ModSlotGear {
     pub optic: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub magazine: Option<String>,
+    /// T-310 — Arsenal attachment ResourceNames from SlotLoadoutV2 `weapons[].attachments`
+    /// on the (0, primary) rifle. Empty lists omit the key so loadouts without attachments
+    /// stay byte-identical to the pre-T-310 document.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub attachments: Vec<String>,
     /// T-182 — the other three authored weapon slots. Named with the EDITOR's own vocabulary
     /// (`arsenal_rules.rs` `WEAPON_SLOTS`) so the compiled document reads the same words the
     /// Arsenal UI shows. None of the three carry optic/magazine sub-slots — those ride the
@@ -254,6 +259,7 @@ impl ModSlotGear {
         self.primary.is_none()
             && self.optic.is_none()
             && self.magazine.is_none()
+            && self.attachments.is_empty()
             // T-182 — a launcher-only (or throwable-only) gear block is authored content. Omit
             // these three and `mod_slot_loadout` would drop the whole `loadout` key for such a
             // slot, so the fields would never reach the wire in the one case they are the only
@@ -2045,6 +2051,17 @@ fn mod_slot_loadout(lo: &serde_json::Value) -> Option<ModSlotLoadout> {
         // sub-slots in the editor, so nothing is being dropped by not reading them there.
         gear.optic = non_empty(primary.get("optic"));
         gear.magazine = non_empty(primary.get("magazine"));
+        // T-310 — SlotLoadoutV2 weapons[].attachments edges on the (0,primary) rifle.
+        // Empty strings drop; an empty list omits the compiled key (byte-identical to today).
+        gear.attachments = primary
+            .get("attachments")
+            .and_then(serde_json::Value::as_array)
+            .map(|rows| {
+                rows.iter()
+                    .filter_map(|v| v.as_str().filter(|s| !s.is_empty()).map(String::from))
+                    .collect()
+            })
+            .unwrap_or_default();
     }
     gear.launcher = weapon_at(1, "primary").and_then(|w| non_empty(w.get("weapon")));
     gear.handgun = weapon_at(2, "secondary").and_then(|w| non_empty(w.get("weapon")));
@@ -4140,6 +4157,10 @@ mod tests {
             ),
             (Some("res://m72"), Some("res://m9"), Some("res://m67"))
         );
+        assert!(
+            g.attachments.is_empty(),
+            "FIXTURE attachments: [] must not emit gear.attachments"
+        );
         assert_eq!(lo.cargo.len(), 2);
         assert_eq!(
             (lo.cargo[0].container.as_str(), lo.cargo[0].qty),
@@ -4148,6 +4169,12 @@ mod tests {
         // s2 (no loadout) + s3 (all-empty loadout) omit the key entirely on the wire.
         assert!(doc.slots[1].loadout.is_none() && doc.slots[2].loadout.is_none());
         let wire = serde_json::to_value(&doc).unwrap();
+        assert!(
+            wire["slots"][0]["loadout"]["gear"]
+                .get("attachments")
+                .is_none(),
+            "empty attachments[] must omit the compiled key (byte-identical to pre-T-310)"
+        );
         assert!(wire["slots"][1].get("loadout").is_none());
         assert!(wire["slots"][2].get("loadout").is_none());
         // s4: cargo-only loadout → gear key omitted, cargo verbatim (qty 40 preserved).
@@ -5606,6 +5633,7 @@ mod tests {
                 Some("res://stanag")
             )
         );
+        assert!(g.attachments.is_empty());
 
         // The PAIR is the selector, not the index: a row at the right index with the wrong
         // slotType is not silently promoted into the key it half-matches.
@@ -5626,6 +5654,45 @@ mod tests {
         let m = mod_slot_loadout(&lo).expect("cargo-only");
         assert!(m.gear.is_none());
         assert_eq!(m.cargo.len(), 1);
+    }
+
+    /// T-310 — a suppressor on the (0,primary) SlotLoadoutV2 attachments edge reaches compiled gear.
+    #[test]
+    fn arsenal_suppressor_edge_reaches_compiled_gear() {
+        const SUPPRESSOR: &str =
+            "{E52C9791E1554A5F}Prefabs/Weapons/Attachments/Muzzle/Suppressor_M16/Suppressor_M16.et";
+        let lo = serde_json::json!({
+            "weapons": [{
+                "slotIndex": 0,
+                "slotType": "primary",
+                "weapon": "res://m16",
+                "optic": "res://acog",
+                "magazine": "res://stanag",
+                "attachments": [SUPPRESSOR, ""]
+            }]
+        });
+        let g = mod_slot_loadout(&lo).expect("gear").gear.expect("gear");
+        assert_eq!(g.attachments, vec![SUPPRESSOR.to_string()]);
+        let wire = serde_json::to_value(&g).expect("serialize gear");
+        assert_eq!(wire["attachments"][0], SUPPRESSOR);
+
+        let lo_empty = serde_json::json!({
+            "weapons": [{
+                "slotIndex": 0,
+                "slotType": "primary",
+                "weapon": "res://m16",
+                "attachments": []
+            }]
+        });
+        let g_empty = mod_slot_loadout(&lo_empty)
+            .expect("gear")
+            .gear
+            .expect("gear");
+        let wire_empty = serde_json::to_value(&g_empty).expect("serialize empty-attach gear");
+        assert!(
+            wire_empty.get("attachments").is_none(),
+            "empty attachments must omit the key: {wire_empty}"
+        );
     }
 
     #[test]

@@ -263,6 +263,8 @@ class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 					// have no sub-slots in the editor, so nothing is dropped by not reading them.
 					gear.optic = w.optic;
 					gear.magazine = w.magazine;
+					if (w.attachments && w.attachments.Count() > 0)
+						gear.attachments = w.attachments;
 				}
 				else if (w.slotIndex == 1 && w.slotType == "primary")
 					gear.launcher = w.weapon;
@@ -279,11 +281,9 @@ class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 					continue;
 				}
 
-				// T-197 - attachments are authored per weapon, but this equip path mounts only the
-				// primary's optic and magazine (TBD_SlotGearStruct carries no attachment field, so
-				// the compiled mission cannot express them either). Say so by name; a file whose
-				// suppressor silently vanished is exactly the kind of quiet loss T-181.10 banned.
-				if (w.attachments && !w.attachments.IsEmpty())
+				// T-310 - primary attachments copy onto gear.attachments and the helper mounts them.
+				// Other weapons' attachment edges still have no compiled slot; name the loss.
+				if (!(w.slotIndex == 0 && w.slotType == "primary") && w.attachments && !w.attachments.IsEmpty())
 					Print(string.Format("[TBD][Loadout] WARNING: %1 attachment(s) authored on %2 are NOT mounted - this path mounts only the primary's optic and magazine", w.attachments.Count(), w.weapon), LogLevel.WARNING);
 			}
 		}
