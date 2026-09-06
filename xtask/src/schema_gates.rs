@@ -2008,12 +2008,6 @@ struct UnreadField {
 const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
     // T-212 / T-685 — objectives[] typed entities + capture/defend/height rules on zoneRules.
     UnreadField {
-        name: "editorTriggers",
-        expected: 0,
-        ticket: "T-079/T-676",
-        why: "no identifier of this spelling in the mod",
-    },
-    UnreadField {
         name: "attackerCount",
         expected: 0,
         ticket: "T-685",
@@ -2098,19 +2092,10 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         ticket: "T-675",
         why: "briefing/lobby seat-count UI identifiers, unrelated to vehicle.seats crew plan",
     },
-    // T-676 / T-079 — trigger activation/effects.
-    UnreadField {
-        name: "activation",
-        expected: 0,
-        ticket: "T-676",
-        why: "clean",
-    },
-    UnreadField {
-        name: "effects",
-        expected: 0,
-        ticket: "T-676",
-        why: "clean",
-    },
+    // T-676 / T-079 — trigger activation/effects: RETIRED 2026-09-06. `editorTriggers`,
+    // `activation`, `effects` and `variantId` all gained readers when TBD_TriggerRuntime.c landed,
+    // so their "no reader on any shipped build" assertions are retired rather than re-pinned — a
+    // non-zero baseline here means a pre-existing UNRELATED identifier, which these are not.
     // T-677 — per-squad waypoints.
     UnreadField {
         name: "waypoints",
@@ -2318,12 +2303,6 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         why: "radio/gadget subsystem identifiers, unrelated to the slot.gadgets flag block",
     },
     // T-654 — variant conditional-inclusion.
-    UnreadField {
-        name: "variantId",
-        expected: 0,
-        ticket: "T-654",
-        why: "clean",
-    },
     // The top-level `variants[]` registry itself — the only new top-level array that lacked a row
     // (objectives/vehicles/editorTriggers/missionParams all have one). Measured clean 0.
     UnreadField {
