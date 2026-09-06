@@ -232,3 +232,51 @@ edit, in-editor play button.
   other site refuses 1.3; and the two copies stay structurally identical, differing only in string
   punctuation, each obeying its own tree's ASCII rule. It also confirmed the re-aimed API test
   (`26f7a785a`) and the hand-stamped `created_at` on T-674.1 against the file's first commit.
+
+- 2026-09-06 **WAVE 241 CLOSED** (`cd37d1a78`) — T-675.1 the authored vehicle roster onto top-level
+  `vehicles[]` at schema 1.3, T-935.11 the prefab catalogue / forest regions / type inventory to
+  rkyv with archive fetch branches for roads and regions, T-676 the Enfusion trigger runtime (2107
+  lines: six conditions, seven effects, a 1 Hz LIVE-only tick). Closed from a RESERVED pending
+  entry — the wave dissolved id by id again and `wave repack --reserve` is what repaired it, its
+  first use on a live wave.
+- 2026-09-06 **The mod compile gate worked again for the first time this run** (T-946.3,
+  `2392a2513`). Three tbd-export WorkbenchGame scripts carried 15 em-dashes and failed the gate's
+  pre-compile ASCII scan, so `cargo xtask mod compile` had never reached the compiler — which is
+  why wave 240's edit to both copies of `TBD_MissionValidator.c` shipped uncompiled. Fifteen
+  characters. The gate now reports `OK: compiled clean, 5740 files, 11314 classes`, and both
+  validator copies are inside that count.
+- 2026-09-06 `wave land` had been aborting after the merge on every wave since the close-marker
+  ledger started moving (T-946.14, `a0a762416`): its post-merge gate used pre-merge HEAD as the
+  diff anchor, which the gate's own T-602 base check refuses whenever main moved after the wave's
+  close marker — a ledger row and the wave's briefs are enough. The merge precedes the gate, so
+  the operator was left with a landed slice, no bookkeeping and a refusal naming a base nobody
+  chose. The anchor moved; the revert target kept its job and is printed under its own name.
+- 2026-09-06 T-676's slice gate went RED on `schema`, and it was red BECAUSE the ticket succeeded:
+  T-706's unread-wire-field invariant pins per field that a 1.3 key has no identifier of that
+  spelling anywhere in the mod, and `editorTriggers` (2), `activation` (15), `effects` (6) and
+  `variantId` (4) all gained readers at once. Rows RETIRED rather than re-pinned — a non-zero
+  baseline in that table means a pre-existing UNRELATED identifier and a test enforces exactly that
+  wording, so pinning real readers at 4/6/15 would have been a lie the test would have to be
+  weakened to accept. The two schema descriptions that asserted no reader were corrected in the
+  same commit, and so was `schemaVersion`'s, which had been telling every reader since e5f46e4fc
+  that the shipped mod would REJECT a 1.3 document and that flatten still emits 1.1/1.2.
+- 2026-09-06 Wave 241 verifier: 13 findings, 2 MAJOR. **T-946.18: one authored vehicle emits TWO
+  rows and they had no join key.** T-675.1's own comment called `uid` the key; `ModEntity` had no
+  such field and `$defs/entity` is `additionalProperties: false`. The mod already spawns
+  `entities[]`, so a roster reader would have spawned every crewed vehicle twice. Fixed, along with
+  the roster row silently TRIMMING `inventory` — a value the schema declares, the editor authors
+  and the entity twin emits. **T-946.19**: `not_present` read TRUE over a live player whose slot had
+  not resolved (a section mid-respawn read as an empty zone, and `not_present` + `end_mission` ends
+  the round over them); `repeat` was silently inert for `timer` because a TIMER never falls; the
+  heartbeat had no idempotence latch, and two timers on one instance both pass the stale-timer
+  defence, halving every authored `timeoutSeconds`. Also fixed: `archives.rs` documented
+  `half_extents` as zero-when-absent while the writer spells NaN (zero is a LEGAL half-extent), and
+  the `by_kind` census order was pinned only at its ends in both crates. Filed: T-946.20 (trigger
+  semantics live only in the code), T-946.21 (a foreign-generation objects archive loads while
+  chunks fall back to JSON), T-946.22 (the unread-field gate cannot force stale wording out).
+- 2026-09-06 Two gaps the wave could not close itself. **T-935.14** (READY, packed into the next
+  wave): `objects/prefabs.rkyv` is emitted, verified and UNREACHABLE — both SPA prefab consumers go
+  through `load_prefabs_gz`, which only understands gzipped JSON, so the fetch T-935.11 could not
+  add would have handed its bytes to nothing. **T-946.17**: neither the slice gate nor the wave gate
+  has a `mod compile` step, so 2107 lines of Enfusion landed with no gate compiling them; the
+  command centre ran it by hand, which is the manual step a gate exists to remove.
