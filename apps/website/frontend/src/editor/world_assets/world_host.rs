@@ -6,7 +6,9 @@ use map_engine_core::geometry::polyline_strip::road_class_signature;
 use map_engine_core::geometry::vector_compose::{
     compose_landcover_mesh, compose_roads_mesh, LandcoverInput, PolyMeshGpu, RoadInput, RoadMeshGpu,
 };
-use map_engine_core::world::{chunk_bin_path, parse_manifest_binary, WorldResidency, WorldStore};
+use map_engine_core::world::{
+    chunk_bin_path, parse_manifest_binary, regions_from_bytes, WorldResidency, WorldStore,
+};
 // T-596 — vector-lane ids come from the engine's `role_id`, never a hand-copied literal: a private
 // `const ROLE_AIRFIELD_APRON: u32 = 8` has no compile-time link to `lane_role_from_u32`, so a
 // renumber there silently uploads the apron to whatever lane 8 became instead of failing the build.
@@ -139,17 +141,36 @@ impl WorldHost {
             .unwrap_or("objects/forest-regions.json.gz");
         self.asset_base = base.clone();
         self.chunks_path = chunks.to_string();
+        let objects_bin = parse_manifest_binary(&v).objects;
         // T-935.3 — take the `.bin` chunk path only when the manifest's `objects.binary` block
         // describes a container AND a row shape this build actually implements
         // (`matches_this_build`: TBDC v1, `ObjectInstancePod`, 32 bytes). Reading a future 24-byte
         // row at a 32-byte stride would not error — it would draw a map made of garbage — so a
         // block this loader does not understand falls back to the `.json.gz` path that works.
-        self.chunks_bin = parse_manifest_binary(&v)
-            .objects
+        self.chunks_bin = objects_bin
+            .as_ref()
             .filter(|b| b.matches_this_build())
-            .map(|b| b.chunks);
+            .map(|b| b.chunks.clone());
+        // T-935.11 — the Tier-2 archive paths out of the SAME block, but deliberately NOT behind
+        // `matches_this_build`: that predicate is about the chunk container and the POD row, and
+        // an rkyv archive answers for itself (`schema_version`, checked by its own reader). A
+        // manifest that names archives beside a chunk container this build cannot read should
+        // still get its archives. An empty string is "the block does not name one" — every field
+        // of `ObjectsBinaryBlock` is `serde(default)`.
+        let named = |p: &String| (!p.is_empty()).then(|| p.clone());
+        let roads_bin = objects_bin.as_ref().and_then(|b| named(&b.roads));
+        let regions_bin = objects_bin.as_ref().and_then(|b| named(&b.regions));
 
         if let Some(bytes) = fetch_bytes(&format!("{base}/{prefabs}")).await {
+            // T-935.11 — this fetch has NO archive branch, and that is a reported gap rather than
+            // an oversight: `objects.binary.prefabs` names a `PrefabCatalogArchive`
+            // (`map_engine_core::world::catalog_from_bytes` reads it, everon-pinned), but the only
+            // consumer here is `WorldResidency`, whose prefab state is private and is derived from
+            // the JSON `Value` (`building_prefab_lookup` / `fence_prefab_lookup` / the glyph
+            // lookup). Feeding it the archive needs a `WorldResidency::load_prefabs` sniff in
+            // `residency.rs`, which T-935.11 does not own. Adding a fetch that could not reach the
+            // residency would be a fast path that cannot fire, so the JSON stays the only route
+            // until that method exists.
             let _ = self.residency.load_prefabs_gz(&bytes);
             // T-090.12.5 — size the occluder from the residency and prefetch the hot set.
             self.occluder.init(&base, &self.residency).await;
@@ -162,24 +183,69 @@ impl WorldHost {
         // Two files (JSON + WebP), and it reports them itself so a bail-out between them is not
         // counted as both.
         self.atlas = load_glyph_atlas(report).await;
-        if let Some(bytes) = fetch_bytes(&format!("{base}/{roads}")).await {
-            if self.store.load_roads_gz(&bytes).is_ok() {
-                self.roads_loaded = true;
-                // T-173 H6 — derive the NW Everon airfield bbox from the runway segments so the
-                // hangar/tower airfield glyphs (and the apron toggle) become live (T-152.5).
-                let runways: Vec<_> = self.store.runway_segments().into_iter().cloned().collect();
-                self.residency.set_airfield_bbox_from_runways(&runways);
-            }
+        // T-935.11 — roads: the archive when the manifest names one, the gz JSON otherwise.
+        // `WorldStore::load_roads` sniffs the two formats (T-935.6), so both routes are the same
+        // call and a `.rkyv` served under a `.json.gz` name still decodes correctly.
+        self.roads_loaded = self.load_roads(&base, roads_bin.as_deref(), roads).await;
+        if self.roads_loaded {
+            // T-173 H6 — derive the NW Everon airfield bbox from the runway segments so the
+            // hangar/tower airfield glyphs (and the apron toggle) become live (T-152.5).
+            let runways: Vec<_> = self.store.runway_segments().into_iter().cloned().collect();
+            self.residency.set_airfield_bbox_from_runways(&runways);
         }
         done();
-        if let Some(bytes) = fetch_bytes(&format!("{base}/{regions}")).await {
-            if self.store.load_forest_regions_gz(&bytes).is_ok() {
-                self.landcover_ready = true;
-            }
-        }
+        self.landcover_ready = self
+            .load_regions(&base, regions_bin.as_deref(), regions)
+            .await;
         done();
         self.ready = true;
         true
+    }
+
+    /// T-935.11 — load the road network, archive first when the manifest names one.
+    ///
+    /// Returns whether a network is loaded. The archive is *preferred*, not required: a named
+    /// archive that will not fetch or will not decode falls through to the `.json.gz` path, which
+    /// is the route that has always worked and stays the default until T-935.13. That fallback is
+    /// what makes it safe to point the manifest at a binary asset before the file is on the CDN —
+    /// the cost of getting it wrong is a slower boot, never a blank map.
+    ///
+    /// Both routes go through `WorldStore::load_roads`, which sniffs gzip-vs-rkyv on the bytes
+    /// (T-935.6) rather than trusting the URL, so a mislabelled file decodes as what it is.
+    async fn load_roads(&mut self, base: &str, bin: Option<&str>, json: &str) -> bool {
+        if let Some(path) = bin {
+            if let Some(bytes) = fetch_bytes(&format!("{base}/{path}")).await {
+                if self.store.load_roads(&bytes).is_ok() {
+                    return true;
+                }
+            }
+        }
+        match fetch_bytes(&format!("{base}/{json}")).await {
+            Some(bytes) => self.store.load_roads(&bytes).is_ok(),
+            None => false,
+        }
+    }
+
+    /// T-935.11 — load the land-cover regions, archive first when the manifest names one; same
+    /// fallback contract as [`load_roads`](Self::load_roads).
+    ///
+    /// The two formats do not share an entry point here the way roads do: `WorldStore` has no
+    /// regions sniff (`store.rs` is T-935.6's file, not this slice's), so the archive route calls
+    /// `regions_from_bytes` — which validates the buffer, checks `schema_version`, and refuses any
+    /// region the JSON parser would have dropped — and assigns the store's public `regions` field.
+    async fn load_regions(&mut self, base: &str, bin: Option<&str>, json: &str) -> bool {
+        if let Some(path) = bin {
+            if let Some(bytes) = fetch_bytes(&format!("{base}/{path}")).await {
+                if let Ok(regions) = regions_from_bytes(&bytes) {
+                    self.store.regions = regions;
+                    return true;
+                }
+            }
+        }
+        match fetch_bytes(&format!("{base}/{json}")).await {
+            Some(bytes) => self.store.load_forest_regions_gz(&bytes).is_ok(),
+            None => false,
+        }
     }
 
     /// One residency settle pass. Returns whether it did real work (fetched, drained, or pushed a
