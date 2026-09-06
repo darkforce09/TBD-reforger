@@ -225,13 +225,20 @@ impl OccluderHost {
     /// `blas_seen` suppresses only re-issues, never a refetch that matters: a sidecar the byte
     /// budget evicted is re-listed by `wanted()` (the descriptor is loaded by then, and `wanted`
     /// asks `blas.contains_key`), and that path is untouched here.
+    /// The round's fetch budget is unchanged: `wanted()` caps its own list at
+    /// [`WANT_PER_PASS`] and so does this. A 96-pid round of multi-instance buildings names
+    /// hundreds of distinct sidecars, and issuing all of them would turn one drain round into a
+    /// boot stall — the archive is meant to remove a round-trip, not to change the pacing.
     fn with_archive_blas(&self, have: Vec<String>, pids: &[u16]) -> Vec<String> {
         let mut out = have;
-        for pid in pids {
+        'pids: for pid in pids {
             let Some(paths) = self.archive_blas.get(pid) else {
                 continue;
             };
             for p in paths {
+                if out.len() >= WANT_PER_PASS {
+                    break 'pids;
+                }
                 if !self.blas_seen.contains(p) && !out.contains(p) {
                     out.push(p.clone());
                 }
