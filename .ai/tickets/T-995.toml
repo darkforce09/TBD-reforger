@@ -1,0 +1,11 @@
+id = "T-995"
+kind = "work"
+title = "Smoothed forest regions are dropped before render"
+summary = "The world host filters out every region of kind forest, and all 36 everon regions are forest, so no smoothed edge reaches the map. The larger payload is fetched on load and discarded."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T07:23:56Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

@@ -1,0 +1,11 @@
+id = "T-998"
+kind = "work"
+title = "Container version is read as u16 and u32"
+summary = "The browser reads a 16 bit version and the tool reads 32 bits, so a v2 container with non-zero flags is version 2 to one and unsupported to the other."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T07:24:33Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

@@ -490,8 +490,23 @@ impl WorldHost {
                 // down that same path. The two ingests have different error types, so the branch
                 // compares success rather than matching one `Result`.
                 Some(bytes) => {
+                    // T-946: SAY WHY, or the tile just goes blank. `ChunkBinError` distinguishes a
+                    // corrupt container from well-formed bytes served for ANOTHER tile, and that
+                    // second case is a server or manifest fault no amount of retrying fixes — but
+                    // the error was being dropped by `is_ok()`, so a mis-served tile failed closed
+                    // and silently, and after `FETCH_FAILURE_CAP` became a permanently empty chunk
+                    // with nothing in the console. The wave 239 verifier proved the diagnostic was
+                    // unreachable by grepping the gate's own wasm bundle for its text: zero hits.
                     let applied = if next.binary {
-                        self.residency.ingest_chunk_bin(&next.id, &bytes).is_ok()
+                        match self.residency.ingest_chunk_bin(&next.id, &bytes) {
+                            Ok(_) => true,
+                            Err(e) => {
+                                web_sys::console::warn_1(
+                                    &format!("world: chunk {} rejected: {e}", next.id).into(),
+                                );
+                                false
+                            }
+                        }
                     } else {
                         self.residency.ingest_chunk_gz(&next.id, &bytes).is_ok()
                     };

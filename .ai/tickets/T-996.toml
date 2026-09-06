@@ -1,0 +1,11 @@
+id = "T-996"
+kind = "work"
+title = "The v2 satellite verifier checks less than v1"
+summary = "The v1 verifier cross-checks the index world bounds and terrain against the manifest; the v2 verifier takes no manifest and the v2 index carries neither field. v2 is now the build default."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T07:24:02Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

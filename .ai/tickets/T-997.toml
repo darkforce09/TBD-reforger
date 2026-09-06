@@ -1,0 +1,11 @@
+id = "T-997"
+kind = "work"
+title = "Everon tiling pins never read the committed bundle"
+summary = "Two tests say the expected tiling is read off the bundle, but both compute it from hardcoded constants with no file access. The real bundle does verify, yet no gate step runs that verifier."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T07:24:26Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
