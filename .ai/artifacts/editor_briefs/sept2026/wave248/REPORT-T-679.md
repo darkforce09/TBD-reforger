@@ -7,7 +7,7 @@
 slice/T-679
 ```
 
-First action of the run, before any edit. HEAD at start: `4b01ae415` (T-942 twin-widen). Tree left committed on `580a5304c3e9a4fcfe5419eb7f0932484f9bde8f`.
+First action of the run, before any edit. HEAD at start: `4b01ae415` (T-942 twin-widen). Code commit `580a5304c3e9a4fcfe5419eb7f0932484f9bde8f`; this report is a follow-on commit on the same branch.
 
 ## defect_verified_on_main
 
@@ -150,6 +150,7 @@ T-706 unread 1.3 wire fields (each must stay reader-free until its ticket lands)
 ## commits
 
 - `580a5304c3e9a4fcfe5419eb7f0932484f9bde8f` — `T-679: scatter slot and group spawns by placement radius.`
+- report commit on this branch — `T-679: record wave 248 slice report.`
 
 Not pushed. Not merged. Tickets/registry untouched.
 
