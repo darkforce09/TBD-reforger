@@ -294,6 +294,17 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! it was refused but not why; this carries the why to them instead of only to the console.
 	protected string m_sLastStageRefusal;
 
+	//! T-291 — authored `settings.spectatorPolicy`. Replicated so the CLIENT spectator controller
+	//! can enforce none / own-side delay / free. MissionLoader applies the same enum on the server,
+	//! but SpectatorTargets is a process-local static and does not cross the wire.
+	[RplProp()]
+	protected string m_sSpectatorPolicy;
+
+	//! T-291 — authored `settings.nightVision`. Server applies it by stripping NVG gadgets when
+	//! false. Replicated so a client can read the latch; the strip itself is authority-only.
+	[RplProp()]
+	protected bool m_bNightVision;
+
 	//! T-181.38 — the round clock is not running. Negative rather than 0 for the same reason
 	//! `TBD_SafestartManager.NOT_RUNNING` is: a 0 would read as "about to expire".
 	protected static const int ROUND_CLOCK_OFF = -1;
@@ -359,10 +370,31 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! T-291 — authored `settings.spectatorPolicy`, or empty when the mission omitted the key.
+	//! SpectatorController on the client is the consumer.
+	string GetSpectatorPolicy()
+	{
+		return m_sSpectatorPolicy;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-291 — authored `settings.nightVision`. False when unauthored (JsonLoadContext default).
+	bool IsNightVisionAllowed()
+	{
+		return m_bNightVision;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! @authority server — mission load and the stage machine run on the server only.
 	override void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);
+
+		// T-291 — NVG strip on spawn. Same invoker SpawnManager uses: SCR_BaseGameModeComponent
+		// has no OnPlayerSpawned virtual in 1.7.
+		SCR_BaseGameMode gm = SCR_BaseGameMode.Cast(owner);
+		if (gm)
+			gm.GetOnPlayerSpawned().Insert(OnPlayerSpawnedApplyNvg);
 
 		// Deferred one frame so sibling components are certainly constructed — the roll-call
 		// must not report MISSING merely because it asked too early.
@@ -400,7 +432,12 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			// flow.timeLimitSeconds — 90 minutes on bridgehead), so it is by far the most likely to
 			// still be pending across an in-process scenario restart.
 			queue.Remove(TickRoundClock);
+			queue.Remove(StripNightVisionForPlayer);
 		}
+
+		SCR_BaseGameMode gm = SCR_BaseGameMode.Cast(owner);
+		if (gm)
+			gm.GetOnPlayerSpawned().Remove(OnPlayerSpawnedApplyNvg);
 
 		super.OnDelete(owner);
 	}
@@ -495,6 +532,8 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		// leaves LOADING. `flow.safeStartSeconds` in particular has to reach TBD_SafestartManager
 		// while it is still impossible for SAFE_START to have been entered.
 		ApplyMissionFlow();
+		ApplyAuthoredWeather();
+		ApplyAuthoredSettings();
 
 		TBD_Registry.Load();
 
@@ -547,6 +586,144 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 		// T-563 — refuse/pending handled inside SetStage via StageRefusalFor (same as admin).
 		SetStage(TBD_EGameStage.LOBBY);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-291 — apply `environment.windDirDeg` through the world's weather manager.
+	//!
+	//! T-682's TBD_EnvironmentReader already applies fog/wind/windDirDeg/viewDistance at parse.
+	//! This is the FrameworkManager weather-setup half the ticket names: the direction override
+	//! is re-applied here from the loaded document so a reader in THIS file owns the field.
+	//! Presence is the ABSENT sentinel, never `if (doc.environment)`.
+	//! @authority server
+	protected void ApplyAuthoredWeather()
+	{
+		TBD_MissionDocumentStruct mission = TBD_MissionLoader.GetMission();
+		if (!mission)
+			return;
+
+		TBD_MissionEnvironmentStruct env = mission.environment;
+		if (!env)
+			return;
+
+		// JsonLoadContext allocates nested refs when the key is absent; presence is the sentinel.
+		if (env.windDirDeg == TBD_MissionEnvironmentStruct.ABSENT)
+			return;
+
+		if (env.windDirDeg < 0 || env.windDirDeg > 360)
+		{
+			Print(string.Format("[TBD][Weather] windDirDeg=%1 outside 0..360 — not applied", env.windDirDeg), LogLevel.WARNING);
+			return;
+		}
+
+		BaseWorld baseWorld = GetGame().GetWorld();
+		ChimeraWorld world = ChimeraWorld.CastFrom(baseWorld);
+		if (!world)
+		{
+			Print("[TBD][Weather] no ChimeraWorld — windDirDeg not applied", LogLevel.ERROR);
+			return;
+		}
+
+		TimeAndWeatherManagerEntity tw = world.GetTimeAndWeatherManager();
+		BaseWeatherManagerEntity weather = BaseWeatherManagerEntity.Cast(tw);
+		if (!weather)
+		{
+			Print("[TBD][Weather] no BaseWeatherManagerEntity — windDirDeg not applied", LogLevel.ERROR);
+			return;
+		}
+
+		if (!weather.SetWindDirectionOverride(true, env.windDirDeg))
+		{
+			Print(string.Format("[TBD][Weather] SetWindDirectionOverride failed windDirDeg=%1", env.windDirDeg), LogLevel.WARNING);
+			return;
+		}
+
+		Print(string.Format("[TBD][Weather] windDirDeg=%1 applied", env.windDirDeg), LogLevel.NORMAL);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-291 — latch authored settings onto replicated fields. SpectatorController on the client
+	//! reads GetSpectatorPolicy(); this file applies nightVision by stripping NVG gadgets when off.
+	//! @authority server
+	protected void ApplyAuthoredSettings()
+	{
+		TBD_MissionSettingsStruct s = TBD_MissionLoader.GetSettings();
+		if (!s)
+		{
+			m_sSpectatorPolicy = string.Empty;
+			m_bNightVision = false;
+			Replication.BumpMe();
+			return;
+		}
+
+		m_sSpectatorPolicy = s.spectatorPolicy;
+		m_bNightVision = s.nightVision;
+		Replication.BumpMe();
+
+		if (m_sSpectatorPolicy.IsEmpty())
+			Print("[TBD][Settings] spectatorPolicy=<absent> (SpectatorController keeps current enter rules)", LogLevel.NORMAL);
+		else
+			Print(string.Format("[TBD][Settings] spectatorPolicy=%1 latched for clients", m_sSpectatorPolicy), LogLevel.NORMAL);
+
+		if (m_bNightVision)
+			Print("[TBD][Settings] nightVision=true — NVG gadgets are allowed", LogLevel.NORMAL);
+		else
+			Print("[TBD][Settings] nightVision=false — NVG gadgets stripped on spawn", LogLevel.NORMAL);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-291 — after a body exists, strip night-vision gadgets when the mission forbids them.
+	//! Delayed so TBD_LoadoutEquipHelper's async dress can finish (T-541 settle).
+	//! @authority server
+	protected void OnPlayerSpawnedApplyNvg(int playerId, IEntity controlledEntity)
+	{
+		if (RplSession.Mode() == RplMode.Client || !controlledEntity)
+			return;
+		if (m_bNightVision)
+			return;
+
+		GetGame().GetCallqueue().CallLater(StripNightVisionForPlayer, 1500, false, playerId);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! @authority server
+	protected void StripNightVisionForPlayer(int playerId)
+	{
+		if (m_bNightVision)
+			return;
+
+		PlayerManager players = GetGame().GetPlayerManager();
+		if (!players)
+			return;
+
+		IEntity body = players.GetPlayerControlledEntity(playerId);
+		if (!body)
+			return;
+
+		SCR_GadgetManagerComponent gadgetMgr = SCR_GadgetManagerComponent.GetGadgetManager(body);
+		if (!gadgetMgr)
+			return;
+
+		array<SCR_GadgetComponent> nvgs = gadgetMgr.GetGadgetsByType(EGadgetType.NIGHT_VISION);
+		if (!nvgs)
+			return;
+
+		int removed = 0;
+		foreach (SCR_GadgetComponent g : nvgs)
+		{
+			if (!g)
+				continue;
+
+			IEntity item = g.GetOwner();
+			if (!item)
+				continue;
+
+			SCR_EntityHelper.DeleteEntityAndChildren(item);
+			removed++;
+		}
+
+		if (removed > 0)
+			Print(string.Format("[TBD][Settings] nightVision=false — removed %1 NVG gadget(s)", removed), LogLevel.NORMAL);
 	}
 
 	// ══ T-181.38 — THE `flow` BLOCK ═══════════════════════════════════════════════════════════
