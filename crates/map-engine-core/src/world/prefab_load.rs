@@ -731,6 +731,41 @@ mod tests {
         assert!(msg.contains("everon") && msg.contains("arland"), "{msg}");
     }
 
+    /// Rule 17 — `world_host`'s new archive branch is reachable, not decoration. Its whole
+    /// predicate is `objects.binary.prefabs` being a non-empty string, and that is what this
+    /// checks, over a manifest shaped like the one T-935.13 will ship. The second half is why the
+    /// branch nevertheless makes no request on a live boot today: the committed everon manifest
+    /// names no `objects.binary` block at all, so the JSON path is still the one that runs.
+    /// (`world_host` itself is `wasm32`-only and has no test harness; the other half of that
+    /// branch — archive bytes actually reaching a residency — is the everon pin above.)
+    #[test]
+    fn the_manifest_can_name_the_archive_the_host_branch_fetches() {
+        let named = |b: &super::super::manifest::ObjectsBinaryBlock| {
+            (!b.prefabs.is_empty()).then(|| b.prefabs.clone())
+        };
+        let declared: Value = serde_json::from_str(
+            r#"{ "objects": { "prefabsPath": "objects/prefabs.json.gz",
+                              "chunksPath": "objects/chunks",
+                              "binary": { "prefabs": "objects/prefabs.rkyv" } } }"#,
+        )
+        .unwrap();
+        let block = super::super::manifest::parse_manifest_binary(&declared)
+            .objects
+            .expect("objects.binary");
+        assert_eq!(named(&block).as_deref(), Some("objects/prefabs.rkyv"));
+
+        let everon_manifest: Value = serde_json::from_str(
+            &std::fs::read_to_string(everon().join("manifest.json")).expect("everon manifest"),
+        )
+        .unwrap();
+        assert!(
+            super::super::manifest::parse_manifest_binary(&everon_manifest)
+                .objects
+                .is_none(),
+            "a committed manifest naming an archive would flip the default before T-935.13"
+        );
+    }
+
     /// Two rows sharing a `prefabId` are refused rather than collapsed, because the JSON lane
     /// resolves the collision per lookup and the archive lane cannot see the order that decides it.
     #[test]
