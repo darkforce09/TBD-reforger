@@ -45,10 +45,8 @@ pub fn exact_tree_count(
         if let Some(rows) = chunk.rows_by_class.get(&tree_code) {
             n += rows.len();
         }
-        if count_veg {
-            if let Some(rows) = chunk.rows_by_class.get(&veg_code) {
-                n += rows.len();
-            }
+        if count_veg && let Some(rows) = chunk.rows_by_class.get(&veg_code) {
+            n += rows.len();
         }
     }
     n
