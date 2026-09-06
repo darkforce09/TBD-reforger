@@ -1,0 +1,12 @@
+id = "T-946.7"
+kind = "work"
+title = "Everon bathymetry pyramid is 655 MB"
+summary = "Level zero alone is 491 MB, so the container cannot be fetched whole in a browser and the loader range-reads a coarse suffix. The cutover should decide whether level zero is committed at all."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T08:38:02Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

@@ -1,0 +1,12 @@
+id = "T-946.6"
+kind = "work"
+title = "Water vectors and the depth raster disagree"
+summary = "Only 34 of everon's 129 lake centroids read as water in the bathymetry mask; 95 read dry. The two come from different exports and small lakes can legitimately miss, but a guard trusting both to agree will be surprised."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T08:37:32Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

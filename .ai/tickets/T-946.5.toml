@@ -1,0 +1,12 @@
+id = "T-946.5"
+kind = "work"
+title = "Bathymetry payload size silently drops overflowing levels"
+summary = "The TBDB header sums level spans with filter_map, so a level whose span overflows is dropped and the total under-reports. A truncated file could pass a length check built on it. The water slice avoided the helper."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T08:37:25Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
