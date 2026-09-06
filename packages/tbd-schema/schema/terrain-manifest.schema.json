@@ -236,11 +236,11 @@
             "containerVersion": { "const": 1, "description": "CONTAINER_VERSION. Pinned, not open: a v2 manifest must fail this schema until the reader that understands v2 lands." },
             "pod": { "const": "ObjectInstancePod", "description": "POD_NAME — the 32-byte row documented in map-object-instance.schema.json $defs/objectInstancePodRow." },
             "podBytes": { "const": 32, "description": "POD_BYTES. Every offset in the format is 32 + 32 * index." },
-            "chunks": { "type": "string", "description": "Path template carrying BOTH {cx} and {cy}, e.g. objects/chunks/{cx}_{cy}.bin. A template missing either placeholder resolves every chunk in the world to one URL (chunk_bin_path returns None and the loader stays on JSON)." },
-            "prefabs": { "type": "string", "description": "objects/prefabs.rkyv — PrefabCatalogArchive." },
-            "roads": { "type": "string", "description": "roads/road_network.rkyv — RoadNetworkArchive." },
-            "regions": { "type": "string", "description": "objects/forest-regions.rkyv — ForestRegionsArchive." },
-            "typeInventory": { "type": "string", "description": "objects/type-inventory.rkyv; the inventory also lives inside the prefab catalogue." }
+            "chunks": { "type": "string", "minLength": 1, "description": "Path template carrying BOTH {cx} and {cy}, e.g. objects/chunks/{cx}_{cy}.bin. A template missing either placeholder resolves every chunk in the world to one URL (chunk_bin_path returns None and the loader stays on JSON)." },
+            "prefabs": { "type": "string", "minLength": 1, "description": "objects/prefabs.rkyv — PrefabCatalogArchive." },
+            "roads": { "type": "string", "minLength": 1, "description": "roads/road_network.rkyv — RoadNetworkArchive." },
+            "regions": { "type": "string", "minLength": 1, "description": "objects/forest-regions.rkyv — ForestRegionsArchive." },
+            "typeInventory": { "type": "string", "minLength": 1, "description": "objects/type-inventory.rkyv; the inventory also lives inside the prefab catalogue." }
           }
         }
       }

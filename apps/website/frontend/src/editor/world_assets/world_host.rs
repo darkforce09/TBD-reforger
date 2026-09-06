@@ -225,8 +225,20 @@ impl WorldHost {
     ) -> bool {
         if let Some(path) = bin {
             if let Some(bytes) = fetch_bytes(&format!("{base}/{path}")).await {
-                if self.residency.load_prefabs(&bytes, terrain).is_ok() {
-                    return true;
+                // T-946.24 — SAY WHY BEFORE FALLING BACK. The archive lane's refusals are the
+                // whole point of it: a catalogue built for another terrain, a schema version this
+                // build does not read, a duplicate `prefabId` that would make one id win the
+                // footprint table and lose the class table. Discarding the error with `is_ok()`
+                // turned every one of those into a silent JSON boot, so the manifest could point at
+                // a wrong archive for a whole release and the only symptom would be a slower start.
+                match self.residency.load_prefabs(&bytes, terrain) {
+                    Ok(_) => return true,
+                    Err(e) => web_sys::console::warn_1(
+                        &format!(
+                            "world: prefab archive {path} rejected: {e} — falling back to JSON"
+                        )
+                        .into(),
+                    ),
                 }
             }
         }
@@ -249,8 +261,14 @@ impl WorldHost {
     async fn load_roads(&mut self, base: &str, bin: Option<&str>, json: &str) -> bool {
         if let Some(path) = bin {
             if let Some(bytes) = fetch_bytes(&format!("{base}/{path}")).await {
-                if self.store.load_roads(&bytes).is_ok() {
-                    return true;
+                // T-946.24 — see `load_prefabs`: a refused archive must say so, or a wrong one
+                // costs a release with nothing but a slower boot to show for it.
+                match self.store.load_roads(&bytes) {
+                    Ok(_) => return true,
+                    Err(e) => web_sys::console::warn_1(
+                        &format!("world: road archive {path} rejected: {e} — falling back to JSON")
+                            .into(),
+                    ),
                 }
             }
         }
@@ -270,9 +288,18 @@ impl WorldHost {
     async fn load_regions(&mut self, base: &str, bin: Option<&str>, json: &str) -> bool {
         if let Some(path) = bin {
             if let Some(bytes) = fetch_bytes(&format!("{base}/{path}")).await {
-                if let Ok(regions) = regions_from_bytes(&bytes) {
-                    self.store.regions = regions;
-                    return true;
+                // T-946.24 — see `load_prefabs`.
+                match regions_from_bytes(&bytes) {
+                    Ok(regions) => {
+                        self.store.regions = regions;
+                        return true;
+                    }
+                    Err(e) => web_sys::console::warn_1(
+                        &format!(
+                            "world: region archive {path} rejected: {e} — falling back to JSON"
+                        )
+                        .into(),
+                    ),
                 }
             }
         }

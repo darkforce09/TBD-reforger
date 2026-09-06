@@ -1,0 +1,50 @@
+id = "T-946.24"
+kind = "work"
+title = "Four holes in the mirror-lockstep guard"
+summary = "The wave 242 verifier broke the guard T-946.23 added: a missing framework file was invisible, the stripper truncated at a slash inside a string literal, literal contents were erased, and non-script paths were uncovered."
+class = "chore"
+status = "shipped"
+order = 7079
+spec = "docs/specs/ideas/t946_24_lockstep_holes.md"
+plan = "docs/plans/t-946_24_plan.md"
+executor = "claude-code"
+priority = 1
+parent = "T-946"
+main_goal = "The lockstep guard covers everything the addon order can swap, and a missing shipping file is detectable."
+context = [
+    "mirror_lockstep walked export and skipped paths with no framework twin, so a lost framework file read as export-only.",
+    "Measured: moving tbd-framework TBD_Log.c aside left OK: compiled clean with the file count unchanged.",
+    "The borrowed stripper found the comment marker before blanking literals, hiding any divergence after a URL.",
+    "Three shared non-script paths differ byte-for-byte with identical GUIDs, so the addon order decides which resolves.",
+]
+requirement = [
+    "An export-only script that is not on an explicit list fails the gate.",
+    "Scripts are compared as code plus string literals, with the ASCII rule's punctuation folded away.",
+    "Every shared non-script path is compared byte-for-byte against an allowlist carrying reasons.",
+    "The comparison covers all of Scripts, including the WorkbenchGame module neither tree compiles.",
+]
+current_state = ["The guard added one wave earlier passes over a shipping tree that has lost a file."]
+approach = [
+    "EXPORT_ONLY_SCRIPTS, MIRROR_DIVERGENT_ASSETS and a literal-aware normaliser in gate_mod_compile.rs.",
+    "Blank literals before the comment marker in the shared Enfusion stripper.",
+    "Perturbation: re-run the verifier's four attacks and require each to fail the gate.",
+]
+verify = [
+    "cargo xtask mod compile",
+    "cargo test -p xtask",
+]
+acceptance = [
+    "Each of the verifier four attacks fails the gate naming the path, and a clean tree passes.",
+    "The one real drift the repaired gate found is resolved rather than allowlisted.",
+]
+created_at = "2026-09-06T15:30:00Z"
+completed_at = "2026-09-06T13:01:50Z"
+owns = [
+    "xtask/src/gate_mod_compile.rs",
+    "xtask/src/schema_gates.rs",
+]
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

@@ -243,8 +243,10 @@ edit, in-editor play button.
   `2392a2513`). Three tbd-export WorkbenchGame scripts carried 15 em-dashes and failed the gate's
   pre-compile ASCII scan, so `cargo xtask mod compile` had never reached the compiler — which is
   why wave 240's edit to both copies of `TBD_MissionValidator.c` shipped uncompiled. Fifteen
-  characters. The gate now reports `OK: compiled clean, 5740 files, 11314 classes`, and both
-  validator copies are inside that count.
+  characters. The gate now reports `OK: compiled clean, 5740 files, 11314 classes`. **The claim
+  that both validator copies are inside that count is RETRACTED — see T-946.23 in the wave 242 rows
+  below.** Only the tbd-EXPORT copy was: the gate listed the export addon last, the Enfusion VFS
+  overlays by path, and the framework copy — the one that ships — was never read.
 - 2026-09-06 `wave land` had been aborting after the merge on every wave since the close-marker
   ledger started moving (T-946.14, `a0a762416`): its post-merge gate used pre-merge HEAD as the
   diff anchor, which the gate's own T-602 base check refuses whenever main moved after the wave's

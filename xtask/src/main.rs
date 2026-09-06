@@ -701,7 +701,7 @@ enum SchemaCmd {
     N6,
     /// N10 tile-budget single-source
     N10,
-    /// Semantic golden gates S2-S9 + S11-S14 (verify-map-object-golden)
+    /// Semantic golden gates S2-S9 + S11-S15 (verify-map-object-golden)
     #[command(name = "map-object-golden")]
     MapObjectGolden,
     /// Height-label gates G2-G6 + ASL oracle (verify-height-labels; native restore)

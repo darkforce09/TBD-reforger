@@ -1350,7 +1350,8 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! A kit prefab that carries no `SCR_CharacterRankComponent` cannot take a rank, and a mission
 	//! that authored one would then have it silently dropped -- the exact T-216 failure this whole
 	//! program exists to close, just moved one layer down. So a missing component is REPORTED
-	//! (once per slot, at WARNING) rather than skipped in silence. Nothing here is fatal: an
+	//! (at WARNING) rather than skipped in silence. Once per SPAWN, not once per slot: SpawnSlotBody
+	//! runs again on every rematerialise, so a kit missing the component says so each time. Nothing here is fatal: an
 	//! unappliable identity must never cost the player their body.
 	protected void ApplySlotIdentity(IEntity body, TBD_MissionSlotStruct slot)
 	{
@@ -1362,7 +1363,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		// One line per identified seat, at the moment it is applied. `leader` is the resolved
 		// answer, not the raw `leaderSlotId`, so a dangling or cross-squad reference reads as
-		// "no" here rather than looking applied. Eight substitutions -- `string.Format` takes at
+		// "no" here rather than looking applied. Seven substitutions -- `string.Format` takes at
 		// most nine.
 		Print(string.Format("[TBD][Identity] slot=%1 callsign='%2' rank='%3' stance='%4' unitName='%5' tag='%6' leader=%7",
 			slot.Key(), slot.callsign, slot.rank, slot.stance, slot.unitName, slot.tag,

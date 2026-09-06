@@ -1198,12 +1198,35 @@ fn pod_row_doc_failures(instance_schema: &Value) -> Vec<String> {
 /// ([`ObjectsBinaryBlock::matches_this_build`] is the loader's own predicate, reused here).
 ///
 /// Existence only, never content: in a slice worktree these files are git-LFS pointers.
+/// Is `kind` (e.g. `objects.binary.prefabs`) actually PRESENT in the manifest, as opposed to absent?
+///
+/// T-946.24 — the difference between "not claimed" and "claimed as nothing".
+fn manifest_names_key(manifest: &Value, kind: &str) -> bool {
+    let mut cur = manifest;
+    for seg in kind.split('.') {
+        match cur.get(seg) {
+            Some(v) => cur = v,
+            None => return false,
+        }
+    }
+    true
+}
+
 fn manifest_binary_failures(manifest: &Value, asset_dir: &Path) -> (usize, Vec<String>) {
     let bin = parse_manifest_binary(manifest);
     let mut errs = Vec::new();
     let mut declared = 0_usize;
     let want = |kind: &str, rel: &str, dir: bool, errs: &mut Vec<String>| {
+        // T-946.24 — an ABSENT key and a key set to "" are different statements. Absent means the
+        // manifest does not claim this artefact exists; empty means it claims one and names
+        // nothing, which resolves to the asset directory itself and used to pass both this gate and
+        // the schema. Found by the wave-242 verifier.
         if rel.is_empty() {
+            if manifest_names_key(manifest, kind) {
+                errs.push(format!(
+                    "{kind} is present but empty — name the path or drop the key; an empty path                      resolves to the asset directory and claims an artefact that is not there"
+                ));
+            }
             return;
         }
         let p = asset_dir.join(rel);
@@ -2721,15 +2744,21 @@ pub(crate) fn strip_enfusion_comments_and_strings(src: &str) -> String {
     let str_re = regex::Regex::new(r#""(?:\\.|[^"\\])*""#).ok();
     let mut out = String::with_capacity(no_block.len());
     for line in no_block.lines() {
-        let code = match line.find("//") {
-            Some(i) => &line[..i],
-            None => line,
+        // T-946.24 — LITERALS FIRST, THEN `//`. It used to be the other way round, so a line
+        // holding a `"http://…"` was truncated at the literal's own slashes and every identifier
+        // after it vanished from the count. Found by the wave-242 verifier, which used exactly
+        // that shape to hide an undefined call from the mirror-lockstep check. Blanking literals
+        // first removes the slashes that are DATA before looking for the ones that start a
+        // comment.
+        let blanked = match &str_re {
+            Some(re) => re.replace_all(line, "\"\"").into_owned(),
+            None => line.to_string(),
         };
-        let code = match &str_re {
-            Some(re) => re.replace_all(code, "\"\"").into_owned(),
-            None => code.to_string(),
+        let code = match blanked.find("//") {
+            Some(i) => &blanked[..i],
+            None => blanked.as_str(),
         };
-        out.push_str(&code);
+        out.push_str(code);
         out.push('\n');
     }
     out

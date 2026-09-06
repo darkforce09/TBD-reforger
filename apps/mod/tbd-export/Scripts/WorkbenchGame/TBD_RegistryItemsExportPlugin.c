@@ -131,15 +131,15 @@ class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 			if (written > 0)
 				Emit(",\n");
 			Emit("    {\n");
-			Emit("      \"resource_name\": \"" + TBD_MapExportJson.Escape(it.resourceName) + "\",\n");
-			Emit("      \"display_name\": \"" + TBD_MapExportJson.Escape(it.displayName) + "\",\n");
-			Emit("      \"category\": \"" + TBD_MapExportJson.Escape(it.category) + "\",\n");
-			Emit("      \"kind\": \"" + TBD_MapExportJson.Escape(it.kind) + "\"");
+			Emit("      \"resource_name\": \"" + TBD_ExportJson.Escape(it.resourceName) + "\",\n");
+			Emit("      \"display_name\": \"" + TBD_ExportJson.Escape(it.displayName) + "\",\n");
+			Emit("      \"category\": \"" + TBD_ExportJson.Escape(it.category) + "\",\n");
+			Emit("      \"kind\": \"" + TBD_ExportJson.Escape(it.kind) + "\"");
 			// v3 optional metadata - absent values are omitted, never guessed.
 			if (it.isAbstract)
 				Emit(",\n      \"abstract\": true");
 			if (!it.arsenalType.IsEmpty())
-				Emit(",\n      \"arsenal_type\": \"" + TBD_MapExportJson.Escape(it.arsenalType) + "\"");
+				Emit(",\n      \"arsenal_type\": \"" + TBD_ExportJson.Escape(it.arsenalType) + "\"");
 			if (it.weightKg >= 0)
 				Emit(",\n      \"weight_kg\": " + it.weightKg.ToString());
 			if (it.volumeCm3 >= 0)
@@ -153,9 +153,9 @@ class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 			if (it.cargoGridH > 0)
 				Emit(",\n      \"cargo_grid_h\": " + it.cargoGridH.ToString());
 			if (!it.addonId.IsEmpty())
-				Emit(",\n      \"addon\": \"" + TBD_MapExportJson.Escape(it.addonId) + "\"");
+				Emit(",\n      \"addon\": \"" + TBD_ExportJson.Escape(it.addonId) + "\"");
 			if (!it.variantOf.IsEmpty())
-				Emit(",\n      \"variant_of\": \"" + TBD_MapExportJson.Escape(it.variantOf) + "\"");
+				Emit(",\n      \"variant_of\": \"" + TBD_ExportJson.Escape(it.variantOf) + "\"");
 			Emit("\n    }");
 			written++;
 		}
