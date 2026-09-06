@@ -5,6 +5,7 @@ summary = "Flatten authored_blocks_root copies only winConditions so /compiled d
 class = "feature"
 status = "idea"
 parent = "T-946"
+notes = "FIXED 2026-09-06 by T-936.3 merge b82424167: authored_blocks_root copies tasks[]. Do not re-dispatch."
 created_at = "2026-09-06T19:40:56Z"
 
 owns = [

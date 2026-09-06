@@ -20,13 +20,6 @@
       "branch": "ticket/T-212"
     },
     {
-      "id": "T-681",
-      "title": "Entity states: health, allow-damage, show-model, size, stamina",
-      "status": "ready",
-      "spec": "docs/specs/existing/t681_entity_states.md",
-      "branch": "ticket/T-681"
-    },
-    {
       "id": "T-685",
       "title": "Zone volumes: height bounds capture counts and owner",
       "status": "ready",
@@ -95,13 +88,6 @@
       "status": "ready",
       "spec": "docs/specs/ideas/t242_t216_deltas.md",
       "branch": "ticket/T-242"
-    },
-    {
-      "id": "T-133",
-      "title": "OFCR timed objectives",
-      "status": "ready",
-      "spec": "docs/platform/tbd_north_star_backlog.md",
-      "branch": "ticket/T-133"
     },
     {
       "id": "T-301",

@@ -3,14 +3,18 @@ kind = "work"
 title = "OFCR timed objectives"
 summary = "Objectives that evaluate at mission time T+N: the T-936.2 task model gains a schedule (delay, window), the tasks panel edits it, and TBD_TaskStateMachine.c fires the transition on the mission clock."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7570
-priority = 3
 spec = "docs/platform/tbd_north_star_backlog.md"
 plan = "docs/plans/t-133_plan.md"
 executor = "claude-code"
-main_goal = "An objective scheduled for T+N minutes stays inactive until then and evaluates afterwards."
 notes = "2026-09-05: T-115 shipped (kept); all three owned files are created by T-936.2 → depends_on it. Operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist. Scope engine/core (was repo/docs)."
+priority = 3
+depends_on = [
+    "T-115",
+    "T-936.2",
+]
+main_goal = "An objective scheduled for T+N minutes stays inactive until then and evaluates afterwards."
 context = [
     "Anchor 2026-09-05: T-936.2 creates mission/tasks.rs, panels/tasks_panel.rs and Objectives/TBD_TaskStateMachine.c and packs earlier; T-115 (shipped) is the capture/destroy/hold base.",
     "Timed checks are the OFCR pattern: an objective that only counts after T+N minutes.",
@@ -20,9 +24,7 @@ requirement = [
     "tasks_panel.rs edits the schedule with undoable operations.",
     "TBD_TaskStateMachine.c evaluates scheduled tasks on the mission clock and logs each transition with the time.",
 ]
-current_state = [
-    "Tasks (once T-936.2 lands) transition only on trigger completion; no time dimension exists.",
-]
+current_state = ["Tasks (once T-936.2 lands) transition only on trigger completion; no time dimension exists."]
 approach = [
     "Model plus validator tests; panel with wasm tests; state machine with a headless boot log line.",
     "Perturbation: window validation off; the validator test goes red; restore, touch, green.",
@@ -37,11 +39,10 @@ acceptance = [
     "An objective scheduled at T+10 min stays inactive before then and evaluates afterwards, visibly in the log.",
     "Invalid schedules are refused in the panel with the reason.",
 ]
-depends_on = [
-    "T-115",
-    "T-936.2",
-]
+shipped_at = "c58cf917c"
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-06T21:46:19Z"
+estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/mission/tasks.rs",
     "apps/website/frontend/src/editor/panels/tasks_panel.rs",

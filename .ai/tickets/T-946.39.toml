@@ -1,0 +1,19 @@
+id = "T-946.39"
+kind = "work"
+title = "Radio panel never mounts in settings"
+summary = "panels/mod.rs publishes radio_panel but settings_modal.rs still only mounts win_conditions_card so authors cannot edit radioPlan."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T21:45:25Z"
+
+owns = [
+    "apps/website/frontend/src/editor/panels/settings_modal.rs",
+]
+verify = [
+    "rg radio_panel apps/website/frontend/src/editor/panels/settings_modal.rs must hit the mount",
+]
+
+[scope]
+domain = "repo"
+layer = "docs"

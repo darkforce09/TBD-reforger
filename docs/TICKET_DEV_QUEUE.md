@@ -13,14 +13,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** Objectives as typed, placed, per-side entities with one uniform attribute spine
 
-## T-681 — Entity states: health, allow-damage, show-model, size, stamina
-
-- **Slice spec:** `docs/specs/existing/t681_entity_states.md`
-- **Program hub:** `docs/specs/existing/t681_entity_states.md`
-- **Branch:** `ticket/T-681`
-- **Targets:** 
-- **Summary:** Entity states: health, allow-damage, show-model, size, stamina
-
 ## T-685 — Zone volumes: height bounds capture counts and owner
 
 - **Slice spec:** `docs/specs/existing/t685_zone_volumes.md`
@@ -100,14 +92,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-242`
 - **Targets:** 
 - **Summary:** The T-216 schema deltas (slot tag/callsign/rank/stance, group leaderSlotId, root vehicles $def) are all declared in mission.schema.json today, but flatten drops the four slot fields (DIAG_DROP_SLOT_*); emit them and pin with schema-validated goldens.
-
-## T-133 — OFCR timed objectives
-
-- **Slice spec:** `docs/platform/tbd_north_star_backlog.md`
-- **Program hub:** `docs/platform/tbd_north_star_backlog.md`
-- **Branch:** `ticket/T-133`
-- **Targets:** 
-- **Summary:** Objectives that evaluate at mission time T+N: the T-936.2 task model gains a schedule (delay, window), the tasks panel edits it, and TBD_TaskStateMachine.c fires the transition on the mission clock.
 
 ## T-301 — Briefing kit lists 7 of 13 gear fields
 

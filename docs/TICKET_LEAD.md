@@ -10,7 +10,6 @@
 
 - **T-090** (7079) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-212** (7320) — Typed per-side objectives with attributes [ready] — Objectives as typed, placed, per-side entities with one uniform attribute spine
-- **T-681** (7340) — Entity states: health, allow-damage, show-model, size, stamina [ready] — Entity states: health, allow-damage, show-model, size, stamina
 - **T-685** (7370) — Zone volumes: height bounds capture counts and owner [ready] — Zones become volumes: min/max height, attacker and defender counts, starting owner
 - **T-689** (7380) — Play-area enforcement gains a vehicle-class axis: the aircraft exemption [ready] — Play-area enforcement gains a vehicle-class axis: the aircraft exemption
 - **T-705** (7400) — Player gadget flags — map, compass, watch, GPS, radio [ready] — Player gadget flags — map, compass, watch, GPS, radio
@@ -21,7 +20,6 @@
 - **T-290** (7540) — Nine dead flatten fields mod never reads [ready] — meta.author/templateId/playerRange, the environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds and the orbat block are emitted but never read by the mod; add readers where cheap and annotate the rest in an emit ledger.
 - **T-291** (7550) — Resolve five schema fields implemented on no surface [ready] — environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem.
 - **T-242** (7560) — Emit T-216 slot deltas through flatten [ready] — The T-216 schema deltas (slot tag/callsign/rank/stance, group leaderSlotId, root vehicles $def) are all declared in mission.schema.json today, but flatten drops the four slot fields (DIAG_DROP_SLOT_*); emit them and pin with schema-validated goldens.
-- **T-133** (7570) — OFCR timed objectives [ready] — Objectives that evaluate at mission time T+N: the T-936.2 task model gains a schedule (delay, window), the tasks panel edits it, and TBD_TaskStateMachine.c fires the transition on the mission clock.
 - **T-301** (7660) — Briefing kit lists 7 of 13 gear fields [ready] — TBD_BriefingData.BuildKit (UI/TBD_BriefingData.c:519) lists seven gear fields; T-182's launcher, handgun and throwable never appear on the briefing screen. Add them while keeping pants/boots/handwear hidden.
 - **T-302** (7670) — Prove T-182 weapon equip on a live body [ready] — T-182's slot-indexed weapon equip compiles but was never observed in game; add a per-slot equip result log, a headless world-boot assertion that four authored weapons land in four slots, and a human checklist item.
 - **T-304** (7680) — RegistryScan never reads weapon weight; 32 wrong rows [ready] — TBD_RegistryScan ReadPhysAttrsPass treats SCR_WeaponAttachmentsStorageComponent as storage so weapon weight is never read (0/107), and its class-keyed foreach picks hash order over derivation depth, so 32 rows carry Item_Base.et's 0.01 kg.
@@ -110,7 +108,6 @@ flowchart LR
   T257[T-257] --> T212[T-212]
   T685[T-685] --> T689[T-689]
   T076[T-076] --> T675[T-675]
-  T115[T-115] --> T133[T-133]
   T114[T-114] --> T139[T-139]
   T222[T-222] --> T190[T-190]
   T135[T-135] --> T157[T-157]

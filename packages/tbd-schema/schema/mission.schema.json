@@ -1251,6 +1251,28 @@
         "description": {
           "$ref": "#/$defs/wireSafeString",
           "description": "Optional longer briefing text. Not drawn on the HUD marker."
+        },
+        "schedule": {
+          "$ref": "#/$defs/taskSchedule",
+          "description": "READ SINCE T-133 (2026-09-06). Optional timed window. Absent ⇒ untimed (always evaluate). `TBD_TaskStateMachine.c` reads nested `startAfterS`/`windowS` via the ABSENT sentinel; presence of the object is not a nested-ref test."
+        }
+      }
+    },
+    "taskSchedule": {
+      "type": "object",
+      "description": "T-133 — seconds from mission start (`startAfterS`) and duration (`windowS`). windowS must be > 0; startAfterS must be ≥ 0 and strictly inside mission length (enforced by tasks.rs; schema pins types and closed keys).",
+      "required": ["startAfterS", "windowS"],
+      "additionalProperties": false,
+      "properties": {
+        "startAfterS": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "READ SINCE T-133 (2026-09-06). Seconds from mission start before the task becomes active. 0 is legal (evaluate from T+0)."
+        },
+        "windowS": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "description": "READ SINCE T-133 (2026-09-06). Duration in seconds the task stays evaluable after startAfterS. Must be > 0."
         }
       }
     },
