@@ -1,0 +1,11 @@
+id = "T-955"
+kind = "work"
+title = "git-lfs probe misses the operator's Homebrew install"
+summary = "xtask/src/wave/push.rs probes git lfs version on PATH, which fails under the factory's pinned PATH even though git-lfs 3.7.1 exists. The normal-push branch never runs. Probe the pre-push hook or an absolute path."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T00:59:53Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

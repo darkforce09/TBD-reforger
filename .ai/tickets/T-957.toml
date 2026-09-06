@@ -1,0 +1,11 @@
+id = "T-957"
+kind = "work"
+title = "Vanilla reference is rotated pre-T-305 output"
+summary = "2483 extracted .c files under apps/mod/vanilla_reference/Scripts are shifted 56 bytes by the pre-T-305 pak reader, and the committed enf-index TSVs were built over them. Re-extract, re-index, recommit the TSVs."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T01:00:12Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

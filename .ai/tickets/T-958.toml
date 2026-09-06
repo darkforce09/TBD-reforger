@@ -1,0 +1,11 @@
+id = "T-958"
+kind = "work"
+title = "Density lane count comment says 57, list says 61"
+summary = "mk_ci_tasks.rs describes the tbd-tools lane as 57 tests; cargo test --lib --list reports 61 after T-305 added four. Correct the comment."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T01:00:18Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

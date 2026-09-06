@@ -1,0 +1,11 @@
+id = "T-954"
+kind = "work"
+title = "lfs_paths_in_range never checks check-attr answered for every path"
+summary = "xtask/src/wave/push.rs walks check-attr triples without comparing their count to the paths fed. A truncated answer from a zero-exit child reads as nothing-is-LFS. Count triples against the NUL-terminated input."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T00:59:47Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

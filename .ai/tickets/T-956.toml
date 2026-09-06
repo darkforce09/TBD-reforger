@@ -1,0 +1,11 @@
+id = "T-956"
+kind = "work"
+title = "ci-local no longer mirrors ci.yml"
+summary = "mk_ci_tasks.rs and CLAUDE.md both say ci-local mirrors ci.yml, but T-298 added the tbd-tools lane to the workflow only, and no gate asserts parity. Add the task to ci-local or drop the mirror claim."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T01:00:00Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
