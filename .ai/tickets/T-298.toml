@@ -34,8 +34,10 @@ acceptance = [
     "A push that breaks the density partition invariant fails CI in the tbd-tools step.",
     "The randomized partition test passes on main and appears in the CI log.",
 ]
+shipped_at = "e754bcc9c"
 created_at = "2026-09-05T03:30:00Z"
 completed_at = "2026-09-06T00:28:25Z"
+estimated = ["tokens"]
 owns = [
     "tools/tbd-tools/src/density.rs",
     ".github/workflows/ci.yml",
