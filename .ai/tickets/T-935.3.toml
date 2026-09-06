@@ -49,8 +49,10 @@ acceptance = [
     "residency.rs grows by at most 40 lines; the file-length gate stays green.",
     "world-los output on cell 18_0 is unchanged from main before this slice.",
 ]
+shipped_at = "05e4c6560"
 created_at = "2026-09-05T01:34:37Z"
 completed_at = "2026-09-06T06:54:41Z"
+estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/world/residency.rs",
     "crates/map-engine-core/src/world/chunk_bin.rs",
