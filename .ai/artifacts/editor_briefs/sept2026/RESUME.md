@@ -7,49 +7,65 @@ mod `.c` scripts agent-editable, gate `cargo xtask mod compile`, in-game checks 
 rkyv · auto-continue waves · deferred on operator word: T-137, RadioManagerEntity world edit, in-editor
 "Play scenario" · all six "frozen scope" tickets approved 2026-09-05 · **one wave at a time** (token cap).
 
-## State at last save (2026-09-05 evening)
-- Registry: 150 dispatchable tickets ready, packed 3 per wave (`wave.lock`, 52 waves). Programs T-935
-  (map storage) … T-941 (mod lifecycle), T-942 (chore, shipped), T-943 (push guard), T-944, T-945.
-- Wave 248 = T-940.5 (DB pool config), T-940.6 (audit LISTEN/NOTIFY), T-311 (leaderboard tie-break):
-  ALL THREE LANDED + SHIPPED + sha-stamped (8fc66b589, f5f7abc10, 7094bc2b0). Trunk fixes landed:
-  36f65687e (gitignore/.mjs/hub header), 021a711eb (registry), 21cf11b32 (xtask clippy),
-  2b509127b (T-311 test moved to tests/ for the T-542 pin), 9730d812d (ledger).
-- Wave 248 close is PENDING: full wave gate was at step 10/30 all PASS when the machine restarted.
-- Worktrees T-940.5 / T-940.6 / T-311 still exist under `.ai/artifacts/worktrees/` (drop at close).
+## THE WAVE NUMBERS CHANGED — read this before anything else
+T-946 (2026-09-06) re-seated the lock's wave labels on the close-marker ledger, which they had run
+**13 numbers ahead of**. Everything this run called "wave 248" closed as **wave 235**, and the wave
+after it as **236**. Older notes in `docs/platform/FACTORY_RUN_2026-09.md` still say 248 — that is the
+same wave. Do not try to reconcile them by renumbering anything; the ledger is right now.
 
-## Close wave 248 (do in this order)
-```bash
-cd /run/media/system/Disk_2/Projects/TBD-Reforger
-export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target CARGO_BUILD_JOBS=4
-cargo xtask db up; cargo xtask mk rust-api &   # and `cargo xtask mk leptos-debug &`
-cargo xtask platform preflight                 # PASS
-podman exec tbd_reforger_db psql -U tbd -d postgres -c "DROP DATABASE IF EXISTS tbd_wave248_cold WITH (FORCE);" -c "CREATE DATABASE tbd_wave248_cold OWNER tbd;"
-BASE=$(git rev-list --extended-regexp --grep='^wave [0-9]+ CLOSED' -1 HEAD)   # = 1d3253ca8
-# run DETACHED (the Claude Code memory watchdog kills background builds): 
-setsid nohup bash -c "TBD_GATE_DB='postgres://tbd:tbd@localhost:5434/tbd_wave248_cold?sslmode=disable' TBD_GATE_WAVE=248 TBD_GATE_BASE_CONFIRM=$BASE cargo xtask platform wave gate; echo GATE_EXIT=\$?" > /tmp/gate-w248.log 2>&1 &
-# expect GATE: PASS. Then the adversarial verifier (brief: wave248/VERIFY.md, model opus) on merged main.
-# Triage (BLOCKER fix in-wave via completion agent; MAJOR that can lose authored work fix; else file queued).
-cargo xtask platform wave verified $(git rev-parse HEAD)
-cargo xtask platform wave wave --close --summary "wave 248: DB pool config, audit LISTEN/NOTIFY, leaderboard tie-break; GATE PASS"
-# ledger row in docs/platform/FACTORY_RUN_2026-09.md; eye-pass rows already in docs/platform/EYE_PASS_2026-09.md
-for t in T-940.5 T-940.6 T-311; do cargo run -q -p xtask -- platform slice-worktree -- drop $t; done
-git push origin main            # plain push works here (git-lfs on host); `platform wave push` deadlocks (T-943)
+## State at last save (2026-09-06)
+- **wave 235 CLOSED** `b6a3cfd89` — T-940.5 DB pool config, T-940.6 audit LISTEN/NOTIFY, T-311
+  leaderboard tie-break, T-934.1 reorg A1. Gate PASS, verifier clean, pushed.
+- **wave 236 CLOSED** `35328a7b1` — T-305 pak offsets are absolute, T-298 tbd-tools density lane in
+  CI, T-943 push guard deadlock. Gate PASS twice, verifier's two harness MAJORs fixed, pushed.
+- **wave 237 DISPATCHED** — T-300 (shared target dir serves unmerged binaries), T-935.1 (world::binary
+  POD + rkyv archives), T-277 (27.4% of the map catalogue unclassified). Briefs at
+  `.ai/artifacts/editor_briefs/sept2026/wave237/`, worktrees live, three agents running.
+- Open findings filed, none fixed: T-947…T-953 (wave 235 verifier), T-954…T-958 (wave 236 verifier).
+  **T-957 is the one to look at**: `apps/mod/vanilla_reference` is 2,483 files rotated by the
+  pre-T-305 pak reader, and the committed `enf-index` TSVs were built over them. Re-extraction wipes
+  and rewrites a committed artifact tree, so it needs an operator word.
+
+## THE BRIDGE — every cargo command runs on the host
+This session runs inside the `claude-desktop` container (glibc 2.36). The shared cache
+`/home/Samuel/.cache/tbd-target` is stamped for the HOST toolchain (glibc 2.43); running cargo in the
+container against it is the GLIBC_2.xx trap (T-853). Two wrappers exist for this, and every brief
+points agents at them:
 ```
+/home/Samuel/.cache/tbd-bin/hcargo <cargo args>      # forwards CARGO_TARGET_DIR, CARGO_BUILD_JOBS,
+/home/Samuel/.cache/tbd-bin/hrustfmt <args>          # TEST_DATABASE_URL, TBD_IT_BASE_DB
+```
+`podman` and `git-lfs` differ by side: `podman` is HOST only (`distrobox-host-exec podman exec
+tbd_reforger_db psql …`); `git push` must run IN THE CONTAINER, because the host's git-lfs is a
+Homebrew binary absent from the non-interactive PATH (that is T-955).
 
-## Next wave (249) — the loop
-`cargo xtask platform wave status` → 3 tickets → `cargo run -q -p xtask -- platform slice-worktree -- new T-xxx` each →
-brief = `SLICE_BRIEF_TEMPLATE.md` filled from the ticket (`cargo xtask ticket show T-xxx`, its plan in
-docs/plans/, its spec prompt block) + sibling owns → 3 Agent-tool slice agents in parallel (each with its
-own `*_it` test DB via `TBD_IT_BASE_DB`, e.g. `tbd_slice_t305_it`) → on report: reject-table, three checks
-(`git log main..slice/T-x`, `git diff --stat`, worktree status empty) → `cargo xtask platform wave land --bookkeeping T-x`
-→ `cargo xtask ticket ship T-x` → `cargo xtask ticket stamp-sha T-x <land sha>` → after all three: gate (detached)
-→ verifier → verified → close → push → next. Registry edits: `cargo test -p xtask` after every edit.
+## The loop, as it actually runs now
+```bash
+cargo xtask db up                      # host podman
+# dev servers, host, detached:  cargo xtask mk rust-api  ·  cargo xtask mk leptos-debug
+cargo xtask platform preflight         # PASS (worktree warnings are fine mid-wave)
+```
+Per wave: `platform wave status` → 3 tickets → `platform slice-worktree -- new T-xxx` each → briefs
+from the wave-236/237 files as the template (they carry the bridge block and the traps) → 3 Agent-tool
+slice agents **with `model: opus` set explicitly** → on report: reject-table + three checks
+(`git log`, `git diff --stat $(git merge-base main HEAD)..HEAD`, worktree clean) →
+`platform wave land --bookkeeping` → per id `ticket ship` then commit then `ticket stamp-sha <land sha>`
+→ **cold DB + detached full gate** → verifier agent → `platform wave verified $(git rev-parse HEAD)`
+→ `wave --close` → ledger row in `docs/platform/FACTORY_RUN_2026-09.md` → drop worktrees →
+`git push origin main` (from the container) → next wave.
 
 ## Traps learned this run
-- `platform wave push` deadlocks on LFS-heavy ranges (T-943): use `git push origin main`.
-- Slice gates run in the worktree branch: merge `main` into the slice first when trunk fixes landed.
-- `--slice` gates skip `test api` / T-542 pin: DB-backed tests must live in `tests/*.rs` via `common`.
-- `active_slice` is not an on-disk ticket key (T-945); `cargo test -p xtask` pins registry facts (T-212 deps).
-- Test DB names must match the T-381 allow-list (`*_it`, `*_cold`, `tbd_gate*`); `db test-it` uses `TBD_IT_BASE_DB`.
-- Claude Code kills background commands when `free` memory is low: run gates via `setsid nohup`, poll the log.
-- Rate limits cut agents; resume the same agent id with SendMessage (context intact) — never a twin.
+- **Gates and closes need `TBD_GATE_BASE_CONFIRM=<newest close marker>`** while the lock has no rows
+  for the base's own wave. This should stop being needed now that labels track the ledger.
+- Run gates **detached** (`setsid nohup … > log 2>&1 &`) and poll the log: Claude Code kills
+  background children when free memory is low. A full gate is ~30 min, 31 steps.
+- `ticket ship` repacks per id, and its repack **inherits the lock's width** since T-946 — but the
+  wave still dissolves id by id, so `wave --close --tickets <ids>` is how you close a wave whose
+  membership the lock has lost. `ship --no-repack` + one repack at the end is the batch path.
+- `cargo test -p xtask` after EVERY registry edit; `ticket check` must be exit 0 before a close.
+- A slice worktree's `packages/map-assets` payloads are LFS POINTERS, so ~7 xtask map tests fail
+  there with `bad magic [118, 101, 114, 115]` ("vers"). Environmental, not a finding.
+- The shared cache can hand an agent ANOTHER worktree's test binary — that is T-300, in flight now.
+- Rate limits: the Fable cap cut all three agents at once on 2026-09-05. `SendMessage` was NOT
+  available in that session, so agents could not be resumed by id and had to be respawned; an
+  agent's uncommitted work is then unreviewed and should be reverted, not inherited.
