@@ -19,6 +19,9 @@ use serde_json::Value;
 
 use crate::root::find_repo_root as repo_root;
 use crate::sync::refuse_empty_write;
+use map_engine_core::world::binary::chunk_container::CONTAINER_VERSION;
+use map_engine_core::world::binary::pod::{POD_BYTES, POD_NAME};
+use map_engine_core::world::{chunk_bin_path, parse_manifest_binary};
 
 fn read_json(p: &Path) -> Result<Value> {
     let raw = fs::read_to_string(p).with_context(|| format!("read {}", p.display()))?;
@@ -1097,6 +1100,184 @@ struct TerrainContract {
     max_m: f64,
 }
 
+/* ───────────────── T-935.12 — the manifest's binary blocks (spec §5) ───────────────── */
+
+/// `map-object-instance.schema.json` `$defs/objectInstancePodRow` against the Rust POD.
+///
+/// The layout block is documentation, because JSON Schema cannot describe bytes — and a wire
+/// contract nobody checks is how a format rots. So the arithmetic is checked here: it must cover
+/// exactly [`POD_BYTES`] bytes with no gap and no overlap, in ascending offset, with each field's
+/// width matching its declared type. Offsets are proved against real bytes elsewhere: `golden_gate`
+/// S15 decodes the committed golden `.bin` at these very offsets and compares to the JSON decode.
+fn pod_row_doc_failures(instance_schema: &Value) -> Vec<String> {
+    let doc = &instance_schema["$defs"]["objectInstancePodRow"];
+    let mut errs = Vec::new();
+    if doc.is_null() {
+        return vec![
+            "map-object-instance.schema.json: $defs/objectInstancePodRow is missing — the \
+                     32-byte binary row must stay documented beside the JSON rows it encodes"
+                .to_string(),
+        ];
+    }
+    if doc["podBytes"].as_u64() != Some(POD_BYTES as u64) {
+        errs.push(format!(
+            "objectInstancePodRow.podBytes {} != POD_BYTES {POD_BYTES}",
+            doc["podBytes"]
+        ));
+    }
+    // The seven f32s then u16/u8/u8, spec §2. This order is what makes the struct padding-free, so
+    // it is pinned by name here and by fixed byte offset in golden_gate S15.
+    let expect: [(&str, &str); 10] = [
+        ("x", "f32"),
+        ("y", "f32"),
+        ("z", "f32"),
+        ("yaw", "f32"),
+        ("pitch", "f32"),
+        ("roll", "f32"),
+        ("scale", "f32"),
+        ("prefab_id", "u16"),
+        ("class_code", "u8"),
+        ("_pad", "u8"),
+    ];
+    let fields = doc["fields"].as_array().cloned().unwrap_or_default();
+    if fields.len() != expect.len() {
+        errs.push(format!(
+            "objectInstancePodRow has {} fields, want {}",
+            fields.len(),
+            expect.len()
+        ));
+        return errs;
+    }
+    let mut at = 0_u64;
+    for (i, f) in fields.iter().enumerate() {
+        let (want_name, want_ty) = expect[i];
+        let (name, ty) = (
+            f["name"].as_str().unwrap_or(""),
+            f["type"].as_str().unwrap_or(""),
+        );
+        let (off, bytes) = (f["offset"].as_u64(), f["bytes"].as_u64());
+        if name != want_name || ty != want_ty {
+            errs.push(format!(
+                "field {i} is {name}:{ty}, want {want_name}:{want_ty}"
+            ));
+        }
+        let want_bytes = match want_ty {
+            "f32" => 4,
+            "u16" => 2,
+            _ => 1,
+        };
+        if bytes != Some(want_bytes) {
+            errs.push(format!(
+                "field {want_name} declares {bytes:?} bytes, want {want_bytes}"
+            ));
+        }
+        if off != Some(at) {
+            errs.push(format!(
+                "field {want_name} declares offset {off:?}, want {at}"
+            ));
+        }
+        at += want_bytes;
+    }
+    if at != POD_BYTES as u64 {
+        errs.push(format!(
+            "documented row covers {at} bytes, want {POD_BYTES}"
+        ));
+    }
+    errs
+}
+
+/// Does every path a binary block names exist under the terrain's asset directory, and does the
+/// chunk container it declares match the row shape THIS build implements?
+///
+/// Both failures are invisible at runtime, which is why they are gated here. A **dangling** path
+/// costs nothing loud: the loader's fallback for a missing binary is the JSON path that still
+/// works, so a manifest naming an archive nobody emitted just silently gives up the whole point of
+/// the migration. A **shape** disagreement is worse — `pod`/`podBytes`/`containerVersion` exist on
+/// the wire precisely so a loader can refuse a 24-byte-row file rather than read it at a 32-byte
+/// stride and draw a map made of garbage that never once errors
+/// ([`ObjectsBinaryBlock::matches_this_build`] is the loader's own predicate, reused here).
+///
+/// Existence only, never content: in a slice worktree these files are git-LFS pointers.
+fn manifest_binary_failures(manifest: &Value, asset_dir: &Path) -> (usize, Vec<String>) {
+    let bin = parse_manifest_binary(manifest);
+    let mut errs = Vec::new();
+    let mut declared = 0_usize;
+    let want = |kind: &str, rel: &str, dir: bool, errs: &mut Vec<String>| {
+        if rel.is_empty() {
+            return;
+        }
+        let p = asset_dir.join(rel);
+        let ok = if dir { p.is_dir() } else { p.is_file() };
+        if !ok {
+            let what = if dir { "directory" } else { "file" };
+            errs.push(format!("{kind} names {rel}, but no such {what} exists"));
+        }
+    };
+    if let Some(o) = &bin.objects {
+        declared += 1;
+        if !o.matches_this_build() {
+            errs.push(format!(
+                "objects.binary declares {}/v{} rows of {} x {} B; this build reads TBDC/v{} {POD_NAME} x {POD_BYTES} B",
+                o.container, o.container_version, o.pod, o.pod_bytes, CONTAINER_VERSION
+            ));
+        }
+        // The chunk path is a TEMPLATE. `chunk_bin_path` is the loader's own filler: it returns
+        // None unless BOTH placeholders are present, because a template missing one resolves every
+        // chunk in the world to a single URL and the map fills with copies of one tile.
+        match chunk_bin_path(&o.chunks, "0_0") {
+            None => errs.push(format!(
+                "objects.binary.chunks '{}' does not carry both {{cx}} and {{cy}}",
+                o.chunks
+            )),
+            Some(filled) => {
+                let dir = Path::new(&filled)
+                    .parent()
+                    .map(PathBuf::from)
+                    .unwrap_or_default();
+                let abs = asset_dir.join(&dir);
+                let any_bin = fs::read_dir(&abs).is_ok_and(|rd| {
+                    rd.filter_map(std::result::Result::ok)
+                        .any(|e| e.path().extension().is_some_and(|x| x == "bin"))
+                });
+                if !any_bin {
+                    errs.push(format!(
+                        "objects.binary.chunks resolves to {}, which holds no .bin",
+                        dir.display()
+                    ));
+                }
+            }
+        }
+        want("objects.binary.prefabs", &o.prefabs, false, &mut errs);
+        want("objects.binary.roads", &o.roads, false, &mut errs);
+        want("objects.binary.regions", &o.regions, false, &mut errs);
+        want(
+            "objects.binary.typeInventory",
+            &o.type_inventory,
+            false,
+            &mut errs,
+        );
+    }
+    if let Some(d) = &bin.dem_raw {
+        declared += 1;
+        want("dem.raw.path", &d.path, false, &mut errs);
+    }
+    if let Some(l) = &bin.labels {
+        declared += 1;
+        want("labels.path", &l.path, false, &mut errs);
+    }
+    if let Some(w) = &bin.water {
+        declared += 1;
+        want("water.vectors", &w.vectors, false, &mut errs);
+        want("water.bathymetry", &w.bathymetry, false, &mut errs);
+    }
+    if let Some(b) = &bin.buildings {
+        declared += 1;
+        want("buildings.archive", &b.archive, false, &mut errs);
+        want("buildings.blas", &b.blas, true, &mut errs);
+    }
+    (declared, errs)
+}
+
 pub fn terrain_manifest(terrain: &str) -> Result<u8> {
     let contract = match terrain {
         "everon" => TerrainContract {
@@ -1210,8 +1391,208 @@ pub fn terrain_manifest(terrain: &str) -> Result<u8> {
         return Ok(1);
     }
     println!("PASS  Manifest matches terrains.ts for {terrain}");
+
+    // T-935.12. Runs on every manifest, with or without binary blocks — a manifest that declares
+    // none is the shipped state and says so out loud, because "PASS" over zero examined blocks is
+    // this program's signature defect. The POD row doc is checked unconditionally: it describes the
+    // format whether or not this terrain has migrated yet.
+    let instance_schema =
+        read_json(&schema_root(&root).join("schema/map-object-instance.schema.json"))?;
+    let mut bin_errors = pod_row_doc_failures(&instance_schema);
+    let (declared, path_errors) = manifest_binary_failures(
+        &manifest,
+        &root.join(format!("packages/map-assets/{terrain}")),
+    );
+    bin_errors.extend(path_errors);
+    if !bin_errors.is_empty() {
+        eprintln!("FAIL  T-935 binary blocks (spec §5):");
+        for e in &bin_errors {
+            eprintln!("      {e}");
+        }
+        return Ok(1);
+    }
+    if declared == 0 {
+        println!(
+            "PASS  ObjectInstancePod row doc; {terrain} declares no T-935 binary block (JSON paths)"
+        );
+    } else {
+        println!(
+            "PASS  ObjectInstancePod row doc + {declared} T-935 binary block(s), every path resolved"
+        );
+    }
+
     println!("\nverify-terrain-manifest: OK");
     Ok(0)
+}
+
+#[cfg(test)]
+mod t935_binary_block_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn fixture_dir(name: &str) -> PathBuf {
+        let d = std::env::temp_dir().join(format!("t935-12-{}-{name}", std::process::id()));
+        let _ = fs::remove_dir_all(&d);
+        fs::create_dir_all(&d).expect("fixture root");
+        d
+    }
+
+    /// The §5 manifest, complete. `parse_manifest_binary` reads only these keys.
+    fn full_manifest() -> Value {
+        json!({
+            "objects": { "binary": {
+                "schemaVersion": "1.0.0", "container": "TBDC", "containerVersion": 1,
+                "pod": "ObjectInstancePod", "podBytes": 32,
+                "chunks": "objects/chunks/{cx}_{cy}.bin", "prefabs": "objects/prefabs.rkyv",
+                "roads": "roads/road_network.rkyv", "regions": "objects/forest-regions.rkyv",
+                "typeInventory": "objects/type-inventory.rkyv" } },
+            "dem": { "raw": { "path": "dem/elevation.dem", "encoding": "tbde-v1" } },
+            "labels": { "path": "locations/map_labels.rkyv", "encoding": "rkyv-map-labels-v1" },
+            "water": { "vectors": "water/water_vectors.rkyv",
+                       "bathymetry": "water/bathymetry.tbd-bath", "encoding": "tbdb-v1" },
+            "buildings": { "archive": "prefabs/building_blueprints.rkyv", "blas": "prefabs/blas" }
+        })
+    }
+
+    /// Every file the §5 manifest names, materialised. Content is irrelevant — the gate checks
+    /// existence only, because in a slice worktree these are git-LFS pointer files.
+    fn materialise(dir: &Path) {
+        for rel in [
+            "objects/chunks/0_0.bin",
+            "objects/prefabs.rkyv",
+            "roads/road_network.rkyv",
+            "objects/forest-regions.rkyv",
+            "objects/type-inventory.rkyv",
+            "dem/elevation.dem",
+            "locations/map_labels.rkyv",
+            "water/water_vectors.rkyv",
+            "water/bathymetry.tbd-bath",
+            "prefabs/building_blueprints.rkyv",
+        ] {
+            let p = dir.join(rel);
+            fs::create_dir_all(p.parent().expect("parent")).expect("mkdir");
+            fs::write(&p, b"x").expect("write");
+        }
+        fs::create_dir_all(dir.join("prefabs/blas")).expect("blas dir");
+    }
+
+    fn live_instance_schema() -> Value {
+        let root = repo_root().expect("repo root");
+        read_json(&schema_root(&root).join("schema/map-object-instance.schema.json"))
+            .expect("map-object-instance.schema.json")
+    }
+
+    /// The committed row doc describes exactly the POD this build links.
+    #[test]
+    fn live_pod_row_doc_matches_the_rust_pod() {
+        assert_eq!(
+            pod_row_doc_failures(&live_instance_schema()),
+            Vec::<String>::new()
+        );
+    }
+
+    /// …and would notice if it stopped. One shifted offset leaves a hole in the row, which is
+    /// exactly the drift the doc exists to make visible.
+    #[test]
+    fn pod_row_doc_reds_on_a_shifted_offset_and_on_a_missing_block() {
+        let mut s = live_instance_schema();
+        s["$defs"]["objectInstancePodRow"]["fields"][8]["offset"] = json!(31);
+        let errs = pod_row_doc_failures(&s);
+        assert!(
+            errs.iter()
+                .any(|e| e.contains("class_code") && e.contains("offset")),
+            "shifted offset must red: {errs:?}"
+        );
+        let mut gone = live_instance_schema();
+        gone["$defs"] = json!({});
+        assert_eq!(
+            pod_row_doc_failures(&gone).len(),
+            1,
+            "a missing row doc is a FAIL"
+        );
+    }
+
+    /// ACCEPTANCE: a manifest WITH every §5 block, every path present.
+    #[test]
+    fn every_binary_block_is_accepted_when_its_paths_exist() {
+        let dir = fixture_dir("full");
+        materialise(&dir);
+        let (declared, errs) = manifest_binary_failures(&full_manifest(), &dir);
+        assert_eq!(declared, 5, "five blocks declared");
+        assert_eq!(errs, Vec::<String>::new());
+    }
+
+    /// ACCEPTANCE: the same manifest over an EMPTY tree. Every path dangles, and a dangling binary
+    /// path is silent at runtime (the loader falls back to JSON), so it has to be loud here.
+    #[test]
+    fn dangling_binary_paths_are_rejected_one_by_one() {
+        let dir = fixture_dir("empty");
+        let (declared, errs) = manifest_binary_failures(&full_manifest(), &dir);
+        assert_eq!(declared, 5);
+        for kind in [
+            "objects.binary.chunks",
+            "objects.binary.prefabs",
+            "objects.binary.roads",
+            "objects.binary.regions",
+            "objects.binary.typeInventory",
+            "dem.raw.path",
+            "labels.path",
+            "water.vectors",
+            "water.bathymetry",
+            "buildings.archive",
+            "buildings.blas",
+        ] {
+            assert!(
+                errs.iter().any(|e| e.starts_with(kind)),
+                "{kind} not reported: {errs:?}"
+            );
+        }
+    }
+
+    /// A chunks dir that exists but was never emitted into is still dangling — the directory alone
+    /// proves nothing, and `objects/chunks/` is populated with `.json.gz` on every shipped terrain.
+    #[test]
+    fn a_chunks_dir_holding_no_bin_is_dangling() {
+        let dir = fixture_dir("gzonly");
+        materialise(&dir);
+        fs::remove_file(dir.join("objects/chunks/0_0.bin")).expect("rm");
+        fs::write(dir.join("objects/chunks/0_0.json.gz"), b"x").expect("write");
+        let (_, errs) = manifest_binary_failures(&full_manifest(), &dir);
+        assert!(errs.iter().any(|e| e.contains("holds no .bin")), "{errs:?}");
+    }
+
+    /// The shape check, which is the reason `pod`/`podBytes`/`containerVersion` are on the wire:
+    /// a 24-byte row read at a 32-byte stride does not error, it draws garbage.
+    #[test]
+    fn a_row_shape_this_build_cannot_read_is_refused() {
+        let dir = fixture_dir("shape");
+        materialise(&dir);
+        let mut m = full_manifest();
+        m["objects"]["binary"]["podBytes"] = json!(24);
+        let (_, errs) = manifest_binary_failures(&m, &dir);
+        assert!(
+            errs.iter().any(|e| e.contains("this build reads")),
+            "{errs:?}"
+        );
+
+        // …and a template missing a placeholder, which would resolve the whole world to one URL.
+        let mut t = full_manifest();
+        t["objects"]["binary"]["chunks"] = json!("objects/chunks/all.bin");
+        let (_, errs) = manifest_binary_failures(&t, &dir);
+        assert!(errs.iter().any(|e| e.contains("{cx}")), "{errs:?}");
+    }
+
+    /// ACCEPTANCE: the manifest actually committed for everon declares no block, and is accepted.
+    #[test]
+    fn the_live_everon_manifest_declares_no_block_and_passes() {
+        let root = repo_root().expect("repo root");
+        let dir = root.join("packages/map-assets/everon");
+        let m = read_json(&dir.join("manifest.json")).expect("everon manifest");
+        assert_eq!(
+            manifest_binary_failures(&m, &dir),
+            (0, Vec::<String>::new())
+        );
+    }
 }
 
 /* ─────────────────────────── t090 spec consistency (12 gates) ─────────────────────────── */

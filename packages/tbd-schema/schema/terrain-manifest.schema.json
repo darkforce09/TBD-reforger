@@ -69,6 +69,16 @@
             "x": { "type": "boolean" },
             "z": { "type": "boolean" }
           }
+        },
+        "raw": {
+          "type": "object",
+          "description": "T-935 (spec §3.2) — the TBDE raw-u16 twin of the DEM PNG, streamed into one Vec<u16> instead of decoded through a PNG codec. OPTIONAL: absent means the PNG above is the only elevation source. Mirrors DemRawBlock in crates/map-engine-core/src/world/manifest.rs.",
+          "additionalProperties": false,
+          "required": ["path", "encoding"],
+          "properties": {
+            "path": { "type": "string", "description": "Relative to packages/map-assets/{terrainId}/, e.g. dem/elevation.dem." },
+            "encoding": { "const": "tbde-v1" }
+          }
         }
       }
     },
@@ -126,7 +136,11 @@
               "properties": {
                 "path": { "type": "string" },
                 "url": { "type": "string" },
-                "encoding": { "const": "tbd-sat-v1" },
+                "encoding": {
+                  "type": "string",
+                  "description": "tbd-sat-v1 is the shipped hand-packed tile table; tbd-sat-v2 (T-935, spec §3.5) replaces its index with an rkyv TbdSatIndexV2 behind the same magic. The reader dispatches on the file's own version field — this string only tells a loader which one to expect.",
+                  "enum": ["tbd-sat-v1", "tbd-sat-v2"]
+                },
                 "baseWidthPx": { "type": "integer", "minimum": 1 },
                 "baseHeightPx": { "type": "integer", "minimum": 1 },
                 "mipCount": { "type": "integer", "minimum": 1 },
@@ -210,7 +224,56 @@
             }
           }
         },
-        "exportedAt": { "type": "string", "format": "date-time" }
+        "exportedAt": { "type": "string", "format": "date-time" },
+        "binary": {
+          "type": "object",
+          "description": "T-935 (spec §5) — the TBDC chunk container plus the four Tier-2 rkyv archives that replace the objects/*.json.gz set. OPTIONAL: absent means the JSON paths above are the only ones, which is every manifest shipped before T-935.13. Mirrors ObjectsBinaryBlock in crates/map-engine-core/src/world/manifest.rs; container/containerVersion/pod/podBytes are on the wire so a loader can REFUSE a row shape it does not implement (ObjectsBinaryBlock::matches_this_build) instead of reading a 24-byte-row file at a 32-byte stride and drawing a map made of garbage that never errors.",
+          "additionalProperties": false,
+          "required": ["container", "containerVersion", "pod", "podBytes", "chunks"],
+          "properties": {
+            "schemaVersion": { "type": "string" },
+            "container": { "const": "TBDC", "description": "spec §3.1 — magic of objects/chunks/{cx}_{cy}.bin." },
+            "containerVersion": { "const": 1, "description": "CONTAINER_VERSION. Pinned, not open: a v2 manifest must fail this schema until the reader that understands v2 lands." },
+            "pod": { "const": "ObjectInstancePod", "description": "POD_NAME — the 32-byte row documented in map-object-instance.schema.json $defs/objectInstancePodRow." },
+            "podBytes": { "const": 32, "description": "POD_BYTES. Every offset in the format is 32 + 32 * index." },
+            "chunks": { "type": "string", "description": "Path template carrying BOTH {cx} and {cy}, e.g. objects/chunks/{cx}_{cy}.bin. A template missing either placeholder resolves every chunk in the world to one URL (chunk_bin_path returns None and the loader stays on JSON)." },
+            "prefabs": { "type": "string", "description": "objects/prefabs.rkyv — PrefabCatalogArchive." },
+            "roads": { "type": "string", "description": "roads/road_network.rkyv — RoadNetworkArchive." },
+            "regions": { "type": "string", "description": "objects/forest-regions.rkyv — ForestRegionsArchive." },
+            "typeInventory": { "type": "string", "description": "objects/type-inventory.rkyv; the inventory also lives inside the prefab catalogue." }
+          }
+        }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "description": "T-935 (spec §5) — the rkyv label archive replacing locations.json plus the road-name JSON. OPTIONAL. Mirrors LabelsBlock in crates/map-engine-core/src/world/manifest.rs.",
+      "additionalProperties": false,
+      "required": ["path", "encoding"],
+      "properties": {
+        "path": { "type": "string", "description": "e.g. locations/map_labels.rkyv." },
+        "encoding": { "const": "rkyv-map-labels-v1" }
+      }
+    },
+    "water": {
+      "type": "object",
+      "description": "T-935 (spec §3.3/§5) — water vectors as an rkyv archive and the TBDB mipmapped bathymetry raster. OPTIONAL. Mirrors WaterBlock in crates/map-engine-core/src/world/manifest.rs.",
+      "additionalProperties": false,
+      "required": ["vectors", "encoding"],
+      "properties": {
+        "vectors": { "type": "string", "description": "e.g. water/water_vectors.rkyv — WaterVectorsArchive." },
+        "bathymetry": { "type": "string", "description": "e.g. water/bathymetry.tbd-bath. Absent on a terrain with no bathymetry bake." },
+        "encoding": { "const": "tbdb-v1" }
+      }
+    },
+    "buildings": {
+      "type": "object",
+      "description": "T-935 (spec §5) — one BuildingBlueprintArchive fetch in place of 1623 descriptor fetches, plus the directory its .bvh sidecars are indexed out of. OPTIONAL. Mirrors BuildingsBlock in crates/map-engine-core/src/world/manifest.rs.",
+      "additionalProperties": false,
+      "required": ["archive"],
+      "properties": {
+        "archive": { "type": "string", "description": "e.g. prefabs/building_blueprints.rkyv." },
+        "blas": { "type": "string", "description": "Directory of the .bvh sidecars, e.g. prefabs/blas." }
       }
     },
     "glyphs": {

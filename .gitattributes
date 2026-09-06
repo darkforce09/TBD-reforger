@@ -4,3 +4,26 @@ packages/map-assets/**/*.png filter=lfs diff=lfs merge=lfs -text
 packages/map-assets/**/*.r16 filter=lfs diff=lfs merge=lfs -text
 packages/map-assets/**/*.tbd-sat filter=lfs diff=lfs merge=lfs -text
 packages/map-assets/**/prefabs/blas/*.bvh filter=lfs diff=lfs merge=lfs -text
+
+# T-935 map binary storage (spec §3) — the raw-POD / rkyv / container payloads that replace the
+# objects/*.json.gz set at the T-935.13 cutover. `.bin` = TBDC object chunks, `.rkyv` = the Tier-2
+# archives (prefab catalogue, roads, labels, water vectors, forest regions, building blueprints),
+# `.dem` = the TBDE raw elevation grid, `.tbd-bath` = the TBDB mipmapped bathymetry. All four are
+# incompressible emitter output measured in hundreds of MB, which is what LFS exists for.
+#
+# The rules land here BEFORE any such file is committed, on purpose: a binary added while the
+# filter is unspecified goes into git as raw bytes and the rule never retroactively applies to it.
+# Scope is packages/map-assets only — packages/tbd-schema/golden/**/*.bin are small committed
+# fixtures that every gate (and every slice worktree) must be able to read as real bytes, so they
+# stay ordinary blobs.
+packages/map-assets/**/*.bin filter=lfs diff=lfs merge=lfs -text
+packages/map-assets/**/*.rkyv filter=lfs diff=lfs merge=lfs -text
+packages/map-assets/**/*.dem filter=lfs diff=lfs merge=lfs -text
+packages/map-assets/**/*.tbd-bath filter=lfs diff=lfs merge=lfs -text
+
+# EXCEPTION, and it must stay LAST (git takes the final matching line). The 625 TBDD forest-density
+# tiles were committed as RAW git blobs at T-090.3.2, before any LFS rule covered `.bin`. Letting
+# the rule above claim them would show all 625 as modified in every clone and every worktree
+# without one byte changing, because the clean filter would produce a pointer that differs from the
+# stored blob. Converting them is its own migration, not a side effect of adding a schema gate.
+packages/map-assets/**/objects/density/*.bin -filter -diff -merge -text
