@@ -11,8 +11,11 @@
 //! decode is a frame the browser cannot paint.
 //!
 //! The raw file is 81.9 MB — 10 MB *larger* on the wire — and that is the trade: no inflate at all,
-//! and the bytes land in the `Vec<u16>` the store keeps as they arrive. There is exactly one
-//! allocation on this path.
+//! and the bytes land in the `Vec<u16>` the store keeps as they arrive. The DECODE is one
+//! allocation; the PATH is two, because `load_declared_raw` still calls `metres_grid()` and three
+//! shipped consumers take `&[f32]` (hillshade, the `dem_vectors` downsample, and the retained
+//! grid). Two, down from the PNG path's four — T-946 corrected this line, which said "exactly one
+//! allocation" forty-eight lines above the `f32` grid it builds. Removing the last one is T-978.
 //!
 //! # Why this streams itself instead of calling `fetch_bytes_streamed`
 //!

@@ -11,8 +11,10 @@
 //!
 //! * the **census**: every `blocks: false` prefab, inserted at once, so those pids are routed to
 //!   `no_block` and never fetched at all (301 of everon's 1623 descriptors today);
-//! * the **BLAS index**: every prefab's `.bvh` fetch list, so a sidecar can be queued without
-//!   having read that prefab's descriptor JSON first ([`OccluderHost::with_archive_blas`]);
+//! * the **BLAS index**: every prefab's `.bvh` fetch list. T-946 removed the fold that consumed
+//!   it — it ran AFTER the awaited descriptor fetch, so `wanted()` had already named every
+//!   sidecar it could have added. Queueing these concurrently with the descriptors is the real
+//!   saving and is its own ticket; until then the archive's index is not read at runtime;
 //! * the **blueprint levels**, kept as bytes so LOS and viewshed read them zero-copy through
 //!   [`OccluderHost::building_archive`] — `access_checked` hands back a borrowed view, nothing is
 //!   deserialised.
@@ -28,13 +30,13 @@
 //!
 //! [`InstanceRecord`]: map_engine_core::building_compound::InstanceRecord
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use map_engine_core::bvh::BvhSidecar;
 use map_engine_core::world::occluder::descriptor::{ArchiveBoot, BuildingArchiveBytes};
 use map_engine_core::world::occluder::{BlasManifest, PrefabDescriptor, WorldOccluder};
-use map_engine_core::world::{parse_manifest_binary, ResidencyEvent, TerrainSizeM, WorldResidency};
+use map_engine_core::world::{ResidencyEvent, TerrainSizeM, WorldResidency, parse_manifest_binary};
 
 use super::fetch::{fetch_bytes, fetch_text};
 
@@ -57,11 +59,6 @@ pub struct OccluderHost {
     /// LOS; `None` on every manifest without a `buildings` block, which is the shipped state
     /// until T-935.13.
     archive: Option<BuildingArchiveBytes>,
-    /// pid → its `.bvh` fetch list, read out of the archive's shared BLAS index once at boot.
-    archive_blas: HashMap<u16, Vec<String>>,
-    /// Sidecar paths this session has already handed to `insert_blas` — see
-    /// [`OccluderHost::with_archive_blas`], which is the only reader.
-    blas_seen: HashSet<String>,
     /// `(census inserted, blocking rows left to JSON, rows the archive could not resolve)`.
     archive_census: (usize, usize, usize),
     failed: HashMap<String, u8>,
@@ -76,8 +73,6 @@ impl OccluderHost {
             base: String::new(),
             manifest: None,
             archive: None,
-            archive_blas: HashMap::new(),
-            blas_seen: HashSet::new(),
             archive_census: (0, 0, 0),
             failed: HashMap::new(),
             ready: false,
@@ -154,7 +149,6 @@ impl OccluderHost {
         };
         let boot = ArchiveBoot::from_archive(archive);
         self.archive_census = (boot.census.len(), boot.blocking, boot.unusable);
-        self.archive_blas = boot.blas_by_pid.into_iter().collect();
         for d in boot.census {
             self.occ.insert_descriptor(d);
         }
@@ -213,40 +207,6 @@ impl OccluderHost {
         self.archive_census
     }
 
-    /// `have` plus the `.bvh` sidecars these pids need according to the archive's BLAS index —
-    /// distinct, `have` first, pid order after.
-    ///
-    /// This is what the archive's `blas_index` buys the loader. Without it a sidecar is only
-    /// reachable after that prefab's descriptor JSON has arrived AND parsed (`Wanted::blas` walks
-    /// `descriptors[pid].instances`), so a descriptor that 404s or lands late stalls its geometry
-    /// for a whole extra drain round. With it, the sidecars of the pids whose descriptors are
-    /// being fetched right now go out in the SAME round.
-    ///
-    /// `blas_seen` suppresses only re-issues, never a refetch that matters: a sidecar the byte
-    /// budget evicted is re-listed by `wanted()` (the descriptor is loaded by then, and `wanted`
-    /// asks `blas.contains_key`), and that path is untouched here.
-    /// The round's fetch budget is unchanged: `wanted()` caps its own list at
-    /// [`WANT_PER_PASS`] and so does this. A 96-pid round of multi-instance buildings names
-    /// hundreds of distinct sidecars, and issuing all of them would turn one drain round into a
-    /// boot stall — the archive is meant to remove a round-trip, not to change the pacing.
-    fn with_archive_blas(&self, have: Vec<String>, pids: &[u16]) -> Vec<String> {
-        let mut out = have;
-        'pids: for pid in pids {
-            let Some(paths) = self.archive_blas.get(pid) else {
-                continue;
-            };
-            for p in paths {
-                if out.len() >= WANT_PER_PASS {
-                    break 'pids;
-                }
-                if !self.blas_seen.contains(p) && !out.contains(p) {
-                    out.push(p.clone());
-                }
-            }
-        }
-        out
-    }
-
     fn failed_out(&self, key: &str) -> bool {
         self.failed.get(key).copied().unwrap_or(0) >= FAILURE_CAP
     }
@@ -300,7 +260,6 @@ impl OccluderHost {
                 match bytes.and_then(|b| BvhSidecar::parse(&b).ok()) {
                     Some(sc) => {
                         self.occ.insert_blas(&rel, Arc::new(sc));
-                        self.blas_seen.insert(rel);
                         work = true;
                     }
                     None => self.note_failure(rel),
@@ -337,15 +296,26 @@ impl OccluderHost {
         for _ in 0..DRAIN_ROUNDS {
             let mut round = false;
             let want = self.occ.wanted(&ids, WANT_PER_PASS);
-            let pending = want.descriptors.clone();
             if !want.descriptors.is_empty() {
                 round |= self.fetch_descriptors(&want.descriptors).await;
             }
             let want = self.occ.wanted(&ids, WANT_PER_PASS);
-            // T-935.8 — `wanted().blas` can only name the sidecars of descriptors that already
-            // parsed. The archive knows the rest, so this round also carries the sidecars of the
-            // pids it just asked for, whether or not their JSON arrived.
-            let blas = self.with_archive_blas(want.blas, &pending);
+            // T-946 — THE ARCHIVE SIDECAR FOLD IS GONE, because it could not do what it said.
+            //
+            // It claimed to carry "the sidecars of the pids whose descriptors are being fetched
+            // right now, in the SAME round". But `fetch_descriptors` is AWAITED above, so by the
+            // time this line runs every descriptor that parsed is already in `self.occ` and the
+            // `wanted()` call on the line above already names its sidecars — the fold's own
+            // `!out.contains(p)` then removed them again. The only paths it could still add
+            // belonged to pids whose descriptor 404'd or failed to parse, and `try_expand` can
+            // never attach geometry to a descriptor it does not have. So the mechanism bought no
+            // round-trip and spent real fetches and real bytes of the 48 MB budget on geometry
+            // that provably could not be used. Found by the wave 238 verifier.
+            //
+            // Issuing the archive's sidecars CONCURRENTLY with the descriptor fetch would deliver
+            // the intended saving; that is a change to this loop's ordering and belongs in its own
+            // ticket rather than in a fix for a mechanism that was inert.
+            let blas = want.blas;
             if !blas.is_empty() {
                 round |= self.fetch_blas(&blas).await;
             }

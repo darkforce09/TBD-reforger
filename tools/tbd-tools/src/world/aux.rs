@@ -1554,17 +1554,37 @@ mod elevation_dem_tests {
     /// its raster and re-reads it, asserting all 40,960,000 samples are identical and metres agree
     /// to within the `f32` rounding of the header's scale/offset.
     ///
-    /// `#[ignore]` because `packages/map-assets/**/*.png` is git-LFS: in a slice worktree the file
-    /// on disk is a 133-byte pointer, and a test that reads one would be red for a reason that has
-    /// nothing to do with this code. Run it where the payload is hydrated:
-    /// `cargo test -p tbd-tools elevation_dem -- --ignored --nocapture`.
+    /// NOT `#[ignore]`, as of T-946. It was, because `packages/map-assets/**/*.png` is git-LFS and
+    /// in a slice worktree the file is a 133-byte pointer — but a blanket ignore also hid it from
+    /// the WAVE gate, which runs on main where the payload is real. The wave 238 verifier found
+    /// that `test xtask+tbd-tools PASS` had covered the emitter's unit tests and not the one test
+    /// that compares the emitted `.dem` against the shipped DEM. It costs 3.5 s there.
+    ///
+    /// So the skip is now conditional on the evidence rather than declared: a pointer file is a
+    /// few hundred bytes, the real DEM is 71.9 MB, and a skip SAYS SO on stdout instead of
+    /// vanishing into an ignore count.
     #[test]
-    #[ignore = "needs the git-lfs everon DEM payload; run explicitly with -- --ignored"]
     fn everon_elevation_dem_matches_the_shipped_png() {
         use map_engine_core::dem::sample::uint16_to_meters;
 
         let root = repo_root();
         let png = root.join("packages/map-assets/everon/dem/everon-dem-16bit.png");
+        // An LFS pointer is ~133 B; the real 6400x6400 16-bit PNG is 71.9 MB. Anything in between
+        // is neither, and is worth failing on rather than skipping past.
+        const LFS_POINTER_MAX: u64 = 4096;
+        match std::fs::metadata(&png) {
+            Ok(m) if m.len() <= LFS_POINTER_MAX => {
+                println!(
+                    "skip-lfs: {} is {} bytes — a git-LFS pointer, not the DEM. \
+                     Hydrate with `git lfs pull --include packages/map-assets/everon/dem/`",
+                    png.display(),
+                    m.len()
+                );
+                return;
+            }
+            Ok(_) => {}
+            Err(e) => panic!("{}: {e}", png.display()),
+        }
         let bytes = std::fs::read(&png).unwrap_or_else(|e| panic!("{}: {e}", png.display()));
         assert!(
             bytes.len() > 1_000_000,

@@ -37,8 +37,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::building_compound::InstanceRecord;
 use crate::world::binary::archives::{
-    ArchivedBlasEntry, ArchivedBuildingBlueprintArchive, ArchivedOccluderDescriptor,
-    BlasEntry as WireBlasEntry, BuildingBlueprintArchive, OccluderDescriptor as WireDescriptor,
+    ARCHIVE_SCHEMA_VERSION, ArchivedBlasEntry, ArchivedBuildingBlueprintArchive,
+    ArchivedOccluderDescriptor, BlasEntry as WireBlasEntry, BuildingBlueprintArchive,
+    OccluderDescriptor as WireDescriptor,
 };
 use crate::world::binary::{BinaryError, access_checked};
 
@@ -325,10 +326,30 @@ impl BuildingArchiveBytes {
 
     /// The validated archive, borrowed in place — no deserialise, no allocation.
     ///
+    /// VALIDATION IS LAYOUT PLUS MEANING. `access_checked` proves rkyv can read the buffer; it
+    /// says nothing about whether this build agrees with the writer about what the fields MEAN.
+    /// T-946: the wave 238 verifier found this accessor taking a future archive on layout alone,
+    /// while its sibling `world::locations::map_labels_from_bytes` — written in the same wave —
+    /// checked the version. For labels a mismatch draws the wrong text. Here it seeds `no_block`
+    /// for the wrong prefab ids, `wanted()` never asks for them again, and the building stops
+    /// occluding for the whole session with nothing logged: the silently wrong sightline this
+    /// module exists to prevent.
+    ///
     /// # Errors
-    /// [`BinaryError::Archive`] when the buffer fails rkyv validation.
+    /// [`BinaryError::Archive`] when the buffer fails rkyv validation;
+    /// [`BinaryError::UnsupportedVersion`] when it was written to a schema this build does not
+    /// implement. Both are the caller's cue to fall back to the descriptor JSON.
     pub fn archive(&self) -> Result<&ArchivedBuildingBlueprintArchive, BinaryError> {
-        access_checked::<BuildingBlueprintArchive>(self.as_slice())
+        let archive = access_checked::<BuildingBlueprintArchive>(self.as_slice())?;
+        let version = archive.schema_version.to_native();
+        if version != ARCHIVE_SCHEMA_VERSION {
+            return Err(BinaryError::UnsupportedVersion {
+                what: "BuildingBlueprintArchive",
+                expected: ARCHIVE_SCHEMA_VERSION,
+                actual: version,
+            });
+        }
+        Ok(archive)
     }
 }
 
@@ -684,6 +705,41 @@ mod tests {
             blueprints: vec![],
         };
         BuildingArchiveBytes::new(&to_bytes(&a).expect("serialise"))
+    }
+
+    /// T-946 — a future archive must be refused, not read on layout alone.
+    ///
+    /// rkyv's `access_checked` proves the buffer is READABLE, not that this build agrees with the
+    /// writer about what the fields mean. Found by the wave 238 verifier: a v2 archive whose
+    /// `blocks` bits had shifted would seed `no_block` for the wrong prefab ids, `wanted()` would
+    /// never ask for them again, and those buildings would stop occluding for the whole session
+    /// with nothing logged. The sibling label archive checked its version in the same wave.
+    #[test]
+    fn a_future_archive_schema_is_refused_rather_than_read() {
+        let future = BuildingBlueprintArchive {
+            schema_version: ARCHIVE_SCHEMA_VERSION + 1,
+            descriptors: vec![],
+            blas_index: vec![],
+            blueprints: vec![],
+        };
+        let bytes = BuildingArchiveBytes::new(&to_bytes(&future).expect("serialise"));
+        let err = bytes
+            .archive()
+            .expect_err("a schema this build does not implement must not be read");
+        println!("── refusal ── {err}");
+        assert!(
+            matches!(err, BinaryError::UnsupportedVersion { .. }),
+            "and it must say so, not blame the layout: {err:?}"
+        );
+        // The current version still reads.
+        let current = BuildingBlueprintArchive {
+            schema_version: ARCHIVE_SCHEMA_VERSION,
+            descriptors: vec![],
+            blas_index: vec![],
+            blueprints: vec![],
+        };
+        let ok = BuildingArchiveBytes::new(&to_bytes(&current).expect("serialise"));
+        assert!(ok.archive().is_ok());
     }
 
     #[test]
