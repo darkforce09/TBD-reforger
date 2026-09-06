@@ -118,7 +118,7 @@ OK: compiled clean
 
 ## commits
 
-(filled after `git commit`)
+- `9534104563246ca4c3de6afa89aa02100b00e181` T-291: read orphan settings, wind, and spectator policy
 
 ## manual_checklist
 
