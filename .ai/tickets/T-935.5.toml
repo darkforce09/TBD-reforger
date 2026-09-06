@@ -42,8 +42,10 @@ acceptance = [
     "decode_tbdd contains no per-byte assembly loop in production code.",
     "forest_mass.rs and every other caller compiles unchanged.",
 ]
+shipped_at = "2c57d0162"
 created_at = "2026-09-05T01:34:37Z"
 completed_at = "2026-09-06T03:17:10Z"
+estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/geometry/tbdd.rs",
     "tools/tbd-tools/src/density.rs",
