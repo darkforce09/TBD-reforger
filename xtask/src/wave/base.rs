@@ -424,7 +424,25 @@ pub fn wave_plan_tickets_at(ctx: &Ctx, rev: &str, n: i64) -> Vec<String> {
     if !blob.is_empty() {
         if let Ok(lock) = crate::wave_lock::parse(&blob) {
             if let Ok(w) = u32::try_from(n) {
-                return lock.tickets_in_wave(w);
+                let open = lock.tickets_in_wave(w);
+                if !open.is_empty() {
+                    return open;
+                }
+                // T-946 — A CLOSED WAVE LIVES IN `[[emptied]]`, AND THAT IS STILL THE PLAN
+                // SPEAKING. The open-wave list is the only place this used to look, so a wave
+                // that emptied correctly — every ticket shipped, the repack freezing its set as a
+                // pending entry — had NO rows here and oracle 2 reported silence. Every gate then
+                // demanded `TBD_GATE_BASE_CONFIRM`, which is exactly the "give the ledger
+                // something to say" the refusal asks for, refused about a ledger that WAS saying
+                // it. Reading the pending entry can only ever strengthen the check: silence
+                // becomes a real ticket list, which the completion test below then contradicts or
+                // corroborates.
+                return lock
+                    .emptied
+                    .iter()
+                    .find(|e| e.n == w)
+                    .map(|e| e.tickets.clone())
+                    .unwrap_or_default();
             }
             return Vec::new();
         }
@@ -1009,6 +1027,56 @@ pub fn refuse_empty_range(range: &str, what: &str) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// T-946 — a wave that emptied correctly still has rows for oracle 2 to read.
+    ///
+    /// Before this, `wave_plan_tickets_at` looked only at `[[waves]]`, so a wave whose every
+    /// ticket had shipped — the repack having frozen its set as a pending `[[emptied]]` entry —
+    /// produced an EMPTY list, and oracle 2 reported "has NO rows for wave N … it cannot
+    /// corroborate this boundary". Every gate then demanded `TBD_GATE_BASE_CONFIRM` about a
+    /// ledger that was in fact recording exactly the wave being closed.
+    #[test]
+    fn the_plan_speaks_for_a_wave_that_has_already_emptied() {
+        let toml = concat!(
+            "version = 1\n",
+            "max_concurrent = 3\n",
+            "wave_base = 235\n",
+            "pack_last = []\n",
+            "[owns]\n",
+            "[depends_on]\n",
+            "[[waves]]\n",
+            "n = 0\n",
+            "tickets = [\"T-1\"]\n",
+            "[[waves]]\n",
+            "n = 237\n",
+            "tickets = [\"T-9\"]\n",
+            "[[emptied]]\n",
+            "n = 236\n",
+            "tickets = [\"T-300\", \"T-935.1\", \"T-277\"]\n",
+        );
+        let lock = crate::wave_lock::parse(toml).expect("parse");
+        println!(
+            "── open 237 = {:?} · open 236 = {:?} · pending = {:?}",
+            lock.tickets_in_wave(237),
+            lock.tickets_in_wave(236),
+            lock.emptied
+                .iter()
+                .map(|e| (e.n, e.tickets.clone()))
+                .collect::<Vec<_>>()
+        );
+        // The open-wave view alone is silent about 236 — that is the bug, kept visible here.
+        assert!(lock.tickets_in_wave(236).is_empty());
+        // The pending record is not silent, and it names the wave that closed.
+        let pending: Vec<String> = lock
+            .emptied
+            .iter()
+            .find(|e| e.n == 236)
+            .map(|e| e.tickets.clone())
+            .unwrap_or_default();
+        assert_eq!(pending, vec!["T-300", "T-935.1", "T-277"]);
+        // And an open wave still wins for its own label.
+        assert_eq!(lock.tickets_in_wave(237), vec!["T-9".to_string()]);
+    }
 
     #[test]
     fn the_four_accepted_suffixes_and_nothing_else() {
