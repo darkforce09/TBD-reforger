@@ -188,7 +188,7 @@
     },
     "environment": {
       "type": "object",
-      "description": "Mission environment. T-682 adds `fog` / `wind` / `viewDistance` on the WIRE (schemaVersion 1.3) as the scenario-side environment axes (ATTR-FIELD-SCN-FOG / -SCN-WIND / -SCN-VIEW-DIST).\n\nAUTHORING PATH LANDS SEPARATELY — read this before adding an editor control. `eden_env.rs`'s `keys_nothing_reads_are_not_authored` test names `viewDistance` (and `thermals`/`windDirDeg`/`fog`/`wind`) as keys the EDITOR MUST NOT AUTHOR, because nothing reads them back: `ModEnvironment` (flatten.rs) serialises only `dateTime`/`weatherPreset`, and T-193 removed the view-distance/thermals controls for exactly this reason. That frontend test gates AUTHORING (`env_key_is_carried`, a hardcoded editor table with no dependency on this schema), NOT the wire: declaring `viewDistance` here does not make the editor author it, so the test stays green. The mod READER comes first and the control second (the `author_env` ordering rationale, eden_env.rs) — the Enfusion environment reader lands under T-682, and only then does an editor control become authorable. NOTHING reads `fog`/`wind`/`viewDistance` on any shipped build; `windDirDeg` is present but `ModEnvironment` does not serialise it either.",
+      "description": "Mission environment. T-682 adds `fog` / `wind` / `viewDistance` on the WIRE (schemaVersion 1.3) as the scenario-side environment axes (ATTR-FIELD-SCN-FOG / -SCN-WIND / -SCN-VIEW-DIST).\n\nAUTHORING PATH LANDS SEPARATELY — read this before adding an editor control. `env.rs`'s `keys_nothing_reads_are_not_authored` test names `viewDistance` (and `thermals`/`windDirDeg`/`fog`/`wind`) as keys the EDITOR MUST NOT AUTHOR. That frontend test gates AUTHORING, NOT the wire. The mod READER comes first and the control second (`author_env`). READ SINCE T-682 (2026-09-06) by `TBD_EnvironmentReader.c` (both mod trees) and `ModEnvironment` serialisation of `fog`/`wind`/`windDirDeg`/`viewDistance` when authored. Editor controls stay refused until a later ticket.",
       "additionalProperties": false,
       "properties": {
         "dateTime": { "type": "string", "format": "date-time" },
@@ -198,17 +198,17 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "T-682 (ATTR-FIELD-SCN-FOG). Fog density, 0 (clear) → 1 (thickest), matching Eden's normalised scenario fog. On the wire only — no reader on any shipped build; lands under T-682."
+          "description": "T-682 (ATTR-FIELD-SCN-FOG). Fog density, 0 (clear) → 1 (thickest), matching Eden's normalised scenario fog. READ SINCE T-682 (2026-09-06) by `TBD_EnvironmentReader.c`."
         },
         "wind": {
           "type": "number",
           "minimum": 0,
-          "description": "T-682 (ATTR-FIELD-SCN-WIND). Wind STRENGTH (m/s); direction is the existing `windDirDeg`. On the wire only — no reader on any shipped build; lands under T-682."
+          "description": "T-682 (ATTR-FIELD-SCN-WIND). Wind STRENGTH (m/s); direction is the existing `windDirDeg`. READ SINCE T-682 (2026-09-06) by `TBD_EnvironmentReader.c`."
         },
         "viewDistance": {
           "type": "number",
           "exclusiveMinimum": 0,
-          "description": "T-682 (ATTR-FIELD-SCN-VIEW-DIST). Terrain/object view distance in metres. On the wire only — no reader on any shipped build, and DELIBERATELY NOT AUTHORED by the editor (T-193 removed its control; eden_env.rs asserts it stays un-authored). The reader + re-added control land under T-682."
+          "description": "T-682 (ATTR-FIELD-SCN-VIEW-DIST). Terrain/object view distance in metres. READ SINCE T-682 (2026-09-06) by `TBD_EnvironmentReader.c`. DELIBERATELY NOT AUTHORED by the editor (T-193 removed its control; env.rs asserts it stays un-authored). The editor control is a later ticket."
         }
       }
     },
@@ -273,7 +273,7 @@
         "behaviour": {
           "type": "string",
           "enum": ["careless", "safe", "aware", "combat", "stealth"],
-          "description": "T-678 (ATTR-FIELD-GRP-BEHAVIOUR, schemaVersion 1.3). Group behaviour state — TBD vocabulary (careless/safe/aware/combat/stealth) the reader maps onto the engine's behaviour type; the names here are the contract, not an engine identifier (the earlier `EAIWaypointCompletionType` attribution was wrong — a completion-type enum is not a behaviour ladder — and is dropped). On the wire only — no reader on any shipped build; lands under T-678."
+          "description": "T-678 (ATTR-FIELD-GRP-BEHAVIOUR, schemaVersion 1.3). Group behaviour state — TBD vocabulary (careless/safe/aware/combat/stealth). READ SINCE T-677 (2026-09-06) on waypoint overrides via `TBD_WaypointRuntime.c` (identifier count is global). Group-level defaults still land under T-678."
         },
         "formation": {
           "type": "string",
@@ -293,11 +293,11 @@
         "speedMode": {
           "type": "string",
           "enum": ["limited", "normal", "full"],
-          "description": "T-678 (ATTR-FIELD-GRP-SPEED-MODE, schemaVersion 1.3). Group movement speed mode. On the wire only — word-boundary `speedMode` is ZERO in both trees; lands under T-678."
+          "description": "T-678 (ATTR-FIELD-GRP-SPEED-MODE, schemaVersion 1.3). Group movement speed mode. READ SINCE T-677 (2026-09-06) on waypoint overrides via `TBD_WaypointRuntime.c` (identifier count is global). Group-level defaults still land under T-678."
         },
         "waypoints": {
           "type": "array",
-          "description": "T-677 — per-squad waypoint list (schemaVersion 1.3), the nine `ATTR-FIELD-WP-*` ids. On the wire only, and GATED ON A SUBJECT: `TBD_SpawnManager` spawns every body AI-DISABLED (TBD_SpawnManager.c:963,1166), so a waypoint has nothing to command until AI units exist. Ships together with the group-AI-state ticket (T-678) or not at all — they share the gate exactly. The waypoint runtime lands under T-677.",
+          "description": "T-677 — per-squad waypoint list (schemaVersion 1.3), the nine `ATTR-FIELD-WP-*` ids. READ SINCE T-677 (2026-09-06) by `TBD_WaypointRuntime.c`. `TBD_SpawnManager` opens the AI spawn gate only for waypointed groups. Group combatMode/formation remain T-678.",
           "items": { "$ref": "#/$defs/waypoint" }
         },
         "placementRadius": {
@@ -1066,7 +1066,7 @@
     },
     "waypoint": {
       "type": "object",
-      "description": "T-677 — one squad waypoint (schemaVersion 1.3). Read the `group.waypoints` description first: NOTHING reads this on any shipped build, and the whole feature is gated on AI units existing (every body spawns AI-disabled today). Ordered by position in the array; `type` is the waypoint kind, `x`/`z` its position.",
+      "description": "T-677 — one squad waypoint (schemaVersion 1.3). READ SINCE T-677 (2026-09-06) by `TBD_WaypointRuntime.c` (both mod trees). Ordered by position in the array; `type` is the waypoint kind, `x`/`z` its position. The AI spawn gate opens only for waypointed groups.",
       "required": ["type", "x", "z"],
       "additionalProperties": false,
       "properties": {
@@ -1095,7 +1095,7 @@
         "vehicleUid": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "T-677 (schemaVersion 1.3). For a `get_in` (and, when boarding a specific vehicle, `get_out`) waypoint: the target vehicle, referenced by a `vehicles[].uid`-style stable id, so the squad boards THE authored vehicle rather than any nearby one by proximity inference. Absent → proximity/nearest, the only behaviour available before this key. Ignored for non-boarding waypoint types. On the wire only — the waypoint reader lands under T-677."
+          "description": "T-677 (schemaVersion 1.3). For a `get_in` (and, when boarding a specific vehicle, `get_out`) waypoint: the target vehicle, referenced by a `vehicles[].uid`-style stable id, so the squad boards THE authored vehicle rather than any nearby one by proximity inference. Absent → proximity/nearest, the only behaviour available before this key. Ignored for non-boarding waypoint types. READ SINCE T-677 (2026-09-06) by `TBD_WaypointRuntime.c`."
         },
         "radiusM": {
           "type": "number",

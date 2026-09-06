@@ -2539,22 +2539,9 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
     // `activation`, `effects` and `variantId` all gained readers when TBD_TriggerRuntime.c landed,
     // so their "no reader on any shipped build" assertions are retired rather than re-pinned — a
     // non-zero baseline here means a pre-existing UNRELATED identifier, which these are not.
-    // T-677 — per-squad waypoints.
-    UnreadField {
-        name: "waypoints",
-        expected: 0,
-        ticket: "T-677",
-        why: "clean",
-    },
-    // W120 m-8 — the get_in waypoint vehicle target (waypoint.vehicleUid → vehicles[].uid). New
-    // wire word; measured clean 0. (`vehicles[].uid` itself reuses the pre-B1 `uid` field name,
-    // already reader-free and not a new field.)
-    UnreadField {
-        name: "vehicleUid",
-        expected: 0,
-        ticket: "T-677",
-        why: "clean",
-    },
+    // T-677 — per-squad waypoints: RETIRED 2026-09-06. `waypoints` and `vehicleUid` gained
+    // readers when TBD_WaypointRuntime.c landed, so their "no reader on any shipped build"
+    // assertions are retired rather than re-pinned.
     // T-678 — group AI state.
     UnreadField {
         name: "combatMode",
@@ -2568,19 +2555,9 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         ticket: "T-678",
         why: "clean",
     },
-    UnreadField {
-        name: "speedMode",
-        expected: 0,
-        ticket: "T-678",
-        why: "clean",
-    },
-    // `behaviour` appears only in English prose in comments — stripped to 0 identifiers.
-    UnreadField {
-        name: "behaviour",
-        expected: 0,
-        ticket: "T-678",
-        why: "English word 'behaviour' only in comments (stripped); no identifier",
-    },
+    // T-677 also binds waypoint `speedMode` / `behaviour` (ATTR-FIELD-WP-SPEED / -WP-BEHAVIOUR).
+    // Those UNREAD rows were labelled T-678 (group-level) but the identifier count is global —
+    // RETIRED 2026-09-06 with T-677. Group `combatMode` / `formation` stay (T-678).
     // T-679 — placement scatter (slot + group).
     UnreadField {
         name: "placementRadius",
@@ -2647,25 +2624,9 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         ticket: "T-681",
         why: "T-673 marker.size reader (3 identifiers) plus the pre-existing file-size comment; T-681 entity OBJ-SIZE is a different field and still unread",
     },
-    // T-682 — environment fog/wind/viewDistance.
-    UnreadField {
-        name: "fog",
-        expected: 0,
-        ticket: "T-682",
-        why: "clean",
-    },
-    UnreadField {
-        name: "wind",
-        expected: 0,
-        ticket: "T-682",
-        why: "clean once comments stripped",
-    },
-    UnreadField {
-        name: "viewDistance",
-        expected: 0,
-        ticket: "T-682",
-        why: "clean (frontend also refuses to author it — eden_env.rs)",
-    },
+    // T-682 — environment fog/wind/viewDistance: RETIRED 2026-09-06. TBD_EnvironmentReader.c
+    // plus ModEnvironment serialisation landed those identifiers. Editor authoring stays refused
+    // (author_env); that is a different gate.
     // T-684 — missionParams[] first-class launch parameters.
     UnreadField {
         name: "missionParams",
