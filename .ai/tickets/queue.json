@@ -6,13 +6,6 @@
   "git_base": "main",
   "tickets": [
     {
-      "id": "T-924",
-      "title": "Gate verdict receipt required at land",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t924_gate_verdict.md",
-      "branch": "ticket/T-924"
-    },
-    {
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",

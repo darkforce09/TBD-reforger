@@ -5,14 +5,6 @@
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
 
-## T-924 — Gate verdict receipt required at land
-
-- **Slice spec:** `docs/specs/ideas/t924_gate_verdict.md`
-- **Program hub:** `docs/specs/ideas/t924_gate_verdict.md`
-- **Branch:** `ticket/T-924`
-- **Targets:** 
-- **Summary:** platform wave gate writes a verdict file (HEAD sha plus verdict) and platform wave land refuses a landing ticket without a fresh one. Forward-only: future lands only, no backfill, existing tickets stay green untouched.
-
 ## T-149 — Forest mass polygon smoothing
 
 - **Slice spec:** `docs/specs/ideas/t149_forest_smooth.md`
