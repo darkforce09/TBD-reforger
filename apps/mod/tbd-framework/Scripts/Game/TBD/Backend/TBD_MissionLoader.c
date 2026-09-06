@@ -351,6 +351,12 @@ class TBD_MissionDocumentStruct
 	//! Read field values (empty string / false), do not null-check this reference.
 	//! @contract mission.schema.json#/$defs/settings
 	ref TBD_MissionSettingsStruct settings;
+	//! T-682 -- mission environment (fog / wind / viewDistance). ALWAYS non-null after a
+	//! parse even when the JSON key is absent -- JsonLoadContext allocates nested `ref`
+	//! fields regardless. Presence is an ABSENT-sentinel test on the float fields, never a
+	//! null check. dateTime / weatherPreset bind here but are NOT applied by T-682.
+	//! @contract mission.schema.json#/$defs/environment
+	ref TBD_MissionEnvironmentStruct environment;
 }
 
 //! Loads Mission JSON from backend REST or $profile fallback.
@@ -1082,6 +1088,10 @@ class TBD_MissionLoader
 		// T-259 — hand spectatorPolicy to the published SpectatorTargets seam. Respawns and NVG
 		// have no published setter inside this file's owns; see ApplyMissionSettings.
 		ApplyMissionSettings();
+
+		// T-682 -- apply authored fog / wind / viewDistance. No-ops when those keys are
+		// absent, so missions without them boot unchanged.
+		TBD_EnvironmentReader.Apply();
 
 		// T-181.13.1 — a valid mission document is the earliest moment an end-of-round results
 		// report could mean anything, and this is a server-only path (BeginLoad is reached only
