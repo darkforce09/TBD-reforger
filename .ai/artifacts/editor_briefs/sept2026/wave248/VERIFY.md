@@ -1,20 +1,40 @@
-You are the adversarial verifier for wave 248 of the TBD-Reforger factory. Your job is to find what the three slice agents got WRONG, not to confirm they were right. Do NOT fix. Do NOT commit. Do NOT file tickets. Leave main exactly as you found it (restore anything you mutate; `git status --porcelain` must be empty when you finish). No subagents. Token economy: read only what you attack; ranges for files over 200 lines.
+# Wave 248 adversarial verify
 
-Repo: /run/media/system/Disk_2/Projects/TBD-Reforger, branch main (do not create branches). `export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target`. Integration tests need a DB: `podman exec tbd_reforger_db psql -U tbd -d postgres -c "CREATE DATABASE tbd_verify_w248_it OWNER tbd"`; `TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/tbd_verify_w248_it?sslmode=disable`; for the full suite `TBD_IT_BASE_DB=tbd_verify_w248_it cargo xtask db test-it`. Drop the DB when done. Never `cargo xtask ci ci-local`. A test printing `skip:` is a FAIL.
+HEAD at verify start: `fbae3f3ac` (UNREAD retirement). Base `21d384ccd`. Merges T-299 `f90297d7e`, T-679 `759b53354`, T-685 `db9af2402`. Host cargo, `CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target`. `:3000` / `:8080` left listening. T-946.41 filing `7fb32c496` lands after this SHA.
 
-Wave base: 36f65687e (trunk hotfix). Merges on main: 7094bc2b0 (T-311 leaderboard tie-breaker, `apps/website/api/src/handlers/telemetry/leaderboards.rs`), f5f7abc10 (T-940.6 audit LISTEN/NOTIFY: `migrations/0025_audit_notify.sql`, `services/audit_notify.rs`, `handlers/admin/audit.rs`, `tests/audit_notify.rs`), 8fc66b589 (T-940.5 DB pool config: `db.rs`, `config.rs`, `.env.example`). Registry commits b96afe836, 9318aa607.
+**T-685 report's flatten-omits claim is half-wrong.** `flatten.rs:3168` clones `raw.rules` as `serde_json::Value`, so authored `zoneRules` keys including the six T-685 fields survive `/compiled` if the editor stored them. `rg placementRadius flatten.rs` is empty: `ModSlot` / `ModOrbatGroup` have no scatter fields. That hole is real and is T-946.41 (scatter only). T-946.36 still covers params / group AI / vehicle / entity state.
 
-Highest-risk claims to attack (each agent admitted these):
-1. T-311: "repeat/skip across pages was NOT reproducible at 6 rows on PG 18.4" — the fix is proven only on tie ORDER, not on page-set instability. Attack: is `lt.discord_id` truly unique and non-null in `leaderboard_totals` (migration 0014)? Does any arm still lack the tie-breaker (grep all ORDER BY in the file)? Does the paging test provision its own DB in a way that leaks (allow-list, drop on panic)?
-2. T-940.6: (a) trigger `audit_slot_kicked` also fires on migration 0018's `ON DELETE SET NULL` — does deleting a slot/mission produce spurious `event.slot_kick` rows? (b) `audit_trigger_write` mirrors `write_audit`'s INSERT — diff them column by column; any column the handler writes that the trigger omits (or types differ) is a defect. (c) the stream subscribes before the tail snapshot — race between snapshot and first NOTIFY; (d) one pump per pool keyed by connect-options allocation — what happens with two pools in one process (tests spawn many)? Leaked tasks? (e) SSE keep-alive added — does the frontend's audit page (`apps/website/frontend/src/pages/admin/audit*.rs`) tolerate comment frames? (f) migration 0025 on a database with existing rows: does `audit_logs_notify` fire on the migration itself or on backfills?
-3. T-940.5: (a) `connect_lazy` ignores env on purpose — which callers use it in production (bin/api.rs? realtime?) and would silently keep 25? (b) `set_var` in tests under a tokio mutex — do other test modules in website-api read the same vars concurrently (cargo test threads)? (c) `ConfigError::MalformedValue` — is it exhaustively matched anywhere (non_exhaustive)? (d) the private `tbd-target-T-940.5` build vs the shared cache: is `target/debug/api` on the shared cache now built from main (provenance)?
-4. Cross-slice: T-940.6 and T-940.5 both touch pool construction paths (`services/audit_notify.rs::for_pool` keys on pool options; `db.rs` builds options) — does the listener's 1-connection pool respect the new config, and does `AuditNotify::for_pool` deadlock or spawn twice when `connect` is called twice with the same URL?
-5. The trunk hotfix 36f65687e: `apps/website/api/.gitignore` `/missions/` — is `apps/website/api/missions/` still ignored (mission uploads), and is nothing else under `apps/website/api` named `missions/` that should stay ignored? The untracked `.mjs` files: does any Rust/xtask code reference them by path?
-6. Gate vacuity: run `cargo test -p website-api --lib db::` and `--test audit_notify` and `--lib leaderboards` yourself with `--list` and compare counts; confirm the new tests are not hollow pins (a test that `include_str!`s its own file and greps its own assertion passes forever).
+## Findings
 
-Severity table (also the command center's triage table):
-- BLOCKER: main is broken, data at risk, or a gate reported success on code it never examined.
-- MAJOR: a shipped ticket does not do what it claims, or can destroy operator-authored work.
-- MINOR / NIT: everything else.
+### 1. MAJOR — flatten still drops placementRadius / placementShape (T-946.41)
 
-Report (≤ 60 lines): findings first, each with severity, file:line, the exact command + verbatim output that proves it, and the fix shape (one line). Then an explicit list of what you attacked and FAILED to break. Then confirm main is untouched (`git status --porcelain` empty, HEAD sha).
+`GetRawJson()` is the `/compiled` body. `ModSlot` (`flatten.rs:142`) and `ModOrbatGroup` (`:292`) have no `placementRadius` / `placementShape`. Live compile never reaches `TBD_PlacementScatter.c`. Hand-staged `schema-1_3-wire-fields.json` does. Group scatter is a shared offset because groups have no authored x/z (NIT, not re-filed).
+
+### 2. MAJOR — flatten still drops params / group AI / vehicle / entity state (T-946.36)
+
+Unchanged this wave. Not re-filed. Zone volume keys are **not** this class (Value clone).
+
+### 3. MAJOR — tasks and radio panels never mount (T-946.33 + T-946.39)
+
+Unchanged. Not re-filed.
+
+### 4. NIT — destroy diagnose stays XZ on authored entities[]
+
+`TBD_ObjectiveRegistry.c:753` live query uses `ContainsOrigin` on `GetOrigin()` (has Y). Authored `entities[]` rows still have no Y, so the diagnose path cannot apply AGL. Not filed.
+
+---
+
+## Attacked and FAILED to break
+
+- **T-299 phantom pad:** `factions.minItems` is 1 (`mission.schema.json` ~line 70). Remaining `minItems: 2` are `playerRange` (`:184`) and `$defs/polygon` pair (`:577`), not factions. `TBD_MissionValidator.c` has no "at least two" faction warning. Two-faction Class-R path untouched.
+- **T-685 apply is not a dead API:** both `TBD_ObjectivesComponent.c` trees call `ContainsAgl` / `ResolveActingFaction` / `EnemyContestsHold`. Owns widened `189275663`. `TBD_ZoneVolume.c` twins byte-identical (`cmp -s`).
+- **T-679 twins:** `TBD_PlacementScatter.c` byte-identical. `SpawnManager` calls `ForSlot` before height.
+- **UNREAD tripwires:** six T-685 rows and two T-679 rows retired (baselines were 0). `shape` re-pinned **34 → 36** (`TBD_PlacementScatter.Scatter` local `shape` parameter, two identifiers; `why` contains `different` / `unrelated`). `size` stays 14. Fire-once retargeted to `vehicleClasses` / T-689. `cargo test -p xtask unread_wire_field_tests` → 5 passed. `cargo xtask schema validate` → All contracts valid (13 unread at baseline).
+- **Slices edited schema_gates.rs / mission.schema.json:** merge commits do not. CC retired UNREAD after land.
+- **Export twins / T-946.26:** new `.c` files are byte-identical ASCII. Loader twins still differ emdash vs hyphen in comments (pre-existing).
+- **T-946.35 flatten drops tasks[]:** still cancelled (T-936.3). Do not re-file.
+
+## main_left_clean
+
+- tracked dirty at verify start: none required for the UNREAD commit
+- `:3000` and `:8080` still LISTEN
