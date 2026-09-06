@@ -20,7 +20,7 @@
 //! worst region *worse* in the same measurement. So the drift is paid back geometrically, by
 //! sliding the whole smoothed ring along its own vertex normals by a single distance `d` chosen so
 //! the signed area comes back exactly. `d` is a *uniform* boundary displacement — on everon it
-//! never exceeds 3.63 m, a fifth of one 32 m lattice cell — which is why this and not a
+//! never exceeds 2.91 m, under a tenth of one 32 m lattice cell — which is why this and not a
 //! scale-about-the-centroid: a centroid scale is a similarity, so restoring a 11.7% area loss
 //! means a 6% linear inflation, and on a 600 m forest that moves the far edge ~18 m, five times
 //! further than the smoothing it is compensating for.
@@ -32,6 +32,9 @@
 //! rule asks the finer field whether the cut is *justified*, and only overrides the smoother when
 //! the evidence is unambiguous ([`PIN_SOLID_MASS`] / [`PIN_CLEAR_MASS`]); the ambiguous band in
 //! between is exactly where the 32 m quantisation error lives, and there the ring rounds.
+//! Note that the question is about MATERIAL, not about the ring: a hole encloses a clearing, so
+//! shrinking a hole's enclosure *adds* forest, and a hole must read the field the other way round
+//! from its outer twin (`a_hole_reads_the_canopy_the_other_way_round`).
 //!
 //! The TBDD format, its header and its writers are untouched — this module only ever *reads*
 //! `density::sample_corners`.
@@ -51,8 +54,8 @@ pub const CHAIKIN_ITERATIONS: usize = 2;
 /// LOCKED (`docs/specs/ideas/t149_forest_smooth.md`): a ring with fewer *distinct* vertices than
 /// this is emitted untouched. A single 32 m cell — a lone clearing inside a forest — traces a
 /// 4-vertex ring, and rounding a 32 m square into a lens would lose a sixth of it for no
-/// cartographic gain. On everon this carve-out covers 665 rings / 2 660 vertices, and it is the
-/// whole of the residual right-angle count after smoothing.
+/// cartographic gain. On everon this carve-out covers 665 rings / 2 660 vertices; those plus the
+/// canopy pins are the whole of the residual right-angle count after smoothing.
 pub const MIN_SMOOTH_VERTICES: usize = 6;
 
 /// Emitted coordinate precision, in decimal places (centimetres) — the same 2 dp the density
@@ -71,20 +74,21 @@ pub const CORNER_PROBE_M: f64 = DENSITY_CELL_M_F;
 /// distance.
 ///
 /// The offset a ring needs is scale-free: `|d| / mean edge` is **0.2258 for a Chaikin-rounded
-/// square of any side** (measured at 32 m, 128 m, 512 m and 1280 m), and 0.2032 at worst over
-/// every everon ring. An absolute rail therefore cannot be right for both — an 8 m rail passes
-/// the whole everon catalogue (worst offset 3.63 m) and then refuses a 512 m block that needs
-/// 23.8 m, which is the same ring at a different size. Half a mean edge leaves 2.2× headroom
-/// over both, and [`RingReport::offset_capped`] reports it if it ever binds.
+/// square of any side** (asserted at 32 m, 128 m and 1280 m by
+/// `a_square_ring_holds_its_area_under_the_bound_at_every_scale`) and 0.1907 at worst over every
+/// everon ring (asserted by `everon_smooths…`). An absolute rail therefore cannot be right for
+/// both — an 8 m rail passes the whole everon catalogue (worst offset 2.90 m) and then refuses a
+/// 512 m block that needs 23.8 m, which is the same ring at a different size. Half a mean edge
+/// leaves 2.2× headroom over both, and [`RingReport::offset_capped`] reports it if it ever binds.
 pub const MAX_AREA_OFFSET_EDGES: f64 = 0.5;
 
-/// Pin a **convex** corner when the canopy just inside it is this solid — a real promontory the
-/// cut would eat. 3× the marching iso; the canopy channel is a box-SUM over a 3×3 8 m window, so
-/// this reads "at least six trees within ~24 m of the corner", not "marginally above threshold".
+/// Pin a corner whose cut would **eat** forest, when the wedge it would eat is this solid — a real
+/// promontory. 3× the marching iso; the canopy channel is a box-SUM over a 3×3 8 m window, so this
+/// reads "at least six trees within ~24 m of the corner", not "marginally above threshold".
 pub const PIN_SOLID_MASS: f64 = 3.0 * CANOPY_MASS_ISO;
 
-/// Pin a **concave** corner only when the notch is this bare — a real clearing the cut would fill
-/// in. Zero: a notch with *any* canopy in it is a 32 m threshold artefact and should round out.
+/// Pin a corner whose cut would **grow** forest into the wedge, only when that wedge is this bare —
+/// a real clearing. Zero: a notch with *any* canopy in it is a 32 m threshold artefact and rounds.
 pub const PIN_CLEAR_MASS: f64 = 0.0;
 
 /// Acceptance bound (`T-149.toml`): area drift per region, as a fraction.
@@ -217,25 +221,41 @@ fn corner_pins(v: &[(f64, f64)], sign: f64, canopy: CanopyMass<'_>) -> Vec<bool>
             let q = v[(i + 1) % n];
             let (ax, ay) = (c.0 - p.0, c.1 - p.1);
             let (bx, by) = (q.0 - c.0, q.1 - c.1);
-            let cross = (ax * by - ay * bx) * sign;
+            // Two DIFFERENT questions, and conflating them inverts every hole:
+            //   `turn`  — which SIDE of the ring the cut's wedge lies on, relative to the ring's
+            //             own enclosed region. Orientation-normalised, so it reads the same for an
+            //             outer ring and a hole.
+            //   `raw`   — whether the cut takes MATERIAL away or gives it back. A hole encloses a
+            //             clearing, so shrinking a hole's enclosure *adds* forest; the raw turn
+            //             already carries that flip and must not be normalised out.
+            let raw = ax * by - ay * bx;
+            let turn = raw * sign;
             let (Some(na), Some(nb)) = (left_normal(ax, ay), left_normal(bx, by)) else {
                 return false;
             };
             let (sx, sy) = ((na.0 + nb.0) * sign, (na.1 + nb.1) * sign);
             let len = sx.hypot(sy);
-            if cross.abs() < EPS || len < EPS {
+            if turn.abs() < EPS || len < EPS {
                 // Collinear: there is no corner here to preserve.
                 return false;
             }
-            let (ix, iy) = (sx / len, sy / len); // unit, into the material
-            if cross > 0.0 {
-                // Convex: the cut REMOVES the wedge just inside the corner. Keep the corner only
-                // if that wedge is solid canopy.
-                canopy(c.0 + CORNER_PROBE_M * ix, c.1 + CORNER_PROBE_M * iy) >= PIN_SOLID_MASS
+            // Unit vector into the ring's own enclosed region (the material for an outer ring,
+            // the clearing for a hole).
+            let (ix, iy) = (sx / len, sy / len);
+            // The wedge the cut moves the boundary across: inside the enclosure at a ring-convex
+            // vertex, outside it at a ring-reflex one.
+            let probe = if turn > 0.0 {
+                (c.0 + CORNER_PROBE_M * ix, c.1 + CORNER_PROBE_M * iy)
             } else {
-                // Concave: the cut ADDS the wedge just outside the corner. Keep the notch only if
-                // that wedge is bare.
-                canopy(c.0 - CORNER_PROBE_M * ix, c.1 - CORNER_PROBE_M * iy) <= PIN_CLEAR_MASS
+                (c.0 - CORNER_PROBE_M * ix, c.1 - CORNER_PROBE_M * iy)
+            };
+            let mass = canopy(probe.0, probe.1);
+            if raw > 0.0 {
+                // The cut EATS forest here. Keep the corner only if the wedge is solid canopy.
+                mass >= PIN_SOLID_MASS
+            } else {
+                // The cut GROWS forest into the wedge. Keep the notch only if the wedge is bare.
+                mass <= PIN_CLEAR_MASS
             }
         })
         .collect()
@@ -851,6 +871,77 @@ mod tests {
         }
     }
 
+    /// A HOLE ring must read the canopy the other way round, and this is the test that caught it
+    /// being wrong.
+    ///
+    /// The pin rule asks "does the cut eat forest, or grow it?", and a hole encloses a *clearing*:
+    /// shrinking a hole's enclosure ADDS forest. So the same ring traversed the other way must pin
+    /// the OTHER corners. The first version of `corner_pins` branched on the
+    /// orientation-normalised turn, which is invariant under reversal — it gave a hole and its
+    /// outer twin identical pins, i.e. it pinned every clearing corner as if the clearing were a
+    /// forest. `everon_smooths…` could not see it (a hole with ≥ 6 vertices is rare) and
+    /// `a_hole_ring_keeps_its_sign_and_its_area` could not either (it passes no oracle at all).
+    #[test]
+    fn a_hole_reads_the_canopy_the_other_way_round() {
+        let c = REGION_CELL_M;
+        let l = vec![
+            (0.0, 0.0),
+            (3.0 * c, 0.0),
+            (3.0 * c, c),
+            (c, c),
+            (c, 3.0 * c),
+            (0.0, 3.0 * c),
+        ];
+        let outer = closed(&l);
+        let mut rev = l.clone();
+        rev.reverse();
+        let hole = closed(&rev);
+        assert!(signed_area(&l) > 0.0 && signed_area(&rev) < 0.0);
+
+        // "Solid everywhere": every forest-eating cut is refused, every forest-growing cut is
+        // taken. Reversing the ring swaps which corners those are, so the pin sets are
+        // complementary — an L hexagon is 5 convex + 1 reflex (5·90° + 270° = 720°), so 5 pins
+        // one way and 1 the other.
+        let solid = |_x: f64, _y: f64| PIN_SOLID_MASS;
+        let outer_pins = corner_pins(&l, 1.0, &solid);
+        let hole_pins = corner_pins(&rev, -1.0, &solid);
+        let outer_n = outer_pins.iter().filter(|p| **p).count();
+        let hole_n = hole_pins.iter().filter(|p| **p).count();
+        assert_eq!(outer_n, 5, "the L has 5 material-convex corners");
+        assert_eq!(
+            hole_n, 1,
+            "reversed, the same 6 corners must pin the complementary 1 — a hole that pins the \
+             same corners as its outer twin is reading the canopy as if the clearing were forest"
+        );
+        assert_eq!(
+            outer_n + hole_n,
+            l.len(),
+            "the two sets must partition the ring"
+        );
+        for i in 0..l.len() {
+            // The reversed ring visits the same vertices in the opposite order.
+            let j = rev.iter().position(|p| *p == l[i]).expect("same vertices");
+            assert_ne!(
+                outer_pins[i], hole_pins[j],
+                "vertex {i} {:?} pinned the same way as an outer and as a hole",
+                l[i]
+            );
+        }
+
+        // …and it survives the full pipeline, area and orientation intact.
+        let (_, o) = smooth_ring(&outer, Some(&solid));
+        let (_, h) = smooth_ring(&hole, Some(&solid));
+        assert_eq!((o.pinned, h.pinned), (5, 1));
+        assert!(
+            o.area_out > 0.0 && h.area_out < 0.0,
+            "an orientation flipped"
+        );
+        for r in [&o, &h] {
+            let drift = (r.area_out - r.area_in).abs() / r.area_in.abs();
+            assert!(drift < MAX_AREA_DRIFT, "drift {:.4}%", drift * 100.0);
+        }
+    }
+
     /// The probe has to reach a DIFFERENT 8 m corner than the vertex, or the oracle is asking
     /// itself. Diagonal bisector, so the per-axis step is `CORNER_PROBE_M / √2`.
     #[test]
@@ -1008,6 +1099,7 @@ mod tests {
         let (mut turns_in, mut square_in, mut adjacent_in) = (0, 0, 0);
         let (mut turns_out, mut square_out, mut adjacent_out, mut allowed_square) = (0, 0, 0, 0);
         let (mut carved_rings, mut carved_verts) = (0, 0);
+        let mut worst_offset_edges = 0.0f64;
         let mut per_ring: Vec<Vec<(f64, f64)>> = Vec::new();
         for r in &regions_in {
             for ring_json in r["polygon"].as_array().expect("polygon") {
@@ -1018,6 +1110,13 @@ mod tests {
                 adjacent_in += adj;
 
                 let (out, rep) = smooth_ring(&ring, Some(&canopy));
+                if !rep.skipped_small {
+                    let mut distinct = out.clone();
+                    distinct.pop();
+                    let edge = mean_edge(&distinct);
+                    assert!(edge > EPS);
+                    worst_offset_edges = worst_offset_edges.max(rep.offset_m.abs() / edge);
+                }
                 assert!(
                     out.len() >= 4 && out.first() == out.last(),
                     "{}: a smoothed ring stopped being a valid closed ring",
@@ -1051,6 +1150,14 @@ mod tests {
             "the shipped rings are supposed to be 100% right angles ({turns_in} turns)"
         );
         assert!(carved_rings > 0 && carved_verts > 0);
+        // The rail has real headroom rather than merely not binding — this is the claim
+        // MAX_AREA_OFFSET_EDGES is set from, held against the corpus instead of a doc comment.
+        assert!(
+            worst_offset_edges < 0.5 * MAX_AREA_OFFSET_EDGES,
+            "the hungriest everon ring wants {worst_offset_edges:.4} of a mean edge, rail is \
+             {MAX_AREA_OFFSET_EDGES} — less than 2x headroom left"
+        );
+        assert!(worst_offset_edges > 0.0, "no ring needed any offset at all");
 
         // CLAIM 3 — run the production path and hold it to the same rings.
         let mut regions = regions_in.clone();
@@ -1124,11 +1231,13 @@ mod tests {
              {carved_rings} rings carved out ({carved_verts} verts); \
              right-angle turns {square_in}/{turns_in} -> {square_out}/{turns_out}, \
              consecutive {adjacent_in} -> {adjacent_out}; worst area drift {:.6}% ({}) \
-             vs bound {:.1}%",
+             vs bound {:.1}%; largest area-restoring offset {:.4} m \
+             ({worst_offset_edges:.4} of a mean edge, rail {MAX_AREA_OFFSET_EDGES})",
             reports.len(),
             worst.0 * 100.0,
             worst.1,
-            MAX_AREA_DRIFT * 100.0
+            MAX_AREA_DRIFT * 100.0,
+            reports.iter().fold(0.0f64, |m, r| m.max(r.max_offset_m))
         );
     }
 }
