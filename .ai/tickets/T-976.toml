@@ -1,0 +1,11 @@
+id = "T-976"
+kind = "work"
+title = "Label host doc names the wrong two requests"
+summary = "world_assets/mod.rs documents LabelHost init as fetching locations.json and road-names.json. On the archive path the count is still two but the files are manifest.json and map_labels.rkyv. One-line doc fix."
+class = "bug"
+status = "idea"
+created_at = "2026-09-06T04:57:42Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

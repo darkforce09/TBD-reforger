@@ -1,0 +1,11 @@
+id = "T-977"
+kind = "work"
+title = "Town label gates read the JSON source directly"
+summary = "xtask/src/label_gates.rs parses locations.json rather than the manifest, so the gates stay on the JSON after a manifest cutover. Correct while dual emission holds; revisit at the cutover slice."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T04:57:49Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
