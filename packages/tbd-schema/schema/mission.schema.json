@@ -194,7 +194,7 @@
       "properties": {
         "dateTime": { "type": "string", "format": "date-time" },
         "weatherPreset": { "type": "string" },
-        "windDirDeg": { "type": "number", "minimum": 0, "maximum": 360 },
+        "windDirDeg": { "type": "number", "minimum": 0, "maximum": 360, "description": "T-682 / T-291. Wind direction degrees. READ SINCE T-682 (2026-09-06) by `TBD_EnvironmentReader.c`; T-291 (2026-09-07) reapplies it in `TBD_FrameworkManager.c` weather setup (`SetWindDirectionOverride`, ABSENT sentinel)." },
         "fog": {
           "type": "number",
           "minimum": 0,
@@ -464,7 +464,7 @@
         },
         "gadgets": {
           "$ref": "#/$defs/gadgetFlags",
-          "description": "T-705 (schemaVersion 1.3). Which personal gadgets this player spawns with (map/compass/watch/gps/radio), the Eden General-States model that lets a scenario decide a player's gadgets. On the wire only — every flag needs an Enfusion reader in apps/mod/tbd-framework, none of which exists on any shipped build; the readers land under T-705 (this is the schema half, split out of T-705 for the one-pass widening)."
+          "description": "T-705 (schemaVersion 1.3). Which personal gadgets this player spawns with (map/compass/watch/gps/radio), the Eden General-States model that lets a scenario decide a player's gadgets. READ SINCE T-705 (2026-09-07) by `TBD_GadgetFlags.c` (both mod trees): Bind from MissionLoader, apply after spawn. Presence is a `map<string,bool>` (Count()==0 omit keeps kit defaults; Find is per-flag). Flatten does not emit `slot.gadgets` (T-946.43); hand-staged 1.3 JSON reaches the reader. Authored `gps: true` cannot add a GPS — no GPS item in the TBD registry."
         },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
@@ -1122,14 +1122,14 @@
     },
     "gadgetFlags": {
       "type": "object",
-      "description": "T-705 — per-player gadget presence flags (schemaVersion 1.3). Read the `slot.gadgets` description first: NOTHING reads these on any shipped build. Each is Eden's General-States gadget toggle; ABSENT means \"leave the kit's default\", `true`/`false` force the gadget on/off. Every flag needs its own Enfusion reader in apps/mod/tbd-framework (the T-705 half); a bool cannot express \"absent vs authored false\" at runtime, but the kit default covers the absent case, so nothing is lost behaviourally.",
+      "description": "T-705 — per-player gadget presence flags (schemaVersion 1.3). READ SINCE T-705 (2026-09-07) by `TBD_GadgetFlags.c`. Each is Eden's General-States gadget toggle; ABSENT means \"leave the kit's default\", `true`/`false` force the gadget on/off. The reader uses a string-bool map so omit vs authored-false do not collapse. Flatten omits the block (T-946.43).",
       "additionalProperties": false,
       "properties": {
-        "map": { "type": "boolean", "description": "T-705 — spawn with a map. On the wire only; reader lands under T-705." },
-        "compass": { "type": "boolean", "description": "T-705 — spawn with a compass. On the wire only; reader lands under T-705." },
-        "watch": { "type": "boolean", "description": "T-705 — spawn with a watch. On the wire only; reader lands under T-705." },
-        "gps": { "type": "boolean", "description": "T-705 — spawn with a GPS. On the wire only; reader lands under T-705." },
-        "radio": { "type": "boolean", "description": "T-705 — spawn with a personal radio. On the wire only; reader lands under T-705." }
+        "map": { "type": "boolean", "description": "T-705 — spawn with a map. READ SINCE T-705 (2026-09-07) by `TBD_GadgetFlags.c`." },
+        "compass": { "type": "boolean", "description": "T-705 — spawn with a compass. READ SINCE T-705 (2026-09-07) by `TBD_GadgetFlags.c`." },
+        "watch": { "type": "boolean", "description": "T-705 — spawn with a watch. READ SINCE T-705 (2026-09-07) by `TBD_GadgetFlags.c` (prefab-path needle; no EGadgetType.WATCH)." },
+        "gps": { "type": "boolean", "description": "T-705 — spawn with a GPS. READ SINCE T-705 (2026-09-07) by `TBD_GadgetFlags.c`. Authored true cannot add a GPS (no registry item); authored false still withholds a GPS-named item." },
+        "radio": { "type": "boolean", "description": "T-705 — spawn with a personal radio. READ SINCE T-705 (2026-09-07) by `TBD_GadgetFlags.c`." }
       }
     },
     "flow": {
@@ -1284,7 +1284,7 @@
     },
     "weatherTimeline": {
       "type": "object",
-      "description": "T-936.4 — authored weather KEYFRAMES (schemaVersion 1.3). Distinct from `environment.weatherPreset` (the single static preset the mission starts with). A timeline is `{keyframes: [{atMinutes, weatherPreset, windDirDeg?, fog?}]}`; `atMinutes` is minutes from LIVE start and must be strictly increasing (enforced by weather.rs; schema pins types and closed keys). Preset vocabulary is the same four strings `environment.weatherPreset` already uses (`clear` / `overcast` / `heavy_rain` / `dense_fog`).\n\nREAD SINCE T-936.4 by `Gamemode/TBD_WeatherRuntime.c` (both mod trees): the server applies each keyframe at its offset through `TimeAndWeatherManagerEntity.ForceWeatherTo`; clients follow weather replication. Absent object ⇒ a mission with no timeline, which is every pre-T-936.4 document; the AUTHORED_BLOCKS carrier emits nothing in that case, so Class-R byte-parity fixtures stay identical.",
+      "description": "T-936.4 — authored weather KEYFRAMES (schemaVersion 1.3). Distinct from `environment.weatherPreset` (the single static preset the mission starts with). A timeline is `{keyframes: [{atMinutes, weatherPreset, windDirDeg?, fog?}]}`; `atMinutes` is minutes from LIVE start and must be strictly increasing (enforced by weather.rs; schema pins types and closed keys). Preset vocabulary is the same four strings `environment.weatherPreset` already uses (`clear` / `overcast` / `heavy_rain` / `dense_fog`).\n\nREAD SINCE T-936.4 (2026-09-07) by `Gamemode/TBD_WeatherRuntime.c` (both mod trees): the server applies each keyframe at its offset through `TimeAndWeatherManagerEntity.ForceWeatherTo`; clients follow weather replication. Absent object ⇒ a mission with no timeline, which is every pre-T-936.4 document; the AUTHORED_BLOCKS carrier emits nothing in that case, so Class-R byte-parity fixtures stay identical. Flatten `EditorPayload::authored_blocks_root` still copies only `winConditions` / `tasks` / `radioPlan`, so live `/compiled` drops the block (T-946.44).",
       "required": ["keyframes"],
       "additionalProperties": false,
       "properties": {
@@ -1473,9 +1473,10 @@
         "respawn": { "type": "string", "enum": ["none", "tickets", "wave"] },
         "spectatorPolicy": {
           "type": "string",
-          "enum": ["none", "own_side_delayed_60s", "free"]
+          "enum": ["none", "own_side_delayed_60s", "free"],
+          "description": "T-291. READ SINCE T-291 (2026-09-07) by `TBD_SpectatorController.c` via replicated `TBD_FrameworkManager.GetSpectatorPolicy()`. Empty/unauthored keeps today's enter-immediately behaviour."
         },
-        "nightVision": { "type": "boolean" }
+        "nightVision": { "type": "boolean", "description": "T-291. READ SINCE T-291 (2026-09-07) by `TBD_FrameworkManager.c` (strip NVG gadgets when false). JsonLoadContext binds omit as false, so unauthored missions strip NVG (T-946.46)." }
       }
     }
   }

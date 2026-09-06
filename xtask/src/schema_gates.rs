@@ -2564,31 +2564,19 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         ticket: "T-673",
         why: "loadout-area (LoadoutAreaType, worn-garment) identifiers, unrelated to marker.area geometry; the marker.area interior (markerArea circle/polygon/rectangle/ellipse) is wrapper-covered by a future area reader",
     },
-    // T-705 — per-player gadget flags.
-    UnreadField {
-        name: "compass",
-        expected: 0,
-        ticket: "T-705",
-        why: "clean",
-    },
-    UnreadField {
-        name: "watch",
-        expected: 0,
-        ticket: "T-705",
-        why: "clean",
-    },
-    UnreadField {
-        name: "gps",
-        expected: 0,
-        ticket: "T-705",
-        why: "clean",
-    },
-    // `gadgets` is the radio/gadget subsystem's own vocabulary; not a reader of slot.gadgets flags.
+    // T-705 — per-player gadget flags: RETIRED 2026-09-07. `compass` / `watch` / `gps`
+    // gained identifiers when TBD_GadgetFlags.c landed (second GetRawJson pass, apply after
+    // spawn). Baselines were 0, so they retire rather than re-pin. Flatten still omits
+    // `slot.gadgets` (T-946.43); hand-staged 1.3 JSON reaches the reader.
+    //
+    // `gadgets` is RE-PINNED, not retired. Its baseline of 6 was the radio/gadget subsystem's
+    // own vocabulary, UNRELATED to the slot.gadgets flag block. T-705's reader added 27, so
+    // the new floor is 33 and the unrelated 6 stay guarded.
     UnreadField {
         name: "gadgets",
-        expected: 6,
+        expected: 33,
         ticket: "T-705",
-        why: "radio/gadget subsystem identifiers, unrelated to the slot.gadgets flag block",
+        why: "6 radio/gadget subsystem identifiers, unrelated to slot.gadgets, plus 27 from the T-705 reader",
     },
     // T-654 — variant conditional-inclusion.
     // The top-level `variants[]` registry itself — the only new top-level array that lacked a row
