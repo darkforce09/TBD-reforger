@@ -259,6 +259,16 @@ class TBD_MissionFlowStruct
 class TBD_MissionEntityStruct
 {
 	string alias;      //!< Registry alias (`prop:`/`comp:`/...). Schema-required.
+	//! T-675.2 -- `$defs/entity.uid`, the editor's own id for the authored object this row came
+	//! from. OPTIONAL: blank is not identity, so it is empty on every row authored before T-946.18
+	//! added the key and on any vehicle whose editor id could not be carried on the wire.
+	//!
+	//! THIS IS THE JOIN KEY. One authored vehicle emits TWO rows -- this `entities[]` one, which
+	//! `SpawnMissionEntities` spawns, and a `vehicles[]` roster row carrying the crew plan. Without
+	//! a shared key a roster reader has no way to tell that the vehicle it is about to spawn is
+	//! already standing in the world, and every crewed vehicle spawns twice. See
+	//! `TBD_MissionVehicleRoster.ClaimTwin`.
+	string uid;
 	float x;           //!< World X metres. Schema-required.
 	float z;           //!< World Z metres. Schema-required.
 	float headingDeg;  //!< Yaw degrees 0..360. OPTIONAL - 0 when absent (JsonLoadContext default).
@@ -303,6 +313,14 @@ class TBD_MissionDocumentStruct
 	//! places them so destroy-alias resolution can find them in the world.
 	//! @contract mission.schema.json#/properties/entities
 	ref array<ref TBD_MissionEntityStruct> entities;
+	//! T-675.2 -- the mission-placed vehicle ROSTER (`vehicles[]`), the crew plan T-076 authors.
+	//! OPTIONAL: every mission compiled before T-675.1 has none, so null here is legal and normal.
+	//!
+	//! NOT a duplicate of `entities[]` above. One authored vehicle emits BOTH -- an alias row there
+	//! and a roster row here -- because `$defs/entity` is closed and has nowhere to put `seats`.
+	//! `TBD_MissionVehicleRoster` joins the two on `uid` so the vehicle is spawned exactly once.
+	//! @contract mission.schema.json#/properties/vehicles
+	ref array<ref TBD_MissionVehicleStruct> vehicles;
 	ref TBD_MissionWinConditionsStruct winConditions;         //!< T-181.13 round-end triggers.
 	//! T-181.38 - event pacing. ALWAYS non-null after a parse, even for a mission with no `flow`
 	//! key: `JsonLoadContext` allocates it regardless. Test its FIELDS against
@@ -571,6 +589,21 @@ class TBD_MissionLoader
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! T-675.2 -- the raw `vehicles[]` roster, or null when no VALID mission is loaded / none authored.
+	//!
+	//! Null here is LEGAL and is the common case: every mission compiled before T-675.1 carries no
+	//! `vehicles` key at all, and `TBD_MissionVehicleRoster.SeatAuthoredCrews` returns on the first
+	//! line for it, so a rosterless mission spawns exactly as it did before this slice.
+	//! @contract mission.schema.json#/properties/vehicles
+	static array<ref TBD_MissionVehicleStruct> GetVehicles()
+	{
+		if (!s_Valid || !s_Mission)
+			return null;
+
+		return s_Mission.vehicles;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! T-259 - the mission policy block (`settings`), or null when no VALID mission is loaded.
 	//!
 	//! The reference itself is ALWAYS allocated after a successful parse (JsonLoadContext), even
@@ -596,6 +629,11 @@ class TBD_MissionLoader
 	//! Idempotent for a given load: call once after a valid parse (see `ParseMissionJson`).
 	static void SpawnMissionEntities()
 	{
+		// T-675.2 -- clear the entities[] -> world index BEFORE the early return below, not after.
+		// A reload whose new mission authors no entities[] must not inherit the previous mission's
+		// rows, or a roster row would "join" a vehicle that is no longer in the world.
+		TBD_MissionVehicleRoster.ResetIndex();
+
 		array<ref TBD_MissionEntityStruct> entities = GetEntities();
 		if (!entities || entities.Count() == 0)
 			return;
@@ -648,6 +686,11 @@ class TBD_MissionLoader
 			}
 
 			spawned++;
+			// T-675.2 -- remember what reached the world, keyed on the row's own uid and its
+			// alias|x|z fingerprint, so the vehicles[] roster row for this same authored vehicle
+			// CLAIMS this entity instead of spawning a second copy of it. Skipped rows above are
+			// deliberately not recorded: nothing exists for a roster row to claim.
+			TBD_MissionVehicleRoster.RecordEntitySpawn(ent.uid, ent.alias, ent.x, ent.z, body);
 			Print(string.Format("[TBD][Entities] spawned alias='%1' at %2 heading=%3", ent.alias, pos.ToString(), ent.headingDeg));
 		}
 

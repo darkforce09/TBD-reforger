@@ -1020,6 +1020,13 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			Print(string.Format("[TBD][Slots] %1 of %2 slot bodies FAILED to materialize - see the kit resolve / prefab errors above",
 				failed, number), LogLevel.ERROR);
 
+		// T-675.2 -- the authored vehicles[] roster. Runs HERE, after every slot body exists and before
+		// the loadout settle is armed, because a seat is a body being MOVED INTO a vehicle: there is
+		// nothing to move before this point. Each roster row claims the entity its entities[] twin
+		// already put in the world rather than spawning a second copy of it, then seats the slots it
+		// names. A rosterless mission returns on the first line and behaves exactly as before.
+		TBD_MissionVehicleRoster.SeatAuthoredCrews(this);
+
 		if (built <= 0)
 			return;
 
