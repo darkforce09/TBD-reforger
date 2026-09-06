@@ -834,7 +834,7 @@
 | T-935 | 7089 | queued | program | Map binary storage — hybrid rkyv + POD | Replace gz-JSON/PNG map assets with a hybrid layout: raw #[repr(C)] POD for bulk GPU data (chunks, DEM, density), rkyv archives for structured metadata (roads, labels, water, buildings, catalog), mipmapped containers for satellite and bathymetry. |
 | T-277 | 7110 | shipped | work | 27.4% of the map catalogue is unclassified | 444 of 1,623 everon prefabs fall through to prefab-classify.json's fallback rule; vegetation and utility count zero and the road census is zero against 888 shipped road segments. Append rules until fallback is under 5% and the census matches. |
 | T-149 | 7170 | shipped | work | Forest mass polygon smoothing | Upgrade the V1 blocky Path B forest hulls: sample the existing 8 m TBDD density grid and apply Chaikin smoothing to the marching-squares rings before the forest-regions emit so forest edges read as natural cartography. |
-| T-676 | 7260 | ready | work | Trigger activation and effects — the Enfusion runtime | Trigger activation and effects — the Enfusion runtime |
+| T-676 | 7260 | shipped | work | Trigger activation and effects — the Enfusion runtime | Trigger activation and effects — the Enfusion runtime |
 | T-677 | 7290 | ready | work | Waypoints — group movement orders | Waypoints — group movement orders |
 | T-678 | 7300 | ready | work | Group AI state: combat mode, behaviour, formation, speed | Group AI state: combat mode, behaviour, formation, speed |
 | T-673 | 7310 | ready | work | Marker style and Area markers — the $defs/marker widening | Marker style and Area markers — the $defs/marker widening |

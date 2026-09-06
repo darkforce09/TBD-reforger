@@ -3,7 +3,7 @@ kind = "work"
 title = "Trigger activation and effects — the Enfusion runtime"
 summary = "Trigger activation and effects — the Enfusion runtime"
 class = "chore"
-status = "ready"
+status = "shipped"
 order = 7260
 spec = "docs/specs/existing/t676_trigger_runtime.md"
 plan = "docs/plans/t-676_plan.md"
@@ -57,7 +57,13 @@ citations = [
     "zoneRules sixteen keys untriaged",
     "T-706 schema widening split",
 ]
-estimated = ["scope"]
+shipped_at = "4c0542b87"
+created_at = "2026-08-13T17:07:35Z"
+completed_at = "2026-09-06T10:53:48Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c"]
 
 [scope]

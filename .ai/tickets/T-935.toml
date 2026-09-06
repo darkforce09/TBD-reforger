@@ -23,6 +23,7 @@ children = [
     "T-935.11",
     "T-935.12",
     "T-935.13",
+    "T-935.14",
 ]
 main_goal = "Every map asset the editor boots from is a binary the loader casts or accesses zero-copy; gz-JSON and PNG-DEM decode paths are deleted after cutover."
 context = [

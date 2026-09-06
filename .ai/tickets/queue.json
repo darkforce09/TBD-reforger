@@ -13,13 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-676",
-      "title": "Trigger activation and effects \u2014 the Enfusion runtime",
-      "status": "ready",
-      "spec": "docs/specs/existing/t676_trigger_runtime.md",
-      "branch": "ticket/T-676"
-    },
-    {
       "id": "T-677",
       "title": "Waypoints \u2014 group movement orders",
       "status": "ready",

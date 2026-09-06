@@ -1,15 +1,21 @@
 id = "T-935.11"
 kind = "work"
-parent = "T-935"
 title = "Prefab catalog, forest regions, type inventory to rkyv"
 summary = "tbd-tools emits objects/prefabs.rkyv, objects/forest-regions.rkyv and objects/type-inventory.rkyv; prefab.rs and regions.rs load the archives; world_host.rs fetches every objects.* archive (roads included) when manifest.objects.binary lists it."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7210
-priority = 1
 spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
 plan = "docs/plans/t-935_11_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = [
+    "T-935.1",
+    "T-935.2",
+    "T-935.3",
+    "T-935.6",
+]
+parent = "T-935"
 main_goal = "Every catalog-shaped objects asset has an rkyv archive and a frontend fetch branch keyed on the manifest."
 context = [
     "Anchor 2026-09-04: build.rs writes prefabs :479, forest-regions :593, type-inventory :746; core prefab.rs:15/33, regions.rs:10 parse them; world_host.rs fetches prefabs :133, roads :146, regions :156.",
@@ -40,8 +46,10 @@ acceptance = [
     "prefabs.rkyv, forest-regions.rkyv and type-inventory.rkyv for everon parse to the same structures as their JSON sources.",
     "world_host.rs has an archive branch for every objects.* asset it fetches; JSON stays default until T-935.13.",
 ]
-depends_on = ["T-935.1", "T-935.2", "T-935.3", "T-935.6"]
+shipped_at = "6447f4fb9"
 created_at = "2026-09-05T01:34:37Z"
+completed_at = "2026-09-06T10:52:56Z"
+estimated = ["tokens"]
 owns = [
     "tools/tbd-tools/src/world/catalog_emit.rs",
     "tools/tbd-tools/src/world/mod.rs",

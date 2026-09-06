@@ -5,14 +5,6 @@
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
 
-## T-676 — Trigger activation and effects — the Enfusion runtime
-
-- **Slice spec:** `docs/specs/existing/t676_trigger_runtime.md`
-- **Program hub:** `docs/specs/existing/t676_trigger_runtime.md`
-- **Branch:** `ticket/T-676`
-- **Targets:** 
-- **Summary:** Trigger activation and effects — the Enfusion runtime
-
 ## T-677 — Waypoints — group movement orders
 
 - **Slice spec:** `docs/specs/existing/t677_waypoint_runtime.md`

@@ -1,0 +1,12 @@
+id = "T-946.17"
+kind = "work"
+title = "No gate step compiles Enfusion script"
+summary = "The slice gate and the wave gate have no mod compile step, so T-676's 2107 lines of Enfusion landed on main with nothing in either gate compiling them. The command centre ran the gate by hand instead."
+class = "chore"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T12:12:00Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"

@@ -9,7 +9,6 @@
 ## Ready
 
 - **T-090** (7079) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-676** (7260) — Trigger activation and effects — the Enfusion runtime [ready] — Trigger activation and effects — the Enfusion runtime
 - **T-677** (7290) — Waypoints — group movement orders [ready] — Waypoints — group movement orders
 - **T-678** (7300) — Group AI state: combat mode, behaviour, formation, speed [ready] — Group AI state: combat mode, behaviour, formation, speed
 - **T-673** (7310) — Marker style and Area markers — the $defs/marker widening [ready] — Marker style and Area markers — the $defs/marker widening
@@ -113,7 +112,6 @@ flowchart LR
   T092[T-092] --> T071[T-071]
   T177[T-177] --> T071[T-071]
   T118[T-118] --> T114[T-114]
-  T079[T-079] --> T676[T-676]
   T677[T-677] --> T678[T-678]
   T069[T-069] --> T673[T-673]
   T685[T-685] --> T212[T-212]

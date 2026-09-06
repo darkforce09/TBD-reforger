@@ -1,0 +1,52 @@
+id = "T-935.14"
+kind = "work"
+parent = "T-935"
+title = "The prefab archive has no residency reader"
+summary = "T-935.11 shipped objects/prefabs.rkyv and a checked reader for it, but every frontend prefab consumer goes through load_prefabs_gz, which only understands gzipped JSON. The archive is unreachable until the residency can ingest it."
+class = "feature"
+status = "ready"
+order = 7215
+priority = 1
+spec = "docs/specs/Mission_Creator_Architecture/t935_14_prefab_residency_reader.md"
+plan = "docs/plans/t-935_14_plan.md"
+executor = "claude-code"
+main_goal = "The prefab catalogue archive reaches the residency, so the fetch branch T-935.11 could not add becomes live code."
+context = [
+    "T-935.11 shipped catalog_from_bytes with everon parity, terrain and census checks, and no caller.",
+    "Measured on main: the SPA's only prefab consumers are world_host.rs:174 and world_los.rs:358, both load_prefabs_gz.",
+    "load_prefabs_gz derives building_prefab_lookup, fence_prefab_lookup and the glyph table from a serde_json::Value.",
+    "A world_host fetch without this would hand bytes to nothing, which the slice rules call a dead mechanism.",
+]
+requirement = [
+    "WorldResidency::load_prefabs(&[u8]) sniffs gzip versus rkyv and delegates both arms, as store.rs does for roads.",
+    "The archive arm builds the row table, building lookup, fence lookup and glyph table from a PrefabCatalog.",
+    "world_host fetches objects/prefabs.rkyv when manifest.objects.binary names it; JSON stays default until T-935.13.",
+    "residency.rs is SIZE-3 allowlisted, so it takes only the call site and the logic lives in a new file.",
+]
+current_state = ["objects/prefabs.rkyv is emitted, verified and unreachable: nothing in the SPA can consume it."]
+approach = [
+    "New file beside the reader builds the residency's prefab structures from a PrefabCatalog.",
+    "residency.rs gains the sniffing entry point; world_host gains the fetch branch.",
+    "Perturbation: shift the archive-side building lookup by one and watch the everon parity pin go red.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features prefab",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-935.14",
+]
+acceptance = [
+    "The archive lane and the JSON lane build an identical residency for everon: same rows in order, same building and fence lookups, same glyph table.",
+    "world_host has an archive branch for prefabs alongside roads and regions, and JSON remains the default.",
+]
+depends_on = ["T-935.11"]
+created_at = "2026-09-06T12:10:00Z"
+owns = [
+    "crates/map-engine-core/src/world/prefab_load.rs",
+    "crates/map-engine-core/src/world/residency.rs",
+    "crates/map-engine-core/src/world/mod.rs",
+    "apps/website/frontend/src/editor/world_assets/world_host.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "world"

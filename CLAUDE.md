@@ -155,7 +155,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 > the lowest-ordered `ready` program, not the program in flight.
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-149**
+**Latest shipped:** **T-676**
 
 **ACTIVE NOW:** **T-154** — T-154.1 (Rust/wgpu 3D arsenal doll (T-151-adjacent 3D pipeline spike)). Slice spec: `docs/specs/Mission_Creator_Architecture/t154_1_doll_polish.md`.
 
@@ -163,13 +163,13 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-940** — Website platform: events, telemetry, admin, content (`queued`)
 - **T-090** — Map visualization program (`ready`)
 - **T-935** — Map binary storage — hybrid rkyv + POD (`queued`)
-- **T-676** — Trigger activation and effects — the Enfusion runtime (`ready`)
 - **T-677** — Waypoints — group movement orders (`ready`)
 - **T-678** — Group AI state: combat mode, behaviour, formation, speed (`ready`)
 - **T-673** — Marker style and Area markers — the $defs/marker widening (`ready`)
 - **T-212** — Typed per-side objectives with attributes (`ready`)
 - **T-680** — Vehicle states: lock, fuel, ammo (`ready`)
 - **T-681** — Entity states: health, allow-damage, show-model, size, stamina (`ready`)
+- **T-682** — Environment readers: fog, wind, view distance (`ready`)
 <!-- ticket-sync:status:end -->
 
 **Shipped history — every slice, sha and tag — lives in**
