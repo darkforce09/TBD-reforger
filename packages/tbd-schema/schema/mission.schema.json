@@ -1136,10 +1136,62 @@
     },
     "winConditions": {
       "type": "object",
+      "description": "How the round is won (T-936.1).\n\n`endOn` is the CLOSED list of triggers that may END the round and is unchanged by T-936.1 — `TBD_ObjectiveRegistry.EvaluateEndTriggers` drives three of them and `TBD_FrameworkManager.TickWinConditions` the other two. `mode` is the AUTHORED WIN RULE that sits on top of them, and until T-936.1 it was a free `minLength: 1` string that `flatten.rs` hardcoded to `attrition` no matter what the author chose — so it could not be wrong and it could not be right either.\n\n═══ WHY THE ENUM CARRIES SEVEN VALUES AND NOT FIVE ═══\n\nThe five the editor authors are `attrition` | `objective` | `extraction` | `vip` | `timeout` (`crates/map-engine-core/src/mission/win_conditions.rs` `AUTHORED_MODES`, and the `mode` enum in `mission-editor-payload.schema.json`, which lists ONLY those five — an editor payload cannot carry the other two).\n\n`points_then_attrition` and `defender_holds_or_attacker_destroys` are GRANDFATHERED. They are not editor output and no slice will ever emit them: they are carried by four committed hand-authored goldens (`bridgehead-at-levie`, `empty-warning-fields`, `slot-loadout-coverage`, `last-stand-at-montfort`) plus two `golden-missions-invalid` fixtures, all of which pre-date the enum and must keep validating — this ticket's own acceptance says so. Dropping them would fail `xtask schema validate` on six committed files whose subject is the mod's PARSER, not the win rule.\n\nThey cost nothing at runtime. `mode` reaches the mod at exactly one place — `TBD_BriefingData.BuildWinConditions` renders `Humanise(mode)` on the briefing screen — and `TBD_WinConditionEvaluator` treats any mode outside the five as MODE_UNKNOWN, which is the pre-T-936.1 behaviour those documents were written for: the round ends on `endOn` alone.\n\n═══ PER-MODE PARAMS ═══\n\n`extractionZoneId` / `vipSlotId` / `timeoutMinutes` are each REQUIRED BY, and only meaningful to, one mode — the `allOf` below states that per mode rather than leaving three optional keys nothing has to fill in. `win_conditions.rs` additionally REFUSES a param that belongs to a different mode than the one authored, which a schema `if/then` could express only as a fourth pile of conditionals; the compile is the authoring gate and says which param and which mode.",
       "required": ["mode", "endOn"],
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": { "mode": { "const": "extraction" } },
+            "required": ["mode"]
+          },
+          "then": { "required": ["extractionZoneId"] }
+        },
+        {
+          "if": {
+            "properties": { "mode": { "const": "vip" } },
+            "required": ["mode"]
+          },
+          "then": { "required": ["vipSlotId"] }
+        },
+        {
+          "if": {
+            "properties": { "mode": { "const": "timeout" } },
+            "required": ["mode"]
+          },
+          "then": { "required": ["timeoutMinutes"] }
+        }
+      ],
       "properties": {
-        "mode": { "type": "string", "minLength": 1 },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "attrition",
+            "objective",
+            "extraction",
+            "vip",
+            "timeout",
+            "points_then_attrition",
+            "defender_holds_or_attacker_destroys"
+          ],
+          "description": "The authored win rule. Five editor-authorable values plus two grandfathered golden-only values — see this block's own note for why the enum is seven wide. `attrition` is what `flatten.rs` emits when the payload authors no `winConditions` at all, which is what keeps every pre-T-936.1 mission byte-identical."
+        },
+        "extractionZoneId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "`mode: extraction` only — the `zones[].id` the extracting side must reach. `flatten.rs` reports a diagnostic when this names a zone that did not reach the wire, because an extraction zone that does not exist is a round that can never be won (the same rule `$defs/vehicle.seats[].slotId` follows against the emitted slots). Read by `TBD_WinConditionEvaluator`, which resolves it through `TBD_ZoneRegistry` and refuses to evaluate rather than inventing a zone."
+        },
+        "vipSlotId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "`mode: vip` only — the `slots[].uid` of the protected player. Matched against the EMITTED slot uids by `flatten.rs`, not the authored ones, for the same reason `$defs/vehicle.seats[].slotId` is: a uid that resolved in the editor payload but was never placed would dangle on the wire. Read by `TBD_WinConditionEvaluator`."
+        },
+        "timeoutMinutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1440,
+          "description": "`mode: timeout` only — how long the round runs before the clock ends it, in whole minutes. 1440 is 24 h; the ceiling exists for the same reason `$defs/zoneRules.captureSeconds` has one (a typo'd `600` where `60` was meant is a round nobody can finish).\n\nIt is NOT a second clock. `flatten.rs` projects it onto `flow.timeLimitSeconds` (× 60) and adds `time_limit` to `endOn`, so the round is ended by the ONE armed clock `TBD_FrameworkManager.ArmRoundClock` already runs. Two timers for one deadline is the T-946.19 defect class, and `TBD_WinConditionEvaluator` deliberately starts no timer of its own for this mode."
+        },
         "endOn": {
           "type": "array",
           "minItems": 1,
