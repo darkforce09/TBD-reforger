@@ -3,7 +3,7 @@ kind = "work"
 title = "Single-faction compile ships a phantom opfor"
 summary = "flatten pads a stub opposing faction (flatten.rs:2470-2472) to satisfy the schema's two-faction rule, so every single-faction mission shows an unplayable side in briefing and ORBAT. Let the schema permit one faction and stop padding."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7480
 spec = "docs/specs/ideas/t299_phantom_opfor.md"
 plan = "docs/plans/t-299_plan.md"
@@ -37,7 +37,10 @@ acceptance = [
     "A single-faction mission compiles with one faction; briefing and ORBAT show no phantom side.",
     "Two-faction compiles are unchanged byte for byte; the mod validator accepts one faction.",
 ]
+shipped_at = "f90297d7e"
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-06T22:29:20Z"
+estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/mission/flatten.rs",
     "packages/tbd-schema/schema/mission.schema.json",

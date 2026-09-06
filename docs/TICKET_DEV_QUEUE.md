@@ -13,14 +13,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** Objectives as typed, placed, per-side entities with one uniform attribute spine
 
-## T-685 — Zone volumes: height bounds capture counts and owner
-
-- **Slice spec:** `docs/specs/existing/t685_zone_volumes.md`
-- **Program hub:** `docs/specs/existing/t685_zone_volumes.md`
-- **Branch:** `ticket/T-685`
-- **Targets:** 
-- **Summary:** Zones become volumes: min/max height, attacker and defender counts, starting owner
-
 ## T-689 — Play-area enforcement gains a vehicle-class axis: the aircraft exemption
 
 - **Slice spec:** `docs/specs/existing/t689_play_area_vehicle_axis.md`
@@ -44,22 +36,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-654`
 - **Targets:** 
 - **Summary:** Conditional inclusion: variant-gated document subtrees
-
-## T-679 — Placement scatter: radius and area shape
-
-- **Slice spec:** `docs/specs/existing/t679_placement_scatter.md`
-- **Program hub:** `docs/specs/existing/t679_placement_scatter.md`
-- **Branch:** `ticket/T-679`
-- **Targets:** 
-- **Summary:** Placement scatter: radius and area shape
-
-## T-299 — Single-faction compile ships a phantom opfor
-
-- **Slice spec:** `docs/specs/ideas/t299_phantom_opfor.md`
-- **Program hub:** `docs/specs/ideas/t299_phantom_opfor.md`
-- **Branch:** `ticket/T-299`
-- **Targets:** 
-- **Summary:** flatten pads a stub opposing faction (flatten.rs:2470-2472) to satisfy the schema's two-faction rule, so every single-faction mission shows an unplayable side in briefing and ORBAT. Let the schema permit one faction and stop padding.
 
 ## T-310 — Arsenal attachments never reach the compiled document
 

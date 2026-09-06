@@ -10,12 +10,9 @@
 
 - **T-090** (7079) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-212** (7320) — Typed per-side objectives with attributes [ready] — Objectives as typed, placed, per-side entities with one uniform attribute spine
-- **T-685** (7370) — Zone volumes: height bounds capture counts and owner [ready] — Zones become volumes: min/max height, attacker and defender counts, starting owner
 - **T-689** (7380) — Play-area enforcement gains a vehicle-class axis: the aircraft exemption [ready] — Play-area enforcement gains a vehicle-class axis: the aircraft exemption
 - **T-705** (7400) — Player gadget flags — map, compass, watch, GPS, radio [ready] — Player gadget flags — map, compass, watch, GPS, radio
 - **T-654** (7410) — Conditional inclusion: variant-gated document subtrees [ready] — Conditional inclusion: variant-gated document subtrees
-- **T-679** (7420) — Placement scatter: radius and area shape [ready] — Placement scatter: radius and area shape
-- **T-299** (7480) — Single-faction compile ships a phantom opfor [ready] — flatten pads a stub opposing faction (flatten.rs:2470-2472) to satisfy the schema's two-faction rule, so every single-faction mission shows an unplayable side in briefing and ORBAT. Let the schema permit one faction and stop padding.
 - **T-310** (7490) — Arsenal attachments never reach the compiled document [ready] — T-197 persists weapon attachment edges in SlotLoadoutV2 but flatten's mod_slot_loadout reads only weapon/optic/magazine and the schema gear block has no list; add gear.attachments[], emit it, and mount it in TBD_LoadoutEquipHelper.c.
 - **T-290** (7540) — Nine dead flatten fields mod never reads [ready] — meta.author/templateId/playerRange, the environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds and the orbat block are emitted but never read by the mod; add readers where cheap and annotate the rest in an emit ledger.
 - **T-291** (7550) — Resolve five schema fields implemented on no surface [ready] — environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem.

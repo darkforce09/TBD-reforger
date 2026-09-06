@@ -164,12 +164,12 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-090** — Map visualization program (`ready`)
 - **T-935** — Map binary storage — hybrid rkyv + POD (`queued`)
 - **T-212** — Typed per-side objectives with attributes (`ready`)
-- **T-685** — Zone volumes: height bounds capture counts and owner (`ready`)
 - **T-689** — Play-area enforcement gains a vehicle-class axis: the aircraft exemption (`ready`)
 - **T-705** — Player gadget flags — map, compass, watch, GPS, radio (`ready`)
 - **T-654** — Conditional inclusion: variant-gated document subtrees (`ready`)
-- **T-679** — Placement scatter: radius and area shape (`ready`)
 - **T-674** — T-216 follow-on: slot identity reaches the wire (`queued`)
+- **T-675** — Vehicle roster reaches game — T-076 compile half (`queued`)
+- **T-936** — Mission logic the audit found missing (`queued`)
 <!-- ticket-sync:status:end -->
 
 **Shipped history — every slice, sha and tag — lives in**

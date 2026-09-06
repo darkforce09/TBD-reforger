@@ -3,8 +3,7 @@ kind = "work"
 title = "Placement scatter: radius and area shape"
 summary = "Placement scatter: radius and area shape"
 class = "chore"
-status = "ready"
-created_at = "2026-08-02T00:00:00Z"
+status = "shipped"
 order = 7420
 spec = "docs/specs/existing/t679_placement_scatter.md"
 plan = "docs/plans/t-679_plan.md"
@@ -57,7 +56,13 @@ citations = [
     "T-706 schema widening split",
     "cheapest workbench widening slice",
 ]
-estimated = ["scope"]
+shipped_at = "759b53354"
+created_at = "2026-08-02T00:00:00Z"
+completed_at = "2026-09-06T22:29:30Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c",

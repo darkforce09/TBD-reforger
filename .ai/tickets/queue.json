@@ -20,13 +20,6 @@
       "branch": "ticket/T-212"
     },
     {
-      "id": "T-685",
-      "title": "Zone volumes: height bounds capture counts and owner",
-      "status": "ready",
-      "spec": "docs/specs/existing/t685_zone_volumes.md",
-      "branch": "ticket/T-685"
-    },
-    {
       "id": "T-689",
       "title": "Play-area enforcement gains a vehicle-class axis: the aircraft exemption",
       "status": "ready",
@@ -46,20 +39,6 @@
       "status": "ready",
       "spec": "docs/specs/existing/t654_variant_inclusion.md",
       "branch": "ticket/T-654"
-    },
-    {
-      "id": "T-679",
-      "title": "Placement scatter: radius and area shape",
-      "status": "ready",
-      "spec": "docs/specs/existing/t679_placement_scatter.md",
-      "branch": "ticket/T-679"
-    },
-    {
-      "id": "T-299",
-      "title": "Single-faction compile ships a phantom opfor",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t299_phantom_opfor.md",
-      "branch": "ticket/T-299"
     },
     {
       "id": "T-310",
