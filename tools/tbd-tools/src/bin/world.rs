@@ -6,7 +6,7 @@ use std::process::ExitCode;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use tbd_tools::world::{aux, build, edds, gates, pak::PakVfs, reclassify, topo};
+use tbd_tools::world::{aux, build, edds, gates, pak::PakVfs, reclassify, roads_emit, topo};
 
 #[derive(Parser)]
 #[command(name = "world", about = "T-090 world-export pipeline (Rust)")]
@@ -122,7 +122,8 @@ enum Cmd {
         #[arg(long)]
         phase: String,
     },
-    /// build-roads-from-topo.mjs port
+    /// build-roads-from-topo.mjs port. Dual emission (T-935.6): writes
+    /// `objects/roads.json.gz` and `roads/road_network.rkyv`.
     BuildRoads {
         #[arg(long)]
         terrain: String,
@@ -130,6 +131,16 @@ enum Cmd {
         out: Option<PathBuf>,
         #[arg(long)]
         ops_log: bool,
+    },
+    /// T-935.6 — re-emit `roads/road_network.rkyv` from the committed `objects/roads.json.gz`.
+    ///
+    /// The archive half of `build-roads`, without the `.pak` VFS the topo decode needs — so the
+    /// binary lane is reproducible from the repo alone rather than only on an export box.
+    RoadsRkyv {
+        #[arg(long)]
+        terrain: String,
+        #[arg(long)]
+        out: Option<PathBuf>,
     },
 }
 
@@ -209,8 +220,23 @@ fn run() -> anyhow::Result<ExitCode> {
             ops_log,
         } => {
             build::build_roads_from_topo(&terrain, out.as_deref(), ops_log)?;
+            // T-935.6 dual emission. It runs AFTER the JSON write and reads the file that write
+            // just produced, so the archive is the JSON's centrelined twin by construction — see
+            // `roads_emit`'s module docs. Both paths are printed because an operator who only
+            // sees one of them cannot tell which lane a stale asset came from.
+            let dir = roads_emit::resolve_terrain_dir(&terrain, out.as_deref());
+            let (rkyv, bytes) = roads_emit::emit_road_network(&dir)?;
+            println!(
+                "build-roads: {} + {} ({bytes} bytes)",
+                dir.join(roads_emit::ROADS_GZ).display(),
+                rkyv.display()
+            );
             Ok(ExitCode::SUCCESS)
         }
+        Cmd::RoadsRkyv { terrain, out } => Ok(ExitCode::from(roads_emit::emit_road_network_cli(
+            &terrain,
+            out.as_deref(),
+        )?)),
         Cmd::PhaseGate { terrain, phase } => Ok(ExitCode::from(aux::phase_gate(&terrain, &phase)?)),
         Cmd::ValidateExports => Ok(ExitCode::from(aux::validate_export_artifacts()?)),
         Cmd::Census { terrain } => Ok(ExitCode::from(aux::census_types(&terrain)?)),

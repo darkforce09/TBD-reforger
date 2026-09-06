@@ -16,6 +16,8 @@ pub mod gates;
 pub mod jsval;
 pub mod pak;
 pub mod reclassify;
+/// T-935.6 — the `roads/road_network.rkyv` twin written beside `objects/roads.json.gz`.
+pub mod roads_emit;
 pub mod topo;
 
 /// T-278 — the instance kinds a census bucket exists for, in emitted key order.
