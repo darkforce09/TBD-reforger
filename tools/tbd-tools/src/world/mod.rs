@@ -4,6 +4,8 @@
 use anyhow::{Result, bail};
 
 pub mod aux;
+/// T-935.2 — the `TBDC` binary twin written beside every chunk `.json.gz`.
+pub mod binary_emit;
 pub mod build;
 pub mod classify;
 pub mod edds;

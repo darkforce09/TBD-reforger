@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Result, bail};
 use serde_json::{Map, Value, json};
 
+use super::binary_emit;
 use super::classify::{Classifier, load_rules, stream_raw_entities};
 use super::jsval::{chunk_row_values, round3, trailers_trivial};
 use super::jsval::{js_normalize, js_num, norm_heading, round2};
@@ -481,6 +482,8 @@ pub fn build_world_objects_opt(
         gz9(compact(&prefabs_doc).as_bytes())?,
     )?;
 
+    // T-935.2 — the class byte the chunk JSON does not carry, from the catalogue just written.
+    let class_by_pid = binary_emit::class_code_table(&prefabs_doc);
     let mut cells: Vec<Value> = Vec::new();
     for key in &sorted_chunk_keys {
         let list = &chunks[key];
@@ -499,6 +502,8 @@ pub fn build_world_objects_opt(
                 ))
             })
             .collect();
+        // T-935.2 — narrowed from the SAME rows the gz write below serialises (see binary_emit).
+        let pods = binary_emit::pods_from_rows(&rows, &class_by_pid);
         let doc = json!({ "instances": rows });
         std::fs::write(
             chunks_dir.join(format!("{key}.json.gz")),
@@ -506,6 +511,9 @@ pub fn build_world_objects_opt(
         )?;
         let mut it = key.split('_').map(|v| v.parse::<i64>().unwrap_or(0));
         let (cx, cy) = (it.next().unwrap_or(0), it.next().unwrap_or(0));
+        // T-935.2 — dual emission: the binary twin beside the gz-JSON, which stays authoritative
+        // until T-935.13 flips the manifest.
+        binary_emit::write_chunk_bin(&chunks_dir.join(format!("{key}.bin")), cx, cy, &pods)?;
         cells.push(json!({
             "cx": cx, "cy": cy, "path": format!("objects/chunks/{key}.json.gz"),
             "instanceCount": list.len(),

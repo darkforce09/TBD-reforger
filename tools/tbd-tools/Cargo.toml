@@ -25,7 +25,14 @@ image-webp = "0.2"
 png = "0.17"
 resvg = { version = "0.45", default-features = false }
 webp = "0.3"
-map-engine-core = { path = "../../crates/map-engine-core", features = ["png", "world"] }
+# `binary` (T-935.2) is named even though `world` already implies it: `world/binary_emit.rs` links
+# `ObjectInstancePod`/`TbdcHeader` directly, so a future narrowing of `world` must not silently
+# take the emitter's types away. It activates nothing new — the lock is unchanged.
+map-engine-core = { path = "../../crates/map-engine-core", features = [
+    "png",
+    "world",
+    "binary",
+] }
 futures-util = "0.3"
 regex = "1"
 reqwest = { version = "0.13.4", default-features = false, features = ["json", "charset"] }
