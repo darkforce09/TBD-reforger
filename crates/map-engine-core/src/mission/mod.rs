@@ -5,8 +5,15 @@
 //! (`flatten_to_mod_document`) lands here next, once decoupled from the backend `Mission` model.
 
 pub mod compile;
+/// T-936 — the AUTHORED_BLOCKS passthrough: the one list `compile.rs` copies from and `flatten.rs`
+/// reads back, so the seven T-936 blocks land without seven pairs of edits to those two contested
+/// files. See its header for the list-not-open-passthrough rule.
+pub mod extensions;
 pub mod flatten;
 pub mod kit;
 pub mod orbat;
 pub mod validate;
+/// T-936.1 — the authored `winConditions` block: the five modes the editor may author, the
+/// per-mode params, and the validator [`extensions::AUTHORED_BLOCKS`] registers for it.
+pub mod win_conditions;
 pub mod wire_safety;

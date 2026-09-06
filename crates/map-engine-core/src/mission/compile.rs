@@ -272,15 +272,50 @@ pub fn compile_payload(small_maps_json: &str, slots_json: &str, include_orbat: b
         }
     }
 
+    // T-936 — the AUTHORED_BLOCKS passthrough, and the ONLY place this function copies one.
+    //
+    // The blocks ride `meta.environment` — the editor's per-mission settings BAG, which is the one
+    // part of `meta` with a read/write pair the editor can drive and which `hydrate` loads back
+    // verbatim, so an authored block survives Save → reload with no change to `doc/store.rs`. They
+    // land at the payload ROOT, which is where `mission-editor-payload.schema.json` declares them
+    // and where `flatten_to_mod_document` reads them. `mission/extensions.rs` owns the list and the
+    // validators; the seven T-936 slices add a row there and touch nothing here.
+    //
+    // The bag is emitted at `payload.environment` as well (unchanged, verbatim — that is what makes
+    // the round trip work), so a block appears twice in the SAVED payload: once nested where the
+    // editor reads it back and once at the root where the compile reads it. That is the same
+    // duplication `flow`'s keys already have (`meta.environment.timeLimitSeconds` →
+    // `flow.timeLimitSeconds`), and the nested copy is the authoritative one — see the extras skip
+    // below for the half that keeps a deleted block deleted.
+    //
+    // Placed BEFORE the T-219 extras re-emit so a stale parked copy cannot win over the live
+    // document — the same "live wins over parked" ordering `small_maps_json` applies to its own
+    // zones/compositions/triggers projections.
+    if let Some(obj) = payload.as_object_mut() {
+        crate::mission::extensions::copy_authored_blocks(&environment, obj);
+    }
+
     // T-219 — re-emit unknown top-level keys that hydrate parked in `payloadExtras`. Never
     // overwrite a key this function already authored (schemaVersion / map / editor / …), and never
     // promote the side-channel name itself onto the wire payload (T-432: `payloadExtras` is in
     // `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS` so the known-key skip below enforces that claim).
+    //
+    // T-936 — an AUTHORED_BLOCKS key is NEVER re-emitted from extras, even when the live document
+    // does not carry it. Hydrate parks the root copy of the block (it is not in
+    // `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS`), so without this skip, DELETING a win rule would
+    // silently un-delete itself on the next save: the live bag no longer has the key, the
+    // `contains_key` guard therefore does not fire, and the stale parked copy walks back onto the
+    // wire. Absence has to be expressible — the same rule `small_maps_json` applies when the last
+    // zone, composition, trigger, comment or connection is deleted, arriving here from the other
+    // side of the same round trip.
     if let Some(extras) = small.get("payloadExtras").and_then(Value::as_object)
         && let Some(obj) = payload.as_object_mut()
     {
         for (k, v) in extras {
-            if is_known_editor_payload_top_level(k) || obj.contains_key(k) {
+            if is_known_editor_payload_top_level(k)
+                || crate::mission::extensions::is_authored_block(k)
+                || obj.contains_key(k)
+            {
                 continue;
             }
             obj.insert(k.clone(), v.clone());
@@ -1235,5 +1270,107 @@ mod tests {
         .to_string();
         let p2 = compile_payload(&with_meta, "{}", false);
         assert_eq!(p2["title"], json!("Authored"));
+    }
+
+    /// T-936 — an authored block rides `meta.environment` and lands at the payload ROOT, verbatim.
+    ///
+    /// The transport is the settings BAG because it is the one part of `meta` with a read/write
+    /// pair the editor can drive, and because `hydrate` loads `payload.environment` back into it
+    /// verbatim — which is what makes an authored block survive Save → reload with no change to
+    /// `doc/store.rs`. The destination is the root because that is where
+    /// `mission-editor-payload.schema.json` declares it and where `flatten_to_mod_document` reads
+    /// it. Both copies are asserted here: the nested one is the editor's read-back, the root one is
+    /// the compile's input, and the pair is what closes the round trip.
+    #[test]
+    fn an_authored_block_rides_the_environment_bag_and_lands_at_the_payload_root() {
+        let block = json!({"mode": "vip", "endOn": ["faction_eliminated"], "vipSlotId": "s-12"});
+        let small = json!({
+            "meta": {
+                "terrain": "everon",
+                "environment": { "weather": "clear", "winConditions": block.clone() }
+            }
+        })
+        .to_string();
+        let p = compile_payload(&small, "{}", false);
+        assert_eq!(p["winConditions"], block, "carried verbatim to the root");
+        assert_eq!(
+            p["environment"]["winConditions"], block,
+            "the bag reaches the wire unchanged — that is the reload path"
+        );
+        assert_eq!(p["environment"]["weather"], json!("clear"));
+
+        // Export takes the same path — it is the same function with `include_orbat`.
+        let ex = compile_payload(&small, "{}", true);
+        assert_eq!(ex["winConditions"], block);
+    }
+
+    /// An unlisted key in the bag does NOT become a wire key. `AUTHORED_BLOCKS` is a list, not an
+    /// open passthrough: `mission.schema.json` closes the document root with
+    /// `additionalProperties: false`, so one stray promoted key would 500 `/compiled`.
+    #[test]
+    fn an_unlisted_environment_key_is_not_promoted_to_the_payload_root() {
+        let small = json!({
+            "meta": {
+                "terrain": "everon",
+                "environment": { "weather": "clear", "tasks": [{"id": "t1"}] }
+            }
+        })
+        .to_string();
+        let p = compile_payload(&small, "{}", false);
+        assert!(
+            p.get("tasks").is_none(),
+            "`tasks` has no AUTHORED_BLOCKS row until T-936.2: {p}"
+        );
+        // ...and the bag itself is untouched by the passthrough.
+        assert_eq!(
+            p["environment"],
+            json!({"weather": "clear", "tasks": [{"id": "t1"}]})
+        );
+    }
+
+    /// The LIVE document wins over a stale parked copy — the same ordering `small_maps_json`
+    /// applies to its own zones/compositions/triggers projections, and the reason
+    /// `copy_authored_blocks` runs BEFORE the T-219 extras re-emit.
+    #[test]
+    fn a_live_authored_block_wins_over_a_stale_parked_one() {
+        let live = json!({"mode": "vip", "endOn": ["time_limit"], "vipSlotId": "live"});
+        let stale = json!({"mode": "attrition", "endOn": ["time_limit"]});
+        let small = json!({
+            "meta": { "terrain": "everon", "environment": { "winConditions": live.clone() } },
+            "payloadExtras": { "winConditions": stale }
+        })
+        .to_string();
+        let p = compile_payload(&small, "{}", false);
+        assert_eq!(p["winConditions"], live);
+    }
+
+    /// **Deleting a win rule must stay deleted.** Hydrate parks the payload's ROOT `winConditions`
+    /// in `payloadExtras` (it is not a known top-level key), so without the T-936 skip in the extras
+    /// loop, clearing the block would silently un-delete itself on the very next save — the
+    /// half-applied-mutation shape `small_maps_json`'s zones/compositions/triggers/comments/
+    /// connections absence rules exist to prevent, arriving from the other side of the same trip.
+    ///
+    /// Both spellings of "cleared" are covered: the key absent from the bag, and the key present as
+    /// `null` (what a cleared value looks like coming out of a yrs map, and what
+    /// `"winConditions": null` would fail the schema's type check with).
+    #[test]
+    fn a_cleared_authored_block_stays_cleared_against_a_stale_parked_copy() {
+        let stale = json!({"mode": "vip", "endOn": ["time_limit"], "vipSlotId": "ghost"});
+
+        for bag in [
+            json!({ "weather": "clear" }),
+            json!({ "weather": "clear", "winConditions": serde_json::Value::Null }),
+        ] {
+            let small = json!({
+                "meta": { "terrain": "everon", "environment": bag },
+                "payloadExtras": { "winConditions": stale.clone() }
+            })
+            .to_string();
+            let p = compile_payload(&small, "{}", false);
+            assert!(
+                p.get("winConditions").is_none(),
+                "a deleted win rule came back from payloadExtras: {p}"
+            );
+        }
     }
 }

@@ -420,11 +420,29 @@ pub struct ModFlow {
     pub jip: String,
 }
 
+/// `mission.schema.json#/$defs/winConditions` — the mission's win rule.
+///
+/// T-936.1 made `mode` mean something. Before it, this struct was built from a literal
+/// (`mode: "attrition"`) with `end_on` derived from the sides that hold slots, so an author who
+/// chose a rule in the editor got attrition anyway. `mode` and `end_on` are now the AUTHORED values
+/// whenever a payload carries a `winConditions` block, and the derivation below is the fallback for
+/// the (today, overwhelming) majority of missions that carry none — which is what keeps their bytes
+/// identical.
+///
+/// `params` is `#[serde(flatten)]`ed rather than nested because `$defs/winConditions` declares the
+/// params as SIBLINGS of `mode`/`endOn` (`{mode, endOn, vipSlotId}`), which is also the shape
+/// Enfusion's `JsonLoadContext` binds member-by-name on the mod side. Every param is an `Option`
+/// with `skip_serializing_if`, so a block with no params emits exactly the two keys it always
+/// emitted — the byte-parity floor, stated in
+/// `win_conditions::tests::empty_params_serialise_to_no_keys_at_all` and pinned end-to-end by
+/// `compiler_shaped_golden_is_a_fresh_emitter_output`.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ModWinConditions {
     pub mode: String,
     pub end_on: Vec<String>,
+    #[serde(flatten)]
+    pub params: crate::mission::win_conditions::WinConditionParams,
 }
 
 /// `mission.schema.json#/$defs/settings` — T-259.
@@ -743,6 +761,21 @@ pub struct ModMissionDocument {
     pub zones: Vec<ModZone>,
     pub flow: ModFlow,
     pub win_conditions: ModWinConditions,
+    /// T-936 — the AUTHORED_BLOCKS carrier (`mission/extensions.rs`), `#[serde(flatten)]`ed so each
+    /// block it holds emits at the document ROOT, here, in schema property order.
+    ///
+    /// Declared immediately after `winConditions` because that is where the T-936 program's blocks
+    /// sit in `mission.schema.json`'s property order, and because the block T-936.1 itself lands is
+    /// the one modelled by the field above — the carrier holds the OPTIONAL blocks the six sibling
+    /// slices add (`tasks`, `weatherTimeline`, `audio`, `spawnModules`, `tacticalGraphics`), each of
+    /// which is one row in `AUTHORED_BLOCKS` and one validator, with no edit here.
+    ///
+    /// Empty today, and an empty carrier serialises to NOTHING — not to an empty object — so this
+    /// field costs a mission that authors no optional block exactly zero bytes. That is the claim
+    /// `extensions::tests::an_empty_carrier_adds_nothing_to_the_document` states in bytes and
+    /// `compiler_shaped_golden_is_a_fresh_emitter_output` pins against the committed golden.
+    #[serde(flatten)]
+    pub extensions: crate::mission::extensions::ExtensionBlocks,
     /// T-202 — per-faction orders + map markers, keyed by the SAME slugged faction key as
     /// [`Self::factions`]`[].key` and [`Self::orbat`]. Declared after `winConditions` to match the
     /// schema's own property order, and a `BTreeMap` for the same reason `orbat` is one.
@@ -826,6 +859,25 @@ pub const DIAG_DROP_SLOT_STANCE: &str = "COMPILE-DROP-SLOT-STANCE";
 pub const DIAG_DROP_SLOT_UNIT_NAME: &str = "COMPILE-DROP-SLOT-UNIT-NAME";
 /// Stable rule id: the authored vehicle ROSTER (top-level `vehicles[]`, seats + crew) is dropped.
 pub const DIAG_DROP_VEHICLE_ROSTER: &str = "COMPILE-DROP-VEHICLE-ROSTER";
+/// Stable rule id: the authored `winConditions` block could not be honoured as written (T-936.1).
+///
+/// **One id for four situations, deliberately, exactly as [`DIAG_DROP_VEHICLE_ROSTER`] is one id
+/// for six drop reasons.** They are one rule to a consumer — "your win rule is not the rule this
+/// mission will run" — and the MESSAGE is what says which:
+///
+/// * the block is malformed and the compile fell back to the derived attrition rule;
+/// * `extractionZoneId` / `vipSlotId` names something that did not reach the wire, so the rule can
+///   never be satisfied;
+/// * an authored `endOn` trigger was dropped because this mission cannot honour it (today:
+///   `faction_eliminated` where fewer than two sides hold slots — the mod's validator REFUSES such
+///   a document outright, so carrying it would make the mission unloadable with no way to fix it);
+/// * `mode: timeout` moved `flow.timeLimitSeconds` off the value the flow block authored.
+///
+/// Splitting it four ways was considered and rejected: [`COMPILE_DIAGNOSTIC_RULE_IDS`]'s own
+/// reachability test requires every id to FIRE over one fixture, and a document has exactly one
+/// `mode`, so three of four ids would be permanently unreachable — a dead rule that reads as a live
+/// one, which is worse than a coarse id with a precise sentence.
+pub const DIAG_WIN_CONDITIONS: &str = "COMPILE-WIN-CONDITIONS";
 
 /// Every diagnostic rule id this compile can emit, in emission order. The single source of truth a
 /// consumer (the panel legend, a smoke harness, the `/compiled` response header) enumerates rather
@@ -837,7 +889,7 @@ pub const DIAG_DROP_VEHICLE_ROSTER: &str = "COMPILE-DROP-VEHICLE-ROSTER";
 /// control byte, the wrong JSON type, or (for a leader) naming a seat that is not in the squad. The
 /// id is what a consumer routes on and what the `/compiled` rules header publishes, so it stays
 /// stable across that meaning change; the MESSAGE is what says why, and every message was rewritten.
-pub const COMPILE_DIAGNOSTIC_RULE_IDS: [&str; 7] = [
+pub const COMPILE_DIAGNOSTIC_RULE_IDS: [&str; 8] = [
     DIAG_DROP_SQUAD_LEADER,
     DIAG_DROP_SLOT_TAG,
     DIAG_DROP_SLOT_CALLSIGN,
@@ -845,6 +897,7 @@ pub const COMPILE_DIAGNOSTIC_RULE_IDS: [&str; 7] = [
     DIAG_DROP_SLOT_STANCE,
     DIAG_DROP_SLOT_UNIT_NAME,
     DIAG_DROP_VEHICLE_ROSTER,
+    DIAG_WIN_CONDITIONS,
 ];
 
 /// The five slot-identity keys read as raw JSON, paired with the rule that reports each one's loss.
@@ -1172,6 +1225,25 @@ impl DiagnosticAcc {
             &v.id,
         );
     }
+
+    /// T-936.1 — the authored `winConditions` block is not the rule this mission will run.
+    ///
+    /// `subject_id` is the offending REFERENCE (a slot uid, a zone id) when the finding is about
+    /// one, so the panel can select what the author must fix; `"winConditions"` otherwise, because
+    /// the block itself is the subject and a finding with no owner is one the panel cannot route.
+    ///
+    /// `Warning`, never `Error`: a diagnostic is not a refusal, and every situation this reports
+    /// still produces a valid, loadable document — with a rule the author did not choose, which is
+    /// exactly the thing worth saying out loud.
+    fn win_conditions(&mut self, message: String, subject_id: &str) {
+        self.push(
+            DIAG_WIN_CONDITIONS,
+            Severity::Warning,
+            message,
+            "/winConditions".to_string(),
+            subject_id,
+        );
+    }
 }
 
 /// `Alpha (sq1)` / `sq1` — a squad named the way an author recognises it, never a bare index.
@@ -1288,6 +1360,40 @@ struct EditorPayload {
     /// which is the invariant `scan_editor_payload_types` (T-367) exists to hold. The accept/reject
     /// decision moves to the read helpers, where it matches the dialog's read-back exactly.
     environment: serde_json::Value,
+    /// T-936.1 — the authored `winConditions` block, straight off the payload root where
+    /// `compile_payload`'s `copy_authored_blocks` put it.
+    ///
+    /// A bare [`serde_json::Value`] for exactly the reason [`Self::environment`] is one: stored
+    /// payloads are immutable, and a typed field here would let one wrong-typed key in an existing
+    /// payload become a permanent `CompileError::Parse` → HTTP 500. The typing happens in
+    /// `mission/win_conditions.rs`, which REPORTS a refusal and falls back to the derivation
+    /// instead of failing the compile.
+    ///
+    /// **This is the one line a later T-936 slice adds to this file.** It is a named field rather
+    /// than a `#[serde(flatten)]` map because flatten makes serde buffer every unmatched top-level
+    /// key's value into `Content` — `loadouts`, `objectives`, `markers`, `payloadExtras` and the
+    /// rest — where today they are skipped allocation-free by `IgnoredAny`. On the 367k-slot
+    /// payload `wire_safety` measured at 615.6 ms to parse, that is not a rounding error. Everything
+    /// downstream of this field is generic (`extensions::AUTHORED_BLOCKS`), so a sibling slice adds
+    /// its own one-liner here and a row there, and touches nothing else.
+    #[serde(rename = "winConditions")]
+    win_conditions: Option<serde_json::Value>,
+}
+
+impl EditorPayload {
+    /// The authored blocks as a payload root `mission/extensions.rs` can read.
+    ///
+    /// Rebuilt from the named fields above rather than kept as the original root object, so this
+    /// carries the authored blocks and NOTHING else — an extensions reader cannot accidentally see
+    /// `editor` or `payloadExtras`, and the cost is one small object rather than a second parse of
+    /// a document that can be 8 MB.
+    fn authored_blocks_root(&self) -> serde_json::Value {
+        let mut root = serde_json::Map::new();
+        if let Some(v) = &self.win_conditions {
+            root.insert("winConditions".to_string(), v.clone());
+        }
+        serde_json::Value::Object(root)
+    }
 }
 
 /// Authored `settings` row — the three schema properties, all optional.
@@ -2243,6 +2349,177 @@ fn derive_flow(env: &serde_json::Value) -> ModFlow {
     }
 }
 
+/// T-936.1 — the mission's win rule: the AUTHORED block when the payload carries one, else the
+/// derivation this function has always run.
+///
+/// ══ The absent case is the byte-parity case ══════════════════════════════════════════════════
+/// `authored == None` returns exactly what the struct literal at this call site returned before
+/// T-936.1: `mode: "attrition"` and the derived `end_on`, with empty params that serialise to no
+/// keys at all. Every mission compiled today takes that path, which is why the Class-R parity
+/// fixtures are untouched by this ticket.
+///
+/// ══ What the authored path still refuses to carry ════════════════════════════════════════════
+/// Two gates survive the author's choice, and both are about a document the game server would
+/// REJECT rather than about second-guessing the rule:
+///
+/// 1. **`faction_eliminated` needs two sides that hold slots.** `TBD_MissionValidator` refuses the
+///    whole document otherwise ("declares faction_eliminated but only 1 faction(s) actually have
+///    slots — no second side can ever be eliminated"), the server parks in LOADING, and the author
+///    cannot fix it from the editor. This was already true of the derivation (an unconditional
+///    default made EVERY single-faction mission unloadable, which is why the derivation counts
+///    sides); an authored checklist can make the same mistake, so the same gate applies, and it is
+///    REPORTED rather than silent.
+/// 2. **`endOn` is `minItems: 1`.** If gate 1 empties it, the block falls back to
+///    [`win_conditions::FALLBACK_TRIGGER`] rather than emitting an array the schema rejects.
+///
+/// A DANGLING reference (`extractionZoneId` / `vipSlotId` naming something that never reached the
+/// wire) is reported but NOT rewritten. That is the opposite of `$defs/vehicle.seats[].slotId`,
+/// which drops its row, and the difference is that a vehicle row is one of many while
+/// `winConditions` is required and singular: blanking the param would leave a `vip` mission with no
+/// VIP and nothing said, and rewriting the mode would put a rule in the author's mouth. The
+/// evaluator on the mod side resolves the id through `TBD_ZoneRegistry` / the slot roster and
+/// refuses to evaluate when it cannot, so the failure is loud on both sides of the wire.
+fn resolve_win_conditions(
+    authored: Option<&crate::mission::win_conditions::AuthoredWinConditions>,
+    derived_end_on: Vec<String>,
+    sides_holding_slots: usize,
+    zone_ids: &HashSet<&str>,
+    slot_uids: &HashSet<&str>,
+    diagnostics: &mut DiagnosticAcc,
+) -> ModWinConditions {
+    let Some(a) = authored else {
+        return ModWinConditions {
+            mode: "attrition".to_string(),
+            end_on: derived_end_on,
+            params: crate::mission::win_conditions::WinConditionParams::default(),
+        };
+    };
+
+    // Gate 1 — `faction_eliminated` on a one-sided mission.
+    let mut end_on: Vec<String> = Vec::with_capacity(a.end_on.len());
+    for trigger in &a.end_on {
+        if trigger == "faction_eliminated" && sides_holding_slots < 2 {
+            diagnostics.win_conditions(
+                format!(
+                    "`winConditions.endOn` declares `faction_eliminated` and only \
+                     {sides_holding_slots} faction(s) hold slots, so the compile drops that \
+                     trigger. `TBD_MissionValidator` REFUSES a document that declares it with no \
+                     second side to eliminate — the server would park in LOADING with nothing you \
+                     could change from the editor."
+                ),
+                "winConditions",
+            );
+            continue;
+        }
+        end_on.push(trigger.clone());
+    }
+
+    // Gate 2 — `minItems: 1`.
+    if end_on.is_empty() {
+        end_on.push(crate::mission::win_conditions::FALLBACK_TRIGGER.to_string());
+        diagnostics.win_conditions(
+            format!(
+                "`winConditions.endOn` has nothing left after the checks above, and the schema \
+                 requires at least one trigger — the compile falls back to `{}`. A mission that \
+                 declares no end trigger runs until an admin ends it.",
+                crate::mission::win_conditions::FALLBACK_TRIGGER
+            ),
+            "winConditions",
+        );
+    }
+
+    // `mode: timeout` implies the trigger that actually stops the round. The clock is
+    // `TBD_FrameworkManager.ArmRoundClock`'s and it only arms when `endOn` declares `time_limit`
+    // (the mod says so itself: "flow.timeLimitSeconds=%1 is authored but winConditions.endOn does
+    // not declare 'time_limit' — clock NOT armed, this round will not end on time."). So a timeout
+    // rule without the trigger is a rule that cannot fire, and adding it is the mapping the ticket
+    // asks for — announced, never silent.
+    if a.mode == "timeout" && !end_on.iter().any(|t| t == "time_limit") {
+        end_on.push("time_limit".to_string());
+        diagnostics.win_conditions(
+            "`winConditions.mode` is `timeout` and `endOn` did not declare `time_limit`, so the \
+             compile adds it. The round clock only arms when that trigger is declared, so without \
+             it the authored timeout could never end the round."
+                .to_string(),
+            "winConditions",
+        );
+    }
+
+    // Dangling references — reported, never rewritten (see this function's header).
+    if let Some(zone_id) = a.params.extraction_zone_id.as_deref()
+        && !zone_ids.contains(zone_id)
+    {
+        diagnostics.win_conditions(
+            format!(
+                "`winConditions.extractionZoneId` is {} and no zone with that id reached the \
+                 compiled document, so the extraction can never be reached and the round can never \
+                 be won on it. The value is carried unchanged — `TBD_WinConditionEvaluator` \
+                 resolves it through `TBD_ZoneRegistry` and refuses to evaluate rather than \
+                 choosing a zone for you.",
+                render_authored_str(zone_id)
+            ),
+            zone_id,
+        );
+    }
+    if let Some(slot_uid) = a.params.vip_slot_id.as_deref()
+        && !slot_uids.contains(slot_uid)
+    {
+        diagnostics.win_conditions(
+            format!(
+                "`winConditions.vipSlotId` is {} and no slot with that uid reached the compiled \
+                 document, so there is no VIP to protect or extract. The value is carried \
+                 unchanged — `TBD_WinConditionEvaluator` refuses to evaluate rather than promoting \
+                 some other player to VIP.",
+                render_authored_str(slot_uid)
+            ),
+            slot_uid,
+        );
+    }
+
+    ModWinConditions {
+        mode: a.mode.clone(),
+        end_on,
+        params: a.params.clone(),
+    }
+}
+
+/// T-936.1 — project `mode: timeout`'s `timeoutMinutes` onto `flow.timeLimitSeconds`.
+///
+/// **This is what makes the authored timeout take effect, and it is deliberately NOT a second
+/// clock.** `TBD_FrameworkManager.ArmRoundClock` already runs exactly one round clock off
+/// `flow.timeLimitSeconds`; a runtime timer for `timeoutMinutes` beside it would be two timers for
+/// one deadline, which is the T-946.19 defect class (two timers both passing the same stale-timer
+/// defence, and every authored duration silently halved). So the win rule is expressed in the
+/// field the existing clock already reads, at compile time, once.
+///
+/// A `flow.timeLimitSeconds` the author also set and that DISAGREES is overridden and reported: the
+/// win rule is the more specific statement of the two, and leaving the flow value to win would make
+/// the mode picker's number decorative.
+fn apply_timeout_to_flow(
+    flow: &mut ModFlow,
+    win: &ModWinConditions,
+    diagnostics: &mut DiagnosticAcc,
+) {
+    let Some(minutes) = win.params.timeout_minutes else {
+        return;
+    };
+    let seconds = minutes * 60;
+    if flow.time_limit_seconds == seconds {
+        return;
+    }
+    diagnostics.win_conditions(
+        format!(
+            "`winConditions.mode` is `timeout` with `timeoutMinutes` {minutes} ({seconds} s), and \
+             `flow.timeLimitSeconds` was {} — the compile emits {seconds}. The win rule is the \
+             more specific statement, and the round clock reads `flow.timeLimitSeconds`, so the \
+             two cannot both stand.",
+            flow.time_limit_seconds
+        ),
+        "winConditions",
+    );
+    flow.time_limit_seconds = seconds;
+}
+
 /// Derive `radioPlan.nets[]` from the ORBAT this compile just built (T-203).
 ///
 /// ── Where this comes from, since nothing authors it ──────────────────────────────────
@@ -2886,6 +3163,10 @@ pub fn flatten_to_mod_document(
     let aliases = load_kit_aliases();
     let parsed: EditorPayload =
         serde_json::from_slice(payload).map_err(|e| CompileError::Parse(e.to_string()))?;
+    // T-936 — taken here, before `parsed.editor` is moved out below. It is a small object holding
+    // only the authored blocks (see [`EditorPayload::authored_blocks_root`]); the read that
+    // interprets it happens further down, once the diagnostics accumulator exists.
+    let authored_root = parsed.authored_blocks_root();
     let ed = parsed.editor;
 
     let squads_by_id: HashMap<&str, &SquadIn> =
@@ -3255,16 +3536,55 @@ pub fn flatten_to_mod_document(
     // rather than `factions`, because a faction can be declared with no seats — which is exactly
     // the case that triggered this (an operator's live mission declared opfor with zero slots).
     // Computed here rather than inline below because the struct literal moves `doc_slots`.
-    let end_on = {
+    let sides_holding_slots = {
         let mut sides: Vec<&str> = doc_slots.iter().map(|s| s.faction.as_str()).collect();
         sides.sort_unstable();
         sides.dedup();
+        sides.len()
+    };
+    let derived_end_on = {
         let mut triggers = vec!["time_limit".to_string()];
-        if sides.len() >= 2 {
+        if sides_holding_slots >= 2 {
             triggers.push("faction_eliminated".to_string());
         }
         triggers
     };
+
+    // T-936 — the AUTHORED_BLOCKS passthrough, and this file's ONE read of it. `extensions.rs` owns
+    // the list, the validators and the two destinations; a later T-936 slice adds a row there and a
+    // one-line field on `EditorPayload`, and nothing else here changes.
+    //
+    // A refusal is a DIAGNOSTIC, not a compile failure: stored payloads are immutable and
+    // re-compiled on every `/compiled` fetch, so refusing the whole document over one malformed
+    // block would turn a mission that loads today into a permanent 500. The block falls back to its
+    // derivation and the author is told which key and why.
+    let (authored_blocks, mut block_refusals) =
+        crate::mission::extensions::AuthoredBlocks::parse(&authored_root);
+    let (extensions, carrier_refusals) =
+        crate::mission::extensions::ExtensionBlocks::from_payload(&authored_root);
+    block_refusals.extend(carrier_refusals);
+    for (key, clause) in &block_refusals {
+        diagnostics.win_conditions(
+            format!(
+                "The authored `{key}` block is not one this compile can carry: {clause}. The \
+                 compile falls back to the value it derives, so the mission still loads — with a \
+                 rule you did not choose."
+            ),
+            key,
+        );
+    }
+
+    let zone_ids: HashSet<&str> = zones.iter().map(|z| z.id.as_str()).collect();
+    let win_conditions = resolve_win_conditions(
+        authored_blocks.win_conditions.as_ref(),
+        derived_end_on,
+        sides_holding_slots,
+        &zone_ids,
+        &emitted_slot_uids,
+        &mut diagnostics,
+    );
+    let mut flow = derive_flow(&parsed.environment);
+    apply_timeout_to_flow(&mut flow, &win_conditions, &mut diagnostics);
 
     let max_players = if mission.max_players < 1 {
         (doc_slots.len() as i64).max(1)
@@ -3310,19 +3630,12 @@ pub fn flatten_to_mod_document(
         entities,
         radio_plan: derive_radio_plan(&radio_sources),
         zones,
-        flow: derive_flow(&parsed.environment),
-        win_conditions: ModWinConditions {
-            mode: "attrition".to_string(),
-            // `faction_eliminated` is only declared when at least two factions actually HOLD
-            // SLOTS. The mod's validator rejects the document outright otherwise ("declares
-            // faction_eliminated but only 1 faction(s) actually have slots — no second side can
-            // ever be eliminated"), and since the editor never authors winConditions, an
-            // unconditional default made EVERY single-faction mission unloadable with no way for
-            // the author to fix it. Counted over the flattened slots rather than `factions`,
-            // because a faction can be declared with no seats — which is exactly the case that
-            // triggered this.
-            end_on,
-        },
+        flow,
+        // T-936.1 — the AUTHORED block when the payload carries one, else the derivation this
+        // struct literal used to inline. See [`resolve_win_conditions`] for both paths, for the two
+        // gates that survive an author's choice, and for why the absent case is byte-identical.
+        win_conditions,
+        extensions,
         briefings: derive_briefings(&ed.factions),
         settings: derive_settings(&parsed.settings),
         vehicles: doc_vehicles,
@@ -4566,6 +4879,313 @@ mod tests {
         let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
         let wire = serde_json::to_value(&doc).expect("wire");
         assert_eq!(wire["settings"], golden["settings"]);
+    }
+
+    /// T-936.1 — an AUTHORED `winConditions` block reaches the wire instead of the hardcoded
+    /// `attrition`.
+    ///
+    /// The defect this pins: until T-936.1 the block below was a struct literal with a `mode`
+    /// string literal in it, so a payload could carry `{"mode": "vip", "vipSlotId": "s1"}` and the
+    /// compiled document still said `attrition` — silently, with the author's choice dropped on
+    /// the floor between `compile_payload` and here. `mode` was already free-form in
+    /// `$defs/winConditions`, so nothing downstream could notice either.
+    #[test]
+    fn an_authored_win_conditions_block_reaches_the_wire() {
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["winConditions"] = serde_json::json!({
+            "mode": "vip",
+            "endOn": ["faction_eliminated"],
+            "vipSlotId": "s1",
+        });
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        let wire = serde_json::to_value(&doc).expect("wire");
+        assert_eq!(
+            wire["winConditions"]["mode"], "vip",
+            "the authored mode must reach the wire, not the hardcoded attrition: {wire:#}"
+        );
+        assert_eq!(wire["winConditions"]["vipSlotId"], "s1");
+        assert_eq!(
+            wire["winConditions"]["endOn"],
+            serde_json::json!(["faction_eliminated"])
+        );
+    }
+
+    /// T-936.1 — **the byte-parity floor at the emitter.** A payload with no `winConditions`
+    /// compiles to the two-key derived block and NOTHING else, and the flattened
+    /// [`crate::mission::extensions::ExtensionBlocks`] carrier contributes not one key.
+    ///
+    /// The whole-document version of this claim is
+    /// [`compiler_shaped_golden_is_a_fresh_emitter_output`], which diffs against committed bytes.
+    /// This one states it where a reader of the emitter can see it, and it is the assertion that
+    /// would go red if a later slice made a carrier field non-optional or dropped a
+    /// `skip_serializing_if` — the T-394 shape, where a flattened struct re-emits a key nobody
+    /// meant to emit.
+    #[test]
+    fn an_unauthored_payload_emits_the_derived_block_and_no_extension_keys() {
+        let doc = flatten_to_mod_document(&meta(), FIXTURE.as_bytes()).expect("compiles");
+        assert!(doc.extensions.is_empty());
+        assert!(doc.win_conditions.params.is_empty());
+
+        let wire = serde_json::to_value(&doc).expect("wire");
+        assert_eq!(
+            wire["winConditions"],
+            serde_json::json!({"mode": "attrition", "endOn": ["time_limit", "faction_eliminated"]}),
+            "the derived block must be EXACTLY the two keys it has always been"
+        );
+        for key in [
+            "extractionZoneId",
+            "vipSlotId",
+            "timeoutMinutes",
+            "tasks",
+            "reserved",
+        ] {
+            assert!(
+                wire.get(key).is_none() && wire["winConditions"].get(key).is_none(),
+                "an unauthored mission must not carry `{key}`: {wire:#}"
+            );
+        }
+        assert!(
+            doc.diagnostics
+                .iter()
+                .all(|f| f.rule_id != DIAG_WIN_CONDITIONS),
+            "a mission that authors nothing has nothing to report: {:?}",
+            doc.diagnostics
+        );
+    }
+
+    /// Each authored mode reaches the wire carrying its own param and no other.
+    #[test]
+    fn each_authored_mode_reaches_the_wire_with_its_own_param() {
+        let cases: [(&str, serde_json::Value, &str); 5] = [
+            ("attrition", serde_json::json!({}), ""),
+            ("objective", serde_json::json!({}), ""),
+            (
+                "extraction",
+                serde_json::json!({"extractionZoneId": "z-lz"}),
+                "extractionZoneId",
+            ),
+            ("vip", serde_json::json!({"vipSlotId": "s2"}), "vipSlotId"),
+            (
+                "timeout",
+                serde_json::json!({"timeoutMinutes": 45}),
+                "timeoutMinutes",
+            ),
+        ];
+
+        for (mode, params, param_key) in cases {
+            let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+            let mut block = serde_json::json!({"mode": mode, "endOn": ["time_limit"]});
+            for (k, v) in params.as_object().expect("object") {
+                block[k] = v.clone();
+            }
+            p["winConditions"] = block;
+
+            let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes())
+                .expect("{mode} compiles");
+            let wire = serde_json::to_value(&doc).expect("wire");
+            let emitted = wire["winConditions"].as_object().expect("object");
+
+            assert_eq!(emitted["mode"], mode);
+            for other in ["extractionZoneId", "vipSlotId", "timeoutMinutes"] {
+                assert_eq!(
+                    emitted.contains_key(other),
+                    other == param_key,
+                    "mode {mode} emitted `{other}`: {wire:#}"
+                );
+            }
+        }
+    }
+
+    /// The key must appear ONCE. Two paths can emit it — the typed field and the flattened carrier
+    /// — and `DOCUMENT_OWNED_BLOCKS` is what stops the second; this is the assertion that would
+    /// catch its removal.
+    #[test]
+    fn win_conditions_reaches_the_wire_exactly_once() {
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["winConditions"] =
+            serde_json::json!({"mode": "vip", "endOn": ["time_limit"], "vipSlotId": "s1"});
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        let text = serde_json::to_string(&doc).expect("serialises");
+        assert_eq!(
+            text.matches("\"winConditions\"").count(),
+            1,
+            "the typed field and the extension carrier both emitted it: {text}"
+        );
+    }
+
+    /// An author can check `faction_eliminated` on a one-sided mission. The compile drops it and
+    /// says so — the mod's validator REFUSES such a document, so carrying the author's choice
+    /// would produce a mission that parks in LOADING with nothing they could change.
+    #[test]
+    fn an_authored_faction_eliminated_is_dropped_on_a_one_sided_mission_and_reported() {
+        let mut p: serde_json::Value =
+            serde_json::from_slice(&payload_with(&[("BLUFOR", "US Army", &["Alpha"])]))
+                .expect("one-sided payload parses");
+        p["winConditions"] = serde_json::json!({
+            "mode": "attrition", "endOn": ["faction_eliminated", "time_limit"]
+        });
+
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        assert_eq!(
+            doc.win_conditions.end_on,
+            ["time_limit"],
+            "faction_eliminated must not survive onto a one-sided document"
+        );
+        let reported: Vec<&str> = doc
+            .diagnostics
+            .iter()
+            .filter(|f| f.rule_id == DIAG_WIN_CONDITIONS)
+            .map(|f| f.message.as_str())
+            .collect();
+        assert_eq!(reported.len(), 1, "{:?}", doc.diagnostics);
+        assert!(
+            reported[0].contains("faction_eliminated"),
+            "{}",
+            reported[0]
+        );
+
+        // ...and the SAME checklist on a two-sided mission is carried untouched, which is what
+        // makes the gate a gate rather than a blanket refusal.
+        let mut two: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        two["winConditions"] = serde_json::json!({
+            "mode": "attrition", "endOn": ["faction_eliminated", "time_limit"]
+        });
+        let doc = flatten_to_mod_document(&meta(), two.to_string().as_bytes()).expect("compiles");
+        assert_eq!(
+            doc.win_conditions.end_on,
+            ["faction_eliminated", "time_limit"]
+        );
+    }
+
+    /// `mode: timeout` is expressed in the field the ONE existing round clock reads, and it adds
+    /// the trigger without which that clock never arms. Both moves are announced.
+    #[test]
+    fn timeout_mode_projects_onto_flow_and_adds_the_time_limit_trigger() {
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["winConditions"] = serde_json::json!({
+            "mode": "timeout", "endOn": ["faction_eliminated"], "timeoutMinutes": 45
+        });
+        // The flow block authors a DIFFERENT limit, so the override is visible rather than a
+        // coincidence with the default.
+        p["environment"] = serde_json::json!({"timeLimitSeconds": 1200});
+
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        assert_eq!(doc.flow.time_limit_seconds, 45 * 60);
+        assert!(
+            doc.win_conditions.end_on.iter().any(|t| t == "time_limit"),
+            "the clock only arms when endOn declares time_limit: {:?}",
+            doc.win_conditions.end_on
+        );
+        assert_eq!(doc.win_conditions.params.timeout_minutes, Some(45));
+
+        let messages: Vec<&str> = doc
+            .diagnostics
+            .iter()
+            .filter(|f| f.rule_id == DIAG_WIN_CONDITIONS)
+            .map(|f| f.message.as_str())
+            .collect();
+        assert_eq!(messages.len(), 2, "{messages:?}");
+        assert!(
+            messages.iter().any(|m| m.contains("time_limit")),
+            "{messages:?}"
+        );
+        assert!(messages.iter().any(|m| m.contains("1200")), "{messages:?}");
+
+        // An agreeing flow value is NOT reported — a diagnostic that fires on correct input is
+        // noise, and the corpus rule is that it must not.
+        let mut agree: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        agree["winConditions"] = serde_json::json!({
+            "mode": "timeout", "endOn": ["time_limit"], "timeoutMinutes": 20
+        });
+        agree["environment"] = serde_json::json!({"timeLimitSeconds": 1200});
+        let doc = flatten_to_mod_document(&meta(), agree.to_string().as_bytes()).expect("compiles");
+        assert_eq!(doc.flow.time_limit_seconds, 1200);
+        assert!(
+            doc.diagnostics
+                .iter()
+                .all(|f| f.rule_id != DIAG_WIN_CONDITIONS),
+            "{:?}",
+            doc.diagnostics
+        );
+    }
+
+    /// A malformed authored block is REPORTED and the compile falls back to the derivation — never
+    /// a 500. A stored payload is immutable and re-compiled on every `/compiled` fetch, so a
+    /// refusal here would turn a mission that loads today into a permanently broken one.
+    #[test]
+    fn a_malformed_authored_block_falls_back_to_the_derivation_and_reports() {
+        for bad in [
+            serde_json::json!({"mode": "vip_hunt", "endOn": ["time_limit"]}),
+            serde_json::json!({"mode": "vip", "endOn": ["time_limit"]}),
+            serde_json::json!({"mode": "attrition", "endOn": ["admin_ended"]}),
+            serde_json::json!("attrition"),
+            serde_json::json!({"mode": "timeout", "endOn": ["time_limit"], "timeoutMinutes": 0}),
+        ] {
+            let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+            p["winConditions"] = bad.clone();
+            let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes())
+                .expect("a bad block must not fail the compile");
+
+            assert_eq!(doc.win_conditions.mode, "attrition", "{bad}");
+            assert_eq!(
+                doc.win_conditions.end_on,
+                ["time_limit", "faction_eliminated"],
+                "{bad}"
+            );
+            assert!(doc.win_conditions.params.is_empty(), "{bad}");
+            assert!(
+                doc.diagnostics
+                    .iter()
+                    .any(|f| f.rule_id == DIAG_WIN_CONDITIONS),
+                "a silent fallback is the defect this ticket closes: {bad}"
+            );
+        }
+    }
+
+    /// A dangling reference is REPORTED and CARRIED — not blanked, not swapped for another zone.
+    /// `winConditions` is required and singular, so blanking would leave a `vip` mission with no
+    /// VIP and nothing said; the evaluator refuses to evaluate instead.
+    #[test]
+    fn a_dangling_reference_is_reported_and_the_value_is_carried() {
+        for (mode, key, value) in [
+            ("extraction", "extractionZoneId", "z-nope"),
+            ("vip", "vipSlotId", "s-nope"),
+        ] {
+            let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+            p["winConditions"] =
+                serde_json::json!({"mode": mode, "endOn": ["time_limit"], key: value});
+            let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+
+            let wire = serde_json::to_value(&doc).expect("wire");
+            assert_eq!(wire["winConditions"]["mode"], mode);
+            assert_eq!(
+                wire["winConditions"][key], value,
+                "the author's value must be carried unchanged"
+            );
+
+            let finding = doc
+                .diagnostics
+                .iter()
+                .find(|f| f.rule_id == DIAG_WIN_CONDITIONS)
+                .unwrap_or_else(|| panic!("{mode}: a dangling {key} must be reported"));
+            assert!(finding.message.contains(key), "{}", finding.message);
+            assert_eq!(finding.subject_id.as_deref(), Some(value));
+            assert_eq!(finding.subject, "/winConditions");
+        }
+
+        // A reference that RESOLVES is not reported — the corpus rule that a diagnostic must never
+        // fire on correct input.
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["winConditions"] =
+            serde_json::json!({"mode": "vip", "endOn": ["time_limit"], "vipSlotId": "s1"});
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        assert!(
+            doc.diagnostics
+                .iter()
+                .all(|f| f.rule_id != DIAG_WIN_CONDITIONS),
+            "{:?}",
+            doc.diagnostics
+        );
     }
 
     /// The vehicle row this module reads, pinned field by field — **the contract floor**.
@@ -6852,9 +7472,17 @@ mod tests {
     ///   reference one level out, and (since T-675 landed the emit) the reason the whole row drops
     ///   instead of shipping a crew plan the game server cannot resolve. The vehicle itself is
     ///   placed and aliased, so nothing but the crew ref makes it unrepresentable.
+    /// * T-936.1 — `winConditions` authors a `vip` rule whose `vipSlotId` names no emitted slot.
+    ///   Unlike every row above it, this one is CARRIED rather than dropped (see
+    ///   [`resolve_win_conditions`]: `winConditions` is required and singular, so blanking the
+    ///   param would leave a `vip` mission with no VIP and nothing said). It is here because it is
+    ///   the one `DIAG_WIN_CONDITIONS` situation that can share a document with the other seven —
+    ///   a document has exactly one `mode`, so the timeout and malformed-block situations are
+    ///   mutually exclusive with it and are covered by their own tests.
     const DROP_FIXTURE: &str = r#"{
       "schemaVersion": 1,
       "map": {"terrain": "everon", "bounds": [0, 0, 12800, 12800]},
+      "winConditions": {"mode": "vip", "endOn": ["time_limit"], "vipSlotId": "sNope"},
       "vehicles": [
         {"id": "v1",
          "resourceName": "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et",
