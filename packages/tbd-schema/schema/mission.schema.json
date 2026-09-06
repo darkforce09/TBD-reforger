@@ -1179,7 +1179,7 @@
         "extractionZoneId": {
           "type": "string",
           "minLength": 1,
-          "description": "`mode: extraction` only — the `zones[].id` the extracting side must reach. `flatten.rs` reports a diagnostic when this names a zone that did not reach the wire, because an extraction zone that does not exist is a round that can never be won (the same rule `$defs/vehicle.seats[].slotId` follows against the emitted slots). Read by `TBD_WinConditionEvaluator`, which resolves it through `TBD_ZoneRegistry` and refuses to evaluate rather than inventing a zone."
+          "description": "The `zones[].id` an extracting side must reach. REQUIRED by `mode: extraction`; OPTIONAL on `mode: vip`, where it is what makes \"the VIP got out\" a thing the game can observe — without a zone, a VIP rule can only ever end on the VIP's death, which is half a rule. No other mode may carry it (`win_conditions.rs` refuses a param that belongs elsewhere).\n\n`flatten.rs` reports a diagnostic when this names a zone that did not reach the wire, because an extraction zone that does not exist is a round that can never be won that way (the same rule `$defs/vehicle.seats[].slotId` follows against the emitted slots). Read by `TBD_WinConditionEvaluator`, which resolves it through `TBD_ZoneRegistry` and refuses to evaluate rather than inventing a zone."
         },
         "vipSlotId": {
           "type": "string",

@@ -132,6 +132,27 @@ pub fn param_key_for_mode(mode: &str) -> Option<&'static str> {
     }
 }
 
+/// The param keys a mode may carry WITHOUT being required to, or `&[]`.
+///
+/// One entry today, and it is what makes `vip` a whole rule rather than half of one.
+/// `TBD_WinConditionEvaluator` ends a `vip` round two ways — the VIP dies (the owner loses) or the
+/// VIP gets out (the owner wins) — and the second half needs somewhere to get out TO. Without a
+/// zone the evaluator can only ever observe the death, so the rule an author picked would be half
+/// implemented with nothing saying so. It is OPTIONAL rather than required because "protect the
+/// VIP for the duration" is a legitimate mission with no extraction at all.
+#[must_use]
+pub fn optional_param_keys_for_mode(mode: &str) -> &'static [&'static str] {
+    match mode {
+        "vip" => &["extractionZoneId"],
+        _ => &[],
+    }
+}
+
+/// May `mode` carry `key` at all — as its required param or as an optional one?
+fn mode_may_carry(mode: &str, key: &str) -> bool {
+    param_key_for_mode(mode) == Some(key) || optional_param_keys_for_mode(mode).contains(&key)
+}
+
 /// Every param key, in `$defs/winConditions` property order.
 const PARAM_KEYS: &[&str] = &["extractionZoneId", "vipSlotId", "timeoutMinutes"];
 
@@ -210,12 +231,13 @@ pub fn parse(value: &Value) -> Result<AuthoredWinConditions, String> {
         }
     }
 
-    // Params. The mode decides which key is REQUIRED and which keys are REFUSED, off one table
-    // ([`param_key_for_mode`]), so "vip needs vipSlotId" and "vip must not carry timeoutMinutes"
-    // cannot drift apart.
+    // Params. The mode decides which key is REQUIRED, which are merely ALLOWED, and which are
+    // REFUSED — off two tables ([`param_key_for_mode`] and [`optional_param_keys_for_mode`]), so
+    // "vip needs vipSlotId", "vip may carry extractionZoneId" and "vip must not carry
+    // timeoutMinutes" cannot drift apart.
     let owned = param_key_for_mode(mode);
     for key in PARAM_KEYS {
-        if obj.contains_key(*key) && owned != Some(*key) {
+        if obj.contains_key(*key) && !mode_may_carry(mode, key) {
             return Err(format!(
                 "`winConditions.{key}` belongs to mode {}, not to the authored mode {} — a param \
                  the mode does not read would ride the wire and change nothing",
@@ -239,6 +261,25 @@ pub fn parse(value: &Value) -> Result<AuthoredWinConditions, String> {
         // `attrition` and `objective` take no param — the registry's endOn triggers and the
         // faction-elimination check are already everything those two rules need.
         _ => {}
+    }
+    // The optional params, read with the same gates as a required one when present. Absent is
+    // legitimate here and is not an error — that is the whole difference from the block above.
+    for key in optional_param_keys_for_mode(mode) {
+        if !obj.contains_key(*key) {
+            continue;
+        }
+        match *key {
+            "extractionZoneId" => {
+                params.extraction_zone_id = Some(required_id(obj, "extractionZoneId")?);
+            }
+            other => {
+                return Err(format!(
+                    "`winConditions.{other}` is listed as optional for mode {} and this parser has \
+                     no branch for it — add one rather than dropping the author's value",
+                    quote(mode)
+                ));
+            }
+        }
     }
 
     Ok(AuthoredWinConditions {
@@ -418,6 +459,75 @@ mod tests {
         assert!(err.contains("timeoutMinutes"), "{err}");
         assert!(err.contains("\"timeout\""), "{err}");
         assert!(err.contains("\"vip\""), "{err}");
+
+        // ...and the optional widening does not open the door the other way: `extraction` may not
+        // borrow `vipSlotId` just because `vip` may borrow `extractionZoneId`.
+        let err = parse(&json!({
+            "mode": "extraction",
+            "endOn": ["time_limit"],
+            "extractionZoneId": "z1",
+            "vipSlotId": "s1",
+        }))
+        .expect_err("vipSlotId does not belong to extraction");
+        assert!(err.contains("vipSlotId"), "{err}");
+    }
+
+    /// `vip` may ALSO carry `extractionZoneId`, and it is optional.
+    ///
+    /// It is what makes `vip` a whole rule: the evaluator ends the round when the VIP dies (the
+    /// owner loses) or when the VIP gets out (the owner wins), and the second half needs somewhere
+    /// to get out to. A `vip` rule with no zone is still legitimate — "protect the VIP for the
+    /// duration" — so absence is not an error.
+    #[test]
+    fn vip_may_also_carry_an_optional_extraction_zone() {
+        let with_zone = parse(&json!({
+            "mode": "vip",
+            "endOn": ["time_limit"],
+            "vipSlotId": "s-12",
+            "extractionZoneId": "z-lz",
+        }))
+        .expect("vip accepts an extraction zone");
+        assert_eq!(with_zone.params.vip_slot_id.as_deref(), Some("s-12"));
+        assert_eq!(with_zone.params.extraction_zone_id.as_deref(), Some("z-lz"));
+
+        let without = parse(&json!({
+            "mode": "vip", "endOn": ["time_limit"], "vipSlotId": "s-12"
+        }))
+        .expect("the zone is optional");
+        assert!(without.params.extraction_zone_id.is_none());
+
+        // A blank optional param is still refused — an id that resolves to nothing is not authoring.
+        let err = parse(&json!({
+            "mode": "vip", "endOn": ["time_limit"], "vipSlotId": "s", "extractionZoneId": "  "
+        }))
+        .expect_err("blank is not an id");
+        assert!(err.contains("blank"), "{err}");
+    }
+
+    /// Every optional key a mode declares has a branch in [`parse`], and names a mode that exists.
+    /// Without this, adding a row to [`optional_param_keys_for_mode`] and forgetting the branch
+    /// would turn every block carrying that key into a refusal — the author's whole rule dropped
+    /// over a key the table says is legal.
+    #[test]
+    fn every_optional_param_key_has_a_parse_branch() {
+        for mode in AUTHORED_MODES {
+            for key in optional_param_keys_for_mode(mode) {
+                assert!(PARAM_KEYS.contains(key), "{mode}: {key} is not a param key");
+                assert_ne!(
+                    param_key_for_mode(mode),
+                    Some(*key),
+                    "{mode}: {key} cannot be both required and optional"
+                );
+                let mut block = json!({"mode": mode, "endOn": ["time_limit"]});
+                if let Some(required) = param_key_for_mode(mode) {
+                    block[required] = json!("x");
+                }
+                block[*key] = json!("x");
+                parse(&block).unwrap_or_else(|e| {
+                    panic!("{mode} declares {key} optional but parse refuses it: {e}")
+                });
+            }
+        }
     }
 
     /// **The perturbation target.** Inverting the two-sided comparison in

@@ -36,7 +36,8 @@
 use leptos::prelude::*;
 
 use map_engine_core::mission::win_conditions::{
-    param_key_for_mode, AUTHORED_MODES, END_ON_TRIGGERS, TIMEOUT_MINUTES_MAX, TIMEOUT_MINUTES_MIN,
+    optional_param_keys_for_mode, param_key_for_mode, AUTHORED_MODES, END_ON_TRIGGERS,
+    TIMEOUT_MINUTES_MAX, TIMEOUT_MINUTES_MIN,
 };
 
 /// The reader chain for `meta.environment.winConditions`, end to end.
@@ -125,29 +126,56 @@ pub fn trigger_label(trigger: &str) -> (&'static str, &'static str) {
     }
 }
 
-/// The per-mode field's label and hint, or `None` for a mode that takes no param.
+/// Every field a mode shows, in the order the card lays them out: `(key, label, hint)`.
+///
+/// A mode's REQUIRED param leads; the optional ones follow, off
+/// [`optional_param_keys_for_mode`] so the card cannot offer a field the validator refuses or miss
+/// one it would accept. That is the whole reason this reads two tables instead of hard-coding
+/// three rows — [`tests::the_param_fields_match_the_params_each_mode_takes`] holds it.
 #[must_use]
-pub fn param_field(mode: &str) -> Option<(&'static str, &'static str, &'static str)> {
-    match mode {
-        "extraction" => Some((
+pub fn param_fields(mode: &str) -> Vec<(&'static str, &'static str, &'static str)> {
+    let mut rows = Vec::new();
+    if let Some(key) = param_key_for_mode(mode) {
+        rows.push(field_for(key, true));
+    }
+    for key in optional_param_keys_for_mode(mode) {
+        rows.push(field_for(key, false));
+    }
+    rows
+}
+
+/// One param key's label and hint. `required` picks the wording; the key is the same either way.
+fn field_for(key: &str, required: bool) -> (&'static str, &'static str, &'static str) {
+    match (key, required) {
+        ("extractionZoneId", true) => (
             "extractionZoneId",
             "Extraction zone id",
             "The `zones[].id` the extracting side must reach. The compile reports a zone id that \
              is not on the mission.",
-        )),
-        "vip" => Some((
+        ),
+        ("extractionZoneId", false) => (
+            "extractionZoneId",
+            "Extraction zone id (optional)",
+            "Where the VIP has to reach to win. Leave it empty for a protect-only rule — then only \
+             the VIP's death ends the round.",
+        ),
+        ("vipSlotId", _) => (
             "vipSlotId",
             "VIP slot id",
             "The `slots[].uid` of the protected player. The compile reports a uid no placed slot \
              carries.",
-        )),
-        "timeout" => Some((
+        ),
+        ("timeoutMinutes", _) => (
             "timeoutMinutes",
             "Round length (minutes)",
             "Sets the mission duration in Mission flow — the round clock is the one that ends the \
              round, so this is not a second timer.",
-        )),
-        _ => None,
+        ),
+        _ => (
+            "",
+            "Unknown field",
+            "This param has no field — add one rather than leaving the author unable to set it.",
+        ),
     }
 }
 
@@ -197,6 +225,7 @@ pub fn with_mode(current: Option<&serde_json::Value>, mode: &str) -> serde_json:
 pub fn with_param(
     current: Option<&serde_json::Value>,
     mode: &str,
+    key: &str,
     raw: &str,
 ) -> Result<serde_json::Value, String> {
     let mut next = match current {
@@ -205,9 +234,13 @@ pub fn with_param(
     };
     next["mode"] = serde_json::json!(mode);
 
-    let Some(key) = param_key_for_mode(mode) else {
-        return Ok(next);
-    };
+    // Refuse a key this mode may not carry rather than writing it. `win_conditions::parse` would
+    // refuse the WHOLE block over a stray param, so a card that wrote one would silently disable
+    // the rule the author is editing — the failure this function exists to make impossible.
+    if param_key_for_mode(mode) != Some(key) && !optional_param_keys_for_mode(mode).contains(&key) {
+        return Err(format!("`{key}` is not a field of the `{mode}` rule."));
+    }
+
     let trimmed = raw.trim();
     if trimmed.is_empty() {
         if let Some(obj) = next.as_object_mut() {
@@ -410,46 +443,49 @@ pub fn win_conditions_card(ctrl: &'static str) -> AnyView {
         .into_any();
     }
 
-    let param_row = param_field(&mode).map(|(key, label, hint_text)| {
-        let committed = block
-            .as_ref()
-            .and_then(|b| b.get(key))
-            .map(|v| match v {
-                serde_json::Value::String(s) => s.clone(),
-                other => other.to_string(),
-            })
-            .unwrap_or_default();
-        let mode_for_row = mode.clone();
-        let block_for_row = block.clone();
-        let numeric = key == "timeoutMinutes";
-        view! {
-            <label class="flex flex-col gap-1">
-                <span class=sect>{label}</span>
-                <input
-                    type=if numeric { "number" } else { "text" }
-                    min=if numeric { TIMEOUT_MINUTES_MIN.to_string() } else { String::new() }
-                    max=if numeric { TIMEOUT_MINUTES_MAX.to_string() } else { String::new() }
-                    step="1"
-                    // `change`, not `input`: a value authored per keystroke would file one undo
-                    // step per character, and each bumps `doc_tick`, which rebuilds this subtree
-                    // out from under the caret. Same reason the flow durations use `change`.
-                    value=committed
-                    on:change=move |ev| {
-                        let raw = event_target_value(&ev);
-                        match with_param(block_for_row.as_ref(), &mode_for_row, &raw) {
-                            Ok(next) => {
-                                refusal.set(String::new());
-                                commit(Some(&next));
+    let param_rows = param_fields(&mode)
+        .into_iter()
+        .map(|(key, label, hint_text)| {
+            let committed = block
+                .as_ref()
+                .and_then(|b| b.get(key))
+                .map(|v| match v {
+                    serde_json::Value::String(s) => s.clone(),
+                    other => other.to_string(),
+                })
+                .unwrap_or_default();
+            let mode_for_row = mode.clone();
+            let block_for_row = block.clone();
+            let numeric = key == "timeoutMinutes";
+            view! {
+                <label class="flex flex-col gap-1">
+                    <span class=sect>{label}</span>
+                    <input
+                        type=if numeric { "number" } else { "text" }
+                        min=if numeric { TIMEOUT_MINUTES_MIN.to_string() } else { String::new() }
+                        max=if numeric { TIMEOUT_MINUTES_MAX.to_string() } else { String::new() }
+                        step="1"
+                        // `change`, not `input`: a value authored per keystroke would file one undo
+                        // step per character, and each bumps `doc_tick`, which rebuilds this subtree
+                        // out from under the caret. Same reason the flow durations use `change`.
+                        value=committed
+                        on:change=move |ev| {
+                            let raw = event_target_value(&ev);
+                            match with_param(block_for_row.as_ref(), &mode_for_row, key, &raw) {
+                                Ok(next) => {
+                                    refusal.set(String::new());
+                                    commit(Some(&next));
+                                }
+                                Err(clause) => refusal.set(clause),
                             }
-                            Err(clause) => refusal.set(clause),
                         }
-                    }
-                    class=ctrl
-                />
-                <span class=hint>{hint_text}</span>
-            </label>
-        }
-    });
+                        class=ctrl
+                    />
+                    <span class=hint>{hint_text}</span>
+                </label>
+            }
+        })
+        .collect::<Vec<_>>();
 
     let checked: Vec<String> = block
         .as_ref()
@@ -524,7 +560,7 @@ pub fn win_conditions_card(ctrl: &'static str) -> AnyView {
         <div class="mt-2 flex flex-col gap-4 border-t border-outline-variant/30 pt-4">
             <span class=sect>"Win conditions"</span>
             {picker}
-            {param_row}
+            {param_rows}
             <div class="flex flex-col gap-2">
                 <span class=sect>"Ends the round on"</span>
                 {checklist}
@@ -583,22 +619,45 @@ mod tests {
         assert_eq!(END_ON_TRIGGERS.len(), 5);
     }
 
-    /// Every mode that takes a param has a field, and no mode that takes none has one.
+    /// The fields a mode shows are exactly the params it may carry — its required one plus its
+    /// optional ones, in that order. A field the validator refuses would author a block the compile
+    /// throws away; a missing field would make a legal param unreachable.
     #[test]
-    fn the_param_field_matches_the_modes_that_take_one() {
+    fn the_param_fields_match_the_params_each_mode_takes() {
         for mode in AUTHORED_MODES {
-            match (param_key_for_mode(mode), param_field(mode)) {
-                (Some(key), Some((field_key, label, hint))) => {
-                    assert_eq!(key, field_key, "{mode}");
-                    assert!(!label.is_empty() && !hint.is_empty(), "{mode}");
-                }
-                (None, None) => {}
-                (a, b) => panic!(
-                    "{mode}: param_key_for_mode={a:?} but param_field is {:?}",
-                    b.is_some()
-                ),
+            let shown: Vec<&str> = param_fields(mode).into_iter().map(|(k, _, _)| k).collect();
+            let mut expected: Vec<&str> = Vec::new();
+            if let Some(key) = param_key_for_mode(mode) {
+                expected.push(key);
+            }
+            expected.extend(optional_param_keys_for_mode(mode).iter().copied());
+            assert_eq!(shown, expected, "{mode}");
+
+            for (key, label, hint) in param_fields(mode) {
+                assert!(!key.is_empty(), "{mode} shows a field with no key");
+                assert_ne!(label, "Unknown field", "{mode}: `{key}` has no words");
+                assert!(!hint.is_empty(), "{mode}: `{key}` has no sentence");
             }
         }
+        // vip is the mode with two fields — the required VIP and the optional zone that makes
+        // "the VIP got out" observable.
+        assert_eq!(
+            param_fields("vip")
+                .into_iter()
+                .map(|(k, _, _)| k)
+                .collect::<Vec<_>>(),
+            ["vipSlotId", "extractionZoneId"]
+        );
+    }
+
+    /// A field a mode may not carry is refused rather than written. `win_conditions::parse` refuses
+    /// the WHOLE block over a stray param, so writing one would silently disable the rule the
+    /// author is editing.
+    #[test]
+    fn a_field_that_is_not_the_modes_own_is_refused() {
+        let err = with_param(None, "timeout", "vipSlotId", "s1").expect_err("timeout has no VIP");
+        assert!(err.contains("vipSlotId"), "{err}");
+        assert!(err.contains("timeout"), "{err}");
     }
 
     /// A freshly picked mode produces a block the schema accepts (`endOn` is `minItems: 1`), and
@@ -630,7 +689,8 @@ mod tests {
         assert!(next.get("timeoutMinutes").is_none(), "not invented: {next}");
 
         // ...and the result is a shape the compile's own validator will take once the param lands.
-        let with_minutes = with_param(Some(&next), "timeout", "45").expect("45 is in range");
+        let with_minutes =
+            with_param(Some(&next), "timeout", "timeoutMinutes", "45").expect("45 is in range");
         map_engine_core::mission::win_conditions::validate(&with_minutes)
             .expect("a completed switch must validate");
     }
@@ -647,7 +707,7 @@ mod tests {
     fn a_blank_param_removes_the_key_rather_than_writing_an_empty_string() {
         let vip = json!({"mode": "vip", "endOn": ["time_limit"], "vipSlotId": "s-12"});
         for blank in ["", "   ", "\t"] {
-            let next = with_param(Some(&vip), "vip", blank).expect("blank is allowed");
+            let next = with_param(Some(&vip), "vip", "vipSlotId", blank).expect("blank is allowed");
             assert!(next.get("vipSlotId").is_none(), "{blank:?} → {next}");
             assert_eq!(
                 next["endOn"],
@@ -659,10 +719,10 @@ mod tests {
 
     #[test]
     fn a_param_is_trimmed_and_a_timeout_is_stored_as_a_number() {
-        let next = with_param(None, "extraction", "  z-lz  ").expect("ok");
+        let next = with_param(None, "extraction", "extractionZoneId", "  z-lz  ").expect("ok");
         assert_eq!(next["extractionZoneId"], "z-lz");
 
-        let next = with_param(None, "timeout", " 90 ").expect("ok");
+        let next = with_param(None, "timeout", "timeoutMinutes", " 90 ").expect("ok");
         assert_eq!(
             next["timeoutMinutes"],
             json!(90),
@@ -675,16 +735,17 @@ mod tests {
     #[test]
     fn a_timeout_outside_the_range_is_refused_with_a_sentence() {
         for bad in [TIMEOUT_MINUTES_MIN - 1, 0, TIMEOUT_MINUTES_MAX + 1, 100_000] {
-            let err = with_param(None, "timeout", &bad.to_string())
+            let err = with_param(None, "timeout", "timeoutMinutes", &bad.to_string())
                 .expect_err("out of range must be refused");
             assert!(err.contains(&TIMEOUT_MINUTES_MAX.to_string()), "{err}");
         }
         for word in ["ninety", "45.5", "-"] {
-            let err = with_param(None, "timeout", word).expect_err("not a whole number");
+            let err = with_param(None, "timeout", "timeoutMinutes", word)
+                .expect_err("not a whole number");
             assert!(err.contains("whole number"), "{err}");
         }
         for good in [TIMEOUT_MINUTES_MIN, 90, TIMEOUT_MINUTES_MAX] {
-            with_param(None, "timeout", &good.to_string()).expect("in range");
+            with_param(None, "timeout", "timeoutMinutes", &good.to_string()).expect("in range");
         }
     }
 
@@ -730,7 +791,7 @@ mod tests {
     #[test]
     fn a_full_authoring_pass_produces_a_block_the_compile_accepts() {
         let block = with_mode(None, "vip");
-        let block = with_param(Some(&block), "vip", "slot_sl").expect("id");
+        let block = with_param(Some(&block), "vip", "vipSlotId", "slot_sl").expect("id");
         let block = with_trigger(Some(&block), "vip", "faction_eliminated", true).expect("tick");
         let block = with_trigger(Some(&block), "vip", "time_limit", false).expect("untick");
 
