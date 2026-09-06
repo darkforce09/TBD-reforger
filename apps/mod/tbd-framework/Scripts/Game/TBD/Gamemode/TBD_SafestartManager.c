@@ -245,9 +245,10 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! Driven by TBD_FrameworkManager.SetStage for EVERY transition, not just the two that look
-	//! relevant. That is deliberate: SAFE_START arms, and literally anything else lifts. An admin
-	//! who jumps SAFE_START -> END, or restarts the round back to LOBBY, must not leave a server
-	//! full of invulnerable players behind.
+	//! relevant. T-941.1 (2026-09-07): LOBBY auto-deploy (~250 ms) puts bodies in the world, so
+	//! the shield arms for LOBBY, BRIEFING and SAFE_START. LIVE (and any other non-shield stage)
+	//! lifts once. Arm() is idempotent -- LOBBY->BRIEFING->SAFE_START does not re-apply per body.
+	//! An admin who jumps to END must not leave a server full of invulnerable players behind.
 	//! @authority server
 	void OnStageChanged(TBD_EGameStage stage)
 	{
@@ -255,7 +256,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 		if (RplSession.Mode() == RplMode.Client)
 			return;
 
-		if (stage == TBD_EGameStage.SAFE_START)
+		if (stage == TBD_EGameStage.LOBBY || stage == TBD_EGameStage.BRIEFING || stage == TBD_EGameStage.SAFE_START)
 		{
 			Arm();
 			return;
@@ -268,49 +269,67 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 	//! @authority server
 	protected void Arm()
 	{
-		if (m_bArmed)
-			return;
-
-		m_bArmed = true;
-		m_iArmGeneration++;
-		m_iSuppressedShots = 0;
-		m_iSuppressedThrows = 0;
-		m_iUnrestored = 0;
-		m_iFoundDisabled = 0;
-		m_iLeftDisabled = 0;
-		m_bLiftFailureAnnounced = false;
-		m_mNegligentDischarge = new map<int, bool>();
-
-		// NOT cleared: m_mHeld. A failed lift leaves bodies in it that are still owed a restore,
-		// each carrying the damage-handling value safestart found on it. Clearing here would throw
-		// that value away and the next lift would be back to guessing.
-		int covered = SweepApply();
-
-		SetCountdown(m_iConfiguredSeconds);
-
-		TBD_Log.Kv(TBD_Log.CH_SAFESTART, "armed",
-			string.Format("seconds=%1 bodies=%2 foundAlreadyOff=%3",
-				m_iSecondsRemaining, covered, m_iFoundDisabled));
-
-		// Worth a line during the warmup rather than a surprise at go-live: these bodies will NOT
-		// have damage handling turned on for them at lift, because safestart did not turn it off.
-		if (m_iFoundDisabled > 0)
+		bool first = !m_bArmed;
+		int covered = 0;
+		if (first)
 		{
-			string alreadyOff = "found ";
-			alreadyOff += m_iFoundDisabled.ToString();
-			alreadyOff += " body(s) with damage handling ALREADY off — safestart will leave them off at lift, not force them on.";
-			TBD_Log.Warn(TBD_Log.CH_SAFESTART, alreadyOff);
+			m_bArmed = true;
+			m_iArmGeneration++;
+			m_iSuppressedShots = 0;
+			m_iSuppressedThrows = 0;
+			m_iUnrestored = 0;
+			m_iFoundDisabled = 0;
+			m_iLeftDisabled = 0;
+			m_bLiftFailureAnnounced = false;
+			m_mNegligentDischarge = new map<int, bool>();
+
+			// NOT cleared: m_mHeld. A failed lift leaves bodies in it that are still owed a restore,
+			// each carrying the damage-handling value safestart found on it. Clearing here would throw
+			// that value away and the next lift would be back to guessing.
+			covered = SweepApply();
+
+			GetGame().GetCallqueue().Remove(TickSweep);
+			GetGame().GetCallqueue().CallLater(TickSweep, SWEEP_MS, true);
 		}
 
-		string msg = "[TBD] SAFESTART — damage OFF, weapons cold. Live in ";
-		msg += FormatClock(m_iSecondsRemaining);
-		msg += ".";
-		Broadcast(msg);
+		// T-941.1: countdown starts on SAFE_START only. TickCountdown's untouched stage-drift
+		// lift (stage != SAFE_START) would drop the shield ~1 s after a LOBBY arm.
+		TBD_FrameworkManager framework = TBD_FrameworkManager.GetInstance();
+		if (framework)
+		{
+			if (framework.GetStage() == TBD_EGameStage.SAFE_START)
+			{
+				if (m_iSecondsRemaining == NOT_RUNNING)
+				{
+					SetCountdown(m_iConfiguredSeconds);
 
-		GetGame().GetCallqueue().Remove(TickCountdown);
-		GetGame().GetCallqueue().Remove(TickSweep);
-		GetGame().GetCallqueue().CallLater(TickCountdown, 1000, true);
-		GetGame().GetCallqueue().CallLater(TickSweep, SWEEP_MS, true);
+					string msg = "[TBD] SAFESTART — damage OFF, weapons cold. Live in ";
+					msg += FormatClock(m_iSecondsRemaining);
+					msg += ".";
+					Broadcast(msg);
+
+					GetGame().GetCallqueue().Remove(TickCountdown);
+					GetGame().GetCallqueue().CallLater(TickCountdown, 1000, true);
+				}
+			}
+		}
+
+		if (first)
+		{
+			TBD_Log.Kv(TBD_Log.CH_SAFESTART, "armed",
+				string.Format("seconds=%1 bodies=%2 foundAlreadyOff=%3",
+					m_iSecondsRemaining, covered, m_iFoundDisabled));
+
+			// Worth a line during the warmup rather than a surprise at go-live: these bodies will NOT
+			// have damage handling turned on for them at lift, because safestart did not turn it off.
+			if (m_iFoundDisabled > 0)
+			{
+				string alreadyOff = "found ";
+				alreadyOff += m_iFoundDisabled.ToString();
+				alreadyOff += " body(s) with damage handling ALREADY off — safestart will leave them off at lift, not force them on.";
+				TBD_Log.Warn(TBD_Log.CH_SAFESTART, alreadyOff);
+			}
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------
