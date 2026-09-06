@@ -35,4 +35,8 @@ pub mod tasks_panel;
 // Mounts beside tasks_panel in Mission Settings; that one line lives in settings_modal.rs
 // (T-946.33, outside this slice's owns), same as T-936.1/.2.
 pub mod radio_panel;
+// T-936.4 — the Weather timeline panel: keyframes, undoable list ops. Mounts beside radio_panel
+// in Mission Settings; that one line lives in settings_modal.rs (outside this slice's owns),
+// same as T-936.1/.2/.3.
+pub mod weather_timeline;
 pub mod zones_panel;

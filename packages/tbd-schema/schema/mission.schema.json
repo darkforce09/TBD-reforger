@@ -100,6 +100,7 @@
       "description": "T-936.2 — authored TASKS with a real state machine (schemaVersion 1.3). Distinct from `objectives[]` (T-212: the mission's typed objective SUBJECT) and from `winConditions.endOn` (the round-end TRIGGER vocabulary). A task is what the HUD and the briefing's My Tasks list show: a primary, secondary or optional assignment that starts `assigned` and reaches exactly one terminal state (`succeeded` or `failed`). Tasks OBSERVE T-676 trigger completion via `triggerId`; they never fire `endOn` and they never duplicate objective logic.\n\nREAD SINCE T-936.2 by `Objectives/TBD_TaskStateMachine.c` (server-authoritative transitions) and `UI/TBD_TaskHud.c` (one HUD marker per assigned task, hidden once terminal). Absent array ⇒ a mission with no tasks, which is every pre-T-936.2 document; the AUTHORED_BLOCKS carrier emits nothing in that case, so Class-R byte-parity fixtures stay identical.",
       "items": { "$ref": "#/$defs/task" }
     },
+    "weatherTimeline": { "$ref": "#/$defs/weatherTimeline" },
     "briefings": { "$ref": "#/$defs/briefings" },
     "settings": { "$ref": "#/$defs/settings" },
     "objectives": {
@@ -1278,6 +1279,49 @@
           "type": "integer",
           "exclusiveMinimum": 0,
           "description": "READ SINCE T-133 (2026-09-06). Duration in seconds the task stays evaluable after startAfterS. Must be > 0."
+        }
+      }
+    },
+    "weatherTimeline": {
+      "type": "object",
+      "description": "T-936.4 — authored weather KEYFRAMES (schemaVersion 1.3). Distinct from `environment.weatherPreset` (the single static preset the mission starts with). A timeline is `{keyframes: [{atMinutes, weatherPreset, windDirDeg?, fog?}]}`; `atMinutes` is minutes from LIVE start and must be strictly increasing (enforced by weather.rs; schema pins types and closed keys). Preset vocabulary is the same four strings `environment.weatherPreset` already uses (`clear` / `overcast` / `heavy_rain` / `dense_fog`).\n\nREAD SINCE T-936.4 by `Gamemode/TBD_WeatherRuntime.c` (both mod trees): the server applies each keyframe at its offset through `TimeAndWeatherManagerEntity.ForceWeatherTo`; clients follow weather replication. Absent object ⇒ a mission with no timeline, which is every pre-T-936.4 document; the AUTHORED_BLOCKS carrier emits nothing in that case, so Class-R byte-parity fixtures stay identical.",
+      "required": ["keyframes"],
+      "additionalProperties": false,
+      "properties": {
+        "keyframes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/weatherKeyframe" }
+        }
+      }
+    },
+    "weatherKeyframe": {
+      "type": "object",
+      "description": "T-936.4 — one authored weather keyframe. `TBD_WeatherRuntime` applies `weatherPreset` at `atMinutes` and, when present, the T-682 fog / windDirDeg overrides.",
+      "required": ["atMinutes", "weatherPreset"],
+      "additionalProperties": false,
+      "properties": {
+        "atMinutes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minutes from LIVE start. 0 is legal (apply immediately when the round goes live). Strictly increasing across `keyframes[]` (weather.rs)."
+        },
+        "weatherPreset": {
+          "type": "string",
+          "enum": ["clear", "overcast", "heavy_rain", "dense_fog"],
+          "description": "Same vocabulary as environment.weatherPreset / flatten.rs WEATHER_PRESETS / weather.rs WEATHER_PRESETS."
+        },
+        "windDirDeg": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 360,
+          "description": "Optional wind direction, same axis as environment.windDirDeg (T-682). Omitted ⇒ leave the previous override (or the static environment value) alone."
+        },
+        "fog": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Optional fog density, same axis as environment.fog (T-682). Omitted ⇒ leave the previous override alone."
         }
       }
     },

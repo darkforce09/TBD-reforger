@@ -19,6 +19,10 @@ pub mod radio_plan;
 /// validator [`extensions::AUTHORED_BLOCKS`] registers for it.
 pub mod tasks;
 pub mod validate;
+/// T-936.4 — the authored `weatherTimeline` block: keyframes, strictly increasing `atMinutes`,
+/// the preset vocabulary shared with `environment.weatherPreset`, and the validator
+/// [`extensions::AUTHORED_BLOCKS`] registers for it.
+pub mod weather;
 /// T-936.1 — the authored `winConditions` block: the five modes the editor may author, the
 /// per-mode params, and the validator [`extensions::AUTHORED_BLOCKS`] registers for it.
 pub mod win_conditions;
