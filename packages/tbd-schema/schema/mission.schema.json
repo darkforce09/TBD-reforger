@@ -124,7 +124,7 @@
     },
     "missionParams": {
       "type": "array",
-      "description": "T-684 — first-class launch-time mission parameters (schemaVersion 1.3): a mission carries named parameters chosen at LAUNCH rather than baked at authoring time (name, i18n title key, value list, display list, default, consuming symbol). Models Arma's `class Params` — OFCRA runs one artefact as training server, briefing room, mod-check sandbox and match off 29 such entries. Ranked last of 16 in the synthesis (weakest evidence for this genre) and filed as an idea so the research is not lost; carried here as the wire shape. NOTHING reads it on any shipped build — the launch-time parameter reader + fail-on-demand validation land under T-684.",
+      "description": "T-684 — first-class launch-time mission parameters (schemaVersion 1.3): a mission carries named parameters chosen at LAUNCH rather than baked at authoring time (name, i18n title key, value list, display list, default, consuming symbol). Models Arma's `class Params` — OFCRA runs one artefact as training server, briefing room, mod-check sandbox and match off 29 such entries. READ SINCE T-684 (2026-09-06) by `TBD_MissionParams.c` (both mod trees); launch selection is `$profile:TBD_MissionParams.json` or the authored default. flatten.rs does not yet emit the array onto `/compiled`.",
       "items": { "$ref": "#/$defs/missionParam" }
     }
   },
@@ -268,12 +268,12 @@
         "combatMode": {
           "type": "string",
           "enum": ["blue", "green", "white", "yellow", "red"],
-          "description": "T-678 (ATTR-FIELD-GRP-COMBAT-MODE, schemaVersion 1.3). Group rules of engagement, TBD's own ladder blue=never fire → red=open fire, engage at will. These are TBD VOCABULARY the reader maps onto whatever engine combat-mode type Reforger exposes; the names here are the contract, not an engine identifier (no `EAICombatType`-style enum is asserted — verify the real engine type when the reader lands). On the wire only — word-boundary `combatMode` is ZERO in both the frontend and the mod tree; the AI reader lands under T-678, which ships together with the waypoints ticket (T-677) or not at all (they share the AI gate: every slot currently spawns AI-disabled)."
+          "description": "T-678 (ATTR-FIELD-GRP-COMBAT-MODE, schemaVersion 1.3). Group rules of engagement, TBD's own ladder blue=never fire → red=open fire, engage at will. These are TBD VOCABULARY mapped onto `EAIGroupCombatMode` (HOLD_FIRE / RETURN_FIRE / FIRE_AT_WILL). READ SINCE T-678 (2026-09-06) by `TBD_GroupState.c`. Applied only when T-677 has already AI-enabled the group."
         },
         "behaviour": {
           "type": "string",
           "enum": ["careless", "safe", "aware", "combat", "stealth"],
-          "description": "T-678 (ATTR-FIELD-GRP-BEHAVIOUR, schemaVersion 1.3). Group behaviour state — TBD vocabulary (careless/safe/aware/combat/stealth). READ SINCE T-677 (2026-09-06) on waypoint overrides via `TBD_WaypointRuntime.c` (identifier count is global). Group-level defaults still land under T-678."
+          "description": "T-678 (ATTR-FIELD-GRP-BEHAVIOUR, schemaVersion 1.3). Group behaviour state — TBD vocabulary (careless/safe/aware/combat/stealth). READ SINCE T-677 (2026-09-06) on waypoint overrides via `TBD_WaypointRuntime.c`, and READ SINCE T-678 (2026-09-06) as group defaults via `TBD_GroupState.c`. A waypoint that authors behaviour still wins (WAYPOINT origin)."
         },
         "formation": {
           "type": "string",
@@ -288,16 +288,16 @@
             "file",
             "diamond"
           ],
-          "description": "T-678 (ATTR-FIELD-GRP-FORMATION, schemaVersion 1.3). Group movement formation. Enum tokens are the shared vocabulary: T-672's editor `force_to_formation` + Transform submenu consume them (geometry via `formation_offsets`); Enfusion mod reader still lands under T-678."
+          "description": "T-678 (ATTR-FIELD-GRP-FORMATION, schemaVersion 1.3). Group movement formation. Enum tokens are the shared vocabulary: T-672's editor `force_to_formation` + Transform submenu consume them (geometry via `formation_offsets`). READ SINCE T-678 (2026-09-06) by `TBD_GroupState.c` (engine four-name set; extras map onto Wedge/Line/Column/StaggeredColumn)."
         },
         "speedMode": {
           "type": "string",
           "enum": ["limited", "normal", "full"],
-          "description": "T-678 (ATTR-FIELD-GRP-SPEED-MODE, schemaVersion 1.3). Group movement speed mode. READ SINCE T-677 (2026-09-06) on waypoint overrides via `TBD_WaypointRuntime.c` (identifier count is global). Group-level defaults still land under T-678."
+          "description": "T-678 (ATTR-FIELD-GRP-SPEED-MODE, schemaVersion 1.3). Group movement speed mode. READ SINCE T-677 (2026-09-06) on waypoint overrides via `TBD_WaypointRuntime.c`, and READ SINCE T-678 (2026-09-06) as group defaults via `TBD_GroupState.c` (DEFAULT origin so a waypoint speedMode still wins)."
         },
         "waypoints": {
           "type": "array",
-          "description": "T-677 — per-squad waypoint list (schemaVersion 1.3), the nine `ATTR-FIELD-WP-*` ids. READ SINCE T-677 (2026-09-06) by `TBD_WaypointRuntime.c`. `TBD_SpawnManager` opens the AI spawn gate only for waypointed groups. Group combatMode/formation remain T-678.",
+          "description": "T-677 — per-squad waypoint list (schemaVersion 1.3), the nine `ATTR-FIELD-WP-*` ids. READ SINCE T-677 (2026-09-06) by `TBD_WaypointRuntime.c`. `TBD_SpawnManager` opens the AI spawn gate only for waypointed groups. Group combatMode/formation READ SINCE T-678 (2026-09-06) by `TBD_GroupState.c`.",
           "items": { "$ref": "#/$defs/waypoint" }
         },
         "placementRadius": {
@@ -760,19 +760,19 @@
         "inventory": { "$ref": "#/$defs/entityInventory" },
         "lock": {
           "type": "boolean",
-          "description": "T-680 (ATTR-FIELD-OBJ-LOCK, schemaVersion 1.3). Vehicle-lock state for a placed vehicle entity. On the wire only — word-boundary `lock` in apps/mod is 4 hits, NONE an authored vehicle lock; the reader lands under T-680 (the natural successor to shipped T-215). Like the rest of `entity`, this authors state with no destination until `entities[]` acquires a consumer."
+          "description": "T-680 (ATTR-FIELD-OBJ-LOCK, schemaVersion 1.3). Vehicle-lock state. READ SINCE T-680 (2026-09-06) by `TBD_VehicleState.c` on the `vehicles[]` roster (`LockPilotControls`). An `entities[]`-only row with no roster twin is still unread."
         },
         "fuel": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "T-680 (ATTR-FIELD-OBJ-FUEL, schemaVersion 1.3). Vehicle fuel fraction, 0 → 1 (full). On the wire only — word-boundary `fuel` in apps/mod is 1 hit and not this; the reader lands under T-680."
+          "description": "T-680 (ATTR-FIELD-OBJ-FUEL, schemaVersion 1.3). Vehicle fuel fraction, 0 → 1 (full). READ SINCE T-680 (2026-09-06) by `TBD_VehicleState.c` on the `vehicles[]` roster. An `entities[]`-only row with no roster twin is still unread."
         },
         "ammo": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "T-680 (ATTR-FIELD-OBJ-AMMO, schemaVersion 1.3). Vehicle ammunition fraction, 0 → 1 (full). On the wire only — no reader on any shipped build; lands under T-680."
+          "description": "T-680 (ATTR-FIELD-OBJ-AMMO, schemaVersion 1.3). Vehicle ammunition fraction, 0 → 1 (full). READ SINCE T-680 (2026-09-06) by `TBD_VehicleState.c` on the `vehicles[]` roster (current magazines + cargo). An `entities[]`-only row with no roster twin is still unread."
         },
         "health": {
           "type": "number",
@@ -883,7 +883,7 @@
     },
     "vehicle": {
       "type": "object",
-      "description": "T-675 / T-076 — one mission-placed vehicle (schemaVersion 1.3). Read the top-level `vehicles` description first: NOTHING reads this on any shipped build. `alias` is the `veh:` (or comp:) registry alias; `seats` carries the crew plan (which slots ride where) so the crew UI's authored state reaches the game. Carries the same state fields a vehicle `entity` can (`lock`/`fuel`/`ammo`) because a roster vehicle is still a vehicle — but as a FIRST-CLASS row, not an alias-substituted `entities[]` entry (flatten.rs:2634-2640 proves `entities[]` cannot carry it: one `veh:` registry row means alias substitution would silently swap the wrong vehicle in).",
+      "description": "T-675 / T-076 — one mission-placed vehicle (schemaVersion 1.3). `alias` is the `veh:` (or comp:) registry alias; `seats` carries the crew plan (which slots ride where) so the crew UI's authored state reaches the game. Crew spawn READ SINCE T-675.2. `lock`/`fuel`/`ammo` READ SINCE T-680 (2026-09-06) by `TBD_VehicleState.c`. A FIRST-CLASS row, not an alias-substituted `entities[]` entry.",
       "required": ["alias", "x", "z"],
       "additionalProperties": false,
       "properties": {
@@ -921,7 +921,7 @@
         "inventory": { "$ref": "#/$defs/entityInventory" },
         "lock": {
           "type": "boolean",
-          "description": "T-680-style lock state on the roster vehicle (schemaVersion 1.3). On the wire only — reader lands under T-675/T-680."
+          "description": "T-680 lock state on the roster vehicle (schemaVersion 1.3). READ SINCE T-680 (2026-09-06) by `TBD_VehicleState.c` (`LockPilotControls`; authored true only, bool cannot distinguish omit from false)."
         },
         "fuel": { "type": "number", "minimum": 0, "maximum": 1 },
         "ammo": { "type": "number", "minimum": 0, "maximum": 1 },
@@ -1034,7 +1034,7 @@
     },
     "missionParam": {
       "type": "object",
-      "description": "T-684 — one launch-time mission parameter (schemaVersion 1.3). Read the top-level `missionParams` description first: NOTHING reads this on any shipped build. Models Arma's `class Params` row: a named value chosen at launch, with a title key for i18n, the list of allowed values and their display strings, a default, and the symbol the mission consumes it through.",
+      "description": "T-684 — one launch-time mission parameter (schemaVersion 1.3). READ SINCE T-684 (2026-09-06) by `TBD_MissionParams.c`. Models Arma's `class Params` row: a named value chosen at launch, with a title key for i18n, the list of allowed values and their display strings, a default, and the symbol the mission consumes it through.",
       "required": ["name", "values", "default"],
       "additionalProperties": false,
       "properties": {

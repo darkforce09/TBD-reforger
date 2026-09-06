@@ -14,7 +14,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use serde_json::Value;
 
 use crate::root::find_repo_root as repo_root;
@@ -399,16 +399,14 @@ mod citation_scope_tests {
         let scan = scan_citations(&root, &schemas).expect("scan");
         assert!(scan.problems.is_empty(), "the one citation resolves");
         assert_eq!(scan.scope_errors.len(), 2, "crates/ and packages/ absent");
-        assert!(
-            scan.scope_errors
-                .iter()
-                .any(|e| e.starts_with("scan root crates/"))
-        );
-        assert!(
-            scan.scope_errors
-                .iter()
-                .any(|e| e.starts_with("scan root packages/"))
-        );
+        assert!(scan
+            .scope_errors
+            .iter()
+            .any(|e| e.starts_with("scan root crates/")));
+        assert!(scan
+            .scope_errors
+            .iter()
+            .any(|e| e.starts_with("scan root packages/")));
         let _ = fs::remove_dir_all(&root);
     }
 
@@ -1029,7 +1027,7 @@ pub fn type_inventory() -> Result<u8> {
 /// so neither can drift from the other's idea of the invariant.
 #[cfg(test)]
 mod instance_kind_lockstep_tests {
-    use super::{INSTANCE_KINDS, instance_kinds_lockstep_failures, read_json, repo_root};
+    use super::{instance_kinds_lockstep_failures, read_json, repo_root, INSTANCE_KINDS};
 
     fn enums() -> serde_json::Value {
         read_json(
@@ -2542,22 +2540,11 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
     // T-677 — per-squad waypoints: RETIRED 2026-09-06. `waypoints` and `vehicleUid` gained
     // readers when TBD_WaypointRuntime.c landed, so their "no reader on any shipped build"
     // assertions are retired rather than re-pinned.
-    // T-678 — group AI state.
-    UnreadField {
-        name: "combatMode",
-        expected: 0,
-        ticket: "T-678",
-        why: "clean",
-    },
-    UnreadField {
-        name: "formation",
-        expected: 0,
-        ticket: "T-678",
-        why: "clean",
-    },
-    // T-677 also binds waypoint `speedMode` / `behaviour` (ATTR-FIELD-WP-SPEED / -WP-BEHAVIOUR).
-    // Those UNREAD rows were labelled T-678 (group-level) but the identifier count is global —
-    // RETIRED 2026-09-06 with T-677. Group `combatMode` / `formation` stay (T-678).
+    // T-678 — group AI state: RETIRED 2026-09-06. `combatMode` and `formation` gained readers
+    // when TBD_GroupState.c landed (second JsonLoadContext pass over orbat groups). Baselines
+    // were 0, so they retire rather than re-pin. T-677 already retired waypoint `speedMode` /
+    // `behaviour` (identifier count is global); group-level defaults for those two now live
+    // in the same GroupState reader.
     // T-679 — placement scatter (slot + group).
     UnreadField {
         name: "placementRadius",
@@ -2571,27 +2558,10 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         ticket: "T-679",
         why: "clean",
     },
-    // T-680 — vehicle states.
-    UnreadField {
-        name: "fuel",
-        expected: 0,
-        ticket: "T-680",
-        why: "clean",
-    },
-    // `lock`/`ammo` word-boundary identifiers strip to 0 in the mod tree (the earlier raw hits were
-    // substrings / string literals like item.kind == "ammo" in the Workbench registry scanner).
-    UnreadField {
-        name: "lock",
-        expected: 0,
-        ticket: "T-680",
-        why: "clean once string literals stripped",
-    },
-    UnreadField {
-        name: "ammo",
-        expected: 0,
-        ticket: "T-680",
-        why: "clean once string literals stripped (kind==\"ammo\" was a string)",
-    },
+    // T-680 — vehicle states: RETIRED 2026-09-06. `lock` / `fuel` / `ammo` gained readers when
+    // TBD_VehicleState.c landed (second JsonLoadContext pass over vehicles[], applied from
+    // TBD_SpawnManager after SeatAuthoredCrews). Baselines were 0, so they retire rather than
+    // re-pin. Apply is on the vehicles[] roster; an entities[]-only row still has no consumer.
     // T-681 — entity states.
     UnreadField {
         name: "allowDamage",
@@ -2627,13 +2597,10 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
     // T-682 — environment fog/wind/viewDistance: RETIRED 2026-09-06. TBD_EnvironmentReader.c
     // plus ModEnvironment serialisation landed those identifiers. Editor authoring stays refused
     // (author_env); that is a different gate.
-    // T-684 — missionParams[] first-class launch parameters.
-    UnreadField {
-        name: "missionParams",
-        expected: 0,
-        ticket: "T-684",
-        why: "clean",
-    },
+    // T-684 — missionParams[]: RETIRED 2026-09-06. TBD_MissionParams.c plus the
+    // TBD_MissionDocumentStruct.missionParams binding landed the identifier. Baseline was 0,
+    // so it retires rather than re-pin. flatten.rs still does not emit the array (T-946.35
+    // shape); hand-staged 1.3 JSON reaches the reader.
     // T-673 — marker style/area fields.
     // `shape` collides with the EXISTING zone-shape reader (`TBD_MissionShapeStruct`, the circle/
     // polygon zone geometry) PLUS T-673's marker.shape glyph selector. Re-pinned 32 -> 34
@@ -2797,8 +2764,8 @@ fn unread_wire_field_failures(mod_root: &Path) -> Result<Vec<String>> {
 #[cfg(test)]
 mod unread_wire_field_tests {
     use super::{
-        UNREAD_WIRE_FIELDS, count_mod_readers, repo_root, strip_enfusion_comments_and_strings,
-        unread_wire_field_failures,
+        count_mod_readers, repo_root, strip_enfusion_comments_and_strings,
+        unread_wire_field_failures, UNREAD_WIRE_FIELDS,
     };
     use std::fs;
     use std::path::PathBuf;
@@ -2821,8 +2788,8 @@ mod unread_wire_field_tests {
     }
 
     /// The fire-once proof, MEASURED, not assumed. Drop a synthetic reader of a CLEAN field
-    /// (baseline 0) into a scratch mod tree and confirm the count rises to 1 — i.e. the day T-678
-    /// lands a `combatMode` reader, `unread_wire_field_failures` trips. Without this, "asserts ZERO
+    /// (baseline 0) into a scratch mod tree and confirm the count rises to 1 — i.e. the day T-679
+    /// lands a `placementRadius` reader, `unread_wire_field_failures` trips. Without this, "asserts ZERO
     /// readers" could be a check that never notices a reader at all.
     #[test]
     fn unread_gate_fires_when_a_reader_appears() {
@@ -2832,21 +2799,21 @@ mod unread_wire_field_tests {
         fs::create_dir_all(&scripts).expect("scratch mod tree");
         // A plausible future reader: a struct member bound by JsonLoadContext (maps by name).
         fs::write(
-            scripts.join("TBD_FutureGroupReader.c"),
-            "class TBD_FutureGroupStruct { EAICombatType combatMode; }\n",
+            scripts.join("TBD_FutureScatterReader.c"),
+            "class TBD_FutureScatterStruct { float placementRadius; }\n",
         )
         .expect("write reader");
 
         assert_eq!(
-            count_mod_readers(&dir, "combatMode").expect("count"),
+            count_mod_readers(&dir, "placementRadius").expect("count"),
             1,
-            "a combatMode identifier in a .c file must be counted as a reader"
+            "a placementRadius identifier in a .c file must be counted as a reader"
         );
         let f = unread_wire_field_failures(&dir).expect("scan scratch");
         assert!(
             f.iter()
-                .any(|m| m.contains("'combatMode'") && m.contains("T-678")),
-            "the gate must fail and name combatMode + its ticket once a reader appears; got {f:#?}"
+                .any(|m| m.contains("'placementRadius'") && m.contains("T-679")),
+            "the gate must fail and name placementRadius + its ticket once a reader appears; got {f:#?}"
         );
         let _ = fs::remove_dir_all(&dir);
     }
