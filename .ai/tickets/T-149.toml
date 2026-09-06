@@ -3,7 +3,7 @@ kind = "work"
 title = "Forest mass polygon smoothing"
 summary = "Upgrade the V1 blocky Path B forest hulls: sample the existing 8 m TBDD density grid and apply Chaikin smoothing to the marching-squares rings before the forest-regions emit so forest edges read as natural cartography."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7170
 spec = "docs/specs/ideas/t149_forest_smooth.md"
 plan = "docs/plans/t-149_plan.md"
@@ -36,6 +36,7 @@ acceptance = [
     "The TBDD density format and its readers are unchanged.",
 ]
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-06T06:54:31Z"
 owns = [
     "tools/tbd-tools/src/density.rs",
     "tools/tbd-tools/src/world/forest_smooth.rs",

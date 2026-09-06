@@ -5,14 +5,6 @@
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
 
-## T-149 — Forest mass polygon smoothing
-
-- **Slice spec:** `docs/specs/ideas/t149_forest_smooth.md`
-- **Program hub:** `docs/specs/ideas/t149_forest_smooth.md`
-- **Branch:** `ticket/T-149`
-- **Targets:** 
-- **Summary:** Upgrade the V1 blocky Path B forest hulls: sample the existing 8 m TBDD density grid and apply Chaikin smoothing to the marching-squares rings before the forest-regions emit so forest edges read as natural cartography.
-
 ## T-676 — Trigger activation and effects — the Enfusion runtime
 
 - **Slice spec:** `docs/specs/existing/t676_trigger_runtime.md`

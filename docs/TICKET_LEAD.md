@@ -9,7 +9,6 @@
 ## Ready
 
 - **T-090** (7079) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-149** (7170) — Forest mass polygon smoothing [ready] — Upgrade the V1 blocky Path B forest hulls: sample the existing 8 m TBDD density grid and apply Chaikin smoothing to the marching-squares rings before the forest-regions emit so forest edges read as natural cartography.
 - **T-676** (7260) — Trigger activation and effects — the Enfusion runtime [ready] — Trigger activation and effects — the Enfusion runtime
 - **T-677** (7290) — Waypoints — group movement orders [ready] — Waypoints — group movement orders
 - **T-678** (7300) — Group AI state: combat mode, behaviour, formation, speed [ready] — Group AI state: combat mode, behaviour, formation, speed

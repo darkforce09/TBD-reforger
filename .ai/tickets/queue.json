@@ -13,13 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-149",
-      "title": "Forest mass polygon smoothing",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t149_forest_smooth.md",
-      "branch": "ticket/T-149"
-    },
-    {
       "id": "T-676",
       "title": "Trigger activation and effects \u2014 the Enfusion runtime",
       "status": "ready",
