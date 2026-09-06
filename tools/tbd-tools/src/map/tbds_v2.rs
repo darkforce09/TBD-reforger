@@ -405,10 +405,15 @@ mod t935_10 {
     }
 
     /// The perturbation the ticket names: `index_len` one byte short.
+    ///
+    /// The good container is verified FIRST, so this pin is red for a writer that ships a short
+    /// `index_len` as well as for one that ships a long one — an `expect_err` on its own passes
+    /// happily over a writer that was already broken.
     #[test]
     fn an_index_len_one_byte_short_is_rejected() {
         let (blocks, meta) = synthetic();
         let mut f = v2_of(&blocks, &meta);
+        read_bundle_v2(&f).expect("the unmutated container must verify");
         let short = u32::from_le_bytes(f[8..12].try_into().unwrap()) - 1;
         f[8..12].copy_from_slice(&short.to_le_bytes());
         let e = read_bundle_v2(&f).expect_err("a short index_len must not validate");

@@ -645,9 +645,13 @@ mod t935_10 {
         assert_eq!((idx.terrain_id, idx.world_bounds), (None, None));
     }
 
+    /// The good container is parsed FIRST, so this pin is red for a writer that ships a short
+    /// `index_len` as well as for one that ships a long one — an `expect_err` on its own passes
+    /// happily over a container that was already unreadable.
     #[test]
     fn an_index_len_one_byte_short_is_an_error() {
         let mut f = frame(&index());
+        parse_tbd_sat_index_strict(&f, f.len() as u64).expect("the unmutated container must parse");
         let short = u32::from_le_bytes(f[8..12].try_into().unwrap()) - 1;
         f[8..12].copy_from_slice(&short.to_le_bytes());
         let e = parse_tbd_sat_index_strict(&f, f.len() as u64).expect_err("must not validate");
