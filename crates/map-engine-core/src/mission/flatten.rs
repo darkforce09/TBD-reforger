@@ -1,6 +1,6 @@
 //! Mission compile flatten (gate G6) — Rust port of `services/mission_compile.go`,
 //! the twin of the frontend `flattenModDocument.ts`. Derives the CANONICAL mod
-//! mission document (mission.schema.json, string schemaVersion "1.1"/"1.2") from a
+//! mission document (mission.schema.json, string schemaVersion "1.1"/"1.2"/"1.3") from a
 //! mission row + its version payload, mirroring the TS traversal EXACTLY so
 //! `/missions/:id/compiled` and the client-side flatten agree.
 //!
@@ -46,6 +46,65 @@ pub struct ModEntity {
 pub struct ModEntityInventory {
     pub item: String,
     pub qty: i64,
+}
+
+/// One `vehicles[]` entry (`mission.schema.json#/$defs/vehicle`) — T-675, the mission-placed
+/// vehicle ROSTER with the crew plan T-076 authors.
+///
+/// **This is not the `entities[]` row the same authored vehicle also produces.** `$defs/entity` is
+/// `{alias, x, z, headingDeg, faction, inventory}` and closed, so it has nowhere to put a crew
+/// plan — which is the whole reason T-706 opened a `$def` of its own rather than widening the
+/// entity. This row is the first-class one: it carries `uid`, so a reference (a `get_in`
+/// waypoint's `vehicleUid`) survives a recompile, and `seats`, so the reader knows which slot
+/// rides where.
+///
+/// **Both rows are emitted for the same vehicle, deliberately, and a reader must not spawn it
+/// twice.** Routing the roster through `entities[]` instead is the T-200 silent-substitution
+/// defect with ten tonnes in place of a rifleman (`$defs/alias` names a REGISTRY alias, so an
+/// unaliased vehicle would be swapped for a different one); and deleting the T-425 entity row is a
+/// behaviour change this slice does not own. `uid` is what lets T-675.2 match the two.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModVehicle {
+    /// `$defs/vehicle.alias` — the `veh:` registry alias, resolved from the authored
+    /// `resourceName` through the same kit-aliases table [`derive_vehicles_as_entities`] uses.
+    /// Schema-required; a vehicle with no alias drops WHOLE rather than borrowing another's.
+    pub alias: String,
+    /// `$defs/vehicle.uid` — the editor's own vehicle id, carried verbatim. Optional: a vehicle
+    /// nothing references needs no uid, and an unauthored (blank) id is not identity.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uid: Option<String>,
+    pub x: f64,
+    pub z: f64,
+    /// Unconditional, exactly like [`ModEntity::heading_deg`] on the sibling row: `position.
+    /// rotation` is always readable and defaults to 0, so there is no "unauthored heading" state
+    /// to distinguish. The key is optional in the schema; emitting it always keeps the two
+    /// projections of one authored vehicle from disagreeing about which way it faces.
+    pub heading_deg: f64,
+    /// `$defs/factionKey`, derived exactly as the entity row derives it (shared
+    /// [`vehicle_faction_key`]) so the two rows cannot claim different sides.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub faction: Option<String>,
+    /// The crew plan. Empty omits the key — an uncrewed vehicle is a legal roster row, and the
+    /// omission is what keeps its wire shape identical to a vehicle that was never crewed.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub seats: Vec<ModVehicleSeat>,
+}
+
+/// One `$defs/vehicle.seats[]` entry — which slot rides which crew station (T-675 / T-076).
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModVehicleSeat {
+    /// References `slots[].uid` — the DURABLE identity, never the derived `slots[].id`, which
+    /// shifts under role renames and reorders (the same rule `leaderSlotId` follows). Always
+    /// emitted: every seat here came from a crew entry, so it always names an occupant.
+    pub slot_id: String,
+    /// A token of [`VEHICLE_SEAT_ROLES`], the schema's own closed enum.
+    pub role: String,
+    /// Disambiguates several stations of the same role (`cargo` 0, 1, 2…). Absent for a station
+    /// the author named without an ordinal (`driver`); see [`parse_seat_id`].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub index: Option<u32>,
 }
 
 /// One flattened `slots[]` entry.
@@ -677,6 +736,15 @@ pub struct ModMissionDocument {
     /// empty object — means the payload authored the key; see [`derive_settings`].
     #[serde(skip_serializing_if = "Option::is_none")]
     pub settings: Option<ModSettings>,
+    /// T-675 — the mission-placed vehicle ROSTER (`mission.schema.json` `vehicles[]`), carrying the
+    /// crew plan T-076 authors. Declared after `settings` to match the schema's own property order.
+    ///
+    /// Empty omits the key entirely, which is legal (`vehicles` is not in the schema's top-level
+    /// `required`) and is what keeps a mission with no authored roster — or one whose every row the
+    /// wire could not carry — compiling to the exact bytes it compiled to before this field
+    /// existed. It is also what the `schemaVersion` latch reads: see [`flatten_to_mod_document`].
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub vehicles: Vec<ModVehicle>,
     /// T-200 — **not part of the document.** `#[serde(skip)]`, so the served JSON is byte-identical
     /// to what it was before this field existed; the schema's top-level
     /// `additionalProperties: false` would 500 the whole `/compiled` route otherwise. This is what
@@ -788,6 +856,68 @@ const SLOT_RANKS: [&str; 7] = [
 /// `mission.schema.json#/$defs/slot/properties/stance/enum` — the initial spawn pose. Same
 /// schema-read coupling as [`SLOT_RANKS`]; `doc/store.rs` authors exactly these three spellings.
 const SLOT_STANCES: [&str; 3] = ["stand", "crouch", "prone"];
+
+/* ══════════════════ T-675 — the emit gate for the vehicle roster's seats ══════════════════ */
+
+/// `mission.schema.json#/$defs/vehicle/properties/seats/items/properties/role/enum`, in the
+/// schema's own order — which is also the order the seats of one vehicle are emitted in.
+///
+/// Same `url_guard` coupling as [`SLOT_RANKS`] and held by the same kind of test
+/// (`the_vehicle_seat_roles_are_the_schema_s_own`): the seats item closes with
+/// `additionalProperties: false` and types `role` as this closed enum, so a token this module
+/// emits that the schema does not declare is **HTTP 500 at `GET /missions/:id/compiled`**, in
+/// front of a game server rather than the author.
+///
+/// The AUTHORING surface is narrower than this list — `eden_vehicles_panel`'s generic seat model
+/// offers `driver` / `gunner` / `commander` / `cargo1…cargoN` and nothing else, because vehicle
+/// data has no per-class seat layout yet (T-205). The extra rungs (`pilot`, `copilot`, `turret`)
+/// are the schema's, so a payload authored against a later seat model already projects rather than
+/// dropping its crew the day T-205 lands.
+const VEHICLE_SEAT_ROLES: [&str; 7] = [
+    "driver",
+    "commander",
+    "gunner",
+    "cargo",
+    "pilot",
+    "copilot",
+    "turret",
+];
+
+/// Project one authored crew seat id onto `(role, index)`, or `None` when the wire has no station
+/// that means it.
+///
+/// The authoring surface writes a STATION NAME, optionally with a 1-based ordinal
+/// (`eden_vehicles_panel::seat_model` — `driver`, `gunner`, `commander`, then `cargo1`…`cargoN`);
+/// `$defs/vehicle.seats[]` splits the same fact into a closed `role` enum plus a numeric `index`
+/// whose own description counts from zero ("cargo seat 0, 1, 2…", `minimum: 0`). So `cargo1` is the
+/// FIRST cargo seat on both sides and becomes `{role: "cargo", index: 0}`.
+///
+/// **Re-basing an ordinal is not the silent repair [`emit_wire_safe_identity`] refuses.** The map
+/// is bijective and total on the vocabulary the editor authors — the same station goes in and comes
+/// out, only spelled the way the contract spells it — exactly as [`emit_enum_identity`] case-folds
+/// a rank onto the schema's own token. What would be a repair is guessing: an ordinal of `0`
+/// (which the panel never writes, so it cannot be read as "the first cargo seat" without inventing
+/// an intent), a trailing non-number (`cargo1a`), a count too large for a `u32`, or a station name
+/// the enum does not hold. Each of those returns `None`, and the caller drops the whole row and
+/// says so.
+fn parse_seat_id(seat_id: &str) -> Option<(&'static str, Option<u32>)> {
+    let lower = seat_id.trim().to_ascii_lowercase();
+    if lower.is_empty() {
+        return None;
+    }
+    if let Some(role) = VEHICLE_SEAT_ROLES.iter().find(|r| **r == lower) {
+        return Some((*role, None));
+    }
+    // `<station><ordinal>`: split at the first digit so a sign or a stray character lands in the
+    // head and fails the station lookup rather than being parsed away.
+    let at = lower.find(|c: char| c.is_ascii_digit())?;
+    let (head, ordinal) = lower.split_at(at);
+    let role = VEHICLE_SEAT_ROLES.iter().find(|r| **r == head)?;
+    let n: u32 = ordinal.parse().ok()?;
+    // The panel's ordinals start at 1; `cargo0` is not one it can write, and reading it as either
+    // the first or the zeroth seat would be a guess about what the author meant.
+    n.checked_sub(1).map(|index| (*role, Some(index)))
+}
 
 /// A `wireSafeString` identity value (`callsign` / `unitName` / `tag` / `leaderSlotId`), or `None`
 /// when the compile must drop it whole.
@@ -989,19 +1119,24 @@ impl DiagnosticAcc {
     /// An authored vehicle roster row, dropped. `Warning`: a PLACED vehicle still reaches the wire
     /// as an `entities[]` alias row (T-425), but the roster itself — seats, crew, ORBAT attachment —
     /// does not, and an UNPLACED roster vehicle reaches nothing at all.
-    fn vehicle_roster_dropped(&mut self, vehicle_index: usize, v: &VehicleIn) {
-        let placed = if v.position.is_some() {
-            "its seats and crew assignment do not"
-        } else {
-            "and it has no map position, so nothing about it does"
-        };
+    ///
+    /// T-675 landed the emit, so this now fires only when the row cannot be REPRESENTED, and
+    /// `reason` names the gate that refused it — the same meaning change T-674 made to the six
+    /// identity rules, with the same stable rule id.
+    ///
+    /// **It drops the ROW, never a field of it.** Emitting a vehicle whose crew plan is one seat
+    /// short would ship a roster that reads differently from the author's editor with nobody told —
+    /// the trimming [`emit_wire_safe_identity`] refuses for a name, with a soldier left on the
+    /// ground instead of a label.
+    fn vehicle_roster_dropped(&mut self, vehicle_index: usize, v: &VehicleIn, reason: &str) {
         self.push(
             DIAG_DROP_VEHICLE_ROSTER,
             Severity::Warning,
             format!(
-                "Vehicle {} is on the authored roster and the compile drops the roster — \
-                 `mission.schema.json` declares the top-level `vehicles[]` but the flatten does \
-                 not emit it yet (T-675), so {placed}.",
+                "Vehicle {} is on the authored roster and the compile drops the whole row: \
+                 {reason}. `mission.schema.json` closes `$defs/vehicle`, so a row the wire cannot \
+                 carry would be a 500 at `/compiled` rather than a vehicle — the game server never \
+                 sees this vehicle's crew plan.",
                 display_vehicle(v)
             ),
             format!("/vehicles/{vehicle_index}"),
@@ -1066,6 +1201,13 @@ fn render_authored(v: &serde_json::Value) -> String {
         serde_json::Value::Object(_) => "an object".to_string(),
         serde_json::Value::Null => "null".to_string(),
     }
+}
+
+/// [`render_authored`] for a value already known to be a string — the same quoting, control-byte
+/// stripping and truncation, so a hostile `resourceName`, vehicle id or seat key cannot write the
+/// diagnostic's sentence either.
+fn render_authored_str(s: &str) -> String {
+    render_authored(&serde_json::Value::String(s.to_string()))
 }
 
 /// Is this raw authored value something the author actually SET?
@@ -1246,6 +1388,19 @@ struct VehicleIn {
     squad_id: String,
     /// `$defs/entityInventory` rows verbatim — become `entity.inventory` with no transform.
     cargo: Vec<EntityInventoryIn>,
+    /// T-076 / T-675 — the authored crew plan, `{seat_id: slot_id}`, written by
+    /// `MissionDocCore::assign_crew_seat` and copied verbatim onto the saved payload by
+    /// `mission::compile::compile_payload`. Seat ids are the authoring surface's generic stations
+    /// (`driver` / `gunner` / `commander` / `cargoN`); [`parse_seat_id`] projects them onto
+    /// `$defs/vehicle.seats[].role` + `index`.
+    ///
+    /// **Deliberately `serde_json::Value` and not a typed map**, for the reason [`SlotIn`]'s five
+    /// identity keys state: a typed field here narrows [`scan_editor_payload_types`]'s accept set,
+    /// which that function's own contract forbids ("It cannot reject a payload that compiles
+    /// today"). A stored `"crew": 5` is legal and ignored today; typed, it would become a permanent
+    /// 400 at save. The narrowing happens at EMIT instead ([`project_crew`]), where a crew plan the
+    /// wire cannot carry drops its whole row and is reported.
+    crew: serde_json::Value,
 }
 
 #[derive(Debug, Default, Clone, serde::Deserialize)]
@@ -2253,16 +2408,7 @@ fn derive_vehicles_as_entities(
             )));
         };
 
-        let faction = faction_key_from_faction_id(&v.faction_id).or_else(|| {
-            let sq = squads_by_id.get(v.squad_id.trim())?;
-            if let Some(f) = factions_by_id.get(sq.faction_id.as_str()) {
-                let key = slug_key(&f.key, "");
-                if key.is_empty() { None } else { Some(key) }
-            } else {
-                // squad.factionId may itself be `faction-BLUFOR` (ensure_side_faction shape).
-                faction_key_from_faction_id(&sq.faction_id)
-            }
-        });
+        let faction = vehicle_faction_key(v, &squads_by_id, &factions_by_id);
 
         let inventory: Vec<ModEntityInventory> = v
             .cargo
@@ -2284,6 +2430,235 @@ fn derive_vehicles_as_entities(
         });
     }
     Ok(out)
+}
+
+/// T-425 / T-675 — which side an authored vehicle belongs to: its own map-placed `factionId`
+/// first, else the faction of the squad it is attached to.
+///
+/// **Extracted so the two projections of one authored vehicle cannot disagree.** T-675 emits the
+/// same vehicle twice — as an `entities[]` alias row and as a `vehicles[]` roster row — and a
+/// second copy of this derivation is exactly the two-sites-disagreeing defect `orbat_slots.faction`
+/// (T-346) is the standing lesson for. One function, both call sites.
+///
+/// `None` when neither path yields a key: `faction` is optional on both `$defs/entity` and
+/// `$defs/vehicle`.
+fn vehicle_faction_key(
+    v: &VehicleIn,
+    squads_by_id: &HashMap<&str, &SquadIn>,
+    factions_by_id: &HashMap<&str, &FactionIn>,
+) -> Option<String> {
+    faction_key_from_faction_id(&v.faction_id).or_else(|| {
+        let sq = squads_by_id.get(v.squad_id.trim())?;
+        if let Some(f) = factions_by_id.get(sq.faction_id.as_str()) {
+            let key = slug_key(&f.key, "");
+            if key.is_empty() { None } else { Some(key) }
+        } else {
+            // squad.factionId may itself be `faction-BLUFOR` (ensure_side_faction shape).
+            faction_key_from_faction_id(&sq.faction_id)
+        }
+    })
+}
+
+/// T-675 — project the authored vehicle roster onto top-level `vehicles[]` (`$defs/vehicle`).
+///
+/// This is the sixth row of the T-216 compile-boundary ledger: T-076 shipped a crew UI whose
+/// authored state — which seat of which vehicle a soldier rides — reached the saved payload and
+/// stopped there, because flatten emitted no `vehicles` key at all. T-706 opened the contract; this
+/// is the emit.
+///
+/// **Every row that cannot be carried drops WHOLE and is reported**, never trimmed and never
+/// coerced. A vehicle whose alias is unknown is not substituted (T-200 with ten tonnes instead of a
+/// rifleman); a crew plan with one unreadable seat does not ship its other seats and leave a
+/// soldier standing in a field with nobody told. The gates run in `$defs/vehicle`'s own `required`
+/// order — `alias`, then `x`/`z` — then over the optional values that can still be unrepresentable,
+/// so the reason a row drops is deterministic.
+///
+/// `emitted_slot_uids` is the set of `slots[].uid` that ACTUALLY REACHED the document, not the
+/// authored slot map: `$defs/vehicle.seats[].slotId` references the wire's slots, so a crew entry
+/// naming an authored-but-unplaced seat would resolve in the payload and dangle on the wire.
+fn derive_vehicle_roster(
+    vehicles: &[VehicleIn],
+    squads: &[SquadIn],
+    factions: &[FactionIn],
+    emitted_slot_uids: &HashSet<&str>,
+    aliases: &crate::mission::kit::KitAliases,
+    diagnostics: &mut DiagnosticAcc,
+) -> Vec<ModVehicle> {
+    let squads_by_id: HashMap<&str, &SquadIn> = squads.iter().map(|s| (s.id.as_str(), s)).collect();
+    let factions_by_id: HashMap<&str, &FactionIn> =
+        factions.iter().map(|f| (f.id.as_str(), f)).collect();
+
+    let mut out = Vec::new();
+    for (i, v) in vehicles.iter().enumerate() {
+        match project_roster_vehicle(
+            v,
+            &squads_by_id,
+            &factions_by_id,
+            emitted_slot_uids,
+            aliases,
+        ) {
+            Ok(row) => out.push(row),
+            Err(reason) => diagnostics.vehicle_roster_dropped(i, v, &reason),
+        }
+    }
+    out
+}
+
+/// One authored roster row projected onto `$defs/vehicle`, or the clause saying why the wire
+/// cannot carry it. See [`derive_vehicle_roster`] for the drop-whole rule.
+fn project_roster_vehicle(
+    v: &VehicleIn,
+    squads_by_id: &HashMap<&str, &SquadIn>,
+    factions_by_id: &HashMap<&str, &FactionIn>,
+    emitted_slot_uids: &HashSet<&str>,
+    aliases: &crate::mission::kit::KitAliases,
+) -> Result<ModVehicle, String> {
+    // `alias` — schema-required, and the one gate that must never be satisfied by guessing.
+    //
+    // For a PLACED vehicle this can no longer fire: `derive_vehicles_as_entities` runs first and
+    // refuses the whole compile over an unaliased placed vehicle (T-425), so the document is never
+    // produced. It is live for an UNPLACED one, which that function skips — the roster is the only
+    // thing an ORBAT-attached vehicle could ever have reached, so its loss is reported here.
+    let Some(alias) = aliases.vehicle_for_resource(v.resource_name.trim()) else {
+        return Err(format!(
+            "its resourceName {} has no `veh:` alias in kit-aliases.json and `$defs/vehicle` \
+             requires one — substituting a vehicle that does have an alias is the T-200 silent \
+             swap with ten tonnes in place of a rifleman",
+            render_authored_str(&v.resource_name)
+        ));
+    };
+
+    // `x` / `z` — schema-required. An ORBAT-attached vehicle the author never dropped on the map
+    // has no honest position, and inventing one would place a vehicle somewhere nobody chose.
+    let Some(pos) = v.position.as_ref() else {
+        return Err(
+            "it has no map position and `$defs/vehicle` requires `x` and `z` — a place the author \
+             never picked cannot be invented for it"
+                .to_string(),
+        );
+    };
+
+    // `uid` — optional, but it is what a reference keys on (`$defs/waypoint.vehicleUid`, and the
+    // only way T-675.2 can match this row to its `entities[]` twin), so an id the wire cannot
+    // carry takes the row with it rather than being quietly dropped to `None`. Blank is not
+    // identity at all; anything else is emitted VERBATIM, on the same "no silent repair" rule
+    // [`emit_wire_safe_identity`] states — deleting a control byte mints a DIFFERENT id.
+    let uid = if v.id.trim().is_empty() {
+        None
+    } else if v.id.bytes().any(is_wire_unsafe) {
+        return Err(format!(
+            "its id {} carries a control character, which `wireSafeString` forbids — and repairing \
+             an identity would mint a different one, which every reference to this vehicle would \
+             then miss",
+            render_authored_str(&v.id)
+        ));
+    } else {
+        Some(v.id.clone())
+    };
+
+    Ok(ModVehicle {
+        alias: alias.to_string(),
+        uid,
+        x: pos.x,
+        z: pos.y, // editor y (map north) → mod z, the locked mapping slots and entities use
+        heading_deg: normalize_heading(pos.rotation),
+        faction: vehicle_faction_key(v, squads_by_id, factions_by_id),
+        seats: project_crew(v, emitted_slot_uids)?,
+    })
+}
+
+/// T-675 / T-076 — the authored `{seat_id: slot_id}` crew map projected onto
+/// `$defs/vehicle.seats[]`, or the clause saying why the wire cannot carry the plan.
+///
+/// An absent or `null` `crew` is an uncrewed vehicle: no seats, no finding — the same rule
+/// [`is_authored`] applies to a blank identity value. Any OTHER non-object is a crew plan written
+/// in a shape this reader does not understand, which is reported rather than read as "uncrewed":
+/// silently treating an unreadable plan as no plan is how a mission ships with its crew on foot.
+///
+/// `slotId` is emitted verbatim and is checked for membership in `emitted_slot_uids` rather than
+/// re-gated for wire safety: it must EQUAL a `slots[].uid` already in the document, so whatever the
+/// slot emit carried, this carries, and the two cannot drift apart.
+fn project_crew(
+    v: &VehicleIn,
+    emitted_slot_uids: &HashSet<&str>,
+) -> Result<Vec<ModVehicleSeat>, String> {
+    let crew = match &v.crew {
+        serde_json::Value::Null => return Ok(Vec::new()),
+        serde_json::Value::Object(m) => m,
+        other => {
+            return Err(format!(
+                "its `crew` is {}, not the seat-to-slot map the crew panel authors, so the plan \
+                 cannot be read — reporting it is the alternative to shipping the vehicle as \
+                 uncrewed and telling nobody",
+                render_authored(other)
+            ));
+        }
+    };
+
+    let mut seats: Vec<ModVehicleSeat> = Vec::with_capacity(crew.len());
+    for (seat_id, occupant) in crew {
+        let Some(slot_id) = occupant.as_str().filter(|s| !s.trim().is_empty()) else {
+            return Err(format!(
+                "its crew seat {} holds {}, which does not name a slot",
+                render_authored_str(seat_id),
+                render_authored(occupant)
+            ));
+        };
+        if !emitted_slot_uids.contains(slot_id) {
+            return Err(format!(
+                "its crew seat {} names slot {}, which is not on the compiled roster — \
+                 `$defs/vehicle.seats[].slotId` references `slots[].uid`, so the reference would \
+                 dangle in front of the game server",
+                render_authored_str(seat_id),
+                render_authored_str(slot_id)
+            ));
+        }
+        let Some((role, index)) = parse_seat_id(seat_id) else {
+            return Err(format!(
+                "its crew seat {} is not a station `$defs/vehicle.seats[].role` can name \
+                 (driver, commander, gunner, cargo, pilot, copilot or turret, each optionally \
+                 numbered from 1)",
+                render_authored_str(seat_id)
+            ));
+        };
+        seats.push(ModVehicleSeat {
+            slot_id: slot_id.to_string(),
+            role: role.to_string(),
+            index,
+        });
+    }
+
+    // Canonical order, because the authored map has none this side can trust: `crew` arrives as an
+    // `Any::Map` off the CRDT and the key order a save produces is not the author's. Sorting by
+    // (station, ordinal) makes one authored plan compile to one byte sequence — without it a
+    // recompile of an untouched mission could reorder its own seats.
+    //
+    // A missing ordinal is the zeroth station of its role for BOTH the order and the collision
+    // check below, so `driver` and `driver1` are one seat and not two: two rows naming the same
+    // station would seat two soldiers in one place and the reader would keep whichever it read
+    // last, which is a silent loss of an author's decision.
+    let seat_key = |s: &ModVehicleSeat| {
+        (
+            VEHICLE_SEAT_ROLES
+                .iter()
+                .position(|r| *r == s.role)
+                .unwrap_or(usize::MAX),
+            s.index.unwrap_or(0),
+        )
+    };
+    seats.sort_by_key(seat_key);
+    if let Some(pair) = seats
+        .windows(2)
+        .find(|w| seat_key(&w[0]) == seat_key(&w[1]))
+    {
+        return Err(format!(
+            "two of its crew seats name the same station ({} {}), so one soldier's seat would \
+             overwrite the other's",
+            pair[0].role,
+            pair[0].index.unwrap_or(0)
+        ));
+    }
+    Ok(seats)
 }
 
 /// T-259 — project an authored top-level `settings` object onto `$defs/settings`.
@@ -2477,12 +2852,16 @@ pub fn flatten_to_mod_document(
     let mut radio_sources: Vec<RadioNetSource> = Vec::new();
     let mut substitutions = SubstitutionAcc::default();
     let mut any_y = false;
-    // T-674 — set the moment ANY identity key or leaderSlotId actually reaches the document, which
-    // is what the schemaVersion bump below is a statement about. Deliberately not "any identity key
-    // was AUTHORED": a mission whose every identity value was dropped by the gates carries nothing
-    // 1.3-shaped, so declaring 1.3 for it would tell the mod's validator to reject a document that
-    // is byte-for-byte a 1.1/1.2 one.
-    let mut any_identity = false;
+    // T-674 — set the moment ANY 1.3-shaped value actually reaches the document, which is what the
+    // schemaVersion bump below is a statement about. Deliberately not "a 1.3 key was AUTHORED": a
+    // mission whose every identity value was dropped by the gates carries nothing 1.3-shaped, so
+    // declaring 1.3 for it would tell the mod's validator to reject a document that is
+    // byte-for-byte a 1.1/1.2 one.
+    //
+    // T-675 latches the same flag from the vehicle roster rather than adding a second rung, which
+    // is the reuse T-674 left the door open for; the name says "1.3 key" and not "identity" for
+    // that reason. T-676's `editorTriggers` emit is the next one through the same door.
+    let mut any_1_3_key = false;
 
     for f in &ed.factions {
         let faction_key = slug_key(&f.key, "faction");
@@ -2532,7 +2911,7 @@ pub fn flatten_to_mod_document(
                          wire and the mod would fall back to picking a leader anyway",
                     ),
                     Some(id) => {
-                        any_identity = true;
+                        any_1_3_key = true;
                         leader_slot_id = Some(id);
                         None
                     }
@@ -2636,7 +3015,7 @@ pub fn flatten_to_mod_document(
                     };
                     match resolved {
                         Some(v) => {
-                            any_identity = true;
+                            any_1_3_key = true;
                             emitted[i] = Some(v);
                         }
                         None => diagnostics.slot_identity_dropped(
@@ -2721,21 +3100,58 @@ pub fn flatten_to_mod_document(
         return Err(CompileError::NoSlots);
     }
 
+    // T-254 / T-425 — the `entities[]` projection, hoisted above the version latch by T-675 because
+    // the roster derived beside it decides that version. It stays FIRST of the two vehicle passes:
+    // it is the one that can REFUSE the compile (an unaliased PLACED vehicle is
+    // `CompileError::Parse`), and a list of roster drops for a document that is never produced
+    // would be noise in front of the real refusal.
+    let mut entities = derive_entities(&parsed.entities);
+    entities.extend(derive_vehicles_as_entities(
+        &parsed.vehicles,
+        &ed.squads,
+        &ed.factions,
+        aliases,
+    )?);
+
+    // T-675 — the authored vehicle ROSTER onto top-level `vehicles[]`, the sixth row of the T-216
+    // compile-boundary ledger. Derived HERE, after the slot walk, because
+    // `$defs/vehicle.seats[].slotId` references `slots[].uid` and the only honest set of those is
+    // the one that actually reached `doc_slots`: a crew entry naming an authored-but-unplaced seat
+    // resolves in the payload and would dangle on the wire.
+    let emitted_slot_uids: HashSet<&str> = doc_slots.iter().map(|s| s.uid.as_str()).collect();
+    let doc_vehicles = derive_vehicle_roster(
+        &parsed.vehicles,
+        &ed.squads,
+        &ed.factions,
+        &emitted_slot_uids,
+        aliases,
+        &mut diagnostics,
+    );
+    // …and the bump is latched on the BYTES. `vehicles` is `skip_serializing_if = "Vec::is_empty"`,
+    // so a roster whose every row the wire could not carry puts NO key on the document and that
+    // document is byte-for-byte a 1.1/1.2 one. Latching on "the payload authored a roster" would
+    // declare 1.3 over exactly that document — the shape T-946.11 caught in the predecessor slice,
+    // where a flag set at the COMPUTED value outlives the value's own emit.
+    any_1_3_key |= !doc_vehicles.is_empty();
+
     // T-674 — the version the compiled document DECLARES, highest rung first.
     //
-    // 1.3 is claimed only when an identity key or a `leaderSlotId` ACTUALLY REACHED the document
-    // (`any_identity` is set at the emit sites, never where the value is read), because the bump is
-    // a statement about the bytes and nothing else. It is also the ONE place that decides it: T-675
-    // and T-676 land the remaining 1.3 emits on this same function and set the same flag rather
-    // than adding a second rung, which is the reuse the plan asks for.
+    // 1.3 is claimed only when a 1.3-shaped value ACTUALLY REACHED the document (`any_1_3_key` is
+    // set at the emit sites, never where the value is read), because the bump is a statement about
+    // the bytes and nothing else. It is also the ONE place that decides it: T-675 landed the
+    // vehicle roster and T-676 lands `editorTriggers` on this same function, both setting the same
+    // flag rather than adding a second rung, which is the reuse the plan asks for.
     //
-    // ⚠ THE MOD'S VALIDATOR DOES NOT ACCEPT "1.3" ON ANY SHIPPED BUILD. `TBD_MissionValidator`
-    // hardcodes SCHEMA_1_0/1_1/1_2 and `CheckSchemaVersion` refuses anything else, so a document
-    // that declares 1.3 is rejected server-side and the server parks in LOADING. The allowlist bump
-    // is T-674.2's (the reader slice), and `mission.schema.json`'s own `schemaVersion` description
-    // says it must land with the first slice that emits 1.3 — this one. Until it does, a mission
-    // that authors an identity value compiles to a document today's mod build will not load.
-    let schema_version = if any_identity {
+    // ⚠ WAS: "the mod's validator does not accept 1.3 on any shipped build" — T-674 wrote that when
+    // it was true and the allowlist bump was still ahead of it. **T-674.2 landed it.** Both copies
+    // of `TBD_MissionValidator` (tbd-framework AND tbd-export) now declare `SCHEMA_1_3` and
+    // `CheckSchemaVersion` accepts it beside 1.1/1.2, so a document that declares 1.3 loads. The
+    // note is corrected rather than deleted because a stale "this will not load" over a version
+    // latch is the kind of comment a later slice steers by.
+    //
+    // `mission.schema.json`'s own `schemaVersion` description still carries the pre-T-674 wording
+    // ("flatten.rs still emits 1.1/1.2"); that file is outside this slice's owns.
+    let schema_version = if any_1_3_key {
         "1.3"
     } else if any_y {
         "1.2"
@@ -2818,24 +3234,6 @@ pub fn flatten_to_mod_document(
         environment.date_time = format!("{COMPILE_DATE_ANCHOR}T{t}:00Z");
     }
 
-    let mut entities = derive_entities(&parsed.entities);
-    entities.extend(derive_vehicles_as_entities(
-        &parsed.vehicles,
-        &ed.squads,
-        &ed.factions,
-        aliases,
-    )?);
-
-    // T-690 — the whole authored roster, reported row by row. A PLACED vehicle did just reach the
-    // wire above as an `entities[]` alias row (T-425), but the roster itself — the seats, the crew,
-    // the ORBAT attachment — is what the schema's top-level `vehicles[]` carries and the flatten
-    // emits none of it. Emitted after the entity derive so a compile that REFUSES over an unaliased
-    // vehicle (`?` above) reports that refusal rather than a list of drops for a document that was
-    // never produced.
-    for (i, v) in parsed.vehicles.iter().enumerate() {
-        diagnostics.vehicle_roster_dropped(i, v);
-    }
-
     Ok(ModMissionDocument {
         schema_version,
         meta,
@@ -2861,6 +3259,7 @@ pub fn flatten_to_mod_document(
         },
         briefings: derive_briefings(&ed.factions),
         settings: derive_settings(&parsed.settings),
+        vehicles: doc_vehicles,
         kit_substitutions: substitutions.finish(),
         diagnostics: diagnostics.findings,
     })
@@ -3340,6 +3739,11 @@ mod tests {
     /// A saved payload that authors all six T-180 values plus T-674's `unitName`, each with a
     /// distinctive value so a failure message names the thing that moved.
     ///
+    /// `v1`'s `crew` is written with `cargo2` BEFORE `driver` on purpose: `preserve_order` is on,
+    /// so this fixture's key order is the parsed order, and the compiled roster still has to come
+    /// out driver-first. That is what makes the canonical-order rule in [`project_crew`] an
+    /// assertion here rather than a coincidence of how the map happened to iterate.
+    ///
     /// `rank` is `"sergeant"` — a rung of the `$defs/slot.rank` ladder — because this fixture's job
     /// is to prove each value's FATE, and a value the emit gates would refuse anyway could not
     /// distinguish "dropped because nothing emits it" from "dropped because it is unrepresentable".
@@ -3351,7 +3755,8 @@ mod tests {
         {"id": "v1",
          "resourceName": "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et",
          "position": {"x": 100.5, "y": 200.5, "z": 3.0, "rotation": 45.0},
-         "squadId": "sq1"},
+         "squadId": "sq1",
+         "crew": {"cargo2": "s2", "driver": "s1"}},
         {"id": "v2", "resourceName": "{ABCDEF0123456789}Prefabs/Vehicles/Wheeled/UAZ/UAZ469.et"}
       ],
       "editor": {
@@ -3511,20 +3916,16 @@ mod tests {
             },
             // T-706 opened the top-level `vehicles` roster (`document root + $defs/vehicle`,
             // seats/crew refs on the wire), distinct from the payload's own editor `vehicles`
-            // bag and from the `entities[]` alias path the placed M151 already rides. flatten
-            // still emits no top-level `vehicles` key (asserted directly below the loop); the
-            // crew-spawn emit lands with T-675. This tracks that pending emit — the fixture's own
-            // authored roster entry is the anti-vacuity witness.
+            // bag and from the `entities[]` alias path the placed M151 also rides; **T-675 landed
+            // the emit**, so this row moved from `DeclaredPendingEmit` to `Reaches` — the
+            // transition the pending state exists to force. The authored id arrives as
+            // `$defs/vehicle.uid` (the durable identity, the same role `slot.uid` plays), not as
+            // an `id` key: `$defs/vehicle` declares no `id`, so emitting one would be a 500.
             LedgerRow {
                 what: "vehicle roster (top-level vehicles[] — T-675 crew spawn)",
                 authored_at: "/vehicles/0/id",
                 value: "v1",
-                fate: Fate::DeclaredPendingEmit {
-                    scope: "",
-                    owners: ROOT,
-                    wire_key: "vehicles",
-                    emit_ticket: "T-675",
-                },
+                fate: Fate::Reaches("/vehicles/0/uid"),
             },
             // W120 m-9 — the editor authors TRIGGERS today (T-079 shipped: store.rs root `triggers`
             // map / `triggersById`), T-706 opened the top-level `editorTriggers` roster, and flatten
@@ -3748,10 +4149,13 @@ mod tests {
             );
         }
 
-        // Vehicles (T-425): ride `entities[]` as `$defs/entity` (alias/x/z/headingDeg/faction/
-        // inventory). The top-level `vehicles` key is editor-payload only — not on the compiled
-        // wire. `$defs/entity` stays closed and names a registry ALIAS, not a ResourceName.
-        assert!(wire.get("vehicles").is_none());
+        // Vehicles (T-425): STILL ride `entities[]` as `$defs/entity` (alias/x/z/headingDeg/
+        // faction/inventory), untouched by T-675 — `$defs/entity` stays closed and names a
+        // registry ALIAS, not a ResourceName.
+        //
+        // T-675 adds the SECOND row for the same vehicle: the top-level `vehicles[]` roster, which
+        // is the only one that can carry a crew plan. Both are asserted together because the
+        // hazard the ledger exists to catch is one displacing the other.
         assert_eq!(wire["entities"][0]["alias"], "veh:m151_mg");
         assert_eq!(wire["entities"][0]["headingDeg"], 45.0);
         assert_eq!(wire["entities"][0]["faction"], "blufor");
@@ -3770,6 +4174,59 @@ mod tests {
             schema["$defs"]["alias"]["pattern"],
             "^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$"
         );
+
+        // T-675 — and the roster row the entity row could never carry. One row for the ONE vehicle
+        // the wire can carry: `v2` has no `veh:` alias and no position, so it drops whole.
+        let roster = wire["vehicles"]
+            .as_array()
+            .expect("the compiled document carries a vehicles[] roster");
+        assert_eq!(roster.len(), 1, "only v1 is representable; v2 drops whole");
+        assert_eq!(roster[0]["alias"], "veh:m151_mg");
+        assert_eq!(roster[0]["x"], 100.5);
+        assert_eq!(roster[0]["z"], 200.5, "editor y (map north) → mod z");
+        assert_eq!(roster[0]["headingDeg"], 45.0);
+        assert_eq!(roster[0]["faction"], "blufor");
+        // The crew plan — the value T-076 authored and the compile threw away until this slice.
+        // `driver` first though the fixture writes `cargo2` first: canonical station order.
+        assert_eq!(
+            roster[0]["seats"],
+            serde_json::json!([
+                {"slotId": "s1", "role": "driver"},
+                {"slotId": "s2", "role": "cargo", "index": 1},
+            ]),
+            "seats: {}",
+            roster[0]["seats"]
+        );
+        // And every `slotId` names a slot that IS on the wire — the reference the mod resolves.
+        for seat in roster[0]["seats"].as_array().expect("seats is an array") {
+            let slot_id = seat["slotId"].as_str().expect("slotId is a string");
+            assert!(
+                doc.slots.iter().any(|s| s.uid == slot_id),
+                "seat references {slot_id:?}, which is no slot uid on this wire"
+            );
+        }
+        // The contract half, read out of the schema rather than restated: `$defs/vehicle` is closed
+        // and declares every key the emit above produced, so none of them is a 500 at `/compiled`.
+        let vehicle = &schema["$defs"]["vehicle"];
+        assert_eq!(
+            vehicle["additionalProperties"],
+            serde_json::Value::Bool(false)
+        );
+        for key in ["alias", "uid", "x", "z", "headingDeg", "faction", "seats"] {
+            assert!(
+                vehicle["properties"].get(key).is_some(),
+                "flatten emits vehicles[].{key} but $defs/vehicle does not declare it — every \
+                 compiled mission carrying it would 500 at /compiled"
+            );
+        }
+        let seat = &vehicle["properties"]["seats"]["items"];
+        assert_eq!(seat["additionalProperties"], serde_json::Value::Bool(false));
+        for key in ["slotId", "role", "index"] {
+            assert!(
+                seat["properties"].get(key).is_some(),
+                "flatten emits vehicles[].seats[].{key} but the schema does not declare it"
+            );
+        }
     }
 
     /// T-425 — placed vehicles flatten to `$defs/entity` with alias/inventory/faction.
@@ -4243,10 +4700,14 @@ mod tests {
                 "radioPlan",
                 "schemaVersion",
                 "slots",
+                "vehicles",
                 "winConditions",
                 "zones",
             ],
-            "the compiled document's top-level shape changed — T-425 emits vehicles as entities[]"
+            "the compiled document's top-level shape changed. This fixture places one vehicle, so \
+             it carries BOTH of the two rows an authored vehicle produces: the T-425 `entities[]` \
+             alias row and the T-675 `vehicles[]` roster row that can carry a crew plan. A mission \
+             with no roster omits `vehicles` entirely."
         );
     }
 
@@ -6321,7 +6782,10 @@ mod tests {
     ///   bytes, which is what `wireSafeString` forbids (the T-181.42 callsign exactly).
     /// * `rank` and `stance` name rungs that are not on their `$defs/slot` ladders.
     /// * `leaderSlotId` names a seat this squad does not hold — a reference that would dangle.
-    /// * the vehicle roster is authored, and no top-level `vehicles[]` is emitted (T-675).
+    /// * the roster vehicle boards a slot that is not on the compiled roster — the same dangling
+    ///   reference one level out, and (since T-675 landed the emit) the reason the whole row drops
+    ///   instead of shipping a crew plan the game server cannot resolve. The vehicle itself is
+    ///   placed and aliased, so nothing but the crew ref makes it unrepresentable.
     const DROP_FIXTURE: &str = r#"{
       "schemaVersion": 1,
       "map": {"terrain": "everon", "bounds": [0, 0, 12800, 12800]},
@@ -6329,7 +6793,8 @@ mod tests {
         {"id": "v1",
          "resourceName": "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et",
          "position": {"x": 100.5, "y": 200.5, "z": 3.0, "rotation": 45.0},
-         "squadId": "sq1"}
+         "squadId": "sq1",
+         "crew": {"driver": "sNope"}}
       ],
       "editor": {
         "factions": [{"id": "f1", "key": "BLUFOR", "name": "US Army", "squadIds": ["sq1"]}],
@@ -6382,6 +6847,18 @@ mod tests {
                 .is_none(),
             "a dangling leaderSlotId reached the wire"
         );
+        // The roster row drops WHOLE — not "the vehicle with its bad seat trimmed off". A partly
+        // emitted crew plan is the failure this rule exists to prevent, and it would leave the
+        // `vehicles` key on the wire (and so bump the version) while the author's plan was quietly
+        // one soldier short.
+        assert!(
+            wire.get("vehicles").is_none(),
+            "a vehicle whose crew ref dangles reached the wire: {}",
+            wire["vehicles"]
+        );
+        // ...and its `entities[]` twin is untouched: the T-425 alias row does not carry the crew
+        // plan, so it is not what dropped (T-200 — the entities path stays exactly as it was).
+        assert_eq!(wire["entities"][0]["alias"], "veh:m151_mg");
 
         // ...and each finding names the entity that owns it (the T-657 `subject_id` vocabulary,
         // reused rather than re-invented: it is the panel's click-to-select key).
@@ -6845,6 +7322,371 @@ mod tests {
         }
     }
 
+    /// T-675 — the crew-station enum is the schema's own list, on the same terms.
+    ///
+    /// `$defs/vehicle.seats[]` closes with `additionalProperties: false` and types `role` as a
+    /// closed enum, so a station [`VEHICLE_SEAT_ROLES`] names that the schema does not is HTTP 500
+    /// at `/compiled` for every mission whose author boards that seat. The ORDER matters here as
+    /// well as the membership, because it is also the order the seats of one vehicle are emitted
+    /// in — a reordered schema enum would silently reorder every compiled crew plan.
+    #[test]
+    fn the_vehicle_seat_roles_are_the_schema_s_own() {
+        let schema: serde_json::Value =
+            serde_json::from_str(MISSION_SCHEMA_RAW).expect("mission.schema.json parses");
+        let declared: Vec<&str> = schema["$defs"]["vehicle"]["properties"]["seats"]["items"]
+            ["properties"]["role"]["enum"]
+            .as_array()
+            .expect("$defs/vehicle.seats[].role declares no enum")
+            .iter()
+            .map(|v| v.as_str().expect("enum tokens are strings"))
+            .collect();
+        assert_eq!(
+            VEHICLE_SEAT_ROLES.as_slice(),
+            declared,
+            "the crew-station list in flatten.rs and the one in mission.schema.json have drifted"
+        );
+    }
+
+    /* ══════════════ T-675 — the vehicle roster reaches the compiled wire ══════════════ */
+
+    /// One placed, aliased, squad-attached vehicle with a two-seat crew plan, plus the two slots
+    /// it boards. The baseline every roster row below perturbs one field of.
+    const ROSTER_FIXTURE: &str = r#"{
+      "schemaVersion": 1,
+      "map": {"terrain": "everon", "bounds": [0, 0, 12800, 12800]},
+      "vehicles": [
+        {"id": "v1",
+         "resourceName": "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et",
+         "position": {"x": 100.5, "y": 200.5, "z": 3.0, "rotation": 450.0},
+         "squadId": "sq1",
+         "crew": {"cargo3": "s2", "driver": "s1"}}
+      ],
+      "editor": {
+        "factions": [{"id": "f1", "key": "BLUFOR", "name": "US Army", "squadIds": ["sq1"]}],
+        "squads": [{"id": "sq1", "factionId": "f1", "callsign": "Alpha", "name": "Alpha 1-1",
+                    "slotIds": ["s1", "s2"], "vehicleIds": ["v1"]}],
+        "slots": [
+          {"id": "s1", "squadId": "sq1", "index": 0, "role": "SL",
+           "position": {"x": 1.0, "y": 2.0, "z": 0, "rotation": 0}},
+          {"id": "s2", "squadId": "sq1", "index": 1, "role": "RFL",
+           "position": {"x": 3.0, "y": 4.0, "z": 0, "rotation": 0}}
+        ],
+        "editorLayers": []
+      }
+    }"#;
+
+    /// Compile [`ROSTER_FIXTURE`] with `mutate` applied to the parsed payload first.
+    fn roster_wire(mutate: impl FnOnce(&mut serde_json::Value)) -> ModMissionDocument {
+        let mut p: serde_json::Value =
+            serde_json::from_str(ROSTER_FIXTURE).expect("fixture parses");
+        mutate(&mut p);
+        flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles")
+    }
+
+    /// The ticket's acceptance, on the SERIALIZED document: an authored roster reaches the game
+    /// server as `vehicles[]` with seats and crew refs, at `schemaVersion` 1.3.
+    #[test]
+    fn the_authored_vehicle_roster_reaches_the_compiled_wire() {
+        let doc = roster_wire(|_| {});
+        let wire = serde_json::to_value(&doc).expect("serialises");
+
+        assert_eq!(wire["schemaVersion"], "1.3");
+        assert_eq!(
+            wire["vehicles"],
+            serde_json::json!([{
+                "alias": "veh:m151_mg",
+                "uid": "v1",
+                "x": 100.5,
+                "z": 200.5,
+                "headingDeg": 90.0,
+                "faction": "blufor",
+                "seats": [
+                    {"slotId": "s1", "role": "driver"},
+                    {"slotId": "s2", "role": "cargo", "index": 2},
+                ],
+            }]),
+            "vehicles: {}",
+            wire["vehicles"]
+        );
+        // `450 → 90`: the same heading normalisation slots and entities use, so one authored
+        // vehicle's two rows cannot face different ways.
+        assert_eq!(wire["entities"][0]["headingDeg"], 90.0);
+        // `cargo3` is the THIRD cargo seat on both sides — the panel counts its stations from 1
+        // and `$defs/vehicle.seats[].index` counts from 0. Boarding a soldier into cargo 3 and
+        // shipping cargo 4 would be a silent relocation of the author's decision.
+        assert_eq!(wire["vehicles"][0]["seats"][1]["index"], 2);
+        // Nothing was authored that the compile could not carry, so nothing is reported. A finding
+        // beside a value that reached the wire anyway is the worst of both (T-690 rule 2).
+        assert!(
+            doc.diagnostics.is_empty(),
+            "a fully representable roster produced findings: {:?}",
+            doc.diagnostics
+        );
+    }
+
+    /// Operator/agent helper — write [`ROSTER_FIXTURE`]'s compiled document out so the REAL
+    /// JSON-Schema validator can be pointed at it:
+    ///
+    /// ```text
+    /// cargo test -p map-engine-core --all-features dump_roster_document -- --ignored --nocapture
+    /// cargo xtask schema validate-file /tmp/t675_roster_document.json
+    /// ```
+    ///
+    /// This crate cannot validate against `mission.schema.json` itself — `jsonschema` lives in
+    /// `xtask` / the API and pulling it into a wasm-facing crate for a test would be a heavier
+    /// change than the emit — so the committed pins read the schema by hand
+    /// (`$defs/vehicle` closed, every emitted key declared) and this is the escape hatch that
+    /// checks the VALUE constraints the hand-read cannot: the `alias` and `factionKey` patterns,
+    /// the `role` enum, `index`'s minimum and `uid`'s `minLength`. Same shape as
+    /// `regen_compiler_shaped_fixture` above, and it is also the sample document T-675.2's reader
+    /// needs.
+    #[test]
+    #[ignore = "manual — writes a document for `cargo xtask schema validate-file`"]
+    fn dump_roster_document_for_schema_validate() {
+        let doc = roster_wire(|_| {});
+        let path = std::env::temp_dir().join("t675_roster_document.json");
+        let mut s = serde_json::to_string_pretty(&doc).expect("serialize compiled document");
+        s.push('\n');
+        std::fs::write(&path, s).expect("write document");
+        eprintln!("wrote {}", path.display());
+    }
+
+    /// A mission with no authored roster compiles to the bytes it compiled to before the emit
+    /// existed — the acceptance's second half, and the property `skip_serializing_if` buys.
+    ///
+    /// Checked by KEY over the whole document rather than by substring: `vehicles` is a word that
+    /// occurs in the payload, and a substring search over the serialized text would answer a
+    /// question about the input.
+    #[test]
+    fn a_mission_with_no_roster_carries_no_vehicles_key() {
+        for (name, payload) in [
+            ("FIXTURE", FIXTURE),
+            ("IDENTITY_FIXTURE", IDENTITY_FIXTURE),
+            ("COMPILER_SHAPED_PAYLOAD", COMPILER_SHAPED_PAYLOAD),
+        ] {
+            let doc = flatten_to_mod_document(&meta(), payload.as_bytes()).expect("compiles");
+            let wire = serde_json::to_value(&doc).expect("serialises");
+            assert!(
+                wire.get("vehicles").is_none(),
+                "{name} authors no vehicle roster but the compiled document grew a `vehicles` key"
+            );
+            assert!(
+                !any_object_has_key(&wire, "seats"),
+                "{name} authors no crew plan but the compiled document grew a `seats` key"
+            );
+        }
+    }
+
+    /// Every way one roster row can be unrepresentable drops it WHOLE, reports it once, and leaves
+    /// the `entities[]` alias path exactly as it was (T-200).
+    ///
+    /// Each case names the gate it is aimed at, and each is reachable on its own — the drop reason
+    /// is deterministic because the gates run in `$defs/vehicle`'s `required` order.
+    #[test]
+    fn an_unrepresentable_roster_row_drops_whole_and_is_reported() {
+        // `(case, the clause the message must carry, the id the finding must name, mutation)`.
+        // The id is per-case because one case perturbs the id itself, and a finding that named a
+        // repaired id would point the panel's click-to-select at nothing.
+        type RosterDropCase = (
+            &'static str,
+            &'static str,
+            &'static str,
+            fn(&mut serde_json::Value),
+        );
+        let cases: &[RosterDropCase] = &[
+            (
+                "no `veh:` alias (unplaced — a PLACED one refuses the whole compile, T-425)",
+                "has no `veh:` alias",
+                "v1",
+                |p| {
+                    p["vehicles"][0]["resourceName"] =
+                        serde_json::json!("{DEADBEEF00000000}Prefabs/Vehicles/Nope.et");
+                    p["vehicles"][0]
+                        .as_object_mut()
+                        .expect("vehicle row")
+                        .remove("position");
+                },
+            ),
+            (
+                "no map position (schema requires x and z)",
+                "has no map position",
+                "v1",
+                |p| {
+                    p["vehicles"][0]
+                        .as_object_mut()
+                        .expect("vehicle row")
+                        .remove("position");
+                },
+            ),
+            (
+                "wire-unsafe id (`wireSafeString` forbids control bytes)",
+                "carries a control character",
+                "v\t1",
+                |p| p["vehicles"][0]["id"] = serde_json::json!("v\t1"),
+            ),
+            (
+                "crew ref naming no compiled slot",
+                "is not on the compiled roster",
+                "v1",
+                |p| p["vehicles"][0]["crew"] = serde_json::json!({"driver": "sNope"}),
+            ),
+            (
+                "crew ref naming a slot no squad holds (resolves in the payload, dangles on \
+                 the wire)",
+                "is not on the compiled roster",
+                "v1",
+                |p| {
+                    p["editor"]["slots"].as_array_mut().expect("slots").push(
+                        serde_json::json!({"id": "sOrphan", "squadId": "", "index": 9,
+                                           "role": "RFL",
+                                           "position": {"x": 9.0, "y": 9.0, "z": 0,
+                                                        "rotation": 0}}),
+                    );
+                    p["vehicles"][0]["crew"] = serde_json::json!({"driver": "sOrphan"});
+                },
+            ),
+            (
+                "seat id off the schema's station enum",
+                "is not a station",
+                "v1",
+                |p| p["vehicles"][0]["crew"] = serde_json::json!({"turret_left": "s1"}),
+            ),
+            (
+                "seat ordinal the panel cannot write (`cargo0`)",
+                "is not a station",
+                "v1",
+                |p| p["vehicles"][0]["crew"] = serde_json::json!({"cargo0": "s1"}),
+            ),
+            (
+                "two seats naming one station",
+                "name the same station",
+                "v1",
+                |p| p["vehicles"][0]["crew"] = serde_json::json!({"cargo": "s1", "cargo1": "s2"}),
+            ),
+            (
+                "crew occupant that is not a slot id",
+                "does not name a slot",
+                "v1",
+                |p| p["vehicles"][0]["crew"] = serde_json::json!({"driver": 5}),
+            ),
+            (
+                "crew that is not a seat map at all",
+                "not the seat-to-slot map",
+                "v1",
+                |p| p["vehicles"][0]["crew"] = serde_json::json!([["driver", "s1"]]),
+            ),
+        ];
+
+        for (case, clause, owner_id, mutate) in cases {
+            let doc = roster_wire(*mutate);
+            let wire = serde_json::to_value(&doc).expect("serialises");
+            assert!(
+                wire.get("vehicles").is_none(),
+                "{case}: the row reached the wire instead of dropping whole: {}",
+                wire["vehicles"]
+            );
+            assert_eq!(
+                wire["schemaVersion"], "1.1",
+                "{case}: nothing 1.3-shaped is on the wire, so the version must not claim 1.3"
+            );
+            let findings: Vec<&Finding> = doc
+                .diagnostics
+                .iter()
+                .filter(|f| f.rule_id == DIAG_DROP_VEHICLE_ROSTER)
+                .collect();
+            assert_eq!(
+                findings.len(),
+                1,
+                "{case}: expected exactly one roster finding, got {findings:?}"
+            );
+            assert!(
+                findings[0].message.contains(clause),
+                "{case}: the finding does not say why — {:?}",
+                findings[0].message
+            );
+            assert_eq!(
+                findings[0].subject_id.as_deref(),
+                Some(*owner_id),
+                "{case}: the finding must name the vehicle the author can click"
+            );
+        }
+    }
+
+    /// The T-200 half, stated on its own: the `entities[]` alias row is what it always was, with
+    /// or without a roster beside it. This slice ADDS a row; it does not move one.
+    #[test]
+    fn the_roster_emit_leaves_the_entities_alias_path_alone() {
+        let with_crew = roster_wire(|_| {});
+        let no_crew = roster_wire(|p| {
+            p["vehicles"][0]
+                .as_object_mut()
+                .expect("vehicle row")
+                .remove("crew");
+        });
+        let dropped =
+            roster_wire(|p| p["vehicles"][0]["crew"] = serde_json::json!({"driver": "x"}));
+
+        let entities =
+            |d: &ModMissionDocument| serde_json::to_value(&d.entities).expect("entities serialise");
+        assert_eq!(entities(&with_crew), entities(&no_crew));
+        assert_eq!(
+            entities(&with_crew),
+            entities(&dropped),
+            "a dropped roster row changed the entities[] projection — the two paths are coupled"
+        );
+        assert_eq!(with_crew.entities.len(), 1);
+        assert_eq!(with_crew.entities[0].alias, "veh:m151_mg");
+        // An uncrewed vehicle is still a roster row: it carries its identity and its place, and
+        // omits `seats` entirely rather than emitting an empty array.
+        let wire = serde_json::to_value(&no_crew).expect("serialises");
+        assert_eq!(wire["vehicles"][0]["uid"], "v1");
+        assert!(wire["vehicles"][0].get("seats").is_none());
+        assert!(
+            no_crew.diagnostics.is_empty(),
+            "an uncrewed vehicle is not a finding: {:?}",
+            no_crew.diagnostics
+        );
+    }
+
+    /// [`parse_seat_id`] — the station projection, over the vocabulary the panel writes and the
+    /// spellings it never does.
+    #[test]
+    fn seat_ids_project_onto_the_schema_s_stations() {
+        // Exactly what `eden_vehicles_panel::seat_model` authors: three fixed stations then
+        // `cargo1…cargoN`, 1-based for the operator and 0-based on the wire.
+        assert_eq!(parse_seat_id("driver"), Some(("driver", None)));
+        assert_eq!(parse_seat_id("gunner"), Some(("gunner", None)));
+        assert_eq!(parse_seat_id("commander"), Some(("commander", None)));
+        assert_eq!(parse_seat_id("cargo1"), Some(("cargo", Some(0))));
+        assert_eq!(parse_seat_id("cargo4"), Some(("cargo", Some(3))));
+        // The schema's other stations, so a payload authored against a later seat model (T-205)
+        // projects instead of dropping its crew.
+        assert_eq!(parse_seat_id("pilot"), Some(("pilot", None)));
+        assert_eq!(parse_seat_id("turret2"), Some(("turret", Some(1))));
+        // Tolerated shaping, because it changes no meaning: surrounding space and casing.
+        assert_eq!(parse_seat_id("  Driver "), Some(("driver", None)));
+        // A bare station name is the station itself — the panel does not write `cargo` today, but
+        // it is on the enum and means something unambiguous, so it projects.
+        assert_eq!(parse_seat_id("cargo"), Some(("cargo", None)));
+        assert_eq!(parse_seat_id("copilot"), Some(("copilot", None)));
+        // Refused, because reading any of these would be a guess at what the author meant.
+        for bad in [
+            "",
+            "  ",
+            "cargo0",
+            "cargo1a",
+            "cargo-1",
+            "cargo+1",
+            "1",
+            "seat1",
+            "cargo99999999999",
+            "co-pilot",
+            "driver_1",
+        ] {
+            assert_eq!(parse_seat_id(bad), None, "{bad:?} must not project");
+        }
+    }
+
     /// **1.3 is claimed for the BYTES, not for the intent.** The bump names a widening the mod's
     /// validator must allowlist before it will load the document at all, so declaring it over a
     /// document that carries nothing 1.3-shaped would make a plain mission unloadable for free.
@@ -6894,6 +7736,38 @@ mod tests {
                 r#""slotIds": ["s1", "s2"], "leaderSlotId": "s2""#,
             )),
             "1.3"
+        );
+        // T-675 — and so does the vehicle roster, which is the same statement one key out: a
+        // `vehicles[]` on the wire is 1.3-shaped whether or not any seat is labelled.
+        const ROSTER_SEED: &str = r#""vehicles": [{"id": "v1", "resourceName": "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et", "position": {"x": 10.0, "y": 20.0, "z": 0, "rotation": 0}}], "editor": {"#;
+        let with_roster = STRIPPED_IDENTITY_FIXTURE.replace(r#""editor": {"#, ROSTER_SEED);
+        assert_ne!(
+            with_roster, STRIPPED_IDENTITY_FIXTURE,
+            "the roster seed must change the fixture"
+        );
+        assert_eq!(
+            version(&with_roster),
+            "1.3",
+            "an emitted vehicles[] alone must bump the version"
+        );
+        // ...and the half that separates EMITTED from AUTHORED for the roster too: the SAME
+        // authored vehicle with no map position drops whole, so no `vehicles` key reaches the wire
+        // and the document is byte-for-byte the 1.1 one. A flag latched where the roster is READ
+        // instead of where it SERIALISES would declare 1.3 over exactly this document (T-946.11).
+        // (An unaliased PLACED vehicle cannot be used for this: T-425 refuses the whole compile
+        // over one, so there would be no document to ask about.)
+        let unplaced = with_roster.replace(
+            r#", "position": {"x": 10.0, "y": 20.0, "z": 0, "rotation": 0}"#,
+            "",
+        );
+        assert_ne!(
+            unplaced, with_roster,
+            "removing the position must change the seed"
+        );
+        assert_eq!(
+            version(&unplaced),
+            "1.1",
+            "a roster whose every row dropped must not claim 1.3"
         );
         // The stripped fixture itself carries nothing 1.3-shaped — the anti-vacuity witness for
         // every row above, which would all pass if it did.

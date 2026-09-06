@@ -1,0 +1,48 @@
+id = "T-946.14"
+kind = "work"
+title = "wave land gates against pre-merge HEAD"
+summary = "cmd_land uses one value as both the revert target and the gate's diff anchor. As the anchor it is wrong, and the T-602 base check refuses it whenever main moved after the wave's close marker."
+class = "chore"
+status = "shipped"
+order = 7077
+spec = "docs/specs/ideas/t946_14_land_gate_base.md"
+plan = "docs/plans/t-946_14_plan.md"
+executor = "claude-code"
+priority = 1
+parent = "T-946"
+main_goal = "A land's post-merge gate reads the whole wave instead of refusing about a base nobody chose."
+context = [
+    "cmd_land takes base = pre-merge HEAD (land.rs:173) and passes it to gate::cmd_gate (land.rs:234).",
+    "The gate derives what to examine from base..HEAD, so that anchor hides every commit but the merge.",
+    "Measured 2026-09-06 landing T-675.1: refused with 7 commit(s) of this wave sit OUTSIDE edb4e4e4d..HEAD.",
+    "It fires on every wave that does any command-centre work between the close marker and the first land.",
+]
+requirement = [
+    "The gate derives its own base from the close-marker ledger, as the end-of-wave gate and the close ceremony do.",
+    "The revert target stays pre-merge HEAD and the rollback advice is unchanged.",
+    "The re-run hint must not repeat the base that caused the refusal.",
+]
+current_state = ["Every land this wave aborts after merging, leaving a landed slice and no bookkeeping."]
+approach = [
+    "Pass an empty base to gate::cmd_gate; keep base for revert and rename the printed label to revert target.",
+    "Record the verbatim refusal in the comment so the next reader sees why the anchor moved.",
+]
+verify = [
+    "cargo test -p xtask",
+    "cargo clippy -p xtask --all-targets -- -D warnings",
+    "cargo xtask platform wave land --bookkeeping <id>",
+]
+acceptance = [
+    "A land whose main has moved since the close marker reaches its bookkeeping step instead of refusing at the base check.",
+    "The gate it runs reports on the whole span since the marker, not on the merge alone.",
+]
+shipped_at = "a0a762416"
+created_at = "2026-09-06T10:52:00Z"
+completed_at = "2026-09-06T10:23:42Z"
+estimated = ["tokens"]
+owns = ["xtask/src/wave/land.rs"]
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "wave"

@@ -32,7 +32,7 @@ verify = [
     "cargo xtask mod compile",
 ]
 acceptance = [
-    "cargo xtask mod compile gets past the ASCII scan and reports the engine verdict.",
+    "The mod compile gate gets past its ASCII scan and reports the engine verdict instead of failing before compilation.",
     "No non-ASCII bytes remain in any tbd-export .c file; tbd-framework stays exempt as documented.",
 ]
 shipped_at = "2392a2513"

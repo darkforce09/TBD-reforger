@@ -169,9 +169,25 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
     // by the arm above, so this line is the operator's proof that both halves agree.
     wprintln!("gate verdict PASS: {}", gated.join(" "));
 
-    // The base is the last known-GREEN main. It is the gate's diff anchor and the revert target.
+    // The last known-GREEN main. THE REVERT TARGET ONLY — not the gate's diff anchor.
+    //
+    // T-946.14: it used to be both, and as the gate's anchor it was wrong the moment main moved
+    // after the wave's close marker, which it always does (the command centre commits briefs, a
+    // ledger row and its own fixes between the close and the first land). Measured 2026-09-06
+    // landing T-675.1 into wave 241:
+    //
+    //   gate: base edb4e4e4d starts AFTER this wave opened — refusing to run.
+    //           this wave opened at 52a038a77
+    //           7 commit(s) of this wave sit OUTSIDE edb4e4e4d..HEAD. touch_changed, wasm32,
+    //           fmt and the trunk build would each report PASS/SKIP without reading one of them
+    //
+    // That refusal is T-602 working exactly as designed — a gate anchored at pre-merge HEAD reads
+    // only the merge and calls the whole wave green — so the anchor is what has to change, not the
+    // check. The gate derives its own base from the close-marker ledger when given none, which is
+    // the same base the end-of-wave gate and the close ceremony use. The revert target stays
+    // pre-merge HEAD, because that IS the commit to roll back to.
     let base = git_stdout_lossy(&["rev-parse", "HEAD"]);
-    wprintln!("wave base: {base}");
+    wprintln!("revert target: {base}");
 
     let mut landed: Vec<String> = Vec::new();
     let mut stamped: Vec<String> = Vec::new();
@@ -231,7 +247,7 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
         "landed {} slice(s). Running the wave gate on merged main:",
         landed.len()
     );
-    if gate::cmd_gate(ctx, &base) != 0 {
+    if gate::cmd_gate(ctx, "") != 0 {
         // DO NOT DROP. `slice-worktree drop` is `worktree remove --force` + `branch -D`, so
         // dropping here would destroy the tree and branch of every slice in the wave BEFORE anyone
         // can see which one broke it — the exact failure the T-181 reap incident (643c5233) was
@@ -242,7 +258,7 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
             landed.len(),
             landed.join(" ")
         );
-        wprintln!("  fix on main and re-run:  cargo xtask platform wave gate {base}");
+        wprintln!("  fix on main and re-run:  cargo xtask platform wave gate");
         wprintln!("  or roll back the wave :  cargo xtask platform wave revert {base}");
         return 1;
     }
