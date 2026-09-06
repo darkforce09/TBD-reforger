@@ -1,0 +1,11 @@
+id = "T-970"
+kind = "work"
+title = "Chunk .bin files are neither LFS-tracked nor ignored"
+summary = "packages/map-assets objects/chunks .bin matches no gitattributes or gitignore rule, so about 37 MB of untracked binaries sit in the tree after a real export with nothing stopping a careless add."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T03:11:09Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

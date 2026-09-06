@@ -1,0 +1,11 @@
+id = "T-971"
+kind = "work"
+title = "verify-phase reds on the new chunk .bin files"
+summary = "gates.rs walks a scratch build unfiltered and reports files absent from the committed tree as missing. T-935.2 emits 315 chunk .bin files that are deliberately uncommitted, so verify-phase reports 315 missing."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T03:11:27Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
