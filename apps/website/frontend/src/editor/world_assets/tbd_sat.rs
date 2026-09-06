@@ -662,17 +662,24 @@ mod t935_10 {
         assert!(parse_tbd_sat_index_strict(&f, f.len() as u64).is_err());
     }
 
-    /// The check `access_checked` cannot make: the archive is perfectly readable and still means
-    /// something this build must refuse.
+    /// The check `access_checked` cannot make, isolated so that **only** it can catch the fault.
+    ///
+    /// Moving `tile_px` alone leaves every other invariant intact: the rects are derived from
+    /// `w_tiles`/`h_tiles`, so they still tile the level exactly, every offset is still in range,
+    /// the tile count still matches its own grid and bytecheck still passes. A build without the
+    /// grid rule accepts this container and reads it as a different picture — which is exactly the
+    /// failure mode (T-946, wave 238) of reading an archive on layout alone.
     #[test]
     fn a_grid_that_contradicts_tile_px_is_rejected() {
         let mut i = index();
-        i.levels[0].w_tiles = 1;
-        i.levels[0].h_tiles = 1;
-        i.levels[0].tiles.truncate(1);
+        assert_eq!(i.tile_px, TILE_PX);
+        i.tile_px = 4;
         let f = frame(&i);
         let e = parse_tbd_sat_index_strict(&f, f.len() as u64).expect_err("must not validate");
-        assert!(format!("{e}").contains("level 0: grid 1x1"), "{e}");
+        assert!(
+            format!("{e}").contains("level 0: grid 3x3, tile_px 4 over 5x5 means 2x2"),
+            "{e}"
+        );
     }
 
     #[test]

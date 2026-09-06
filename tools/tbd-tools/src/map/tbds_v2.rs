@@ -415,17 +415,20 @@ mod t935_10 {
         assert!(e.contains("rkyv index does not validate"), "{e}");
     }
 
-    /// Meaning, not layout: the archive still validates, and must still be refused.
+    /// Meaning, not layout — isolated so that **only** the grid rule can catch the fault. Moving
+    /// `tile_px` alone leaves the rects, the offsets, the VP8L dimensions and bytecheck all intact:
+    /// a verifier without the rule reports OK over a container it reads as a different picture.
     #[test]
     fn a_grid_that_disagrees_with_tile_px_is_rejected() {
         let (blocks, meta) = synthetic();
         let mut index = tbds_v2_index(&blocks, &meta, (5, 5), 2).expect("index");
-        index.levels[0].w_tiles = 1;
-        index.levels[0].h_tiles = 1;
-        index.levels[0].tiles.truncate(1);
+        index.tile_px = 4;
         let f = tbds_v2_bytes(&index, &blocks).expect("frame");
         let e = read_bundle_v2(&f).expect_err("a grid that contradicts tile_px must not pass");
-        assert!(e.contains("level 0: grid 1x1"), "{e}");
+        assert!(
+            e.contains("level 0: grid 3x3, tile_px 4 over 5x5 expects 2x2"),
+            "{e}"
+        );
     }
 
     #[test]
