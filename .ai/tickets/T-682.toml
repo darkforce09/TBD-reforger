@@ -59,6 +59,8 @@ estimated = ["scope"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EnvironmentReader.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_EnvironmentReader.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
     "crates/map-engine-core/src/mission/flatten.rs",
 ]
 
