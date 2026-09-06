@@ -38,3 +38,4 @@ Unchanged. Not re-filed.
 
 - tracked dirty at verify start: none required for the UNREAD commit
 - `:3000` and `:8080` still LISTEN
+- wave-level `cargo xtask mod compile`: OK, 5752 files / **11415** classes, 0 TBD warnings (wave 247 was 11397)
