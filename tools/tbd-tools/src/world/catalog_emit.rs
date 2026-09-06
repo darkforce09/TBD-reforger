@@ -413,6 +413,18 @@ mod tests {
             EVERON_INSTANCES,
             "the per-kind census must add up to the declared total"
         );
+        // T-946.19 — the ORDER, on the emitter side too. A sum is permutation-blind, and
+        // `by_kind` is an order contract (`INSTANCE_KINDS`, `road` last): the wave-241 verifier
+        // showed `by_kind[1..8]` could be shuffled with every test in both crates still green.
+        assert_eq!(
+            standalone
+                .by_kind
+                .iter()
+                .map(|k| k.kind.as_str())
+                .collect::<Vec<_>>(),
+            crate::world::INSTANCE_KINDS.to_vec(),
+            "the emitted census must keep `INSTANCE_KINDS` order"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 

@@ -1,0 +1,13 @@
+id = "T-946.18"
+kind = "work"
+title = "One authored vehicle emitted two rows with no join key"
+summary = "T-675.1 emits a placed vehicle as an entities row and a roster row, calling uid the join key. ModEntity had no uid and the schema forbade one, so a reader would spawn every crewed vehicle twice."
+class = "chore"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T13:05:00Z"
+notes = "Fixed in the same commit that filed it: uid added to ModEntity and $defs/entity, roster inventory emitted, both derived once and shared. Kept as the record of the defect."
+
+[scope]
+domain = "engine"
+layer = "core"

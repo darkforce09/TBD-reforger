@@ -1,0 +1,12 @@
+id = "T-946.20"
+kind = "work"
+title = "Trigger semantics are documented only in the code"
+summary = "The schema condition and timeout descriptions never say detection is 250 metre proximity with no line of sight, nor that a gap resets the dwell, and one still tells readers no reader exists. An author reads the schema."
+class = "chore"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T13:07:00Z"
+
+[scope]
+domain = "schema"
+layer = "mission"

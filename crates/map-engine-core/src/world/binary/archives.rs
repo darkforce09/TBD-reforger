@@ -165,7 +165,15 @@ archive_type! {
         pub class_code: u8,
         pub label: String,
         pub resource_name: String,
-        /// Half-extents in metres, `[x, y, z]`; zero when the export has no spatial block.
+        /// Half-extents in metres, `[x, y, z]`.
+        ///
+        /// ABSENT IS `NaN`, NOT ZERO. This doc said zero until T-946.19, and it was wrong from the
+        /// day the archive gained a writer: `prefab.rs`'s `num_to_wire` spells an absent optional
+        /// as `NaN` precisely because zero is a LEGAL half-extent, so a prefab authored
+        /// `halfExtents: [0, 0, 0]` would read back as "no spatial block" and the archive lane
+        /// would disagree with the JSON parse on a real row. Everon carries no zero half-extent
+        /// today, which is why the ambiguity went unnoticed; the writer was already right and this
+        /// sentence was the only thing claiming otherwise.
         pub half_extents: [f32; 3],
         pub height_m: f32,
         pub icon_key: String,
@@ -192,6 +200,9 @@ archive_type! {
         pub census_status: String,
         pub unique_prefabs: u32,
         pub total_instances: u64,
+        /// The per-kind census, in `INSTANCE_KINDS` order with `road` last — the order every
+        /// committed inventory has, and an ORDER CONTRACT, not an incidental one: a reader that
+        /// indexes it by position gets a different kind's counts if it drifts.
         pub by_kind: Vec<KindCensus>,
     }
 }

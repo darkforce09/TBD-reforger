@@ -518,6 +518,20 @@ pub fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
                     "         through `ticket ship --no-repack` + one repack so it freezes a"
                 );
                 wprintln!("         pending entry with its own reserved label, then close that.");
+                // T-946.19 — the line above is the PREVENTION, and it is useless to the operator
+                // standing in front of a wave that already dissolved: by then no amount of
+                // re-shipping will make the carry see a set whose label was reissued three ships
+                // ago. The wave-241 verifier hit exactly that and had to be told the repair by
+                // hand. Name it here, with the ids already in hand.
+                wprintln!("         A wave that ALREADY dissolved is repaired instead:");
+                wprintln!(
+                    "           cargo xtask wave repack --reserve {:?}",
+                    ids.join(" ")
+                );
+                wprintln!(
+                    "         freezes exactly that set at this label, renumbers the open waves"
+                );
+                wprintln!("         past it, and then this close succeeds unchanged.");
                 return 1;
             }
             wprintln!(

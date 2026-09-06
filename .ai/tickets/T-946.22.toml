@@ -1,0 +1,12 @@
+id = "T-946.22"
+kind = "work"
+title = "The unread-wire-field gate is one-directional"
+summary = "Nothing checks that a schema description asserting nothing reads a field still has a matching row, so retiring a row cannot force the stale wording out and a description can outlive its own truth."
+class = "chore"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T13:09:00Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"

@@ -29,6 +29,23 @@ use crate::mission::wire_safety::is_wire_unsafe;
 #[serde(rename_all = "camelCase")]
 pub struct ModEntity {
     pub alias: String,
+    /// `$defs/entity.uid` — the editor's own id for the authored object this row came from.
+    ///
+    /// T-946.18: this is THE JOIN KEY, and it did not exist until the wave-241 verifier went
+    /// looking for it. T-675.1 emits one authored vehicle as TWO rows — this `entities[]` alias
+    /// row and a `vehicles[]` roster row — and said in its own comment that `uid` was what let a
+    /// reader match them. `ModEntity` had no `uid` and `$defs/entity` was `additionalProperties:
+    /// false` with no such property, so the two rows had no key in common at all. The mod already
+    /// spawns `entities[]` (`TBD_MissionLoader.SpawnMissionEntities`), so the day T-675.2 lands a
+    /// roster reader every crewed vehicle would spawn twice with nothing to dedupe on.
+    ///
+    /// Optional, and the same rule the roster row uses ([`roster_uid`]): blank is not identity,
+    /// and an id the wire cannot carry is not silently repaired. A vehicle whose id is blank
+    /// therefore still emits two unjoinable rows — the editor mints ids, so that is an authored
+    /// document nobody has produced, but it is the residual hole and it is stated rather than
+    /// hidden.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uid: Option<String>,
     pub x: f64,
     pub z: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -62,7 +79,8 @@ pub struct ModEntityInventory {
 /// twice.** Routing the roster through `entities[]` instead is the T-200 silent-substitution
 /// defect with ten tonnes in place of a rifleman (`$defs/alias` names a REGISTRY alias, so an
 /// unaliased vehicle would be swapped for a different one); and deleting the T-425 entity row is a
-/// behaviour change this slice does not own. `uid` is what lets T-675.2 match the two.
+/// behaviour change this slice does not own. `uid` is what lets T-675.2 match the two — carried on
+/// BOTH rows since T-946.18, which is when it turned out `$defs/entity` had no such key.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ModVehicle {
@@ -89,6 +107,17 @@ pub struct ModVehicle {
     /// omission is what keeps its wire shape identical to a vehicle that was never crewed.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub seats: Vec<ModVehicleSeat>,
+    /// `$defs/vehicle.inventory` — the same cargo the `entities[]` twin carries, from the same
+    /// [`vehicle_inventory`] derivation so the two projections cannot disagree about what is in
+    /// the vehicle.
+    ///
+    /// T-946.18: the roster row used to omit this silently. The schema declares the key, the
+    /// editor authors it (`vehicles[].cargo`), and the entity twin emits it — so leaving it out
+    /// was a TRIM, not a drop, and trimming a representable value is the one thing the ledger
+    /// doctrine forbids. It emits here rather than dropping the row because the value IS
+    /// representable; there was never anything to refuse.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub inventory: Vec<ModEntityInventory>,
 }
 
 /// One `$defs/vehicle.seats[]` entry — which slot rides which crew station (T-675 / T-076).
@@ -2334,6 +2363,7 @@ fn derive_entities(rows: &[EntityIn]) -> Vec<ModEntity> {
         let heading = normalize_heading(pos.rotation);
         out.push(ModEntity {
             alias: alias.to_string(),
+            uid: entity_uid(&e.id),
             x: pos.x,
             z: pos.y,
             heading_deg: Some(heading),
@@ -2410,26 +2440,72 @@ fn derive_vehicles_as_entities(
 
         let faction = vehicle_faction_key(v, &squads_by_id, &factions_by_id);
 
-        let inventory: Vec<ModEntityInventory> = v
-            .cargo
-            .iter()
-            .filter(|r| !r.item.trim().is_empty() && r.qty >= 1)
-            .map(|r| ModEntityInventory {
-                item: r.item.clone(),
-                qty: r.qty,
-            })
-            .collect();
-
         out.push(ModEntity {
             alias: alias.to_string(),
+            // `None` for an id the wire cannot carry: the roster row DROPS on that id, so there is
+            // no twin left to join to and losing the key here loses nothing.
+            uid: roster_uid(v).unwrap_or(None),
             x: pos.x,
             z: pos.y,
             heading_deg: Some(normalize_heading(pos.rotation)),
             faction,
-            inventory,
+            inventory: vehicle_inventory(v),
         });
     }
     Ok(out)
+}
+
+/// T-946.18 — an authored `entities[]` id as `$defs/entity.uid`, or nothing.
+///
+/// The plain-entity arm has no whole-row drop for a bad id and gaining one here would be a
+/// behaviour change beyond the join key this ticket adds, so an id the wire cannot carry yields
+/// `None` and the row still emits. That is the honest reading: the row has no usable identity, and
+/// saying so is not the same as inventing one.
+fn entity_uid(id: &str) -> Option<String> {
+    if id.trim().is_empty() || id.bytes().any(is_wire_unsafe) {
+        return None;
+    }
+    Some(id.to_string())
+}
+
+/// T-946.18 — the authored vehicle id as the wire carries it, for BOTH rows one vehicle emits.
+///
+/// `Ok(None)` is "no identity to carry": blank is not an id. `Err` is "this id exists and the wire
+/// cannot carry it", which the roster turns into a whole-row drop — repairing it by deleting a
+/// control byte would mint a DIFFERENT id, and every reference to this vehicle would then miss.
+/// One function because a join key is only a join key if both projections spell it identically;
+/// two copies of this rule is the `orbat_slots.faction` (T-346) defect with an identity instead of
+/// a side.
+fn roster_uid(v: &VehicleIn) -> Result<Option<String>, String> {
+    if v.id.trim().is_empty() {
+        return Ok(None);
+    }
+    if v.id.bytes().any(is_wire_unsafe) {
+        return Err(format!(
+            "its id {} carries a control character, which `wireSafeString` forbids — and repairing \
+             an identity would mint a different one, which every reference to this vehicle would \
+             then miss",
+            render_authored_str(&v.id)
+        ));
+    }
+    Ok(Some(v.id.clone()))
+}
+
+/// T-946.18 — the authored cargo as BOTH rows carry it (`$defs/entityInventory`).
+///
+/// Same shared-derivation rule as [`vehicle_faction_key`] and [`roster_uid`]: the roster row and
+/// its `entities[]` twin describe ONE vehicle, so a second copy of "which cargo rows are real"
+/// would let them disagree about what is inside it. Blank items and non-positive quantities are
+/// not cargo.
+fn vehicle_inventory(v: &VehicleIn) -> Vec<ModEntityInventory> {
+    v.cargo
+        .iter()
+        .filter(|r| !r.item.trim().is_empty() && r.qty >= 1)
+        .map(|r| ModEntityInventory {
+            item: r.item.clone(),
+            qty: r.qty,
+        })
+        .collect()
 }
 
 /// T-425 / T-675 — which side an authored vehicle belongs to: its own map-placed `factionId`
@@ -2543,18 +2619,7 @@ fn project_roster_vehicle(
     // carry takes the row with it rather than being quietly dropped to `None`. Blank is not
     // identity at all; anything else is emitted VERBATIM, on the same "no silent repair" rule
     // [`emit_wire_safe_identity`] states — deleting a control byte mints a DIFFERENT id.
-    let uid = if v.id.trim().is_empty() {
-        None
-    } else if v.id.bytes().any(is_wire_unsafe) {
-        return Err(format!(
-            "its id {} carries a control character, which `wireSafeString` forbids — and repairing \
-             an identity would mint a different one, which every reference to this vehicle would \
-             then miss",
-            render_authored_str(&v.id)
-        ));
-    } else {
-        Some(v.id.clone())
-    };
+    let uid = roster_uid(v)?;
 
     Ok(ModVehicle {
         alias: alias.to_string(),
@@ -2564,6 +2629,7 @@ fn project_roster_vehicle(
         heading_deg: normalize_heading(pos.rotation),
         faction: vehicle_faction_key(v, squads_by_id, factions_by_id),
         seats: project_crew(v, emitted_slot_uids)?,
+        inventory: vehicle_inventory(v),
     })
 }
 
@@ -7646,6 +7712,69 @@ mod tests {
             "an uncrewed vehicle is not a finding: {:?}",
             no_crew.diagnostics
         );
+    }
+
+    /// T-946.18 — ONE authored vehicle emits TWO rows, and a reader must be able to tell that.
+    ///
+    /// The wave-241 verifier found T-675.1 claiming in its own comment that `uid` was the join
+    /// key, while `ModEntity` had no `uid` and `$defs/entity` was `additionalProperties: false`
+    /// with no such property. The mod already spawns `entities[]`
+    /// (`TBD_MissionLoader.SpawnMissionEntities`), so a roster reader would have spawned every
+    /// crewed vehicle twice with nothing to dedupe on.
+    #[test]
+    fn one_authored_vehicle_emits_two_rows_that_share_a_join_key() {
+        let wire = serde_json::to_value(roster_wire(|_| {})).expect("serialises");
+        let ent = &wire["entities"][0];
+        let veh = &wire["vehicles"][0];
+
+        assert_eq!(ent["alias"], veh["alias"], "same vehicle, both projections");
+        assert_eq!(ent["uid"], "v1", "the entity twin carries the authored id");
+        assert_eq!(veh["uid"], "v1", "so does the roster row");
+        assert_eq!(
+            ent["uid"], veh["uid"],
+            "the two rows one vehicle emits must share a key a reader can dedupe on"
+        );
+
+        // The residual hole, pinned rather than hidden: a blank authored id is not identity, so
+        // neither row gets a key and a reader cannot join them. The editor mints ids, so this is a
+        // document nobody has authored — but it is the shape to look at first if one ever appears.
+        let blank = serde_json::to_value(roster_wire(|p| p["vehicles"][0]["id"] = "".into()))
+            .expect("serialises");
+        assert!(blank["entities"][0].get("uid").is_none());
+        assert!(blank["vehicles"][0].get("uid").is_none());
+    }
+
+    /// T-946.18 — the roster row used to TRIM `inventory`, which the ledger doctrine forbids.
+    ///
+    /// `$defs/vehicle.inventory` exists, the editor authors it as `vehicles[].cargo`, and the
+    /// `entities[]` twin emits it. Omitting it from the roster row was not a drop-whole (the value
+    /// is representable) and produced no finding — it simply vanished.
+    #[test]
+    fn the_roster_row_carries_the_cargo_its_entity_twin_carries() {
+        let wire = serde_json::to_value(roster_wire(|p| {
+            p["vehicles"][0]["cargo"] = serde_json::json!([
+                {"item": "item:mre", "qty": 4},
+                {"item": "   ", "qty": 9},
+                {"item": "item:ifak", "qty": 0}
+            ]);
+        }))
+        .expect("serialises");
+
+        let want = serde_json::json!([{"item": "item:mre", "qty": 4}]);
+        assert_eq!(
+            wire["entities"][0]["inventory"], want,
+            "the entity twin filters blank items and non-positive quantities"
+        );
+        assert_eq!(
+            wire["vehicles"][0]["inventory"], want,
+            "and the roster row must carry the same cargo, not a trimmed view of it"
+        );
+
+        // No cargo authored means no key on either row — an empty array would claim the author
+        // emptied the vehicle, which is a different statement from never having filled it.
+        let bare = serde_json::to_value(roster_wire(|_| {})).expect("serialises");
+        assert!(bare["entities"][0].get("inventory").is_none());
+        assert!(bare["vehicles"][0].get("inventory").is_none());
     }
 
     /// [`parse_seat_id`] — the station projection, over the vocabulary the panel writes and the

@@ -1,0 +1,14 @@
+id = "T-946.19"
+kind = "work"
+title = "Trigger runtime: three holes the verifier found"
+summary = "not_present read TRUE over a live player whose slot had not resolved, repeat was silently inert for timer conditions, and the heartbeat had no idempotence latch so a second schedule would halve every authored timeout."
+class = "chore"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T13:06:00Z"
+notes = "Fixed in the same commit that filed it. Also in that commit: the archives.rs half-extents doc said zero where the writer spells NaN, and the by_kind census order was pinned only at its ends."
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "zones"

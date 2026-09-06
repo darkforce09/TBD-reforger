@@ -1,0 +1,12 @@
+id = "T-946.21"
+kind = "work"
+title = "An objects archive can be served from a foreign generation"
+summary = "The manifest objects block carries a schema version nothing reads, and the two wired archives carry no terrain identity, so a manifest naming a foreign forest-regions archive loads while chunks fall back to this build's JSON."
+class = "chore"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T13:08:00Z"
+
+[scope]
+domain = "engine"
+layer = "world"

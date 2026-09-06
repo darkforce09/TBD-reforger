@@ -943,10 +943,30 @@ mod tests {
         assert_eq!(inventory.terrain_id, "everon");
         assert_eq!(inventory.unique_prefabs as usize, EVERON_PREFABS);
         assert_eq!(inventory.total_instances, EVERON_INSTANCES);
-        // The nine census kinds, `road` last (`INSTANCE_KINDS` order, preserved by serde_json).
-        assert_eq!(inventory.by_kind.len(), 9, "{:?}", inventory.by_kind);
-        assert_eq!(inventory.by_kind[0].kind, "building");
-        assert_eq!(inventory.by_kind[8].kind, "road");
+        // T-946.19 — THE WHOLE ORDER, not its ends. The wave-241 verifier found this pin checked
+        // only `len == 9`, the first kind, the last kind and the instance SUM, so permuting
+        // `by_kind[1..8]` passed every test in both crates while the doc four hundred lines up
+        // calls the order a contract. A reader that indexes this by position would then get a
+        // different kind's counts.
+        assert_eq!(
+            inventory
+                .by_kind
+                .iter()
+                .map(|k| k.kind.as_str())
+                .collect::<Vec<_>>(),
+            vec![
+                "building",
+                "tree",
+                "vegetation",
+                "rock",
+                "prop",
+                "utility",
+                "water",
+                "vehicle",
+                "road",
+            ],
+            "`INSTANCE_KINDS` order with `road` last is the census contract"
+        );
         assert_eq!(
             inventory.by_kind.iter().map(|k| k.instances).sum::<u64>(),
             EVERON_INSTANCES,

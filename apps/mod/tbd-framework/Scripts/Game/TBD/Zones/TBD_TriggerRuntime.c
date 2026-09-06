@@ -1251,7 +1251,12 @@ class TBD_TriggerRuntime
 
 		if (trigger.m_eState == TBD_ETriggerState.FIRED)
 		{
-			if (!holds)
+			// T-946.19 - a TIMER condition NEVER falls: `ConditionHolds` returns true for it
+			// unconditionally, because the condition IS "time has passed since arming". Re-arming
+			// only on a fall therefore made `repeat` silently inert for every timer trigger - it
+			// fired once and never again, while the prepared-trigger log printed `repeat=1`. A
+			// repeating timer is a PERIODIC one, so it re-arms itself and the dwell starts over.
+			if (!holds || trigger.m_eCondition == TBD_ETriggerCondition.TIMER)
 			{
 				trigger.m_eState = TBD_ETriggerState.ARMED;
 				trigger.m_fHeldSeconds = 0;
@@ -1330,7 +1335,20 @@ class TBD_TriggerRuntime
 			return CountInside(trigger.m_Zone, trigger.m_sOwnerSide, true) > 0;
 
 		if (trigger.m_eCondition == TBD_ETriggerCondition.NOT_PRESENT)
-			return CountInside(trigger.m_Zone, trigger.m_sOwnerSide, true) == 0;
+		{
+			// T-946.19 - "nobody of this side is here" is the dangerous answer, so it needs more
+			// than the matching count. A live player whose slot has not resolved carries an EMPTY
+			// faction key, and CountInside skips an empty key whenever ownerSide is named - so a
+			// section standing in the zone mid-respawn read as an empty zone, and a not_present +
+			// end_mission mission would have ended the round over them. That is the same failure
+			// SnapshotPlayers was fixed for one layer up, arriving through a per-player gap
+			// instead of a missing manager. Somebody unidentified inside the zone means the
+			// question cannot be answered, so it is answered FALSE.
+			if (CountInside(trigger.m_Zone, trigger.m_sOwnerSide, true) > 0)
+				return false;
+
+			return CountUnknownInside(trigger.m_Zone) == 0;
+		}
 
 		if (trigger.m_eCondition == TBD_ETriggerCondition.SEIZED_BY)
 		{
@@ -1380,6 +1398,41 @@ class TBD_TriggerRuntime
 				if (playerFaction.IsEmpty() || playerFaction == factionKey)
 					continue;
 			}
+
+			if (zone && !zone.Contains(s_aPlayerX[i], s_aPlayerZ[i]))
+				continue;
+
+			hits++;
+		}
+
+		return hits;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-946.19 - how many live players inside `zone` have no resolved faction.
+	//!
+	//! A player in the snapshot with an empty faction key is a real body standing on real ground
+	//! whose SIDE the runtime does not know: `TBD_SpawnManager.GetAssignedSlot` returns null between
+	//! joining and being assigned, and mid-respawn. [`CountInside`] deliberately skips them, because
+	//! counting an unidentified body as hostile would make `seized_by` unusable on any server with
+	//! an admin walking around.
+	//!
+	//! That is right for the questions where an extra body would BLOCK a fire, and wrong for the one
+	//! question where their absence CAUSES it. `not_present` asks whether a zone is empty of a side,
+	//! and answering "yes" over somebody it cannot identify is the same shape of confident-wrong the
+	//! empty-snapshot bug was: the round ends, and it looks exactly like the authored condition
+	//! being met. So `not_present` asks this too, and stands down when it is non-zero.
+	protected static int CountUnknownInside(TBD_Zone zone)
+	{
+		if (!s_aPlayerIds)
+			return 0;
+
+		int hits = 0;
+		int count = s_aPlayerIds.Count();
+		for (int i = 0; i < count; i++)
+		{
+			if (!s_aPlayerFaction[i].IsEmpty())
+				continue;
 
 			if (zone && !zone.Contains(s_aPlayerX[i], s_aPlayerZ[i]))
 				continue;
@@ -2081,8 +2134,20 @@ modded class SCR_BaseGameMode
 		if (!TBD_FrameworkManager.IsFrameworkWorld())
 			return;
 
+		// T-946.19 - schedule AT MOST ONE tick per game mode instance. The stale-timer defence
+		// below is `GetGame().GetGameMode() != this`, which two timers on the SAME instance both
+		// pass: if OnGameStart ever ran twice here, the tick rate would double and every authored
+		// `timeoutSeconds` would be halved, silently and only on that server. A latch costs one
+		// bool and removes the whole class.
+		if (m_bTBD_TriggerTickArmed)
+			return;
+
+		m_bTBD_TriggerTickArmed = true;
 		GetGame().GetCallqueue().CallLater(TBD_TriggerTick, TBD_TriggerRuntime.TICK_MS, false);
 	}
+
+	//! T-946.19 - set once the heartbeat is scheduled; see OnGameStart.
+	protected bool m_bTBD_TriggerTickArmed;
 
 	//------------------------------------------------------------------------------------------------
 	//! One evaluation, then re-arm.

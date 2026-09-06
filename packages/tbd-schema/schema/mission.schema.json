@@ -743,6 +743,11 @@
       "additionalProperties": false,
       "properties": {
         "alias": { "$ref": "#/$defs/alias" },
+        "uid": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "T-946.18 (schemaVersion 1.3) — stable identity for this entity, carried verbatim from the editor, the same role `slot.uid` and `vehicle.uid` play. THIS IS THE JOIN KEY BETWEEN THE TWO ROWS ONE AUTHORED VEHICLE EMITS: T-675.1 emits a placed vehicle as an `entities[]` alias row AND a `vehicles[]` roster row, deliberately, and until this property existed the two had nothing in common to match on — while the mod already spawns `entities[]` (`TBD_MissionLoader.SpawnMissionEntities`), so a roster reader would have spawned every crewed vehicle twice. A reader dedupes on `entity.uid == vehicle.uid`. Optional: an entity nothing references needs no uid, and a blank or wire-unsafe authored id yields no key rather than a repaired one."
+        },
         "x": { "type": "number" },
         "z": { "type": "number" },
         "headingDeg": { "type": "number", "minimum": 0, "maximum": 360 },
