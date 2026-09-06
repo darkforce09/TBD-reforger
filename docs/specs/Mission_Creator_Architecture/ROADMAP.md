@@ -12,7 +12,6 @@
 ### Recommended next work (auto-generated)
 
 - **T-940** — Website platform: events, telemetry, admin, content (queued)
-- **T-298** — Gate tbd-tools density tests in CI (ready)
 - **T-943** — platform wave push deadlocks on large LFS ranges (ready)
 - **T-300** — Shared CARGO_TARGET_DIR serves unmerged slice binaries (ready)
 - **T-924** — Gate verdict receipt required at land (ready)
@@ -21,6 +20,7 @@
 - **T-277** — 27.4% of the map catalogue is unclassified (ready)
 - **T-149** — Forest mass polygon smoothing (ready)
 - **T-676** — Trigger activation and effects — the Enfusion runtime (ready)
+- **T-677** — Waypoints — group movement orders (ready)
 <!-- ticket-sync:next:end -->
 
 ---

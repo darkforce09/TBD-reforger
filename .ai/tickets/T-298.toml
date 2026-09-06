@@ -3,7 +3,7 @@ kind = "work"
 title = "Gate tbd-tools density tests in CI"
 summary = "`cargo test -p tbd-tools --lib density::` passes on main today (2 tests, 2026-09-05) but no CI lane runs it; add the tbd-tools lib tests to ci.yml and pin the corner-partition invariant with a seeded randomized test."
 class = "chore"
-status = "ready"
+status = "shipped"
 order = 7040
 spec = "docs/specs/ideas/t298_tbd_tools_gate.md"
 plan = "docs/plans/t-298_plan.md"
@@ -35,6 +35,7 @@ acceptance = [
     "The randomized partition test passes on main and appears in the CI log.",
 ]
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-06T00:28:25Z"
 owns = [
     "tools/tbd-tools/src/density.rs",
     ".github/workflows/ci.yml",

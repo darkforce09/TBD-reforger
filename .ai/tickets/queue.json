@@ -6,13 +6,6 @@
   "git_base": "main",
   "tickets": [
     {
-      "id": "T-298",
-      "title": "Gate tbd-tools density tests in CI",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t298_tbd_tools_gate.md",
-      "branch": "ticket/T-298"
-    },
-    {
       "id": "T-943",
       "title": "platform wave push deadlocks on large LFS ranges",
       "status": "ready",

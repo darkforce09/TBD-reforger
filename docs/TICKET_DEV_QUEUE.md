@@ -5,14 +5,6 @@
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
 
-## T-298 — Gate tbd-tools density tests in CI
-
-- **Slice spec:** `docs/specs/ideas/t298_tbd_tools_gate.md`
-- **Program hub:** `docs/specs/ideas/t298_tbd_tools_gate.md`
-- **Branch:** `ticket/T-298`
-- **Targets:** 
-- **Summary:** `cargo test -p tbd-tools --lib density::` passes on main today (2 tests, 2026-09-05) but no CI lane runs it; add the tbd-tools lib tests to ci.yml and pin the corner-partition invariant with a seeded randomized test.
-
 ## T-943 — platform wave push deadlocks on large LFS ranges
 
 - **Slice spec:** `docs/specs/factory/t943_push_guard_deadlock.md`

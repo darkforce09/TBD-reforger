@@ -8,7 +8,6 @@
 
 ## Ready
 
-- **T-298** (7040) — Gate tbd-tools density tests in CI [ready] — `cargo test -p tbd-tools --lib density::` passes on main today (2 tests, 2026-09-05) but no CI lane runs it; add the tbd-tools lib tests to ci.yml and pin the corner-partition invariant with a seeded randomized test.
 - **T-943** (7050) — platform wave push deadlocks on large LFS ranges [ready] — cmd_push's LFS guard pipes every path of a commit into git check-attr without draining stdout; a commit touching 1,691 files wedges both processes forever, and on a host with git-lfs the guard refuses a legitimate push.
 - **T-300** (7060) — Shared CARGO_TARGET_DIR serves unmerged slice binaries [ready] — A binary built inside a slice worktree counts as fresh for a main-checkout build under the shared CARGO_TARGET_DIR, so run-style lanes can execute unmerged code; run-only binaries get their own target and preflight checks the build stamp.
 - **T-924** (7070) — Gate verdict receipt required at land [ready] — platform wave gate writes a verdict file (HEAD sha plus verdict) and platform wave land refuses a landing ticket without a fresh one. Forward-only: future lands only, no backfill, existing tickets stay green untouched.
