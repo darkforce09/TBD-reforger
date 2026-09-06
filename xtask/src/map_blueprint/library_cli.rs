@@ -1,5 +1,9 @@
 //! The CLI arm of `cargo xtask map bvh-batch --all-prefabs` (T-090.12.2): argument parsing, the
 //! census report and the write. The library itself is [`super::library`].
+//!
+//! T-935.8 adds the `archive` subcommand ([`run_archive`]) — the rkyv fold of what this command
+//! wrote. The two are deliberately the same CLI arm: an archive is only ever as good as the
+//! descriptor library it is built from, so they belong next to each other.
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -92,6 +96,13 @@ pub(super) fn print_report(lib: &Library, census: &HashMap<u32, u64>, terrain: &
     if noted > 20 {
         println!("  … {} more blocks:false descriptors", noted - 20);
     }
+}
+
+/// T-935.8 — `map blueprint-from-voxels archive [--terrain everon] [--out <prefabs dir>]
+/// [--dry-run]`: fold the emitted descriptor library, its BLAS index and the extracted blueprints
+/// into `prefabs/building_blueprints.rkyv`, and print what a Workbench pass still owes it.
+pub fn run_archive(args: &[String]) -> Result<u8> {
+    super::archive_emit::run(args)
 }
 
 /// The `--all-prefabs` arm of `map bvh-batch`.

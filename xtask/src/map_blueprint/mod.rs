@@ -9,7 +9,16 @@
 //! Usage: `--filter <substr> [--src <dir>] [--out <dir>] [--algo segments|grid]
 //!         [--params <file.json>] [--debug-dir <dir>]`
 //! Exit: 0 = every matched dump interpreted and validated · 1 = no match or any failure.
+//!
+//! **Subcommand `archive`** (T-935.8) — `cargo xtask map blueprint-from-voxels archive
+//! [--terrain everon] [--out <prefabs dir>] [--dry-run]` folds the emitted library
+//! (`prefabs/blas-manifest.json` + `descriptors/*.json` + `buildings/*.json`) into one
+//! `prefabs/building_blueprints.rkyv` — see [`archive_emit`]. It takes the first positional token,
+//! so it does not collide with `blueprint-from-voxels`' own flags; the archive is *not* reachable
+//! as `cargo xtask map-blueprint archive` because that top-level command does not exist (the
+//! `map_blueprint` module hangs off `map blueprint-from-voxels`, `xtask/src/main.rs:496`).
 
+mod archive_emit;
 mod batch;
 mod bvh;
 mod emit;
@@ -57,6 +66,11 @@ use params::Params;
 use walls::Algo;
 
 pub fn run(args: &[String]) -> Result<u8> {
+    // T-935.8 — `… blueprint-from-voxels archive [--terrain everon]`: the rkyv fold of the emitted
+    // library. A leading positional token, so every existing flag parse below is untouched.
+    if args.first().is_some_and(|a| a == "archive") {
+        return library_cli::run_archive(&args[1..]);
+    }
     let root = find_repo_root()?;
     let mut src_override: Option<PathBuf> = None;
     let mut out_override: Option<PathBuf> = None;
