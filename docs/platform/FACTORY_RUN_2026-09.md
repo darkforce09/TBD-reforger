@@ -79,3 +79,24 @@ edit, in-editor play button.
   gate and the close needed `TBD_GATE_BASE_CONFIRM`: oracle 2 cannot corroborate a base whose wave
   has no rows in `wave.lock`, which is the price of the pre-T-946 numbering and should stop being
   paid now that labels and the ledger agree.
+
+- 2026-09-06 **WAVE 236 CLOSED** (`35328a7b1`): T-305 pak entry offsets are absolute, T-298 the
+  tbd-tools density lane runs in CI, T-943 the push guard no longer deadlocks. Gate PASS twice —
+  once at the landing tree and again after the harness fixes below, because code changed between
+  them. Closed with `--tickets`, since the wave's own ids had already left the lock.
+- 2026-09-06 Wave 236 verifier: two MAJORs against the COMMAND CENTER's own T-946 work, both fixed
+  in `49569e0ff`. (1) `ticket ship`'s repack hook re-shaped a wave that was being run: it repacks
+  with no environment and `max_concurrent()` defaults to 8, so a 3-wide wave 236 came back holding
+  eight different tickets and had nothing left to close. `compile` now inherits the previous lock's
+  width unless `TBD_MAX_CONCURRENT` asks otherwise. (2) The `--no-repack` waiver swallowed
+  `missing_lock_error`, which carries the same "run `cargo xtask wave repack`" phrase and is
+  returned ALONE ahead of every other lock check — so `ship --no-repack` could write ticket status
+  with no plan on disk. Excluded by identity. A third lesson rode along: the first width test used
+  `set_var("TBD_MAX_CONCURRENT")` and made a sibling fail one run in three, so `compile_with_cap`
+  exists and no test mutates that variable.
+- 2026-09-06 Wave 236 findings filed: T-954 check-attr answers are never counted against the paths
+  fed; T-955 the git-lfs probe misses the operator's Homebrew install, so T-943's normal-push branch
+  never runs through the factory PATH; T-956 `ci-local` claims to mirror ci.yml and no longer does;
+  **T-957 `apps/mod/vanilla_reference` is 2,483 rotated files from the pre-T-305 reader and the
+  committed enf-index TSVs were built over them** — filed, not fixed, because re-extraction wipes
+  and rewrites a committed artifact tree; T-958 a stale test count in a comment.
