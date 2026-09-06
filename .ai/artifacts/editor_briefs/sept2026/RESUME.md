@@ -13,18 +13,25 @@ T-946 (2026-09-06) re-seated the lock's wave labels on the close-marker ledger, 
 after it as **236**. Older notes in `docs/platform/FACTORY_RUN_2026-09.md` still say 248 — that is the
 same wave. Do not try to reconcile them by renumbering anything; the ledger is right now.
 
-## State at last save (2026-09-06)
-- **wave 235 CLOSED** `b6a3cfd89` — T-940.5 DB pool config, T-940.6 audit LISTEN/NOTIFY, T-311
-  leaderboard tie-break, T-934.1 reorg A1. Gate PASS, verifier clean, pushed.
-- **wave 236 CLOSED** `35328a7b1` — T-305 pak offsets are absolute, T-298 tbd-tools density lane in
-  CI, T-943 push guard deadlock. Gate PASS twice, verifier's two harness MAJORs fixed, pushed.
-- **wave 237 DISPATCHED** — T-300 (shared target dir serves unmerged binaries), T-935.1 (world::binary
-  POD + rkyv archives), T-277 (27.4% of the map catalogue unclassified). Briefs at
-  `.ai/artifacts/editor_briefs/sept2026/wave237/`, worktrees live, three agents running.
-- Open findings filed, none fixed: T-947…T-953 (wave 235 verifier), T-954…T-958 (wave 236 verifier).
-  **T-957 is the one to look at**: `apps/mod/vanilla_reference` is 2,483 files rotated by the
-  pre-T-305 pak reader, and the committed `enf-index` TSVs were built over them. Re-extraction wipes
-  and rewrites a committed artifact tree, so it needs an operator word.
+## State at last save (2026-09-06, late)
+- **CLOSED AND PUSHED: waves 235, 236, 237, 238, 239.** 21 tickets shipped. Markers `b6a3cfd89`,
+  `35328a7b1` (DISAVOWED, see below), `4f2d4598f`, `ad9b22890`, `4f7a0daa7`, `b0257e946`.
+- **Wave 240 is next**: `cargo xtask platform wave status` names it. Briefs go in
+  `.ai/artifacts/editor_briefs/sept2026/wave240/`; copy the wave239 ones as the template — they
+  carry the bridge block, the corrected gate scope and rules 16/17.
+- The first wave-236 marker was disavowed (`36f462d3f`) because its label collided with an open
+  wave. `--close --tickets` refuses that now. Do not be alarmed by two `wave 236 CLOSED` subjects.
+- **49 findings filed, T-947…T-998.** The ones needing an operator decision, not an agent:
+  * **T-957** — `apps/mod/vanilla_reference` is 2,483 files rotated by the pre-T-305 pak reader,
+    and the committed `enf-index` TSVs were built over them. Re-extraction rewrites a committed
+    artifact tree.
+  * **T-981 / T-985** — the building archive cannot carry the 1,322 BLOCKING prefabs (no instance
+    records on the wire) and drops the boot hot-set. Both slices took the safe path; T-935.13's
+    plan assumes neither limit exists. Something in that plan has to give.
+  * **T-993** — the satellite BOOT path still refuses any container but v1. Flip the manifest
+    without changing it and the basemap silently drops to the low-res preview.
+  * **T-994 / T-995** — forest smoothing emits self-crossing rings (38 on everon), and the editor
+    filters out every forest region so none of it renders. Fix the second before the first matters.
 
 ## THE BRIDGE — every cargo command runs on the host
 This session runs inside the `claude-desktop` container (glibc 2.36). The shared cache
