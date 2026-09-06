@@ -1,0 +1,11 @@
+id = "T-982"
+kind = "work"
+title = "map-blueprint archive subcommand name is wrong"
+summary = "The ticket and docs name cargo xtask map-blueprint archive, which does not exist. The real command is cargo xtask map blueprint-from-voxels archive. Also the ticket says six golden blueprints; the tree has three."
+class = "docs"
+status = "idea"
+created_at = "2026-09-06T05:12:24Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

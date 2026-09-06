@@ -1,0 +1,11 @@
+id = "T-981"
+kind = "work"
+title = "Occluder archive cannot carry blocking prefabs"
+summary = "The archived descriptor has no instances field, so a blocking prefab seeded from the archive traces a coarse AABB forever with nothing logged. 1322 of 1623 block, and no slice puts instance records on the wire."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T05:12:17Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
