@@ -32,8 +32,10 @@ acceptance = [
     "A pak entry read through read_file equals the bytes the entry table describes, compressed or not.",
     "The synthetic-pak test stays green and fails if either seek regains the data_start term.",
 ]
+shipped_at = "adc3eed7f"
 created_at = "2026-09-05T03:30:00Z"
 completed_at = "2026-09-06T00:27:19Z"
+estimated = ["tokens"]
 owns = ["tools/tbd-tools/src/world/pak.rs"]
 
 [scope]
