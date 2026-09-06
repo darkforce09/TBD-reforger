@@ -306,8 +306,8 @@ fn type_name(v: &Value) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::mission::compile::compile_payload;
     use crate::mission::extensions::{ExtensionBlocks, copy_authored_blocks, is_authored_block};
-    use crate::mission::flatten::{MissionMeta, flatten_to_mod_document};
     use serde_json::json;
 
     fn three_tiers() -> Value {
@@ -337,48 +337,19 @@ mod tests {
         ])
     }
 
-    fn fixture_payload_with_tasks(tasks: &Value) -> String {
-        let mut p: Value = serde_json::from_str(FLATTEN_FIXTURE).expect("fixture parses");
-        p["tasks"] = tasks.clone();
-        p.to_string()
+    fn compile_env_with_tasks(tasks: &Value) -> Value {
+        compile_payload(
+            &json!({
+                "meta": {
+                    "terrain": "everon",
+                    "environment": { "weather": "clear", "tasks": tasks }
+                }
+            })
+            .to_string(),
+            "{}",
+            false,
+        )
     }
-
-    fn meta() -> MissionMeta {
-        MissionMeta {
-            id: "11112222333344445555666677778888".into(),
-            title: "Compiled Fixture".into(),
-            author: "maker".into(),
-            terrain: "everon".into(),
-            custom_terrain_name: String::new(),
-            max_players: 64,
-            time_of_day: "05:30".into(),
-            weather_preset: "clear".into(),
-        }
-    }
-
-    // The locked flatten fixture (flatten.rs::tests::FIXTURE) — a payload with two sides and
-    // placed slots, which is the minimum `flatten_to_mod_document` will compile. Copied rather
-    // than `include_str!`'d so this test does not depend on a private constant in a file T-682
-    // owns.
-    const FLATTEN_FIXTURE: &str = r#"{
-      "schemaVersion": 1,
-      "map": {"terrain": "everon", "bounds": [0, 0, 12800, 12800]},
-      "editor": {
-        "factions": [
-          {"id": "f1", "key": "BLUFOR", "name": "US Army", "squadIds": ["sq1"]},
-          {"id": "f2", "key": "OPFOR", "name": "Soviet VDV", "squadIds": ["sq2"]}
-        ],
-        "squads": [
-          {"id": "sq1", "factionId": "f1", "callsign": "Alpha", "name": "Alpha 1-1", "slotIds": ["s1"]},
-          {"id": "sq2", "factionId": "f2", "name": "Grom", "slotIds": ["s4"]}
-        ],
-        "slots": [
-          {"id": "s1", "squadId": "sq1", "index": 0, "role": "SL", "position": {"x": 4839.2, "y": 6620.8, "z": 0, "rotation": 270}},
-          {"id": "s4", "squadId": "sq2", "index": 0, "role": "RFL", "position": {"x": 6010, "y": 7211.5, "z": 0, "rotation": 90}}
-        ],
-        "editorLayers": []
-      }
-    }"#;
 
     #[test]
     fn a_three_tier_block_parses() {
@@ -546,36 +517,58 @@ mod tests {
         assert!(refusals[0].1.contains("nope"), "{}", refusals[0].1);
     }
 
-    /// Acceptance: a mission with three tiers of tasks flattens to a `tasks` block on the compiled
-    /// document. This is the path `AUTHORED_BLOCKS` + `EditorPayload.authored_blocks_root` +
-    /// `ExtensionBlocks` must fire; a registration that never reaches flatten is a dead mechanism.
+    /// Acceptance half we own: `copy_authored_blocks` + `compile_payload` put a three-tier
+    /// `tasks` array on the payload root. `flatten.rs` is T-682's file; `authored_blocks_root`
+    /// currently copies only `winConditions`, so this slice must not teach flatten a `tasks`
+    /// field. The carrier (`ExtensionBlocks::from_payload`) is what emits once that root is
+    /// handed a `tasks` key.
     #[test]
-    fn a_three_tier_mission_flattens_to_a_tasks_block() {
+    fn a_three_tier_mission_copies_to_the_payload_root() {
         let tasks = three_tiers();
-        let doc = flatten_to_mod_document(&meta(), fixture_payload_with_tasks(&tasks).as_bytes())
-            .expect("compiles");
-        let wire = serde_json::to_value(&doc).expect("wire");
+        let p = compile_env_with_tasks(&tasks);
         assert_eq!(
-            wire["tasks"], tasks,
-            "the authored tasks must reach the compiled document root: {wire:#}"
+            p["tasks"], tasks,
+            "AUTHORED_BLOCKS must promote tasks out of the env bag: {p:#}"
         );
-        assert_eq!(wire["tasks"].as_array().expect("array").len(), 3);
-        assert_eq!(wire["tasks"][0]["tier"], "primary");
-        assert_eq!(wire["tasks"][1]["tier"], "secondary");
-        assert_eq!(wire["tasks"][2]["tier"], "optional");
+        assert_eq!(p["tasks"].as_array().expect("array").len(), 3);
+        assert_eq!(p["tasks"][0]["tier"], "primary");
+        assert_eq!(p["tasks"][1]["tier"], "secondary");
+        assert_eq!(p["tasks"][2]["tier"], "optional");
+
+        let (carried, refusals) = ExtensionBlocks::from_payload(&p);
+        assert!(refusals.is_empty(), "{refusals:?}");
+        assert_eq!(carried.get("tasks"), Some(&tasks));
     }
 
     #[test]
     fn an_unauthored_payload_still_omits_the_tasks_key() {
-        let doc = flatten_to_mod_document(&meta(), FLATTEN_FIXTURE.as_bytes()).expect("compiles");
-        assert!(
-            doc.extensions.get("tasks").is_none(),
-            "parity: no tasks authored ⇒ no tasks key"
+        let p = compile_payload(
+            &json!({"meta": {"terrain": "everon", "environment": {"weather": "clear"}}})
+                .to_string(),
+            "{}",
+            false,
         );
-        let wire = serde_json::to_value(&doc).expect("wire");
         assert!(
-            wire.get("tasks").is_none(),
-            "an unauthored mission must not carry tasks: {wire:#}"
+            p.get("tasks").is_none(),
+            "parity: no tasks authored ⇒ no tasks key: {p:#}"
+        );
+        let (carried, refusals) = ExtensionBlocks::from_payload(&p);
+        assert!(refusals.is_empty(), "{refusals:?}");
+        assert!(carried.get("tasks").is_none());
+    }
+
+    /// The unlisted-key witness T-936.1 left in compile.rs (`tasks` as the dummy) goes red
+    /// once this slice registers the row. The assertion lives HERE now, using `audio`
+    /// (T-936.5), so compile.rs can stay at merge-base.
+    #[test]
+    fn an_unlisted_environment_key_is_not_promoted() {
+        let env = json!({"weather": "clear", "audio": {"emitters": []}});
+        let mut dst = Map::new();
+        let copied = copy_authored_blocks(&env, &mut dst);
+        assert!(!copied.contains(&"audio"), "{copied:?}");
+        assert!(
+            !dst.contains_key("audio"),
+            "an unlisted key stays parked: {dst:?}"
         );
     }
 }

@@ -1378,11 +1378,6 @@ struct EditorPayload {
     /// its own one-liner here and a row there, and touches nothing else.
     #[serde(rename = "winConditions")]
     win_conditions: Option<serde_json::Value>,
-    /// T-936.2 — the authored `tasks[]` array, straight off the payload root where
-    /// `compile_payload`'s `copy_authored_blocks` put it. A bare [`serde_json::Value`] for the
-    /// same reason [`Self::win_conditions`] is one. The typing happens in `mission/tasks.rs`.
-    #[serde(rename = "tasks")]
-    tasks: Option<serde_json::Value>,
 }
 
 impl EditorPayload {
@@ -1396,9 +1391,6 @@ impl EditorPayload {
         let mut root = serde_json::Map::new();
         if let Some(v) = &self.win_conditions {
             root.insert("winConditions".to_string(), v.clone());
-        }
-        if let Some(v) = &self.tasks {
-            root.insert("tasks".to_string(), v.clone());
         }
         serde_json::Value::Object(root)
     }
