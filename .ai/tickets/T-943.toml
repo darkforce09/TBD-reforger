@@ -38,8 +38,10 @@ acceptance = [
     "On this host the push uploads LFS objects through the normal hook path and the remote clone is intact.",
     "Without git-lfs the guard still refuses --no-verify over LFS content with the same message.",
 ]
+shipped_at = "b8b6804da"
 created_at = "2026-09-04T21:47:41Z"
 completed_at = "2026-09-06T00:28:35Z"
+estimated = ["tokens"]
 owns = ["xtask/src/wave/push.rs"]
 
 [scope]
