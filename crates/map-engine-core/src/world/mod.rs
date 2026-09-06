@@ -5,6 +5,16 @@
 //! deck.gl; the JS boundary is the `map-engine-wasm` `WorldStore` handle.
 
 mod airfield;
+/// T-935.1 — the one authoritative definition of every TBD map binary format: the 32-byte
+/// `ObjectInstancePod`, the TBDC/TBDE/TBDB/TBDS container headers, and the rkyv 0.8 Tier-2
+/// archives. `pub mod` rather than re-exported: several wire types deliberately share a name with
+/// their `f64` parser twin here (`PrefabEntry`, `BuildingLevel`, `BlasEntry`), and the path is what
+/// keeps "the row on disk" and "the row in memory" from being confused for each other.
+///
+/// Gated on `binary`, which `world` enables — so a `world` build always has it, and a consumer
+/// that wants only the formats can take `binary` alone without the flate2/serde_json parser stack.
+#[cfg(feature = "binary")]
+pub mod binary;
 mod cartographic_strip;
 mod chunk;
 mod chunk_math;
@@ -78,7 +88,9 @@ pub use lod_gates::{
     WORLD_RENDER_CLASSES, class_visible, contour_interval_for_zoom,
 };
 pub use manifest::{
-    ChunkCell, DEFAULT_CHUNK_SIZE_M, ObjectsManifest, narrow_cells, parse_objects_manifest,
+    BuildingsBlock, ChunkCell, DEFAULT_CHUNK_SIZE_M, DemRawBlock, LabelsBlock, ManifestBinary,
+    ObjectsBinaryBlock, ObjectsManifest, SAT_UNIFIED_ENCODING_V2, TBDC_CONTAINER, WaterBlock,
+    narrow_cells, parse_manifest_binary, parse_objects_manifest, satellite_unified_encoding,
 };
 pub use obb::{
     BuildingPrefabInfo, FencePrefabInfo, building_prefab_lookup, fence_prefab_lookup, obb_corners,
