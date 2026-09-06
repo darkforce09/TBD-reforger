@@ -1,0 +1,20 @@
+id = "T-946.46"
+kind = "work"
+title = "Unauthored nightVision strips NVG gadgets"
+summary = "JsonLoadContext binds omitted settings.nightVision as false so FrameworkManager strips NVG on every unauthored mission."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T01:30:03Z"
+
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",
+]
+verify = [
+    "a mission that omits settings.nightVision must leave kit NVG gadgets in place",
+]
+
+[scope]
+domain = "repo"
+layer = "docs"

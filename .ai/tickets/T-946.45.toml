@@ -1,0 +1,19 @@
+id = "T-946.45"
+kind = "work"
+title = "Weather timeline panel never mounts"
+summary = "weather_timeline.rs is registered in panels/mod.rs but settings_modal.rs never mounts it, same as T-946.33."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T01:30:02Z"
+
+owns = [
+    "apps/website/frontend/src/editor/panels/settings_modal.rs",
+]
+verify = [
+    "Mission Settings dialog must render the weather timeline keyframe list",
+]
+
+[scope]
+domain = "repo"
+layer = "docs"

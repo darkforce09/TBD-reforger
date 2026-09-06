@@ -1,0 +1,19 @@
+id = "T-946.44"
+kind = "work"
+title = "Flatten drops weatherTimeline from compiled"
+summary = "EditorPayload authored_blocks_root copies only winConditions tasks radioPlan so weatherTimeline dies at flatten."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T01:30:01Z"
+
+owns = [
+    "crates/map-engine-core/src/mission/flatten.rs",
+]
+verify = [
+    "flatten_to_mod_document of a payload with weatherTimeline keyframes must emit the block on /compiled",
+]
+
+[scope]
+domain = "repo"
+layer = "docs"
