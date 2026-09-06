@@ -282,3 +282,44 @@ edit, in-editor play button.
   add would have handed its bytes to nothing. **T-946.17**: neither the slice gate nor the wave gate
   has a `mod compile` step, so 2107 lines of Enfusion landed with no gate compiling them; the
   command centre ran it by hand, which is the manual step a gate exists to remove.
+
+- 2026-09-06 **WAVE 242 CLOSED** (`54153870d`) — T-935.14 the prefab archive reaching the residency,
+  T-935.12 the binary formats made schema-described, golden-gated and LFS-routed, T-674.2 the
+  Enfusion reader for slot identity and squad leader. Closed from a RESERVED pending entry again.
+- 2026-09-06 **THE MOD COMPILE GATE HAD BEEN COMPILING THE WRONG COPY OF EVERY SHARED SCRIPT**
+  (T-946.23, `dbaf92891`). The Enfusion VFS overlays addons BY PATH and the last one wins; the gate
+  listed `TBD_Framework,TBD_Export`, so all 139 shared paths compiled from tbd-EXPORT and the
+  framework tree — the only one the shipping server loads — went unread. Found by the T-674.2
+  agent, which could not explain why its framework-only probe compiled clean. Reproduced before
+  acting: an undefined function planted in `tbd-framework/.../TBD_MissionSlotStruct.c` gave
+  `OK: compiled clean`, exit 0. **THIS RETRACTS A CLAIM MADE IN THIS LEDGER ONE WAVE EARLIER**: the
+  wave-241 row says both copies of `TBD_MissionValidator.c` were inside the compile count. Only the
+  export copy was. T-676's `TBD_TriggerRuntime.c` is framework-only and genuinely was compiled.
+- 2026-09-06 Wave 242 verifier, and it went straight at that fix: **one BLOCKER of my own making.**
+  `mirror_lockstep` walked the EXPORT tree and skipped any path with no framework twin, so moving
+  `tbd-framework/.../TBD_Log.c` aside left the gate green with the file count UNCHANGED — export's
+  copy stepped into its place and nothing said so. The same defect class the fix was written for,
+  reintroduced in the opposite direction. Also MAJOR: the stripper it borrowed finds `//` BEFORE
+  blanking string literals, so a divergence after any `"http://…"` was invisible; and it ERASED
+  literal contents, so two mirrors could name different resource GUIDs — different UI layouts — and
+  pass. And the addon flip did not change only scripts: three shared NON-script paths differ
+  byte-for-byte while carrying identical GUIDs, so the flip swapped which body resolves.
+  All four fixed in T-946.24: an explicit list of the 13 legitimately export-only scripts (so a
+  missing framework file is detectable at all), literals blanked before `//`, literals KEPT and
+  ASCII-folded rather than erased, and every shared non-script path compared with a three-entry
+  allowlist. The lockstep also grew from `Scripts/Game` to all of `Scripts`, covering the 84 shared
+  WorkbenchGame scripts that neither tree compiles.
+- 2026-09-06 The lockstep found one real drift on its first honest run: the framework and export
+  copies of `TBD_RegistryItemsExportPlugin.c` called `TBD_ExportJson.Escape` and
+  `TBD_MapExportJson.Escape` — the alias and the class it aliases. Both compile, so nothing had
+  ever noticed. Aligned on the alias, which `TBD_MapExportPaths.c:164` documents as existing for
+  this exact caller.
+- 2026-09-06 Also from the wave 242 report, fixed in the same pass (T-946.24): an `objects.binary`
+  path set to `""` passed both the schema and the gate, resolving to the asset directory itself;
+  the three archive lanes in `world_host` discarded their own refusals with `is_ok()` and fell back
+  to JSON in silence, so a catalogue built for another terrain or carrying a duplicate `prefabId`
+  cost a slower boot and said nothing; and `load_count_guard`'s message named tbd-framework
+  specifically while measuring the UNION of both addons, so it could never have detected the thing
+  it named. Filed, not fixed: **T-946.25** — the prefab lane's parity pin compares the archive
+  against an f32-NARROWED copy of the export rather than the committed f64 export, so on the real
+  input the two lanes differ by f32 rounding; the code says so and the acceptance does not.

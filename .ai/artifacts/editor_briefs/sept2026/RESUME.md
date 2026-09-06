@@ -14,12 +14,17 @@ after it as **236**. Older notes in `docs/platform/FACTORY_RUN_2026-09.md` still
 same wave. Do not try to reconcile them by renumbering anything; the ledger is right now.
 
 ## State at last save (2026-09-06, wave 240 closed and pushed)
-- **CLOSED AND PUSHED: waves 235 … 241.** 27 tickets shipped. Markers `b6a3cfd89`, `35328a7b1`
+- **CLOSED AND PUSHED: waves 235 … 242.** 30 tickets shipped. Markers `b6a3cfd89`, `35328a7b1`
   (DISAVOWED, see below), `4f2d4598f`, `ad9b22890`, `4f7a0daa7`, `b0257e946`, `52a038a77`,
-  `cd37d1a78`.
-- **Wave 242 is next**: `cargo xtask platform wave status` names it. Expected T-935.14 (the prefab
-  archive's residency reader — filed from wave 241 and packed first), T-935.12 and T-674.2. Copy
-  the wave241 briefs as the template; they carry the bridge block and rules 1-18.
+  `cd37d1a78`, `54153870d`.
+- **Wave 243 is next**: `cargo xtask platform wave status` names it. Copy the wave242 briefs as the
+  template; they carry the bridge block and rules 1-18.
+- **THE MOD GATE IS REAL NOW, AND IT WAS NOT BEFORE.** For every wave up to 242 the Enfusion gate
+  compiled tbd-EXPORT's copy of all 139 shared scripts and never read tbd-framework, which is the
+  only tree the shipping server loads (T-946.23). Framework is compiled last now and the mirrors it
+  no longer compiles are held in lockstep (T-946.24). Any Enfusion change must be made in BOTH
+  trees or the gate refuses it — the export tree is ASCII-only, the framework tree is not, and the
+  lockstep folds that punctuation away.
 - The first wave-236 marker was disavowed (`36f462d3f`) because its label collided with an open
   wave. Do not be alarmed by two `wave 236 CLOSED` subjects.
 - **THE CLOSE-LABEL TRAP IS NOW FIXED, and the fix is a command you must know.** A wave shipped one
@@ -35,7 +40,7 @@ same wave. Do not try to reconcile them by renumbering anything; the ledger is r
   are inside that count, so wave 240's uncompiled Enfusion edit is now compile-verified.
 - Do NOT run `cargo test -p xtask` while `cargo xtask mod compile` is running: they share
   `~/.local/share/tbd-server-addons` and two T-878 tests fail (T-946.13).
-- **69 findings filed, T-947…T-999 and T-946.1…T-946.22.** The ones needing an OPERATOR decision,
+- **72 findings filed, T-947…T-999 and T-946.1…T-946.25.** The ones needing an OPERATOR decision,
   not an agent:
   * **T-946.1** — the top-level ticket id space is EXHAUSTED at T-999. Every new finding is filed as
     a child of T-946. This blocks all further top-level filing and needs a numbering decision.
