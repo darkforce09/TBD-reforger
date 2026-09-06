@@ -1,0 +1,12 @@
+id = "T-946.1"
+kind = "work"
+title = "Ticket id space is exhausted at 999"
+summary = "The registry schema caps ids at three digits, and T-999 is taken. The next ticket cannot be filed. Widen the pattern and check every id parser and sort that assumes three digits."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T08:07:21Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

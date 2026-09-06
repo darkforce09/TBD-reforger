@@ -1,11 +1,11 @@
 id = "T-946"
-kind = "work"
+kind = "program"
 title = "Wave close: child tickets, ledger-seated labels, batch ship"
 summary = "wave --close could not close any wave: the close-time view saw parent tickets only, lock labels ran past what the marker oracle accepts, and per-id repacks stopped a wave ever emptying."
 class = "feature"
 status = "idea"
+children = [
+    "T-946.1",
+    "T-946.2",
+]
 created_at = "2026-09-06T00:08:28Z"
-
-[scope]
-domain = "repo"
-layer = "docs"

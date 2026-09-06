@@ -1,0 +1,11 @@
+id = "T-999"
+kind = "work"
+title = "Everon road archive is emitted but not committed"
+summary = "The emitter is proven end to end and produces a 435452 byte archive from the committed roads json, but the asset itself lives outside every slice's owns so nothing is committed. The loader slices downstream will have nothing to fetch."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T08:06:31Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
