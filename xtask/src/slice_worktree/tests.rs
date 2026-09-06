@@ -70,10 +70,22 @@ fn lane_ok(root: &Path, slice: &str, lane: &str) -> bool {
     lane_is_linked(&dst, &root.join("apps/mod").join(lane))
 }
 
+/// T-946 — record a PASS gate verdict for `slice`'s current tip, the way the slice gate would.
+///
+/// `cmd_merge` refuses an ungated branch since T-946 closed the second of the three merge-to-main
+/// paths, so a fixture that merges has to be gated first. That is the guard working: before this,
+/// these fixtures were merging code no gate had examined, which is exactly what they now cannot.
+fn gated(root: &Path, slice: &str) {
+    let tip = g(root, &format!("rev-parse slice/{slice}")).1;
+    crate::wave::verdict::write(root, slice, tip.trim(), crate::wave::verdict::PASS)
+        .expect("record the gate verdict");
+}
+
 /// new + one commit in the tree + merge to main: the "work has all landed" state.
 fn landed(root: &Path, slice: &str) {
     assert_eq!(cmd_new(root, slice).unwrap(), 0);
     commit(&tree(root, slice), "s.txt", slice);
+    gated(root, slice);
     assert_eq!(cmd_merge(root, slice).unwrap(), 0);
 }
 
@@ -185,6 +197,39 @@ fn new_refuses_when_a_required_oracle_is_missing() {
 }
 
 #[test]
+fn merge_refuses_a_slice_no_gate_has_examined() {
+    // T-946 — `platform wave land` was one of THREE doors to main; this is the second, and
+    // `mod wave land` calls it, which makes it the chokepoint both share. Before the guard moved
+    // here, a slice could merge with no gate having run on it at all.
+    let root = scratch("merge-ungated");
+    assert_eq!(cmd_new(&root, "T-905").unwrap(), 0);
+    commit(&tree(&root, "T-905"), "s.txt", "w");
+
+    let rc = cmd_merge(&root, "T-905").unwrap();
+    assert_eq!(rc, 2, "an ungated slice must not merge");
+    assert!(
+        !root.join("s.txt").exists(),
+        "and nothing of it may reach main"
+    );
+
+    // A stale receipt is refused for the same reason: it describes a different commit.
+    crate::wave::verdict::write(
+        &root,
+        "T-905",
+        "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+        crate::wave::verdict::PASS,
+    )
+    .expect("write");
+    assert_eq!(cmd_merge(&root, "T-905").unwrap(), 2, "stale receipt");
+    assert!(!root.join("s.txt").exists());
+
+    // Gated at the real tip, it merges.
+    gated(&root, "T-905");
+    assert_eq!(cmd_merge(&root, "T-905").unwrap(), 0);
+    assert!(root.join("s.txt").exists());
+}
+
+#[test]
 fn sub_slice_shares_the_parent_tree() {
     let root = scratch("subslice");
     assert_eq!(cmd_new(&root, "T-181.7.1").unwrap(), 0);
@@ -194,6 +239,9 @@ fn sub_slice_shares_the_parent_tree() {
     // ODDITY: `merge`/`drop` do the same rewrite but SILENTLY. Proven by operating on the
     // sub-slice id and having the PARENT's tree be what moves.
     commit(&tree(&root, "T-181.7"), "s.txt", "w");
+    // The receipt is keyed to the PARENT id, because that is the branch `merge` rewrites to and
+    // therefore the one the gate would have examined (T-946).
+    gated(&root, "T-181.7");
     let rc = cmd_merge(&root, "T-181.7.1").unwrap();
     assert_eq!(rc, 0, "merge did not rewrite the sub-slice to its parent");
     assert!(root.join("s.txt").exists());

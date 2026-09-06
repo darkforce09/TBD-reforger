@@ -475,6 +475,23 @@ fn cmd_merge(root: &Path, slice_arg: &str) -> Result<u8> {
         return Ok(1);
     }
 
+    // T-946 — THE GATE-VERDICT RECEIPT GUARDS THIS PATH TOO.
+    //
+    // T-924 put the receipt check in `platform wave land`, and the wave 237 verifier found that
+    // `land` is one of THREE ways a slice branch reaches main: this command is the second, and
+    // `mod wave land` is the third — which calls this one. A guard that covers a third of the
+    // doors is a guard nobody can rely on, and its main goal is literally "nothing mechanical lets
+    // an ungated or stale-gated slice land". So the check moves to the chokepoint both paths share.
+    //
+    // Same fail-closed shape as `land`: the tip of the branch about to be merged is compared with
+    // the sha the gate recorded, and a missing, stale, red or unreadable receipt refuses. Nothing
+    // here waives it — a merge is a merge whoever typed it.
+    let tip = gn(root, &["rev-parse", &branch])?.stdout;
+    if let Some(msg) = crate::wave::verdict::land_refusal(root, &slice, tip.trim()) {
+        eprintln!("{msg}");
+        return Ok(2);
+    }
+
     // ODDITY: the message is hard-coded to `T-181:` whatever program the slice belongs to, so the
     // platform factory's merges are all tagged with the mod program's ticket. Preserved — `reap`'s
     // `git log --grep` keys off `slice/<id>` in git's auto-generated "Merge branch" line, not off

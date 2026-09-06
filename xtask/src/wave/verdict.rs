@@ -263,6 +263,18 @@ pub fn land_refusal(main_root: &Path, slice: &str, landing_sha: &str) -> Option<
                  {hint}"
             ));
         }
+        Err(e) if !is_ticket_id(slice) => {
+            // T-946 — SAY THE RIGHT THING OR THE OPERATOR CANNOT ACT. An id this module refuses to
+            // build a path for cannot be re-gated either: `record_slice_gate` bails in exactly the
+            // same place, so "re-gate" describes a loop with no exit. Branches of this shape do
+            // exist here — `git branch --list 'slice/*'` carries `slice/T-247-hotfix`.
+            return Some(format!(
+                "land: {slice} is not a ticket id (expected T-nnn[.n…]), so no gate verdict can \
+                 exist for it: {e:#}\n      \
+                 Re-gating CANNOT help — the gate refuses the same shape. Land it under its \
+                 canonical id, or rename the branch to slice/<ticket id> and gate that."
+            ));
+        }
         Err(e) => {
             return Some(format!(
                 "land: the gate verdict for {slice} is unreadable: {e:#}\n      \
@@ -312,6 +324,42 @@ mod tests {
         let _ = std::fs::remove_dir_all(&tmp);
         std::fs::create_dir_all(&tmp).expect("mk scratch");
         tmp
+    }
+
+    /// T-946 — a non-canonical slice id must not be told to do the impossible.
+    ///
+    /// `slice/T-247-hotfix` is a branch shape this repo really creates. `path_for` refuses it, so
+    /// `read` errors — and the old message said "re-gate", which cannot help: `record_slice_gate`
+    /// refuses the same shape in the same place. The refusal now says so and names the two things
+    /// that DO work.
+    #[test]
+    fn a_non_canonical_slice_id_is_told_the_truth_not_to_re_gate() {
+        let dir = std::env::temp_dir().join(format!("t946-badid-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let msg = land_refusal(
+            &dir,
+            "T-247-hotfix",
+            "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+        )
+        .expect("must refuse");
+        println!("── refusal ──\n{msg}");
+        assert!(
+            msg.contains("not a ticket id"),
+            "names the real cause: {msg}"
+        );
+        assert!(
+            msg.contains("Re-gating CANNOT help"),
+            "and does not send the operator round a loop with no exit: {msg}"
+        );
+        // A canonical id with no receipt still gets the ordinary re-gate advice.
+        let ok = land_refusal(&dir, "T-999", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+            .expect("must refuse");
+        assert!(
+            ok.contains("no gate has run on it") && !ok.contains("Re-gating CANNOT help"),
+            "the ordinary arm is unchanged: {ok}"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

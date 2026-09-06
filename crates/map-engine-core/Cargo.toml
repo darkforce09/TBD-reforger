@@ -53,8 +53,11 @@ world = [
 # is `forest_mass.rs` in the SPA, which links this crate as
 # `default-features = false, features = ["mission", "blueprint"]` — so the moment `decode_tbdd`
 # casts with bytemuck, an optional bytemuck is a build failure for the SPA and for `website-api`
-# (`features = ["mission"]`). Proof: `cargo tree -p map-engine-core -i bytemuck` → "did not match
-# any packages" featureless, and the same command with `--features binary` prints v1.25.0.
+# (`features = ["mission"]`). That was measured BEFORE the change: `cargo tree -p map-engine-core
+# -i bytemuck` then answered "did not match any packages" featureless and printed v1.25.0 with
+# `--features binary`. It does not answer that any more, and must not — the same command now
+# prints v1.25.0 unconditionally, which is the whole point of the line below (T-946: the original
+# note read as a present-tense proof of a state its own commit had inverted).
 binary = ["dep:rkyv"]
 # `blueprint` (building-blueprint structs + LOS attribution over the `bvh` raycaster) stands alone
 # so the Leptos SPA can link it without pulling `world`'s flate2/serde_json parser stack into the
@@ -94,7 +97,10 @@ rkyv = { version = "0.8.18", optional = true, default-features = false, features
 # `bytemuck::cast_slice`, and `geometry` is compiled by every consumer regardless of features
 # (`website-api` takes `["mission"]`, the SPA takes `["mission", "blueprint"]` with default
 # features off). It is a compile-time-only dependency for those two — `Pod`/`Zeroable` are marker
-# traits and every call inlines to a pointer cast — so the wasm bundle does not grow.
+# traits and every call inlines to a pointer cast — so the wasm bundle is not expected to grow.
+# T-946: "expected", not measured. The gate's own wasm and trunk steps skipped this wave because
+# they scoped by path prefix and nothing under `apps/website/frontend/` had changed, so no bundle
+# was built to compare; that scoping is fixed and the next SPA-touching wave will build one.
 bytemuck = { version = "1", features = ["derive", "min_const_generics"] }
 earcutr = "0.5.0"
 

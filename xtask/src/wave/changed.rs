@@ -7,6 +7,9 @@
 use std::path::{Path, PathBuf};
 
 use super::{Ctx, git_stdout_lossy, host, ledger};
+
+/// The SPA crate, repo-relative — the root of the wasm dependency walk.
+pub const FRONTEND_DIR: &str = "apps/website/frontend";
 use crate::{wprint, wprintln};
 
 /// The default diff base — the slice's own range inside a worktree.
@@ -149,6 +152,80 @@ pub fn fmt_changed(ctx: &Ctx, base: &str) -> i32 {
 /// `#![cfg(target_arch = "wasm32")]`, so a native check walks straight past it and reports PASS on
 /// a file it never looked at. T-188 hit exactly this. Any slice touching the frontend must be
 /// checked for wasm32 or the gate is decorative. Warm cost measured: 0.16s.
+/// The frontend crate directory, and every WORKSPACE crate it depends on, transitively.
+///
+/// T-946 — THE PATH PREFIX WAS NEVER THE RIGHT QUESTION. `wasm_changed` and the `trunk build` step
+/// both asked "did anything under `apps/website/frontend/` change", but the SPA compiles half the
+/// engine into its own wasm binary. Wave 237 changed `crates/map-engine-core` — a rewritten
+/// `geometry/tbdd.rs` and a dependency that stopped being optional — touched no frontend path, and
+/// the gate printed `wasm32 (frontend) PASS` alongside `trunk build SKIP (frontend untouched this
+/// wave)`. Neither had compiled a line of it. `Runner::run` discards a passing step's output, so
+/// the reason never even reached the log: the vacuity was invisible in the transcript.
+///
+/// The scope is DERIVED, not listed, because a hand-kept list is the same bug with a slower fuse:
+/// walk `path = "…"` dependencies out of `apps/website/frontend/Cargo.toml` and keep walking. Today
+/// that reaches `crates/map-engine-render` and `crates/map-engine-core`; when it reaches more, this
+/// follows without an edit. A crate that cannot be read contributes nothing rather than silently
+/// narrowing the scope — the caller treats an empty walk as "check anyway", never as "skip".
+pub fn wasm_scope_prefixes(root: &Path) -> Vec<String> {
+    let mut seen: Vec<String> = vec![FRONTEND_DIR.to_string()];
+    let mut queue: Vec<String> = vec![FRONTEND_DIR.to_string()];
+    while let Some(dir) = queue.pop() {
+        let Ok(text) = std::fs::read_to_string(root.join(&dir).join("Cargo.toml")) else {
+            continue;
+        };
+        for line in text.lines() {
+            let Some(rest) = line.split("path").nth(1) else {
+                continue;
+            };
+            let Some(open) = rest.find('"') else { continue };
+            let after = &rest[open + 1..];
+            let Some(close) = after.find('"') else {
+                continue;
+            };
+            let rel = &after[..close];
+            let Some(joined) = join_rel(&dir, rel) else {
+                continue;
+            };
+            if !seen.contains(&joined) {
+                seen.push(joined.clone());
+                queue.push(joined);
+            }
+        }
+    }
+    seen.sort();
+    seen
+}
+
+/// `base/rel` with `.` and `..` resolved textually — repo-relative in, repo-relative out. `None`
+/// when the path climbs above the repo root, which is not a workspace crate.
+fn join_rel(base: &str, rel: &str) -> Option<String> {
+    let mut parts: Vec<&str> = base.split('/').filter(|s| !s.is_empty()).collect();
+    for seg in rel.split('/') {
+        match seg {
+            "" | "." => {}
+            ".." => {
+                parts.pop()?;
+            }
+            other => parts.push(other),
+        }
+    }
+    if parts.is_empty() {
+        return None;
+    }
+    Some(parts.join("/"))
+}
+
+/// Does any changed path fall inside the wasm scope?
+pub fn wasm_scope_touched<'a>(root: &Path, paths: impl Iterator<Item = &'a str>) -> bool {
+    let scope = wasm_scope_prefixes(root);
+    paths.into_iter().any(|p| {
+        scope
+            .iter()
+            .any(|d| p.starts_with(&format!("{d}/")) || p == d)
+    })
+}
+
 pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
     let base = if base.is_empty() { DEFAULT_BASE } else { base };
     // Same union as fmt_changed, for the same reason. LFS-safe porcelain (T-401).
@@ -157,12 +234,12 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
         Err(rc) => return rc,
     };
     let diff = git_stdout_lossy(&["diff", "--name-only", base]);
-    let touched = diff
-        .lines()
-        .chain(wt.iter().map(String::as_str))
-        .any(|p| p.starts_with("apps/website/frontend/"));
+    let touched = wasm_scope_touched(&ctx.root, diff.lines().chain(wt.iter().map(String::as_str)));
     if !touched {
-        wprintln!("frontend untouched");
+        wprintln!(
+            "frontend untouched — scope: {}",
+            wasm_scope_prefixes(&ctx.root).join(" ")
+        );
         return 0;
     }
     // checkrun, not hostrun: this IS a cargo check, so it carries the T-421 exposure verbatim. The
@@ -424,6 +501,63 @@ pub fn compiled_include_input_paths() -> Vec<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// T-946 — the wasm scope reaches the engine crates the SPA compiles, not just its own path.
+    ///
+    /// Wave 237 changed `crates/map-engine-core` only, and the gate printed
+    /// `wasm32 (frontend) PASS` next to `trunk build SKIP (frontend untouched this wave)` — a
+    /// success reported over code neither step had compiled. The scope is derived from
+    /// `path = "…"` dependencies, so it follows the graph instead of a hand-kept list.
+    #[test]
+    fn the_wasm_scope_follows_the_frontends_dependency_graph() {
+        let root = crate::root::test_repo_root();
+        let scope = wasm_scope_prefixes(&root);
+        println!("── wasm scope ── {scope:?}");
+        assert!(
+            scope.iter().any(|d| d == FRONTEND_DIR),
+            "the frontend itself is always in scope: {scope:?}"
+        );
+        for engine in ["crates/map-engine-core", "crates/map-engine-render"] {
+            assert!(
+                scope.iter().any(|d| d == engine),
+                "{engine} is compiled into the SPA's wasm and must be in scope: {scope:?}"
+            );
+        }
+        // The exact change that fooled the gate.
+        assert!(
+            wasm_scope_touched(
+                &root,
+                ["crates/map-engine-core/src/geometry/tbdd.rs"].into_iter()
+            ),
+            "a map-engine-core source change must put the SPA in scope"
+        );
+        assert!(
+            wasm_scope_touched(&root, ["crates/map-engine-core/Cargo.toml"].into_iter()),
+            "and so must its manifest — wave 237 made a dependency unconditional there"
+        );
+        // Something the SPA genuinely does not compile stays out.
+        assert!(
+            !wasm_scope_touched(&root, ["apps/website/api/src/db.rs"].into_iter()),
+            "a backend-only change must not force the most expensive step in the gate"
+        );
+    }
+
+    #[test]
+    fn join_rel_resolves_dotdot_and_refuses_to_climb_out() {
+        assert_eq!(
+            join_rel("apps/website/frontend", "../../../crates/map-engine-core").as_deref(),
+            Some("crates/map-engine-core")
+        );
+        assert_eq!(
+            join_rel("crates/map-engine-render", "../map-engine-core").as_deref(),
+            Some("crates/map-engine-core")
+        );
+        assert_eq!(
+            join_rel("crates", "../../elsewhere"),
+            None,
+            "cannot climb out"
+        );
+    }
 
     #[test]
     fn edition_falls_back_to_2021_when_nothing_says_otherwise() {

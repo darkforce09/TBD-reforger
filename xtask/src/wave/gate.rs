@@ -568,15 +568,17 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     // The Leptos build is the single most expensive gate (2-6 min warm). Wave-level only, and only
     // when the wave actually touched the frontend — measured across the WHOLE wave, not the last
     // merge. NOTE: committed diff only, no working-tree union; that is what the bash asked.
-    if git_stdout_lossy(&["diff", "--name-only", &range])
-        .lines()
-        .any(|p| p.starts_with("apps/website/frontend/"))
-    {
+    // T-946: the scope is the frontend crate AND every workspace crate it compiles in, derived
+    // from the dependency graph — see `changed::wasm_scope_prefixes`. Wave 237 rewrote
+    // `map-engine-core`'s TBDD decode, which the SPA links, and this step skipped.
+    let wave_diff = git_stdout_lossy(&["diff", "--name-only", &range]);
+    if changed::wasm_scope_touched(&ctx.root, wave_diff.lines()) {
         r.run("trunk build", || trunk::gate_trunk_build(ctx));
     } else {
         wprintln!(
-            "  {:<24} SKIP (frontend untouched this wave)",
-            "trunk build"
+            "  {:<24} SKIP (nothing the SPA compiles changed this wave: {})",
+            "trunk build",
+            changed::wasm_scope_prefixes(&ctx.root).join(" ")
         );
     }
     // T-420. Placed next to `ticket registry` rather than up with the compile steps because the two
