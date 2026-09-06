@@ -155,7 +155,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 > the lowest-ordered `ready` program, not the program in flight.
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-676**
+**Latest shipped:** **T-702**
 
 **ACTIVE NOW:** **T-154** — T-154.1 (Rust/wgpu 3D arsenal doll (T-151-adjacent 3D pipeline spike)). Slice spec: `docs/specs/Mission_Creator_Architecture/t154_1_doll_polish.md`.
 

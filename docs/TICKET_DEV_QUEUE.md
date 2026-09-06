@@ -85,14 +85,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** Play-area enforcement gains a vehicle-class axis: the aircraft exemption
 
-## T-702 — Whole-terrain zone — one zone sized to the map
-
-- **Slice spec:** `docs/specs/existing/t702_whole_terrain_zone.md`
-- **Program hub:** `docs/specs/existing/t702_whole_terrain_zone.md`
-- **Branch:** `ticket/T-702`
-- **Targets:** 
-- **Summary:** 3DEN-MISC-001 E11: one command authors a play-area boundary polygon covering the terrain exactly from terrain_bounds.
-
 ## T-705 — Player gadget flags — map, compass, watch, GPS, radio
 
 - **Slice spec:** `docs/specs/existing/t705_gadget_flags.md`

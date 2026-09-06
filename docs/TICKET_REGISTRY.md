@@ -845,7 +845,7 @@
 | T-684 | 7360 | ready | work | Mission parameters as first-class document objects | Mission parameters as first-class document objects |
 | T-685 | 7370 | ready | work | Zone volumes: height bounds capture counts and owner | Zones become volumes: min/max height, attacker and defender counts, starting owner |
 | T-689 | 7380 | ready | work | Play-area enforcement gains a vehicle-class axis: the aircraft exemption | Play-area enforcement gains a vehicle-class axis: the aircraft exemption |
-| T-702 | 7390 | ready | work | Whole-terrain zone — one zone sized to the map | 3DEN-MISC-001 E11: one command authors a play-area boundary polygon covering the terrain exactly from terrain_bounds. |
+| T-702 | 7390 | shipped | work | Whole-terrain zone — one zone sized to the map | 3DEN-MISC-001 E11: one command authors a play-area boundary polygon covering the terrain exactly from terrain_bounds. |
 | T-705 | 7400 | ready | work | Player gadget flags — map, compass, watch, GPS, radio | Player gadget flags — map, compass, watch, GPS, radio |
 | T-654 | 7410 | ready | work | Conditional inclusion: variant-gated document subtrees | Conditional inclusion: variant-gated document subtrees |
 | T-679 | 7420 | ready | work | Placement scatter: radius and area shape | Placement scatter: radius and area shape |
