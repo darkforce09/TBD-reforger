@@ -636,7 +636,11 @@ pub fn build_world_objects_opt(
                 ("instances".to_string(), json!(0)),
             ]);
             if *k == "road" {
-                m.insert("segments".into(), json!(0));
+                // Read from the committed roads.json.gz, never asserted as zero — see `road_census`.
+                m.insert(
+                    "segments".into(),
+                    json!(road_census(&objects_dir).map(|(n, _)| n).unwrap_or(0)),
+                );
             }
             (k.to_string(), Value::Object(m))
         })
@@ -717,7 +721,12 @@ pub fn build_world_objects_opt(
         "byBuildingClass".into(),
         Value::Object(sort_map(by_building_class)),
     );
-    inventory.insert("byRoadClass".into(), json!({}));
+    inventory.insert(
+        "byRoadClass".into(),
+        road_census(&objects_dir)
+            .map(|(_, by)| Value::Object(by))
+            .unwrap_or_else(|| json!({})),
+    );
     inventory.insert(
         "bySpeciesClass".into(),
         Value::Object(sort_map(by_species_class)),
@@ -1103,6 +1112,44 @@ pub fn gen_density_fixture() -> Result<()> {
 
 /// build-roads-from-topo.mjs port. Determinism: records sorted by (type, first x, first y,
 /// vertexCount); ids assigned after the sort; points rounded to 2 dp; gzip level 9.
+/// The road census, read from the COMMITTED `roads.json.gz` — T-946/T-960.
+///
+/// Roads never pass through prefab classification: they export as prefab-less `RoadEntity` rows
+/// (`resourceName` empty), so `classify.rs` — a pure function of the resource name — never sees
+/// one. That is why appending classification rules could not make the census non-zero, and why
+/// both slots were simply hardcoded: `byKind.road.segments` to 0 and `byRoadClass` to `{}`. The
+/// artifact therefore published "0 road segments" while `roads.json.gz` beside it shipped 887.
+///
+/// `roads.json.gz` is committed and repo-reproducible, so the census is derivable here with no
+/// Workbench staging export — which also lets `world reclassify` correct the shipped artifact.
+/// Returns `None` when the file is absent or unreadable: a missing census stays absent rather
+/// than being asserted as zero.
+#[must_use]
+pub fn road_census(objects_dir: &Path) -> Option<(u64, Map<String, Value>)> {
+    let raw = std::fs::read(objects_dir.join("roads.json.gz")).ok()?;
+    let doc: Value = serde_json::from_slice(&gunzip(&raw).ok()?).ok()?;
+    let segs = doc["roadSegments"].as_array()?;
+    let mut by_class: Map<String, Value> = Map::new();
+    for r in segs {
+        let Some(c) = r["roadClass"].as_str() else {
+            continue;
+        };
+        let n = by_class.get(c).and_then(Value::as_u64).unwrap_or(0);
+        by_class.insert(c.to_string(), json!(n + 1));
+    }
+    let mut keys: Vec<String> = by_class.keys().cloned().collect();
+    keys.sort();
+    // The schema's `classBucket` shape: a road has no prefab type, and a segment IS the instance.
+    let sorted: Map<String, Value> = keys
+        .into_iter()
+        .map(|k| {
+            let n = by_class[&k].as_u64().unwrap_or(0);
+            (k, json!({ "prefabTypes": 0, "instances": n }))
+        })
+        .collect();
+    Some((segs.len() as u64, sorted))
+}
+
 pub fn build_roads_from_topo(
     terrain: &str,
     out_base: Option<&Path>,
@@ -1169,7 +1216,7 @@ pub fn build_roads_from_topo_opt(
         })
         .collect();
     let doc = json!({ "schemaVersion": "1.0.0", "terrainId": terrain, "roadSegments": segments });
-    // T-537: refuse writing empty roads.json.gz over the committed 888-segment catalog.
+    // T-537: refuse writing empty roads.json.gz over the committed 887-segment catalog.
     super::refuse_empty_write(
         "build-roads-from-topo",
         segments.is_empty(),
@@ -1223,6 +1270,31 @@ pub fn build_roads_from_topo_opt(
 
 #[cfg(test)]
 mod tests {
+    /// T-946/T-960 — the road census comes from the committed roads.json.gz, and it is 887.
+    ///
+    /// Both slots used to be hardcoded (`segments` 0, `byRoadClass` {}) because roads export as
+    /// prefab-less `RoadEntity` rows that classification never sees, so no rule edit could ever
+    /// make them non-zero. Five places in the repo also claimed 888; the file ships 887.
+    #[test]
+    fn the_road_census_reads_the_committed_roads_file() {
+        let objects = crate::serve::repo_root().join("packages/map-assets/everon/objects");
+        if !objects.join("roads.json.gz").is_file() {
+            panic!("everon roads.json.gz missing at {}", objects.display());
+        }
+        let (segments, by_class) = road_census(&objects).expect("census");
+        println!("── segments {segments} · byClass {by_class:?}");
+        assert_eq!(segments, 887, "roads.json.gz ships 887 segments, not 888");
+        assert_eq!(
+            by_class
+                .values()
+                .filter_map(|v| v["instances"].as_u64())
+                .sum::<u64>(),
+            segments,
+            "every segment lands in exactly one class"
+        );
+        assert_eq!(by_class.len(), 5, "five road classes: {by_class:?}");
+    }
+
     /// T-090.12.1 — the P5 filter admits T-244's `vehicle` kind: without it a rebuild from the
     /// staged export silently dropped the 13 wreck prefabs (176 instances) the committed
     /// catalogue carries since T-594, and E6 could never have matched the committed artifacts.

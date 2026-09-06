@@ -279,7 +279,40 @@ fn instances_by_prefab(chunks_dir: &Path, n_prefabs: usize) -> Result<Vec<u64>> 
 
 /// Recompute the count lanes of `type-inventory.json` from the rebuilt rows, preserving every
 /// other key and its order. Mirrors `build.rs`'s census block.
-fn rebuild_inventory(committed: &Value, rules: &Rules, prefabs: &[Value], inst: &[u64]) -> Value {
+/// Re-derive `needsReview` from the live rules — T-946, and the number it corrects is the one
+/// the ticket that touched it was named after.
+///
+/// The entries are staging-derived (`instanceCount` and `reason` come from a Workbench export
+/// this repo cannot reproduce), which is why they used to be carried through untouched. But
+/// membership is NOT staging-derived: a prefab needs review exactly when the rules still fail to
+/// classify it, and that is decidable here. Preserving the list wholesale meant a rule edit that
+/// classified 420 of the 443 left the artifact still publishing `needsReview.prefabTypes = 443` —
+/// the shipped file contradicted the catalogue beside it, and `verify type-inventory` is
+/// shape-only so nothing caught it. Found by the wave 237 verifier.
+///
+/// Each surviving entry keeps its own recorded text; only entries the rules now classify are
+/// dropped. `prefabTypes` is recounted from what remains.
+fn rebuild_needs_review(committed: &Value, classify: &mut Classifier) -> Option<Value> {
+    let listed = committed["needsReview"]["prefabs"].as_array()?;
+    let kept: Vec<Value> = listed
+        .iter()
+        .filter(|e| {
+            let rn = e["resourceName"].as_str().unwrap_or_default();
+            !classify.classify(rn).matched
+        })
+        .cloned()
+        .collect();
+    Some(json!({ "prefabTypes": kept.len(), "prefabs": kept }))
+}
+
+fn rebuild_inventory(
+    committed: &Value,
+    rules: &Rules,
+    classify: &mut Classifier,
+    prefabs: &[Value],
+    inst: &[u64],
+    road_census: Option<(u64, Map<String, Value>)>,
+) -> Value {
     let mut by_kind: Map<String, Value> = super::INSTANCE_KINDS
         .iter()
         .map(|k| {
@@ -288,10 +321,16 @@ fn rebuild_inventory(committed: &Value, rules: &Rules, prefabs: &[Value], inst: 
                 ("instances".to_string(), json!(0)),
             ]);
             if *k == "road" {
-                // Roads come from `.topo`, not the prefab lane; carry the committed value.
+                // Roads come from `.topo`, not the prefab lane — but the census is derivable from
+                // the COMMITTED roads.json.gz, so recompute it rather than carrying a value that
+                // was hardcoded to 0 (T-946/T-960, `build::road_census`). Falls back to the
+                // committed number when the file cannot be read.
                 m.insert(
                     "segments".into(),
-                    committed["byKind"]["road"]["segments"].clone(),
+                    road_census
+                        .as_ref()
+                        .map(|(n, _)| json!(n))
+                        .unwrap_or_else(|| committed["byKind"]["road"]["segments"].clone()),
                 );
             }
             (k.to_string(), Value::Object(m))
@@ -346,6 +385,12 @@ fn rebuild_inventory(committed: &Value, rules: &Rules, prefabs: &[Value], inst: 
     out.insert("byKind".into(), Value::Object(by_kind));
     out.insert("byBuildingClass".into(), sorted(by_building));
     out.insert("bySpeciesClass".into(), sorted(by_species));
+    if let Some((_, by_class)) = road_census {
+        out.insert("byRoadClass".into(), Value::Object(by_class));
+    }
+    if let Some(nr) = rebuild_needs_review(committed, classify) {
+        out.insert("needsReview".into(), nr);
+    }
     Value::Object(out)
 }
 
@@ -443,15 +488,25 @@ pub fn reclassify_terrain(terrain: &str, mode: Mode, out_base: Option<&Path>) ->
             .as_array()
             .cloned()
             .unwrap_or_default();
-        let mut inv = rebuild_inventory(&committed_inv, &rules, &prefab_rows, &inst);
+        let mut classify = Classifier::new(&rules);
+        let census = super::build::road_census(&objects);
+        let mut inv = rebuild_inventory(
+            &committed_inv,
+            &rules,
+            &mut classify,
+            &prefab_rows,
+            &inst,
+            census,
+        );
         js_normalize(&mut inv);
         std::fs::write(
             out_objects.join("type-inventory.json"),
             serde_json::to_string_pretty(&inv)? + "\n",
         )?;
         println!(
-            "reclassify:   type-inventory.json byKind/byBuildingClass/bySpeciesClass recomputed; \
-             needsReview + generatedAt preserved (staging-derived, not reproducible from the repo)"
+            "reclassify:   type-inventory.json byKind/byBuildingClass/bySpeciesClass and \
+             needsReview recomputed; generatedAt and each entry's instanceCount/reason preserved \
+             (staging-derived, not reproducible from the repo)"
         );
     }
     println!("reclassify: WROTE {}", out_objects.display());

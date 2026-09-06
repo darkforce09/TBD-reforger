@@ -735,7 +735,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
             let bridge = h
                 .page
                 .wait_for(
-                    "typeof window.__mapAssets === 'object' && window.__mapAssets.hillshadeW > 0 && window.__mapAssets.road_segments === 888 && window.__mapAssets.landcover_polygons === 0 && window.__mapAssets.sea_polygons > 0 && window.__mapAssets.contour_segments > 0 && window.__mapAssets.world_building_instances > 0 && window.__mapAssets.world_chunks_drawn > 0 && window.__mapAssets.forest_mode === 'density' && window.__mapAssets.forest_density_w === 1601 && window.__mapAssets.forest_density_h === 1601 && window.__mapAssets.forest_bins_ok === 625 && window.__mapAssets.forest_polygons === 625 && (window.__mapAssets.atlas_bytes > 0 || window.__mapAssets.glyphAtlas === true) && window.__mapAssets.tree_glyphs === 0",
+                    "typeof window.__mapAssets === 'object' && window.__mapAssets.hillshadeW > 0 && window.__mapAssets.road_segments === 887 && window.__mapAssets.landcover_polygons === 0 && window.__mapAssets.sea_polygons > 0 && window.__mapAssets.contour_segments > 0 && window.__mapAssets.world_building_instances > 0 && window.__mapAssets.world_chunks_drawn > 0 && window.__mapAssets.forest_mode === 'density' && window.__mapAssets.forest_density_w === 1601 && window.__mapAssets.forest_density_h === 1601 && window.__mapAssets.forest_bins_ok === 625 && window.__mapAssets.forest_polygons === 625 && (window.__mapAssets.atlas_bytes > 0 || window.__mapAssets.glyphAtlas === true) && window.__mapAssets.tree_glyphs === 0",
                     720,
                     250,
                 )
@@ -752,7 +752,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
                 "!!window.__mapAssets && window.__mapAssets.satW > 0 && window.__mapAssets.satH > 0 && window.__mapAssets.satMode === 'single'",
             )
             .await?;
-            let a_roads = eval_bool(&h.page, "window.__mapAssets.road_segments === 888").await?;
+            let a_roads = eval_bool(&h.page, "window.__mapAssets.road_segments === 887").await?;
             // T-177 — landcover lane is empty on Everon since **T-176 A2** dropped `forest`-kind
             // regions (the 32 m wash) and Everon has no `field`/`waterBody` regions, so the composed
             // mesh is 0 polygons (`world_host::push_landcover`). Was `=== 36`; that stale assertion
@@ -866,7 +866,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
                 "path": path,
                 "pins": {
                     "sat_full_bytes": SAT_FULL_BYTES,
-                    "roads": 888,
+                    "roads": 887,
                     "landcover": 0,
                     "forest_density": 1601,
                     "forest_bins": 625,
@@ -887,7 +887,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
             "path": path,
             "pins": {
                 "sat_full_bytes": SAT_FULL_BYTES,
-                "roads": 888,
+                "roads": 887,
                 "landcover": 36,
                 "default_zoom": -2.0,
                 "tree_glyph_min_zoom": 0.0,
