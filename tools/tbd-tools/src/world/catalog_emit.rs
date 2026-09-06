@@ -500,10 +500,9 @@ mod tests {
     /// This is also the only place both halves are visible: the emitter constants live in
     /// `tbd-tools`, the manifest parser in `map-engine-core`.
     ///
-    /// The second half is the acceptance's own words, made mechanical: the committed everon
-    /// manifest must carry **no** `objects.binary` block, so both frontend archive branches stay
-    /// dormant until T-935.13 writes one. If that ever stops being true by accident, this fails
-    /// here rather than by the editor quietly changing which files it fetches.
+    /// The second half is T-935.13: the committed everon manifest names the same paths this
+    /// emitter writes. If they drift, this fails here rather than by the editor fetching the
+    /// wrong files.
     #[test]
     fn the_manifest_block_names_the_paths_this_emitter_writes() {
         let flipped = serde_json::json!({
@@ -538,11 +537,13 @@ mod tests {
             &std::fs::read_to_string(everon_dir().join("manifest.json")).expect("everon manifest"),
         )
         .expect("parse everon manifest");
-        assert!(
-            parse_manifest_binary(&everon).objects.is_none(),
-            "the committed everon manifest gained an objects.binary block — T-935.11's acceptance \
-             is that JSON stays the default until T-935.13 writes one"
-        );
+        let live = parse_manifest_binary(&everon)
+            .objects
+            .expect("T-935.13 writes objects.binary");
+        assert_eq!(live.prefabs, PREFAB_CATALOG_RKYV);
+        assert_eq!(live.regions, FOREST_REGIONS_RKYV);
+        assert_eq!(live.type_inventory, TYPE_INVENTORY_RKYV);
+        assert_eq!(live.roads, super::super::roads_emit::ROAD_NETWORK_RKYV);
     }
 
     /// A terrain with no `forest-regions.json.gz` (a non-density `--phase`) emits the two

@@ -532,18 +532,22 @@ mod tests {
     }
 
     /// The manifest branch the loader keys on, on **real** inputs: the committed everon manifest
-    /// carries no `objects.binary` block, so the gz path stays; a manifest that does carry one
-    /// resolves to a `.bin` URL. Without this the binary branch in `world_host.rs` would be a
-    /// mechanism nobody had shown could fire.
+    /// carries `objects.binary`, so a chunk id fills to a `.bin` URL. A synthetic block with the
+    /// same template resolves the same way. Without this the binary branch in `world_host.rs`
+    /// would be a mechanism nobody had shown could fire.
     #[test]
     fn manifest_decides_the_branch() {
         use super::super::manifest::parse_manifest_binary;
 
         let raw = fs::read_to_string(everon().join("manifest.json")).expect("everon manifest");
         let shipped: serde_json::Value = serde_json::from_str(&raw).expect("manifest json");
-        assert!(
-            parse_manifest_binary(&shipped).objects.is_none(),
-            "the shipped everon manifest must still take the .json.gz path (T-935.13 flips it)"
+        let live = parse_manifest_binary(&shipped)
+            .objects
+            .expect("T-935.13 writes objects.binary");
+        assert!(live.matches_this_build());
+        assert_eq!(
+            chunk_bin_path(&live.chunks, "18_0").as_deref(),
+            Some("objects/chunks/18_0.bin")
         );
 
         let flipped: serde_json::Value = serde_json::json!({ "objects": { "binary": {
