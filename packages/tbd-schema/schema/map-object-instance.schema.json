@@ -2,7 +2,26 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/map-object-instance/v1.json",
   "title": "TBD Map Object Instance (catalog v1 placement row)",
-  "description": "One placed object. Compact: references its prefab by index; never duplicates kind/class/resourceName/bounds (resolve via prefabs[prefabId]). T-090.2. Three equivalent encodings: an expanded object (golden/readability), a legacy id-first positional array [id, prefabId, x, y, z?, rotationDeg?], or the chunk wire tuple — [prefabId, x, y, z, rotationDeg] (T-090.3.1) or, since objects schemaVersion 1.1.0 (T-090.12.1), [prefabId, x, y, z, rotationDeg, pitchDeg, rollDeg, scale] (all numbers; id derived as {cx}_{cy}:{index}). Discriminator: element 0 string = legacy tuple, element 0 number = chunk tuple.",
+  "description": "One placed object. Compact: references its prefab by index; never duplicates kind/class/resourceName/bounds (resolve via prefabs[prefabId]). T-090.2. Three equivalent JSON encodings: an expanded object (golden/readability), a legacy id-first positional array [id, prefabId, x, y, z?, rotationDeg?], or the chunk wire tuple — [prefabId, x, y, z, rotationDeg] (T-090.3.1) or, since objects schemaVersion 1.1.0 (T-090.12.1), [prefabId, x, y, z, rotationDeg, pitchDeg, rollDeg, scale] (all numbers; id derived as {cx}_{cy}:{index}). Discriminator: element 0 string = legacy tuple, element 0 number = chunk tuple. A FOURTH encoding of the same row exists and is NOT JSON: the 32-byte ObjectInstancePod inside a TBDC container (T-935, spec §2/§3.1), documented byte-for-byte at $defs/objectInstancePodRow below.",
+  "$defs": {
+    "objectInstancePodRow": {
+      "title": "ObjectInstancePod — the 32-byte binary row (T-935.1, spec §2)",
+      "description": "NOT a JSON Schema validator (JSON Schema cannot describe bytes) — this is the wire contract for objects/chunks/{cx}_{cy}.bin, recorded beside the JSON rows it encodes so the two cannot drift apart unnoticed. One .bin is a 32-byte TbdcHeader followed by `count` of these and nothing else, so byte offset of row i is 32 + 32 * i and the whole ingest is a length check plus one bytemuck::cast_slice. All fields little-endian; the struct is #[repr(C)] with no padding, which is what the field ORDER below buys. A 5-wide JSON row decodes with pitchDeg = rollDeg = 0 and scale = 1. Live definition: crates/map-engine-core/src/world/binary/pod.rs; the manifest names it as objects.binary.pod / podBytes so a loader can refuse a shape it does not implement. Checked by `cargo xtask schema terrain-manifest` (arithmetic: no gap, no overlap, total = POD_BYTES) and by golden_gate S15, which decodes the committed golden .bin at these very offsets.",
+      "podBytes": 32,
+      "fields": [
+        { "name": "x", "offset": 0, "bytes": 4, "type": "f32", "unit": "metres, world space" },
+        { "name": "y", "offset": 4, "bytes": 4, "type": "f32", "unit": "metres, world space" },
+        { "name": "z", "offset": 8, "bytes": 4, "type": "f32", "unit": "metres, world space" },
+        { "name": "yaw", "offset": 12, "bytes": 4, "type": "f32", "unit": "degrees; the JSON row's rotationDeg, Enfusion GetAngles() heading about Y" },
+        { "name": "pitch", "offset": 16, "bytes": 4, "type": "f32", "unit": "degrees about X" },
+        { "name": "roll", "offset": 20, "bytes": 4, "type": "f32", "unit": "degrees about Z" },
+        { "name": "scale", "offset": 24, "bytes": 4, "type": "f32", "unit": "uniform GetScale(); 1.0 when the source row is 5-wide" },
+        { "name": "prefab_id", "offset": 28, "bytes": 2, "type": "u16", "unit": "index into the prefab catalogue; the prefabIdx SoA column" },
+        { "name": "class_code", "offset": 30, "bytes": 1, "type": "u8", "unit": "render-class code, 255 = NO_CLASS; derived from the prefab catalogue, not carried by the JSON row" },
+        { "name": "_pad", "offset": 31, "bytes": 1, "type": "u8", "unit": "always 0 — present so the struct is exactly 32 B with no compiler padding a Pod cast would expose as uninitialised" }
+      ]
+    }
+  },
   "oneOf": [
     {
       "type": "object",
