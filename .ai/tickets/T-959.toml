@@ -1,0 +1,11 @@
+id = "T-959"
+kind = "work"
+title = "Reroute run lanes onto the run target"
+summary = "Four lanes still build into the shared cache: ci_editor_api.rs api build and run, gate_mcp_call_selftest.rs mcpd, three hostrun verify steps in wave/gate.rs, and mk_build.rs rust-api. Each needs TBD_RUN_TARGET_DIR, one line per site."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T02:02:23Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

@@ -1,0 +1,11 @@
+id = "T-961"
+kind = "work"
+title = "utility kind is dropped by the P5 phase filter"
+summary = "phase_kinds P5_props omits utility, so build.rs deletes utility rows instead of counting them. Adding it yields 107 prefabs and 7145 instances, and needs the store.rs prefab-count pin re-pinned."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T02:02:36Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

@@ -1,0 +1,11 @@
+id = "T-960"
+kind = "work"
+title = "Road census is unreachable from the classify rules"
+summary = "Roads export as prefab-less RoadEntity rows, so classify.rs never sees them, and build.rs hardcodes segments 0 and byRoadClass empty. Wire both from the 887 segments build_roads_from_topo already computes."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T02:02:30Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
