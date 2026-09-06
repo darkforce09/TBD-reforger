@@ -81,8 +81,9 @@ pub use importance_declutter::{
 };
 pub use index::WorldSpatialIndex;
 pub use locations::{
-    height_labels_from_archive, height_labels_to_archive, locations_to_label_specs,
-    parse_height_labels_json, parse_locations_json, towns_from_archive, towns_to_archive,
+    MAP_LABELS_ALIGN, MapLabels, height_labels_from_archive, height_labels_to_archive,
+    locations_to_label_specs, map_labels_from_bytes, parse_height_labels_json,
+    parse_locations_json, towns_from_archive, towns_to_archive,
 };
 pub use lod_gates::{
     BUILDING_BADGE_MIN_ZOOM, BUILDING_FOOTPRINT_MIN_ZOOM, FENCE_MIN_ZOOM, FOREST_FILL_MAX_ZOOM,

@@ -29,8 +29,12 @@
 
 use crate::dem::peaks::{HeightLabel, HeightLabelKind};
 use crate::label::LabelSpec;
-use crate::world::binary::archives::{HeightLabel as HeightLabelWire, MapLabelsArchive, TownLabel};
+use crate::world::binary::archives::{
+    ARCHIVE_SCHEMA_VERSION, HeightLabel as HeightLabelWire, MapLabelsArchive, TownLabel,
+};
+use crate::world::binary::{BinaryError, access_checked};
 use crate::world::importance_declutter::LocationLabel;
+use crate::world::road_labels::{RoadLabelPlacement, road_names_from_archive};
 
 use rkyv::Archived;
 
@@ -176,11 +180,93 @@ pub fn height_labels_from_archive(archive: &Archived<MapLabelsArchive>) -> Vec<H
         .collect()
 }
 
+/* ──────────────────────────── T-935.7 the loader's own read ──────────────────────────── */
+
+/// The alignment a `map_labels.rkyv` buffer must sit on before [`access_checked`] will look at it.
+///
+/// 16 is what [`to_bytes`](crate::world::binary::to_bytes)' `AlignedVec` writes with, and it is a
+/// multiple of every alignment the archived type itself asks for — the `const` below is the proof,
+/// checked at compile time rather than trusted.
+pub const MAP_LABELS_ALIGN: usize = 16;
+
+const _: () = assert!(
+    MAP_LABELS_ALIGN.is_multiple_of(align_of::<Archived<MapLabelsArchive>>()),
+    "MAP_LABELS_ALIGN must be a multiple of the archived type's own alignment"
+);
+
+/// One `map_labels.rkyv` file, read into the structures the label host renders from.
+///
+/// `height_labels` is carried because the archive carries it, **not** because the SPA renders it:
+/// the SPA's height lane is `find_peaks` over the DEM raster (`world_assets/labels.rs`) and has
+/// never read `height-labels.json`. The lane exists here so the emitter's parity pin has a reader,
+/// and so a future consumer of the named export has one too.
+#[derive(Clone, Debug, PartialEq)]
+pub struct MapLabels {
+    pub towns: Vec<LocationLabel>,
+    pub height_labels: Vec<HeightLabel>,
+    /// Candidates in `road_declutter_order`; feed them to
+    /// [`build_road_label_draw_set_from_archive`](crate::world::build_road_label_draw_set_from_archive).
+    pub road_names: Vec<RoadLabelPlacement>,
+}
+
+/// Read raw `map_labels.rkyv` bytes exactly as a loader must: copy onto an alignment
+/// [`access_checked`] accepts, **validate**, check the schema version, then materialise the lanes.
+///
+/// This is the whole of the SPA's binary label path, and it lives here rather than in the wasm-only
+/// `world_assets::labels` host so it is reachable from a native test — `world_assets` is
+/// `#[cfg(target_arch = "wasm32")]` and this repo has no wasm-bindgen-test harness, so anything
+/// that stayed on that side of the boundary would be gated by compilation alone.
+///
+/// A `Vec<u8>` off the network is 1-aligned, so the copy is not optional; it is one allocation of
+/// the file's own size, which for everon is ~3.4 KB against the 13 KB of JSON it replaces.
+///
+/// # Errors
+/// * [`BinaryError::Misaligned`] — the copy could not be placed on the boundary (the allocator
+///   refused to say where it put the buffer). Recoverable by falling back to the JSON path.
+/// * [`BinaryError::Archive`] — rkyv validation rejected the buffer (truncated, corrupt, not this
+///   format).
+/// * [`BinaryError::UnsupportedVersion`] — a well-formed archive written by a different schema.
+///   `access_checked` cannot catch this: the layout is legal, the *meaning* is not.
+pub fn map_labels_from_bytes(raw: &[u8]) -> Result<MapLabels, BinaryError> {
+    let (buf, pad) = aligned_copy(raw).ok_or(BinaryError::Misaligned {
+        what: "MapLabelsArchive",
+        align: MAP_LABELS_ALIGN,
+    })?;
+    let archive = access_checked::<MapLabelsArchive>(&buf[pad..])?;
+    let version = archive.schema_version.to_native();
+    if version != ARCHIVE_SCHEMA_VERSION {
+        return Err(BinaryError::UnsupportedVersion {
+            what: "MapLabelsArchive",
+            expected: ARCHIVE_SCHEMA_VERSION,
+            actual: version,
+        });
+    }
+    Ok(MapLabels {
+        towns: towns_from_archive(archive),
+        height_labels: height_labels_from_archive(archive),
+        road_names: road_names_from_archive(archive),
+    })
+}
+
+/// `raw` copied into a buffer whose byte at `pad` sits on [`MAP_LABELS_ALIGN`].
+///
+/// Capacity is reserved up front so the `extend_from_slice` cannot reallocate and move the
+/// alignment out from under the offset that was just measured; the result is re-checked anyway.
+fn aligned_copy(raw: &[u8]) -> Option<(Vec<u8>, usize)> {
+    let mut buf: Vec<u8> = Vec::with_capacity(raw.len() + MAP_LABELS_ALIGN);
+    let pad = buf.as_ptr().align_offset(MAP_LABELS_ALIGN);
+    if pad >= MAP_LABELS_ALIGN {
+        return None;
+    }
+    buf.resize(pad, 0);
+    buf.extend_from_slice(raw);
+    (buf[pad..].as_ptr().align_offset(MAP_LABELS_ALIGN) == 0).then_some((buf, pad))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::world::binary::archives::ARCHIVE_SCHEMA_VERSION;
-    use crate::world::binary::{access_checked, to_bytes};
+    use crate::world::binary::to_bytes;
 
     fn archive_of(towns: Vec<TownLabel>, heights: Vec<HeightLabelWire>) -> rkyv::util::AlignedVec {
         to_bytes(&MapLabelsArchive {
@@ -283,5 +369,107 @@ mod tests {
         let a = access_checked::<MapLabelsArchive>(&bytes).expect("access");
         assert!(towns_from_archive(a).is_empty());
         assert!(height_labels_from_archive(a).is_empty());
+    }
+
+    /* ─────────────── T-935.7 the loader's read (`map_labels_from_bytes`) ─────────────── */
+
+    use crate::world::binary::archives::RoadNameLabel;
+
+    /// A three-lane archive, serialised, then handed back the way the network hands a file over:
+    /// as a plain `Vec<u8>`, whose data pointer has alignment 1.
+    fn three_lane_file() -> Vec<u8> {
+        to_bytes(&MapLabelsArchive {
+            schema_version: ARCHIVE_SCHEMA_VERSION,
+            towns: vec![TownLabel {
+                name: "Montignac".into(),
+                position: [6400.0, 6400.5],
+                importance: 0.875,
+                kind: "town".into(),
+            }],
+            height_labels: vec![HeightLabelWire {
+                position: [1024.0, 2048.0],
+                elevation_m: 375.0,
+            }],
+            road_names: vec![RoadNameLabel {
+                name: "Main Highway".into(),
+                position: [10.5, -20.25],
+                angle_deg: 12.5,
+                road_class: 1,
+            }],
+        })
+        .expect("serialise")
+        .to_vec()
+    }
+
+    /// THE LOADER PIN. `fetch_bytes` yields a `Vec<u8>`, not the `AlignedVec` `to_bytes` produced,
+    /// and `access_checked` reinterprets in place — so this reads the file the way the SPA gets it
+    /// and all three lanes must come back. (The *hostile* offsets are the next test; a `Vec<u8>`
+    /// from the allocator is usually already aligned by luck, which is precisely why luck may not
+    /// be what the pin rests on.)
+    #[test]
+    fn a_file_buffer_reads_all_three_lanes() {
+        let file = three_lane_file();
+        let labels = map_labels_from_bytes(&file).expect("read");
+        assert_eq!(labels.towns.len(), 1);
+        assert_eq!(labels.towns[0].name, "Montignac");
+        assert_eq!(labels.towns[0].y, 6400.5);
+        assert_eq!(labels.height_labels.len(), 1);
+        assert_eq!(labels.height_labels[0].value_m, 375);
+        assert_eq!(labels.road_names.len(), 1);
+        assert_eq!(labels.road_names[0].name, "Main Highway");
+        assert_eq!(labels.road_names[0].road_class, "highway_paved");
+    }
+
+    /// Every byte offset in a 16-byte window: the aligned copy must not depend on where the
+    /// allocator happened to put the incoming buffer.
+    #[test]
+    fn the_read_survives_every_offset_the_allocator_can_hand_it() {
+        let file = three_lane_file();
+        for skew in 0..MAP_LABELS_ALIGN {
+            let mut shifted = vec![0u8; skew];
+            shifted.extend_from_slice(&file);
+            let labels = map_labels_from_bytes(&shifted[skew..]).expect("read");
+            assert_eq!(labels.towns.len(), 1, "skew {skew}");
+            assert_eq!(labels.road_names.len(), 1, "skew {skew}");
+        }
+    }
+
+    /// A truncated download is the common corruption, and it must come back as an error rather
+    /// than a wild read — `access_checked` is the only reader, and it validates.
+    #[test]
+    fn a_truncated_file_is_an_error_not_a_wild_read() {
+        let file = three_lane_file();
+        for cut in [0, 1, file.len() / 2, file.len() - 1] {
+            let err = map_labels_from_bytes(&file[..cut]).expect_err("must reject");
+            assert!(
+                matches!(err, BinaryError::Archive { .. }),
+                "cut {cut}: {err}"
+            );
+        }
+    }
+
+    /// A *legal* archive written by another schema. rkyv validation passes it — the layout is
+    /// fine — so the version check is the only thing between it and a mis-rendered map.
+    #[test]
+    fn a_future_schema_version_is_refused() {
+        let file = to_bytes(&MapLabelsArchive {
+            schema_version: ARCHIVE_SCHEMA_VERSION + 1,
+            towns: Vec::new(),
+            height_labels: Vec::new(),
+            road_names: Vec::new(),
+        })
+        .expect("serialise")
+        .to_vec();
+        let err = map_labels_from_bytes(&file).expect_err("must refuse");
+        assert!(
+            matches!(
+                err,
+                BinaryError::UnsupportedVersion {
+                    expected: ARCHIVE_SCHEMA_VERSION,
+                    ..
+                }
+            ),
+            "{err}"
+        );
     }
 }
