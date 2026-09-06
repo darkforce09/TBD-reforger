@@ -111,8 +111,15 @@ pub use manifest::{
 pub use obb::{
     BuildingPrefabInfo, FencePrefabInfo, building_prefab_lookup, fence_prefab_lookup, obb_corners,
 };
-pub use prefab::{PrefabEntry, PrefabRow, build_prefab_maps, narrow_prefab_rows};
-pub use regions::{LandCoverRegion, parse_regions_payload};
+pub use prefab::{
+    PREFAB_CATALOG_ALIGN, PrefabCatalog, PrefabEntry, PrefabRow, build_prefab_maps,
+    catalog_from_bytes, inventory_from_bytes, inventory_to_archive, narrow_prefab_rows,
+    row_to_archive, rows_from_archive,
+};
+pub use regions::{
+    FOREST_REGIONS_ALIGN, LandCoverRegion, parse_regions_payload, region_to_archive,
+    regions_from_bytes,
+};
 pub use residency::{
     APPLY_BUDGET_MS, BUILDING_MIN_ZOOM, FETCH_FAILURE_CAP, IngestOutcome, LRU_MIN_CHUNKS,
     ResidencyEvent, WorldResidency,
