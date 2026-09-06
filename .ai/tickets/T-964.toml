@@ -1,0 +1,11 @@
+id = "T-964"
+kind = "work"
+title = "exact_tree_count_chunk has no zoom gate"
+summary = "density_ladder.rs gates vegetation by zoom in exact_tree_count but not in exact_tree_count_chunk, which feeds the density grid, so texel sums disagree below the vegetation zoom. Trees are also ungated below their own zoom."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T02:36:13Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

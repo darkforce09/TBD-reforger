@@ -1,0 +1,11 @@
+id = "T-963"
+kind = "work"
+title = "Run stamp covers a directory, not each binary"
+summary = "One tbd-built-from describes a whole profile dir while cargo build compiles only what argv names, so a mixed-provenance dir reads green. The stamp also ignores a dirty tree. Stamp per binary and record dirty. Blocks T-959."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T02:36:07Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

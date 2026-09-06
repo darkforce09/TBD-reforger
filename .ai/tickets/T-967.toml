@@ -1,0 +1,11 @@
+id = "T-967"
+kind = "work"
+title = "ObjectInstancePod pad is documented as zero but unenforced"
+summary = "pod.rs says _pad is always written as 0; a non-zero pad round-trips intact and breaks derived PartialEq. Zero it on construction or exclude it from equality."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T02:36:33Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

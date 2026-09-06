@@ -1,0 +1,11 @@
+id = "T-969"
+kind = "work"
+title = "clippy map-engine step is not the all-features floor"
+summary = "wave/gate.rs runs clippy with doc, mission and world, omitting png, while claiming to be the all-features floor."
+class = "docs"
+status = "idea"
+created_at = "2026-09-06T02:36:46Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
