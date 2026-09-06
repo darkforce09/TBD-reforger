@@ -1,15 +1,19 @@
 id = "T-935.3"
 kind = "work"
-parent = "T-935"
 title = "Loader ingests chunk .bin via bytemuck cast_slice"
 summary = "WorldResidency gains ingest_chunk_bin: TBDC header check, bytemuck::cast_slice into ObjectInstancePod, SoA WorldChunk fill without JSON or gzip; world_host fetches {cx}_{cy}.bin whenever manifest.objects.binary.chunks is present."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7180
-priority = 1
 spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
 plan = "docs/plans/t-935_3_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = [
+    "T-935.1",
+    "T-935.2",
+]
+parent = "T-935"
 main_goal = "Chunk ingest on the main thread is a header check plus a cast, not a gzip inflate plus serde parse."
 context = [
     "audit.md Finding 1.4 (apps/website/audit.md:117-124): main-thread gzip-JSON chunk ingest in residency.rs:716-737 and chunk.rs:46-97; fix = flat binary ingest.",
@@ -45,8 +49,8 @@ acceptance = [
     "residency.rs grows by at most 40 lines; the file-length gate stays green.",
     "world-los output on cell 18_0 is unchanged from main before this slice.",
 ]
-depends_on = ["T-935.1", "T-935.2"]
 created_at = "2026-09-05T01:34:37Z"
+completed_at = "2026-09-06T06:54:41Z"
 owns = [
     "crates/map-engine-core/src/world/residency.rs",
     "crates/map-engine-core/src/world/chunk_bin.rs",
