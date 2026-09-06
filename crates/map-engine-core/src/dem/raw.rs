@@ -233,7 +233,7 @@ impl RawDemSink {
             && pairs > 0
             && let Ok(words) = bytemuck::try_cast_slice::<u8, u16>(&rest[..pairs * 2])
         {
-            let end = self.filled.checked_add(words.len()).unwrap_or(usize::MAX);
+            let end = self.filled.saturating_add(words.len());
             if end > self.samples.len() {
                 return Err(self.overrun());
             }
@@ -300,7 +300,7 @@ impl RawDemSink {
 /// order that drifted would have to drift in both halves of one screen to go unnoticed.
 #[must_use]
 pub fn to_bytes(header: &TbdeHeader, samples: &[u16]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(HEADER_BYTES + samples.len() * size_of::<u16>());
+    let mut out = Vec::with_capacity(HEADER_BYTES + size_of_val(samples));
     out.extend_from_slice(&header.to_header_bytes());
     for s in samples {
         out.extend_from_slice(&s.to_le_bytes());
@@ -312,12 +312,14 @@ pub fn to_bytes(header: &TbdeHeader, samples: &[u16]) -> Vec<u8> {
 mod tests {
     use super::*;
 
-    /// A range whose `f32` scale is exact: `511.9921875 / 65535 == 2^-7`, and `-256` is a power of
-    /// two, so the header's `f32` arithmetic and the PNG path's `f64` arithmetic land on the same
-    /// `f32` for every one of the 65,536 samples. Metres parity is then a real equality rather
-    /// than a tolerance that hides a formula error.
+    /// A range whose `f32` scale is exact. The span is written as `65535 / 128` rather than
+    /// `511.9921875` so the property is visible: dividing it by 65535 gives exactly `2^-7`, and
+    /// `-256` is a power of two, so the header's `f32` arithmetic and the PNG path's `f64`
+    /// arithmetic land on the same `f32` for every one of the 65,536 samples. Metres parity is
+    /// then a real equality rather than a tolerance that would hide a formula error.
+    /// `parse_round_trips_the_grid_and_the_header` asserts the resulting `scale_m` is that `2^-7`.
     const EXACT_MIN_M: f32 = -256.0;
-    const EXACT_MAX_M: f32 = 255.992_187_5;
+    const EXACT_MAX_M: f32 = EXACT_MIN_M + 65535.0 / 128.0;
 
     /// everon's shipped range (`manifest.json` `heightRangeMinM` / `heightRangeMaxM`).
     const EVERON_MIN_M: f32 = -204.78;
@@ -348,6 +350,11 @@ mod tests {
         assert_eq!(dem.header.reserved, [0_u8; 8]);
         assert_eq!(dem.header.offset_m, EXACT_MIN_M);
         assert_eq!(dem.header.scale_m, (EXACT_MAX_M - EXACT_MIN_M) / 65535.0);
+        assert_eq!(
+            dem.header.scale_m,
+            1.0 / 128.0,
+            "EXACT_* must quantise to an exact f32 step — the metres-parity tests rest on it"
+        );
     }
 
     /// `(x, y)` must index row-major with `width` as the stride, and out-of-range must be `None`
