@@ -1,0 +1,11 @@
+id = "T-986"
+kind = "work"
+title = "v-suite oracles have drifted on 22 of 25 routes"
+summary = "The frozen route oracles were last refreshed at T-173 while the pages have moved repeatedly since, so gate v-suite verify fails 22 of 25 routes. Only four are clean. Needs a re-freeze or an explicit decision."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T06:42:27Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

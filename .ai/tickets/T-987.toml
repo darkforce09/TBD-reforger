@@ -1,0 +1,11 @@
+id = "T-987"
+kind = "work"
+title = "Frontend wasm clippy carries 76 pre-existing errors"
+summary = "Running clippy on website-frontend for wasm32 with warnings denied reports 76 errors, 121 with all targets. The gate's clippy step is change-scoped so it never sees them."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T06:42:58Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
