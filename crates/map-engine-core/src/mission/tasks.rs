@@ -166,12 +166,13 @@ pub fn validate_schedule(
             "startAfterS cannot be negative (got {start_after_s})"
         ));
     }
-    if let Some(length) = mission_length_s {
-        if length > 0 && start_after_s >= length {
-            return Err(format!(
-                "startAfterS {start_after_s} is not within mission length {length}s"
-            ));
-        }
+    if let Some(length) = mission_length_s
+        && length > 0
+        && start_after_s >= length
+    {
+        return Err(format!(
+            "startAfterS {start_after_s} is not within mission length {length}s"
+        ));
     }
     Ok(())
 }
