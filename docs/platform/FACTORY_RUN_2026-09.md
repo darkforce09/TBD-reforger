@@ -127,3 +127,25 @@ edit, in-editor play button.
   one of them a live browser assertion. (4) FILED as T-963: the run stamp describes a directory
   rather than each binary, and ignores a dirty tree; the run lane has no caller yet, so it blocks
   T-959 instead. Minors/nits T-964…T-969.
+
+- 2026-09-06 **WAVE 237 CLOSED** (`ad9b22890`) — T-924 the gate-verdict receipt, T-935.5 TBDD
+  decode by `cast_slice` (bit-exact over all 625 committed tiles), T-935.2 chunk dual-emit (parity
+  over all 315 chunks, 1.2 M instances). Batch-shipped again, closed from its own pending entry
+  with no `--tickets` and no `TBD_GATE_BASE_CONFIRM`.
+- 2026-09-06 Wave 237 verifier: a **BLOCKER — the gate reported success over code it never
+  compiled.** `wasm_changed` and the `trunk build` step both scoped by the path prefix
+  `apps/website/frontend/`, but the SPA compiles `map-engine-core` and `map-engine-render` into its
+  own wasm binary. This wave rewrote `map-engine-core`'s TBDD decode and made `bytemuck`
+  unconditional there, so the gate printed `wasm32 (frontend) PASS` beside `trunk build SKIP
+  (frontend untouched this wave)` having compiled none of it — and `Runner::run` discards a passing
+  step's output, so the reason never reached the log. Main was not broken (verified by hand, rc 0).
+  The scope is now DERIVED by walking `path = "…"` deps out of the frontend's manifest; the re-gate
+  ran both steps for real. Fixed in `2a94af3ac`, with the old prefix rule kept as the perturbation.
+- 2026-09-06 Same verifier, two MAJORs against T-924 — the guard shipped ONE WAVE EARLIER and
+  already had holes. (1) It covered `platform wave land` only; `slice-worktree merge` is the second
+  door to main and `mod wave land` calls it, so any slice could still merge ungated. The check moved
+  to the chokepoint both share, and five fixtures that had been merging ungated now fail closed.
+  (2) A non-canonical id (`slice/T-247-hotfix`, a shape this repo creates) hit `path_for`'s refusal
+  and was told to "re-gate" — advice with no exit, since the gate refuses the same shape in the same
+  place. Both fixed in `2a94af3ac`. Filed: T-974, T-975. Noted: the guard could not run on its own
+  wave (the in-flight `land` binary predated its merge), so wave 238 is its first real exercise.
