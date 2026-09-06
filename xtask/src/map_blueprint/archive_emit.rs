@@ -570,6 +570,22 @@ mod tests {
         let a = held.archive().expect("access");
         let boot = ArchiveBoot::from_archive(a);
 
+        // The safety invariant goes FIRST, deliberately. Asserted after the counts, a flipped
+        // branch reports "left: 301, right: 1322" — a bookkeeping mismatch — instead of naming the
+        // prefabs that would stop occluding. Measured: that is exactly what the first version of
+        // this test printed under the perturbation.
+        let censused_blocker = boot.census.iter().find(|d| d.blocks);
+        assert!(
+            censused_blocker.is_none(),
+            "prefab {:?} blocks and is in the census: rebuilt from the archive it has no instance \
+             records, so insert_descriptor registers it and try_expand yields nothing — it stops \
+             occluding for the whole session with nothing logged",
+            censused_blocker.map(|d| (d.prefab_id, d.slug.as_str()))
+        );
+        assert!(
+            boot.census.iter().all(|d| d.local_bounds.is_none()),
+            "blocks: false carries no bounds"
+        );
         assert_eq!(boot.unusable, 0, "every committed row resolves");
         assert_eq!(boot.census.len() + boot.blocking, 1623, "the whole corpus");
         assert_eq!(
@@ -580,14 +596,6 @@ mod tests {
             boot.census.len(),
             301,
             "non-blocking prefabs boot from the archive"
-        );
-        assert!(
-            boot.census.iter().all(|d| !d.blocks),
-            "a blocking descriptor in the census is a prefab that stops occluding"
-        );
-        assert!(
-            boot.census.iter().all(|d| d.local_bounds.is_none()),
-            "blocks: false carries no bounds"
         );
 
         let by_pid: BTreeMap<u16, &Vec<String>> =
