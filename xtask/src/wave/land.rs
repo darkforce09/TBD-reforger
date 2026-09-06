@@ -440,6 +440,33 @@ pub fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
                 .first()
                 .map(|e| e.n)
                 .unwrap_or(lock.wave_base.saturating_add(1));
+            // THE LABEL MUST NOT BELONG TO A WAVE THAT IS STILL OPEN.
+            //
+            // Measured 2026-09-06 and it cost a marker: wave 236's three tickets shipped one at a
+            // time, so no `[[emptied]]` entry formed, the repack handed the freed label 236 to the
+            // NEXT batch, and `--close --tickets` then wrote `wave 236 CLOSED` naming the tickets
+            // that had actually been gated. Oracle 2 reads the lock at the marker's PARENT, saw
+            // wave 236 assigned to three unshipped tickets, and every later gate refused with
+            // "A wave with open tickets did not close, so this commit is not a wave boundary".
+            // The marker had to be disavowed. `--tickets` vouches for MEMBERSHIP, never for a
+            // label, so the collision is refused here rather than discovered a wave later.
+            if let Some(open) = lock.waves.iter().find(|w| w.n == n && w.n > 0) {
+                wprintln!(
+                    "REFUSED: wave {n} is still an OPEN wave in the lock, holding {:?}.",
+                    open.tickets
+                );
+                wprintln!(
+                    "         Closing that label would write a marker whose own plan calls it open,"
+                );
+                wprintln!(
+                    "         and oracle 2 refuses every later gate over it (T-618). Ship the wave"
+                );
+                wprintln!(
+                    "         through `ticket ship --no-repack` + one repack so it freezes a"
+                );
+                wprintln!("         pending entry with its own reserved label, then close that.");
+                return 1;
+            }
             wprintln!(
                 "close target: wave {n} — operator-vouched set of {} ticket(s) (--tickets)",
                 ids.len()
@@ -1389,6 +1416,55 @@ mod tests {
         assert!(
             out.contains("still open: T-2"),
             "the refusal names the unshipped id: {out}"
+        );
+        drop(cwd);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// T-946 — `--tickets` must refuse a label the lock still calls OPEN.
+    ///
+    /// This is the guard for the marker that had to be disavowed on 2026-09-06: wave 236 shipped
+    /// per id, no pending entry formed, the repack gave label 236 to the next batch, and the close
+    /// wrote `wave 236 CLOSED` over it. Oracle 2 then refused every gate until the marker was
+    /// reverted.
+    #[test]
+    fn close_tickets_refuses_a_label_that_is_still_an_open_wave() {
+        // No pending entry, so the label falls back to wave_base + 1 — and an OPEN wave holds it.
+        let dir = emptied_scratch("open-label", 2, 0);
+        let cwd = testcwd::CwdGuard::enter(&dir);
+        let lock = crate::wave_lock::load(&dir).expect("lock");
+        let n = lock.wave_base + 1;
+        println!(
+            "── lock ── base {} · open waves {:?} · pending {:?}",
+            lock.wave_base,
+            lock.waves
+                .iter()
+                .filter(|w| w.n > 0)
+                .map(|w| (w.n, w.tickets.clone()))
+                .collect::<Vec<_>>(),
+            lock.emptied.iter().map(|e| e.n).collect::<Vec<_>>()
+        );
+        assert!(
+            lock.waves.iter().any(|w| w.n == n),
+            "the fixture must actually have an open wave at {n}"
+        );
+
+        let ctx = Ctx::enter().expect("ctx");
+        let (out, rc) = capture_step(|| {
+            cmd_wave_close(
+                &ctx,
+                &[
+                    "--tickets".to_string(),
+                    "T-1,T-2".to_string(),
+                    "--dry-run".to_string(),
+                ],
+            )
+        });
+        println!("── close --tickets over an open label ──\n{out}");
+        assert_eq!(rc, 1, "must refuse");
+        assert!(
+            out.contains(&format!("wave {n} is still an OPEN wave")),
+            "the refusal names the label and why: {out}"
         );
         drop(cwd);
         let _ = std::fs::remove_dir_all(&dir);
