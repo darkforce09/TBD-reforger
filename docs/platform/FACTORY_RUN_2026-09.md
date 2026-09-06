@@ -149,3 +149,29 @@ edit, in-editor play button.
   and was told to "re-gate" — advice with no exit, since the gate refuses the same shape in the same
   place. Both fixed in `2a94af3ac`. Filed: T-974, T-975. Noted: the guard could not run on its own
   wave (the in-flight `land` binary predated its merge), so wave 238 is its first real exercise.
+
+- 2026-09-06 **WAVE 238 CLOSED** (`4f7a0daa7`) — T-935.4 the raw TBDE DEM (emitted beside the PNG,
+  streamed into one `Vec<u16>`), T-935.7 the label archive (one rkyv fetch for towns and road
+  names), T-935.8 the building-blueprint archive and occluder boot. All three inherited a
+  predecessor killed mid-ticket by the session limit; the successors were told they OWN that code
+  and must verify, perturb and gate it themselves, and all three found something in it.
+- 2026-09-06 THE SESSION LIMIT KILLED ALL THREE AGENTS MID-TICKET, and one died holding a live
+  perturbation — a `core::mem::swap` of two header fields, still applied. Committed work was kept
+  (1085 / 980 / 1236 lines); every uncommitted diff was reverted, which removed that break and two
+  half-written loaders. `SendMessage` is unavailable in this session, so the originals could not be
+  resumed by id and fresh agents inherited the branches instead. The method note that justifies
+  the whole approach: T-935.4's own perturbation made `RawDemSink::finish` clone rather than move —
+  a real second 81.9 MB allocation, semantically invisible — and ALL TWELVE inherited tests passed
+  over it. Only the pin the successor added caught it.
+- 2026-09-06 Wave 238 verifier: four MAJORs, two fixed in `47ecabf6f`. (1) `BuildingArchiveBytes`
+  was accepted on LAYOUT alone — `access_checked` with no `schema_version` read, while its sibling
+  `map_labels_from_bytes` checked it in the same wave. A shifted `blocks` bit would seed `no_block`
+  for the wrong pids and those buildings would stop occluding for the session with nothing logged.
+  (2) `with_archive_blas` ran AFTER the awaited descriptor fetch, so everything it could add was
+  already named by `wanted()` and the rest belonged to descriptors that had failed — no round-trip
+  bought, real fetches and 48 MB-budget bytes spent on geometry that could never attach. Removed
+  with its state. Also fixed: the emitter's only real-corpus proof was `#[ignore]`d so the WAVE gate
+  never ran it (now conditional on the file being a pointer, and it prints `skip-lfs:`), and
+  `dem_load.rs` claimed "exactly one allocation" 48 lines above its `f32` grid. Filed: T-983, T-984,
+  T-985. And the re-gate caught the COMMAND CENTER formatting a 2021-edition crate with
+  `--edition 2024` — the exact trap the slice briefs warn agents about.
