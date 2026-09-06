@@ -1,0 +1,11 @@
+id = "T-979"
+kind = "work"
+title = "Shared cache serves stale rmeta to the gate driver"
+summary = "Building xtask in the shared target dir failed on an unresolved import with no compile line for the crate defining it, killing two gates before any step ran. Touching the sources cleared it."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T05:02:52Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
