@@ -337,9 +337,6 @@ class TBD_MissionValidator
 			if (faction.presetId.IsEmpty())
 				AddWarning(subject, "no presetId — the faction has no registry preset to build from");
 		}
-
-		if (declared.Count() == 1)
-			AddWarning("factions", "only one faction is declared; mission.schema.json expects at least two");
 	}
 
 	//------------------------------------------------------------------------------------------------
