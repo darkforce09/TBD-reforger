@@ -72,10 +72,16 @@ pub struct AuthoredBlock {
 ///
 /// Order is `mission.schema.json`'s own property order, which is the order [`ExtensionBlocks`]
 /// emits them in.
-pub const AUTHORED_BLOCKS: &[AuthoredBlock] = &[AuthoredBlock {
-    key: "winConditions",
-    validate: crate::mission::win_conditions::validate,
-}];
+pub const AUTHORED_BLOCKS: &[AuthoredBlock] = &[
+    AuthoredBlock {
+        key: "winConditions",
+        validate: crate::mission::win_conditions::validate,
+    },
+    AuthoredBlock {
+        key: "tasks",
+        validate: crate::mission::tasks::validate,
+    },
+];
 
 /// The authored blocks the compiled document MODELS with a typed field of its own, and which
 /// [`ExtensionBlocks`] must therefore not carry — see the module header's "two destinations".
@@ -190,7 +196,7 @@ impl AuthoredBlocks {
 /// is what lets T-936.2…T-936.7 land a block with a row plus a validator and no edit to this file,
 /// `compile.rs` or `flatten.rs` — which is the whole reason this module exists.
 ///
-/// Empty today, because the one block T-936.1 lands is document-modelled
+/// T-936.1's `winConditions` is document-modelled; T-936.2's `tasks` rides this carrier
 /// ([`DOCUMENT_OWNED_BLOCKS`]). The mechanism is not speculative: [`Self::from_payload`] runs on
 /// every compile and its withholding of `winConditions` is what stops a duplicate key, and
 /// [`tests::a_carried_block_reaches_the_document_root`] drives a populated carrier through the
@@ -311,11 +317,11 @@ mod tests {
         assert!(is_authored_block("winConditions"));
         assert!(DOCUMENT_OWNED_BLOCKS.contains(&"winConditions"));
         assert!(
-            !is_authored_block("tasks"),
-            "T-936.2 lands this, not T-936.1"
+            is_authored_block("tasks"),
+            "T-936.2 registers tasks; a missing row is a silent drop at flatten"
         );
         assert!(!is_authored_block("payloadExtras"));
-        assert_eq!(AUTHORED_BLOCKS.len(), 1);
+        assert_eq!(AUTHORED_BLOCKS.len(), 2);
     }
 
     /// Every entry in [`DOCUMENT_OWNED_BLOCKS`] must be a registered block, or the withhold rule
@@ -333,7 +339,7 @@ mod tests {
             "weather": "clear",
             "timeLimitSeconds": 5400,
             "winConditions": {"mode": "vip", "endOn": ["faction_eliminated"], "vipSlotId": "s1"},
-            "tasks": [{"id": "t1"}],
+            "audio": {"emitters": []},
         });
         let mut dst = Map::new();
         let copied = copy_authored_blocks(&env, &mut dst);
@@ -342,7 +348,7 @@ mod tests {
         assert_eq!(dst.len(), 1, "only the listed key travels: {dst:?}");
         assert_eq!(dst["winConditions"], env["winConditions"], "verbatim");
         assert!(
-            !dst.contains_key("tasks"),
+            !dst.contains_key("audio"),
             "an unlisted key stays parked in payloadExtras"
         );
         assert!(
