@@ -1122,6 +1122,10 @@ class TBD_MissionLoader
 		// absent, so missions without them boot unchanged.
 		TBD_EnvironmentReader.Apply();
 
+		// T-705 -- bind slot.gadgets and arm the post-loadout spawn apply. No-ops when
+		// no slot authors the block, so missions without flags boot unchanged.
+		TBD_GadgetFlags.Bind();
+
 		// T-684 -- resolve authored launch parameters against server-config
 		// selections (or authored defaults). No-ops when missionParams is empty.
 		TBD_MissionParams.Resolve();
