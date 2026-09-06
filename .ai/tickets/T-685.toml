@@ -66,6 +66,8 @@ owns = [
     "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c",
     "apps/website/frontend/src/editor/panels/zones_panel.rs",
 ]
 
