@@ -2564,37 +2564,20 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
     // TBD_VehicleState.c landed (second JsonLoadContext pass over vehicles[], applied from
     // TBD_SpawnManager after SeatAuthoredCrews). Baselines were 0, so they retire rather than
     // re-pin. Apply is on the vehicles[] roster; an entities[]-only row still has no consumer.
-    // T-681 — entity states.
-    UnreadField {
-        name: "allowDamage",
-        expected: 0,
-        ticket: "T-681",
-        why: "clean",
-    },
-    UnreadField {
-        name: "showModel",
-        expected: 0,
-        ticket: "T-681",
-        why: "clean",
-    },
-    UnreadField {
-        name: "stamina",
-        expected: 0,
-        ticket: "T-681",
-        why: "clean",
-    },
-    // `health`/`size` strip to 0 (size appeared only in a byte-count comment).
-    UnreadField {
-        name: "health",
-        expected: 0,
-        ticket: "T-681",
-        why: "clean",
-    },
+    // T-681 — entity states: RETIRED 2026-09-06. `allowDamage` / `showModel` / `stamina` /
+    // `health` gained identifiers when TBD_EntityState.c landed (second JsonLoadContext pass
+    // over entities[], applied from TBD_SpawnManager after VehicleState). Baselines were 0,
+    // so they retire rather than re-pin. `stamina` is bound and skip-logged: Reforger has no
+    // per-character enable toggle. Bools apply only when bound true (T-946.37 class).
+    //
+    // `size` is RE-PINNED, not retired. Its baseline of 3 was T-673 marker.size plus a
+    // file-size comment, UNRELATED to entity OBJ-SIZE. T-681's SetScale reader added 11,
+    // so the new floor is 14 and the unrelated 3 stay guarded (same class as seats 8→12).
     UnreadField {
         name: "size",
-        expected: 3,
+        expected: 14,
         ticket: "T-681",
-        why: "T-673 marker.size reader (3 identifiers) plus the pre-existing file-size comment; T-681 entity OBJ-SIZE is a different field and still unread",
+        why: "T-673 marker.size reader (3 identifiers) plus the pre-existing file-size comment, a different field from entity OBJ-SIZE; re-pinned 3 -> 14 after T-681",
     },
     // T-682 — environment fog/wind/viewDistance: RETIRED 2026-09-06. TBD_EnvironmentReader.c
     // plus ModEnvironment serialisation landed those identifiers. Editor authoring stays refused

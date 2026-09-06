@@ -778,24 +778,24 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "T-681 (ATTR-FIELD-OBJ-HEALTH, schemaVersion 1.3). Initial health fraction, 0 (destroyed) → 1 (pristine). On the wire only — GATED ON `entities[]` acquiring a consumer (nothing on any shipped build reads that array), so this authors state with no destination until the reader lands under T-681."
+          "description": "T-681 (ATTR-FIELD-OBJ-HEALTH, schemaVersion 1.3). Initial health fraction, 0 (destroyed) → 1 (pristine). READ SINCE T-681 (2026-09-06) by `TBD_EntityState.c` (`DamageManagerComponent.SetHealthScaled`) on spawned `entities[]` bodies. Unset leaves the prefab default. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
         },
         "allowDamage": {
           "type": "boolean",
-          "description": "T-681 (ATTR-FIELD-OBJ-ALLOW-DAMAGE, schemaVersion 1.3). Whether this entity may take damage at all (Eden's invincibility toggle). On the wire only — lands under T-681."
+          "description": "T-681 (ATTR-FIELD-OBJ-ALLOW-DAMAGE, schemaVersion 1.3). Whether this entity may take damage at all (Eden's invincibility toggle). READ SINCE T-681 (2026-09-06) by `TBD_EntityState.c` (`EnableDamageHandling(true)`) only when bound true. Authored false and omit bind identically (T-946.37 class). Flatten still omits the key on `/compiled` (T-946.36)."
         },
         "showModel": {
           "type": "boolean",
-          "description": "T-681 (ATTR-FIELD-OBJ-SHOW-MODEL, schemaVersion 1.3). Whether the entity's model is visible (Eden's show/hide). On the wire only — lands under T-681."
+          "description": "T-681 (ATTR-FIELD-OBJ-SHOW-MODEL, schemaVersion 1.3). Whether the entity's model is visible (Eden's show/hide). READ SINCE T-681 (2026-09-06) by `TBD_EntityState.c` (`SetFlags(VISIBLE)`) only when bound true. Authored false (hide) cannot be distinguished from omit. Flatten still omits the key on `/compiled` (T-946.36)."
         },
         "size": {
           "type": "number",
           "exclusiveMinimum": 0,
-          "description": "T-681 (ATTR-FIELD-OBJ-SIZE, schemaVersion 1.3). Uniform scale multiplier for the placed object (1 = native size). On the wire only — lands under T-681."
+          "description": "T-681 (ATTR-FIELD-OBJ-SIZE, schemaVersion 1.3). Uniform scale multiplier for the placed object (1 = native size). READ SINCE T-681 (2026-09-06) by `TBD_EntityState.c` (`IEntity.SetScale`). Unset leaves the prefab scale. Identifier count collides with T-673 marker.size (UNREAD re-pin, not retire). Flatten still omits the entity key on `/compiled` (T-946.36)."
         },
         "stamina": {
           "type": "boolean",
-          "description": "T-681 (ATTR-FIELD-OBJ-STAMINA, schemaVersion 1.3). Whether stamina is enabled for a character entity. On the wire only, and carries an UNRESOLVED upstream question — whether Reforger exposes a per-character stamina toggle at all (a Workbench API question, not answerable by code search here). The reader (and the answer) land under T-681."
+          "description": "T-681 (ATTR-FIELD-OBJ-STAMINA, schemaVersion 1.3). Whether stamina is enabled for a character entity. READ SINCE T-681 (2026-09-06) as a bound identifier on `TBD_EntityState.c`; Reforger exposes no per-character stamina enable toggle (`BaseStaminaComponent.GetStamina` only), so authored true is logged and skipped. Flatten still omits the key on `/compiled` (T-946.36)."
         },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
