@@ -9,6 +9,9 @@ pub mod binary_emit;
 pub mod build;
 pub mod classify;
 pub mod edds;
+/// T-149 — Chaikin smoothing of the Path B forest rings, between `forest::trace_rings` and the
+/// `forest-regions.json.gz` emit.
+pub mod forest_smooth;
 pub mod gates;
 pub mod jsval;
 pub mod pak;
