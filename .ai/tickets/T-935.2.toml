@@ -44,8 +44,10 @@ acceptance = [
     "The parity test proves the .bin decode equals the .json.gz decode for every everon chunk.",
     "Shipped loaders still read .json.gz unchanged; nothing under apps/ or crates/ is modified.",
 ]
+shipped_at = "e68ad8c7c"
 created_at = "2026-09-05T01:34:37Z"
 completed_at = "2026-09-06T03:17:19Z"
+estimated = ["tokens"]
 owns = [
     "tools/tbd-tools/src/world/binary_emit.rs",
     "tools/tbd-tools/src/world/build.rs",
