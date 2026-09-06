@@ -2453,16 +2453,10 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
     // gained identifiers when TBD_ZoneVolume.c + TBD_MissionZoneRulesStruct bind landed.
     // Baselines were 0, so they retire rather than re-pin. Flatten still omits the keys
     // (T-946.36); hand-staged 1.3 JSON reaches the reader.
-    // T-689 — play-area vehicle-class filter (zoneRules.vehicleClasses). This is T-689's ONLY
-    // field, nested in TBD_MissionZoneRulesStruct which the mod ALREADY binds
-    // (TBD_MissionLoader.c) — so a T-689 reader adds one member and no covered identifier moves.
-    // Measured clean 0.
-    UnreadField {
-        name: "vehicleClasses",
-        expected: 0,
-        ticket: "T-689",
-        why: "clean",
-    },
+    // T-689 — play-area vehicle-class filter: RETIRED 2026-09-07. `vehicleClasses` gained
+    // identifiers when TBD_PlayAreaVehicleAxis.c plus the TBD_MissionZoneRulesStruct bind
+    // landed (ZoneRegistry apply). Baseline was 0, so it retires rather than re-pin.
+    // Authored `[]` and absent both Count()==0 (T-946.42); both confine everyone.
     // `objectives` collides with TBD_ObjectivesComponent's own member (the win-condition objective
     // list it already tracks) — NOT a reader of the new top-level `objectives[]` document array.
     UnreadField {
@@ -2735,8 +2729,8 @@ mod unread_wire_field_tests {
     }
 
     /// The fire-once proof, MEASURED, not assumed. Drop a synthetic reader of a CLEAN field
-    /// (baseline 0) into a scratch mod tree and confirm the count rises to 1 — i.e. the day T-689
-    /// lands a `vehicleClasses` reader, `unread_wire_field_failures` trips. Without this, "asserts ZERO
+    /// (baseline 0) into a scratch mod tree and confirm the count rises to 1 — i.e. the day T-212
+    /// lands a `framing` reader, `unread_wire_field_failures` trips. Without this, "asserts ZERO
     /// readers" could be a check that never notices a reader at all.
     #[test]
     fn unread_gate_fires_when_a_reader_appears() {
@@ -2746,21 +2740,21 @@ mod unread_wire_field_tests {
         fs::create_dir_all(&scripts).expect("scratch mod tree");
         // A plausible future reader: a struct member bound by JsonLoadContext (maps by name).
         fs::write(
-            scripts.join("TBD_FuturePlayAreaReader.c"),
-            "class TBD_FuturePlayAreaStruct { string vehicleClasses; }\n",
+            scripts.join("TBD_FutureObjectiveReader.c"),
+            "class TBD_FutureObjectiveStruct { string framing; }\n",
         )
         .expect("write reader");
 
         assert_eq!(
-            count_mod_readers(&dir, "vehicleClasses").expect("count"),
+            count_mod_readers(&dir, "framing").expect("count"),
             1,
-            "a vehicleClasses identifier in a .c file must be counted as a reader"
+            "a framing identifier in a .c file must be counted as a reader"
         );
         let f = unread_wire_field_failures(&dir).expect("scan scratch");
         assert!(
             f.iter()
-                .any(|m| m.contains("'vehicleClasses'") && m.contains("T-689")),
-            "the gate must fail and name vehicleClasses + its ticket once a reader appears; got {f:#?}"
+                .any(|m| m.contains("'framing'") && m.contains("T-212")),
+            "the gate must fail and name framing + its ticket once a reader appears; got {f:#?}"
         );
         let _ = fs::remove_dir_all(&dir);
     }
