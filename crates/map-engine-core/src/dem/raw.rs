@@ -520,6 +520,55 @@ mod tests {
         ));
     }
 
+    /// **The single-allocation pin** — the claim this whole slice is built on, and the one the
+    /// other tests cannot see: they all pass just as happily over a decoder that pushes into a
+    /// growing vector and reallocates 24 times on the way to everon's 81.9 MB.
+    ///
+    /// So this one watches the buffer itself. Capacity alone would not settle it — a `Vec` may
+    /// reallocate and land on the same capacity — so the buffer's *address* is pinned too, across
+    /// a push per byte, which is the most fragmented delivery a socket can produce. `finish` is
+    /// then held to the same standard: it must **move** the buffer out, not copy it.
+    #[test]
+    fn the_sample_vector_is_allocated_once_and_never_moves() {
+        let s = grid();
+        let bytes = framed(GRID_W, GRID_H, EXACT_MIN_M, EXACT_MAX_M, &s);
+        let mut sink = RawDemSink::new(bytes.len() as u64);
+        assert_eq!(
+            sink.samples.capacity(),
+            0,
+            "nothing may be allocated before the header has been validated against the file length"
+        );
+
+        let mut byte_at_a_time = bytes.chunks(1);
+        for c in byte_at_a_time.by_ref().take(HEADER_BYTES) {
+            sink.push(c).expect("header byte");
+        }
+        let (ptr, cap) = (sink.samples.as_ptr(), sink.samples.capacity());
+        assert_eq!(
+            sink.samples.len(),
+            s.len(),
+            "the header must size the buffer to the whole grid at once, not incrementally"
+        );
+
+        for c in byte_at_a_time {
+            sink.push(c).expect("payload byte");
+            assert_eq!(
+                sink.samples.as_ptr(),
+                ptr,
+                "the sample buffer moved: the payload decode reallocated"
+            );
+            assert_eq!(sink.samples.capacity(), cap, "the sample buffer regrew");
+        }
+
+        let dem = sink.finish().expect("finish");
+        assert_eq!(
+            dem.samples.as_ptr(),
+            ptr,
+            "`finish` must move the buffer out, not copy it into a second allocation"
+        );
+        assert_eq!(dem.samples, s);
+    }
+
     /// A hostile header must never reach the allocator. `65535 x 65535` is 8.6 GB of `u16`; the
     /// length check rejects it against a 40-byte file first.
     #[test]

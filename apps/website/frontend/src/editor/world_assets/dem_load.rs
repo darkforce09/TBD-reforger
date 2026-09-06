@@ -53,6 +53,29 @@ pub fn raw_block_is_readable(block: &DemRawBlock) -> bool {
     !block.path.is_empty() && block.encoding == TBDE_ENCODING_V1
 }
 
+/// The whole raw arm of the DEM boot path: take the `dem.raw` block *if* the manifest declares one
+/// this build can read, stream it, and hand back the `DecodedDem` the PNG path also produces.
+///
+/// `None` means "use the PNG", and it is the answer for every terrain shipping today — everon's
+/// manifest carries no `dem.raw` block until T-935.13.
+///
+/// The `f32` grid built here is a deliberate, single, documented allocation on top of the `u16`
+/// one: `build_hillshade_image` and the DEM vector grid both take `&[f32]`, and neither is this
+/// slice's to change. The `u16` grid is what the network wrote into, and nothing copies it.
+pub async fn load_declared_raw(
+    base: &str,
+    block: Option<&DemRawBlock>,
+    report: &dyn Fn(BootEvent),
+) -> Option<map_engine_core::dem::png_decode::DecodedDem> {
+    let block = block.filter(|b| raw_block_is_readable(b))?;
+    let raw = load_dem_raw(&format!("{base}/{}", block.path), BootSeg::Terrain, report).await?;
+    Some(map_engine_core::dem::png_decode::DecodedDem {
+        meters: raw.metres_grid(),
+        width: raw.width(),
+        height: raw.height(),
+    })
+}
+
 /// Stream `url` into one `Vec<u16>`.
 ///
 /// Returns `None` — leaving the caller to use the PNG — on any non-2xx, a missing
@@ -69,9 +92,14 @@ pub async fn load_dem_raw(url: &str, seg: BootSeg, report: &dyn Fn(BootEvent)) -
         .headers()
         .get("content-length")
         .and_then(|v| v.parse::<u64>().ok())?;
-    report(BootEvent::Budget(seg, total));
 
+    // The `Budget` is announced only once there is a body to read it from. `BootEvent::Budget`
+    // *replaces* a segment's total while `Done` accumulates (canvas/boot.rs), so a raw attempt that
+    // announced a budget and then fell through to the PNG would leave the terrain segment counting
+    // this file's bytes against the PNG's total. Every failure reachable before this line — non-2xx,
+    // no `content-length`, no body — therefore reports nothing at all and the PNG path starts clean.
     let body = resp.body()?;
+    report(BootEvent::Budget(seg, total));
     let reader: web_sys::ReadableStreamDefaultReader = body.get_reader().unchecked_into();
     let mut sink = RawDemSink::new(total);
     let mut unreported: u64 = 0;
