@@ -3,7 +3,7 @@ kind = "work"
 title = "Arsenal attachments never reach the compiled document"
 summary = "T-197 persists weapon attachment edges in SlotLoadoutV2 but flatten's mod_slot_loadout reads only weapon/optic/magazine and the schema gear block has no list; add gear.attachments[], emit it, and mount it in TBD_LoadoutEquipHelper.c."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7490
 spec = "docs/specs/ideas/t310_arsenal_attachments.md"
 plan = "docs/plans/t-310_plan.md"
@@ -37,7 +37,10 @@ acceptance = [
     "A suppressor picked in the Arsenal appears in the compiled gear and on the spawned weapon.",
     "Loadouts without attachments compile byte-identically to today.",
 ]
+shipped_at = "37d718e60"
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-06T23:01:37Z"
+estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/mission/flatten.rs",
     "packages/tbd-schema/schema/mission.schema.json",

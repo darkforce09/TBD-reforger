@@ -10,10 +10,8 @@
 
 - **T-090** (7079) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-212** (7320) — Typed per-side objectives with attributes [ready] — Objectives as typed, placed, per-side entities with one uniform attribute spine
-- **T-689** (7380) — Play-area enforcement gains a vehicle-class axis: the aircraft exemption [ready] — Play-area enforcement gains a vehicle-class axis: the aircraft exemption
 - **T-705** (7400) — Player gadget flags — map, compass, watch, GPS, radio [ready] — Player gadget flags — map, compass, watch, GPS, radio
 - **T-654** (7410) — Conditional inclusion: variant-gated document subtrees [ready] — Conditional inclusion: variant-gated document subtrees
-- **T-310** (7490) — Arsenal attachments never reach the compiled document [ready] — T-197 persists weapon attachment edges in SlotLoadoutV2 but flatten's mod_slot_loadout reads only weapon/optic/magazine and the schema gear block has no list; add gear.attachments[], emit it, and mount it in TBD_LoadoutEquipHelper.c.
 - **T-290** (7540) — Nine dead flatten fields mod never reads [ready] — meta.author/templateId/playerRange, the environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds and the orbat block are emitted but never read by the mod; add readers where cheap and annotate the rest in an emit ledger.
 - **T-291** (7550) — Resolve five schema fields implemented on no surface [ready] — environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem.
 - **T-242** (7560) — Emit T-216 slot deltas through flatten [ready] — The T-216 schema deltas (slot tag/callsign/rank/stance, group leaderSlotId, root vehicles $def) are all declared in mission.schema.json today, but flatten drops the four slot fields (DIAG_DROP_SLOT_*); emit them and pin with schema-validated goldens.
@@ -103,7 +101,6 @@ flowchart LR
   T685[T-685] --> T212[T-212]
   T241[T-241] --> T212[T-212]
   T257[T-257] --> T212[T-212]
-  T685[T-685] --> T689[T-689]
   T076[T-076] --> T675[T-675]
   T114[T-114] --> T139[T-139]
   T222[T-222] --> T190[T-190]

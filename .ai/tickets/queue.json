@@ -20,13 +20,6 @@
       "branch": "ticket/T-212"
     },
     {
-      "id": "T-689",
-      "title": "Play-area enforcement gains a vehicle-class axis: the aircraft exemption",
-      "status": "ready",
-      "spec": "docs/specs/existing/t689_play_area_vehicle_axis.md",
-      "branch": "ticket/T-689"
-    },
-    {
       "id": "T-705",
       "title": "Player gadget flags \u2014 map, compass, watch, GPS, radio",
       "status": "ready",
@@ -39,13 +32,6 @@
       "status": "ready",
       "spec": "docs/specs/existing/t654_variant_inclusion.md",
       "branch": "ticket/T-654"
-    },
-    {
-      "id": "T-310",
-      "title": "Arsenal attachments never reach the compiled document",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t310_arsenal_attachments.md",
-      "branch": "ticket/T-310"
     },
     {
       "id": "T-290",

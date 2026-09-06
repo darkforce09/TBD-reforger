@@ -3,7 +3,7 @@ kind = "work"
 title = "Safestart armed during LOBBY and BRIEFING"
 summary = "The safestart damage shield arms for LOBBY and BRIEFING as well as SAFE_START, so bodies auto-deployed during the lobby window cannot be hurt before the mission goes live."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7580
 spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
 plan = "docs/plans/t-941_1_plan.md"
@@ -36,7 +36,10 @@ acceptance = [
     "The mod compiles and the boot lane passes with the widened predicate.",
     "Checklist: a player deployed during LOBBY takes no damage from a grenade; damage resumes after GoLive.",
 ]
+shipped_at = "c3866cddb"
 created_at = "2026-09-05T02:33:18Z"
+completed_at = "2026-09-06T23:01:27Z"
+estimated = ["tokens"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c",

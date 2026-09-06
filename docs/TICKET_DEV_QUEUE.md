@@ -13,14 +13,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** Objectives as typed, placed, per-side entities with one uniform attribute spine
 
-## T-689 — Play-area enforcement gains a vehicle-class axis: the aircraft exemption
-
-- **Slice spec:** `docs/specs/existing/t689_play_area_vehicle_axis.md`
-- **Program hub:** `docs/specs/existing/t689_play_area_vehicle_axis.md`
-- **Branch:** `ticket/T-689`
-- **Targets:** 
-- **Summary:** Play-area enforcement gains a vehicle-class axis: the aircraft exemption
-
 ## T-705 — Player gadget flags — map, compass, watch, GPS, radio
 
 - **Slice spec:** `docs/specs/existing/t705_gadget_flags.md`
@@ -36,14 +28,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-654`
 - **Targets:** 
 - **Summary:** Conditional inclusion: variant-gated document subtrees
-
-## T-310 — Arsenal attachments never reach the compiled document
-
-- **Slice spec:** `docs/specs/ideas/t310_arsenal_attachments.md`
-- **Program hub:** `docs/specs/ideas/t310_arsenal_attachments.md`
-- **Branch:** `ticket/T-310`
-- **Targets:** 
-- **Summary:** T-197 persists weapon attachment edges in SlotLoadoutV2 but flatten's mod_slot_loadout reads only weapon/optic/magazine and the schema gear block has no list; add gear.attachments[], emit it, and mount it in TBD_LoadoutEquipHelper.c.
 
 ## T-290 — Nine dead flatten fields mod never reads
 
