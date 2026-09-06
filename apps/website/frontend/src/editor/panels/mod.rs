@@ -27,4 +27,8 @@ pub mod vehicles_panel;
 // is one line in `settings_modal.rs`, which is outside T-936.1's owned files. See the card's own
 // header.
 pub mod win_conditions_card;
+// T-936.2 — the Tasks panel: tier / trigger / marker pickers, undoable list ops. Mounts beside
+// win_conditions_card in Mission Settings; that one line lives in settings_modal.rs (outside this
+// slice's owns), same as T-936.1's card.
+pub mod tasks_panel;
 pub mod zones_panel;
