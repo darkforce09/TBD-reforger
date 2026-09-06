@@ -45,8 +45,10 @@ acceptance = [
     "The occluder host boots from one fetch instead of 1623 when the manifest points at the archive.",
     "world-los on cell 18_0 is unchanged from main.",
 ]
+shipped_at = "aaa0b86d9"
 created_at = "2026-09-05T01:34:37Z"
 completed_at = "2026-09-06T05:11:21Z"
+estimated = ["tokens"]
 owns = [
     "xtask/src/map_blueprint/archive_emit.rs",
     "xtask/src/map_blueprint/library_cli.rs",
