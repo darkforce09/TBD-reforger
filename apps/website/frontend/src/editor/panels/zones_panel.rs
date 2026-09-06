@@ -59,6 +59,28 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
             "Play areas and objectives. Circle: click the centre, then click the rim. Polygon: click each vertex, then Close."
         </p>
 
+        // ── Whole-terrain zone (T-702 / 3DEN-MISC-001 E11) ─────────────────────────────────
+        // One press authors the play area every mission wants first, sized to the map from the
+        // same `terrain_bounds` the compile reads — instead of the author walking a 12.8 km ring
+        // vertex by vertex. It is a CREATE, not a gesture: no draw is armed and no click follows.
+        // The returned id goes straight into `selected`, which is what makes the Attributes panel
+        // below open on the new zone; the tick bump re-reads the count and the list. A `None`
+        // (no document, or a rect the world guard refused) leaves the selection untouched rather
+        // than pointing Attributes at an id that was never minted.
+        <button
+            type="button"
+            title="Author one boundary zone covering the whole terrain, sized from the mission's map"
+            class="mt-2 w-full rounded-md border border-primary/40 bg-primary/10 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-primary/20"
+            on:click=move |_| {
+                if let Some(id) = ops::add_whole_terrain_zone() {
+                    selected.set(Some(id));
+                }
+                doc_tick.update(|n| *n = n.wrapping_add(1));
+            }
+        >
+            "Whole-terrain zone"
+        </button>
+
         // ── Draw controls ──────────────────────────────────────────────────────────────────
         <label class="mt-3 block text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
             "Type"
@@ -903,6 +925,98 @@ pub fn polygon_flat(verts: &[(f64, f64)]) -> Vec<f64> {
     out
 }
 
+/* ════════════ T-702 (3DEN-MISC-001 E11) — the whole-terrain zone, the pure half ════════════ */
+
+/// The label a whole-terrain zone is authored with. Presentation seed, not a wire key: it lands in
+/// `zone.label` (which the schema leaves free — no `minLength`, empty allowed) and the author can
+/// rename or clear it in Attributes exactly like a hand-drawn zone.
+pub const WHOLE_TERRAIN_ZONE_LABEL: &str = "Play Area";
+
+/// The schema `zone.type` a whole-terrain zone carries — `boundary`, the play area, resolved from
+/// [`zone_types`] rather than spelled.
+///
+/// Same reason the draw picker seeds itself from the schema and `zone_rule_fields` generates its
+/// controls: `add_polygon_zone` writes whatever `type` it is handed, and a value this file invented
+/// would save 201 and then 500 `/compiled` forever (T-581, measured from the other side). `None`
+/// means the schema no longer declares `boundary`, and the affordance must then offer nothing
+/// rather than guess — a missing type is new information, not a default.
+#[must_use]
+pub fn whole_terrain_zone_type() -> Option<String> {
+    zone_types().into_iter().find(|t| t == "boundary")
+}
+
+/// May `bounds` be authored as a whole-terrain rect at all? The rect twin of
+/// [`radius_survives_compile`].
+///
+/// A rect whose extent quantises to zero on either axis collapses two of its four corners onto each
+/// other under `flatten`'s [`round_coord`], leaving a ring the `$defs/polygon` `minItems: 3` intent
+/// refuses — the same `r → 0.0` failure a degenerate circle has, in two dimensions. Expressed over
+/// the grid and over [`polygon_is_committable`] (not as a bespoke threshold) so it cannot disagree
+/// with the rule the rest of the tool already applies.
+///
+/// **Honest scope:** both shipped terrains (Everon `12800²`, Arland `4096²`) pass this today, and
+/// `terrain_bounds` resolves every unknown key to Everon — so no *current* terrain can trip it. It
+/// is a precondition on the BOUNDS, not on the terrain table, and it is the guard that keeps this
+/// affordance safe the moment a terrain's extent stops being a compile-time literal (a `custom`
+/// terrain sized from a manifest is already a shape `MissionMeta::custom_terrain_name` anticipates).
+#[must_use]
+pub fn terrain_rect_is_authorable(bounds: [f64; 4]) -> bool {
+    let [min_x, min_z, max_x, max_z] = bounds;
+    // Positive area AFTER quantisation: `round_coord(0.04) == 0.0`, so a rect thinner than the
+    // 0.1 m grid on either axis is refused here rather than committed and rejected at save.
+    let has_area = round_coord(max_x - min_x) > 0.0 && round_coord(max_z - min_z) > 0.0;
+    has_area && polygon_is_committable(&terrain_rect_corners(bounds))
+}
+
+/// The four corners of the terrain rect, SW → SE → NE → NW.
+///
+/// The winding is not a taste: it is byte-for-byte the order `flatten::synthesize_terrain_boundary`
+/// emits for its `z_bounds` fallback AO, so an authored whole-terrain zone and the boundary the
+/// compile would have synthesised for the same map are the SAME ring rather than two rings that
+/// merely cover the same ground. `whole_terrain_ring_is_the_rect_the_compile_reads` proves that
+/// against the real `flatten_to_mod_document`, for both terrains.
+///
+/// The document's second axis is `z`, not `y` (see [`circle_from_clicks`]) — `terrain_bounds`'
+/// `minY`/`maxY` are this ring's z coordinates.
+fn terrain_rect_corners(bounds: [f64; 4]) -> [(f64, f64); 4] {
+    let [min_x, min_z, max_x, max_z] = bounds;
+    [
+        (min_x, min_z),
+        (max_x, min_z),
+        (max_x, max_z),
+        (min_x, max_z),
+    ]
+}
+
+/// T-702 — the whole-terrain ring for `terrain`, as the flat `[x0,z0,…]` `add_polygon_zone` takes.
+///
+/// ═══ THE ANSWER CARRIES THE WORLD IT WAS BUILT FOR ═══
+///
+/// This is a spatial answer — "the map, exactly" — so it names the map it answered for and
+/// **refuses a caller whose bounds disagree with it**. `bounds` is not trusted: it must equal
+/// `compile::terrain_bounds(terrain)`, the one helper `flatten` (`synthesize_terrain_boundary`),
+/// `validate` (`V3-SLOT-IN-BOUNDS`) and the editor's own `terrain_bounds_of` all read. A caller
+/// that resolved the extent some other way — a manifest field, a remembered `12800`, a stale
+/// terrain key read separately from the bounds — gets `None` and authors nothing, instead of
+/// silently drawing a "whole-terrain" zone that is not the terrain. That failure is invisible in
+/// the editor (a big rectangle looks like a big rectangle) and only shows up in-game as a play
+/// area with the wrong edge, which is precisely why the disagreement is refused here.
+///
+/// `None` also for a rect [`terrain_rect_is_authorable`] rejects.
+///
+/// Returns a POLYGON, never a circle: the terrain is a square, and a disc inscribed in it leaves
+/// the corners outside the play area while one circumscribing it runs far past the map edge.
+#[must_use]
+pub fn terrain_rect_ring(terrain: &str, bounds: [f64; 4]) -> Option<Vec<f64>> {
+    if bounds != map_engine_core::mission::compile::terrain_bounds(terrain) {
+        return None;
+    }
+    if !terrain_rect_is_authorable(bounds) {
+        return None;
+    }
+    Some(polygon_flat(&terrain_rect_corners(bounds)))
+}
+
 /// Which shape a zone draw is building.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ZoneShape {
@@ -970,8 +1084,9 @@ impl DrawTarget {
 mod tests {
     use super::{
         circle_from_clicks, humanize_key, humanize_token, polygon_flat, polygon_is_committable,
-        radius_survives_compile, round_coord, zone_rule_fields, zone_types, ZoneRuleKind,
-        MIN_AUTHORABLE_RADIUS_M, MISSION_SCHEMA, ZONE_GRID_M,
+        radius_survives_compile, round_coord, terrain_rect_is_authorable, terrain_rect_ring,
+        whole_terrain_zone_type, zone_rule_fields, zone_types, ZoneRuleKind,
+        MIN_AUTHORABLE_RADIUS_M, MISSION_SCHEMA, WHOLE_TERRAIN_ZONE_LABEL, ZONE_GRID_M,
     };
 
     /// The quantisation this file mirrors is `flatten::round_coord`, which is private there. Pin it
@@ -1326,6 +1441,333 @@ mod tests {
             body.contains("Some(Pending::Zone(_))"),
             "T-792: cancel_zone_draw must clear on Pending::Zone(_) regardless of collection, so a \
              trigger draw (the second consumer) is cancelled by the same call"
+        );
+    }
+
+    /* ═════════════ T-702 (3DEN-MISC-001 E11) — the whole-terrain Play Area zone ═════════════ */
+
+    /// **BOTH shipped terrains.** `everon` (12800²) and `arland` (4096²) are the two the create
+    /// dialog offers (`library/create_dialog.rs`) and the only two `compile::terrain_bounds`
+    /// distinguishes; every other key resolves to Everon, which the golden below also covers by
+    /// running the unknown ones through the SAME comparison rather than assuming the fallback.
+    const SHIPPED_TERRAINS: [&str; 2] = ["everon", "arland"];
+
+    /// A compilable mission with `zones` set to `extra` — factions/squads/slots are present because
+    /// `flatten_to_mod_document` answers `CompileError::NoSlots` on a bare document, which would
+    /// fail this test for a reason with nothing to do with zones. Mirrors flatten's own
+    /// `zones_test_payload` fixture.
+    fn terrain_payload(extra: &str) -> Vec<u8> {
+        format!(
+            r#"{{
+              "zones": {extra},
+              "editor": {{
+                "factions": [{{"key": "BLUFOR", "name": "US", "squadIds": ["sq_a"]}}],
+                "squads": [{{"id": "sq_a", "callsign": "Alpha", "slotIds": ["s_a"]}}],
+                "slots": [
+                  {{"id": "s_a", "index": 0, "role": "RFL",
+                   "position": {{"x": 1000.0, "y": 2000.0, "z": 0, "rotation": 0}}}}
+                ]
+              }}
+            }}"#
+        )
+        .into_bytes()
+    }
+
+    /// Compile `payload` for `terrain` and hand back the mod document.
+    fn compile_for(
+        terrain: &str,
+        payload: &[u8],
+    ) -> map_engine_core::mission::flatten::ModMissionDocument {
+        use map_engine_core::mission::flatten::{flatten_to_mod_document, MissionMeta};
+        let meta = MissionMeta {
+            terrain: terrain.to_string(),
+            ..MissionMeta::default()
+        };
+        let doc = flatten_to_mod_document(&meta, payload)
+            .unwrap_or_else(|e| panic!("{terrain} must compile: {e:?}"));
+        // T-702 — a golden that only checks the SHAPE of a document has not checked WHICH document
+        // it read. `flatten` latches `schemaVersion` on the payload's own keys (`1.1` / `1.2` /
+        // `1.3`, flatten.rs), and this fixture carries none of the later ones, so `1.1` is both the
+        // version under test and a statement of which payload shape produced it. A latch change
+        // re-opens this comparison instead of letting it pass over a document whose `zones` no
+        // longer mean what they meant here.
+        assert_eq!(
+            doc.schema_version, "1.1",
+            "the mod-document format this golden was written against"
+        );
+        doc
+    }
+
+    /// The `boundary` zone the compile produced, as one flat `[x0,z0,…]` ring.
+    fn compiled_boundary_ring(
+        doc: &map_engine_core::mission::flatten::ModMissionDocument,
+        id: &str,
+    ) -> Vec<f64> {
+        use map_engine_core::mission::flatten::ModZoneShape;
+        let z = doc
+            .zones
+            .iter()
+            .find(|z| z.id == id)
+            .unwrap_or_else(|| panic!("no zone `{id}` in the compiled document"));
+        assert_eq!(z.kind, "boundary", "`{id}` must compile as the play area");
+        let ModZoneShape::Polygon { polygon } = &z.shape else {
+            panic!("`{id}` must be a POLYGON — a square terrain is not a disc");
+        };
+        polygon.iter().flat_map(|p| [p[0], p[1]]).collect()
+    }
+
+    /// ═══ THE GOLDEN: THE AUTHORED RECT **IS** THE COMPILED RECT ═══
+    ///
+    /// The affordance's whole promise is "one zone sized to the map", and the only way to check that
+    /// without re-typing a number this file would then be the sole author of is to ask the COMPILE
+    /// what the map is. `flatten` already answers it: with no authored boundary it synthesises
+    /// `z_bounds` from `compile::terrain_bounds` (`flatten.rs` `synthesize_terrain_boundary`), which
+    /// is the same helper `validate`'s `V3-SLOT-IN-BOUNDS` and the editor's own `terrain_bounds_of`
+    /// read. So this compiles a zone-free mission for each terrain, takes the ring the compile
+    /// itself produced, and demands [`terrain_rect_ring`] equals it — coordinate for coordinate,
+    /// in the same winding.
+    ///
+    /// That is what makes "matching terrain_bounds exactly" mechanical rather than aspirational: a
+    /// literal `12800` typed here would drift the day a terrain's extent changes; this cannot,
+    /// because both sides are the same source.
+    #[test]
+    fn whole_terrain_ring_is_the_rect_the_compile_reads() {
+        use map_engine_core::mission::compile::terrain_bounds;
+        for terrain in SHIPPED_TERRAINS {
+            let compiled =
+                compiled_boundary_ring(&compile_for(terrain, &terrain_payload("[]")), "z_bounds");
+            let authored = terrain_rect_ring(terrain, terrain_bounds(terrain))
+                .unwrap_or_else(|| panic!("{terrain}'s own bounds must be authorable"));
+            assert_eq!(
+                authored, compiled,
+                "the {terrain} whole-terrain ring must be the rect the compile reads, exactly"
+            );
+        }
+        // The two terrains really are DIFFERENT rects — without this the loop above would pass just
+        // as happily if `terrain_bounds` had collapsed to one size and the golden had followed it.
+        assert_ne!(
+            terrain_rect_ring("everon", terrain_bounds("everon")),
+            terrain_rect_ring("arland", terrain_bounds("arland")),
+            "everon 12800² and arland 4096² must not author the same ring"
+        );
+        // And an unknown terrain resolves to Everon's rect through the SAME path, rather than to
+        // nothing — `terrain_bounds` documents that fallback and the affordance inherits it.
+        for unknown in ["custom", "definitely-not-a-terrain", ""] {
+            assert_eq!(
+                terrain_rect_ring(unknown, terrain_bounds(unknown)),
+                terrain_rect_ring("everon", terrain_bounds("everon")),
+                "an unknown terrain must author Everon's rect, the fallback terrain_bounds takes"
+            );
+        }
+    }
+
+    /// ═══ AND IT REPLACES THE SYNTHESISED AO RATHER THAN SITTING BESIDE IT ═══
+    ///
+    /// `flatten`'s `derive_zones` only synthesises `z_bounds` when the payload declares NO
+    /// `boundary` zone (`zones_have_boundary`). So a mission carrying the authored Play Area must
+    /// compile to exactly ONE boundary — the authored one, carrying the author's label — and the
+    /// synthesised fallback must be gone. If the two rings ever differed, pressing the button would
+    /// silently change the play area's edge from what the mission already compiled to; they do not,
+    /// and this is where that is checked end to end.
+    #[test]
+    fn the_authored_play_area_becomes_the_compiled_play_area() {
+        use map_engine_core::mission::compile::terrain_bounds;
+        for terrain in SHIPPED_TERRAINS {
+            let ring = terrain_rect_ring(terrain, terrain_bounds(terrain)).expect("authorable");
+            let verts: Vec<String> = ring
+                .chunks_exact(2)
+                .map(|c| format!("[{}, {}]", c[0], c[1]))
+                .collect();
+            let authored = format!(
+                r#"[{{"id": "z1", "type": "{}", "label": "{WHOLE_TERRAIN_ZONE_LABEL}",
+                      "shape": {{"polygon": [{}]}}}}]"#,
+                whole_terrain_zone_type().expect("the schema declares `boundary`"),
+                verts.join(", ")
+            );
+            let doc = compile_for(terrain, &terrain_payload(&authored));
+            let boundaries: Vec<&str> = doc
+                .zones
+                .iter()
+                .filter(|z| z.kind == "boundary")
+                .map(|z| z.id.as_str())
+                .collect();
+            assert_eq!(
+                boundaries,
+                ["z1"],
+                "the authored Play Area must BE the compiled play area — no second, synthesised \
+                 z_bounds beside it ({terrain})"
+            );
+            assert_eq!(
+                compiled_boundary_ring(&doc, "z1"),
+                ring,
+                "and its ring must survive the compile unchanged ({terrain})"
+            );
+            assert_eq!(
+                doc.zones
+                    .iter()
+                    .find(|z| z.id == "z1")
+                    .map(|z| z.label.as_str()),
+                Some(WHOLE_TERRAIN_ZONE_LABEL),
+                "the author's label must reach the mod ({terrain})"
+            );
+        }
+    }
+
+    /// ═══ THE ANSWER REFUSES A WORLD IT WAS NOT BUILT FOR ═══
+    ///
+    /// [`terrain_rect_ring`] is a spatial answer, so it carries its terrain and refuses bounds that
+    /// disagree with it. The failure this guards is not hypothetical: the editor reads the extent
+    /// through `terrain_bounds_of(core)` and the terrain key through the same doc, and any future
+    /// path that resolved one from a manifest, a cached value or a remembered `12800` would produce
+    /// a "whole-terrain" zone that is not the terrain — invisible in the editor, wrong in game.
+    #[test]
+    fn terrain_rect_ring_refuses_bounds_that_are_not_this_terrain() {
+        use map_engine_core::mission::compile::terrain_bounds;
+        let everon = terrain_bounds("everon");
+        let arland = terrain_bounds("arland");
+        assert!(terrain_rect_ring("everon", everon).is_some());
+        assert!(terrain_rect_ring("arland", arland).is_some());
+        // The classic mix-up: the right terrain, the OTHER terrain's extent.
+        assert_eq!(
+            terrain_rect_ring("arland", everon),
+            None,
+            "arland must refuse Everon's 12800² rect"
+        );
+        assert_eq!(
+            terrain_rect_ring("everon", arland),
+            None,
+            "everon must refuse Arland's 4096² rect"
+        );
+        // And a hand-built extent that is merely CLOSE is still not the map.
+        assert_eq!(
+            terrain_rect_ring("everon", [0.0, 0.0, 12_800.0, 12_799.9]),
+            None,
+            "an extent one grid step short of the terrain is not the terrain"
+        );
+    }
+
+    /// ═══ THE RECT RULE, FIRED ═══
+    ///
+    /// The [`radius_survives_compile`] twin: real bounds pass; a rect collapsed on either axis, or
+    /// thinner than the 0.1 m grid, or carrying a non-finite corner, is refused rather than
+    /// committed as a zone the save would reject. Stated on the bounds alone (not through
+    /// `terrain_rect_ring`, whose world guard would answer first and hide it), so the rule itself is
+    /// what is under test.
+    #[test]
+    fn terrain_rect_rule_fires() {
+        use map_engine_core::mission::compile::terrain_bounds;
+        for terrain in SHIPPED_TERRAINS {
+            assert!(
+                terrain_rect_is_authorable(terrain_bounds(terrain)),
+                "{terrain}'s real rect must be authorable"
+            );
+        }
+        let good = terrain_bounds("everon");
+        // Zero width, then zero height.
+        assert!(!terrain_rect_is_authorable([
+            good[0], good[1], good[0], good[3]
+        ]));
+        assert!(!terrain_rect_is_authorable([
+            good[0], good[1], good[2], good[1]
+        ]));
+        // Sub-grid width: `round_coord(0.04) == 0.0`, the same collapse a degenerate circle faces.
+        assert!(
+            !terrain_rect_is_authorable([0.0, 0.0, ZONE_GRID_M / 2.5, 12_800.0]),
+            "a rect thinner than the grid quantises two corners together"
+        );
+        // Inverted (max behind min) is not "a rect drawn the other way", it is no rect at all.
+        assert!(!terrain_rect_is_authorable([
+            0.0, 0.0, -12_800.0, -12_800.0
+        ]));
+        // A non-finite corner must never reach the document.
+        assert!(!terrain_rect_is_authorable([0.0, 0.0, f64::NAN, 12_800.0]));
+        assert!(!terrain_rect_is_authorable([
+            0.0,
+            0.0,
+            f64::INFINITY,
+            12_800.0
+        ]));
+        // The rule is a gate, not a latch: the untouched bound is authorable again.
+        assert!(terrain_rect_is_authorable(good));
+    }
+
+    /// The type is read from the schema, like every other `zone.type` this panel offers — an
+    /// invented value saves 201 and then 500s `/compiled` (T-581).
+    #[test]
+    fn whole_terrain_zone_type_comes_from_the_schema() {
+        let t = whole_terrain_zone_type().expect("the schema must declare `boundary`");
+        assert_eq!(t, "boundary");
+        assert!(
+            zone_types().contains(&t),
+            "the whole-terrain type must be one the schema declares"
+        );
+        assert_eq!(WHOLE_TERRAIN_ZONE_LABEL, "Play Area");
+    }
+
+    /// ═══ THE AFFORDANCE IS WIRED — BUTTON → COMMAND → DOCUMENT ═══
+    ///
+    /// `operations::entity` is `#![cfg(target_arch = "wasm32")]`, so no native test can link the
+    /// command; this is the source pin `every_t211_mutator_has_a_caller` set the precedent for. It
+    /// runs on `class_r_scrub::live_code` (comments deleted, string literals BLANKED) so a needle
+    /// can only be satisfied by a real call — never by the comment that describes it, and never by a
+    /// mention inside a string. The button's user-visible copy is pinned separately on `live_source`,
+    /// which keeps literals, because copy that ships IS code.
+    ///
+    /// Without this the affordance could rot to a button that calls nothing, which is the T-582
+    /// defect in miniature.
+    #[test]
+    fn whole_terrain_affordance_is_wired() {
+        use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        let ops = live_code(include_str!("../state/operations/entity.rs"));
+        let body = only_body(&ops, "pub fn add_whole_terrain_zone() -> Option<String>");
+
+        // It reads the LIVE terrain off the document — both halves, so the world guard has two
+        // things to compare — and never a literal extent.
+        assert!(
+            body.contains("terrain_key_of(core)") && body.contains("terrain_bounds_of(core)"),
+            "T-702: the command must read the live terrain KEY and its BOUNDS from the doc, so the \
+             rect it authors is the rect the compile reads"
+        );
+        // The rect is built through the pure, world-guarded helper here — not open-coded.
+        assert!(
+            body.contains("zones_panel::terrain_rect_ring("),
+            "T-702: the ring must come from terrain_rect_ring (which refuses bounds that are not \
+             this terrain), not from four corners spelled in the command"
+        );
+        // The create is the ONE-transaction labelled mutator. `add_polygon_zone` +
+        // `set_zone_label` would be two undo steps
+        // (store.rs `a_labelled_polygon_zone_create_is_one_undo_step`), and the acceptance is one.
+        assert!(
+            body.contains("core.add_polygon_zone_labelled("),
+            "T-702: one button = one undo step, so the create must be the single-txn labelled \
+             mutator — never add_polygon_zone followed by set_zone_label"
+        );
+        assert!(
+            !body.contains("core.set_zone_label("),
+            "T-702: a second mutator here is a second undo step; the label rides the create"
+        );
+        // The label and the type are the shared, schema-checked values — not second literals.
+        assert!(
+            body.contains("zones_panel::WHOLE_TERRAIN_ZONE_LABEL")
+                && body.contains("zones_panel::whole_terrain_zone_type()"),
+            "T-702: label and type must be the shared constants, not re-spelled in the command"
+        );
+
+        // The panel button CALLS the command and selects what it returns, so Attributes open on the
+        // zone the author just made.
+        let panel = live_code(include_str!("zones_panel.rs"));
+        let panel_copy = live_source(include_str!("zones_panel.rs"));
+        assert!(
+            panel.contains("ops::add_whole_terrain_zone()"),
+            "T-702: the Zones panel must CALL the command (the T-582 no-caller defect must not recur)"
+        );
+        assert!(
+            panel.contains("selected.set(Some(id))"),
+            "T-702: the panel must select the new zone id, which is what opens its Attributes"
+        );
+        assert!(
+            panel_copy.contains("Whole-terrain zone"),
+            "T-702: the affordance must be a labelled control an author can find"
         );
     }
 }

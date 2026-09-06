@@ -1868,14 +1868,33 @@ fn mint_ids(ctx: &OpsCtx, core: &MissionDocCore, count: usize) -> Vec<String> {
     out
 }
 
-/// T-650 — the terrain bounds `[x0, y0, width, height]` for the live mission (the `paste_at_cursor`
-/// idiom: read `meta.terrain` off `small_maps_json`, resolve bounds via the compile helper).
-pub(super) fn terrain_bounds_of(core: &MissionDocCore) -> [f64; 4] {
-    let terrain = serde_json::from_str::<serde_json::Value>(&core.small_maps_json())
+/// T-702 — the live mission's `meta.terrain`, exactly as the compile reads it (the
+/// `paste_at_cursor` idiom: off `small_maps_json`). An absent / non-string key answers `""`, which
+/// `compile::terrain_bounds` resolves to Everon, so the empty string is a real terrain key here and
+/// not an error case.
+///
+/// Split out of [`terrain_bounds_of`] so the terrain and its extent come from **one** read of one
+/// document rather than two independent ones — T-702's world guard compares them, and a guard whose
+/// two sides were resolved differently would either fire spuriously or never fire at all.
+pub(super) fn terrain_key_of(core: &MissionDocCore) -> String {
+    serde_json::from_str::<serde_json::Value>(&core.small_maps_json())
         .ok()
         .and_then(|v| v.get("meta")?.get("terrain")?.as_str().map(str::to_string))
-        .unwrap_or_default();
-    map_engine_core::mission::compile::terrain_bounds(&terrain)
+        .unwrap_or_default()
+}
+
+/// T-650 — the terrain bounds `[minX, minY, maxX, maxY]` for the live mission, resolved from
+/// [`terrain_key_of`] through the compile helper — the same `compile::terrain_bounds` the
+/// flatten path (`synthesize_terrain_boundary`) and the validator (`V3-SLOT-IN-BOUNDS`) read.
+///
+/// **T-702 — the element names were `[x0, y0, width, height]` here and that was wrong.**
+/// `compile::terrain_bounds` returns MAXIMA, not extents. The two coincide today only because every
+/// terrain it knows is anchored at `(0, 0)`, so `place_composition(…, b[2], b[3])` below happens to
+/// receive the right numbers under the wrong names. Corrected rather than propagated: this function
+/// is now also the source of a whole-terrain rect, where reading `b[2]` as a width would author a
+/// zone the size of the map's far corner.
+pub(super) fn terrain_bounds_of(core: &MissionDocCore) -> [f64; 4] {
+    map_engine_core::mission::compile::terrain_bounds(&terrain_key_of(core))
 }
 
 /// T-650 — does `id` name a live slot? (Used to keep only slot ids in the post-place selection —
@@ -3716,23 +3735,32 @@ fn mint_row_id(core: &MissionDocCore, collection: DrawTarget) -> String {
 /// then the shared dirty tail. The write txn is scoped so it is gone before `after_local_edit` opens
 /// its read txn (the `mission_history` rule).
 fn write_row(collection: DrawTarget, f: impl FnOnce(&MissionDocCore, &str)) -> bool {
-    let did = OPS_CTX.with(|c| {
+    write_row_returning_id(collection, f).is_some()
+}
+
+/// [`write_row`], but hands back the minted id.
+///
+/// The draw tool discards it — committing a drawn ring selects nothing, because the author's
+/// pointer is already where they want it. T-702's whole-terrain button has no click to select
+/// with, so it needs the id to put the new zone in the Attributes panel. Same single write txn,
+/// same one undo step, same one `after_local_edit` tail either way; only the return type differs.
+fn write_row_returning_id(
+    collection: DrawTarget,
+    f: impl FnOnce(&MissionDocCore, &str),
+) -> Option<String> {
+    let id = OPS_CTX.with(|c| {
         let guard = c.borrow();
-        let Some(ctx) = guard.as_ref() else {
-            return false;
-        };
+        let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
-        let Some(core) = d.as_ref() else {
-            return false;
-        };
+        let core = d.as_ref()?;
         let id = mint_row_id(core, collection);
         f(core, &id);
-        true
+        Some(id)
     });
-    if did {
+    if id.is_some() {
         mission_history::after_local_edit();
     }
-    did
+    id
 }
 
 /// Every authored zone, in `zones_json` map order, for the dock list.
@@ -3887,6 +3915,60 @@ pub fn zone_count() -> usize {
             .as_ref()
             .and_then(|ctx| ctx.doc.borrow().as_ref().map(MissionDocCore::zone_count))
             .unwrap_or(0)
+    })
+}
+
+/// T-702 (3DEN-MISC-001 E11) — author ONE `boundary` polygon zone whose four corners are the
+/// terrain rect exactly, labelled "Play Area", and return its id so the panel can select it.
+///
+/// Every mission wants a play area, and today the only way to get one is to draw a 12.8 km ring by
+/// hand through [`begin_zone_draw`] — vertex by vertex, on a map where a pixel is metres. This is
+/// that ring, authored from the map itself.
+///
+/// ═══ THE RECT IS THE COMPILE'S RECT, OR THERE IS NO RECT ═══
+///
+/// The terrain key and its extent are read from the SAME live document in one borrow
+/// ([`terrain_key_of`] / [`terrain_bounds_of`], both resolving through
+/// `compile::terrain_bounds` — the helper `flatten::synthesize_terrain_boundary` uses to build
+/// `z_bounds` and `validate` uses for `V3-SLOT-IN-BOUNDS`). Both are handed to
+/// [`crate::editor::panels::zones_panel::terrain_rect_ring`], which refuses the pair if they
+/// disagree. So the zone this authors is the same rectangle the mission already compiles to, or the
+/// button does nothing at all — it will not author a plausible-looking rect that is not the map.
+///
+/// ═══ ONE UNDO STEP ═══
+///
+/// `capture_timeout_millis = 0` makes every LOCAL transaction its own undo step, so the ring and
+/// its label are written by ONE mutator (`add_polygon_zone_labelled`) inside ONE
+/// [`write_row_returning_id`] transaction. Spelling it as `add_polygon_zone` +
+/// `set_zone_label` would leave an anonymous zone standing after the author's single Ctrl+Z; the
+/// store's `a_labelled_polygon_zone_create_is_one_undo_step` pins both halves of that.
+///
+/// `None` means nothing was authored: no document, no `boundary` type in the schema, or a rect the
+/// world guard refused. The panel then leaves the selection alone rather than pointing Attributes
+/// at an id that does not exist.
+pub fn add_whole_terrain_zone() -> Option<String> {
+    use crate::editor::panels::zones_panel;
+
+    // Read the world first, in its own borrow, so it is closed before `write_row_returning_id`
+    // opens the write txn (the `mission_history` borrow rule).
+    let (terrain, bounds) = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        Some((terrain_key_of(core), terrain_bounds_of(core)))
+    })?;
+    let ring = zones_panel::terrain_rect_ring(&terrain, bounds)?;
+    // `boundary` comes from the schema enum, never spelled here: `add_polygon_zone_labelled` writes
+    // whatever `type` it is handed, and an invented value saves 201 then 500s `/compiled` (T-581).
+    let kind = zones_panel::whole_terrain_zone_type()?;
+    write_row_returning_id(DrawTarget::Zone, |core, id| {
+        core.add_polygon_zone_labelled(
+            id,
+            &kind,
+            &ring,
+            Some(zones_panel::WHOLE_TERRAIN_ZONE_LABEL),
+        );
     })
 }
 
