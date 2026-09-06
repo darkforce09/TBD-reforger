@@ -79,6 +79,7 @@ use leptos::prelude::*;
 
 use crate::core::ui::MaterialIcon;
 use crate::editor::panels::env::ENV_UNCARRIED_NOTE;
+use crate::editor::panels::win_conditions_card::win_conditions_card;
 
 // T-691 — the Editor Preferences dialog's open flag, parked here from `MissionSettingsDialog`'s
 // setup so the pointer row (and any future in-owns caller) can arm it without threading a prop
@@ -940,6 +941,12 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
                         {render_presentation_section(ctrl, shape)}
                         {render_shape_section(ctrl, shape)}
                         {render_flow_section(ctrl)}
+                        // T-936.1 — the Win conditions card. T-936.1 built, registered and unit-tested it, but
+                        // `panels/settings_modal.rs` was outside that slice's owns, so the one-line mount landed
+                        // here in the wave-243 bookkeeping commit instead. A card that is registered but never
+                        // mounted is a mechanism that cannot fire (rule 17), so this is part of the wave, not a
+                        // follow-up.
+                        {win_conditions_card(ctrl)}
                         {render_prefs_section(&env)}
                     </div>
                 </div>

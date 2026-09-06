@@ -2482,19 +2482,21 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         ticket: "T-212",
         why: "clean",
     },
-    // T-675 / T-076 — vehicles[] roster.
-    UnreadField {
-        name: "vehicles",
-        expected: 0,
-        ticket: "T-675",
-        why: "clean",
-    },
-    // `seats` is briefing/lobby seat-count UI, not a vehicle crew-plan reader.
+    // T-675 / T-076 — vehicles[] roster: RETIRED 2026-09-06. `vehicles` gained its reader when
+    // T-675.2 landed `TBD_MissionVehicleStruct.c` and the `TBD_MissionDocumentStruct.vehicles`
+    // binding. Its baseline was 0 — the whole assertion was "no reader yet" — so it retires rather
+    // than re-pins. `JsonLoadContext` binds by member name, so the identifier IS the contract: no
+    // reader for this field can exist without spelling it.
+    //
+    // `seats` is RE-PINNED, not retired. Its baseline of 8 was pre-existing briefing/lobby
+    // seat-count UI, UNRELATED to the vehicle crew plan, and the wave-242 verifier's finding was
+    // precisely that retiring a non-zero-baseline row silently drops that tripwire. T-675.2's crew
+    // reader added 4, so the new floor is 12 and the unrelated 8 stay guarded.
     UnreadField {
         name: "seats",
-        expected: 8,
+        expected: 12,
         ticket: "T-675",
-        why: "briefing/lobby seat-count UI identifiers, unrelated to vehicle.seats crew plan",
+        why: "8 pre-existing briefing/lobby seat-count UI identifiers + 4 from T-675.2's crew-plan reader",
     },
     // T-676 / T-079 — trigger activation/effects: RETIRED 2026-09-06. `editorTriggers`,
     // `activation`, `effects` and `variantId` all gained readers when TBD_TriggerRuntime.c landed,

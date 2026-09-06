@@ -104,7 +104,7 @@
     },
     "vehicles": {
       "type": "array",
-      "description": "T-675 / T-076 — mission-placed VEHICLE roster (schemaVersion 1.3), the compile half split out of T-076 so the crew UI could ship. A vehicle is NOT an `entities[]` alias row: `#/$defs/alias` is `^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$` and the mod's `Data/registry.json` holds exactly ONE `veh:` row, so routing crewed vehicles through `entities[]` would reproduce the T-200 silent-substitution defect with a ten-tonne vehicle (flatten.rs:2631-2640). This is `document root + a new $def`, keyed `vehicles`, carrying seats/crew refs onto the wire. NOTHING reads it on any shipped build (`TBD_MissionDocumentStruct` declares no `vehicles`); the crew-spawn reader lands under T-675. Compiled from the editor `vehiclesById` (T-215/T-425), sibling of the payload's own top-level `vehicles` bag but the DECLARED contract shape here.",
+      "description": "T-675 / T-076 — mission-placed VEHICLE roster (schemaVersion 1.3), the compile half split out of T-076 so the crew UI could ship. A vehicle is NOT an `entities[]` alias row: `#/$defs/alias` is `^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$` and the mod's `Data/registry.json` holds exactly ONE `veh:` row, so routing crewed vehicles through `entities[]` would reproduce the T-200 silent-substitution defect with a ten-tonne vehicle (flatten.rs:2631-2640). This is `document root + a new $def`, keyed `vehicles`, carrying seats/crew refs onto the wire. READ SINCE T-675.2 (2026-09-06) by `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionVehicleStruct.c`, bound through `TBD_MissionDocumentStruct.vehicles` and seated by `TBD_SpawnManager` after the slot bodies materialise. NOTE FOR ANY FUTURE READER: one authored vehicle emits TWO rows — this roster row AND an `entities[]` alias row (flatten.rs:78-83) — and `entities[]` is already spawned by `SpawnMissionEntities()`, so `uid` is the join key the roster reader claims on. Without that claim every crewed vehicle reaches the world twice. Compiled from the editor `vehiclesById` (T-215/T-425), sibling of the payload's own top-level `vehicles` bag but the DECLARED contract shape here.",
       "items": { "$ref": "#/$defs/vehicle" }
     },
     "editorTriggers": {
@@ -886,7 +886,7 @@
         "uid": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "T-675 — stable identity for this roster vehicle (schemaVersion 1.3), carried verbatim from the editor so a reference survives recompiles and edits — the same role `slot.uid` plays for a slot. A `get_in` waypoint's `vehicleUid` names this. Optional; a vehicle nothing references needs no uid. On the wire only — the crew-spawn reader lands under T-675."
+          "description": "T-675 — stable identity for this roster vehicle (schemaVersion 1.3), carried verbatim from the editor so a reference survives recompiles and edits — the same role `slot.uid` plays for a slot. A `get_in` waypoint's `vehicleUid` names this. Optional; a vehicle nothing references needs no uid. READ SINCE T-675.2 (2026-09-06): it is the JOIN KEY the roster reader claims on, because one authored vehicle emits both this row and an `entities[]` alias row carrying the same uid, and only the claim stops the vehicle being spawned twice. A roster row with no uid falls back to an `alias|x|z` fingerprint."
         },
         "x": { "type": "number" },
         "z": { "type": "number" },
