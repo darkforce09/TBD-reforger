@@ -1,7 +1,14 @@
-//! T-165.9 — unified satellite bundle (tbd-sat v1): the verifier (port of
+//! T-165.9 — unified satellite bundle (tbd-sat): the verifier (port of
 //! `verify-unified-satellite.mjs`, dep-free byte parse) and the builder (port of
 //! `build-unified-satellite.mjs` — Lanczos cascade mips, tile crop, VP8L via image-webp).
 //! Plus the tile-pyramid verifier (port of `verify-tile-pyramid.mjs`).
+//!
+//! T-935.10 — the container gained a **version 2** ([`super::tbds_v2`]): a 32-byte `TbdsHeader`
+//! plus an rkyv `TbdSatIndexV2` instead of v1's hand-packed JSON table. Both writers consume the
+//! same encoded block vector, so a v1 and a v2 bundle built from one source have **byte-identical
+//! payloads** and differ only in their index — which makes "renders identically at every mip" a
+//! property of the code rather than a hope. v1 is retained behind `--container-version 1`:
+//! `everon-sat.tbd-sat` is committed in that shape until T-935.13 regenerates it.
 
 use std::path::{Path, PathBuf};
 
@@ -9,6 +16,9 @@ use anyhow::Result;
 use serde_json::{Value, json};
 
 use super::img;
+use super::tbds_v2::{
+    BundleSummary, TileBuf, mip_dims, tbds_v2_bytes, tbds_v2_index, verify_bundle_v2,
+};
 use crate::serve::repo_root;
 use crate::world::aux::iso_from_system_time;
 use crate::world::jsval::js_num;
@@ -42,7 +52,6 @@ pub fn verify_unified_satellite(terrain: &str) -> Result<u8> {
     let bundle = root.join(terrain).join(&bundle_rel);
 
     let mut errors: Vec<String> = Vec::new();
-    let mut fail = |m: String| errors.push(m);
 
     if !bundle.exists() {
         return Ok(die(&format!(
@@ -60,22 +69,115 @@ pub fn verify_unified_satellite(terrain: &str) -> Result<u8> {
     if &buf[0..4] != b"TBDS" {
         return Ok(die("bad magic (expected \"TBDS\")"));
     }
+    // v1 stores its version as a u32 at offset 4; v2's `TbdsHeader` stores a u16 version there
+    // followed by a u16 `flags` that the writer leaves zero — so the same four bytes read 1 or 2
+    // for either container, and this dispatch does not have to know which shape it is looking at
+    // before it has decided.
     let version = u32::from_le_bytes([buf[4], buf[5], buf[6], buf[7]]);
-    if version != 1 {
-        return Ok(die(&format!(
-            "unsupported formatVersion {version} (expected 1)"
-        )));
+    let summary = match version {
+        1 => verify_bundle_v1(&buf, terrain, &manifest, &mut errors),
+        2 => verify_bundle_v2(&buf, &mut errors),
+        v => {
+            return Ok(die(&format!(
+                "unsupported formatVersion {v} (expected 1 or 2)"
+            )));
+        }
+    };
+    let Some(summary) = summary else {
+        eprintln!(
+            "verify-unified-satellite: FAIL ({}) for {terrain}",
+            errors.len()
+        );
+        for e in &errors {
+            eprintln!("  - {e}");
+        }
+        return Ok(1);
+    };
+    let (base_w, base_h, block_count) = (summary.base_w, summary.base_h, summary.block_count);
+    let mut fail = |m: String| errors.push(m);
+
+    if sat["delivery"] != "unified" {
+        fail(format!(
+            "manifest tiles.satellite.delivery \"{}\" !== \"unified\"",
+            sat["delivery"].as_str().unwrap_or("")
+        ));
     }
+    if unified["encoding"] != summary.encoding {
+        fail(format!(
+            "manifest unified.encoding \"{}\" !== \"{}\" (the bundle on disk is v{version})",
+            unified["encoding"].as_str().unwrap_or(""),
+            summary.encoding
+        ));
+    }
+    if let Some(url) = unified["url"].as_str()
+        && !url.contains(&format!("/{terrain}/{bundle_rel}"))
+    {
+        fail(format!(
+            "manifest unified.url {url} does not point at {terrain}/{bundle_rel}"
+        ));
+    }
+    if unified["baseWidthPx"].as_u64() != Some(base_w)
+        || unified["baseHeightPx"].as_u64() != Some(base_h)
+    {
+        fail(format!(
+            "manifest unified base {}x{} !== bundle {base_w}x{base_h}",
+            unified["baseWidthPx"], unified["baseHeightPx"]
+        ));
+    }
+    if unified["mipCount"].as_u64() != Some(summary.mip_count) {
+        fail(format!(
+            "manifest unified.mipCount {} !== bundle {}",
+            unified["mipCount"], summary.mip_count
+        ));
+    }
+    let size = std::fs::metadata(&bundle)?.len();
+    if unified["bytes"].as_u64() != Some(size) {
+        fail(format!(
+            "manifest unified.bytes {} !== file size {size}",
+            unified["bytes"]
+        ));
+    }
+
+    if !errors.is_empty() {
+        eprintln!(
+            "verify-unified-satellite: FAIL ({}) for {terrain}",
+            errors.len()
+        );
+        for e in &errors {
+            eprintln!("  - {e}");
+        }
+        return Ok(1);
+    }
+    println!(
+        "verify-unified-satellite: OK {terrain} — {base_w}x{base_h}, {} mips, {block_count} VP8L blocks, {:.1} MB (tbd-sat v{version})",
+        summary.mip_count,
+        size as f64 / 1e6
+    );
+    Ok(0)
+}
+
+/// The v1 (hand-packed JSON table) bundle checks, unchanged from T-165.9. `None` = fatal.
+fn verify_bundle_v1(
+    buf: &[u8],
+    terrain: &str,
+    manifest: &Value,
+    errors: &mut Vec<String>,
+) -> Option<BundleSummary> {
+    let mut fail = |m: String| errors.push(m);
     let json_len = u32::from_le_bytes([buf[8], buf[9], buf[10], buf[11]]) as usize;
     if 12 + json_len > buf.len() {
-        return Ok(die(&format!(
+        fail(format!(
             "jsonLength {json_len} overruns file ({} bytes)",
             buf.len()
-        )));
+        ));
+        return None;
     }
     let index: Value = match serde_json::from_slice(&buf[12..12 + json_len]) {
         Ok(v) => v,
-        Err(e) => return Ok(die(&format!("JSON index unparseable: {e}"))),
+        Err(e) => {
+            fail(format!("JSON index unparseable: {e}"));
+            return None;
+        }
     };
 
     if index["formatVersion"] != 1 {
@@ -216,63 +318,13 @@ pub fn verify_unified_satellite(terrain: &str) -> Result<u8> {
         ));
     }
 
-    if sat["delivery"] != "unified" {
-        fail(format!(
-            "manifest tiles.satellite.delivery \"{}\" !== \"unified\"",
-            sat["delivery"].as_str().unwrap_or("")
-        ));
-    }
-    if unified["encoding"] != "tbd-sat-v1" {
-        fail(format!(
-            "manifest unified.encoding \"{}\" !== \"tbd-sat-v1\"",
-            unified["encoding"].as_str().unwrap_or("")
-        ));
-    }
-    if let Some(url) = unified["url"].as_str()
-        && !url.contains(&format!("/{terrain}/{bundle_rel}"))
-    {
-        fail(format!(
-            "manifest unified.url {url} does not point at {terrain}/{bundle_rel}"
-        ));
-    }
-    if unified["baseWidthPx"].as_u64() != Some(base_w)
-        || unified["baseHeightPx"].as_u64() != Some(base_h)
-    {
-        fail(format!(
-            "manifest unified base {}x{} !== bundle {base_w}x{base_h}",
-            unified["baseWidthPx"], unified["baseHeightPx"]
-        ));
-    }
-    if unified["mipCount"] != index["mipCount"] {
-        fail(format!(
-            "manifest unified.mipCount {} !== bundle {}",
-            unified["mipCount"], index["mipCount"]
-        ));
-    }
-    let size = std::fs::metadata(&bundle)?.len();
-    if unified["bytes"].as_u64() != Some(size) {
-        fail(format!(
-            "manifest unified.bytes {} !== file size {size}",
-            unified["bytes"]
-        ));
-    }
-
-    if !errors.is_empty() {
-        eprintln!(
-            "verify-unified-satellite: FAIL ({}) for {terrain}",
-            errors.len()
-        );
-        for e in &errors {
-            eprintln!("  - {e}");
-        }
-        return Ok(1);
-    }
-    println!(
-        "verify-unified-satellite: OK {terrain} — {base_w}x{base_h}, {} mips, {block_count} VP8L blocks, {:.1} MB",
-        index["mipCount"],
-        size as f64 / 1e6
-    );
-    Ok(0)
+    Some(BundleSummary {
+        base_w,
+        base_h,
+        mip_count: index["mipCount"].as_u64().unwrap_or(0),
+        block_count,
+        encoding: "tbd-sat-v1",
+    })
 }
 
 /* ─────────────────────────── verify-tile-pyramid ─────────────────────────── */
@@ -416,8 +468,13 @@ pub fn build_unified_satellite(
     out: &Path,
     terrain: &str,
     tile_threshold: usize,
+    container_version: u16,
 ) -> Result<u8> {
     use sha2::Digest as _;
+    if container_version != 1 && container_version != 2 {
+        eprintln!("unsupported --container-version {container_version} (expected 1 or 2)");
+        return Ok(1);
+    }
     let world_bounds: [u64; 4] = match terrain {
         "everon" => [0, 0, 12800, 12800],
         "arland" => [0, 0, 4096, 4096],
@@ -441,28 +498,11 @@ pub fn build_unified_satellite(
     ));
 
     // Mip chain dims: base → 1×1 with the GL rule.
-    let mut dims = Vec::new();
-    let (mut w, mut h) = (src_w, src_h);
-    loop {
-        dims.push((w, h));
-        if w == 1 && h == 1 {
-            break;
-        }
-        w = 1.max(w / 2);
-        h = 1.max(h / 2);
-    }
+    let dims = mip_dims(src_w, src_h);
     log(&format!("mip chain: {} levels ({src_w} → 1)", dims.len()));
 
     // Cascade-halve + tile + encode (rayon-free: encode sequentially — image-webp lossless
     // is fast enough for the rebuild-smoke acceptance; parallelism can come later).
-    struct TileBuf {
-        level: usize,
-        x: usize,
-        y: usize,
-        w: usize,
-        h: usize,
-        buf: Vec<u8>,
-    }
     let mut blocks: Vec<TileBuf> = Vec::new();
     let mut level_meta = Vec::new();
     let mut current = base;
@@ -536,6 +576,78 @@ pub fn build_unified_satellite(
         source_meta = Value::Object(sm);
     }
 
+    let file = if container_version == 2 {
+        let index = tbds_v2_index(&blocks, &level_meta, (src_w, src_h), tile_threshold)?;
+        tbds_v2_bytes(&index, &blocks)?
+    } else {
+        build_tbds_v1_bytes(
+            &blocks,
+            &level_meta,
+            (src_w, src_h),
+            terrain,
+            world_bounds,
+            &source_meta,
+            &input_sha256,
+        )?
+    };
+    if let Some(parent) = out.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(out, &file)?;
+
+    // Driven by the encoded blocks rather than by either index, so the receipt says the same thing
+    // for both container versions.
+    for (level, &(lw, _)) in level_meta.iter().enumerate() {
+        let (n, bytes) = blocks
+            .iter()
+            .filter(|b| b.level == level)
+            .fold((0usize, 0u64), |(n, bytes), b| {
+                (n + 1, bytes + b.buf.len() as u64)
+            });
+        log(&format!(
+            "  level {level:>2}  {lw:>5}px  {n} block(s)  {:.2} MB",
+            bytes as f64 / 1e6
+        ));
+    }
+    log(&format!(
+        "wrote {}  {:.1} MB in {:.0}s (tbd-sat v{container_version})",
+        out.display(),
+        file.len() as f64 / 1e6,
+        t0.elapsed().as_secs_f64()
+    ));
+    log("manifest block:");
+    let base_name = out.file_name().unwrap_or_default().to_string_lossy();
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({
+            "delivery": "unified",
+            "unified": {
+                "path": format!("satellite/{base_name}"),
+                "url": format!("/map-assets/{terrain}/satellite/{base_name}"),
+                "encoding": format!("tbd-sat-v{container_version}"),
+                "baseWidthPx": src_w,
+                "baseHeightPx": src_h,
+                "mipCount": dims.len(),
+                "bytes": file.len(),
+            },
+        }))?
+    );
+    Ok(0)
+}
+
+/// The v1 container bytes: `"TBDS"`, formatVersion 1, jsonLength, the hand-packed JSON table, then
+/// the payload. Retained verbatim behind `--container-version 1` because `everon-sat.tbd-sat` is
+/// committed in this shape and stays that way until T-935.13 regenerates it.
+pub(crate) fn build_tbds_v1_bytes(
+    blocks: &[TileBuf],
+    level_meta: &[(usize, usize)],
+    base: (usize, usize),
+    terrain: &str,
+    world_bounds: [u64; 4],
+    source_meta: &Value,
+    input_sha256: &str,
+) -> Result<Vec<u8>> {
+    let (src_w, src_h) = base;
     let mut mips: Vec<Value> = Vec::new();
     for (level, &(lw, lh)) in level_meta.iter().enumerate() {
         let tiles: Vec<Value> = blocks
@@ -559,7 +671,7 @@ pub fn build_unified_satellite(
         "inputSha256": input_sha256,
         "baseWidthPx": src_w,
         "baseHeightPx": src_h,
-        "mipCount": dims.len(),
+        "mipCount": level_meta.len(),
         "mips": mips,
     });
 
@@ -586,51 +698,8 @@ pub fn build_unified_satellite(
     file.extend_from_slice(&1u32.to_le_bytes());
     file.extend_from_slice(&(json_buf.len() as u32).to_le_bytes());
     file.extend_from_slice(&json_buf);
-    for b in &blocks {
+    for b in blocks {
         file.extend_from_slice(&b.buf);
     }
-    if let Some(parent) = out.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    std::fs::write(out, &file)?;
-
-    for mip in index["mips"].as_array().unwrap() {
-        let bytes: u64 = mip["tiles"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|t| t["length"].as_u64().unwrap())
-            .sum();
-        log(&format!(
-            "  level {:>2}  {:>5}px  {} block(s)  {:.2} MB",
-            mip["level"],
-            mip["width"],
-            mip["tiles"].as_array().unwrap().len(),
-            bytes as f64 / 1e6
-        ));
-    }
-    log(&format!(
-        "wrote {}  {:.1} MB in {:.0}s",
-        out.display(),
-        file.len() as f64 / 1e6,
-        t0.elapsed().as_secs_f64()
-    ));
-    log("manifest block:");
-    let base_name = out.file_name().unwrap_or_default().to_string_lossy();
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&json!({
-            "delivery": "unified",
-            "unified": {
-                "path": format!("satellite/{base_name}"),
-                "url": format!("/map-assets/{terrain}/satellite/{base_name}"),
-                "encoding": "tbd-sat-v1",
-                "baseWidthPx": src_w,
-                "baseHeightPx": src_h,
-                "mipCount": dims.len(),
-                "bytes": file.len(),
-            },
-        }))?
-    );
-    Ok(0)
+    Ok(file)
 }

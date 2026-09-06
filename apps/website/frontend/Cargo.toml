@@ -124,3 +124,16 @@ wasm-bindgen-futures = "0.4"
 
 # [profile.*] lives in the workspace root Cargo.toml (member profiles are ignored). trunk applies
 # wasm-opt via the index.html data-wasm-opt attribute.
+
+# T-935.10 — the HOST TEST BUILD ONLY. `world_assets/tbd_sat.rs` is `#![cfg(target_arch = "wasm32")]`
+# in the bundle but is mounted a second time under `cfg(all(test, not(wasm32)))` as
+# `mission_editor::tbd_sat_pure` (mission_editor.rs:3115) so its arithmetic is executed by `cargo
+# test` rather than only grepped for. Its TBDS v2 branch reads the container through
+# `map_engine_core::world::binary`, and `pub mod world` is gated on the `world` feature — which the
+# wasm32 entry above already enables and the native entry does not. A dev-dependency adds it for
+# test targets alone: the wasm bundle is untouched (same feature it already had) and so is the
+# native lib build, so the rkyv round-trip runs on the host instead of only compiling for wasm32.
+[dev-dependencies]
+map-engine-core = { path = "../../../crates/map-engine-core", default-features = false, features = [
+    "world",
+] }

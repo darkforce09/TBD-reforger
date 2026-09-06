@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
-use tbd_tools::map::{carto, glyphs, labels, labels_emit, sap, unified, water};
+use tbd_tools::map::{carto, glyphs, labels, labels_emit, sap, tbds_v2, unified, water};
 
 #[derive(Parser)]
 #[command(name = "map", about = "T-090 map-asset image pipeline (Rust)")]
@@ -138,6 +138,10 @@ enum Cmd {
         terrain: String,
         #[arg(long, default_value_t = 8192)]
         tile_threshold: usize,
+        /// T-935.10 — TBDS container version: 2 (32-byte header + rkyv TbdSatIndexV2, the
+        /// default) or 1 (the hand-packed JSON table `everon-sat.tbd-sat` is committed as).
+        #[arg(long, default_value_t = tbds_v2::DEFAULT_CONTAINER_VERSION)]
+        container_version: u16,
     },
 }
 
@@ -216,11 +220,13 @@ fn run() -> anyhow::Result<ExitCode> {
             out,
             terrain,
             tile_threshold,
+            container_version,
         } => Ok(ExitCode::from(unified::build_unified_satellite(
             &input,
             &out,
             &terrain,
             tile_threshold,
+            container_version,
         )?)),
     }
 }

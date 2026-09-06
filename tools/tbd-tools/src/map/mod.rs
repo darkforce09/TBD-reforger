@@ -15,6 +15,9 @@ pub mod labels;
 /// those three JSON files: this module only ever reads them.
 pub mod labels_emit;
 pub mod sap;
+/// T-935.10 — the `TBDS` v2 satellite container (32-byte header + rkyv `TbdSatIndexV2`). Split
+/// out of [`unified`], which is already a SIZE-1 file and keeps only the call sites.
+pub mod tbds_v2;
 pub mod unified;
 pub mod water;
 
