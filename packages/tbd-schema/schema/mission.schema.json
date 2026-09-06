@@ -1184,7 +1184,7 @@
         "vipSlotId": {
           "type": "string",
           "minLength": 1,
-          "description": "`mode: vip` only — the `slots[].uid` of the protected player. Matched against the EMITTED slot uids by `flatten.rs`, not the authored ones, for the same reason `$defs/vehicle.seats[].slotId` is: a uid that resolved in the editor payload but was never placed would dangle on the wire. Read by `TBD_WinConditionEvaluator`."
+          "description": "`mode: vip` only — the `slots[].uid` of the protected player. Matched against the EMITTED slot uids by `flatten.rs`, not the authored ones, for the same reason `$defs/vehicle.seats[].slotId` is: a uid that resolves in the editor payload but that the compile emitted no `slots[]` row for would dangle on the wire. Read by `TBD_WinConditionEvaluator`."
         },
         "timeoutMinutes": {
           "type": "integer",
