@@ -309,7 +309,7 @@ mod tests {
         // The ladder must actually change: a lane that drew the same set everywhere would pass the
         // comparison above while proving nothing about the zoom gate the class byte encodes.
         assert!(
-            drawn_totals.iter().any(|n| *n == 0) && drawn_totals.windows(2).any(|w| w[0] != w[1]),
+            drawn_totals.contains(&0) && drawn_totals.windows(2).any(|w| w[0] != w[1]),
             "road-name draw set is zoom-invariant across {ZOOMS:?}: {drawn_totals:?}"
         );
     }
