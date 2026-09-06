@@ -1,15 +1,16 @@
 id = "T-935.10"
 kind = "work"
-parent = "T-935"
 title = "Satellite TBDS v2 with rkyv index"
 summary = "map unified emits .tbd-sat version 2: fixed header plus an rkyv TbdSatIndexV2 (mip levels, tile offsets, lengths, format) followed by tile payloads; tbd_sat.rs reads v1 and v2 via HTTP Range."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7160
-priority = 1
 spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
 plan = "docs/plans/t-935_10_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = ["T-935.1"]
+parent = "T-935"
 main_goal = "The satellite container index is a validated rkyv archive, and the committed v1 file keeps loading."
 context = [
     "Anchor 2026-09-04: tools/tbd-tools/src/map/unified.rs writes TBDS v1 (everon-sat.tbd-sat, 152 MB LFS, manifest encoding tbd-sat-v1, mipCount 14); frontend tbd_sat.rs reads it via HTTP Range.",
@@ -20,9 +21,7 @@ requirement = [
     "tbd_sat.rs: Range-read the first 64 KB, parse version; v2 uses access_checked on the index; v1 path unchanged; tile Range math shared.",
     "Round-trip test: 3-mip synthetic container in v1 and v2; both readers return identical tiles; a corrupt index is Err.",
 ]
-current_state = [
-    "tools/tbd-tools/src/map/unified.rs writes a v1 header with a hand-packed tile table; apps/website/frontend/src/editor/world_assets/tbd_sat.rs parses that table byte by byte.",
-]
+current_state = ["tools/tbd-tools/src/map/unified.rs writes a v1 header with a hand-packed tile table; apps/website/frontend/src/editor/world_assets/tbd_sat.rs parses that table byte by byte."]
 approach = [
     "unified.rs: build TbdSatIndexV2 {base_w, base_h, tile_px, levels: Vec<{w_tiles, h_tiles, tiles: Vec<{offset u64, len u32, format u8}>}>}; write header, index bytes, tiles.",
     "tbd_sat.rs: version switch; v2 index through map_engine_core::world::binary::archives; v1 decoder untouched.",
@@ -38,8 +37,8 @@ acceptance = [
     "A v2 container built from the everon source renders identically to the committed v1 file at every mip.",
     "The reader accepts both versions; the committed v1 everon-sat.tbd-sat loads unchanged.",
 ]
-depends_on = ["T-935.1"]
 created_at = "2026-09-05T01:34:37Z"
+completed_at = "2026-09-06T06:54:21Z"
 owns = [
     "tools/tbd-tools/src/map/unified.rs",
     "apps/website/frontend/src/editor/world_assets/tbd_sat.rs",
