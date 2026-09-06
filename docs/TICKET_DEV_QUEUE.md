@@ -5,14 +5,6 @@
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
 
-## T-677 — Waypoints — group movement orders
-
-- **Slice spec:** `docs/specs/existing/t677_waypoint_runtime.md`
-- **Program hub:** `docs/specs/existing/t677_waypoint_runtime.md`
-- **Branch:** `ticket/T-677`
-- **Targets:** 
-- **Summary:** Waypoints — group movement orders
-
 ## T-678 — Group AI state: combat mode, behaviour, formation, speed
 
 - **Slice spec:** `docs/specs/existing/t678_group_ai_state.md`
@@ -44,14 +36,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-681`
 - **Targets:** 
 - **Summary:** Entity states: health, allow-damage, show-model, size, stamina
-
-## T-682 — Environment readers: fog, wind, view distance
-
-- **Slice spec:** `docs/specs/existing/t682_environment_readers.md`
-- **Program hub:** `docs/specs/existing/t682_environment_readers.md`
-- **Branch:** `ticket/T-682`
-- **Targets:** 
-- **Summary:** Environment readers: fog, wind, view distance
 
 ## T-684 — Mission parameters as first-class document objects
 

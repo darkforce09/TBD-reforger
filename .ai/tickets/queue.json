@@ -13,13 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-677",
-      "title": "Waypoints \u2014 group movement orders",
-      "status": "ready",
-      "spec": "docs/specs/existing/t677_waypoint_runtime.md",
-      "branch": "ticket/T-677"
-    },
-    {
       "id": "T-678",
       "title": "Group AI state: combat mode, behaviour, formation, speed",
       "status": "ready",
@@ -46,13 +39,6 @@
       "status": "ready",
       "spec": "docs/specs/existing/t681_entity_states.md",
       "branch": "ticket/T-681"
-    },
-    {
-      "id": "T-682",
-      "title": "Environment readers: fog, wind, view distance",
-      "status": "ready",
-      "spec": "docs/specs/existing/t682_environment_readers.md",
-      "branch": "ticket/T-682"
     },
     {
       "id": "T-684",

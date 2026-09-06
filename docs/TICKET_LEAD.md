@@ -9,12 +9,10 @@
 ## Ready
 
 - **T-090** (7079) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-677** (7290) — Waypoints — group movement orders [ready] — Waypoints — group movement orders
 - **T-678** (7300) — Group AI state: combat mode, behaviour, formation, speed [ready] — Group AI state: combat mode, behaviour, formation, speed
 - **T-212** (7320) — Typed per-side objectives with attributes [ready] — Objectives as typed, placed, per-side entities with one uniform attribute spine
 - **T-680** (7330) — Vehicle states: lock, fuel, ammo [ready] — Vehicle states: lock, fuel, ammo
 - **T-681** (7340) — Entity states: health, allow-damage, show-model, size, stamina [ready] — Entity states: health, allow-damage, show-model, size, stamina
-- **T-682** (7350) — Environment readers: fog, wind, view distance [ready] — Environment readers: fog, wind, view distance
 - **T-684** (7360) — Mission parameters as first-class document objects [ready] — Mission parameters as first-class document objects
 - **T-685** (7370) — Zone volumes: height bounds capture counts and owner [ready] — Zones become volumes: min/max height, attacker and defender counts, starting owner
 - **T-689** (7380) — Play-area enforcement gains a vehicle-class axis: the aircraft exemption [ready] — Play-area enforcement gains a vehicle-class axis: the aircraft exemption

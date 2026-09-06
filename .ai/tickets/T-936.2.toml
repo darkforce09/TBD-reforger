@@ -1,15 +1,19 @@
 id = "T-936.2"
 kind = "work"
-parent = "T-936"
 title = "Task state machine with HUD markers"
 summary = "Authored tasks (primary|secondary|optional) with states assigned|succeeded|failed live in the schema, a core tasks.rs model and a tasks panel; TBD_TaskStateMachine.c syncs transitions with T-676 triggers and TBD_TaskHud.c draws markers."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7460
-priority = 1
 spec = "docs/specs/audit_2026_09/t936_mission_logic.md"
 plan = "docs/plans/t-936_2_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = [
+    "T-936.1",
+    "T-676",
+]
+parent = "T-936"
 main_goal = "Tasks have tiers and a real state machine in the editor, the compiled document and the game HUD."
 context = [
     "Master audit S1: no task state machine exists; audit-verified confirms zero trigger runtime under Scripts/Game/TBD — T-676 adds it and this slice consumes its completion events.",
@@ -24,9 +28,7 @@ requirement = [
     "New Objectives/TBD_TaskStateMachine.c: server-authoritative state per task; T-676 trigger completion drives transitions; replicated to clients; illegal transitions logged and ignored.",
     "New UI/TBD_TaskHud.c: one HUD marker per assigned task via the existing marker icon path; hidden once succeeded or failed.",
 ]
-current_state = [
-    "No tasks vocabulary in the schema; no tasks module under mission/; nothing under Objectives/ or UI/ tracks task state or draws task markers.",
-]
+current_state = ["No tasks vocabulary in the schema; no tasks module under mission/; nothing under Objectives/ or UI/ tracks task state or draws task markers."]
 approach = [
     "Verify on main: a payload carrying tasks flattens without them (AUTHORED_BLOCKS lacks tasks); paste the red.",
     "Add schema plus golden; write tasks.rs with a test per legal and illegal transition; register in extensions.rs; build the panel.",
@@ -45,8 +47,10 @@ acceptance = [
     "A mission with three tiers of tasks flattens to a tasks block; each task starts assigned and reaches exactly one terminal state in-game (checklist).",
     "The tasks panel adds, edits, reorders and undoes tasks; the HUD shows only assigned tasks.",
 ]
-depends_on = ["T-936.1", "T-676"]
+shipped_at = "fb50b757a"
 created_at = "2026-09-05T02:09:02Z"
+completed_at = "2026-09-06T19:42:57Z"
+estimated = ["tokens"]
 owns = [
     "packages/tbd-schema/schema/mission.schema.json",
     "packages/tbd-schema/golden-missions/schema-1_3-tasks.json",

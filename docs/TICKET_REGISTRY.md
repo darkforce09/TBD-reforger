@@ -835,13 +835,13 @@
 | T-277 | 7110 | shipped | work | 27.4% of the map catalogue is unclassified | 444 of 1,623 everon prefabs fall through to prefab-classify.json's fallback rule; vegetation and utility count zero and the road census is zero against 888 shipped road segments. Append rules until fallback is under 5% and the census matches. |
 | T-149 | 7170 | shipped | work | Forest mass polygon smoothing | Upgrade the V1 blocky Path B forest hulls: sample the existing 8 m TBDD density grid and apply Chaikin smoothing to the marching-squares rings before the forest-regions emit so forest edges read as natural cartography. |
 | T-676 | 7260 | shipped | work | Trigger activation and effects — the Enfusion runtime | Trigger activation and effects — the Enfusion runtime |
-| T-677 | 7290 | ready | work | Waypoints — group movement orders | Waypoints — group movement orders |
+| T-677 | 7290 | shipped | work | Waypoints — group movement orders | Waypoints — group movement orders |
 | T-678 | 7300 | ready | work | Group AI state: combat mode, behaviour, formation, speed | Group AI state: combat mode, behaviour, formation, speed |
 | T-673 | 7310 | shipped | work | Marker style and Area markers — the $defs/marker widening | Marker style and Area markers — the $defs/marker widening |
 | T-212 | 7320 | ready | work | Typed per-side objectives with attributes | Objectives as typed, placed, per-side entities with one uniform attribute spine |
 | T-680 | 7330 | ready | work | Vehicle states: lock, fuel, ammo | Vehicle states: lock, fuel, ammo |
 | T-681 | 7340 | ready | work | Entity states: health, allow-damage, show-model, size, stamina | Entity states: health, allow-damage, show-model, size, stamina |
-| T-682 | 7350 | ready | work | Environment readers: fog, wind, view distance | Environment readers: fog, wind, view distance |
+| T-682 | 7350 | shipped | work | Environment readers: fog, wind, view distance | Environment readers: fog, wind, view distance |
 | T-684 | 7360 | ready | work | Mission parameters as first-class document objects | Mission parameters as first-class document objects |
 | T-685 | 7370 | ready | work | Zone volumes: height bounds capture counts and owner | Zones become volumes: min/max height, attacker and defender counts, starting owner |
 | T-689 | 7380 | ready | work | Play-area enforcement gains a vehicle-class axis: the aircraft exemption | Play-area enforcement gains a vehicle-class axis: the aircraft exemption |

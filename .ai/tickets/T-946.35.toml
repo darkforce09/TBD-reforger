@@ -1,0 +1,19 @@
+id = "T-946.35"
+kind = "work"
+title = "Flatten drops tasks from compiled document"
+summary = "Flatten authored_blocks_root copies only winConditions so /compiled drops tasks[]. Restore the EditorPayload.tasks insert and add a flatten_to_mod_document test."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T19:40:56Z"
+
+owns = [
+    "crates/map-engine-core/src/mission/flatten.rs",
+]
+verify = [
+    "flatten_to_mod_document of a payload with tasks[] must emit root tasks[]",
+]
+
+[scope]
+domain = "repo"
+layer = "docs"
