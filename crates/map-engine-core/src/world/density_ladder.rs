@@ -16,11 +16,27 @@ pub fn parse_chunk_xy(id: &str) -> Option<(i64, i64)> {
     Some((a.parse().ok()?, b.parse().ok()?))
 }
 
-/// Exact tree+vegetation instance count over `draw_ids` (Class R — sum of row lens).
-#[must_use]
-pub fn exact_tree_count(chunks: &HashMap<String, WorldChunk>, draw_ids: &[String]) -> usize {
+/// Exact tree (+ vegetation, when vegetation is drawn at `z`) instance count over `draw_ids`
+/// (Class R — sum of row lens).
+///
+/// THE ZOOM ARGUMENT IS THE WHOLE POINT. This number is compared against what the glyph packer
+/// actually packed (`residency::tree_glyph_count`), and the packer gates each class through
+/// `class_visible`: trees from `TREE_GLYPH_MIN_ZOOM` = 0.0, vegetation only from
+/// `VEGETATION_MIN_ZOOM` = 1.5. Counting vegetation unconditionally therefore over-reports for
+/// every zoom in `0.0 ≤ z < 1.5` — the band where tree glyphs draw and vegetation does not.
+///
+/// It went unnoticed because Everon's `vegetation` census was EMPTY: 0 prefabs, 0 instances, so
+/// the extra term was always zero. T-277 classified 33 vegetation prefabs (285,296 instances) and
+/// the pin turned red immediately — `packed 26000 != exact 29476`, a 3,476-instance phantom in a
+/// counter whose whole contract is "no silent drops".
+pub fn exact_tree_count(
+    chunks: &HashMap<String, WorldChunk>,
+    draw_ids: &[String],
+    z: f64,
+) -> usize {
     let tree_code = class_code("tree");
     let veg_code = class_code("vegetation");
+    let count_veg = crate::world::lod_gates::class_visible("vegetation", z);
     let mut n = 0usize;
     for id in draw_ids {
         let Some(chunk) = chunks.get(id) else {
@@ -29,8 +45,10 @@ pub fn exact_tree_count(chunks: &HashMap<String, WorldChunk>, draw_ids: &[String
         if let Some(rows) = chunk.rows_by_class.get(&tree_code) {
             n += rows.len();
         }
-        if let Some(rows) = chunk.rows_by_class.get(&veg_code) {
-            n += rows.len();
+        if count_veg {
+            if let Some(rows) = chunk.rows_by_class.get(&veg_code) {
+                n += rows.len();
+            }
         }
     }
     n
@@ -195,7 +213,9 @@ mod tests {
         chunks.insert("1_1".into(), chunk_with_tree_rows("1_1", 10));
         chunks.insert("1_2".into(), chunk_with_tree_rows("1_2", 7));
         let draw = vec!["1_1".into(), "1_2".into()];
-        assert_eq!(exact_tree_count(&chunks, &draw), 17);
+        // Tree-only fixture, so the vegetation gate cannot change the answer; both bands agree.
+        assert_eq!(exact_tree_count(&chunks, &draw, 0.0), 17);
+        assert_eq!(exact_tree_count(&chunks, &draw, 2.0), 17);
     }
 
     #[test]
@@ -213,7 +233,7 @@ mod tests {
         chunks.insert("0_1".into(), chunk_with_tree_rows("0_1", 2));
         let grid = pack_density_grid_r32(&chunks, 2, 2);
         let draw = vec!["0_0".into(), "1_0".into()];
-        let exact = exact_tree_count(&chunks, &draw) as u64;
+        let exact = exact_tree_count(&chunks, &draw, 0.0) as u64;
         assert_eq!(density_texel_sum_for_draw_ids(&grid, 2, &draw), exact);
         assert_eq!(exact, 8);
     }
