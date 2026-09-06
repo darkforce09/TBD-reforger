@@ -292,6 +292,9 @@ pub struct ModOrbatRole {
     pub slot: String,
     pub kit: String,
     pub count: i64,
+    // T-291 — `$defs/role.radio` (net ids this role would spawn tuned to) is EDITOR-ONLY.
+    // `radioPlan.nets[]` already carries the nets a side can hear; T-705 owns gadget flags.
+    // Emitting this array with no reader in T-291's owns would be an unread wire field.
 }
 
 #[derive(Debug, Serialize)]
@@ -396,6 +399,9 @@ pub struct ModFaction {
     pub display_name: String,
     pub preset_id: String,
     pub tickets: i64,
+    // T-291 — `$defs/faction.color` is EDITOR-ONLY. This struct does not carry it, so flatten
+    // cannot emit an unread hex onto `/compiled`. No faction-colour reader lives in T-291's owns
+    // (FrameworkManager / SpectatorController). Documented here rather than in T-290's emit-ledger.
 }
 
 #[derive(Debug, Serialize)]
@@ -766,6 +772,9 @@ fn escape_resource_name(s: &str) -> String {
 pub struct ModMissionDocument {
     pub schema_version: String,
     pub meta: ModMeta,
+    // T-291 — top-level `layers[]` (decoration layer aliases) is EDITOR-ONLY. T-654's `variants[]`
+    // is the runtime inclusion contract. This document has no `layers` field, so flatten cannot
+    // emit the array unread. Not T-290's emit-ledger; the omitted field is the documentation.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub environment: Option<ModEnvironment>,
     pub factions: Vec<ModFaction>,
@@ -3102,12 +3111,15 @@ fn project_crew(
     Ok(seats)
 }
 
-/// T-259 — project an authored top-level `settings` object onto `$defs/settings`.
+/// T-259 / T-291 — project an authored top-level `settings` object onto `$defs/settings`.
 ///
 /// `None` in → `None` out (key omitted on the wire). `Some` in → `Some` out even when every field
 /// is empty, so an authored `"settings": {}` survives as `{}` rather than vanishing. Empty strings
 /// on `respawn` / `spectatorPolicy` are treated as absent fields (trimmed), matching how the mod
-/// reader uses empty string for "key not set".
+/// reader uses empty string for "key not set". Non-empty `spectatorPolicy` / `nightVision` REACH
+/// the wire — T-291's readers are `TBD_FrameworkManager` (latch + NVG strip + windDirDeg) and
+/// `TBD_SpectatorController` (none / own-side delay / free). `respawn` is emitted only; its
+/// pool reader stays with the T-181 lineage.
 fn derive_settings(authored: &Option<SettingsIn>) -> Option<ModSettings> {
     let Some(s) = authored else {
         return None;
@@ -3420,6 +3432,8 @@ pub fn flatten_to_mod_document(
                     roles[idx].count += 1;
                 } else {
                     role_index.insert(role, roles.len());
+                    // T-291 — `$defs/role.radio` is editor-only (see [`ModOrbatRole`]); do not
+                    // invent a nets array here.
                     roles.push(ModOrbatRole {
                         slot: role.to_string(),
                         kit: kit.clone(),
@@ -5036,6 +5050,65 @@ mod tests {
         let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
         let wire = serde_json::to_value(&doc).expect("wire");
         assert_eq!(wire["settings"], golden["settings"]);
+    }
+
+    /// T-291 — the three runtime orphans reach `/compiled` together: settings.spectatorPolicy,
+    /// settings.nightVision, environment.windDirDeg.
+    #[test]
+    fn t291_runtime_orphans_reach_the_compiled_wire() {
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["settings"] = serde_json::json!({
+            "spectatorPolicy": "own_side_delayed_60s",
+            "nightVision": true
+        });
+        p["environment"] = serde_json::json!({ "windDirDeg": 120 });
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        let wire = serde_json::to_value(&doc).expect("wire");
+        assert_eq!(wire["settings"]["spectatorPolicy"], "own_side_delayed_60s");
+        assert_eq!(wire["settings"]["nightVision"], true);
+        assert_eq!(wire["environment"]["windDirDeg"].as_f64(), Some(120.0));
+    }
+
+    /// T-291 — `factions[].color`, `roles[].radio` and top-level `layers[]` are editor-only:
+    /// authoring them on the payload must not put those keys on the compiled document.
+    #[test]
+    fn t291_color_radio_layers_are_editor_only_and_do_not_reach_the_wire() {
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["layers"] = serde_json::json!(["layer:decor_a"]);
+        if let Some(factions) = p.pointer_mut("/editor/factions")
+            && let Some(row) = factions.get_mut(0)
+        {
+            row["color"] = serde_json::json!("#ff0000");
+        }
+        if let Some(slots) = p.pointer_mut("/editor/slots")
+            && let Some(row) = slots.get_mut(0)
+        {
+            row["radio"] = serde_json::json!(["net:cmd"]);
+        }
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        let wire = serde_json::to_value(&doc).expect("wire");
+        assert!(
+            wire.get("layers").is_none(),
+            "layers[] is editor-only and must not reach /compiled"
+        );
+        let factions = wire["factions"].as_array().expect("factions");
+        for f in factions {
+            assert!(
+                f.get("color").is_none(),
+                "factions[].color is editor-only, got {f}"
+            );
+        }
+        let orbat = wire["orbat"].as_object().expect("orbat");
+        for (_side, faction) in orbat {
+            for group in faction["groups"].as_array().expect("groups") {
+                for role in group["roles"].as_array().expect("roles") {
+                    assert!(
+                        role.get("radio").is_none(),
+                        "roles[].radio is editor-only, got {role}"
+                    );
+                }
+            }
+        }
     }
 
     /// T-936.1 — an AUTHORED `winConditions` block reaches the wire instead of the hardcoded

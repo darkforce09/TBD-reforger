@@ -92,6 +92,13 @@ class TBD_SpectatorController
 	//! (`TBD_SpectatorHost.MIN_MOVE_M`), so the message is not sent in the first place.
 	static const float HOST_REPORT_MIN_MOVE_M = 2.0;
 
+	//! T-291 — `own_side_delayed_60s` waits this long after death before the camera appears.
+	static const int OWN_SIDE_DELAY_MS = 60000;
+
+	static const string POLICY_NONE = "none";
+	static const string POLICY_OWN_SIDE = "own_side_delayed_60s";
+	static const string POLICY_FREE = "free";
+
 	protected static TBD_SpectatorCamera s_Camera;
 	protected static CameraBase s_PreviousCamera;
 
@@ -99,6 +106,10 @@ class TBD_SpectatorController
 	protected static bool s_bHadLife;
 	protected static bool s_bListenersRegistered;
 	protected static int s_iNoBodyMs;
+
+	//! T-291 — elapsed while dead and not yet in spectator, used for the 60 s own-side delay.
+	protected static int s_iPolicyWaitMs;
+	protected static bool s_bLoggedNone;
 
 	//! T-181.24 — camera-report bookkeeping. `s_bHostReported` exists so the FIRST report is always
 	//! sent: comparing against a zeroed `s_vHostReported` would silently swallow it for anyone who
@@ -192,6 +203,8 @@ class TBD_SpectatorController
 
 		s_bHadLife = false;
 		s_iNoBodyMs = 0;
+		s_iPolicyWaitMs = 0;
+		s_bLoggedNone = false;
 		s_iFollowPlayerId = -1;
 		s_bFirstPerson = false;
 		s_PreviousCamera = null;
@@ -234,9 +247,27 @@ class TBD_SpectatorController
 			// Seen a living body: from here on, losing it means the life was spent.
 			s_bHadLife = true;
 			s_iNoBodyMs = 0;
+			s_iPolicyWaitMs = 0;
 
 			if (s_bActive)
 				Leave();
+
+			return;
+		}
+
+		SyncSpectatorPolicy();
+
+		string policy = AuthoredPolicy();
+		if (policy == POLICY_NONE)
+		{
+			if (s_bActive)
+				Leave();
+
+			if (!s_bLoggedNone)
+			{
+				Print("[TBD][spectator] spectatorPolicy=none — staying on the death view (no spectator camera).", LogLevel.NORMAL);
+				s_bLoggedNone = true;
+			}
 
 			return;
 		}
@@ -249,16 +280,53 @@ class TBD_SpectatorController
 			return;
 		}
 
+		bool wantsEnter = false;
 		if (s_bHadLife)
 		{
-			Enter(local);
-			return;
+			wantsEnter = true;
+		}
+		else
+		{
+			s_iNoBodyMs += POLL_MS;
+			if (s_iNoBodyMs >= NO_BODY_GRACE_MS)
+				wantsEnter = true;
 		}
 
-		// Never had a body in a live round: reconnected on a spent life, or a refused deploy.
-		s_iNoBodyMs += POLL_MS;
-		if (s_iNoBodyMs >= NO_BODY_GRACE_MS)
-			Enter(local);
+		if (!wantsEnter)
+			return;
+
+		if (policy == POLICY_OWN_SIDE)
+		{
+			s_iPolicyWaitMs += POLL_MS;
+			if (s_iPolicyWaitMs < OWN_SIDE_DELAY_MS)
+				return;
+		}
+
+		Enter(local);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-291 — authored spectatorPolicy, replicated onto TBD_FrameworkManager. Empty when the
+	//! mission omitted the key (or the latch has not arrived yet).
+	protected static string AuthoredPolicy()
+	{
+		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
+		if (!fm)
+			return string.Empty;
+
+		return fm.GetSpectatorPolicy();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-291 — apply faction restriction on the CLIENT. MissionLoader's ApplyMissionSettings
+	//! runs on the server only; SpectatorTargets is a process-local static and does not replicate.
+	protected static void SyncSpectatorPolicy()
+	{
+		string policy = AuthoredPolicy();
+		if (policy == POLICY_FREE)
+			TBD_SpectatorTargets.SetFactionRestricted(false);
+		else if (policy == POLICY_OWN_SIDE || policy == POLICY_NONE)
+			TBD_SpectatorTargets.SetFactionRestricted(true);
 	}
 
 	//------------------------------------------------------------------------------------------------
