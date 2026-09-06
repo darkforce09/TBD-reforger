@@ -462,6 +462,25 @@ mod tests {
         bytes
     }
 
+    /// The first committed tile whose payload is not all zeros.
+    ///
+    /// 354 of the 625 everon tiles are open sea and decode to 8450 zeros — `0_0.bin`, the one a
+    /// sorted listing hands you first, among them. A single-tile test that takes `[0]` therefore
+    /// compares zeros with zeros: MEASURED, a decoder whose aligned-copy branch was gutted to
+    /// return `vec![0u16; n]` passed `unaligned_payload_decodes_identically` unchanged. The scan is
+    /// on the raw bytes, not on a decode, so the oracle does not depend on the code under test.
+    fn everon_tile_with_signal() -> (PathBuf, Vec<u8>) {
+        for path in everon_density_tiles() {
+            let bytes = read_tile(&path);
+            if bytes[TBDD_HEADER_BYTES..].iter().any(|b| *b != 0) {
+                return (path, bytes);
+            }
+        }
+        panic!(
+            "all 625 everon density tiles have an all-zero payload — the corpus carries no signal"
+        )
+    }
+
     /// T-935.5 acceptance — **all 625** committed everon tiles decode bit-identically through the
     /// `cast_slice` decoder and through the pre-T-935.5 byte loop.
     #[test]
@@ -577,7 +596,7 @@ mod tests {
     /// it, so this is the aligned-copy branch and nothing else.
     #[test]
     fn unaligned_payload_decodes_identically() {
-        let bytes = read_tile(&everon_density_tiles()[0]);
+        let (path, bytes) = everon_tile_with_signal();
         let mut shifted = Vec::with_capacity(bytes.len() + 1);
         shifted.push(0u8);
         shifted.extend_from_slice(&bytes);
@@ -592,17 +611,23 @@ mod tests {
             bytemuck::try_cast_slice::<u8, u16>(&unaligned[TBDD_HEADER_BYTES..]).is_err(),
             "the payload cast succeeded on an odd address — the copy branch was not exercised"
         );
-        assert_eq!(decode_tbdd(unaligned), decode_tbdd(&bytes));
-        assert_eq!(
-            decode_tbdd(unaligned),
-            parity_reference::decode_tbdd(&bytes)
+        let got = decode_tbdd(unaligned).expect("odd-addressed tile must decode");
+        // The copy branch has to be graded on cells that are not zero, or a branch that returns a
+        // zeroed Vec passes. `0_0.bin` and 353 other everon tiles are open sea; this is why the
+        // fixture is `everon_tile_with_signal` and not `everon_density_tiles()[0]`.
+        assert!(
+            got.channels.iter().flatten().any(|v| *v != 0),
+            "{} decoded to all zeros — the copy branch was graded against nothing",
+            path.display()
         );
+        assert_eq!(Ok(got.clone()), decode_tbdd(&bytes));
+        assert_eq!(Ok(got), parity_reference::decode_tbdd(&bytes));
     }
 
     /// Every truncation of a real tile is an `Err`, never a panic.
     #[test]
     fn short_payloads_are_err_never_panic() {
-        let bytes = read_tile(&everon_density_tiles()[0]);
+        let (_, bytes) = everon_tile_with_signal();
         for cut in [0usize, 1, 4, 12, 15, 16, 17, 100, 16_915] {
             let short = &bytes[..cut];
             let got = decode_tbdd(short);
@@ -617,7 +642,7 @@ mod tests {
 
     #[test]
     fn header_pod_is_the_on_disk_header() {
-        let bytes = read_tile(&everon_density_tiles()[0]);
+        let (_, bytes) = everon_tile_with_signal();
         let head: TbddHeader = bytemuck::pod_read_unaligned(&bytes[..TBDD_HEADER_BYTES]);
         assert_eq!(size_of::<TbddHeader>(), TBDD_HEADER_BYTES);
         assert_eq!(align_of::<TbddHeader>(), 2);
