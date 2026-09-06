@@ -1,0 +1,11 @@
+id = "T-989"
+kind = "work"
+title = "T-149 verify line names a command that does not exist"
+summary = "The ticket says cargo xtask ci verify map-object-golden. That subcommand does not exist; the gate is cargo xtask schema map-object-golden."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T06:45:39Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

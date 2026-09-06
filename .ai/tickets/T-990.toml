@@ -1,0 +1,11 @@
+id = "T-990"
+kind = "work"
+title = "F6 gate compares raw rings to a smoothed catalogue"
+summary = "The phase gate re-derives forest regions with the raw tracer and compares the array to the committed file. The emit now writes smoothed rings, so they can never match after a regeneration."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T06:45:56Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

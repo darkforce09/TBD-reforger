@@ -1,0 +1,11 @@
+id = "T-988"
+kind = "work"
+title = "Forest regions file grows 5.7x when smoothed"
+summary = "The smoothed everon rings take forest-regions.json.gz from 43638 to 248877 bytes, 15528 to 42762 vertices. The world load fetches it and no size budget gate covers it."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T06:45:32Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
