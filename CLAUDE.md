@@ -163,13 +163,13 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-940** — Website platform: events, telemetry, admin, content (`queued`)
 - **T-090** — Map visualization program (`ready`)
 - **T-935** — Map binary storage — hybrid rkyv + POD (`queued`)
-- **T-678** — Group AI state: combat mode, behaviour, formation, speed (`ready`)
 - **T-212** — Typed per-side objectives with attributes (`ready`)
-- **T-680** — Vehicle states: lock, fuel, ammo (`ready`)
 - **T-681** — Entity states: health, allow-damage, show-model, size, stamina (`ready`)
-- **T-684** — Mission parameters as first-class document objects (`ready`)
 - **T-685** — Zone volumes: height bounds capture counts and owner (`ready`)
 - **T-689** — Play-area enforcement gains a vehicle-class axis: the aircraft exemption (`ready`)
+- **T-705** — Player gadget flags — map, compass, watch, GPS, radio (`ready`)
+- **T-654** — Conditional inclusion: variant-gated document subtrees (`ready`)
+- **T-679** — Placement scatter: radius and area shape (`ready`)
 <!-- ticket-sync:status:end -->
 
 **Shipped history — every slice, sha and tag — lives in**

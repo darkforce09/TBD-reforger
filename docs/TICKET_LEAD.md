@@ -9,11 +9,8 @@
 ## Ready
 
 - **T-090** (7079) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-678** (7300) — Group AI state: combat mode, behaviour, formation, speed [ready] — Group AI state: combat mode, behaviour, formation, speed
 - **T-212** (7320) — Typed per-side objectives with attributes [ready] — Objectives as typed, placed, per-side entities with one uniform attribute spine
-- **T-680** (7330) — Vehicle states: lock, fuel, ammo [ready] — Vehicle states: lock, fuel, ammo
 - **T-681** (7340) — Entity states: health, allow-damage, show-model, size, stamina [ready] — Entity states: health, allow-damage, show-model, size, stamina
-- **T-684** (7360) — Mission parameters as first-class document objects [ready] — Mission parameters as first-class document objects
 - **T-685** (7370) — Zone volumes: height bounds capture counts and owner [ready] — Zones become volumes: min/max height, attacker and defender counts, starting owner
 - **T-689** (7380) — Play-area enforcement gains a vehicle-class axis: the aircraft exemption [ready] — Play-area enforcement gains a vehicle-class axis: the aircraft exemption
 - **T-705** (7400) — Player gadget flags — map, compass, watch, GPS, radio [ready] — Player gadget flags — map, compass, watch, GPS, radio
@@ -108,7 +105,6 @@ flowchart LR
   T092[T-092] --> T071[T-071]
   T177[T-177] --> T071[T-071]
   T118[T-118] --> T114[T-114]
-  T677[T-677] --> T678[T-678]
   T685[T-685] --> T212[T-212]
   T241[T-241] --> T212[T-212]
   T257[T-257] --> T212[T-212]

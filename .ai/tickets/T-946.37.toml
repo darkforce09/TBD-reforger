@@ -1,0 +1,20 @@
+id = "T-946.37"
+kind = "work"
+title = "Lock false cannot unlock spawned prefab"
+summary = "JsonLoadContext binds omitted lock and authored false the same; Apply only locks on true so a prefab that spawns locked cannot be unlocked."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T20:45:30Z"
+
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c",
+]
+verify = [
+    "authored lock=false must unlock a prefab that spawns with pilot controls locked",
+]
+
+[scope]
+domain = "repo"
+layer = "docs"

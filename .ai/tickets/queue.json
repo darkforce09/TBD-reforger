@@ -13,13 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-678",
-      "title": "Group AI state: combat mode, behaviour, formation, speed",
-      "status": "ready",
-      "spec": "docs/specs/existing/t678_group_ai_state.md",
-      "branch": "ticket/T-678"
-    },
-    {
       "id": "T-212",
       "title": "Typed per-side objectives with attributes",
       "status": "ready",
@@ -27,25 +20,11 @@
       "branch": "ticket/T-212"
     },
     {
-      "id": "T-680",
-      "title": "Vehicle states: lock, fuel, ammo",
-      "status": "ready",
-      "spec": "docs/specs/existing/t680_vehicle_states.md",
-      "branch": "ticket/T-680"
-    },
-    {
       "id": "T-681",
       "title": "Entity states: health, allow-damage, show-model, size, stamina",
       "status": "ready",
       "spec": "docs/specs/existing/t681_entity_states.md",
       "branch": "ticket/T-681"
-    },
-    {
-      "id": "T-684",
-      "title": "Mission parameters as first-class document objects",
-      "status": "ready",
-      "spec": "docs/specs/existing/t684_mission_params.md",
-      "branch": "ticket/T-684"
     },
     {
       "id": "T-685",

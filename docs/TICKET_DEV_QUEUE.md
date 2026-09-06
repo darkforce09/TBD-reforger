@@ -5,14 +5,6 @@
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
 
-## T-678 — Group AI state: combat mode, behaviour, formation, speed
-
-- **Slice spec:** `docs/specs/existing/t678_group_ai_state.md`
-- **Program hub:** `docs/specs/existing/t678_group_ai_state.md`
-- **Branch:** `ticket/T-678`
-- **Targets:** 
-- **Summary:** Group AI state: combat mode, behaviour, formation, speed
-
 ## T-212 — Typed per-side objectives with attributes
 
 - **Slice spec:** `docs/specs/existing/t212_typed_objectives.md`
@@ -21,14 +13,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** Objectives as typed, placed, per-side entities with one uniform attribute spine
 
-## T-680 — Vehicle states: lock, fuel, ammo
-
-- **Slice spec:** `docs/specs/existing/t680_vehicle_states.md`
-- **Program hub:** `docs/specs/existing/t680_vehicle_states.md`
-- **Branch:** `ticket/T-680`
-- **Targets:** 
-- **Summary:** Vehicle states: lock, fuel, ammo
-
 ## T-681 — Entity states: health, allow-damage, show-model, size, stamina
 
 - **Slice spec:** `docs/specs/existing/t681_entity_states.md`
@@ -36,14 +20,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-681`
 - **Targets:** 
 - **Summary:** Entity states: health, allow-damage, show-model, size, stamina
-
-## T-684 — Mission parameters as first-class document objects
-
-- **Slice spec:** `docs/specs/existing/t684_mission_params.md`
-- **Program hub:** `docs/specs/existing/t684_mission_params.md`
-- **Branch:** `ticket/T-684`
-- **Targets:** 
-- **Summary:** Mission parameters as first-class document objects
 
 ## T-685 — Zone volumes: height bounds capture counts and owner
 

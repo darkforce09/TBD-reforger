@@ -3,7 +3,7 @@ kind = "work"
 title = "Vehicle states: lock, fuel, ammo"
 summary = "Vehicle states: lock, fuel, ammo"
 class = "chore"
-status = "ready"
+status = "shipped"
 order = 7330
 spec = "docs/specs/existing/t680_vehicle_states.md"
 plan = "docs/plans/t-680_plan.md"
@@ -54,7 +54,13 @@ citations = [
     "T-706 schema widening split",
     "T-076 placement separate ticket",
 ]
-estimated = ["scope"]
+shipped_at = "24117ac36"
+created_at = "2026-08-02T00:00:00Z"
+completed_at = "2026-09-06T20:46:57Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c",

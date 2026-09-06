@@ -3,10 +3,10 @@ kind = "work"
 title = "Group AI state: combat mode, behaviour, formation, speed"
 summary = "Group AI state: combat mode, behaviour, formation, speed"
 class = "chore"
-status = "ready"
+status = "shipped"
 order = 7300
-plan = "docs/plans/t-678_plan.md"
 spec = "docs/specs/existing/t678_group_ai_state.md"
+plan = "docs/plans/t-678_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row
@@ -50,20 +50,25 @@ verify = [
     "No packages/tbd-schema edits in this slice.",
     "cargo xtask mod compile",
 ]
+acceptance = [
+    "Combat mode, behaviour, formation and speed mode from the payload are applied to AI-enabled groups after spawn.",
+    "Groups without the attrs behave as before; no packages/tbd-schema edits; compile clean.",
+]
 citations = [
     "T-677 waypoint shared gate",
     "zero combatMode speedMode hits",
     "T-706 schema widening split",
 ]
-estimated = ["scope"]
+shipped_at = "2bfbbebc8"
+created_at = "2026-08-02T00:00:00Z"
+completed_at = "2026-09-06T20:46:22Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/AI/TBD_GroupState.c",
-]
-
-acceptance = [
-    "Combat mode, behaviour, formation and speed mode from the payload are applied to AI-enabled groups after spawn.",
-    "Groups without the attrs behave as before; no packages/tbd-schema edits; compile clean.",
 ]
 
 [scope]
