@@ -1,15 +1,16 @@
 id = "T-935.4"
 kind = "work"
-parent = "T-935"
 title = "DEM raw elevation.dem emitter and streamed loader"
 summary = "tbd-tools emits dem/elevation.dem (TBDE header + raw u16 LE grid) from the same u16 source as the PNG; the frontend streams it into one Vec<u16> with lazy metre conversion, no PNG decode."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7130
-priority = 1
 spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
 plan = "docs/plans/t-935_4_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = ["T-935.1"]
+parent = "T-935"
 main_goal = "The DEM boots from a raw u16 grid the loader streams straight into its final buffer; the PNG decoder is bypassed."
 context = [
     "Anchor 2026-09-04: tools/tbd-tools/src/world/aux.rs:1109 raw-u16-to-dem-png; frontend mod.rs:619 loads the DEM PNG via fetch_bytes_streamed; core dem/png_decode.rs:58-79 decodes it.",
@@ -44,8 +45,8 @@ acceptance = [
     "The raw loader allocates the sample Vec once; no PNG decoder runs when manifest.dem.raw is present.",
     "With the manifest unchanged the PNG path boots identically.",
 ]
-depends_on = ["T-935.1"]
 created_at = "2026-09-05T01:34:37Z"
+completed_at = "2026-09-06T05:11:01Z"
 owns = [
     "tools/tbd-tools/src/world/aux.rs",
     "crates/map-engine-core/src/dem/raw.rs",
