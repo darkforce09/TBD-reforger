@@ -20,6 +20,11 @@ pub mod sap;
 pub mod tbds_v2;
 pub mod unified;
 pub mod water;
+/// T-935.9 — `water/water_vectors.rkyv` + `water/bathymetry.tbd-bath` from the Workbench inland-
+/// water staging export. Separate from [`water`], which is the *image* lane (inland-water
+/// classifier + ortho tint) and shares nothing with it but the word: this module reads the staging
+/// rasters and writes binaries. Same split as [`labels`] versus [`labels_emit`].
+pub mod water_emit;
 
 /// T-537 / T-383 — refuse structurally empty / vacuous overwrites of committed map assets.
 pub(crate) fn refuse_empty_write(context: &str, empty: bool, detail: &str) -> Result<()> {

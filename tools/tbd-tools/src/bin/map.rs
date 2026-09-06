@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
-use tbd_tools::map::{carto, glyphs, labels, labels_emit, sap, tbds_v2, unified, water};
+use tbd_tools::map::{carto, glyphs, labels, labels_emit, sap, tbds_v2, unified, water, water_emit};
 
 #[derive(Parser)]
 #[command(name = "map", about = "T-090 map-asset image pipeline (Rust)")]
@@ -79,6 +79,12 @@ enum Cmd {
     /// road-names.json (dual emission; the JSON files stay). `--terrain` takes a terrain id or a
     /// terrain directory.
     LabelsRkyv {
+        #[arg(long, default_value = "everon")]
+        terrain: String,
+    },
+    /// T-935.9 — `water/water_vectors.rkyv` + `water/bathymetry.tbd-bath` from the Workbench
+    /// inland-water staging export. `--terrain` takes a terrain id or a terrain directory.
+    Water {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
@@ -200,6 +206,7 @@ fn run() -> anyhow::Result<ExitCode> {
             Ok(ExitCode::from(labels::export_height_labels(&terrain)?))
         }
         Cmd::LabelsRkyv { terrain } => Ok(ExitCode::from(labels_emit::emit_map_labels(&terrain)?)),
+        Cmd::Water { terrain } => Ok(ExitCode::from(water_emit::emit_water(&terrain)?)),
         Cmd::ResetWaterMeta { terrain } => Ok(ExitCode::from(carto::reset_water_meta(&terrain)?)),
         Cmd::PatchUnifiedBytes { terrain } => {
             Ok(ExitCode::from(carto::patch_unified_bytes(&terrain)?))
