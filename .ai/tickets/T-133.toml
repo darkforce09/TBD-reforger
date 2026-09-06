@@ -46,6 +46,7 @@ owns = [
     "crates/map-engine-core/src/mission/tasks.rs",
     "apps/website/frontend/src/editor/panels/tasks_panel.rs",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c",
 ]
 
 [scope]

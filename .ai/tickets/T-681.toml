@@ -59,6 +59,9 @@ owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_EntityState.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
 ]
 
 [scope]
