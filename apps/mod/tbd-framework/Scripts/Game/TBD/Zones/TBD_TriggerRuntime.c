@@ -1241,13 +1241,16 @@ class TBD_TriggerRuntime
 			return;
 		}
 
+		// A one-shot that has fired is finished. Answered BEFORE the condition is evaluated, so a
+		// spent trigger stops costing a zone scan (or an objective walk) once a second for the rest
+		// of the round.
+		if (trigger.m_eState == TBD_ETriggerState.FIRED && !trigger.m_bRepeat)
+			return;
+
 		bool holds = ConditionHolds(trigger);
 
 		if (trigger.m_eState == TBD_ETriggerState.FIRED)
 		{
-			if (!trigger.m_bRepeat)
-				return;
-
 			if (!holds)
 			{
 				trigger.m_eState = TBD_ETriggerState.ARMED;
