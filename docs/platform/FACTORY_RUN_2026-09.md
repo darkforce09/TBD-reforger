@@ -100,3 +100,30 @@ edit, in-editor play button.
   **T-957 `apps/mod/vanilla_reference` is 2,483 rotated files from the pre-T-305 reader and the
   committed enf-index TSVs were built over them** — filed, not fixed, because re-extraction wipes
   and rewrites a committed artifact tree; T-958 a stale test count in a comment.
+
+- 2026-09-06 **WAVE 236 CLOSED** (`4f2d4598f`) — T-300 the run target and its build-provenance
+  stamp, T-935.1 the `world::binary` formats, T-277 the map catalogue classified (27.3% fallback to
+  2.35%). The FIRST close of this run that needed neither `--tickets` nor `TBD_GATE_BASE_CONFIRM`:
+  the wave was batch-shipped (`ship --no-repack` ×3 then ONE repack), so it froze its whole set as
+  a pending entry with its own reserved label, and oracle 2 corroborated from that entry.
+- 2026-09-06 The FIRST wave-236 marker (`35328a7b1`) was DISAVOWED (`36f462d3f`). Its three tickets
+  had shipped one at a time, no pending entry formed, the repack handed the freed label 236 to the
+  next batch, and `--close --tickets` wrote the marker over a label the plan still called open.
+  Oracle 2 reads the lock at the marker's PARENT and refused every later gate. The label was wrong;
+  the work was not — T-305, T-298 and T-943 stayed shipped and stamped, and their span was re-gated
+  from wave 235's close. A close marker carries no diff, so `git revert` produces nothing to commit
+  and the disavowal trailer had to be written by hand. Guarded now: `--close --tickets` refuses a
+  label the lock still calls open.
+- 2026-09-06 Wave 237 verifier: FOUR MAJORs, three fixed in-wave. (1) `chunk_container.rs` computed
+  every length with unchecked `as usize *`, and `usize` is 32-bit on wasm32 — THE LOADER'S OWN
+  TARGET — so a header claiming 2^27 instances matched an EMPTY payload there while erroring on
+  x86_64. Proven on a real wasm32 build under node. (2) `reclassify` preserved `needsReview`
+  wholesale, so after T-277 classified 420 of 443 the artifact still published
+  `needsReview.prefabTypes = 443` — the ticket's own headline number — and `verify type-inventory`
+  is shape-only. (3) `byKind.road.segments` and `byRoadClass` were literally hardcoded to 0 and
+  `{}`: roads export as prefab-less `RoadEntity` rows that classification never sees, so T-277's
+  requirement 2 was unreachable from its owned file. New `build::road_census` derives both from the
+  committed `roads.json.gz` — 887 segments, five classes — and corrected five places claiming 888,
+  one of them a live browser assertion. (4) FILED as T-963: the run stamp describes a directory
+  rather than each binary, and ignores a dirty tree; the run lane has no caller yet, so it blocks
+  T-959 instead. Minors/nits T-964…T-969.
