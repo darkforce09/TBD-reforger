@@ -1,15 +1,16 @@
 id = "T-935.8"
 kind = "work"
-parent = "T-935"
 title = "Building blueprint archive and occluder loader"
 summary = "xtask map-blueprint emits prefabs/building_blueprints.rkyv (1623 descriptors + BLAS index + golden blueprint levels); occluder_host.rs loads one archive instead of 1623 descriptor JSON fetches when manifest.buildings is present."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7150
-priority = 1
 spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
 plan = "docs/plans/t-935_8_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = ["T-935.1"]
+parent = "T-935"
 main_goal = "Occluder boot is one archive fetch plus BLAS sidecars; blueprint levels are zero-copy for viewshed and LOS."
 context = [
     "Anchor 2026-09-04: occluder_host.rs:52/107/134 fetches blas-manifest.json, prefabs/descriptors/*.json (1623, 19 MB), *.bvh (1690 LFS); descriptor.rs:52, bvh_sidecar.rs:219, building_blueprint.rs define the shapes.",
@@ -44,8 +45,8 @@ acceptance = [
     "The occluder host boots from one fetch instead of 1623 when the manifest points at the archive.",
     "world-los on cell 18_0 is unchanged from main.",
 ]
-depends_on = ["T-935.1"]
 created_at = "2026-09-05T01:34:37Z"
+completed_at = "2026-09-06T05:11:21Z"
 owns = [
     "xtask/src/map_blueprint/archive_emit.rs",
     "xtask/src/map_blueprint/library_cli.rs",
