@@ -35,8 +35,10 @@ acceptance = [
     "A local build-objects run reports fallback below 5% with non-zero vegetation, utility and road counts (numbers in the report).",
     "Every appended rule carries gameplay, spatial and render.iconKey and the schema gates pass.",
 ]
+shipped_at = "eb779cc48"
 created_at = "2026-09-05T03:30:00Z"
 completed_at = "2026-09-06T01:53:20Z"
+estimated = ["tokens"]
 owns = ["packages/tbd-schema/rules/prefab-classify.json"]
 
 [scope]
