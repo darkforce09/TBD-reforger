@@ -1,0 +1,11 @@
+id = "T-993"
+kind = "work"
+title = "Satellite boot still hardcodes container v1"
+summary = "The boot path reads a 12 byte header and rejects any version but 1, so a v2 bundle is refused before the new reader sees it. Must change in the same commit as the manifest flip."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T06:53:11Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

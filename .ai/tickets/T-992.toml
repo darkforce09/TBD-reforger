@@ -1,0 +1,11 @@
+id = "T-992"
+kind = "work"
+title = "Mip geometry is implemented twice"
+summary = "The level dimension and tile rect arithmetic exists in both the emitter and the reader. Two agreeing implementations is a decent oracle now but a drift hazard; the shared home is the core crate."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T06:52:46Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
