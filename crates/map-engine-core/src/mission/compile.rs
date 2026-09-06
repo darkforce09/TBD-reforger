@@ -272,6 +272,22 @@ pub fn compile_payload(small_maps_json: &str, slots_json: &str, include_orbat: b
         }
     }
 
+    // T-936 — the AUTHORED_BLOCKS passthrough, and the ONLY place this function copies one.
+    //
+    // The blocks ride `meta` (the editor's per-mission settings bag, which `small_maps_json` emits
+    // whole and `hydrate` loads back verbatim) and land at the payload ROOT, which is where
+    // `mission-editor-payload.schema.json` declares them and where `flatten_to_mod_document` reads
+    // them. `mission/extensions.rs` owns the list and the validators; the seven T-936 slices add a
+    // row there and touch nothing here.
+    //
+    // Placed BEFORE the T-219 extras re-emit so a stale parked copy of the same key cannot win over
+    // the live document — the same "live wins over parked" ordering `small_maps_json` applies to its
+    // own zones/compositions/triggers projections. The extras loop's `obj.contains_key(k)` guard is
+    // what enforces it from the other side.
+    if let Some(obj) = payload.as_object_mut() {
+        crate::mission::extensions::copy_authored_blocks(&meta, obj);
+    }
+
     // T-219 — re-emit unknown top-level keys that hydrate parked in `payloadExtras`. Never
     // overwrite a key this function already authored (schemaVersion / map / editor / …), and never
     // promote the side-channel name itself onto the wire payload (T-432: `payloadExtras` is in
@@ -1235,5 +1251,77 @@ mod tests {
         .to_string();
         let p2 = compile_payload(&with_meta, "{}", false);
         assert_eq!(p2["title"], json!("Authored"));
+    }
+
+    /// T-936 — an authored block rides `meta` and lands at the payload ROOT, verbatim.
+    ///
+    /// The transport is `meta` because that is the bag `small_maps_json` emits whole and `hydrate`
+    /// loads back verbatim, which is what makes an authored block survive Save → reload with no
+    /// change to `doc/store.rs`. The destination is the root because that is where
+    /// `mission-editor-payload.schema.json` declares it and where `flatten_to_mod_document` reads
+    /// it.
+    #[test]
+    fn an_authored_block_rides_meta_and_lands_at_the_payload_root() {
+        let block = json!({"mode": "vip", "endOn": ["faction_eliminated"], "vipSlotId": "s-12"});
+        let small = json!({
+            "meta": { "terrain": "everon", "winConditions": block.clone() }
+        })
+        .to_string();
+        let p = compile_payload(&small, "{}", false);
+        assert_eq!(p["winConditions"], block, "carried verbatim");
+
+        // Export takes the same path — it is the same function with `include_orbat`.
+        let ex = compile_payload(&small, "{}", true);
+        assert_eq!(ex["winConditions"], block);
+    }
+
+    /// An unlisted key in `meta` does NOT become a wire key. `AUTHORED_BLOCKS` is a list, not an
+    /// open passthrough: `mission.schema.json` closes the document root with
+    /// `additionalProperties: false`, so one stray promoted key would 500 `/compiled`.
+    #[test]
+    fn an_unlisted_meta_key_is_not_promoted_to_the_payload_root() {
+        let small = json!({
+            "meta": {
+                "terrain": "everon",
+                "tasks": [{"id": "t1"}],
+                "environment": { "weather": "clear" }
+            }
+        })
+        .to_string();
+        let p = compile_payload(&small, "{}", false);
+        assert!(
+            p.get("tasks").is_none(),
+            "`tasks` has no AUTHORED_BLOCKS row until T-936.2: {p}"
+        );
+        // ...and the keys `meta` has always carried are untouched by the passthrough.
+        assert_eq!(p["environment"], json!({"weather": "clear"}));
+    }
+
+    /// The LIVE document wins over a stale parked copy — the same ordering `small_maps_json`
+    /// applies to its own zones/compositions/triggers projections, and the reason
+    /// `copy_authored_blocks` runs BEFORE the T-219 extras re-emit.
+    #[test]
+    fn a_live_authored_block_wins_over_a_stale_parked_one() {
+        let live = json!({"mode": "vip", "endOn": ["time_limit"], "vipSlotId": "live"});
+        let stale = json!({"mode": "attrition", "endOn": ["time_limit"]});
+        let small = json!({
+            "meta": { "terrain": "everon", "winConditions": live.clone() },
+            "payloadExtras": { "winConditions": stale }
+        })
+        .to_string();
+        let p = compile_payload(&small, "{}", false);
+        assert_eq!(p["winConditions"], live);
+    }
+
+    /// A cleared key is `null` coming out of a yrs map, and `"winConditions": null` would fail the
+    /// schema's own type check — so absence has to be expressible, not just non-empty presence.
+    #[test]
+    fn a_cleared_authored_block_reaches_the_wire_as_absence_not_null() {
+        let small = json!({
+            "meta": { "terrain": "everon", "winConditions": serde_json::Value::Null }
+        })
+        .to_string();
+        let p = compile_payload(&small, "{}", false);
+        assert!(p.get("winConditions").is_none(), "{p}");
     }
 }
