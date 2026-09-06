@@ -1,0 +1,11 @@
+id = "T-973"
+kind = "work"
+title = "land passes a gate base past the wave opening"
+summary = "platform wave land passes the pre-merge HEAD as the gate base. When the command center commits between close and land, that base post-dates the wave opening and the post-merge gate refuses. Derive the base instead."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T03:18:38Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
