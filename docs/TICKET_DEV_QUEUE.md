@@ -5,14 +5,6 @@
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
 
-## T-305 — pak.rs seeks data_start plus offset; offsets are absolute
-
-- **Slice spec:** `docs/specs/ideas/t305_pak_offset.md`
-- **Program hub:** `docs/specs/ideas/t305_pak_offset.md`
-- **Branch:** `ticket/T-305`
-- **Targets:** 
-- **Summary:** read_file/read_raw in tools/tbd-tools/src/world/pak.rs seek data_start + entry.offset, but entry offsets are absolute from the pak start; every `enf extract` read is shifted by 56 bytes. Seek entry.offset directly, pinned by a fixture test.
-
 ## T-298 — Gate tbd-tools density tests in CI
 
 - **Slice spec:** `docs/specs/ideas/t298_tbd_tools_gate.md`

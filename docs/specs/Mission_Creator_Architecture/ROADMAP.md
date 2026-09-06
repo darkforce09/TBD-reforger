@@ -12,7 +12,6 @@
 ### Recommended next work (auto-generated)
 
 - **T-940** — Website platform: events, telemetry, admin, content (queued)
-- **T-305** — pak.rs seeks data_start plus offset; offsets are absolute (ready)
 - **T-298** — Gate tbd-tools density tests in CI (ready)
 - **T-943** — platform wave push deadlocks on large LFS ranges (ready)
 - **T-300** — Shared CARGO_TARGET_DIR serves unmerged slice binaries (ready)
@@ -21,6 +20,7 @@
 - **T-935** — Map binary storage — hybrid rkyv + POD (queued)
 - **T-277** — 27.4% of the map catalogue is unclassified (ready)
 - **T-149** — Forest mass polygon smoothing (ready)
+- **T-676** — Trigger activation and effects — the Enfusion runtime (ready)
 <!-- ticket-sync:next:end -->
 
 ---

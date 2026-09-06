@@ -3,7 +3,7 @@ kind = "work"
 title = "pak.rs seeks data_start plus offset; offsets are absolute"
 summary = "read_file/read_raw in tools/tbd-tools/src/world/pak.rs seek data_start + entry.offset, but entry offsets are absolute from the pak start; every `enf extract` read is shifted by 56 bytes. Seek entry.offset directly, pinned by a fixture test."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7030
 spec = "docs/specs/ideas/t305_pak_offset.md"
 plan = "docs/plans/t-305_plan.md"
@@ -33,6 +33,7 @@ acceptance = [
     "The synthetic-pak test stays green and fails if either seek regains the data_start term.",
 ]
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-06T00:27:19Z"
 owns = ["tools/tbd-tools/src/world/pak.rs"]
 
 [scope]
