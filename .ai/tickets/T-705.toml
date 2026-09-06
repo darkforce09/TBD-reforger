@@ -3,7 +3,7 @@ kind = "work"
 title = "Player gadget flags — map, compass, watch, GPS, radio"
 summary = "Player gadget flags — map, compass, watch, GPS, radio"
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7400
 spec = "docs/specs/existing/t705_gadget_flags.md"
 plan = "docs/plans/t-705_plan.md"
@@ -52,8 +52,13 @@ citations = [
     "NEW-W1 General States",
     "TBD_GadgetFlags.c reader",
 ]
-estimated = ["scope"]
+shipped_at = "d67220cb7"
 created_at = "2026-08-02T00:00:00Z"
+completed_at = "2026-09-06T23:38:14Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c",

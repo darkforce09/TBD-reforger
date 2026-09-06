@@ -13,14 +13,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** Objectives as typed, placed, per-side entities with one uniform attribute spine
 
-## T-705 — Player gadget flags — map, compass, watch, GPS, radio
-
-- **Slice spec:** `docs/specs/existing/t705_gadget_flags.md`
-- **Program hub:** `docs/specs/existing/t705_gadget_flags.md`
-- **Branch:** `ticket/T-705`
-- **Targets:** 
-- **Summary:** Player gadget flags — map, compass, watch, GPS, radio
-
 ## T-654 — Conditional inclusion: variant-gated document subtrees
 
 - **Slice spec:** `docs/specs/existing/t654_variant_inclusion.md`
@@ -36,14 +28,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-290`
 - **Targets:** 
 - **Summary:** meta.author/templateId/playerRange, the environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds and the orbat block are emitted but never read by the mod; add readers where cheap and annotate the rest in an emit ledger.
-
-## T-291 — Resolve five schema fields implemented on no surface
-
-- **Slice spec:** `docs/specs/ideas/t291_orphan_schema_fields.md`
-- **Program hub:** `docs/specs/ideas/t291_orphan_schema_fields.md`
-- **Branch:** `ticket/T-291`
-- **Targets:** 
-- **Summary:** environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem.
 
 ## T-242 — Emit T-216 slot deltas through flatten
 

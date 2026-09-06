@@ -164,12 +164,12 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-090** — Map visualization program (`ready`)
 - **T-935** — Map binary storage — hybrid rkyv + POD (`queued`)
 - **T-212** — Typed per-side objectives with attributes (`ready`)
-- **T-705** — Player gadget flags — map, compass, watch, GPS, radio (`ready`)
 - **T-654** — Conditional inclusion: variant-gated document subtrees (`ready`)
 - **T-674** — T-216 follow-on: slot identity reaches the wire (`queued`)
 - **T-675** — Vehicle roster reaches game — T-076 compile half (`queued`)
 - **T-936** — Mission logic the audit found missing (`queued`)
 - **T-290** — Nine dead flatten fields mod never reads (`ready`)
+- **T-242** — Emit T-216 slot deltas through flatten (`ready`)
 <!-- ticket-sync:status:end -->
 
 **Shipped history — every slice, sha and tag — lives in**

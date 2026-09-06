@@ -20,13 +20,6 @@
       "branch": "ticket/T-212"
     },
     {
-      "id": "T-705",
-      "title": "Player gadget flags \u2014 map, compass, watch, GPS, radio",
-      "status": "ready",
-      "spec": "docs/specs/existing/t705_gadget_flags.md",
-      "branch": "ticket/T-705"
-    },
-    {
       "id": "T-654",
       "title": "Conditional inclusion: variant-gated document subtrees",
       "status": "ready",
@@ -39,13 +32,6 @@
       "status": "ready",
       "spec": "docs/specs/ideas/t290_dead_flatten_fields.md",
       "branch": "ticket/T-290"
-    },
-    {
-      "id": "T-291",
-      "title": "Resolve five schema fields implemented on no surface",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t291_orphan_schema_fields.md",
-      "branch": "ticket/T-291"
     },
     {
       "id": "T-242",

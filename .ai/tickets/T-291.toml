@@ -3,7 +3,7 @@ kind = "work"
 title = "Resolve five schema fields implemented on no surface"
 summary = "environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7550
 spec = "docs/specs/ideas/t291_orphan_schema_fields.md"
 plan = "docs/plans/t-291_plan.md"
@@ -34,7 +34,10 @@ acceptance = [
     "spectatorPolicy, nightVision and windDirDeg authored in the editor reach the compiled document and the running mission.",
     "color, radio and layers are each either read by a named file or documented editor-only in the ledger.",
 ]
+shipped_at = "eded386a6"
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-06T23:39:07Z"
+estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/mission/flatten.rs",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",
