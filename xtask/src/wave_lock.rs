@@ -579,9 +579,46 @@ pub fn compile(
     baseline: &BTreeSet<String>,
     prev: Option<&WaveLock>,
 ) -> Result<WaveLock> {
+    compile_with_cap(root, baseline, prev, None)
+}
+
+/// [`compile`] with the width supplied instead of read from the environment.
+///
+/// Exists so tests can pack a deliberately narrow plan without `set_var`: `TBD_MAX_CONCURRENT` is
+/// process state, `cargo test` is multi-threaded, and a test that mutates it re-packs whatever
+/// sibling happens to call the packer at that instant — measured 2026-09-06, one such test made
+/// `candidates_sort_by_order_then_id_never_glob_order` fail about one run in three. Same lesson as
+/// the cwd race this file's neighbours already carry, arriving through a different global.
+pub fn compile_with_cap(
+    root: &Path,
+    baseline: &BTreeSet<String>,
+    prev: Option<&WaveLock>,
+    cap_override: Option<usize>,
+) -> Result<WaveLock> {
     let views = load_views(root)?;
     let mut warnings = Vec::new();
-    let cap = max_concurrent();
+    // T-946 follow-up — A REPACK MUST NOT RESHAPE A PLAN NOBODY ASKED IT TO RESHAPE.
+    //
+    // `max_concurrent()` reads `TBD_MAX_CONCURRENT` and defaults to 8, and `ticket ship`'s
+    // lifecycle hook repacks with no environment at all. Measured 2026-09-06: wave 236 was packed
+    // at the run's 3-wide cap, then `ticket ship T-298`'s hook re-packed the whole lock at 8 and
+    // wave 236 came back holding eight different tickets — the wave that had just been gated no
+    // longer existed in the plan, and `wave --close` had nothing to close. The lock RECORDS its
+    // own `max_concurrent`; an incidental repack must honour it. An explicit
+    // `TBD_MAX_CONCURRENT` still wins, because that is a caller asking on purpose.
+    let cap = match (
+        cap_override.or_else(|| {
+            std::env::var("TBD_MAX_CONCURRENT")
+                .ok()
+                .filter(|v| !v.is_empty())
+                .and_then(|v| v.parse().ok())
+        }),
+        prev,
+    ) {
+        (Some(n), _) if n > 0 => n,
+        (None, Some(p)) if p.max_concurrent > 0 => p.max_concurrent,
+        _ => max_concurrent(),
+    };
     let open = greedy_waves(&views, cap, &mut warnings)?;
     for w in &warnings {
         eprintln!("wave repack: warning: {w}");
@@ -1355,6 +1392,71 @@ mod tests {
         );
         let _ = fs::remove_dir_all(&dir);
         let _ = fs::remove_dir_all(&dir2);
+    }
+
+    /// T-946 follow-up — an incidental repack keeps the plan's own width.
+    ///
+    /// `ticket ship`'s lifecycle hook repacks with no environment, and `max_concurrent()` defaults
+    /// to 8. Measured 2026-09-06: wave 236 was packed 3 wide, `ticket ship T-298`'s hook re-packed
+    /// it at 8, and the wave that had just been gated no longer existed in the plan — `wave
+    /// --close` had nothing to close. An explicit `TBD_MAX_CONCURRENT` still wins.
+    #[test]
+    fn an_incidental_repack_keeps_the_locks_own_width() {
+        let dir = scratch_git(
+            "t946-cap",
+            &[
+                ("T-1.toml", &work("T-1", 10, &["a.rs"], &[], "queued")),
+                ("T-2.toml", &work("T-2", 20, &["b.rs"], &[], "queued")),
+                ("T-3.toml", &work("T-3", 30, &["c.rs"], &[], "queued")),
+            ],
+            &["wave 41 CLOSED — prior"],
+        );
+        // Pack it deliberately narrow, the way the run does — via the explicit cap, never
+        // `set_var`: TBD_MAX_CONCURRENT is process state and a sibling test would be re-packed
+        // under it (that is the race documented on `compile_with_cap`).
+        let narrow = compile_with_cap(&dir, &BTreeSet::new(), None, Some(1)).unwrap();
+        write(&dir, &narrow).unwrap();
+        println!(
+            "── deliberate ── max_concurrent = {}, waves = {:?}",
+            narrow.max_concurrent,
+            narrow.waves.iter().map(|w| w.n).collect::<Vec<_>>()
+        );
+        assert_eq!(narrow.max_concurrent, 1);
+        let narrow_open: Vec<usize> = narrow
+            .waves
+            .iter()
+            .filter(|w| w.n > 0)
+            .map(|w| w.tickets.len())
+            .collect();
+        assert_eq!(narrow_open, vec![1, 1, 1], "three singleton waves");
+
+        // An incidental repack — no environment, exactly the ship hook's shape.
+        let again = repack_quiet(&dir).unwrap();
+        println!(
+            "── incidental ── max_concurrent = {}, wave sizes = {:?}",
+            again.max_concurrent,
+            again
+                .waves
+                .iter()
+                .filter(|w| w.n > 0)
+                .map(|w| w.tickets.len())
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            again.max_concurrent, 1,
+            "the hook must not silently widen the plan to the default 8"
+        );
+        assert_eq!(
+            again
+                .waves
+                .iter()
+                .filter(|w| w.n > 0)
+                .map(|w| w.tickets.len())
+                .collect::<Vec<_>>(),
+            vec![1, 1, 1],
+            "and the wave membership must not move under a wave that is being run"
+        );
+        let _ = fs::remove_dir_all(&dir);
     }
 
     /// T-946 — the lock numbers from the HIGHEST CLAIM, not merely the newest marker, and a

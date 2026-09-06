@@ -1917,6 +1917,32 @@ mod tests {
         let _ = fs::remove_dir_all(&root);
     }
 
+    /// T-946 follow-up — the batch waiver must NOT swallow the missing-lock refusal.
+    ///
+    /// `wave_lock::missing_lock_error` carries the same ``run `cargo xtask wave repack` `` phrase
+    /// the waiver keys on, and `check_as_errors` returns it ALONE — every other lock check is
+    /// skipped behind it. Waiving it would let `ship --no-repack` write ticket status with no plan
+    /// on disk at all. Found by the wave 236 adversarial verifier, 2026-09-06.
+    #[test]
+    fn the_batch_waiver_never_swallows_a_missing_lock() {
+        let root = scratch_registry("ship-batch-nolock");
+        let registry = load_registry(&root).expect("scratch registry loads");
+        crate::wave_lock::repack_quiet(&root).expect("baseline lock");
+        let lock_path = root.join(crate::wave_lock::LOCK_REL);
+        fs::remove_file(&lock_path).expect("remove the lock");
+
+        let raw = crate::check::check(&root, &registry, false);
+        println!("── with no lock ── {raw:?}");
+        assert!(
+            raw.iter().any(|e| e.contains("DidNotRun")),
+            "the fixture must actually produce the DidNotRun refusal: {raw:?}"
+        );
+        let err = crate::check::require_check_ok_deferring_repack(&root, &registry, "ship NEXT")
+            .expect_err("a missing lock must refuse even inside the batch window");
+        println!("── deferring ── {err:#}");
+        let _ = fs::remove_dir_all(&root);
+    }
+
     #[test]
     fn ship_no_repack_leaves_the_lock_untouched_until_the_next_repack() {
         let root = scratch_registry("ship-no-repack");

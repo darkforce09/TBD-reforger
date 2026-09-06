@@ -1237,8 +1237,16 @@ fn require_check_ok_inner(
 ) -> Result<()> {
     let mut errors = check(root, registry, false);
     if defer_repack {
+        // A MISSING lock is NOT staleness, and it carries the same phrase. `wave_lock`'s
+        // DidNotRun refusal reads "… missing — DidNotRun: run `cargo xtask wave repack`. A
+        // missing lock is a refusal, never an empty plan.", and `check_as_errors` early-returns
+        // it ALONE — every other lock check is skipped. Waiving it would let `ship --no-repack`
+        // mutate ticket status with no plan on disk and no lock validation whatsoever. Measured
+        // by the wave 236 verifier, 2026-09-06: `mv .ai/tickets/wave.lock /tmp && ticket check`
+        // produced exactly that one error, and the waiver swallowed it.
+        let missing = crate::wave_lock::missing_lock_error(root);
         let before = errors.len();
-        errors.retain(|e| !e.contains(REPACK_FIXES_IT));
+        errors.retain(|e| !e.contains(REPACK_FIXES_IT) || *e == missing);
         let waived = before - errors.len();
         if waived > 0 {
             eprintln!(
