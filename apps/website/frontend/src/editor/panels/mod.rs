@@ -31,4 +31,8 @@ pub mod win_conditions_card;
 // win_conditions_card in Mission Settings; that one line lives in settings_modal.rs (outside this
 // slice's owns), same as T-936.1's card.
 pub mod tasks_panel;
+// T-936.3 — the Radio nets panel: authored frequencies, faction assignment, Reset-to-derived.
+// Mounts beside tasks_panel in Mission Settings; that one line lives in settings_modal.rs
+// (T-946.33, outside this slice's owns), same as T-936.1/.2.
+pub mod radio_panel;
 pub mod zones_panel;

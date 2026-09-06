@@ -74,6 +74,10 @@ pub struct AuthoredBlock {
 /// emits them in.
 pub const AUTHORED_BLOCKS: &[AuthoredBlock] = &[
     AuthoredBlock {
+        key: "radioPlan",
+        validate: crate::mission::radio_plan::validate,
+    },
+    AuthoredBlock {
         key: "winConditions",
         validate: crate::mission::win_conditions::validate,
     },
@@ -86,9 +90,10 @@ pub const AUTHORED_BLOCKS: &[AuthoredBlock] = &[
 /// The authored blocks the compiled document MODELS with a typed field of its own, and which
 /// [`ExtensionBlocks`] must therefore not carry — see the module header's "two destinations".
 ///
-/// A block belongs here when `mission.schema.json` makes it top-level-`required` (so there is
-/// always a value to emit and a derivation to fall back on). Everything optional rides the carrier.
-pub const DOCUMENT_OWNED_BLOCKS: &[&str] = &["winConditions"];
+/// A block belongs here when `ModMissionDocument` MODELS it with a typed field (so emitting it
+/// from the carrier too would duplicate the key). `winConditions` is also top-level-`required`;
+/// `radioPlan` is optional but already typed (T-203 derivation). Everything else rides the carrier.
+pub const DOCUMENT_OWNED_BLOCKS: &[&str] = &["radioPlan", "winConditions"];
 
 /// Is `key` an authored block?
 #[must_use]
@@ -134,8 +139,10 @@ pub fn copy_authored_blocks(env: &Value, dst: &mut Map<String, Value>) -> Vec<&'
 ///
 /// Every field is an `Option`; `None` means "the author wrote no such block", which is what the
 /// emitter tests to decide between the authored value and the derivation it has always run.
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct AuthoredBlocks {
+    /// `radioPlan` (T-936.3). Document-modelled: flatten substitutes this for `derive_radio_plan`.
+    pub radio_plan: Option<crate::mission::radio_plan::AuthoredRadioPlan>,
     /// `winConditions` (T-936.1).
     pub win_conditions: Option<crate::mission::win_conditions::AuthoredWinConditions>,
 }
@@ -178,8 +185,14 @@ impl AuthoredBlocks {
             //
             // Validated one line above, so this cannot fail; `ok()` rather than `expect` because a
             // compile must never panic on stored bytes.
-            if block.key == "winConditions" {
-                out.win_conditions = crate::mission::win_conditions::parse(value).ok();
+            match block.key {
+                "winConditions" => {
+                    out.win_conditions = crate::mission::win_conditions::parse(value).ok();
+                }
+                "radioPlan" => {
+                    out.radio_plan = crate::mission::radio_plan::parse(value).ok();
+                }
+                _ => {}
             }
         }
 
@@ -320,8 +333,13 @@ mod tests {
             is_authored_block("tasks"),
             "T-936.2 registers tasks; a missing row is a silent drop at flatten"
         );
+        assert!(
+            is_authored_block("radioPlan"),
+            "T-936.3 registers radioPlan; a missing row is a silent drop at flatten"
+        );
+        assert!(DOCUMENT_OWNED_BLOCKS.contains(&"radioPlan"));
         assert!(!is_authored_block("payloadExtras"));
-        assert_eq!(AUTHORED_BLOCKS.len(), 2);
+        assert_eq!(AUTHORED_BLOCKS.len(), 3);
     }
 
     /// Every entry in [`DOCUMENT_OWNED_BLOCKS`] must be a registered block, or the withhold rule
@@ -424,6 +442,9 @@ mod tests {
         for key in DOCUMENT_OWNED_BLOCKS {
             let sample = match *key {
                 "winConditions" => json!({"mode": "attrition", "endOn": ["time_limit"]}),
+                "radioPlan" => {
+                    json!({"nets": [{"id": "net:blufor_cmd", "label": "Command", "freqMHz": 30.0}]})
+                }
                 other => panic!(
                     "DOCUMENT_OWNED_BLOCKS row `{other}` has no sample here — add one, and an arm \
                      in AuthoredBlocks::parse, or the block validates and is then dropped"
@@ -435,6 +456,7 @@ mod tests {
             assert!(refusals.is_empty(), "{refusals:?}");
             let landed = match *key {
                 "winConditions" => blocks.win_conditions.is_some(),
+                "radioPlan" => blocks.radio_plan.is_some(),
                 _ => false,
             };
             assert!(
