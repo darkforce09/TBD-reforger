@@ -6,7 +6,7 @@ use map_engine_core::geometry::polyline_strip::road_class_signature;
 use map_engine_core::geometry::vector_compose::{
     compose_landcover_mesh, compose_roads_mesh, LandcoverInput, PolyMeshGpu, RoadInput, RoadMeshGpu,
 };
-use map_engine_core::world::{WorldResidency, WorldStore};
+use map_engine_core::world::{chunk_bin_path, parse_manifest_binary, WorldResidency, WorldStore};
 // T-596 — vector-lane ids come from the engine's `role_id`, never a hand-copied literal: a private
 // `const ROLE_AIRFIELD_APRON: u32 = 8` has no compile-time link to `lane_role_from_u32`, so a
 // renumber there silently uploads the apron to whatever lane 8 became instead of failing the build.
@@ -28,6 +28,10 @@ const ATLAS_JSON: &str = "/map-assets/glyphs/atlas/world-glyphs.json";
 struct PendingChunk {
     id: String,
     bytes: Option<Vec<u8>>,
+    /// T-935.3 — which decoder these bytes are for. Carried per item rather than read off the host
+    /// at drain time because the fetch and the ingest are separated by a frame budget: the flag has
+    /// to travel with the payload it describes.
+    binary: bool,
 }
 
 struct AtlasUpload {
@@ -43,6 +47,11 @@ pub struct WorldHost {
     store: WorldStore,
     asset_base: String,
     chunks_path: String,
+    /// T-935.3 — the manifest's `objects.binary.chunks` template
+    /// (`objects/chunks/{cx}_{cy}.bin`), and ONLY when the block also describes the container and
+    /// row shape this build implements. `None` — every manifest shipped before T-935.13, the
+    /// committed everon one included — means the `.json.gz` path below is used unchanged.
+    chunks_bin: Option<String>,
     ready: bool,
     pending: VecDeque<PendingChunk>,
     atlas: Option<AtlasUpload>,
@@ -73,6 +82,7 @@ impl WorldHost {
             store: WorldStore::new(),
             asset_base: String::new(),
             chunks_path: String::new(),
+            chunks_bin: None,
             ready: false,
             pending: VecDeque::new(),
             atlas: None,
@@ -129,6 +139,15 @@ impl WorldHost {
             .unwrap_or("objects/forest-regions.json.gz");
         self.asset_base = base.clone();
         self.chunks_path = chunks.to_string();
+        // T-935.3 — take the `.bin` chunk path only when the manifest's `objects.binary` block
+        // describes a container AND a row shape this build actually implements
+        // (`matches_this_build`: TBDC v1, `ObjectInstancePod`, 32 bytes). Reading a future 24-byte
+        // row at a 32-byte stride would not error — it would draw a map made of garbage — so a
+        // block this loader does not understand falls back to the `.json.gz` path that works.
+        self.chunks_bin = parse_manifest_binary(&v)
+            .objects
+            .filter(|b| b.matches_this_build())
+            .map(|b| b.chunks);
 
         if let Some(bytes) = fetch_bytes(&format!("{base}/{prefabs}")).await {
             let _ = self.residency.load_prefabs_gz(&bytes);
@@ -416,6 +435,7 @@ impl WorldHost {
         self.residency.mark_inflight(&ids);
         let base = self.asset_base.clone();
         let chunks = self.chunks_path.clone();
+        let chunks_bin = self.chunks_bin.clone();
         let mut fetched = Vec::with_capacity(ids.len());
         // T-175 H3 — fetch each batch of FETCH_CONCURRENCY chunks **concurrently** (was one serial
         // `await` per chunk, so a zoom-out / cold boot that pins dozens of new chunks stalled on
@@ -423,11 +443,20 @@ impl WorldHost {
         // cooperatively on the wasm single thread. Order within the batch is preserved.
         for batch in ids.chunks(FETCH_CONCURRENCY) {
             let futs = batch.iter().map(|id| {
-                let url = format!("{base}/{chunks}/{id}.json.gz");
+                // T-935.3 — the `.bin` twin when the manifest declares one and the id fills the
+                // template; otherwise the `.json.gz` URL, byte-for-byte as before.
+                let rel = chunks_bin
+                    .as_deref()
+                    .and_then(|template| chunk_bin_path(template, id));
+                let binary = rel.is_some();
+                let url = rel.map_or_else(
+                    || format!("{base}/{chunks}/{id}.json.gz"),
+                    |rel| format!("{base}/{rel}"),
+                );
                 let id = id.clone();
                 async move {
                     let bytes = fetch_bytes(&url).await;
-                    PendingChunk { id, bytes }
+                    PendingChunk { id, bytes, binary }
                 }
             });
             for item in futures::future::join_all(futs).await {
@@ -456,10 +485,20 @@ impl WorldHost {
             match next.bytes {
                 // T-173 P3 — disposition owned by core: Applied/ParsedEmpty keep the result;
                 // ShapeMismatch + gzip/json errors route through the retry-capped failure path.
-                Some(bytes) => match self.residency.ingest_chunk_gz(&next.id, &bytes) {
-                    Ok(_) => {}
-                    Err(_) => self.residency.note_fetch_failure(&next.id),
-                },
+                // T-935.3 — a `.bin` decodes through `ingest_chunk_bin` (header check + cast) and
+                // routes its errors — corrupt container, or well-formed bytes for another tile —
+                // down that same path. The two ingests have different error types, so the branch
+                // compares success rather than matching one `Result`.
+                Some(bytes) => {
+                    let applied = if next.binary {
+                        self.residency.ingest_chunk_bin(&next.id, &bytes).is_ok()
+                    } else {
+                        self.residency.ingest_chunk_gz(&next.id, &bytes).is_ok()
+                    };
+                    if !applied {
+                        self.residency.note_fetch_failure(&next.id);
+                    }
+                }
                 None => self.residency.note_fetch_failure(&next.id),
             }
             applied += 1;
