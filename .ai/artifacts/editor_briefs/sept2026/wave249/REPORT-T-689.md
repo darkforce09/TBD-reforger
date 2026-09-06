@@ -110,7 +110,7 @@ OK: compiled clean
 ## commits
 
 - `bda12038dd89c44e7a13b89f7e2b5095fcaf1154` `T-689: bind and apply play-area vehicleClasses axis.`
-- (this report commit follows)
+- `075ac9f33e6f1371da60de7148c1ada694289dfd` `T-689: record slice report (unread fail expected, mod compile clean).`
 
 ## manual_checklist
 
