@@ -1,7 +1,7 @@
 id = "T-946.13"
 kind = "work"
 title = "xtask t878 tests share the live server addons dir"
-summary = "The T-878 staging tests create and symlink ~/.local/share/tbd-server-addons/tbd-framework, which cargo xtask mod compile also uses, so running the two at once fails two tests with File exists and Permission denied. Measured 2026-09-06: 2 of 795 failed under contention, 0 of 795 in four clean runs."
+summary = "The T-878 staging tests create and symlink ~/.local/share/tbd-server-addons/tbd-framework, which cargo xtask mod compile also uses, so running the two at once fails two tests with File exists and Permission denied."
 class = "chore"
 status = "idea"
 parent = "T-946"
