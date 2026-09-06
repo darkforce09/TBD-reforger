@@ -95,6 +95,11 @@
     },
     "flow": { "$ref": "#/$defs/flow" },
     "winConditions": { "$ref": "#/$defs/winConditions" },
+    "tasks": {
+      "type": "array",
+      "description": "T-936.2 — authored TASKS with a real state machine (schemaVersion 1.3). Distinct from `objectives[]` (T-212: the mission's typed objective SUBJECT) and from `winConditions.endOn` (the round-end TRIGGER vocabulary). A task is what the HUD and the briefing's My Tasks list show: a primary, secondary or optional assignment that starts `assigned` and reaches exactly one terminal state (`succeeded` or `failed`). Tasks OBSERVE T-676 trigger completion via `triggerId`; they never fire `endOn` and they never duplicate objective logic.\n\nREAD SINCE T-936.2 by `Objectives/TBD_TaskStateMachine.c` (server-authoritative transitions) and `UI/TBD_TaskHud.c` (one HUD marker per assigned task, hidden once terminal). Absent array ⇒ a mission with no tasks, which is every pre-T-936.2 document; the AUTHORED_BLOCKS carrier emits nothing in that case, so Class-R byte-parity fixtures stay identical.",
+      "items": { "$ref": "#/$defs/task" }
+    },
     "briefings": { "$ref": "#/$defs/briefings" },
     "settings": { "$ref": "#/$defs/settings" },
     "objectives": {
@@ -1205,6 +1210,47 @@
               "hold_expired"
             ]
           }
+        }
+      }
+    },
+    "task": {
+      "type": "object",
+      "description": "T-936.2 — one authored task. Transitions are assigned→succeeded and assigned→failed only; anything else is logged and ignored (server authoritative, `TBD_TaskStateMachine`). `triggerId` names an `editorTriggers[].id` whose T-676 completion drives the success transition. `markerId` is the HUD glyph: an authored `$defs/marker.icon` alias, resolved through `TBD_MarkerIcons` (the existing marker icon path). Position comes from the linked trigger's zone.",
+      "required": ["id", "title", "tier", "state"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "Stable task id. Unique within `tasks[]`."
+        },
+        "title": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "The words on the HUD marker and in the tasks panel."
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["primary", "secondary", "optional"]
+        },
+        "state": {
+          "type": "string",
+          "enum": ["assigned", "succeeded", "failed"],
+          "description": "Authoring default is `assigned`. The runtime writes the terminal state; the editor may also author a terminal state for a task that has already resolved in a canned scenario."
+        },
+        "triggerId": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "Optional `editorTriggers[].id`. When that trigger fires, an `assigned` task becomes `succeeded`. An inert or missing trigger fails the task. Tasks observe; they never fire endOn."
+        },
+        "markerId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional HUD icon alias from `$defs/marker.icon` (TBD_MarkerIcons.Register keys). Absent ⇒ the HUD uses `objective_marker`."
+        },
+        "description": {
+          "$ref": "#/$defs/wireSafeString",
+          "description": "Optional longer briefing text. Not drawn on the HUD marker."
         }
       }
     },
