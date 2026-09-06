@@ -409,6 +409,20 @@ pub struct ModEnvironment {
     pub date_time: String,
     #[serde(skip_serializing_if = "String::is_empty")]
     pub weather_preset: String,
+    /// T-682 — direction degrees, already in `$defs/environment`. `None` omits the key so a
+    /// mission that never authored it stays byte-identical to today's emit.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wind_dir_deg: Option<f64>,
+    /// T-682 — fog density 0..=1 (ATTR-FIELD-SCN-FOG). `0` is clear and MUST emit; absence is
+    /// `None`, not zero.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fog: Option<f64>,
+    /// T-682 — wind strength m/s (ATTR-FIELD-SCN-WIND). `0` is calm and MUST emit.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wind: Option<f64>,
+    /// T-682 — terrain/object view distance in metres (ATTR-FIELD-SCN-VIEW-DIST).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub view_distance: Option<f64>,
 }
 
 #[derive(Debug, Serialize)]
@@ -3506,6 +3520,12 @@ pub fn flatten_to_mod_document(
     // where a flag set at the COMPUTED value outlives the value's own emit.
     any_1_3_key |= !doc_vehicles.is_empty();
 
+    // T-682 — fog / wind / windDirDeg / viewDistance are 1.3 keys. Latch on the BYTES that will
+    // actually serialise (`skip_serializing_if` None), never on "the payload mentioned the word":
+    // a malformed or out-of-range value is dropped and the document stays 1.1/1.2.
+    let env_axes = EnvironmentAxes::from_payload_bag(&parsed.environment);
+    any_1_3_key |= env_axes.any_on_wire();
+
     // T-674 — the version the compiled document DECLARES, highest rung first.
     //
     // 1.3 is claimed only when a 1.3-shaped value ACTUALLY REACHED the document (`any_1_3_key` is
@@ -3639,6 +3659,10 @@ pub fn flatten_to_mod_document(
     let mut environment = ModEnvironment {
         date_time: String::new(),
         weather_preset: mission.weather_preset.clone(),
+        wind_dir_deg: env_axes.wind_dir_deg,
+        fog: env_axes.fog,
+        wind: env_axes.wind,
+        view_distance: env_axes.view_distance,
     };
     if !mission.time_of_day.is_empty() {
         // time_of_day may be HH:MM or HH:MM:SS — keep exactly HH:MM.
@@ -3685,6 +3709,58 @@ pub fn flatten_to_mod_document(
 /// `""` is deliberately absent: `PATCH /missions/{id}` reads the empty string as "clear", but here
 /// an absent value must mean **not authored** so the mission row wins the fallback below.
 const WEATHER_PRESETS: [&str; 4] = ["clear", "overcast", "heavy_rain", "dense_fog"];
+
+/// T-682 — optional `$defs/environment` axes read off the payload's top-level `environment` bag
+/// (the same bag `compile_payload` copies from `meta.environment`).
+///
+/// Wrong types and out-of-range values become `None` rather than a compile failure: stored
+/// payloads are immutable, and a bad `fog` must not 500 `GET /missions/:id/compiled`. The
+/// schema ranges are the gates; `0` is a real authored value for fog/wind/windDirDeg, so
+/// presence is `Some`, never a truthiness test.
+struct EnvironmentAxes {
+    wind_dir_deg: Option<f64>,
+    fog: Option<f64>,
+    wind: Option<f64>,
+    view_distance: Option<f64>,
+}
+
+impl EnvironmentAxes {
+    fn from_payload_bag(env: &serde_json::Value) -> Self {
+        Self {
+            wind_dir_deg: env_opt_closed(env, "windDirDeg", 0.0, 360.0),
+            fog: env_opt_closed(env, "fog", 0.0, 1.0),
+            wind: env_opt_min(env, "wind", 0.0),
+            view_distance: env_opt_exclusive_min(env, "viewDistance", 0.0),
+        }
+    }
+
+    fn any_on_wire(&self) -> bool {
+        self.wind_dir_deg.is_some()
+            || self.fog.is_some()
+            || self.wind.is_some()
+            || self.view_distance.is_some()
+    }
+}
+
+fn env_opt_f64(env: &serde_json::Value, key: &str) -> Option<f64> {
+    let n = env.get(key)?.as_f64()?;
+    if n.is_finite() { Some(n) } else { None }
+}
+
+fn env_opt_closed(env: &serde_json::Value, key: &str, min: f64, max: f64) -> Option<f64> {
+    let n = env_opt_f64(env, key)?;
+    if n < min || n > max { None } else { Some(n) }
+}
+
+fn env_opt_min(env: &serde_json::Value, key: &str, min: f64) -> Option<f64> {
+    let n = env_opt_f64(env, key)?;
+    if n < min { None } else { Some(n) }
+}
+
+fn env_opt_exclusive_min(env: &serde_json::Value, key: &str, min: f64) -> Option<f64> {
+    let n = env_opt_f64(env, key)?;
+    if n <= min { None } else { Some(n) }
+}
 
 /// Apply the **T-192 payload-first / row-second** precedence for `time`/`weather` to a
 /// row-derived [`MissionMeta`], in place.
@@ -7457,6 +7533,103 @@ mod tests {
         let once = (meta.time_of_day.clone(), meta.weather_preset.clone());
         apply_authored_environment(&mut meta, &payload);
         assert_eq!((meta.time_of_day, meta.weather_preset), once);
+    }
+
+    /// T-682 — `windDirDeg` / `fog` / `wind` / `viewDistance` reach the compiled `environment`
+    /// block when the payload bag carries representable values. Before this slice
+    /// `ModEnvironment` serialised only `dateTime` / `weatherPreset`, so a schema-valid
+    /// `windDirDeg` vanished on the way to the dedicated server.
+    #[test]
+    fn t682_environment_axes_serialise_when_authored() {
+        let doc = flatten_to_mod_document(
+            &meta(),
+            &fixture_with_environment(serde_json::json!({
+                "time": "05:30",
+                "weather": "clear",
+                "windDirDeg": 45,
+                "fog": 0.2,
+                "wind": 3.5,
+                "viewDistance": 2500,
+            })),
+        )
+        .expect("compiles");
+        let env = serde_json::to_value(doc.environment.as_ref().expect("environment block"))
+            .expect("serialises");
+        assert_eq!(env["windDirDeg"].as_f64(), Some(45.0));
+        assert_eq!(env["fog"].as_f64(), Some(0.2));
+        assert_eq!(env["wind"].as_f64(), Some(3.5));
+        assert_eq!(env["viewDistance"].as_f64(), Some(2500.0));
+        assert_eq!(doc.schema_version, "1.3", "those four keys are 1.3-shaped");
+    }
+
+    /// T-682 — fog `0` is clear, wind `0` is calm, windDirDeg `0` is north. A skip-if-zero
+    /// would drop a deliberate authored statement, the same trap `timeLimitSeconds: 0` has.
+    #[test]
+    fn t682_authored_zero_fog_and_wind_are_kept() {
+        let doc = flatten_to_mod_document(
+            &meta(),
+            &fixture_with_environment(serde_json::json!({
+                "fog": 0,
+                "wind": 0,
+                "windDirDeg": 0,
+            })),
+        )
+        .expect("compiles");
+        let env = serde_json::to_value(doc.environment.as_ref().expect("environment block"))
+            .expect("serialises");
+        assert_eq!(env["fog"].as_f64(), Some(0.0));
+        assert_eq!(env["wind"].as_f64(), Some(0.0));
+        assert_eq!(env["windDirDeg"].as_f64(), Some(0.0));
+        assert!(
+            env.get("viewDistance").is_none(),
+            "unauthored viewDistance must not appear"
+        );
+    }
+
+    /// T-682 — missions that never authored the axes stay byte-identical on those keys, and
+    /// do not claim schemaVersion 1.3 for a 1.2 document (FIXTURE carries elevation → 1.2).
+    #[test]
+    fn t682_absent_axes_omit_the_keys_and_do_not_bump_version() {
+        let doc = flatten_to_mod_document(&meta(), FIXTURE.as_bytes()).expect("compiles");
+        let env = serde_json::to_value(doc.environment.as_ref().expect("environment block"))
+            .expect("serialises");
+        for key in ["windDirDeg", "fog", "wind", "viewDistance"] {
+            assert!(
+                env.get(key).is_none(),
+                "{key} must be omitted when the payload never authored it"
+            );
+        }
+        assert_eq!(doc.schema_version, "1.2");
+        assert_eq!(env["weatherPreset"], "clear");
+    }
+
+    /// T-682 — a wrong-typed or out-of-range value is dropped, not a 500, and must not latch 1.3.
+    #[test]
+    fn t682_malformed_or_out_of_range_axes_are_dropped() {
+        for (name, bag) in [
+            ("string fog", serde_json::json!({"fog": "thick"})),
+            ("fog > 1", serde_json::json!({"fog": 1.1})),
+            ("fog < 0", serde_json::json!({"fog": -0.1})),
+            ("windDirDeg 361", serde_json::json!({"windDirDeg": 361})),
+            ("negative wind", serde_json::json!({"wind": -1})),
+            ("viewDistance 0", serde_json::json!({"viewDistance": 0})),
+            (
+                "viewDistance negative",
+                serde_json::json!({"viewDistance": -50}),
+            ),
+        ] {
+            let doc = flatten_to_mod_document(&meta(), &fixture_with_environment(bag))
+                .unwrap_or_else(|e| panic!("{name} must still compile: {e}"));
+            let env = serde_json::to_value(doc.environment.as_ref().expect("environment block"))
+                .expect("serialises");
+            for key in ["windDirDeg", "fog", "wind", "viewDistance"] {
+                assert!(
+                    env.get(key).is_none(),
+                    "{name}: {key} must not reach the wire"
+                );
+            }
+            assert_eq!(doc.schema_version, "1.2", "{name}: must not claim 1.3");
+        }
     }
 
     /* ══════════ T-690 — the compile's structured diagnostics ══════════ */
