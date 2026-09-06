@@ -5,14 +5,6 @@
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
 
-## T-943 — platform wave push deadlocks on large LFS ranges
-
-- **Slice spec:** `docs/specs/factory/t943_push_guard_deadlock.md`
-- **Program hub:** `docs/specs/factory/t943_push_guard_deadlock.md`
-- **Branch:** `ticket/T-943`
-- **Targets:** 
-- **Summary:** cmd_push's LFS guard pipes every path of a commit into git check-attr without draining stdout; a commit touching 1,691 files wedges both processes forever, and on a host with git-lfs the guard refuses a legitimate push.
-
 ## T-300 — Shared CARGO_TARGET_DIR serves unmerged slice binaries
 
 - **Slice spec:** `docs/specs/ideas/t300_shared_target.md`

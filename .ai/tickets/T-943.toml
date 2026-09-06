@@ -3,7 +3,7 @@ kind = "work"
 title = "platform wave push deadlocks on large LFS ranges"
 summary = "cmd_push's LFS guard pipes every path of a commit into git check-attr without draining stdout; a commit touching 1,691 files wedges both processes forever, and on a host with git-lfs the guard refuses a legitimate push."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7050
 spec = "docs/specs/factory/t943_push_guard_deadlock.md"
 plan = "docs/plans/t-943_plan.md"
@@ -39,6 +39,7 @@ acceptance = [
     "Without git-lfs the guard still refuses --no-verify over LFS content with the same message.",
 ]
 created_at = "2026-09-04T21:47:41Z"
+completed_at = "2026-09-06T00:28:35Z"
 owns = ["xtask/src/wave/push.rs"]
 
 [scope]

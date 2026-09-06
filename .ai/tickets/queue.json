@@ -6,13 +6,6 @@
   "git_base": "main",
   "tickets": [
     {
-      "id": "T-943",
-      "title": "platform wave push deadlocks on large LFS ranges",
-      "status": "ready",
-      "spec": "docs/specs/factory/t943_push_guard_deadlock.md",
-      "branch": "ticket/T-943"
-    },
-    {
       "id": "T-300",
       "title": "Shared CARGO_TARGET_DIR serves unmerged slice binaries",
       "status": "ready",
