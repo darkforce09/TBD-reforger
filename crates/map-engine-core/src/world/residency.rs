@@ -1275,7 +1275,8 @@ impl WorldResidency {
             } else {
                 heatmap_trees(visible)
             };
-            self.exact_tree_count = exact_tree_count(&self.chunks, &self.draw_ids) as u32;
+            self.exact_tree_count =
+                exact_tree_count(&self.chunks, &self.draw_ids, self.deck_zoom) as u32;
             self.rebuild_glyph_buffers();
             self.glyph_recomposes += 1;
             changed = true;
@@ -2202,7 +2203,7 @@ mod tests {
         let id0 = draw[0].clone();
         inject_trees(&mut r, &id0, 10);
         r.refresh_draw_set_and_glyphs();
-        let exact = exact_tree_count(&r.chunks, &r.draw_ids);
+        let exact = exact_tree_count(&r.chunks, &r.draw_ids, r.deck_zoom);
         assert_eq!(exact, 10);
         assert!(!r.heatmap_trees_active());
         // Texel sum Class R (grid stays whole-chunk exact).
@@ -2692,11 +2693,15 @@ mod t152_3_tests {
     #[test]
     fn tree_glyphs_pack_from_real_everon_data() {
         let mut r = load_everon_residency();
-        // Every real Everon tree prefab (iconKey tree-conifer/tree-deciduous) registers as group 0.
+        // Every real Everon tree AND vegetation prefab registers as group 0: 19 tree-conifer +
+        // 32 tree-deciduous + 33 vegetation-bush. The vegetation third arrived with T-277, which
+        // classified 33 prefabs (285,296 instances) that had all been falling through to the
+        // catalogue's fallback rule — before it, `byKind.vegetation` was literally 0/0 and this
+        // count was 51.
         assert_eq!(
             r.glyph_lookup_len_for_group(0),
-            51,
-            "all real tree prefabs must map to group-0 glyphs"
+            84,
+            "all real tree and vegetation prefabs must map to group-0 glyphs"
         );
         // A dense-forest chunk at detail zoom (z=0, tree glyphs on) packs its whole tree census.
         // `drive_fixture_chunk` replicates 16_2's data (6500 trees) into every strict-draw chunk;

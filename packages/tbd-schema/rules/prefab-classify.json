@@ -3624,6 +3624,1367 @@
         "bridge": false,
         "runway": false
       }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Props/Furniture/LampFluorescent",
+          "Props/Furniture/LightWall_01"
+        ]
+      },
+      "kind": "utility",
+      "class": "lamp",
+      "ai": {
+        "summary": "Fixed exterior light fixture (fluorescent tube, wall lamp); a mounted utility fitting, not movable furniture \u2014 must precede the Props/Furniture/ rule whose path it shares. Glyph gap: the manifest has no utility-lamp icon, so it draws the utility-powerline pole.",
+        "taxonomyPath": "utility/lamp",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.3,
+          "y": 0.15,
+          "z": 0.3
+        },
+        "heightM": 0.6
+      },
+      "gameplay": {
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": true,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "utility-powerline",
+        "lodMinZoom": 5,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/WEGenerators/Powerline/"
+        ]
+      },
+      "kind": "utility",
+      "class": "powerline",
+      "ai": {
+        "summary": "World-editor generated powerline run (pylons + catenary); tall thin pole footprint, prone cover at the base only, never a vehicle obstacle.",
+        "taxonomyPath": "utility/powerline",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.6,
+          "y": 0.6,
+          "z": 6.0
+        },
+        "heightM": 12.0
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.5
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "utility-powerline",
+        "lodMinZoom": 2,
+        "baseSizePx": 14,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Props/Naval/Buoy_01",
+          "Props/Naval/FishingBuoy_01",
+          "Props/Naval/LifeBuoy_01",
+          "Props/Naval/MooringBuoy_01"
+        ]
+      },
+      "kind": "water",
+      "class": "buoy",
+      "ai": {
+        "summary": "Navigation, mooring or life buoy; floating or beached marker, no cover and no obstruction. Glyph gap: the manifest ships no water-* icon, so it draws prop-unknown until one exists.",
+        "taxonomyPath": "water/buoy",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.4,
+          "y": 0.4,
+          "z": 0.6
+        },
+        "heightM": 1.2
+      },
+      "gameplay": {
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 5,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Props/Commercial/Posters/",
+          "Props/Commercial/SignPub_"
+        ]
+      },
+      "kind": "prop",
+      "class": "sign",
+      "ai": {
+        "summary": "Poster set or hanging pub/shop sign; flat signage face, no cover and no obstruction \u2014 must precede the Props/Commercial/ rule whose path it shares.",
+        "taxonomyPath": "misc/prop/sign",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.5,
+          "y": 0.05,
+          "z": 0.4
+        },
+        "heightM": 0.8
+      },
+      "gameplay": {
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 5,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Props/Military/Fortification/",
+          "Props/Infrastructure/SnowBreakers/"
+        ]
+      },
+      "kind": "prop",
+      "class": "barrier",
+      "ai": {
+        "summary": "Anti-vehicle field obstacle (Czech hedgehog, barbed tape coil, concrete snow breaker); hard prone/crouch cover and a hard vehicle stop, infantry pass.",
+        "taxonomyPath": "misc/prop/barrier",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 0.6
+        },
+        "heightM": 1.2
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-fence",
+        "lodMinZoom": 4,
+        "baseSizePx": 12,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Props/Infrastructure/ConeTraffic/",
+          "Props/Military/Training/Obstacles/"
+        ]
+      },
+      "kind": "prop",
+      "class": "barrier",
+      "ai": {
+        "summary": "Light or training obstacle (traffic cone, vault/crawl/climb frame); marks or shapes movement without stopping a vehicle; frames are climbable.",
+        "taxonomyPath": "misc/prop/barrier",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.8,
+          "y": 0.8,
+          "z": 0.8
+        },
+        "heightM": 1.6
+      },
+      "gameplay": {
+        "cover": {
+          "type": "soft",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.6
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": true,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-fence",
+        "lodMinZoom": 5,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Decals/",
+          "Props/Military/Camps/Duckboard_01"
+        ]
+      },
+      "kind": "prop",
+      "class": "pavement",
+      "ai": {
+        "summary": "Flat ground overlay (dirt/oil/marking decal, duckboard walkway); zero-height surface dressing \u2014 no cover, no line-of-sight effect, no obstruction.",
+        "taxonomyPath": "misc/prop/pavement",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 2.0,
+          "y": 2.0,
+          "z": 0.02
+        },
+        "heightM": 0.04
+      },
+      "gameplay": {
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 5,
+        "baseSizePx": 8,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Terrain/Erosion/"
+        ]
+      },
+      "kind": "prop",
+      "class": "pavement",
+      "ai": {
+        "summary": "Terrain-blending embankment shell (eroded dirt/forest berm); ground surface geometry giving prone cover on the lee side, never a vehicle obstacle.",
+        "taxonomyPath": "misc/prop/pavement",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 4.0,
+          "y": 4.0,
+          "z": 0.5
+        },
+        "heightM": 1.0
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.5
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 4,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Vegetation/Bush/"
+        ]
+      },
+      "kind": "vegetation",
+      "class": "bush",
+      "ai": {
+        "summary": "Species bush (hazel, willow, juniper, rose, elder, reed); prone/crouch concealment only, no ballistic protection.",
+        "taxonomyPath": "vegetation/bush",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.9,
+          "y": 0.9,
+          "z": 0.8
+        },
+        "heightM": 1.6
+      },
+      "gameplay": {
+        "cover": {
+          "type": "soft",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": true,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "vegetation-bush",
+        "lodMinZoom": 4,
+        "baseSizePx": 14,
+        "anchor": [
+          0.5,
+          1.0
+        ],
+        "defaultColor": "#3d6a28"
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Vegetation/Plant/"
+        ]
+      },
+      "kind": "vegetation",
+      "class": "grass",
+      "ai": {
+        "summary": "Herbaceous plant or weed clump (burdock, nettle, thistle, curbside weeds, seaweed); ankle-to-knee ground cover, prone concealment only.",
+        "taxonomyPath": "vegetation/grass",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.4,
+          "y": 0.4,
+          "z": 0.3
+        },
+        "heightM": 0.6
+      },
+      "gameplay": {
+        "cover": {
+          "type": "soft",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.4
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": true,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "vegetation-bush",
+        "lodMinZoom": 5,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          1.0
+        ],
+        "defaultColor": "#4f7a34"
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Vegetation/Vegetables/"
+        ]
+      },
+      "kind": "vegetation",
+      "class": "grass",
+      "ai": {
+        "summary": "Field crop row (cabbage, potato, pumpkin, tomato, capsicum); low cultivated ground cover, prone concealment only.",
+        "taxonomyPath": "vegetation/grass",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.5,
+          "y": 0.5,
+          "z": 0.2
+        },
+        "heightM": 0.4
+      },
+      "gameplay": {
+        "cover": {
+          "type": "soft",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.3
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": true,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "vegetation-bush",
+        "lodMinZoom": 5,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          1.0
+        ],
+        "defaultColor": "#5d8a3a"
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Props/Agriculture/"
+        ]
+      },
+      "kind": "prop",
+      "class": "furniture",
+      "ai": {
+        "summary": "Farmyard fitting (beehive, hay bale/dryer, trough, milk can, scarecrow, water tank, weighing scale); waist-high clutter giving prone cover at most.",
+        "taxonomyPath": "misc/prop/furniture",
+        "confidence": 0.8
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.8,
+          "y": 0.8,
+          "z": 0.6
+        },
+        "heightM": 1.2
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.6
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 5,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Props/Civilian/"
+        ]
+      },
+      "kind": "prop",
+      "class": "furniture",
+      "ai": {
+        "summary": "Civilian household or yard item (bottle, bucket, basket, cart, ladder, wheelbarrow, kerosene lamp, tool); small movable clutter, no meaningful cover.",
+        "taxonomyPath": "misc/prop/furniture",
+        "confidence": 0.8
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.4,
+          "y": 0.4,
+          "z": 0.4
+        },
+        "heightM": 0.8
+      },
+      "gameplay": {
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 5,
+        "baseSizePx": 8,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Props/Commercial/"
+        ]
+      },
+      "kind": "prop",
+      "class": "furniture",
+      "ai": {
+        "summary": "Commercial fitting (market stand, beer keg); stall-height clutter giving prone cover at most.",
+        "taxonomyPath": "misc/prop/furniture",
+        "confidence": 0.8
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 0.6
+        },
+        "heightM": 1.2
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.6
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 5,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Props/Construction/"
+        ]
+      },
+      "kind": "prop",
+      "class": "debris",
+      "ai": {
+        "summary": "Construction material stack (brick/plank/gravel pile, concrete pipe, cable reel, mixer, pallet jack); hard crouch cover, infantry-passable.",
+        "taxonomyPath": "misc/prop/debris",
+        "confidence": 0.8
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.2,
+          "y": 1.0,
+          "z": 0.6
+        },
+        "heightM": 1.2
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 0.9
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 4,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Props/Crates/"
+        ]
+      },
+      "kind": "prop",
+      "class": "furniture",
+      "ai": {
+        "summary": "Wooden or cardboard crate/box stack; hard crouch cover when stacked, infantry-passable, no vehicle obstruction.",
+        "taxonomyPath": "misc/prop/furniture",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.6,
+          "y": 0.5,
+          "z": 0.4
+        },
+        "heightM": 0.8
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 0.8
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 5,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Props/Decorations/"
+        ]
+      },
+      "kind": "prop",
+      "class": "furniture",
+      "ai": {
+        "summary": "Decorative planter (flowerpot, street trough, pelargonia box); knee-high dressing, prone cover only.",
+        "taxonomyPath": "misc/prop/furniture",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.4,
+          "y": 0.4,
+          "z": 0.3
+        },
+        "heightM": 0.6
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.4
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 5,
+        "baseSizePx": 8,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Props/Forest/"
+        ]
+      },
+      "kind": "prop",
+      "class": "debris",
+      "ai": {
+        "summary": "Forestry stack or stand (cut wood pile, log, game feed rack, skull); hard crouch cover along the pile, infantry-passable.",
+        "taxonomyPath": "misc/prop/debris",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.5,
+          "y": 0.8,
+          "z": 0.7
+        },
+        "heightM": 1.4
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 4,
+        "baseSizePx": 12,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Props/Furniture/"
+        ]
+      },
+      "kind": "prop",
+      "class": "furniture",
+      "ai": {
+        "summary": "Interior or terrace furniture (chair, stool, table, rack, chest, sunshade, bar tap); waist-high, prone cover at most.",
+        "taxonomyPath": "misc/prop/furniture",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.5,
+          "y": 0.5,
+          "z": 0.4
+        },
+        "heightM": 0.8
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.5
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 5,
+        "baseSizePx": 8,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Props/Garbage/"
+        ]
+      },
+      "kind": "prop",
+      "class": "debris",
+      "ai": {
+        "summary": "Refuse (bin, cardboard, junk/litter pile, tyre pile, military garbage); low soft-to-hard clutter, prone cover only.",
+        "taxonomyPath": "misc/prop/debris",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.7,
+          "y": 0.7,
+          "z": 0.4
+        },
+        "heightM": 0.8
+      },
+      "gameplay": {
+        "cover": {
+          "type": "soft",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.5
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 5,
+        "baseSizePx": 8,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Props/Industrial/"
+        ]
+      },
+      "kind": "prop",
+      "class": "debris",
+      "ai": {
+        "summary": "Industrial yard item (steel barrel, gas tank, concrete panel, pallet, MarsBox, repair gear); hard crouch cover, infantry-passable.",
+        "taxonomyPath": "misc/prop/debris",
+        "confidence": 0.8
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.8,
+          "y": 0.8,
+          "z": 0.6
+        },
+        "heightM": 1.2
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 0.9
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 4,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Props/Naval/"
+        ]
+      },
+      "kind": "prop",
+      "class": "furniture",
+      "ai": {
+        "summary": "Harbour and fishing gear (net, net hanger, rope, lobster trap, winch); low quayside clutter, prone cover at most.",
+        "taxonomyPath": "misc/prop/furniture",
+        "confidence": 0.8
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.8,
+          "y": 0.8,
+          "z": 0.5
+        },
+        "heightM": 1.0
+      },
+      "gameplay": {
+        "cover": {
+          "type": "soft",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.5
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 5,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Props/Recreation/"
+        ]
+      },
+      "kind": "prop",
+      "class": "furniture",
+      "ai": {
+        "summary": "Beach and leisure item (lounger, air mattress, blanket, sunshade, pedal boat, caravan, paddle); low clutter, prone cover at most.",
+        "taxonomyPath": "misc/prop/furniture",
+        "confidence": 0.8
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.0,
+          "y": 0.6,
+          "z": 0.4
+        },
+        "heightM": 0.8
+      },
+      "gameplay": {
+        "cover": {
+          "type": "soft",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.4
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 5,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Props/Services/"
+        ]
+      },
+      "kind": "prop",
+      "class": "furniture",
+      "ai": {
+        "summary": "Public service fitting (mailbox, post office box and stand, fire extinguisher box); chest-high mounted box, prone cover only.",
+        "taxonomyPath": "misc/prop/furniture",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.3,
+          "y": 0.3,
+          "z": 0.5
+        },
+        "heightM": 1.0
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.5
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 5,
+        "baseSizePx": 8,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Props/VehicleParts/"
+        ]
+      },
+      "kind": "prop",
+      "class": "debris",
+      "ai": {
+        "summary": "Detached vehicle part (tyre, tyre pile); wreckage debris, never a vehicle (T-244) \u2014 prone cover only.",
+        "taxonomyPath": "misc/prop/debris",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.6,
+          "y": 0.6,
+          "z": 0.35
+        },
+        "heightM": 0.7
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.5
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "prop-unknown",
+        "lodMinZoom": 5,
+        "baseSizePx": 8,
+        "anchor": [
+          0.5,
+          1.0
+        ]
+      }
     }
   ],
   "fallback": {
