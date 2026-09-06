@@ -1,15 +1,16 @@
 id = "T-935.5"
 kind = "work"
-parent = "T-935"
 title = "Density TBDD decode via cast_slice, bit-exact"
 summary = "Replace the per-byte TBDD decode loop with a header parse plus bytemuck::cast_slice; a Class-R byte-parity test proves bit-exact output against the old loop on all 625 everon density tiles."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7100
-priority = 1
 spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
 plan = "docs/plans/t-935_5_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = ["T-935.1"]
+parent = "T-935"
 main_goal = "Forest density tiles decode by cast, and the existing 625 tiles stay valid byte for byte."
 context = [
     "Anchor 2026-09-04: crates/map-engine-core/src/geometry/tbdd.rs:51 decode_tbdd is a byte loop; tools/tbd-tools/src/density.rs:24 emits TBDD; 625 objects/density/*.bin committed; forest_mass.rs:108 loads them.",
@@ -41,8 +42,8 @@ acceptance = [
     "decode_tbdd contains no per-byte assembly loop in production code.",
     "forest_mass.rs and every other caller compiles unchanged.",
 ]
-depends_on = ["T-935.1"]
 created_at = "2026-09-05T01:34:37Z"
+completed_at = "2026-09-06T03:17:10Z"
 owns = [
     "crates/map-engine-core/src/geometry/tbdd.rs",
     "tools/tbd-tools/src/density.rs",
