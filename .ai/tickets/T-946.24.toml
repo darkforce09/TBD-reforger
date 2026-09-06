@@ -37,8 +37,10 @@ acceptance = [
     "Each of the verifier four attacks fails the gate naming the path, and a clean tree passes.",
     "The one real drift the repaired gate found is resolved rather than allowlisted.",
 ]
+shipped_at = "9ca40c247"
 created_at = "2026-09-06T15:30:00Z"
 completed_at = "2026-09-06T13:01:50Z"
+estimated = ["tokens"]
 owns = [
     "xtask/src/gate_mod_compile.rs",
     "xtask/src/schema_gates.rs",
