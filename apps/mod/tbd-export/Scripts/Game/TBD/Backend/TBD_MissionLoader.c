@@ -117,6 +117,11 @@ class TBD_MissionZoneRulesStruct
 	float minHeight = ABSENT;
 	float maxHeight = ABSENT;
 	string startingOwner;
+	//! T-689 -- play-area vehicle-class filter. Presence is Count(), never a null check:
+	//! JsonLoadContext allocates an absent ref array. Count()==0 is today's apply-all
+	//! (absent). A non-empty list restricts the penalty to the named classes; omit
+	//! aircraft to author the FNF v4 exemption. Consumer: Zones/TBD_PlayAreaVehicleAxis.c.
+	ref array<string> vehicleClasses;
 }
 
 

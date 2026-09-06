@@ -94,6 +94,7 @@ class TBD_ZoneRegistry
 		s_bBuilt = false;
 		s_iBoundaryCount = 0;
 		s_iBaseProtectionCount = 0;
+		TBD_PlayAreaVehicleAxis.Clear();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -106,6 +107,8 @@ class TBD_ZoneRegistry
 	{
 		if (s_bBuilt)
 			return true;
+
+		TBD_PlayAreaVehicleAxis.Clear();
 
 		array<ref TBD_MissionZoneStruct> raw = TBD_MissionLoader.GetZones();
 		if (!raw)
@@ -446,6 +449,10 @@ class TBD_ZoneRegistry
 			}
 		}
 
+		TBD_PlayAreaVehicleAxis.Bind(zone.m_sId, rules);
+		if (rules.vehicleClasses && rules.vehicleClasses.Count() > 0)
+			legible++;
+
 		if (legible == 0 && report)
 		{
 			TBD_Log.Warn(CH, string.Format("zone '%1': no rule this build understands (graceSeconds, warnEverySeconds, penalty) was readable - running on defaults grace=%2s warnEvery=%3s penalty=warn. Either none was authored, or one was authored under a key this build does not declare and therefore cannot see; a typed JSON parser cannot tell those apart.",
@@ -500,6 +507,13 @@ class TBD_ZoneRegistry
 				return true;
 		}
 
+		// T-689 -- occupant off the governing zone's vehicleClasses axis is not in
+		// violation (aircraft exemption). PlayAreaComponent calls this with the body's
+		// own XZ, so OccupantConfinedByZone can reverse-lookup without a new parameter.
+		TBD_Zone governing = GoverningBoundary(factionKey);
+		if (governing && !TBD_PlayAreaVehicleAxis.OccupantConfinedByZone(governing, px, pz))
+			return true;
+
 		return false;
 	}
 
@@ -524,7 +538,7 @@ class TBD_ZoneRegistry
 			// the conservative reading, and it only ever produces a warning by default.
 			if (zone.m_sFaction == factionKey)
 				continue;
-			if (zone.Contains(px, pz))
+			if (zone.Contains(px, pz) && TBD_PlayAreaVehicleAxis.OccupantConfinedByZone(zone, px, pz))
 				return zone;
 		}
 
