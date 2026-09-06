@@ -27,6 +27,7 @@ use super::cartographic_strip::{
     compose_bridge_rail_strips, compose_fence_strip, compose_pier_strip, pack_cartographic_strips,
 };
 use super::chunk::{WorldChunk, parse_chunk};
+use super::chunk_bin::{ChunkBinError, parse_chunk_bin_for};
 use super::chunk_math::{
     Bbox, TerrainSizeM, chunk_ids_for_rect, chunk_ids_for_viewport, chunk_rect_for_bbox,
 };
@@ -729,23 +730,45 @@ impl WorldResidency {
     pub fn ingest_chunk_gz(&mut self, id: &str, bytes: &[u8]) -> Result<IngestOutcome, WorldError> {
         let raw = bytes_to_json(bytes)?;
         match parse_chunk(id, &raw, &self.prefab_by_id) {
-            Some(chunk) if chunk.count > 0 => {
-                let count = chunk.count;
-                self.insert_chunk(id, chunk);
-                self.known_empty.remove(id);
-                self.fetch_failures.remove(id);
-                Ok(IngestOutcome::Applied(count))
-            }
-            Some(chunk) => {
-                self.insert_chunk(id, chunk);
-                self.known_empty.insert(id.to_string());
-                self.fetch_failures.remove(id);
-                Ok(IngestOutcome::ParsedEmpty)
-            }
+            Some(chunk) => Ok(self.apply_parsed_chunk(id, chunk)),
             None => {
                 self.note_fetch_failure(id);
                 Ok(IngestOutcome::ShapeMismatch)
             }
+        }
+    }
+
+    /// T-935.3 — `applyChunk` for a `TBDC` `objects/chunks/{cx}_{cy}.bin`: a header check and one
+    /// `cast_slice` ([`parse_chunk_bin_for`]) where the gz path inflates and walks a JSON array on
+    /// the main thread (audit.md Finding 1.4). Everything *after* the parse is
+    /// [`Self::apply_parsed_chunk`] — the same bookkeeping, not a copy of it.
+    ///
+    /// # Errors
+    /// [`ChunkBinError`] for a corrupt container or for well-formed bytes belonging to a different
+    /// tile; nothing is inserted in either case and the caller routes it to
+    /// [`Self::note_fetch_failure`] exactly like an HTTP failure.
+    pub fn ingest_chunk_bin(
+        &mut self,
+        id: &str,
+        bytes: &[u8],
+    ) -> Result<IngestOutcome, ChunkBinError> {
+        let chunk = parse_chunk_bin_for(id, bytes)?;
+        Ok(self.apply_parsed_chunk(id, chunk))
+    }
+
+    /// The post-parse half of an ingest, shared by the gz and `.bin` paths so the two can never
+    /// drift on the T-173 P3 policy: insert, clear the failure counter, and mark known-empty iff
+    /// the chunk parsed to zero instances.
+    fn apply_parsed_chunk(&mut self, id: &str, chunk: WorldChunk) -> IngestOutcome {
+        let count = chunk.count;
+        self.insert_chunk(id, chunk);
+        self.fetch_failures.remove(id);
+        if count > 0 {
+            self.known_empty.remove(id);
+            IngestOutcome::Applied(count)
+        } else {
+            self.known_empty.insert(id.to_string());
+            IngestOutcome::ParsedEmpty
         }
     }
 

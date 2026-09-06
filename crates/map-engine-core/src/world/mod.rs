@@ -17,6 +17,11 @@ mod airfield;
 pub mod binary;
 mod cartographic_strip;
 mod chunk;
+/// T-935.3 — the `.bin` twin of [`chunk`]: a `TBDC` container decoded into the same SoA
+/// [`WorldChunk`] with a header check and one `cast_slice`, no gzip and no serde. Lives beside
+/// `chunk` rather than inside `residency` because `residency.rs` is an allowlisted SIZE-3 file and
+/// takes only the two call sites.
+mod chunk_bin;
 mod chunk_math;
 mod classify;
 mod density_ladder;
@@ -53,6 +58,7 @@ pub use cartographic_strip::{
     strip_world_width_at_midpoint,
 };
 pub use chunk::{WorldChunk, parse_chunk};
+pub use chunk_bin::{ChunkBinError, chunk_bin_path, parse_chunk_bin, parse_chunk_bin_for};
 pub use chunk_math::{
     Bbox, ChunkRect, TerrainSizeM, chunk_id, chunk_ids_for_rect, chunk_ids_for_viewport,
     chunk_rect_for_bbox, expand_bbox, expand_chunk_rect, preload_margin_m,
