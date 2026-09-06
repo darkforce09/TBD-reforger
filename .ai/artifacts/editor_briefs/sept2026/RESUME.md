@@ -13,10 +13,14 @@ T-946 (2026-09-06) re-seated the lock's wave labels on the close-marker ledger, 
 after it as **236**. Older notes in `docs/platform/FACTORY_RUN_2026-09.md` still say 248 — that is the
 same wave. Do not try to reconcile them by renumbering anything; the ledger is right now.
 
-## WAVE 243 IS IN FLIGHT (2026-09-06) — read before touching anything
-- **Membership CHANGED from the lock.** Running **T-675.2, T-936.1, T-702**, not the lock's
-  `[T-935.13, T-675.2, T-673]`. Close with `wave --close --tickets T-675.2 T-936.1 T-702`.
-  `platform wave status` will disagree until then; that is expected, not drift.
+## WAVE 243 IS CLOSED AND PUSHED (2026-09-06) — marker `46d8ea65b`, HEAD `2be06ac16`
+**Claude Code stopped here. Waves 244+ are Cursor's** — read
+`.ai/artifacts/editor_briefs/sept2026/CURSOR_HANDOFF.md` first, then
+`docs/platform/FACTORY_FOR_CURSOR.md`. The block below is the wave-243 record, kept because its
+T-935.13 dossier and its traps are what wave 244 needs.
+- **Membership DIFFERED from the lock.** Shipped **T-675.2, T-936.1, T-702**, not the lock's
+  `[T-935.13, T-675.2, T-673]`, so the close ran with `--tickets`. All three are `shipped` and
+  stamped; the lock was repacked on close and `wave check` is green with the ledger base at 243.
 - **T-935.13 was pulled from this wave.** Operator decision 2026-09-06: it becomes ONE GIANT WIDENED
   slice (owns 5 -> ~20 files, T-985 and T-993 folded in) and runs in **wave 244 alongside T-673**.
   It lands with `dem.raw` UNFILLED — operator-authorized, not an agent deferral. See below.
