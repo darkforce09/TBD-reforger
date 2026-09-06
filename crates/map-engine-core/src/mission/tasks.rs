@@ -1,4 +1,4 @@
-//! T-936.2 — the authored `tasks[]` block: tiers, states, and the transition table.
+//! T-936.2 / T-133 — the authored `tasks[]` block: tiers, states, transitions, and schedule.
 //!
 //! ══ Why this module exists ══════════════════════════════════════════════════════════════════
 //! Until this slice a mission had no task vocabulary. `mission.schema.json` used `task` only as
@@ -11,6 +11,13 @@
 //! `assigned → succeeded` and `assigned → failed` only. Anything else is refused here and, on the
 //! mod side, logged and ignored. The illegal-transition test below is the perturbation target:
 //! adding `succeeded → assigned` to [`LEGAL_TRANSITIONS`] must turn that test red.
+//!
+//! ══ Schedule (T-133) ═══════════════════════════════════════════════════════════════════════
+//! An optional `schedule {startAfterS, windowS}` is the OFCR time dimension. `windowS` must be
+//! `> 0` ([`window_is_legal`] — the T-133 perturbation target). `startAfterS` must be `>= 0` and,
+//! when a mission length is supplied, strictly inside that length. Omit the key for an untimed
+//! task. `$defs/task` in `mission.schema.json` does not yet declare `schedule` (this slice does
+//! not own that file); the editor and the state machine still author and read it.
 //!
 //! ══ The AUTHORED_BLOCKS row ═════════════════════════════════════════════════════════════════
 //! [`validate`] is what `extensions.rs` registers. The block is OPTIONAL and rides
@@ -117,6 +124,56 @@ pub struct AuthoredTask {
     pub trigger_id: Option<String>,
     pub marker_id: Option<String>,
     pub description: Option<String>,
+    /// Absent when the task is untimed (the T-936.2 default).
+    pub schedule: Option<Schedule>,
+}
+
+/// OFCR timing on one task. Wire keys are `startAfterS` / `windowS`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Schedule {
+    pub start_after_s: i64,
+    pub window_s: i64,
+}
+
+/// True when `windowS` may stand.
+///
+/// **The T-133 perturbation target.** Changing `>` to `>=` turns
+/// [`tests::a_zero_window_is_refused`] red — that test is what proves this predicate is what
+/// the validator examines, not a comment next to it.
+#[must_use]
+pub fn window_is_legal(window_s: i64) -> bool {
+    window_s > 0
+}
+
+/// Refuse an illegal schedule. `mission_length_s`: `None` skips the length rule (the AUTHORED_BLOCKS
+/// validator does not see `flow.timeLimitSeconds`); `Some(0)` is an authored no-limit; `Some(n)`
+/// with `n > 0` requires `0 <= startAfterS < n`.
+///
+/// # Errors
+/// A sentence naming the broken field.
+pub fn validate_schedule(
+    start_after_s: i64,
+    window_s: i64,
+    mission_length_s: Option<i64>,
+) -> Result<(), String> {
+    if !window_is_legal(window_s) {
+        return Err(format!(
+            "windowS must be > 0 (got {window_s}) — a timed task needs a window it can evaluate inside"
+        ));
+    }
+    if start_after_s < 0 {
+        return Err(format!(
+            "startAfterS cannot be negative (got {start_after_s})"
+        ));
+    }
+    if let Some(length) = mission_length_s {
+        if length > 0 && start_after_s >= length {
+            return Err(format!(
+                "startAfterS {start_after_s} is not within mission length {length}s"
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// May `from` become `to`?
@@ -233,6 +290,7 @@ fn parse_item(value: &Value, index: usize) -> Result<AuthoredTask, String> {
         trigger_id: optional_string(obj, index, "triggerId")?,
         marker_id: optional_string(obj, index, "markerId")?,
         description: optional_string(obj, index, "description")?,
+        schedule: parse_schedule(obj, index)?,
     })
 }
 
@@ -244,7 +302,10 @@ const KNOWN_KEYS: &[&str] = &[
     "triggerId",
     "markerId",
     "description",
+    "schedule",
 ];
+
+const SCHEDULE_KEYS: &[&str] = &["startAfterS", "windowS"];
 
 fn required_string(obj: &Map<String, Value>, index: usize, key: &str) -> Result<String, String> {
     let Some(raw) = obj.get(key) else {
@@ -286,6 +347,47 @@ fn optional_string(
         ));
     }
     Ok(Some(trimmed.to_string()))
+}
+
+fn parse_schedule(obj: &Map<String, Value>, index: usize) -> Result<Option<Schedule>, String> {
+    let Some(raw) = obj.get("schedule") else {
+        return Ok(None);
+    };
+    let Some(sched) = raw.as_object() else {
+        return Err(format!(
+            "`tasks[{index}].schedule` must be an object, not {}",
+            type_name(raw)
+        ));
+    };
+    for key in sched.keys() {
+        if !SCHEDULE_KEYS.contains(&key.as_str()) {
+            return Err(format!(
+                "`tasks[{index}].schedule` carries {key:?}, which the schedule object does not declare"
+            ));
+        }
+    }
+    let start_after_s = required_i64(sched, index, "startAfterS")?;
+    let window_s = required_i64(sched, index, "windowS")?;
+    validate_schedule(start_after_s, window_s, None)?;
+    Ok(Some(Schedule {
+        start_after_s,
+        window_s,
+    }))
+}
+
+fn required_i64(obj: &Map<String, Value>, index: usize, key: &str) -> Result<i64, String> {
+    let Some(raw) = obj.get(key) else {
+        return Err(format!(
+            "`tasks[{index}].schedule.{key}` is required and is missing"
+        ));
+    };
+    let Some(n) = raw.as_i64() else {
+        return Err(format!(
+            "`tasks[{index}].schedule.{key}` must be an integer, not {}",
+            type_name(raw)
+        ));
+    };
+    Ok(n)
 }
 
 fn quote(s: &str) -> String {
@@ -570,5 +672,104 @@ mod tests {
             !dst.contains_key("audio"),
             "an unlisted key stays parked: {dst:?}"
         );
+    }
+
+    fn timed(start: i64, window: i64) -> Value {
+        json!([{
+            "id": "t1",
+            "title": "A",
+            "tier": "primary",
+            "state": "assigned",
+            "schedule": {"startAfterS": start, "windowS": window}
+        }])
+    }
+
+    #[test]
+    fn a_legal_schedule_round_trips() {
+        let got = parse(&timed(600, 300)).expect("parses");
+        let sched = got[0].schedule.expect("schedule");
+        assert_eq!(sched.start_after_s, 600);
+        assert_eq!(sched.window_s, 300);
+    }
+
+    #[test]
+    fn an_unscheduled_task_still_parses() {
+        let got = parse(&json!([{
+            "id": "t1", "title": "A", "tier": "primary", "state": "assigned"
+        }]))
+        .expect("parses");
+        assert!(got[0].schedule.is_none());
+    }
+
+    /// **The T-133 perturbation target.** Widening [`window_is_legal`] from `>` to `>=`
+    /// makes a zero window parse, and this test goes red.
+    #[test]
+    fn a_zero_window_is_refused() {
+        let err = parse(&timed(0, 0)).expect_err("window 0");
+        assert!(err.contains("windowS"), "{err}");
+        assert!(err.contains("> 0"), "{err}");
+        assert!(!window_is_legal(0), "the predicate itself must refuse 0");
+        validate_schedule(0, 0, None).expect_err("window 0");
+    }
+
+    #[test]
+    fn a_negative_window_is_refused() {
+        let err = parse(&timed(10, -1)).expect_err("negative window");
+        assert!(err.contains("windowS"), "{err}");
+    }
+
+    #[test]
+    fn a_negative_start_is_refused() {
+        let err = parse(&timed(-1, 60)).expect_err("negative start");
+        assert!(err.contains("startAfterS"), "{err}");
+    }
+
+    #[test]
+    fn start_at_or_past_mission_length_is_refused() {
+        validate_schedule(600, 60, Some(600)).expect_err("start == length");
+        validate_schedule(601, 60, Some(600)).expect_err("start > length");
+        validate_schedule(599, 60, Some(600)).expect("start inside");
+        validate_schedule(0, 60, Some(5400)).expect("T+0 of a 90 min round");
+        validate_schedule(100, 60, Some(0)).expect("no time limit");
+        validate_schedule(100, 60, None).expect("length unknown at AUTHORED_BLOCKS");
+        let err = validate_schedule(5400, 60, Some(5400)).expect_err("default round end");
+        assert!(err.contains("within mission length"), "{err}");
+        assert!(err.contains("5400"), "{err}");
+    }
+
+    #[test]
+    fn a_start_of_zero_is_legal() {
+        let got = parse(&timed(0, 120)).expect("T+0");
+        assert_eq!(got[0].schedule.unwrap().start_after_s, 0);
+    }
+
+    #[test]
+    fn a_schedule_that_is_not_an_object_is_refused() {
+        let err = parse(&json!([{
+            "id": "t1", "title": "A", "tier": "primary", "state": "assigned",
+            "schedule": 600
+        }]))
+        .expect_err("number");
+        assert!(err.contains("object"), "{err}");
+    }
+
+    #[test]
+    fn an_unknown_schedule_property_is_refused() {
+        let err = parse(&json!([{
+            "id": "t1", "title": "A", "tier": "primary", "state": "assigned",
+            "schedule": {"startAfterS": 10, "windowS": 20, "endOn": "time_limit"}
+        }]))
+        .expect_err("endOn");
+        assert!(err.contains("endOn"), "{err}");
+    }
+
+    #[test]
+    fn a_missing_window_key_is_refused() {
+        let err = parse(&json!([{
+            "id": "t1", "title": "A", "tier": "primary", "state": "assigned",
+            "schedule": {"startAfterS": 10}
+        }]))
+        .expect_err("missing window");
+        assert!(err.contains("windowS"), "{err}");
     }
 }
