@@ -1,0 +1,12 @@
+id = "T-946.10"
+kind = "work"
+title = "Range fetch never checks where the body starts"
+summary = "The helper parses only the total from the content-range header and ignores the start, so a server answering a different range is accepted. Assert the start matches what was asked."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T09:13:42Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

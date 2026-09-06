@@ -1,0 +1,12 @@
+id = "T-946.9"
+kind = "work"
+title = "Water mask cannot detect bounds that disagree with the raster"
+summary = "The container carries no world extent, so a stale bounds value yields confident wrong answers rather than unknown. Carry the extent or a texel pitch in the header and refuse a mismatch."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T09:13:35Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

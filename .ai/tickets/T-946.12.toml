@@ -1,0 +1,12 @@
+id = "T-946.12"
+kind = "work"
+title = "Wave 240's close label is a live open wave"
+summary = "No pending entry formed because the batch broke mid-way, so the close falls back to base plus one, which the per-id repack already reissued to the next batch. The collision guard correctly refuses."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T09:14:01Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
