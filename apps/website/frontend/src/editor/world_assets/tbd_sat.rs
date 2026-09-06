@@ -103,6 +103,39 @@ fn read_u32_le(buf: &[u8], at: usize) -> Option<u32> {
     Some(u32::from_le_bytes(buf.get(at..at + 4)?.try_into().ok()?))
 }
 
+/// Inclusive Range end of header+index, sized from a 12-byte prefix.
+///
+/// v1 stores `jsonLength` at offset 8; v2 stores `index_len` at the same offset but the rkyv
+/// index starts at byte 32 (`TbdsHeader`). The first Range of a TBDS file is 12 bytes either way
+/// — this is what `satellite::fetch_index_head` must ask for *next*, and it is the T-993 fold:
+/// reading version as `u32` and requiring `== 1` rejected every v2 file before the dispatcher ran.
+pub fn index_range_end(prefix: &[u8]) -> Result<u64, TbdSatError> {
+    if prefix.len() < 12 {
+        return Err(TbdSatError::TooSmall);
+    }
+    let magic = read_u32_le(prefix, 0).ok_or(TbdSatError::TooSmall)?;
+    if magic != MAGIC {
+        return Err(TbdSatError::BadMagic);
+    }
+    match u16::from_le_bytes([prefix[4], prefix[5]]) {
+        V1 => {
+            let json_len = read_u32_le(prefix, 8).ok_or(TbdSatError::TooSmall)? as u64;
+            if json_len == 0 || json_len > 16 * 1024 * 1024 {
+                return Err(TbdSatError::JsonOverrun);
+            }
+            Ok(11 + json_len)
+        }
+        V2 => {
+            let index_len = read_u32_le(prefix, 8).ok_or(TbdSatError::TooSmall)? as u64;
+            if index_len == 0 || index_len > 16 * 1024 * 1024 {
+                return Err(TbdSatError::JsonOverrun);
+            }
+            Ok(31 + index_len)
+        }
+        v => Err(TbdSatError::UnsupportedVersion(u32::from(v))),
+    }
+}
+
 /// Parse header + index; `file_size` is the full-file size (a Range head may be shorter).
 ///
 /// The version lives at the same offset in both containers — v1 writes a `u32` 1 there, v2's
@@ -589,6 +622,36 @@ mod t935_10 {
                     .map(|t| (m.level, t.x, t.y, t.width, t.height, t.length))
             })
             .collect()
+    }
+
+    /// T-993 — a 12-byte prefix sizes both containers. Restoring `version != 1` in the Range
+    /// planner would make the v2 arm of this test fail (UnsupportedVersion(2)).
+    #[test]
+    fn index_range_end_sizes_v1_and_v2_from_a_twelve_byte_prefix() {
+        let (v1b, v2b) = (v1(), frame(&index()));
+        let e1 = index_range_end(&v1b[..12]).expect("v1 prefix");
+        let e2 = index_range_end(&v2b[..12]).expect("v2 prefix");
+        assert!(e1 >= 11, "v1 end {e1}");
+        assert!(e2 >= 31, "v2 end {e2}");
+        let i1 = parse_tbd_sat_index_strict(&v1b[..=e1 as usize], v1b.len() as u64).expect("v1");
+        let i2 = parse_tbd_sat_index_strict(&v2b[..=e2 as usize], v2b.len() as u64).expect("v2");
+        assert_eq!((i1.container_version, i2.container_version), (1, 2));
+        assert_eq!(
+            index_range_end(&v2b[..12]).unwrap(),
+            index_range_end(&v2b[..32]).unwrap(),
+            "a 32-byte v2 header must not change the sized end"
+        );
+        let third = {
+            let mut b = MAGIC.to_le_bytes().to_vec();
+            b.extend_from_slice(&3u16.to_le_bytes());
+            b.extend_from_slice(&0u16.to_le_bytes());
+            b.extend_from_slice(&8u32.to_le_bytes());
+            b
+        };
+        match index_range_end(&third) {
+            Err(TbdSatError::UnsupportedVersion(3)) => {}
+            other => panic!("third version must be named, got {other:?}"),
+        }
     }
 
     /// The acceptance: one pyramid, two containers, the same tiles in the same places, and the

@@ -170,16 +170,11 @@ fn upload_decoded(
 async fn fetch_index_head(url: &str, strict: bool) -> Option<(TbdSatIndex, u64)> {
     // T-629 — the index is two Range requests and everything downstream depends on them, so they
     // get the same retry ladder as the tiles: losing the header to a 429 loses the whole basemap.
+    // T-993 — first 12 bytes are enough to size BOTH containers (v1 jsonLength, v2 index_len);
+    // `index_range_end` dispatches on the u16 version so a v2 file is not rejected as `version != 1`.
     let head = fetch_range_resilient(url, 0, 11).await?;
-    if head.bytes.len() < 12 {
-        return None;
-    }
-    let version = u32::from_le_bytes(head.bytes[4..8].try_into().ok()?);
-    let json_len = u32::from_le_bytes(head.bytes[8..12].try_into().ok()?);
-    if version != 1 || json_len == 0 || json_len > 16 * 1024 * 1024 {
-        return None;
-    }
-    let full = fetch_range_resilient(url, 0, 11 + u64::from(json_len)).await?;
+    let end = super::tbd_sat::index_range_end(&head.bytes).ok()?;
+    let full = fetch_range_resilient(url, 0, end).await?;
     let index = if strict {
         parse_tbd_sat_index_strict(&full.bytes, full.total).ok()?
     } else {

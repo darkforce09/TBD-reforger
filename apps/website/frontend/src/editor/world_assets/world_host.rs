@@ -51,8 +51,8 @@ pub struct WorldHost {
     chunks_path: String,
     /// T-935.3 — the manifest's `objects.binary.chunks` template
     /// (`objects/chunks/{cx}_{cy}.bin`), and ONLY when the block also describes the container and
-    /// row shape this build implements. `None` — every manifest shipped before T-935.13, the
-    /// committed everon one included — means the `.json.gz` path below is used unchanged.
+    /// row shape this build implements. `None` means the `.json.gz` path below is used.
+    /// Everon names the template (T-935.13); a terrain without `objects.binary` still takes JSON.
     chunks_bin: Option<String>,
     ready: bool,
     pending: VecDeque<PendingChunk>,
@@ -202,20 +202,10 @@ impl WorldHost {
         true
     }
 
-    /// T-935.14 — load the prefab catalogue, archive first when `objects.binary.prefabs` names one.
-    ///
-    /// Returns whether a catalogue is loaded. Same fallback contract as
-    /// [`load_roads`](Self::load_roads): the archive is *preferred*, not required, and a named
-    /// archive that will not fetch or will not decode falls through to the `.json.gz` path — which
-    /// is the route that has always worked and stays the default until T-935.13 puts the block in
-    /// the manifest. No committed manifest names one today, so this fetch is not yet made on any
-    /// live boot; the branch is proven by `map-engine-core`'s everon parity pin, which drives the
-    /// same `load_prefabs` entry point over real archive bytes.
-    ///
-    /// Both routes go through `WorldResidency::load_prefabs`, which sniffs gzip-versus-rkyv on the
-    /// bytes rather than trusting the URL, so a mislabelled file decodes as what it is. `terrain`
-    /// is the directory these bytes were fetched from and the archive records the terrain it was
-    /// built for: a disagreement is refused rather than resolved against the wrong catalogue.
+    /// T-935.13 — load the prefab catalogue from `objects.binary.prefabs` when named; otherwise
+    /// the gz-JSON path. A named archive that 404s or fails `schema_version` is a failed boot of
+    /// that class, not a silent JSON fetch: the runtime-fetch JSON branch is what made a wrong
+    /// cutover look like a successful JSON boot.
     async fn load_prefabs(
         &mut self,
         base: &str,
@@ -224,23 +214,23 @@ impl WorldHost {
         json: &str,
     ) -> bool {
         if let Some(path) = bin {
-            if let Some(bytes) = fetch_bytes(&format!("{base}/{path}")).await {
-                // T-946.24 — SAY WHY BEFORE FALLING BACK. The archive lane's refusals are the
-                // whole point of it: a catalogue built for another terrain, a schema version this
-                // build does not read, a duplicate `prefabId` that would make one id win the
-                // footprint table and lose the class table. Discarding the error with `is_ok()`
-                // turned every one of those into a silent JSON boot, so the manifest could point at
-                // a wrong archive for a whole release and the only symptom would be a slower start.
-                match self.residency.load_prefabs(&bytes, terrain) {
-                    Ok(_) => return true,
-                    Err(e) => web_sys::console::warn_1(
-                        &format!(
-                            "world: prefab archive {path} rejected: {e} — falling back to JSON"
-                        )
-                        .into(),
-                    ),
+            return match fetch_bytes(&format!("{base}/{path}")).await {
+                Some(bytes) => match self.residency.load_prefabs(&bytes, terrain) {
+                    Ok(_) => true,
+                    Err(e) => {
+                        web_sys::console::warn_1(
+                            &format!("world: prefab archive {path} rejected: {e}").into(),
+                        );
+                        false
+                    }
+                },
+                None => {
+                    web_sys::console::warn_1(
+                        &format!("world: prefab archive {path} missing").into(),
+                    );
+                    false
                 }
-            }
+            };
         }
         match fetch_bytes(&format!("{base}/{json}")).await {
             Some(bytes) => self.residency.load_prefabs(&bytes, terrain).is_ok(),
@@ -248,29 +238,25 @@ impl WorldHost {
         }
     }
 
-    /// T-935.11 — load the road network, archive first when the manifest names one.
-    ///
-    /// Returns whether a network is loaded. The archive is *preferred*, not required: a named
-    /// archive that will not fetch or will not decode falls through to the `.json.gz` path, which
-    /// is the route that has always worked and stays the default until T-935.13. That fallback is
-    /// what makes it safe to point the manifest at a binary asset before the file is on the CDN —
-    /// the cost of getting it wrong is a slower boot, never a blank map.
-    ///
-    /// Both routes go through `WorldStore::load_roads`, which sniffs gzip-vs-rkyv on the bytes
-    /// (T-935.6) rather than trusting the URL, so a mislabelled file decodes as what it is.
+    /// T-935.13 — load the road network from `objects.binary.roads` when named; otherwise gz-JSON.
+    /// A named archive does not fall through to JSON.
     async fn load_roads(&mut self, base: &str, bin: Option<&str>, json: &str) -> bool {
         if let Some(path) = bin {
-            if let Some(bytes) = fetch_bytes(&format!("{base}/{path}")).await {
-                // T-946.24 — see `load_prefabs`: a refused archive must say so, or a wrong one
-                // costs a release with nothing but a slower boot to show for it.
-                match self.store.load_roads(&bytes) {
-                    Ok(_) => return true,
-                    Err(e) => web_sys::console::warn_1(
-                        &format!("world: road archive {path} rejected: {e} — falling back to JSON")
-                            .into(),
-                    ),
+            return match fetch_bytes(&format!("{base}/{path}")).await {
+                Some(bytes) => match self.store.load_roads(&bytes) {
+                    Ok(_) => true,
+                    Err(e) => {
+                        web_sys::console::warn_1(
+                            &format!("world: road archive {path} rejected: {e}").into(),
+                        );
+                        false
+                    }
+                },
+                None => {
+                    web_sys::console::warn_1(&format!("world: road archive {path} missing").into());
+                    false
                 }
-            }
+            };
         }
         match fetch_bytes(&format!("{base}/{json}")).await {
             Some(bytes) => self.store.load_roads(&bytes).is_ok(),
@@ -278,30 +264,30 @@ impl WorldHost {
         }
     }
 
-    /// T-935.11 — load the land-cover regions, archive first when the manifest names one; same
-    /// fallback contract as [`load_roads`](Self::load_roads).
-    ///
-    /// The two formats do not share an entry point here the way roads do: `WorldStore` has no
-    /// regions sniff (`store.rs` is T-935.6's file, not this slice's), so the archive route calls
-    /// `regions_from_bytes` — which validates the buffer, checks `schema_version`, and refuses any
-    /// region the JSON parser would have dropped — and assigns the store's public `regions` field.
+    /// T-935.13 — load land-cover regions from `objects.binary.regions` when named; otherwise
+    /// gz-JSON. A named archive does not fall through to JSON.
     async fn load_regions(&mut self, base: &str, bin: Option<&str>, json: &str) -> bool {
         if let Some(path) = bin {
-            if let Some(bytes) = fetch_bytes(&format!("{base}/{path}")).await {
-                // T-946.24 — see `load_prefabs`.
-                match regions_from_bytes(&bytes) {
+            return match fetch_bytes(&format!("{base}/{path}")).await {
+                Some(bytes) => match regions_from_bytes(&bytes) {
                     Ok(regions) => {
                         self.store.regions = regions;
-                        return true;
+                        true
                     }
-                    Err(e) => web_sys::console::warn_1(
-                        &format!(
-                            "world: region archive {path} rejected: {e} — falling back to JSON"
-                        )
-                        .into(),
-                    ),
+                    Err(e) => {
+                        web_sys::console::warn_1(
+                            &format!("world: region archive {path} rejected: {e}").into(),
+                        );
+                        false
+                    }
+                },
+                None => {
+                    web_sys::console::warn_1(
+                        &format!("world: region archive {path} missing").into(),
+                    );
+                    false
                 }
-            }
+            };
         }
         match fetch_bytes(&format!("{base}/{json}")).await {
             Some(bytes) => self.store.load_forest_regions_gz(&bytes).is_ok(),

@@ -80,31 +80,22 @@ impl OccluderHost {
     }
 
     /// After the residency loaded its manifest + prefabs: size the occluder, take the catalogue,
-    /// then either read the T-935.8 archive (one fetch) or fall back to the library manifest plus
-    /// the hot-set prefetch (descriptors + their BLAS).
+    /// then either read the T-935.8 archive (one fetch) or fall back to JSON descriptors. The
+    /// hot-set prefetch always runs: `BuildingBlueprintArchive` has no `hot` field (T-985), so
+    /// returning after a successful archive boot used to skip the only source of that list
+    /// (`prefabs/blas-manifest.json`).
     pub async fn init(&mut self, base: &str, residency: &WorldResidency) {
         self.base = base.to_string();
         self.occ = WorldOccluder::new(residency.chunk_size_m(), residency.terrain());
         self.occ.set_prefabs(residency.prefab_rows());
-        if self.init_from_archive(base).await {
-            self.ready = true;
-            self.occ.refresh();
-            return;
-        }
+        let _archive = self.init_from_archive(base).await;
+        // T-985 — fetch the library manifest for `.hot` even when the archive booted. The archive
+        // is the census + BLAS index + blueprint levels; it is not the hot list.
         self.manifest = fetch_text(&format!("{base}/prefabs/blas-manifest.json"))
             .await
             .and_then(|t| serde_json::from_str(&t).ok());
         self.ready = true;
-        let hot: Vec<u16> = self
-            .manifest
-            .as_ref()
-            .map(|m| {
-                m.hot
-                    .iter()
-                    .filter_map(|p| u16::try_from(*p).ok())
-                    .collect()
-            })
-            .unwrap_or_default();
+        let hot = hot_pids(self.manifest.as_ref());
         if !hot.is_empty() {
             self.fetch_descriptors(&hot).await;
             let paths: Vec<String> = hot
@@ -350,6 +341,18 @@ impl OccluderHost {
         out.truncate(5);
         (n, out)
     }
+}
+
+/// T-985 — pids the boot path prefetches. The archive does not carry this list.
+fn hot_pids(manifest: Option<&BlasManifest>) -> Vec<u16> {
+    manifest
+        .map(|m| {
+            m.hot
+                .iter()
+                .filter_map(|p| u16::try_from(*p).ok())
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 impl Default for OccluderHost {

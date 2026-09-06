@@ -215,7 +215,7 @@ pub fn with_occluder_host<R>(f: impl FnOnce(&OccluderHost) -> R) -> Option<R> {
 ///
 /// `dead_code`-allowed, and this is the whole of why: these three are the seam the ticket exists to
 /// publish (*"export `WaterMask::is_water` publicly for placement guards"*), the placement guard
-/// that calls them is a later ticket, and no manifest carries a `water` block until T-935.13 — so
+/// that calls them is a later ticket, and everon still carries no `water` block (emitter skipped) — so
 /// there is nothing in this crate to call them yet. **They are wrappers, not logic**: everything
 /// they can get wrong (the world→texel mapping, the mip fold, the off-map answer, the
 /// schema-version gate) is decided in `map_engine_core::world::water` and executed by `cargo test`
@@ -469,7 +469,7 @@ pub async fn bootstrap(
 
     // T-935.9 — bathymetry + water vectors, and ONLY when the manifest declares them (spec §5):
     // no `water` block means no request goes out and nothing is added to the world budget, which
-    // is every terrain shipping before T-935.13. The block is passed down rather than re-fetched
+    // is everon today (water emitter skipped). The block is passed down rather than re-fetched
     // because `bootstrap` already has the manifest in hand.
     if let Some(m) = manifest.as_ref() {
         mh.water
@@ -662,8 +662,8 @@ struct DemInfo {
     min_m: f64,
     #[serde(rename = "heightRangeMaxM")]
     max_m: f64,
-    /// T-935.4 — `dem.raw` (spec §5): the `TBDE` twin of the PNG at `path`. Absent on every
-    /// manifest shipped before T-935.13, and absent means the PNG is the only DEM there is. The
+    /// T-935.4 — `dem.raw` (spec §5): the `TBDE` twin of the PNG at `path`. Absent on everon
+    /// (operator: no `.r16` / GetSurfaceY) — PNG is the only DEM there is. The
     /// block type is T-935.1's, not a second copy of it.
     #[serde(default)]
     raw: Option<map_engine_core::world::DemRawBlock>,

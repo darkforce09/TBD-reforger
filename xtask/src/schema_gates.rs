@@ -1605,15 +1605,52 @@ mod t935_binary_block_tests {
         assert!(errs.iter().any(|e| e.contains("{cx}")), "{errs:?}");
     }
 
-    /// ACCEPTANCE: the manifest actually committed for everon declares no block, and is accepted.
+    /// ACCEPTANCE: T-935.13 cutover — everon declares objects + labels + buildings (not dem.raw,
+    /// not water: those emitters did not run). Every named path must resolve.
     #[test]
-    fn the_live_everon_manifest_declares_no_block_and_passes() {
+    fn the_live_everon_manifest_declares_the_cutover_blocks_and_passes() {
         let root = repo_root().expect("repo root");
         let dir = root.join("packages/map-assets/everon");
         let m = read_json(&dir.join("manifest.json")).expect("everon manifest");
+        let (declared, errs) = manifest_binary_failures(&m, &dir);
+        assert_eq!(errs, Vec::<String>::new(), "{errs:?}");
         assert_eq!(
-            manifest_binary_failures(&m, &dir),
-            (0, Vec::<String>::new())
+            declared, 3,
+            "objects + labels + buildings, not dem.raw/water"
+        );
+        assert!(m.get("dem").and_then(|d| d.get("raw")).is_none());
+        assert!(m.get("water").is_none());
+        assert_eq!(
+            m["tiles"]["satellite"]["unified"]["encoding"].as_str(),
+            Some("tbd-sat-v1"),
+            "unified v2 emitter skipped; encoding stays v1 while the reader accepts v2"
+        );
+    }
+
+    /// T-985 — archive boot must still fetch blas-manifest.json for `.hot`. The defect was
+    /// `if init_from_archive { return; }` before that fetch. Restore the early return and this
+    /// test goes red.
+    #[test]
+    fn t985_occluder_init_still_fetches_blas_manifest_for_hot() {
+        let root = repo_root().expect("repo root");
+        let src = fs::read_to_string(
+            root.join("apps/website/frontend/src/editor/world_assets/occluder_host.rs"),
+        )
+        .expect("occluder_host.rs");
+        let init = src
+            .split("pub async fn init(")
+            .nth(1)
+            .expect("init")
+            .split("async fn init_from_archive")
+            .next()
+            .expect("split");
+        assert!(
+            init.contains("blas-manifest.json"),
+            "archive boot must still read blas-manifest.json for the hot list: {init}"
+        );
+        assert!(
+            !init.contains("return;"),
+            "T-985: init must not return before the hot-list fetch: {init}"
         );
     }
 }
@@ -4069,6 +4106,13 @@ pub fn map_glyphs() -> Result<u8> {
             }
             Err(e) => errors.push(format!("catalog {}: unreadable ({e})", catalog.display())),
         }
+    } else {
+        // T-935.13 — do not skip glyph coverage when runtime gz-JSON leaves. We still ship the
+        // gz as an emitter input; if it is absent the gate must fail, not go silently vacuous.
+        errors.push(format!(
+            "catalog {}: missing (glyph coverage would otherwise be skipped)",
+            catalog.display()
+        ));
     }
 
     // 2. SVG + render-field sanity.

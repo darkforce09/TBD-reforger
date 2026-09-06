@@ -8,7 +8,7 @@
 //!
 //! When the terrain manifest carries a `labels` block (spec §5), a single `map_labels.rkyv` fetch
 //! replaces both text fetches below and both lanes come out of it validated and zero-copy. With no
-//! block — which is every manifest shipped before T-935.13 — the JSON path runs unchanged.
+//! block is absent the JSON path runs unchanged. Everon names `locations/map_labels.rkyv`.
 //!
 //! Three things about that split are worth stating where they can be checked:
 //!
@@ -106,7 +106,11 @@ impl LabelHost {
         report: &dyn Fn(BootEvent),
     ) {
         if !self.init_from_archive(base, report).await {
-            self.init_from_json(base, report).await;
+            // JSON only when the manifest has no labels block. A named archive that 404s must
+            // not silently fetch locations.json (T-935.13 runtime-fetch cutover).
+            if Self::labels_block(base).await.is_none() {
+                self.init_from_json(base, report).await;
+            }
         }
         self.road_segments = road_segments;
         // Peaks over the full 12.8 km Everon extent (DEM raster is north-up, no axis flip).

@@ -26,8 +26,9 @@ use map_engine_core::dem::sample::{DemManifest, sample_elevation_meters};
 use map_engine_core::world::occluder::{
     BlockPolicy, PrefabDescriptor, WorldOccluder, WorldVerdict,
 };
-use map_engine_core::world::{TerrainSizeM, parse_chunk};
-use map_engine_core::world::{build_prefab_maps, narrow_prefab_rows};
+use map_engine_core::world::{
+    TerrainSizeM, build_prefab_maps, narrow_prefab_rows, parse_chunk, parse_chunk_bin_for,
+};
 use serde_json::Value;
 
 /// Everon: 12 800 m square, 512 m chunks.
@@ -70,14 +71,20 @@ pub fn load_cell(assets: &Path, cell: &str) -> Result<(WorldOccluder, Vec<String
     for dx in -1..=1 {
         for dy in -1..=1 {
             let id = format!("{}_{}", cx + dx, cy + dy);
-            let path = assets.join("objects/chunks").join(format!("{id}.json.gz"));
-            if !path.is_file() {
-                continue;
-            }
-            let raw = gunzip_json(&path)?;
-            if let Some(chunk) = parse_chunk(&id, &raw, &by_id) {
+            let bin = assets.join("objects/chunks").join(format!("{id}.bin"));
+            let gz = assets.join("objects/chunks").join(format!("{id}.json.gz"));
+            if bin.is_file() {
+                let bytes = fs::read(&bin).with_context(|| bin.display().to_string())?;
+                let chunk = parse_chunk_bin_for(&id, &bytes)
+                    .with_context(|| format!("parse {}", bin.display()))?;
                 occ.insert_chunk(&id, &chunk);
                 loaded.push(id);
+            } else if gz.is_file() {
+                let raw = gunzip_json(&gz)?;
+                if let Some(chunk) = parse_chunk(&id, &raw, &by_id) {
+                    occ.insert_chunk(&id, &chunk);
+                    loaded.push(id);
+                }
             }
         }
     }
@@ -410,17 +417,32 @@ pub fn run(args: &[String]) -> Result<u8> {
     let mut code = 0u8;
     if census {
         for id in &loaded {
-            let Some(chunk) =
-                gunzip_json(&assets.join("objects/chunks").join(format!("{id}.json.gz"))).ok()
-            else {
+            let gz = assets.join("objects/chunks").join(format!("{id}.json.gz"));
+            let bin = assets.join("objects/chunks").join(format!("{id}.bin"));
+            let (rows, pids): (usize, Vec<u16>) = if gz.is_file() {
+                let Some(chunk) = gunzip_json(&gz).ok() else {
+                    continue;
+                };
+                let arr = chunk["instances"].as_array();
+                let n = arr.map_or(0, Vec::len);
+                let pids = arr
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|r| r[0].as_u64().and_then(|p| u16::try_from(p).ok()))
+                    .collect();
+                (n, pids)
+            } else if bin.is_file() {
+                let Ok(bytes) = fs::read(&bin) else { continue };
+                let Ok(chunk) = parse_chunk_bin_for(id, &bytes) else {
+                    continue;
+                };
+                (chunk.count as usize, chunk.prefab_idx)
+            } else {
                 continue;
             };
-            let rows = chunk["instances"].as_array().map_or(0, Vec::len);
             let mut kinds: HashMap<&str, usize> = HashMap::new();
-            for r in chunk["instances"].as_array().into_iter().flatten() {
-                if let Some(pid) = r[0].as_u64().and_then(|p| u16::try_from(p).ok()) {
-                    *kinds.entry(occ.kind_of(pid).unwrap_or("?")).or_insert(0) += 1;
-                }
+            for pid in pids {
+                *kinds.entry(occ.kind_of(pid).unwrap_or("?")).or_insert(0) += 1;
             }
             let mut kv: Vec<(&str, usize)> = kinds.into_iter().collect();
             kv.sort();
