@@ -180,3 +180,45 @@ slice code; the lockstep walker cannot see an ignored tree. File as a child of T
 
 ## MERGE PRECONDITION — file-disjointness PROVED
 20 changed paths across the three slices, **zero overlaps** (T-675.2 6, T-702 3, T-936.1 11).
+
+---
+
+## VERIFIER — 4 real defects, 3 fixed in-pass, 7 filed
+The adversarial verifier broke four things and confirmed the command-centre work on everything else.
+
+**Fixed in `505c25794`:**
+1. **`mode: timeout` fired a false diagnostic on the ORDINARY case.** `flow.time_limit_seconds`
+   defaults to `FLOW_DEFAULT_TIMELIMIT_S = 5400`, so a mission authoring the timeout rule and
+   nothing else was told `flow.timeLimitSeconds` "was 5400 ... the two cannot both stand" about a
+   number nobody wrote. The slice's own fixture states the rule ("a diagnostic that fires on correct
+   input is noise") and then tested only the explicitly-authored path. Fixed with
+   `flow_seconds_authored()`, sharing `authored_flow_seconds`' filter so the two cannot drift.
+   Perturbation-proved: forcing the guard false reproduces the verbatim 5400 message.
+2. The mounted card's own header still said it was unmounted and named
+   `render_win_conditions_card` — a symbol that exists nowhere. Command-centre omission when
+   mounting it.
+3. `GetVehicles()` documented null as "the common case" for a rosterless mission. It is not:
+   `JsonLoadContext` allocates an absent `ref`, so an absent roster is an EMPTY ARRAY. Behaviour was
+   right; the doc taught the wrong presence test — the exact trap the landmine note exists to
+   prevent. Fixed in both trees.
+
+**Filed as T-946.26 … T-946.32** (id space exhausted; see T-946.1): the two mod-gate holes
+(framework-only new script invisible; `mod compile` unrunnable in a worktree), the dangling
+`CallLater` handles, the motor-pool census false alarm, the `terrain_bounds_of` width/height lie,
+the superset-only mode-enum pin, and `ClaimTwin` not comparing prefab.
+
+**Confirmed, not broken** — the command-centre work nobody else had reviewed: `seats` expected 12
+recounted independently as exactly 12 (8 UI + 4 crew reader); nothing else still asserts `vehicles`
+is reader-free; both hand-stamped `created_at` values match their ticket files' git births and the
+convention their siblings carry; the card renders unconditionally, not inert behind a cfg. Also
+confirmed: byte-parity of the no-winConditions flatten (the committed emitter-dump golden is
+untouched across the whole span), no second timer for `timeout`, a reload cannot inherit a stale
+roster index, and the gate DBs were fresh with real schema.
+
+## THE LEPTOS LANE WAS RUN, AND IT IS THE SAME RED AS BEFORE THE WAVE
+`mk leptos-gates` was not run by either slice (its `trunk build --release` collides with the
+operator's `trunk serve`, which owns the same `dist/`; the wave gate's own trunk build uses a private
+dist and passed). Run post-merge with `:3000` stopped: **exit 1, 21 `pass:false` / 22 `pass:true`,
+all 21 inside `gate smoke virtual-outliner`.** The pre-merge run from 08:35 the same day has the
+identical 21/22 split, and the failing oracle paths are **byte-identical — 97 paths, `diff` empty**.
+So wave 243 caused no editor regression; these are the pre-existing drifted oracles.
