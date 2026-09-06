@@ -357,6 +357,11 @@ class TBD_MissionDocumentStruct
 	//! null check. dateTime / weatherPreset bind here but are NOT applied by T-682.
 	//! @contract mission.schema.json#/$defs/environment
 	ref TBD_MissionEnvironmentStruct environment;
+	//! T-684 -- launch-time mission parameters (`missionParams[]`). Presence is Count(),
+	//! never a null check: JsonLoadContext allocates an absent ref array. Missions that
+	//! author none boot unchanged. Get(symbol) lives in TBD_MissionParams.c.
+	//! @contract mission.schema.json#/properties/missionParams
+	ref array<ref TBD_MissionParamStruct> missionParams;
 }
 
 //! Loads Mission JSON from backend REST or $profile fallback.
@@ -1092,6 +1097,10 @@ class TBD_MissionLoader
 		// T-682 -- apply authored fog / wind / viewDistance. No-ops when those keys are
 		// absent, so missions without them boot unchanged.
 		TBD_EnvironmentReader.Apply();
+
+		// T-684 -- resolve authored launch parameters against server-config
+		// selections (or authored defaults). No-ops when missionParams is empty.
+		TBD_MissionParams.Resolve();
 
 		// T-181.13.1 - a valid mission document is the earliest moment an end-of-round results
 		// report could mean anything, and this is a server-only path (BeginLoad is reached only
