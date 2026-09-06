@@ -124,6 +124,10 @@ pub const UNKNOWN_HELP: &str = r##"# Platform wave lifecycle — the programmati
 #                                         # CARGO_TARGET_DIR (T-742). Never bare cargo test
 #                                         # against the shared cache — that is the
 #                                         # cross-worktree false-binary class.
+#   cargo xtask platform wave run -p website-api --bin api
+#                                         # build AND LAUNCH into $CARGO_TARGET_DIR/run-main,
+#                                         # stamped `tbd-built-from <sha> <checkout>` (T-300).
+#                                         # Refuses from a worktree: run-main is main's.
 #   cargo xtask platform wave land        # merge every ready slice (no barrier)
 #
 #   bash scripts/platform/wave.sh was deleted at T-902."##;
@@ -240,6 +244,9 @@ pub struct Ctx {
     pub main_root: PathBuf,
     /// `CARGO_TARGET_DIR` — see correction 1. Exported into the environment, as the bash did.
     pub cargo_target_dir: String,
+    /// T-300 — the ONE extra target dir run-style lanes build into. See [`run_target_dir_for`]
+    /// for the formula and why it is one directory rather than one per worktree.
+    pub run_target_dir: String,
     /// `GATE_TIMEOUT` — applied by [`host::Host::hostrun`], not by the step runner. Two reasons:
     /// `command -v` matches shell functions, so a run()-level wrapper tried to `timeout hostrun`
     /// and failed outright; and wrapping on this side kills the actual host process rather than
@@ -309,6 +316,15 @@ impl Ctx {
         // distrobox-host-exec does NOT forward the environment (measured; see host.rs).
         unsafe { std::env::set_var("CARGO_TARGET_DIR", &cargo_target_dir) };
 
+        // T-300. Resolved AFTER the export above so [`resolve_run_target_dir`] reads the value
+        // this driver just chose, and EXPORTED so a lane that never builds a `Ctx` — `platform
+        // preflight`, `mk`'s api lane, the editor smoke — reads the same directory instead of
+        // re-deriving a second formula that will drift from this one.
+        let run_target_dir = resolve_run_target_dir(&main_root);
+        // SAFETY: single-threaded entry, before any child is spawned or thread started — the
+        // same argument the `CARGO_TARGET_DIR` export above makes.
+        unsafe { std::env::set_var("TBD_RUN_TARGET_DIR", &run_target_dir) };
+
         let envd = |k: &str, dflt: String| -> String {
             std::env::var(k)
                 .ok()
@@ -358,6 +374,7 @@ impl Ctx {
             registry_view: ledger::Registry::load_repo(Path::new(".")),
             host,
             cargo_target_dir,
+            run_target_dir,
             main_root,
             root,
         })
@@ -403,6 +420,327 @@ pub fn short(rev: &str) -> String {
 /// `git log -1 --format=%s <rev>`, empty when git cannot resolve it (the `2>/dev/null` shape).
 pub fn subject(rev: &str) -> String {
     git_stdout(&["log", "-1", "--format=%s", rev]).unwrap_or_default()
+}
+
+// ── T-300: THE RUN TARGET, AND THE PROVENANCE CARGO DOES NOT RECORD ──────────────────────────
+//
+// Correction 1 above is right and stays: one shared `CARGO_TARGET_DIR` for check, test and
+// clippy, because a per-worktree target is ~44 GB and eight of them is a dead afternoon. What
+// correction 1 does NOT survive is a lane that BUILDS AND THEN LAUNCHES a binary.
+//
+// MEASURED 2026-09-06, T-300, two checkouts of one package into one target dir:
+//
+//     A. slice worktree builds first     Compiling tbdprobe v0.1.0 (…/slice-worktree)
+//     B. main checkout builds second     Finished `dev` profile … in 0.00s     <- no Compiling
+//     C. $CARGO_TARGET_DIR/debug/<bin>   UNMERGED-SLICE-CODE built_from=…/slice-worktree
+//     D. `cargo run` from main           UNMERGED-SLICE-CODE built_from=…/slice-worktree
+//     E. main's own source says          MERGED-MAIN-CODE
+//
+// Cargo's `-C metadata` hash does not include the manifest path, so both checkouts write the
+// SAME `deps/<name>-<hash>` and the same uplifted `<target>/<profile>/<bin>`; freshness is
+// mtime-keyed, so main's build is satisfied by the worktree's artifact and never recompiles.
+// That is the wave-1 T-192 incident (`make api` on :8080 served unmerged slice code) with its
+// mechanism written down. It is also the signature defect: a lane reporting success over an
+// input it never examined.
+//
+// The cure is two-sided, because either half alone fails open:
+//
+//   * a SEPARATE target for run lanes, so the constant traffic of worktree check/test/clippy
+//     builds into the shared cache can never satisfy a run lane's fingerprint — one extra
+//     directory in total, NOT one per worktree; and
+//   * a STAMP beside the binary naming the sha and the checkout that built it, because a
+//     directory is only trustworthy if something records who wrote it. `cargo clean -p
+//     website-api` was the wave-1 fix and nobody could have known to run it.
+//
+// [`cmd_run`] is the lane; [`crate::platform_preflight`] is the enforcement.
+
+/// The one extra target dir, under the shared cache. Named for its owner: the MAIN checkout.
+pub const RUN_TARGET_SUBDIR: &str = "run-main";
+
+/// The provenance file written beside a run binary. Contents are exactly `<sha> <path>`.
+pub const RUN_STAMP_FILE: &str = "tbd-built-from";
+
+/// Cargo's two profile directories, in the order preflight reports them.
+pub const RUN_PROFILE_DIRS: &[&str] = &["debug", "release"];
+
+/// `$K` from the environment, empty treated as unset — `make`'s `?=` semantics, the same rule
+/// [`Ctx::enter`] applies to `CARGO_TARGET_DIR`.
+fn env_nonempty(k: &str) -> Option<String> {
+    std::env::var(k).ok().filter(|s| !s.is_empty())
+}
+
+/// `<cargo_target_dir>/run-main` — the whole formula, in one expression, so the driver and
+/// `platform preflight` cannot answer this question differently.
+///
+/// A subdirectory of the shared cache rather than a sibling: `platform wave reclaim` already
+/// spares the shared dir wholesale, and a run target parked outside it is a 40 GB tree that no
+/// sweep knows about. It is also what makes the disk claim checkable — one `run-main`, whatever
+/// the worktree count.
+pub fn run_target_dir_for(cargo_target_dir: &str) -> String {
+    Path::new(cargo_target_dir)
+        .join(RUN_TARGET_SUBDIR)
+        .display()
+        .to_string()
+}
+
+/// The run target for a caller that has no [`Ctx`] — `platform preflight` is the one that
+/// matters, and it must not construct one (`Ctx::enter` chdirs and prints the host banner).
+///
+/// Policy, in precedence order, and identical to the one [`Ctx::enter`] applies:
+/// `$TBD_RUN_TARGET_DIR` (the driver exports it, so a child inherits the parent's answer), then
+/// `$CARGO_TARGET_DIR/run-main`, then `<main checkout>/target/run-main`.
+pub fn resolve_run_target_dir(main_root: &Path) -> String {
+    if let Some(v) = env_nonempty("TBD_RUN_TARGET_DIR") {
+        return v;
+    }
+    let base = env_nonempty("CARGO_TARGET_DIR")
+        .unwrap_or_else(|| main_root.join("target").display().to_string());
+    run_target_dir_for(&base)
+}
+
+/// Who built the binaries in a profile directory: the commit, and the checkout it was built from.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RunStamp {
+    /// `git rev-parse HEAD` in [`RunStamp::checkout`] at build time — full 40 hex, never short.
+    pub sha: String,
+    /// The absolute path of the checkout whose source was compiled.
+    pub checkout: String,
+}
+
+impl RunStamp {
+    /// `<sha> <path>` and a trailing newline. One line, because the file is read by a human at
+    /// three in the morning as often as by preflight.
+    pub fn render(&self) -> String {
+        format!("{} {}\n", self.sha, self.checkout)
+    }
+
+    /// The inverse, REFUSING anything it does not fully understand.
+    ///
+    /// Fail-closed on purpose: a stamp that parses loosely turns into a stamp that says "fine"
+    /// about a file it did not read, which is the exact defect this whole module is about. A
+    /// missing stamp is a separate answer ([`read_run_stamp`] returns `None`) and preflight
+    /// blocks on it too, so there is no shape of this file that reads as green by accident.
+    pub fn parse(text: &str) -> Option<RunStamp> {
+        let line = text.lines().next()?.trim();
+        let (sha, path) = line.split_once(' ')?;
+        let path = path.trim();
+        if path.is_empty() || sha.len() != 40 || !sha.chars().all(|c| c.is_ascii_hexdigit()) {
+            return None;
+        }
+        Some(RunStamp {
+            sha: sha.to_ascii_lowercase(),
+            checkout: path.to_string(),
+        })
+    }
+}
+
+/// `<bin_dir>/tbd-built-from` — the stamp sits beside the binaries it describes, so deleting the
+/// profile directory deletes the claim with it and cannot leave a stale one behind.
+pub fn run_stamp_path(bin_dir: &Path) -> PathBuf {
+    bin_dir.join(RUN_STAMP_FILE)
+}
+
+/// Write the stamp, creating the directory if cargo has not yet.
+pub fn write_run_stamp(bin_dir: &Path, stamp: &RunStamp) -> std::io::Result<()> {
+    std::fs::create_dir_all(bin_dir)?;
+    std::fs::write(run_stamp_path(bin_dir), stamp.render())
+}
+
+/// Read the stamp. `None` covers BOTH "absent" and "unreadable as a stamp" — see
+/// [`RunStamp::parse`]; the caller must treat that as unknown provenance, never as agreement.
+pub fn read_run_stamp(bin_dir: &Path) -> Option<RunStamp> {
+    RunStamp::parse(&std::fs::read_to_string(run_stamp_path(bin_dir)).ok()?)
+}
+
+/// The executables sitting in a profile directory, sorted — what preflight NAMES when it blocks.
+///
+/// Regular files with an execute bit and no extension: that is cargo's uplifted binary shape and
+/// it excludes `.d` depfiles, the stamp, `.rlib`/`.rmeta`, and the `deps/ build/ incremental/`
+/// subdirectories without having to enumerate them.
+pub fn run_binaries(bin_dir: &Path) -> Vec<String> {
+    use std::os::unix::fs::PermissionsExt;
+    let mut out: Vec<String> = Vec::new();
+    let Ok(rd) = std::fs::read_dir(bin_dir) else {
+        return out;
+    };
+    for ent in rd.flatten() {
+        let Ok(md) = ent.metadata() else { continue };
+        if !md.is_file() || md.permissions().mode() & 0o111 == 0 {
+            continue;
+        }
+        let name = ent.file_name().to_string_lossy().into_owned();
+        if name.contains('.') || name == RUN_STAMP_FILE {
+            continue;
+        }
+        out.push(name);
+    }
+    out.sort();
+    out
+}
+
+/// `cargo xtask platform wave run <cargo args…> [-- <run args…>]` — the run lane.
+///
+/// Build then launch, both into [`Ctx::run_target_dir`], with the stamp written between the two
+/// so it describes a build that actually succeeded and exists before the server it labels does.
+/// The argv left of `--` is given to BOTH `cargo build` and `cargo run` (`-p`, `--bin`,
+/// `--release` are accepted by each); everything right of it belongs to the program and is passed
+/// only to `run`. That is `ci_editor_api`'s own build-then-run shape, which is the lane this
+/// exists to make safe.
+///
+/// NOT through [`host::Host::hostrun_argv`], and the reason is not style: `hostrun` wraps every
+/// command in `timeout $GATE_TIMEOUT`, and a run lane's whole point is a process that outlives
+/// the gate's 1200 s. It also pipes both streams, which would hide a server's log until it
+/// exits. Cargo is spawned directly with inherited stdio, exactly as [`crate::mk_build`] does.
+pub fn cmd_run(ctx: &Ctx, args: &[String]) -> u8 {
+    if let Some(lines) = run_lane_refusal(&ctx.root, &ctx.main_root, &ctx.run_target_dir, args) {
+        for l in &lines {
+            werr!("{l}");
+        }
+        return 1;
+    }
+    // The two-glibc guard, reused rather than re-derived: a container-built run-main read back by
+    // host cargo is `GLIBC_2.xx not found`, which reads as a broken checkout (T-853).
+    if let Err(msg) = crate::mk_target_dir::abi_guard(Path::new(&ctx.run_target_dir)) {
+        werr!("run: {msg}");
+        return 1;
+    }
+
+    let (build_args, run_args) = split_run_args(args);
+    let profile = if build_args.iter().any(|a| a == "--release") {
+        "release"
+    } else {
+        "debug"
+    };
+
+    wprintln!("run: CARGO_TARGET_DIR={}", ctx.run_target_dir);
+    let rc = spawn_cargo(ctx, "build", &build_args, &[]);
+    if rc != 0 {
+        werr!("run: build failed (rc {rc}) — nothing stamped, nothing launched.");
+        return rc;
+    }
+
+    let bin_dir = Path::new(&ctx.run_target_dir).join(profile);
+    let stamp = RunStamp {
+        sha: git_stdout(&["rev-parse", "HEAD"]).unwrap_or_default(),
+        checkout: ctx.root.display().to_string(),
+    };
+    if stamp.sha.len() != 40 {
+        // Refuse rather than write a stamp preflight will reject anyway: an unresolvable HEAD
+        // means we cannot say what this binary is, and launching an unlabelled binary is the
+        // state this whole ticket exists to end.
+        werr!("run: REFUSING — `git rev-parse HEAD` did not resolve; cannot stamp the build.");
+        return 1;
+    }
+    if let Err(e) = write_run_stamp(&bin_dir, &stamp) {
+        werr!(
+            "run: REFUSING — could not write {}: {e}",
+            run_stamp_path(&bin_dir).display()
+        );
+        return 1;
+    }
+    wprintln!(
+        "run: {} {} {}",
+        RUN_STAMP_FILE,
+        short(&stamp.sha),
+        stamp.checkout
+    );
+
+    spawn_cargo(ctx, "run", &build_args, &run_args)
+}
+
+/// The three reasons a run lane must not proceed, rendered as the stderr it prints, or `None`.
+///
+/// A free function taking paths rather than a method on [`Ctx`]: building a `Ctx` chdirs the
+/// process and detects the host bridge (which prints a five-line banner), so the refusals could
+/// only be tested by the thing they are supposed to prevent. Returning the LINES rather than a
+/// code keeps the message under test — a refusal that names the wrong path is a refusal nobody
+/// acts on.
+fn run_lane_refusal(
+    root: &Path,
+    main_root: &Path,
+    run_target_dir: &str,
+    args: &[String],
+) -> Option<Vec<String>> {
+    // R1 — a lane with no argv would build the whole workspace into the run target and stamp it
+    // as if a run binary existed. Usage, not a default.
+    if args.is_empty() {
+        return Some(vec![
+            "run: REFUSING — no cargo arguments.".into(),
+            "     usage: cargo xtask platform wave run -p website-api --bin api".into(),
+            "            cargo xtask platform wave run -p tbd-tools --bin world -- reclassify"
+                .into(),
+        ]);
+    }
+    // R2 — a caller that names its own target dir has silently opted out of the whole mechanism
+    // and would still get a stamp. Refuse rather than stamp a directory we did not choose.
+    if let Some(bad) = args
+        .iter()
+        .find(|a| a.starts_with("--target-dir") || a.starts_with("CARGO_TARGET_DIR="))
+    {
+        return Some(vec![
+            format!("run: REFUSING — `{bad}` overrides the run target this lane exists to pin."),
+            "     Drop it, or use `cargo xtask platform wave test --slice <T-xxx>` for a".into(),
+            "     private per-slice dir (T-742).".into(),
+        ]);
+    }
+    // R3 — THE MAIN GOAL, enforced at the only place it can be. `run-main` is the MAIN
+    // checkout's; a worktree writing it is the wave-1 incident happening again, one layer down.
+    // A slice that needs a live server gets a private dir, which costs disk but cannot poison
+    // anybody — and refusing here is why the stamp's checkout field is normally boring.
+    if root != main_root {
+        return Some(vec![
+            "run: REFUSING — this is a worktree, and the run target belongs to the main checkout."
+                .into(),
+            format!("     worktree      = {}", root.display()),
+            format!("     main checkout = {}", main_root.display()),
+            format!("     run target    = {run_target_dir}"),
+            "     A worktree build here would be executed by main's next run lane (T-300).".into(),
+            "     Use CARGO_TARGET_DIR=<main_root>/target-<slice> for a private server dir.".into(),
+        ]);
+    }
+    None
+}
+
+/// Split a run-lane argv at the first bare `--`: left goes to both cargo verbs, right only to
+/// `run`. A missing `--` means everything is a cargo argument.
+fn split_run_args(args: &[String]) -> (Vec<String>, Vec<String>) {
+    match args.iter().position(|a| a == "--") {
+        Some(i) => (args[..i].to_vec(), args[i + 1..].to_vec()),
+        None => (args.to_vec(), Vec::new()),
+    }
+}
+
+/// `cargo <verb> <cargo_args…> [-- <run_args…>]` in the run target, stdio inherited.
+fn spawn_cargo(ctx: &Ctx, verb: &str, cargo_args: &[String], run_args: &[String]) -> u8 {
+    let mut cmd = std::process::Command::new("cargo");
+    cmd.arg(verb)
+        .args(cargo_args)
+        .current_dir(&ctx.root)
+        .env("CARGO_TARGET_DIR", &ctx.run_target_dir);
+    if !run_args.is_empty() {
+        cmd.arg("--").args(run_args);
+    }
+    // Flush before the child inherits stdout — the STREAM ORDERING contract in the header.
+    flush();
+    match cmd.status() {
+        // A signalled child has NO exit code; `128+n` is bash's fiction and [`host::capture`]
+        // reproduces it deliberately, so this one does too rather than inventing a third answer.
+        // Under eight parallel worktrees the OOM killer is a routine visitor.
+        Ok(s) => match s.code() {
+            Some(code) => (code & 0xff) as u8,
+            None => {
+                let sig = std::os::unix::process::ExitStatusExt::signal(&s).unwrap_or(0);
+                werr!("run: cargo {verb} was killed by signal {sig} — not a build failure.");
+                128u8.saturating_add(sig as u8)
+            }
+        },
+        // 127 is "not installed", which is not "it ran and failed" — the honest distinction the
+        // rest of this workspace keeps (`NotRun::ToolAbsent`).
+        Err(e) => {
+            werr!("run: failed to spawn cargo {verb}: {e}");
+            127
+        }
+    }
 }
 
 /// Entry for `cargo xtask platform wave [args…]`.
@@ -473,6 +811,9 @@ pub fn run(args: &[String]) -> Result<u8> {
         "status" => status::cmd_status(&ctx),
         "prep" => status::cmd_prep(&ctx),
         "test" => test_cmd::cmd_test(&ctx, &rest),
+        // T-300. Sibling of `test`, and for the same reason one layer over: `test` keeps a slice's
+        // cargo test off the shared cache, `run` keeps a launched binary off it.
+        "run" => cmd_run(&ctx, &rest),
         "gate" => match rest.first().map(String::as_str) {
             Some("--slice") => {
                 gate::gate_slice(&ctx, rest.get(1).map(String::as_str).unwrap_or(""))
@@ -517,6 +858,200 @@ pub fn run(args: &[String]) -> Result<u8> {
     };
     flush();
     Ok(rc)
+}
+
+#[cfg(test)]
+mod run_target_tests {
+    use super::*;
+
+    /// A scratch directory that removes itself. `std::env::temp_dir()` and NOT `/tmp` spelled
+    /// out, so a sandbox that relocates it still works.
+    struct Tmp(PathBuf);
+    impl Tmp {
+        fn new(tag: &str) -> Tmp {
+            let p = std::env::temp_dir().join(format!(
+                "tbd-t300-{tag}-{}-{:?}",
+                std::process::id(),
+                std::thread::current().id()
+            ));
+            let _ = std::fs::remove_dir_all(&p);
+            std::fs::create_dir_all(&p).expect("mkdir scratch");
+            Tmp(p)
+        }
+    }
+    impl Drop for Tmp {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    const SHA: &str = "4b2cca4a5880ee8a0e8fbcbbedd476534db5b0ac";
+
+    /// THE FORMULA. `run-main` must be a child of the shared cache and must not BE it — if the
+    /// two collapse, every worktree's check/test/clippy traffic is back in the run lane's
+    /// fingerprint set and the whole ticket is undone while every other test still passes.
+    #[test]
+    fn run_target_is_a_child_of_the_shared_cache_and_not_the_cache_itself() {
+        let shared = "/home/Samuel/.cache/tbd-target";
+        let run = run_target_dir_for(shared);
+        assert_eq!(run, format!("{shared}/{RUN_TARGET_SUBDIR}"));
+        assert_ne!(
+            run, shared,
+            "the run target collapsed onto the shared cache"
+        );
+        assert!(Path::new(&run).starts_with(shared));
+    }
+
+    /// One directory in total. Two different worktrees resolving the run target must get the
+    /// SAME path — the disk claim in the ticket ("one extra target, not one per worktree") is a
+    /// property of this function, so it is asserted here rather than measured with `du`.
+    #[test]
+    fn every_checkout_resolves_the_same_run_target() {
+        let shared = "/home/Samuel/.cache/tbd-target";
+        assert_eq!(run_target_dir_for(shared), run_target_dir_for(shared));
+        assert_eq!(
+            run_target_dir_for(shared),
+            "/home/Samuel/.cache/tbd-target/run-main"
+        );
+    }
+
+    #[test]
+    fn stamp_round_trips_sha_and_checkout() {
+        let s = RunStamp {
+            sha: SHA.into(),
+            checkout: "/run/media/system/Disk_2/Projects/TBD-Reforger".into(),
+        };
+        assert_eq!(s.render(), format!("{SHA} {}\n", s.checkout));
+        assert_eq!(RunStamp::parse(&s.render()), Some(s));
+    }
+
+    /// Fail-closed. Every one of these is a shape a "tolerant" parser would accept, and each
+    /// would let preflight report agreement about a binary it cannot actually identify.
+    #[test]
+    fn stamp_parse_refuses_what_it_cannot_read() {
+        for bad in [
+            "",
+            "\n",
+            SHA,                                                   // sha with no checkout
+            "/run/media/system/Disk_2 \n",                         // checkout with no sha
+            "4b2cca4a5 /run/media/system/Disk_2",                  // short sha
+            "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz /run/media", // 40 non-hex
+            "4b2cca4a5880ee8a0e8fbcbbedd476534db5b0ac ",           // trailing space, empty path
+        ] {
+            assert_eq!(RunStamp::parse(bad), None, "accepted {bad:?}");
+        }
+    }
+
+    #[test]
+    fn stamp_is_written_beside_the_binaries_and_read_back() {
+        let t = Tmp::new("stamp");
+        let bin_dir = t.0.join("debug");
+        let s = RunStamp {
+            sha: SHA.into(),
+            checkout: t.0.display().to_string(),
+        };
+        write_run_stamp(&bin_dir, &s).expect("write");
+        assert_eq!(run_stamp_path(&bin_dir), bin_dir.join("tbd-built-from"));
+        assert!(run_stamp_path(&bin_dir).is_file());
+        assert_eq!(read_run_stamp(&bin_dir), Some(s));
+    }
+
+    #[test]
+    fn absent_stamp_reads_as_unknown_not_as_agreement() {
+        let t = Tmp::new("absent");
+        assert_eq!(read_run_stamp(&t.0), None);
+    }
+
+    /// Preflight names the binary, so this must find binaries and nothing else.
+    #[test]
+    fn run_binaries_lists_executables_and_skips_the_stamp_and_depfiles() {
+        use std::os::unix::fs::PermissionsExt;
+        let t = Tmp::new("bins");
+        let d = t.0.join("debug");
+        std::fs::create_dir_all(d.join("deps")).expect("mkdir");
+        for (name, mode) in [("api", 0o755), ("world", 0o755), ("notes", 0o644)] {
+            let p = d.join(name);
+            std::fs::write(&p, b"x").expect("write");
+            std::fs::set_permissions(&p, std::fs::Permissions::from_mode(mode)).expect("chmod");
+        }
+        std::fs::write(d.join("api.d"), b"dep").expect("write");
+        write_run_stamp(
+            &d,
+            &RunStamp {
+                sha: SHA.into(),
+                checkout: "/x".into(),
+            },
+        )
+        .expect("stamp");
+        assert_eq!(
+            run_binaries(&d),
+            vec!["api".to_string(), "world".to_string()]
+        );
+    }
+
+    #[test]
+    fn split_run_args_puts_program_arguments_only_on_run() {
+        let v = |s: &[&str]| s.iter().map(|x| (*x).to_string()).collect::<Vec<_>>();
+        assert_eq!(
+            split_run_args(&v(&[
+                "-p",
+                "tbd-tools",
+                "--bin",
+                "world",
+                "--",
+                "reclassify"
+            ])),
+            (
+                v(&["-p", "tbd-tools", "--bin", "world"]),
+                v(&["reclassify"])
+            )
+        );
+        assert_eq!(
+            split_run_args(&v(&["-p", "website-api", "--bin", "api"])),
+            (v(&["-p", "website-api", "--bin", "api"]), v(&[]))
+        );
+    }
+
+    /// THE MAIN GOAL, as a unit: a worktree may not build into the run target at all, and the
+    /// refusal must name both checkouts so the operator knows which tree to look at.
+    #[test]
+    fn run_lane_refuses_a_worktree_and_names_both_checkouts() {
+        let main = Path::new("/repo");
+        let wt = Path::new("/repo/.ai/artifacts/worktrees/T-300");
+        let args = vec!["-p".to_string(), "website-api".to_string()];
+        let lines = run_lane_refusal(wt, main, "/cache/run-main", &args).expect("must refuse");
+        let text = lines.join("\n");
+        assert!(text.contains("REFUSING"), "{text}");
+        assert!(
+            text.contains("/repo/.ai/artifacts/worktrees/T-300"),
+            "{text}"
+        );
+        assert!(text.contains("main checkout = /repo"), "{text}");
+        assert!(text.contains("/cache/run-main"), "{text}");
+    }
+
+    #[test]
+    fn run_lane_allows_the_main_checkout() {
+        let main = Path::new("/repo");
+        let args = vec!["-p".to_string(), "website-api".to_string()];
+        assert_eq!(run_lane_refusal(main, main, "/cache/run-main", &args), None);
+    }
+
+    #[test]
+    fn run_lane_refuses_an_empty_argv_and_a_caller_supplied_target_dir() {
+        let main = Path::new("/repo");
+        assert!(run_lane_refusal(main, main, "/cache/run-main", &[]).is_some());
+        for bad in [
+            "--target-dir",
+            "--target-dir=/tmp/x",
+            "CARGO_TARGET_DIR=/tmp/x",
+        ] {
+            let args = vec!["-p".to_string(), "website-api".to_string(), bad.to_string()];
+            let lines = run_lane_refusal(main, main, "/cache/run-main", &args)
+                .unwrap_or_else(|| panic!("accepted {bad}"));
+            assert!(lines.join("\n").contains(bad));
+        }
+    }
 }
 
 /// T-923 test support — PROCESS-GLOBAL cwd serialisation for tests that must chdir.
