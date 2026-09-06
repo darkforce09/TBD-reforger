@@ -45,6 +45,7 @@ modded class SCR_PlayerController
 		}
 
 		TBD_MarkerWire wire = TBD_MarkerService.BuildForPlayer(GetPlayerId());
+		TBD_MarkerStyleCodec.PackIntoX(wire);
 		TBD_MarkerClient.Accept(wire.m_aX, wire.m_aZ, wire.m_aIcon, wire.m_aLabel,
 			wire.m_sFactionKey, wire.m_sMissionId, wire.m_bServed);
 	}
@@ -60,6 +61,7 @@ modded class SCR_PlayerController
 		// short-circuit above produce the same operator-visible record.
 		TBD_MarkerWire wire = TBD_MarkerService.BuildForPlayer(GetPlayerId());
 
+		TBD_MarkerStyleCodec.PackIntoX(wire);
 		Rpc(TBD_RpcDo_Markers, wire.m_aX, wire.m_aZ, wire.m_aIcon, wire.m_aLabel,
 			wire.m_sFactionKey, wire.m_sMissionId, wire.m_bServed);
 	}

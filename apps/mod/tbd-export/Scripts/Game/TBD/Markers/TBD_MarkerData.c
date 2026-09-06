@@ -152,6 +152,25 @@ class TBD_MarkerService
 			wire.m_aIcon.Insert(marker.icon);
 			wire.m_aLabel.Insert(CapLabel(marker.label));
 
+			int sizeFp = -1;
+			if (marker.size > 0)
+				sizeFp = RoundToInt(marker.size * 100);
+
+			int rotationFp = -1;
+			if (marker.rotationDeg >= 0)
+				rotationFp = RoundToInt(marker.rotationDeg * 100);
+
+			int alpha255 = -1;
+			if (marker.alpha >= 0)
+				alpha255 = RoundToInt(marker.alpha * 255);
+
+			wire.m_aSizeFp.Insert(sizeFp);
+			wire.m_aRotationFp.Insert(rotationFp);
+			wire.m_aShape.Insert(marker.shape);
+			wire.m_aBrush.Insert(marker.brush);
+			wire.m_aColorHex.Insert(marker.color);
+			wire.m_aAlpha255.Insert(alpha255);
+
 			sent++;
 		}
 
@@ -265,6 +284,14 @@ class TBD_MarkerWire
 	ref array<string> m_aIcon = {};
 	ref array<string> m_aLabel = {};
 
+	// T-673 style columns. Floats as fixed-point ints (x100; alpha 0..255). -1 = absent.
+	ref array<int> m_aSizeFp = {};
+	ref array<int> m_aRotationFp = {};
+	ref array<string> m_aShape = {};
+	ref array<string> m_aBrush = {};
+	ref array<string> m_aColorHex = {};
+	ref array<int> m_aAlpha255 = {};
+
 	//! Why the server declined, when it did. Logged, not shown to the player.
 	string m_sRefusal;
 
@@ -272,5 +299,217 @@ class TBD_MarkerWire
 	int Count()
 	{
 		return m_aX.Count();
+	}
+}
+
+//! T-673 -- six style columns packed into the existing `m_aX` RPC parameter.
+//!
+//! `Rpc()` takes at most EIGHT parameters (measured: a ninth fails with
+//! "Too many parameters for 'Rpc' method"; see TBD_RadioController and
+//! docs/mod/t181_event_mod_program.md). The marker RPC already uses all eight
+//! (fn + xs + zs + icons + labels + faction + mission + served), so the six
+//! style columns cannot be extra Rpc arguments. They travel as a 6-int record
+//! trailer on `xs` (size x100, rotationDeg x100, shape idx, brush idx, 0xRRGGBB,
+//! alpha 0..255). A mission whose markers are all default (icon-only) appends
+//! NOTHING -- the wire stays the pre-T-673 four arrays bit-for-bit.
+class TBD_MarkerStyleCodec
+{
+	static const int COLS = 6;
+	static const string HEX_DIGITS = "0123456789abcdef";
+
+	//------------------------------------------------------------------------------------------------
+	static int IntAt(array<int> values, int index)
+	{
+		if (!values || !values.IsIndexValid(index))
+			return -1;
+
+		return values[index];
+	}
+
+	//------------------------------------------------------------------------------------------------
+	static string StrAt(array<string> values, int index)
+	{
+		if (!values || !values.IsIndexValid(index))
+			return string.Empty;
+
+		return values[index];
+	}
+
+	//------------------------------------------------------------------------------------------------
+	static int ShapeIndex(string authored)
+	{
+		if (authored.IsEmpty())
+			return 0;
+
+		if (authored == "icon")
+			return 0;
+
+		if (authored == "rectangle")
+			return 1;
+
+		if (authored == "ellipse")
+			return 2;
+
+		if (authored == "polyline")
+			return 3;
+
+		return 0;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	static int BrushIndex(string authored)
+	{
+		if (authored.IsEmpty())
+			return -1;
+
+		if (authored == "solid")
+			return 0;
+
+		if (authored == "border")
+			return 1;
+
+		if (authored == "diagonal")
+			return 2;
+
+		if (authored == "cross_diagonal")
+			return 3;
+
+		if (authored == "horizontal")
+			return 4;
+
+		if (authored == "vertical")
+			return 5;
+
+		if (authored == "grid")
+			return 6;
+
+		if (authored == "fill_diagonal")
+			return 7;
+
+		return -1;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Parse `#rrggbb` to 0xRRGGBB. Empty -> -1 (absent). Malformed -> -2.
+	static int ParseHexRgb(string authored)
+	{
+		if (authored.IsEmpty())
+			return -1;
+
+		string hex = authored;
+		hex.TrimInPlace();
+		hex.ToLower();
+
+		if (hex.Length() != 7)
+			return -2;
+
+		if (hex.Get(0) != "#")
+			return -2;
+
+		int value = 0;
+		for (int i = 1; i < 7; i++)
+		{
+			int digit = HEX_DIGITS.IndexOf(hex.Get(i));
+			if (digit < 0)
+				return -2;
+
+			value = (value * 16) + digit;
+		}
+
+		return value;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Append 6-int records to `wire.m_aX` when any marker carries style. No-op for icon-only.
+	static void PackIntoX(TBD_MarkerWire wire)
+	{
+		if (!wire || !wire.m_aX || !wire.m_aZ)
+			return;
+
+		int n = wire.m_aZ.Count();
+		if (n <= 0)
+			return;
+
+		array<int> extra = new array<int>();
+		bool any = false;
+
+		for (int i = 0; i < n; i++)
+		{
+			int sizeFp = IntAt(wire.m_aSizeFp, i);
+			int rotationFp = IntAt(wire.m_aRotationFp, i);
+			int shapeIdx = ShapeIndex(StrAt(wire.m_aShape, i));
+			int brushIdx = BrushIndex(StrAt(wire.m_aBrush, i));
+			int colorRgb = ParseHexRgb(StrAt(wire.m_aColorHex, i));
+			if (colorRgb == -2)
+				colorRgb = -1;
+
+			int alpha255 = IntAt(wire.m_aAlpha255, i);
+
+			extra.Insert(sizeFp);
+			extra.Insert(rotationFp);
+			extra.Insert(shapeIdx);
+			extra.Insert(brushIdx);
+			extra.Insert(colorRgb);
+			extra.Insert(alpha255);
+
+			if (sizeFp >= 0)
+				any = true;
+			if (rotationFp >= 0)
+				any = true;
+			if (shapeIdx != 0)
+				any = true;
+			if (brushIdx >= 0)
+				any = true;
+			if (colorRgb >= 0)
+				any = true;
+			if (alpha255 >= 0)
+				any = true;
+		}
+
+		if (!any)
+			return;
+
+		foreach (int value : extra)
+			wire.m_aX.Insert(value);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Fill the six style columns from an `xs` trailer. Unstyled (xs.Count == zs.Count) leaves
+	//! the output arrays empty so ApplyRows uses the pre-T-673 defaults. Malformed length
+	//! degrades the same way and returns false.
+	static bool UnpackFromX(array<int> xs, array<int> zs, array<int> sizeFp, array<int> rotationFp,
+		array<int> shapeIdx, array<int> brushIdx, array<int> colorRgb, array<int> alpha255)
+	{
+		int n = 0;
+		if (zs)
+			n = zs.Count();
+
+		if (!xs || n <= 0)
+			return true;
+
+		if (xs.Count() == n)
+			return true;
+
+		if (xs.Count() != n + (n * COLS))
+			return false;
+
+		int cursor = n;
+		for (int i = 0; i < n; i++)
+		{
+			sizeFp.Insert(xs[cursor]);
+			cursor++;
+			rotationFp.Insert(xs[cursor]);
+			cursor++;
+			shapeIdx.Insert(xs[cursor]);
+			cursor++;
+			brushIdx.Insert(xs[cursor]);
+			cursor++;
+			colorRgb.Insert(xs[cursor]);
+			cursor++;
+			alpha255.Insert(xs[cursor]);
+			cursor++;
+		}
+
+		return true;
 	}
 }

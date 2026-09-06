@@ -186,6 +186,16 @@ class TBD_MissionMarkerStruct
 	float z;      //!< World Z, metres.
 	string icon;  //!< Icon key authored in the editor ("objective", "defend", "destroy").
 	string label; //!< Marker caption ("OBJ BRIDGE").
+
+	// T-673 -- JsonLoadContext binds these by member name. -1 / empty string = key absent.
+	// size exclusiveMinimum 0 so -1 cannot be authored; rotationDeg/alpha minimum 0 so an
+	// authored 0 is real (alpha: 0 is a legal invisible marker) and -1 is the sentinel.
+	float size = -1;
+	float rotationDeg = -1;
+	string shape;
+	string brush;
+	string color;
+	float alpha = -1;
 }
 
 //! T-181.23 — one faction's WRITTEN ORDERS. This is the Arma-3 briefing text the whole briefing
