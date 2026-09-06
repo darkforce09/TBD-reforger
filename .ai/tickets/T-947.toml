@@ -1,0 +1,11 @@
+id = "T-947"
+kind = "work"
+title = "World-parity DEM skip passes green and silently"
+summary = "xtask/src/map_world_los_tests.rs:200 returns green with zero assertions when load_dem errs. The gate vacuity guard only matches a leading skip: prefix and only wraps test api, so nothing catches it."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T00:08:46Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

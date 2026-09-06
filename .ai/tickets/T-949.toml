@@ -1,0 +1,11 @@
+id = "T-949"
+kind = "work"
+title = "Leaderboard paging test cannot fail on its named claim"
+summary = "tests/leaderboards_paging.rs asserts page-set completeness on a six-row board, where both orderings return the same set. Only the in_order assertion has red power. Seed tied rows or rename it."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T00:08:59Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

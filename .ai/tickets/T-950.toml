@@ -1,0 +1,11 @@
+id = "T-950"
+kind = "work"
+title = "Audit SSE stream has no client"
+summary = "T-940.6 ships /audit-logs/stream but no frontend consumes it; the admin audit page is a paged before= Resource. Either wire the page to the stream or record the endpoint as API-only."
+class = "audit"
+status = "idea"
+created_at = "2026-09-06T00:09:06Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

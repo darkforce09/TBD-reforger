@@ -1,0 +1,11 @@
+id = "T-953"
+kind = "work"
+title = "Migration numbering gap 0022-0024"
+summary = "apps/website/api/migrations jumps 0021 to 0025. A sibling slice landing 0022-0024 later would apply after 0025 on any migrated database, and two slices can collide on one number."
+class = "chore"
+status = "idea"
+created_at = "2026-09-06T00:09:25Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

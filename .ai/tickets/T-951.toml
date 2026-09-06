@@ -1,0 +1,11 @@
+id = "T-951"
+kind = "work"
+title = "Audit listener registry is never pruned"
+summary = "services/audit_notify.rs keys a listener map on the Arc address of connect_options and never removes entries. One leaks per pool created, and a freed address can be recycled into a new pool key."
+class = "audit"
+status = "idea"
+created_at = "2026-09-06T00:09:12Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

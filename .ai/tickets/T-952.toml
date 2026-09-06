@@ -1,0 +1,11 @@
+id = "T-952"
+kind = "work"
+title = "website-api set_var mutates a shared test process"
+summary = "apps/website/api/src/db.rs uses set_var under a mutex in a 281-test binary. The SAFETY note claims no C getenv reader, which is unverifiable when libc is linked. Use the existing from_lookup injection instead."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T00:09:19Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
