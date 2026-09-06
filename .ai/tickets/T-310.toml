@@ -43,6 +43,10 @@ owns = [
     "packages/tbd-schema/schema/mission.schema.json",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",
 ]
 
 [scope]
