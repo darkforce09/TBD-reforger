@@ -323,3 +323,41 @@ edit, in-editor play button.
   it named. Filed, not fixed: **T-946.25** — the prefab lane's parity pin compares the archive
   against an f32-NARROWED copy of the export rather than the committed f64 export, so on the real
   input the two lanes differ by f32 rounding; the code says so and the acceptance does not.
+
+- 2026-09-06 **WAVE 243 CLOSED** (`46d8ea65b`) — T-675.2 the Enfusion vehicles[] roster reader and
+  authored crew seating, T-936.1 win conditions end to end (schema enum, core passthrough, editor
+  card, evaluator), T-702 the whole-terrain Play Area zone. **Membership differs from the lock:**
+  T-935.13 and T-673 were pulled and T-936.1 substituted, so the close ran with `--tickets`.
+- 2026-09-06 **T-935.13 CANNOT BE HONOURED AS WRITTEN, and T-981 is REFUTED.** The operator's premise
+  was that the building archive drops the 1,322 blocking prefabs. It does not: `descriptor.rs:405-409`
+  counts blocking rows and NEVER censuses them, the host inserts census only, and the 1,322 keep their
+  JSON descriptor lane with full `instances` — pinned by a whole-corpus test. Measured independently:
+  1623 descriptors, 1322 `"blocks": true`, all 1623 carrying `instances`. The real blockers are five
+  others the ticket never named, the hardest being that **`dem/elevation.dem` cannot be built at all** —
+  its only writer consumes an ASCII-decimal u16 raster that exists nowhere in the repo or the 1.5 G
+  staging tree, so it needs a Workbench GetSurfaceY re-export from the operator. Also: deleting the
+  gz-JSON breaks the tools that BUILD the binaries (the building-archive emitter itself reads
+  `prefabs.json.gz`), three of the ticket's own five verify commands read the files it deletes,
+  `schema_gates.rs:4044` goes SILENTLY VACUOUS, and dropping flate2 deletes the gzip-vs-rkyv sniff
+  that T-935.11/.14 shipped. Operator decision: run it as ONE GIANT WIDENED slice in wave 244 with
+  T-985 and T-993 folded in, landing with `dem.raw` unfilled — operator-authorized, not a deferral.
+- 2026-09-06 T-673 was pulled from wave 243 because its six marker fields must be declared on
+  `TBD_MissionMarkerStruct`, which lives in `TBD_MissionLoader.c` — a file T-675.2 owned. Its own
+  ticket notes are stale twice over: they still claim `$defs/marker` is closed and the executor is
+  `workbench`. T-706 shipped the widening (`9228a458`) and a committed golden already carries all six.
+- 2026-09-06 **T-678 was in the lock and is not dispatchable** — `depends_on = ["T-677"]`, and T-677 is
+  `ready`, not shipped. The lock packs by order and does not check deps. Compute deps AND
+  owns-disjointness (including export twins) before composing any wave.
+- 2026-09-06 Wave 243 verifier: four real defects, three fixed in the pass. The one that mattered:
+  **`mode: timeout` reported a conflict on the ORDINARY case** — `flow.timeLimitSeconds` defaults to
+  5400, so authoring the timeout rule and nothing else was told it disagreed with a number nobody
+  wrote. The slice's own fixture states "a diagnostic that fires on correct input is noise" and then
+  tested only the authored path. A delta verifier over that fix then found **the comment which fixed a
+  false comment was itself false** ("never a null check", over a caller that tests both). Filed
+  T-946.26-.32, including two more holes in the mod gate one wave after T-946.23/.24 were written for
+  exactly this class: `mirror_lockstep` still cannot see a framework-only NEW script, and it fails in
+  EVERY slice worktree over 19 untracked EnfusionMCP scripts, making `mod compile` unrunnable there.
+- 2026-09-06 `mk leptos-gates` ran post-merge for the first time this run (its `trunk build --release`
+  collides with the operator's `trunk serve` over the same `dist/`; stop the server first). Exit 1,
+  21 fail / 22 pass — and **byte-identical to the pre-merge run: 97 failing oracle paths, `diff`
+  empty.** Pre-existing drifted oracles, no regression from this wave.
