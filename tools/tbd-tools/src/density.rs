@@ -170,4 +170,133 @@ mod tests {
         // 1601 is the thing a reader can check against the T-178 Class-R pin of the same number.
         assert_eq!(corner_grid_size(world), 1601);
     }
+
+    /// T-298 — SplitMix64, the reference constant set, inlined.
+    ///
+    /// `tbd-tools` carries no `rand` dependency and a partition pin is not a reason to grow the
+    /// dependency graph. Seeded once below, so the 64 grids are the *same* 64 grids on every
+    /// machine and in CI: a randomized test that cannot be reproduced from its own source is a
+    /// test whose red nobody can act on.
+    struct Rng(u64);
+
+    impl Rng {
+        fn next_u64(&mut self) -> u64 {
+            self.0 = self.0.wrapping_add(0x9E37_79B9_7F4A_7C15);
+            let mut z = self.0;
+            z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+            z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+            z ^ (z >> 31)
+        }
+
+        /// `0..n`. The modulo bias is irrelevant here — nothing in this test is a statistical
+        /// claim, the draws only have to be varied and reproducible.
+        fn below(&mut self, n: u64) -> u64 {
+            self.next_u64() % n
+        }
+
+        /// One instance coordinate. Deliberately NOT uniform over the world: a sixth of the draws
+        /// land exactly on a window seam (`k * DENSITY_CELL_M / 2` — the `[c-cell/2, c+cell/2)`
+        /// boundary, where a half-open window either keeps the point or hands it to its
+        /// neighbour), and two sixths fall OUTSIDE `[0, world]`, where `corner_of` clamps into the
+        /// edge corner. Both are cases the hand-built lattice above cannot reach, and in both the
+        /// identity must survive: a clamped point is still exactly one point.
+        fn coord(&mut self, world: f64) -> f64 {
+            let half = u64::from(DENSITY_CELL_M) / 2;
+            let span = world as u64;
+            let outside = 4 * u64::from(DENSITY_CELL_M);
+            match self.below(6) {
+                0 => (self.below(span / half + 1) * half) as f64,
+                1 => -((self.below(outside) + 1) as f64),
+                2 => world + (self.below(outside) + 1) as f64,
+                _ => self.below(span * 100) as f64 / 100.0,
+            }
+        }
+    }
+
+    /// T-298 — the corner partition identity, seeded and randomized over 64 grids.
+    ///
+    /// `corner_partition_identity` above is ONE sample: one world size, one hand-built lattice of
+    /// 1000 points, none of them on a window seam, none outside the world (so the clamp is never
+    /// exercised) and never sliced back out per chunk. It is also, with
+    /// `encode_decode_round_trip_and_fixture`, the whole of this module's coverage — and until
+    /// T-298 both ran in NO workflow (ci.yml had no tbd-tools step; the wave gate's
+    /// `test xtask+tbd-tools` is local-only and the mod gate scopes itself to `enf::`), which is
+    /// how the stale `401` in the test above sat red from T-176 to T-597, four weeks. This is the
+    /// sweep that goes with the CI lane: fixed seed, 64 pseudo-random worlds, three oracles that
+    /// each fail for a different reason.
+    #[test]
+    fn seeded_random_corner_partition_identity() {
+        // The world exporter's chunk side (module doc: corner (i,j) of chunk (cx,cy) sits at
+        // `cx*512 + i*DENSITY_CELL_M`). A chunk's corner window has to span exactly one chunk —
+        // that is the relation T-176 A2 moved (32 m → 8 m, so 17 → 65 corners) and that nothing
+        // was checking. A flat 512 for the same reason the 1601 above is flat.
+        const CHUNK_M: usize = 512;
+        let cols = DENSITY_COLS as usize;
+        let rows = DENSITY_ROWS as usize;
+        let stride = cols - 1;
+        assert_eq!(
+            CHUNK_M / DENSITY_CELL_M as usize + 1,
+            cols,
+            "DENSITY_COLS must span one {CHUNK_M} m chunk at {DENSITY_CELL_M} m per cell"
+        );
+        assert_eq!(cols, rows, "the chunk corner window is square");
+
+        let mut rng = Rng(0x0000_0298_5EED_1601);
+        for grid in 0..64u32 {
+            let chunks = 1 + rng.below(6) as usize;
+            let world = (chunks * CHUNK_M) as f64;
+            let count = 8 + rng.below(193) as usize;
+            let pts: Vec<(f64, f64)> = (0..count)
+                .map(|_| (rng.coord(world), rng.coord(world)))
+                .collect();
+
+            let (corners, size) = accumulate_corners(pts.iter().copied(), world);
+
+            // ORACLE 1 — geometry. `chunks` chunk-windows wide, minus the borders they share.
+            // Reds if `corner_grid_size` or `DENSITY_CELL_M` moves without the other following.
+            let want = chunks * stride + 1;
+            assert_eq!(
+                size, want,
+                "grid {grid}: {chunks} chunks of {CHUNK_M} m must give {want} corners"
+            );
+            assert_eq!(corners.len(), size * size, "grid {grid}: grid is not size²");
+
+            // ORACLE 2 — partition. Every instance lands in exactly one corner; the ones outside
+            // the world clamp into an edge corner instead of vanishing. So the counts sum to the
+            // number of instances fed in, at any cell size (PH-P2-5).
+            let sum: u64 = corners.iter().copied().map(u64::from).sum();
+            assert_eq!(
+                sum, count as u64,
+                "grid {grid}: corner counts sum to {sum}, fed {count} instances"
+            );
+
+            // ORACLE 3 — the per-chunk slices are that same partition, re-cut. Each chunk owns its
+            // `stride`×`stride` interior; the last one in each direction also owns the shared
+            // border it has no neighbour to hand on to. Re-assembled it must reproduce ORACLE 2's
+            // sum — a slice stride that is not `DENSITY_COLS - 1` double-counts a shared border
+            // (tiled > sum) or steps over a column (tiled < sum).
+            let mut tiled = 0u64;
+            for cy in 0..chunks {
+                for cx in 0..chunks {
+                    let win = slice_chunk_corners(&corners, size, cx, cy);
+                    assert_eq!(
+                        win.len(),
+                        cols * rows,
+                        "grid {grid}: chunk ({cx},{cy}) window is not COLS×ROWS"
+                    );
+                    let w = if cx + 1 == chunks { cols } else { stride };
+                    let h = if cy + 1 == chunks { rows } else { stride };
+                    for j in 0..h {
+                        for i in 0..w {
+                            tiled += u64::from(win[j * cols + i]);
+                        }
+                    }
+                }
+            }
+            assert_eq!(
+                tiled, sum,
+                "grid {grid}: chunk slices re-assemble to {tiled}, global grid holds {sum}"
+            );
+        }
+    }
 }

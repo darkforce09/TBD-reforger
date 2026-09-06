@@ -87,6 +87,22 @@ jobs:
         env:
           SQLX_OFFLINE: "true"
         run: cargo xtask mk rust-build
+      # T-298: tbd-tools ran in NO workflow. `grep -n tbd-tools .github/workflows/ci.yml` matched
+      # ONE COMMENT (the fmt note above) and no step, the mod gate scopes itself to `--lib enf::`,
+      # and the wave gate's `test xtask+tbd-tools` is local-only — so on push, nothing checked the
+      # density grid and `density::tests::corner_partition_identity` sat red from T-176 to T-597.
+      # `working-directory: .` for the same reason as the fmt step: the job default is
+      # apps/website/api, and `-p` alone would resolve against that package's directory.
+      # AHEAD of the DB-backed `test` step deliberately. Steps stop at the first failure, so behind
+      # it a Postgres-service red would decide whether the density invariant was checked at all —
+      # and that step is exactly the one with the history (T-381/T-597). This lane needs no
+      # database, no LFS and no wasm target; nothing about it should wait on one that does.
+      # Quoted like the verify-ci-shell step below: `density:: ` is a colon-space, which YAML
+      # reads as a mapping value inside a plain scalar. `verify ci-shell` caught it, unparseable
+      # YAML being a FAIL there and not an empty result.
+      - name: "tbd-tools lib tests (T-298 — density:: + world::)"
+        working-directory: .
+        run: cargo xtask ci tbd-tools-test
       # T-597: `rust_it`, matching the `services.db` POSTGRES_DB above and Makefile:207.
       # The old `tbd_reforger` here is what T-381's guard refused — see the services block.
       - name: test (TEST-1 analog)
