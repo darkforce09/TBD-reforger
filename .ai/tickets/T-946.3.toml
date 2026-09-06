@@ -1,0 +1,12 @@
+id = "T-946.3"
+kind = "work"
+title = "Mod compile gate blocked by pre-existing non-ASCII"
+summary = "The mod compile gate fails its ASCII scan on three WorkbenchGame map-export scripts before any compilation runs, so no mod script change can be gated until they are transliterated."
+class = "chore"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T08:12:51Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
