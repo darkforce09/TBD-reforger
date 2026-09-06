@@ -7,6 +7,10 @@ pub mod aux;
 /// T-935.2 — the `TBDC` binary twin written beside every chunk `.json.gz`.
 pub mod binary_emit;
 pub mod build;
+/// T-935.11 — the rkyv twins of the three catalogue JSONs (`objects/prefabs.rkyv`,
+/// `objects/type-inventory.rkyv`, `objects/forest-regions.rkyv`), written beside them by
+/// `build_world_objects`.
+pub mod catalog_emit;
 pub mod classify;
 pub mod edds;
 /// T-149 — Chaikin smoothing of the Path B forest rings, between `forest::trace_rings` and the

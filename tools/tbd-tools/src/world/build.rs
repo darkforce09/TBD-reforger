@@ -12,6 +12,7 @@ use anyhow::{Result, bail};
 use serde_json::{Map, Value, json};
 
 use super::binary_emit;
+use super::catalog_emit;
 use super::classify::{Classifier, load_rules, stream_raw_entities};
 use super::forest_smooth;
 use super::jsval::{chunk_row_values, round3, trailers_trivial};
@@ -773,6 +774,19 @@ pub fn build_world_objects_opt(
         objects_dir.join("type-inventory.json"),
         pretty_nl(&Value::Object(inventory)),
     )?;
+
+    // T-935.11 — dual emission: the rkyv twins of the three catalogue JSONs, built by re-reading
+    // the files just written (so they equal the loader's decode by construction) and read back
+    // through the SPA's own entry points before this returns. The JSON stays authoritative until
+    // T-935.13 flips the manifest.
+    for (path, bytes) in catalog_emit::emit_catalog_archives(&out_base)? {
+        if !quiet {
+            println!(
+                "build-world-objects: rkyv → {} ({bytes} bytes)",
+                path.display()
+            );
+        }
+    }
 
     // ---- manifest patch (real terrain dir only) ----
     if patch_manifest {
