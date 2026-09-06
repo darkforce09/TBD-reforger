@@ -1046,6 +1046,7 @@ T-945 = ["xtask/src/tickets_store.rs", "xtask/src/schema_gates.rs", ".ai/tickets
 "T-946.39" = ["apps/website/frontend/src/editor/panels/settings_modal.rs"]
 "T-946.40" = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c", "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_EntityState.c"]
 "T-946.41" = ["crates/map-engine-core/src/mission/flatten.rs"]
+"T-946.42" = ["apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c", "apps/mod/tbd-export/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c"]
 
 [depends_on]
 "T-067.1" = ["T-935.13"]
