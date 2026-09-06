@@ -42,3 +42,40 @@ edit, in-editor play button.
   the gate's cold `target-gate-tools`, never in isolation, never in the warm cache. Fix (command
   center, harness): `root::built_repo_root()` from `CARGO_MANIFEST_DIR` for the fixture/asset
   helpers, and `run_in(root)` so the HOME test injects its root instead of chdir. 3/3 green after.
+  target dir, so the binary a checkout runs may have been compiled from a SIBLING worktree; the
+  constant then pointed there. Measured 2026-09-05: five `map_world_los` pins failed
+  `parse …/worktrees/T-943/packages/map-assets/…/t_picea_abies_0_canopy.bvh: bad magic
+  [118, 101, 114, 115]` — "vers", the head of an LFS pointer. That is the T-742 cross-worktree
+  false-binary class arriving through a constant. Replaced in T-946 by `root::test_repo_root()`:
+  the cwd walk, resolved under `wave::testcwd`'s lock — the READER half of a contract that module
+  already documented for the movers. All ten fixture readers use it (the wave 248 verifier's F1
+  was that 9aa2acb23 had converted only two).
+
+- 2026-09-06 Wave 248 could not be closed at all, and three defects had to line up for it (T-946,
+  `7f97c043c`). (1) `wave::ledger::Registry::load_repo` went through the phase-2 loader, which
+  walks `is_parent_id` only, so every slice id read as unshipped and close refused
+  `wave 247 still open: T-934.1` about a ticket whose file says `status = "shipped"`. (2) The lock
+  reserved one label per emptied wave and numbered past it, reaching 248, while the close oracle
+  accepts only `highest standing claim + 1` = 235 — no label the lock proposed was writable.
+  (3) `ticket ship` repacked after every id, so a wave shipped one ticket at a time shrank between
+  ships and no repack ever saw its whole set landed; wave 248 left no pending entry at all.
+  Fixes: the typed corpus for the close-time view, `carry_emptied` re-seats pending labels on the
+  marker ledger (frozen SETS stay frozen), `ticket ship --no-repack` + one repack per wave, and
+  `wave --close --tickets <ids>` for a set the lock has already lost. Consequence to remember when
+  reading these notes: THE RUN'S WAVE NUMBERS MOVED. What this file calls wave 248 closed as
+  **wave 235**; the next open wave is **236**, not 249.
+
+- 2026-09-06 Wave 248 verifier findings filed, none fixed in-wave (no BLOCKER, none can lose
+  authored work): T-947 world-parity DEM skip is green with zero assertions; T-948 audit_notify's
+  six DB tests pass with no database while T-311 wrote the opposite rule in the same wave; T-949
+  the leaderboard paging test cannot fail on its named claim; T-950 the audit SSE stream has no
+  client; T-951 the listener registry is never pruned and is keyed on a recyclable address; T-952
+  `set_var` mutates a shared 281-test process; T-953 migrations jump 0021→0025.
+
+- 2026-09-06 **WAVE 235 CLOSED** (`b6a3cfd89`), the wave this file has been calling 248. Gate PASS
+  32/32 on `d4caed957`; adversarial verifier ran on merged main and found no BLOCKER; findings filed
+  as T-947…T-953. Closed with `wave --close --tickets T-934.1,T-940.5,T-940.6,T-311` — the honest
+  span since `1d3253ca8`, since the lock had lost the trio's membership to per-id repacks. Both the
+  gate and the close needed `TBD_GATE_BASE_CONFIRM`: oracle 2 cannot corroborate a base whose wave
+  has no rows in `wave.lock`, which is the price of the pre-T-946 numbering and should stop being
+  paid now that labels and the ledger agree.
