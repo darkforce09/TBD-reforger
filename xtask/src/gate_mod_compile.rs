@@ -293,7 +293,22 @@ fn compile_inner(
     let _ = fs::remove_file(&export_link);
     std::os::unix::fs::symlink(root.join("apps/mod/tbd-export"), &export_link)?;
 
-    let mut addons = String::from("TBD_Framework,TBD_Export");
+    // T-946.23 — EXPORT FIRST, FRAMEWORK LAST, AND THE ORDER IS THE WHOLE POINT.
+    //
+    // The Enfusion VFS overlays addons BY PATH and the LAST one wins, so with the old
+    // `TBD_Framework,TBD_Export` order every one of the 139 script paths that exists in both trees
+    // was compiled from tbd-EXPORT and the tbd-framework copy was never read. The shipping server
+    // loads only `TBD_Framework` (`scripts/mod/tbd-staging-server.config.json`), so the gate was
+    // green over code that does not ship and silent about the code that does. Measured 2026-09-06
+    // by planting `void f(){ThisSymbolDoesNotExist_CC();}` in
+    // `tbd-framework/.../TBD_MissionSlotStruct.c`: `OK: compiled clean`, exit 0. The same line in
+    // the tbd-export copy fails the gate. Found by the T-674.2 slice agent, reproduced here before
+    // anything was changed.
+    //
+    // Framework last means the SHIPPING copies are the ones the engine reads. The export mirrors
+    // are then covered by [`mirror_lockstep`] instead of by compilation, which is the honest trade:
+    // the two trees are line-for-line identical by design, so a divergence is itself the defect.
+    let mut addons = String::from("TBD_Export,TBD_Framework");
 
     if opts.selftest {
         let st = run_dir.join("addons/tbd-selftest");
@@ -409,6 +424,23 @@ fn compile_inner(
         return Ok(code);
     }
 
+    let drift = mirror_lockstep(root)?;
+    if !drift.is_empty() {
+        println!();
+        println!("FAIL: tbd-framework and tbd-export disagree on a shared script's CODE");
+        println!("      (comments and string literals are ignored; only code is compared)");
+        for l in &drift {
+            println!("  {l}");
+        }
+        println!(
+            "      The engine compiles the tbd-framework copy (T-946.23) and the mirror ships too,"
+        );
+        println!(
+            "      so a divergence here is code that no gate reads. Make the two copies agree."
+        );
+        return Ok(1);
+    }
+
     let ascii_bad = ascii_check_export(&root.join("apps/mod/tbd-export"))?;
     if !ascii_bad.is_empty() {
         println!();
@@ -440,6 +472,55 @@ fn compile_inner(
     }
     println!("    {warn} warning(s) in TBD sources");
     Ok(0)
+}
+
+/// T-946.23 — every `Scripts/Game` script that exists in BOTH mod trees must be the same CODE.
+///
+/// The compile reads the tbd-framework copy of a shared path (see the addon order above), so the
+/// tbd-export mirror is checked here instead of by the compiler. Comments and string literals are
+/// stripped from both sides before comparing, because they are LEGITIMATELY different: tbd-export
+/// is held to a pure-ASCII rule that tbd-framework is exempt from, so the same sentence is spelled
+/// with an em-dash in one tree and a hyphen in the other. Whitespace is normalised for the same
+/// reason. What is left is the code, and the code has no reason to differ.
+///
+/// Returns one line per diverging path; empty means lockstep.
+fn mirror_lockstep(root: &Path) -> io::Result<Vec<String>> {
+    let fw = root.join("apps/mod/tbd-framework/Scripts/Game");
+    let ex = root.join("apps/mod/tbd-export/Scripts/Game");
+    if !fw.is_dir() || !ex.is_dir() {
+        return Ok(Vec::new());
+    }
+    let norm = |p: &Path| -> io::Result<String> {
+        let src = fs::read_to_string(p)?;
+        let code = crate::schema_gates::strip_enfusion_comments_and_strings(&src);
+        Ok(code.split_whitespace().collect::<Vec<_>>().join(" "))
+    };
+    let mut out = Vec::new();
+    let mut stack = vec![ex.clone()];
+    while let Some(dir) = stack.pop() {
+        for e in fs::read_dir(&dir)? {
+            let p = e?.path();
+            if p.is_dir() {
+                stack.push(p);
+                continue;
+            }
+            if p.extension().and_then(|x| x.to_str()) != Some("c") {
+                continue;
+            }
+            let Ok(rel) = p.strip_prefix(&ex) else {
+                continue;
+            };
+            let twin = fw.join(rel);
+            if !twin.is_file() {
+                continue; // export-only script: nothing to be in lockstep with
+            }
+            if norm(&p)? != norm(&twin)? {
+                out.push(format!("Scripts/Game/{}", rel.display()));
+            }
+        }
+    }
+    out.sort();
+    Ok(out)
 }
 
 /// The dedicated server compiles only the Game module: `Scripts/WorkbenchGame` sources are never

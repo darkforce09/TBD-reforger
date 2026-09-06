@@ -2360,7 +2360,7 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
 /// string literals from EnforceScript source, so an identifier count reflects code, not prose or
 /// data. Deliberately simple (no escaped-quote-in-string edge lawyering) — the corpus is the mod's
 /// own hand-written `.c`, and the count only has to be STABLE and identifier-scoped, not a parser.
-fn strip_enfusion_comments_and_strings(src: &str) -> String {
+pub(crate) fn strip_enfusion_comments_and_strings(src: &str) -> String {
     // Block comments first (can span lines).
     let no_block = regex::Regex::new(r"(?s)/\*.*?\*/")
         .map(|re| re.replace_all(src, " ").into_owned())

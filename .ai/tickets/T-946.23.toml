@@ -1,0 +1,49 @@
+id = "T-946.23"
+kind = "work"
+title = "Mod gate compiled the wrong copy of shared scripts"
+summary = "The Enfusion VFS overlays addons by path and the last wins, so with Export last the gate compiled the export copy of all 139 shared scripts and never read the framework copies, which are the ones that ship."
+class = "chore"
+status = "shipped"
+order = 7078
+spec = "docs/specs/ideas/t946_23_mod_gate_shadowing.md"
+plan = "docs/plans/t-946_23_plan.md"
+executor = "claude-code"
+priority = 1
+parent = "T-946"
+main_goal = "The mod gate compiles the code that ships, and the mirror it no longer compiles cannot drift."
+context = [
+    "gate_mod_compile.rs:296 launched the server with -addons TBD_Framework,TBD_Export; the VFS overlays by path and the last addon wins.",
+    "The shipping server loads only TBD_Framework, per scripts/mod/tbd-staging-server.config.json.",
+    "Measured 2026-09-06: an undefined function planted in the framework copy compiles clean, exit 0; the same line in the export copy fails.",
+    "Found by the T-674.2 slice agent and reproduced by the command centre before anything changed.",
+]
+requirement = [
+    "The engine compiles the tbd-framework copy of every shared script.",
+    "Export mirrors that are no longer compiled are checked by a lockstep comparison instead.",
+    "The comparison ignores comments and string literals, because the export tree is ASCII-only and the framework tree is not.",
+]
+current_state = ["Every Enfusion slice this factory has run was gated over code that does not ship."]
+approach = [
+    "Flip the addon order to TBD_Export,TBD_Framework and record the measurement in the comment.",
+    "Add mirror_lockstep before the ASCII scan, reusing the existing Enfusion comment and string stripper.",
+    "Perturbation: plant an undefined function in a framework shared script and watch the gate go from exit 0 to exit 1.",
+]
+verify = [
+    "cargo xtask mod compile",
+    "cargo test -p xtask",
+]
+acceptance = [
+    "An error planted in a tbd-framework shared script fails the gate naming that file; a clean tree passes.",
+    "Two mirrors that disagree on code fail with the path named, while a punctuation-only difference passes.",
+]
+created_at = "2026-09-06T14:20:00Z"
+completed_at = "2026-09-06T12:12:34Z"
+owns = [
+    "xtask/src/gate_mod_compile.rs",
+    "xtask/src/schema_gates.rs",
+]
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"
