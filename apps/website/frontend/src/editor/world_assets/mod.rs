@@ -16,6 +16,10 @@ pub use fetch::{fetch_bytes, fetch_text};
 pub use occluder_host::OccluderHost;
 mod satellite;
 mod tbd_sat;
+/// T-935.9 — the `TBDB` bathymetry mask + `water_vectors.rkyv`, loaded only when the terrain
+/// manifest carries a `water` block. Reached from outside through [`with_water_mask`] /
+/// [`is_water`] / [`is_known_dry_land`].
+mod water;
 mod world_host;
 
 use std::cell::{Cell, RefCell};
@@ -63,6 +67,8 @@ pub struct MapHost {
     terrain: String,
     /// T-173 H5 — town / road / height text-label host.
     labels: labels::LabelHost,
+    /// T-935.9 — bathymetry mask + water vectors; empty unless the manifest declares them.
+    water: water::WaterHost,
 }
 
 impl MapHost {
@@ -76,6 +82,7 @@ impl MapHost {
             settle_deadline: Rc::new(Cell::new(0.0)),
             terrain: String::new(),
             labels: labels::LabelHost::new(),
+            water: water::WaterHost::new(),
         }
     }
 
@@ -198,6 +205,55 @@ pub fn with_occluder_host<R>(f: impl FnOnce(&OccluderHost) -> R) -> Option<R> {
         let mh = guard.as_ref()?;
         Some(f(mh.world.occluder_host()))
     })
+}
+
+/// T-935.9 — run `f` on the live water mask (the `TBDB` bathymetry the manifest declared). `None`
+/// before the engine mounts, while `flush_viewport` has the host taken for an async pass, or when
+/// this terrain ships no readable bathymetry — and `None` means **no reading**, never "dry".
+/// Callers that want a placement answer should use [`is_known_dry_land`], which folds all three
+/// unknowns into the one answer that cannot place a unit in a lake.
+///
+/// `dead_code`-allowed, and this is the whole of why: these three are the seam the ticket exists to
+/// publish (*"export `WaterMask::is_water` publicly for placement guards"*), the placement guard
+/// that calls them is a later ticket, and no manifest carries a `water` block until T-935.13 — so
+/// there is nothing in this crate to call them yet. **They are wrappers, not logic**: everything
+/// they can get wrong (the world→texel mapping, the mip fold, the off-map answer, the
+/// schema-version gate) is decided in `map_engine_core::world::water` and executed by `cargo test`
+/// there. `world_assets` is `wasm32`-only, so a host test cannot reach this side at all.
+#[allow(dead_code)]
+pub fn with_water_mask<R>(f: impl FnOnce(&map_engine_core::world::WaterMask) -> R) -> Option<R> {
+    RENDER_CTX.with(|c| {
+        let ctx = c.borrow();
+        let (_, host) = ctx.as_ref()?;
+        let guard = host.try_borrow().ok()?;
+        let mh = guard.as_ref()?;
+        Some(f(mh.water.mask()?))
+    })
+}
+
+/// T-935.9 — does the loaded bathymetry record water at `(x, z)` (world metres)?
+///
+/// `false` on dry ground, and `false` for every kind of *unknown*: off the map, no mask loaded,
+/// the host momentarily taken. It answers about water and cannot answer about ground it has no
+/// reading for, which is why a **placement guard must ask [`is_known_dry_land`] instead** — this
+/// one is the honest mask query, not the permission to build.
+/// See [`with_water_mask`] for why this is `dead_code`-allowed.
+#[allow(dead_code)]
+#[must_use]
+pub fn is_water(x: f64, z: f64) -> bool {
+    with_water_mask(|m| m.is_water(x, z)).unwrap_or(false)
+}
+
+/// T-935.9 — **the placement guard's question**: is `(x, z)` KNOWN dry ground?
+///
+/// `false` in water, `false` off the map, `false` when the terrain ships no bathymetry at all, and
+/// `false` while the host is borrowed. Every unknown answers "not here", so a guard that gates on
+/// this can be wrong by refusing a legal spot and never by drowning a squad.
+/// See [`with_water_mask`] for why this is `dead_code`-allowed.
+#[allow(dead_code)]
+#[must_use]
+pub fn is_known_dry_land(x: f64, z: f64) -> bool {
+    with_water_mask(|m| m.is_known_dry_land(x, z)).unwrap_or(false)
 }
 
 /// T-762 — the already-parsed town / named-location index from `LabelHost` boot
@@ -411,6 +467,16 @@ pub async fn bootstrap(
     let _ = mh.world.init(&terrain, report.as_ref()).await;
     mh.forest.init(&terrain);
 
+    // T-935.9 — bathymetry + water vectors, and ONLY when the manifest declares them (spec §5):
+    // no `water` block means no request goes out and nothing is added to the world budget, which
+    // is every terrain shipping before T-935.13. The block is passed down rather than re-fetched
+    // because `bootstrap` already has the manifest in hand.
+    if let Some(m) = manifest.as_ref() {
+        mh.water
+            .init(&base, m.water.as_ref(), m.world_bounds, report.as_ref())
+            .await;
+    }
+
     // T-173 H6 — build + upload the airfield apron ground polygon once (static). Needs both the
     // runway-derived bbox (set in `world.init`) and the DEM grid.
     if let Some(grid) = mh.dem.grid() {
@@ -581,6 +647,13 @@ struct ManifestDem {
     world_bounds: [f64; 4],
     dem: DemInfo,
     tiles: Option<TilesBlock>,
+    /// T-935.9 — the `water` block (spec §5), kept as **raw JSON on purpose**. `ManifestDem` is
+    /// deserialised strictly, so a typed field here would make a malformed `water` block fail the
+    /// one parse the DEM *and* satellite lanes also depend on: a typo in a hand-edited manifest
+    /// would cost the whole basemap rather than the water layer. `water::readable_block` types it
+    /// tolerantly, exactly as `parse_manifest_binary` does for the other blocks.
+    #[serde(default)]
+    water: Option<serde_json::Value>,
 }
 #[derive(serde::Deserialize)]
 struct DemInfo {

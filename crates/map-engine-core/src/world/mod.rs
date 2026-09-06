@@ -39,6 +39,12 @@ mod residency;
 mod road_labels;
 mod roads;
 mod store;
+/// T-935.9 — the runtime water reader: the `TBDB` bathymetry pyramid ([`WaterMask`]) and the
+/// `water/water_vectors.rkyv` archive ([`WaterVectors`]). Lives here rather than in the SPA's
+/// `world_assets::water` because [`WaterMask::is_water`] is a placement guard's question and
+/// `world_assets` is `wasm32`-only — everything that can be wrong is decided where `cargo test`
+/// executes it, the same split T-935.7 used for `map_labels.rkyv`.
+mod water;
 
 pub use crate::building_blueprint::{
     BBox2D, BuildingBlueprint, BuildingDoor, BuildingFurniture, BuildingLevel, BuildingStairs,
@@ -128,3 +134,7 @@ pub use roads::{
     road_style_width,
 };
 pub use store::{WorldError, WorldStore, bytes_to_json};
+pub use water::{
+    Bathymetry, BathymetryLevel, SuffixPlan, TBDB_ENCODING_V1, WATER_VECTORS_ALIGN, WaterAt,
+    WaterMask, WaterVectors, downsample_index, suffix_plan,
+};
