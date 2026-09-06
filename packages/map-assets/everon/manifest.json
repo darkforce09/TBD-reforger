@@ -104,7 +104,19 @@
     },
     "transforms": "yaw+pitch+roll+scale",
     "scaleSource": "GetScale",
-    "workbenchVersion": "Arma Reforger Tools (Steam build 24870687)"
+    "workbenchVersion": "Arma Reforger Tools (Steam build 24870687)",
+    "binary": {
+      "schemaVersion": "1.0.0",
+      "container": "TBDC",
+      "containerVersion": 1,
+      "pod": "ObjectInstancePod",
+      "podBytes": 32,
+      "chunks": "objects/chunks/{cx}_{cy}.bin",
+      "prefabs": "objects/prefabs.rkyv",
+      "roads": "roads/road_network.rkyv",
+      "regions": "objects/forest-regions.rkyv",
+      "typeInventory": "objects/type-inventory.rkyv"
+    }
   },
   "anchors": [],
   "precision": {
@@ -115,5 +127,13 @@
   "locations": {
     "path": "locations.json",
     "exportedAt": "2026-07-13T00:29:00Z"
+  },
+  "labels": {
+    "path": "locations/map_labels.rkyv",
+    "encoding": "rkyv-map-labels-v1"
+  },
+  "buildings": {
+    "archive": "prefabs/building_blueprints.rkyv",
+    "blas": "prefabs/blas"
   }
 }

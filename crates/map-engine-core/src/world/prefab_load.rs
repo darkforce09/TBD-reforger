@@ -733,9 +733,7 @@ mod tests {
 
     /// Rule 17 — `world_host`'s new archive branch is reachable, not decoration. Its whole
     /// predicate is `objects.binary.prefabs` being a non-empty string, and that is what this
-    /// checks, over a manifest shaped like the one T-935.13 will ship. The second half is why the
-    /// branch nevertheless makes no request on a live boot today: the committed everon manifest
-    /// names no `objects.binary` block at all, so the JSON path is still the one that runs.
+    /// checks, over a synthetic manifest and the committed everon one (T-935.13).
     /// (`world_host` itself is `wasm32`-only and has no test harness; the other half of that
     /// branch — archive bytes actually reaching a residency — is the everon pin above.)
     #[test]
@@ -758,11 +756,14 @@ mod tests {
             &std::fs::read_to_string(everon().join("manifest.json")).expect("everon manifest"),
         )
         .unwrap();
-        assert!(
-            super::super::manifest::parse_manifest_binary(&everon_manifest)
-                .objects
-                .is_none(),
-            "a committed manifest naming an archive would flip the default before T-935.13"
+        assert_eq!(
+            named(
+                &super::super::manifest::parse_manifest_binary(&everon_manifest)
+                    .objects
+                    .expect("T-935.13 writes objects.binary")
+            )
+            .as_deref(),
+            Some("objects/prefabs.rkyv")
         );
     }
 

@@ -1,5 +1,5 @@
 //! T-935.4 — the DEM boot path: `dem/elevation.dem` (`TBDE`) streamed straight into its final
-//! `Vec<u16>`, with the 16-bit PNG kept as the fallback until T-935.13 flips the manifest.
+//! `Vec<u16>`, with the 16-bit PNG kept as the fallback because T-935.13 leaves `dem.raw` unfilled (operator: no `.r16`).
 //!
 //! # What this replaces
 //!
@@ -59,8 +59,7 @@ pub fn raw_block_is_readable(block: &DemRawBlock) -> bool {
 /// The whole raw arm of the DEM boot path: take the `dem.raw` block *if* the manifest declares one
 /// this build can read, stream it, and hand back the `DecodedDem` the PNG path also produces.
 ///
-/// `None` means "use the PNG", and it is the answer for every terrain shipping today — everon's
-/// manifest carries no `dem.raw` block until T-935.13.
+/// `None` means "use the PNG". Everon's manifest still carries no `dem.raw` block (operator).
 ///
 /// The `f32` grid built here is a deliberate, single, documented allocation on top of the `u16`
 /// one: `build_hillshade_image` and the DEM vector grid both take `&[f32]`, and neither is this

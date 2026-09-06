@@ -38,6 +38,8 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
+
+use super::catalog_emit;
 use serde_json::{Map, Value, json};
 
 use super::build::{gunzip, gz9};
@@ -510,6 +512,12 @@ pub fn reclassify_terrain(terrain: &str, mode: Mode, out_base: Option<&Path>) ->
         );
     }
     println!("reclassify: WROTE {}", out_objects.display());
+    // T-935.13 — the rkyv twins must not go stale when classification is rewritten. The emitter
+    // re-reads the JSON just written (same contract as build-world-objects).
+    let terrain_for_rkyv = out_objects.parent().unwrap_or(out_objects.as_path());
+    for (path, bytes) in catalog_emit::emit_catalog_archives(terrain_for_rkyv)? {
+        println!("reclassify:   rkyv → {} ({bytes} bytes)", path.display());
+    }
     Ok(0)
 }
 

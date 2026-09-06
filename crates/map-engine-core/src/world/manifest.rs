@@ -37,7 +37,7 @@ pub struct ObjectsManifest {
     pub regions_path: Option<String>,
     pub instance_count: Option<f64>,
     pub prefab_count: Option<f64>,
-    /// T-935 `objects.binary` (spec §5). `None` on every manifest shipped before T-935.13.
+    /// T-935 `objects.binary` (spec §5). `None` when the terrain still boots from JSON.
     pub binary: Option<ObjectsBinaryBlock>,
 }
 
@@ -168,8 +168,8 @@ pub fn satellite_unified_encoding(raw: &Value) -> Option<&str> {
 
 /// Read every T-935 binary block (spec §5) out of a terrain manifest.
 ///
-/// Never fails: a manifest with no binary blocks — which is every manifest shipped before T-935.13
-/// — yields [`ManifestBinary::default`], and [`ManifestBinary::is_empty`] reports it.
+/// Never fails: a manifest with no binary blocks yields [`ManifestBinary::default`], and
+/// [`ManifestBinary::is_empty`] reports it.
 #[must_use]
 pub fn parse_manifest_binary(raw: &Value) -> ManifestBinary {
     ManifestBinary {
@@ -295,8 +295,8 @@ mod tests {
         serde_json::from_str(EVERON_MANIFEST).expect("committed everon manifest is valid JSON")
     }
 
-    /// ACCEPTANCE: the committed everon manifest parses exactly as it did before T-935.1 — every
-    /// pre-existing field identical, and every new optional block absent.
+    /// ACCEPTANCE: JSON paths stay (emitter inputs); T-935.13 fills objects/labels/buildings.
+    /// dem.raw and water stay absent. Satellite encoding stays v1 (unified v2 emitter skipped).
     #[test]
     fn everon_manifest_parses_unchanged() {
         let raw = everon();
@@ -312,13 +312,17 @@ mod tests {
         );
         assert_eq!(m.instance_count, Some(1_216_066.0));
         assert_eq!(m.prefab_count, Some(1623.0));
-        // The new field, and the whole of "parses exactly as today": no binary block is present.
-        assert_eq!(m.binary, None);
+        let objects_bin = m.binary.expect("T-935.13 objects.binary");
+        assert!(objects_bin.matches_this_build());
+        assert_eq!(objects_bin.chunks, "objects/chunks/{cx}_{cy}.bin");
+        assert_eq!(objects_bin.prefabs, "objects/prefabs.rkyv");
 
         let b = parse_manifest_binary(&raw);
-        assert!(b.is_empty(), "everon declares no binary blocks yet: {b:?}");
-        assert_eq!(b, ManifestBinary::default());
-        // The satellite container IS declared, at v1 — so the flag must read false, not "absent".
+        assert!(b.objects.is_some());
+        assert!(b.labels.is_some());
+        assert!(b.buildings.is_some());
+        assert!(b.dem_raw.is_none(), "dem.raw stays unfilled");
+        assert!(b.water.is_none(), "water emitter skipped");
         assert_eq!(satellite_unified_encoding(&raw), Some("tbd-sat-v1"));
         assert!(!b.satellite_unified_v2);
     }
