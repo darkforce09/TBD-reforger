@@ -1,7 +1,7 @@
 id = "T-985"
 kind = "work"
 title = "Archive boot drops the hot-set prefetch"
-summary = "The archive branch returns before the blas manifest is read, so the hot list is never loaded and no archive field replaces it. Blocking hot prefabs trace a proxy until the drain rounds catch up."
+summary = "Archive boot returns before the blas hot list. FOLDS INTO T-935.13 (wave 244 giant slice)."
 class = "feature"
 status = "idea"
 created_at = "2026-09-06T05:41:48Z"

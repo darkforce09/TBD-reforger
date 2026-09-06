@@ -9,7 +9,7 @@ spec = "docs/specs/existing/t673_marker_style_reader.md"
 plan = "docs/plans/t-673_plan.md"
 executor = "claude-code"
 notes = """
-workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-673 salvage/t853-dropped/T-673` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other.
+STALE NOTES SUPERSEDED 2026-09-06 (command center, wave 244). T-706 shipped the $defs/marker widening (`9228a458`); mission.schema.json:1176-1298 declares 11 keys; golden-missions/schema-1_3-wire-fields.json:227-257 already carries all six attributes. Executor is factory (claude-code), not workbench. Schema is not this ticket. The six fields must be declared on TBD_MissionMarkerStruct in TBD_MissionLoader.c (JsonLoadContext binds by member name) and TBD_MarkerController.c (four positional array<> RPCs; six more columns change both signatures). Edit BOTH tbd-framework and tbd-export twins. color is #rrggbb on the wire; SetColorEntry takes an enum index — parse hex, map to nearest SCR_EScenarioFrameworkMarkerCustomColor, keep the hex on the struct. size UNREAD_WIRE_FIELDS row is owned by T-681 — expected collision; do not edit schema_gates.rs. Salvage tag salvage/t853-dropped/T-673 is unreviewed reference only.
 
 --- HEAD migration_legacy (verbatim) ---
 
@@ -24,9 +24,9 @@ missing=0
 depends_on = ["T-069"]
 main_goal = "Ship Enfusion marker style reader for six MRK attrs; no schema edits."
 context = [
-    "$defs/marker closed at x z icon label; six attrs contract-blocked.",
-    "Schema widening split to T-706; this ticket is mod reader only.",
-    "Must ship after T-069 authors four schema-carried marker fields.",
+    "T-706 shipped $defs/marker widening (`9228a458`); six MRK attrs are on the 1.3 wire already. This ticket is the Enfusion reader only.",
+    "Declare the six fields on TBD_MissionMarkerStruct in TBD_MissionLoader.c; JsonLoadContext binds by member name. TBD_MarkerController.c RPC signatures must grow six columns.",
+    "Edit the same relative path in tbd-framework AND tbd-export (mirror_lockstep since wave 242). Export must be pure ASCII.",
     "Operator: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
 ]
 requirement = [
@@ -61,6 +61,12 @@ estimated = ["scope"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerData.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerClient.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerController.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Markers/TBD_MarkerData.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Markers/TBD_MarkerClient.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Markers/TBD_MarkerController.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
 ]
 
 [scope]

@@ -14,13 +14,17 @@ main_goal = "Everon boots from binary assets only, with the JSON emit and its de
 context = [
     "Anchor 2026-09-04: everon today — 315 chunk .json.gz (22 MB), dem PNG 71.9 MB, prefabs/roads/forest-regions .json.gz, type-inventory.json; flate2 is a `world` dep (Cargo.toml:33,45,48).",
     "Final slice: every emitter, loader, schema and gate from .1-.12 is on main; the manifest flip is the only switch the frontend reads.",
+    "Operator 2026-09-06: one giant widened slice. T-985 and T-993 fold in. dem.raw stays UNFILLED (authorized); needs Workbench GetSurfaceY.",
+    "T-981 is REFUTED: descriptor.rs:405-409 never censuses blocking rows; 1322 blocking prefabs keep the JSON descriptor lane with full instances (archive_emit.rs:568). prefabs/descriptors/ STAYS. Descriptors ARE runtime fetches.",
+    "Keep flate2 wherever gzip decode still serves emitters, tools, or the T-935.11/.14 sniff. Dropping it deletes bytes_to_json. 'flate2 gone' is not binding.",
+    "Do not delete gz-JSON emitters still read. Frontend binary default; JSON fetch branches can go. Worktree cannot run water/unified v2 (no staging/).",
 ]
 requirement = [
-    "Run all emitters (build-objects, build-roads, elevation.dem, labels-rkyv, water, map-blueprint archive, unified v2); commit the regenerated everon assets through LFS.",
-    "packages/map-assets/everon/manifest.json and objects/chunks/manifest.json: fill objects.binary, dem.raw, labels, water, buildings, tbd-sat-v2; delete the gz-JSON chunk and catalog files.",
-    "build.rs: remove the gz-JSON chunk writer; crates/map-engine-core/Cargo.toml: drop flate2 from `world`; frontend mod.rs: binary loaders default, JSON branches removed.",
-    "Commit body lists before/after bytes per asset class and cold-boot timings (chunks, DEM, labels, occluders) from the editor perf log.",
-    "The DEM PNG and descriptor JSON stay: they are emitter inputs for tbd-tools and xtask, not runtime fetches.",
+    "Flip everon manifests to binary assets that exist; leave dem.raw UNFILLED (operator). Fold T-985 (archive hot-set prefetch) and T-993 (satellite boot accepts v2).",
+    "Frontend binary loaders default; JSON runtime-fetch branches removed. prefabs/descriptors/ stay. Do not put the 1322 blocking prefabs on the archive.",
+    "Keep gz-JSON that emitters still consume; keep flate2 wherever gzip decode is still required. Update gz-JSON consumers so catalog/world-los gates do not go silently vacuous.",
+    "Commit body lists before/after bytes per asset class, notes dem.raw unfilled, and records which emitters could not run in the worktree (staging/).",
+    "Do not retire UNREAD_WIRE_FIELDS rows in schema_gates.rs — that file is owned only to keep catalog/world-los honest.",
 ]
 current_state = [
     "After T-935.12 every loader has a dormant binary branch; the everon manifest still names json.gz and PNG paths, so the editor boots from JSON.",
@@ -28,10 +32,10 @@ current_state = [
 ]
 approach = [
     "Measure before: byte sizes per asset class and boot timings on everon; paste into the plan and commit body.",
-    "Regenerate everon with each emitter; the data files (objects/chunks/*.bin, *.rkyv, elevation.dem, water/*, building_blueprints.rkyv, everon-sat v2) are emitter outputs, never hand-edited.",
-    "Edit both manifests; delete objects/chunks/*.json.gz and prefabs, roads, forest-regions .json.gz.",
-    "Remove gz emit from build.rs and flate2 from Cargo.toml `world`; frontend mod.rs: binary default.",
-    "Gates: verify-terrain-strict, world-los on cell 18_0 identical to the pre-cutover run, leptos-gates; measure after; write the commit body.",
+    "Regenerate everon with each emitter that can run without gitignored staging/; the data files are emitter outputs, never hand-edited.",
+    "Edit both manifests; do not delete emitter-input gz-JSON or prefabs/descriptors/.",
+    "Frontend mod.rs: binary default. Keep flate2. Fold T-985 and T-993.",
+    "Gates: slice gate; world-los on main after merge (worktree LFS pointers are environmental). Measure after; write the commit body.",
 ]
 verify = [
     "cargo xtask ci verify-terrain-strict",
@@ -41,18 +45,36 @@ verify = [
     "cargo xtask platform wave gate --slice T-935.13",
 ]
 acceptance = [
-    "Everon boots from binary assets only; no json.gz fetch appears in the editor network log.",
-    "world-los results on cell 18_0 match the pre-cutover run exactly.",
-    "flate2 is gone from map-engine-core's `world` feature; the commit body carries before/after sizes and boot timings.",
+    "Everon boots from binary assets for every filled manifest slot; dem.raw stays unfilled; no json.gz runtime fetch appears in the editor network log for flipped classes.",
+    "prefabs/descriptors/ remain; the 1322 blocking prefabs are not forced onto the archive. T-985 hot-set and T-993 sat-v2 boot are in this slice.",
+    "flate2 remains wherever gzip decode is still required; commit body carries before/after sizes and the dem.raw-unfilled note.",
 ]
 depends_on = ["T-935.12"]
 created_at = "2026-09-05T01:34:37Z"
 owns = [
+    "apps/website/frontend/src/editor/world_assets/mod.rs",
+    "apps/website/frontend/src/editor/world_assets/world_host.rs",
+    "apps/website/frontend/src/editor/world_assets/occluder_host.rs",
+    "apps/website/frontend/src/editor/world_assets/labels.rs",
+    "apps/website/frontend/src/editor/world_assets/water.rs",
+    "apps/website/frontend/src/editor/world_assets/satellite.rs",
+    "apps/website/frontend/src/editor/world_assets/dem_load.rs",
+    "apps/website/frontend/src/editor/world_assets/tbd_sat.rs",
+    "crates/map-engine-core/Cargo.toml",
+    "crates/map-engine-core/src/world/store.rs",
     "packages/map-assets/everon/manifest.json",
     "packages/map-assets/everon/objects/chunks/manifest.json",
-    "crates/map-engine-core/Cargo.toml",
-    "apps/website/frontend/src/editor/world_assets/mod.rs",
+    "packages/tbd-schema/schema/terrain-manifest.schema.json",
     "tools/tbd-tools/src/world/build.rs",
+    "tools/tbd-tools/src/world/reclassify.rs",
+    "tools/tbd-tools/src/world/gates.rs",
+    "xtask/src/map_world_los.rs",
+    "xtask/src/verify_blas_manifest.rs",
+    "xtask/src/label_gates.rs",
+    "xtask/src/schema_gates.rs",
+    "xtask/src/map_blueprint/library.rs",
+    "xtask/src/map_blueprint/library_cli.rs",
+    "xtask/src/map_blueprint/world_row.rs",
 ]
 
 [scope]

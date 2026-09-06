@@ -1,10 +1,12 @@
 id = "T-981"
 kind = "work"
 title = "Occluder archive cannot carry blocking prefabs"
-summary = "The archived descriptor has no instances field, so a blocking prefab seeded from the archive traces a coarse AABB forever with nothing logged. 1322 of 1623 block, and no slice puts instance records on the wire."
+summary = "CANCELLED — REFUTED 2026-09-06. Blocking prefabs keep the JSON descriptor lane; archive was never meant to carry them."
 class = "feature"
-status = "idea"
+status = "cancelled"
+order = 9810
 created_at = "2026-09-06T05:12:17Z"
+completed_at = "2026-09-06T17:06:42Z"
 
 [scope]
 domain = "repo"
