@@ -1,0 +1,18 @@
+{
+  "derived_from_shas": [
+    "c1bb4db8fb3f8f165b75db621473b9cebf99734c",
+    "21400f682241af210e2c39132971597352530a98",
+    "752e87c8a2d34df286f9f20622a9d14dfabde0aa",
+    "fc18e875535ca29155601b4d875bc9aa1e7d0280",
+    "f86cc5f8624bd3dcdd2710c7ef9863ec93b5636a",
+    "5d3d48a6a8c10b1d6fdd1d9d65b782ff10b6fb96",
+    "91a2baba7cb4b225485c24e0c79f816f9ca04b27",
+    "c8e8628cdfaa30e0c2057fbebd22adc857faec06"
+  ],
+  "factor": 150,
+  "generated_at": "2026-09-06T06:54:24Z",
+  "id": "T-935.10",
+  "loc_changed": 1375,
+  "source": "diff_loc",
+  "tokens_estimated": 206250
+}
