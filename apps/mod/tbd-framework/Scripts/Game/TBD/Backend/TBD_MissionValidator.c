@@ -43,6 +43,12 @@ class TBD_MissionValidator
 	protected static const string SCHEMA_1_0 = "1.0";
 	protected static const string SCHEMA_1_1 = "1.1";
 	protected static const string SCHEMA_1_2 = "1.2";
+	//! T-946: 1.3 (T-674.1) added OPTIONAL per-slot identity (callsign, rank, stance, unitName,
+	//! tag) and an optional group leaderSlotId. Nothing this build must read, and every 1.3
+	//! document is a valid 1.2 one with extra keys — but this validator rejects any version it
+	//! does not name, so without this line a mission carrying a single authored callsign is
+	//! refused outright and the server parks in LOADING. The reader for those fields is T-674.2.
+	protected static const string SCHEMA_1_3 = "1.3";
 
 	//! mission.schema.json#/$defs/winConditions/properties/endOn enum — the two triggers with no
 	//! owning constant anywhere else in the mod.
@@ -241,18 +247,18 @@ class TBD_MissionValidator
 
 		if (version.IsEmpty())
 		{
-			AddError("schemaVersion", "missing — this build understands 1.0, 1.1 and 1.2");
+			AddError("schemaVersion", "missing — this build understands 1.0, 1.1, 1.2 and 1.3");
 			return false;
 		}
 
-		if (version == SCHEMA_1_1 || version == SCHEMA_1_2)
+		if (version == SCHEMA_1_1 || version == SCHEMA_1_2 || version == SCHEMA_1_3)
 			return true;
 
 		if (version == SCHEMA_1_0)
 			return false;
 
 		AddError("schemaVersion", string.Format(
-			"'%1' is not recognised — this build understands 1.0, 1.1 and 1.2. A newer document may carry fields this server silently drops.",
+			"'%1' is not recognised — this build understands 1.0, 1.1, 1.2 and 1.3. A newer document may carry fields this server silently drops.",
 			version));
 		return false;
 	}
