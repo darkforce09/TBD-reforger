@@ -198,3 +198,37 @@ edit, in-editor play button.
 - 2026-09-06 A slice left `scratch_old_v2.txt` in the MAIN checkout (rule 8: probes go in /tmp).
   Untracked, unreferenced, and it would have blocked the close. Moved to the session scratchpad
   rather than deleted — it was not the command center's to destroy.
+
+- 2026-09-06 **WAVE 240 CLOSED** (`52a038a77`) — T-935.6 the road network to rkyv (with the
+  gzip-vs-rkyv magic sniff every later archive fetch reuses), T-935.9 water vectors plus a TBDB
+  bathymetry pyramid and a placement-guard mask, T-674.1 slot identity and squad leader on the wire
+  at schema 1.3. Full gate PASS, 31 steps. Closed from a RESERVED pending entry — see below.
+- 2026-09-06 The wave could not be closed at all when its gate finished, and the reason is worth
+  the paragraph. `carry_emptied` freezes a pending `[[emptied]]` entry only when ONE repack sees a
+  whole open wave landed, and `ticket ship` repacks after EVERY id. This wave's batch broke mid-way
+  on T-674.1's missing `created_at`, the per-id path finished it, and by the last ship the label 240
+  had already been re-issued to T-935.11 / T-675.1 / T-676. `--close --tickets` then asked for 240,
+  which a live open wave held, and the collision guard refused — correctly: oracle 2 reads the plan
+  at the marker's PARENT and would have seen wave 240 assigned to unshipped tickets, refusing every
+  later gate. That is exactly the shape that cost wave 236 its marker (`35328a7b1`, disavowed).
+  Fixed rather than forced: `cargo xtask wave repack --reserve "<ids>"` (T-946.12, `6e72b0b4d`)
+  freezes an operator-named set of SHIPPED ids as a pending target, so the label the ceremony claims
+  is one no open wave holds. The repack stays the only writer of the lock; the vouching is for
+  MEMBERSHIP only and every id is re-checked shipped against the tree. The entry is self-sustaining
+  under later repacks, which matters because `ticket ship` runs one on every id.
+- 2026-09-06 Wave 240 verifier: 11 findings, 4 MAJOR. Two fixed in `cf69afda2` — (1) `water.rs`
+  `assemble` accepted a suffix LONGER than the level it claimed, so a mask built from a longer tail
+  read DRY over open water with no error; (2) `chunk_container.rs` `level_dims` shifted a `u32` by
+  the level with no width check, a panic in wasm at level 32. Filed, not fixed: T-946.9 (the water
+  mask carries no world extent, so a stale `worldBounds` gives confident wrong answers instead of
+  `Unknown`), T-946.10 (the Range helper parses only the TOTAL from `content-range`, never the
+  START, so a server answering a different range is accepted), T-946.11 (the 1.3 flag latches where
+  the value is computed, not where it SERIALISES — two factions whose names slug to one key
+  overwrite each other and the version can say 1.3 with no key on the wire), T-946.12 (the close
+  label above).
+- 2026-09-06 The verifier read `e5f46e4fc` as Enfusion script, which no gate could compile (T-946.3),
+  and found it CORRECT: the `SCHEMA_1_3` constant matches its three siblings in declaration, access
+  and type; returning true is right because 1.3 makes `slots[]` mandatory exactly as 1.2 does; no
+  other site refuses 1.3; and the two copies stay structurally identical, differing only in string
+  punctuation, each obeying its own tree's ASCII rule. It also confirmed the re-aimed API test
+  (`26f7a785a`) and the hand-stamped `created_at` on T-674.1 against the file's first commit.
