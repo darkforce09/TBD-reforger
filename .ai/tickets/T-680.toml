@@ -57,7 +57,9 @@ citations = [
 estimated = ["scope"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
 ]
 
 [scope]

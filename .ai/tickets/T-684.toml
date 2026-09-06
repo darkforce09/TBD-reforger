@@ -60,7 +60,9 @@ citations = [
 estimated = ["scope"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionParams.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionParams.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
 ]
 
 [scope]

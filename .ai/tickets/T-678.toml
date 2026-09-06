@@ -56,7 +56,10 @@ citations = [
     "T-706 schema widening split",
 ]
 estimated = ["scope"]
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c"]
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/AI/TBD_GroupState.c",
+]
 
 acceptance = [
     "Combat mode, behaviour, formation and speed mode from the payload are applied to AI-enabled groups after spawn.",
