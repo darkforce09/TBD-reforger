@@ -1198,6 +1198,11 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		float x = slot.x;
 		float z = slot.z;
+		// T-679 -- placement scatter (slot radius/shape plus a shared group offset).
+		// Zero / absent radius returns this exact (x, z).
+		vector scattered = TBD_PlacementScatter.ForSlot(slot.Key(), slot.id, slot.faction, slot.groupCallsign, x, z);
+		x = scattered[0];
+		z = scattered[2];
 
 		// Spawn height policy (T-092.1): explicit JSON y wins, else live terrain
 		// surface; both get the measured capsule offset on top. Golden pin (T-249):
