@@ -105,7 +105,20 @@ class TBD_MissionZoneRulesStruct
 	float graceSeconds = ABSENT;
 	float warnEverySeconds = ABSENT;
 	string penalty;   //!< Empty string = absent (JsonLoadContext leaves it at the initializer).
+
+	//! T-685 -- volume / count / owner. Same JsonLoadContext pass, bound by member name.
+	//! Counts and heights can be authored 0 (or -5 for minHeight), so they need sentinels;
+	//! startingOwner uses the empty string. WOG semantics for these names are INFERRED -- TBD
+	//! rules live in Zones/TBD_ZoneVolume.c, not a pasted corpus sentence.
+	static const int ABSENT_INT = -1;
+	int attackerCount = ABSENT_INT;
+	int defenderCount = ABSENT_INT;
+	float advantagePercent = ABSENT;
+	float minHeight = ABSENT;
+	float maxHeight = ABSENT;
+	string startingOwner;
 }
+
 
 //! One entry from the mission `zones[]` array (spawn, objective, boundary, ...).
 //! @contract mission.schema.json#/$defs/zone

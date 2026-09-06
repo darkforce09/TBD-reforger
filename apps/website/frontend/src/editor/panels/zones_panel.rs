@@ -1272,6 +1272,75 @@ mod tests {
         );
     }
 
+    /// T-685 -- the six zone-volume keys must already render via `zone_rule_fields` (schema-
+    /// generated). This pins their KINDS so a generator that dropped `$ref` / integer / bounds
+    /// would still cover the vocabulary names and ship the wrong controls. Do not invent a second
+    /// inspector: a missing key fails `zone_rule_fields_cover_the_whole_vocabulary` first.
+    #[test]
+    fn t685_volume_fields_render_from_zone_rules_schema() {
+        let fields = zone_rule_fields();
+        let kind = |k: &str| {
+            fields
+                .iter()
+                .find(|f| f.key == k)
+                .unwrap_or_else(|| panic!("T-685: {k} missing from zone_rule_fields"))
+                .kind
+                .clone()
+        };
+
+        match kind("attackerCount") {
+            ZoneRuleKind::Number {
+                integer, minimum, ..
+            } => {
+                assert!(integer, "attackerCount is schema integer");
+                assert_eq!(minimum, Some(0.0));
+            }
+            other => panic!("attackerCount must be Number, got {other:?}"),
+        }
+        match kind("defenderCount") {
+            ZoneRuleKind::Number {
+                integer, minimum, ..
+            } => {
+                assert!(integer, "defenderCount is schema integer");
+                assert_eq!(minimum, Some(0.0));
+            }
+            other => panic!("defenderCount must be Number, got {other:?}"),
+        }
+        match kind("advantagePercent") {
+            ZoneRuleKind::Number {
+                integer,
+                minimum,
+                maximum,
+                ..
+            } => {
+                assert!(!integer, "advantagePercent is schema number");
+                assert_eq!(minimum, Some(0.0));
+                assert_eq!(maximum, Some(100.0));
+            }
+            other => panic!("advantagePercent must be Number, got {other:?}"),
+        }
+        match kind("minHeight") {
+            ZoneRuleKind::Number { integer, .. } => {
+                assert!(!integer, "minHeight is schema number (AGL metres)");
+            }
+            other => panic!("minHeight must be Number, got {other:?}"),
+        }
+        match kind("maxHeight") {
+            ZoneRuleKind::Number { integer, .. } => {
+                assert!(!integer, "maxHeight is schema number (AGL metres)");
+            }
+            other => panic!("maxHeight must be Number, got {other:?}"),
+        }
+        match kind("startingOwner") {
+            ZoneRuleKind::Text { pattern, .. } => assert_eq!(
+                pattern.as_deref(),
+                Some("^[a-z][a-z0-9_]*$"),
+                "startingOwner must resolve $ref factionKey (side picker, not a free string)"
+            ),
+            other => panic!("startingOwner must resolve to Text, got {other:?}"),
+        }
+    }
+
     /// The type picker is schema-driven for the same reason the rules are: `set_zone_type` writes
     /// whatever it is handed, and an invented seventh value saves 201 then 500s `/compiled`.
     #[test]

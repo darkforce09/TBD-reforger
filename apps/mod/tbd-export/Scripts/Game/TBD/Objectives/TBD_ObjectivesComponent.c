@@ -305,6 +305,9 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 				if (!objective.m_Zone.Contains(px, pz))
 					continue;
 
+				if (!TBD_ZoneVolume.ContainsAgl(objective.m_sId, origin))
+					continue;
+
 				objective.AddPresence(factionKey);
 				objective.m_aPresentPlayers.Insert(playerId);
 			}
@@ -336,7 +339,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	{
 		// Also computes m_bContested. See TBD_Objective.ResolveActingFaction for what
 		// `rules.contestable` means and why.
-		string acting = objective.ResolveActingFaction();
+		string acting = TBD_ZoneVolume.ResolveActingFaction(objective);
 
 		if (objective.m_bContested != objective.m_bAnnouncedContested)
 		{
@@ -554,8 +557,8 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		if (objective.m_bComplete)
 			return;
 
-		bool enemyPresent = objective.HasEnemyPresent(objective.m_sFaction);
-		bool holderPresent = objective.PresenceOf(objective.m_sFaction) > 0;
+		bool enemyPresent = TBD_ZoneVolume.EnemyContestsHold(objective);
+		bool holderPresent = TBD_ZoneVolume.HolderPresent(objective);
 
 		objective.m_bContested = enemyPresent;
 

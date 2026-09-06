@@ -129,6 +129,7 @@ class TBD_ObjectiveRegistry
 		s_QueryResource = string.Empty;
 		s_QueryZone = null;
 		TBD_ObjectiveRulesReader.Clear();
+		TBD_ZoneVolume.Clear();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -159,6 +160,7 @@ class TBD_ObjectiveRegistry
 		// The second typed pass over the same raw JSON. A failure here is not fatal: every objective
 		// then runs on documented defaults, which is reported ONCE below rather than per zone.
 		bool rulesOk = TBD_ObjectiveRulesReader.Read();
+		TBD_ZoneVolume.Read();
 
 		s_aObjectives = new array<ref TBD_Objective>();
 		s_iCaptureCount = 0;
@@ -389,6 +391,9 @@ class TBD_ObjectiveRegistry
 			ResolveHoldRules(objective, rules, subject);
 		else
 			ResolveDestroyRules(objective, rules, subject);
+
+		TBD_ZoneVolume.ApplyStartingOwner(objective);
+		TBD_ZoneVolume.LogBound(objective);
 
 		return objective;
 	}
@@ -745,7 +750,7 @@ class TBD_ObjectiveRegistry
 		// The AABB is a box; the zone may be a polygon or a circle. Ask the zone itself so a target
 		// in the box but outside the actual shape is not counted.
 		vector origin = entity.GetOrigin();
-		if (!s_QueryZone.Contains(origin[0], origin[2]))
+		if (!TBD_ZoneVolume.ContainsOrigin(s_QueryZone, origin))
 			return true;
 
 		s_iQueryMatched++;
