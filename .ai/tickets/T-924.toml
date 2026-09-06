@@ -33,8 +33,10 @@ acceptance = [
     "Landing a slice whose last gate ran on a different sha, or never ran, is refused with the fix named.",
     "A gated slice lands as before; nothing changes for already-shipped tickets.",
 ]
+shipped_at = "9fcf4b218"
 created_at = "2026-08-16T03:15:21Z"
 completed_at = "2026-09-06T03:17:00Z"
+estimated = ["tokens"]
 owns = [
     "xtask/src/wave/gate.rs",
     "xtask/src/wave/land.rs",
