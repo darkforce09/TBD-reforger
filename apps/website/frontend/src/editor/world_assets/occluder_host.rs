@@ -36,7 +36,7 @@ use std::sync::Arc;
 use map_engine_core::bvh::BvhSidecar;
 use map_engine_core::world::occluder::descriptor::{ArchiveBoot, BuildingArchiveBytes};
 use map_engine_core::world::occluder::{BlasManifest, PrefabDescriptor, WorldOccluder};
-use map_engine_core::world::{ResidencyEvent, TerrainSizeM, WorldResidency, parse_manifest_binary};
+use map_engine_core::world::{parse_manifest_binary, ResidencyEvent, TerrainSizeM, WorldResidency};
 
 use super::fetch::{fetch_bytes, fetch_text};
 
