@@ -1018,28 +1018,40 @@ mod tests {
         assert_eq!(compile_diagnostics_rules_header(&doc.diagnostics), None);
     }
 
-    /// A payload that authors dropped values still serves a VALID document — findings ride alongside
-    /// the bytes, never inside them. Without this, the obvious "just add a `diagnostics` key"
+    /// A payload that authors a dropped value still serves a VALID document — findings ride
+    /// alongside the bytes, never inside them. Without this, the obvious "just add a `diagnostics` key"
     /// implementation would 500 `/compiled` for every mission (`additionalProperties: false` on the
     /// document root), which is exactly what the T-216 ledger warns about.
     #[test]
     fn a_mission_with_findings_still_serves_a_schema_valid_document() {
+        // T-946 — THE SEED HAD TO CHANGE, and why is the point of the test.
+        //
+        // It used to author `"rank": "Corporal", "stance": "prone"` and assert BOTH were dropped.
+        // T-674.1 made both representable: rank and stance now reach the wire, so the old seed
+        // produces no findings at all and this test went red on its own success. A test that pins
+        // a LOSS has to be re-aimed the moment the loss is repaired, or it argues for keeping the
+        // bug.
+        //
+        // So the seed now authors a rank that is genuinely off the schema's ladder — the enum gate
+        // still drops it, one finding — while `stance` stays a representable value and EMITS. That
+        // keeps this boundary's real subject intact (a document with findings is still served, and
+        // still valid) and adds the half T-674.1 introduced: the emitted keys must not break it.
         let payload = FIXTURE.replace(
             r#"{"id": "s2", "squadId": "sq1", "index": 1, "role": "TL","#,
-            r#"{"id": "s2", "squadId": "sq1", "index": 1, "role": "TL", "rank": "Corporal", "stance": "prone","#,
+            r#"{"id": "s2", "squadId": "sq1", "index": 1, "role": "TL", "rank": "Lance Corporal", "stance": "prone","#,
         );
         assert_ne!(payload, FIXTURE, "the seed must change the fixture");
         let doc = flatten_to_mod_document(&fixture_mission(), payload.as_bytes())
             .expect("still compiles");
         assert_eq!(
             doc.diagnostics.len(),
-            2,
-            "two authored values were dropped; got {:?}",
+            1,
+            "the off-ladder rank is dropped and reported; the representable stance is not; got {:?}",
             doc.diagnostics
         );
         assert_eq!(
             compile_diagnostics_rules_header(&doc.diagnostics).as_deref(),
-            Some("COMPILE-DROP-SLOT-RANK,COMPILE-DROP-SLOT-STANCE")
+            Some("COMPILE-DROP-SLOT-RANK")
         );
 
         let body = serde_json::to_vec(&doc).expect("serialises");
