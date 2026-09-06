@@ -2643,9 +2643,9 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
     },
     UnreadField {
         name: "size",
-        expected: 0,
+        expected: 3,
         ticket: "T-681",
-        why: "clean once comments stripped (file-size comment)",
+        why: "T-673 marker.size reader (3 identifiers) plus the pre-existing file-size comment; T-681 entity OBJ-SIZE is a different field and still unread",
     },
     // T-682 — environment fog/wind/viewDistance.
     UnreadField {
@@ -2674,39 +2674,15 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         why: "clean",
     },
     // T-673 — marker style/area fields.
-    UnreadField {
-        name: "rotationDeg",
-        expected: 0,
-        ticket: "T-673",
-        why: "clean",
-    },
-    UnreadField {
-        name: "brush",
-        expected: 0,
-        ticket: "T-673",
-        why: "clean",
-    },
-    UnreadField {
-        name: "color",
-        expected: 0,
-        ticket: "T-673",
-        why: "clean",
-    },
-    UnreadField {
-        name: "alpha",
-        expected: 0,
-        ticket: "T-673",
-        why: "clean",
-    },
     // `shape` collides with the EXISTING zone-shape reader (`TBD_MissionShapeStruct`, the circle/
-    // polygon zone geometry) — NOT a reader of the new marker.shape glyph selector. Measured 32
-    // (gate semantics: TBD_BriefingData 9 + TBD_ZoneRegistry 9 + TBD_MissionValidator 8 +
-    // TBD_MissionLoader 6), all zone-geometry.
+    // polygon zone geometry) PLUS T-673's marker.shape glyph selector. Re-pinned 32 -> 34
+    // (2026-09-06, wave 244) rather than deleted: the 32 zone-geometry identifiers are still a
+    // tripwire. T-673 added 2 marker.shape identifiers.
     UnreadField {
         name: "shape",
-        expected: 32,
+        expected: 34,
         ticket: "T-673",
-        why: "existing zone-shape reader (TBD_MissionShapeStruct circle/polygon geometry), a different field from the new marker.shape glyph selector",
+        why: "existing zone-shape reader (TBD_MissionShapeStruct circle/polygon geometry), a different field from marker.shape; re-pinned 32 -> 34 after T-673",
     },
     // `area` collides with the loadout-area (`LoadoutArea`) identifier family — NOT a marker reader.
     // Measured 13 (gate semantics, comments+strings stripped): TBD_LoadoutEquipHelper 7 +

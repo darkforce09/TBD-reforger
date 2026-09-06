@@ -1306,18 +1306,18 @@
         "size": {
           "type": "number",
           "exclusiveMinimum": 0,
-          "description": "T-673 (ATTR-FIELD-MRK-SIZE, schemaVersion 1.3). Marker icon/text scale multiplier (1 = default). On the wire only — the closed `$defs/marker` ({x,z,icon,label}) blocked this field entirely (the compiled schema carries 25 `additionalProperties: false`, so it was contract-blocked, not merely unbuilt); the mod reader lands under T-673, which ships after T-069."
+          "description": "T-673 (ATTR-FIELD-MRK-SIZE, schemaVersion 1.3). Marker icon/text scale multiplier (1 = default). READ SINCE T-673 (2026-09-06) by `TBD_MissionMarkerStruct` in `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c`, packed onto the marker RPC xs-trailer and applied by `TBD_MarkerClient`. Entity OBJ-SIZE (T-681) is a different field and still unread."
         },
         "rotationDeg": {
           "type": "number",
           "minimum": 0,
           "maximum": 360,
-          "description": "T-673 (ATTR-FIELD-MRK-ROTATION, schemaVersion 1.3). Marker rotation in degrees. On the wire only — lands under T-673."
+          "description": "T-673 (ATTR-FIELD-MRK-ROTATION, schemaVersion 1.3). Marker rotation in degrees. READ SINCE T-673 (2026-09-06) by `TBD_MissionMarkerStruct` / `TBD_MarkerClient.SetRotation`."
         },
         "shape": {
           "type": "string",
           "enum": ["icon", "rectangle", "ellipse", "polyline"],
-          "description": "T-673 (ATTR-FIELD-MRK-SHAPE, schemaVersion 1.3). Icon-vs-AREA is Eden's entire second marker model, and this key is the ICON-side selector / authoring hint, NOT the geometry. PRECEDENCE (the one rule that resolves the two): if `area` (a `#/$defs/markerArea`) is present, this marker IS an area marker and `shape` is IGNORED — the authoritative extent is `area`, whose vocabulary (circle | polygon | rectangle | ellipse) is the superset that can actually express a rect/ellipse. If `area` is absent, this is an icon marker (draw the `icon` glyph). `icon` names the glyph marker; `rectangle`/`ellipse`/`polyline` are legacy shape hints subordinate to `area` (an author who sets `shape: \"ellipse\"` must also author an ellipse `area` for it to take effect — the reader reads `area`, and mismatches resolve in `area`'s favour by this rule). On the wire only — the area-marker reader lands under T-673 (a widening plus a mod-side reader, not a UI ticket)."
+          "description": "T-673 (ATTR-FIELD-MRK-SHAPE, schemaVersion 1.3). Icon-vs-AREA is Eden's entire second marker model, and this key is the ICON-side selector / authoring hint, NOT the geometry. PRECEDENCE (the one rule that resolves the two): if `area` (a `#/$defs/markerArea`) is present, this marker IS an area marker and `shape` is IGNORED — the authoritative extent is `area`, whose vocabulary (circle | polygon | rectangle | ellipse) is the superset that can actually express a rect/ellipse. If `area` is absent, this is an icon marker (draw the `icon` glyph). `icon` names the glyph marker; `rectangle`/`ellipse`/`polyline` are legacy shape hints subordinate to `area` (an author who sets `shape: \"ellipse\"` must also author an ellipse `area` for it to take effect — the reader reads `area`, and mismatches resolve in `area`'s favour by this rule). READ SINCE T-673 (2026-09-06) by `TBD_MissionMarkerStruct.shape`. Area *fill* (brush over `area` geometry) is still not drawn — `SCR_MapMarkerBase` has no brush API; T-673 logs once and still draws the icon with authored colour/rotation/size/alpha."
         },
         "brush": {
           "type": "string",
@@ -1331,17 +1331,17 @@
             "grid",
             "fill_diagonal"
           ],
-          "description": "T-673 (ATTR-FIELD-MRK-BRUSH, schemaVersion 1.3). Area-marker fill brush (matches Eden's marker brush set). Meaningful only for a `shape` other than `icon`. On the wire only — lands under T-673."
+          "description": "T-673 (ATTR-FIELD-MRK-BRUSH, schemaVersion 1.3). Area-marker fill brush (matches Eden's marker brush set). Meaningful only for a `shape` other than `icon`. READ SINCE T-673 (2026-09-06) by `TBD_MissionMarkerStruct.brush` (bound and packed); fill is not yet painted on the map widget."
         },
         "color": {
           "$ref": "#/$defs/hexColor",
-          "description": "T-673 (ATTR-FIELD-MRK-COLOR, schemaVersion 1.3). Marker colour, same `#rrggbb` form as `faction.color`. On the wire only — lands under T-673."
+          "description": "T-673 (ATTR-FIELD-MRK-COLOR, schemaVersion 1.3). Marker colour, same `#rrggbb` form as `faction.color`. READ SINCE T-673 (2026-09-06) by `TBD_MissionMarkerStruct.color`; hex is mapped to the nearest `SCR_EScenarioFrameworkMarkerCustomColor` via `SetColorEntry`."
         },
         "alpha": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "T-673 (ATTR-FIELD-MRK-ALPHA, schemaVersion 1.3). Marker opacity, 0 (transparent) → 1 (opaque). On the wire only — lands under T-673."
+          "description": "T-673 (ATTR-FIELD-MRK-ALPHA, schemaVersion 1.3). Marker opacity, 0 (transparent) → 1 (opaque). READ SINCE T-673 (2026-09-06) by `TBD_MissionMarkerStruct.alpha` / `TBD_StyledMapMarker` widget opacity."
         },
         "area": {
           "$ref": "#/$defs/markerArea",
