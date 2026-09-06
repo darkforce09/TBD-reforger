@@ -14,7 +14,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use serde_json::Value;
 
 use crate::root::find_repo_root as repo_root;
@@ -399,14 +399,16 @@ mod citation_scope_tests {
         let scan = scan_citations(&root, &schemas).expect("scan");
         assert!(scan.problems.is_empty(), "the one citation resolves");
         assert_eq!(scan.scope_errors.len(), 2, "crates/ and packages/ absent");
-        assert!(scan
-            .scope_errors
-            .iter()
-            .any(|e| e.starts_with("scan root crates/")));
-        assert!(scan
-            .scope_errors
-            .iter()
-            .any(|e| e.starts_with("scan root packages/")));
+        assert!(
+            scan.scope_errors
+                .iter()
+                .any(|e| e.starts_with("scan root crates/"))
+        );
+        assert!(
+            scan.scope_errors
+                .iter()
+                .any(|e| e.starts_with("scan root packages/"))
+        );
         let _ = fs::remove_dir_all(&root);
     }
 
@@ -1027,7 +1029,7 @@ pub fn type_inventory() -> Result<u8> {
 /// so neither can drift from the other's idea of the invariant.
 #[cfg(test)]
 mod instance_kind_lockstep_tests {
-    use super::{instance_kinds_lockstep_failures, read_json, repo_root, INSTANCE_KINDS};
+    use super::{INSTANCE_KINDS, instance_kinds_lockstep_failures, read_json, repo_root};
 
     fn enums() -> serde_json::Value {
         read_json(
@@ -2764,8 +2766,8 @@ fn unread_wire_field_failures(mod_root: &Path) -> Result<Vec<String>> {
 #[cfg(test)]
 mod unread_wire_field_tests {
     use super::{
-        count_mod_readers, repo_root, strip_enfusion_comments_and_strings,
-        unread_wire_field_failures, UNREAD_WIRE_FIELDS,
+        UNREAD_WIRE_FIELDS, count_mod_readers, repo_root, strip_enfusion_comments_and_strings,
+        unread_wire_field_failures,
     };
     use std::fs;
     use std::path::PathBuf;
