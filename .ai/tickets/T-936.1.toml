@@ -3,7 +3,7 @@ kind = "work"
 title = "Win conditions: authored modes, editor card, evaluator"
 summary = "The editor authors winConditions (mode attrition|objective|extraction|vip|timeout with params) that compile_payload carries and flatten passes through instead of hardcoding attrition; a new evaluator script drives extraction and vip endings."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7450
 spec = "docs/specs/audit_2026_09/t936_mission_logic.md"
 plan = "docs/plans/t-936_1_plan.md"
@@ -45,7 +45,10 @@ acceptance = [
     "The Win conditions card round-trips add, edit and undo; saving and reloading keeps the authored block.",
     "The evaluator script compiles and ends the mission exactly once when the configured condition is met (in-game behaviour on the human checklist).",
 ]
+shipped_at = "66b92edec"
 created_at = "2026-09-05T02:09:02Z"
+completed_at = "2026-09-06T15:39:52Z"
+estimated = ["tokens"]
 owns = [
     "packages/tbd-schema/schema/mission.schema.json",
     "packages/tbd-schema/schema/mission-editor-payload.schema.json",

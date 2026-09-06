@@ -3,7 +3,7 @@ kind = "work"
 title = "Whole-terrain zone — one zone sized to the map"
 summary = "3DEN-MISC-001 E11: one command authors a play-area boundary polygon covering the terrain exactly from terrain_bounds."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7390
 spec = "docs/specs/existing/t702_whole_terrain_zone.md"
 plan = "docs/plans/t-702_plan.md"
@@ -43,7 +43,13 @@ citations = [
     "4e4eefd7 salvage commit message",
     "terrain_bounds compile path",
 ]
-estimated = ["scope"]
+shipped_at = "34bdfe4c2"
+created_at = "2026-08-13T17:07:35Z"
+completed_at = "2026-09-06T15:41:31Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = [
     "apps/website/frontend/src/editor/panels/zones_panel.rs",
     "apps/website/frontend/src/editor/state/operations/entity.rs",

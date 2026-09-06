@@ -83,13 +83,6 @@
       "branch": "ticket/T-689"
     },
     {
-      "id": "T-702",
-      "title": "Whole-terrain zone \u2014 one zone sized to the map",
-      "status": "ready",
-      "spec": "docs/specs/existing/t702_whole_terrain_zone.md",
-      "branch": "ticket/T-702"
-    },
-    {
       "id": "T-705",
       "title": "Player gadget flags \u2014 map, compass, watch, GPS, radio",
       "status": "ready",

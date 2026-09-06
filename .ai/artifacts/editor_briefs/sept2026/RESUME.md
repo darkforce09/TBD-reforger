@@ -13,6 +13,63 @@ T-946 (2026-09-06) re-seated the lock's wave labels on the close-marker ledger, 
 after it as **236**. Older notes in `docs/platform/FACTORY_RUN_2026-09.md` still say 248 — that is the
 same wave. Do not try to reconcile them by renumbering anything; the ledger is right now.
 
+## WAVE 243 IS IN FLIGHT (2026-09-06) — read before touching anything
+- **Membership CHANGED from the lock.** Running **T-675.2, T-936.1, T-702**, not the lock's
+  `[T-935.13, T-675.2, T-673]`. Close with `wave --close --tickets T-675.2 T-936.1 T-702`.
+  `platform wave status` will disagree until then; that is expected, not drift.
+- **T-935.13 was pulled from this wave.** Operator decision 2026-09-06: it becomes ONE GIANT WIDENED
+  slice (owns 5 -> ~20 files, T-985 and T-993 folded in) and runs in **wave 244 alongside T-673**.
+  It lands with `dem.raw` UNFILLED — operator-authorized, not an agent deferral. See below.
+- **T-673 was pulled too**: its six marker fields must be declared on `TBD_MissionMarkerStruct`, which
+  lives in `TBD_MissionLoader.c` — a file T-675.2 owns. They cannot share a wave.
+- **T-678 is NOT dispatchable**: `depends_on = ["T-677"]` and T-677 is `ready`, not shipped (and T-677
+  itself collides with T-675.2 on `TBD_SpawnManager.c`). T-936.1 substituted for it.
+- Briefs: `.ai/artifacts/editor_briefs/sept2026/wave243/{T-675.2,T-936.1,T-702}.md`.
+- Worktrees created; all three started clean at `79b4da61f`.
+
+### THE RATE LIMIT KILLED THE FIRST DISPATCH, AND SendMessage IS STILL NOT AVAILABLE
+All three wave-243 agents died at once on the session cap (2026-09-06, resets 16:30). `ListAgents` shows
+no in-process subagents afterwards and there is no `SendMessage` tool in this session — so agents CANNOT
+be resumed by id, exactly as on 2026-09-05. Their uncommitted work was unreviewed and was REVERTED
+surgically (`git checkout --` on named files, `rm` on the one new untracked file; never `git stash`,
+never `git clean -fd`, both of which eat LFS pointers). Three fresh agents were respawned on the same
+briefs, each told to commit after every self-contained step so the next outage leaves reviewed work.
+
+### T-935.13 — WHAT THE EVIDENCE ACTUALLY SAYS (supersedes the T-981/T-985 note below)
+- **T-981 is REFUTED.** `descriptor.rs:405-409` counts blocking rows and NEVER censuses them; the host
+  inserts census only (`occluder_host.rs:152-154`). The 1,322 keep their JSON descriptor lane with full
+  `instances`, pinned by `archive_emit.rs:568`. Measured: 1623 descriptors, 1322 `"blocks": true`, all
+  1623 carrying `instances`. The archive was never meant to carry them. Close T-981 as refuted, and fix
+  T-935.13's `context` line calling the descriptor JSON "not runtime fetches" — they ARE runtime fetches.
+- **T-985 is CONFIRMED** (`occluder_host.rs:92` returns before the blas-manifest hot list; the archive has
+  no `hot` field). **T-993 is CONFIRMED** (`satellite.rs:179` `version != 1`, with the correct v2
+  dispatcher already sitting behind it at `tbd_sat.rs:112`; `terrain-manifest.schema.json:236` also pins
+  `containerVersion` to `const 1`). Both fold into the giant T-935.13.
+- **Five blockers the tickets did not name:**
+  1. `dem/elevation.dem` is UNBUILDABLE — its only writer (`aux.rs:1242-1251`) consumes an ASCII-decimal
+     u16 raster (`aux.rs:1163-1183`); no `.r16` exists in the repo or the 1.5 G staging tree. Workbench
+     GetSurfaceY re-export, i.e. OPERATOR WORK.
+  2. Deleting the gz-JSON breaks the tools that BUILD the binaries — `library_cli.rs:171` (the
+     building-archive emitter itself), `build.rs:954,978` `redensify_from_committed`, `roads_emit`
+     (regenerates the rkyv FROM the gz), `labels_emit.rs:218`.
+  3. Three of the ticket's own five verify commands read the deleted files: `map world-los`
+     (`map_world_los.rs:49,73,414`, zero `.bin` branch), `cargo test -p map-engine-core --all-features`,
+     and the slice gate's `cargo test -p xtask`. `verify-phase` G1-G12 and `verify-road-names` go hard
+     red; `schema_gates.rs:4044` goes SILENTLY VACUOUS (`if catalog.exists()`).
+  4. Dropping flate2 from the `world` feature deletes `bytes_to_json` (`store.rs:51`), the single
+     production flate2 site and the shared decode behind the gzip-vs-rkyv sniff in four loaders — the
+     fallback contract T-935.11/.14 shipped. flate2-removal and sniff-fallback are mutually exclusive.
+  5. A slice worktree CANNOT run the emitters: `water` and `unified v2` read gitignored `staging/`.
+
+### COMMAND-CENTRE WORK OWED AFTER WAVE 243 LANDS
+- Retire `UNREAD_WIRE_FIELDS` rows `vehicles` (exp 0, `schema_gates.rs:2487`) and `seats` (exp 8, `:2494`)
+  and rewrite the matching `mission.schema.json` descriptions — the `0b9c05c8b` precedent. Re-pin rather
+  than delete where a row has a non-zero baseline.
+- Close T-981 as refuted; fix T-935.13's wrong `context` line.
+- Fix T-673's stale `notes`/`context`: they still say `$defs/marker` is closed and the executor is
+  `workbench`. T-706 shipped the widening (`9228a458`); `mission.schema.json:1176-1298` declares 11 keys
+  and `golden-missions/schema-1_3-wire-fields.json:227-257` already carries all six attributes.
+
 ## State at last save (2026-09-06, wave 240 closed and pushed)
 - **CLOSED AND PUSHED: waves 235 … 242.** 30 tickets shipped. Markers `b6a3cfd89`, `35328a7b1`
   (DISAVOWED, see below), `4f2d4598f`, `ad9b22890`, `4f7a0daa7`, `b0257e946`, `52a038a77`,
