@@ -102,7 +102,7 @@ class TBD_PendingEquip
 //! primary weapon's storage, so they need their own (much shorter) verify loop.
 class TBD_PendingWeaponItem
 {
-	string label;    //!< "optic" / "magazine"
+	string label;    //!< "optic" / "magazine" / "attach"
 	string resName;  //!< item ResourceName
 	bool mountIssued; //!< TrySpawnPrefabToStorage accepted the spawn-to-weapon call
 }
@@ -380,6 +380,8 @@ class TBD_LoadoutApplication : Managed
 	//! produced an ERROR and a green mission could not exist.
 	protected void Fail(string label, string resName, string reason, bool blocking = true)
 	{
+		if (label == "attach")
+			LogAttachResult(resName, false);
 		string entry = string.Format("%1=%2 (%3)", label, resName, reason);
 		m_aFailures.Insert(entry);
 
@@ -409,6 +411,8 @@ class TBD_LoadoutApplication : Managed
 	//! this pass is the independent check on the dressed half.
 	protected void Degrade(string label, string resName, string reason)
 	{
+		if (label == "attach")
+			LogAttachResult(resName, false);
 		Print(string.Format("%1 slot=%2 %3 DEGRADED item=%4 - %5", m_sTag, m_sLabel, label, resName, reason), LogLevel.WARNING);
 		m_aDegraded.Insert(string.Format("%1=%2 (%3)", label, resName, reason));
 		m_aShortfallLabels.Insert(label);
@@ -439,6 +443,8 @@ class TBD_LoadoutApplication : Managed
 		if (!gear.primary.IsEmpty())   n++;
 		if (!gear.optic.IsEmpty())     n++;
 		if (!gear.magazine.IsEmpty())  n++;
+		if (gear.attachments)
+			n += gear.attachments.Count();
 		// T-182 - the three weapon slots the compiler used to discard. Counted here because this
 		// is the verdict's DENOMINATOR: omit them and a pass that failed to deliver a launcher
 		// would still report gear=N/N and call itself complete.
@@ -976,7 +982,10 @@ class TBD_LoadoutApplication : Managed
 		}
 
 		TBD_SlotGearStruct gear = m_Loadout.gear;
-		if (!gear || (gear.optic.IsEmpty() && gear.magazine.IsEmpty()))
+		bool hasAttach = false;
+		if (gear && gear.attachments && gear.attachments.Count() > 0)
+			hasAttach = true;
+		if (!gear || (gear.optic.IsEmpty() && gear.magazine.IsEmpty() && !hasAttach))
 		{
 			FinishRest();
 			return;
@@ -989,12 +998,22 @@ class TBD_LoadoutApplication : Managed
 				Fail("optic", gear.optic, "no primary weapon on the character to mount it on");
 			if (!gear.magazine.IsEmpty())
 				Fail("magazine", gear.magazine, "no primary weapon on the character to load it into");
+			if (gear.attachments)
+			{
+				foreach (string attachRes : gear.attachments)
+					Fail("attach", attachRes, "no primary weapon on the character to mount it on");
+			}
 			FinishRest();
 			return;
 		}
 
 		IssueWeaponItem("optic", gear.optic);
 		IssueWeaponItem("magazine", gear.magazine);
+		if (gear.attachments)
+		{
+			foreach (string attachRes : gear.attachments)
+				IssueWeaponItem("attach", attachRes);
+		}
 
 		if (m_aWeaponPending.IsEmpty())
 		{
@@ -1003,6 +1022,16 @@ class TBD_LoadoutApplication : Managed
 		}
 
 		GetGame().GetCallqueue().CallLater(WeaponVerifyTick, WEAPON_TICK_MS, false, 1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-310 per-attachment mount log: [TBD][Equip] attach=<res> result=<ok|failed>
+	protected void LogAttachResult(string resName, bool ok)
+	{
+		string result = "failed";
+		if (ok)
+			result = "ok";
+		Print(string.Format("[TBD][Equip] attach=%1 result=%2", resName, result));
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1035,6 +1064,8 @@ class TBD_LoadoutApplication : Managed
 		if (WeaponStorageHas(storage, resName))
 		{
 			Print(string.Format("%1 slot=%2 %3 mount-skipped (already on weapon) %4", m_sTag, m_sLabel, label, resName));
+			if (label == "attach")
+				LogAttachResult(resName, true);
 			m_iGearApplied++;
 			return;
 		}
@@ -1143,6 +1174,8 @@ class TBD_LoadoutApplication : Managed
 				continue;
 
 			Print(string.Format("%1 slot=%2 %3 mount OK %4 (on %5)", m_sTag, m_sLabel, p.label, p.resName, PrefabOf(m_PrimaryWeapon)));
+			if (p.label == "attach")
+				LogAttachResult(p.resName, true);
 			m_iGearApplied++;
 			m_aWeaponPending.Remove(i);
 		}

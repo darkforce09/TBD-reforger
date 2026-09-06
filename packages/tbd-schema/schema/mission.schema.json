@@ -379,12 +379,17 @@
           "properties": {
             "gear": {
               "type": "object",
-              "description": "Fixed gear ResourceNames. WEAR derivation: jacket→uniform, armoredVest else vest→vest (single-vest collapse, documented), headCover→helmet; pants/boots/handwear/backpack copied verbatim since A3. WEAPONS (T-182): all FOUR editor weapon slots are carried, each selected by the exact (slotIndex, slotType) pair the Arsenal authors — (0,primary)→primary, (1,primary)→launcher, (2,secondary)→handgun, (3,grenade)→throwable — and each keeps the editor's own key name so the compiled document reads the same words the Arsenal UI shows (arsenal_rules.rs WEAPON_SLOTS is the source of that mapping). optic/magazine ride the (0,primary) rifle ALONE; the other three weapons carry no sub-slots today. Before T-182 the compiler selected ONLY (0,primary) and silently discarded launcher/handgun/throwable — this prose used to describe that partial mapping as complete, which is why the loss shipped unnoticed. Empty slots are omitted, never empty strings.",
+              "description": "Fixed gear ResourceNames. WEAR derivation: jacket→uniform, armoredVest else vest→vest (single-vest collapse, documented), headCover→helmet; pants/boots/handwear/backpack copied verbatim since A3. WEAPONS (T-182): all FOUR editor weapon slots are carried, each selected by the exact (slotIndex, slotType) pair the Arsenal authors — (0,primary)→primary, (1,primary)→launcher, (2,secondary)→handgun, (3,grenade)→throwable — and each keeps the editor's own key name so the compiled document reads the same words the Arsenal UI shows (arsenal_rules.rs WEAPON_SLOTS is the source of that mapping). optic/magazine ride the (0,primary) rifle ALONE; the other three weapons carry no sub-slots today. Before T-182 the compiler selected ONLY (0,primary) and silently discarded launcher/handgun/throwable — this prose used to describe that partial mapping as complete, which is why the loss shipped unnoticed. Empty slots are omitted, never empty strings. T-310: optional attachments[] (wireSafeString ResourceNames) from the (0,primary) SlotLoadoutV2 edges; omitted when empty.",
               "additionalProperties": false,
               "properties": {
                 "primary": { "type": "string", "minLength": 1 },
                 "optic": { "type": "string", "minLength": 1 },
                 "magazine": { "type": "string", "minLength": 1 },
+                "attachments": {
+                  "type": "array",
+                  "description": "T-310. Optional. Primary-rifle Arsenal attachment ResourceNames, copied from SlotLoadoutV2 weapons[].attachments edges on (slotIndex 0, slotType primary). Omitted when empty. Mounted by TBD_LoadoutEquipHelper after optic/magazine.",
+                  "items": { "$ref": "#/$defs/wireSafeString", "minLength": 1 }
+                },
                 "launcher": { "type": "string", "minLength": 1 },
                 "handgun": { "type": "string", "minLength": 1 },
                 "throwable": { "type": "string", "minLength": 1 },

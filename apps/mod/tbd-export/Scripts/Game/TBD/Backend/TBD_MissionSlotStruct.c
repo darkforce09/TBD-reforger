@@ -7,6 +7,7 @@ class TBD_SlotGearStruct
 	string primary;  //!< Primary weapon ResourceName - engine weapon slot 0 (slotType "primary").
 	string optic;    //!< Optic ResourceName. T-181.10 - mounted into the PRIMARY weapon's storage only.
 	string magazine; //!< Magazine ResourceName. T-181.10 - loaded into the PRIMARY weapon's storage only.
+	ref array<string> attachments; //!< T-310. Arsenal attachment ResourceNames. Empty/absent = none; Count() is presence.
 	// T-182 - the other three authored weapon slots. The editor has always written all four
 	// (arsenal_rules.rs WEAPON_SLOTS); the compiler selected only slot 0 and dropped these three,
 	// so a player authored with an RPG spawned without it. Names are the EDITOR's own vocabulary
