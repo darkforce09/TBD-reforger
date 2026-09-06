@@ -289,22 +289,42 @@ pub fn declutter_road_labels(
     candidates: &[RoadLabelPlacement],
     deck_zoom: f64,
 ) -> Vec<RoadLabelPlacement> {
-    let d_min = road_declutter_min_dist_m(deck_zoom);
     let mut sorted: Vec<RoadLabelPlacement> = candidates.to_vec();
-    sorted.sort_by(|a, b| {
-        b.priority
-            .cmp(&a.priority)
-            .then_with(|| a.name.cmp(&b.name))
-            .then_with(|| a.segment_id.cmp(&b.segment_id))
-    });
+    sorted.sort_by(road_declutter_order);
+    declutter_road_labels_in_order(&sorted, deck_zoom)
+}
+
+/// The declutter sort key: priority desc, then name, then segment id.
+///
+/// Split out of [`declutter_road_labels`] at T-935.7 so the emitter can write the archive's
+/// `road_names` lane *already in this order* — see [`road_names_to_archive`].
+fn road_declutter_order(a: &RoadLabelPlacement, b: &RoadLabelPlacement) -> std::cmp::Ordering {
+    b.priority
+        .cmp(&a.priority)
+        .then_with(|| a.name.cmp(&b.name))
+        .then_with(|| a.segment_id.cmp(&b.segment_id))
+}
+
+/// The greedy half of [`declutter_road_labels`], for candidates **already** in
+/// [`road_declutter_order`].
+///
+/// `priority` and `segment_id` enter the algorithm only through that sort, so a caller holding a
+/// pre-sorted list reproduces the same draw set without them — which is exactly the archive path,
+/// where the wire type carries neither (see [`road_names_from_archive`]).
+#[must_use]
+pub fn declutter_road_labels_in_order(
+    sorted: &[RoadLabelPlacement],
+    deck_zoom: f64,
+) -> Vec<RoadLabelPlacement> {
+    let d_min = road_declutter_min_dist_m(deck_zoom);
     let mut keep: Vec<RoadLabelPlacement> = Vec::new();
     for cand in sorted {
         if keep.len() >= ROAD_NAME_MAX_ON_SCREEN {
             break;
         }
-        let blocked = keep.iter().any(|k| dist_m(&cand, k) < d_min);
+        let blocked = keep.iter().any(|k| dist_m(cand, k) < d_min);
         if !blocked {
-            keep.push(cand);
+            keep.push(cand.clone());
         }
     }
     keep
@@ -370,6 +390,176 @@ pub fn major_roads_covered(drawn: &[RoadLabelPlacement], required: &[&str]) -> b
             .iter()
             .any(|n| n == &k || n.contains(&k) || k.contains(n))
     })
+}
+
+/* ─────────────────────── T-935.7 road names ⇄ MapLabelsArchive ─────────────────────── */
+
+/// The closed road-class table, in `roads::road_style_width` order. The index **+1** is the
+/// `road_class` byte on the wire; `0` is "unknown class", which no gate admits.
+pub const ROAD_CLASSES: [&str; 6] = [
+    "highway_paved",
+    "road_paved",
+    "road_dirt",
+    "track",
+    "path",
+    "runway",
+];
+
+/// Wire code for a road class (`0` when the class is not in [`ROAD_CLASSES`]).
+#[must_use]
+pub fn road_class_code(road_class: &str) -> u8 {
+    ROAD_CLASSES
+        .iter()
+        .position(|c| *c == road_class)
+        .map_or(0, |i| (i + 1) as u8)
+}
+
+/// Class name for a wire code (`""` for `0` / out of range).
+#[must_use]
+pub fn road_class_name(code: u8) -> &'static str {
+    match usize::from(code)
+        .checked_sub(1)
+        .and_then(|i| ROAD_CLASSES.get(i))
+    {
+        Some(c) => c,
+        None => "",
+    }
+}
+
+/// The `deck_zoom` floor at which [`road_name_visible_for_class`] starts admitting `road_class`,
+/// or `None` when the class is never drawn.
+#[must_use]
+pub fn road_class_visibility_floor(road_class: &str) -> Option<f64> {
+    if road_class == "highway_paved" || road_class == "runway" {
+        Some(ROAD_NAME_MIN_ZOOM_HIGHWAY)
+    } else if road_class == "road_paved" {
+        Some(ROAD_NAME_MIN_ZOOM_SECONDARY)
+    } else {
+        None
+    }
+}
+
+/// `road-names.json` + centrelined segments → the archive's `road_names` lane.
+///
+/// # What the wire type can and cannot say
+///
+/// [`RoadNameLabel`] is a *baked placement* — name, anchor, angle, one class byte. It carries
+/// neither `priority` nor `segment_id` nor the curated `minDeckZoom` override, and
+/// [`build_road_label_draw_set`] uses all three. Two encodings close that gap exactly, and both are
+/// checked rather than assumed:
+///
+/// 1. **Order carries priority.** `priority` and `segment_id` enter the pipeline only as the
+///    declutter sort key, so the lane is written pre-sorted in [`road_declutter_order`] and read
+///    back through [`declutter_road_labels_in_order`], which does not re-sort.
+/// 2. **The class byte carries the *visibility* floor, not the segment's class.** An entry with a
+///    `minDeckZoom` override is stored as the class whose gate has that exact floor, so
+///    [`road_name_visible_for_class`] on the archive side admits precisely the rows
+///    [`road_entry_visible`] admits on the JSON side.
+///
+/// Encoding 2 is only total over the floors some class already expresses (`0.0` and `1.0`). A
+/// curated override the table cannot represent is an **error**, not a rounded guess: a silently
+/// re-floored label is a road name that appears at the wrong zoom on a map, and this is the one
+/// place that can still see the override.
+///
+/// # Errors
+/// Returns a message when an entry's effective visibility floor has no class encoding.
+pub fn road_names_to_archive(
+    names: &RoadNamesFile,
+    segments: &[RoadSegment],
+) -> Result<Vec<crate::world::binary::archives::RoadNameLabel>, String> {
+    // The bake zoom admits every entry: the highest floor any class or override asks for. Anchors
+    // and angles do not depend on zoom (`placement_fractions` keys off arc length), so one pass at
+    // this zoom is the complete candidate set.
+    let bake_zoom = names
+        .roads
+        .iter()
+        .filter_map(|e| e.min_deck_zoom)
+        .fold(ROAD_NAME_MIN_ZOOM_SECONDARY, f64::max);
+    let mut baked: Vec<(RoadLabelPlacement, u8)> = Vec::new();
+    for entry in &names.roads {
+        let one = RoadNamesFile {
+            schema_version: names.schema_version.clone(),
+            terrain_id: names.terrain_id.clone(),
+            roads: vec![entry.clone()],
+        };
+        for cand in place_road_labels(&one, segments, bake_zoom) {
+            let floor = match entry.min_deck_zoom {
+                Some(m) => m,
+                None => road_class_visibility_floor(&cand.road_class).ok_or_else(|| {
+                    format!(
+                        "road-names archive: \"{}\" is class {} which is never drawn",
+                        cand.name, cand.road_class
+                    )
+                })?,
+            };
+            let gate_class = ROAD_CLASSES
+                .iter()
+                .find(|c| road_class_visibility_floor(c) == Some(floor))
+                .ok_or_else(|| {
+                    format!(
+                        "road-names archive: \"{}\" needs visibility floor {floor}, which no road \
+                         class expresses — RoadNameLabel cannot carry it",
+                        cand.name
+                    )
+                })?;
+            baked.push((cand, road_class_code(gate_class)));
+        }
+    }
+    baked.sort_by(|a, b| road_declutter_order(&a.0, &b.0));
+    #[allow(clippy::cast_possible_truncation)]
+    Ok(baked
+        .into_iter()
+        .map(|(p, code)| crate::world::binary::archives::RoadNameLabel {
+            name: p.name,
+            position: [p.x as f32, p.y as f32],
+            angle_deg: p.angle_deg as f32,
+            road_class: code,
+        })
+        .collect())
+}
+
+/// The archive's `road_names` lane → candidate [`RoadLabelPlacement`]s, still in
+/// [`road_declutter_order`]. Feed them to [`build_road_label_draw_set_from_archive`].
+///
+/// `road_class` is the **visibility** class (see [`road_names_to_archive`]), `priority` is derived
+/// from it, and `segment_id` / `arc_frac` come back empty — the wire type has no room for them.
+/// That makes [`road_placement_geometry_holds`], which joins on `segment_id`, a JSON-path gate only.
+#[must_use]
+pub fn road_names_from_archive(
+    archive: &rkyv::Archived<crate::world::binary::archives::MapLabelsArchive>,
+) -> Vec<RoadLabelPlacement> {
+    archive
+        .road_names
+        .iter()
+        .map(|r| {
+            let road_class = road_class_name(r.road_class);
+            RoadLabelPlacement {
+                name: r.name.to_string(),
+                x: f64::from(r.position[0].to_native()),
+                y: f64::from(r.position[1].to_native()),
+                angle_deg: f64::from(r.angle_deg.to_native()),
+                priority: road_class_priority(road_class),
+                segment_id: String::new(),
+                road_class: road_class.to_string(),
+                arc_frac: 0.0,
+            }
+        })
+        .collect()
+}
+
+/// [`build_road_label_draw_set`] for archive-derived candidates: gate by the wire class's
+/// visibility floor, then declutter **without re-sorting** (the lane is already ordered).
+#[must_use]
+pub fn build_road_label_draw_set_from_archive(
+    candidates: &[RoadLabelPlacement],
+    deck_zoom: f64,
+) -> Vec<RoadLabelPlacement> {
+    let visible: Vec<RoadLabelPlacement> = candidates
+        .iter()
+        .filter(|c| road_name_visible_for_class(&c.road_class, deck_zoom))
+        .cloned()
+        .collect();
+    declutter_road_labels_in_order(&visible, deck_zoom)
 }
 
 #[cfg(test)]
@@ -484,5 +674,129 @@ mod tests {
         });
         let file = parse_road_names_json(&json.to_string()).expect("parse");
         assert_eq!(file.roads[0].name, "Main Highway");
+    }
+
+    /* ───────────────────── T-935.7 archive bridge ───────────────────── */
+
+    use crate::world::binary::archives::MapLabelsArchive;
+    use crate::world::binary::{access_checked, to_bytes};
+
+    fn class_codes_round_trip_fixture() -> (RoadNamesFile, Vec<RoadSegment>) {
+        // A highway (class gate z≥0), a secondary (class gate z≥1) and a `road_paved` pinned to
+        // z≥0 by a curated override — the everon shape that makes the override load-bearing.
+        let segments = vec![
+            seg("hw", "highway_paved", vec![[0.0, 0.0], [4000.0, 0.0]]),
+            seg("sec", "road_paved", vec![[0.0, 900.0], [4000.0, 900.0]]),
+            seg(
+                "pinned",
+                "road_paved",
+                vec![[0.0, 1800.0], [4000.0, 1800.0]],
+            ),
+        ];
+        let names = RoadNamesFile {
+            schema_version: "1.0.0".into(),
+            terrain_id: "fixture".into(),
+            roads: vec![
+                RoadNameEntry {
+                    id: "a".into(),
+                    name: "Main Highway".into(),
+                    segment_ids: vec!["hw".into()],
+                    min_deck_zoom: None,
+                },
+                RoadNameEntry {
+                    id: "b".into(),
+                    name: "Secondary Road".into(),
+                    segment_ids: vec!["sec".into()],
+                    min_deck_zoom: None,
+                },
+                RoadNameEntry {
+                    id: "c".into(),
+                    name: "Pinned Road".into(),
+                    segment_ids: vec!["pinned".into()],
+                    min_deck_zoom: Some(0.0),
+                },
+            ],
+        };
+        (names, segments)
+    }
+
+    #[test]
+    fn class_codes_round_trip_and_reject_the_unknown() {
+        for c in ROAD_CLASSES {
+            assert_eq!(road_class_name(road_class_code(c)), c);
+        }
+        assert_eq!(road_class_code("not_a_class"), 0);
+        assert_eq!(road_class_name(0), "");
+        assert_eq!(road_class_name(200), "");
+        assert!(!road_name_visible_for_class(road_class_name(0), 99.0));
+    }
+
+    /// The whole point of the lane: the same road names, at the same anchors and angles, at every
+    /// zoom band — including `0 ≤ z < 1`, where only the curated override keeps `Pinned Road` up.
+    #[test]
+    fn archive_road_labels_match_the_json_draw_set_at_every_zoom() {
+        let (names, segments) = class_codes_round_trip_fixture();
+        let lane = road_names_to_archive(&names, &segments).expect("bake");
+        let bytes = to_bytes(&MapLabelsArchive {
+            schema_version: 1,
+            towns: Vec::new(),
+            height_labels: Vec::new(),
+            road_names: lane,
+        })
+        .expect("serialise");
+        let candidates =
+            road_names_from_archive(access_checked::<MapLabelsArchive>(&bytes).expect("access"));
+
+        let mut saw_pinned_below_one = false;
+        for z in [-2.0, -0.5, 0.0, 0.5, 1.0, 2.0, 3.0] {
+            let json = build_road_label_draw_set(&names, &segments, z);
+            let arch = build_road_label_draw_set_from_archive(&candidates, z);
+            assert_eq!(
+                arch.len(),
+                json.len(),
+                "z={z}: {:?} vs {:?}",
+                arch.iter().map(|l| &l.name).collect::<Vec<_>>(),
+                json.iter().map(|l| &l.name).collect::<Vec<_>>()
+            );
+            for (a, j) in arch.iter().zip(&json) {
+                assert_eq!(a.name, j.name, "z={z}");
+                assert_eq!(a.x, f64::from(j.x as f32), "z={z} {}", j.name);
+                assert_eq!(a.y, f64::from(j.y as f32), "z={z} {}", j.name);
+                assert_eq!(
+                    a.angle_deg,
+                    f64::from(j.angle_deg as f32),
+                    "z={z} {}",
+                    j.name
+                );
+            }
+            if (0.0..1.0).contains(&z) && json.iter().any(|l| l.name == "Pinned Road") {
+                saw_pinned_below_one = true;
+            }
+        }
+        assert!(
+            saw_pinned_below_one,
+            "fixture must exercise the minDeckZoom override below the class gate"
+        );
+    }
+
+    #[test]
+    fn an_unrepresentable_override_is_refused_rather_than_rounded() {
+        let (mut names, segments) = class_codes_round_trip_fixture();
+        names.roads[2].min_deck_zoom = Some(2.5);
+        let err = road_names_to_archive(&names, &segments).expect_err("must refuse");
+        assert!(err.contains("Pinned Road"), "{err}");
+        assert!(err.contains("visibility floor 2.5"), "{err}");
+    }
+
+    #[test]
+    fn declutter_in_order_is_the_greedy_half_of_declutter() {
+        let (names, segments) = class_codes_round_trip_fixture();
+        let mut cands = place_road_labels(&names, &segments, 3.0);
+        assert!(cands.len() >= 3);
+        cands.sort_by(road_declutter_order);
+        assert_eq!(
+            declutter_road_labels_in_order(&cands, 1.0),
+            declutter_road_labels(&cands, 1.0)
+        );
     }
 }

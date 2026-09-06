@@ -10,6 +10,10 @@ pub mod carto;
 pub mod glyphs;
 pub mod img;
 pub mod labels;
+/// T-935.7 — `locations/map_labels.rkyv`, the binary twin of `locations.json` +
+/// `height-labels.json` + `road-names.json`. Separate from [`labels`], which *produces* two of
+/// those three JSON files: this module only ever reads them.
+pub mod labels_emit;
 pub mod sap;
 pub mod unified;
 pub mod water;

@@ -80,7 +80,11 @@ pub use importance_declutter::{
     town_label_zoom_ceiling, town_lane_kind_ok,
 };
 pub use index::WorldSpatialIndex;
-pub use locations::{locations_to_label_specs, parse_locations_json};
+pub use locations::{
+    MAP_LABELS_ALIGN, MapLabels, height_labels_from_archive, height_labels_to_archive,
+    locations_to_label_specs, map_labels_from_bytes, parse_height_labels_json,
+    parse_locations_json, towns_from_archive, towns_to_archive,
+};
 pub use lod_gates::{
     BUILDING_BADGE_MIN_ZOOM, BUILDING_FOOTPRINT_MIN_ZOOM, FENCE_MIN_ZOOM, FOREST_FILL_MAX_ZOOM,
     FOREST_OUTLINE_MIN_ZOOM, INSTANCE_BUDGET, PIER_MIN_ZOOM, PROP_MIN_ZOOM, REF_ZOOM,
@@ -102,14 +106,16 @@ pub use residency::{
     ResidencyEvent, WorldResidency,
 };
 pub use road_labels::{
-    ROAD_NAME_DECLUTTER_BASE_M, ROAD_NAME_LONG_SEGMENT_M, ROAD_NAME_MAX_ON_SCREEN,
+    ROAD_CLASSES, ROAD_NAME_DECLUTTER_BASE_M, ROAD_NAME_LONG_SEGMENT_M, ROAD_NAME_MAX_ON_SCREEN,
     ROAD_NAME_MIN_ZOOM_HIGHWAY, ROAD_NAME_MIN_ZOOM_SECONDARY, ROAD_NAME_OFFSET_M,
     ROAD_NAME_PERP_TOL_M, RoadLabelPlacement, RoadNameEntry, RoadNamesFile,
-    build_road_label_draw_set, declutter_road_labels, major_roads_covered, parse_road_names_json,
+    build_road_label_draw_set, build_road_label_draw_set_from_archive, declutter_road_labels,
+    declutter_road_labels_in_order, major_roads_covered, parse_road_names_json,
     perpendicular_dist_to_polyline, place_road_labels, placement_fractions, point_tangent_at_frac,
-    polyline_length, road_class_priority, road_declutter_invariant_holds,
-    road_declutter_min_dist_m, road_name_schema_holds, road_name_visible_for_class,
-    road_placement_geometry_holds, upright_angle_deg,
+    polyline_length, road_class_code, road_class_name, road_class_priority,
+    road_class_visibility_floor, road_declutter_invariant_holds, road_declutter_min_dist_m,
+    road_name_schema_holds, road_name_visible_for_class, road_names_from_archive,
+    road_names_to_archive, road_placement_geometry_holds, upright_angle_deg,
 };
 pub use roads::{
     CENTERLINE_DEDUPE_M, RoadSegment, extract_road_centerline, parse_roads_payload,
