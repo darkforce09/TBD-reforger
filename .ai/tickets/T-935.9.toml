@@ -1,15 +1,20 @@
 id = "T-935.9"
 kind = "work"
-parent = "T-935"
 title = "Water vectors rkyv and bathymetry TBDB container"
 summary = "tbd-tools map emits water/water_vectors.rkyv from the staging vector export and water/bathymetry.tbd-bath (TBDB, u16 depth + u8 mask, mip chain) from the two staging rasters; a new runtime loader exposes the water mask for placement guards."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7200
-priority = 1
 spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
 plan = "docs/plans/t-935_9_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = [
+    "T-935.1",
+    "T-935.3",
+    "T-935.7",
+]
+parent = "T-935"
 main_goal = "Water is a first-class binary asset: vectors zero-copy, bathymetry castable, and a mask query any placement guard can call."
 context = [
     "Anchor 2026-09-04: staging (gitignored) packages/map-assets/everon/staging/water/TBD_InlandWaterExport_{mask,depth}.txt (328 MB each) + TBD_InlandWaterExport_vectors.json; no water loader exists anywhere.",
@@ -43,8 +48,8 @@ acceptance = [
     "WaterMask::is_water answers from the container without decoding rasters; mip levels agree with level 0 on synthetic data.",
     "The frontend water module builds into the editor and activates only when manifest.water is present.",
 ]
-depends_on = ["T-935.1", "T-935.3", "T-935.7"]
 created_at = "2026-09-05T01:34:37Z"
+completed_at = "2026-09-06T08:40:32Z"
 owns = [
     "tools/tbd-tools/src/map/water_emit.rs",
     "tools/tbd-tools/src/map/mod.rs",
