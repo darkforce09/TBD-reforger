@@ -2311,49 +2311,21 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         ticket: "T-654",
         why: "clean",
     },
-    // T-674 — objective-style slot identity.
-    UnreadField {
-        name: "rank",
-        expected: 0,
-        ticket: "T-674",
-        why: "clean",
-    },
-    UnreadField {
-        name: "stance",
-        expected: 0,
-        ticket: "T-674",
-        why: "clean (word-boundary; the 39-file grep hits were substrings)",
-    },
-    UnreadField {
-        name: "unitName",
-        expected: 0,
-        ticket: "T-674",
-        why: "clean",
-    },
-    UnreadField {
-        name: "leaderSlotId",
-        expected: 0,
-        ticket: "T-674",
-        why: "clean",
-    },
-    // `callsign` is the EXISTING group.callsign wire key (a different field); `tag` is DOMINATED by
-    // UI list-row `int tag` numbering. Both are re-checked, not introduced, by T-674's new slot.* keys.
-    UnreadField {
-        name: "callsign",
-        expected: 16,
-        ticket: "T-674",
-        why: "existing group.callsign reader (TBD_MissionLoader/TBD_BriefingData), a different wire key from the new slot.callsign",
-    },
-    // Measured 42 (gate semantics), dominated by UI list-row `int tag` numbering:
-    // TBD_LobbyScreen 16 + TBD_ListBox 8 + TBD_AdminScreen 6 + TBD_ListBoxRow 2 = 32 of 42; the
-    // rest are BriefingScreen/SpectatorScreen/LoadoutEquipHelper. NOT "loadout/spectator" as once
-    // annotated — the UI list-row int tag is the real dominant, unrelated to the new slot.tag key.
-    UnreadField {
-        name: "tag",
-        expected: 42,
-        ticket: "T-674",
-        why: "UI list-row 'int tag' numbering (LobbyScreen/ListBox/AdminScreen/ListBoxRow dominate), unrelated to the new slot.tag key",
-    },
+    // T-674 — objective-style slot identity: RETIRED 2026-09-06, all six rows.
+    //
+    // T-674.2 landed the Enfusion reader, so `rank` (17), `stance` (11), `unitName` (5) and
+    // `leaderSlotId` (3) went from a clean 0 to real `JsonLoadContext`-bound members —
+    // `JsonLoadContext` binds by field NAME, so those identifiers ARE the contract and no way of
+    // writing the reader avoids them.
+    //
+    // `callsign` (16 -> 22) and `tag` (42 -> 45) go with them, and that is the part worth stating.
+    // A non-zero baseline in this table means "these hits are a pre-existing UNRELATED identifier",
+    // which `nonzero_baselines_explain_the_pre_existing_identifier` enforces in the `why` wording.
+    // Once a field genuinely gains a reader that sentence is false, so re-pinning them at 22 and 45
+    // would assert something untrue about a row whose whole purpose is the assertion. The unrelated
+    // identifiers they used to pin (the existing `group.callsign` reader, the UI list-row `int
+    // tag`) lose their tripwire with them; that is a real cost, and it is smaller than a table that
+    // lies.
 ];
 
 /// Strip `//`/`//!` line comments, `/* … */` block comments and the CONTENTS of double-quoted

@@ -312,7 +312,7 @@
         "leaderSlotId": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "T-674 — the TBD-only key naming which slot leads this squad (schemaVersion 1.3). References `slots[].uid` — a durable identity, because `id` is derived and shifts under role renames/reorders/deletes (see the `slot.id` description). This is a PER-SQUAD fact, so it lives here on the wire orbat group (one copy, the T-216 delta table's own proposal) rather than denormalised onto every `slots[]` entry where N copies could disagree with no schema able to catch it — the editor already authors it once per squad at `/editor/squads/*/leaderSlotId`. On the wire only — flatten.rs enumerates a squad's leaderSlotId as one of the six author-facing values the compile silently drops; the reader lands under T-674."
+          "description": "T-674 — the TBD-only key naming which slot leads this squad (schemaVersion 1.3). References `slots[].uid` — a durable identity, because `id` is derived and shifts under role renames/reorders/deletes (see the `slot.id` description). This is a PER-SQUAD fact, so it lives here on the wire orbat group (one copy, the T-216 delta table's own proposal) rather than denormalised onto every `slots[]` entry where N copies could disagree with no schema able to catch it — the editor already authors it once per squad at `/editor/squads/*/leaderSlotId`. READ SINCE T-674.2 (2026-09-06) via `TBD_MissionLoader.GetSquadLeaderSlot` / `IsSquadLeader`, which resolve it through the uid-aware slot lookup and then RE-CHECK that the seat belongs to this squad: slot uids are unique document-wide, so a leaderSlotId copied between squads resolves cleanly to a seat in the wrong one and nothing downstream could notice. A cross-squad reference yields no leader rather than a guessed one."
         }
       }
     },
@@ -411,7 +411,7 @@
         "callsign": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "T-674 (ATTR-FIELD-OBJ-CALLSIGN, schemaVersion 1.3). A per-slot display callsign, distinct from `groupCallsign` (the ORBAT group name) and from `id` (the derived label). On the wire only — flatten.rs:2620-2632 records this as one of the author-facing values the compile silently drops today; the roster reader lands under T-674. `wireSafeString`-constrained because it reaches the same tab-delimited roster wire as `id`."
+          "description": "T-674 (ATTR-FIELD-OBJ-CALLSIGN, schemaVersion 1.3). A per-slot display callsign, distinct from `groupCallsign` (the ORBAT group name) and from `id` (the derived label). READ SINCE T-674.2 (2026-09-06): bound on `TBD_MissionSlotStruct` and logged per identified seat. Reforger exposes NO replicated free-text name on a character (`CharacterIdentityComponent.SetIdentityFromIDs` takes indices into a faction identity table), so this reaches every surface holding the slot and the server log, and is deliberately NOT pushed onto the spawned entity. `wireSafeString`-constrained because it reaches the same tab-delimited roster wire as `id`."
         },
         "rank": {
           "type": "string",
@@ -424,22 +424,22 @@
             "major",
             "colonel"
           ],
-          "description": "T-674 (ATTR-FIELD-OBJ-RANK, schemaVersion 1.3). Character rank — TBD's own ladder (private → colonel); the reader maps these onto whatever engine rank type Reforger exposes; the names here are the contract, not an engine identifier (no `ECharacterRank`-style enum is asserted — verify the real engine type when the reader lands). On the wire only — no reader on any shipped build; lands under T-674."
+          "description": "T-674 (ATTR-FIELD-OBJ-RANK, schemaVersion 1.3). Character rank — TBD's own ladder (private → colonel); READ SINCE T-674.2 (2026-09-06). The engine type is `SCR_ECharacterRank` with unprefixed members PRIVATE/CORPORAL/SERGEANT/LIEUTENANT/CAPTAIN/MAJOR/COLONEL (also RENEGADE and GENERAL, which TBD does not author), applied through `SCR_CharacterRankComponent.SetCharacterRank` and replicated. TBD's ladder is an exact lowercase subset. The names here remain the contract; a kit prefab with no rank component is reported at WARNING rather than silently dropping the authored rank."
         },
         "stance": {
           "type": "string",
           "enum": ["stand", "crouch", "prone"],
-          "description": "T-674 (ATTR-FIELD-OBJ-STANCE, schemaVersion 1.3). Initial spawn pose. On the wire only, and needs an Enfusion spawn-pose call as well as this key — word-boundary `stance` in apps/mod is ZERO today (the 39-file `grep -rl stance` result is every hit being a substring). Lands under T-674."
+          "description": "T-674 (ATTR-FIELD-OBJ-STANCE, schemaVersion 1.3). Initial spawn pose. READ SINCE T-674.2 (2026-09-06), applied through `CharacterControllerComponent.SetStanceChange` on EVERY spawn including respawn, because a fresh body inherits nothing."
         },
         "unitName": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "T-674 (ATTR-FIELD-OBJ-UNIT-NAME, schemaVersion 1.3). A per-slot unit name that rides this slice rather than standing alone (the sweep says so explicitly). On the wire only — no reader on any shipped build; lands under T-674. `wireSafeString`-constrained (reaches a delimited wire)."
+          "description": "T-674 (ATTR-FIELD-OBJ-UNIT-NAME, schemaVersion 1.3). A per-slot unit name that rides this slice rather than standing alone (the sweep says so explicitly). READ SINCE T-674.2 (2026-09-06): bound on the slot and logged, not pushed onto the entity, for the same reason as `callsign` — read that description. `wireSafeString`-constrained (reaches a delimited wire)."
         },
         "tag": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "T-674 — the TBD-only slot tag key (schemaVersion 1.3), mirroring the ORBAT-slot `tag` the events path already carries (T-010). On the wire only for the placed-slot document — the flatten drops it today (flatten.rs:2620-2632); the reader lands under T-674."
+          "description": "T-674 — the TBD-only slot tag key (schemaVersion 1.3), mirroring the ORBAT-slot `tag` the events path already carries (T-010). READ SINCE T-674.2 (2026-09-06): bound on the slot and logged. Like `callsign` and `unitName` it has no engine target that reaches a client, so it is not pushed onto the spawned entity."
         },
         "placementRadius": {
           "type": "number",

@@ -36,8 +36,10 @@ acceptance = [
     "An error planted in a tbd-framework shared script fails the gate naming that file; a clean tree passes.",
     "Two mirrors that disagree on code fail with the path named, while a punctuation-only difference passes.",
 ]
+shipped_at = "dbaf92891"
 created_at = "2026-09-06T14:20:00Z"
 completed_at = "2026-09-06T12:12:34Z"
+estimated = ["tokens"]
 owns = [
     "xtask/src/gate_mod_compile.rs",
     "xtask/src/schema_gates.rs",
