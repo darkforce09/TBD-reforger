@@ -1,15 +1,19 @@
 id = "T-935.6"
 kind = "work"
-parent = "T-935"
 title = "Roads: rkyv emit and zero-copy loader"
 summary = "build-roads emits roads/road_network.rkyv (RoadNetworkArchive) beside objects/roads.json.gz; store.rs sniffs gzip magic versus rkyv so roads.rs loads either source into the same road network."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7190
-priority = 1
 spec = "docs/specs/Mission_Creator_Architecture/t935_map_binary_storage.md"
 plan = "docs/plans/t-935_6_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = [
+    "T-935.1",
+    "T-935.2",
+]
+parent = "T-935"
 main_goal = "The road network loads through access_checked with no JSON parse, and the JSON path still works until cutover."
 context = [
     "Anchor 2026-09-04: tools/tbd-tools/src/world/build.rs build-roads :1106-1183 writes objects/roads.json.gz; core roads.rs:28 parses it; store.rs:50/110/120 wires it; world_host.rs:146 fetches it.",
@@ -40,8 +44,8 @@ acceptance = [
     "roads/road_network.rkyv for everon loads through access_checked and equals the JSON road network.",
     "store.rs accepts gzip-JSON or rkyv bytes transparently; the frontend still fetches JSON until T-935.11/.13.",
 ]
-depends_on = ["T-935.1", "T-935.2"]
 created_at = "2026-09-05T01:34:37Z"
+completed_at = "2026-09-06T08:40:22Z"
 owns = [
     "tools/tbd-tools/src/world/roads_emit.rs",
     "tools/tbd-tools/src/world/mod.rs",
