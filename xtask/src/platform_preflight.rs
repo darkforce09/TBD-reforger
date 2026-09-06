@@ -270,6 +270,160 @@ fn stray_worktree_targets(root: &Path) -> u64 {
     n
 }
 
+// ── T-300: THE RUN TARGET'S PROVENANCE ───────────────────────────────────────────────────────
+//
+// `stray_worktree_targets` above answers "did a worktree build into its own `target/`?" — a disk
+// question. This answers the one that cost wave 1 a day: "is the binary a run lane is about to
+// launch the code that is actually on main?" Cargo cannot answer it. Its `-C metadata` hash does
+// not include the manifest path, so two checkouts of one package write the same artifact and the
+// same uplifted `<profile>/<bin>`, and freshness is mtime-keyed, so the second build is satisfied
+// by the first and prints `Finished` with no `Compiling` line. MEASURED 2026-09-06 (T-300):
+// a worktree built `UNMERGED-SLICE-CODE`, the main checkout's `cargo run` then printed it.
+//
+// So `cargo xtask platform wave run` writes `tbd-built-from` (`<sha> <checkout>`) beside the
+// binaries, and this reads it back. THREE answers, and only one of them is green: agreement,
+// disagreement, and NO STAMP — because binaries whose provenance is unknown are exactly the
+// case the wave-1 incident presented as, and treating unknown as fine is the signature defect.
+
+/// Cargo's two profile directories, in the order this check reports them.
+const RUN_PROFILE_DIRS: &[&str] = &["debug", "release"];
+
+/// The executables in a profile directory, sorted — what this check NAMES when it blocks.
+///
+/// Regular files with an execute bit and no extension: cargo's uplifted-binary shape, which
+/// excludes `.d` depfiles, the stamp, `.rlib`/`.rmeta` and the `deps/ build/ incremental/`
+/// subdirectories without enumerating them. A sibling of [`stray_worktree_targets`] above rather
+/// than of the writer in [`crate::wave`]: it is a probe of a directory, and the reader is the
+/// only caller.
+fn run_binaries(bin_dir: &Path) -> Vec<String> {
+    use std::os::unix::fs::PermissionsExt;
+    let mut out: Vec<String> = Vec::new();
+    let Ok(rd) = fs::read_dir(bin_dir) else {
+        return out;
+    };
+    for ent in rd.flatten() {
+        let Ok(md) = ent.metadata() else { continue };
+        if !md.is_file() || md.permissions().mode() & 0o111 == 0 {
+            continue;
+        }
+        let name = ent.file_name().to_string_lossy().into_owned();
+        if name.contains('.') || name == crate::wave::RUN_STAMP_FILE {
+            continue;
+        }
+        out.push(name);
+    }
+    out.sort();
+    out
+}
+
+/// What the run target's stamp says about the binaries sitting in it.
+#[derive(Debug, PartialEq, Eq)]
+enum RunTargetState {
+    /// No run target on disk, or no binaries in it. Nothing can be stale.
+    Empty,
+    /// Stamped, and the stamp names this checkout at HEAD.
+    Fresh { profile: String, bins: usize },
+    /// Binaries with no readable `tbd-built-from` beside them.
+    Unstamped { profile: String, bins: Vec<String> },
+    /// Stamped, and the stamp disagrees with HEAD or with this checkout.
+    Stale {
+        profile: String,
+        bins: Vec<String>,
+        stamp: crate::wave::RunStamp,
+    },
+}
+
+/// Read every profile directory in the run target and report the FIRST one that is not green.
+///
+/// First-bad rather than a summary: preflight's contract is one line per check, and the operator
+/// needs the path to delete, not a census. `head` empty (git could not answer) is itself a
+/// disagreement — a preflight that cannot resolve HEAD cannot certify anything.
+fn run_target_state(run_dir: &Path, head: &str, this_checkout: &Path) -> RunTargetState {
+    let mut fresh: Option<RunTargetState> = None;
+    for profile in RUN_PROFILE_DIRS {
+        let bin_dir = run_dir.join(profile);
+        let bins = run_binaries(&bin_dir);
+        if bins.is_empty() {
+            continue;
+        }
+        match crate::wave::read_run_stamp(&bin_dir) {
+            None => {
+                return RunTargetState::Unstamped {
+                    profile: (*profile).to_string(),
+                    bins,
+                };
+            }
+            Some(stamp) => {
+                let agrees = !head.is_empty()
+                    && stamp.sha == head
+                    && Path::new(&stamp.checkout) == this_checkout;
+                if !agrees {
+                    return RunTargetState::Stale {
+                        profile: (*profile).to_string(),
+                        bins,
+                        stamp,
+                    };
+                }
+                if fresh.is_none() {
+                    fresh = Some(RunTargetState::Fresh {
+                        profile: (*profile).to_string(),
+                        bins: bins.len(),
+                    });
+                }
+            }
+        }
+    }
+    fresh.unwrap_or(RunTargetState::Empty)
+}
+
+/// `(is_block, detail)` — the detail names the stale binary AND the checkout that built it AND
+/// the command that clears it, because a preflight line the operator cannot act on is a warning
+/// they will learn to scroll past.
+fn run_target_detail(state: &RunTargetState, run_dir: &Path, head: &str) -> (bool, String) {
+    let d = run_dir.display();
+    match state {
+        RunTargetState::Empty => (false, format!("{d} — no run binaries built yet")),
+        RunTargetState::Fresh { profile, bins } => (
+            false,
+            format!(
+                "{d}/{profile} — {bins} binary(ies) built from HEAD {}",
+                short(head)
+            ),
+        ),
+        RunTargetState::Unstamped { profile, bins } => (
+            true,
+            format!(
+                "{d}/{profile}/{} has no {} — provenance unknown; cargo clean --target-dir {d}",
+                bins.join(","),
+                crate::wave::RUN_STAMP_FILE,
+            ),
+        ),
+        RunTargetState::Stale {
+            profile,
+            bins,
+            stamp,
+        } => (
+            true,
+            format!(
+                "{d}/{profile}/{} was built from {} by {} — HEAD is {}; cargo clean --target-dir {d}",
+                bins.join(","),
+                short(&stamp.sha),
+                stamp.checkout,
+                short(head),
+            ),
+        ),
+    }
+}
+
+/// First 7 of a sha, or `(unresolved)` when git could not answer — never an empty string mid
+/// sentence, which is how `wave::short` renders a failure and how a message loses its subject.
+fn short(sha: &str) -> String {
+    if sha.len() < 7 {
+        return "(unresolved)".to_string();
+    }
+    sha[..7].to_string()
+}
+
 fn worktree_paths(root: &Path) -> Vec<PathBuf> {
     let out = Command::new("git")
         .args(["worktree", "list"])
@@ -413,6 +567,19 @@ pub fn run(warn_only: bool) -> Result<u8> {
             "per-worktree target/",
             &format!("{stray} worktree(s) built into their own target — will exhaust disk"),
         );
+    }
+    // T-300. The shared cache is fine for check/test/clippy and fatal for a launched binary; this
+    // is the check that says which one the run target currently holds.
+    {
+        let run_dir = PathBuf::from(crate::wave::resolve_run_target_dir(&root));
+        let head = git_out(&root, &["rev-parse", "HEAD"]).unwrap_or_default();
+        let state = run_target_state(&run_dir, &head, &root);
+        let (block, detail) = run_target_detail(&state, &run_dir, &head);
+        if block {
+            nope(&mut c, "run target", &detail);
+        } else {
+            ok("run target", &detail);
+        }
     }
 
     // 5. RAM + swap
@@ -640,4 +807,181 @@ pub fn run(warn_only: bool) -> Result<u8> {
     }
     writeln!(out, "PREFLIGHT: PASS ({} warn)", c.warn)?;
     Ok(0)
+}
+
+#[cfg(test)]
+mod run_target_tests {
+    use super::*;
+    use crate::wave::{RunStamp, write_run_stamp};
+    use std::os::unix::fs::PermissionsExt;
+
+    const HEAD: &str = "4b2cca4a5880ee8a0e8fbcbbedd476534db5b0ac";
+    const OTHER: &str = "1f486e5721f906619259768b8ae7b7ebfd625fb9";
+
+    struct Tmp(PathBuf);
+    impl Tmp {
+        fn new(tag: &str) -> Tmp {
+            let p = env::temp_dir().join(format!(
+                "tbd-t300-pf-{tag}-{}-{:?}",
+                std::process::id(),
+                std::thread::current().id()
+            ));
+            let _ = fs::remove_dir_all(&p);
+            fs::create_dir_all(&p).expect("mkdir scratch");
+            Tmp(p)
+        }
+        /// A run target holding `bins` executables in `profile`, and the stamp when given.
+        fn run_target(&self, profile: &str, bins: &[&str], stamp: Option<RunStamp>) -> PathBuf {
+            let run = self.0.join("run-main");
+            let d = run.join(profile);
+            fs::create_dir_all(&d).expect("mkdir profile");
+            for b in bins {
+                let p = d.join(b);
+                fs::write(&p, b"elf").expect("write bin");
+                fs::set_permissions(&p, fs::Permissions::from_mode(0o755)).expect("chmod");
+            }
+            if let Some(s) = stamp {
+                write_run_stamp(&d, &s).expect("stamp");
+            }
+            run
+        }
+    }
+    impl Drop for Tmp {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn stamp(sha: &str, checkout: &Path) -> RunStamp {
+        RunStamp {
+            sha: sha.to_string(),
+            checkout: checkout.display().to_string(),
+        }
+    }
+
+    #[test]
+    fn a_run_target_that_was_never_built_is_green() {
+        let t = Tmp::new("empty");
+        let run = t.0.join("run-main");
+        let st = run_target_state(&run, HEAD, &t.0);
+        assert_eq!(st, RunTargetState::Empty);
+        assert!(!run_target_detail(&st, &run, HEAD).0);
+    }
+
+    #[test]
+    fn binaries_built_from_head_in_this_checkout_are_green() {
+        let t = Tmp::new("fresh");
+        let run = t.run_target("debug", &["api"], Some(stamp(HEAD, &t.0)));
+        let st = run_target_state(&run, HEAD, &t.0);
+        assert_eq!(
+            st,
+            RunTargetState::Fresh {
+                profile: "debug".into(),
+                bins: 1
+            }
+        );
+        let (block, detail) = run_target_detail(&st, &run, HEAD);
+        assert!(!block, "{detail}");
+        assert!(detail.contains("4b2cca4"), "{detail}");
+    }
+
+    /// THE TICKET'S OWN PERTURBATION, as a unit: a stamp whose sha is not HEAD must go red and
+    /// the message must name the binary, the sha it came from and HEAD.
+    #[test]
+    fn a_stamp_that_disagrees_with_head_blocks_and_names_the_binary() {
+        let t = Tmp::new("stale");
+        let run = t.run_target("debug", &["api", "world"], Some(stamp(OTHER, &t.0)));
+        let st = run_target_state(&run, HEAD, &t.0);
+        let (block, detail) = run_target_detail(&st, &run, HEAD);
+        assert!(block, "a wrong sha read as green: {detail}");
+        assert!(detail.contains("api,world"), "{detail}");
+        assert!(detail.contains("1f486e5"), "{detail}");
+        assert!(detail.contains("4b2cca4"), "{detail}");
+        assert!(detail.contains("cargo clean --target-dir"), "{detail}");
+    }
+
+    /// THE WAVE-1 INCIDENT, as a unit: right sha, wrong checkout. This is the case a sha-only
+    /// comparison passes — a worktree sitting on the same commit as main still holds UNCOMMITTED
+    /// slice code, which is precisely what `make api` served on :8080.
+    #[test]
+    fn a_stamp_from_a_worktree_at_the_same_sha_still_blocks_and_names_the_checkout() {
+        let t = Tmp::new("foreign");
+        let wt = t.0.join(".ai/artifacts/worktrees/T-300");
+        let run = t.run_target("debug", &["api"], Some(stamp(HEAD, &wt)));
+        let st = run_target_state(&run, HEAD, &t.0);
+        let (block, detail) = run_target_detail(&st, &run, HEAD);
+        assert!(block, "a foreign checkout read as green: {detail}");
+        assert!(detail.contains("worktrees/T-300"), "{detail}");
+    }
+
+    /// Fail closed. Binaries with no stamp are the state every run target was in before this
+    /// ticket, and reporting that as green would make the whole check decorative.
+    #[test]
+    fn binaries_with_no_stamp_block_rather_than_pass() {
+        let t = Tmp::new("unstamped");
+        let run = t.run_target("release", &["api"], None);
+        let st = run_target_state(&run, HEAD, &t.0);
+        let (block, detail) = run_target_detail(&st, &run, HEAD);
+        assert!(block, "unstamped binaries read as green: {detail}");
+        assert!(detail.contains("tbd-built-from"), "{detail}");
+        assert!(detail.contains("release/api"), "{detail}");
+    }
+
+    /// A preflight that cannot resolve HEAD certifies nothing.
+    #[test]
+    fn an_unresolvable_head_blocks_rather_than_certifies() {
+        let t = Tmp::new("nohead");
+        let run = t.run_target("debug", &["api"], Some(stamp(HEAD, &t.0)));
+        let st = run_target_state(&run, "", &t.0);
+        let (block, detail) = run_target_detail(&st, &run, "");
+        assert!(block, "empty HEAD read as green: {detail}");
+        assert!(detail.contains("(unresolved)"), "{detail}");
+    }
+
+    /// Both profile directories are read: a release run binary must not hide behind an empty
+    /// debug one.
+    #[test]
+    fn the_release_profile_is_checked_too() {
+        let t = Tmp::new("release");
+        let run = t.run_target("release", &["api"], Some(stamp(OTHER, &t.0)));
+        assert!(run_target_detail(&run_target_state(&run, HEAD, &t.0), &run, HEAD).0);
+    }
+
+    /// The reader/writer contract, asserted from the READER's side: what
+    /// [`crate::wave::write_run_stamp`] emits is exactly what this module accepts, and an absent
+    /// stamp reads as unknown rather than as agreement.
+    #[test]
+    fn the_stamp_round_trips_and_an_absent_one_reads_as_unknown() {
+        let t = Tmp::new("roundtrip");
+        let d = t.0.join("debug");
+        let s = stamp(HEAD, &t.0);
+        assert_eq!(s.render(), format!("{HEAD} {}\n", t.0.display()));
+        assert_eq!(
+            crate::wave::read_run_stamp(&d),
+            None,
+            "absent read as agreement"
+        );
+        write_run_stamp(&d, &s).expect("write");
+        assert_eq!(crate::wave::run_stamp_path(&d), d.join("tbd-built-from"));
+        assert_eq!(crate::wave::read_run_stamp(&d), Some(s));
+    }
+
+    /// The check NAMES the binary, so this must find binaries and nothing else.
+    #[test]
+    fn run_binaries_lists_executables_and_skips_the_stamp_and_depfiles() {
+        let t = Tmp::new("bins");
+        let d = t.0.join("debug");
+        fs::create_dir_all(d.join("deps")).expect("mkdir");
+        for (name, mode) in [("api", 0o755), ("world", 0o755), ("notes", 0o644)] {
+            let p = d.join(name);
+            fs::write(&p, b"x").expect("write");
+            fs::set_permissions(&p, fs::Permissions::from_mode(mode)).expect("chmod");
+        }
+        fs::write(d.join("api.d"), b"dep").expect("write");
+        write_run_stamp(&d, &stamp(HEAD, &t.0)).expect("stamp");
+        assert_eq!(
+            run_binaries(&d),
+            vec!["api".to_string(), "world".to_string()]
+        );
+    }
 }
