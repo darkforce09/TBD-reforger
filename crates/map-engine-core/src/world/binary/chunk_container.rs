@@ -201,16 +201,23 @@ impl TbdcHeader {
         }
     }
 
-    /// Payload length this header implies.
+    /// Payload length this header implies — `None` when the product does not fit `usize`.
+    ///
+    /// CHECKED BECAUSE THE LOADER IS 32-BIT. `usize` is 4 bytes on `wasm32-unknown-unknown`, the
+    /// target this format exists for, so `count as usize * POD_BYTES` wraps for any `count`
+    /// above 2^27. Measured on a real wasm32 build under node vs the same code native:
+    /// `TbdcHeader::new(0, 0, 0x0800_0000).instances(&[])` is `Err(LengthMismatch)` on x86_64 and
+    /// `Ok(0 rows)` on wasm32 — the length check that exists so "a truncated download reads as a
+    /// short-but-valid chunk" cannot happen was void on the one platform it is for.
     #[must_use]
-    pub fn payload_bytes(&self) -> usize {
-        self.count as usize * POD_BYTES
+    pub fn payload_bytes(&self) -> Option<usize> {
+        (self.count as usize).checked_mul(POD_BYTES)
     }
 
-    /// Whole-file length this header implies.
+    /// Whole-file length this header implies — `None` on the same overflow.
     #[must_use]
-    pub fn file_bytes(&self) -> usize {
-        HEADER_BYTES + self.payload_bytes()
+    pub fn file_bytes(&self) -> Option<usize> {
+        HEADER_BYTES.checked_add(self.payload_bytes()?)
     }
 
     /// The payload as instance rows, zero-copy, with the header's `count` enforced.
@@ -222,10 +229,19 @@ impl TbdcHeader {
     /// [`BinaryError::LengthMismatch`] when the payload is not exactly `count * 32` bytes, or
     /// [`BinaryError::Misaligned`] when it cannot be cast in place.
     pub fn instances<'a>(&self, payload: &'a [u8]) -> Result<&'a [ObjectInstancePod], BinaryError> {
-        if payload.len() != self.payload_bytes() {
+        // An overflowing header can never be satisfied by a real buffer, so it is a length
+        // mismatch — reported with the count that caused it rather than a wrapped number.
+        let Some(expected) = self.payload_bytes() else {
             return Err(BinaryError::LengthMismatch {
                 what: Self::NAME,
-                expected: self.payload_bytes(),
+                expected: usize::MAX,
+                actual: payload.len(),
+            });
+        };
+        if payload.len() != expected {
+            return Err(BinaryError::LengthMismatch {
+                what: Self::NAME,
+                expected,
                 actual: payload.len(),
             });
         }
@@ -282,16 +298,16 @@ impl TbdeHeader {
         }
     }
 
-    /// Samples the header implies.
+    /// Samples the header implies — `None` on 32-bit overflow (see `TbdcHeader::payload_bytes`).
     #[must_use]
-    pub fn sample_count(&self) -> usize {
-        self.width as usize * self.height as usize
+    pub fn sample_count(&self) -> Option<usize> {
+        (self.width as usize).checked_mul(self.height as usize)
     }
 
-    /// Payload length this header implies.
+    /// Payload length this header implies — `None` on 32-bit overflow (see `TbdcHeader`).
     #[must_use]
-    pub fn payload_bytes(&self) -> usize {
-        self.sample_count() * size_of::<u16>()
+    pub fn payload_bytes(&self) -> Option<usize> {
+        self.sample_count()?.checked_mul(size_of::<u16>())
     }
 
     /// The payload as `u16` samples, zero-copy, with `width * height` enforced.
@@ -299,10 +315,17 @@ impl TbdeHeader {
     /// # Errors
     /// [`BinaryError::LengthMismatch`] or [`BinaryError::Misaligned`].
     pub fn samples<'a>(&self, payload: &'a [u8]) -> Result<&'a [u16], BinaryError> {
-        if payload.len() != self.payload_bytes() {
+        let Some(expected) = self.payload_bytes() else {
             return Err(BinaryError::LengthMismatch {
                 what: Self::NAME,
-                expected: self.payload_bytes(),
+                expected: usize::MAX,
+                actual: payload.len(),
+            });
+        };
+        if payload.len() != expected {
+            return Err(BinaryError::LengthMismatch {
+                what: Self::NAME,
+                expected,
                 actual: payload.len(),
             });
         }
@@ -402,17 +425,19 @@ impl TbdbHeader {
         let mut offset = 0_usize;
         for l in 0..=level {
             let (w, h) = self.level_dims(l)?;
-            let texels = w as usize * h as usize;
-            let depth_bytes = texels * size_of::<u16>();
+            let texels = (w as usize).checked_mul(h as usize)?;
+            let depth_bytes = texels.checked_mul(size_of::<u16>())?;
             let mask_bytes = texels;
-            let stride = (depth_bytes + mask_bytes).next_multiple_of(4);
+            let stride = depth_bytes
+                .checked_add(mask_bytes)?
+                .checked_next_multiple_of(4)?;
             if l == level {
                 return Some(LevelSpan {
                     width: w,
                     height: h,
                     depth_offset: offset,
                     depth_bytes,
-                    mask_offset: offset + depth_bytes,
+                    mask_offset: offset.checked_add(depth_bytes)?,
                     mask_bytes,
                     stride,
                 });
@@ -545,13 +570,13 @@ mod tests {
         let rows = [ObjectInstancePod::identity(), ObjectInstancePod::identity()];
         let head = TbdcHeader::new(-7, 12, 2);
         let buf = framed(&head, pod::instances_to_bytes(&rows));
-        let file = &buf.0[..head.file_bytes()];
+        let file = &buf.0[..head.file_bytes().expect("no overflow in a fixture")];
 
         let (h, payload) = TbdcHeader::parse(file).expect("aligned parse");
         assert_eq!(*h, head);
         assert_eq!(h.cx, -7);
         assert_eq!(h.cy, 12);
-        assert_eq!(h.file_bytes(), HEADER_BYTES + 64);
+        assert_eq!(h.file_bytes(), Some(HEADER_BYTES + 64));
         assert_eq!(h.instances(payload).expect("cast"), &rows[..]);
 
         let (owned, payload2) = TbdcHeader::read(file).expect("unaligned-safe read");
@@ -578,11 +603,11 @@ mod tests {
         let head = TbdeHeader::new(4, 2, -204.78, 375.53);
         let samples: [u16; 8] = [0, 1, 2, 3, 4, 5, 6, u16::MAX];
         let buf = framed(&head, bytemuck::cast_slice(&samples));
-        let file = &buf.0[..HEADER_BYTES + head.payload_bytes()];
+        let file = &buf.0[..HEADER_BYTES + head.payload_bytes().expect("no overflow in a fixture")];
 
         let (h, payload) = TbdeHeader::parse(file).expect("aligned parse");
         assert_eq!(*h, head);
-        assert_eq!(h.sample_count(), 8);
+        assert_eq!(h.sample_count(), Some(8));
         assert_eq!(h.samples(payload).expect("cast"), &samples[..]);
         assert!((h.metres(0) - (-204.78)).abs() < 1e-2);
         assert!((h.metres(u16::MAX) - 375.53).abs() < 1e-2);
@@ -635,6 +660,37 @@ mod tests {
 
     /// Non-square and non-power-of-two: the `max(1, …)` clamp must stop a dimension collapsing to
     /// zero, which would make a level's stride 0 and every deeper offset wrong.
+    /// T-935.1 follow-up — the length check must hold on a 32-bit `usize`, which is what the
+    /// loader actually runs on.
+    ///
+    /// `wasm32-unknown-unknown` has a 4-byte `usize`, so `count as usize * POD_BYTES` wrapped for
+    /// any count above 2^27 and a header claiming 134,217,728 instances "matched" an EMPTY
+    /// payload. Measured by the wave 237 verifier on a real wasm32 build under node against the
+    /// same code native: `Err(LengthMismatch)` on x86_64, `Ok(0 rows)` on wasm32. The arithmetic
+    /// is checked now, so the count that overflows a 32-bit address space is refused on BOTH.
+    ///
+    /// Written to be meaningful on a 64-bit host too: `u32::MAX` instances at 32 bytes each
+    /// overflows nothing on 64-bit, so the 64-bit half asserts the honest large answer while the
+    /// 32-bit half asserts the refusal.
+    #[test]
+    fn a_count_that_cannot_fit_the_address_space_is_refused_not_wrapped() {
+        // 2^27 instances × 32 B = 2^32 B — exactly one past a 32-bit usize.
+        let head = TbdcHeader::new(0, 0, 0x0800_0000);
+        let bytes = head.payload_bytes();
+        println!("── usize {} bits ── payload_bytes = {bytes:?}", usize::BITS);
+        if usize::BITS == 32 {
+            assert_eq!(bytes, None, "the product does not fit and must not wrap");
+        } else {
+            assert_eq!(bytes, Some(0x1_0000_0000));
+        }
+        // Either way an EMPTY payload is never a valid answer for it.
+        let err = head
+            .instances(&[])
+            .expect_err("an empty payload cannot satisfy 2^27 instances");
+        println!("── instances(&[]) ── {err}");
+        assert!(matches!(err, BinaryError::LengthMismatch { .. }));
+    }
+
     #[test]
     fn tbdb_levels_clamp_at_one_texel() {
         let head = TbdbHeader::new(3, 1, 3, 1.0);
