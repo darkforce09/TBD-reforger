@@ -141,6 +141,21 @@ class TBD_MissionOrbatGroupStruct
 	string callsign; //!< Squad callsign ("Alpha"). Schema-required.
 	string type;     //!< Group type label authored in the editor ("infantry_squad"). Schema-required.
 	ref array<ref TBD_MissionOrbatRoleStruct> roles;
+	//! T-674.2 -- which seat leads this squad (schemaVersion 1.3). OPTIONAL: empty when the
+	//! mission names no leader, which every pre-1.3 document does.
+	//!
+	//! Carries `slots[].uid` -- the DURABLE identity -- never the derived `slots[].id`, which
+	//! shifts under role renames, reorders and deletes. Resolve it with
+	//! `TBD_MissionLoader.GetSquadLeaderSlot`, never by string-comparing it against `id`.
+	//!
+	//! It lives on the GROUP and not on the seat (W120 M-4): a leader is a per-squad fact, so one
+	//! copy cannot disagree with itself, whereas N copies across the seats could and no schema
+	//! could catch it.
+	//!
+	//! The compiler already guarantees MEMBERSHIP -- flatten drops a `leaderSlotId` that names no
+	//! seat of this squad rather than emitting a dangling reference -- but the resolver re-checks
+	//! it anyway, because this build must not trust a document it did not compile.
+	string leaderSlotId;
 }
 
 //! One faction's ORBAT (its groups), keyed by faction in the orbat map.
@@ -269,12 +284,15 @@ class TBD_MissionSettingsStruct
 }
 
 //! Full mission document parsed from the backend — the canonical contract the loader
-//! consumes. schemaVersion is the canonical STRING ("1.0"/"1.1"/"1.2"), distinct from the
+//! consumes. schemaVersion is the canonical STRING ("1.0"/"1.1"/"1.2"/"1.3"), distinct from the
 //! website's integer editor/export version. Field names must equal the JSON keys.
 //! @contract mission.schema.json#/
 class TBD_MissionDocumentStruct
 {
-	string schemaVersion;                                      //!< Canonical contract version ("1.0"/"1.1"/"1.2").
+	//! Canonical contract version ("1.0"/"1.1"/"1.2"/"1.3"). 1.3 (T-674) is the additive slot
+	//! identity + `leaderSlotId` revision -- every 1.3 document is a valid 1.2 one with extra
+	//! optional keys. `TBD_MissionValidator` holds the list this build accepts.
+	string schemaVersion;
 	ref TBD_MissionMetaStruct meta;                            //!< Mission header.
 	ref array<ref TBD_MissionFactionStruct> factions;         //!< Playable factions.
 	ref array<ref TBD_MissionZoneStruct> zones;               //!< Spawn/objective/boundary zones.
@@ -379,6 +397,88 @@ class TBD_MissionLoader
 		}
 
 		return null;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-674.2 -- the ORBAT group a squad callsign names, or null.
+	//!
+	//! The ORBAT is keyed by FACTION and a callsign is only unique within one, so a caller that
+	//! knows the faction passes it and gets the unambiguous answer. `factionKey` empty means
+	//! "search every faction", which is what a caller holding only a slot's `groupCallsign` can
+	//! do; the first match wins, exactly as the derived slot ids are built.
+	static TBD_MissionOrbatGroupStruct GetOrbatGroup(string factionKey, string groupCallsign)
+	{
+		if (!s_Valid || !s_Mission || !s_Mission.orbat || groupCallsign.IsEmpty())
+			return null;
+
+		foreach (string key, TBD_MissionOrbatFactionStruct faction : s_Mission.orbat)
+		{
+			if (!faction || !faction.groups)
+				continue;
+			if (!factionKey.IsEmpty() && key != factionKey)
+				continue;
+
+			foreach (TBD_MissionOrbatGroupStruct group : faction.groups)
+			{
+				if (group && group.callsign == groupCallsign)
+					return group;
+			}
+		}
+
+		return null;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-674.2 -- the slot that leads `slot`'s squad, or null when the mission named no leader.
+	//!
+	//! `$defs/group.leaderSlotId` carries a slot `uid`, so this goes through `GetSlotById`, which
+	//! is uid-aware. Two guards on top of it, and neither is redundant paranoia:
+	//!
+	//!  1. **The reference must resolve.** flatten already refuses to emit a `leaderSlotId` that
+	//!     names no seat, but this build parses documents it did not compile (a `$profile`
+	//!     fallback file is hand-editable), and a dangling id must read as "no leader authored"
+	//!     rather than silently promoting whichever seat happens to answer.
+	//!  2. **The resolved seat must be in the SAME squad.** Slot uids are unique document-wide, so
+	//!     a leaderSlotId copied between squads resolves perfectly well to a seat in the WRONG
+	//!     one. That is the failure this check exists for: it would put a leader in a squad they
+	//!     do not belong to, and nothing downstream could notice.
+	//!
+	//! Returns null rather than picking a fallback leader. Choosing one is a POLICY decision for
+	//! whatever consumes this, and inventing it here would make "the author named a leader" and
+	//! "we guessed one" indistinguishable at every call site.
+	static TBD_MissionSlotStruct GetSquadLeaderSlot(TBD_MissionSlotStruct slot)
+	{
+		if (!slot)
+			return null;
+
+		TBD_MissionOrbatGroupStruct group = GetOrbatGroup(slot.faction, slot.groupCallsign);
+		if (!group || group.leaderSlotId.IsEmpty())
+			return null;
+
+		TBD_MissionSlotStruct leader = GetSlotById(group.leaderSlotId);
+		if (!leader)
+			return null;
+
+		// Guard 2 -- a cross-squad reference is not this squad's leader.
+		if (leader.faction != slot.faction || leader.groupCallsign != slot.groupCallsign)
+			return null;
+
+		return leader;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-674.2 -- does this slot lead its own squad?
+	//!
+	//! Compares on `Key()` (uid when present, derived id otherwise) because that is the identity
+	//! the rest of the mod keys bodies, seat leases and rosters on -- comparing the struct
+	//! REFERENCES would be true only while both sides hold the very same parsed instance.
+	static bool IsSquadLeader(TBD_MissionSlotStruct slot)
+	{
+		TBD_MissionSlotStruct leader = GetSquadLeaderSlot(slot);
+		if (!leader)
+			return false;
+
+		return leader.Key() == slot.Key();
 	}
 
 	//------------------------------------------------------------------------------------------------
