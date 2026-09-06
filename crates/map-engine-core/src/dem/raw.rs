@@ -226,9 +226,13 @@ impl RawDemSink {
             rest = tail;
         }
         let pairs = rest.len() / 2;
-        // The aligned fast path the spec calls for: when the remaining bytes start on a `u16`
-        // boundary of the destination and the host is little-endian (asserted at compile time in
-        // `binary::pod`), the whole chunk is one `copy_from_slice` instead of `pairs` shifts.
+        // The aligned fast path the spec calls for: when the chunk's own bytes sit on a `u16`
+        // boundary — `try_cast_slice` tests the SOURCE pointer, not the destination, which is a
+        // `Vec<u16>` and therefore always aligned — and the host is little-endian (asserted at
+        // compile time in `binary::pod`), the whole chunk is one `copy_from_slice` rather than
+        // `pairs` shift-and-ors. Whether it hits is the allocator's business, so the slow branch
+        // below is not a fallback for broken input: it is the other half of a coin flip, and
+        // `misaligned_payload_decodes_identically_to_the_aligned_one` forces both sides of it.
         if cfg!(target_endian = "little")
             && pairs > 0
             && let Ok(words) = bytemuck::try_cast_slice::<u8, u16>(&rest[..pairs * 2])
