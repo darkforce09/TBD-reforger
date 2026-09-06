@@ -1029,6 +1029,9 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		// T-680 -- authored lock / fuel / ammo. Vehicles exist only after the roster
 		// join-or-spawn above; unset attributes are sentinels and leave engine defaults.
 		TBD_VehicleState.ApplySpawned();
+		// T-681 -- authored health / allowDamage / showModel / size (stamina logged, not applied).
+		// entities[] bodies were recorded at SpawnMissionEntities; unset attrs leave defaults.
+		TBD_EntityState.ApplySpawned();
 
 		if (built <= 0)
 			return;

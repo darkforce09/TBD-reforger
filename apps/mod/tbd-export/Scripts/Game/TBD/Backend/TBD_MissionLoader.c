@@ -658,6 +658,9 @@ class TBD_MissionLoader
 		// A reload whose new mission authors no entities[] must not inherit the previous mission's
 		// rows, or a roster row would "join" a vehicle that is no longer in the world.
 		TBD_MissionVehicleRoster.ResetIndex();
+		// T-681 -- drop the entity-state spawn index on the same reload boundary as the
+		// vehicle roster, so a mission with no entities[] cannot inherit stale world pointers.
+		TBD_EntityState.ResetIndex();
 
 		array<ref TBD_MissionEntityStruct> entities = GetEntities();
 		if (!entities || entities.Count() == 0)
@@ -716,6 +719,9 @@ class TBD_MissionLoader
 			// CLAIMS this entity instead of spawning a second copy of it. Skipped rows above are
 			// deliberately not recorded: nothing exists for a roster row to claim.
 			TBD_MissionVehicleRoster.RecordEntitySpawn(ent.uid, ent.alias, ent.x, ent.z, body);
+			// T-681 -- remember the body so entity health/allowDamage/showModel/size can be
+			// applied after slot materialize without an AABB guess.
+			TBD_EntityState.RecordSpawn(ent.uid, ent.alias, ent.x, ent.z, body);
 			Print(string.Format("[TBD][Entities] spawned alias='%1' at %2 heading=%3", ent.alias, pos.ToString(), ent.headingDeg));
 		}
 
