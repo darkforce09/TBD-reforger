@@ -2301,6 +2301,22 @@ fn authored_flow_seconds(env: &serde_json::Value, key: &str, default: i64) -> i6
         .unwrap_or(default)
 }
 
+/// Was `key` AUTHORED, as opposed to defaulted? Shares [`authored_flow_seconds`]'s filter on
+/// purpose: "absent", "not a number" and "negative" must mean the same thing to both, or a caller
+/// can be told a value it never wrote disagrees with it.
+///
+/// T-946 (wave-243 verifier): `apply_timeout_to_flow` reported a conflict whenever the flow value
+/// differed from `timeoutMinutes * 60`, and an unauthored flow value is [`FLOW_DEFAULT_TIMELIMIT_S`]
+/// = 5400, so authoring ONLY the timeout rule — the ordinary case — was reported as disagreeing
+/// with 5400. The slice's own rule at the fixture below is that a diagnostic firing on correct
+/// input is noise; this is what keeps that rule true for the common path, not just the tested one.
+fn flow_seconds_authored(env: &serde_json::Value, key: &str) -> bool {
+    env.get(key)
+        .and_then(serde_json::Value::as_i64)
+        .filter(|n| *n >= 0)
+        .is_some()
+}
+
 /// The authored `flow.jip`, or [`FLOW_DEFAULT_JIP`]. Mirrors `eden_env::read_flow_jip`'s filter:
 /// a value outside [`JIP_VALUES`] is treated as unauthored rather than forwarded.
 fn authored_flow_jip(env: &serde_json::Value) -> String {
@@ -2498,6 +2514,7 @@ fn resolve_win_conditions(
 fn apply_timeout_to_flow(
     flow: &mut ModFlow,
     win: &ModWinConditions,
+    flow_time_limit_authored: bool,
     diagnostics: &mut DiagnosticAcc,
 ) {
     let Some(minutes) = win.params.timeout_minutes else {
@@ -2505,6 +2522,14 @@ fn apply_timeout_to_flow(
     };
     let seconds = minutes * 60;
     if flow.time_limit_seconds == seconds {
+        return;
+    }
+    // Only an AUTHORED flow value can disagree with the win rule. An unauthored one is
+    // FLOW_DEFAULT_TIMELIMIT_S, which the author never wrote and cannot be in conflict with
+    // anything they did write — reporting it made the ordinary "timeout mode, nothing else"
+    // mission noisy. The projection below still runs either way: the win rule always wins.
+    if !flow_time_limit_authored {
+        flow.time_limit_seconds = seconds;
         return;
     }
     diagnostics.win_conditions(
@@ -3584,7 +3609,12 @@ pub fn flatten_to_mod_document(
         &mut diagnostics,
     );
     let mut flow = derive_flow(&parsed.environment);
-    apply_timeout_to_flow(&mut flow, &win_conditions, &mut diagnostics);
+    apply_timeout_to_flow(
+        &mut flow,
+        &win_conditions,
+        flow_seconds_authored(&parsed.environment, "timeLimitSeconds"),
+        &mut diagnostics,
+    );
 
     let max_players = if mission.max_players < 1 {
         (doc_slots.len() as i64).max(1)
@@ -5105,6 +5135,31 @@ mod tests {
                 .iter()
                 .all(|f| f.rule_id != DIAG_WIN_CONDITIONS),
             "{:?}",
+            doc.diagnostics
+        );
+
+        // T-946 (wave-243 verifier): the ORDINARY case — the author sets the timeout rule and
+        // nothing else. The flow value is then FLOW_DEFAULT_TIMELIMIT_S, which they never wrote,
+        // so there is nothing for the win rule to disagree WITH. Before the fix this reported
+        // "`flow.timeLimitSeconds` was 5400 ... the two cannot both stand" about a default, which
+        // is exactly the noise the block above forbids. The projection must still happen.
+        let mut only_rule: serde_json::Value =
+            serde_json::from_str(FIXTURE).expect("fixture parses");
+        only_rule["winConditions"] = serde_json::json!({
+            "mode": "timeout", "endOn": ["time_limit"], "timeoutMinutes": 45
+        });
+        only_rule["environment"] = serde_json::json!({});
+        let doc =
+            flatten_to_mod_document(&meta(), only_rule.to_string().as_bytes()).expect("compiles");
+        assert_eq!(
+            doc.flow.time_limit_seconds, 2700,
+            "the win rule must still be projected onto the flow clock"
+        );
+        assert!(
+            doc.diagnostics
+                .iter()
+                .all(|f| f.rule_id != DIAG_WIN_CONDITIONS),
+            "an unauthored flow value cannot conflict with the win rule: {:?}",
             doc.diagnostics
         );
     }

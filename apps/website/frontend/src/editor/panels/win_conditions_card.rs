@@ -24,11 +24,13 @@
 //!
 //! ══ Where the card renders ═══════════════════════════════════════════════════════════════════
 //! [`win_conditions_card`] is a section in the same shape as `settings_modal::render_flow_section`
-//! and belongs beside it in the Mission Settings dialog — one line,
-//! `{render_win_conditions_card(ctrl)}`, after the Mission flow section. **That line is not in this
-//! commit**: `panels/settings_modal.rs` is outside T-936.1's owned file list, so the mount is the
-//! one piece of this card the slice could not land. Everything the mount needs is here and every
-//! rule the card enforces is unit-tested natively below.
+//! and renders beside it in the Mission Settings dialog. It is MOUNTED, at
+//! `settings_modal.rs`'s `{win_conditions_card(ctrl)}` immediately after the Mission flow section.
+//!
+//! T-936.1 could not land that line itself — `panels/settings_modal.rs` was outside its owned file
+//! list — so the mount went in with the wave-243 bookkeeping instead. A card that is built,
+//! registered and tested but never mounted is a mechanism that cannot fire, which is why it landed
+//! in the same wave rather than as a follow-up.
 //!
 //! Pure Rust + JSON; the doc-driving bodies are wasm-only (`operations` is wasm32-gated), exactly
 //! like every sibling panel.

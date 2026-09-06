@@ -591,9 +591,12 @@ class TBD_MissionLoader
 	//------------------------------------------------------------------------------------------------
 	//! T-675.2 -- the raw `vehicles[]` roster, or null when no VALID mission is loaded / none authored.
 	//!
-	//! Null here is LEGAL and is the common case: every mission compiled before T-675.1 carries no
-	//! `vehicles` key at all, and `TBD_MissionVehicleRoster.SeatAuthoredCrews` returns on the first
-	//! line for it, so a rosterless mission spawns exactly as it did before this slice.
+	//! Null here is LEGAL: it means no VALID mission is loaded. It is NOT how an absent roster
+	//! arrives -- `JsonLoadContext` ALLOCATES an absent `ref` member (measured; see the header of
+	//! TBD_MissionVehicleStruct.c), so a mission compiled before T-675.1, carrying no `vehicles`
+	//! key at all, yields an EMPTY ARRAY rather than null. Both are handled: the caller's presence
+	//! test is `Count() == 0`, never a null check, and `SeatAuthoredCrews` returns on its first
+	//! line either way, so a rosterless mission spawns exactly as it did before this slice.
 	//! @contract mission.schema.json#/properties/vehicles
 	static array<ref TBD_MissionVehicleStruct> GetVehicles()
 	{
