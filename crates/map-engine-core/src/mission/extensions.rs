@@ -21,11 +21,18 @@
 //! refused with a sentence rather than carried to a schema failure the author cannot read.
 //!
 //! ══ Where the blocks live in the editor document ═════════════════════════════════════════════
-//! In `meta` — the editor's per-mission settings bag, which `MissionDocCore::small_maps_json`
-//! emits whole and `hydrate` loads back verbatim. That is the same transport the T-224 `flow` keys
-//! already use (`panels/env.rs` records the argument: the bag is the transport, the table is the
-//! contract), and it is what makes an authored block survive Save → reload without a change to
-//! `doc/store.rs`, whose parked-key machinery has its own owners.
+//! In `meta.environment` — the editor's per-mission settings BAG, not the compiled document's
+//! `environment` block of the same name. That distinction is `panels/env.rs`'s own ("the bag is
+//! the transport, the table is the contract"), and the T-224 `flow` keys already ride it: they are
+//! written into `meta.environment` and land at `flow.timeLimitSeconds` on the wire, nowhere near
+//! the compiled `environment`.
+//!
+//! It is the bag rather than a `meta.winConditions` sibling for a mechanical reason, and the
+//! mechanism is what makes it correct: `meta.environment` is the only part of `meta` with a
+//! read/write pair the editor can drive (`operations::read_env_value` / `update_environment`, one
+//! merge patch, one undo step), and `MissionDocCore::hydrate` loads `payload.environment` back into
+//! it VERBATIM. So an authored block survives Save → reload with no change to `doc/store.rs`, whose
+//! parked-key machinery has its own owners and its own tickets.
 //!
 //! ══ Two destinations, and why a block has exactly one ════════════════════════════════════════
 //! A block is either MODELLED by the compiled document (a typed field on `ModMissionDocument`) or
@@ -83,10 +90,11 @@ pub fn is_authored_block(key: &str) -> bool {
     AUTHORED_BLOCKS.iter().any(|b| b.key == key)
 }
 
-/// Copy every authored block present in `meta` onto the compiled payload root, verbatim.
+/// Copy every authored block present in `env` onto the compiled payload root, verbatim.
 ///
-/// **`compile.rs`'s ONE call site.** `meta` is the editor document's `meta` bag
-/// (`small_maps_json`'s `meta` key); `dst` is the payload object being built.
+/// **`compile.rs`'s ONE call site.** `env` is the editor document's `meta.environment` settings bag
+/// (see the module header for why that bag and not a `meta` sibling); `dst` is the payload object
+/// being built.
 ///
 /// A block that is present but MALFORMED is copied anyway, deliberately. This function is on the
 /// SAVE path: a saved payload is stored immutably, and silently dropping a block the author is
@@ -98,10 +106,10 @@ pub fn is_authored_block(key: &str) -> bool {
 ///
 /// Returns the keys it copied, so the caller can keep the T-219 `payloadExtras` re-emit from
 /// racing it.
-pub fn copy_authored_blocks(meta: &Value, dst: &mut Map<String, Value>) -> Vec<&'static str> {
+pub fn copy_authored_blocks(env: &Value, dst: &mut Map<String, Value>) -> Vec<&'static str> {
     let mut copied = Vec::new();
     for block in AUTHORED_BLOCKS {
-        let Some(value) = meta.get(block.key) else {
+        let Some(value) = env.get(block.key) else {
             continue;
         };
         // `null` is not authoring. It is what a cleared key looks like coming out of a yrs map, and
@@ -321,22 +329,26 @@ mod tests {
 
     #[test]
     fn copy_carries_a_listed_key_verbatim_and_leaves_everything_else() {
-        let meta = json!({
-            "title": "Op Test",
+        let env = json!({
+            "weather": "clear",
+            "timeLimitSeconds": 5400,
             "winConditions": {"mode": "vip", "endOn": ["faction_eliminated"], "vipSlotId": "s1"},
             "tasks": [{"id": "t1"}],
         });
         let mut dst = Map::new();
-        let copied = copy_authored_blocks(&meta, &mut dst);
+        let copied = copy_authored_blocks(&env, &mut dst);
 
         assert_eq!(copied, ["winConditions"]);
         assert_eq!(dst.len(), 1, "only the listed key travels: {dst:?}");
-        assert_eq!(dst["winConditions"], meta["winConditions"], "verbatim");
+        assert_eq!(dst["winConditions"], env["winConditions"], "verbatim");
         assert!(
             !dst.contains_key("tasks"),
             "an unlisted key stays parked in payloadExtras"
         );
-        assert!(!dst.contains_key("title"));
+        assert!(
+            !dst.contains_key("weather"),
+            "the bag's own keys stay in the bag"
+        );
     }
 
     #[test]
