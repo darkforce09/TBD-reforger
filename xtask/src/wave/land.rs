@@ -7,7 +7,7 @@
 use std::path::Path;
 
 use super::status::lock_or_refuse;
-use super::{Ctx, gate, git_stdout, git_stdout_lossy, ledger, push, short};
+use super::{Ctx, gate, git_stdout, git_stdout_lossy, ledger, push, short, verdict};
 use crate::{werr, wprintln};
 
 /// Land every slice that is ready. No barrier — see correction 2.
@@ -131,6 +131,43 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
             );
         }
     }
+
+    // T-924 — NOTHING MECHANICAL USED TO STOP AN UNGATED SLICE LANDING.
+    //
+    // `land` ran the WAVE gate after merging (below) and never asked whether a SLICE gate had run
+    // before. On 2026-08-14 one had not: it refused from the wrong cwd, the exit was masked by a
+    // pipe, and the slice merged anyway — the miss was caught by hand, afterwards.
+    //
+    // The check is here, in its own pass, for two reasons. It is BEFORE the merge loop, because a
+    // refusal after `git merge` is a report, not a gate. And it is ALL-OR-NOTHING: one ungated
+    // slice stops the whole land rather than landing its siblings and leaving a partial wave for
+    // whoever reads the scrollback. The sha compared is the tip of `slice/<id>` — the commit the
+    // merge below will bring in — against the sha the gate stamped from inside that worktree.
+    //
+    // NO `--bookkeeping` WAIVER, deliberately. That flag waives T-913.2 TOKEN receipts for manual
+    // lands; a bookkeeping land still merges real code to main, so waiving the gate receipt would
+    // reopen this exact hole behind a flag. Re-gating a finished slice is seconds.
+    let mut ungated: Vec<String> = Vec::new();
+    let mut gated: Vec<String> = Vec::new();
+    for t in &ready {
+        let tip = git_stdout_lossy(&["rev-parse", &format!("slice/{t}")]);
+        match verdict::land_refusal(&ctx.main_root, t, &tip) {
+            Some(refusal) => ungated.push(refusal),
+            None => gated.push(format!("{t}@{}", short(&tip))),
+        }
+    }
+    if !ungated.is_empty() {
+        for refusal in &ungated {
+            werr!("{refusal}");
+        }
+        werr!("land: nothing was landed — main is untouched.");
+        return 2;
+    }
+    // Say so on the HAPPY path too. A check that speaks only when it refuses is a check nobody can
+    // confirm is running — which is how the 2026-08-14 gate went unnoticed in the first place. The
+    // sha printed here is the one the gate stamped AND the one about to be merged; they are equal
+    // by the arm above, so this line is the operator's proof that both halves agree.
+    wprintln!("gate verdict PASS: {}", gated.join(" "));
 
     // The base is the last known-GREEN main. It is the gate's diff anchor and the revert target.
     let base = git_stdout_lossy(&["rev-parse", "HEAD"]);

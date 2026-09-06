@@ -14,6 +14,7 @@
 
 use super::{
     Ctx, base, changed, db, git_stdout_lossy, host, lock::GateState, migrate, schema, touch, trunk,
+    verdict,
 };
 use crate::{wprint, wprintln};
 
@@ -223,6 +224,19 @@ pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {
     });
 
     wprintln!();
+    // T-924 — RECORD THE VERDICT WHERE `land` CAN READ IT, ON EVERY RUN.
+    //
+    // Before this, the verdict existed only in the terminal, and on 2026-08-14 that was enough to
+    // lose one: this gate REFUSED (wrong cwd — the `refuse_empty_range` return above), its exit
+    // code was swallowed by a pipe, and the slice was merged by hand with nothing having examined
+    // it. `land` could not have caught that, because it had nothing to ask.
+    //
+    // ONE call site, ahead of the FAIL return, so PASS and FAIL both write. That matters: if only
+    // a green gate left a receipt, `land` could not tell a RED gate from a gate that never ran,
+    // and those have different fixes. The two early returns above deliberately write NOTHING —
+    // they mean no step executed, so there is no verdict to record, and inventing a FAIL there
+    // would be this program's signature defect (reporting on an input nothing examined).
+    verdict::record_slice_gate(ctx, tid, !r.fail);
     if r.fail {
         state.verdict("FAIL", "SLICE GATE");
         return 1;
