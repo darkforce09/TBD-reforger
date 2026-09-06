@@ -67,7 +67,7 @@
     "environment": { "$ref": "#/$defs/environment" },
     "factions": {
       "type": "array",
-      "minItems": 2,
+      "minItems": 1,
       "items": { "$ref": "#/$defs/faction" }
     },
     "orbat": { "$ref": "#/$defs/orbat" },

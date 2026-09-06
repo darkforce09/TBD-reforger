@@ -3506,9 +3506,8 @@ pub fn flatten_to_mod_document(
 
         if !groups.is_empty() {
             // T-203 — harvested BEFORE `groups` moves into the orbat, and only for a faction
-            // that actually holds seats: the stub faction padded in below has no squads and no
-            // players, so giving it frequencies would put nets in the document that nobody can
-            // ever be served.
+            // that actually holds seats. A declared side with no squads would otherwise get
+            // nets nobody can ever be served.
             radio_sources.push(RadioNetSource {
                 faction_key: faction_key.clone(),
                 display_name: display_name.clone(),
@@ -3593,23 +3592,6 @@ pub fn flatten_to_mod_document(
         "1.1"
     }
     .to_string();
-
-    // Schema requires ≥ 2 factions; pad a stub opposing faction for single-faction drafts.
-    if factions.len() < 2 {
-        let mut stub = "opfor";
-        for f in &factions {
-            if f.key == "opfor" {
-                stub = "blufor";
-            }
-        }
-        let (_, preset) = aliases.faction_default(stub);
-        factions.push(ModFaction {
-            key: stub.to_string(),
-            display_name: stub.to_uppercase(),
-            preset_id: preset.to_string(),
-            tickets: 0,
-        });
-    }
 
     let terrain = mission_terrain_key(&mission.terrain, &mission.custom_terrain_name);
 
@@ -5653,6 +5635,57 @@ mod tests {
             flatten_to_mod_document(&meta(), payload),
             Err(CompileError::NoSlots)
         ));
+    }
+
+    /// T-299 — a one-faction editor graph must compile with exactly that one side.
+    ///
+    /// The schema used to demand `factions.minItems: 2`, so this emitter padded a stub `opfor`
+    /// (or `blufor` if opfor was already present). That side showed in briefing and ORBAT with
+    /// no slots, which is the validator warning "declared but has no slots — nobody can play
+    /// this side" on a side the author never declared.
+    #[test]
+    fn single_faction_compile_does_not_pad_a_phantom_opfor() {
+        let payload = br#"{
+          "editor": {
+            "factions": [
+              {"key": "BLUFOR", "name": "US", "squadIds": ["sq_a"]}
+            ],
+            "squads": [
+              {"id": "sq_a", "callsign": "Alpha", "slotIds": ["s_a"]}
+            ],
+            "slots": [
+              {"id": "s_a", "index": 0, "role": "RFL",
+               "position": {"x": 1000.0, "y": 2000.0, "z": 0, "rotation": 0}}
+            ]
+          }
+        }"#;
+        let doc = flatten_to_mod_document(&meta(), payload).expect("compiles");
+        let keys: Vec<&str> = doc.factions.iter().map(|f| f.key.as_str()).collect();
+        assert_eq!(
+            keys,
+            ["blufor"],
+            "phantom side padded into factions[]: {keys:?}"
+        );
+        assert_eq!(doc.orbat.len(), 1);
+        assert!(doc.orbat.contains_key("blufor"));
+        assert!(
+            !doc.orbat.contains_key("opfor"),
+            "phantom opfor reached ORBAT"
+        );
+        assert!(
+            !doc.briefings.contains_key("opfor"),
+            "phantom opfor reached briefings"
+        );
+        let wire = serde_json::to_value(&doc).unwrap();
+        assert_eq!(wire["factions"].as_array().map(Vec::len), Some(1));
+        assert!(
+            !doc.win_conditions
+                .end_on
+                .iter()
+                .any(|t| t == "faction_eliminated"),
+            "one holding side must not declare faction_eliminated: {:?}",
+            doc.win_conditions.end_on
+        );
     }
 
     // ── T-201 zones[] beyond synthetic spawn circles ───────────────────────────────────
