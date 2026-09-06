@@ -200,7 +200,10 @@ fn ring_of(body: &Value, what: &str) -> Result<Vec<[f32; 2]>> {
         ring.pop();
     }
     if ring.len() < 3 {
-        bail!("{what}: a water body ring needs 3 distinct points, got {}", ring.len());
+        bail!(
+            "{what}: a water body ring needs 3 distinct points, got {}",
+            ring.len()
+        );
     }
     Ok(ring)
 }
@@ -246,7 +249,10 @@ fn rivers_of(root: &Value) -> Result<Vec<WaterLine>> {
                 })
                 .collect::<Result<Vec<_>>>()?;
             if centerline.len() < 2 {
-                bail!("{what}: a centreline needs 2 points, got {}", centerline.len());
+                bail!(
+                    "{what}: a centreline needs 2 points, got {}",
+                    centerline.len()
+                );
             }
             Ok(WaterLine {
                 id: id_field(r, &what)?,
@@ -339,7 +345,10 @@ where
         values.clear();
         for tok in line.split_ascii_whitespace() {
             let v: u32 = tok.parse().with_context(|| {
-                format!("{}: row {z} has a non-integer value {tok:?}", path.display())
+                format!(
+                    "{}: row {z} has a non-integer value {tok:?}",
+                    path.display()
+                )
             })?;
             values.push(v);
         }
@@ -406,7 +415,7 @@ impl Level {
             out.write_all(&row)?;
         }
         out.write_all(&self.mask)?;
-        Ok(pad4(out, self.depth.len() * 2 + self.mask.len())?)
+        pad4(out, self.depth.len() * 2 + self.mask.len())
     }
 }
 
@@ -437,8 +446,8 @@ pub fn write_bathymetry(
     let mips = mip_count(w, h);
     let header = TbdbHeader::new(w, h, mips, meta.depth_scale);
     create_parent(out_path)?;
-    let file =
-        std::fs::File::create(out_path).with_context(|| format!("create {}", out_path.display()))?;
+    let file = std::fs::File::create(out_path)
+        .with_context(|| format!("create {}", out_path.display()))?;
     let mut out = BufWriter::with_capacity(WRITE_BUF, file);
     out.write_all(&header.to_header_bytes())?;
 
@@ -704,7 +713,10 @@ mod tests {
         let b = bathymetry_of(dir);
         assert_eq!((b.width(), b.height(), b.level_count()), (4, 4, 3));
         let base = b.level(0).expect("level 0");
-        assert_eq!(base.depth, &[7, 0, 0, 0, 0, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 12]);
+        assert_eq!(
+            base.depth,
+            &[7, 0, 0, 0, 0, 0, 0, 0, 0, 30, 0, 0, 0, 0, 0, 12]
+        );
         assert_eq!(base.mask, &[1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1]);
 
         for level in 1..b.level_count() {
@@ -798,7 +810,10 @@ mod tests {
                 std::fs::read(dir.join(WATER_VECTORS_RKYV)).expect("vectors"),
             ));
         }
-        assert_eq!(runs[0].0, runs[1].0, "bathymetry bytes are not deterministic");
+        assert_eq!(
+            runs[0].0, runs[1].0,
+            "bathymetry bytes are not deterministic"
+        );
         assert_eq!(runs[0].1, runs[1].1, "vector bytes are not deterministic");
         // Every level is padded to 4, so the payload is too — and the file with it.
         assert!(runs[0].0.len().is_multiple_of(4));
@@ -828,7 +843,7 @@ mod tests {
             let want = (5_u32 >> u32::from(level)).max(1);
             assert_eq!((g.width, g.height), (want, want), "level {level}");
             assert!(
-                g.mask.iter().any(|&m| m != 0) && g.depth.iter().any(|&d| d == 9),
+                g.mask.iter().any(|&m| m != 0) && g.depth.contains(&9),
                 "level {level} lost the corner lake the odd tail clamps into"
             );
         }
@@ -848,9 +863,17 @@ mod tests {
         assert!(format!("{err:#}").contains("3 rows, expected 4"), "{err:#}");
 
         let s2 = Scratch::new("wide");
-        let dir2 = s2.stage(DEPTH_4X4, "2 0 0 0 0\n0 0 0 0\n0 0 0 0\n0 0 0 0\n", &meta_json(4, 4), &vectors_json());
+        let dir2 = s2.stage(
+            DEPTH_4X4,
+            "2 0 0 0 0\n0 0 0 0\n0 0 0 0\n0 0 0 0\n",
+            &meta_json(4, 4),
+            &vectors_json(),
+        );
         let err2 = emit_water(dir2.to_str().expect("utf8")).expect_err("must refuse");
-        assert!(format!("{err2:#}").contains("5 values, expected 4"), "{err2:#}");
+        assert!(
+            format!("{err2:#}").contains("5 values, expected 4"),
+            "{err2:#}"
+        );
     }
 
     #[test]
@@ -891,11 +914,26 @@ mod tests {
     #[test]
     fn a_vector_export_the_archive_cannot_represent_is_refused() {
         for (bad, needle) in [
-            (r#"{"lakes":[{"surfaceElevationYM":1,"polygon":[[0,0,0],[1,0,0],[1,0,1]]}]}"#, "id"),
-            (r#"{"lakes":[{"id":"l","polygon":[[0,0,0],[1,0,0],[1,0,1]]}]}"#, "surfaceElevationYM"),
-            (r#"{"lakes":[{"id":"l","surfaceElevationYM":1,"polygon":[[0,0,0],[1,0,0]]}]}"#, "3 distinct points"),
-            (r#"{"lakes":[{"id":"l","surfaceElevationYM":1,"polygon":[[0,0],[1,0],[1,1]]}]}"#, "[x, y, z]"),
-            (r#"{"rivers":[{"id":"r","averageWidthM":1,"nodes":[{"pos":[0,0,0]}]}]}"#, "2 points"),
+            (
+                r#"{"lakes":[{"surfaceElevationYM":1,"polygon":[[0,0,0],[1,0,0],[1,0,1]]}]}"#,
+                "id",
+            ),
+            (
+                r#"{"lakes":[{"id":"l","polygon":[[0,0,0],[1,0,0],[1,0,1]]}]}"#,
+                "surfaceElevationYM",
+            ),
+            (
+                r#"{"lakes":[{"id":"l","surfaceElevationYM":1,"polygon":[[0,0,0],[1,0,0]]}]}"#,
+                "3 distinct points",
+            ),
+            (
+                r#"{"lakes":[{"id":"l","surfaceElevationYM":1,"polygon":[[0,0],[1,0],[1,1]]}]}"#,
+                "[x, y, z]",
+            ),
+            (
+                r#"{"rivers":[{"id":"r","averageWidthM":1,"nodes":[{"pos":[0,0,0]}]}]}"#,
+                "2 points",
+            ),
             (r#"{"rivers":[{"id":"r","averageWidthM":1}]}"#, "nodes"),
         ] {
             let err = build_water_vectors(bad).expect_err(bad);
@@ -906,10 +944,21 @@ mod tests {
     #[test]
     fn an_export_with_no_water_at_all_is_refused() {
         let s = Scratch::new("empty");
-        let dir = s.stage(DEPTH_4X4, MASK_4X4, &meta_json(4, 4), r#"{"lakes":[],"rivers":[]}"#);
+        let dir = s.stage(
+            DEPTH_4X4,
+            MASK_4X4,
+            &meta_json(4, 4),
+            r#"{"lakes":[],"rivers":[]}"#,
+        );
         let err = emit_water(dir.to_str().expect("utf8")).expect_err("must refuse");
-        assert!(format!("{err:#}").contains("refusing empty write"), "{err:#}");
-        assert!(!dir.join(WATER_VECTORS_RKYV).exists(), "nothing may be written");
+        assert!(
+            format!("{err:#}").contains("refusing empty write"),
+            "{err:#}"
+        );
+        assert!(
+            !dir.join(WATER_VECTORS_RKYV).exists(),
+            "nothing may be written"
+        );
     }
 
     #[test]
@@ -917,7 +966,10 @@ mod tests {
         assert_eq!(emit_water("/nonexistent/terrain/xyzzy").expect("no dir"), 1);
         let s = Scratch::new("nostaging");
         std::fs::remove_dir_all(s.0.join(STAGING_WATER)).expect("drop staging");
-        assert_eq!(emit_water(s.0.to_str().expect("utf8")).expect("no staging"), 1);
+        assert_eq!(
+            emit_water(s.0.to_str().expect("utf8")).expect("no staging"),
+            1
+        );
     }
 
     #[test]

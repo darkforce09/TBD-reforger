@@ -135,6 +135,6 @@ pub use roads::{
 };
 pub use store::{WorldError, WorldStore, bytes_to_json};
 pub use water::{
-    Bathymetry, BathymetryLevel, TBDB_ENCODING_V1, WATER_VECTORS_ALIGN, WaterAt, WaterMask,
-    WaterVectors, downsample_index,
+    Bathymetry, BathymetryLevel, SuffixPlan, TBDB_ENCODING_V1, WATER_VECTORS_ALIGN, WaterAt,
+    WaterMask, WaterVectors, downsample_index, suffix_plan,
 };

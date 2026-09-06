@@ -19,7 +19,7 @@
 //! | inside the extent, mask byte 0 | [`WaterAt::Dry`] | `false` | `Some(metres)` (0.0) |
 //! | inside the extent, mask byte non-zero | [`WaterAt::Water`] | `true` | `Some(metres)` |
 //! | **outside the world extent** | [`WaterAt::Unknown`] | **`false`** | **`None`** |
-//! | a mip level the file does not carry | [`WaterAt::Unknown`] | `false` | `None` |
+//! | a mip level this container does not hold | [`WaterAt::Unknown`] | `false` | `None` |
 //! | **no file at all** | — the host holds `Option<WaterMask>` and it is `None` | — | — |
 //!
 //! `is_water` answering `false` off the map is not a claim that the ground there is dry: it is the
@@ -105,7 +105,75 @@ impl BathymetryLevel<'_> {
     }
 }
 
-/// A whole `water/bathymetry.tbd-bath` file, validated once and then read in place.
+/// Which byte range of a `.tbd-bath` a loader should actually fetch: everon's full pyramid is
+/// 655,359,980 B, and the levels a placement guard needs are the small ones at the end.
+///
+/// Produced by [`suffix_plan`]. `file_offset` already includes the 32-byte header, so it is an
+/// HTTP `Range` start as-is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SuffixPlan {
+    /// The finest level the plan carries; levels below it are not fetched and read as
+    /// [`WaterAt::Unknown`].
+    pub first_level: u16,
+    pub file_offset: u64,
+    pub bytes: u64,
+}
+
+/// Offsets of a level suffix **within the payload**: `(bytes before `first_level`, bytes from
+/// `first_level` to the end)`. All arithmetic checked — a hostile `width * height * 2` wraps a
+/// 32-bit `usize` on wasm, and a wrapped length sizes an allocation for a grid the file has not
+/// got.
+fn payload_span(header: &TbdbHeader, first_level: u16) -> Result<(usize, usize), BinaryError> {
+    let bad = BinaryError::LengthMismatch {
+        what: "TBDB",
+        expected: 0,
+        actual: usize::from(first_level),
+    };
+    if header.width == 0
+        || header.height == 0
+        || header.mip_count == 0
+        || first_level >= header.mip_count
+    {
+        return Err(bad);
+    }
+    let (mut before, mut after) = (0_usize, 0_usize);
+    for level in 0..header.mip_count {
+        let stride = header.level_span(level).ok_or_else(|| bad.clone())?.stride;
+        let slot = if level < first_level {
+            &mut before
+        } else {
+            &mut after
+        };
+        *slot = slot.checked_add(stride).ok_or_else(|| bad.clone())?;
+    }
+    Ok((before, after))
+}
+
+/// The **finest** level whose suffix — that level and every coarser one — fits `budget_bytes`.
+///
+/// `None` when even the coarsest level does not fit, or the header is degenerate. Coarser is
+/// always safe to fall back to: the fold is `depth = max` / `mask = any water`, so a coarse texel
+/// over-reports water and never under-reports it, and a placement guard that reads a coarse level
+/// refuses more ground than it has to rather than less.
+#[must_use]
+pub fn suffix_plan(header: &TbdbHeader, budget_bytes: u64) -> Option<SuffixPlan> {
+    let mut best: Option<SuffixPlan> = None;
+    for first_level in (0..header.mip_count).rev() {
+        let (before, after) = payload_span(header, first_level).ok()?;
+        let bytes = u64::try_from(after).ok()?;
+        if bytes > budget_bytes {
+            break;
+        }
+        best = Some(SuffixPlan {
+            first_level,
+            file_offset: u64::try_from(size_of::<TbdbHeader>().checked_add(before)?).ok()?,
+            bytes,
+        });
+    }
+    best
+}
+
+/// A `water/bathymetry.tbd-bath`, or the **coarse tail of one**, validated once and read in place.
 ///
 /// The payload is kept as `Vec<u32>` rather than `Vec<u8>` purely as an **alignment vehicle**: a
 /// `Vec<u8>` is 1-aligned, the format pads every level to a multiple of 4 bytes so every level's
@@ -113,82 +181,98 @@ impl BathymetryLevel<'_> {
 /// `bytemuck::try_cast_slice::<u8, u16>` succeed on those blocks without a second copy per query.
 /// The words are never *interpreted* as numbers — [`u32::from_ne_bytes`] in, `cast_slice` out, so
 /// the bytes round-trip exactly (`binary::pod` asserts the host is little-endian at compile time).
+///
+/// # Why a partial pyramid is a first-class shape
+///
+/// A browser cannot hold everon's 655 MB level 0, and it does not need to: the header alone says
+/// where every level lives, so a loader Range-fetches a *suffix* ([`suffix_plan`]) and gets a
+/// complete, self-consistent mask at a coarser texel size. The **header is kept whole** either way
+/// — [`WaterMask::texel_at_level`] still folds from a level-0 texel down the same ladder — so the
+/// answers a partial container gives are exactly the answers the full one gives at those levels,
+/// not an approximation of them.
 #[derive(Clone, Debug)]
 pub struct Bathymetry {
     header: TbdbHeader,
+    first_level: u16,
     payload: Vec<u32>,
 }
 
 impl Bathymetry {
     /// Parse a whole `.tbd-bath` file.
     ///
-    /// Validates magic, version, **and the length every level of the declared pyramid implies** —
-    /// the last one with checked arithmetic throughout, because `width * height * 2` for a
-    /// hostile header overflows a 32-bit `usize` on wasm and a wrapped length would size the
-    /// allocation for a grid the file does not contain.
-    ///
     /// # Errors
     /// * [`BinaryError::Truncated`] — under 32 bytes, or a payload shorter than the header's
     ///   pyramid.
     /// * [`BinaryError::BadMagic`] / [`BinaryError::UnsupportedVersion`] — not a `TBDB` v1 file.
     /// * [`BinaryError::LengthMismatch`] — a header describing a zero-sized pyramid (`width`,
-    ///   `height` or `mip_count` of 0, reported as an implied payload of 0 bytes), a level whose
-    ///   size overflows `usize`, or a pyramid whose total is not the multiple of 4 the padding
-    ///   rule guarantees.
+    ///   `height` or `mip_count` of 0), a level whose size overflows `usize`, or a pyramid whose
+    ///   total is not the multiple of 4 the padding rule guarantees.
     pub fn from_bytes(raw: &[u8]) -> Result<Self, BinaryError> {
         let (header, payload) = TbdbHeader::read(raw)?;
-        if header.width == 0 || header.height == 0 || header.mip_count == 0 {
-            return Err(BinaryError::LengthMismatch {
-                what: "TBDB",
-                expected: 0,
-                actual: payload.len(),
-            });
-        }
-        let mut expected = 0_usize;
-        for level in 0..header.mip_count {
-            let span = header
-                .level_span(level)
-                .ok_or(BinaryError::LengthMismatch {
-                    what: "TBDB",
-                    expected: 0,
-                    actual: payload.len(),
-                })?;
-            expected = expected
-                .checked_add(span.stride)
-                .ok_or(BinaryError::LengthMismatch {
-                    what: "TBDB",
-                    expected: 0,
-                    actual: payload.len(),
-                })?;
-        }
-        if payload.len() < expected {
+        Self::assemble(header, 0, payload, raw.len())
+    }
+
+    /// Parse the level suffix a [`SuffixPlan`] fetched: `header` is the whole file's 32-byte
+    /// header (Range-read separately), `payload` the bytes from `first_level`'s depth block to the
+    /// end of the file.
+    ///
+    /// # Errors
+    /// As [`Bathymetry::from_bytes`], plus [`BinaryError::LengthMismatch`] when `first_level` is
+    /// not a level this header has.
+    pub fn from_level_suffix(
+        header: TbdbHeader,
+        first_level: u16,
+        payload: &[u8],
+    ) -> Result<Self, BinaryError> {
+        // The header arrived over the wire too, on its own request — validate it here rather than
+        // trusting that whoever produced it did.
+        header.validate()?;
+        let len = payload.len().saturating_add(size_of::<TbdbHeader>());
+        Self::assemble(header, first_level, payload, len)
+    }
+
+    fn assemble(
+        header: TbdbHeader,
+        first_level: u16,
+        payload: &[u8],
+        raw_len: usize,
+    ) -> Result<Self, BinaryError> {
+        let (_, bytes) = payload_span(&header, first_level)?;
+        if payload.len() < bytes {
             return Err(BinaryError::Truncated {
                 what: "TBDB",
-                expected: expected.saturating_add(size_of::<TbdbHeader>()),
-                actual: raw.len(),
+                expected: bytes.saturating_add(size_of::<TbdbHeader>()),
+                actual: raw_len,
             });
         }
-        if !expected.is_multiple_of(4) {
+        if !bytes.is_multiple_of(4) {
             return Err(BinaryError::LengthMismatch {
                 what: "TBDB",
-                expected: expected.next_multiple_of(4),
-                actual: expected,
+                expected: bytes.next_multiple_of(4),
+                actual: bytes,
             });
         }
-        let words = payload[..expected]
-            .chunks_exact(4)
-            .map(|c| u32::from_ne_bytes([c[0], c[1], c[2], c[3]]))
-            .collect();
         Ok(Self {
             header,
-            payload: words,
+            first_level,
+            payload: payload[..bytes]
+                .chunks_exact(4)
+                .map(|c| u32::from_ne_bytes([c[0], c[1], c[2], c[3]]))
+                .collect(),
         })
     }
 
-    /// The 32-byte header as it was written.
+    /// The 32-byte header as it was written — **the whole file's**, even when only a suffix is
+    /// held, so the world→texel ladder is unchanged.
     #[must_use]
     pub fn header(&self) -> &TbdbHeader {
         &self.header
+    }
+
+    /// The finest level actually present (`0` for a whole file).
+    #[must_use]
+    pub fn finest_level(&self) -> u16 {
+        self.first_level
     }
 
     /// Level-0 grid width in texels.
@@ -209,17 +293,27 @@ impl Bathymetry {
         self.header.mip_count
     }
 
-    /// One level's two grids, or `None` past [`Bathymetry::level_count`].
+    /// One level's two grids, or `None` past [`Bathymetry::level_count`] — or *below*
+    /// [`Bathymetry::finest_level`], when only a suffix was fetched.
     ///
-    /// Zero-copy: both slices point into the buffer [`Bathymetry::from_bytes`] allocated.
+    /// Zero-copy: both slices point into the buffer the parse allocated.
     #[must_use]
     pub fn level(&self, level: u16) -> Option<BathymetryLevel<'_>> {
+        if level < self.first_level {
+            return None;
+        }
         let span = self.header.level_span(level)?;
+        // Offsets in `LevelSpan` are relative to the start of the WHOLE payload; this buffer starts
+        // at `first_level`'s depth block. Both are sums of 4-multiple strides, so the difference is
+        // still 4-aligned and the depth cast still succeeds without a copy.
+        let base = self.header.level_span(self.first_level)?.depth_offset;
+        let depth_off = span.depth_offset.checked_sub(base)?;
+        let mask_off = span.mask_offset.checked_sub(base)?;
         let bytes: &[u8] = cast_slice(&self.payload);
-        let depth_end = span.depth_offset.checked_add(span.depth_bytes)?;
-        let mask_end = span.mask_offset.checked_add(span.mask_bytes)?;
-        let depth_bytes = bytes.get(span.depth_offset..depth_end)?;
-        let mask = bytes.get(span.mask_offset..mask_end)?;
+        let depth_end = depth_off.checked_add(span.depth_bytes)?;
+        let mask_end = mask_off.checked_add(span.mask_bytes)?;
+        let depth_bytes = bytes.get(depth_off..depth_end)?;
+        let mask = bytes.get(mask_off..mask_end)?;
         // Every level starts on a stride that is a multiple of 4, so this cast never copies and
         // never fails; `try_` rather than `cast_slice` so a future layout change is an error
         // instead of a panic in a placement guard.
@@ -346,10 +440,11 @@ impl WaterMask {
         }
     }
 
-    /// What the finest level records at `(x, z)`.
+    /// What the **finest level this container actually holds** records at `(x, z)` — level 0 for a
+    /// whole file, [`Bathymetry::finest_level`] for a Range-fetched suffix.
     #[must_use]
     pub fn sample(&self, x: f64, z: f64) -> WaterAt {
-        self.sample_at_level(x, z, 0)
+        self.sample_at_level(x, z, self.bathymetry.finest_level())
     }
 
     /// **`true` only where the container records water.**
@@ -386,16 +481,18 @@ impl WaterMask {
     }
 
     /// Mip selection: the **coarsest** level whose texels are still no wider than `target_m`
-    /// metres, or `0` when even level 0 is coarser than that (there is nothing finer to pick).
+    /// metres, or [`Bathymetry::finest_level`] when even that is coarser than the target (there is
+    /// nothing finer in this container to pick).
     ///
     /// A caller rasterising a mask overlay at 32 m/px reads level 5 of everon instead of touching
-    /// 163 M level-0 texels; a caller asking a single placement question uses level 0.
+    /// 163 M level-0 texels; a caller asking a single placement question uses the finest it has.
     #[must_use]
     pub fn level_for_texel_size_m(&self, target_m: f64) -> u16 {
         let [min_x, _, max_x, _] = self.bounds;
         let span = max_x - min_x;
-        let mut best = 0_u16;
-        for level in 0..self.bathymetry.level_count() {
+        let finest = self.bathymetry.finest_level();
+        let mut best = finest;
+        for level in finest..self.bathymetry.level_count() {
             let Some((w, _)) = self.bathymetry.header.level_dims(level) else {
                 break;
             };
@@ -611,7 +708,7 @@ mod tests {
             assert_eq!(got_mask, want_mask, "level {level} mask");
             assert_eq!(grid.depth, &want_depth[..], "level {level} depth");
             assert!(
-                want_mask.iter().any(|&m| m == 1) && want_depth.iter().any(|&d| d > 0),
+                want_mask.contains(&1) && want_depth.iter().any(|&d| d > 0),
                 "level {level} oracle is vacuous — nothing wet folded into it"
             );
         }
@@ -686,6 +783,104 @@ mod tests {
         assert!(m.texel_at_level(2.0, 2.0, MIPS).is_none());
     }
 
+    /// A Range-fetched suffix must answer **exactly** what the whole file answers at the levels it
+    /// holds — the header is kept whole precisely so the fold does not shift — and `Unknown` for
+    /// the fine levels it does not.
+    #[test]
+    fn a_level_suffix_answers_identically_to_the_whole_file() {
+        let bytes = synth(W, H, MIPS, &[(WET.0, WET.1, 30)]);
+        let full = Bathymetry::from_bytes(&bytes).expect("full");
+        assert_eq!(full.finest_level(), 0);
+        for first in 1..MIPS {
+            let plan = suffix_plan(full.header(), u64::MAX).expect("plan");
+            let (before, _) = payload_span(full.header(), first).expect("span");
+            let start = size_of::<TbdbHeader>() + before;
+            let part = Bathymetry::from_level_suffix(*full.header(), first, &bytes[start..])
+                .expect("suffix parses");
+            assert_eq!(part.finest_level(), first);
+            assert_eq!((part.width(), part.height()), (W, H), "header stays whole");
+            assert_eq!(plan.first_level, 0, "an unbounded budget takes everything");
+
+            let a = WaterMask::new(full.clone(), [0.0, 0.0, 4.0, 4.0]).expect("full mask");
+            let b = WaterMask::new(part, [0.0, 0.0, 4.0, 4.0]).expect("part mask");
+            for tz in 0..H {
+                for tx in 0..W {
+                    let (x, z) = (world_of(tx, W, 4.0), world_of(tz, H, 4.0));
+                    for level in 0..MIPS {
+                        let want = if level < first {
+                            WaterAt::Unknown
+                        } else {
+                            a.sample_at_level(x, z, level)
+                        };
+                        assert_eq!(
+                            b.sample_at_level(x, z, level),
+                            want,
+                            "suffix from {first}, level {level} at ({x}, {z})"
+                        );
+                    }
+                    // `sample` follows the finest level the container HOLDS, not level 0.
+                    assert_eq!(b.sample(x, z), a.sample_at_level(x, z, first));
+                }
+            }
+            assert_eq!(
+                b.level_for_texel_size_m(0.0),
+                first,
+                "cannot go finer than it has"
+            );
+        }
+    }
+
+    /// The plan a browser loader runs on: pick the finest level whose tail fits the budget, and
+    /// give a `Range` start that already includes the header.
+    #[test]
+    fn suffix_plan_picks_the_finest_level_inside_the_budget() {
+        // everon: 12800² × 14 levels. Level 0 alone is 491,520,000 B.
+        let everon = TbdbHeader::new(12_800, 12_800, 14, 0.1);
+        let whole = suffix_plan(&everon, u64::MAX).expect("whole");
+        assert_eq!(whole.first_level, 0);
+        assert_eq!(whole.file_offset, 32);
+        assert_eq!(whole.bytes, 655_359_948);
+        for (budget, level, bytes) in [
+            (16_u64 << 20, 3_u16, 10_239_948_u64),
+            (4 << 20, 4, 2_559_948),
+            (1 << 20, 5, 639_948),
+            // Level 9's tail is 2448 B, so 1 KiB stops at level 10 (12×12, 432+108+28+4).
+            (1024, 10, 572),
+        ] {
+            let p = suffix_plan(&everon, budget).expect("plan");
+            assert_eq!((p.first_level, p.bytes), (level, bytes), "budget {budget}");
+            assert!(p.bytes <= budget, "budget {budget} overrun");
+            let (before, _) = payload_span(&everon, p.first_level).expect("span");
+            assert_eq!(p.file_offset, 32 + before as u64);
+        }
+        // A budget under the coarsest level's 4 bytes has no plan at all.
+        assert!(suffix_plan(&everon, 3).is_none());
+        assert!(suffix_plan(&TbdbHeader::new(0, 0, 0, 0.1), u64::MAX).is_none());
+    }
+
+    #[test]
+    fn a_truncated_suffix_is_refused() {
+        let bytes = synth(W, H, MIPS, &[(1, 2, 30)]);
+        let head = TbdbHeader::new(W, H, MIPS, SCALE);
+        let (before, after) = payload_span(&head, 1).expect("span");
+        let start = size_of::<TbdbHeader>() + before;
+        assert!(Bathymetry::from_level_suffix(head, 1, &bytes[start..]).is_ok());
+        assert!(matches!(
+            Bathymetry::from_level_suffix(head, 1, &bytes[start..start + after - 4]),
+            Err(BinaryError::Truncated { .. })
+        ));
+        assert!(matches!(
+            Bathymetry::from_level_suffix(head, MIPS, &bytes[start..]),
+            Err(BinaryError::LengthMismatch { .. })
+        ));
+        let mut bad = head;
+        bad.magic = *b"vers";
+        assert!(matches!(
+            Bathymetry::from_level_suffix(bad, 0, &bytes[32..]),
+            Err(BinaryError::BadMagic { .. })
+        ));
+    }
+
     /// Corners map to the first and last sample, and the mapping is monotone across the span —
     /// the whole of "a wrong answer puts a unit in a lake" is this function being right.
     #[test]
@@ -711,7 +906,11 @@ mod tests {
         assert_eq!(downsample_index(1, 2), 0);
         assert_eq!(downsample_index(2, 2), 1);
         assert_eq!(downsample_index(3, 2), 1);
-        assert_eq!(downsample_index(4, 2), 1, "the odd tail must clamp, not overrun");
+        assert_eq!(
+            downsample_index(4, 2),
+            1,
+            "the odd tail must clamp, not overrun"
+        );
         assert_eq!(downsample_index(9, 1), 0);
         let bytes = synth(5, 5, 3, &[(4, 4, 9)]);
         let b = Bathymetry::from_bytes(&bytes).expect("parse 5x5");
@@ -730,7 +929,11 @@ mod tests {
     fn mip_selection_picks_the_coarsest_level_within_the_budget() {
         let m = mask_4x4();
         // 4 m over 4 samples: level 0 texels are 1 m, level 1 are 2 m, level 2 are 4 m.
-        assert_eq!(m.level_for_texel_size_m(0.5), 0, "nothing is finer than 1 m");
+        assert_eq!(
+            m.level_for_texel_size_m(0.5),
+            0,
+            "nothing is finer than 1 m"
+        );
         assert_eq!(m.level_for_texel_size_m(1.0), 0);
         assert_eq!(m.level_for_texel_size_m(2.0), 1);
         assert_eq!(m.level_for_texel_size_m(100.0), 2, "capped by the pyramid");
@@ -782,7 +985,10 @@ mod tests {
             let mut z = good.clone();
             z[zeroed].copy_from_slice(&0_u32.to_le_bytes());
             assert!(
-                matches!(Bathymetry::from_bytes(&z), Err(BinaryError::LengthMismatch { .. })),
+                matches!(
+                    Bathymetry::from_bytes(&z),
+                    Err(BinaryError::LengthMismatch { .. })
+                ),
                 "a zero-sized grid must be refused, not folded onto one texel"
             );
         }
