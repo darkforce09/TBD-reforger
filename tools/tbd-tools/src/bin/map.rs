@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
-use tbd_tools::map::{carto, glyphs, labels, sap, unified, water};
+use tbd_tools::map::{carto, glyphs, labels, labels_emit, sap, unified, water};
 
 #[derive(Parser)]
 #[command(name = "map", about = "T-090 map-asset image pipeline (Rust)")]
@@ -72,6 +72,13 @@ enum Cmd {
     },
     /// export-height-labels.mjs port (native core restore — wasm pkg is gone)
     ExportHeightLabels {
+        #[arg(long, default_value = "everon")]
+        terrain: String,
+    },
+    /// T-935.7 — locations/map_labels.rkyv from locations.json + height-labels.json +
+    /// road-names.json (dual emission; the JSON files stay). `--terrain` takes a terrain id or a
+    /// terrain directory.
+    LabelsRkyv {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
@@ -188,6 +195,7 @@ fn run() -> anyhow::Result<ExitCode> {
         Cmd::ExportHeightLabels { terrain } => {
             Ok(ExitCode::from(labels::export_height_labels(&terrain)?))
         }
+        Cmd::LabelsRkyv { terrain } => Ok(ExitCode::from(labels_emit::emit_map_labels(&terrain)?)),
         Cmd::ResetWaterMeta { terrain } => Ok(ExitCode::from(carto::reset_water_meta(&terrain)?)),
         Cmd::PatchUnifiedBytes { terrain } => {
             Ok(ExitCode::from(carto::patch_unified_bytes(&terrain)?))
