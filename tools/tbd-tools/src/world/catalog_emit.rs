@@ -259,6 +259,8 @@ pub fn emit_catalog_archives(terrain_dir: &Path) -> Result<Vec<(PathBuf, usize)>
 
 #[cfg(test)]
 mod tests {
+    use map_engine_core::world::parse_manifest_binary;
+
     use super::*;
     use crate::serve::repo_root;
 
@@ -476,6 +478,59 @@ mod tests {
             "{msg}"
         );
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The hop nothing else covers: the paths this emitter **writes** have to be the paths the
+    /// manifest **names**, or `world_host`'s archive branches fetch a URL nothing ever wrote — a
+    /// 404 that falls silently back to JSON on every boot, which is indistinguishable from "the
+    /// binary lane is switched off".
+    ///
+    /// This is also the only place both halves are visible: the emitter constants live in
+    /// `tbd-tools`, the manifest parser in `map-engine-core`.
+    ///
+    /// The second half is the acceptance's own words, made mechanical: the committed everon
+    /// manifest must carry **no** `objects.binary` block, so both frontend archive branches stay
+    /// dormant until T-935.13 writes one. If that ever stops being true by accident, this fails
+    /// here rather than by the editor quietly changing which files it fetches.
+    #[test]
+    fn the_manifest_block_names_the_paths_this_emitter_writes() {
+        let flipped = serde_json::json!({
+            "objects": {
+                "prefabsPath": "objects/prefabs.json.gz",
+                "chunksPath": "objects/chunks",
+                "binary": {
+                    "schemaVersion": "1.0.0",
+                    "container": "TBDC", "containerVersion": 1,
+                    "pod": "ObjectInstancePod", "podBytes": 32,
+                    "chunks": "objects/chunks/{cx}_{cy}.bin",
+                    "prefabs": "objects/prefabs.rkyv",
+                    "roads": "roads/road_network.rkyv",
+                    "regions": "objects/forest-regions.rkyv",
+                    "typeInventory": "objects/type-inventory.rkyv"
+                }
+            }
+        });
+        let block = parse_manifest_binary(&flipped)
+            .objects
+            .expect("objects.binary");
+        assert_eq!(block.prefabs, PREFAB_CATALOG_RKYV);
+        assert_eq!(block.regions, FOREST_REGIONS_RKYV);
+        assert_eq!(block.type_inventory, TYPE_INVENTORY_RKYV);
+        assert_eq!(block.roads, super::super::roads_emit::ROAD_NETWORK_RKYV);
+        assert!(
+            !block.prefabs.is_empty() && !block.regions.is_empty(),
+            "world_host reads an empty path as \"not named\" — these must be non-empty"
+        );
+
+        let everon: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(everon_dir().join("manifest.json")).expect("everon manifest"),
+        )
+        .expect("parse everon manifest");
+        assert!(
+            parse_manifest_binary(&everon).objects.is_none(),
+            "the committed everon manifest gained an objects.binary block — T-935.11's acceptance \
+             is that JSON stays the default until T-935.13 writes one"
+        );
     }
 
     /// A terrain with no `forest-regions.json.gz` (a non-density `--phase`) emits the two
