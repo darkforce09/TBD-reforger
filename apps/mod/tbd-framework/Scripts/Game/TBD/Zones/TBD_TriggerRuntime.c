@@ -1441,13 +1441,13 @@ class TBD_TriggerRuntime
 	//! them: one broken objective must not make the mission unwinnable.
 	protected static bool ObjectiveComplete(notnull TBD_Trigger trigger)
 	{
-		array<ref TBD_Objective> objectives = TBD_ObjectiveRegistry.GetAll();
-		if (!objectives)
+		array<ref TBD_Objective> objectiveList = TBD_ObjectiveRegistry.GetAll();
+		if (!objectiveList)
 			return false;
 
 		if (!trigger.m_sZoneId.IsEmpty())
 		{
-			foreach (TBD_Objective one : objectives)
+			foreach (TBD_Objective one : objectiveList)
 			{
 				if (one && one.m_sId == trigger.m_sZoneId)
 					return one.m_bComplete;
@@ -1457,7 +1457,7 @@ class TBD_TriggerRuntime
 		}
 
 		int usable = 0;
-		foreach (TBD_Objective objective : objectives)
+		foreach (TBD_Objective objective : objectiveList)
 		{
 			if (!objective || !objective.m_bUsable)
 				continue;
@@ -1882,8 +1882,8 @@ class TBD_TriggerRuntime
 	//! a capture objective without an owner would leave the round unwinnable by that route.
 	protected static void EffectSetObjective(notnull TBD_Trigger trigger, notnull TBD_TriggerEffect effect)
 	{
-		array<ref TBD_Objective> objectives = TBD_ObjectiveRegistry.GetAll();
-		if (!objectives)
+		array<ref TBD_Objective> objectiveList = TBD_ObjectiveRegistry.GetAll();
+		if (!objectiveList)
 		{
 			TBD_Log.Warn(CH, string.Format("trigger '%1' set_objective '%2' but the objective registry has not been built - nothing changed",
 				trigger.m_sId, effect.m_sObjectiveId));
@@ -1891,7 +1891,7 @@ class TBD_TriggerRuntime
 		}
 
 		TBD_Objective target;
-		foreach (TBD_Objective objective : objectives)
+		foreach (TBD_Objective objective : objectiveList)
 		{
 			if (objective && objective.m_sId == effect.m_sObjectiveId)
 			{
