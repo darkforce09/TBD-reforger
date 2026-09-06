@@ -13,25 +13,41 @@ T-946 (2026-09-06) re-seated the lock's wave labels on the close-marker ledger, 
 after it as **236**. Older notes in `docs/platform/FACTORY_RUN_2026-09.md` still say 248 — that is the
 same wave. Do not try to reconcile them by renumbering anything; the ledger is right now.
 
-## State at last save (2026-09-06, late)
-- **CLOSED AND PUSHED: waves 235, 236, 237, 238, 239.** 21 tickets shipped. Markers `b6a3cfd89`,
-  `35328a7b1` (DISAVOWED, see below), `4f2d4598f`, `ad9b22890`, `4f7a0daa7`, `b0257e946`.
-- **Wave 240 is next**: `cargo xtask platform wave status` names it. Briefs go in
-  `.ai/artifacts/editor_briefs/sept2026/wave240/`; copy the wave239 ones as the template — they
-  carry the bridge block, the corrected gate scope and rules 16/17.
+## State at last save (2026-09-06, wave 240 closed and pushed)
+- **CLOSED AND PUSHED: waves 235, 236, 237, 238, 239, 240.** 24 tickets shipped. Markers
+  `b6a3cfd89`, `35328a7b1` (DISAVOWED, see below), `4f2d4598f`, `ad9b22890`, `4f7a0daa7`,
+  `b0257e946`, `52a038a77`.
+- **Wave 241 is next**: T-935.11 (prefab/forest-region/type-inventory archives), T-675.1 (vehicle
+  roster on the wire), T-676 (Enfusion trigger runtime). `cargo xtask platform wave status` confirms.
+  Briefs are drafted in this session's scratchpad as `brief_T-*.md`; copy them to
+  `.ai/artifacts/editor_briefs/sept2026/wave241/` when the worktrees exist.
 - The first wave-236 marker was disavowed (`36f462d3f`) because its label collided with an open
-  wave. `--close --tickets` refuses that now. Do not be alarmed by two `wave 236 CLOSED` subjects.
-- **49 findings filed, T-947…T-998.** The ones needing an operator decision, not an agent:
+  wave. Do not be alarmed by two `wave 236 CLOSED` subjects.
+- **THE CLOSE-LABEL TRAP IS NOW FIXED, and the fix is a command you must know.** A wave shipped one
+  ticket at a time leaves NO pending `[[emptied]]` entry, because `ticket ship` repacks after every
+  id and the label gets re-issued to the next batch. `--close --tickets` then asks for a label a
+  live open wave holds and is refused. Repair, before closing:
+      cargo xtask wave repack --reserve "T-a T-b T-c"
+  It freezes those shipped ids as the pending close target and renumbers the open waves past it.
+  The batch path that avoids the whole problem is still `ticket ship --no-repack` + one repack.
+- **The mod compile gate WORKS again** (T-946.3, `2392a2513`): three tbd-export scripts carried 15
+  em-dashes and failed the ASCII scan before the compiler ever ran. `cargo xtask mod compile` now
+  reports `OK: compiled clean, 5739 files, 11293 classes`. Both copies of `TBD_MissionValidator.c`
+  are inside that count, so wave 240's uncompiled Enfusion edit is now compile-verified.
+- Do NOT run `cargo test -p xtask` while `cargo xtask mod compile` is running: they share
+  `~/.local/share/tbd-server-addons` and two T-878 tests fail (T-946.13).
+- **60 findings filed, T-947…T-999 and T-946.1…T-946.13.** The ones needing an OPERATOR decision,
+  not an agent:
+  * **T-946.1** — the top-level ticket id space is EXHAUSTED at T-999. Every new finding is filed as
+    a child of T-946. This blocks all further top-level filing and needs a numbering decision.
   * **T-957** — `apps/mod/vanilla_reference` is 2,483 files rotated by the pre-T-305 pak reader,
     and the committed `enf-index` TSVs were built over them. Re-extraction rewrites a committed
     artifact tree.
   * **T-981 / T-985** — the building archive cannot carry the 1,322 BLOCKING prefabs (no instance
-    records on the wire) and drops the boot hot-set. Both slices took the safe path; T-935.13's
-    plan assumes neither limit exists. Something in that plan has to give.
-  * **T-993** — the satellite BOOT path still refuses any container but v1. Flip the manifest
-    without changing it and the basemap silently drops to the low-res preview.
-  * **T-994 / T-995** — forest smoothing emits self-crossing rings (38 on everon), and the editor
-    filters out every forest region so none of it renders. Fix the second before the first matters.
+    records on the wire) and drops the boot hot-set. T-935.13's plan assumes neither limit exists.
+  * **T-993** — the satellite BOOT path still refuses any container but v1.
+  * **T-994 / T-995** — forest smoothing emits 38 self-crossing rings, and the editor filters out
+    every forest region so none of it renders. Fix the second before the first matters.
 
 ## THE BRIDGE — every cargo command runs on the host
 This session runs inside the `claude-desktop` container (glibc 2.36). The shared cache
