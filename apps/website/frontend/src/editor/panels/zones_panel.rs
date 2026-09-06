@@ -1573,7 +1573,19 @@ mod tests {
     fn the_authored_play_area_becomes_the_compiled_play_area() {
         use map_engine_core::mission::compile::terrain_bounds;
         for terrain in SHIPPED_TERRAINS {
+            // The play area the compile would have synthesised for this map, taken FROM the compile.
+            // Building the payload out of `terrain_rect_ring` and then reading it back would make
+            // this test self-consistent — measured: it stayed GREEN while `terrain_rect_corners`
+            // was perturbed to a hardcoded 12800 rect, because it round-tripped the wrong rect just
+            // as faithfully. So the fallback ring is the oracle and the authored ring is checked
+            // against it before either reaches a payload.
+            let synthesised =
+                compiled_boundary_ring(&compile_for(terrain, &terrain_payload("[]")), "z_bounds");
             let ring = terrain_rect_ring(terrain, terrain_bounds(terrain)).expect("authorable");
+            assert_eq!(
+                ring, synthesised,
+                "the authored ring must be the play area the compile would have made ({terrain})"
+            );
             let verts: Vec<String> = ring
                 .chunks_exact(2)
                 .map(|c| format!("[{}, {}]", c[0], c[1]))
