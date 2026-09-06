@@ -1455,13 +1455,47 @@ impl MissionDocCore {
     /// T-211 — create a polygon zone from a FLAT `[x0,z0,x1,z1,…]` ring (the wasm-boundary shape:
     /// one `Vec<f64>` crosses cheaply where a `Vec<Vec<f64>>` does not). A trailing unpaired
     /// coordinate is dropped rather than written as a malformed vertex.
+    ///
+    /// Label-free by construction: the draw tool authors the ring first and the author names the
+    /// zone afterwards, which is two gestures and rightly two undo steps. A create that must land
+    /// NAMED in ONE step is [`Self::add_polygon_zone_labelled`], which this delegates to so the two
+    /// cannot drift.
     pub fn add_polygon_zone(&self, id: &str, kind: &str, points_flat: &[f64]) {
+        self.add_polygon_zone_labelled(id, kind, points_flat, None);
+    }
+
+    /// T-702 — [`Self::add_polygon_zone`] plus `zone.label`, in **ONE transaction**.
+    ///
+    /// ═══ WHY THIS EXISTS AND IS NOT TWO CALLS ═══
+    ///
+    /// `capture_timeout_millis = 0` (see [`Self::new`]) makes **every** LOCAL transaction its own
+    /// undo step, and `two_local_moves_are_two_undo_steps` /
+    /// `mixed_slot_vehicle_two_calls_are_two_undo_steps` pin exactly that. So
+    /// `add_polygon_zone(…)` followed by `set_zone_label(…)` is **two** Ctrl+Z presses: the first
+    /// strips the name and leaves an anonymous zone standing, which is not what an author who
+    /// pressed one button asked to undo. A one-gesture create therefore has to write both keys
+    /// under one `begin()`, the same shape [`Self::move_entities_and_vehicles`] took for the T-425
+    /// mixed drag and [`Self::update_slots_attr_batch`] took for the T-649 apply-to-all.
+    ///
+    /// `label` follows [`Self::set_zone_label`]'s vocabulary: `None` writes **no** `label` key
+    /// (the mod's `PrettyZoneTitle` fallback), `Some("")` writes the empty label, which is a
+    /// distinct authored state the schema allows on purpose.
+    pub fn add_polygon_zone_labelled(
+        &self,
+        id: &str,
+        kind: &str,
+        points_flat: &[f64],
+        label: Option<&str>,
+    ) {
         let mut txn = self.begin();
         let zone = self
             .zones
             .insert(&mut txn, id, MapPrelim::from([("id", id)]));
         zone.insert(&mut txn, "type", kind);
         zone.insert(&mut txn, "shape", polygon_shape_any(points_flat));
+        if let Some(l) = label {
+            zone.insert(&mut txn, "label", l);
+        }
     }
 
     /// T-211 — reshape an existing zone to a circle (drag / resize). Replaces the whole `shape`
@@ -11319,6 +11353,87 @@ mod tests {
         fresh.set_origin_init(false);
         assert_eq!(fresh.zone_count(), 1);
         assert!(!fresh.can_undo(), "hydrate must not create an undo step");
+    }
+
+    /// ═══ T-702 — A NAMED ZONE AUTHORED BY ONE GESTURE IS **ONE** UNDO STEP ═══
+    ///
+    /// The whole-terrain Play Area button is one press, so its Ctrl+Z must be one press. This
+    /// asserts the DEPTH, not merely that undo works: the two-call spelling
+    /// (`add_polygon_zone` + `set_zone_label`) undoes GREEN on a `can_undo()`-shaped test while
+    /// leaving an anonymous zone on the map after the author's single Ctrl+Z, which is the
+    /// granularity defect `undo_depth()` was added for (T-159.22.1). The second half of the test
+    /// is that failure mode, spelled out and pinned at depth 2, so the two spellings can never be
+    /// confused for each other again.
+    #[test]
+    fn a_labelled_polygon_zone_create_is_one_undo_step() {
+        let mut doc = MissionDocCore::new();
+        assert_eq!(doc.undo_depth(), 0, "a fresh doc has nothing to undo");
+
+        doc.add_polygon_zone_labelled(
+            "z1",
+            "boundary",
+            &[0.0, 0.0, 12_800.0, 0.0, 12_800.0, 12_800.0, 0.0, 12_800.0],
+            Some("Play Area"),
+        );
+        let rows: serde_json::Value =
+            serde_json::from_str(&doc.zones_json()).expect("zones_json parses");
+        assert_eq!(rows["z1"]["type"], "boundary");
+        assert_eq!(
+            rows["z1"]["label"], "Play Area",
+            "the create must land NAMED, not name it afterwards"
+        );
+        assert_eq!(
+            doc.undo_depth(),
+            1,
+            "one gesture = one LOCAL txn = ONE undo step (capture_timeout_millis = 0)"
+        );
+
+        assert!(doc.undo());
+        assert_eq!(
+            doc.zone_count(),
+            0,
+            "the author's SINGLE Ctrl+Z must remove the whole zone, not just its name"
+        );
+        assert_eq!(doc.undo_depth(), 0, "and leave nothing else stacked");
+        assert!(doc.redo());
+        let back: serde_json::Value =
+            serde_json::from_str(&doc.zones_json()).expect("zones_json parses");
+        assert_eq!(
+            back["z1"]["label"], "Play Area",
+            "redo must restore the NAME with the ring — one step, both keys"
+        );
+
+        // ── the spelling this replaced, pinned as the defect it is ──────────────────────────
+        let two_call = MissionDocCore::new();
+        two_call.add_polygon_zone("z1", "boundary", &[0.0, 0.0, 1.0, 0.0, 1.0, 1.0]);
+        two_call.set_zone_label("z1", Some("Play Area"));
+        assert_eq!(
+            two_call.undo_depth(),
+            2,
+            "create-then-name is TWO txns and therefore two Ctrl+Z presses — which is why \
+             add_polygon_zone_labelled exists"
+        );
+    }
+
+    /// `None` writes no `label` key at all, so the label-free create keeps its old wire shape
+    /// exactly: [`MissionDocCore::add_polygon_zone`] now delegates, and a delegation that quietly
+    /// started emitting `"label": ""` would change every zone the draw tool has ever authored.
+    #[test]
+    fn an_unlabelled_polygon_zone_carries_no_label_key() {
+        let doc = MissionDocCore::new();
+        doc.add_polygon_zone("z1", "boundary", &[0.0, 0.0, 1.0, 0.0, 1.0, 1.0]);
+        doc.add_polygon_zone_labelled("z2", "boundary", &[0.0, 0.0, 1.0, 0.0, 1.0, 1.0], Some(""));
+        let rows: serde_json::Value =
+            serde_json::from_str(&doc.zones_json()).expect("zones_json parses");
+        assert!(
+            rows["z1"].get("label").is_none(),
+            "the draw-tool create must still write NO label key: {}",
+            rows["z1"]
+        );
+        assert_eq!(
+            rows["z2"]["label"], "",
+            "Some(\"\") stays the distinct empty-label state set_zone_label already allows"
+        );
     }
 
     /// A zone-only document has unsaved content — the conflict gate must not discard it.
