@@ -71,6 +71,9 @@ class TBD_MarkerClient
 	//! so without this a player who checks their map twenty times writes twenty identical lines.
 	protected static string s_sLastLoggedOutcome;
 
+	//! One warning per world when an area shape arrives: the placed-marker widget cannot fill.
+	protected static bool s_bAreaFillNoted;
+
 	//------------------------------------------------------------------------------------------------
 	//! @authority client — arm the pull. Called by `TBD_MarkerComponent` on any machine with a
 	//! workspace (a dedicated server has none and has no map to draw on).
@@ -132,6 +135,7 @@ class TBD_MarkerClient
 		s_sAppliedFaction = string.Empty;
 		s_fLastMapRequestMs = 0;
 		s_sLastLoggedOutcome = string.Empty;
+		s_bAreaFillNoted = false;
 
 		TBD_MarkerIcons.ResetForWorld();
 	}
@@ -189,7 +193,10 @@ class TBD_MarkerClient
 
 		// A new mission means a new set of authoring mistakes worth hearing about.
 		if (missionId != s_sAppliedMissionId)
+		{
 			TBD_MarkerIcons.ResetReported();
+			s_bAreaFillNoted = false;
+		}
 
 		s_sAppliedMissionId = missionId;
 		s_sAppliedFaction = factionKey;
@@ -198,7 +205,7 @@ class TBD_MarkerClient
 
 		// Served-but-empty is a legal, common answer: `briefings` absent, `markers` absent, and
 		// `markers: []` are three different states and none of them is an error.
-		if (!xs || xs.IsEmpty())
+		if (!zs || zs.IsEmpty())
 		{
 			if (NoteOutcome(missionId, factionKey, 0))
 			{
@@ -209,7 +216,20 @@ class TBD_MarkerClient
 			return;
 		}
 
-		ApplyRows(xs, zs, icons, labels, factionKey, missionId);
+		array<int> sizeFp = new array<int>();
+		array<int> rotationFp = new array<int>();
+		array<int> shapeIdx = new array<int>();
+		array<int> brushIdx = new array<int>();
+		array<int> colorRgb = new array<int>();
+		array<int> alpha255 = new array<int>();
+		if (!TBD_MarkerStyleCodec.UnpackFromX(xs, zs, sizeFp, rotationFp, shapeIdx, brushIdx, colorRgb, alpha255))
+		{
+			TBD_Log.Warn(TBD_MarkerService.CH_MARKERS,
+				"marker style trailer was malformed -- drew icon-only defaults.");
+		}
+
+		ApplyRows(xs, zs, icons, labels, sizeFp, rotationFp, shapeIdx, brushIdx, colorRgb,
+			alpha255, factionKey, missionId);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -293,7 +313,9 @@ class TBD_MarkerClient
 	//! `SCR_BaseTutorialStage.CreateMarkerCustom()` does for a placed custom marker
 	//! (`SetType(PLACED_CUSTOM)` / `SetIconEntry` / `SetColorEntry` / `SetCustomText`).
 	protected static void ApplyRows(array<int> xs, array<int> zs, array<string> icons,
-		array<string> labels, string factionKey, string missionId)
+		array<string> labels, array<int> sizeFp, array<int> rotationFp, array<int> shapeIdx,
+		array<int> brushIdx, array<int> colorRgb, array<int> alpha255,
+		string factionKey, string missionId)
 	{
 		SCR_MapMarkerManagerComponent mgr = FindMarkerManager();
 		if (!mgr)
@@ -301,7 +323,7 @@ class TBD_MarkerClient
 			// WARNING, not ERROR: a machine with no marker manager (or no map) is not a broken
 			// mission, and `world-boot.sh` fails closed on any TBD-owned `SCR (E)` line.
 			TBD_Log.Warn(TBD_MarkerService.CH_MARKERS,
-				string.Format("no SCR_MapMarkerManagerComponent on the game mode — %1 marker(s) cannot be drawn.",
+				string.Format("no SCR_MapMarkerManagerComponent on the game mode - %1 marker(s) cannot be drawn.",
 					xs.Count()));
 			return;
 		}
@@ -310,12 +332,12 @@ class TBD_MarkerClient
 
 		int unknownIcons = 0;
 
-		for (int i = 0, count = xs.Count(); i < count; i++)
+		for (int i = 0, count = zs.Count(); i < count; i++)
 		{
 			// Defensive against a malformed parallel set. The four arrays are built together and
 			// sent together so they cannot legitimately differ in length, but a short array here
 			// would be an out-of-range read rather than a missing caption.
-			if (!zs.IsIndexValid(i) || !icons.IsIndexValid(i) || !labels.IsIndexValid(i))
+			if (!xs.IsIndexValid(i) || !icons.IsIndexValid(i) || !labels.IsIndexValid(i))
 				break;
 
 			bool recognised;
@@ -328,18 +350,70 @@ class TBD_MarkerClient
 
 			iconEntry = TBD_MarkerIcons.ClampToLoadedConfig(iconEntry);
 
-			SCR_MapMarkerBase marker = new SCR_MapMarkerBase();
+			int rowSizeFp = -1;
+			int rowRotFp = -1;
+			int rowShapeIdx = 0;
+			int rowBrushIdx = -1;
+			int rowRgb = -1;
+			int rowAlpha255 = -1;
+			if (sizeFp && sizeFp.IsIndexValid(i))
+				rowSizeFp = sizeFp[i];
+			if (rotationFp && rotationFp.IsIndexValid(i))
+				rowRotFp = rotationFp[i];
+			if (shapeIdx && shapeIdx.IsIndexValid(i))
+				rowShapeIdx = shapeIdx[i];
+			if (brushIdx && brushIdx.IsIndexValid(i))
+				rowBrushIdx = brushIdx[i];
+			if (colorRgb && colorRgb.IsIndexValid(i))
+				rowRgb = colorRgb[i];
+			if (alpha255 && alpha255.IsIndexValid(i))
+				rowAlpha255 = alpha255[i];
+
+			NoteAreaShape(rowShapeIdx, rowBrushIdx);
+
+			bool scaleIcon = false;
+			if (rowSizeFp >= 0 && rowSizeFp != 100)
+				scaleIcon = true;
+
+			bool fadeIcon = false;
+			if (rowAlpha255 >= 0 && rowAlpha255 != 255)
+				fadeIcon = true;
+
+			SCR_MapMarkerBase marker;
+			TBD_StyledMapMarker styled;
+			if (scaleIcon || fadeIcon)
+			{
+				styled = new TBD_StyledMapMarker();
+				if (scaleIcon)
+					styled.m_iTbdSizeFp = rowSizeFp;
+				if (fadeIcon)
+					styled.m_iTbdAlpha255 = rowAlpha255;
+				marker = styled;
+			}
+			else
+			{
+				marker = new SCR_MapMarkerBase();
+			}
+
 			marker.SetType(SCR_EMapMarkerType.PLACED_CUSTOM);
 			marker.SetWorldPos(xs[i], zs[i]);
 			marker.SetIconEntry(iconEntry);
-			marker.SetColorEntry(TBD_MarkerIcons.MARKER_COLOR);
+
+			int colorEntry = TBD_MarkerIcons.MARKER_COLOR;
+			if (rowRgb >= 0)
+				colorEntry = NearestColorEntry(rowRgb);
+			marker.SetColorEntry(colorEntry);
+
+			if (rowRotFp >= 0)
+				marker.SetRotation((rowRotFp + 50) / 100);
+
 			marker.SetCustomText(labels[i]);
 
 			// A mission marker is briefing material, not a scribble: the player must not be able to
 			// delete their own orders off the map with the vanilla remove action.
 			marker.SetCanBeRemovedByOwner(false);
 
-			// isLocal — this client only. Never enters replication, so it cannot leak sideways.
+			// isLocal -- this client only. Never enters replication, so it cannot leak sideways.
 			mgr.InsertStaticMarker(marker, true);
 
 			s_aApplied.Insert(marker);
@@ -353,10 +427,6 @@ class TBD_MarkerClient
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! True the first time this outcome differs from the last one logged. Server-side has the same
-	//! guard for the same reason (see `TBD_MarkerService.ShouldLog`): repeating an unchanged fact
-	//! once per map open is noise, and noise is how a real line gets missed.
 	protected static bool NoteOutcome(string missionId, string factionKey, int count)
 	{
 		string outcome = string.Format("%1|%2|%3", missionId, factionKey, count);
@@ -400,5 +470,170 @@ class TBD_MarkerClient
 	{
 		if (!s_aApplied)
 			s_aApplied = new array<ref SCR_MapMarkerBase>();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-673 -- area shape/brush is on the wire but SCR_MapMarkerBase has no fill surface.
+	//! The icon still carries the caption; one note per world, not per row.
+	protected static void NoteAreaShape(int rowShapeIdx, int rowBrushIdx)
+	{
+		if (s_bAreaFillNoted)
+			return;
+
+		if (rowShapeIdx <= 0)
+			return;
+
+		s_bAreaFillNoted = true;
+
+		TBD_Log.Warn(TBD_MarkerService.CH_MARKERS,
+			string.Format("area marker shapeIdx=%1 brushIdx=%2 -- placed-marker widget cannot fill a shape; icon drawn with authored colour/rotation/size/alpha.",
+				rowShapeIdx, rowBrushIdx));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Parse `#rrggbb` to 0xRRGGBB. Empty -> -1 (absent). Malformed -> -2.
+	//------------------------------------------------------------------------------------------------
+	//! Map an authored 0xRRGGBB onto the nearest `SCR_EScenarioFrameworkMarkerCustomColor`
+	//! index (the placed-marker palette). Hex stays on TBD_MissionMarkerStruct; SetColorEntry
+	//! takes the enum index. Unreadable colour or an empty palette falls back to MARKER_COLOR.
+	protected static int NearestColorEntry(int rgb)
+	{
+		if (rgb < 0)
+			return TBD_MarkerIcons.MARKER_COLOR;
+
+		int wantR = rgb / 65536;
+		int wantG = (rgb / 256) % 256;
+		int wantB = rgb % 256;
+
+		SCR_MapMarkerManagerComponent mgr = FindMarkerManager();
+		if (!mgr)
+			return TBD_MarkerIcons.MARKER_COLOR;
+
+		SCR_MapMarkerConfig cfg = mgr.GetMarkerConfig();
+		if (!cfg)
+			return TBD_MarkerIcons.MARKER_COLOR;
+
+		SCR_MapMarkerEntryPlaced placed = SCR_MapMarkerEntryPlaced.Cast(
+			cfg.GetMarkerEntryConfigByType(SCR_EMapMarkerType.PLACED_CUSTOM));
+		if (!placed)
+			return TBD_MarkerIcons.MARKER_COLOR;
+
+		array<ref SCR_MarkerColorEntry> entries = placed.GetColorEntries();
+		if (!entries || entries.IsEmpty())
+			return TBD_MarkerIcons.MARKER_COLOR;
+
+		int bestIndex = TBD_MarkerIcons.MARKER_COLOR;
+		int bestDist = 2147483647;
+
+		for (int i = 0, n = entries.Count(); i < n; i++)
+		{
+			SCR_MarkerColorEntry entry = entries[i];
+			if (!entry)
+				continue;
+
+			Color palette = entry.GetColor();
+			if (!palette)
+				continue;
+
+			int packed = palette.PackToInt();
+			int pr = (packed / 65536) % 256;
+			int pg = (packed / 256) % 256;
+			int pb = packed % 256;
+
+			int dr = pr - wantR;
+			int dg = pg - wantG;
+			int db = pb - wantB;
+			int dist = (dr * dr) + (dg * dg) + (db * db);
+			if (dist < bestDist)
+			{
+				bestDist = dist;
+				bestIndex = i;
+			}
+		}
+
+		return bestIndex;
+	}
+
+}
+
+//! T-673 -- placed custom marker that reapplies authored size/alpha after vanilla builds the widget.
+//! Colour goes through SetColorEntry (nearest palette index) on the base class, not this override.
+//! A default-styled row never instantiates this class, so icon-only markers keep the pre-T-673 path.
+class TBD_StyledMapMarker : SCR_MapMarkerBase
+{
+	int m_iTbdSizeFp = -1;
+	int m_iTbdAlpha255 = -1;
+
+	protected static bool s_bSizeUnsupportedWarned;
+
+	//------------------------------------------------------------------------------------------------
+	override void OnCreateMarker(bool skipProfanityFilter = false)
+	{
+		super.OnCreateMarker(skipProfanityFilter);
+
+		if (!m_wRoot)
+			return;
+
+		if (m_iTbdAlpha255 >= 0)
+			m_wRoot.SetOpacity(m_iTbdAlpha255 / 255.0);
+
+		if (m_iTbdSizeFp >= 0 && m_iTbdSizeFp != 100)
+			GetGame().GetCallqueue().CallLater(ApplyTbdSize, 0, false);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void ApplyTbdSize()
+	{
+		if (!m_wRoot)
+			return;
+
+		float factor = m_iTbdSizeFp / 100.0;
+		int scaled = ScaleImagesUnder(m_wRoot, factor);
+
+		if (scaled == 0 && !s_bSizeUnsupportedWarned)
+		{
+			s_bSizeUnsupportedWarned = true;
+			TBD_Log.Warn(TBD_MarkerService.CH_MARKERS,
+				"marker size could not be applied -- this build's marker layout has no scalable image; markers drew at default size.");
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected int ScaleImagesUnder(Widget parent, float factor)
+	{
+		int scaled = 0;
+		if (!parent)
+			return 0;
+
+		Widget child = parent.GetChildren();
+		while (child)
+		{
+			ImageWidget image = ImageWidget.Cast(child);
+			if (image && FrameWidget.Cast(parent))
+			{
+				float w;
+				float h;
+				image.GetScreenSize(w, h);
+
+				if (w > 0 && h > 0)
+				{
+					WorkspaceWidget workspace = GetGame().GetWorkspace();
+					float baseW = workspace.DPIUnscale(w);
+					float baseH = workspace.DPIUnscale(h);
+
+					FrameSlot.SetSize(image, baseW * factor, baseH * factor);
+					FrameSlot.SetPos(image,
+						FrameSlot.GetPosX(image) - ((baseW * factor) - baseW) / 2,
+						FrameSlot.GetPosY(image) - ((baseH * factor) - baseH) / 2);
+
+					scaled++;
+				}
+			}
+
+			scaled = scaled + ScaleImagesUnder(child, factor);
+			child = child.GetSibling();
+		}
+
+		return scaled;
 	}
 }
