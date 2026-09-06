@@ -1767,8 +1767,27 @@ mod tests {
 
         // The panel button CALLS the command and selects what it returns, so Attributes open on the
         // zone the author just made.
-        let panel = live_code(include_str!("zones_panel.rs"));
-        let panel_copy = live_source(include_str!("zones_panel.rs"));
+        //
+        // Sliced to the WASM half before scrubbing: this file ships two `zones_panel` definitions —
+        // the real one and the `cfg(not(wasm32))` native stub that returns `().into_any()` — and
+        // `live_code` keeps BOTH (it resolves dead `cfg` items, but a native-only item is not dead
+        // on the native build that runs this test). `only_body` refuses that ambiguity by design
+        // (T-601), and rightly: a pin that guessed between a real panel and an empty stub is a pin
+        // that could be greened by the stub. The anchor is the stub's own doc line, taken on the RAW
+        // source because scrubbing deletes comments.
+        let raw_panel = include_str!("zones_panel.rs");
+        // Split so this test's own source does not contain the anchor it searches for — the file it
+        // reads is the file it lives in, and a whole literal here would be a second match (measured:
+        // it was, first try). Same idiom as `editor_live_from_page`.
+        let stub_anchor = format!("{}{}", "/// Native shell: no ", "document, so no zones.");
+        assert_eq!(
+            raw_panel.matches(stub_anchor.as_str()).count(),
+            1,
+            "T-702: the wasm/native slice anchor must be unambiguous"
+        );
+        let wasm_half = &raw_panel[..raw_panel.find(stub_anchor.as_str()).expect("counted above")];
+        let panel = live_code(wasm_half);
+        let panel_copy = live_source(wasm_half);
         assert!(
             panel.contains("ops::add_whole_terrain_zone()"),
             "T-702: the Zones panel must CALL the command (the T-582 no-caller defect must not recur)"
@@ -1776,6 +1795,43 @@ mod tests {
         assert!(
             panel.contains("selected.set(Some(id))"),
             "T-702: the panel must select the new zone id, which is what opens its Attributes"
+        );
+
+        // ═══ "ATTRIBUTES OPEN" IS A CONSEQUENCE OF THE SELECTION, NOT A SECOND ACT ═══
+        //
+        // The panel has no "attributes are open" flag to set: the Attributes block renders exactly
+        // when `selected` names a row `zone_rows()` still returns. So `selected.set(Some(id))` on
+        // an id the command just minted IS the panel opening — there is no third condition that a
+        // create could satisfy for a hand-drawn zone and miss for this one. Pinned structurally
+        // because the DOM half is only observable in a browser (see the slice's manual checklist).
+        //
+        // Matched EXACTLY, not by `contains`. A `contains` pin passes straight through an added
+        // condition — measured: it stayed green while the gate was perturbed to
+        // `selected.get().filter(|_| attrs_open)` with `attrs_open = false`, i.e. a panel that never
+        // opens at all. So the whole guard region is normalised and compared whole.
+        let gate = only_body(
+            &panel,
+            "pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<String>>) -> AnyView",
+        );
+        let opens_at = gate
+            .find("zone_attributes(")
+            .expect("T-702: the panel must render the Attributes block");
+        let head = "let Some(id) = selected.get()";
+        let from = gate[..opens_at]
+            .rfind(head)
+            .expect("T-702: Attributes must be gated on the selection");
+        let squash = |s: &str| s.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert_eq!(
+            squash(&gate[from..opens_at]),
+            squash(
+                "let Some(id) = selected.get() else { return ().into_any(); };
+                 let Some(z) = ops::zone_rows().into_iter().find(|r| r.id == id) else {
+                     return ().into_any();
+                 };"
+            ),
+            "T-702: Attributes must be gated on `selected` plus the live row and NOTHING else — any \
+             third condition is a second thing the whole-terrain create would have to satisfy, and \
+             selecting the new id would stop being enough to open the panel"
         );
         assert!(
             panel_copy.contains("Whole-terrain zone"),
