@@ -383,7 +383,7 @@ pub fn run(args: &[String]) -> Result<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use map_engine_core::world::occluder::descriptor::BuildingArchiveBytes;
+    use map_engine_core::world::occluder::descriptor::{ArchiveBoot, BuildingArchiveBytes};
 
     fn prefabs_dir() -> PathBuf {
         crate::root::test_repo_root().join("packages/map-assets/everon/prefabs")
@@ -548,6 +548,64 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// T-935.8 — the split the occluder host boots from, over the WHOLE committed corpus.
+    ///
+    /// Two things are pinned here, and both are load-bearing for line of sight:
+    ///
+    /// 1. **The census carries `blocks: false` rows and nothing else.** An archived row has no
+    ///    instance records, so a `blocks: true` descriptor rebuilt from one enters
+    ///    `WorldOccluder::descriptors`, fails `try_expand` on its empty instance list
+    ///    (`trace.rs:341`), and is then skipped by `wanted()` forever (`trace.rs:443` only asks
+    ///    for a descriptor it does not already hold). The prefab would trace against its coarse
+    ///    AABB for the rest of the session with nothing logged. This assertion is the only thing
+    ///    standing between that and the loader.
+    /// 2. **Every row's `.bvh` list survives the index.** The oracle is the descriptor JSON's own
+    ///    `blas_paths()`, re-read from disk — not the archive compared with itself — so a lost,
+    ///    truncated or reordered `blas_index` is caught here.
+    #[test]
+    fn archive_boot_splits_the_whole_corpus_and_never_censuses_a_blocking_prefab() {
+        let (_built, held) = built_and_read();
+        let a = held.archive().expect("access");
+        let boot = ArchiveBoot::from_archive(a);
+
+        assert_eq!(boot.unusable, 0, "every committed row resolves");
+        assert_eq!(boot.census.len() + boot.blocking, 1623, "the whole corpus");
+        assert_eq!(
+            boot.blocking, 1322,
+            "blocking prefabs stay on the JSON path"
+        );
+        assert_eq!(
+            boot.census.len(),
+            301,
+            "non-blocking prefabs boot from the archive"
+        );
+        assert!(
+            boot.census.iter().all(|d| !d.blocks),
+            "a blocking descriptor in the census is a prefab that stops occluding"
+        );
+        assert!(
+            boot.census.iter().all(|d| d.local_bounds.is_none()),
+            "blocks: false carries no bounds"
+        );
+
+        let by_pid: BTreeMap<u16, &Vec<String>> =
+            boot.blas_by_pid.iter().map(|(p, v)| (*p, v)).collect();
+        assert_eq!(by_pid.len(), boot.blas_by_pid.len(), "one row per pid");
+        let mut with_blas = 0usize;
+        for path in sorted_json_files(&prefabs_dir().join("descriptors")).expect("descriptors") {
+            let json: PrefabDescriptor = read_json(&path).expect("parse descriptor");
+            let pid = u16::try_from(json.prefab_id).expect("everon pids fit u16");
+            let want: Vec<String> = json.blas_paths().iter().map(|s| (*s).to_string()).collect();
+            assert_eq!(
+                by_pid.get(&pid).map(|v| v.as_slice()),
+                Some(&want[..]),
+                "pid {pid}"
+            );
+            with_blas += usize::from(!want.is_empty());
+        }
+        assert_eq!(with_blas, 1322, "every blocking prefab has a sidecar list");
     }
 
     /// The remainder is a Workbench pass, and the command that runs it is part of the emit's

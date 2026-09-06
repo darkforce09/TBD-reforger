@@ -332,6 +332,66 @@ impl BuildingArchiveBytes {
     }
 }
 
+/// T-935.8 — what one `prefabs/building_blueprints.rkyv` fetch tells an occluder loader, split
+/// into the half it may hand straight to
+/// [`WorldOccluder::insert_descriptor`](super::WorldOccluder::insert_descriptor) and the half it
+/// may not.
+///
+/// The split is the whole point, and it is here rather than in the SPA so it is testable natively
+/// against the real corpus: the archive row has no [`InstanceRecord`]s, so a `blocks: true`
+/// descriptor rebuilt from it would enter `WorldOccluder::descriptors`, fail `try_expand`
+/// (`instances.is_empty()`), and then be skipped forever by `wanted()` — which only asks for a
+/// descriptor it does not already hold. The prefab would trace against its coarse AABB for the
+/// rest of the session with no error anywhere. That is the silently-wrong sightline this archive
+/// exists to avoid, so [`census`](Self::census) carries `blocks: false` rows only.
+///
+/// [`blas_by_pid`](Self::blas_by_pid) is the half that *is* complete for every prefab: the `.bvh`
+/// fetch list of every row, resolved through the archive's shared library. It is what lets a
+/// loader queue a prefab's sidecars in the same round as its descriptor instead of the round
+/// after.
+pub struct ArchiveBoot {
+    /// Rebuilt `blocks: false` descriptors — safe to insert, and the reason those pids are never
+    /// fetched again (`insert_descriptor` routes them to `no_block`).
+    pub census: Vec<PrefabDescriptor>,
+    /// `(pid, .bvh paths)` for **every** archived row, pid-ascending, paths in first-use order.
+    pub blas_by_pid: Vec<(u16, Vec<String>)>,
+    /// Archived rows with `blocks: true` — the descriptors a loader must still read as JSON.
+    pub blocking: usize,
+    /// Rows whose `prefab_id` does not fit `u16`, or whose BLAS list does not resolve against
+    /// `blas_index`. Both are dropped rather than guessed, and counted so a loader can say so.
+    pub unusable: usize,
+}
+
+impl ArchiveBoot {
+    /// Split a validated archive. Cheap enough to run once at boot: one pass over the rows.
+    #[must_use]
+    pub fn from_archive(a: &ArchivedBuildingBlueprintArchive) -> Self {
+        let mut boot = Self {
+            census: Vec::new(),
+            blas_by_pid: Vec::with_capacity(a.descriptors.len()),
+            blocking: 0,
+            unusable: 0,
+        };
+        for row in a.descriptors.iter() {
+            let (Ok(pid), Some(paths)) = (
+                u16::try_from(row.prefab_id.to_native()),
+                PrefabDescriptor::archived_blas_paths(row, &a.blas_index),
+            ) else {
+                boot.unusable += 1;
+                continue;
+            };
+            boot.blas_by_pid.push((pid, paths));
+            if row.blocks {
+                boot.blocking += 1;
+            } else {
+                boot.census.push(PrefabDescriptor::from_archived(row));
+            }
+        }
+        boot.blas_by_pid.sort_by_key(|(pid, _)| *pid);
+        boot
+    }
+}
+
 /// One row of the archive's shared BLAS library, back as the manifest's own [`BlasEntry`].
 impl BlasEntry {
     /// This manifest row as an archive library entry. Lossless — the two shapes are identical.
