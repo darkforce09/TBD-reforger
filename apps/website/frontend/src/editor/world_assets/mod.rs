@@ -4,6 +4,9 @@
 #![cfg(target_arch = "wasm32")]
 
 mod bridge;
+/// T-935.4 — the `dem/elevation.dem` (`TBDE`) boot path, used when the manifest carries a
+/// `dem.raw` block; the PNG loader below stays for every manifest that does not.
+mod dem_load;
 mod dem_vectors;
 mod fetch;
 mod forest_mass;
@@ -586,6 +589,11 @@ struct DemInfo {
     min_m: f64,
     #[serde(rename = "heightRangeMaxM")]
     max_m: f64,
+    /// T-935.4 — `dem.raw` (spec §5): the `TBDE` twin of the PNG at `path`. Absent on every
+    /// manifest shipped before T-935.13, and absent means the PNG is the only DEM there is. The
+    /// block type is T-935.1's, not a second copy of it.
+    #[serde(default)]
+    raw: Option<map_engine_core::world::DemRawBlock>,
 }
 #[derive(serde::Deserialize)]
 struct TilesBlock {
@@ -609,6 +617,22 @@ struct UnifiedBlock {
 /// The decode + hillshade below is CPU, not network, and is deliberately unmeasured: it is a
 /// synchronous block on wasm's single thread, so nothing — including the bar — repaints while it
 /// runs. A number moving through it would be a number nobody could see and nothing had measured.
+///
+/// T-935.4 — the DEM now arrives by whichever encoding the manifest declares. `dem.raw` present and
+/// readable → `dem/elevation.dem`, streamed into one `Vec<u16>` with no decoder at all
+/// ([`dem_load::load_declared_raw`]). Absent, unreadable, or a fetch that fails for any reason →
+/// the 16-bit PNG below, byte for byte the path that shipped. **A manifest with no `dem.raw` block
+/// never reaches the raw loader**, which is what makes the cutover (T-935.13) a manifest edit
+/// rather than a code change, and what makes this slice a no-op for every terrain today.
+///
+/// Both arms end in the same `DecodedDem`, so everything downstream — hillshade, the DEM vector
+/// grid, the peak labels — is untouched.
+///
+/// **The PNG fetch stays inline in this body deliberately.**
+/// `t628_boot_progress::the_terrain_dem_is_streamed_against_its_content_length` reads *this
+/// function's* body to prove the terrain segment goes through the measured, streamed helper. Moving
+/// the fetch out into a `load_dem_meters` helper is exactly the shape that pin exists to catch, and
+/// it goes red the moment you try (measured: it did).
 async fn load_dem_and_hillshade(
     engine: &EngineHandle,
     base: &str,
@@ -616,13 +640,18 @@ async fn load_dem_and_hillshade(
     report: &dyn Fn(crate::editor::mission_editor::boot_progress::BootEvent),
 ) -> Option<(Vec<f32>, u32, u32, u32, u32)> {
     use crate::editor::mission_editor::boot_progress::BootSeg;
-    let dem_bytes = fetch_bytes_streamed(
-        &format!("{base}/{}", manifest.dem.path),
-        BootSeg::Terrain,
-        report,
-    )
-    .await?;
-    let dem = decode_png_to_meters(&dem_bytes, manifest.dem.min_m, manifest.dem.max_m).ok()?;
+    let dem = match dem_load::load_declared_raw(base, manifest.dem.raw.as_ref(), report).await {
+        Some(raw) => raw,
+        None => {
+            let dem_bytes = fetch_bytes_streamed(
+                &format!("{base}/{}", manifest.dem.path),
+                BootSeg::Terrain,
+                report,
+            )
+            .await?;
+            decode_png_to_meters(&dem_bytes, manifest.dem.min_m, manifest.dem.max_m).ok()?
+        }
+    };
     let hs = build_hillshade_image(&dem.meters, dem.width as usize, dem.height as usize);
     if hs.data.is_empty() || hs.w == 0 || hs.h == 0 {
         return None;
