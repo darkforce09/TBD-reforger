@@ -1,0 +1,11 @@
+id = "T-983"
+kind = "work"
+title = "Archive sidecars should be fetched with the descriptors"
+summary = "The removed fold ran after the awaited descriptor fetch, so it could add nothing usable. Issuing the archive's sidecar list concurrently with the descriptor round is the actual round-trip saving."
+class = "feature"
+status = "idea"
+created_at = "2026-09-06T05:41:30Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
