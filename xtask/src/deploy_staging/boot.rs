@@ -805,7 +805,7 @@ mod tests {
     fn guid_reads_out_of_the_real_gproj() {
         // Not a fixture: the live gproj, because the whole point of read_addon_guid is that a
         // literal drifts from the source silently.
-        let root = crate::root::find_repo_root().unwrap();
+        let root = crate::root::test_repo_root();
         if root.join("apps/mod/tbd-framework/addon.gproj").is_file() {
             let g = read_addon_guid(&root).expect("gproj present");
             assert!(

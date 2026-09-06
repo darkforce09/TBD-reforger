@@ -370,7 +370,7 @@ mod tests {
     /// recorded by the Workbench recon on 2026-09-03.
     #[test]
     fn garbage_container_lid_pins_y_x_z_with_negated_pitch_and_roll() {
-        let root = crate::root::find_repo_root().unwrap();
+        let root = crate::root::test_repo_root();
         let fx =
             load_fixture(&root.join("xtask/tests/fixtures/rotation_pin_GarbageContainer_01.json"))
                 .unwrap();

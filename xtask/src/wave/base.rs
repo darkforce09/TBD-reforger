@@ -458,6 +458,68 @@ pub fn wave_ledger_unshipped_at(ctx: &Ctx, rev: &str, tickets: &[String]) -> Opt
     Some(open.join(" "))
 }
 
+/// The highest wave number any reachable, NON-DISAVOWED marker claims — `None` when the history
+/// carries no marker at all.
+///
+/// T-946. This is [`wave_close_is_newest_wave`]'s `high` lifted out of the oracle so the LOCK can
+/// number waves from the same authority the oracle judges them by. The oracle accepts a candidate
+/// marker `n` only when `n` is strictly above every NON-disavowed claim AND `n <= high + 1`
+/// (T-618: "wave numbers do not merely increase, they increase by ONE"). So `high + 1` is the one
+/// label a close may ever write, and any other number the lock proposes is unwritable.
+///
+/// DISAVOWED MARKERS ARE SKIPPED, and that is the opposite of the oracle's `high`, deliberately.
+/// `high` bounds the candidate from ABOVE (`n <= high + 1`), where counting a reverted close is
+/// conservative — it closes the hole the F6 revert fix opened. This function feeds the label the
+/// lock will PROPOSE, and there the same reasoning inverts: a reverted `wave 42 CLOSED` means
+/// wave 42 was never closed, so 42 is the number the next close should reuse. Counting it would
+/// burn a label the ledger still owes, and `a_disavowed_marker_is_not_a_base` pins exactly that.
+/// The oracle accepts either (42 and 43 both sit inside the window); the lock proposes the honest
+/// one.
+///
+/// WHY THIS IS NOT `newest_close_base`. That one walks newest-first and returns the FIRST
+/// non-disavowed marker — the newest by commit order, not the highest by claim. On a healthy
+/// ledger they are the same number. On this repository, measured 2026-09-05, they are not:
+///
+/// ```text
+/// 1d3253ca8 wave 234 CLOSED — editor wave 211: …      <- newest by commit order  (base 234)
+/// d21197d20 T-853 wave 235 CLOSED — language hard zero <- highest by claim       (high 235)
+/// ```
+///
+/// The T-853 program closed waves 231–235 alongside the editor programme's own 234, so history
+/// genuinely holds a newer marker claiming a lower wave. The lock derived its floor from 234 and
+/// ratcheted a label per emptied wave to 247, while the oracle would accept only 236 — so no
+/// close could be written at all, in either direction.
+pub fn max_close_claim(root: &Path) -> Result<Option<i64>, String> {
+    if git_in_lossy(root, &["rev-parse", "--is-shallow-repository"]).trim() == "true" {
+        return Err(
+            "shallow clone: the close-marker ledger is unreadable — fetch full history              (fetch-depth: 0 in CI) before wave repack/check"
+                .into(),
+        );
+    }
+    let list = git_in_lossy(
+        root,
+        &[
+            "rev-list",
+            "--extended-regexp",
+            &format!("--grep={WAVE_CLOSE_MARKER_RE}"),
+            "HEAD",
+        ],
+    );
+    let mut high: Option<i64> = None;
+    for sha in list.lines().filter(|l| !l.is_empty()) {
+        let Some(n) = wave_close_number_in(root, sha) else {
+            continue;
+        };
+        if wave_close_disavowed_in(root, sha).is_some() {
+            continue;
+        }
+        if high.map(|h| n > h).unwrap_or(true) {
+            high = Some(n);
+        }
+    }
+    Ok(high)
+}
+
 /// ORACLE 1. `0` = this marker claims the highest wave number reachable, by exactly one;
 /// `2` = contradicted, from either direction.
 pub fn wave_close_is_newest_wave(sha: &str) -> u8 {

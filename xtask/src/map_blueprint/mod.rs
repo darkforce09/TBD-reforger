@@ -316,8 +316,8 @@ pub(crate) mod tests {
     use super::*;
 
     pub(crate) fn fixture(name: &str) -> std::path::PathBuf {
-        // Compile-time root, not the cwd walk: see `root::built_repo_root` for the race.
-        crate::root::built_repo_root()
+        // Compile-time root, not the cwd walk: see `root::test_repo_root` for the race.
+        crate::root::test_repo_root()
             .join("xtask/tests/fixtures")
             .join(name)
     }

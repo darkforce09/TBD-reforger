@@ -310,7 +310,7 @@ fn only_kind_and_limit_select_rows() {
 #[test]
 fn committed_farmhouse_descriptor_reproduces_the_t090_11_instances() {
     use map_engine_core::building_compound::InstancesFile;
-    let root = crate::root::find_repo_root().unwrap();
+    let root = crate::root::test_repo_root();
     let prefabs = root.join("packages/map-assets/everon/prefabs");
     let manifest: BlasManifest =
         serde_json::from_str(&fs::read_to_string(prefabs.join("blas-manifest.json")).unwrap())

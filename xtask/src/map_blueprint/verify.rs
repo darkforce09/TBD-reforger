@@ -719,7 +719,7 @@ mod tests {
     /// Workbench recon dump (88 architectural children, 2026-09-03).
     #[test]
     fn farmhouse_sockets_match_the_workbench_recon() {
-        let root = crate::root::find_repo_root().unwrap();
+        let root = crate::root::test_repo_root();
         let instances = root.join(
             "packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.instances.json",
         );

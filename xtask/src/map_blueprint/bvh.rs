@@ -442,8 +442,7 @@ mod tests {
         let golden =
             fs::read(fixture("FarmHouse_E_1L01_Wood.bvh.golden")).expect("golden sidecar fixture");
         // The shipping sidecar and the test golden are the same bytes, forever.
-        let shipping = crate::root::find_repo_root()
-            .expect("repo root")
+        let shipping = crate::root::test_repo_root()
             .join("packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.bvh");
         assert_eq!(
             golden,
@@ -502,7 +501,7 @@ mod compound_tests {
     /// the commit message.
     #[test]
     fn farmhouse_compound_door_parity_is_pinned() {
-        let root = crate::root::find_repo_root().expect("repo root");
+        let root = crate::root::test_repo_root();
         let buildings = root.join("packages/map-assets/everon/prefabs/buildings");
         let shell_bytes = fs::read(buildings.join("FarmHouse_E_1L01_Wood.bvh")).expect("shell");
         let sc = BvhSidecar::parse(&shell_bytes).expect("shell parses");

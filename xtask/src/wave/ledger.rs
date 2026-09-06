@@ -148,9 +148,38 @@ impl Registry {
         Self::from_value(&v)
     }
 
+    /// The whole ticket tree, CHILDREN INCLUDED — `wave --close`, `current_wave` and `land` all
+    /// key off this, and every one of them asks about slice ids.
+    ///
+    /// T-946: this used to go through `crate::registry::load_registry`, whose phase-2 arm
+    /// (`phase2::load_phase2_tree`) walks `is_parent_id` ONLY. Every child id — `T-934.1`,
+    /// `T-940.5`, every slice the factory actually dispatches — was therefore absent from
+    /// `by_id`, and [`Registry::is_shipped`] answers `false` for an id it has never heard of.
+    /// The observable failure, measured 2026-09-05 on a tree where `T-934.1.toml` reads
+    /// `status = "shipped"`:
+    ///
+    /// ```text
+    /// $ cargo xtask platform wave wave --close --dry-run
+    /// close target: wave 247 — emptied (1 ticket(s), set frozen at repack)
+    /// REFUSED: wave 247 still open: T-934.1
+    /// ```
+    ///
+    /// A wave of slices could never be closed, and the refusal named a ticket that had shipped
+    /// weeks earlier. The typed corpus (`wave_lock::load_views`, i.e. `tbd_tickets::Corpus`) is
+    /// the substrate the packer already keys off — which is why the SAME tree parks those very
+    /// ids in the lock's wave 0 while close calls them open. One substrate, one answer.
+    ///
+    /// Fail-closed exactly as before: an unreadable tree poisons the view rather than reporting
+    /// "not shipped" for a corpus nobody parsed.
     pub fn load_repo(root: &Path) -> Registry {
-        match crate::registry::load_registry(root) {
-            Ok(v) => Self::from_value(&v),
+        match crate::wave_lock::load_views(root) {
+            Ok(views) => Registry {
+                poisoned: false,
+                by_id: views
+                    .into_iter()
+                    .map(|v| (v.id, Some(v.status.as_str().to_string())))
+                    .collect(),
+            },
             Err(_) => Registry {
                 poisoned: true,
                 by_id: Default::default(),

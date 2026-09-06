@@ -312,7 +312,7 @@ mod tests {
     /// stayed 5-wide (trivial trailers are never padded).
     #[test]
     fn farmhouse_chunk_row_places_every_socket_child_within_2cm() {
-        let root = find_repo_root().unwrap();
+        let root = crate::root::test_repo_root();
         let instances = root.join(
             "packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.instances.json",
         );

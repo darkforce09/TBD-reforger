@@ -599,6 +599,26 @@ fn reload_registry(root: &Path, registry: &mut Value) -> Result<()> {
 }
 
 pub fn cmd_ship(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
+    cmd_ship_opt(root, registry, id, true)
+}
+
+/// `ship` with the wave.lock refresh made optional — T-946's BATCH SHIP.
+///
+/// WHY A WAVE COULD NOT EMPTY. `wave --close` can only close a pending `[[emptied]]` entry, and
+/// `wave_lock::carry_emptied` freezes one only when a repack sees a wave whose EVERY ticket has
+/// landed. But this verb repacks after each id, and the repack re-packs from scratch: the id just
+/// shipped moves to wave 0 and the wave it came from is a different, smaller wave by the time the
+/// next ship runs. A wave shipped one ticket at a time therefore dissolves an id at a time and no
+/// repack ever sees the whole set landed — measured 2026-09-05 on wave 248 (T-940.5, T-940.6,
+/// T-311): three ships, three repacks, zero pending entries, and the wave became unclosable.
+///
+/// So the command center ships the wave's ids with `--no-repack` and repacks ONCE at the end:
+/// that repack sees all of them shipped together and freezes the full set. The lock is still
+/// refreshed before anything is committed (the T-912.2 lifecycle invariant) — only the point at
+/// which it happens moves, from per-id to per-wave.
+///
+/// `refresh: true` is the unchanged single-ship path.
+pub fn cmd_ship_opt(root: &Path, registry: &mut Value, id: &str, refresh: bool) -> Result<()> {
     // Membership first (the pre-T-916 `require_ticket`-before-check order), but against the
     // full typed corpus so dotted child ids resolve (T-916.2).
     let mut corpus = load_corpus(root)?;
@@ -622,7 +642,12 @@ pub fn cmd_ship(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
 
     reload_registry(root, registry)?;
     cmd_sync(root, registry)?;
-    refresh_wave_lock(root)?;
+    if refresh {
+        refresh_wave_lock(root)?;
+    } else {
+        println!("{id}: wave.lock NOT refreshed (--no-repack) — run `cargo xtask wave repack`");
+        println!("      once the rest of the wave has shipped, or `wave check` stays red.");
+    }
     println!("{id} -> shipped");
     Ok(())
 }
@@ -1811,6 +1836,60 @@ mod tests {
     /// "Rewiring sequence invariant"). The typed op writes files FIRST; if cmd_ship then fed
     /// the pre-mutation Value to cmd_sync, queue.json and the generated docs would still call
     /// T-002 ready. The regenerated outputs must reflect the POST-state.
+    /// T-946 — `--no-repack` leaves the committed lock untouched, and the later repack picks the
+    /// change up.
+    ///
+    /// Shipping repacked after EVERY id, which is why a wave could never empty:
+    /// `wave_lock::carry_emptied` freezes a pending `[[emptied]]` entry only when one repack sees
+    /// a wave whose every ticket has landed, and a per-id repack re-packs the wave smaller before
+    /// the next ship runs (see `numbering_and_carry` in `wave_lock`). The command center now ships
+    /// the wave's ids — each still followed by its own `stamp-sha`, the lifecycle is unchanged —
+    /// and repacks ONCE at the end, where the whole set is visible at the same instant.
+    #[test]
+    fn ship_no_repack_leaves_the_lock_untouched_until_the_next_repack() {
+        let root = scratch_registry("ship-no-repack");
+        let mut registry = load_registry(&root).expect("scratch registry loads");
+        crate::wave_lock::repack_quiet(&root).expect("baseline lock");
+        let lock_path = root.join(crate::wave_lock::LOCK_REL);
+        let before = fs::read_to_string(&lock_path).expect("lock on disk");
+        assert!(
+            before.contains("\"T-002\""),
+            "pre-state: T-002 is packed in an open wave"
+        );
+
+        cmd_ship_opt(&root, &mut registry, "T-002", false).expect("ship --no-repack");
+        let after_ship = fs::read_to_string(&lock_path).expect("lock on disk");
+        println!(
+            "── lock bytes ── before={} after --no-repack={}",
+            before.len(),
+            after_ship.len()
+        );
+        assert_eq!(
+            before, after_ship,
+            "--no-repack must not write the lock at all"
+        );
+
+        crate::wave_lock::repack_quiet(&root).expect("the end-of-wave repack");
+        let after_repack = fs::read_to_string(&lock_path).expect("lock on disk");
+        println!("── lock bytes ── after repack={}", after_repack.len());
+        assert_ne!(
+            after_ship, after_repack,
+            "the deferred repack still parks the shipped ticket — the refresh moved, not vanished"
+        );
+        let wave0 = crate::wave_lock::load(&root)
+            .expect("lock")
+            .waves
+            .iter()
+            .find(|w| w.n == 0)
+            .map(|w| w.tickets.clone())
+            .unwrap_or_default();
+        assert!(
+            wave0.contains(&"T-002".to_string()),
+            "T-002 parked at wave 0 by the deferred repack: {wave0:?}"
+        );
+        let _ = fs::remove_dir_all(&root);
+    }
+
     #[test]
     fn ship_regenerates_docs_from_post_state_reload_pin() {
         let root = scratch_registry("reload-pin");

@@ -966,6 +966,12 @@ enum TicketCmd {
     },
     Ship {
         id: String,
+        /// T-946: skip the wave.lock refresh so a whole wave can be shipped and then repacked
+        /// ONCE — a wave repacked per-id dissolves before any repack sees it fully landed, and
+        /// never forms the pending entry `wave --close` needs. Run `cargo xtask wave repack`
+        /// after the last id of the wave.
+        #[arg(long)]
+        no_repack: bool,
     },
     /// T-917.6: step 3 of the ship lifecycle — after the landing commit exists, write
     /// its SHA onto the shipped ticket (`shipped_at`, both storage arms) and close the
@@ -1455,9 +1461,9 @@ fn run() -> Result<u8> {
                     let mut reg = load_registry(&root)?;
                     cmd_reorder(&root, &mut reg, &id, &after)?;
                 }
-                TicketCmd::Ship { id } => {
+                TicketCmd::Ship { id, no_repack } => {
                     let mut reg = load_registry(&root)?;
-                    cmd_ship(&root, &mut reg, &id)?;
+                    cmd_ship_opt(&root, &mut reg, &id, !no_repack)?;
                 }
                 // No registry pre-load and no check preflight: stamp-sha is the verb
                 // that moves the transiently gate-red ship→commit window back to

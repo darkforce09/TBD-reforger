@@ -14,23 +14,25 @@ pub fn find_repo_root() -> Result<PathBuf> {
     }
 }
 
-/// The repo root of the checkout THIS BINARY WAS BUILT FROM, resolved at compile time from
-/// `CARGO_MANIFEST_DIR` (`<root>/xtask`) — never from the cwd.
+/// The repo root for TEST FIXTURES: the cwd walk, resolved under the cwd lock.
 ///
-/// For test fixtures only. [`find_repo_root`] reads the process cwd, and the cwd is process-wide:
-/// the wave tests `set_current_dir` into throwaway roots that carry their own `.ai/tickets/ROOT`
-/// marker (under `wave::testcwd::CWD_LOCK`, which fixture readers do not hold), so any fixture
-/// helper walking from the cwd at that instant resolved the throwaway root and failed with
-/// NotFound. Measured 2026-09-05, wave 248 full gate (`test xtask+tbd-tools`), on
-/// `map_world_los::tests::world_parity_world_column_clears_its_floor_when_the_dem_is_present`:
-/// 3/4 red in the gate's cold target dir, never in isolation. A linked worktree has its own
-/// `xtask/` so this resolves per worktree, exactly like the cwd walk did on a quiet process.
+/// T-946, and it replaced a `CARGO_MANIFEST_DIR` constant that looked simpler and was wrong. The
+/// factory builds every worktree into ONE shared target dir, so the binary a slice worktree runs
+/// may have been compiled from a SIBLING worktree, and a compile-time root then points at that
+/// sibling's checkout — whose LFS payloads are pointer files. Measured 2026-09-05: five
+/// `map_world_los` pins failed with
+/// `parse …/worktrees/T-943/packages/map-assets/…/t_picea_abies_0_canopy.bvh: bad magic
+/// [118, 101, 114, 115]` — "vers", the first bytes of `version https://git-lfs…`. That is the
+/// T-742 cross-worktree false-binary class arriving through a constant instead of a binary.
+///
+/// So the answer must come from the cwd (which worktree am I actually running in?) while the
+/// RACE that motivated all of this is closed by taking [`crate::wave::testcwd`]'s lock — the one
+/// the chdir-ing tests already hold. See that module for the measured failure.
+///
+/// Callers must not already hold a `CwdGuard`; the mutex is not reentrant.
 #[cfg(test)]
-pub fn built_repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("xtask/ lives directly under the repo root")
-        .to_path_buf()
+pub fn test_repo_root() -> PathBuf {
+    crate::wave::testcwd::resolve_under_lock(|| find_repo_root().expect("repo root"))
 }
 
 pub fn registry_path(root: &Path) -> PathBuf {

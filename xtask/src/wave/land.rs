@@ -409,7 +409,7 @@ pub fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
     // ARGUMENTS ARE AN ALLOWLIST — land's signature lesson (see cmd_land), applied on arrival:
     // a ceremony that silently discarded a misspelled `--sumary` would commit the default
     // subject instead of the one the operator wrote.
-    let (summary, dry_run) = match parse_close_args(args) {
+    let (summary, dry_run, explicit) = match parse_close_args(args) {
         Ok(v) => v,
         Err(e) => {
             werr!("{e}");
@@ -418,7 +418,51 @@ pub fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
     };
 
     let lock = lock_or_refuse!(ledger::load_lock(ctx));
-    let Some((w, wave_ids)) = close_target(&lock) else {
+    // T-946 — `--tickets`: close a set the LOCK cannot name.
+    //
+    // A pending `[[emptied]]` entry only forms when one repack sees a whole wave landed, and
+    // `ticket ship` repacks after every id. So a wave shipped one ticket at a time dissolves into
+    // wave 0 an id at a time and the entry never forms (or forms holding the last id alone) —
+    // measured 2026-09-05 on wave 248's T-940.5 / T-940.6 / T-311, which left no entry at all
+    // while a one-ticket remnant from an earlier wave sat pending. The gate, meanwhile, gates the
+    // whole span since the previous marker, so the wave IS verified; only the lock's bookkeeping
+    // lost the membership. `--tickets` lets the command center name that verified span, and every
+    // id is still validated shipped below — the flag vouches for MEMBERSHIP, never for status.
+    //
+    // The label is never taken from the caller: it stays the lock's own next label, which the
+    // repack seats on the marker ledger (`wave_lock::ledger_floor`), so the ceremony's oracle can
+    // accept it. `--no-repack` batch shipping (see `cmds::cmd_ship`) is the fix that stops the
+    // entries going missing in the first place; this is the repair for waves that already did.
+    let target = match &explicit {
+        Some(ids) => {
+            let n = lock
+                .emptied
+                .first()
+                .map(|e| e.n)
+                .unwrap_or(lock.wave_base.saturating_add(1));
+            wprintln!(
+                "close target: wave {n} — operator-vouched set of {} ticket(s) (--tickets)",
+                ids.len()
+            );
+            for e in lock.emptied.iter().filter(|e| e.n <= n) {
+                let unnamed: Vec<&String> = e.tickets.iter().filter(|t| !ids.contains(t)).collect();
+                if !unnamed.is_empty() {
+                    wprintln!(
+                        "  note: pending wave {} carried {:?}, which this marker does not name —",
+                        e.n,
+                        unnamed
+                    );
+                    wprintln!(
+                        "        the post-close repack drops that entry, so name them too if this"
+                    );
+                    wprintln!("        close is meant to cover them.");
+                }
+            }
+            Some((n.to_string(), ids.clone()))
+        }
+        None => close_target(&lock),
+    };
+    let Some((w, wave_ids)) = target else {
         return 1; // refusal printed by close_target; nothing was read beyond the lock
     };
     let open: Vec<String> = wave_ids
@@ -498,9 +542,13 @@ pub fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
 
 /// The `wave --close` argument allowlist: `--summary <text>` and `--dry-run`, nothing else.
 /// A filter-shaped argument MUST filter or MUST refuse — same rule as `cmd_land`'s parser.
-fn parse_close_args(args: &[String]) -> Result<(Option<String>, bool), String> {
+/// `(summary, dry_run, operator-vouched ticket set)` — the parsed shape of `wave --close`.
+type CloseArgs = (Option<String>, bool, Option<Vec<String>>);
+
+fn parse_close_args(args: &[String]) -> Result<CloseArgs, String> {
     let mut summary: Option<String> = None;
     let mut dry_run = false;
+    let mut tickets: Option<Vec<String>> = None;
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
@@ -508,17 +556,38 @@ fn parse_close_args(args: &[String]) -> Result<(Option<String>, bool), String> {
                 Some(v) => summary = Some(v.clone()),
                 None => return Err("wave --close: --summary needs a value".into()),
             },
+            // T-946 — the operator-vouched set. See `cmd_wave_close`.
+            "--tickets" => match it.next() {
+                Some(v) => {
+                    let ids: Vec<String> = v
+                        .split(&[',', ' '][..])
+                        .map(str::trim)
+                        .filter(|s| !s.is_empty())
+                        .map(str::to_string)
+                        .collect();
+                    if ids.is_empty() {
+                        return Err(
+                            "wave --close: --tickets was given no ids (a filter-shaped argument                              must filter or refuse)"
+                                .into(),
+                        );
+                    }
+                    tickets = Some(ids);
+                }
+                None => {
+                    return Err("wave --close: --tickets needs a comma-separated id list".into());
+                }
+            },
             "--dry-run" => dry_run = true,
             // `'')` — an empty positional is dropped, not refused (the cmd_land shape).
             "" => {}
             other => {
                 return Err(format!(
-                    "wave --close: refusing unknown argument '{other}' (expected --summary <text> and/or --dry-run)"
+                    "wave --close: refusing unknown argument '{other}' (expected --summary <text>, --tickets <ids> and/or --dry-run)"
                 ));
             }
         }
     }
-    Ok((summary, dry_run))
+    Ok((summary, dry_run, tickets))
 }
 
 /// T-925 — the close TARGET: the oldest pending `[[emptied]]` entry of the committed lock,
@@ -875,14 +944,15 @@ mod tests {
 
     #[test]
     fn the_close_argument_parser_is_an_allowlist() {
-        assert_eq!(parse_close_args(&[]).unwrap(), (None, false));
+        // T-946 added the third element: the operator-vouched `--tickets` set, `None` by default.
+        assert_eq!(parse_close_args(&[]).unwrap(), (None, false, None));
         assert_eq!(
             parse_close_args(&["--dry-run".into()]).unwrap(),
-            (None, true)
+            (None, true, None)
         );
         assert_eq!(
             parse_close_args(&["--summary".into(), "five slices".into()]).unwrap(),
-            (Some("five slices".into()), false)
+            (Some("five slices".into()), false, None)
         );
         assert!(parse_close_args(&["--summary".into()]).is_err(), "no value");
         assert!(
@@ -1222,6 +1292,106 @@ mod tests {
             git(&dir, &["commit", "-q", "-m", &format!("T-{i}: ship")]);
         }
         dir
+    }
+
+    /// T-946 — the close-time registry view must see CHILD ids.
+    ///
+    /// RED before the fix: `is_shipped("T-1.1")` was false for a ticket file that reads
+    /// `status = "shipped"`, because the view loaded parents only, and `wave --close` printed
+    /// `REFUSED: wave N still open: T-1.1` forever.
+    #[test]
+    fn registry_view_reports_a_shipped_child_ticket_as_shipped() {
+        let dir = std::env::temp_dir().join(format!("t946-child-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let tickets = dir.join(".ai/tickets");
+        std::fs::create_dir_all(&tickets).unwrap();
+        std::fs::write(tickets.join("ROOT"), "# ticket-registry root marker\n").unwrap();
+        std::fs::write(tickets.join("scope-vocab.toml"), "[repo.xtask]\n").unwrap();
+        // `queued`, not `ready`: the T-917 schema gate requires a spec on a ready ticket, and
+        // the typed corpus this view now loads through enforces it.
+        std::fs::write(
+            tickets.join("T-1.toml"),
+            work_toml("T-1", 10, "a.rs", "queued"),
+        )
+        .unwrap();
+        std::fs::write(
+            tickets.join("T-1.1.toml"),
+            work_toml("T-1.1", 11, "b.rs", "shipped"),
+        )
+        .unwrap();
+        std::fs::write(
+            tickets.join("T-2.toml"),
+            work_toml("T-2", 20, "c.rs", "queued"),
+        )
+        .unwrap();
+
+        match crate::wave_lock::load_views(&dir) {
+            Ok(v) => println!(
+                "── load_views ── {:?}",
+                v.iter()
+                    .map(|t| (t.id.as_str(), t.status.as_str()))
+                    .collect::<Vec<_>>()
+            ),
+            Err(e) => println!("── load_views ERR ── {e:#}"),
+        }
+        let reg = ledger::Registry::load_repo(&dir);
+        println!("── is_shipped ── T-1.1 = {}", reg.is_shipped("T-1.1"));
+        assert!(
+            reg.is_shipped("T-1.1"),
+            "a shipped CHILD must read as shipped — the parents-only view is what made \
+             `wave --close` refuse a wave of slices"
+        );
+        assert!(!reg.is_shipped("T-2"), "a queued parent is not shipped");
+        assert!(
+            !reg.is_shipped("T-404"),
+            "an id with no ticket file is not shipped"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// T-946 — `--tickets` closes an operator-vouched set, and still validates every id.
+    #[test]
+    fn close_tickets_flag_parses_and_still_refuses_an_unshipped_id() {
+        let parsed = parse_close_args(&[
+            "--tickets".to_string(),
+            "T-1, T-2".to_string(),
+            "--dry-run".to_string(),
+        ])
+        .expect("parse");
+        println!("── parsed ── {parsed:?}");
+        assert_eq!(parsed.2, Some(vec!["T-1".to_string(), "T-2".to_string()]));
+        assert!(parsed.1, "--dry-run still parses alongside --tickets");
+        assert!(
+            parse_close_args(&["--tickets".to_string(), "  ".to_string()]).is_err(),
+            "an empty id list must refuse, not silently close everything"
+        );
+        assert!(
+            parse_close_args(&["--tickets".to_string()]).is_err(),
+            "a value-less --tickets must refuse"
+        );
+
+        // T-2 is NOT shipped in this tree, so the vouched set is still rejected on status.
+        let dir = emptied_scratch("vouch", 2, 1);
+        let cwd = testcwd::CwdGuard::enter(&dir);
+        let ctx = Ctx::enter().expect("ctx");
+        let (out, rc) = capture_step(|| {
+            cmd_wave_close(
+                &ctx,
+                &[
+                    "--tickets".to_string(),
+                    "T-1,T-2".to_string(),
+                    "--dry-run".to_string(),
+                ],
+            )
+        });
+        println!("── --tickets with an unshipped id ──\n{out}");
+        assert_eq!(rc, 1, "an unshipped id in the vouched set must refuse");
+        assert!(
+            out.contains("still open: T-2"),
+            "the refusal names the unshipped id: {out}"
+        );
+        drop(cwd);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

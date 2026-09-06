@@ -342,7 +342,12 @@ fn wave_zero(views: &[TicketView], baseline: &BTreeSet<String>) -> Vec<String> {
 /// The frozen set is never recomputed or filtered afterwards: it is the ledger of what the
 /// wave WAS when it emptied, which is what its close marker will name. Labels ascend in the
 /// output; `check_as_errors` re-verifies that via the union numbering check.
-fn carry_emptied(prev: Option<&WaveLock>, views: &[TicketView], wave_base: u32) -> Vec<LockWave> {
+fn carry_emptied(
+    prev: Option<&WaveLock>,
+    views: &[TicketView],
+    wave_base: u32,
+    ledger_floor: u32,
+) -> Vec<LockWave> {
     let Some(prev) = prev else {
         return Vec::new();
     };
@@ -369,6 +374,22 @@ fn carry_emptied(prev: Option<&WaveLock>, views: &[TicketView], wave_base: u32) 
         }
     }
     out.sort_by_key(|e| e.n);
+    // T-946 — RELABEL FROM THE LEDGER, KEEP THE SET FROZEN. The frozen ticket set is still never
+    // recomputed; only the LABEL is, because the label is the half that drifted. A pending entry
+    // is a promise that a `wave N CLOSED` marker will be written for this set, and the ceremony's
+    // oracle accepts exactly `ledger_floor + 1` — so a label above that is a promise the ceremony
+    // is structurally unable to keep. Measured 2026-09-05: entries ratcheted one label per
+    // emptied wave (a wave that empties reserves its label, the next open wave numbers past it)
+    // while no close ever landed to spend one, reaching 247 against a ledger whose highest claim
+    // was 235. `wave --close` refused forever, in both directions.
+    //
+    // Ledger ORDER is preserved (the queue still drains oldest-first, which is the only order the
+    // oracle's +1 window admits); only the numbers are re-seated onto the ledger. On a healthy
+    // ledger `ledger_floor == wave_base` and every label is already its own new value, so this
+    // renumbers nothing.
+    for (i, e) in out.iter_mut().enumerate() {
+        e.n = ledger_floor + 1 + i as u32;
+    }
     out
 }
 
@@ -485,12 +506,32 @@ fn ledger_base(root: &Path) -> Result<u32> {
         .unwrap_or(0))
 }
 
+/// The number below which no label may be issued: the highest wave any reachable close marker
+/// CLAIMS, never lower than the base.
+///
+/// T-946. `wave_base` answers "which commit is the wave boundary" and is derived newest-first;
+/// this answers "which numbers are already spent by a close that still stands", and the oracle
+/// ([`crate::wave::base::wave_close_is_newest_wave`]) will accept exactly `floor + 1`. Numbering
+/// the lock from anything else is how the two drifted 13 labels apart — see
+/// [`crate::wave::base::max_close_claim`] for the measured ledger that did it.
+///
+/// On a healthy ledger the newest marker also carries the highest claim, so this equals
+/// `wave_base` and nothing renumbers.
+fn ledger_floor(root: &Path, wave_base: u32) -> Result<u32> {
+    let claim = crate::wave::base::max_close_claim(root)
+        .map_err(|e| anyhow::anyhow!(e))?
+        .and_then(|n| u32::try_from(n).ok())
+        .unwrap_or(0);
+    Ok(wave_base.max(claim))
+}
+
 fn assemble(
     views: &[TicketView],
     baseline: &BTreeSet<String>,
     open_waves: Vec<Vec<String>>,
     cap: usize,
     wave_base: u32,
+    ledger_floor: u32,
     emptied: Vec<LockWave>,
 ) -> WaveLock {
     let (owns, depends_on, pack_last) = snapshots(views);
@@ -507,7 +548,10 @@ fn assemble(
     // markers, so the first open wave is max(wave_base, highest pending) + 1 and a relabel
     // can never collide with a wave that is waiting to close. Wave 0 is a LEDGER, not a
     // schedule — its label never moves off 0.
-    let floor = emptied.iter().map(|e| e.n).fold(wave_base, u32::max);
+    let floor = emptied
+        .iter()
+        .map(|e| e.n)
+        .fold(wave_base.max(ledger_floor), u32::max);
     for (i, tickets) in open_waves.into_iter().enumerate() {
         waves.push(LockWave {
             n: floor + 1 + i as u32,
@@ -543,8 +587,11 @@ pub fn compile(
         eprintln!("wave repack: warning: {w}");
     }
     let wave_base = ledger_base(root)?;
-    let emptied = carry_emptied(prev, &views, wave_base);
-    Ok(assemble(&views, baseline, open, cap, wave_base, emptied))
+    let floor = ledger_floor(root, wave_base)?;
+    let emptied = carry_emptied(prev, &views, wave_base, floor);
+    Ok(assemble(
+        &views, baseline, open, cap, wave_base, floor, emptied,
+    ))
 }
 
 pub fn render(lock: &WaveLock) -> Result<String> {
@@ -636,12 +683,14 @@ fn migrate_from_tsv(root: &Path) -> Result<WaveLock> {
     // reachable on a hypothetical TSV-bearing tree, and numbering it off the ledger keeps the
     // base check green there instead of red-on-arrival. No emptied carry: the TSV era
     // predates the section, and a TSV-bearing tree has no previous LOCK to carry from.
+    let migration_base = ledger_base(root)?;
     let lock = assemble(
         &views,
         &wave0_tsv,
         open,
         max_concurrent(),
-        ledger_base(root)?,
+        migration_base,
+        ledger_floor(root, migration_base)?,
         Vec::new(),
     );
     write(root, &lock)?;
@@ -905,7 +954,10 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
         }
     }
     if let Some(want_base) = derived_base {
-        let want = carry_emptied(Some(&lock), &views, want_base);
+        // T-946: recompute with the SAME floor the packer used, or `check` reds on a lock that
+        // is correct — the carry rule now seats pending labels on the marker ledger.
+        let want_floor = ledger_floor(root, want_base).unwrap_or(want_base);
+        let want = carry_emptied(Some(&lock), &views, want_base, want_floor);
         if want != lock.emptied {
             errors.push(format!(
                 "wave.lock emptied section disagrees with the carry rule — pending labels {:?}, carry derives {:?}: run `cargo xtask wave repack`",
@@ -1236,6 +1288,120 @@ mod tests {
             git_in_dir(&dir, &["commit", "-q", "-m", s]);
         }
         dir
+    }
+
+    /// T-946 — a wave repacked once its whole set has landed freezes that whole set; a wave
+    /// repacked after EVERY id freezes at most a remnant.
+    ///
+    /// This is why wave 248 could not be closed on 2026-09-05. `wave --close` closes a pending
+    /// `[[emptied]]` entry and [`carry_emptied`] freezes one only when a repack sees a wave whose
+    /// every ticket has landed — but `ticket ship` repacked per id, and each repack re-packs from
+    /// scratch, so the wave shrank between ships and no repack ever saw the full set. The repair
+    /// is `ship --no-repack` plus one repack at the end of the wave (`cmds::cmd_ship_opt`); this
+    /// pins the lock-side half of it, both directions in one test so neither can rot alone.
+    #[test]
+    fn a_wave_freezes_its_whole_set_only_when_repacked_after_the_last_ship() {
+        let files = |s1: &str, s2: &str| {
+            vec![
+                ("T-1.toml".to_string(), work("T-1", 10, &["a.rs"], &[], s1)),
+                ("T-2.toml".to_string(), work("T-2", 20, &["b.rs"], &[], s2)),
+            ]
+        };
+        let write = |dir: &Path, rows: &[(String, String)]| {
+            for (name, body) in rows {
+                fs::write(dir.join(".ai/tickets").join(name), body).unwrap();
+            }
+        };
+        let set_of = |lock: &WaveLock| -> Vec<Vec<String>> {
+            lock.emptied.iter().map(|e| e.tickets.clone()).collect()
+        };
+
+        // Disjoint owns, so the packer puts T-1 and T-2 in ONE wave.
+        let seed = files("queued", "queued");
+        let rows: Vec<(&str, &str)> = seed.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
+        let dir = scratch_git("t946-carry-per-id", &rows, &["wave 41 CLOSED — prior"]);
+        let base = repack_quiet(&dir).unwrap();
+        assert_eq!(
+            base.waves.iter().find(|w| w.n > 0).map(|w| w.tickets.len()),
+            Some(2),
+            "the fixture must pack both tickets into one wave: {:?}",
+            base.waves
+        );
+
+        // Per-id: ship T-1, repack, ship T-2, repack.
+        write(&dir, &files("shipped", "queued"));
+        repack_quiet(&dir).unwrap();
+        write(&dir, &files("shipped", "shipped"));
+        let per_id = repack_quiet(&dir).unwrap();
+        println!("── per-id repack ── emptied sets = {:?}", set_of(&per_id));
+        assert!(
+            !set_of(&per_id).iter().any(|t| t.len() == 2),
+            "a per-id repack cannot freeze the whole wave — the defect: {:?}",
+            set_of(&per_id)
+        );
+
+        // Batched: both ship, then ONE repack.
+        let dir2 = scratch_git("t946-carry-batch", &rows, &["wave 41 CLOSED — prior"]);
+        repack_quiet(&dir2).unwrap();
+        write(&dir2, &files("shipped", "shipped"));
+        let batched = repack_quiet(&dir2).unwrap();
+        println!("── one repack ── emptied sets = {:?}", set_of(&batched));
+        assert!(
+            set_of(&batched).iter().any(|t| t.len() == 2
+                && t.contains(&"T-1".to_string())
+                && t.contains(&"T-2".to_string())),
+            "one repack after the last ship freezes the wave's whole set: {:?}",
+            set_of(&batched)
+        );
+        let _ = fs::remove_dir_all(&dir);
+        let _ = fs::remove_dir_all(&dir2);
+    }
+
+    /// T-946 — the lock numbers from the HIGHEST CLAIM, not merely the newest marker, and a
+    /// prefixed subject is not a marker at all.
+    ///
+    /// This is the measured shape of the real ledger on 2026-09-05: a newer marker claiming a
+    /// LOWER wave than an older one (the T-853 programme closed alongside the editor programme),
+    /// plus prefixed `T-853 wave N CLOSED` subjects that the anchored authority rejects. Before
+    /// the fix the lock numbered from `newest_close_base` alone while the close ceremony's oracle
+    /// would accept only `highest claim + 1`, so the two drifted and NO close could be written.
+    #[test]
+    fn numbering_seats_on_the_highest_claim_not_the_newest_marker() {
+        let dir = scratch_git(
+            "t946-claim",
+            &[
+                ("T-1.toml", &work("T-1", 10, &["a.rs"], &[], "queued")),
+                ("T-2.toml", &work("T-2", 20, &["a.rs"], &[], "queued")),
+            ],
+            &[
+                "wave 41 CLOSED — the highest claim",
+                "T-853 wave 45 CLOSED — prefixed, so NOT a marker",
+                "wave 40 CLOSED — newer by commit order, lower by claim",
+            ],
+        );
+
+        let base = crate::wave::base::newest_close_base(&dir).unwrap();
+        let claim = crate::wave::base::max_close_claim(&dir).unwrap();
+        println!("── newest_close_base = {base:?}   max_close_claim = {claim:?}");
+        assert_eq!(base, Some(40), "newest by commit order");
+        assert_eq!(
+            claim,
+            Some(41),
+            "highest claim among REAL markers — the prefixed 45 is not one"
+        );
+
+        let lock = repack_quiet(&dir).unwrap();
+        let open: Vec<u32> = lock.waves.iter().map(|w| w.n).filter(|n| *n > 0).collect();
+        println!(
+            "── open wave labels ── {open:?} (wave_base = {})",
+            lock.wave_base
+        );
+        assert_eq!(
+            open.first().copied(),
+            Some(42),
+            "the first open wave is highest-claim + 1 = the only label the close oracle accepts"
+        );
+        let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]

@@ -282,7 +282,6 @@ pub fn validate_and_write(
 mod tests {
     use super::*;
     use crate::map_blueprint::{plate, slabs, synth, walls};
-    use crate::root::find_repo_root;
 
     #[test]
     fn box_room_blueprint_passes_the_schema_contract() {
@@ -330,7 +329,7 @@ mod tests {
             "local-frame west centerline, got {west_x}"
         );
 
-        let root = find_repo_root().expect("repo root");
+        let root = crate::root::test_repo_root();
         let schema = root.join("packages/tbd-schema/schema/building-blueprint.schema.json");
         let tmp = std::env::temp_dir().join("tbd_bp_synth_schema_test.json");
         validate_and_write(&bp, &schema, &tmp).expect("schema-valid blueprint");
