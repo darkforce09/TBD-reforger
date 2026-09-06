@@ -7,12 +7,9 @@
 //! spawned in a lake. `world_assets` is `#![cfg(target_arch = "wasm32")]` and this repo has no
 //! wasm-bindgen-test harness, so anything decided over there is guarded by compilation alone. Every
 //! decision that can be wrong — the payload-length check, the world→texel mapping, the mip fold,
-//! the schema-version gate — is therefore made here, where `cargo test` executes it. The SPA module
-//! is the fetch shim on top ([`crate::world`] is what it links).
+//! the schema-version gate — is therefore made here, where `cargo test` executes it.
 //!
 //! # What the query answers, precisely
-//!
-//! [`WaterMask::sample`] is three-valued on purpose:
 //!
 //! | Where | [`WaterAt`] | [`WaterMask::is_water`] | [`WaterMask::depth_m`] |
 //! |---|---|---|---|
@@ -20,7 +17,7 @@
 //! | inside the extent, mask byte non-zero | [`WaterAt::Water`] | `true` | `Some(metres)` |
 //! | **outside the world extent** | [`WaterAt::Unknown`] | **`false`** | **`None`** |
 //! | a mip level this container does not hold | [`WaterAt::Unknown`] | `false` | `None` |
-//! | **no file at all** | — the host holds `Option<WaterMask>` and it is `None` | — | — |
+//! | **no file at all** | the host holds `Option<WaterMask>` and it is `None` | — | — |
 //!
 //! `is_water` answering `false` off the map is not a claim that the ground there is dry: it is the
 //! absence of a reading, which is why [`WaterAt::Unknown`] exists and why the guard-facing
@@ -28,22 +25,19 @@
 //! (because a caller holding no mask holds no reading either) `false` by construction when the
 //! container was never loaded.
 //!
-//! # The grid convention
+//! # The grid convention, and the fold that agrees with the emitter by construction
 //!
 //! `TBD_MapExportWater.c` walks `wx = px * worldSize / (w - 1)`, so a raster texel is a **point
 //! sample on a vertex grid**: texel 0 sits exactly on the world minimum and texel `w - 1` exactly
 //! on the maximum, and row 0 is `z = z_min` (no flip — unlike `TBDE`, whose row 0 is the north
-//! edge). The query is therefore *nearest sample*, not a cell lookup, which is what
-//! [`WaterMask::texel_at_level`] implements.
+//! edge). The query is therefore *nearest sample*, not a cell lookup.
 //!
-//! # The mip fold agrees with the emitter by construction
-//!
-//! [`downsample_index`] is the *only* definition of "which coarse texel does this fine texel fold
-//! into", and both sides call it: `tbd-tools`' `map water` builds level `L + 1` by folding level
-//! `L` through it, and [`WaterMask::texel_at_level`] walks a level-0 texel down the same ladder one
-//! step at a time. Two independent formulas would drift the moment a dimension stopped being a
-//! power of two (everon's 12800 stops at level 9: `25 >> 1 == 12`, not 12.5), and the drift would
-//! be a coarse texel that reads the wrong lake.
+//! [`downsample_index`] is then the *only* definition of "which coarse texel does this fine texel
+//! fold into", and both sides call it: `tbd-tools`' `map water` builds level `L + 1` by folding
+//! level `L` through it, and [`WaterMask::texel_at_level`] walks a level-0 texel down the same
+//! ladder one step at a time. Two independent formulas would drift the moment a dimension stopped
+//! being a power of two (everon's 12800 stops at level 9: `25 >> 1 == 12`, not 12.5), and the drift
+//! would be a coarse texel that reads the wrong lake.
 
 use bytemuck::cast_slice;
 use rkyv::Archived;
@@ -72,23 +66,21 @@ const _: () = assert!(
 /// index one past the end. Clamping it into the final destination texel means that texel absorbs
 /// three sources instead of two — which is the conservative direction for both reductions
 /// (`depth = max`, `mask = any water`): a coarse texel never claims dry ground that is wet.
-///
-/// Called by the emitter to build a level and by [`WaterMask::texel_at_level`] to read one. That
-/// is deliberate — see the module docs.
+/// Called by the emitter to build a level and by [`WaterMask::texel_at_level`] to read one — that
+/// is deliberate, see the module docs.
 #[must_use]
 pub fn downsample_index(src_index: u32, dst_dim: u32) -> u32 {
     (src_index >> 1).min(dst_dim.saturating_sub(1))
 }
 
-/// One decoded level of a [`Bathymetry`] pyramid: the `u16` depth grid and the `u8` water mask,
+/// One decoded level of a [`Bathymetry`] pyramid: the `u16` depth grid (metres are
+/// `v * depth_scale`, [`TbdbHeader::metres`]) and the `u8` water mask (`0` dry, non-zero water),
 /// both `width * height` long and both borrowed from the container with no copy.
 #[derive(Clone, Copy, Debug)]
 pub struct BathymetryLevel<'a> {
     pub width: u32,
     pub height: u32,
-    /// Quantised depth; metres are `v * depth_scale` ([`TbdbHeader::metres`]).
     pub depth: &'a [u16],
-    /// `0` = dry, non-zero = water.
     pub mask: &'a [u8],
 }
 
@@ -105,15 +97,12 @@ impl BathymetryLevel<'_> {
     }
 }
 
-/// Which byte range of a `.tbd-bath` a loader should actually fetch: everon's full pyramid is
-/// 655,359,980 B, and the levels a placement guard needs are the small ones at the end.
-///
-/// Produced by [`suffix_plan`]. `file_offset` already includes the 32-byte header, so it is an
-/// HTTP `Range` start as-is.
+/// Which byte range of a `.tbd-bath` a loader should actually fetch ([`suffix_plan`]): everon's
+/// full pyramid is 655,359,980 B and the levels a placement guard needs are the small ones at the
+/// end. `file_offset` already includes the 32-byte header, so it is an HTTP `Range` start as-is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SuffixPlan {
-    /// The finest level the plan carries; levels below it are not fetched and read as
-    /// [`WaterAt::Unknown`].
+    /// The finest level carried; levels below it read as [`WaterAt::Unknown`].
     pub first_level: u16,
     pub file_offset: u64,
     pub bytes: u64,
@@ -121,36 +110,31 @@ pub struct SuffixPlan {
 
 /// Offsets of a level suffix **within the payload**: `(bytes before `first_level`, bytes from
 /// `first_level` to the end)`. All arithmetic checked — a hostile `width * height * 2` wraps a
-/// 32-bit `usize` on wasm, and a wrapped length sizes an allocation for a grid the file has not
-/// got.
+/// 32-bit `usize` on wasm, and a wrapped length sizes an allocation for a grid the file has not got.
 fn payload_span(header: &TbdbHeader, first_level: u16) -> Result<(usize, usize), BinaryError> {
-    let bad = BinaryError::LengthMismatch {
+    let h = *header;
+    let bad = || BinaryError::LengthMismatch {
         what: "TBDB",
         expected: 0,
         actual: usize::from(first_level),
     };
-    if header.width == 0
-        || header.height == 0
-        || header.mip_count == 0
-        || first_level >= header.mip_count
-    {
-        return Err(bad);
+    if h.width == 0 || h.height == 0 || h.mip_count == 0 || first_level >= h.mip_count {
+        return Err(bad());
     }
     let (mut before, mut after) = (0_usize, 0_usize);
-    for level in 0..header.mip_count {
-        let stride = header.level_span(level).ok_or_else(|| bad.clone())?.stride;
+    for level in 0..h.mip_count {
+        let n = h.level_span(level).ok_or_else(bad)?.stride;
         let slot = if level < first_level {
             &mut before
         } else {
             &mut after
         };
-        *slot = slot.checked_add(stride).ok_or_else(|| bad.clone())?;
+        *slot = slot.checked_add(n).ok_or_else(bad)?;
     }
     Ok((before, after))
 }
 
 /// The **finest** level whose suffix — that level and every coarser one — fits `budget_bytes`.
-///
 /// `None` when even the coarsest level does not fit, or the header is degenerate. Coarser is
 /// always safe to fall back to: the fold is `depth = max` / `mask = any water`, so a coarse texel
 /// over-reports water and never under-reports it, and a placement guard that reads a coarse level
@@ -182,14 +166,11 @@ pub fn suffix_plan(header: &TbdbHeader, budget_bytes: u64) -> Option<SuffixPlan>
 /// The words are never *interpreted* as numbers — [`u32::from_ne_bytes`] in, `cast_slice` out, so
 /// the bytes round-trip exactly (`binary::pod` asserts the host is little-endian at compile time).
 ///
-/// # Why a partial pyramid is a first-class shape
-///
-/// A browser cannot hold everon's 655 MB level 0, and it does not need to: the header alone says
-/// where every level lives, so a loader Range-fetches a *suffix* ([`suffix_plan`]) and gets a
-/// complete, self-consistent mask at a coarser texel size. The **header is kept whole** either way
-/// — [`WaterMask::texel_at_level`] still folds from a level-0 texel down the same ladder — so the
-/// answers a partial container gives are exactly the answers the full one gives at those levels,
-/// not an approximation of them.
+/// **A partial pyramid is a first-class shape.** A browser cannot hold everon's 655 MB level 0 and
+/// does not need to: a loader Range-fetches a *suffix* ([`suffix_plan`]). The **header is kept
+/// whole** either way — [`WaterMask::texel_at_level`] still folds from a level-0 texel down the
+/// same ladder — so a partial container gives exactly the full one's answers at those levels, not
+/// an approximation of them.
 #[derive(Clone, Debug)]
 pub struct Bathymetry {
     header: TbdbHeader,
@@ -204,9 +185,9 @@ impl Bathymetry {
     /// * [`BinaryError::Truncated`] — under 32 bytes, or a payload shorter than the header's
     ///   pyramid.
     /// * [`BinaryError::BadMagic`] / [`BinaryError::UnsupportedVersion`] — not a `TBDB` v1 file.
-    /// * [`BinaryError::LengthMismatch`] — a header describing a zero-sized pyramid (`width`,
-    ///   `height` or `mip_count` of 0), a level whose size overflows `usize`, or a pyramid whose
-    ///   total is not the multiple of 4 the padding rule guarantees.
+    /// * [`BinaryError::LengthMismatch`] — a zero-sized pyramid (`width`, `height` or `mip_count`
+    ///   of 0), a level whose size overflows `usize`, or a total that is not the multiple of 4 the
+    ///   padding rule guarantees.
     pub fn from_bytes(raw: &[u8]) -> Result<Self, BinaryError> {
         let (header, payload) = TbdbHeader::read(raw)?;
         Self::assemble(header, 0, payload, raw.len())
@@ -262,14 +243,14 @@ impl Bathymetry {
         })
     }
 
-    /// The 32-byte header as it was written — **the whole file's**, even when only a suffix is
-    /// held, so the world→texel ladder is unchanged.
+    /// The 32-byte header as written — **the whole file's**, even when only a suffix is held, so
+    /// the world→texel ladder is unchanged.
     #[must_use]
     pub fn header(&self) -> &TbdbHeader {
         &self.header
     }
 
-    /// The finest level actually present (`0` for a whole file).
+    /// The finest level present (`0` for a whole file).
     #[must_use]
     pub fn finest_level(&self) -> u16 {
         self.first_level
@@ -314,13 +295,14 @@ impl Bathymetry {
         let mask_end = mask_off.checked_add(span.mask_bytes)?;
         let depth_bytes = bytes.get(depth_off..depth_end)?;
         let mask = bytes.get(mask_off..mask_end)?;
-        // Every level starts on a stride that is a multiple of 4, so this cast never copies and
-        // never fails; `try_` rather than `cast_slice` so a future layout change is an error
-        // instead of a panic in a placement guard.
+        // Every level starts on a 4-multiple stride, so this cast never copies and never fails;
+        // `try_` rather than `cast_slice` so a future layout change is an error rather than a
+        // panic in a placement guard.
         let depth = bytemuck::try_cast_slice::<u8, u16>(depth_bytes).ok()?;
+        let (width, height) = (span.width, span.height);
         Some(BathymetryLevel {
-            width: span.width,
-            height: span.height,
+            width,
+            height,
             depth,
             mask,
         })
@@ -330,10 +312,10 @@ impl Bathymetry {
 /// What the mask knows about one world point.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum WaterAt {
-    /// **No reading here.** The point is outside the container's world extent, or the requested
-    /// mip level is not in the file. This is *not* a claim that the ground is dry.
+    /// **No reading here** — outside the container's world extent, or a mip level it does not
+    /// hold. *Not* a claim that the ground is dry.
     Unknown,
-    /// The container records dry ground.
+    /// Dry ground.
     Dry,
     /// The container records water, `depth_m` metres deep.
     Water { depth_m: f32 },
@@ -416,27 +398,22 @@ impl WaterMask {
         Some((tx, tz))
     }
 
-    /// What level `level` records at `(x, z)`.
+    /// What level `level` records at `(x, z)`. Every step that cannot answer says
+    /// [`WaterAt::Unknown`] rather than guessing.
     #[must_use]
     pub fn sample_at_level(&self, x: f64, z: f64, level: u16) -> WaterAt {
-        let Some((tx, tz)) = self.texel_at_level(x, z, level) else {
-            return WaterAt::Unknown;
+        let read = || {
+            let (tx, tz) = self.texel_at_level(x, z, level)?;
+            let grid = self.bathymetry.level(level)?;
+            let i = grid.index(tx, tz)?;
+            Some((*grid.mask.get(i)?, *grid.depth.get(i)?))
         };
-        let Some(grid) = self.bathymetry.level(level) else {
-            return WaterAt::Unknown;
-        };
-        let Some(i) = grid.index(tx, tz) else {
-            return WaterAt::Unknown;
-        };
-        let (Some(&mask), Some(&depth)) = (grid.mask.get(i), grid.depth.get(i)) else {
-            return WaterAt::Unknown;
-        };
-        if mask == 0 {
-            WaterAt::Dry
-        } else {
-            WaterAt::Water {
+        match read() {
+            None => WaterAt::Unknown,
+            Some((0, _)) => WaterAt::Dry,
+            Some((_, depth)) => WaterAt::Water {
                 depth_m: self.bathymetry.header.metres(depth),
-            }
+            },
         }
     }
 
@@ -447,11 +424,9 @@ impl WaterMask {
         self.sample_at_level(x, z, self.bathymetry.finest_level())
     }
 
-    /// **`true` only where the container records water.**
-    ///
-    /// Off the map — and for a mip level the file does not carry — the answer is `false`, because
-    /// there is no reading, not because the ground is dry (see [`WaterAt::Unknown`] and the module
-    /// docs). A caller that must not drop a unit in a lake wants
+    /// **`true` only where the container records water.** Off the map — and for a level the file
+    /// does not carry — the answer is `false` because there is no reading, *not* because the ground
+    /// is dry. A caller that must not drop a unit in a lake wants
     /// [`WaterMask::is_known_dry_land`], which refuses both.
     #[must_use]
     pub fn is_water(&self, x: f64, z: f64) -> bool {
@@ -493,36 +468,31 @@ impl WaterMask {
         let finest = self.bathymetry.finest_level();
         let mut best = finest;
         for level in finest..self.bathymetry.level_count() {
-            let Some((w, _)) = self.bathymetry.header.level_dims(level) else {
-                break;
-            };
-            if span / f64::from(w) > target_m {
-                break;
+            match self.bathymetry.header.level_dims(level) {
+                Some((w, _)) if span / f64::from(w) <= target_m => best = level,
+                _ => break,
             }
-            best = level;
         }
         best
     }
 }
 
 /// Nearest sample index on a vertex grid of `dim` samples spanning `t ∈ [0, 1]`.
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn nearest_sample(t: f64, dim: u32) -> u32 {
     if dim <= 1 {
         return 0;
     }
     let last = f64::from(dim - 1);
-    let idx = (t * last).round().clamp(0.0, last);
-    // Clamped to `[0, dim - 1]` on the line above, so the cast is exact and cannot saturate.
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let out = idx as u32;
-    out
+    // Clamped to `[0, dim - 1]`, so the cast is exact and cannot saturate.
+    (t * last).round().clamp(0.0, last) as u32
 }
 
 /// A whole `water/water_vectors.rkyv` file, kept as the bytes it arrived as.
 ///
 /// Zero-copy per spec §6: the file is fetched once, copied **once** onto an alignment
-/// [`access_checked`] accepts, validated **once** here, and every later read is a borrow of that
-/// same buffer. Nothing is deserialised into owned lakes and rivers.
+/// [`access_checked`] accepts, validated **once** here, and every later read borrows that same
+/// buffer. Nothing is deserialised into owned lakes and rivers.
 #[derive(Clone, Debug)]
 pub struct WaterVectors {
     buf: Vec<u8>,
@@ -577,12 +547,10 @@ impl WaterVectors {
     }
 }
 
-/// `raw` copied into a buffer whose byte at `pad` sits on [`WATER_VECTORS_ALIGN`].
-///
-/// Capacity is reserved up front so `extend_from_slice` cannot reallocate and move the alignment
-/// out from under the offset just measured; the result is re-checked anyway. (The same six lines
-/// exist privately in `world::locations` for `map_labels.rkyv`; both are private to their module
-/// and neither file is the other's to edit.)
+/// `raw` copied into a buffer whose byte at `pad` sits on [`WATER_VECTORS_ALIGN`]. Capacity is
+/// reserved up front so `extend_from_slice` cannot reallocate and move the alignment out from
+/// under the offset just measured; the result is re-checked anyway. (`world::locations` has the
+/// same six lines privately for `map_labels.rkyv`; neither file is the other's to edit.)
 fn aligned_copy(raw: &[u8]) -> Option<(Vec<u8>, usize)> {
     let mut buf: Vec<u8> = Vec::with_capacity(raw.len() + WATER_VECTORS_ALIGN);
     let pad = buf.as_ptr().align_offset(WATER_VECTORS_ALIGN);
@@ -614,8 +582,7 @@ mod tests {
     /// bytes are pinned in `tbd-tools`.
     fn synth(width: u32, height: u32, mips: u16, wet: &[(u32, u32, u16)]) -> Vec<u8> {
         let head = TbdbHeader::new(width, height, mips, SCALE);
-        let mut out = Vec::new();
-        out.extend_from_slice(bytemuck::bytes_of(&head));
+        let mut out = bytemuck::bytes_of(&head).to_vec();
         let (mut w, mut h) = (width as usize, height as usize);
         let mut depth = vec![0_u16; w * h];
         let mut mask = vec![0_u8; w * h];
@@ -624,13 +591,9 @@ mod tests {
             mask[z as usize * w + x as usize] = 1;
         }
         for level in 0..mips {
-            for d in &depth {
-                out.extend_from_slice(&d.to_le_bytes());
-            }
+            out.extend(depth.iter().flat_map(|d| d.to_le_bytes()));
             out.extend_from_slice(&mask);
-            while !out.len().is_multiple_of(4) {
-                out.push(0);
-            }
+            out.resize(out.len().next_multiple_of(4), 0);
             if level + 1 == mips {
                 break;
             }
@@ -655,35 +618,46 @@ mod tests {
         WaterMask::from_bytes(&bytes, [0.0, 0.0, 4.0, 4.0]).expect("4x4 mask")
     }
 
-    /// World coordinate of the centre of level-0 texel `t` on a `dim`-sample vertex grid over
-    /// `[0, span]`.
+    /// World coordinate of level-0 texel `t` on a `dim`-sample vertex grid over `[0, span]`.
     fn world_of(t: u32, dim: u32, span: f64) -> f64 {
         f64::from(t) * span / f64::from(dim - 1)
     }
 
-    #[test]
-    fn a_synthetic_container_round_trips_its_header_and_levels() {
-        let b = Bathymetry::from_bytes(&synth(W, H, MIPS, &[(1, 2, 30)])).expect("parse");
-        assert_eq!((b.width(), b.height(), b.level_count()), (W, H, MIPS));
-        assert_eq!(b.header().depth_scale, SCALE);
-        for (level, dims) in [(0_u16, (4_u32, 4_u32)), (1, (2, 2)), (2, (1, 1))] {
-            let g = b.level(level).expect("level present");
-            assert_eq!((g.width, g.height), dims, "level {level}");
-            assert_eq!(g.depth.len(), (dims.0 * dims.1) as usize);
-            assert_eq!(g.mask.len(), (dims.0 * dims.1) as usize);
+    /// Which refusal a parse gave, as a short name — lets the refusal tables below read one line
+    /// per case instead of a four-line `assert!(matches!(…))` each.
+    fn refusal<T>(r: Result<T, BinaryError>) -> &'static str {
+        match r {
+            Ok(_) => "ok",
+            Err(BinaryError::Truncated { .. }) => "truncated",
+            Err(BinaryError::BadMagic { .. }) => "magic",
+            Err(BinaryError::UnsupportedVersion { .. }) => "version",
+            Err(BinaryError::Misaligned { .. }) => "align",
+            Err(BinaryError::LengthMismatch { .. }) => "length",
+            Err(BinaryError::Archive { .. }) => "archive",
         }
-        assert!(b.level(MIPS).is_none(), "past the last level");
     }
 
     /// THE SLICE'S PIN. Every level agrees with level 0: a coarse texel is water whenever ANY
     /// level-0 texel folding into it is water, and its depth is the MAX of that set. Checked by
     /// walking level 0 and folding, so the assertion cannot be satisfied by a mask that is uniform.
+    /// The header and the level geometry are checked here too — they are what the fold indexes.
     #[test]
     fn every_mip_level_agrees_with_level_zero() {
         // Several wet texels at different depths, so "max" is distinguishable from "first",
         // "last" and "any".
         let wet = [(0_u32, 0_u32, 7_u16), (1, 2, 30), (3, 3, 12)];
         let b = Bathymetry::from_bytes(&synth(W, H, MIPS, &wet)).expect("parse");
+        assert_eq!((b.width(), b.height(), b.level_count()), (W, H, MIPS));
+        assert_eq!((b.header().depth_scale, b.finest_level()), (SCALE, 0));
+        assert!(b.level(MIPS).is_none(), "past the last level");
+        for (level, dims) in [(0_u16, (4_u32, 4_u32)), (1, (2, 2)), (2, (1, 1))] {
+            let g = b.level(level).expect("level present");
+            let n = (dims.0 * dims.1) as usize;
+            assert_eq!(
+                ((g.width, g.height), g.depth.len(), g.mask.len()),
+                (dims, n, n)
+            );
+        }
         let base = b.level(0).expect("level 0");
         for level in 1..b.level_count() {
             let grid = b.level(level).expect("level present");
@@ -714,31 +688,23 @@ mod tests {
         }
     }
 
+    /// The three predicates agree with [`WaterMask::sample`] on both answers it can give inside
+    /// the extent, and the lake survives every level of the pyramid.
     #[test]
-    fn the_wet_texel_reads_as_water_at_every_level() {
+    fn wet_and_dry_texels_read_consistently_across_the_predicates() {
         let m = mask_4x4();
         let (x, z) = (world_of(WET.0, W, 4.0), world_of(WET.1, H, 4.0));
         assert_eq!(m.sample(x, z), WaterAt::Water { depth_m: 3.0 });
-        assert!(m.is_water(x, z));
-        assert!(!m.is_known_dry_land(x, z));
+        assert!(m.is_water(x, z) && !m.is_known_dry_land(x, z));
         assert_eq!(m.depth_m(x, z), Some(3.0));
         for level in 0..MIPS {
-            assert_eq!(
-                m.sample_at_level(x, z, level),
-                WaterAt::Water { depth_m: 3.0 },
-                "level {level} lost the lake"
-            );
+            let want = WaterAt::Water { depth_m: 3.0 };
+            assert_eq!(m.sample_at_level(x, z, level), want, "level {level}");
         }
-    }
-
-    #[test]
-    fn a_dry_texel_reads_as_dry_at_level_zero() {
-        let m = mask_4x4();
-        let (x, z) = (world_of(3, W, 4.0), world_of(0, H, 4.0));
-        assert_eq!(m.sample(x, z), WaterAt::Dry);
-        assert!(!m.is_water(x, z));
-        assert!(m.is_known_dry_land(x, z));
-        assert_eq!(m.depth_m(x, z), Some(0.0));
+        let (dx, dz) = (world_of(3, W, 4.0), world_of(0, H, 4.0));
+        assert_eq!(m.sample(dx, dz), WaterAt::Dry);
+        assert!(!m.is_water(dx, dz) && m.is_known_dry_land(dx, dz));
+        assert_eq!(m.depth_m(dx, dz), Some(0.0));
     }
 
     /// The answer OUTSIDE the map, pinned in every direction and for NaN. `Unknown`, never `Dry`:
@@ -746,18 +712,13 @@ mod tests {
     #[test]
     fn outside_the_map_is_unknown_not_dry() {
         let m = mask_4x4();
-        for (x, z) in [
-            (-0.001, 2.0),
-            (4.001, 2.0),
-            (2.0, -0.001),
-            (2.0, 4.001),
-            (-1e9, -1e9),
-            (1e9, 1e9),
-            (f64::NAN, 2.0),
-            (2.0, f64::NAN),
-            (f64::INFINITY, 2.0),
-            (2.0, f64::NEG_INFINITY),
-        ] {
+        #[rustfmt::skip]
+        let off = [
+            (-0.001, 2.0), (4.001, 2.0), (2.0, -0.001), (2.0, 4.001),
+            (-1e9, -1e9), (1e9, 1e9), (f64::NAN, 2.0), (2.0, f64::NAN),
+            (f64::INFINITY, 2.0), (2.0, f64::NEG_INFINITY),
+        ];
+        for (x, z) in off {
             assert_eq!(m.sample(x, z), WaterAt::Unknown, "({x}, {z})");
             assert!(!m.is_water(x, z), "({x}, {z}) claimed water off the map");
             assert!(
@@ -773,14 +734,11 @@ mod tests {
         for (x, z) in [(0.0, 0.0), (4.0, 4.0), (0.0, 4.0), (4.0, 0.0)] {
             assert_ne!(m.sample(x, z), WaterAt::Unknown, "corner ({x}, {z})");
         }
-    }
-
-    #[test]
-    fn a_level_the_file_does_not_carry_is_unknown() {
-        let m = mask_4x4();
-        assert_eq!(m.sample_at_level(2.0, 2.0, MIPS), WaterAt::Unknown);
-        assert_eq!(m.sample_at_level(2.0, 2.0, u16::MAX), WaterAt::Unknown);
-        assert!(m.texel_at_level(2.0, 2.0, MIPS).is_none());
+        // The other unknown: a level this container does not hold.
+        for level in [MIPS, u16::MAX] {
+            assert_eq!(m.sample_at_level(2.0, 2.0, level), WaterAt::Unknown);
+            assert!(m.texel_at_level(2.0, 2.0, level).is_none());
+        }
     }
 
     /// A Range-fetched suffix must answer **exactly** what the whole file answers at the levels it
@@ -792,15 +750,12 @@ mod tests {
         let full = Bathymetry::from_bytes(&bytes).expect("full");
         assert_eq!(full.finest_level(), 0);
         for first in 1..MIPS {
-            let plan = suffix_plan(full.header(), u64::MAX).expect("plan");
             let (before, _) = payload_span(full.header(), first).expect("span");
             let start = size_of::<TbdbHeader>() + before;
             let part = Bathymetry::from_level_suffix(*full.header(), first, &bytes[start..])
                 .expect("suffix parses");
             assert_eq!(part.finest_level(), first);
             assert_eq!((part.width(), part.height()), (W, H), "header stays whole");
-            assert_eq!(plan.first_level, 0, "an unbounded budget takes everything");
-
             let a = WaterMask::new(full.clone(), [0.0, 0.0, 4.0, 4.0]).expect("full mask");
             let b = WaterMask::new(part, [0.0, 0.0, 4.0, 4.0]).expect("part mask");
             for tz in 0..H {
@@ -856,6 +811,12 @@ mod tests {
         // A budget under the coarsest level's 4 bytes has no plan at all.
         assert!(suffix_plan(&everon, 3).is_none());
         assert!(suffix_plan(&TbdbHeader::new(0, 0, 0, 0.1), u64::MAX).is_none());
+        // The in-container twin: 4 m over 4 samples means 1 m texels at level 0, 2 m at 1, 4 m
+        // at 2. 0.5 m is finer than anything the pyramid has, and 100 m is capped by it.
+        let m = mask_4x4();
+        for (target, want) in [(0.5, 0_u16), (1.0, 0), (2.0, 1), (100.0, 2)] {
+            assert_eq!(m.level_for_texel_size_m(target), want, "{target} m");
+        }
     }
 
     #[test]
@@ -864,21 +825,20 @@ mod tests {
         let head = TbdbHeader::new(W, H, MIPS, SCALE);
         let (before, after) = payload_span(&head, 1).expect("span");
         let start = size_of::<TbdbHeader>() + before;
-        assert!(Bathymetry::from_level_suffix(head, 1, &bytes[start..]).is_ok());
-        assert!(matches!(
-            Bathymetry::from_level_suffix(head, 1, &bytes[start..start + after - 4]),
-            Err(BinaryError::Truncated { .. })
-        ));
-        assert!(matches!(
-            Bathymetry::from_level_suffix(head, MIPS, &bytes[start..]),
-            Err(BinaryError::LengthMismatch { .. })
-        ));
-        let mut bad = head;
-        bad.magic = *b"vers";
-        assert!(matches!(
-            Bathymetry::from_level_suffix(bad, 0, &bytes[32..]),
-            Err(BinaryError::BadMagic { .. })
-        ));
+        let mut bad_magic = head;
+        bad_magic.magic = *b"vers";
+        let short = &bytes[start..start + after - 4];
+        #[rustfmt::skip]
+        let cases = [
+            ("whole suffix", head, 1_u16, &bytes[start..], "ok"),
+            ("4 B short", head, 1, short, "truncated"),
+            ("no such level", head, MIPS, &bytes[start..], "length"),
+            ("LFS header", bad_magic, 0, &bytes[32..], "magic"),
+        ];
+        for (what, h, first, tail, want) in cases {
+            let got = refusal(Bathymetry::from_level_suffix(h, first, tail));
+            assert_eq!(got, want, "{what}");
+        }
     }
 
     /// Corners map to the first and last sample, and the mapping is monotone across the span —
@@ -902,16 +862,17 @@ mod tests {
     /// the last destination texel has to absorb THREE sources, not two.
     #[test]
     fn odd_dimensions_fold_without_running_off_the_end() {
-        assert_eq!(downsample_index(0, 2), 0);
-        assert_eq!(downsample_index(1, 2), 0);
-        assert_eq!(downsample_index(2, 2), 1);
-        assert_eq!(downsample_index(3, 2), 1);
-        assert_eq!(
-            downsample_index(4, 2),
-            1,
-            "the odd tail must clamp, not overrun"
-        );
-        assert_eq!(downsample_index(9, 1), 0);
+        // src 4 is the odd tail: it must clamp into the last dst texel, not index past it.
+        for (src, dst_dim, want) in [
+            (0, 2, 0),
+            (1, 2, 0),
+            (2, 2, 1),
+            (3, 2, 1),
+            (4, 2, 1),
+            (9, 1, 0),
+        ] {
+            assert_eq!(downsample_index(src, dst_dim), want, "{src} into {dst_dim}");
+        }
         let bytes = synth(5, 5, 3, &[(4, 4, 9)]);
         let b = Bathymetry::from_bytes(&bytes).expect("parse 5x5");
         for level in 0..3 {
@@ -925,85 +886,46 @@ mod tests {
         }
     }
 
+    /// Every way a `.tbd-bath` — or the extent it is read against — can be wrong, and the refusal
+    /// each one must get. A header that claims 40000² must not allocate for it; a zero-sized grid
+    /// must be refused rather than folded onto one texel that then answers for the whole map; a
+    /// degenerate extent would divide by zero and do the same.
     #[test]
-    fn mip_selection_picks_the_coarsest_level_within_the_budget() {
-        let m = mask_4x4();
-        // 4 m over 4 samples: level 0 texels are 1 m, level 1 are 2 m, level 2 are 4 m.
-        assert_eq!(
-            m.level_for_texel_size_m(0.5),
-            0,
-            "nothing is finer than 1 m"
-        );
-        assert_eq!(m.level_for_texel_size_m(1.0), 0);
-        assert_eq!(m.level_for_texel_size_m(2.0), 1);
-        assert_eq!(m.level_for_texel_size_m(100.0), 2, "capped by the pyramid");
-    }
-
-    #[test]
-    fn a_degenerate_extent_has_no_mask() {
-        let b = || Bathymetry::from_bytes(&synth(W, H, MIPS, &[(1, 2, 30)])).expect("parse");
-        for bounds in [
-            [0.0, 0.0, 0.0, 4.0],
-            [0.0, 0.0, 4.0, 0.0],
-            [4.0, 0.0, 0.0, 4.0],
-            [0.0, 0.0, f64::NAN, 4.0],
-            [0.0, 0.0, f64::INFINITY, 4.0],
-        ] {
-            assert!(WaterMask::new(b(), bounds).is_none(), "{bounds:?}");
-            assert!(WaterMask::from_bytes(&synth(W, H, MIPS, &[]), bounds).is_err());
-        }
-    }
-
-    #[test]
-    fn a_malformed_container_is_refused_not_guessed() {
-        let good = synth(W, H, MIPS, &[(1, 2, 30)]);
-        assert!(matches!(
-            Bathymetry::from_bytes(&good[..8]),
-            Err(BinaryError::Truncated { .. })
-        ));
-        let mut magic = good.clone();
-        magic[..4].copy_from_slice(b"vers"); // an LFS pointer file
-        assert!(matches!(
-            Bathymetry::from_bytes(&magic),
-            Err(BinaryError::BadMagic { .. })
-        ));
-        let mut version = good.clone();
-        version[4..6].copy_from_slice(&9_u16.to_le_bytes());
-        assert!(matches!(
-            Bathymetry::from_bytes(&version),
-            Err(BinaryError::UnsupportedVersion { .. })
-        ));
-        // A header claiming a pyramid larger than the payload must not allocate for it.
-        let mut big = good.clone();
-        big[8..12].copy_from_slice(&40_000_u32.to_le_bytes());
-        big[12..16].copy_from_slice(&40_000_u32.to_le_bytes());
-        assert!(matches!(
-            Bathymetry::from_bytes(&big),
-            Err(BinaryError::Truncated { .. })
-        ));
-        for zeroed in [8..12_usize, 12..16] {
-            let mut z = good.clone();
-            z[zeroed].copy_from_slice(&0_u32.to_le_bytes());
-            assert!(
-                matches!(
-                    Bathymetry::from_bytes(&z),
-                    Err(BinaryError::LengthMismatch { .. })
-                ),
-                "a zero-sized grid must be refused, not folded onto one texel"
-            );
-        }
-        let mut no_levels = good.clone();
-        no_levels[6..8].copy_from_slice(&0_u16.to_le_bytes());
-        assert!(matches!(
-            Bathymetry::from_bytes(&no_levels),
-            Err(BinaryError::LengthMismatch { .. })
-        ));
-        // Truncated in the middle of the last level.
-        assert!(matches!(
-            Bathymetry::from_bytes(&good[..good.len() - 4]),
-            Err(BinaryError::Truncated { .. })
-        ));
+    fn a_malformed_container_or_extent_is_refused_not_guessed() {
         assert_eq!(HEADER_BYTES, 32);
+        let good = synth(W, H, MIPS, &[(1, 2, 30)]);
+        #[rustfmt::skip]
+        let extents = [
+            [0.0, 0.0, 0.0, 4.0], [0.0, 0.0, 4.0, 0.0], [4.0, 0.0, 0.0, 4.0],
+            [0.0, 0.0, f64::NAN, 4.0], [0.0, 0.0, f64::INFINITY, 4.0],
+        ];
+        for bounds in extents {
+            let b = Bathymetry::from_bytes(&good).expect("parse");
+            assert!(WaterMask::new(b, bounds).is_none(), "{bounds:?}");
+            assert!(WaterMask::from_bytes(&good, bounds).is_err(), "{bounds:?}");
+        }
+        let patch = |at: std::ops::Range<usize>, v: &[u8]| {
+            let mut b = good.clone();
+            b[at].copy_from_slice(v);
+            b
+        };
+        let cut = good[..good.len() - 4].to_vec();
+        #[rustfmt::skip]
+        let cases: [(&str, Vec<u8>, &str); 7] = [
+            ("head cut off", good[..8].to_vec(), "truncated"),
+            ("last level cut", cut, "truncated"),
+            ("an LFS pointer", patch(0..4, b"vers"), "magic"),
+            ("a future version", patch(4..6, &9_u16.to_le_bytes()), "version"),
+            ("mip_count 0", patch(6..8, &0_u16.to_le_bytes()), "length"),
+            ("width 0", patch(8..12, &0_u32.to_le_bytes()), "length"),
+            ("height 0", patch(12..16, &0_u32.to_le_bytes()), "length"),
+        ];
+        for (what, bytes, want) in cases {
+            assert_eq!(refusal(Bathymetry::from_bytes(&bytes)), want, "{what}");
+        }
+        let mut big = patch(8..12, &40_000_u32.to_le_bytes());
+        big[12..16].copy_from_slice(&40_000_u32.to_le_bytes());
+        assert_eq!(refusal(Bathymetry::from_bytes(&big)), "truncated", "40000²");
     }
 
     /// A `Vec<u8>` off the network is 1-aligned. The parse must survive that, and read the same
@@ -1022,29 +944,25 @@ mod tests {
         }
     }
 
+    #[rustfmt::skip]
     fn vectors_archive(schema_version: u16) -> rkyv::util::AlignedVec {
-        to_bytes(&WaterVectorsArchive {
-            schema_version,
-            lakes: vec![WaterBody {
-                id: "lake_1".into(),
-                surface_y: 84.762,
-                ring: vec![[0.0, 0.0], [4.0, 0.0], [4.0, 4.0]],
-            }],
-            rivers: vec![WaterLine {
-                id: "river_1".into(),
-                width_m: 12.5,
-                centerline: vec![[0.0, 1.0], [4.0, 1.0]],
-            }],
-            ponds: Vec::new(),
-        })
-        .expect("serialise")
+        let lake = WaterBody { id: "lake_1".into(), surface_y: 84.762,
+                               ring: vec![[0.0, 0.0], [4.0, 0.0], [4.0, 4.0]] };
+        let river = WaterLine { id: "river_1".into(), width_m: 12.5,
+                                centerline: vec![[0.0, 1.0], [4.0, 1.0]] };
+        to_bytes(&WaterVectorsArchive { schema_version, lakes: vec![lake],
+                                        rivers: vec![river], ponds: Vec::new() })
+            .expect("serialise")
     }
 
+    /// The archive is read in place off a 1-aligned network buffer — and refuses what it must.
+    /// Rule 16: rkyv proves the buffer is READABLE, never that this build agrees with the writer
+    /// about what the fields mean, so a shifted schema is refused even though it validates.
     #[test]
-    fn water_vectors_read_in_place_from_an_unaligned_buffer() {
-        let bytes = vectors_archive(ARCHIVE_SCHEMA_VERSION);
+    fn water_vectors_read_in_place_and_refuse_a_foreign_or_corrupt_file() {
+        let good = vectors_archive(ARCHIVE_SCHEMA_VERSION);
         let mut shifted = vec![0_u8];
-        shifted.extend_from_slice(&bytes);
+        shifted.extend_from_slice(&good);
         let v = WaterVectors::from_bytes(&shifted[1..]).expect("parse");
         assert_eq!(v.counts().expect("counts"), (1, 1, 0));
         let a = v.archive().expect("archive");
@@ -1053,40 +971,28 @@ mod tests {
         assert_eq!(a.lakes[0].ring.len(), 3);
         assert_eq!(a.rivers[0].width_m.to_native(), 12.5);
         assert_eq!(a.rivers[0].centerline.len(), 2);
-    }
 
-    /// Rule: rkyv proves the buffer is READABLE, never that this build agrees with the writer
-    /// about what the fields mean. A shifted schema must be refused even though it validates.
-    #[test]
-    fn a_foreign_schema_version_is_refused_even_though_it_validates() {
-        let bytes = vectors_archive(ARCHIVE_SCHEMA_VERSION + 1);
+        let future = vectors_archive(ARCHIVE_SCHEMA_VERSION + 1);
         assert!(
-            access_checked::<WaterVectorsArchive>(&bytes).is_ok(),
-            "the buffer must be structurally valid, or this test proves nothing"
+            access_checked::<WaterVectorsArchive>(&future).is_ok(),
+            "the future-schema buffer must be structurally valid, or this proves nothing"
         );
-        assert!(matches!(
-            WaterVectors::from_bytes(&bytes),
-            Err(BinaryError::UnsupportedVersion {
-                expected: ARCHIVE_SCHEMA_VERSION,
-                ..
-            })
-        ));
-    }
-
-    #[test]
-    fn a_corrupt_vectors_file_is_refused() {
-        let bytes = vectors_archive(ARCHIVE_SCHEMA_VERSION);
-        assert!(matches!(
-            WaterVectors::from_bytes(&bytes[..bytes.len() / 2]),
-            Err(BinaryError::Archive { .. })
-        ));
-        assert!(matches!(
-            WaterVectors::from_bytes(&[]),
-            Err(BinaryError::Archive { .. })
-        ));
-        let mut flipped = bytes.to_vec();
+        let mut flipped = good.to_vec();
         let n = flipped.len();
         flipped[n - 3] ^= 0xFF;
-        assert!(WaterVectors::from_bytes(&flipped).is_err());
+        #[rustfmt::skip]
+        let cases = [
+            ("a future schema", future.to_vec(), "version"),
+            ("half a file", good[..good.len() / 2].to_vec(), "archive"),
+            ("no file", Vec::new(), "archive"),
+        ];
+        for (what, bytes, want) in cases {
+            assert_eq!(refusal(WaterVectors::from_bytes(&bytes)), want, "{what}");
+        }
+        assert_ne!(
+            refusal(WaterVectors::from_bytes(&flipped)),
+            "ok",
+            "bit flip"
+        );
     }
 }
