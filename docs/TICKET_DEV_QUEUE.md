@@ -5,14 +5,6 @@
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
 
-## T-300 — Shared CARGO_TARGET_DIR serves unmerged slice binaries
-
-- **Slice spec:** `docs/specs/ideas/t300_shared_target.md`
-- **Program hub:** `docs/specs/ideas/t300_shared_target.md`
-- **Branch:** `ticket/T-300`
-- **Targets:** 
-- **Summary:** A binary built inside a slice worktree counts as fresh for a main-checkout build under the shared CARGO_TARGET_DIR, so run-style lanes can execute unmerged code; run-only binaries get their own target and preflight checks the build stamp.
-
 ## T-924 — Gate verdict receipt required at land
 
 - **Slice spec:** `docs/specs/ideas/t924_gate_verdict.md`

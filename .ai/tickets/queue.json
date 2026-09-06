@@ -6,13 +6,6 @@
   "git_base": "main",
   "tickets": [
     {
-      "id": "T-300",
-      "title": "Shared CARGO_TARGET_DIR serves unmerged slice binaries",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t300_shared_target.md",
-      "branch": "ticket/T-300"
-    },
-    {
       "id": "T-924",
       "title": "Gate verdict receipt required at land",
       "status": "ready",

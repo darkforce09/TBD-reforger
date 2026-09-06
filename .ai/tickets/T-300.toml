@@ -3,7 +3,7 @@ kind = "work"
 title = "Shared CARGO_TARGET_DIR serves unmerged slice binaries"
 summary = "A binary built inside a slice worktree counts as fresh for a main-checkout build under the shared CARGO_TARGET_DIR, so run-style lanes can execute unmerged code; run-only binaries get their own target and preflight checks the build stamp."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7060
 spec = "docs/specs/ideas/t300_shared_target.md"
 plan = "docs/plans/t-300_plan.md"
@@ -40,6 +40,7 @@ acceptance = [
     "Disk use grows by one extra target, not one per worktree.",
 ]
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-06T01:53:02Z"
 owns = [
     "xtask/src/wave/mod.rs",
     "xtask/src/platform_preflight.rs",
