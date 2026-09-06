@@ -5,7 +5,9 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
-use tbd_tools::map::{carto, glyphs, labels, labels_emit, sap, tbds_v2, unified, water, water_emit};
+use tbd_tools::map::{
+    carto, glyphs, labels, labels_emit, sap, tbds_v2, unified, water, water_emit,
+};
 
 #[derive(Parser)]
 #[command(name = "map", about = "T-090 map-asset image pipeline (Rust)")]
