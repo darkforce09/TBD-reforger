@@ -175,3 +175,26 @@ edit, in-editor play button.
   `dem_load.rs` claimed "exactly one allocation" 48 lines above its `f32` grid. Filed: T-983, T-984,
   T-985. And the re-gate caught the COMMAND CENTER formatting a 2021-edition crate with
   `--edition 2024` — the exact trap the slice briefs warn agents about.
+
+- 2026-09-06 **WAVE 239 CLOSED** (`b0257e946`) — T-935.10 satellite TBDS v2 with an rkyv index
+  (v1 still reads), T-149 forest ring smoothing, T-935.3 chunk `.bin` ingest by header check plus
+  cast. Batch-shipped, closed from its own pending entry.
+- 2026-09-06 Wave 239 verifier, and it found the thing the brief asked it to hunt. **T-994: the
+  forest smoothing turns a SIMPLE polygon set into a SELF-CROSSING one** — 0 crossings in, 38 out
+  on the committed everon corpus (37 sibling pairs, 1 self-crossing ring). The tracer legitimately
+  emits pinch vertices (121 of 1022 rings repeat one), and at a pinch the two passes carry OPPOSITE
+  normals, so any non-zero area-restoring offset separates them across each other. The rail never
+  binds (0.19 of a mean edge against a 0.5 cap) so `offset_capped` says nothing, and a bowtie
+  cancels its own area exactly — the slice's only instrument is area, so it is structurally blind
+  to this. FILED, not fixed: pinning one ring's pinches does not address the sibling half, and
+  **T-995** says the output is unrendered anyway (`world_host` filters out every `kind: "forest"`
+  region, and all 36 everon regions are forest), so T-149's acceptance cannot be observed as
+  shipped and T-988's 5.7x payload is fetched and discarded. Also filed: T-996 (the v2 satellite
+  verifier cross-checks less than v1, and v2 is now the default), T-997 (two "committed everon"
+  pins never open the bundle), T-998 (container version read as u16 by the SPA, u32 by the tool).
+  Fixed in `ac6a8f5ba`: `world_host` discarded `ChunkBinError` through `is_ok()`, so a tile served
+  under the wrong id failed closed and silently and became a permanently empty chunk — the verifier
+  proved the diagnostic unreachable by grepping the gate's own wasm for its text, zero hits.
+- 2026-09-06 A slice left `scratch_old_v2.txt` in the MAIN checkout (rule 8: probes go in /tmp).
+  Untracked, unreferenced, and it would have blocked the close. Moved to the session scratchpad
+  rather than deleted — it was not the command center's to destroy.
