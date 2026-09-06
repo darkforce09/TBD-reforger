@@ -4,6 +4,7 @@ title = "Zone volumes: height bounds capture counts and owner"
 summary = "Zones become volumes: min/max height, attacker and defender counts, starting owner"
 class = "feature"
 status = "ready"
+created_at = "2026-08-02T00:00:00Z"
 order = 7370
 spec = "docs/specs/existing/t685_zone_volumes.md"
 plan = "docs/plans/t-685_plan.md"
@@ -60,8 +61,11 @@ citations = [
 estimated = ["scope"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneVolume.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Zones/TBD_ZoneVolume.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",
     "apps/website/frontend/src/editor/panels/zones_panel.rs",
 ]
 

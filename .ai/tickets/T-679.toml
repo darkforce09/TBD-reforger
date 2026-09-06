@@ -4,6 +4,7 @@ title = "Placement scatter: radius and area shape"
 summary = "Placement scatter: radius and area shape"
 class = "chore"
 status = "ready"
+created_at = "2026-08-02T00:00:00Z"
 order = 7420
 spec = "docs/specs/existing/t679_placement_scatter.md"
 plan = "docs/plans/t-679_plan.md"
@@ -59,7 +60,9 @@ citations = [
 estimated = ["scope"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
 ]
 
 [scope]

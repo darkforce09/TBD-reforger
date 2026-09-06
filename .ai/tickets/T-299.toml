@@ -42,6 +42,7 @@ owns = [
     "crates/map-engine-core/src/mission/flatten.rs",
     "packages/tbd-schema/schema/mission.schema.json",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionValidator.c",
 ]
 
 [scope]
