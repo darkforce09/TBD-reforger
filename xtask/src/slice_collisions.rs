@@ -221,7 +221,7 @@ pub fn run(argv: &[String]) -> Result<u8> {
 
     // One writer. This alias exists for runbook muscle memory only (see the module header).
     if flags.contains("--repack") {
-        return wave_lock::cmd_repack(&root);
+        return wave_lock::cmd_repack(&root, &[]);
     }
 
     let lock = wave_lock::load(&root)?; // missing lock = DidNotRun refusal, never an empty set

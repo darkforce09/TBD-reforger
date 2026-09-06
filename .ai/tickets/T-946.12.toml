@@ -3,10 +3,55 @@ kind = "work"
 title = "Wave 240's close label is a live open wave"
 summary = "No pending entry formed because the batch broke mid-way, so the close falls back to base plus one, which the per-id repack already reissued to the next batch. The collision guard correctly refuses."
 class = "feature"
-status = "idea"
+status = "shipped"
+order = 7075
+spec = "docs/specs/ideas/t946_12_reserve_close_label.md"
+plan = "docs/plans/t-946_12_plan.md"
+executor = "claude-code"
+notes = "Found by the wave 240 adversarial verifier, 2026-09-06. Same shape as the wave 236 marker that had to be disavowed, caught before the fact this time because the a596f89e1 collision guard refused the close."
+priority = 1
 parent = "T-946"
+main_goal = "A wave that shipped one ticket at a time can still be closed under a label no open wave holds."
+context = [
+    "carry_emptied freezes a pending entry only when ONE repack sees a previous open wave whose whole set is landed (wave_lock.rs:345).",
+    "ticket ship repacks after every id, so the first ship reassigns the wave's label to the next batch and the last ship finds nothing to freeze.",
+    "Measured 2026-09-06 on wave 240: the batch broke on T-674.1's missing created_at and the per-id path finished it.",
+    "The lock ended with no [[emptied]] entry and label 240 reissued to T-935.11 / T-675.1 / T-676.",
+    "wave --close --tickets then takes wave_base + 1 = 240 (land.rs:475) and the collision guard refuses it.",
+    "Oracle 2 reads the plan at the marker's PARENT, so closing anyway would refuse every later gate.",
+]
+requirement = [
+    "A repack can freeze an operator-named set of SHIPPED ids as a pending close target.",
+    "The label the ceremony claims then belongs to that set, not to a live open wave.",
+    "The vouching is for MEMBERSHIP only: every named id is still checked shipped-or-cancelled, the same meaning wave --close re-checks against the tree.",
+    "The entry must survive later repacks untouched and leave check_as_errors green, because ticket ship runs a repack on every id.",
+    "An empty reservation must compile the lock byte-identically to a plain repack.",
+]
+current_state = ["A wave that dissolved id by id cannot be closed at all: the only label the ceremony will accept is one a live open wave holds."]
+approach = [
+    "wave_lock::reserved_entry validates the named ids and appends one LockWave after the derived carry, at ledger_floor + 1 + carried.len(); assemble already numbers open waves past every pending label.",
+    "compile_reserving / repack_reserving / wave repack --reserve <ids> — the repack stays the only writer of the lock.",
+    "Perturbation: make reserved_entry a no-op and watch reserving_freezes_the_lost_set_and_the_open_wave_numbers_past_it go red; restore, re-run green.",
+]
+verify = [
+    "cargo test -p xtask wave_lock",
+    'cargo xtask wave repack --reserve "T-935.6 T-935.9 T-674.1"',
+    "cargo xtask ticket check",
+]
+acceptance = [
+    "a_wave_dissolved_id_by_id_leaves_no_entry_and_its_label_is_reissued pins the defect; reserving_freezes_the_lost_set_and_the_open_wave_numbers_past_it pins the repair and that a plain repack keeps it.",
+    "Reserving a live ticket, an unknown id or a duplicate is refused and writes nothing.",
+    "wave 240 closes with its marker's parent naming the three shipped tickets and no open wave 240.",
+]
 created_at = "2026-09-06T09:14:01Z"
+completed_at = "2026-09-06T09:24:05Z"
+owns = [
+    "xtask/src/wave_lock.rs",
+    "xtask/src/main.rs",
+    "xtask/src/slice_collisions.rs",
+]
 
 [scope]
 domain = "repo"
-layer = "docs"
+layer = "xtask"
+component = "wave"

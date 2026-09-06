@@ -250,7 +250,12 @@ enum TopCmd {
 #[derive(Subcommand, Debug)]
 enum WaveLockCmd {
     /// Compile `.ai/tickets/wave.lock` from the ticket files — the ONLY legal writer.
-    Repack,
+    Repack {
+        /// Freeze these shipped ids as a pending close target (space-separated). For a wave that
+        /// dissolved id by id and left no `[[emptied]]` entry — see `wave_lock::reserved_entry`.
+        #[arg(long, value_name = "IDS")]
+        reserve: Option<String>,
+    },
     /// Recompute from the tickets and structurally compare against the committed lock.
     Check,
 }
@@ -1301,7 +1306,15 @@ fn run() -> Result<u8> {
         TopCmd::Wave { cmd } => {
             let root = find_repo_root()?;
             match cmd {
-                WaveLockCmd::Repack => wave_lock::cmd_repack(&root),
+                WaveLockCmd::Repack { reserve } => {
+                    let ids: Vec<String> = reserve
+                        .as_deref()
+                        .unwrap_or_default()
+                        .split_whitespace()
+                        .map(str::to_string)
+                        .collect();
+                    wave_lock::cmd_repack(&root, &ids)
+                }
                 WaveLockCmd::Check => wave_lock::cmd_check(&root),
             }
         }
