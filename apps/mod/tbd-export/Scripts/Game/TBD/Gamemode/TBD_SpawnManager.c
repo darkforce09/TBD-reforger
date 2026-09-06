@@ -1228,6 +1228,11 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		// created-at-load bodies don't fight the PS parked-AI reactivation bug.
 		DisableBodyAI(body);
 
+		// T-674.2 -- authored identity (schemaVersion 1.3). Runs on EVERY spawn of the slot body,
+		// initial and respawn, for the same reason the loadout pass does: a fresh body inherits
+		// nothing, so a life that did not re-apply the pose would stand up on respawn.
+		ApplySlotIdentity(body, slot);
+
 		Print(string.Format("[TBD][Slots] Slot-%1 %2 (%3) kit %4 at %5",
 			number, slot.Key(), slot.id, slot.kit, pos.ToString()));
 		Print(string.Format("[TBD][Spawn] slot=%1 Y=%2 jsonY=%3 surfaceY=%4 delta=%5 heading=%6",
@@ -1316,6 +1321,161 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (!gear.backpack.IsEmpty()) return true;
 
 		return false;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-674.2 -- apply this slot's authored identity to the body just spawned for it.
+	//!
+	//! == WHAT THE ENGINE CAN AND CANNOT CARRY ==
+	//! The five 1.3 identity keys do NOT all have an engine home, and pretending otherwise would
+	//! be worse than binding none of them. Measured against the live API index, not assumed:
+	//!
+	//!   * `stance`   APPLIED. `CharacterControllerComponent.SetStanceChange(ECharacterStanceChange)`
+	//!                is the same call the vanilla stance action makes.
+	//!   * `rank`     APPLIED. `SCR_CharacterRankComponent.SetCharacterRank` is replicated
+	//!                (RplSave/RplLoad + RpcDoSetCharacterRank), so clients see it.
+	//!   * `callsign` / `unitName` / `tag`   NOT APPLIED TO THE ENTITY, because there is nothing to
+	//!                apply them to. Reforger exposes NO replicated free-text name on a character:
+	//!                `CharacterIdentityComponent.SetIdentityFromIDs` takes INDICES into the
+	//!                faction identity table, and the only free-text setter in the whole API is
+	//!                `SCR_AIGroup.SetCustomName` -- a GROUP, and this framework forms none.
+	//!                They are bound on `TBD_MissionSlotStruct` instead, where every surface
+	//!                holding the slot (briefing wire, admin roster, results) can read them, and
+	//!                they are printed here so the authored value is visible on the authoritative
+	//!                server log at the moment it takes effect. Inventing a local-only
+	//!                `SetInfoInstance` call would have looked like a binding and reached no
+	//!                client at all.
+	//!
+	//! == WHY EVERY STEP IS GUARDED AND LOGGED ==
+	//! A kit prefab that carries no `SCR_CharacterRankComponent` cannot take a rank, and a mission
+	//! that authored one would then have it silently dropped -- the exact T-216 failure this whole
+	//! program exists to close, just moved one layer down. So a missing component is REPORTED
+	//! (once per slot, at WARNING) rather than skipped in silence. Nothing here is fatal: an
+	//! unappliable identity must never cost the player their body.
+	protected void ApplySlotIdentity(IEntity body, TBD_MissionSlotStruct slot)
+	{
+		if (!body || !slot || !slot.HasIdentity())
+			return;
+
+		ApplySpawnStance(body, slot);
+		ApplySlotRank(body, slot);
+
+		// One line per identified seat, at the moment it is applied. `leader` is the resolved
+		// answer, not the raw `leaderSlotId`, so a dangling or cross-squad reference reads as
+		// "no" here rather than looking applied. Eight substitutions -- `string.Format` takes at
+		// most nine.
+		Print(string.Format("[TBD][Identity] slot=%1 callsign='%2' rank='%3' stance='%4' unitName='%5' tag='%6' leader=%7",
+			slot.Key(), slot.callsign, slot.rank, slot.stance, slot.unitName, slot.tag,
+			TBD_MissionLoader.IsSquadLeader(slot)));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-674.2 -- set the initial spawn pose from `$defs/slot.stance`.
+	//!
+	//! `SetStanceChange` is a REQUEST into the character's movement state machine, not a teleport
+	//! into a pose: the body plays the transition. That is what the authored value means (the seat
+	//! starts prone), and it is why this runs after the body exists rather than being folded into
+	//! the spawn transform.
+	protected void ApplySpawnStance(IEntity body, TBD_MissionSlotStruct slot)
+	{
+		if (slot.stance.IsEmpty())
+			return;
+
+		ECharacterStanceChange change = StanceChangeFor(slot.stance);
+		if (change == ECharacterStanceChange.STANCECHANGE_NONE)
+		{
+			// Enum-gated by the emitter, so this is unreachable for a document THIS platform
+			// compiled -- which is precisely why it is worth saying out loud when it happens.
+			Print(string.Format("[TBD][Identity] slot=%1 stance='%2' is not one of stand|crouch|prone -- pose not applied",
+				slot.Key(), slot.stance), LogLevel.WARNING);
+			return;
+		}
+
+		CharacterControllerComponent controller = CharacterControllerComponent.Cast(body.FindComponent(CharacterControllerComponent));
+		if (!controller)
+		{
+			Print(string.Format("[TBD][Identity] slot=%1 authored stance='%2' but its kit body has no CharacterControllerComponent -- pose NOT applied",
+				slot.Key(), slot.stance), LogLevel.WARNING);
+			return;
+		}
+
+		controller.SetStanceChange(change);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-674.2 -- `$defs/slot.stance` token to the engine's stance-change request.
+	//! STANCECHANGE_NONE doubles as "not a token I know", which the one caller reports.
+	protected static ECharacterStanceChange StanceChangeFor(string stance)
+	{
+		if (stance == "stand")
+			return ECharacterStanceChange.STANCECHANGE_TOERECTED;
+		if (stance == "crouch")
+			return ECharacterStanceChange.STANCECHANGE_TOCROUCH;
+		if (stance == "prone")
+			return ECharacterStanceChange.STANCECHANGE_TOPRONE;
+
+		return ECharacterStanceChange.STANCECHANGE_NONE;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-674.2 -- set the authored rank on the body.
+	//!
+	//! `silent = true`: the rank is part of how the seat was AUTHORED, not something the player
+	//! earned this round, so it must not fire the promotion notification at spawn.
+	protected void ApplySlotRank(IEntity body, TBD_MissionSlotStruct slot)
+	{
+		if (slot.rank.IsEmpty())
+			return;
+
+		bool known;
+		SCR_ECharacterRank rank = CharacterRankFor(slot.rank, known);
+		if (!known)
+		{
+			Print(string.Format("[TBD][Identity] slot=%1 rank='%2' is not on the ladder -- rank not applied",
+				slot.Key(), slot.rank), LogLevel.WARNING);
+			return;
+		}
+
+		SCR_CharacterRankComponent rankComponent = SCR_CharacterRankComponent.GetCharacterRankComponent(body);
+		if (!rankComponent)
+		{
+			Print(string.Format("[TBD][Identity] slot=%1 authored rank='%2' but its kit body has no SCR_CharacterRankComponent -- rank NOT applied",
+				slot.Key(), slot.rank), LogLevel.WARNING);
+			return;
+		}
+
+		rankComponent.SetCharacterRank(rank, true);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-674.2 -- `$defs/slot.rank` token to `SCR_ECharacterRank`.
+	//!
+	//! The schema ladder (private..colonel) is a strict SUBSET of the engine's, in the engine's own
+	//! spelling lowercased, so this is a rename and not a policy mapping. `known` is an out flag
+	//! rather than a sentinel member because the enum has no "unset" value to borrow -- RENEGADE
+	//! and GENERAL are real ranks the schema simply does not author, so neither can stand in for
+	//! "I did not recognise this".
+	protected static SCR_ECharacterRank CharacterRankFor(string rank, out bool known)
+	{
+		known = true;
+
+		if (rank == "private")
+			return SCR_ECharacterRank.PRIVATE;
+		if (rank == "corporal")
+			return SCR_ECharacterRank.CORPORAL;
+		if (rank == "sergeant")
+			return SCR_ECharacterRank.SERGEANT;
+		if (rank == "lieutenant")
+			return SCR_ECharacterRank.LIEUTENANT;
+		if (rank == "captain")
+			return SCR_ECharacterRank.CAPTAIN;
+		if (rank == "major")
+			return SCR_ECharacterRank.MAJOR;
+		if (rank == "colonel")
+			return SCR_ECharacterRank.COLONEL;
+
+		known = false;
+		return SCR_ECharacterRank.PRIVATE;
 	}
 
 	//------------------------------------------------------------------------------------------------
