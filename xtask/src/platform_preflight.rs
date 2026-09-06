@@ -285,6 +285,37 @@ fn stray_worktree_targets(root: &Path) -> u64 {
 // disagreement, and NO STAMP — because binaries whose provenance is unknown are exactly the
 // case the wave-1 incident presented as, and treating unknown as fine is the signature defect.
 
+/// Cargo's two profile directories, in the order this check reports them.
+const RUN_PROFILE_DIRS: &[&str] = &["debug", "release"];
+
+/// The executables in a profile directory, sorted — what this check NAMES when it blocks.
+///
+/// Regular files with an execute bit and no extension: cargo's uplifted-binary shape, which
+/// excludes `.d` depfiles, the stamp, `.rlib`/`.rmeta` and the `deps/ build/ incremental/`
+/// subdirectories without enumerating them. A sibling of [`stray_worktree_targets`] above rather
+/// than of the writer in [`crate::wave`]: it is a probe of a directory, and the reader is the
+/// only caller.
+fn run_binaries(bin_dir: &Path) -> Vec<String> {
+    use std::os::unix::fs::PermissionsExt;
+    let mut out: Vec<String> = Vec::new();
+    let Ok(rd) = fs::read_dir(bin_dir) else {
+        return out;
+    };
+    for ent in rd.flatten() {
+        let Ok(md) = ent.metadata() else { continue };
+        if !md.is_file() || md.permissions().mode() & 0o111 == 0 {
+            continue;
+        }
+        let name = ent.file_name().to_string_lossy().into_owned();
+        if name.contains('.') || name == crate::wave::RUN_STAMP_FILE {
+            continue;
+        }
+        out.push(name);
+    }
+    out.sort();
+    out
+}
+
 /// What the run target's stamp says about the binaries sitting in it.
 #[derive(Debug, PartialEq, Eq)]
 enum RunTargetState {
@@ -309,9 +340,9 @@ enum RunTargetState {
 /// disagreement — a preflight that cannot resolve HEAD cannot certify anything.
 fn run_target_state(run_dir: &Path, head: &str, this_checkout: &Path) -> RunTargetState {
     let mut fresh: Option<RunTargetState> = None;
-    for profile in crate::wave::RUN_PROFILE_DIRS {
+    for profile in RUN_PROFILE_DIRS {
         let bin_dir = run_dir.join(profile);
-        let bins = crate::wave::run_binaries(&bin_dir);
+        let bins = run_binaries(&bin_dir);
         if bins.is_empty() {
             continue;
         }
@@ -914,5 +945,43 @@ mod run_target_tests {
         let t = Tmp::new("release");
         let run = t.run_target("release", &["api"], Some(stamp(OTHER, &t.0)));
         assert!(run_target_detail(&run_target_state(&run, HEAD, &t.0), &run, HEAD).0);
+    }
+
+    /// The reader/writer contract, asserted from the READER's side: what
+    /// [`crate::wave::write_run_stamp`] emits is exactly what this module accepts, and an absent
+    /// stamp reads as unknown rather than as agreement.
+    #[test]
+    fn the_stamp_round_trips_and_an_absent_one_reads_as_unknown() {
+        let t = Tmp::new("roundtrip");
+        let d = t.0.join("debug");
+        let s = stamp(HEAD, &t.0);
+        assert_eq!(s.render(), format!("{HEAD} {}\n", t.0.display()));
+        assert_eq!(
+            crate::wave::read_run_stamp(&d),
+            None,
+            "absent read as agreement"
+        );
+        write_run_stamp(&d, &s).expect("write");
+        assert_eq!(crate::wave::run_stamp_path(&d), d.join("tbd-built-from"));
+        assert_eq!(crate::wave::read_run_stamp(&d), Some(s));
+    }
+
+    /// The check NAMES the binary, so this must find binaries and nothing else.
+    #[test]
+    fn run_binaries_lists_executables_and_skips_the_stamp_and_depfiles() {
+        let t = Tmp::new("bins");
+        let d = t.0.join("debug");
+        fs::create_dir_all(d.join("deps")).expect("mkdir");
+        for (name, mode) in [("api", 0o755), ("world", 0o755), ("notes", 0o644)] {
+            let p = d.join(name);
+            fs::write(&p, b"x").expect("write");
+            fs::set_permissions(&p, fs::Permissions::from_mode(mode)).expect("chmod");
+        }
+        fs::write(d.join("api.d"), b"dep").expect("write");
+        write_run_stamp(&d, &stamp(HEAD, &t.0)).expect("stamp");
+        assert_eq!(
+            run_binaries(&d),
+            vec!["api".to_string(), "world".to_string()]
+        );
     }
 }
