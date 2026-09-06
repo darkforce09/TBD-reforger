@@ -27,7 +27,27 @@ doc = ["dep:yrs", "dep:serde_json"]
 # flip an `as f32` store and fail the Class R `f32BytesEqual` gate over 508k instances. The
 # `"serde_json/float_roundtrip"` form activates the optional dep AND its feature, scoped to
 # `world`-enabled builds (the wasm shim) — the backend's `mission`-only build is untouched.
-world = ["dep:thiserror", "dep:flate2", "dep:serde", "serde_json/float_roundtrip", "blueprint"]
+world = [
+    "dep:thiserror",
+    "dep:flate2",
+    "dep:serde",
+    "serde_json/float_roundtrip",
+    "blueprint",
+    "binary",
+]
+# `binary` (T-935.1) — the ONE authoritative definition of every TBD map binary format: the 32-byte
+# `ObjectInstancePod`, the TBDC/TBDE/TBDB container headers, and the rkyv 0.8 Tier-2 archives.
+# Emitters (tbd-tools, xtask) and loaders (the SPA) both link these types, so a format can only ever
+# change in one place. `world` enables it, which is why the existing consumers need no Cargo change.
+#
+# rkyv `bytecheck` is NOT optional here: `access_checked` is the only reader entry point in the
+# module and it is `rkyv::access`, the validating one. Without the feature that call does not exist
+# and a hostile/corrupt archive would be read unchecked.
+# `little_endian` pins the archive's own scalars to LE regardless of host, matching the spec line
+# "all multi-byte fields on disk are little-endian" — the Pod side gets the same guarantee from the
+# `target_endian` const assert in `binary::pod`.
+# Deliberately NO flate2 and NO serde_json: binary formats are the thing that replaces gzip-JSON.
+binary = ["dep:rkyv", "dep:bytemuck"]
 # `blueprint` (building-blueprint structs + LOS attribution over the `bvh` raycaster) stands alone
 # so the Leptos SPA can link it without pulling `world`'s flate2/serde_json parser stack into the
 # wasm bundle. Needs `bvh` (zero-dep) since T-090.6 step 3: evaluate_los raycasts the COLL sidecar.
@@ -46,6 +66,25 @@ serde_json = { version = "1", optional = true, features = ["preserve_order"] }
 thiserror = { version = "2", optional = true }
 yrs = { version = "0.27", optional = true }
 flate2 = { version = "1", optional = true }
+# T-935.1 Tier 2 — zero-copy archives. `default-features = false` drops nothing we want back except
+# `std`, which we re-add: `bytecheck` (validation, see the `binary` feature note) and `alloc` come
+# with it. `little_endian` makes the archived scalars explicitly LE so a `.rkyv` written on x86 is
+# readable byte-for-byte by any host, not just the LE ones.
+#
+# Pointer width is left at rkyv's default (32-bit relative pointers, `_macros.rs:10`), which is what
+# makes one `.rkyv` file readable by BOTH the x86_64 emitter and the wasm32 SPA — a 64-bit setting
+# would widen every relative pointer and split the format in two.
+rkyv = { version = "0.8.18", optional = true, default-features = false, features = [
+    "std",
+    "bytecheck",
+    "little_endian",
+] }
+# T-935.1 Tier 1 — `#[derive(Pod, Zeroable)]` for the POD + the three container headers.
+# `min_const_generics` lets the derive cover the headers' `reserved: [u8; N]` tails.
+bytemuck = { version = "1", optional = true, features = [
+    "derive",
+    "min_const_generics",
+] }
 earcutr = "0.5.0"
 
 [dev-dependencies]
