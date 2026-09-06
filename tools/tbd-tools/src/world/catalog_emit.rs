@@ -321,9 +321,31 @@ mod tests {
         assert_eq!(written[1].0, dir.join(TYPE_INVENTORY_RKYV));
         assert_eq!(written[2].0, dir.join(FOREST_REGIONS_RKYV));
 
-        // The catalogue: same rows, same lookup, same census as the JSON path builds.
+        // The catalogue: same rows, in the same ORDER, and the file is exactly the value the
+        // builder produced.
+        //
+        // The order half is not decoration. `by_id` below is a hash map, so it is blind to a
+        // reordered catalogue — measured: a `rows_from_archive` that rotates the row vector by one
+        // leaves every assertion on `by_id` passing. The reader side of that is pinned in
+        // `map-engine-core`'s `everon_catalogue_archive_equals_the_json_rows`; what is pinned HERE
+        // is the writer side, JSON order → archive order → file bytes.
         let json_rows = narrow_prefab_rows(&read_doc(&dir, PREFABS_GZ).expect("prefabs json"));
         assert_eq!(json_rows.len(), EVERON_PREFABS);
+        let rebuilt = build_prefab_catalog_archive(&dir).expect("rebuild");
+        assert_eq!(rebuilt.prefabs.len(), json_rows.len());
+        for (i, (a, j)) in rebuilt.prefabs.iter().zip(json_rows.iter()).enumerate() {
+            assert_eq!(
+                f64::from(a.prefab_id),
+                j.prefab_id,
+                "row {i}: the archive is not in prefabs.json.gz order"
+            );
+        }
+        assert_eq!(
+            std::fs::read(dir.join(PREFAB_CATALOG_RKYV)).expect("read"),
+            to_bytes(&rebuilt).expect("serialise").as_slice(),
+            "the file on disk is not the catalogue the builder produced"
+        );
+
         let cat = catalog_from_bytes(
             &std::fs::read(dir.join(PREFAB_CATALOG_RKYV)).expect("read"),
             "everon",
