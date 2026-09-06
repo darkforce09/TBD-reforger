@@ -1,0 +1,19 @@
+id = "T-946.41"
+kind = "work"
+title = "Flatten omits scatter and zone volumes"
+summary = "Editor flatten drops placementRadius placementShape and zoneRules volume count owner keys so /compiled never reaches T-679 T-685 readers."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T22:26:51Z"
+
+owns = [
+    "crates/map-engine-core/src/mission/flatten.rs",
+]
+verify = [
+    "flatten_to_mod_document of a 1.3 payload must emit placementRadius placementShape and zoneRules volume count owner keys",
+]
+
+[scope]
+domain = "repo"
+layer = "docs"
