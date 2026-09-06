@@ -736,5 +736,13 @@ mod t935_10 {
             ]
         );
         assert_eq!(tile_rect(6_400, 6_400, 1, 1, 0), (0, 0, 6_400, 6_400));
+        // The committed bundle's own ladder: `map verify-unified --terrain everon` reports
+        // 17 VP8L blocks, which is 4 at level 0 and one at each of levels 1..13.
+        let per_level: Vec<u32> = d
+            .iter()
+            .map(|&(lw, lh)| lw.div_ceil(8_192) * lh.div_ceil(8_192))
+            .collect();
+        assert_eq!(per_level[0], 4);
+        assert_eq!(per_level.iter().sum::<u32>(), 17);
     }
 }
