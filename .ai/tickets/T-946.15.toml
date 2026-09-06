@@ -1,0 +1,12 @@
+id = "T-946.15"
+kind = "work"
+title = "No CI gate validates a roster-carrying compiled document"
+summary = "The one place in the tree that JSON-Schema-validates a compiled document seeds no vehicles, so nothing checks a document that actually carries a vehicles[] roster. Found by the T-675.1 slice."
+class = "chore"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-06T11:40:00Z"
+
+[scope]
+domain = "repo"
+layer = "ci"
