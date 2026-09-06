@@ -1233,7 +1233,13 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		// CRF pattern: deactivate once + next-frame re-check. No repeating hammer -
 		// created-at-load bodies don't fight the PS parked-AI reactivation bug.
-		DisableBodyAI(body);
+		//
+		// T-677 -- the AI spawn gate. Unwaypointed seats stay parked forever (this call).
+		// Waypointed seats stay parked through LOBBY / SAFE_START so they do not wander the
+		// briefing; a LIVE respawn of an AI seat skips the disable so the waypoint runtime
+		// has a subject to command. Players (claimed seats) are never enabled by T-677.
+		if (!TBD_WaypointRuntime.ShouldEnableAIAtSpawn(slot))
+			DisableBodyAI(body);
 
 		// T-674.2 -- authored identity (schemaVersion 1.3). Runs on EVERY spawn of the slot body,
 		// initial and respawn, for the same reason the loadout pass does: a fresh body inherits
