@@ -1,4 +1,4 @@
-//! T-936.2 - the server-authoritative task state machine.
+//! T-936.2 / T-133 - the server-authoritative task state machine.
 //!
 //! The Enfusion half of `mission.schema.json#/properties/tasks`. Tasks OBSERVE T-676 trigger
 //! completion (`TBD_TriggerRuntime`); they never fire `winConditions.endOn` and they never
@@ -9,9 +9,27 @@
 //! names no prepared trigger once the runtime is built, fails the task. A task with no triggerId
 //! stays assigned until something calls TryTransition.
 //!
+//! T-133 schedule: a task with schedule {startAfterS, windowS} stays inactive until the mission
+//! clock reaches startAfterS, evaluates inside the window, and fails if still assigned when the
+//! window ends. Each transition logs `[TBD][Task] id=<n> t=<s> -> <state>`.
+//!
+//! Nested `schedule` is allocated by JsonLoadContext even when the key is absent. Presence is the
+//! ABSENT sentinel on startAfterS / windowS, never `if (raw.schedule)`.
+//!
 //! Clients hold no mission document, so state is pushed through TBD_TaskHud's player-controller
 //! RPC (the existing marker icon path draws only assigned tasks).
 //! @contract mission.schema.json#/$defs/task
+
+//------------------------------------------------------------------------------------------------
+//! Optional `tasks[].schedule`. JsonLoadContext ALLOCATES this nested ref even when the key is
+//! absent, so presence is the ABSENT sentinel (startAfterS may legally be 0).
+class TBD_TaskScheduleStruct
+{
+	static const int ABSENT = -1000000;
+
+	int startAfterS = -1000000;
+	int windowS = -1000000;
+}
 
 //------------------------------------------------------------------------------------------------
 //! One `tasks[]` entry on the wire. Field names must equal the JSON keys - JsonLoadContext maps
@@ -26,6 +44,7 @@ class TBD_TaskStruct
 	string triggerId;
 	string markerId;
 	string description;
+	ref TBD_TaskScheduleStruct schedule;
 }
 
 //------------------------------------------------------------------------------------------------
@@ -65,6 +84,10 @@ class TBD_Task
 	int m_iWorldX;
 	int m_iWorldZ;
 	bool m_bHasPosition;
+	bool m_bHasSchedule;
+	int m_iStartAfterS;
+	int m_iWindowS;
+	bool m_bWindowOpened;
 }
 
 //------------------------------------------------------------------------------------------------
@@ -91,6 +114,9 @@ class TBD_TaskStateMachine
 	protected static string s_sBuiltForMission;
 	protected static bool s_bDirty;
 	protected static bool s_bAnnounced;
+	protected static bool s_bLiveClockLatched;
+	protected static float s_fLiveStartMs;
+	protected static int s_iMissionElapsedS;
 
 	//------------------------------------------------------------------------------------------------
 	static void Clear()
@@ -100,6 +126,9 @@ class TBD_TaskStateMachine
 		s_sBuiltForMission = string.Empty;
 		s_bDirty = false;
 		s_bAnnounced = false;
+		s_bLiveClockLatched = false;
+		s_fLiveStartMs = 0;
+		s_iMissionElapsedS = 0;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -170,7 +199,9 @@ class TBD_TaskStateMachine
 			return;
 		}
 
-		SyncFromTriggers();
+		int t = MissionElapsedS();
+		EvaluateSchedule(t);
+		SyncFromTriggers(t);
 		ResolvePositions();
 
 		if (s_bDirty)
@@ -194,13 +225,12 @@ class TBD_TaskStateMachine
 			return false;
 		}
 
-		TBD_ETaskState from = task.m_eState;
 		task.m_eState = to;
 		s_bDirty = true;
-		TBD_Log.Kv(CH, "transition", string.Format(
-			"id=%1 from=%2 to=%3",
+		TBD_Log.Event(CH, string.Format(
+			"id=%1 t=%2 -> %3",
 			task.m_sId,
-			StateName(from),
+			s_iMissionElapsedS,
 			StateName(to)));
 		return true;
 	}
@@ -221,7 +251,7 @@ class TBD_TaskStateMachine
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected static void SyncFromTriggers()
+	protected static void SyncFromTriggers(int t)
 	{
 		if (!TBD_TriggerRuntime.IsBuilt())
 			return;
@@ -232,6 +262,9 @@ class TBD_TaskStateMachine
 				continue;
 
 			if (task.m_eState != TBD_ETaskState.ASSIGNED)
+				continue;
+
+			if (!IsEvaluating(task, t))
 				continue;
 
 			if (task.m_sTriggerId.IsEmpty())
@@ -339,7 +372,136 @@ class TBD_TaskStateMachine
 		task.m_sDescription = raw.description;
 		task.m_eTier = ParseTier(raw.tier);
 		task.m_eState = ParseState(raw.state);
+		task.m_bHasSchedule = false;
+		task.m_iStartAfterS = 0;
+		task.m_iWindowS = 0;
+		task.m_bWindowOpened = false;
+		BindSchedule(task, raw);
 		return task;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Presence is the ABSENT sentinel, never `if (raw.schedule)` - JsonLoadContext allocates the
+	//! nested ref when the key is missing. startAfterS may be 0.
+	protected static void BindSchedule(notnull TBD_Task task, notnull TBD_TaskStruct raw)
+	{
+		if (!raw.schedule)
+			return;
+
+		int startAfterS = raw.schedule.startAfterS;
+		int windowS = raw.schedule.windowS;
+		if (startAfterS == TBD_TaskScheduleStruct.ABSENT)
+			return;
+
+		if (windowS == TBD_TaskScheduleStruct.ABSENT)
+			return;
+
+		if (startAfterS < 0)
+			return;
+
+		if (windowS <= 0)
+			return;
+
+		task.m_bHasSchedule = true;
+		task.m_iStartAfterS = startAfterS;
+		task.m_iWindowS = windowS;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Mission seconds since LIVE. 0 before LIVE. World time is milliseconds (same unit
+	//! TBD_MarkerClient uses for MAP_REQUEST_MIN_GAP_MS).
+	protected static int MissionElapsedS()
+	{
+		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
+		if (!fm)
+		{
+			s_iMissionElapsedS = 0;
+			return 0;
+		}
+
+		if (fm.GetStage() != TBD_EGameStage.LIVE)
+		{
+			s_bLiveClockLatched = false;
+			s_iMissionElapsedS = 0;
+			return 0;
+		}
+
+		if (!GetGame() || !GetGame().GetWorld())
+		{
+			s_iMissionElapsedS = 0;
+			return 0;
+		}
+
+		float now = GetGame().GetWorld().GetWorldTime();
+		if (!s_bLiveClockLatched)
+		{
+			s_bLiveClockLatched = true;
+			s_fLiveStartMs = now;
+		}
+
+		int elapsed = (now - s_fLiveStartMs) / 1000;
+		if (elapsed < 0)
+			elapsed = 0;
+
+		s_iMissionElapsedS = elapsed;
+		return elapsed;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Open the window once (log assigned-at-time) and fail when the window has closed.
+	protected static void EvaluateSchedule(int t)
+	{
+		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
+		if (!fm)
+			return;
+
+		if (fm.GetStage() != TBD_EGameStage.LIVE)
+			return;
+
+		foreach (TBD_Task task : s_aTasks)
+		{
+			if (!task)
+				continue;
+
+			if (!task.m_bHasSchedule)
+				continue;
+
+			if (task.m_eState != TBD_ETaskState.ASSIGNED)
+				continue;
+
+			if (t < task.m_iStartAfterS)
+				continue;
+
+			if (!task.m_bWindowOpened)
+			{
+				task.m_bWindowOpened = true;
+				TBD_Log.Event(CH, string.Format(
+					"id=%1 t=%2 -> assigned",
+					task.m_sId,
+					t));
+			}
+
+			int endT = task.m_iStartAfterS + task.m_iWindowS;
+			if (t >= endT)
+				TryTransition(task, TBD_ETaskState.FAILED);
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Untimed tasks always evaluate. Timed tasks evaluate only inside [startAfterS, startAfterS+windowS).
+	protected static bool IsEvaluating(notnull TBD_Task task, int t)
+	{
+		if (!task.m_bHasSchedule)
+			return true;
+
+		if (!task.m_bWindowOpened)
+			return false;
+
+		int endT = task.m_iStartAfterS + task.m_iWindowS;
+		if (t >= endT)
+			return false;
+
+		return true;
 	}
 
 	//------------------------------------------------------------------------------------------------

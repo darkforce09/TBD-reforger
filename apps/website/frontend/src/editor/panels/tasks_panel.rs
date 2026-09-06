@@ -19,7 +19,11 @@
 use leptos::prelude::*;
 use serde_json::Value;
 
-use map_engine_core::mission::tasks::{STATES, TIERS};
+use map_engine_core::mission::tasks::{validate_schedule, STATES, TIERS};
+
+#[cfg(target_arch = "wasm32")]
+use super::env::read_flow_seconds;
+use super::env::FLOW_DEFAULT_TIMELIMIT_S;
 
 /// The reader chain for `meta.environment.tasks`, end to end.
 pub const TASKS_READERS: &[(&str, &str)] = &[
@@ -189,6 +193,63 @@ pub fn with_field(
     Ok(next)
 }
 
+/// Seconds currently authored on `schedule.<key>`, or empty when the task is untimed.
+#[must_use]
+pub fn schedule_seconds(row: &Value, key: &str) -> String {
+    row.get("schedule")
+        .and_then(|s| s.get(key))
+        .and_then(Value::as_i64)
+        .map(|n| n.to_string())
+        .unwrap_or_default()
+}
+
+/// Set or clear `tasks[index].schedule`. Empty-empty removes the key (untimed). One empty field
+/// is refused so a half-typed row cannot ride the wire. `mission_length_s` is
+/// `flow.timeLimitSeconds` (0 = no limit).
+///
+/// # Errors
+/// The reason shown in the panel: window, start, or mission-length refusal copy.
+pub fn with_schedule(
+    existing: &[Value],
+    index: usize,
+    start_after_s: &str,
+    window_s: &str,
+    mission_length_s: i64,
+) -> Result<Vec<Value>, String> {
+    let Some(row) = existing.get(index).and_then(Value::as_object) else {
+        return Err("that task is no longer in the list".to_string());
+    };
+    let start_raw = start_after_s.trim();
+    let window_raw = window_s.trim();
+    let mut obj = row.clone();
+    if start_raw.is_empty() && window_raw.is_empty() {
+        obj.remove("schedule");
+        let mut next = existing.to_vec();
+        next[index] = Value::Object(obj);
+        return Ok(next);
+    }
+    if start_raw.is_empty() {
+        return Err("startAfterS is required when a schedule is authored".to_string());
+    }
+    if window_raw.is_empty() {
+        return Err("windowS is required when a schedule is authored".to_string());
+    }
+    let start: i64 = start_raw
+        .parse()
+        .map_err(|_| format!("startAfterS {start_raw:?} is not an integer"))?;
+    let window: i64 = window_raw
+        .parse()
+        .map_err(|_| format!("windowS {window_raw:?} is not an integer"))?;
+    validate_schedule(start, window, Some(mission_length_s))?;
+    obj.insert(
+        "schedule".to_string(),
+        serde_json::json!({"startAfterS": start, "windowS": window}),
+    );
+    let mut next = existing.to_vec();
+    next[index] = Value::Object(obj);
+    Ok(next)
+}
+
 const EDITABLE_KEYS: &[&str] = &[
     "id",
     "title",
@@ -301,12 +362,18 @@ pub fn tasks_panel(ctrl: &'static str) -> AnyView {
                 .and_then(Value::as_str)
                 .unwrap_or("")
                 .to_string();
+            let start_after = schedule_seconds(&row, "startAfterS");
+            let window_s = schedule_seconds(&row, "windowS");
+            let window_for_start = window_s.clone();
+            let start_for_window = start_after.clone();
             let rows_for_edit = rows.clone();
             let rows_for_tier = rows.clone();
             let rows_for_state = rows.clone();
             let rows_for_trigger = rows.clone();
             let rows_for_marker = rows.clone();
             let rows_for_desc = rows.clone();
+            let rows_for_start = rows.clone();
+            let rows_for_window = rows.clone();
             let rows_for_up = rows.clone();
             let rows_for_down = rows.clone();
             let rows_for_del = rows.clone();
@@ -458,6 +525,50 @@ pub fn tasks_panel(ctrl: &'static str) -> AnyView {
                             }
                         />
                     </label>
+                    <label class="flex flex-col gap-1">
+                        <span class=sect>"Start after (s)"</span>
+                        <input
+                            type="text"
+                            prop:value=start_after.clone()
+                            class=ctrl
+                            on:change=move |ev| {
+                                refusal.set(String::new());
+                                let length = read_flow_seconds("timeLimitSeconds", FLOW_DEFAULT_TIMELIMIT_S);
+                                match with_schedule(
+                                    &rows_for_start,
+                                    index,
+                                    &event_target_value(&ev),
+                                    &window_for_start,
+                                    length,
+                                ) {
+                                    Ok(next) => commit(Some(&next)),
+                                    Err(err) => refusal.set(err),
+                                }
+                            }
+                        />
+                    </label>
+                    <label class="flex flex-col gap-1">
+                        <span class=sect>"Window (s)"</span>
+                        <input
+                            type="text"
+                            prop:value=window_s.clone()
+                            class=ctrl
+                            on:change=move |ev| {
+                                refusal.set(String::new());
+                                let length = read_flow_seconds("timeLimitSeconds", FLOW_DEFAULT_TIMELIMIT_S);
+                                match with_schedule(
+                                    &rows_for_window,
+                                    index,
+                                    &start_for_window,
+                                    &event_target_value(&ev),
+                                    length,
+                                ) {
+                                    Ok(next) => commit(Some(&next)),
+                                    Err(err) => refusal.set(err),
+                                }
+                            }
+                        />
+                    </label>
                 </div>
             }
         })
@@ -470,7 +581,8 @@ pub fn tasks_panel(ctrl: &'static str) -> AnyView {
             <span class=sect>"Tasks"</span>
             <span class=hint>
                 "Primary, secondary and optional assignments. Completing a linked trigger succeeds \
-                 the task in-game; the HUD shows only assigned tasks."
+                 the task in-game; the HUD shows only assigned tasks. A schedule keeps the task \
+                 inactive until startAfterS and evaluates only inside windowS."
             </span>
             {list}
             <button
@@ -607,5 +719,47 @@ mod tests {
         for (hop, reader) in TASKS_READERS {
             assert!(reader.len() > 30, "{hop}'s reader is not named: {reader}");
         }
+    }
+
+    #[test]
+    fn with_schedule_writes_start_and_window() {
+        let next = with_schedule(&[pri()], 0, "600", "300", 5400).expect("legal");
+        assert_eq!(next[0]["schedule"]["startAfterS"], 600);
+        assert_eq!(next[0]["schedule"]["windowS"], 300);
+        assert_eq!(schedule_seconds(&next[0], "startAfterS"), "600");
+        assert_eq!(schedule_seconds(&next[0], "windowS"), "300");
+        assert_eq!(schedule_seconds(&pri(), "startAfterS"), "");
+        map_engine_core::mission::tasks::validate(&Value::Array(next))
+            .expect("the panel must not author a block the compile refuses");
+        assert_eq!(FLOW_DEFAULT_TIMELIMIT_S, 5400);
+    }
+
+    #[test]
+    fn a_zero_window_is_refused_with_the_reason() {
+        let err = with_schedule(&[pri()], 0, "10", "0", 5400).expect_err("window 0");
+        assert!(err.contains("windowS"), "{err}");
+        assert!(err.contains("> 0"), "{err}");
+    }
+
+    #[test]
+    fn start_past_mission_length_is_refused_with_the_reason() {
+        let err = with_schedule(&[pri()], 0, "5400", "60", 5400).expect_err("at end");
+        assert!(err.contains("within mission length"), "{err}");
+        assert!(err.contains("5400"), "{err}");
+    }
+
+    #[test]
+    fn clearing_both_fields_removes_the_schedule() {
+        let timed = with_schedule(&[pri()], 0, "120", "60", 5400).expect("set");
+        let cleared = with_schedule(&timed, 0, "", "", 5400).expect("clear");
+        assert!(cleared[0].get("schedule").is_none());
+    }
+
+    #[test]
+    fn a_half_filled_schedule_is_refused() {
+        let err = with_schedule(&[pri()], 0, "120", "", 5400).expect_err("window missing");
+        assert!(err.contains("windowS"), "{err}");
+        let err = with_schedule(&[pri()], 0, "", "60", 5400).expect_err("start missing");
+        assert!(err.contains("startAfterS"), "{err}");
     }
 }
