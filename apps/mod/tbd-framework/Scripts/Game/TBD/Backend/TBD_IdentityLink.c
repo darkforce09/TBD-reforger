@@ -44,15 +44,13 @@
 //! linking is a once-per-human action, so head-of-line blocking costs nothing real. The queue is
 //! bounded and every entry has a watchdog, so it cannot wedge.
 //!
-//! ══ HONEST LIMITS ══════════════════════════════════════════════════════════════════════════
-//! * **The code is typed in PUBLIC CHAT and this cannot prevent that.**
-//!   `SCR_ChatComponent.OnNewMessage` is the RECEIVE-side display hook (vanilla forwards it
-//!   straight to `SCR_ChatPanelManager`); by the time it runs on the server the message has
-//!   already been distributed. Consuming it here suppresses nothing. The exposure window is the
-//!   round trip on success (the backend sets `consumed_at` in the same transaction), but on ANY
-//!   failure the code stays live and public — so every failure reply tells the player to mint a
-//!   fresh one. The real fix is a UI field instead of a chat line; that is a screen, and screens
-//!   are blocked on the Workbench rdb pass (see the program hub).
+//! ══ T-941.6 — ACCOUNT-LINK OFF PUBLIC CHAT ══════════════════════════════════════════════════
+//! `#tbd link …` is consumed in `TBD_AdminCommands` BEFORE `super.OnNewMessage`, so vanilla
+//! never forwards the line to `SCR_ChatPanelManager`. Replies go only through
+//! `SCR_ChatComponent.SendPrivateMessage` (server → that one client). The code is POSTed to
+//! `/ingest/link-confirm` from the server and is never echoed in chat or logs. A token typed
+//! without the `#tbd link` prefix is ordinary public chat — we do not filter beyond that command.
+//! On failure the code may still be live on the website; the player is told to mint a fresh one.
 //! * **Compile-verified plus a real HTTP round trip against a capture endpoint** — see the slice
 //!   report. Nothing here has been exercised by a live player on a dedicated server, because no
 //!   gate on the fast lane connects a client.
@@ -144,6 +142,39 @@ class TBD_IdentityLink
 	//------------------------------------------------------------------------------------
 
 	//------------------------------------------------------------------------------------------------
+	//! T-941.6 consume-before-broadcast guard. TRUE means the caller MUST NOT call
+	//! `super.OnNewMessage` — vanilla would put the code in public chat. Authority runs the
+	//! link flow (POST /ingest/link-confirm); every peer, including clients, suppresses the echo.
+	//! A bare code without the `#tbd link` prefix returns FALSE (ordinary chat).
+	static bool TryConsumeBeforeBroadcast(SCR_ChatComponent chat, string msg, int senderId, bool authority)
+	{
+		if (!IsLinkCommand(msg))
+			return false;
+
+		if (authority)
+			TryHandleChat(chat, msg, senderId);
+
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! `#tbd link` / `#tbd Link` / `#tbd LINK` — the command prefix only, no extra filtering.
+	protected static bool IsLinkCommand(string msg)
+	{
+		if (!msg.StartsWith("#tbd"))
+			return false;
+
+		array<string> parts = new array<string>();
+		msg.Split(" ", parts, true);
+		if (parts.Count() < 2)
+			return false;
+
+		string sub = string.Format("%1", parts[1]);
+		sub.ToLower();
+		return sub == "link";
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! The `#tbd link …` chat surface. Returns TRUE when the message was a link command and has
 	//! been fully handled, so the caller must not fall through to anything else.
 	//!
@@ -207,7 +238,7 @@ class TBD_IdentityLink
 		lines.Insert(TAG + "usage: #tbd link <code>   (also: #tbd link status)");
 		lines.Insert(TAG + "1. on the website, open the avatar menu -> 'Link Arma Identity' -> Generate Link Code");
 		lines.Insert(TAG + "2. type that 6-digit code here within 10 minutes. It links this game identity to your TBD account so attendance and stats count.");
-		lines.Insert(TAG + "NOTE: whatever you type here is visible to other players. If a link fails, generate a NEW code before retrying.");
+		lines.Insert(TAG + "NOTE: this command is private — other players do not see the code. If a link fails, generate a NEW code before retrying.");
 		return lines;
 	}
 
@@ -290,7 +321,7 @@ class TBD_IdentityLink
 			// this account to everyone who ever uses that name and lock every other account out
 			// of it. Refusing is not caution, it is the only correct answer.
 			ReplyLine(chat, playerId, TAG + "cannot link: this host gives you a name-derived identity, not a real one, so a link made here would break the moment you rename - and would block anyone else with your name.");
-			ReplyLine(chat, playerId, TAG + "link from a DEDICATED TBD server instead. Your code was not used; generate a new one anyway, since it was visible in chat.");
+			ReplyLine(chat, playerId, TAG + "link from a DEDICATED TBD server instead. Your code was not used; generate a new one anyway.");
 			TBD_Log.Warn(CH_LINK, string.Format(
 				"refused player=%1 reason=synthetic-identity id=%2 (listen/hosted host - vanilla name hash). Run events on a dedicated server.", playerId, armaId));
 			return;
@@ -613,10 +644,10 @@ class TBD_IdentityLink
 	//------------------------------------------------------------------------------------------------
 	//! Said after every failure, and only after a failure. On success the backend has already set
 	//! `consumed_at`, so the code is dead the moment it works; on failure it is still live AND it
-	//! was typed where everyone could read it.
+	//! was not consumed by the website, so it may still be live.
 	protected static string NewCodeAdvice()
 	{
-		return TAG + "your code was typed in public chat and is still usable — generate a NEW one before retrying.";
+		return TAG + "your code was not consumed — generate a NEW one before retrying.";
 	}
 
 	//------------------------------------------------------------------------------------------------
