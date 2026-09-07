@@ -4,7 +4,7 @@
  * Mod-agnostic prefab scanner used by TBD_RegistryItemsExportPlugin: enumerates every
  * .et under $<addon>:Prefabs for all loaded addons (Workbench.SearchResources +
  * GameProject.GetLoadedAddons), classifies items by component introspection over the
- * raw prefab container tree (BaseContainer, ancestry walk included — variants keep
+ * raw prefab container tree (BaseContainer, ancestry walk included - variants keep
  * their facts on ancestor copies), and derives compat edges from engine data only:
  * magazine wells, attachment slot types, vehicle weapon slot chains, character
  * loadout slots. No curated GUID/path lists anywhere.
@@ -32,8 +32,8 @@ class TBD_RegistryScanItem
 	string addonId;
 
 	// v3 (T-068.10.2) metadata. Negative float = absent (EnfScript has no nullable float);
-	// absent values are omitted from the JSON — never guessed.
-	bool isAbstract;       // *_base.et filename / "* Base" display — UI-hidden template
+	// absent values are omitted from the JSON - never guessed.
+	bool isAbstract;       // *_base.et filename / "* Base" display - UI-hidden template
 	string arsenalType;    // SCR_EArsenalItemType flag name when an EntityCatalog entry exists
 	float weightKg = -1;       // ItemPhysicalAttributes.Weight (kg)
 	float volumeCm3 = -1;      // ItemPhysicalAttributes.ItemVolume (cm3)
@@ -77,7 +77,7 @@ class TBD_RegistryEdge
 class TBD_RegistryScanner
 {
 	// Skip-without-load path fragments: pure world dressing that cannot be an item. /Props/
-	// is deliberately NOT hard-skipped (supply crates and arsenal boxes live there) — those
+	// is deliberately NOT hard-skipped (supply crates and arsenal boxes live there) - those
 	// paths flow through normal classification, which drops component-less prefabs anyway.
 	protected static const ref array<string> DENY_HARD = {"/Structures/", "/Rocks/", "/Trees/", "/Debris/", "/Foliage/", "Prefabs/Editor/"};
 
@@ -93,7 +93,7 @@ class TBD_RegistryScanner
 	ref map<string, int> m_ItemIndexByRn = new map<string, int>();
 	ref array<ref TBD_RegistryAddonInfo> m_Addons = {};
 
-	// DeriveEdges output (members — strong-ref containers cannot be method arguments).
+	// DeriveEdges output (members - strong-ref containers cannot be method arguments).
 	ref array<ref TBD_RegistryEdge> m_Edges = {};
 	ref map<string, int> m_EdgeHistogram = new map<string, int>();
 	protected ref map<string, bool> m_EmittedKeys = new map<string, bool>();
@@ -103,13 +103,13 @@ class TBD_RegistryScanner
 	int m_iSkippedNoSignal;
 	int m_iFailedLoad;
 	int m_iSeen;
-	// v3 quality counters (printed every export — tierA + tierB + tierC + other == total).
+	// v3 quality counters (printed every export - tierA + tierB + tierC + other == total).
 	int m_iTierA;          // component/ancestor rules (engine-required signals)
 	int m_iTierB;          // EntityCatalog-refined rows
 	int m_iTierC;          // path-convention fallback rows
 	int m_iOtherKind;      // fallthrough rows (kind == other)
 	int m_iWeaponUnsplit;  // carryable weapons with no family split (cosmetic, counted)
-	int m_iUnknownArea;    // cloth with an unmapped LoadoutAreaType (→ other, counted)
+	int m_iUnknownArea;    // cloth with an unmapped LoadoutAreaType (-> other, counted)
 	int m_iCatalogEntries; // SCR_ArsenalItem entries parsed across all EntityCatalogs
 	int m_iCatalogHits;    // entries whose prefab matched a scanned item (coverage numerator)
 	protected string m_sCurrentAddonId;
@@ -158,7 +158,7 @@ class TBD_RegistryScanner
 		// rootPath. Re-run globally and bucket per addon via the "$Addon:" filePath prefix.
 		if (m_Items.IsEmpty())
 		{
-			Print(m_sLogTag + " per-addon rootPath search found nothing — retrying one global SearchResources pass", LogLevel.WARNING);
+			Print(m_sLogTag + " per-addon rootPath search found nothing - retrying one global SearchResources pass", LogLevel.WARNING);
 			m_sCurrentAddonId = string.Empty;
 			Workbench.SearchResources(OnResourceFound, extEt, null, string.Empty, true);
 		}
@@ -311,6 +311,66 @@ class TBD_RegistryScanner
 	}
 
 	//------------------------------------------------------------------------------------------------
+
+	//------------------------------------------------------------------------------------------------
+	//! T-304: class-keyed map foreach is hash order, so Item_Base.et's InventoryItemComponent
+	//! (0.01 kg) can beat a more-derived class. typename has no parent-walk API - compare pairs
+	//! with IsInherited and sort most-derived first. Unrelated classes keep incoming order
+	//! (stable insertion sort). AssertClassNamesMostDerivedFirst fires if a strict subtype is
+	//! sorted after its base (the hash-order foreach failure mode).
+	protected void ClassKeysMostDerivedFirst(map<string, ref array<BaseContainer>> comps, notnull array<string> outKeys)
+	{
+		outKeys.Clear();
+		int n = comps.Count();
+		for (int i = 0; i < n; i++)
+			outKeys.Insert(comps.GetKey(i));
+		SortClassNamesMostDerivedFirst(outKeys);
+		AssertClassNamesMostDerivedFirst(outKeys);
+	}
+
+	protected void SortClassNamesMostDerivedFirst(notnull array<string> keys)
+	{
+		for (int i = 1; i < keys.Count(); i++)
+		{
+			string moving = keys[i];
+			int j = i - 1;
+			while (j >= 0 && ClassIsMoreDerived(moving, keys[j]))
+			{
+				keys[j + 1] = keys[j];
+				j--;
+			}
+			keys[j + 1] = moving;
+		}
+	}
+
+	//! True when `a` is a strict subtype of `b` (a must sort before b).
+	protected bool ClassIsMoreDerived(string a, string b)
+	{
+		if (a == b || a.IsEmpty() || b.IsEmpty())
+			return false;
+		typename ta = a.ToType();
+		typename tb = b.ToType();
+		if (!ta || !tb)
+			return false;
+		return ta.IsInherited(tb);
+	}
+
+	protected void AssertClassNamesMostDerivedFirst(notnull array<string> keys)
+	{
+		int n = keys.Count();
+		for (int i = 0; i < n; i++)
+		{
+			for (int k = i + 1; k < n; k++)
+			{
+				if (ClassIsMoreDerived(keys[k], keys[i]))
+				{
+					Print(m_sLogTag + " T-304 ASSERT: most-derived bucket must win, never hash order: '"
+						+ keys[k] + "' is more derived than '" + keys[i] + "' but sorted later", LogLevel.ERROR);
+				}
+			}
+		}
+	}
+
 	protected bool HasComp(map<string, ref array<BaseContainer>> comps, string exactClass)
 	{
 		return comps.Contains(exactClass);
@@ -321,7 +381,9 @@ class TBD_RegistryScanner
 	//! *MuzzleComponent specialisation).
 	protected bool HasCompSuffix(map<string, ref array<BaseContainer>> comps, string suffix)
 	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (cls.EndsWith(suffix))
 				return true;
@@ -334,9 +396,14 @@ class TBD_RegistryScanner
 	//! name ends with classSuffix, deduped, most-derived first.
 	protected void CollectObjectVarClasses(map<string, ref array<BaseContainer>> comps, string classSuffix, string varName, notnull array<string> outClasses)
 	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (!cls.EndsWith(classSuffix))
+				continue;
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
 				continue;
 			foreach (BaseContainer c : bucket)
 			{
@@ -355,9 +422,14 @@ class TBD_RegistryScanner
 	//! with classSuffix, resolved to canonical ResourceNames, deduped.
 	protected void CollectResourceVarValues(map<string, ref array<BaseContainer>> comps, string classSuffix, string varName, notnull array<string> outValues)
 	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (!cls.EndsWith(classSuffix))
+				continue;
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
 				continue;
 			foreach (BaseContainer c : bucket)
 			{
@@ -372,8 +444,8 @@ class TBD_RegistryScanner
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Exact LoadoutAreaType class → v3 kind. Mod-defined subclasses resolve through typename
-	//! ancestry to the nearest mapped base (AreaKindFor); unmapped areas → "" (counted, → other).
+	//! Exact LoadoutAreaType class -> v3 kind. Mod-defined subclasses resolve through typename
+	//! ancestry to the nearest mapped base (AreaKindFor); unmapped areas -> "" (counted, -> other).
 	protected static string AreaKindExact(string areaClass)
 	{
 		if (areaClass == "LoadoutJacketArea") return "gear_jacket";
@@ -403,7 +475,7 @@ class TBD_RegistryScanner
 	};
 
 	//------------------------------------------------------------------------------------------------
-	//! Area class → kind with inheritance fallback for mod subclasses (RHS_JacketArea extends
+	//! Area class -> kind with inheritance fallback for mod subclasses (RHS_JacketArea extends
 	//! LoadoutJacketArea classifies as gear_jacket). typename has no parent-walk API, so the
 	//! unknown class is tested with IsInherited against every mapped base instead.
 	protected string AreaKindFor(string areaClass)
@@ -429,7 +501,9 @@ class TBD_RegistryScanner
 	protected bool HasCompInheritedFrom(map<string, ref array<BaseContainer>> comps, string baseClass)
 	{
 		typename baseType = baseClass.ToType();
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (cls == baseClass || cls.EndsWith(baseClass))
 				return true;
@@ -443,9 +517,12 @@ class TBD_RegistryScanner
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! ItemPhysicalAttributes (weight/volume, leaf override wins — buckets are most-derived-first)
+	//! ItemPhysicalAttributes (weight/volume, leaf override wins - buckets are most-derived-first).
+	//! T-304: read Attributes.ItemPhysAttributes even when the class name ends in StorageComponent
+	//! (SCR_WeaponAttachmentsStorageComponent on weapons). Class keys are sorted most-derived
+	//! first; hash-order map foreach is forbidden (AssertClassNamesMostDerivedFirst).
 	//! + container capacity vars off storage components. Absent stays -1 (omitted from JSON).
-	//! T-068.15.1: capacity prefers the UNIVERSAL storage — the inventory panel source
+	//! T-068.15.1: capacity prefers the UNIVERSAL storage - the inventory panel source
 	//! (SCR_InventoryStorageBaseUI reads the garment's SCR_UniversalInventoryStorageComponent).
 	//! Garments like the BDU jacket also carry a nested SCR_EquipmentStorageComponent
 	//! (flashlight slot) whose resolved MaxCumulativeVolume (1000) otherwise shadows the
@@ -460,10 +537,16 @@ class TBD_RegistryScanner
 	//------------------------------------------------------------------------------------------------
 	protected void ReadPhysAttrsPass(map<string, ref array<BaseContainer>> comps, TBD_RegistryScanItem item, bool universalPass)
 	{
-		// Single inner loop per outer entry — a second foreach over the same (write-protected)
+		// Single inner loop per outer entry - a second foreach over the same (write-protected)
 		// map-value variable is rejected by the Enforce compiler.
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		// T-304: never `foreach (comps)` here - that is hash order.
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
+				continue;
 			bool isInvItem = cls.EndsWith("InventoryItemComponent");
 			bool isStorage = cls.EndsWith("StorageComponent");
 			if (universalPass)
@@ -475,7 +558,9 @@ class TBD_RegistryScanner
 				continue;
 			foreach (BaseContainer comp : bucket)
 			{
-				if (isInvItem)
+				// T-304: weapons hang ItemPhysAttributes off *StorageComponent. Read them
+				// even when the component name ends in StorageComponent.
+				if (isInvItem || isStorage)
 				{
 					BaseContainer attrs = comp.GetObject("Attributes");
 					if (attrs)
@@ -525,8 +610,8 @@ class TBD_RegistryScanner
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! R7a: vanilla weapon-family ancestry → kind. Weapon_Base deliberately unmapped (every
-	//! weapon incl. cannons/mortars descends it — mapping it would bypass the R6 statics rule).
+	//! R7a: vanilla weapon-family ancestry -> kind. Weapon_Base deliberately unmapped (every
+	//! weapon incl. cannons/mortars descends it - mapping it would bypass the R6 statics rule).
 	protected static string WeaponAncestorKind(string tail)
 	{
 		string t = tail;
@@ -539,7 +624,7 @@ class TBD_RegistryScanner
 
 	//------------------------------------------------------------------------------------------------
 	//! Classify the prefab into a registry-items v3 kind and collect its compat facts.
-	//! Rule order mirrors .ai/artifacts/t068_10_2_census.md §Rules (R0/R2..R9); the census
+	//! Rule order mirrors .ai/artifacts/t068_10_2_census.md SRules (R0/R2..R9); the census
 	//! H_pred is the acceptance contract (gate G1). Returns false when the prefab carries no
 	//! item signal at all (world dressing).
 	protected bool ClassifyAndCollect(BaseContainer root, map<string, ref array<BaseContainer>> comps, string filePath, TBD_RegistryScanItem item)
@@ -561,7 +646,7 @@ class TBD_RegistryScanner
 		ReadPhysAttrs(comps, item);
 		DeriveCargoGrid(item);
 
-		// R0 — vehicles / characters / magazines keep their T-150 rules.
+		// R0 - vehicles / characters / magazines keep their T-150 rules.
 		if (isVehicle)
 		{
 			item.kind = "vehicle";
@@ -576,10 +661,10 @@ class TBD_RegistryScanner
 			item.ruleId = "R0";
 			CollectLoadoutPrefabs(comps, item.loadoutPrefabs);
 			// v3: default weapons per slot. Grenade/throwable slots are CharacterGrenadeSlot-
-			// Component — a DIFFERENT suffix (a default RGD5 is a default weapon too).
+			// Component - a DIFFERENT suffix (a default RGD5 is a default weapon too).
 			CollectResourceVarValues(comps, "WeaponSlotComponent", "WeaponTemplate", item.defaultWeaponRefs);
 			CollectResourceVarValues(comps, "GrenadeSlotComponent", "WeaponTemplate", item.defaultWeaponRefs);
-			// T-068.15.1: InitialInventoryItems → character_default_cargo edges.
+			// T-068.15.1: InitialInventoryItems -> character_default_cargo edges.
 			CollectInitialCargo(comps, item.defaultCargoItems, item.defaultCargoTargets);
 			return true;
 		}
@@ -595,7 +680,7 @@ class TBD_RegistryScanner
 			return true;
 		}
 
-		// R2 — wear areas (exact class map + typename ancestry for mod subclasses).
+		// R2 - wear areas (exact class map + typename ancestry for mod subclasses).
 		if (hasCloth)
 		{
 			array<string> areas = {};
@@ -615,7 +700,7 @@ class TBD_RegistryScanner
 				return true;
 			}
 
-			// Empty AreaType = decorative cloth node (73 such in vanilla) — NOT an unknown
+			// Empty AreaType = decorative cloth node (73 such in vanilla) - NOT an unknown
 			// area; let the remaining rules (gadgets etc.) classify it instead of forcing
 			// other here. Only a NAMED-but-unmapped area is worth the counter + warning.
 			if (!area.IsEmpty())
@@ -628,7 +713,7 @@ class TBD_RegistryScanner
 			}
 		}
 
-		// R3 — gadgets (SCR_GadgetComponent family covers compass/map/radio/flashlight/
+		// R3 - gadgets (SCR_GadgetComponent family covers compass/map/radio/flashlight/
 		// consumable/detonator/... in one inheritance check).
 		if (HasCompInheritedFrom(comps, "SCR_BinocularsComponent"))
 		{
@@ -643,7 +728,7 @@ class TBD_RegistryScanner
 			return true;
 		}
 
-		// R4 — throwables (grenades, smokes; they carry WeaponComponent, so before weapons).
+		// R4 - throwables (grenades, smokes; they carry WeaponComponent, so before weapons).
 		if (HasCompInheritedFrom(comps, "GrenadeMoveComponent"))
 		{
 			item.kind = "gear_throwable";
@@ -652,7 +737,7 @@ class TBD_RegistryScanner
 			return true;
 		}
 
-		// R5 — explosive charges (DemoBlocks carry WeaponComponent, so before weapons).
+		// R5 - explosive charges (DemoBlocks carry WeaponComponent, so before weapons).
 		if (HasCompInheritedFrom(comps, "SCR_ExplosiveChargeComponent")
 			|| HasCompInheritedFrom(comps, "SCR_ExplosiveTriggerComponent")
 			|| HasCompInheritedFrom(comps, "SCR_ExplosiveChargeInventoryItemComponent"))
@@ -674,7 +759,7 @@ class TBD_RegistryScanner
 			if (!meshes.IsEmpty())
 				item.meshRef = meshes[0];
 
-			// R7a — vanilla weapon-family ancestry (before R6 so abstract Core templates,
+			// R7a - vanilla weapon-family ancestry (before R6 so abstract Core templates,
 			// which have no phys attrs by design, keep their family kind).
 			array<string> tails = {};
 			CollectAncestorTails(root, tails);
@@ -689,7 +774,7 @@ class TBD_RegistryScanner
 				}
 			}
 
-			// R6 — statics: crewed emplacements, rocket pods, and weapons that cannot be
+			// R6 - statics: crewed emplacements, rocket pods, and weapons that cannot be
 			// carried (no phys attrs and no inventory item component anywhere in the chain).
 			bool carryable = hasInventoryItem || item.weightKg >= 0 || item.volumeCm3 >= 0;
 			if (HasCompSuffix(comps, "CompartmentManagerComponent")
@@ -706,7 +791,7 @@ class TBD_RegistryScanner
 				return true;
 			}
 
-			// R7b/c/d — carryable weapons without vanilla ancestry.
+			// R7b/c/d - carryable weapons without vanilla ancestry.
 			if (HasCompInheritedFrom(comps, "MuzzleInMagComponent"))
 			{
 				item.kind = "gear_launcher";
@@ -767,7 +852,7 @@ class TBD_RegistryScanner
 			return true;
 		}
 
-		// R9 — inventory item with no stronger signal: quarantined, counted, never gear_primary.
+		// R9 - inventory item with no stronger signal: quarantined, counted, never gear_primary.
 		if (hasInventoryItem)
 		{
 			item.kind = "other";
@@ -779,13 +864,18 @@ class TBD_RegistryScanner
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! InventoryItemComponent.Attributes(SCR_ItemAttributeCollection).CustomAttributes[] →
+	//! InventoryItemComponent.Attributes(SCR_ItemAttributeCollection).CustomAttributes[] ->
 	//! WeaponAttachmentAttributes.AttachmentType class name (empty when absent).
 	protected string ItemAttachmentType(map<string, ref array<BaseContainer>> comps)
 	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (!cls.EndsWith("InventoryItemComponent"))
+				continue;
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
 				continue;
 			foreach (BaseContainer inv : bucket)
 			{
@@ -810,7 +900,7 @@ class TBD_RegistryScanner
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Vehicle pass: walk SlotManagerComponent slots (Roof → Turret → gun mount …) through VehPart
+	//! Vehicle pass: walk SlotManagerComponent slots (Roof -> Turret -> gun mount ...) through VehPart
 	//! prefab refs, collecting every WeaponSlotComponent.WeaponTemplate target transitively.
 	protected void CollectVehicleWeapons(BaseContainer root, map<string, ref array<BaseContainer>> comps, notnull array<string> outWeapons, int depth)
 	{
@@ -820,9 +910,14 @@ class TBD_RegistryScanner
 			return;
 
 		array<string> slotPrefabs = {};
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (!cls.EndsWith("SlotManagerComponent"))
+				continue;
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
 				continue;
 			foreach (BaseContainer mgr : bucket)
 			{
@@ -863,12 +958,17 @@ class TBD_RegistryScanner
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Character pass: BaseLoadoutManagerComponent.Slots[].Prefab → default cloth/gear prefabs.
+	//! Character pass: BaseLoadoutManagerComponent.Slots[].Prefab -> default cloth/gear prefabs.
 	protected void CollectLoadoutPrefabs(map<string, ref array<BaseContainer>> comps, notnull array<string> outPrefabs)
 	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (!cls.EndsWith("LoadoutManagerComponent"))
+				continue;
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
 				continue;
 			foreach (BaseContainer mgr : bucket)
 			{
@@ -892,7 +992,7 @@ class TBD_RegistryScanner
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! T-068.15.1: UI grid from MaxCumulativeVolume (spike: 50 cm³/cell, width 4, min height 3).
+	//! T-068.15.1: UI grid from MaxCumulativeVolume (spike: 50 cm^3/cell, width 4, min height 3).
 	//! Matches SCR_InventoryStorageBaseUI defaults + BDU blouse/trousers screenshot Class-R.
 	protected void DeriveCargoGrid(TBD_RegistryScanItem item)
 	{
@@ -910,13 +1010,18 @@ class TBD_RegistryScanner
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! T-068.15.1: SCR_InventoryStorageManagerComponent.InitialInventoryItems → cargo seed.
+	//! T-068.15.1: SCR_InventoryStorageManagerComponent.InitialInventoryItems -> cargo seed.
 	//! Parallel arrays: each PrefabsToSpawn entry + its TargetStorage path (evidence).
 	protected void CollectInitialCargo(map<string, ref array<BaseContainer>> comps, notnull array<string> outItems, notnull array<string> outTargets)
 	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (!cls.EndsWith("InventoryStorageManagerComponent"))
+				continue;
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
 				continue;
 			foreach (BaseContainer mgr : bucket)
 			{
@@ -966,9 +1071,14 @@ class TBD_RegistryScanner
 	protected string FirstUiName(map<string, ref array<BaseContainer>> comps)
 	{
 		// InventoryItemComponent.Attributes.ItemDisplayName.Name
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (!cls.EndsWith("InventoryItemComponent"))
+				continue;
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
 				continue;
 			foreach (BaseContainer inv : bucket)
 			{
@@ -1078,13 +1188,13 @@ class TBD_RegistryScanner
 	// Configs/EntityCatalog/*: entries pair a prefab with an SCR_EArsenalItemType flag.
 	// The pass records arsenal_type metadata for every matched item and refines the kind ONLY
 	// where component rules could not split (weapon_unsplit / other) plus the census
-	// pre-authorized flare delta — it never contradicts a component-derived kind, so the
+	// pre-authorized flare delta - it never contradicts a component-derived kind, so the
 	// census H_pred stays the offline-computable contract.
 
 	protected ref map<string, string> m_CatalogTypeByRn = new map<string, string>();
 	protected ref array<string> m_CatalogConfPaths = {};
 
-	//! SCR_EArsenalItemType bit → flag name (verbatim from SCR_EArsenalItemType.c, bits 1..22).
+	//! SCR_EArsenalItemType bit -> flag name (verbatim from SCR_EArsenalItemType.c, bits 1..22).
 	protected static string ArsenalFlagName(int value)
 	{
 		if ((value & (1 << 1)) != 0) return "RIFLE";
@@ -1112,7 +1222,7 @@ class TBD_RegistryScanner
 		return string.Empty;
 	}
 
-	//! Arsenal flag → v3 kind (for refinement of unsplit/other rows only).
+	//! Arsenal flag -> v3 kind (for refinement of unsplit/other rows only).
 	protected static string CatalogKindFor(string flagName)
 	{
 		if (flagName == "RIFLE" || flagName == "MACHINE_GUN" || flagName == "SNIPER_RIFLE") return "gear_primary";
@@ -1142,8 +1252,8 @@ class TBD_RegistryScanner
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Enumerate Configs/EntityCatalog across all loaded addons and build rn → arsenal flag map.
-	//! Var names probed with logged fallbacks (SCR naming conventions) — the first successful
+	//! Enumerate Configs/EntityCatalog across all loaded addons and build rn -> arsenal flag map.
+	//! Var names probed with logged fallbacks (SCR naming conventions) - the first successful
 	//! probe set is printed for the verify log.
 	void ScanEntityCatalogs()
 	{
@@ -1193,7 +1303,7 @@ class TBD_RegistryScanner
 			if (!cat)
 				continue;
 
-			// Var names are self-discovered via BaseContainer var enumeration — no guessed
+			// Var names are self-discovered via BaseContainer var enumeration - no guessed
 			// names anywhere: the entry list is the object-array whose elements are
 			// *CatalogEntry*-classed; the prefab is the entry's string var ending '.et';
 			// the arsenal data is the *ArsenalItem*-classed element; the type is the int
@@ -1582,7 +1692,7 @@ class TBD_RegistryScanner
 						EmitEdge(target.resourceName, host.resourceName, "ammo_in_vehicle_weapon", "MagazineTemplate");
 				}
 
-				// Attachment slots × attachment items.
+				// Attachment slots x attachment items.
 				foreach (string slotType : host.slotAttachTypes)
 				{
 					foreach (int aIdx : attachItems)
@@ -1610,7 +1720,7 @@ class TBD_RegistryScanner
 					}
 					EmitEdge(gearRn, host.resourceName, "character_default_loadout", "LoadoutSlotInfo");
 				}
-				// v3: weapon defaults were never exported (cloth-only LoadoutSlotInfo) — the
+				// v3: weapon defaults were never exported (cloth-only LoadoutSlotInfo) - the
 				// Primary picker degrade documented in the hub. WeaponTemplate per weapon slot.
 				foreach (string weaponRn : host.defaultWeaponRefs)
 				{

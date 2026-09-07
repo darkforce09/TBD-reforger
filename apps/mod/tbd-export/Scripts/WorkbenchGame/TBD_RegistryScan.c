@@ -311,6 +311,66 @@ class TBD_RegistryScanner
 	}
 
 	//------------------------------------------------------------------------------------------------
+
+	//------------------------------------------------------------------------------------------------
+	//! T-304: class-keyed map foreach is hash order, so Item_Base.et's InventoryItemComponent
+	//! (0.01 kg) can beat a more-derived class. typename has no parent-walk API - compare pairs
+	//! with IsInherited and sort most-derived first. Unrelated classes keep incoming order
+	//! (stable insertion sort). AssertClassNamesMostDerivedFirst fires if a strict subtype is
+	//! sorted after its base (the hash-order foreach failure mode).
+	protected void ClassKeysMostDerivedFirst(map<string, ref array<BaseContainer>> comps, notnull array<string> outKeys)
+	{
+		outKeys.Clear();
+		int n = comps.Count();
+		for (int i = 0; i < n; i++)
+			outKeys.Insert(comps.GetKey(i));
+		SortClassNamesMostDerivedFirst(outKeys);
+		AssertClassNamesMostDerivedFirst(outKeys);
+	}
+
+	protected void SortClassNamesMostDerivedFirst(notnull array<string> keys)
+	{
+		for (int i = 1; i < keys.Count(); i++)
+		{
+			string moving = keys[i];
+			int j = i - 1;
+			while (j >= 0 && ClassIsMoreDerived(moving, keys[j]))
+			{
+				keys[j + 1] = keys[j];
+				j--;
+			}
+			keys[j + 1] = moving;
+		}
+	}
+
+	//! True when `a` is a strict subtype of `b` (a must sort before b).
+	protected bool ClassIsMoreDerived(string a, string b)
+	{
+		if (a == b || a.IsEmpty() || b.IsEmpty())
+			return false;
+		typename ta = a.ToType();
+		typename tb = b.ToType();
+		if (!ta || !tb)
+			return false;
+		return ta.IsInherited(tb);
+	}
+
+	protected void AssertClassNamesMostDerivedFirst(notnull array<string> keys)
+	{
+		int n = keys.Count();
+		for (int i = 0; i < n; i++)
+		{
+			for (int k = i + 1; k < n; k++)
+			{
+				if (ClassIsMoreDerived(keys[k], keys[i]))
+				{
+					Print(m_sLogTag + " T-304 ASSERT: most-derived bucket must win, never hash order: '"
+						+ keys[k] + "' is more derived than '" + keys[i] + "' but sorted later", LogLevel.ERROR);
+				}
+			}
+		}
+	}
+
 	protected bool HasComp(map<string, ref array<BaseContainer>> comps, string exactClass)
 	{
 		return comps.Contains(exactClass);
@@ -321,7 +381,9 @@ class TBD_RegistryScanner
 	//! *MuzzleComponent specialisation).
 	protected bool HasCompSuffix(map<string, ref array<BaseContainer>> comps, string suffix)
 	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (cls.EndsWith(suffix))
 				return true;
@@ -334,9 +396,14 @@ class TBD_RegistryScanner
 	//! name ends with classSuffix, deduped, most-derived first.
 	protected void CollectObjectVarClasses(map<string, ref array<BaseContainer>> comps, string classSuffix, string varName, notnull array<string> outClasses)
 	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (!cls.EndsWith(classSuffix))
+				continue;
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
 				continue;
 			foreach (BaseContainer c : bucket)
 			{
@@ -355,9 +422,14 @@ class TBD_RegistryScanner
 	//! with classSuffix, resolved to canonical ResourceNames, deduped.
 	protected void CollectResourceVarValues(map<string, ref array<BaseContainer>> comps, string classSuffix, string varName, notnull array<string> outValues)
 	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (!cls.EndsWith(classSuffix))
+				continue;
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
 				continue;
 			foreach (BaseContainer c : bucket)
 			{
@@ -429,7 +501,9 @@ class TBD_RegistryScanner
 	protected bool HasCompInheritedFrom(map<string, ref array<BaseContainer>> comps, string baseClass)
 	{
 		typename baseType = baseClass.ToType();
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (cls == baseClass || cls.EndsWith(baseClass))
 				return true;
@@ -443,7 +517,10 @@ class TBD_RegistryScanner
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! ItemPhysicalAttributes (weight/volume, leaf override wins - buckets are most-derived-first)
+	//! ItemPhysicalAttributes (weight/volume, leaf override wins - buckets are most-derived-first).
+	//! T-304: read Attributes.ItemPhysAttributes even when the class name ends in StorageComponent
+	//! (SCR_WeaponAttachmentsStorageComponent on weapons). Class keys are sorted most-derived
+	//! first; hash-order map foreach is forbidden (AssertClassNamesMostDerivedFirst).
 	//! + container capacity vars off storage components. Absent stays -1 (omitted from JSON).
 	//! T-068.15.1: capacity prefers the UNIVERSAL storage - the inventory panel source
 	//! (SCR_InventoryStorageBaseUI reads the garment's SCR_UniversalInventoryStorageComponent).
@@ -462,8 +539,14 @@ class TBD_RegistryScanner
 	{
 		// Single inner loop per outer entry - a second foreach over the same (write-protected)
 		// map-value variable is rejected by the Enforce compiler.
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		// T-304: never `foreach (comps)` here - that is hash order.
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
+				continue;
 			bool isInvItem = cls.EndsWith("InventoryItemComponent");
 			bool isStorage = cls.EndsWith("StorageComponent");
 			if (universalPass)
@@ -475,7 +558,9 @@ class TBD_RegistryScanner
 				continue;
 			foreach (BaseContainer comp : bucket)
 			{
-				if (isInvItem)
+				// T-304: weapons hang ItemPhysAttributes off *StorageComponent. Read them
+				// even when the component name ends in StorageComponent.
+				if (isInvItem || isStorage)
 				{
 					BaseContainer attrs = comp.GetObject("Attributes");
 					if (attrs)
@@ -783,9 +868,14 @@ class TBD_RegistryScanner
 	//! WeaponAttachmentAttributes.AttachmentType class name (empty when absent).
 	protected string ItemAttachmentType(map<string, ref array<BaseContainer>> comps)
 	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (!cls.EndsWith("InventoryItemComponent"))
+				continue;
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
 				continue;
 			foreach (BaseContainer inv : bucket)
 			{
@@ -820,9 +910,14 @@ class TBD_RegistryScanner
 			return;
 
 		array<string> slotPrefabs = {};
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (!cls.EndsWith("SlotManagerComponent"))
+				continue;
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
 				continue;
 			foreach (BaseContainer mgr : bucket)
 			{
@@ -866,9 +961,14 @@ class TBD_RegistryScanner
 	//! Character pass: BaseLoadoutManagerComponent.Slots[].Prefab -> default cloth/gear prefabs.
 	protected void CollectLoadoutPrefabs(map<string, ref array<BaseContainer>> comps, notnull array<string> outPrefabs)
 	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (!cls.EndsWith("LoadoutManagerComponent"))
+				continue;
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
 				continue;
 			foreach (BaseContainer mgr : bucket)
 			{
@@ -914,9 +1014,14 @@ class TBD_RegistryScanner
 	//! Parallel arrays: each PrefabsToSpawn entry + its TargetStorage path (evidence).
 	protected void CollectInitialCargo(map<string, ref array<BaseContainer>> comps, notnull array<string> outItems, notnull array<string> outTargets)
 	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (!cls.EndsWith("InventoryStorageManagerComponent"))
+				continue;
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
 				continue;
 			foreach (BaseContainer mgr : bucket)
 			{
@@ -966,9 +1071,14 @@ class TBD_RegistryScanner
 	protected string FirstUiName(map<string, ref array<BaseContainer>> comps)
 	{
 		// InventoryItemComponent.Attributes.ItemDisplayName.Name
-		foreach (string cls, array<BaseContainer> bucket : comps)
+		array<string> classOrder = {};
+		ClassKeysMostDerivedFirst(comps, classOrder);
+		foreach (string cls : classOrder)
 		{
 			if (!cls.EndsWith("InventoryItemComponent"))
+				continue;
+			array<BaseContainer> bucket = comps.Get(cls);
+			if (!bucket)
 				continue;
 			foreach (BaseContainer inv : bucket)
 			{
