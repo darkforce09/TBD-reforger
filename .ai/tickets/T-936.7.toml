@@ -62,6 +62,9 @@ owns = [
     "crates/map-engine-core/src/mission/extensions.rs",
     "crates/map-engine-core/src/mission/flatten.rs",
     "crates/map-engine-core/src/mission/compile.rs",
+    "crates/map-engine-core/src/mission/tasks.rs",
+    "crates/map-engine-core/src/mission/spawn_modules.rs",
+    "packages/tbd-schema/golden-missions/schema-1_3-tactical-graphics.json",
 ]
 
 [scope]
