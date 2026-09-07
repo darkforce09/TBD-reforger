@@ -1235,6 +1235,8 @@ pub struct RenderEngine {
     tree_icons_20: Vec<u8>,
     /// When true (WebGPU), WorldTrees draw via compute cull + draw_indirect.
     compute_cull_trees: bool,
+    /// T-938.1 — persistent VERTEX|COPY_DST instance buffers for slot/cluster icon lanes.
+    lane_pool: crate::buffer_pool::LanePool,
 }
 
 #[wasm_bindgen]
@@ -1643,6 +1645,7 @@ impl RenderEngine {
             icon_cull,
             tree_icons_20: Vec::new(),
             compute_cull_trees: !is_gl,
+            lane_pool: crate::buffer_pool::LanePool::new(),
         })
     }
 
@@ -2130,10 +2133,15 @@ impl RenderEngine {
             .pop()
             .expect("calibration batch always present");
         for batch in self.batches.drain(..) {
+            let role = batch.role;
             match batch.payload {
                 BatchPayload::Instanced { instances, .. }
-                | BatchPayload::BuildingInstanced { instances, .. }
-                | BatchPayload::IconInstanced { instances, .. } => instances.destroy(),
+                | BatchPayload::BuildingInstanced { instances, .. } => instances.destroy(),
+                BatchPayload::IconInstanced { instances, .. } => {
+                    if !Self::is_pooled_icon_role(role) {
+                        instances.destroy();
+                    }
+                }
                 BatchPayload::MarkerComposite {
                     icons, captions, ..
                 } => {
@@ -2151,6 +2159,7 @@ impl RenderEngine {
             }
         }
         self.batches.push(calibration);
+        self.lane_pool.clear();
         self.stress_instances = 0;
         self.gen_ms = 0.0;
         self.upload_ms = 0.0;
@@ -4904,6 +4913,52 @@ impl RenderEngine {
         self.remove_lane(LaneRole::MissionComments);
     }
 
+    fn is_pooled_icon_role(role: LaneRole) -> bool {
+        matches!(
+            role,
+            LaneRole::Slots
+                | LaneRole::SlotDrag
+                | LaneRole::Clusters
+                | LaneRole::SlotPlacePreview
+                | LaneRole::MissionVehicles
+                | LaneRole::MissionComments
+        )
+    }
+
+    fn upsert_pooled_icon_lane(
+        &mut self,
+        role: LaneRole,
+        buf: wgpu::Buffer,
+        count: u32,
+        visible: bool,
+        buffer_changed: bool,
+    ) {
+        if !buffer_changed
+            && let Some(batch) = self.batches.iter_mut().find(|b| b.role == role)
+            && let BatchPayload::IconInstanced {
+                instances,
+                count: stored,
+            } = &mut batch.payload
+        {
+            *instances = buf;
+            *stored = count;
+            batch.visible = visible;
+            self.damage.mark();
+            return;
+        }
+        self.upsert_lane(
+            role,
+            Batch {
+                role,
+                visible,
+                payload: BatchPayload::IconInstanced {
+                    instances: buf,
+                    count,
+                },
+            },
+        );
+    }
+
     fn upload_slot_role_lane(&mut self, role: LaneRole, bytes: &[u8], visible: bool) {
         const STRIDE: usize = 20;
         if bytes.is_empty() {
@@ -4916,29 +4971,16 @@ impl RenderEngine {
             self.remove_lane(role);
             return;
         }
-        let mut converted = bytes.to_vec();
-        Self::convert_icon_world_to_anchor(&mut converted);
-        use wgpu::util::DeviceExt;
-        let buf = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("slot-icon-lane"),
-                contents: &converted,
-                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            });
         #[allow(clippy::cast_possible_truncation)]
-        let count = (converted.len() / STRIDE) as u32;
-        self.upsert_lane(
-            role,
-            Batch {
-                role,
-                visible,
-                payload: BatchPayload::IconInstanced {
-                    instances: buf,
-                    count,
-                },
-            },
+        let count = (bytes.len() / STRIDE) as u32;
+        let (buf, buffer_changed) = self.lane_pool.write_gpu(
+            &self.device,
+            &self.queue,
+            role as u32,
+            bytes,
+            Self::convert_icon_world_to_anchor,
         );
+        self.upsert_pooled_icon_lane(role, buf, count, visible, buffer_changed);
     }
 
     // ── W4 vector lane uploads ────────────────────────────────────────────────────────────────
