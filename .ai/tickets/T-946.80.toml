@@ -1,0 +1,12 @@
+id = "T-946.80"
+kind = "work"
+title = "Cold DB base cannot reach the wave gate"
+summary = "hostrun_argv whitelists only CARGO_TARGET_DIR and TEST_DATABASE_URL, so TBD_IT_BASE_DB set for a wave gate or close is silently dropped and the integration tests run on the shared rust_it scratch DB. Wave 254's close created zero tbd_wave255_close_cold databases."
+class = "chore"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T17:55:10Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

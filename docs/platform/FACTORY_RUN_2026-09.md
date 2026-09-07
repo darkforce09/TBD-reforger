@@ -379,3 +379,57 @@ edit, in-editor play button.
 - 2026-09-07 Wave 253 verifier (`492286519`): one BLOCKER, nine MAJOR, four NIT. **BLOCKER fixed in-wave** (`1d514ea1b`): T-938.3 shipped ONE `cull_params` uniform owned by `IconComputeCull`, rewritten per lane and bound at binding 3 by every lane's bind group. `encode_cull` encodes all lanes into one `CommandEncoder` and the frame is one submit, and `Queue::write_buffer` is staged — applied before any command buffer in that submit runs — so every lane read whichever `src_count` was written last, nondeterministically (`HashMap::keys()` order). Invisible with one lane; T-938.3 made nine lanes normal, so 380 slots + 12 tree glyphs either drops 368 slot icons or over-runs a 12-icon buffer with a 380 count, on essentially every WebGPU frame. `params_buf` moved into `LaneGpu`. `icon_cull_gpu.rs` is `cfg(wasm32)`, so the pin is the crate's existing Class-R probe (`cull_params_is_per_lane`); perturbation RED verbatim, restored green, and `cargo check --target wasm32-unknown-unknown` is what proves the move builds.
 - 2026-09-07 **The first wave-253 gate was 30/31 with `test frontend` the only red, and neither slice could have seen it** — `platform wave gate --slice` does not run the frontend suite. Both failures were deterministic in isolation and both were this wave's. (1) T-937.4's own Class-R probe was DEAD: `unreadable_lockout_offers_retry` splits `save_status.rs` at the FIRST `#[cfg(test)]`, but the test-only `last_toast()` sat at line 47, above the `invoke_retry`/`"Retry"` it searched for — the haystack was lines 1-46 and the assertion could only ever fail. **This is wave 252's T-937.1 haystack trap (`edb7e69f8`) repeated one wave later in the same class of test**; `last_toast` now sits below every production item with a comment saying why. (2) T-938.4's brief specified `f32` + NaN sparse storage, so heights read back f32-rounded (6.2 → 6.199999809); the slice widened FIVE of its own goldens from `1e-9` to `1e-5`/`1e-4` and left the identical assertions in `building_viewer.rs` — outside its owns — to break. Fixed at `36d98499b`; owns gained `building_viewer.rs`. Lesson worth keeping: **an owns widen without a repack goes red on `check::tests::tip_registry_full_check_ok`** ("wave.lock owns snapshot disagrees with the ticket files"), because the lock carries an owns snapshot; `a18efcc18` had the same latent staleness and was masked only because the ship's repack fixed it later.
 - 2026-09-07 Filed T-946.51…T-946.63. MAJOR: `.51` `SAVE_IN_FLIGHT` is write-only and its test passes on the identifier alone, `.52` the y-interval index is rebuilt per cut so total work went UP, `.53` `authored_blocks_root` is a hand match with no key-coverage guard (same class as T-946.36/41/43/44/47, next victim already named: T-936.7 `tacticalGraphics`), `.54` the T-374 unreadable latch is now set ~560 ms late so `run_save` can overwrite an unreadable record, `.55` the objective HUD replicates to every player at 1 Hz with no dirty check (wire cost higher than the chat pump it replaced), `.56` the WebGPU slot upload does a pooled write it discards plus three host clones per pointer move, `.57` roster vehicles are resolved by position only so 3 m neighbours collide, `.58` the T-139 kit preview is structurally empty on a dedicated server, `.59` T-938.2 narrowed the brief's ship threshold to one sub-metric. NIT: `.60`-`.63`. Verifier found no logic divergence in any Enfusion twin pair and `files_outside_owns` `[]` for all ten.
+
+- 2026-09-07 **WAVE 254 CLOSED** (`425478f87`) — the run's **first five-wide wave**, and membership is
+  lock row 255 exactly, not a custom pack: T-936.7 tactical graphics (schema, core validator, the
+  flatten wire and a canvas that draws, picks and edits), T-937.3 side-key memo behind a new yrs
+  observer plus a `slot_exists` fast path (500 side-key resolutions over 500 slots → 2), T-190 two
+  tabs converge through the CRDT (navigator.locks writer role, read-merge-write, a conflict modal
+  that names both options and marks the destructive one), T-938.5 viewsheds sliced across frames with
+  per-subsystem caps, T-938.6 a wasm memory budget with a satellite mip floor and HUD readout.
+  GATE: PASS 32/32 (base `aac282ff1`, derived and corroborated — no `TBD_GATE_BASE_CONFIRM`).
+  Wave-level `mod compile` OK (5761 files, 11484 classes, 0 warnings; no Enfusion files this wave).
+  **The label offset persists**: the close claimed 254 because `close_target` takes
+  `emptied.first()` and 254 had been pending since wave 253's single repack emptied two lock rows.
+  `[[emptied]] 255` now carries this wave's five and is the next close's label.
+- 2026-09-07 **GOING FIVE-WIDE IS A LOCK CHANGE, NOT A DISPATCH CHOICE.** `wave.lock` records its own
+  `max_concurrent` and every incidental repack — `ticket ship` runs one per id — inherits it, so
+  dispatching five against a lock that says three would let a mid-wave repack reshape the wave being
+  gated, which is the wave-236 failure T-946 documented. Repacked with `TBD_MAX_CONCURRENT=5` before
+  dispatch; `wave_base` and the pending `[[emptied]]` carried intact.
+  **Four of the five tickets could not deliver their stated acceptance with the files they owned**,
+  and one, T-936.7, had three requirement lines that contradicted shipped code. Exploration before
+  dispatch is what found this; the widens and the corrections are in `c73d39668`.
+- 2026-09-07 **THE SLICE GATE HAD NO TEST STEP AT ALL** (T-946.64, `a3e63856c`). It ran cargo check,
+  wasm32, fmt, clippy, schema, catalogue drift, two `db_migrate` steps and the `VERIFY_STEPS` loop —
+  every one of which asks whether the tree compiles or is formatted, and not one of which runs a
+  test. That is why wave 253 shipped two deterministically-failing frontend tests that only the wave
+  gate caught, after merge. Proven by perturbation before dispatch: a broken frontend test gives
+  `test (frontend, changed) FAIL` → `SLICE GATE: FAIL`; fixed, PASS. It ran in all five slice gates.
+- 2026-09-07 Wave 254 verifier (`7274e6e52`): one BLOCKER in the wave's content and **two in the gate
+  step the wave itself added**. (1) T-936.7 bound its tactical lane from `after_doc_change` only —
+  the EDIT half — while rows reach a document through the IDB restore, hydrate, conflict resolution
+  and T-190's peer merge, all of which land in `rebind_engine_from_doc`. With `begin_tactical_draw`
+  having no caller, a hydrated payload is the ONLY way rows exist, so "the canvas draws all four
+  kinds" failed on 100% of live openings — while pick still read the document, leaving the graphic
+  invisible AND clickable AND deletable. (2) The new test step built into `target-gate-check`, which
+  lives under `main_root` and is SHARED BY EVERY WORKTREE — the exact dir the wave gate refuses for
+  this command because T-193 and T-195 each measured a stale cross-worktree test binary; five slices
+  ran concurrently into it. (3) Its scope was the dependency graph alone, so a slice touching only
+  `mission.schema.json` — which THIS WAVE changed — would have skipped the suite and reported PASS
+  over the one test documented to fail loudly on it. All three fixed in-wave with
+  perturbation-proven pins; T-946.64 shipped with no test and has one now.
+- 2026-09-07 Filed T-946.65…T-946.79 (MAJOR: the DEM forecast leaking on six early returns and
+  permanently downgrading the satellite; `merge_before_write` blind-writing on a failed read;
+  `MERGED_WRITES` counting decisions not merges; Delete eating a tactical graphic ahead of a marquee
+  selection; the tactical draw path unreachable; a viewshed cap refusal indistinguishable from an
+  empty result; the wash lane shipped, tested and unreachable). **T-946.74 was deliberately left**:
+  the partial disc paints unmarched ground as *proven dead ground* because the job pre-fills `Hidden`
+  to match the synchronous sentinel, so the honest `Unknown` breaks the bit-identity proof unless the
+  sync path moves too — a design change, not a one-word fix.
+- 2026-09-07 **THE COLD-DB HALF OF THE CEREMONY DOES NOT WORK THE WAY THE RUNBOOK IMPLIES**
+  (T-946.80). `hostrun_argv` whitelists exactly `CARGO_TARGET_DIR` and `TEST_DATABASE_URL`, so
+  `TBD_IT_BASE_DB` set for a wave gate or a close is silently dropped and the integration tests run
+  on the shared `rust_it` scratch DB. Measured: this close created **zero** `tbd_wave255_close_cold*`
+  databases. Both of this wave's full gates were therefore warm-DB runs, and earlier waves' cold DB
+  names must have come from a separate `db test-it` invocation rather than from the gate.
