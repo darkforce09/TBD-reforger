@@ -29,10 +29,9 @@ class TBD_ObjectivesComponentClass : SCR_BaseGameModeComponentClass {}
 //! ══ What a player is told, and over what ════════════════════════════════════════════════════
 //! Clients hold NO mission document (recorded landmine), so every word below is composed on the
 //! server from server-owned state and pushed out; a client computes nothing and is never asked to.
-//! The channel is `SCR_ChatComponent.SendPrivateMessage`, the same per-player server->client path
-//! `TBD_PlayAreaComponent` already uses, chosen over a HUD because a new `.layout` is INVISIBLE to
-//! the engine until Workbench rewrites `resourceDatabase.rdb` (recorded landmine) — a widget
-//! written on this lane could not open.
+//! T-941.4: the board and capture bar go over Owner RPC to `TBD_ObjectiveHud`. Chat keeps ONLY the
+//! objective-complete line (`CAPTURED` / `DESTROYED` / `HELD`). The old per-tick
+//! `SCR_ChatComponent.SendPrivateMessage` pump is gone — it buried the log in progress spam.
 //!
 //! Everything is also logged server-side, so an operator can reconstruct the objective history of a
 //! round even if delivery to a particular client failed.
@@ -65,8 +64,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	//! Latch: the "an end trigger is met but nothing is wired to act on it" banner fires ONCE.
 	protected bool m_bEndTriggerAnnounced;
 
-	//! This tick's messages for everybody. Accumulated during the advance pass and delivered in one
-	//! walk of the player list, so a tick costs at most two walks however many objectives changed.
+	//! This tick's COMPLETE lines only (captured / destroyed / held). Progress lives on the HUD.
 	protected ref array<string> m_aBroadcasts;
 
 	//------------------------------------------------------------------------------------------------
@@ -112,6 +110,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		if (m_aBroadcasts)
 			m_aBroadcasts.Clear();
 
+		HideAllHuds();
 		s_Instance = null;
 
 		super.OnDelete(owner);
@@ -135,6 +134,8 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
 		if (!fm || fm.GetStage() != TBD_EGameStage.LIVE)
 		{
+			if (m_bLive)
+				HideAllHuds();
 			m_bLive = false;
 			return;
 		}
@@ -346,11 +347,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			objective.m_bAnnouncedContested = objective.m_bContested;
 			if (objective.m_bContested)
 			{
-				string contestedMsg = "TBD: ";
-				contestedMsg += objective.DisplayName();
-				contestedMsg += " is CONTESTED -- progress is frozen while both sides are on it.";
-				objective.m_sPendingInsideMessage = contestedMsg;
-
 				TBD_Log.Kv(TBD_ObjectiveRegistry.CH, "contested", string.Format("id=%1 sides=%2 progress=%3s owner='%4'",
 					objective.m_sId, objective.PresentFactionCount(), objective.m_fProgress, objective.m_sOwner));
 			}
@@ -448,13 +444,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		if (previousOwner.IsEmpty())
 			return;
 
-		string msg = "TBD: ";
-		msg += objective.DisplayName();
-		msg += " has been NEUTRALISED (was ";
-		msg += previousOwner;
-		msg += ").";
-		m_aBroadcasts.Insert(msg);
-
 		TBD_Log.Kv(TBD_ObjectiveRegistry.CH, "neutralised", string.Format("id=%1 by=%2 previousOwner=%3",
 			objective.m_sId, acting, previousOwner));
 	}
@@ -505,9 +494,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Tell whoever is standing on it how it is going, no more often than `announceEverySeconds`.
-	//! Only players INSIDE hear this — the whole server does not need a running commentary, and the
-	//! people who need the number are the ones who can act on it.
+	//! Server log of capture progress. The HUD bar is the player-facing channel (T-941.4).
 	protected void AnnounceCaptureProgress(notnull TBD_Objective objective, string acting, string verb)
 	{
 		if (objective.m_fSinceAnnounce < objective.m_fAnnounceEverySeconds)
@@ -515,16 +502,8 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 
 		objective.m_fSinceAnnounce = 0;
 
-		string msg = "TBD: ";
-		msg += verb;
-		msg += " ";
-		msg += objective.DisplayName();
-		msg += " -- ";
-		msg += objective.ProgressPercent().ToString();
-		msg += "% (";
-		msg += acting;
-		msg += ")";
-		objective.m_sPendingInsideMessage = msg;
+		TBD_Log.Kv(TBD_ObjectiveRegistry.CH, "captureProgress", string.Format("id=%1 verb=%2 percent=%3 acting=%4",
+			objective.m_sId, verb, objective.ProgressPercent(), acting));
 	}
 
 	// ════════════════════════════════════════════════════════════════════════════════════════════
@@ -571,11 +550,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			{
 				TBD_Log.Kv(TBD_ObjectiveRegistry.CH, "holdReset", string.Format("id=%1 lost=%2s to an enemy incursion",
 					objective.m_sId, objective.m_fHeldSeconds));
-
-				string resetMsg = "TBD: the hold on ";
-				resetMsg += objective.DisplayName();
-				resetMsg += " has been BROKEN -- the clock is back to zero.";
-				m_aBroadcasts.Insert(resetMsg);
 			}
 			objective.m_fHeldSeconds = 0;
 		}
@@ -591,18 +565,6 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		if (paused != objective.m_bHoldPaused)
 		{
 			objective.m_bHoldPaused = paused;
-
-			string stateMsg = "TBD: the hold on ";
-			stateMsg += objective.DisplayName();
-			if (paused)
-			{
-				stateMsg += " is PAUSED.";
-			}
-			else
-			{
-				stateMsg += " is running again.";
-			}
-			m_aBroadcasts.Insert(stateMsg);
 
 			TBD_Log.Kv(TBD_ObjectiveRegistry.CH, "holdPaused", string.Format("id=%1 paused=%2 held=%3s enemyPresent=%4",
 				objective.m_sId, paused, objective.m_fHeldSeconds, enemyPresent));
@@ -654,14 +616,8 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		// Rounded into an int FIRST — see TBD_Objective.HoldStatusText for why.
 		int whole = Math.Round(remaining);
 
-		string msg = "TBD: ";
-		msg += objective.DisplayName();
-		msg += " -- ";
-		msg += whole.ToString();
-		msg += "s of the hold remain (";
-		msg += objective.m_sFaction;
-		msg += ").";
-		m_aBroadcasts.Insert(msg);
+		TBD_Log.Kv(TBD_ObjectiveRegistry.CH, "holdMark", string.Format("id=%1 remain=%2s holder=%3",
+			objective.m_sId, whole, objective.m_sFaction));
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -722,10 +678,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	// ════════════════════════════════════════════════════════════════════════════════════════════
 
 	//------------------------------------------------------------------------------------------------
-	//! One walk of the player list to push out everything this tick produced.
-	//!
-	//! Broadcasts go to every connected player; a per-objective message goes only to the players who
-	//! were sampled inside that objective. Both are composed server-side from server-owned state.
+	//! One walk of the player list: complete-lines over chat, board + bar over HUD RPC.
 	protected void Deliver(notnull PlayerManager players, notnull array<int> connected, notnull array<ref TBD_Objective> objectives)
 	{
 		foreach (string broadcast : m_aBroadcasts)
@@ -736,16 +689,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			}
 		}
 
-		foreach (TBD_Objective objective : objectives)
-		{
-			if (!objective || objective.m_sPendingInsideMessage.IsEmpty())
-				continue;
-
-			foreach (int insideId : objective.m_aPresentPlayers)
-			{
-				Tell(players, insideId, objective.m_sPendingInsideMessage);
-			}
-		}
+		ReplicateHud(players, connected, objectives);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -790,9 +734,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	//! state. There is no faction parameter on this path, so there is nothing for a client to forge
 	//! — the same discipline that makes `TBD_MarkerController`'s request RPC take no arguments.
 	//!
-	//! This is the seam for anything that wants to SHOW objective state: an admin chat command, or a
-	//! marker-style `TBD_RequestObjectives()` RPC when a screen exists to receive it. Today's only
-	//! consumer is the chat feed above; see the slice report for why no RPC was added yet.
+	//! Server-owned board for one player. The HUD is the consumer (T-941.4); chat is complete-only.
 	array<string> BuildBoardForPlayer(int playerId)
 	{
 		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
@@ -801,8 +743,125 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Push the HUD snapshot to every connected player. 1 Hz, same cadence as the tick.
+	protected void ReplicateHud(notnull PlayerManager players, notnull array<int> connected, notnull array<ref TBD_Objective> board)
+	{
+		foreach (int playerId : connected)
+		{
+			PushHudToPlayer(players, playerId, board, 1);
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Close the HUD on every connected client (left LIVE, or the component is tearing down).
+	protected void HideAllHuds()
+	{
+		PlayerManager players = GetGame().GetPlayerManager();
+		if (!players)
+			return;
+
+		array<int> connected = new array<int>();
+		players.GetPlayers(connected);
+		array<ref TBD_Objective> board = new array<ref TBD_Objective>();
+		foreach (int playerId : connected)
+		{
+			PushHudToPlayer(players, playerId, board, 0);
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Public so a late-joining controller can ask without inventing a second snapshot builder.
+	void PushHudTo(int playerId)
+	{
+		PlayerManager players = GetGame().GetPlayerManager();
+		if (!players)
+			return;
+
+		array<ref TBD_Objective> board = TBD_ObjectiveRegistry.GetAll();
+		if (!board)
+			board = new array<ref TBD_Objective>();
+
+		PushHudToPlayer(players, playerId, board, 1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void PushHudToPlayer(notnull PlayerManager players, int playerId, notnull array<ref TBD_Objective> board, int show)
+	{
+		SCR_PlayerController controller = SCR_PlayerController.Cast(players.GetPlayerController(playerId));
+		if (!controller)
+			return;
+
+		array<string> icons = new array<string>();
+		array<string> titles = new array<string>();
+		array<string> details = new array<string>();
+		string barLabel;
+		int barPercent;
+		int barVisible;
+
+		FillHudSnapshot(playerId, board, icons, titles, details, barLabel, barPercent, barVisible);
+		controller.TBD_PushObjectiveHud(icons, titles, details, barLabel, barPercent, barVisible, show);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void FillHudSnapshot(int playerId, notnull array<ref TBD_Objective> board,
+		notnull array<string> icons, notnull array<string> titles, notnull array<string> details,
+		out string barLabel, out int barPercent, out int barVisible)
+	{
+		barLabel = string.Empty;
+		barPercent = 0;
+		barVisible = 0;
+
+		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
+		string factionKey = ResolveFaction(spawn, playerId);
+
+		foreach (TBD_Objective objective : board)
+		{
+			if (!objective)
+				continue;
+
+			icons.Insert(HudIcon(objective, factionKey));
+			titles.Insert(objective.DisplayName());
+			details.Insert(objective.StatusText(factionKey));
+
+			if (objective.m_eKind != TBD_EObjectiveKind.CAPTURE)
+				continue;
+			if (objective.m_aPresentPlayers.Find(playerId) == -1)
+				continue;
+
+			bool take = barVisible == 0 || objective.m_bContested;
+			if (!take)
+				continue;
+
+			barVisible = 1;
+			barLabel = objective.DisplayName();
+			barPercent = objective.ProgressPercent();
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! One ASCII glyph per row: o neutral, + ours, - theirs, ! contested, v complete, # destroy, H hold.
+	protected string HudIcon(notnull TBD_Objective objective, string factionKey)
+	{
+		if (!objective.m_bUsable)
+			return ".";
+		if (objective.m_bComplete)
+			return "v";
+		if (objective.m_bContested)
+			return "!";
+		if (objective.m_eKind == TBD_EObjectiveKind.DESTROY)
+			return "#";
+		if (objective.m_eKind == TBD_EObjectiveKind.HOLD_UNTIL)
+			return "H";
+		if (objective.m_sOwner.IsEmpty())
+			return "o";
+		if (!factionKey.IsEmpty() && objective.m_sOwner == factionKey)
+			return "+";
+		return "-";
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! Server -> one client, over the channel this codebase already uses for per-player replies
-	//! (`TBD_AdminCommands.Reply`, `TBD_PlayAreaComponent.Tell`).
+	//! (`TBD_AdminCommands.Reply`, `TBD_PlayAreaComponent.Tell`). Complete-lines only (T-941.4).
 	protected void Tell(notnull PlayerManager players, int playerId, string text)
 	{
 		PlayerController pc = players.GetPlayerController(playerId);
