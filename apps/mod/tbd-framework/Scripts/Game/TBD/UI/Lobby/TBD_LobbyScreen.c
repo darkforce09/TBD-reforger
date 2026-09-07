@@ -91,6 +91,9 @@ class TBD_LobbyScreen : TBD_ShellScreen
 	//! Visual echo of the seat you hold, restored after every rebuild.
 	protected int m_iOwnRowTag;
 
+	//! T-139 — kit preview hosted beside the slot list. Null when the layout did not instantiate.
+	protected TBD_LoadoutPreview m_Preview;
+
 	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenOpen()
 	{
@@ -115,7 +118,12 @@ class TBD_LobbyScreen : TBD_ShellScreen
 
 		TBD_ListBox list = GetList();
 		if (list)
+		{
 			list.GetOnActivate().Insert(OnRowPicked);
+			list.GetOnHighlight().Insert(OnRowHighlighted);
+		}
+
+		MountLoadoutPreview();
 
 		GetOnPrimaryAction().Insert(OnDeployPressed);
 
@@ -138,7 +146,12 @@ class TBD_LobbyScreen : TBD_ShellScreen
 
 		TBD_ListBox list = GetList();
 		if (list)
+		{
 			list.GetOnActivate().Remove(OnRowPicked);
+			list.GetOnHighlight().Remove(OnRowHighlighted);
+		}
+
+		m_Preview = null;
 
 		GetOnPrimaryAction().Remove(OnDeployPressed);
 		TBD_LobbyClient.GetOnRosterChanged().Remove(OnRosterChanged);
@@ -335,6 +348,7 @@ class TBD_LobbyScreen : TBD_ShellScreen
 		// After EndUpdate: the list restores its selection inside EndUpdate, and the tag numbering
 		// only became meaningful as the rows above were emitted.
 		list.SetSelectedTag(m_iOwnRowTag);
+		RefreshPreviewFromTag(m_iOwnRowTag);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -550,6 +564,68 @@ class TBD_LobbyScreen : TBD_ShellScreen
 	//------------------------------------------------------------------------------------------------
 	//! One click does one thing, immediately. Direct manipulation — there is no confirm step
 	//! anywhere on this screen.
+
+	//------------------------------------------------------------------------------------------------
+	//! T-139 — park the kit preview in the right column of the shell and shrink the slot list.
+	protected void MountLoadoutPreview()
+	{
+		if (m_Preview)
+			return;
+
+		Widget listW = Find("List");
+		if (!listW)
+			return;
+
+		Widget parent = listW.GetParent();
+		if (!parent)
+			return;
+
+		FrameSlot.SetOffsets(listW, 48, 162, 304, 136);
+		FrameSlot.SetPos(listW, 48, 162);
+		FrameSlot.SetSize(listW, -352, -298);
+
+		Widget root = TBD_LoadoutPreview.CreateUnder(parent);
+		if (!root)
+			return;
+
+		m_Preview = TBD_LoadoutPreview.Cast(root.FindHandler(TBD_LoadoutPreview));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Hover/focus on a seat row shows that seat's kit without taking it.
+	protected void OnRowHighlighted(TBD_ListBox list, int tag)
+	{
+		if (tag >= TAG_SLOT_BASE)
+			RefreshPreviewFromTag(tag);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void RefreshPreviewFromTag(int tag)
+	{
+		if (tag < TAG_SLOT_BASE)
+			return;
+		if (!m_aSlotKeys)
+			return;
+
+		int index = tag - TAG_SLOT_BASE;
+		if (index < 0)
+			return;
+		if (index >= m_aSlotKeys.Count())
+			return;
+
+		RefreshPreviewForKey(m_aSlotKeys[index], index);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void RefreshPreviewForKey(string key, int slotIndex)
+	{
+		if (!m_Preview)
+			return;
+
+		TBD_MissionSlotStruct slot = TBD_MissionLoader.GetSlotById(key);
+		m_Preview.Refresh(slot, slotIndex);
+	}
+
 	protected void OnRowPicked(TBD_ListBox list, int tag)
 	{
 		if (tag == TAG_BRIEFING)
@@ -624,6 +700,7 @@ class TBD_LobbyScreen : TBD_ShellScreen
 			return;
 
 		string key = m_aSlotKeys[index];
+		RefreshPreviewForKey(key, index);
 
 		TBD_LobbySlot slot = m_Roster.FindSlot(key);
 		if (!slot)
