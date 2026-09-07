@@ -17,7 +17,9 @@ context = [
     "store.rs is shared with T-937.1 and T-937.2; this slice packs after both.",
 ]
 requirement = [
-    "store.rs: a side-key cache keyed by slot id, invalidated by the store's existing change observer; materialize reads through it.",
+    "store.rs: a side-key cache keyed by slot id, invalidated whenever a squad or faction changes; materialize reads through it.",
+    "Corrected 2026-09-07: there is NO change observer in the store or anywhere in the repo. Zero hits for .observe(, observe_deep, observe_update, yrs::Subscription. The slice supplies invalidation itself.",
+    "materialize(&self) -> SlotSoa is a PINNED signature — T-190 owns persist.rs, whose slots_digest calls it this wave. Interior mutability (RefCell/Cell), never &mut self.",
     "store.rs: slot_exists(id) -> bool consulting the raw map, hidden or not, without materializing.",
     "operations/entity.rs:1885 uses slot_exists; the warning comments at :1795 and :1847 point to it.",
     "A test asserts materialize over 500 slots performs at most one side-key resolution per distinct side.",

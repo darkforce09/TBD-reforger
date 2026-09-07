@@ -20,6 +20,10 @@ requirement = [
     "New state/tab_lock.rs (registered in state/mod.rs): BroadcastChannel per mission id announces presence; a second tab shows a read-only banner until the first closes.",
     "persist.rs reads the stored blob and applies it as a yrs update before writing, so two tabs converge instead of clobbering.",
     "The conflict modal shows object counts and timestamps for both options and marks 'Load server version' as destructive.",
+    "Corrected 2026-09-07: ConflictInfo and ConflictDialog live in canvas/overlays.rs:898-970, not mission_editor.rs, which holds only the re-export, the signal and the mount. overlays.rs is now owned.",
+    "BroadcastChannel and navigator.locks already exist in core/client.rs:422-430 and :509-532 via js_sys::Reflect, because web-sys does not enable them here. Follow that precedent; touch no Cargo.toml.",
+    "Folded in by operator 2026-09-07 — T-946.51: SAVE_IN_FLIGHT is set and reset but never read, and its test passes on the identifier alone; the real guard is lock_for(id).",
+    "Folded in by operator 2026-09-07 — T-946.54: note_unreadable retries 80/160/320 ms before inserting into UNREADABLE, so run_save passes the guard and can overwrite a record already known unreadable.",
 ]
 current_state = ["Whichever tab's debounce fires last wins; the CRDT can merge and is never asked to; the reload prompt offers no counts or timestamps."]
 approach = [
@@ -44,6 +48,7 @@ owns = [
     "apps/website/frontend/src/editor/state/tab_lock.rs",
     "apps/website/frontend/src/editor/state/mod.rs",
     "apps/website/frontend/src/editor/mission_editor.rs",
+    "apps/website/frontend/src/editor/canvas/overlays.rs",
 ]
 
 [scope]

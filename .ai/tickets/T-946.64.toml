@@ -3,13 +3,13 @@ kind = "work"
 title = "Slice gate runs no test step at all"
 summary = "platform wave gate --slice runs check, wasm32, fmt, clippy, schema, db_migrate and verify steps but no cargo test, so wave 253 shipped two deterministically-failing frontend tests that only the full wave gate caught."
 class = "chore"
-status = "ready"
-parent = "T-946"
+status = "shipped"
 order = 7525
-priority = 1
 spec = "docs/platform/PLATFORM_FACTORY.md"
 plan = "docs/plans/t-946_64_plan.md"
 executor = "claude-code"
+priority = 1
+parent = "T-946"
 main_goal = "A slice that breaks a frontend test learns it at slice time, not at wave gate."
 context = [
     "Anchor 2026-09-07: gate_slice (xtask/src/wave/gate.rs:99-224) runs check, wasm32, fmt, clippy, schema, catalogue drift, db_migrate twice and VERIFY_STEPS. No cargo test step exists.",
@@ -21,9 +21,7 @@ requirement = [
     "The step uses the gate's private target dir (checkrun_argv + ctx.gate_check_target), not the shared warm cache — T-421.",
     "A failing frontend test turns the step, and the slice gate verdict, red.",
 ]
-current_state = [
-    "No gate step runs any test. A slice agent only runs tests if its brief tells it to, and wave 253 proved that is not enough.",
-]
+current_state = ["No gate step runs any test. A slice agent only runs tests if its brief tells it to, and wave 253 proved that is not enough."]
 approach = [
     "Add frontend_tests_changed to changed.rs beside wasm_changed, reusing wasm_scope_touched for the scope decision.",
     "Register it in gate_slice after the clippy step.",
@@ -37,6 +35,10 @@ acceptance = [
     "A slice touching the wasm scope runs the frontend suite inside its own gate and goes red on a failing test.",
     "A slice touching nothing in that scope reports a named skip rather than running the suite.",
 ]
+shipped_at = "a3e63856c8cc66a60a0af1e9a0772d2230c1b709"
+created_at = "2026-09-07T14:58:29Z"
+completed_at = "2026-09-07T15:23:39Z"
+estimated = ["tokens"]
 owns = [
     "xtask/src/wave/changed.rs",
     "xtask/src/wave/gate.rs",

@@ -19,6 +19,9 @@ context = [
 requirement = [
     "Schema: top-level tacticalGraphics [{id, kind: phase_line|boundary|axis_of_advance|curved_arrow, points: [[x, z]...] minItems 2, label?, sideKey?, style?}], additionalProperties false.",
     "New mission/tactical_graphics.rs (registered in mission/mod.rs): model, validator (point count per kind, finite coordinates); registered in extensions.rs AUTHORED_BLOCKS.",
+    "T-946.53: the AUTHORED_BLOCKS row alone does NOT reach /compiled. flatten.rs needs a named EditorPayload serde field AND an authored_block_value match arm; its _ => None drops unmatched keys silently.",
+    "Also moving together: extensions.rs len 6->7, the !is_authored_block(tacticalGraphics) assert and its two decoy keys, and the compile.rs test whose message names this ticket.",
+    "Correct the two comments that claim a row suffices — extensions.rs:10-13 and mission-editor-payload.schema.json:34 — in the same commit as the change that falsifies them.",
     "New canvas/tactical_graphics.rs (registered in canvas/mod.rs): draws each kind (Catmull-Rom for curved arrows), vertex drag editing, selection; undoable operations.",
     "Rendering goes through the existing overlay layer; no new render lane in map-engine-render.",
 ]
@@ -45,11 +48,20 @@ depends_on = ["T-673", "T-936.6"]
 created_at = "2026-09-05T02:09:02Z"
 owns = [
     "packages/tbd-schema/schema/mission.schema.json",
+    "packages/tbd-schema/schema/mission-editor-payload.schema.json",
     "apps/website/frontend/src/editor/canvas/tactical_graphics.rs",
     "apps/website/frontend/src/editor/canvas/mod.rs",
+    "apps/website/frontend/src/editor/canvas/gestures.rs",
+    "apps/website/frontend/src/editor/canvas/commands.rs",
+    "apps/website/frontend/src/editor/canvas/render_sync.rs",
+    "apps/website/frontend/src/editor/state/history.rs",
+    "apps/website/frontend/src/editor/state/operations.rs",
+    "apps/website/frontend/src/editor/state/operations/tactical_graphics.rs",
     "crates/map-engine-core/src/mission/tactical_graphics.rs",
     "crates/map-engine-core/src/mission/mod.rs",
     "crates/map-engine-core/src/mission/extensions.rs",
+    "crates/map-engine-core/src/mission/flatten.rs",
+    "crates/map-engine-core/src/mission/compile.rs",
 ]
 
 [scope]

@@ -45,6 +45,7 @@ owns = [
     "apps/website/frontend/src/editor/world_assets/memory_budget.rs",
     "apps/website/frontend/src/editor/world_assets/mod.rs",
     "apps/website/frontend/src/editor/world_assets/satellite.rs",
+    "apps/website/frontend/src/editor/canvas/viewport.rs",
 ]
 
 [scope]
