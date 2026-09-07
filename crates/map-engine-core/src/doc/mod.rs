@@ -13,6 +13,7 @@ mod id_arrays;
 mod place_orbat;
 mod soa;
 mod store;
+mod undo_groups;
 
 pub use apply_faction::{
     APPLY_ANCHOR_X, APPLY_ANCHOR_Y, ApplyFactionError, ApplyFactionResult, FactionLibraryInput,
@@ -24,6 +25,7 @@ pub use store::{
     ConnectionFinding, ConnectionKind, ConnectionRow, EntityTransformPatch, MissionDocCore,
     formation_offsets, validate_connection_rows,
 };
+pub use undo_groups::{GESTURE_WINDOW_MS, MAX_UNDO_GROUPS, ManualClock, install_wasm_now};
 
 #[cfg(test)]
 mod reexport_pins {
