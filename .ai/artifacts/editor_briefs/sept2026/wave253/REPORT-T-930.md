@@ -52,7 +52,7 @@ Restored the call, `touch` entity.rs: **restored_green** (`place_path_invalidate
 
 ## gate_verdict_tail
 
-First PASS was on dirty HEAD `9f4a8c7d1dff` (wasm32/clippy lifetime fail fixed: bind `RefMut` before `as_mut`). Re-gate after commit so land SHA matches.
+First PASS was on dirty HEAD `9f4a8c7d1dff` (wasm32/clippy lifetime fail fixed: bind `RefMut` before `as_mut`). Code commit `8aea6bcd8`. Re-gate after this report SHA fill.
 
 ```
   T-437 destroy inert      PASS
@@ -61,7 +61,7 @@ First PASS was on dirty HEAD `9f4a8c7d1dff` (wasm32/clippy lifetime fail fixed: 
   T-452 player identity    PASS
   no-python (T-620)        PASS
 
-  gate verdict PASS @ <post-commit SHA> recorded: .ai/artifacts/verdicts/T-930.json
+  gate verdict PASS @ 8aea6bcd8 recorded: .ai/artifacts/verdicts/T-930.json
 SLICE GATE: PASS
 ```
 
@@ -85,7 +85,8 @@ Lock wait ~210s (T-938.4 / T-938.3 / T-937.4).
 
 ## commits
 
-(filled after commit)
+- `8aea6bcd8` T-930: first vehicle paint uses silhouette, not yellow disc
+- (report SHA fill follows)
 
 ## twins_confirmed
 
