@@ -144,7 +144,7 @@ pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {
     // `changed::frontend_tests_changed` for the two wave-253 failures that bought it: both were
     // deterministic, both were in this gate's blind spot, and both were found only after merge.
     r.run("test (frontend, changed)", || {
-        changed::frontend_tests_changed(ctx, "")
+        changed::frontend_tests_changed(ctx, "", tid)
     });
     // T-420. NOT change-scoped, and it is in the CHEAP gate on purpose: this is the step that would
     // have stopped T-244, whose diff is 0 .rs files — so every other step above it is change-scoped

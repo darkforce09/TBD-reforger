@@ -378,6 +378,20 @@ pub fn rebind_engine_from_doc() {
                 let (mxy, mtints, micons, mcaptions) = marker_lane_xy_tints(doc);
                 e.markers_bind(&mxy, &mtints, micons, mcaptions);
                 e.comments_bind_ids(&comment_lane_xy(doc), comment_lane_ids(doc));
+                // T-936.7 fix, wave 255 verify. THIS SITE IS THE ONLY WAY TACTICAL GRAPHICS CAN
+                // ARRIVE. The slice bound the lane from `after_doc_change` only, which is reached
+                // from undo/redo and `after_local_edit` — i.e. from an EDIT. Rows reach a document
+                // through the IDB restore (`mission_editor.rs`), the server hydrate and conflict
+                // resolution (`state/hydrate.rs`), and T-190's peer merge (`state/persist.rs`), and
+                // all three land here, not there. `begin_tactical_draw` has no caller yet, so a
+                // hydrated payload is currently the ONLY way rows exist at all: without this line a
+                // mission whose payload carries `tacticalGraphics` drew nothing on 100% of live
+                // openings, while `live_tactical_graphics` still answered picks — an invisible
+                // graphic that is nonetheless clickable and deletable, which is precisely the
+                // "what is drawn and what a click can find are one set" invariant the slice cites.
+                // Every other lane above is bound at BOTH sites for this reason, and the repo keeps
+                // a family of pins (t760, t780, t790, t808, t819) asserting exactly that.
+                upload_tactical_graphics(e, doc);
             }
         }
         refresh_signals(ctx, obj);
@@ -450,9 +464,12 @@ fn after_doc_change(ctx: &HistoryCtx) {
             e.markers_bind(&mxy, &mtints, micons, mcaptions);
             e.comments_bind_ids(&comment_lane_xy(doc), comment_lane_ids(doc));
             // T-936.7 — rebind the tactical-graphics lane from the COMMITTED document, on the
-            // same footing as every lane above it. This is the reason the lane can never go
-            // stale after an undo/redo/restore: a lane bound only from its authoring call site
-            // is exactly the defect `upload_squad_links`' own note warns about.
+            // same footing as every lane above it. This is the EDIT half only: this function is
+            // reached from undo, redo and `after_local_edit`. The RESTORE half —
+            // IDB restore, server hydrate, conflict resolution, T-190's peer merge — lands in
+            // `rebind_engine_from_doc`, which is a different function and needs its own call.
+            // The original of this comment claimed both and the slice only wired one, which the
+            // wave-255 verify caught: see the note at that other call site.
             upload_tactical_graphics(e, doc);
         }
     }

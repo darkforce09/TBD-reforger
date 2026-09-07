@@ -3370,6 +3370,15 @@ mod t768_connect_lmb_complete;
 #[path = "mission_editor_tests/t780_connection_line.rs"]
 mod t780_connection_line;
 
+// ═════ T-936.7 — the tactical lane is bound on the RESTORE path too ═══════════════════════════════
+//
+// Wave-255 verify BLOCKER. T-936.7 bound its lane from `after_doc_change` only — the edit half —
+// so a mission whose payload carried `tacticalGraphics` drew nothing when OPENED, which is the only
+// way rows can currently exist at all. Same family as t760 / t780 / t819 above.
+#[cfg(test)]
+#[path = "mission_editor_tests/t936_7_tactical_lane_bind.rs"]
+mod t936_7_tactical_lane_bind;
+
 // ═════ T-784 — the comment GLYPH is pickable, and the pick is the lane's own list ════════════════
 //
 // The defect was total: the glyph had no pick path at all, the Outliner comment row was `ROW_STATIC`

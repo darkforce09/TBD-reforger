@@ -1,0 +1,12 @@
+id = "T-946.76"
+kind = "work"
+title = "Completed viewshed uploads only via object wash tick"
+summary = "T-938.5 finish_terrain republishes state and starts the object wash but never uploads; the final disc reaches the GPU only if ObjectPass::step reports a changed cell."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T17:22:41Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

@@ -1,0 +1,12 @@
+id = "T-946.65"
+kind = "work"
+title = "DEM forecast leaks on six early returns"
+summary = "T-938.6 holds Dem+Hillshade (327 MB on everon) before the join and only set_held on the success path; six early returns in load_dem_and_hillshade leave declared-but-unallocated bytes held for the tab's life, permanently downgrading the satellite. hold/set_held have no test."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T17:21:21Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

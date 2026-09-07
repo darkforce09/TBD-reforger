@@ -1,0 +1,12 @@
+id = "T-946.70"
+kind = "work"
+title = "Viewshed cap refusal is invisible to the operator"
+summary = "T-938.5 last_refusal has no production caller and an over-cap compute_viewshed returns a cols:0 raster nothing branches on, so a refusal draws a blank overlay identical to finding nothing."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T17:21:57Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

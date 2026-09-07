@@ -1,0 +1,12 @@
+id = "T-946.69"
+kind = "work"
+title = "Tactical draw path is unreachable in production"
+summary = "begin_tactical_draw has zero call sites, so tactical_draw_armed is permanently false and push_vertex, complete and cancel are dead. Arming needs a panels surface or a keybinding that fails two keymap census tests."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T17:21:50Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

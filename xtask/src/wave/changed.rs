@@ -4,6 +4,7 @@
 //! merged main — so without an explicit base these silently check nothing exactly where it matters
 //! most. Every caller in the wave gate passes `$base..HEAD`; the slice gate takes the default.
 
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use super::{Ctx, git_stdout_lossy, host, ledger};
@@ -281,19 +282,40 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 /// Both were deterministic in isolation. Neither slice gate could have seen them, and the fix for
 /// "the gate does not run the tests" is not a longer brief.
 ///
-/// **Scope is [`wasm_scope_touched`], not a literal `apps/website/frontend/` prefix.** That helper
-/// walks the SPA's `Cargo.toml` path dependencies, so `map-engine-core` is inside it — which is
-/// precisely how T-938.4's core-crate edit reached a frontend test. A prefix check would have
-/// missed the very case this step exists for.
+/// **Scope is [`wasm_scope_touched`] PLUS the SPA's `include_str!`/`include_bytes!` inputs.**
+/// `wasm_scope_touched` walks the SPA's `Cargo.toml` path dependencies, so `map-engine-core` is
+/// inside it — which is precisely how T-938.4's core-crate edit reached a frontend test, and why a
+/// literal `apps/website/frontend/` prefix would have missed the very case this step exists for.
+///
+/// But the dependency graph is not the whole input set, and the wave-255 verify caught the hole:
+/// the suite compiles files from OUTSIDE that graph, through `include_str!` —
+/// `packages/tbd-schema/schema/mission.schema.json` (`editor/panels/zones_panel.rs`),
+/// `loadout-export.schema.json` (`arsenal/`), `apps/website/api/src/app.rs` (four `pages/` census
+/// tests), `apps/mod/tbd-framework/Data/registry.json` (`arsenal/asset_catalog.rs`). Wave 255 itself
+/// changed `mission.schema.json`; a slice whose diff was only that file would have printed
+/// "frontend untouched" and skipped, while `zone_rule_fields_cover_the_whole_vocabulary` compiles
+/// that exact file and is documented to fail loudly on a new key.
+///
+/// So the include inputs are added — but SCOPED to the wasm-scope crates via
+/// [`include_inputs_under`], not taken wholesale from [`compiled_include_input_paths`]. Wholesale
+/// would drag `apps/website/api/**` into the frontend's scope, which this module's own test
+/// deliberately asserts must never happen.
 ///
 /// Native `cargo test`, not `--target wasm32-unknown-unknown`: the wasm target has no test runner
 /// here, and the two failures above were both in natively-reachable code (`save_status.rs` is
 /// deliberately left ungated for exactly this reason).
 ///
-/// `checkrun_argv` + [`Ctx::gate_check_target`], never the shared warm cache — this is a cargo step
-/// and carries the T-421/T-596 exposure verbatim. Under five concurrent slices the shared dir
-/// replays cached verdicts, and a *test* step that reports a cached PASS is worse than no step.
-pub fn frontend_tests_changed(ctx: &Ctx, base: &str) -> i32 {
+/// **A PRIVATE, PER-SLICE target dir — not [`Ctx::gate_check_target`].** This was wrong in the
+/// first cut and the wave-255 verify caught it. `gate_check_target` is `main_root/target-gate-check`,
+/// and `main_root` is the primary checkout SHARED BY EVERY WORKTREE — so five concurrent slice gates
+/// all build `website-frontend` into one directory. That is the exact condition
+/// [`super::gate::cmd_gate`] refuses in so many words: T-193 and T-195 independently measured
+/// `cargo test -p website-frontend` running a stale `website_frontend-<hash>` binary built from
+/// ANOTHER worktree (same package name + version across worktrees = same artifact hash =
+/// clobbering), and the wave gate gives its own frontend step `target-gate-frontend` for it. A
+/// *test* step reporting another worktree's cached PASS is worse than no step at all. Keyed by
+/// slice id so five concurrent gates cannot collide with each other either.
+pub fn frontend_tests_changed(ctx: &Ctx, base: &str, slice: &str) -> i32 {
     let base = if base.is_empty() { DEFAULT_BASE } else { base };
     // Same committed-plus-working-tree union as fmt_changed and wasm_changed, for the same reason:
     // a slice gate run before committing must not report a vacuous PASS. LFS-safe porcelain (T-401).
@@ -302,23 +324,64 @@ pub fn frontend_tests_changed(ctx: &Ctx, base: &str) -> i32 {
         Err(rc) => return rc,
     };
     let diff = git_stdout_lossy(&["diff", "--name-only", base]);
-    let touched = wasm_scope_touched(&ctx.root, diff.lines().chain(wt.iter().map(String::as_str)));
+    let changed: Vec<String> = diff
+        .lines()
+        .map(str::to_string)
+        .chain(wt.iter().cloned())
+        .collect();
+    let touched = wasm_scope_touched(&ctx.root, changed.iter().map(String::as_str))
+        || frontend_include_input_touched(&ctx.root, changed.iter().map(String::as_str));
     if !touched {
         // A NAMED skip, printing the scope it decided against. "skip:" alone is how a step that
         // silently checks nothing reads exactly like a step that checked something.
         wprintln!(
-            "frontend untouched — no test step; scope: {}",
+            "frontend untouched — no test step; scope: {} (+ their include_str! inputs)",
             wasm_scope_prefixes(&ctx.root).join(" ")
         );
         return 0;
     }
+    let private = ctx
+        .main_root
+        .join(format!("target-gate-slice-frontend-{slice}"));
     let argv = ctx.host.checkrun_argv(
-        &ctx.gate_check_target,
+        &private.display().to_string(),
         &host::v(&["cargo", "test", "-p", "website-frontend"]),
     );
     let (out, rc) = host::capture(&argv);
     wprint!("{out}");
     rc
+}
+
+/// Does any changed path appear in an `include_str!`/`include_bytes!` of a WASM-SCOPE crate?
+///
+/// The companion to [`wasm_scope_touched`] — see [`frontend_tests_changed`] for why the dependency
+/// graph alone is not the frontend suite's input set. Scoped deliberately: passing
+/// `wasm_scope_prefixes` rather than `workspace_members` keeps `apps/website/api/**` out of the
+/// frontend's scope even though the API has plenty of include inputs of its own.
+fn frontend_include_input_touched<'a>(root: &Path, paths: impl Iterator<Item = &'a str>) -> bool {
+    let set = frontend_include_inputs(root);
+    if set.is_empty() {
+        return false;
+    }
+    paths
+        .into_iter()
+        .any(|p| set.contains(&realpath_m(&root.join(p))))
+}
+
+/// The wasm-scope crates' `include_str!`/`include_bytes!` inputs, as absolute paths.
+///
+/// **Absolute, deliberately.** [`workspace_members`] and [`rs_files_under`] resolve against the
+/// PROCESS CWD, so passing the repo-relative `wasm_scope_prefixes` straight through makes the answer
+/// depend on where the binary happened to be started — it returns an empty list from anywhere but
+/// the repo root, and an empty list here means "nothing is in scope", i.e. a silent skip of the very
+/// step this exists to trigger. `root` is already absolute, so joining it pins the walk. Found by
+/// this function's own test, which asserts non-vacuity before asserting membership.
+fn frontend_include_inputs(root: &Path) -> HashSet<PathBuf> {
+    let dirs: Vec<String> = wasm_scope_prefixes(root)
+        .into_iter()
+        .map(|d| root.join(d).display().to_string())
+        .collect();
+    include_inputs_under(&dirs).into_iter().collect()
 }
 
 /// Directory of the `[package]` `Cargo.toml` owning a `.rs` path, or `None`.
@@ -498,7 +561,17 @@ pub fn workspace_members() -> Vec<String> {
 /// "…")` is resolved from the owning package dir. Macro-expanded fixture trees (dto.rs golden
 /// tests) are touched wholesale because their per-file paths are not statically enumerable.
 pub fn compiled_include_input_paths() -> Vec<PathBuf> {
-    let dirs = workspace_members();
+    include_inputs_under(&workspace_members())
+}
+
+/// [`compiled_include_input_paths`] restricted to the given package dirs.
+///
+/// T-946.64 follow-up (wave-255 verify). Split out so the slice gate's frontend test step can ask
+/// the same question about the WASM-SCOPE crates ONLY. Taking the whole-workspace answer would put
+/// `apps/website/api/**`'s include inputs into the frontend's scope, which
+/// `no_api_paths_in_the_wasm_scope` deliberately forbids. Behaviour for the original caller is
+/// unchanged: it passes `workspace_members()` and gets the identical list.
+pub fn include_inputs_under(dirs: &[String]) -> Vec<PathBuf> {
     let re_static =
         regex::Regex::new(r#"include_(?:str|bytes)!\(\s*"([^"]+)""#).expect("static regex");
     let re_manifest = regex::Regex::new(
@@ -510,7 +583,7 @@ pub fn compiled_include_input_paths() -> Vec<PathBuf> {
         if !Path::new(&d).is_dir() {
             continue;
         }
-        for consumer in rs_files_under(&[&d]) {
+        for consumer in rs_files_under(&[d.as_str()]) {
             let Ok(body) = std::fs::read_to_string(&consumer) else {
                 continue;
             };
@@ -596,6 +669,60 @@ mod tests {
         assert!(
             !wasm_scope_touched(&root, ["apps/website/api/src/db.rs"].into_iter()),
             "a backend-only change must not force the most expensive step in the gate"
+        );
+    }
+
+    /// T-946.64 follow-up, filed by the wave-255 verify: **the dependency graph is not the frontend
+    /// suite's whole input set.**
+    ///
+    /// `frontend_tests_changed` originally scoped itself on `wasm_scope_touched` alone. But the
+    /// suite compiles files from outside that graph through `include_str!`, and wave 255 itself
+    /// changed one of them — `packages/tbd-schema/schema/mission.schema.json`, compiled by
+    /// `editor/panels/zones_panel.rs` and asserted over by
+    /// `zone_rule_fields_cover_the_whole_vocabulary`, which is documented to fail loudly on a new
+    /// `$defs/zoneRules` key. A slice whose diff was only that file would have printed "frontend
+    /// untouched", skipped the suite, and reported PASS over the one test that would have caught it.
+    ///
+    /// The negative half is the load-bearing one: the fix must NOT be
+    /// `compiled_include_input_paths()` wholesale, because that would drag the API's own include
+    /// inputs into the frontend's scope and make a backend-only slice run the most expensive step in
+    /// the gate — the thing the test above deliberately forbids.
+    #[test]
+    fn the_frontends_include_str_inputs_are_in_scope_and_the_apis_are_not() {
+        let root = crate::root::test_repo_root();
+        let scoped = frontend_include_inputs(&root);
+        println!("── include inputs ── wasm-scope {}", scoped.len());
+        // Non-vacuity: an empty scoped list would make every assertion below trivially true, and
+        // an empty list is EXACTLY the failure mode here — it reads as "nothing is in scope" and
+        // silently skips the suite. This assertion is what caught the cwd-relative walk that
+        // `frontend_include_inputs` now pins with an absolute root.
+        assert!(
+            !scoped.is_empty(),
+            "the SPA compiles include_str! inputs; an empty list means the walk broke"
+        );
+        // NOT compared against `compiled_include_input_paths()`: that one resolves against the
+        // process CWD and answers 0 from a test binary, so the comparison would be vacuous in
+        // exactly the direction this test exists to rule out. The negative cases below carry the
+        // scoping guarantee instead.
+        // The exact file wave 255 changed.
+        assert!(
+            frontend_include_input_touched(
+                &root,
+                ["packages/tbd-schema/schema/mission.schema.json"].into_iter()
+            ),
+            "mission.schema.json is include_str!'d by the SPA and must put it in scope; \
+             scoped inputs: {scoped:?}"
+        );
+        // And the negative: a backend-only change stays out, include inputs and all.
+        assert!(
+            !frontend_include_input_touched(&root, ["apps/website/api/src/db.rs"].into_iter()),
+            "a backend-only change must not reach the frontend suite"
+        );
+        // A path nobody includes is not in scope either — this is a membership test, not a
+        // "does the file exist" test.
+        assert!(
+            !frontend_include_input_touched(&root, ["README.md"].into_iter()),
+            "an un-included file must not put the SPA in scope"
         );
     }
 

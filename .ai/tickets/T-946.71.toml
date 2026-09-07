@@ -1,0 +1,12 @@
+id = "T-946.71"
+kind = "work"
+title = "Viewshed wash lane shipped with no consumer"
+summary = "T-938.5 submit_wash step_wash take_wash have no callers outside the module's tests; building_viewer.rs still calls level_wash synchronously, so the bit-identity proof covers a lane nothing runs."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T17:22:04Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

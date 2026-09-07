@@ -1,0 +1,12 @@
+id = "T-946.74"
+kind = "work"
+title = "Partial viewshed paints unmarched ground as Hidden"
+summary = "T-938.5 ViewshedJob::new fills with Hidden, so the first 4 ms batch publishes ~93 percent of the disc as proven dead ground; the sibling WashJob uses Unknown, the honest sentinel."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T17:22:26Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

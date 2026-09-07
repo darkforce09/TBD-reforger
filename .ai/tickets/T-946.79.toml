@@ -1,0 +1,12 @@
+id = "T-946.79"
+kind = "work"
+title = "Conflict modal mixes relative and absolute times"
+summary = "T-190 shows local as 4m ago and server as an absolute UTC stamp in adjacent fields, so the dialog meant to stop blind choices still cannot be compared directly."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T17:23:02Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

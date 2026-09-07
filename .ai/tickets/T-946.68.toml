@@ -1,0 +1,12 @@
+id = "T-946.68"
+kind = "work"
+title = "Delete eats a tactical graphic not the selection"
+summary = "T-936.7 commands.rs short-circuits delete_selected_tactical_graphic before delete_selection; clear_tactical_selection has one caller so a marquee or outliner selection leaves the graphic armed."
+class = "chore"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T17:21:43Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

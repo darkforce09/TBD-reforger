@@ -1,0 +1,12 @@
+id = "T-946.67"
+kind = "work"
+title = "MERGED_WRITES counts decisions not merges"
+summary = "T-190's acceptance instrument increments in the SaveDecision::Merge arm before merge_before_write runs and regardless of outcome, so a first save of a new mission in one tab counts as merged."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T17:21:35Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

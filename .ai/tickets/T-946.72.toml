@@ -1,0 +1,12 @@
+id = "T-946.72"
+kind = "work"
+title = "tacticalGraphics missing from UNREAD_WIRE_FIELDS"
+summary = "mission.schema.json says the field is not yet read by the mod but no schema_gates row was added, so nothing will force the wording out when a mod reader lands."
+class = "chore"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T17:22:12Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

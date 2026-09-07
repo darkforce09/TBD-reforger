@@ -1,0 +1,12 @@
+id = "T-946.66"
+kind = "work"
+title = "merge_before_write blind-writes when it cannot read"
+summary = "T-190: a RecordRead::Failed or a merge_stored returning false both fall through to save_state_as. The read does not go through note_unreadable so it never latches UNREADABLE, breaking the module's own stated promise."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T17:21:28Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

@@ -1,0 +1,12 @@
+id = "T-946.78"
+kind = "work"
+title = "step_wash holds the slot borrow across host code"
+summary = "viewshed_scheduler step_wash and take_wash call caller-supplied closures under an active borrow_mut, the exact re-entrancy the terrain lane 100 lines above documents and avoids."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T17:22:55Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

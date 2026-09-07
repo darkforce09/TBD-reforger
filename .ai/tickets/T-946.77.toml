@@ -1,0 +1,12 @@
+id = "T-946.77"
+kind = "work"
+title = "Terrain scheduler lane has no real test"
+summary = "the_terrain_lane_declines_without_a_sampler exits at read_registered_sampler, so TerrainSlot, the drain loop, finish_terrain and pump_terrain_once never execute in any test."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T17:22:48Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
