@@ -264,6 +264,12 @@ pub struct MissionDocCore {
     undo_groups: Arc<super::undo_groups::GroupingClock>,
     /// Prefix of the yrs undo stack forgotten by the 200-group cap (T-937.2).
     undo_cap_hidden: Cell<usize>,
+    /// T-937.3 — how many times [`Self::materialize`] has actually walked
+    /// [`resolve_slot_side_key`] since this document was created. Unconditional (not `cfg(test)`)
+    /// on purpose: a `#[cfg(test)]` counter is invisible to every consumer AND to any probe that
+    /// reads the shipped build, so the one number that says whether the memo below is doing work
+    /// would only exist in the configuration that never ships. One relaxed `Cell` bump per MISS.
+    side_key_resolutions: Cell<u64>,
 }
 
 impl MissionDocCore {
@@ -406,6 +412,7 @@ impl MissionDocCore {
             undo_mgr,
             undo_groups,
             undo_cap_hidden: Cell::new(0),
+            side_key_resolutions: Cell::new(0),
         }
     }
 
@@ -716,6 +723,20 @@ impl MissionDocCore {
         buf
     }
 
+    /// T-937.3 — how many `slot → squad.factionId → faction.key` walks
+    /// ([`resolve_slot_side_key`]) [`Self::materialize`] has performed over this document's whole
+    /// life. Monotonic, never reset.
+    ///
+    /// This is the memo's own honesty check, and it is a *counter* rather than a boolean for the
+    /// reason the platform's signature defect exists: "the cache is wired up" is satisfied by a
+    /// cache that is never read, and "materialize is fast" is satisfied by a materialize that
+    /// resolves nothing because the document is empty. A DELTA across one call, compared against
+    /// the number of distinct squads in that call, cannot be satisfied vacuously by either.
+    #[must_use]
+    pub fn side_key_resolution_count(&self) -> u64 {
+        self.side_key_resolutions.get()
+    }
+
     /// Materialize every slot into the columnar [`SlotSoa`] (criterion 1). Keyed by `ids[row]`.
     ///
     /// T-665 — a slot filed under a **hidden** layer (or under a layer whose ancestor is hidden) is
@@ -797,6 +818,8 @@ impl MissionDocCore {
                 None => NONE_IDX,
             });
             // T-180.3 — slot → squad.factionId → faction.key (missing hop → BLUFOR).
+            self.side_key_resolutions
+                .set(self.side_key_resolutions.get().saturating_add(1));
             soa.side_keys.push(resolve_slot_side_key(
                 &txn,
                 &self.squads,
@@ -14758,5 +14781,248 @@ mod tests {
         assert_eq!(doc.force_to_formation("s1", "wedge"), 0);
         assert_eq!(doc.force_to_formation("", "wedge"), 0);
         assert_eq!(doc.force_to_formation("not-a-slot", "wedge"), 0);
+    }
+
+    /* ══════════════ T-937.3 — side-key memo + the existence fast path ══════════════════════════
+     *
+     * Everything below this banner belongs to T-937.3. It is the LAST block in the file on
+     * purpose: `#[cfg(test)]` is where every source-scrubbing probe in this repo stops reading,
+     * so a test item placed above a production item hides that item from every probe that looks
+     * for it. (This file already carries a REAL `#[cfg(test)] fn new()` inside `impl RemintMap`
+     * with production code below it — which is why `resolve_slot_side_key`, `read_position`,
+     * `read_str`, `read_bool` and `layer_flag_effective` are all invisible to a naive scrub of
+     * store.rs, and why the probe below reads the *frontend* file rather than this one.)
+     */
+
+    /// `count` slots split evenly between two squads that sit under two different factions, all
+    /// filed on one visible layer. Two distinct squads ⇒ exactly two distinct side keys, no
+    /// matter how large `count` grows — which is what makes the resolution count below a
+    /// statement about the memo rather than about the fixture.
+    fn two_sided_core(count: usize) -> MissionDocCore {
+        let doc = MissionDocCore::new();
+        doc.add_editor_layer("layer-1", "Layer 1", None);
+        doc.add_faction("faction-BLUFOR", "BLUFOR", "US Army");
+        doc.add_faction("faction-OPFOR", "OPFOR", "Soviet Army");
+        doc.add_squad("sq-blu", "faction-BLUFOR", "Alpha", None);
+        doc.add_squad("sq-opf", "faction-OPFOR", "Bravo", None);
+        for i in 0..count {
+            let squad = if i % 2 == 0 { "sq-blu" } else { "sq-opf" };
+            let index = u32::try_from(i / 2).expect("fixture index fits u32");
+            doc.add_slot(
+                &format!("n{i}"),
+                squad,
+                "layer-1",
+                index,
+                "Rifleman",
+                None,
+                None,
+                f64::from(index),
+                1.0,
+                0.0,
+                0.0,
+            );
+        }
+        doc
+    }
+
+    /// Every column of a [`SlotSoa`], as one comparable tuple. `SlotSoa` derives neither `Debug`
+    /// nor `PartialEq` (and `soa.rs` is not this slice's file to change), so "the output is
+    /// identical" is spelled out column by column rather than asserted with `assert_eq!` on the
+    /// struct — which also makes a future added column a compile error here instead of a silently
+    /// unchecked field.
+    #[allow(clippy::type_complexity)]
+    fn soa_columns(
+        s: &SlotSoa,
+    ) -> (
+        Vec<String>,
+        Vec<f32>,
+        Vec<f32>,
+        Vec<f32>,
+        Vec<f32>,
+        Vec<f32>,
+        Vec<u8>,
+        Vec<u32>,
+        Vec<u32>,
+        Vec<u32>,
+        Vec<u32>,
+        Vec<String>,
+        Vec<String>,
+        Vec<String>,
+        Vec<String>,
+        Vec<String>,
+    ) {
+        let SlotSoa {
+            ids,
+            xs,
+            ys,
+            xy,
+            zs,
+            rotations,
+            stance,
+            role_idx,
+            tag_idx,
+            squad_idx,
+            layer_idx,
+            side_keys,
+            roles,
+            tags,
+            squads,
+            layers,
+        } = s.clone();
+        (
+            ids, xs, ys, xy, zs, rotations, stance, role_idx, tag_idx, squad_idx, layer_idx,
+            side_keys, roles, tags, squads, layers,
+        )
+    }
+
+    /// The brace-matched body of the **only** `marker` item in `src`, which must already be
+    /// lexically scrubbed by [`strip_rust_lexical_noise`].
+    ///
+    /// Zero matches panics (a rename or a deletion is new information, never "no match" — the
+    /// vacuous-pass shape this program keeps rediscovering) and so does two or more (a shadow copy
+    /// beside the real item: a text probe cannot tell which one ships, so ambiguity is RED).
+    fn only_fn_body(src: &str, marker: &str) -> String {
+        let hits = src.matches(marker).count();
+        assert_eq!(
+            hits, 1,
+            "expected exactly one `{marker}` in the scrubbed source, found {hits} — 0 means it was \
+             renamed or deleted, 2+ means a shadow definition; either way this probe cannot examine \
+             code it cannot unambiguously find"
+        );
+        let at = src.find(marker).expect("counted exactly one");
+        let open = at + src[at..].find('{').expect("a fn has a body");
+        let mut depth = 0usize;
+        for (i, c) in src[open..].char_indices() {
+            match c {
+                '{' => depth += 1,
+                '}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return src[open..=open + i].to_string();
+                    }
+                }
+                _ => {}
+            }
+        }
+        panic!("unbalanced braces after `{marker}`");
+    }
+
+    /// **The reason `slot_attrs_exists` was wrong.** `materialize` is a VIEW: a slot on a hidden
+    /// layer (T-665) and a slot carrying its own `editorHidden` flag (T-701) are both dropped
+    /// before any column is pushed, while the raw `slots` map — and therefore `slots_json`, and
+    /// therefore a Save — still carries them.
+    ///
+    /// Characterization, not a regression: this is green before and after T-937.3, and it is what
+    /// makes the two tests after it mean something.
+    #[test]
+    fn materialize_drops_hidden_slots_the_document_still_holds() {
+        let doc = two_sided_core(4);
+        doc.add_editor_layer("layer-hidden", "Stashed", None);
+        doc.add_slot(
+            "on-hidden-layer",
+            "sq-blu",
+            "layer-hidden",
+            9,
+            "Rifleman",
+            None,
+            None,
+            5.0,
+            5.0,
+            0.0,
+            0.0,
+        );
+        doc.set_editor_layer_hidden("layer-hidden", true);
+        doc.set_slot_editor_hidden("n0", true);
+
+        let soa = doc.materialize();
+        for gone in ["on-hidden-layer", "n0"] {
+            assert!(
+                !soa.ids.iter().any(|s| s == gone),
+                "T-937.3: `{gone}` must be absent from the materialized view"
+            );
+            assert!(
+                doc.slots_json().contains(gone),
+                "T-937.3: … while the document still holds `{gone}` verbatim — that gap is the \
+                 whole defect: an existence check sourced from the SoA answers NO for work the \
+                 mission will happily save"
+            );
+        }
+    }
+
+    /// **T-937.3 — `materialize` resolves each distinct side ONCE per call, not once per slot.**
+    ///
+    /// The count is a DELTA across one call and the bound is the number of distinct squads in the
+    /// fixture (2), not a magic number: grow `two_sided_core` to a million rows and this bound does
+    /// not move. Both halves matter — `>= 1` refuses a pass bought by a memo that answers from a
+    /// previous call's entries (or by an empty document), `<= 2` is the acceptance.
+    #[test]
+    fn materialize_resolves_each_distinct_side_once_over_500_slots() {
+        let doc = two_sided_core(500);
+        let before = doc.side_key_resolution_count();
+        let soa = doc.materialize();
+        let spent = doc.side_key_resolution_count() - before;
+
+        assert_eq!(
+            soa.ids.len(),
+            500,
+            "the fixture must materialize all 500 rows"
+        );
+        assert!(
+            spent >= 1,
+            "T-937.3: a cold document resolved {spent} side keys — a zero means this call read a \
+             memo it must have invalidated, and the bound below would then pass vacuously"
+        );
+        assert!(
+            spent <= 2,
+            "T-937.3: 500 slots over 2 distinct sides took {spent} side-key resolutions; \
+             materialize must resolve each distinct side once per call"
+        );
+        assert_eq!(
+            soa.side_keys.iter().filter(|k| *k == "BLUFOR").count(),
+            250,
+            "T-937.3: the memo must not change WHICH side each row gets"
+        );
+        assert_eq!(
+            soa.side_keys.iter().filter(|k| *k == "OPFOR").count(),
+            250,
+            "T-937.3: the memo must not change WHICH side each row gets"
+        );
+    }
+
+    /// **T-937.3 — the placement selection filter must not answer existence by materializing.**
+    ///
+    /// `operations/entity.rs` is `#![cfg(target_arch = "wasm32")]` through its `operations.rs`
+    /// façade and links `map-engine-core` with the `doc` feature only on wasm, so there is no
+    /// native build of that file to call into — which is why every pin on it in this repo is a
+    /// source probe, and why this one lives here (the T-491/T-574 precedent above:
+    /// `mission_editor_move_commit_names_the_atomic_mix_api`).
+    ///
+    /// Read over [`strip_rust_lexical_noise`] so the doc comment that *describes* the rule cannot
+    /// satisfy it, and scoped to the brace-matched body so a `materialize(` anywhere else in the
+    /// 4.9k-line file cannot fail it. What it cannot decide is whether that body is reachable —
+    /// the behavioural half is `slot_exists_answers_true_for_slots_materialize_drops`, which pins
+    /// the API this body must call.
+    #[test]
+    fn slot_attrs_exists_reads_the_raw_map_not_the_materialized_view() {
+        let ops = strip_rust_lexical_noise(include_str!(
+            "../../../../apps/website/frontend/src/editor/state/operations/entity.rs"
+        ));
+        let body = only_fn_body(&ops, "fn slot_attrs_exists(");
+        assert!(
+            body.len() > 2,
+            "T-937.3: the scrubbed body of slot_attrs_exists is empty — the probe is reading \
+             nothing and would pass over anything"
+        );
+        assert!(
+            body.contains("slot_exists("),
+            "T-937.3: slot_attrs_exists must answer existence off the raw slot map \
+             (`MissionDocCore::slot_exists`), so a hidden slot counts as existing; body:{body}"
+        );
+        assert!(
+            !body.contains("materialize("),
+            "T-937.3: slot_attrs_exists must NOT materialize — the SoA drops hidden slots \
+             (T-665/T-701), so a materialize-sourced existence check answers NO for a slot the \
+             document holds, and it pays an O(all slots) walk to do it; body:{body}"
+        );
     }
 }
