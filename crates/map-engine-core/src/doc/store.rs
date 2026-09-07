@@ -521,18 +521,6 @@ impl MissionDocCore {
             .encode_state_as_update_v1(&StateVector::default())
     }
 
-    /// T-937.1 — whether `root[key].field` is a native `YArray` (hydrate migration probe).
-    #[cfg(test)]
-    pub(crate) fn id_list_is_native(&self, root: &str, key: &str, field: &str) -> bool {
-        let map = match root {
-            "squads" => &self.squads,
-            "editorLayers" => &self.editor_layers,
-            _ => return false,
-        };
-        let txn = self.doc.transact();
-        super::id_arrays::is_native_array(&txn, map, key, field)
-    }
-
     /// Serialize the 8 small root maps + `meta` to one JSON object shaped like the store's
     /// `MapSnapshot` minus `slotsById` (slots ride the fast SoA getters). The 367k-slot hot path never
     /// runs this — these maps hold hundreds of entities. `meta` is `null` when empty (matching
