@@ -139,7 +139,7 @@ Did not restart :3000/:8080.
 
 ## commits
 
-(filled after git commit)
+- `33be8aff933085dd5effef097527248ee751e840` — T-936.6: authored spawnModules waves and garrisons.
 
 ## manual_checklist
 
