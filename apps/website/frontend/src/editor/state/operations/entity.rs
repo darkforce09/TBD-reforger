@@ -1807,6 +1807,12 @@ pub fn cancel_pending() {
 /// [`capture_selection_entities`] and the shared `slot_z` reader were pointed at `slots_json`.
 /// Cost is one O(all slots) parse per placement gesture, the same price `paste_at_cursor` and the
 /// Attributes readers already pay; a place is a rare gesture, not the render hot path.
+///
+/// **T-937.3 — the rule now has a cheap single-id form: [`slot_attrs_exists`], over the core's
+/// `slot_exists`.** This function is the whole-NAMESPACE reader and stays as it is (a minter needs
+/// every id, not one answer); use `slot_attrs_exists` wherever the question is "does THIS id
+/// exist?", and never `materialize()` for either — `slot_attrs_exists` was the one place in this
+/// file that still violated the paragraph above, and T-937.3 closed it.
 fn live_slot_ids(core: &MissionDocCore) -> std::collections::HashSet<String> {
     serde_json::from_str::<serde_json::Value>(&core.slots_json())
         .ok()
@@ -1848,6 +1854,11 @@ pub(super) fn mint_id(ctx: &OpsCtx, core: &MissionDocCore) -> String {
 /// the SoA, so the old source let a placement re-mint (and upsert away) an id a hidden row already
 /// held. The three small-map halves below need no such treatment: `small_maps_json` dumps those root
 /// maps verbatim, with no visibility filter anywhere in it.
+///
+/// **T-937.3 — the single-id twin of that rule is [`slot_attrs_exists`]**, which now reads
+/// `MissionDocCore::slot_exists` (the raw `slots` map, hidden rows included) instead of the SoA.
+/// Both readers therefore see the same universe: what this function proves uniqueness against is
+/// exactly what an existence check downstream will agree exists.
 fn mint_ids(ctx: &OpsCtx, core: &MissionDocCore, count: usize) -> Vec<String> {
     let mut existing = live_slot_ids(core);
     if let Ok(small) = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()) {
@@ -1898,10 +1909,19 @@ pub(super) fn terrain_bounds_of(core: &MissionDocCore) -> [f64; 4] {
 }
 
 /// T-650 — does `id` name a live slot? (Used to keep only slot ids in the post-place selection —
-/// SEL/tint run over the slot SoA.) Reads the materialized SoA once per call; a placement is a rare
-/// gesture, not the render hot path.
+/// SEL/tint run over the slot SoA.)
+///
+/// **T-937.3 — this asks the raw slot map ([`MissionDocCore::slot_exists`]), never `materialize()`.**
+/// It used to answer `core.materialize().ids.iter().any(…)`, which broke the rule
+/// [`live_slot_ids`] and [`mint_ids`] spell out 100 lines above: the SoA is a VIEW that drops slots
+/// on a hidden layer (T-665) and slots carrying their own `editorHidden` flag (T-701), so it
+/// answered **false** for a slot the document holds. Concretely — place a composition while the
+/// active layer is hidden and every id it wrote is filtered out here, so the post-place selection
+/// comes back EMPTY and the operator's stamp appears to have done nothing. It was also an
+/// O(all slots) materialization (position, three string reads, stance and a side-key walk per
+/// visible row) run once per written id, to answer one boolean; `slot_exists` is one map lookup.
 fn slot_attrs_exists(core: &MissionDocCore, id: &str) -> bool {
-    core.materialize().ids.iter().any(|s| s == id)
+    core.slot_exists(id)
 }
 
 /// Resolve the drop target: the active layer if it still exists, else any existing layer (the

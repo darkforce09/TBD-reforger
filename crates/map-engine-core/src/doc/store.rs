@@ -4,16 +4,17 @@
 //! `set_slot_position` / `remove_slot`) exist to exercise the `UndoManager`; the full `state/ydoc.ts`
 //! mutator surface is ported at the 3.1 cutover, not in the spike.
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell, RefMut};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use yrs::types::ToJson;
 use yrs::undo::UndoManager;
 use yrs::updates::decoder::Decode;
 use yrs::{
-    Any, Doc, Map, MapPrelim, MapRef, Origin, Out, ReadTxn, StateVector, Transact, TransactionMut,
-    Update,
+    Any, Doc, Map, MapPrelim, MapRef, Origin, Out, ReadTxn, StateVector, Subscription, Transact,
+    TransactionMut, Update,
 };
 
 use super::id_arrays::{
@@ -63,6 +64,85 @@ pub struct EntityTransformPatch {
     pub y: Option<f64>,
     pub z: Option<f64>,
     pub rotation: Option<f64>,
+}
+
+/// T-937.3 — the cross-call `squad id → faction side key` memo [`MissionDocCore::materialize`]
+/// reads through, plus the signal that invalidates it.
+///
+/// ── WHY THERE IS AN OBSERVER HERE (and why the ticket's premise was wrong) ────────────────────
+/// The ticket said the cache is "invalidated by the store's existing change observer". **There was
+/// no such thing.** Nothing in `map-engine-core` or the frontend subscribed to anything — no
+/// `.observe(`, no `observe_deep`, no `yrs::Subscription`. So the choice was: invalidate by hand at
+/// every mutator that can move a side, or introduce the observer. This introduces it, because the
+/// by-hand option cannot be made safe:
+///
+///   * ~70 mutators take `&self`, and the ones that move a side are not a closed set a reader can
+///     eyeball — `add_squad`, `move_slot_to_squad`, `add_faction` (which OVERWRITES, so it is also
+///     the side-rename path), `place_character_under_side`'s inline faction mint, `hydrate`, the
+///     remint paths, and `apply_faction_library`;
+///   * and three whole classes of write never touch a mutator at all: [`MissionDocCore::undo`] /
+///     `redo`, [`MissionDocCore::apply_update`] (a peer's or IndexedDB's bytes), and `hydrate`.
+///     A hand-placed `invalidate()` call cannot cover those, and a memo that misses one goes
+///     silently, permanently stale — the row keeps rendering under the wrong side's colour.
+///
+/// `Doc::observe_after_transaction` fires once per committed `TransactionMut` from **every** one of
+/// those sources, so the counter below cannot be bypassed by a write path nobody remembered.
+/// `after_transaction` specifically, not `observe_update_v1`: v1 ENCODES the whole update to lib0
+/// bytes before calling back, which would put an encode on every drag frame to compute a number we
+/// throw away. The callback here does one relaxed `fetch_add` and nothing else — deliberately
+/// nothing else, because a callback that touched the `RefCell` below could re-enter it mid-borrow.
+///
+/// It over-invalidates (a `transact_mut` that changed nothing still bumps, as does a slot move that
+/// cannot affect any side key). That is the correct direction to be wrong in: the per-call memo
+/// still holds inside `materialize`, which is where the acceptance bound lives.
+struct SideKeyMemo {
+    /// Bumped by the subscription below on every committed transaction.
+    version: Arc<AtomicU64>,
+    /// `(version the entries were resolved against, squad id → side key)`. Starts at version 0
+    /// against a live counter of 1, so the first `materialize` sees a mismatch and starts cold.
+    entries: RefCell<(u64, HashMap<String, String>)>,
+    /// Keeping the `Subscription` alive is load-bearing: dropping it unsubscribes, the version
+    /// stops moving, and the memo would answer from a document that has changed underneath it.
+    _sub: Subscription,
+}
+
+impl SideKeyMemo {
+    /// Subscribe on `doc` and hand back the memo, or `None` when the subscription could not be
+    /// installed (`yrs` needs exclusive store access, so a live transaction refuses it).
+    ///
+    /// `None` DISABLES the cross-call memo rather than leaving it uninvalidated — a cache with no
+    /// invalidation signal is a staleness bug wearing a speedup's clothes, and this is the one
+    /// failure mode that would otherwise be silent.
+    fn install(doc: &Doc) -> Option<Self> {
+        let version = Arc::new(AtomicU64::new(1));
+        let bump = Arc::clone(&version);
+        let sub = doc
+            .observe_after_transaction(move |_txn| {
+                bump.fetch_add(1, Ordering::Relaxed);
+            })
+            .ok()?;
+        Some(Self {
+            version,
+            entries: RefCell::new((0, HashMap::new())),
+            _sub: sub,
+        })
+    }
+
+    /// The memo's entries, cleared first if the document moved since they were resolved.
+    ///
+    /// Not re-entrant: `materialize` holds this borrow across its slot loop, which is safe only
+    /// because nothing inside that loop can call back into the document core (the loop is `yrs`
+    /// reads, [`resolve_slot_side_key`] and [`Interner`]), and because the observer above touches
+    /// an atomic rather than this `RefCell`.
+    fn entries(&self) -> RefMut<'_, HashMap<String, String>> {
+        let live = self.version.load(Ordering::Relaxed);
+        let mut e = self.entries.borrow_mut();
+        if e.0 != live {
+            e.1.clear();
+            e.0 = live;
+        }
+        RefMut::map(e, |e| &mut e.1)
+    }
 }
 
 /// The `yrs`-backed document core. `slots` is a root map of nested per-slot maps; `editor_layers` is
@@ -264,6 +344,16 @@ pub struct MissionDocCore {
     undo_groups: Arc<super::undo_groups::GroupingClock>,
     /// Prefix of the yrs undo stack forgotten by the 200-group cap (T-937.2).
     undo_cap_hidden: Cell<usize>,
+    /// T-937.3 — how many times [`Self::materialize`] has actually walked
+    /// [`resolve_slot_side_key`] since this document was created. Unconditional (not `cfg(test)`)
+    /// on purpose: a `#[cfg(test)]` counter is invisible to every consumer AND to any probe that
+    /// reads the shipped build, so the one number that says whether the memo below is doing work
+    /// would only exist in the configuration that never ships. One relaxed `Cell` bump per MISS.
+    side_key_resolutions: Cell<u64>,
+    /// T-937.3 — the read-through side-key memo. `None` disables it (see [`SideKeyMemo::install`]);
+    /// `materialize` then falls back to a per-call map, which still satisfies the "once per
+    /// distinct side per call" bound and is simply cold on the next call.
+    side_key_memo: Option<SideKeyMemo>,
 }
 
 impl MissionDocCore {
@@ -339,6 +429,10 @@ impl MissionDocCore {
     }
 
     fn from_doc_with_clock(doc: Doc, inner_clock: Arc<dyn yrs::sync::Clock>) -> Self {
+        // T-937.3 — subscribe FIRST. `observe_after_transaction` needs exclusive store access, and
+        // every `get_or_insert_map` below opens a write transaction; installing here is the one
+        // point in this constructor where no transaction can be live.
+        let side_key_memo = SideKeyMemo::install(&doc);
         let slots = doc.get_or_insert_map("slots");
         let squads = doc.get_or_insert_map("squads");
         let factions = doc.get_or_insert_map("factions");
@@ -406,6 +500,8 @@ impl MissionDocCore {
             undo_mgr,
             undo_groups,
             undo_cap_hidden: Cell::new(0),
+            side_key_resolutions: Cell::new(0),
+            side_key_memo,
         }
     }
 
@@ -716,6 +812,42 @@ impl MissionDocCore {
         buf
     }
 
+    /// T-937.3 — does `id` name a slot this document holds? **Hidden slots count as existing.**
+    ///
+    /// One `MapRef::contains_key` on the raw `slots` root map, under a read transaction. It is the
+    /// existence answer, and the ONLY correct one:
+    ///
+    ///   * [`Self::materialize`] is a VIEW. It drops a slot filed under a hidden layer (T-665) and
+    ///     a slot carrying its own `editorHidden` flag (T-701) before pushing any column, so
+    ///     `materialize().ids.contains(id)` answers **false** for a slot that is in the document,
+    ///     rides a Save, and comes straight back when the flag clears. Existence sourced from the
+    ///     SoA is the id-collision hazard `live_slot_ids` and `mint_ids` in the frontend's
+    ///     `state/operations/entity.rs` already warn about at length.
+    ///   * [`Self::slots_json`] is exact but serialises **every** slot to a `String` to answer one
+    ///     boolean, and `materialize` walks and interns every visible row to do the same.
+    ///
+    /// So this is both the correct answer and the cheap one — O(1) against O(all slots) — which is
+    /// why the frontend's `slot_attrs_exists` was pointed here.
+    #[must_use]
+    pub fn slot_exists(&self, id: &str) -> bool {
+        let txn = self.doc.transact();
+        self.slots.contains_key(&txn, id)
+    }
+
+    /// T-937.3 — how many `slot → squad.factionId → faction.key` walks
+    /// ([`resolve_slot_side_key`]) [`Self::materialize`] has performed over this document's whole
+    /// life. Monotonic, never reset.
+    ///
+    /// This is the memo's own honesty check, and it is a *counter* rather than a boolean for the
+    /// reason the platform's signature defect exists: "the cache is wired up" is satisfied by a
+    /// cache that is never read, and "materialize is fast" is satisfied by a materialize that
+    /// resolves nothing because the document is empty. A DELTA across one call, compared against
+    /// the number of distinct squads in that call, cannot be satisfied vacuously by either.
+    #[must_use]
+    pub fn side_key_resolution_count(&self) -> u64 {
+        self.side_key_resolutions.get()
+    }
+
     /// Materialize every slot into the columnar [`SlotSoa`] (criterion 1). Keyed by `ids[row]`.
     ///
     /// T-665 — a slot filed under a **hidden** layer (or under a layer whose ancestor is hidden) is
@@ -763,6 +895,21 @@ impl MissionDocCore {
         let mut squads = Interner::new();
         let mut layers = Interner::new();
 
+        // T-937.3 — the side-key memo, as one `&mut HashMap` for the loop below. A slot's side is a
+        // pure function of its `squadId` (`squad.factionId → faction.key`), so the memo is keyed by
+        // SQUAD id, not by slot id: a slot that changes squad looks its side up under a different
+        // key on the very next call and self-heals with no invalidation at all, and the map is
+        // O(squads) instead of O(slots). See `side_key_memo_survives_a_slot_moving_sides`.
+        //
+        // `memo` is the cross-call memo when one is installed and a per-call scratch map otherwise;
+        // either way the loop resolves each distinct squad at most once, which is the acceptance.
+        let mut per_call = HashMap::new();
+        let mut memo_borrow = self.side_key_memo.as_ref().map(SideKeyMemo::entries);
+        let memo: &mut HashMap<String, String> = match memo_borrow.as_deref_mut() {
+            Some(m) => m,
+            None => &mut per_call,
+        };
+
         for (id, out) in self.slots.iter(&txn) {
             let Out::YMap(slot) = out else { continue };
             // T-665 — drop slots on a hidden (or hidden-ancestor) layer before any column is pushed.
@@ -797,12 +944,20 @@ impl MissionDocCore {
                 None => NONE_IDX,
             });
             // T-180.3 — slot → squad.factionId → faction.key (missing hop → BLUFOR).
-            soa.side_keys.push(resolve_slot_side_key(
-                &txn,
-                &self.squads,
-                &self.factions,
-                &squad_id,
-            ));
+            // T-937.3 — read through the memo; the walk (up to two `MapRef::get` + two `read_str`
+            // and a fresh `String`) runs once per distinct squad per call, not once per row.
+            let side_key = match memo.get(&squad_id) {
+                Some(k) => k.clone(),
+                None => {
+                    self.side_key_resolutions
+                        .set(self.side_key_resolutions.get().saturating_add(1));
+                    let resolved =
+                        resolve_slot_side_key(&txn, &self.squads, &self.factions, &squad_id);
+                    memo.insert(squad_id.clone(), resolved.clone());
+                    resolved
+                }
+            };
+            soa.side_keys.push(side_key);
         }
 
         soa.roles = roles.words;
@@ -14758,5 +14913,481 @@ mod tests {
         assert_eq!(doc.force_to_formation("s1", "wedge"), 0);
         assert_eq!(doc.force_to_formation("", "wedge"), 0);
         assert_eq!(doc.force_to_formation("not-a-slot", "wedge"), 0);
+    }
+
+    /* ══════════════ T-937.3 — side-key memo + the existence fast path ══════════════════════════
+     *
+     * Everything below this banner belongs to T-937.3. It is the LAST block in the file on
+     * purpose: `#[cfg(test)]` is where every source-scrubbing probe in this repo stops reading,
+     * so a test item placed above a production item hides that item from every probe that looks
+     * for it. (This file already carries a REAL `#[cfg(test)] fn new()` inside `impl RemintMap`
+     * with production code below it — which is why `resolve_slot_side_key`, `read_position`,
+     * `read_str`, `read_bool` and `layer_flag_effective` are all invisible to a naive scrub of
+     * store.rs, and why the probe below reads the *frontend* file rather than this one.)
+     */
+
+    /// `count` slots split evenly between two squads that sit under two different factions, all
+    /// filed on one visible layer. Two distinct squads ⇒ exactly two distinct side keys, no
+    /// matter how large `count` grows — which is what makes the resolution count below a
+    /// statement about the memo rather than about the fixture.
+    fn two_sided_core(count: usize) -> MissionDocCore {
+        let doc = MissionDocCore::new();
+        doc.add_editor_layer("layer-1", "Layer 1", None);
+        doc.add_faction("faction-BLUFOR", "BLUFOR", "US Army");
+        doc.add_faction("faction-OPFOR", "OPFOR", "Soviet Army");
+        doc.add_squad("sq-blu", "faction-BLUFOR", "Alpha", None);
+        doc.add_squad("sq-opf", "faction-OPFOR", "Bravo", None);
+        for i in 0..count {
+            let squad = if i % 2 == 0 { "sq-blu" } else { "sq-opf" };
+            let index = u32::try_from(i / 2).expect("fixture index fits u32");
+            doc.add_slot(
+                &format!("n{i}"),
+                squad,
+                "layer-1",
+                index,
+                "Rifleman",
+                None,
+                None,
+                f64::from(index),
+                1.0,
+                0.0,
+                0.0,
+            );
+        }
+        doc
+    }
+
+    /// Every column of a [`SlotSoa`], **resolved per slot id and sorted** — the whole picture as a
+    /// value two materializations can be compared with.
+    ///
+    /// Sorted by id because `MissionDocCore::materialize` iterates a `yrs` map, whose order is not
+    /// the insertion order and is not stable across two documents holding the same content; the
+    /// module's own `ids_sorted` / `row_of` helpers exist for the same reason ("parity is
+    /// set-equality, not row order"). Dictionary indices are resolved through their word lists
+    /// here for the same reason — first-seen interning is row-order dependent, the resolved
+    /// strings are not.
+    ///
+    /// The **destructure** is the point of the first statement: adding a column to `SlotSoa`
+    /// becomes a compile error here rather than a field this comparison silently stops checking —
+    /// the T-394 `#[serde(flatten)]` golden defect in its non-serde form. Floats compare by
+    /// `to_bits`, so it is byte equality, not a tolerance.
+    fn soa_rows(s: &SlotSoa) -> Vec<String> {
+        let SlotSoa {
+            ids,
+            xs,
+            ys,
+            xy,
+            zs,
+            rotations,
+            stance,
+            role_idx,
+            tag_idx,
+            squad_idx,
+            layer_idx,
+            side_keys,
+            roles,
+            tags,
+            squads,
+            layers,
+        } = s.clone();
+        let word = |dict: &[String], i: u32| match dict.get(i as usize) {
+            Some(w) => w.clone(),
+            None => format!("<{i}>"),
+        };
+        let mut rows: Vec<String> = (0..ids.len())
+            .map(|r| {
+                format!(
+                    "{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
+                    ids[r],
+                    xs[r].to_bits(),
+                    ys[r].to_bits(),
+                    xy[r * 2].to_bits(),
+                    xy[r * 2 + 1].to_bits(),
+                    zs[r].to_bits(),
+                    rotations[r].to_bits(),
+                    stance[r],
+                    word(&roles, role_idx[r]),
+                    word(&tags, tag_idx[r]),
+                    word(&squads, squad_idx[r]),
+                    word(&layers, layer_idx[r]),
+                    side_keys[r],
+                )
+            })
+            .collect();
+        rows.sort();
+        rows
+    }
+
+    /// The brace-matched body of the **only** `marker` item in `src`, which must already be
+    /// lexically scrubbed by [`strip_rust_lexical_noise`].
+    ///
+    /// Zero matches panics (a rename or a deletion is new information, never "no match" — the
+    /// vacuous-pass shape this program keeps rediscovering) and so does two or more (a shadow copy
+    /// beside the real item: a text probe cannot tell which one ships, so ambiguity is RED).
+    fn only_fn_body(src: &str, marker: &str) -> String {
+        let hits = src.matches(marker).count();
+        assert_eq!(
+            hits, 1,
+            "expected exactly one `{marker}` in the scrubbed source, found {hits} — 0 means it was \
+             renamed or deleted, 2+ means a shadow definition; either way this probe cannot examine \
+             code it cannot unambiguously find"
+        );
+        let at = src.find(marker).expect("counted exactly one");
+        let open = at + src[at..].find('{').expect("a fn has a body");
+        let mut depth = 0usize;
+        for (i, c) in src[open..].char_indices() {
+            match c {
+                '{' => depth += 1,
+                '}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return src[open..=open + i].to_string();
+                    }
+                }
+                _ => {}
+            }
+        }
+        panic!("unbalanced braces after `{marker}`");
+    }
+
+    /// **The reason `slot_attrs_exists` was wrong.** `materialize` is a VIEW: a slot on a hidden
+    /// layer (T-665) and a slot carrying its own `editorHidden` flag (T-701) are both dropped
+    /// before any column is pushed, while the raw `slots` map — and therefore `slots_json`, and
+    /// therefore a Save — still carries them.
+    ///
+    /// Characterization, not a regression: this is green before and after T-937.3, and it is what
+    /// makes the two tests after it mean something.
+    #[test]
+    fn materialize_drops_hidden_slots_the_document_still_holds() {
+        let doc = two_sided_core(4);
+        doc.add_editor_layer("layer-hidden", "Stashed", None);
+        doc.add_slot(
+            "on-hidden-layer",
+            "sq-blu",
+            "layer-hidden",
+            9,
+            "Rifleman",
+            None,
+            None,
+            5.0,
+            5.0,
+            0.0,
+            0.0,
+        );
+        doc.set_editor_layer_hidden("layer-hidden", true);
+        doc.set_slot_editor_hidden("n0", true);
+
+        let soa = doc.materialize();
+        for gone in ["on-hidden-layer", "n0"] {
+            assert!(
+                !soa.ids.iter().any(|s| s == gone),
+                "T-937.3: `{gone}` must be absent from the materialized view"
+            );
+            assert!(
+                doc.slots_json().contains(gone),
+                "T-937.3: … while the document still holds `{gone}` verbatim — that gap is the \
+                 whole defect: an existence check sourced from the SoA answers NO for work the \
+                 mission will happily save"
+            );
+        }
+    }
+
+    /// **T-937.3 — `materialize` resolves each distinct side ONCE per call, not once per slot.**
+    ///
+    /// The count is a DELTA across one call and the bound is the number of distinct squads in the
+    /// fixture (2), not a magic number: grow `two_sided_core` to a million rows and this bound does
+    /// not move. Both halves matter — `>= 1` refuses a pass bought by a memo that answers from a
+    /// previous call's entries (or by an empty document), `<= 2` is the acceptance.
+    #[test]
+    fn materialize_resolves_each_distinct_side_once_over_500_slots() {
+        let doc = two_sided_core(500);
+        let before = doc.side_key_resolution_count();
+        let soa = doc.materialize();
+        let spent = doc.side_key_resolution_count() - before;
+
+        assert_eq!(
+            soa.ids.len(),
+            500,
+            "the fixture must materialize all 500 rows"
+        );
+        assert!(
+            spent >= 1,
+            "T-937.3: a cold document resolved {spent} side keys — a zero means this call read a \
+             memo it must have invalidated, and the bound below would then pass vacuously"
+        );
+        assert!(
+            spent <= 2,
+            "T-937.3: 500 slots over 2 distinct sides took {spent} side-key resolutions; \
+             materialize must resolve each distinct side once per call"
+        );
+        assert_eq!(
+            soa.side_keys.iter().filter(|k| *k == "BLUFOR").count(),
+            250,
+            "T-937.3: the memo must not change WHICH side each row gets"
+        );
+        assert_eq!(
+            soa.side_keys.iter().filter(|k| *k == "OPFOR").count(),
+            250,
+            "T-937.3: the memo must not change WHICH side each row gets"
+        );
+    }
+
+    /// **T-937.3 — the placement selection filter must not answer existence by materializing.**
+    ///
+    /// `operations/entity.rs` is `#![cfg(target_arch = "wasm32")]` through its `operations.rs`
+    /// façade and links `map-engine-core` with the `doc` feature only on wasm, so there is no
+    /// native build of that file to call into — which is why every pin on it in this repo is a
+    /// source probe, and why this one lives here (the T-491/T-574 precedent above:
+    /// `mission_editor_move_commit_names_the_atomic_mix_api`).
+    ///
+    /// Read over [`strip_rust_lexical_noise`] so the doc comment that *describes* the rule cannot
+    /// satisfy it, and scoped to the brace-matched body so a `materialize(` anywhere else in the
+    /// 4.9k-line file cannot fail it. What it cannot decide is whether that body is reachable —
+    /// the behavioural half is `slot_exists_answers_true_for_slots_materialize_drops`, which pins
+    /// the API this body must call.
+    #[test]
+    fn slot_attrs_exists_reads_the_raw_map_not_the_materialized_view() {
+        let ops = strip_rust_lexical_noise(include_str!(
+            "../../../../apps/website/frontend/src/editor/state/operations/entity.rs"
+        ));
+        let body = only_fn_body(&ops, "fn slot_attrs_exists(");
+        assert!(
+            body.len() > 2,
+            "T-937.3: the scrubbed body of slot_attrs_exists is empty — the probe is reading \
+             nothing and would pass over anything"
+        );
+        assert!(
+            body.contains("slot_exists("),
+            "T-937.3: slot_attrs_exists must answer existence off the raw slot map \
+             (`MissionDocCore::slot_exists`), so a hidden slot counts as existing; body:{body}"
+        );
+        assert!(
+            !body.contains("materialize("),
+            "T-937.3: slot_attrs_exists must NOT materialize — the SoA drops hidden slots \
+             (T-665/T-701), so a materialize-sourced existence check answers NO for a slot the \
+             document holds, and it pays an O(all slots) walk to do it; body:{body}"
+        );
+    }
+
+    /// **T-937.3 — the behavioural half of the acceptance:** existence answers TRUE for a hidden
+    /// slot, and answering it never materializes the document.
+    ///
+    /// The second clause is proved by the resolution counter rather than asserted in prose: a
+    /// `materialize` over this fixture must walk at least one side key, so a `slot_exists` that
+    /// secretly materialized would move the counter. It must not move at all.
+    #[test]
+    fn slot_exists_answers_true_for_slots_materialize_drops() {
+        let doc = two_sided_core(4);
+        doc.add_editor_layer("layer-hidden", "Stashed", None);
+        doc.add_slot(
+            "on-hidden-layer",
+            "sq-blu",
+            "layer-hidden",
+            9,
+            "Rifleman",
+            None,
+            None,
+            5.0,
+            5.0,
+            0.0,
+            0.0,
+        );
+        doc.set_editor_layer_hidden("layer-hidden", true);
+        doc.set_slot_editor_hidden("n0", true);
+
+        let dropped = doc.materialize();
+        let quiet = doc.side_key_resolution_count();
+
+        for hidden in ["on-hidden-layer", "n0"] {
+            assert!(
+                !dropped.ids.iter().any(|s| s == hidden),
+                "the fixture is only meaningful while `{hidden}` is dropped from the SoA"
+            );
+            assert!(
+                doc.slot_exists(hidden),
+                "T-937.3: `{hidden}` is in the document, so existence must answer TRUE — a NO here \
+                 is the silent-overwrite path the id minters warn about"
+            );
+        }
+        for live in ["n1", "n2", "n3"] {
+            assert!(doc.slot_exists(live), "T-937.3: `{live}` is a visible slot");
+        }
+        assert!(
+            !doc.slot_exists("never-minted"),
+            "T-937.3: existence must still be able to say NO"
+        );
+        assert!(!doc.slot_exists(""), "T-937.3: the empty id names no slot");
+        assert_eq!(
+            doc.side_key_resolution_count(),
+            quiet,
+            "T-937.3: six existence checks moved the side-key counter — slot_exists materialized \
+             the document instead of reading the raw map"
+        );
+    }
+
+    /// **T-937.3 — the memo must not change the picture.** A document materialized three times
+    /// (memo cold, then warm, then warm again) must produce, column for column, exactly what the
+    /// same document materialized once from a cold core produces.
+    ///
+    /// The cold twin is rebuilt from `encode_state` bytes rather than from the same fixture calls,
+    /// so it is the same DOCUMENT reaching a core whose memo has never been populated — the
+    /// closest thing to "materialize as it behaved before this slice" that can be run beside it.
+    #[test]
+    fn a_warm_memo_materializes_exactly_what_a_cold_one_does() {
+        let warm = two_sided_core(64);
+        warm.set_slot_editor_hidden("n7", true);
+        let first = warm.materialize();
+        let _ = warm.materialize();
+        let third = warm.materialize();
+
+        let cold = MissionDocCore::new();
+        cold.apply_update(&warm.encode_state())
+            .expect("the twin takes the same document's bytes");
+        let fresh = cold.materialize();
+
+        assert_eq!(
+            soa_rows(&first),
+            soa_rows(&third),
+            "T-937.3: repeated materialize calls over an unchanged document must agree"
+        );
+        assert_eq!(
+            soa_rows(&third),
+            soa_rows(&fresh),
+            "T-937.3: a warm memo must materialize exactly what a cold core does"
+        );
+        assert_eq!(
+            fresh.ids.len(),
+            63,
+            "non-vacuity: 64 slots minus the one hidden row must have been compared"
+        );
+        assert!(
+            fresh.side_keys.iter().any(|k| k == "OPFOR")
+                && fresh.side_keys.iter().any(|k| k == "BLUFOR"),
+            "non-vacuity: the comparison must span both sides, not one repeated key"
+        );
+    }
+
+    /// **T-937.3 — invalidation, the whole correctness story.** A faction minted AFTER the first
+    /// materialize changes what the squad's side key resolves to (`BLUFOR` is the missing-hop
+    /// fallback), so a memo that is not invalidated keeps painting the squad blue forever.
+    ///
+    /// This is the perturbation target: delete the invalidation and this test goes red.
+    #[test]
+    fn side_key_memo_sees_a_faction_minted_after_the_first_materialize() {
+        // The squad names a faction that does not exist yet — the lazy-mint order the briefing
+        // markers already have to survive (`promote_pending_briefing_markers`).
+        let doc = one_slot_awaiting_its_faction();
+        assert_eq!(
+            doc.materialize().side_keys,
+            vec!["BLUFOR".to_string()],
+            "a missing faction hop resolves to BLUFOR (T-180.3)"
+        );
+
+        doc.add_faction("faction-OPFOR", "OPFOR", "Soviet Army");
+        assert_eq!(
+            doc.materialize().side_keys,
+            vec!["OPFOR".to_string()],
+            "T-937.3: the side-key memo served a stale side after the faction was minted — the \
+             memo is not being invalidated by the document's own change signal"
+        );
+
+        // A side RENAME travels the same path: `add_faction` overwrites the row.
+        doc.add_faction("faction-OPFOR", "INDFOR", "Independent");
+        assert_eq!(
+            doc.materialize().side_keys,
+            vec!["INDFOR".to_string()],
+            "T-937.3: the memo served a stale side after the faction's `key` was rewritten"
+        );
+    }
+
+    /// One slot in `sq-red`, which names `faction-OPFOR` — a faction nobody has minted yet, so the
+    /// slot's side key resolves to the `BLUFOR` missing-hop fallback until one appears.
+    fn one_slot_awaiting_its_faction() -> MissionDocCore {
+        let doc = MissionDocCore::new();
+        doc.add_editor_layer("layer-1", "Layer 1", None);
+        doc.add_squad("sq-red", "faction-OPFOR", "Bravo", None);
+        doc.add_slot(
+            "s0", "sq-red", "layer-1", 0, "Rifleman", None, None, 1.0, 1.0, 0.0, 0.0,
+        );
+        doc
+    }
+
+    /// **T-937.3 — undo is a write too, and it goes through no mutator.** `Ctrl+Z` on the faction
+    /// mint takes the side back to the `BLUFOR` fallback; a memo invalidated by hand at the
+    /// mutators would never hear about it, which is the first of the three reasons the
+    /// invalidation is an observer on the document instead.
+    #[test]
+    fn side_key_memo_sees_an_undo() {
+        let mut doc = one_slot_awaiting_its_faction();
+        doc.add_faction("faction-OPFOR", "OPFOR", "Soviet Army");
+        assert_eq!(doc.materialize().side_keys, vec!["OPFOR".to_string()]);
+
+        assert!(doc.undo(), "the faction mint is one LOCAL undo step");
+        assert_eq!(
+            doc.materialize().side_keys,
+            vec!["BLUFOR".to_string()],
+            "T-937.3: Ctrl+Z removed the faction and the memo kept serving its side key"
+        );
+
+        assert!(doc.redo(), "and redo puts it back");
+        assert_eq!(
+            doc.materialize().side_keys,
+            vec!["OPFOR".to_string()],
+            "T-937.3: the memo served the undone side after a redo"
+        );
+    }
+
+    /// **T-937.3 — a peer's bytes are a write too**, and they reach the document through
+    /// [`MissionDocCore::apply_update`], not through any mutator: the collab seam (T-295) and the
+    /// IndexedDB restore seam both land here. The faction is minted entirely on the far side.
+    #[test]
+    fn side_key_memo_sees_a_remote_update() {
+        let doc = one_slot_awaiting_its_faction();
+        assert_eq!(
+            doc.materialize().side_keys,
+            vec!["BLUFOR".to_string()],
+            "the fallback is cached before the peer's bytes arrive — that is the setup"
+        );
+
+        let peer = MissionDocCore::with_client_id(7);
+        peer.add_faction("faction-OPFOR", "OPFOR", "Soviet Army");
+        doc.apply_update(&peer.encode_state())
+            .expect("a peer's faction mint applies");
+        assert_eq!(
+            doc.materialize().side_keys,
+            vec!["OPFOR".to_string()],
+            "T-937.3: a remote update moved the side and the memo did not notice"
+        );
+    }
+
+    /// **T-937.3 — keying the memo by SQUAD id, not slot id.** The ticket asked for "a side-key
+    /// cache keyed by slot id"; a slot's side is a pure function of its `squadId`, so keying by
+    /// squad makes a re-parent self-healing (the lookup key changes with the slot) instead of a
+    /// third invalidation trigger someone has to remember. This pins that it heals.
+    #[test]
+    fn side_key_memo_survives_a_slot_moving_sides() {
+        // Row ORDER is `yrs` map iteration order, which is neither insertion order nor stable —
+        // read the side back BY ID (`row_of`, the module's existing "parity is set-equality, not
+        // row order" helper) rather than by position.
+        let side_of = |doc: &MissionDocCore, id: &str| {
+            let soa = doc.materialize();
+            soa.side_keys[row_of(&soa, id)].clone()
+        };
+
+        let doc = two_sided_core(2);
+        assert_eq!(side_of(&doc, "n0"), "BLUFOR", "n0 starts under sq-blu");
+        assert_eq!(side_of(&doc, "n1"), "OPFOR", "n1 starts under sq-opf");
+
+        doc.move_slot_to_squad("n0", "sq-opf");
+        assert_eq!(
+            side_of(&doc, "n0"),
+            "OPFOR",
+            "T-937.3: the moved slot kept its old side — the memo answered under a stale key"
+        );
+        assert_eq!(
+            side_of(&doc, "n1"),
+            "OPFOR",
+            "T-937.3: the slot that did not move must be unaffected"
+        );
     }
 }
