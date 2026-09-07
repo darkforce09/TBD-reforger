@@ -1,0 +1,12 @@
+id = "T-946.58"
+kind = "work"
+title = "T-139 kit preview is empty on a dedicated server"
+summary = "TBD_LobbyScreen reads TBD_MissionLoader.GetSlotById, but clients hold no mission document. The grid shows PreviewEmpty and logs items=0 anywhere the client is not also the server."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T13:23:27Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

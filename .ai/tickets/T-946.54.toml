@@ -1,0 +1,12 @@
+id = "T-946.54"
+kind = "work"
+title = "T-374 unreadable latch now set 560 ms late"
+summary = "note_unreadable retries 80/160/320 ms before inserting into UNREADABLE, so for that window run_save passes the guard and can overwrite a record the session already failed to read."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T13:22:43Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

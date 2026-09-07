@@ -1,0 +1,12 @@
+id = "T-946.53"
+kind = "work"
+title = "authored_blocks_root is a hand match with no coverage guard"
+summary = "flatten.rs:1453 authored_block_value is a six-arm match over AUTHORED_BLOCKS; an unmatched key silently drops the block at flatten. The comment above still says adding a block needs only a row."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T13:22:26Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

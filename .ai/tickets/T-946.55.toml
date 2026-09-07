@@ -1,0 +1,12 @@
+id = "T-946.55"
+kind = "work"
+title = "Objective HUD replicates to every player at 1 Hz"
+summary = "TBD_ObjectivesComponent Deliver calls ReplicateHud unconditionally each tick with no dirty check, sending a Reliable Owner RPC of three string arrays per player. Wire cost exceeds the chat pump it replaced."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T13:22:56Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

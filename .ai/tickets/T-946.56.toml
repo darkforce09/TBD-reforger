@@ -1,0 +1,12 @@
+id = "T-946.56"
+kind = "work"
+title = "WebGPU slot upload wastes a pooled write"
+summary = "engine.rs:5066 performs the T-938.1 pooled write_gpu then discards it when GPU cull is on, then makes three full-lane host copies. SlotDrag routes through this on every pointer move."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T13:23:13Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

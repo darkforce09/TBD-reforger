@@ -1,0 +1,12 @@
+id = "T-946.57"
+kind = "work"
+title = "T-941.8 resolves roster vehicles by position only"
+summary = "FindBody returns the first Vehicle within 3 m XZ; wire uid and alias are used only in logs. Two vehicles parked close both resolve to one body, so one gets cargo twice and the other none."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T13:23:20Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
