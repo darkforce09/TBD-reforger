@@ -79,7 +79,7 @@ pub fn read_field_ids<T: ReadTxn>(txn: &T, container: &MapRef, field: &str) -> V
 }
 
 /// True when `map[key].field` is a live `YArray` (not a legacy `Any::Array`).
-#[allow(dead_code)] // `MissionDocCore::id_list_is_native` (cfg(test)) and this module's tests
+#[allow(dead_code)] // this module's tests (must not live as cfg(test) on MissionDocCore)
 pub fn is_native_array<T: ReadTxn>(txn: &T, map: &MapRef, key: &str, field: &str) -> bool {
     matches!(
         map.get(txn, key).and_then(|o| match o {
@@ -463,6 +463,26 @@ mod tests {
 mod mission_doc_tests {
     use super::*;
     use crate::doc::MissionDocCore;
+    use yrs::updates::decoder::Decode;
+    use yrs::{Doc, Transact, Update};
+
+    /// Replay `encode_state` onto a probe peer so hydrate tests can call [`is_native_array`]
+    /// without a `#[cfg(test)]` item on `MissionDocCore` (Class-R haystack truncates there).
+    fn id_list_is_native(doc: &MissionDocCore, root: &str, key: &str, field: &str) -> bool {
+        let probe = Doc::with_client_id(0x00EE_EEEE);
+        let map = match root {
+            "squads" => probe.get_or_insert_map("squads"),
+            "editorLayers" => probe.get_or_insert_map("editorLayers"),
+            _ => return false,
+        };
+        {
+            let mut txn = probe.transact_mut();
+            let update = Update::decode_v1(&doc.encode_state()).expect("decode encode_state");
+            txn.apply_update(update).expect("apply encode_state");
+        }
+        let txn = probe.transact();
+        is_native_array(&txn, &map, key, field)
+    }
 
     fn json_ids(doc: &MissionDocCore, squad: &str) -> Vec<String> {
         let root: serde_json::Value =
@@ -571,11 +591,11 @@ mod mission_doc_tests {
         assert_eq!(json_ids(&doc, "sq1"), ["s1", "s2"]);
         assert_eq!(json_layer_ids(&doc, "lyr"), ["s1", "s2"]);
         assert!(
-            doc.id_list_is_native("squads", "sq1", SLOT_IDS),
+            id_list_is_native(&doc, "squads", "sq1", SLOT_IDS),
             "hydrate must migrate squad.slotIds to YArray"
         );
         assert!(
-            doc.id_list_is_native("editorLayers", "lyr", ENTITY_IDS),
+            id_list_is_native(&doc, "editorLayers", "lyr", ENTITY_IDS),
             "hydrate must migrate layer.entityIds to YArray"
         );
     }
