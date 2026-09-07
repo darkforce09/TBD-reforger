@@ -1307,24 +1307,30 @@ mod tests {
     /// An unlisted key in the bag does NOT become a wire key. `AUTHORED_BLOCKS` is a list, not an
     /// open passthrough: `mission.schema.json` closes the document root with
     /// `additionalProperties: false`, so one stray promoted key would 500 `/compiled`.
+    ///
+    /// T-936.7 re-pointed the witness one last time. It cycled through each slice's key as that
+    /// slice's "not yet registered" example (`tasks` → … → `spawnModules` → `tacticalGraphics`),
+    /// but `tacticalGraphics` is the SEVENTH and final T-936 block, so there is no eighth key to
+    /// hand it to. It now names something that is not a block and never will be, which is what
+    /// the test always actually meant — and it can never go red on a future registration again.
     #[test]
     fn an_unlisted_environment_key_is_not_promoted_to_the_payload_root() {
         let small = json!({
             "meta": {
                 "terrain": "everon",
-                "environment": { "weather": "clear", "tacticalGraphics": [] }
+                "environment": { "weather": "clear", "notAnAuthoredBlock": [] }
             }
         })
         .to_string();
         let p = compile_payload(&small, "{}", false);
         assert!(
-            p.get("tacticalGraphics").is_none(),
-            "`tacticalGraphics` has no AUTHORED_BLOCKS row until T-936.7: {p}"
+            p.get("notAnAuthoredBlock").is_none(),
+            "`notAnAuthoredBlock` has no AUTHORED_BLOCKS row and must not be promoted: {p}"
         );
         // ...and the bag itself is untouched by the passthrough.
         assert_eq!(
             p["environment"],
-            json!({"weather": "clear", "tacticalGraphics": []})
+            json!({"weather": "clear", "notAnAuthoredBlock": []})
         );
     }
 

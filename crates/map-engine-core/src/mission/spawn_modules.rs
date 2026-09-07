@@ -629,15 +629,17 @@ mod tests {
         assert!(carried.get("spawnModules").is_none());
     }
 
-    /// The unlisted-key witness now uses T-936.7's `tacticalGraphics`.
+    /// The unlisted-key witness, and the LAST time it needs re-pointing — T-936.7 registered
+    /// `tacticalGraphics`, the seventh and final T-936 block, so the witness now names something
+    /// that is not a block and never will be rather than the next slice's key.
     #[test]
     fn an_unlisted_environment_key_is_not_promoted() {
-        let env = json!({"weather": "clear", "tacticalGraphics": []});
+        let env = json!({"weather": "clear", "notAnAuthoredBlock": []});
         let mut dst = serde_json::Map::new();
         let copied = copy_authored_blocks(&env, &mut dst);
-        assert!(!copied.contains(&"tacticalGraphics"), "{copied:?}");
+        assert!(!copied.contains(&"notAnAuthoredBlock"), "{copied:?}");
         assert!(
-            !dst.contains_key("tacticalGraphics"),
+            !dst.contains_key("notAnAuthoredBlock"),
             "an unlisted key stays parked: {dst:?}"
         );
     }

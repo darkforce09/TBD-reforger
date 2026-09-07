@@ -799,7 +799,13 @@ pub struct ModMissionDocument {
     /// sit in `mission.schema.json`'s property order, and because the block T-936.1 itself lands is
     /// the one modelled by the field above — the carrier holds the OPTIONAL blocks the six sibling
     /// slices add (`tasks`, `weatherTimeline`, `audio`, `spawnModules`, `tacticalGraphics`), each of
-    /// which is one row in `AUTHORED_BLOCKS` and one validator, with no edit here.
+    /// which is one row in `AUTHORED_BLOCKS` and one validator.
+    ///
+    /// **Not "with no edit here", which is what this sentence used to say (T-946.53).** Each of
+    /// those blocks also needs a named [`EditorPayload`] field and an
+    /// [`EditorPayload::authored_block_value`] arm, or serde never sees the key and the carrier is
+    /// handed nothing to carry — silently. `every_authored_block_key_reaches_the_wire` is the
+    /// structural guard that now refuses a row without them.
     ///
     /// Empty today, and an empty carrier serialises to NOTHING — not to an empty object — so this
     /// field costs a mission that authors no optional block exactly zero bytes. That is the claim
@@ -1427,6 +1433,15 @@ struct EditorPayload {
     /// `/compiled` never emits `spawnModules`.
     #[serde(rename = "spawnModules")]
     spawn_modules: Option<serde_json::Value>,
+    /// T-936.7 / T-946.53 — phase lines, boundaries, axes of advance and curved arrows.
+    ///
+    /// The LAST of the seven T-936 blocks, and the one that got `extensions.rs`'s header
+    /// corrected: a row in `AUTHORED_BLOCKS` is not a wire. There is no `#[serde(flatten)]`
+    /// catch-all above (see the `winConditions` note for the allocation reason), so serde only
+    /// sees `tacticalGraphics` because this field names it, and
+    /// [`Self::authored_block_value`]'s `_ => None` would drop it without this line's partner arm.
+    #[serde(rename = "tacticalGraphics")]
+    tactical_graphics: Option<serde_json::Value>,
 }
 
 impl EditorPayload {
@@ -1436,6 +1451,16 @@ impl EditorPayload {
     /// carries the authored blocks and NOTHING else — an extensions reader cannot accidentally see
     /// `editor` or `payloadExtras`, and the cost is one small object rather than a second parse of
     /// a document that can be 8 MB.
+    /// The value this payload carried for one `AUTHORED_BLOCKS` key.
+    ///
+    /// **`_ => None` is a SILENT DROP, and that is the T-946.53 hazard.** A key registered in
+    /// `extensions::AUTHORED_BLOCKS` with no arm here compiles clean, validates clean, and simply
+    /// never reaches `/compiled` — there is no diagnostic, because from this function's point of
+    /// view an unknown key and an unauthored one are the same thing. Anyone adding an eighth block
+    /// adds a named field to [`EditorPayload`] AND an arm here, and asserts the pair with a test
+    /// that goes to the wire (`authored_tactical_graphics_survive_flatten_to_mod_document` is the
+    /// worked example). The exhaustiveness cannot be pushed onto the compiler: the keys are
+    /// `&'static str` data in another module, not a Rust enum.
     fn authored_block_value(&self, key: &str) -> Option<&serde_json::Value> {
         match key {
             "winConditions" => self.win_conditions.as_ref(),
@@ -1444,6 +1469,7 @@ impl EditorPayload {
             "weatherTimeline" => self.weather_timeline.as_ref(),
             "audio" => self.audio.as_ref(),
             "spawnModules" => self.spawn_modules.as_ref(),
+            "tacticalGraphics" => self.tactical_graphics.as_ref(),
             _ => None,
         }
     }
@@ -6251,6 +6277,94 @@ mod tests {
         assert_eq!(wire["spawnModules"].as_array().map(Vec::len), Some(2));
         assert_eq!(wire["spawnModules"][0]["factionKey"], "opfor");
         assert_eq!(wire["spawnModules"][1]["zoneId"], "z_spawn_blufor");
+    }
+
+    /// T-936.7 — one graphic of each kind flattens to a `tacticalGraphics` block.
+    ///
+    /// This is the T-946.53 assertion in its most direct form: it fails on a tree that has the
+    /// `AUTHORED_BLOCKS` row but not the named [`EditorPayload`] field and the
+    /// [`EditorPayload::authored_block_value`] arm, because `_ => None` drops the key with no
+    /// compile error and no diagnostic.
+    #[test]
+    fn authored_tactical_graphics_survive_flatten_to_mod_document() {
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["tacticalGraphics"] = serde_json::json!([
+            {
+                "id": "tg-phase",
+                "kind": "phase_line",
+                "points": [[1000.0, 2000.0], [1400.0, 2100.0]],
+                "label": "PL BLUE",
+                "sideKey": "blufor",
+                "style": {"color": "#3388ff", "alpha": 0.8}
+            },
+            {
+                "id": "tg-bound",
+                "kind": "boundary",
+                "points": [[900.0, 1800.0], [1200.0, 1900.0], [1500.0, 2400.0]]
+            },
+            {
+                "id": "tg-axis",
+                "kind": "axis_of_advance",
+                "points": [[800.0, 1200.0], [1600.0, 2600.0]],
+                "label": "AXIS SABRE"
+            },
+            {
+                "id": "tg-arrow",
+                "kind": "curved_arrow",
+                "points": [[700.0, 1100.0], [1100.0, 1500.0], [1700.0, 1400.0]],
+                "style": {"brush": "solid", "color": "#ff2222", "widthM": 24.0}
+            }
+        ]);
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        let wire = serde_json::to_value(&doc).expect("wire");
+        assert_eq!(
+            wire["tacticalGraphics"][0]["kind"], "phase_line",
+            "tacticalGraphics must survive flatten_to_mod_document: {wire:#}"
+        );
+        assert_eq!(wire["tacticalGraphics"].as_array().map(Vec::len), Some(4));
+        assert_eq!(wire["tacticalGraphics"][1]["kind"], "boundary");
+        assert_eq!(wire["tacticalGraphics"][2]["kind"], "axis_of_advance");
+        assert_eq!(wire["tacticalGraphics"][3]["kind"], "curved_arrow");
+        assert_eq!(wire["tacticalGraphics"][0]["label"], "PL BLUE");
+        assert_eq!(wire["tacticalGraphics"][0]["sideKey"], "blufor");
+        assert_eq!(wire["tacticalGraphics"][3]["style"]["color"], "#ff2222");
+    }
+
+    /// **T-946.53's structural guard — the one thing that would have caught every instance of
+    /// this class before it shipped.**
+    ///
+    /// `extensions::AUTHORED_BLOCKS` is DATA, not a Rust enum, so nothing makes
+    /// [`EditorPayload::authored_block_value`]'s `match` exhaustive over it: a row whose key has
+    /// no named field and no arm falls into `_ => None` and the author's block vanishes between a
+    /// successful compile and `/compiled` with no error anywhere. This walks the registry itself,
+    /// so an eighth block added without its two `flatten.rs` halves fails HERE, by name, instead
+    /// of being discovered live months later (which is what happened to `weatherTimeline` and
+    /// `audio` — T-946.44).
+    #[test]
+    fn every_authored_block_key_reaches_the_wire() {
+        for block in crate::mission::extensions::AUTHORED_BLOCKS {
+            // A sentinel that is not a legal block value for ANY row, because this asserts the
+            // TRANSPORT (serde field → match arm → root), not the validators. Deserialising is
+            // the whole point: `serde_json::from_value` is what drops an unnamed key.
+            let sentinel = serde_json::json!({"__t946_53": block.key});
+            let payload = serde_json::json!({ block.key: sentinel.clone() });
+            let parsed: EditorPayload =
+                serde_json::from_value(payload).expect("EditorPayload accepts any shape");
+            assert_eq!(
+                parsed.authored_block_value(block.key),
+                Some(&sentinel),
+                "`{}` is registered in AUTHORED_BLOCKS but EditorPayload drops it: it needs a \
+                 named #[serde(rename)] field AND an authored_block_value arm, or /compiled will \
+                 silently omit every mission that authors it (T-946.53)",
+                block.key
+            );
+            assert_eq!(
+                parsed.authored_blocks_root().get(block.key),
+                Some(&sentinel),
+                "`{}` never reaches the extensions root",
+                block.key
+            );
+        }
     }
 
     // ── T-200 kit substitutions ──────────────────────────────────────────────────────────

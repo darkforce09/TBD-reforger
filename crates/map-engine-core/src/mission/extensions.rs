@@ -9,8 +9,32 @@
 //!
 //! So both files get ONE call site each — [`copy_authored_blocks`] and [`ExtensionBlocks::from_payload`]
 //! (plus [`AuthoredBlocks::parse`] for the blocks the document models with a typed field) — and a
-//! later slice adds a block by adding a ROW to [`AUTHORED_BLOCKS`] and a validator module. Nothing
-//! in `compile.rs`, nothing in `flatten.rs`.
+//! later slice adds a block by adding a ROW to [`AUTHORED_BLOCKS`] and a validator module. That
+//! covers `compile.rs` completely: the copy loop is generic over this list and a new block needs
+//! no edit there.
+//!
+//! ══ A ROW IS NOT A WIRE — the correction T-946.53 forced ═════════════════════════════════════
+//! **This header used to end that paragraph "Nothing in `compile.rs`, nothing in `flatten.rs`",
+//! and the `flatten.rs` half was FALSE.** T-936.7 is the slice that proved it, and
+//! `mission-editor-payload.schema.json`'s `winConditions` note carried the same claim in the same
+//! words. Both are corrected in the commit that falsifies them.
+//!
+//! `flatten.rs`'s `EditorPayload` is a NAMED-FIELD deserialise struct with no `#[serde(flatten)]`
+//! catch-all — deliberately, because flatten would make serde buffer every unmatched top-level key
+//! of a payload that can be 8 MB into `Content` instead of skipping it with `IgnoredAny`. It reads
+//! the blocks back through `EditorPayload::authored_block_value`, a hand `match` on the key that
+//! ends `_ => None`. So a block that has a ROW HERE but no named field and no match arm THERE is
+//! dropped in complete silence: no compile error, no diagnostic, no refusal — the compile succeeds
+//! and `/compiled` simply does not contain the author's block. T-946.44 caught that live for
+//! `weatherTimeline` and `audio`; T-946.53 caught this text still telling the next slice not to
+//! look.
+//!
+//! **A new block therefore moves in two files, not one:** a row here, AND a
+//! `#[serde(rename = "…")] Option<Value>` field plus a match arm in `flatten.rs`. The pairing is
+//! asserted, not just described — `tactical_graphics::tests::
+//! tactical_graphics_registered_here_must_also_be_readable_by_flatten` drives a compiled payload
+//! through the real carrier, and `flatten.rs`'s own
+//! `authored_tactical_graphics_survive_flatten_to_mod_document` drives it to the wire.
 //!
 //! ══ This is a LIST, not an open passthrough ══════════════════════════════════════════════════
 //! A key with no row here does not reach the compiled document. It stays exactly where T-219 put
@@ -96,6 +120,10 @@ pub const AUTHORED_BLOCKS: &[AuthoredBlock] = &[
     AuthoredBlock {
         key: "spawnModules",
         validate: crate::mission::spawn_modules::validate,
+    },
+    AuthoredBlock {
+        key: "tacticalGraphics",
+        validate: crate::mission::tactical_graphics::validate,
     },
 ];
 
@@ -218,8 +246,13 @@ impl AuthoredBlocks {
 /// **Deliberately untyped.** The blocks it carries are passed through VERBATIM after their row's
 /// validator has accepted them, so a typed field per block would buy nothing the validator has not
 /// already bought and would cost every later slice an edit here. Keeping the values as `Value`
-/// is what lets T-936.2…T-936.7 land a block with a row plus a validator and no edit to this file,
-/// `compile.rs` or `flatten.rs` — which is the whole reason this module exists.
+/// is what lets T-936.2…T-936.7 land a block with a row plus a validator and no edit to this file
+/// or to `compile.rs`.
+///
+/// It does NOT buy a free ride through `flatten.rs` — this line used to claim it did. See the
+/// module header's "A ROW IS NOT A WIRE": that file's `EditorPayload` is named-field, its
+/// `authored_block_value` `match` ends `_ => None`, and a block with no field and no arm there is
+/// dropped silently however well it is registered here (T-946.53).
 ///
 /// T-936.1's `winConditions` is document-modelled; T-936.2's `tasks` rides this carrier
 /// ([`DOCUMENT_OWNED_BLOCKS`]). The mechanism is not speculative: [`Self::from_payload`] runs on
@@ -365,9 +398,17 @@ mod tests {
             "T-936.6 registers spawnModules; a missing row is a silent drop at flatten"
         );
         assert!(!DOCUMENT_OWNED_BLOCKS.contains(&"spawnModules"));
+        assert!(
+            is_authored_block("tacticalGraphics"),
+            "T-936.7 registers tacticalGraphics; a missing row is a silent drop at flatten"
+        );
+        assert!(!DOCUMENT_OWNED_BLOCKS.contains(&"tacticalGraphics"));
         assert!(!is_authored_block("payloadExtras"));
-        assert!(!is_authored_block("tacticalGraphics"));
-        assert_eq!(AUTHORED_BLOCKS.len(), 6);
+        // T-936.7 is the LAST of the seven blocks, so the negative witness can no longer be the
+        // next slice's key. It is a name that is not a block and never will be — which is what
+        // every previous spelling of this assertion actually meant.
+        assert!(!is_authored_block("notAnAuthoredBlock"));
+        assert_eq!(AUTHORED_BLOCKS.len(), 7);
     }
 
     /// Every entry in [`DOCUMENT_OWNED_BLOCKS`] must be a registered block, or the withhold rule
@@ -385,7 +426,7 @@ mod tests {
             "weather": "clear",
             "timeLimitSeconds": 5400,
             "winConditions": {"mode": "vip", "endOn": ["faction_eliminated"], "vipSlotId": "s1"},
-            "tacticalGraphics": [],
+            "notAnAuthoredBlock": [],
         });
         let mut dst = Map::new();
         let copied = copy_authored_blocks(&env, &mut dst);
@@ -394,7 +435,7 @@ mod tests {
         assert_eq!(dst.len(), 1, "only the listed key travels: {dst:?}");
         assert_eq!(dst["winConditions"], env["winConditions"], "verbatim");
         assert!(
-            !dst.contains_key("tacticalGraphics"),
+            !dst.contains_key("notAnAuthoredBlock"),
             "an unlisted key stays parked in payloadExtras"
         );
         assert!(

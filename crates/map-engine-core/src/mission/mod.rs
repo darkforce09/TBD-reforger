@@ -22,6 +22,10 @@ pub mod radio_plan;
 /// known factions, positive counts, and the validator [`extensions::AUTHORED_BLOCKS`] registers
 /// for it.
 pub mod spawn_modules;
+/// T-936.7 — the authored `tacticalGraphics[]` block: phase lines, boundaries, axes of advance
+/// and curved arrows, the per-kind vertex floors, and the validator
+/// [`extensions::AUTHORED_BLOCKS`] registers for it.
+pub mod tactical_graphics;
 /// T-936.2 — the authored `tasks[]` block: tiers, the assigned→succeeded|failed table, and the
 /// validator [`extensions::AUTHORED_BLOCKS`] registers for it.
 pub mod tasks;
