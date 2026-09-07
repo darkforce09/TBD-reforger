@@ -3,7 +3,7 @@ kind = "work"
 title = "Conditional inclusion: variant-gated document subtrees"
 summary = "Conditional inclusion: variant-gated document subtrees"
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7410
 spec = "docs/specs/existing/t654_variant_inclusion.md"
 plan = "docs/plans/t-654_plan.md"
@@ -55,8 +55,13 @@ citations = [
     "FNF v4 mode architecture",
     "salvage redo T-654 branch",
 ]
-estimated = ["scope"]
+shipped_at = "953ce41e563cd682365ba07d89844f6ae550c756"
 created_at = "2026-08-02T00:00:00Z"
+completed_at = "2026-09-07T00:25:43Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",

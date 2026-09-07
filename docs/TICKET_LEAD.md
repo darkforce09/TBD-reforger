@@ -10,7 +10,6 @@
 
 - **T-090** (7079) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-212** (7320) — Typed per-side objectives with attributes [ready] — Objectives as typed, placed, per-side entities with one uniform attribute spine
-- **T-654** (7410) — Conditional inclusion: variant-gated document subtrees [ready] — Conditional inclusion: variant-gated document subtrees
 - **T-290** (7540) — Nine dead flatten fields mod never reads [ready] — meta.author/templateId/playerRange, the environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds and the orbat block are emitted but never read by the mod; add readers where cheap and annotate the rest in an emit ledger.
 - **T-242** (7560) — Emit T-216 slot deltas through flatten [ready] — The T-216 schema deltas (slot tag/callsign/rank/stance, group leaderSlotId, root vehicles $def) are all declared in mission.schema.json today, but flatten drops the four slot fields (DIAG_DROP_SLOT_*); emit them and pin with schema-validated goldens.
 - **T-301** (7660) — Briefing kit lists 7 of 13 gear fields [ready] — TBD_BriefingData.BuildKit (UI/TBD_BriefingData.c:519) lists seven gear fields; T-182's launcher, handgun and throwable never appear on the briefing screen. Add them while keeping pants/boots/handwear hidden.

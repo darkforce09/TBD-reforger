@@ -3,7 +3,7 @@ kind = "work"
 title = "Lobby: deploy holders on BRIEFING, reopen path"
 summary = "Players stay bodiless during LOBBY; on LOBBY to BRIEFING every claimed slot holder auto-deploys exactly once, the deploy race is closed, and the lobby reopens to change slot."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7590
 spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
 plan = "docs/plans/t-941_2_plan.md"
@@ -36,7 +36,10 @@ acceptance = [
     "The mod compiles and boots; no body spawns during LOBBY.",
     "Checklist: on BRIEFING every claimed slot holder appears once; double-clicking DEPLOY never yields two bodies; reopening the lobby and changing slot redeploys.",
 ]
+shipped_at = "81a44009bde58e53d8f0eea1642bc5f7d872931b"
 created_at = "2026-09-05T02:33:18Z"
+completed_at = "2026-09-07T00:26:04Z"
+estimated = ["tokens"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c",

@@ -1,0 +1,17 @@
+{
+  "derived_from_shas": [
+    "f3f1384f61b705a14489ad574d356b6ecde08a81",
+    "87bd9d9b082b37601d5399745d779e57e24c27ee",
+    "bdf7e2864cfcd5db7724b020aad31cc39d4e1d81",
+    "b5356a52a73bd429b57e556d9cbf66429c4e10f8",
+    "b0f0d1fe1223511be78a9e01656a07584d235d93",
+    "953ce41e563cd682365ba07d89844f6ae550c756",
+    "02c9c006ee8843ff101700240686d79ee629c656"
+  ],
+  "factor": 150,
+  "generated_at": "2026-09-07T00:25:47Z",
+  "id": "T-654",
+  "loc_changed": 2032,
+  "source": "diff_loc",
+  "tokens_estimated": 304800
+}

@@ -13,14 +13,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** Objectives as typed, placed, per-side entities with one uniform attribute spine
 
-## T-654 — Conditional inclusion: variant-gated document subtrees
-
-- **Slice spec:** `docs/specs/existing/t654_variant_inclusion.md`
-- **Program hub:** `docs/specs/existing/t654_variant_inclusion.md`
-- **Branch:** `ticket/T-654`
-- **Targets:** 
-- **Summary:** Conditional inclusion: variant-gated document subtrees
-
 ## T-290 — Nine dead flatten fields mod never reads
 
 - **Slice spec:** `docs/specs/ideas/t290_dead_flatten_fields.md`

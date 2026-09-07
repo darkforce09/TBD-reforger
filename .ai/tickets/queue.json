@@ -20,13 +20,6 @@
       "branch": "ticket/T-212"
     },
     {
-      "id": "T-654",
-      "title": "Conditional inclusion: variant-gated document subtrees",
-      "status": "ready",
-      "spec": "docs/specs/existing/t654_variant_inclusion.md",
-      "branch": "ticket/T-654"
-    },
-    {
       "id": "T-290",
       "title": "Nine dead flatten fields mod never reads",
       "status": "ready",
