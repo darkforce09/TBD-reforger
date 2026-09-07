@@ -932,10 +932,11 @@ pub(crate) fn create_building_pipeline(
     })
 }
 
-/// Compute-culled tree draw handles for **in-order** emission inside [`draw_batches`]
-/// (T-151.11.1 / audit X-01): the `draw_indirect` fires at the `WorldTrees` order slot, not
-/// after the whole list — trees must never paint over slots/grid/marquee.
-struct IndirectTrees<'a> {
+/// Compute-culled icon draw handles for **in-order** emission inside [`draw_batches`]
+/// (T-151.11.1 / audit X-01; T-938.3 per-lane): each `draw_indirect` fires at that lane's
+/// order slot — culled icons must never paint over later lanes.
+struct IndirectIcon<'a> {
+    role: LaneRole,
     pipeline: &'a wgpu::RenderPipeline,
     atlas_bind: &'a wgpu::BindGroup,
     instances: &'a wgpu::Buffer,
@@ -946,7 +947,7 @@ struct IndirectTrees<'a> {
 /// readback path — T-151.1 L1/L10). Group 0 (the camera mvp) is compatible across all pipeline
 /// layouts, so it is bound once. The pipelines are passed in because the live path uses the
 /// surface-format pipelines and the readback path rebuilds them at `Rgba8Unorm`.
-/// `indirect_trees` (WebGPU compute-cull path) is emitted exactly once, in `WorldTrees` order.
+/// `indirect_icons` (WebGPU compute-cull path) is emitted once per culled lane, in draw order.
 #[allow(clippy::too_many_arguments)]
 fn draw_batches<'a>(
     batches: &'a [Batch],
@@ -965,32 +966,36 @@ fn draw_batches<'a>(
     text_atlas_bind: Option<&'a wgpu::BindGroup>,
     slot_base_bind: Option<&'a wgpu::BindGroup>,
     slot_drag_bind: Option<&'a wgpu::BindGroup>,
-    indirect_trees: Option<IndirectTrees<'a>>,
+    indirect_icons: &[IndirectIcon<'a>],
 ) {
-    let mut trees_emitted = false;
-    let emit_trees = |pass: &mut wgpu::RenderPass<'a>, emitted: &mut bool| {
-        if *emitted {
-            return;
-        }
-        *emitted = true;
-        if let Some(t) = &indirect_trees {
-            pass.set_pipeline(t.pipeline);
-            pass.set_bind_group(0, bind_group, &[]);
-            pass.set_bind_group(2, t.atlas_bind, &[]);
-            pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
-            pass.set_vertex_buffer(1, t.instances.slice(..));
-            pass.draw_indirect(t.indirect, 0);
-        }
-    };
+    let mut icons_emitted = vec![false; indirect_icons.len()];
+    let emit_due =
+        |pass: &mut wgpu::RenderPass<'a>, emitted: &mut [bool], before: Option<LaneRole>| {
+            for (i, d) in indirect_icons.iter().enumerate() {
+                if emitted[i] {
+                    continue;
+                }
+                if let Some(role) = before
+                    && lane_order(role) <= lane_order(d.role)
+                {
+                    continue;
+                }
+                emitted[i] = true;
+                pass.set_pipeline(d.pipeline);
+                pass.set_bind_group(0, bind_group, &[]);
+                pass.set_bind_group(2, d.atlas_bind, &[]);
+                pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
+                pass.set_vertex_buffer(1, d.instances.slice(..));
+                pass.draw_indirect(d.indirect, 0);
+            }
+        };
     // group 0 (camera mvp) is set after each `set_pipeline` — its layout is identical across all
     // pipelines, but binding it per-batch (pipeline → groups → buffers → draw) is the always-valid
     // order on both the WebGPU and WebGL2 backends.
     for batch in batches {
-        // The compute-culled tree lane has no Batch entry (upload removes it on the compute
-        // path); slot its indirect draw in the moment we pass the WorldTrees order position.
-        if lane_order(batch.role) > lane_order(LaneRole::WorldTrees) {
-            emit_trees(pass, &mut trees_emitted);
-        }
+        // Compute-culled icon lanes have no Batch entry (upload removes them on the compute
+        // path); slot each indirect draw as we pass that lane's order position.
+        emit_due(pass, &mut icons_emitted, Some(batch.role));
         if !batch.visible {
             continue;
         }
@@ -1107,8 +1112,8 @@ fn draw_batches<'a>(
             }
         }
     }
-    // No batch ordered after WorldTrees (or an empty list): emit the culled trees at the tail.
-    emit_trees(pass, &mut trees_emitted);
+    // No batch ordered after a culled lane (or an empty list): emit remaining indirects at the tail.
+    emit_due(pass, &mut icons_emitted, None);
 }
 
 /// The render engine — owns the GPU device, the canvas surface, the camera, and the
@@ -1233,7 +1238,7 @@ pub struct RenderEngine {
     icon_cull: Option<crate::icon_cull_gpu::IconComputeCull>,
     /// Last tree-glyph 20 B upload (CPU oracle + compute src).
     tree_icons_20: Vec<u8>,
-    /// When true (WebGPU), WorldTrees draw via compute cull + draw_indirect.
+    /// When true (WebGPU), icon lanes draw via compute cull + draw_indirect.
     compute_cull_trees: bool,
     /// T-938.1 — persistent VERTEX|COPY_DST instance buffers for slot/cluster icon lanes.
     lane_pool: crate::buffer_pool::LanePool,
@@ -1716,16 +1721,24 @@ impl RenderEngine {
     #[wasm_bindgen(getter)]
     #[must_use]
     pub fn compute_cull_enabled(&self) -> bool {
-        self.compute_cull_trees && self.icon_cull.is_some()
+        self.gpu_cull_enabled()
     }
 
-    /// Class R CPU oracle count for the last encode_cull frustum.
+    /// T-938.3: when true, `encode_cull` runs the CPU frustum oracle (debug HUD). Off by
+    /// default — visible counts then come from the GPU readback (may lag one frame).
+    pub fn set_compute_cull_debug_hud(&mut self, on: bool) {
+        if let Some(cull) = &mut self.icon_cull {
+            cull.set_debug_hud(on);
+        }
+    }
+
+    /// Class R CPU oracle count for the last encode_cull frustum (0 if the debug HUD flag is off).
     #[wasm_bindgen(getter)]
     #[must_use]
     pub fn compute_cull_cpu_count(&self) -> u32 {
         self.icon_cull
             .as_ref()
-            .map(|c| c.last_cpu_count)
+            .map(|c| c.last_cpu_count())
             .unwrap_or(0)
     }
 
@@ -1744,7 +1757,7 @@ impl RenderEngine {
     #[wasm_bindgen(getter)]
     #[must_use]
     pub fn compute_cull_gpu_sampled(&self) -> bool {
-        self.icon_cull.as_ref().is_some_and(|c| c.gpu_sampled.get())
+        self.icon_cull.as_ref().is_some_and(|c| c.gpu_sampled())
     }
 
     /// Pure CPU compact of current tree icons against a world-meter frustum (Class R harness).
@@ -1764,6 +1777,79 @@ impl RenderEngine {
             max_y - ANCHOR[1],
         ];
         crate::compute_cull::count_icons_in_frustum(&self.tree_icons_20, frustum)
+    }
+
+    fn gpu_cull_enabled(&self) -> bool {
+        self.compute_cull_trees
+            && self.icon_cull.is_some()
+            && self.icon_pipeline_storage32.is_some()
+    }
+
+    fn clear_cull_lane(&mut self, role: LaneRole) {
+        if let Some(cull) = &mut self.icon_cull {
+            cull.upload_lane(&self.device, &self.queue, role as u32, &[]);
+        }
+    }
+
+    fn collect_indirect_icons(&self) -> Vec<IndirectIcon<'_>> {
+        let Some(cull) = self.icon_cull.as_ref() else {
+            return Vec::new();
+        };
+        let Some(pipe32) = self.icon_pipeline_storage32.as_ref() else {
+            return Vec::new();
+        };
+        if !self.compute_cull_trees {
+            return Vec::new();
+        }
+        const ROLES: [LaneRole; 9] = [
+            LaneRole::WorldTrees,
+            LaneRole::WorldProps,
+            LaneRole::WorldBadges,
+            LaneRole::MissionComments,
+            LaneRole::MissionVehicles,
+            LaneRole::Slots,
+            LaneRole::SlotPlacePreview,
+            LaneRole::SlotDrag,
+            LaneRole::Clusters,
+        ];
+        let mut out = Vec::new();
+        for role in ROLES {
+            let Some((dst, indirect)) = cull.lane_draw(role as u32) else {
+                continue;
+            };
+            let atlas = match role {
+                LaneRole::SlotDrag => self.slot_atlas.as_ref().map(|a| &a.drag_bind_group),
+                LaneRole::Slots
+                | LaneRole::Clusters
+                | LaneRole::SlotPlacePreview
+                | LaneRole::MissionVehicles
+                | LaneRole::MissionComments => self.slot_atlas.as_ref().map(|a| &a.base_bind_group),
+                _ => self.glyph_atlas.as_ref().map(|a| &a.bind_group),
+            };
+            let Some(atlas_bind) = atlas else {
+                continue;
+            };
+            out.push(IndirectIcon {
+                role,
+                pipeline: pipe32,
+                atlas_bind,
+                instances: dst,
+                indirect,
+            });
+        }
+        out.sort_by_key(|d| lane_order(d.role));
+        out
+    }
+
+    fn cull_lane_stat(&self, role: LaneRole, batch_sum: u32) -> u32 {
+        if self.gpu_cull_enabled() {
+            self.icon_cull
+                .as_ref()
+                .map(|c| c.lane_gpu_count_for_stats(role as u32))
+                .unwrap_or(0)
+        } else {
+            batch_sum
+        }
     }
 
     #[wasm_bindgen(getter)]
@@ -1803,7 +1889,7 @@ impl RenderEngine {
 
     /// Encode the full scene (optional compute cull + the main color pass) into `encoder`,
     /// targeting `view`. Shared by [`Self::render`] (surface target) and [`Self::render_bench`]
-    /// (offscreen target). Returns whether the WebGPU tree compute-cull ran (the caller kicks
+    /// (offscreen target). Returns whether any WebGPU icon compute-cull ran (the caller kicks
     /// its counter readback only on real presented frames).
     fn encode_main_pass(
         &mut self,
@@ -1811,13 +1897,10 @@ impl RenderEngine {
         view: &wgpu::TextureView,
         take_timing: bool,
     ) -> bool {
-        // T-151.8.1: WebGPU tree instance cull before the color pass.
-        let do_compute_trees = self.compute_cull_trees
-            && self.icon_cull.is_some()
-            && self.icon_pipeline_storage32.is_some()
-            && self.glyph_atlas.is_some()
-            && !self.tree_icons_20.is_empty();
-        if do_compute_trees {
+        // T-151.8.1 / T-938.3: WebGPU per-lane instance cull before the color pass.
+        let do_compute =
+            self.gpu_cull_enabled() && self.icon_cull.as_ref().is_some_and(|c| c.has_any_src());
+        if do_compute {
             let world = self.camera.visible_world_rect();
             // Icon buffers are anchor-relative; frustum must match.
             let frustum = [
@@ -1861,26 +1944,12 @@ impl RenderEngine {
             let text_bg = self.text_atlas.as_ref().map(|a| &a.bind_group);
             let slot_base = self.slot_atlas.as_ref().map(|a| &a.base_bind_group);
             let slot_drag = self.slot_atlas.as_ref().map(|a| &a.drag_bind_group);
-            // T-151.11.1 (audit X-01): the compute-culled tree draw is emitted INSIDE
-            // draw_batches at the WorldTrees order slot — never on top of slots/grid/marquee.
-            let indirect_trees = if do_compute_trees {
-                match (
-                    self.icon_cull.as_ref(),
-                    self.icon_pipeline_storage32.as_ref(),
-                    self.glyph_atlas.as_ref(),
-                ) {
-                    (Some(cull), Some(pipe32), Some(atlas)) => {
-                        cull.dst_buf.as_ref().map(|dst| IndirectTrees {
-                            pipeline: pipe32,
-                            atlas_bind: &atlas.bind_group,
-                            instances: dst,
-                            indirect: &cull.indirect_buf,
-                        })
-                    }
-                    _ => None,
-                }
+            // T-151.11.1 (audit X-01) / T-938.3: compute-culled icon draws are emitted INSIDE
+            // draw_batches at each lane's order slot — never on top of later lanes.
+            let indirect_icons = if do_compute {
+                self.collect_indirect_icons()
             } else {
-                None
+                Vec::new()
             };
             draw_batches(
                 &self.batches,
@@ -1899,10 +1968,10 @@ impl RenderEngine {
                 text_bg,
                 slot_base,
                 slot_drag,
-                indirect_trees,
+                &indirect_icons,
             );
         }
-        do_compute_trees
+        do_compute
     }
 
     /// T-173 — off-vsync frame-cost bench (perf gates G-A/G-B). Encodes + submits `n` full-scene
@@ -2045,7 +2114,7 @@ impl RenderEngine {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("frame"),
             });
-        let do_compute_trees = self.encode_main_pass(&mut encoder, &view, take_timing);
+        let do_compute = self.encode_main_pass(&mut encoder, &view, take_timing);
         if take_timing && let Some(t) = &self.timer {
             encoder.resolve_query_set(&t.query_set, 0..2, &t.resolve_buf, 0);
             encoder.copy_buffer_to_buffer(&t.resolve_buf, 0, &t.read_buf, 0, 16);
@@ -2056,7 +2125,7 @@ impl RenderEngine {
             t.kick_readback();
         }
         // T-151.11.4 (X-03): map the real GPU cull counter for this frame (in-flight guarded).
-        if do_compute_trees && let Some(cull) = &self.icon_cull {
+        if do_compute && let Some(cull) = &self.icon_cull {
             cull.kick_readback();
         }
         self.damage.after_submit();
@@ -2238,12 +2307,8 @@ impl RenderEngine {
             })
             .sum();
         // W5 additive glyph stats (L10) — prior keys untouched.
-        let tree_glyphs: u32 = if self.compute_cull_trees && self.icon_cull.is_some() {
-            self.icon_cull
-                .as_ref()
-                .map(|c| c.last_cpu_count)
-                .unwrap_or(0)
-        } else {
+        let tree_glyphs: u32 = self.cull_lane_stat(
+            LaneRole::WorldTrees,
             self.batches
                 .iter()
                 .filter(|b| b.role == LaneRole::WorldTrees)
@@ -2251,66 +2316,78 @@ impl RenderEngine {
                     BatchPayload::IconInstanced { count, .. } => *count,
                     _ => 0,
                 })
-                .sum()
-        };
-        let prop_glyphs: u32 = self
-            .batches
-            .iter()
-            .filter(|b| b.role == LaneRole::WorldProps)
-            .map(|b| match &b.payload {
-                BatchPayload::IconInstanced { count, .. } => *count,
-                _ => 0,
-            })
-            .sum();
-        let badge_glyphs: u32 = self
-            .batches
-            .iter()
-            .filter(|b| b.role == LaneRole::WorldBadges)
-            .map(|b| match &b.payload {
-                BatchPayload::IconInstanced { count, .. } => *count,
-                _ => 0,
-            })
-            .sum();
+                .sum(),
+        );
+        let prop_glyphs: u32 = self.cull_lane_stat(
+            LaneRole::WorldProps,
+            self.batches
+                .iter()
+                .filter(|b| b.role == LaneRole::WorldProps)
+                .map(|b| match &b.payload {
+                    BatchPayload::IconInstanced { count, .. } => *count,
+                    _ => 0,
+                })
+                .sum(),
+        );
+        let badge_glyphs: u32 = self.cull_lane_stat(
+            LaneRole::WorldBadges,
+            self.batches
+                .iter()
+                .filter(|b| b.role == LaneRole::WorldBadges)
+                .map(|b| match &b.payload {
+                    BatchPayload::IconInstanced { count, .. } => *count,
+                    _ => 0,
+                })
+                .sum(),
+        );
         let atlas_bytes = self.glyph_atlas.as_ref().map_or(0, |a| a.bytes)
             + self.slot_atlas.as_ref().map_or(0, |a| a.bytes)
             + self.text_atlas.as_ref().map_or(0, |a| a.bytes);
         // W6 additive slot stats — prior keys untouched.
-        let slot_instances: u32 = self
-            .batches
-            .iter()
-            .filter(|b| b.role == LaneRole::Slots)
-            .map(|b| match &b.payload {
-                BatchPayload::IconInstanced { count, .. } => *count,
-                _ => 0,
-            })
-            .sum();
-        let slot_drag_instances: u32 = self
-            .batches
-            .iter()
-            .filter(|b| b.role == LaneRole::SlotDrag)
-            .map(|b| match &b.payload {
-                BatchPayload::IconInstanced { count, .. } => *count,
-                _ => 0,
-            })
-            .sum();
-        let cluster_instances: u32 = self
-            .batches
-            .iter()
-            .filter(|b| b.role == LaneRole::Clusters)
-            .map(|b| match &b.payload {
-                BatchPayload::IconInstanced { count, .. } => *count,
-                _ => 0,
-            })
-            .sum();
-        let mission_vehicles: u32 = self
-            .batches
-            .iter()
-            .filter(|b| b.role == LaneRole::MissionVehicles)
-            .map(|b| match &b.payload {
-                BatchPayload::IconInstanced { count, .. } => *count,
-                _ => 0,
-            })
-            .sum();
+        let slot_instances: u32 = self.cull_lane_stat(
+            LaneRole::Slots,
+            self.batches
+                .iter()
+                .filter(|b| b.role == LaneRole::Slots)
+                .map(|b| match &b.payload {
+                    BatchPayload::IconInstanced { count, .. } => *count,
+                    _ => 0,
+                })
+                .sum(),
+        );
+        let slot_drag_instances: u32 = self.cull_lane_stat(
+            LaneRole::SlotDrag,
+            self.batches
+                .iter()
+                .filter(|b| b.role == LaneRole::SlotDrag)
+                .map(|b| match &b.payload {
+                    BatchPayload::IconInstanced { count, .. } => *count,
+                    _ => 0,
+                })
+                .sum(),
+        );
+        let cluster_instances: u32 = self.cull_lane_stat(
+            LaneRole::Clusters,
+            self.batches
+                .iter()
+                .filter(|b| b.role == LaneRole::Clusters)
+                .map(|b| match &b.payload {
+                    BatchPayload::IconInstanced { count, .. } => *count,
+                    _ => 0,
+                })
+                .sum(),
+        );
+        let mission_vehicles: u32 = self.cull_lane_stat(
+            LaneRole::MissionVehicles,
+            self.batches
+                .iter()
+                .filter(|b| b.role == LaneRole::MissionVehicles)
+                .map(|b| match &b.payload {
+                    BatchPayload::IconInstanced { count, .. } => *count,
+                    _ => 0,
+                })
+                .sum(),
+        );
         format!(
             concat!(
                 "{{\"backend\":\"{}\",\"instances\":{},\"chunks\":{},\"gpu_bytes\":{},",
@@ -2367,16 +2444,16 @@ impl RenderEngine {
             cluster_instances,
             mission_vehicles,
             self.submitted_last_frame,
-            self.compute_cull_trees && self.icon_cull.is_some(),
+            self.gpu_cull_enabled(),
             self.icon_cull
                 .as_ref()
-                .map(|c| c.last_cpu_count)
+                .map(|c| c.last_cpu_count())
                 .unwrap_or(0),
             self.icon_cull
                 .as_ref()
                 .map(|c| c.gpu_count_for_stats())
                 .unwrap_or(0),
-            self.icon_cull.as_ref().is_some_and(|c| c.gpu_sampled.get()),
+            self.icon_cull.as_ref().is_some_and(|c| c.gpu_sampled()),
             self.icon_lane_uploads,
             self.polygon_lane_uploads,
             self.strip_lane_uploads,
@@ -2634,8 +2711,8 @@ impl RenderEngine {
             let text_bg = self.text_atlas.as_ref().map(|a| &a.bind_group);
             let slot_base = self.slot_atlas.as_ref().map(|a| &a.base_bind_group);
             let slot_drag = self.slot_atlas.as_ref().map(|a| &a.drag_bind_group);
-            // Readback path runs no compute encode; culled trees are absent here on WebGPU
-            // (pre-11.1 behavior, unchanged) — probes never assert the tree lane.
+            // Readback path runs no compute encode; culled icons are absent here on WebGPU
+            // (pre-11.1 behavior, unchanged) — probes never assert those lanes.
             draw_batches(
                 &self.batches,
                 &mut pass,
@@ -2653,7 +2730,7 @@ impl RenderEngine {
                 text_bg,
                 slot_base,
                 slot_drag,
-                None,
+                &[],
             );
         }
         encoder.copy_texture_to_buffer(
@@ -3757,8 +3834,8 @@ impl RenderEngine {
 
     /// Upload packed 20 B icon instances for trees (0), props (1), or badges (2).
     /// Positions are WORLD meters; converted to anchor-relative here. Empty + visible → sticky.
-    /// T-151.8.1: on WebGPU, tree lane feeds compute cull (`VERTEX|STORAGE` + `draw_indirect`);
-    /// WebGL2 keeps the direct IconInstanced path (chunk granularity).
+    /// T-151.8.1 / T-938.3: on WebGPU, every glyph icon lane feeds compute cull
+    /// (`VERTEX|STORAGE` + `draw_indirect`); WebGL2 keeps the direct IconInstanced path.
     pub fn upload_icon_lane(&mut self, kind: u32, bytes: &[u8], visible: bool) {
         self.icon_lane_uploads += 1;
         let role = match kind {
@@ -3771,10 +3848,8 @@ impl RenderEngine {
         if bytes.is_empty() {
             if role == LaneRole::WorldTrees {
                 self.tree_icons_20.clear();
-                if let Some(cull) = &mut self.icon_cull {
-                    cull.upload_icons(&self.device, &self.queue, &[]);
-                }
             }
+            self.clear_cull_lane(role);
             // T-175 A1 — an empty upload is authoritative "zero instances": drop the
             // IconInstanced batch for **every** role regardless of `visible`, not only when
             // hidden. Previously visible+empty early-returned before `remove_lane`, so props /
@@ -3801,13 +3876,15 @@ impl RenderEngine {
             chunk[4..8].copy_from_slice(&ay.to_le_bytes());
         }
 
-        // WebGPU trees: compute-cull path (no direct IconInstanced lane).
-        if role == LaneRole::WorldTrees && self.compute_cull_trees && self.icon_cull.is_some() {
-            self.tree_icons_20 = converted;
-            if let Some(cull) = &mut self.icon_cull {
-                cull.upload_icons(&self.device, &self.queue, &self.tree_icons_20);
+        // WebGPU: compute-cull path (no direct IconInstanced lane).
+        if self.gpu_cull_enabled() {
+            if role == LaneRole::WorldTrees {
+                self.tree_icons_20 = converted.clone();
             }
-            self.remove_lane(LaneRole::WorldTrees);
+            if let Some(cull) = &mut self.icon_cull {
+                cull.upload_lane(&self.device, &self.queue, role as u32, &converted);
+            }
+            self.remove_lane(role);
             self.damage.mark();
             return;
         }
@@ -3837,9 +3914,15 @@ impl RenderEngine {
 
     /// Drop all three glyph icon lanes.
     pub fn clear_icon_lanes(&mut self) {
-        self.remove_lane(LaneRole::WorldTrees);
-        self.remove_lane(LaneRole::WorldProps);
-        self.remove_lane(LaneRole::WorldBadges);
+        self.tree_icons_20.clear();
+        for role in [
+            LaneRole::WorldTrees,
+            LaneRole::WorldProps,
+            LaneRole::WorldBadges,
+        ] {
+            self.clear_cull_lane(role);
+            self.remove_lane(role);
+        }
     }
 
     // ── W6 mission slot / cluster icon lanes ─────────────────────────────────────────────────
@@ -4905,12 +4988,17 @@ impl RenderEngine {
 
     /// Drop slots + drag + cluster + vehicle + marker + comment lanes.
     fn clear_slot_lanes(&mut self) {
-        self.remove_lane(LaneRole::Slots);
-        self.remove_lane(LaneRole::SlotDrag);
-        self.remove_lane(LaneRole::Clusters);
-        self.remove_lane(LaneRole::MissionVehicles);
+        for role in [
+            LaneRole::Slots,
+            LaneRole::SlotDrag,
+            LaneRole::Clusters,
+            LaneRole::MissionVehicles,
+            LaneRole::MissionComments,
+        ] {
+            self.clear_cull_lane(role);
+            self.remove_lane(role);
+        }
         self.remove_lane(LaneRole::MissionMarkers);
-        self.remove_lane(LaneRole::MissionComments);
     }
 
     fn is_pooled_icon_role(role: LaneRole) -> bool {
@@ -4963,6 +5051,7 @@ impl RenderEngine {
         const STRIDE: usize = 20;
         if bytes.is_empty() {
             if !visible {
+                self.clear_cull_lane(role);
                 self.remove_lane(role);
             }
             return;
@@ -4973,6 +5062,7 @@ impl RenderEngine {
         }
         #[allow(clippy::cast_possible_truncation)]
         let count = (bytes.len() / STRIDE) as u32;
+        // T-938.1 pool write stays on the live path (do not revert).
         let (buf, buffer_changed) = self.lane_pool.write_gpu(
             &self.device,
             &self.queue,
@@ -4980,6 +5070,16 @@ impl RenderEngine {
             bytes,
             Self::convert_icon_world_to_anchor,
         );
+        if self.gpu_cull_enabled() {
+            let packed = self.lane_pool.contents(role as u32).to_vec();
+            if let Some(cull) = &mut self.icon_cull {
+                cull.upload_lane(&self.device, &self.queue, role as u32, &packed);
+            }
+            let _ = (buf, buffer_changed, count);
+            self.remove_lane(role);
+            self.damage.mark();
+            return;
+        }
         self.upsert_pooled_icon_lane(role, buf, count, visible, buffer_changed);
     }
 
@@ -6922,19 +7022,23 @@ impl RenderEngine {
             let frustum = [-1_234.5_f64, -987.25, 2_345.75, 1_876.5];
 
             let mut cull = crate::icon_cull_gpu::IconComputeCull::create(&device, &shader);
+            let cpu = crate::compute_cull::count_icons_in_frustum(&src20, frustum);
             cull.upload_icons(&device, &queue, &src20);
             let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("cull-self-check"),
             });
             cull.encode_cull(&mut encoder, &device, &queue, frustum);
             queue.submit(Some(encoder.finish()));
-            let cpu = cull.last_cpu_count;
+            let readback = cull
+                .readback_buf(0)
+                .expect("self-check lane uploaded")
+                .clone();
 
             // Map the counter readback directly (bounded poll/yield, like map_read_4).
             let done = Rc::new(Cell::new(0u8));
             {
                 let done = done.clone();
-                cull.readback_buf
+                readback
                     .slice(..)
                     .map_async(wgpu::MapMode::Read, move |res| {
                         done.set(if res.is_ok() { 1 } else { 2 });
@@ -6953,10 +7057,10 @@ impl RenderEngine {
                 return Err(JsValue::from_str("cull-self-check: readback map failed"));
             }
             let gpu = {
-                let data = cull.readback_buf.slice(..).get_mapped_range();
+                let data = readback.slice(..).get_mapped_range();
                 u32::from_le_bytes(data[0..4].try_into().expect("4 bytes"))
             };
-            cull.readback_buf.unmap();
+            readback.unmap();
 
             let pass = gpu == cpu && cpu > 0 && cpu < 512;
             Ok(JsValue::from_str(&format!(

@@ -302,16 +302,38 @@ fn icon_in_frustum(pos: vec2<f32>, size: f32, f: vec4<f32>) -> bool {
     return imax.x >= f.x && imin.x <= f.z && imax.y >= f.y && imin.y <= f.w;
 }
 
+// T-938.3: workgroup-local visibility bits, exclusive prefix on thread 0, then one
+// atomicAdd per workgroup (not per visible icon). The first workgroupBarrier must
+// run before that reduce — removing it is the slice perturbation.
+var<workgroup> wg_vis: array<u32, 64>;
+var<workgroup> wg_base: u32;
+
 @compute @workgroup_size(64)
-fn cs_icon_cull(@builtin(global_invocation_id) gid: vec3<u32>) {
-    let i = gid.x;
-    if (i >= cull_params.count) {
-        return;
+fn cs_icon_cull(
+    @builtin(global_invocation_id) gid: vec3<u32>,
+    @builtin(local_invocation_index) lid: u32,
+) {
+    var vis = 0u;
+    if (gid.x < cull_params.count) {
+        let inst = cull_in[gid.x];
+        if (icon_in_frustum(inst.pos, inst.size, cull_params.frustum)) {
+            vis = 1u;
+        }
     }
-    let inst = cull_in[i];
-    if (!icon_in_frustum(inst.pos, inst.size, cull_params.frustum)) {
-        return;
+    wg_vis[lid] = vis;
+    workgroupBarrier();
+    if (lid == 0u) {
+        var total = 0u;
+        for (var i = 0u; i < 64u; i++) {
+            let v = wg_vis[i];
+            wg_vis[i] = total;
+            total += v;
+        }
+        wg_base = atomicAdd(&cull_counter[0], total);
     }
-    let slot = atomicAdd(&cull_counter[0], 1u);
-    cull_out[slot] = inst;
+    workgroupBarrier();
+    if (vis == 1u) {
+        let slot = wg_base + wg_vis[lid];
+        cull_out[slot] = cull_in[gid.x];
+    }
 }
