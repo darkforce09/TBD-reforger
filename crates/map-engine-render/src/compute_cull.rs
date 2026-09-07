@@ -9,6 +9,9 @@
 
 use bytemuck::{Pod, Zeroable};
 
+/// Compute workgroup size in `cs_icon_cull` (`shader.wgsl`).
+pub const CULL_WORKGROUP: usize = 64;
+
 /// Icon instance stride (matches [`crate::scene::IconInstance`] / glyph pack).
 pub const ICON_STRIDE: usize = 20;
 
@@ -93,6 +96,78 @@ pub fn count_icons_in_frustum(src: &[u8], frustum: Frustum) -> u32 {
         }
     }
     count
+}
+
+/// Per-frame CPU oracle used by `encode_cull`.
+///
+/// T-938.3: the scan runs **only** when the debug HUD flag is on. Otherwise the visible
+/// count comes from the GPU counter readback (may lag one frame).
+#[must_use]
+pub fn cpu_count_for_encode(src: &[u8], frustum: Frustum, debug_hud: bool) -> Option<u32> {
+    if !debug_hud {
+        return None;
+    }
+    Some(count_icons_in_frustum(src, frustum))
+}
+
+/// `true` when `cs_icon_cull` hits a `workgroupBarrier` **before** the workgroup
+/// `atomicAdd` of the reduced count. Removing that barrier is the T-938.3 perturbation.
+#[must_use]
+pub fn shader_reduce_barrier_before_atomic() -> bool {
+    let src = include_str!("shader.wgsl");
+    let Some(fn_at) = src.find("fn cs_icon_cull") else {
+        return false;
+    };
+    let body = &src[fn_at..];
+    let Some(add) = body.find("atomicAdd(&cull_counter") else {
+        return false;
+    };
+    let Some(bar) = body.find("workgroupBarrier()") else {
+        return false;
+    };
+    bar < add
+}
+
+/// GPU visible count as the workgroup-local reduce in `cs_icon_cull` would produce.
+///
+/// With the reduce-barrier present this equals [`count_icons_in_frustum`]. Without it,
+/// only local-id 0's visibility bit is visible to the reduce (the race).
+#[must_use]
+pub fn gpu_workgroup_visible_count(src: &[u8], frustum: Frustum) -> u32 {
+    gpu_workgroup_visible_count_ex(src, frustum, shader_reduce_barrier_before_atomic())
+}
+
+fn gpu_workgroup_visible_count_ex(src: &[u8], frustum: Frustum, barrier: bool) -> u32 {
+    if !src.len().is_multiple_of(ICON_STRIDE) {
+        return 0;
+    }
+    let n = src.len() / ICON_STRIDE;
+    let mut total = 0u32;
+    let mut base = 0usize;
+    while base < n {
+        let mut local = [0u32; CULL_WORKGROUP];
+        for (lid, vis) in local.iter_mut().enumerate() {
+            let idx = base + lid;
+            if idx >= n {
+                break;
+            }
+            let chunk = &src[idx * ICON_STRIDE..(idx + 1) * ICON_STRIDE];
+            let px = f32::from_le_bytes(chunk[0..4].try_into().unwrap());
+            let py = f32::from_le_bytes(chunk[4..8].try_into().unwrap());
+            let size = f32::from_le_bytes(chunk[8..12].try_into().unwrap());
+            if icon_intersects_frustum(px, py, size, frustum) {
+                *vis = 1;
+            }
+        }
+        if !barrier {
+            let v0 = local[0];
+            local = [0u32; CULL_WORKGROUP];
+            local[0] = v0;
+        }
+        total += local.iter().copied().sum::<u32>();
+        base += CULL_WORKGROUP;
+    }
+    total
 }
 
 /// Pack a 32 B storage-friendly record for the WebGPU compute shader (std430-ish).
@@ -210,5 +285,45 @@ mod tests {
         assert_eq!(s32.len(), 32);
         let back = unpack_icon_storage32(&s32, 1);
         assert_eq!(back, src);
+    }
+
+    fn fixture_src_frustum() -> (Vec<u8>, Frustum) {
+        let mut src = Vec::new();
+        src.extend_from_slice(&pack_one(10.0, 10.0, 4.0)); // in
+        src.extend_from_slice(&pack_one(500.0, 500.0, 4.0)); // out
+        src.extend_from_slice(&pack_one(20.0, 20.0, 4.0)); // in
+        src.extend_from_slice(&pack_one(30.0, 30.0, 4.0)); // in
+        (src, [0.0, 0.0, 100.0, 100.0])
+    }
+
+    /// T-938.3 defect: `encode_cull` currently calls [`count_icons_in_frustum`] even
+    /// when the debug HUD flag is off. This test is RED on that policy.
+    #[test]
+    fn t938_3_debug_hud_off_skips_cpu_count() {
+        let (src, frustum) = fixture_src_frustum();
+        let n = cpu_count_for_encode(&src, frustum, false);
+        assert!(
+            n.is_none(),
+            "debug HUD off must skip the CPU frustum scan; got {n:?}"
+        );
+    }
+
+    #[test]
+    fn t938_3_gpu_visible_count_equals_cpu_on_fixture() {
+        let (src, frustum) = fixture_src_frustum();
+        let cpu = count_icons_in_frustum(&src, frustum);
+        let gpu = gpu_workgroup_visible_count(&src, frustum);
+        assert_eq!(cpu, 3);
+        assert_eq!(
+            gpu, cpu,
+            "GPU workgroup reduce must match the CPU oracle on the fixture frustum"
+        );
+    }
+
+    #[test]
+    fn t938_3_debug_hud_on_still_counts() {
+        let (src, frustum) = fixture_src_frustum();
+        let n = cpu_count_for_encode(&src, frustum, true);
+        assert_eq!(n, Some(3));
     }
 }
