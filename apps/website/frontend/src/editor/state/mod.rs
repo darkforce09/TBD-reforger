@@ -26,6 +26,10 @@ pub mod operations;
 // T-159.17 yrs IDB persist — IndexedDB (`idb` crate) + debounced writer; wasm32-only.
 #[cfg(target_arch = "wasm32")]
 pub mod persist;
+// T-937.4 — persist error surface (SaveStatus chip + toast). Native-tested; the wasm writer in
+// persist.rs reports every save Err into it. Ungated so `cargo test -p website-frontend` can prove
+// a silent `console.warn` cannot return.
+pub mod save_status;
 // T-159.17 warm editor session — sessionStorage marker; wasm32-only (web-sys/js-sys).
 #[cfg(target_arch = "wasm32")]
 pub mod session;

@@ -36,8 +36,8 @@
 //!     is passed over ([`note_orphan`]), is listed by `__missionPersist.orphans()`, and can be
 //!     claimed on purpose with `__missionPersist.adopt_orphans()`. The one thing it must never do
 //!     is read as "no backup", because that is the state in which someone reaches for one.
-//!   * **A queued write cannot outlive the account that armed it.** The debounce is 5 s; sign-out is
-//!     instant. [`PendingSave`] records the owner at arm time and [`run_save`] drops the write when
+//!   * **A queued write cannot outlive the account that armed it.** The debounce is 1 s; sign-out is
+//!     instant (the idle window is now [`save_status::IDLE_DEBOUNCE_MS`]). [`PendingSave`] records the owner at arm time and [`run_save`] drops the write when
 //!     it no longer matches, so A's bytes can never be filed under B.
 //!   * **Records belonging to other accounts are evicted at editor boot**
 //!     ([`evict_foreign_records`]). That is the backstop which also covers session expiry and a
@@ -128,14 +128,16 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 use crate::editor::state::doc_host::DocHandle;
+use crate::editor::state::save_status::{self, IDLE_DEBOUNCE_MS, UNREADABLE_RETRY_LIMIT};
 
 /// IndexedDB coordinates — identical to `yrsPersist.ts` (`DB_NAME` / `STORE` / v1). Distinct from the
 /// legacy v1 `tbd-mission-${id}` and v2 `tbd-mission-persist`; **no migration** (legacy drafts drop).
 const DB_NAME: &str = "tbd-mission-yrs";
 const STORE: &str = "doc-state";
 const DB_VERSION: u32 = 1;
-/// React `delay = 5000` — a burst of edits coalesces into one write (longer than v2's 2 s).
-const DEBOUNCE_MS: i32 = 5000;
+/// T-937.4 — idle debounce is at most 1 s (was React `delay = 5000`). A burst still coalesces
+/// into one write; hiding the tab flushes immediately instead of waiting out this window.
+const DEBOUNCE_MS: i32 = IDLE_DEBOUNCE_MS;
 
 /* ─────────────────────── T-221 — per-account record scoping ─────────────────────── */
 
@@ -248,11 +250,60 @@ thread_local! {
     static BLOCKED_UNREADABLE: Cell<u32> = const { Cell::new(0) };
 }
 
-/// Remember that a read of `physical_key` failed. See [`RecordRead::Failed`] and [`run_save`].
-fn note_unreadable(physical_key: &str) {
+/// Retry a failed read of `physical_key` three times with backoff, then lock out. See
+/// [`RecordRead::Failed`] and [`run_save`].
+///
+/// T-937.4 — a single failed `get` used to latch the key for the rest of the page lifetime, so a
+/// transient IndexedDB blip silently disabled autosave until reload. Each failed attempt reports
+/// [`save_status::SaveStatus::Unreadable`]; after [`UNREADABLE_RETRY_LIMIT`] the chip offers Retry.
+async fn note_unreadable(physical_key: &str) -> Option<Vec<u8>> {
+    for attempt in 1u8..=UNREADABLE_RETRY_LIMIT {
+        sleep_ms(unreadable_backoff_ms(attempt)).await;
+        match read_raw(physical_key).await {
+            RecordRead::Hit(bytes) => {
+                UNREADABLE.with(|u| {
+                    u.borrow_mut().remove(physical_key);
+                });
+                save_status::report_saved();
+                return Some(bytes);
+            }
+            RecordRead::Miss => {
+                UNREADABLE.with(|u| {
+                    u.borrow_mut().remove(physical_key);
+                });
+                return None;
+            }
+            RecordRead::Failed => {
+                save_status::report_unreadable(attempt);
+            }
+        }
+    }
     UNREADABLE.with(|u| {
         u.borrow_mut().insert(physical_key.to_string());
     });
+    save_status::report_unreadable(UNREADABLE_RETRY_LIMIT);
+    None
+}
+
+fn unreadable_backoff_ms(attempt: u8) -> i32 {
+    80 * (1_i32 << u32::from(attempt.saturating_sub(1)))
+}
+
+/// wasm `setTimeout` as a future — the backoff for [`note_unreadable`].
+async fn sleep_ms(ms: i32) {
+    let promise = js_sys::Promise::new(&mut |resolve, _reject| {
+        let Some(window) = web_sys::window() else {
+            let _ = resolve.call0(&JsValue::UNDEFINED);
+            return;
+        };
+        let done = resolve.clone();
+        let cb = Closure::once_into_js(move || {
+            let _ = done.call0(&JsValue::UNDEFINED);
+        });
+        let _ = window
+            .set_timeout_with_callback_and_timeout_and_arguments_0(cb.as_ref().unchecked_ref(), ms);
+    });
+    let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
 }
 
 /// Report a pre-scoping record that a read just declined to return.
@@ -458,13 +509,7 @@ pub async fn load_state(id: &str) -> Option<Vec<u8>> {
             // Do NOT probe for an orphan here: the probe is a *different* key, and reporting
             // "a pre-scoping record exists" when the real story is "this account's own record is
             // unreadable" would point recovery at the wrong drawer.
-            note_unreadable(&scoped);
-            web_sys::console::warn_1(&JsValue::from_str(&format!(
-                "[yrs-persist] T-374: IndexedDB read FAILED for {id} — this is NOT 'no local \
-                 backup'. Treating local content as unknown; writes to this record are blocked \
-                 while a record is present but unreadable."
-            )));
-            return None;
+            return note_unreadable(&scoped).await;
         }
         RecordRead::Miss => {}
     }
@@ -688,7 +733,7 @@ type ContentProbe = Box<dyn Fn() -> bool>;
 struct PendingSave {
     get_bytes: GetBytes,
     is_cancelled: IsCancelled,
-    /// T-221 — the account signed in when this write was armed. A debounce is 5 s wide and a
+    /// T-221 — the account signed in when this write was armed. A debounce is 1 s wide and a
     /// sign-out is instant, so without this the timer could fire after the handover and file one
     /// user's document under the next one's name: the ticket's defect, reintroduced through the
     /// back door. Checked in [`run_save`].
@@ -729,6 +774,17 @@ thread_local! {
     // (a late `flush()` of the boot debounce would encode the moved doc anyway — the counter, not
     // the blob, is the sound signal that the edit itself re-armed the writer).
     static EDIT_PERSIST_COUNT: Cell<u32> = const { Cell::new(0) };
+    /// T-937.4 — one in-flight save per process. `visibilitychange` hidden flush and `pagehide`
+    /// both call [`flush_state`]; the mutex in [`run_save`] serializes the write, and this flag
+    /// is the observable guard those two listeners share so they never double-save one pending.
+    static SAVE_IN_FLIGHT: Cell<bool> = const { Cell::new(false) };
+}
+
+struct SaveFlightGuard;
+impl Drop for SaveFlightGuard {
+    fn drop(&mut self) {
+        SAVE_IN_FLIGHT.set(false);
+    }
 }
 
 fn lock_for(id: &str) -> Rc<futures::lock::Mutex<()>> {
@@ -771,6 +827,8 @@ fn clear_timer(id: &str) {
 async fn run_save(id: &str, pending: PendingSave) {
     let lock = lock_for(id);
     let _guard = lock.lock().await;
+    SAVE_IN_FLIGHT.set(true);
+    let _flight = SaveFlightGuard;
     if (pending.is_cancelled)() {
         return;
     }
@@ -817,20 +875,25 @@ async fn run_save(id: &str, pending: PendingSave) {
             web_sys::console::warn_1(&JsValue::from_str(&format!(
                 "[yrs-persist] T-374: refused to persist {id} — a record exists at this key but \
                  this session could not read it, so overwriting it could destroy the only copy. \
-                 Reload to retry the read."
+                 Retry from the save-status chip, or reload."
             )));
+            save_status::report_unreadable(UNREADABLE_RETRY_LIMIT);
             return;
         }
         UNREADABLE.with(|u| {
             u.borrow_mut().remove(&key);
         });
     }
+    save_status::report_saving();
     if let Err(e) = save_state_as(&pending.owner, id, &bytes).await {
+        let reason = save_status::format_save_error(&format!("{e} {e:?}"));
         web_sys::console::warn_1(&JsValue::from_str(&format!(
-            "[yrs-persist] save failed: {e:?}"
+            "[yrs-persist] save failed: {reason}"
         )));
+        save_status::report_failed(reason);
         return;
     }
+    save_status::report_saved();
     // T-804 — a flush COMPLETED. Recorded here, in the one branch where the bytes actually reached
     // IndexedDB, and nowhere earlier: the T-779 ack discipline is that this timestamp means "the
     // draft is on disk", not "a write was scheduled". Every refusal above (`is_cancelled`, the
@@ -929,6 +992,11 @@ pub async fn flush_state(id: &str) {
 /// is hidden, and `pagehide` → flush. Both closures leak like the editor's wheel/pan handlers (the
 /// doc + engine leak too; `on_cleanup` is `Send`-bound and can't hold them).
 pub fn register_flush_on_hide(mission_id: String) {
+    save_status::bind_runtime();
+    save_status::set_retry_handler(|| {
+        spawn_local(async move { retry_unreadable_keys().await });
+    });
+
     let Some(win) = web_sys::window() else {
         return;
     };
@@ -949,6 +1017,8 @@ pub fn register_flush_on_hide(mission_id: String) {
         on_vis.forget();
     }
 
+    // pagehide stays fire-and-forget (`spawn_local`, never awaited in the handler). A concurrent
+    // hidden flush is serialized by SAVE_IN_FLIGHT inside [`run_save`].
     let id = mission_id;
     let on_hide = Closure::<dyn FnMut()>::new(move || {
         let id = id.clone();
@@ -956,6 +1026,23 @@ pub fn register_flush_on_hide(mission_id: String) {
     });
     let _ = win.add_event_listener_with_callback("pagehide", on_hide.as_ref().unchecked_ref());
     on_hide.forget();
+}
+
+async fn retry_unreadable_keys() {
+    let keys: Vec<String> = UNREADABLE.with(|u| u.borrow().iter().cloned().collect());
+    if keys.is_empty() {
+        return;
+    }
+    save_status::report_saving();
+    let mut still_locked = false;
+    for key in keys {
+        if note_unreadable(&key).await.is_none() && UNREADABLE.with(|u| u.borrow().contains(&key)) {
+            still_locked = true;
+        }
+    }
+    if !still_locked {
+        save_status::report_saved();
+    }
 }
 
 /* ───────────────────────────── smoke bridge ───────────────────────────── */
@@ -1195,7 +1282,7 @@ pub fn register_mission_persist(
     }) as Box<dyn FnMut() -> JsValue>);
     // T-804 — the last COMPLETED flush's epoch-ms instant, or `null` if none has completed this page
     // lifetime. Read-only, side-effect-free (reads the `LAST_FLUSH_MS` cell). The scripted F-24
-    // acceptance keys the "draft saved Ns ago" chip's recency off this: after an edit + the ~5 s
+    // acceptance keys the "draft saved Ns ago" chip's recency off this: after an edit + the ≤1 s
     // debounce it is a fresh timestamp; on a never-edited mission it stays `null` (the content guard
     // refuses the empty write, so no flush completes) and the chip is absent; after reload it resets.
     let last_flush_fn = Closure::wrap(Box::new(move || -> JsValue {
