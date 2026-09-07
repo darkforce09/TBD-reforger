@@ -136,6 +136,9 @@ class TBD_MissionZoneStruct
 	//! than assuming a label exists.
 	string label;
 	string faction;
+	//! T-654 -- optional variant gate (schema 1.3). Empty = unconditional row.
+	//! @contract mission.schema.json#/$defs/zone (variantId)
+	string variantId;
 	ref TBD_MissionShapeStruct shape;
 	//! T-181.18 - OPTIONAL in the schema; null when the zone authored no rules at all. A non-null
 	//! rules block whose every field is still at its sentinel means "authored, but nothing in it
@@ -158,6 +161,9 @@ class TBD_MissionOrbatGroupStruct
 {
 	string callsign; //!< Squad callsign ("Alpha"). Schema-required.
 	string type;     //!< Group type label authored in the editor ("infantry_squad"). Schema-required.
+	//! T-654 -- optional variant gate (schema 1.3). Empty = unconditional row.
+	//! @contract mission.schema.json#/$defs/group (variantId)
+	string variantId;
 	ref array<ref TBD_MissionOrbatRoleStruct> roles;
 	//! T-674.2 -- which seat leads this squad (schemaVersion 1.3). OPTIONAL: empty when the
 	//! mission names no leader, which every pre-1.3 document does.
@@ -301,6 +307,9 @@ class TBD_MissionEntityStruct
 	float z;           //!< World Z metres. Schema-required.
 	float headingDeg;  //!< Yaw degrees 0..360. OPTIONAL - 0 when absent (JsonLoadContext default).
 	string faction;    //!< Faction key. OPTIONAL - empty when absent.
+	//! T-654 -- optional variant gate (schema 1.3). Empty = unconditional row.
+	//! @contract mission.schema.json#/$defs/entity (variantId)
+	string variantId;
 }
 
 //! Mission policy block (`mission.schema.json#/$defs/settings`) - T-259.
@@ -325,6 +334,89 @@ class TBD_MissionSettingsStruct
 //! consumes. schemaVersion is the canonical STRING ("1.0"/"1.1"/"1.2"/"1.3"), distinct from the
 //! website's integer editor/export version. Field names must equal the JSON keys.
 //! @contract mission.schema.json#/
+
+//! =============================================================================================
+//! T-654 -- CONDITIONAL INCLUSION: variant-gated document subtrees (runtime half of T-706)
+//!
+//! T-706 shipped the wire shape (schemaVersion 1.3): a top-level `variants[]` registry
+//! (#/$defs/variant -- `id` required, optional `label`, optional `default`) and an optional
+//! `variantId` (#/$defs/variantIdRef) on objective / vehicle / entity / group / slot / zone /
+//! editorTrigger rows. This file is the reader that makes those fields mean something at LOAD.
+//!
+//! ACTIVE VARIANT SET
+//! 1. Server override, when authored: `$profile:TBD_VariantConfig.json`
+//!    `{ "activeVariants": ["night", ...] }` -- a SEPARATE file from TBD_BackendConfig.json
+//!    because TBD_BackendConfig.Save() rewrites that file with only its declared fields.
+//!    The override REPLACES document defaults. An authored EMPTY array means "no variants
+//!    active". JsonLoadContext leaves ARRAY fields indistinguishable from empty when it
+//!    allocates them, so presence of the `variants` KEY is recovered from the raw JSON
+//!    (see ExtractVariantDefaultFlags). Absent key -> inert, no log, today's whole corpus.
+//!    Present-but-empty is NOT inert: every variantId is then dangling (fail-visible).
+//! 2. Else document defaults: every variants[] row carrying `default: true`.
+//!    `default` is an Enforce KEYWORD -- `bool default;` does not compile -- and
+//!    JsonLoadContext maps JSON keys onto identically-named fields only, so the typed
+//!    parser never sees that flag. The walker reads it off the raw JSON, index-aligned
+//!    with the typed parse.
+//!
+//! FILTER RULE (per row)
+//!   * variantId absent/empty      -> included (unconditional)
+//!   * variantId in the active set -> included
+//!   * declared but not active     -> excluded silently (selection working)
+//!   * NOT DECLARED in variants[]  -> excluded, one [TBD][Variants] WARNING (dangling)
+//!
+//! Applied in ParseMissionJson AFTER the typed parse and BEFORE TBD_MissionValidator.Run,
+//! so validation and spawn see the EFFECTIVE document. Profile cache stores the FULL body;
+//! filtering is a per-parse view.
+//!
+//! Collections this loader owns:
+//!   * zones[] / entities[] / orbat groups -- typed `variantId` on structs in this file.
+//!   * slots[] / vehicles[] -- those structs live in files this slice does not own, so
+//!     gates are read through TBD_VariantGateSkeletonStruct (second JsonLoadContext pass,
+//!     index-aligned). A count mismatch is an ERROR and that collection stays unfiltered
+//!     this load -- visibly, never silently.
+//!   * Dependent refs of an EXCLUDED vehicle: its entities[] twin (uid, else alias|x|z
+//!     fingerprint) and its seats[].slotId crew seats. Remaining vehicles then drop any
+//!     seat whose slot did not survive, so spawn does not log dangling crew refs.
+//!   * objectives[] / editorTriggers[] are NOT on TBD_MissionDocumentStruct; their
+//!     readers re-parse GetRawJson() in files this slice does not own. GetActiveVariantIds()
+//!     is the hook those readers must consume.
+//! =============================================================================================
+
+//! One named variant from the top-level `variants[]` registry (T-706, schemaVersion 1.3).
+//! Field names must equal the JSON keys -- EXCEPT `default`, which is an Enforce keyword and
+//! cannot be a field. That flag is recovered by ExtractVariantDefaultFlags from the raw JSON.
+//! @contract mission.schema.json#/$defs/variant
+class TBD_MissionVariantStruct
+{
+	string id;    //!< Stable variant key, referenced by gated rows' `variantId`. Schema-required.
+	string label; //!< Optional display name. Empty when absent (JsonLoadContext initializer).
+}
+
+//! T-654 -- variantId-only mirror of one slots[] / vehicles[] row. JsonLoadContext ignores
+//! every other key on the row. Used because TBD_MissionSlotStruct / TBD_MissionVehicleStruct
+//! are not this slice's files to extend.
+//! @contract mission.schema.json#/$defs/slot (variantId)
+//! @contract mission.schema.json#/$defs/vehicle (variantId)
+class TBD_VariantRowRefStruct
+{
+	string variantId; //!< Empty = row is unconditional.
+}
+
+//! Root wrapper for the slot+vehicle skeleton parse: only those two arrays are declared.
+class TBD_VariantGateSkeletonStruct
+{
+	ref array<ref TBD_VariantRowRefStruct> slots;
+	ref array<ref TBD_VariantRowRefStruct> vehicles;
+}
+
+//! T-654 -- server-side variant selection override, `$profile:TBD_VariantConfig.json`.
+class TBD_VariantConfigStruct
+{
+	//! Explicit selection; REPLACES document defaults when authored. null = key absent = no
+	//! override. An authored EMPTY array is honored as "no variants active".
+	ref array<string> activeVariants;
+}
+
 class TBD_MissionDocumentStruct
 {
 	//! Canonical contract version ("1.0"/"1.1"/"1.2"/"1.3"). 1.3 (T-674) is the additive slot
@@ -380,6 +472,12 @@ class TBD_MissionDocumentStruct
 	//! author none boot unchanged. Get(symbol) lives in TBD_MissionParams.c.
 	//! @contract mission.schema.json#/properties/missionParams
 	ref array<ref TBD_MissionParamStruct> missionParams;
+	//! T-654 -- the named-variant registry (schema 1.3). OPTIONAL. Presence of the JSON key is
+	//! recovered from the raw body (ExtractVariantDefaultFlags); do not null-check this array
+	//! as a presence test -- JsonLoadContext may allocate it either way. See the design block
+	//! above TBD_MissionVariantStruct.
+	//! @contract mission.schema.json#/properties/variants
+	ref array<ref TBD_MissionVariantStruct> variants;
 }
 
 //! Loads Mission JSON from backend REST or $profile fallback.
@@ -409,11 +507,19 @@ class TBD_MissionLoader
 	//! MEASURED against the live API 2026-07-25, not assumed: 400 for `msn_8f3a2c`.
 	protected static const int HTTP_BAD_REQUEST = 400;
 
+	//! T-654 -- server-side variant selection override. Separate file from TBD_BackendConfig
+	//! so Save() cannot clobber the selection (design block above TBD_MissionVariantStruct).
+	protected static string s_VariantConfigPath = "$profile:TBD_VariantConfig.json";
+
 	protected static ref TBD_MissionDocumentStruct s_Mission;
 	protected static string s_RawJson;
 	protected static bool s_Loaded;
 	protected static bool s_Valid;
 	protected static bool s_LoadInFlight;
+
+	//! T-654 -- the ACTIVE VARIANT SET the current document was filtered with. null when the
+	//! document declares no variants[] key (machinery inert) or nothing is loaded.
+	protected static ref array<string> s_ActiveVariantIds;
 
 	protected static ref RestCallback s_RestCallback;
 
@@ -542,6 +648,18 @@ class TBD_MissionLoader
 	static TBD_MissionDocumentStruct GetMission()
 	{
 		return s_Mission;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-654 -- the active variant ids the loaded document was filtered with, or null when no
+	//! VALID mission is loaded / the document declares no variants[] key. Readers that still
+	//! parse GetRawJson() (objectives, editorTriggers) must gate their rows on THIS set.
+	static array<string> GetActiveVariantIds()
+	{
+		if (!s_Valid)
+			return null;
+
+		return s_ActiveVariantIds;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1072,10 +1190,711 @@ class TBD_MissionLoader
 	}
 
 	//------------------------------------------------------------------------------------------------
+
+	//------------------------------------------------------------------------------------------------
+	//! T-654 -- reduce the freshly parsed document to its ACTIVE VARIANT SET. No-op (and no log)
+	//! when the document declares no top-level `variants` key -- today's entire corpus.
+	protected static void ApplyVariantFilter(string data)
+	{
+		s_ActiveVariantIds = null;
+
+		if (!s_Mission)
+			return;
+
+		bool variantsKeyPresent;
+		array<bool> defaultFlags = ExtractVariantDefaultFlags(data, variantsKeyPresent);
+		if (!variantsKeyPresent)
+			return;
+
+		map<string, bool> declared = new map<string, bool>();
+		map<string, bool> active = ComputeActiveVariantSet(defaultFlags, declared);
+
+		s_ActiveVariantIds = new array<string>();
+		foreach (string activeId, bool activeUnused : active)
+			s_ActiveVariantIds.Insert(activeId);
+
+		int zonesBefore = 0;
+		int zonesAfter = 0;
+		if (s_Mission.zones)
+		{
+			zonesBefore = s_Mission.zones.Count();
+			array<ref TBD_MissionZoneStruct> keptZones = new array<ref TBD_MissionZoneStruct>();
+			foreach (TBD_MissionZoneStruct zone : s_Mission.zones)
+			{
+				string zoneName = "";
+				string zoneGate = "";
+				if (zone)
+				{
+					zoneName = zone.id;
+					zoneGate = zone.variantId;
+				}
+				if (!zone || IsVariantRowIncluded(zoneGate, declared, active, "zone", zoneName))
+					keptZones.Insert(zone);
+			}
+			s_Mission.zones = keptZones;
+			zonesAfter = keptZones.Count();
+		}
+
+		int groupsBefore = 0;
+		int groupsAfter = 0;
+		if (s_Mission.orbat)
+		{
+			foreach (string factionKey, TBD_MissionOrbatFactionStruct factionOrbat : s_Mission.orbat)
+			{
+				if (!factionOrbat || !factionOrbat.groups)
+					continue;
+
+				groupsBefore = groupsBefore + factionOrbat.groups.Count();
+				array<ref TBD_MissionOrbatGroupStruct> keptGroups = new array<ref TBD_MissionOrbatGroupStruct>();
+				foreach (TBD_MissionOrbatGroupStruct group : factionOrbat.groups)
+				{
+					string groupName = factionKey;
+					string groupGate = "";
+					if (group)
+					{
+						groupName = factionKey + ":" + group.callsign;
+						groupGate = group.variantId;
+					}
+					if (!group || IsVariantRowIncluded(groupGate, declared, active, "orbat group", groupName))
+						keptGroups.Insert(group);
+				}
+				factionOrbat.groups = keptGroups;
+				groupsAfter = groupsAfter + keptGroups.Count();
+			}
+		}
+
+		TBD_VariantGateSkeletonStruct skeleton = ParseVariantGateSkeleton(data);
+
+		map<string, bool> droppedVehicleUids = new map<string, bool>();
+		map<string, bool> droppedVehicleFingerprints = new map<string, bool>();
+		map<string, bool> droppedCrewSlotIds = new map<string, bool>();
+
+		int vehiclesBefore = 0;
+		int vehiclesAfter = 0;
+		if (s_Mission.vehicles)
+		{
+			vehiclesBefore = s_Mission.vehicles.Count();
+			vehiclesAfter = vehiclesBefore;
+			if (vehiclesBefore > 0)
+			{
+				int skelCount = -1;
+				if (skeleton && skeleton.vehicles)
+					skelCount = skeleton.vehicles.Count();
+
+				if (skeleton && skeleton.vehicles && skelCount == vehiclesBefore)
+				{
+					array<ref TBD_MissionVehicleStruct> keptVehicles = new array<ref TBD_MissionVehicleStruct>();
+					foreach (int vehIdx, TBD_MissionVehicleStruct veh : s_Mission.vehicles)
+					{
+						string vehGate = "";
+						TBD_VariantRowRefStruct skelRow = skeleton.vehicles[vehIdx];
+						if (skelRow)
+							vehGate = skelRow.variantId;
+
+						string vehName = "";
+						if (veh)
+							vehName = veh.Label();
+
+						bool keep = !veh || IsVariantRowIncluded(vehGate, declared, active, "vehicle", vehName);
+						if (keep)
+						{
+							keptVehicles.Insert(veh);
+							continue;
+						}
+
+						if (veh)
+							RememberDroppedVehicle(veh, droppedVehicleUids, droppedVehicleFingerprints, droppedCrewSlotIds);
+					}
+					s_Mission.vehicles = keptVehicles;
+					vehiclesAfter = keptVehicles.Count();
+				}
+				else
+				{
+					Print(string.Format(
+						"[TBD][Variants] vehicle skeleton parse disagreed with the typed parse (typed=%1 skeleton=%2) -- vehicles NOT variant-filtered this load",
+						vehiclesBefore, skelCount), LogLevel.ERROR);
+				}
+			}
+		}
+
+		int entitiesBefore = 0;
+		int entitiesAfter = 0;
+		if (s_Mission.entities)
+		{
+			entitiesBefore = s_Mission.entities.Count();
+			array<ref TBD_MissionEntityStruct> keptEntities = new array<ref TBD_MissionEntityStruct>();
+			foreach (TBD_MissionEntityStruct ent : s_Mission.entities)
+			{
+				string entName = "";
+				string entGate = "";
+				string entUid = "";
+				string entFp = "";
+				if (ent)
+				{
+					entName = ent.alias;
+					entGate = ent.variantId;
+					entUid = ent.uid;
+					entFp = string.Format("%1|%2|%3", ent.alias, ent.x, ent.z);
+				}
+
+				bool twinOfDropped = false;
+				if (!entUid.IsEmpty() && droppedVehicleUids.Contains(entUid))
+					twinOfDropped = true;
+				if (!twinOfDropped && !entFp.IsEmpty() && droppedVehicleFingerprints.Contains(entFp))
+					twinOfDropped = true;
+
+				if (twinOfDropped)
+				{
+					Print(string.Format(
+						"[TBD][Variants] EXCLUDING entity '%1' -- twin of an excluded vehicle (dependent ref)",
+						entName), LogLevel.WARNING);
+					continue;
+				}
+
+				if (!ent || IsVariantRowIncluded(entGate, declared, active, "entity", entName))
+					keptEntities.Insert(ent);
+			}
+			s_Mission.entities = keptEntities;
+			entitiesAfter = keptEntities.Count();
+		}
+
+		int slotsBefore = 0;
+		int slotsAfter = 0;
+		if (s_Mission.slots)
+		{
+			slotsBefore = s_Mission.slots.Count();
+			slotsAfter = slotsBefore;
+			if (slotsBefore > 0)
+			{
+				int skelCount = -1;
+				if (skeleton && skeleton.slots)
+					skelCount = skeleton.slots.Count();
+
+				if (skeleton && skeleton.slots && skelCount == slotsBefore)
+				{
+					array<ref TBD_MissionSlotStruct> keptSlots = new array<ref TBD_MissionSlotStruct>();
+					foreach (int slotIdx, TBD_MissionSlotStruct slot : s_Mission.slots)
+					{
+						string slotGate = "";
+						TBD_VariantRowRefStruct skelRow = skeleton.slots[slotIdx];
+						if (skelRow)
+							slotGate = skelRow.variantId;
+
+						string slotName = "";
+						string slotUid = "";
+						string slotKey = "";
+						if (slot)
+						{
+							slotName = slot.Key();
+							slotUid = slot.uid;
+							slotKey = slot.Key();
+						}
+
+						bool crewOfDropped = false;
+						if (!slotUid.IsEmpty() && droppedCrewSlotIds.Contains(slotUid))
+							crewOfDropped = true;
+						if (!crewOfDropped && !slotKey.IsEmpty() && droppedCrewSlotIds.Contains(slotKey))
+							crewOfDropped = true;
+
+						if (crewOfDropped)
+						{
+							Print(string.Format(
+								"[TBD][Variants] EXCLUDING slot '%1' -- crew of an excluded vehicle (dependent ref)",
+								slotName), LogLevel.WARNING);
+							continue;
+						}
+
+						if (!slot || IsVariantRowIncluded(slotGate, declared, active, "slot", slotName))
+							keptSlots.Insert(slot);
+					}
+					s_Mission.slots = keptSlots;
+					slotsAfter = keptSlots.Count();
+				}
+				else
+				{
+					array<ref TBD_MissionSlotStruct> keptSlots = new array<ref TBD_MissionSlotStruct>();
+					int droppedCrewKept = 0;
+					foreach (TBD_MissionSlotStruct slot : s_Mission.slots)
+					{
+						string slotName = "";
+						string slotUid = "";
+						string slotKey = "";
+						if (slot)
+						{
+							slotName = slot.Key();
+							slotUid = slot.uid;
+							slotKey = slot.Key();
+						}
+
+						bool crewOfDropped = false;
+						if (!slotUid.IsEmpty() && droppedCrewSlotIds.Contains(slotUid))
+							crewOfDropped = true;
+						if (!crewOfDropped && !slotKey.IsEmpty() && droppedCrewSlotIds.Contains(slotKey))
+							crewOfDropped = true;
+
+						if (crewOfDropped)
+						{
+							droppedCrewKept = droppedCrewKept + 1;
+							Print(string.Format(
+								"[TBD][Variants] EXCLUDING slot '%1' -- crew of an excluded vehicle (dependent ref)",
+								slotName), LogLevel.WARNING);
+							continue;
+						}
+
+						keptSlots.Insert(slot);
+					}
+					s_Mission.slots = keptSlots;
+					slotsAfter = keptSlots.Count();
+					Print(string.Format(
+						"[TBD][Variants] slot skeleton parse disagreed with the typed parse (typed=%1 skeleton=%2) -- slots NOT variant-gated this load; still dropped %3 crew-of-excluded-vehicle seat(s)",
+						slotsBefore, skelCount, droppedCrewKept), LogLevel.ERROR);
+				}
+			}
+		}
+
+		SweepDanglingVehicleSeats();
+
+		Print(string.Format(
+			"[TBD][Variants] filter applied -- active=[%1] zones=%2/%3 entities=%4/%5 slots=%6/%7 orbatGroups=%8/%9",
+			FormatVariantSet(active), zonesAfter, zonesBefore, entitiesAfter, entitiesBefore,
+			slotsAfter, slotsBefore, groupsAfter, groupsBefore));
+		Print(string.Format("[TBD][Variants] vehicles=%1/%2", vehiclesAfter, vehiclesBefore));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-654 -- record an excluded vehicle's join keys and crew slot ids so dependents drop.
+	protected static void RememberDroppedVehicle(TBD_MissionVehicleStruct veh,
+		map<string, bool> droppedVehicleUids, map<string, bool> droppedVehicleFingerprints,
+		map<string, bool> droppedCrewSlotIds)
+	{
+		if (!veh)
+			return;
+
+		if (!veh.uid.IsEmpty())
+			droppedVehicleUids.Set(veh.uid, true);
+
+		string fp = veh.Fingerprint();
+		if (!fp.IsEmpty())
+			droppedVehicleFingerprints.Set(fp, true);
+
+		if (!veh.seats || veh.seats.Count() == 0)
+			return;
+
+		foreach (TBD_MissionVehicleSeatStruct seat : veh.seats)
+		{
+			if (!seat || seat.slotId.IsEmpty())
+				continue;
+			droppedCrewSlotIds.Set(seat.slotId, true);
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-654 -- after slots have been reduced, strip crew seats that name a slot that is gone
+	//! so TBD_MissionVehicleRoster does not log dangling refs on a kept vehicle.
+	protected static void SweepDanglingVehicleSeats()
+	{
+		if (!s_Mission || !s_Mission.vehicles || s_Mission.vehicles.Count() == 0)
+			return;
+
+		map<string, bool> keptSlotIds = new map<string, bool>();
+		if (s_Mission.slots)
+		{
+			foreach (TBD_MissionSlotStruct slot : s_Mission.slots)
+			{
+				if (!slot)
+					continue;
+				if (!slot.uid.IsEmpty())
+					keptSlotIds.Set(slot.uid, true);
+				string key = slot.Key();
+				if (!key.IsEmpty())
+					keptSlotIds.Set(key, true);
+			}
+		}
+
+		foreach (TBD_MissionVehicleStruct veh : s_Mission.vehicles)
+		{
+			if (!veh || !veh.seats || veh.seats.Count() == 0)
+				continue;
+
+			array<ref TBD_MissionVehicleSeatStruct> keptSeats = new array<ref TBD_MissionVehicleSeatStruct>();
+			foreach (TBD_MissionVehicleSeatStruct seat : veh.seats)
+			{
+				if (!seat)
+					continue;
+				if (seat.slotId.IsEmpty() || keptSlotIds.Contains(seat.slotId))
+				{
+					keptSeats.Insert(seat);
+					continue;
+				}
+
+				Print(string.Format(
+					"[TBD][Variants] dropping dangling crew seat slotId='%1' on vehicle '%2' -- slot did not survive variant filter",
+					seat.slotId, veh.Label()), LogLevel.WARNING);
+			}
+			veh.seats = keptSeats;
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-654 -- per-row filter rule. Returns true to keep the row. The ONLY warned case is a
+	//! DANGLING id: declared-but-inactive rows drop silently, because that is selection working.
+	protected static bool IsVariantRowIncluded(string variantId, map<string, bool> declared,
+		map<string, bool> active, string collection, string rowName)
+	{
+		if (variantId.IsEmpty())
+			return true;
+
+		if (active.Contains(variantId))
+			return true;
+
+		if (!declared.Contains(variantId))
+		{
+			Print(string.Format(
+				"[TBD][Variants] EXCLUDING %1 '%2' -- variantId='%3' names no variants[] entry (dangling reference; fail-visible, not fail-open)",
+				collection, rowName, variantId), LogLevel.WARNING);
+		}
+
+		return false;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-654 -- builds the active set: server override when authored, else document defaults.
+	//! Fills `declared` with every well-formed variants[] id. `defaultFlags` is index-aligned
+	//! with the typed variants[] array (see ExtractVariantDefaultFlags).
+	protected static ref map<string, bool> ComputeActiveVariantSet(array<bool> defaultFlags,
+		map<string, bool> declared)
+	{
+		map<string, bool> active = new map<string, bool>();
+		array<ref TBD_MissionVariantStruct> variants = s_Mission.variants;
+		if (!variants)
+			variants = new array<ref TBD_MissionVariantStruct>();
+
+		foreach (int i, TBD_MissionVariantStruct variant : variants)
+		{
+			if (!variant || variant.id.IsEmpty())
+			{
+				Print(string.Format("[TBD][Variants] variants[%1] has no id -- row ignored", i), LogLevel.WARNING);
+				continue;
+			}
+			if (declared.Contains(variant.id))
+				Print(string.Format("[TBD][Variants] variants[%1] duplicates id '%2' -- ids must be unique", i, variant.id), LogLevel.WARNING);
+			declared.Set(variant.id, true);
+		}
+
+		bool overrideKeyPresent;
+		TBD_VariantConfigStruct cfg = ReadVariantOverride(overrideKeyPresent);
+		if (cfg && overrideKeyPresent)
+		{
+			if (cfg.activeVariants)
+			{
+				foreach (string overrideId : cfg.activeVariants)
+				{
+					if (declared.Contains(overrideId))
+						active.Set(overrideId, true);
+					else
+						Print(string.Format(
+							"[TBD][Variants] override names unknown variant '%1' -- entry ignored (not declared in variants[])",
+							overrideId), LogLevel.WARNING);
+				}
+			}
+			Print(string.Format("[TBD][Variants] active set = SERVER OVERRIDE (%1): [%2]",
+				s_VariantConfigPath, FormatVariantSet(active)));
+			return active;
+		}
+		if (cfg)
+			Print("[TBD][Variants] " + s_VariantConfigPath + " exists but has no activeVariants[] -- using document defaults", LogLevel.WARNING);
+
+		if (defaultFlags.Count() != variants.Count())
+			Print(string.Format(
+				"[TBD][Variants] default-flag scan found %1 row(s) but the typed parse found %2 -- unmatched rows treated as default=false",
+				defaultFlags.Count(), variants.Count()), LogLevel.WARNING);
+
+		foreach (int j, TBD_MissionVariantStruct defVariant : variants)
+		{
+			if (!defVariant || defVariant.id.IsEmpty())
+				continue;
+			if (j < defaultFlags.Count() && defaultFlags[j])
+				active.Set(defVariant.id, true);
+		}
+
+		Print(string.Format("[TBD][Variants] active set = DOCUMENT DEFAULTS: [%1]", FormatVariantSet(active)));
+		return active;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-654 -- reads `$profile:TBD_VariantConfig.json`, mirroring TBD_BackendConfig.Load().
+	//! Missing file -> null silently. An EXISTING file that cannot be read/parsed is an ERROR
+	//! and the load continues on document defaults.
+	//!
+	//! `keyPresent` is recovered from the raw file bytes: JsonLoadContext ALLOCATES
+	//! `activeVariants` even when the key is absent, so a null-check is not a presence test.
+	protected static ref TBD_VariantConfigStruct ReadVariantOverride(out bool keyPresent)
+	{
+		keyPresent = false;
+
+		if (!FileIO.FileExists(s_VariantConfigPath))
+			return null;
+
+		FileHandle handle = FileIO.OpenFile(s_VariantConfigPath, FileMode.READ);
+		if (!handle)
+		{
+			Print("[TBD][Variants] could not OPEN " + s_VariantConfigPath + " -- override ignored, using document defaults", LogLevel.ERROR);
+			return null;
+		}
+
+		string raw;
+		handle.Read(raw, MISSION_FILE_MAX_BYTES);
+		handle.Close();
+
+		JsonLoadContext ctx = new JsonLoadContext();
+		if (!ctx.LoadFromString(raw))
+		{
+			Print("[TBD][Variants] could not READ " + s_VariantConfigPath + " -- override ignored, using document defaults", LogLevel.ERROR);
+			return null;
+		}
+
+		TBD_VariantConfigStruct cfg = new TBD_VariantConfigStruct();
+		if (!ctx.ReadValue("", cfg))
+		{
+			Print("[TBD][Variants] could not PARSE " + s_VariantConfigPath + " -- override ignored, using document defaults", LogLevel.ERROR);
+			return null;
+		}
+
+		keyPresent = OverrideActiveVariantsKeyPresent(raw);
+		return cfg;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-654 -- true when the override file authors a top-level `activeVariants` array. Same
+	//! walker rules as ExtractVariantDefaultFlags (depth-1 key immediately before ':').
+	protected static bool OverrideActiveVariantsKeyPresent(string raw)
+	{
+		int length = raw.Length();
+		int depth = 0;
+		bool inString = false;
+		bool escaped = false;
+		bool capture = false;
+		string token = "";
+		string lastToken = "";
+		int lastTokenDepth = -1;
+
+		for (int i = 0; i < length; i++)
+		{
+			string c = raw.Substring(i, 1);
+
+			if (inString)
+			{
+				if (escaped)
+				{
+					escaped = false;
+					continue;
+				}
+				if (c == "\\")
+				{
+					escaped = true;
+					continue;
+				}
+				if (c == "\"")
+				{
+					inString = false;
+					lastToken = token;
+					lastTokenDepth = depth;
+					continue;
+				}
+				if (capture)
+					token = token + c;
+				continue;
+			}
+
+			if (c == " " || c == "\t" || c == "\n" || c == "\r")
+				continue;
+
+			if (c == "\"")
+			{
+				inString = true;
+				token = "";
+				capture = (depth == 1);
+				continue;
+			}
+
+			if (c == ":")
+			{
+				if (lastTokenDepth == 1 && lastToken == "activeVariants")
+					return true;
+				continue;
+			}
+
+			if (c == "{" || c == "[")
+			{
+				depth = depth + 1;
+				continue;
+			}
+
+			if (c == "}" || c == "]")
+			{
+				depth = depth - 1;
+				continue;
+			}
+		}
+
+		return false;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-654 -- second typed pass over the same JSON string for slot and vehicle variant gates.
+	protected static ref TBD_VariantGateSkeletonStruct ParseVariantGateSkeleton(string data)
+	{
+		JsonLoadContext ctx = new JsonLoadContext();
+		if (!ctx.LoadFromString(data))
+			return null;
+
+		TBD_VariantGateSkeletonStruct skeleton = new TBD_VariantGateSkeletonStruct();
+		if (!ctx.ReadValue("", skeleton))
+			return null;
+
+		return skeleton;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-654 -- per-row `default` flags of the top-level variants[] array, read off the raw JSON
+	//! because `default` is an Enforce keyword the typed parser can never map. Sets
+	//! `variantsKeyPresent` when the top-level `variants` array is found (including empty).
+	protected static ref array<bool> ExtractVariantDefaultFlags(string raw, out bool variantsKeyPresent)
+	{
+		array<bool> flags = new array<bool>();
+		variantsKeyPresent = false;
+
+		int length = raw.Length();
+		int depth = 0;
+		bool inString = false;
+		bool escaped = false;
+		bool capture = false;
+		string token = "";
+		string lastToken = "";
+		int lastTokenDepth = -1;
+		int variantsDepth = -1;
+		int rowIndex = -1;
+		bool expectVariantsArray = false;
+		bool expectDefaultLiteral = false;
+
+		for (int i = 0; i < length; i++)
+		{
+			string c = raw.Substring(i, 1);
+
+			if (inString)
+			{
+				if (escaped)
+				{
+					escaped = false;
+					continue;
+				}
+				if (c == "\\")
+				{
+					escaped = true;
+					continue;
+				}
+				if (c == "\"")
+				{
+					inString = false;
+					lastToken = token;
+					lastTokenDepth = depth;
+					continue;
+				}
+				if (capture)
+					token = token + c;
+				continue;
+			}
+
+			if (c == " " || c == "\t" || c == "\n" || c == "\r")
+				continue;
+
+			if (c == "\"")
+			{
+				inString = true;
+				token = "";
+				capture = (depth == 1) || (variantsDepth != -1 && depth == variantsDepth + 1);
+				expectVariantsArray = false;
+				expectDefaultLiteral = false;
+				continue;
+			}
+
+			if (c == ":")
+			{
+				if (lastTokenDepth == 1 && lastToken == "variants" && variantsDepth == -1)
+					expectVariantsArray = true;
+				else if (variantsDepth != -1 && rowIndex >= 0 && lastTokenDepth == variantsDepth + 1 && lastToken == "default")
+					expectDefaultLiteral = true;
+				continue;
+			}
+
+			if (c == "{" || c == "[")
+			{
+				if (expectVariantsArray)
+				{
+					expectVariantsArray = false;
+					if (c == "[")
+					{
+						variantsDepth = depth + 1;
+						variantsKeyPresent = true;
+					}
+				}
+				else if (variantsDepth != -1 && c == "{" && depth == variantsDepth)
+				{
+					rowIndex = rowIndex + 1;
+					flags.Insert(false);
+				}
+				else
+				{
+					expectDefaultLiteral = false;
+				}
+				depth = depth + 1;
+				continue;
+			}
+
+			if (c == "}" || c == "]")
+			{
+				depth = depth - 1;
+				if (variantsDepth != -1 && depth < variantsDepth)
+					break;
+				continue;
+			}
+
+			expectVariantsArray = false;
+
+			if (expectDefaultLiteral && c != ",")
+			{
+				if (c == "t" && rowIndex >= 0 && rowIndex < flags.Count())
+					flags[rowIndex] = true;
+				expectDefaultLiteral = false;
+			}
+		}
+
+		return flags;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-654 -- log-friendly "a, b, c" of a variant id set; "(none)" for the empty set.
+	protected static string FormatVariantSet(map<string, bool> variantSet)
+	{
+		string joined = "";
+		foreach (string setId, bool setUnused : variantSet)
+		{
+			if (!joined.IsEmpty())
+				joined = joined + ", ";
+			joined = joined + setId;
+		}
+
+		if (joined.IsEmpty())
+			return "(none)";
+
+		return joined;
+	}
+
 	protected static bool ParseMissionJson(string data)
 	{
 		s_RawJson = data;
 		s_Valid = false;
+		s_ActiveVariantIds = null;
 
 		// Parse a JSON string: JsonLoadContext.LoadFromString (ImportFromString /
 		// SCR_JsonLoadContext are both flagged obsolete by the engine).
@@ -1094,6 +1913,11 @@ class TBD_MissionLoader
 			return false;
 		}
 
+		// T-654 -- conditional inclusion: reduce the parsed document to its ACTIVE VARIANT SET
+		// before ANYTHING (the validator included) rules on it. Inert when the document
+		// declares no top-level variants[] key. Design block above TBD_MissionVariantStruct.
+		ApplyVariantFilter(data);
+
 		// T-181.14 - one validation pass over the whole document. It reports EVERY problem
 		// (never just the first) as its own [TBD][Validate] line, then blocks on errors. The
 		// meta.id, slots-required, orbat-parity and duplicate-key checks that used to live in
@@ -1105,6 +1929,7 @@ class TBD_MissionLoader
 		if (!TBD_MissionValidator.Run(s_Mission))
 		{
 			s_Mission = null;
+			s_ActiveVariantIds = null;
 			return false;
 		}
 
