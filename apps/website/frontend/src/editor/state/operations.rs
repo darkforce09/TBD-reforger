@@ -87,3 +87,5 @@ pub use tactical_graphics::*;
 pub use transform::{
     apply_pattern_to_selection, orient_selection, rotate_selection_to_face, space_selection,
 };
+pub mod slot_ids;
+pub use slot_ids::*;

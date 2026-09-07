@@ -1449,7 +1449,7 @@ fn census_line(census: &[(&'static str, usize)]) -> String {
 /// budget can still be refused by the server with a 413, and that message is surfaced verbatim
 /// rather than pre-empted here (this client does not get to invent the server's limit — T-585-era
 /// lesson, and `create_version` already words it precisely).
-const UPLOAD_MAX_BYTES: usize = 64 << 20;
+const UPLOAD_MAX_BYTES: usize = 8388608;
 
 /// Refuse an over-budget file before it is read. `None` = accept.
 ///
@@ -1516,6 +1516,39 @@ fn unwrap_export_envelope(doc: Value) -> Result<Value, String> {
     }
 }
 
+fn check_duplicate_slot_ids_in_payload(payload: &Value) -> Result<(), String> {
+    let Some(editor) = payload.get("editor").and_then(|e| e.as_object()) else {
+        return Ok(());
+    };
+    let Some(squads) = editor.get("squads").and_then(|s| s.as_array()) else {
+        return Ok(());
+    };
+    let mut callsign_seen: std::collections::HashMap<String, std::collections::HashSet<String>> =
+        std::collections::HashMap::new();
+    for squad in squads {
+        let callsign = squad
+            .get("callsign")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty())
+            .or_else(|| squad.get("name").and_then(|v| v.as_str()))
+            .unwrap_or("squad");
+        let Some(slot_ids) = squad.get("slotIds").and_then(|v| v.as_array()) else {
+            continue;
+        };
+        let seen = callsign_seen.entry(callsign.to_string()).or_default();
+        for id_val in slot_ids {
+            if let Some(id_str) = id_val.as_str() {
+                if !seen.insert(id_str.to_string()) {
+                    return Err(format!(
+                        "Duplicate slot id \"{id_str}\" under callsign \"{callsign}\"."
+                    ));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Parse a picked file into the editor payload to POST, or the reason it cannot be one.
 ///
 /// The syntax error is kept verbatim: `serde_json`'s `Display` already ends in
@@ -1528,7 +1561,9 @@ fn parse_uploaded_document(text: &str) -> Result<Value, String> {
     }
     let doc: Value =
         serde_json::from_str(text).map_err(|e| format!("That file is not valid JSON — {e}."))?;
-    unwrap_export_envelope(doc)
+    let payload = unwrap_export_envelope(doc)?;
+    check_duplicate_slot_ids_in_payload(&payload)?;
+    Ok(payload)
 }
 
 /// Suggested next version number: bump the patch of the mission's current version.
@@ -2319,6 +2354,19 @@ fn dossier_sheet_body(
                                         <MaterialIcon name="cloud_upload" class="text-[16px]" />
                                         "Upload as new version"
                                     </button>
+                                    {move || {
+                                        let sz = up_size.get();
+                                        (sz > 0).then(|| {
+                                            view! {
+                                                <span
+                                                    data-testid="mission-upload-size"
+                                                    class="font-mono text-label-md text-on-surface-variant"
+                                                >
+                                                    {format!("{} / 8.4 MB", crate::editor::mission_size::format_bytes(sz))}
+                                                </span>
+                                            }
+                                        })
+                                    }}
                                 </div>
 
                                 // Status line — the headline of whatever just happened (read, parse
@@ -3419,7 +3467,7 @@ mod tests {
         );
         let refusal = oversize_refusal(UPLOAD_MAX_BYTES + 1).expect("over budget must be refused");
         assert!(
-            refusal.contains("67.1 MB"),
+            refusal.contains("8.4 MB"),
             "the budget must be named; got {refusal:?}"
         );
         let huge = oversize_refusal(400 << 20).expect("400 MiB must be refused");
@@ -3428,13 +3476,38 @@ mod tests {
         // and must not be asked to. (It used to be written as `contains(X) && contains(X)` — the
         // same needle twice — which read as a two-number check and was a one-number check.)
         assert!(
-            huge.contains("419.4 MB") && huge.contains("67.1 MB"),
+            huge.contains("419.4 MB") && huge.contains("8.4 MB"),
             "both the author's file size and the budget must be named — 'too large' without them \
              is unactionable; got {huge:?}"
         );
         assert!(
             huge.contains("Mission Creator"),
             "a refusal must say what to do instead; got {huge:?}"
+        );
+    }
+
+    #[test]
+    fn duplicate_slot_id_under_callsign_is_refused() {
+        let payload = json!({
+            "schemaVersion": 1,
+            "editor": {
+                "squads": [
+                    {
+                        "id": "sq1",
+                        "callsign": "Alpha 1-1",
+                        "slotIds": ["s1", "s1"]
+                    }
+                ],
+                "slots": [
+                    { "id": "s1", "role": "SL" }
+                ]
+            }
+        });
+        let text = serde_json::to_string(&payload).unwrap();
+        let err = parse_uploaded_document(&text).expect_err("duplicate slot id must be refused");
+        assert!(
+            err.contains("Alpha 1-1") && err.contains("s1"),
+            "refusal must name both callsign and duplicated slot id; got {err:?}"
         );
     }
 
