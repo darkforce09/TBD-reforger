@@ -29,14 +29,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** The T-216 schema deltas (slot tag/callsign/rank/stance, group leaderSlotId, root vehicles $def) are all declared in mission.schema.json today, but flatten drops the four slot fields (DIAG_DROP_SLOT_*); emit them and pin with schema-validated goldens.
 
-## T-139 — Lobby loadout visual preview
-
-- **Slice spec:** `docs/platform/tbd_north_star_backlog.md`
-- **Program hub:** `docs/platform/tbd_north_star_backlog.md`
-- **Branch:** `ticket/T-139`
-- **Targets:** 
-- **Summary:** In-game lobby kit preview: a TBD_LoadoutPreview widget renders the selected slot's gear as an icon grid (stretch: 2D mannequin) beside the slot list in TBD_LobbyScreen; layout file under UI/layouts.
-
 ## T-257 — Undo scope misses loadouts, items, objectives, markers
 
 - **Slice spec:** `docs/specs/ideas/t257_undo_scope.md`
@@ -60,14 +52,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-932`
 - **Targets:** 
 - **Summary:** T-826 parking: pendingBriefingMarkers drop on server JSON save/reload before first faction mint
-
-## T-930 — Vehicle first-paint disc until moved
-
-- **Slice spec:** `docs/specs/existing/t930_vehicle_first_paint.md`
-- **Program hub:** `docs/specs/existing/t930_vehicle_first_paint.md`
-- **Branch:** `ticket/T-930`
-- **Targets:** 
-- **Summary:** Vehicle first-paint disc until moved — W210 eye-pass
 
 ## T-704 — Command palette over every editor command
 

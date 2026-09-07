@@ -1,15 +1,16 @@
 id = "T-941.4"
 kind = "work"
-parent = "T-941"
 title = "Objective HUD and capture bar replace chat"
 summary = "An objective HUD with a capture bar shows objective state and capture progress; the objectives component replicates state to it instead of pumping private chat messages."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7610
-priority = 1
 spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
 plan = "docs/plans/t-941_4_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = ["T-941.3"]
+parent = "T-941"
 main_goal = "Objective state is on screen, not in the chat log."
 context = [
     "Anchor 2026-09-04: Objectives/TBD_ObjectivesComponent.c:813 chat.SendPrivateMessage(text, playerId) is the per-player pump (:32 documents the channel).",
@@ -20,9 +21,7 @@ requirement = [
     "New UI/Hud/TBD_ObjectiveHud.c and UI/layouts/TBD_ObjectiveHud.layout: objective list with state icons and a capture bar bound to the local player's contested objective.",
     "TBD_ObjectivesComponent.c replicates objective state and capture progress to clients and drops the chat pump; chat keeps only the objective-complete line.",
 ]
-current_state = [
-    "All objective feedback is chat text; no HUD element exists.",
-]
+current_state = ["All objective feedback is chat text; no HUD element exists."]
 approach = [
     "Verify on main: read :813 and the message call sites; record as defect evidence (no script unit test lane).",
     "Write the HUD and layout; replace the pump with replicated state; compile; boot.",
@@ -37,8 +36,10 @@ acceptance = [
     "The mod compiles and boots with the HUD script loaded.",
     "Checklist: entering a capture zone fills the bar; objective completion updates the HUD icon; no per-tick chat messages appear.",
 ]
-depends_on = ["T-941.3"]
+shipped_at = "28a7ce04adef64219557e685e6053c87e9d2247c"
 created_at = "2026-09-05T02:33:18Z"
+completed_at = "2026-09-07T12:54:57Z"
+estimated = ["tokens"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c",

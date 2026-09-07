@@ -3,7 +3,7 @@ kind = "work"
 title = "Section cut via BVH and sparse HeightField"
 summary = "section_at_owned (building_section.rs:292) queries the building's occl.bvh by y-interval instead of every triangle, and HeightField (:46, :66-83) becomes a sparse tiled grid instead of a 2048-squared Option<f64> allocation."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7830
 spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
 plan = "docs/plans/t-938_4_plan.md"
@@ -34,7 +34,10 @@ acceptance = [
     "Section cuts on the six golden buildings equal the brute-force result while visiting only BVH candidates.",
     "An empty HeightField allocates no plan cells; a plan touching one percent of cells uses about one percent of today's memory.",
 ]
+shipped_at = "f264710155a26bf733cce41ecd4f72110ed275d7"
 created_at = "2026-09-05T02:09:02Z"
+completed_at = "2026-09-07T12:57:45Z"
+estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/building_section.rs",
     "crates/map-engine-core/src/building_section_index.rs",

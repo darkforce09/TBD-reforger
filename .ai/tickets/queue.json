@@ -34,13 +34,6 @@
       "branch": "ticket/T-242"
     },
     {
-      "id": "T-139",
-      "title": "Lobby loadout visual preview",
-      "status": "ready",
-      "spec": "docs/platform/tbd_north_star_backlog.md",
-      "branch": "ticket/T-139"
-    },
-    {
       "id": "T-257",
       "title": "Undo scope misses loadouts, items, objectives, markers",
       "status": "ready",
@@ -60,13 +53,6 @@
       "status": "ready",
       "spec": "docs/specs/existing/t932_parked_markers_persist.md",
       "branch": "ticket/T-932"
-    },
-    {
-      "id": "T-930",
-      "title": "Vehicle first-paint disc until moved",
-      "status": "ready",
-      "spec": "docs/specs/existing/t930_vehicle_first_paint.md",
-      "branch": "ticket/T-930"
     },
     {
       "id": "T-704",

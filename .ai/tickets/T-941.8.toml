@@ -1,15 +1,16 @@
 id = "T-941.8"
 kind = "work"
-parent = "T-941"
 title = "Vehicles spawn fuelled with inventory"
 summary = "Spawned vehicles receive full fuel and a per-class default cargo, overridden by roster fuel or inventory fields when present; crew seating stays with T-675.2 in the same file."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7650
-priority = 1
 spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
 plan = "docs/plans/t-941_8_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = ["T-941.2"]
+parent = "T-941"
 main_goal = "Mission vehicles are usable the moment they spawn."
 context = [
     "Queued T-675.2 covers reading vehicles[] and crew spawn from authored seats; fuel and inventory are not covered there, so this slice adds them.",
@@ -22,9 +23,7 @@ requirement = [
     "Roster fuel or inventory fields, when the wire carries them, override the defaults.",
     "A missing cargo prefab logs one warning naming the prefab and the vehicle still spawns.",
 ]
-current_state = [
-    "Vehicles spawn with engine-default fuel and no cargo.",
-]
+current_state = ["Vehicles spawn with engine-default fuel and no cargo."]
 approach = [
     "Verify on main: read the vehicle spawn path in TBD_SpawnManager.c; record as defect evidence (no script unit test lane).",
     "Add fuel and cargo application with the default table; compile; boot.",
@@ -39,8 +38,10 @@ acceptance = [
     "The mod compiles and boots.",
     "Checklist: a roster vehicle spawns fuelled with its class cargo; an unknown cargo prefab produces one warning and the vehicle still spawns.",
 ]
-depends_on = ["T-941.2"]
+shipped_at = "9d72811be23c6133ff494f96ac0134915a224bc2"
 created_at = "2026-09-05T02:33:18Z"
+completed_at = "2026-09-07T12:55:07Z"
+estimated = ["tokens"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",

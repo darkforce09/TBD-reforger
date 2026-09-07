@@ -3,7 +3,7 @@ kind = "work"
 title = "Persist: surface save errors, flush on hide"
 summary = "Save failures in persist.rs become a toast plus a status chip instead of console.warn; a visibilitychange-hidden flush with a shorter debounce joins the fire-and-forget pagehide save; note_unreadable gets a bounded retry."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7730
 spec = "docs/specs/audit_2026_09/t937_editor_data_layer.md"
 plan = "docs/plans/t-937_4_plan.md"
@@ -38,7 +38,10 @@ acceptance = [
     "Switching tabs flushes pending edits within the shortened debounce; a reload afterwards shows them.",
     "An unreadable store retries three times before showing a lockout with a Retry action.",
 ]
+shipped_at = "0d08ea76d8a7efd1ca224e900053b3b22f911870"
 created_at = "2026-09-05T02:09:02Z"
+completed_at = "2026-09-07T12:55:51Z"
+estimated = ["tokens"]
 owns = [
     "apps/website/frontend/src/editor/state/persist.rs",
     "apps/website/frontend/src/editor/state/save_status.rs",

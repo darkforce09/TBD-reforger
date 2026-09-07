@@ -3,7 +3,7 @@ kind = "work"
 title = "Vehicle first-paint disc until moved"
 summary = "Vehicle first-paint disc until moved — W210 eye-pass"
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7790
 spec = "docs/specs/existing/t930_vehicle_first_paint.md"
 plan = "docs/plans/t-930_plan.md"
@@ -42,7 +42,13 @@ citations = [
     "wave210 operator eye-pass",
     "slots_gpu vehicle discs",
 ]
-estimated = ["scope"]
+shipped_at = "f412df38e12c85836c5e0f76ceccb08cbb0e0d41"
+created_at = "2026-08-19T17:32:29Z"
+completed_at = "2026-09-07T12:57:15Z"
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = [
     "crates/map-engine-core/src/slots_gpu.rs",
     "apps/website/frontend/src/editor/state/operations/entity.rs",
