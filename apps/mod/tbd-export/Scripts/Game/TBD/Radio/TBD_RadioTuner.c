@@ -19,35 +19,35 @@
 //! `BaseRadioComponent.SetTransceiverFrequency` is the client-origin variant ("and sync with
 //! server"). The server-authoritative path used here is the former.
 //!
-//! == THE ONE THING THAT IS NOT REACHABLE, AND IT IS NOT AN API ==============================
-//! **The world has no `RadioManagerEntity`, and without it the engine supports NO radio at all.**
-//! Measured on every boot of `Missions/TBD_Dev_POC.conf`, emitted by the engine itself the first
-//! time a `BaseRadioComponent` is created (a transmitter tower in Eden):
+//! == T-941.7 - SCRIPT FALLBACK WHEN THE BACKBONE IS ABSENT ==================================
+//! The engine still emits this on every boot of `Missions/TBD_Dev_POC.conf` the first time a
+//! `BaseRadioComponent` is created (a transmitter tower in Eden):
 //!
 //!     DEFAULT (W): World doesn't contain RadioManagerEntity to support any BaseRadioComponent.
 //!
-//! `worlds/TBD_Dev_POC.ent` is a 62-byte bare `SubScene` of vanilla `Eden.ent` and places nothing
-//! of its own, so there is nothing in the TBD world to host the radio backbone. This is the same
-//! CLASS of blocker as `resourceDatabase.rdb` gating the five menu presets: not a script problem,
-//! not fixable from the fast lane, and settled by one Workbench pass. `ChimeraWorld.GetRadioManager()`
-//! is the runtime question this file asks on every boot so the answer is a FACT IN THE LOG rather
-//! than an assumption in a comment - see `TBD_RadioComponent.ReportBackbone()`.
+//! `worlds/TBD_Dev_POC.ent` still does not place a `RadioManagerEntity` - operator deferred that
+//! world edit 2026-09-04. `ChimeraWorld.GetRadioManager()` remains the runtime question, but a
+//! null answer is no longer a refuse-to-tune. `FallbackChannelTable` supplies the mission
+//! `radioPlan` frequencies when the caller already resolved them, else a script-side default
+//! pair, and `TunePlayer` still drives `SetFrequency` + read-back. The boot warning names the
+//! world, the entity to add, and which table is in use. Placing `RadioManagerEntity` stays on
+//! the operator checklist; it is not this slice.
 //!
 //! == THE RULE THIS FILE EXISTS TO ENFORCE ===================================================
 //! **Never report a tune that did not happen.** Every tune is verified by reading the frequency
 //! back off the same transceiver and comparing. A log line saying a player is on ALPHA while no
 //! radio changed is worse than no radio feature at all, because it would be believed - and this
-//! program has repeatedly been bitten by things that looked like they worked. If the backbone is
-//! absent, if the player carries no radio, or if the read-back disagrees, the outcome says so and
-//! the net list is still DELIVERED and DISPLAYED. Assignment and display do not depend on any of
-//! this; only the tuning does.
+//! program has repeatedly been bitten by things that looked like they worked. If the player
+//! carries no radio, or if the read-back disagrees, the outcome says so and the net list is
+//! still DELIVERED and DISPLAYED. Assignment and display do not depend on any of this; only
+//! the tuning does.
 
 //! What happened when we tried to put one player on their nets. Ordered roughly worst to best so
 //! a reader can tell a blocker from a nuance at a glance.
 enum TBD_ERadioTuneResult
 {
-	//! The world has no `RadioManagerEntity`. Nothing radio-related can work; not our bug to fix
-	//! from script. This is the CURRENT state of `TBD_Dev_POC`.
+	//! World has no `RadioManagerEntity`. T-941.7 no longer refuses to tune on this path -
+	//! `FallbackChannelTable` is used instead. Kept so the wire/client contract stays stable.
 	NO_BACKBONE,
 	//! The player has no controlled entity yet (lobby, dead, mid-possess). Ordinary, not an error.
 	NO_BODY,
@@ -90,8 +90,23 @@ class TBD_RadioSet
 	int m_iCount;        //!< `TransceiversCount()`, cached.
 }
 
+//! T-941.7 - frequencies `TunePlayer` will actually set when the world has no RadioManagerEntity
+//! (and the copy-through of the caller's arrays when it does). `m_sSource` is `radioPlan` or
+//! `defaults` so the boot warning can name the table in use.
+class TBD_RadioFallbackTable
+{
+	ref array<int> m_aFreqKHz;
+	ref array<int> m_aLongRange;
+	string m_sSource;
+}
+
 class TBD_RadioTuner
 {
+	//! Handheld default when the mission authored no radioPlan. 42.000 MHz, schema band 30..512.
+	static const int FALLBACK_DEFAULT_SHORT_KHZ = 42000;
+	//! Long-range default pair. 41.000 MHz - same band as golden `net:cmd`.
+	static const int FALLBACK_DEFAULT_LONG_KHZ = 41000;
+
 	//------------------------------------------------------------------------------------------------
 	//! The world's radio backbone, or null when this world has none.
 	//!
@@ -115,6 +130,84 @@ class TBD_RadioTuner
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! World file the running mission header names, or `worlds/TBD_Dev_POC.ent` when the header
+	//! has not answered. Named in the once-per-boot warning so the operator knows WHICH world to
+	//! edit.
+	static string WorldFileName()
+	{
+		MissionHeader header = GetGame().GetMissionHeader();
+		if (!header)
+			return "worlds/TBD_Dev_POC.ent";
+
+		string path = header.GetWorldPath();
+		if (path.IsEmpty())
+			return "worlds/TBD_Dev_POC.ent";
+
+		return path;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Which script-side table the missing-backbone path will use on this boot: `radioPlan` when
+	//! the loaded mission has accepted nets, else `defaults`.
+	static string FallbackSourceName()
+	{
+		if (TBD_MissionLoader.IsValid() && TBD_RadioPlan.GetTotalNetCount() > 0)
+			return "radioPlan";
+
+		return "defaults";
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Script-side channel table. Caller-resolved `radioPlan` frequencies win when present;
+	//! otherwise, and only when the backbone is missing, the default pair. Never returns null.
+	//!
+	//! Renaming this function is the T-941.7 perturbation: `TunePlayer` calls it by this name.
+	static TBD_RadioFallbackTable FallbackChannelTable(notnull array<int> freqKHz, notnull array<int> longRange, bool backboneMissing)
+	{
+		TBD_RadioFallbackTable table = new TBD_RadioFallbackTable();
+		table.m_aFreqKHz = {};
+		table.m_aLongRange = {};
+
+		if (!freqKHz.IsEmpty())
+		{
+			int n = freqKHz.Count();
+			int nRange = longRange.Count();
+			for (int i = 0; i < n; i++)
+			{
+				table.m_aFreqKHz.Insert(freqKHz[i]);
+				int flag = 0;
+				if (i < nRange)
+					flag = longRange[i];
+
+				table.m_aLongRange.Insert(flag);
+			}
+
+			table.m_sSource = "radioPlan";
+			return table;
+		}
+
+		if (backboneMissing && TBD_MissionLoader.IsValid() && TBD_RadioPlan.GetTotalNetCount() > 0)
+		{
+			// Plan exists but this player was given no nets. Do not invent defaults and do not
+			// leak another side's frequencies - `TunePlayer` returns NO_NETS on the empty table.
+			table.m_sSource = "radioPlan";
+			return table;
+		}
+
+		if (backboneMissing)
+		{
+			table.m_aFreqKHz.Insert(FALLBACK_DEFAULT_SHORT_KHZ);
+			table.m_aLongRange.Insert(0);
+			table.m_aFreqKHz.Insert(FALLBACK_DEFAULT_LONG_KHZ);
+			table.m_aLongRange.Insert(1);
+			table.m_sSource = "defaults";
+			return table;
+		}
+
+		return table;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! @authority server - put one player on their nets, and PROVE it or say it did not happen.
 	//!
 	//! `freqKHz` and `longRange` are parallel: element i of each describes net i, in the order
@@ -129,18 +222,16 @@ class TBD_RadioTuner
 	static TBD_RadioTuneReport TunePlayer(int playerId, notnull array<int> freqKHz, notnull array<int> longRange)
 	{
 		TBD_RadioTuneReport report = new TBD_RadioTuneReport();
-		report.m_iRequested = freqKHz.Count();
 
-		if (freqKHz.IsEmpty())
+		bool backboneMissing = !IsBackboneAvailable();
+		TBD_RadioFallbackTable table = FallbackChannelTable(freqKHz, longRange, backboneMissing);
+		array<int> useFreq = table.m_aFreqKHz;
+		array<int> useRange = table.m_aLongRange;
+		report.m_iRequested = useFreq.Count();
+
+		if (useFreq.IsEmpty())
 		{
 			report.m_eResult = TBD_ERadioTuneResult.NO_NETS;
-			return report;
-		}
-
-		if (!IsBackboneAvailable())
-		{
-			report.m_eResult = TBD_ERadioTuneResult.NO_BACKBONE;
-			report.m_sDetail = "world has no RadioManagerEntity";
 			return report;
 		}
 
@@ -177,9 +268,9 @@ class TBD_RadioTuner
 		int mismatches = 0;
 		int noRoom = 0;
 
-		for (int i = 0; i < freqKHz.Count(); i++)
+		for (int i = 0; i < useFreq.Count(); i++)
 		{
-			TBD_RadioSet radioSet = PickRadio(sets, longRange[i] == 1);
+			TBD_RadioSet radioSet = PickRadio(sets, useRange[i] == 1);
 			if (!radioSet)
 			{
 				noRoom++;
@@ -194,7 +285,7 @@ class TBD_RadioTuner
 				continue;
 			}
 
-			int wanted = Constrain(transceiver, freqKHz[i]);
+			int wanted = Constrain(transceiver, useFreq[i]);
 
 			// The authoritative setter. Documented "Supports proxies and server"; the sibling
 			// `BaseRadioComponent.SetTransceiverFrequency` is the client-origin variant that syncs
@@ -225,19 +316,27 @@ class TBD_RadioTuner
 				report.m_sDetail = string.Format("%1 read-back mismatch, %2 with no free transceiver",
 					mismatches, noRoom);
 			}
-
-			return report;
 		}
-
-		if (mismatches > 0)
+		else if (mismatches > 0)
 		{
 			report.m_eResult = TBD_ERadioTuneResult.READBACK_MISMATCH;
 			report.m_sDetail = string.Format("%1 transceiver(s) did not hold the frequency we set", mismatches);
-			return report;
+		}
+		else
+		{
+			report.m_eResult = TBD_ERadioTuneResult.NO_TRANSCEIVER;
+			report.m_sDetail = "no free transceiver on any carried radio";
 		}
 
-		report.m_eResult = TBD_ERadioTuneResult.NO_TRANSCEIVER;
-		report.m_sDetail = "no free transceiver on any carried radio";
+		if (backboneMissing)
+		{
+			string note = string.Format("script-side fallback (%1); no RadioManagerEntity", table.m_sSource);
+			if (report.m_sDetail.IsEmpty())
+				report.m_sDetail = note;
+			else
+				report.m_sDetail = report.m_sDetail + "; " + note;
+		}
+
 		return report;
 	}
 

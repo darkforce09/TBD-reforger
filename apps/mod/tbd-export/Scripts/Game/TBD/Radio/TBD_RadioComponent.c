@@ -15,6 +15,10 @@ class TBD_RadioComponent : SCR_BaseGameModeComponent
 	//! Nothing is lost by being late: the client polls until it is served.
 	static const int START_DELAY_MS = 2500;
 
+	//! T-941.7 - the missing-backbone warning is once per world. Statics outlive a world
+	//! inside one process, so OnDelete clears this.
+	protected static bool s_bBackboneReported;
+
 	//! The report is nudged past init so the answer is not "missing" merely because we asked first.
 	//!
 	//! 1500 ms and not longer, MEASURED: `world-boot.sh` breaks its wait as soon as the roll-call
@@ -65,6 +69,7 @@ class TBD_RadioComponent : SCR_BaseGameModeComponent
 
 		TBD_RadioClient.Shutdown();
 		TBD_RadioService.Reset();
+		s_bBackboneReported = false;
 
 		super.OnDelete(owner);
 	}
@@ -124,6 +129,11 @@ class TBD_RadioComponent : SCR_BaseGameModeComponent
 	//------------------------------------------------------------------------------------------------
 	protected void ReportBackbone()
 	{
+		if (s_bBackboneReported)
+			return;
+
+		s_bBackboneReported = true;
+
 		if (TBD_RadioTuner.IsBackboneAvailable())
 		{
 			TBD_Log.Kv(TBD_RadioPlan.CH_RADIO, "backbone",
@@ -131,7 +141,10 @@ class TBD_RadioComponent : SCR_BaseGameModeComponent
 			return;
 		}
 
-		TBD_Log.Warn(TBD_RadioPlan.CH_RADIO,
-			"backbone: MISSING - this world has no RadioManagerEntity, so the engine supports NO BaseRadioComponent on it and no frequency can be set from script. Net ASSIGNMENT and DISPLAY still work; automatic TUNING does not. Fix is a world edit in Workbench (place a RadioManagerEntity in worlds/TBD_Dev_POC.ent), not a script change.");
+		string world = TBD_RadioTuner.WorldFileName();
+		string fallback = TBD_RadioTuner.FallbackSourceName();
+		TBD_Log.Warn(TBD_RadioPlan.CH_RADIO, string.Format(
+			"backbone: MISSING - world='%1' has no RadioManagerEntity; using script-side channel table (%2). Add RadioManagerEntity in Workbench (worlds/TBD_Dev_POC.ent) to restore the engine backbone. T-941.7 fallback is in use; the world edit is on the operator checklist.",
+			world, fallback));
 	}
 }
