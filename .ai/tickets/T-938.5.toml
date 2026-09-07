@@ -3,7 +3,7 @@ kind = "work"
 title = "Viewsheds sliced across frames with caps"
 summary = "Building viewsheds (building_viewshed.rs:251-268) and terrain viewsheds (dem/sample.rs:492-535) run as cancellable jobs sliced across frames under radius and cell caps, scheduled by a new viewshed_scheduler.rs that los_tool::place_viewshed calls."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7840
 spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
 plan = "docs/plans/t-938_5_plan.md"
@@ -39,7 +39,10 @@ acceptance = [
     "Placing a viewshed never blocks a frame longer than the batch budget; a second placement cancels the first.",
     "Sliced results equal the synchronous results on the fixture; out-of-cap requests are refused with a message.",
 ]
+shipped_at = "e914301d12e28f86c6a6b982f4c2ef8798d0fa60"
 created_at = "2026-09-05T02:09:02Z"
+completed_at = "2026-09-07T16:43:30Z"
+estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/building_viewshed.rs",
     "crates/map-engine-core/src/building_viewshed_tests.rs",

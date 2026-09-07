@@ -41,13 +41,6 @@
       "branch": "ticket/T-257"
     },
     {
-      "id": "T-190",
-      "title": "Two tabs on one mission clobber each other",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t190_tab_clobber.md",
-      "branch": "ticket/T-190"
-    },
-    {
       "id": "T-932",
       "title": "Parked briefing markers survive server save/reload",
       "status": "ready",

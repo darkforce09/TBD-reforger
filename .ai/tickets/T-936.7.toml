@@ -1,15 +1,19 @@
 id = "T-936.7"
 kind = "work"
-parent = "T-936"
 title = "Tactical graphics: phase lines, boundaries, curved arrows"
 summary = "A tacticalGraphics block (phase_line|boundary|axis_of_advance|curved_arrow polylines with label, side and style) extends the marker vocabulary; the canvas draws and edits them and tactical_graphics.rs validates them."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7530
-priority = 2
 spec = "docs/specs/audit_2026_09/t936_mission_logic.md"
 plan = "docs/plans/t-936_7_plan.md"
 executor = "claude-code"
+priority = 2
+depends_on = [
+    "T-673",
+    "T-936.6",
+]
+parent = "T-936"
 main_goal = "Authors draw phase lines, boundaries and arrows on the map and they reach the compiled document."
 context = [
     "Anchor 2026-09-04: mission.schema.json:1171 $defs/marker is additionalProperties false with a closed 64-icon enum; T-673 (queued) adds color, fill, rotation and shape to markers.",
@@ -25,9 +29,7 @@ requirement = [
     "New canvas/tactical_graphics.rs (registered in canvas/mod.rs): draws each kind (Catmull-Rom for curved arrows), vertex drag editing, selection; undoable operations.",
     "Rendering goes through the existing overlay layer; no new render lane in map-engine-render.",
 ]
-current_state = [
-    "Markers are single points with an icon; no polyline or arrow graphic exists in the schema, the canvas or the compiled document.",
-]
+current_state = ["Markers are single points with an icon; no polyline or arrow graphic exists in the schema, the canvas or the compiled document."]
 approach = [
     "Verify on main: a payload carrying tacticalGraphics flattens without it; paste the red.",
     "Add schema and golden; write the core model with tests; register; build the canvas module with a draw tool per kind.",
@@ -44,8 +46,10 @@ acceptance = [
     "A mission with one graphic of each kind flattens to a tacticalGraphics block that validates; the canvas draws all four kinds.",
     "Dragging a vertex updates the graphic and undoes in one step; a graphic with too few points is refused.",
 ]
-depends_on = ["T-673", "T-936.6"]
+shipped_at = "30f09d8a444d0094b3e41137fb0648b8313c4726"
 created_at = "2026-09-05T02:09:02Z"
+completed_at = "2026-09-07T16:43:00Z"
+estimated = ["tokens"]
 owns = [
     "packages/tbd-schema/schema/mission.schema.json",
     "packages/tbd-schema/schema/mission-editor-payload.schema.json",

@@ -3,7 +3,7 @@ kind = "work"
 title = "Two tabs on one mission clobber each other"
 summary = "Two tabs on one mission write one IndexedDB key; the last debounce wins and the reload prompt blames server drift. Detect the second tab, merge through the CRDT, and give the conflict modal counts, timestamps and a destructive marker."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7760
 spec = "docs/specs/ideas/t190_tab_clobber.md"
 plan = "docs/plans/t-190_plan.md"
@@ -41,7 +41,10 @@ acceptance = [
     "Edits from two tabs converge to one document containing both sets of changes.",
     "The conflict prompt names counts and timestamps and marks the destructive choice.",
 ]
+shipped_at = "e27fd905cdabe43838734218758cd6101f9e9cf9"
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-07T16:43:20Z"
+estimated = ["tokens"]
 owns = [
     "apps/website/frontend/src/editor/state/persist.rs",
     "apps/website/frontend/src/editor/state/hydrate.rs",
