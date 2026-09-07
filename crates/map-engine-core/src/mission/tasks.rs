@@ -660,17 +660,16 @@ mod tests {
         assert!(carried.get("tasks").is_none());
     }
 
-    /// The unlisted-key witness T-936.1 left in compile.rs (`tasks` as the dummy) goes red
-    /// once this slice registers the row. The assertion lives HERE now, using `spawnModules`
-    /// (T-936.6), so compile.rs can stay at merge-base.
+    /// The unlisted-key witness now uses T-936.7's `tacticalGraphics`. T-936.6 registered
+    /// `spawnModules`, so that key is no longer a valid dummy.
     #[test]
     fn an_unlisted_environment_key_is_not_promoted() {
-        let env = json!({"weather": "clear", "spawnModules": []});
+        let env = json!({"weather": "clear", "tacticalGraphics": []});
         let mut dst = Map::new();
         let copied = copy_authored_blocks(&env, &mut dst);
-        assert!(!copied.contains(&"spawnModules"), "{copied:?}");
+        assert!(!copied.contains(&"tacticalGraphics"), "{copied:?}");
         assert!(
-            !dst.contains_key("spawnModules"),
+            !dst.contains_key("tacticalGraphics"),
             "an unlisted key stays parked: {dst:?}"
         );
     }

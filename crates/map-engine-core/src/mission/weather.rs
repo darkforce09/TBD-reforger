@@ -394,7 +394,7 @@ mod tests {
             is_authored_block("weatherTimeline"),
             "T-936.4's row must be in AUTHORED_BLOCKS or the carrier never emits it"
         );
-        assert!(!is_authored_block("spawnModules"));
+        assert!(is_authored_block("spawnModules"));
     }
 
     #[test]

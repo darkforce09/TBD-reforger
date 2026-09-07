@@ -18,6 +18,10 @@ pub mod orbat;
 /// T-936.3 — the authored `radioPlan` block: nets, frequencies, duplicate/range gates, and the
 /// validator [`extensions::AUTHORED_BLOCKS`] registers for it.
 pub mod radio_plan;
+/// T-936.6 — the authored `spawnModules[]` block: wave/garrison modules, exclusive placement,
+/// known factions, positive counts, and the validator [`extensions::AUTHORED_BLOCKS`] registers
+/// for it.
+pub mod spawn_modules;
 /// T-936.2 — the authored `tasks[]` block: tiers, the assigned→succeeded|failed table, and the
 /// validator [`extensions::AUTHORED_BLOCKS`] registers for it.
 pub mod tasks;

@@ -1312,19 +1312,19 @@ mod tests {
         let small = json!({
             "meta": {
                 "terrain": "everon",
-                "environment": { "weather": "clear", "spawnModules": [] }
+                "environment": { "weather": "clear", "tacticalGraphics": [] }
             }
         })
         .to_string();
         let p = compile_payload(&small, "{}", false);
         assert!(
-            p.get("spawnModules").is_none(),
-            "`spawnModules` has no AUTHORED_BLOCKS row until T-936.6: {p}"
+            p.get("tacticalGraphics").is_none(),
+            "`tacticalGraphics` has no AUTHORED_BLOCKS row until T-936.7: {p}"
         );
         // ...and the bag itself is untouched by the passthrough.
         assert_eq!(
             p["environment"],
-            json!({"weather": "clear", "spawnModules": []})
+            json!({"weather": "clear", "tacticalGraphics": []})
         );
     }
 

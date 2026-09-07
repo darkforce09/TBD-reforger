@@ -79,6 +79,7 @@ use leptos::prelude::*;
 
 use crate::core::ui::MaterialIcon;
 use crate::editor::panels::env::ENV_UNCARRIED_NOTE;
+use crate::editor::panels::spawn_modules::spawn_modules_panel;
 use crate::editor::panels::win_conditions_card::win_conditions_card;
 
 // T-691 — the Editor Preferences dialog's open flag, parked here from `MissionSettingsDialog`'s
@@ -947,6 +948,9 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
                         // mounted is a mechanism that cannot fire (rule 17), so this is part of the wave, not a
                         // follow-up.
                         {win_conditions_card(ctrl)}
+                        // T-936.6 — spawn modules. T-936.5 registered audio and never mounted it;
+                        // this slice owns this file, so the panel is mounted here.
+                        {spawn_modules_panel(ctrl)}
                         {render_prefs_section(&env)}
                     </div>
                 </div>
@@ -4478,6 +4482,19 @@ mod t726_settings_esc_stack {
         assert!(
             prefs_at > reg_at && all_at > reg_at,
             "T-726: prefs/all-settings must mount after settings registers (topmost when open)"
+        );
+    }
+
+    /// T-936.6 — a registered panel that is never mounted cannot fire. Needle is assembled so this
+    /// test cannot become its own haystack.
+    #[test]
+    fn spawn_modules_panel_is_mounted_in_mission_settings() {
+        let code = prod();
+        let body = only_body(&code, "pub fn MissionSettingsDialog(");
+        let needle = ["spawn_modules", "_panel("].concat();
+        assert!(
+            body.contains(&needle),
+            "T-936.6: spawn_modules_panel must be mounted in MissionSettingsDialog"
         );
     }
 }
