@@ -24,6 +24,7 @@
 //! ([`LevelSpec`]s + a rect); [`building_drawing`] is the blueprint adapter.
 
 use crate::building_blueprint::BuildingBlueprint;
+use crate::building_section_index::{SparseHeights, triangles_overlapping_y};
 use crate::bvh::{BvhSidecar, cross, sub};
 
 /// Heightfield cell pitch (m) — the stepped-gradient granularity.
@@ -49,7 +50,7 @@ pub const MAX_PLAN_DIM: usize = 2048;
 pub type Seg2 = [[f64; 2]; 2];
 
 /// Top-down raster of the mesh's highest surface per cell (`None` = no surface), row-major,
-/// row 0 = `min_z`, col 0 = `min_x`.
+/// row 0 = `min_z`, col 0 = `min_x`. Storage is sparse tiled `f32` + NaN (T-938.4).
 #[derive(Clone, Debug, PartialEq)]
 pub struct HeightField {
     pub min_x: f64,
@@ -57,7 +58,7 @@ pub struct HeightField {
     pub cell_m: f64,
     pub cols: usize,
     pub rows: usize,
-    pub h: Vec<Option<f64>>,
+    pub h: SparseHeights,
 }
 
 impl HeightField {
@@ -79,7 +80,7 @@ impl HeightField {
             cell_m: cell,
             cols,
             rows,
-            h: vec![None; cols * rows],
+            h: SparseHeights::new(cols, rows),
         }
     }
 
@@ -136,8 +137,11 @@ impl HeightField {
                     if y > clip_below_y {
                         continue;
                     }
-                    let slot = &mut hf.h[row * hf.cols + col];
-                    *slot = Some(slot.map_or(y, |cur: f64| cur.max(y)));
+                    let next = match hf.h.get(col, row) {
+                        Some(cur) => cur.max(y),
+                        None => y,
+                    };
+                    hf.h.set(col, row, Some(next));
                 }
             }
         }
@@ -150,7 +154,7 @@ impl HeightField {
         if col >= self.cols || row >= self.rows {
             return None;
         }
-        self.h[row * self.cols + col]
+        self.h.get(col, row)
     }
 
     /// Local `[x, z]` centre of cell `(col, row)`.
@@ -188,21 +192,31 @@ impl HeightField {
     /// `[min, max]` over the field's surfaces; `None` when the field is empty.
     #[must_use]
     pub fn range(&self) -> Option<[f64; 2]> {
-        self.h
-            .iter()
-            .flatten()
-            .fold(None, |acc: Option<[f64; 2]>, &y| {
-                Some(acc.map_or([y, y], |r| [r[0].min(y), r[1].max(y)]))
-            })
+        self.h.iter_stored().fold(None, |acc: Option<[f64; 2]>, y| {
+            Some(acc.map_or([y, y], |r| [r[0].min(y), r[1].max(y)]))
+        })
     }
 
     /// Number of cells with a surface at or above `min_y`.
     #[must_use]
     pub fn covered_count(&self, min_y: f64) -> usize {
-        self.h
-            .iter()
-            .filter(|c| c.is_some_and(|y| y >= min_y))
-            .count()
+        self.h.iter_stored().filter(|&y| y >= min_y).count()
+    }
+
+    /// Direct cell write (tests used `hf.h[i] = Some(y)` on the dense Vec).
+    pub fn set(&mut self, col: usize, row: usize, y: Option<f64>) {
+        self.h.set(col, row, y);
+    }
+
+    /// Bytes of allocated height tiles. Empty field: 0 (no plan cells).
+    #[must_use]
+    pub fn allocated_bytes(&self) -> usize {
+        self.h.allocated_bytes()
+    }
+
+    /// Stored (non-NaN) heights, tile order.
+    pub fn iter_stored(&self) -> impl Iterator<Item = f64> + '_ {
+        self.h.iter_stored()
     }
 }
 
@@ -290,7 +304,9 @@ pub fn section_at_owned(
     max_abs_ny: f64,
 ) -> Vec<(Seg2, u32)> {
     let mut out = Vec::new();
-    for (ti, &[ia, ib, ic]) in occl.tris.iter().enumerate() {
+    for ti in triangles_overlapping_y(occl, y, y) {
+        let ti = ti as usize;
+        let &[ia, ib, ic] = &occl.tris[ti];
         let v = [
             occl.verts[ia as usize],
             occl.verts[ib as usize],

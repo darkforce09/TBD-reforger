@@ -100,7 +100,7 @@ fn heightfield_clips_at_the_plane_and_sees_the_stairwell() {
         .value_at(5.0, 5.0)
         .expect("ceiling slab under the upper floor");
     assert!(
-        (top - 3.05).abs() < 1e-9,
+        (top - 3.05).abs() < 1e-5,
         "slab top, not the wall tops above the clip: {top}"
     );
     assert_eq!(up.surface.value_at(1.5, 1.5), None, "the stairwell hole");
@@ -110,13 +110,7 @@ fn heightfield_clips_at_the_plane_and_sees_the_stairwell() {
     assert!(!up.surface.covered(1.5, 1.5, up.floor_min_y()));
     // Nothing above a level's cut plane survives in its field.
     for l in &d.levels {
-        assert!(
-            l.surface
-                .h
-                .iter()
-                .flatten()
-                .all(|&y| y <= l.cut_main_y + 1e-9)
-        );
+        assert!(l.surface.iter_stored().all(|y| y <= l.cut_main_y + 1e-4));
     }
     // The ground floor has no slab: only the wall footprints at y = 0 are surfaces.
     let ground = &d.levels[0];
@@ -141,7 +135,7 @@ fn stairs_read_as_rising_heights() {
         .map(|&x| g.value_at(x, 1.5).expect("tread surface"))
         .collect();
     for (k, h) in heights.iter().enumerate() {
-        assert!((h - (0.2 + 0.2 * k as f64)).abs() < 1e-9, "tread {k}: {h}");
+        assert!((h - (0.2 + 0.2 * k as f64)).abs() < 1e-5, "tread {k}: {h}");
     }
     assert!(heights.windows(2).all(|w| w[1] > w[0]));
     // The cut plane at 1.2 m is above every tread: no riser lines from the stairs.
@@ -160,7 +154,7 @@ fn through_voids_keeps_only_uncovered_pieces() {
     for row in 0..hf.rows {
         for col in 0..hf.cols {
             if hf.cell_center(col, row)[0] < 3.0 {
-                hf.h[row * hf.cols + col] = Some(0.0);
+                hf.set(col, row, Some(0.0));
             }
         }
     }
@@ -194,10 +188,10 @@ fn roof_field_is_the_top_surface() {
     let d = building_drawing(&bp, &sc);
     let top = d.roof.value_at(3.0, 3.0).expect("roof slab over the room");
     assert!(
-        (top - 6.2).abs() < 1e-9,
+        (top - 6.2).abs() < 1e-5,
         "slab top is the highest surface: {top}"
     );
-    assert!((d.roof_y[1] - 6.2).abs() < 1e-9, "roof_y {:?}", d.roof_y);
+    assert!((d.roof_y[1] - 6.2).abs() < 1e-5, "roof_y {:?}", d.roof_y);
     assert_eq!(
         d.roof.value_at(-3.0, -3.0),
         None,
@@ -251,5 +245,5 @@ fn drawing_for_without_a_blueprint() {
     assert!((d.levels[0].cut_main_y - 0.7).abs() < 1e-9, "−0.5 + 1.2");
     assert!(!d.levels[0].cut_main.is_empty());
     assert!(d.levels[0].surface.range().is_some());
-    assert!((d.roof_y[1] - 6.2).abs() < 1e-9);
+    assert!((d.roof_y[1] - 6.2).abs() < 1e-5);
 }
