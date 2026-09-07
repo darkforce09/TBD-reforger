@@ -107,7 +107,11 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! two cannot coexist. With the wave on, T-181.29's `ShouldStandDown()` closes the picker ~500 ms
 	//! after it opens - the roster reports the player already has a body - so the operator sees no
 	//! UI at all and nothing in the log says why. That combination was live for exactly one session.
-	[Attribute("1", desc: "Auto-deploy all connected players on LOBBY (PIE/dev wave). MUTUALLY EXCLUSIVE with the slot picker - TBD_GameMode.et overrides this to 0. Safe next to one life either way: the wave goes through DeployPlayerEx, which refuses a spent life.")]
+	//!
+	//! T-941.2 (2026-09-07) - the wave no longer fires during LOBBY at all. Claimed slot holders
+	//! deploy once on LOBBY->BRIEFING (`m_mDeployedHolders`). This flag, when ON, only seats leftover
+	//! unclaimed players at that same BRIEFING beat (PIE). TBD_GameMode.et still sets it 0.
+	[Attribute("1", desc: "T-941.2: when ON, also seat unclaimed players at BRIEFING (PIE). Claimed holders always deploy on LOBBY to BRIEFING. Never fires during LOBBY. TBD_GameMode.et leaves claimed-holder briefing deploy on regardless.")]
 	protected bool m_bAutoDeploy;
 
 	//! Pause between death and the automatic redeploy. Vanilla's deploy menu used to be
@@ -291,6 +295,10 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! T-541 - CallLater tick counter for loadout settle (see TickLoadoutSettle).
 	protected int m_iLoadoutSettleTicks;
 	protected ref map<int, bool> m_mDeployRequested;
+	//! T-941.2 - claimed-holder deploy, keyed on numeric playerId (ticket lock).
+	//! One row per player who already received the LOBBY->BRIEFING (or post-lobby claim)
+	//! body. Disconnect drops it so a recycled id cannot inherit a deploy.
+	protected ref map<int, bool> m_mDeployedHolders;
 	//! A1 - pull-path retry bookkeeping (transient RETRY results; cap = 20 x 500 ms).
 	protected ref map<int, int> m_mRetryCount;
 	//! A1 - watchdog: players whose requested spawn has been observed to materialize.
@@ -357,6 +365,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		m_mSlotBodies = new map<string, IEntity>();
 		m_mBodyBoundTo = new map<string, string>();
 		m_mDeployRequested = new map<int, bool>();
+		m_mDeployedHolders = new map<int, bool>();
 		m_mRetryCount = new map<int, int>();
 		m_mSpawnSeen = new map<int, bool>();
 		m_mDeadPlayers = new map<string, bool>();
@@ -790,8 +799,30 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			return false;
 		}
 
+		TBD_MissionSlotStruct previous = GetAssignedSlot(playerId);
+		bool sameSeat = previous && previous.Key() == slot.Key();
+		bool hadBody = m_mDeployRequested.Contains(playerId);
+
 		m_mPlayerSlot.Set(playerId, slot);
 		Print(string.Format("[TBD][Spawn] claim player=%1 slot=%2", playerId, slot.Key()));
+
+		// T-941.2 - after LOBBY, a claim is a body: first claim deploys, a different seat
+		// despawns the old holder and redeploys. During LOBBY the player stays bodiless.
+		if (m_eStage != TBD_EGameStage.LOBBY && m_eStage != TBD_EGameStage.LOADING)
+		{
+			if (hadBody && !sameSeat)
+				RedeployHolderToClaimedSlot(playerId);
+			else if (!hadBody)
+			{
+				TBD_EDeployResult r = DeployPlayerEx(playerId);
+				Print(string.Format("[TBD][Spawn] path=post-lobby-claim player=%1 result=%2", playerId, typename.EnumToString(TBD_EDeployResult, r)));
+				if (r == TBD_EDeployResult.DEPLOYED || r == TBD_EDeployResult.ALREADY)
+					MarkHolderDeployed(playerId);
+				if (r == TBD_EDeployResult.RETRY)
+					ScheduleDeployRetry(playerId);
+			}
+		}
+
 		return true;
 	}
 
@@ -1171,8 +1202,8 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		// Roster settle may already have entered LOBBY while we were still dressing; kick the
 		// auto-deploy wave now that materialized is true (ScheduleDeployAllConnectedPlayers
 		// early-returned on the first LOBBY entry when we were still pending).
-		if (m_eStage == TBD_EGameStage.LOBBY)
-			ScheduleDeployAllConnectedPlayers();
+		if (m_eStage == TBD_EGameStage.BRIEFING)
+			ScheduleDeployClaimedHolders();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -2228,14 +2259,25 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			action = "DENIED-jip-" + TBD_MissionFlow.JipPolicyName();
 			deploy = false;
 		}
-		else if (!m_bAutoDeploy)
-		{
-			action = "PICKER-auto-deploy-off";
-			deploy = false;
-		}
 		else if (!IsStageDeployable())
 		{
 			action = "WAIT-stage-not-deployable";
+			deploy = false;
+		}
+		else if (m_eStage == TBD_EGameStage.LOBBY)
+		{
+			// T-941.2 - stay bodiless through LOBBY; the picker is the way onto a seat.
+			action = "PICKER-lobby";
+			deploy = false;
+		}
+		else if (!GetAssignedSlot(playerId))
+		{
+			action = "PICKER-no-slot";
+			deploy = false;
+		}
+		else if (m_mDeployedHolders.Contains(playerId))
+		{
+			action = "ALREADY-holder-deployed";
 			deploy = false;
 		}
 
@@ -2319,12 +2361,14 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (!IsSameConnection(playerId, epoch))
 			return;
 
-		if (m_mDeployRequested.Contains(playerId))
+		if (m_mDeployRequested.Contains(playerId) || m_mDeployedHolders.Contains(playerId))
 			return;
 
 		TBD_EDeployResult r = DeployPlayerEx(playerId);
 		Print(string.Format("[TBD][Spawn] path=jip player=%1 result=%2", playerId, typename.EnumToString(TBD_EDeployResult, r)));
 
+		if (r == TBD_EDeployResult.DEPLOYED || r == TBD_EDeployResult.ALREADY)
+			MarkHolderDeployed(playerId);
 		if (r == TBD_EDeployResult.RETRY)
 			ScheduleDeployRetry(playerId);
 	}
@@ -2334,24 +2378,99 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! calls this on every transition, so tracking it here needs no hook into that file.
 	void OnStageChanged(TBD_EGameStage stage)
 	{
+		TBD_EGameStage previous = m_eStage;
 		m_eStage = stage;
 
-		if (stage != TBD_EGameStage.LOBBY)
-			return;
-
-		// T-181.48 - say which route into the world is live, because the failure mode when this is
-		// wrong is INVISIBLE: with the wave ON, the picker raises and is then closed ~500 ms later
-		// by ShouldStandDown() as soon as the roster reports the player already has a body, so the
-		// operator sees no UI and no error. One line here turns that into something a log answers.
-		if (m_bAutoDeploy)
+		if (stage == TBD_EGameStage.LOBBY)
 		{
-			PrintFormat("[TBD][Spawn] LOBBY: auto-deploy wave ON - seating everyone in 250 ms. The slot picker will open and then close itself; set m_bAutoDeploy 0 on TBD_GameMode.et to use the picker.",
-				level: LogLevel.WARNING);
-			ScheduleDeployAllConnectedPlayers();
+			// T-941.2 - bodies wait for BRIEFING. The picker is the way in; the 250 ms
+			// LOBBY wave is gone. m_bAutoDeploy now only seats leftover unclaimed players
+			// when BRIEFING starts (PIE convenience), never during LOBBY.
+			PrintFormat("[TBD][Spawn] LOBBY: no bodies this phase - claimed holders deploy on BRIEFING (T-941.2). m_bAutoDeploy=%1 seats unclaimed players at briefing only.",
+				m_bAutoDeploy);
 			return;
 		}
 
-		PrintFormat("[TBD][Spawn] LOBBY: auto-deploy wave OFF - the slot picker is the way in (admin override: '#tbd deploy <playerId>').");
+		if (previous == TBD_EGameStage.LOBBY && stage == TBD_EGameStage.BRIEFING)
+		{
+			PrintFormat("[TBD][Spawn] BRIEFING: deploying each claimed slot holder once (T-941.2).");
+			ScheduleDeployClaimedHolders();
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+		//! T-941.2 - seat every player who already holds a slot, once, tracked per playerId.
+	//! Early-returns until slot bodies are materialized; TickLoadoutSettle re-kicks on BRIEFING.
+	//! @authority server
+	protected void ScheduleDeployClaimedHolders()
+	{
+		if (RplSession.Mode() == RplMode.Client)
+			return;
+
+		if (!m_bSlotBodiesMaterialized)
+			return;
+
+		GetGame().GetCallqueue().CallLater(DeployClaimedHolders, 250, false);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! @authority server
+	protected void DeployClaimedHolders()
+	{
+		if (RplSession.Mode() == RplMode.Client)
+			return;
+
+		foreach (int playerId, TBD_MissionSlotStruct slot : m_mPlayerSlot)
+		{
+			if (!slot)
+				continue;
+			if (m_mDeployedHolders.Contains(playerId))
+				continue;
+			if (m_bOneLife && IsPlayerDead(playerId))
+			{
+				Print(string.Format("[TBD][Spawn] path=briefing-holder player=%1 skipped - one life spent", playerId));
+				continue;
+			}
+
+			TBD_EDeployResult r = DeployPlayerEx(playerId);
+			Print(string.Format("[TBD][Spawn] path=briefing-holder player=%1 result=%2", playerId, typename.EnumToString(TBD_EDeployResult, r)));
+			if (r == TBD_EDeployResult.DEPLOYED || r == TBD_EDeployResult.ALREADY)
+				MarkHolderDeployed(playerId);
+			if (r == TBD_EDeployResult.RETRY)
+				ScheduleDeployRetry(playerId);
+		}
+
+		if (m_bAutoDeploy)
+			DeployAllConnectedPlayers();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void MarkHolderDeployed(int playerId)
+	{
+		m_mDeployedHolders.Set(playerId, true);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-941.2 - leave the current body and deploy onto the newly claimed slot.
+	//! Clears the once-set so DeployPlayerEx is not ALREADY, then re-marks on success.
+	//! @authority server
+	protected void RedeployHolderToClaimedSlot(int playerId)
+	{
+		SCR_PlayerController pc = SCR_PlayerController.Cast(
+			GetGame().GetPlayerManager().GetPlayerController(playerId));
+		if (pc && pc.IsPossessing())
+			pc.SetPossessedEntity(null);
+
+		m_mDeployRequested.Remove(playerId);
+		m_mDeployedHolders.Remove(playerId);
+		RevokeSpawnAuthorization(playerId);
+
+		TBD_EDeployResult r = DeployPlayerEx(playerId);
+		Print(string.Format("[TBD][Spawn] path=slot-change player=%1 result=%2", playerId, typename.EnumToString(TBD_EDeployResult, r)));
+		if (r == TBD_EDeployResult.DEPLOYED || r == TBD_EDeployResult.ALREADY)
+			MarkHolderDeployed(playerId);
+		if (r == TBD_EDeployResult.RETRY)
+			ScheduleDeployRetry(playerId);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -2382,6 +2501,9 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			// to be a mass resurrection. DeployPlayerEx would refuse each of them anyway; the
 			// skip is here so a wave over a mostly-dead server does not bury the log in
 			// refusals, and so the intent is legible at the call site.
+			if (m_mDeployedHolders.Contains(players[i]))
+				continue;
+
 			if (m_bOneLife && IsPlayerDead(players[i]))
 			{
 				Print(string.Format("[TBD][Spawn] path=push player=%1 skipped - one life spent", players[i]));
@@ -2390,6 +2512,8 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 			TBD_EDeployResult r = DeployPlayerEx(players[i]);
 			Print(string.Format("[TBD][Spawn] path=push player=%1 result=%2", players[i], typename.EnumToString(TBD_EDeployResult, r)));
+			if (r == TBD_EDeployResult.DEPLOYED || r == TBD_EDeployResult.ALREADY)
+				MarkHolderDeployed(players[i]);
 			if (r == TBD_EDeployResult.RETRY)
 				ScheduleDeployRetry(players[i]);
 		}
@@ -2476,6 +2600,14 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		// T-541 - a blocking loadout failure at materialize refused the spawn boundary.
 		// DENIED (not RETRY): spinning would hide the refuse behind a retry ladder.
+		// T-941.2 - nothing spawns during LOBBY. FAILED (not RETRY) so a picker click cannot
+		// start a retry ladder, and not DENIED so the lobby service does not say the life is spent.
+		if (m_eStage == TBD_EGameStage.LOBBY && !adminOverride)
+		{
+			Print(string.Format("[TBD][Spawn] deploy FAILED player=%1 - T-941.2 bodies wait for BRIEFING", playerId), LogLevel.WARNING);
+			return TBD_EDeployResult.FAILED;
+		}
+
 		if (m_bLoadoutDeliveryRefused)
 		{
 			Print(string.Format("[TBD][Spawn] deploy DENIED player=%1 - one or more slot bodies are UNPLAYABLE (blocking loadout failure at the spawn boundary)",
@@ -2951,6 +3083,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			return;
 
 		m_mDeployRequested.Remove(playerId);
+		m_mDeployedHolders.Remove(playerId);
 		m_mRetryCount.Remove(playerId);
 		m_mSpawnSeen.Remove(playerId);
 		// T-181.21 - close any spawn ticket this player still holds. A request authorized a
@@ -3117,6 +3250,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		// Re-arm the deploy bookkeeping, but NOT the life. The life is the last thing to move.
 		m_mDeployRequested.Remove(playerId);
+		m_mDeployedHolders.Remove(playerId);
 		m_mRetryCount.Remove(playerId);
 		m_mSpawnSeen.Remove(playerId);
 
@@ -3258,6 +3392,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		ForgetBodyVanillaIsAboutToTake(playerId, slot);
 
 		m_mDeployRequested.Remove(playerId);
+		m_mDeployedHolders.Remove(playerId);
 		m_mRetryCount.Remove(playerId);
 		m_mSpawnSeen.Remove(playerId);
 		m_mAdminRespawnPending.Remove(playerId);
@@ -3469,6 +3604,8 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		}
 
 		m_mRetryCount.Remove(playerId);
+		if (r == TBD_EDeployResult.DEPLOYED || r == TBD_EDeployResult.ALREADY)
+			MarkHolderDeployed(playerId);
 		if (adminRespawn)
 			FinishAdminRespawn(playerId, r, "retry");
 	}
@@ -3490,6 +3627,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		Print(string.Format("[TBD][Spawn] watchdog player=%1 - spawn request never materialized, re-arming", playerId), LogLevel.WARNING);
 		m_mDeployRequested.Remove(playerId);
+		m_mDeployedHolders.Remove(playerId);
 	}
 
 	//------------------------------------------------------------------------------------------------
