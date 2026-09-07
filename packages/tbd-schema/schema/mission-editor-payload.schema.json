@@ -97,7 +97,7 @@
       "required": ["id"],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
+        "id": { "type": "string" },
         "squadId": { "type": "string" },
         "index": { "type": "integer" },
         "role": { "type": "string" },
@@ -129,7 +129,7 @@
       "required": ["id"],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
+        "id": { "type": "string" },
         "name": { "type": "string" },
         "parentId": { "type": ["string", "null"] },
         "entityIds": {
