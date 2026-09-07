@@ -128,6 +128,33 @@ pub fn shader_reduce_barrier_before_atomic() -> bool {
     bar < add
 }
 
+/// `true` when every culled lane binds its **own** `cull_params` uniform.
+///
+/// `encode_cull` encodes all lanes into ONE `CommandEncoder` and the frame is one submit.
+/// `Queue::write_buffer` is staged: every write in a submit is applied before any command
+/// buffer in it runs. So a `cull_params` buffer owned by `IconComputeCull` and rewritten
+/// per lane hands EVERY lane the `src_count` of whichever lane was encoded last — and the
+/// lane order is `HashMap::keys()`, so which one wins is nondeterministic per run.
+///
+/// With one lane that was invisible. T-938.3 made nine lanes normal (`upload_icon_lane` for
+/// trees/props/badges, `upload_slot_role_lane` for slots/drag/clusters/vehicles/comments/
+/// preview), so on a loaded mission the short lane's count silently truncates the long lane —
+/// 368 of 380 slot icons vanish — or the long count over-runs the short lane's buffers.
+///
+/// `icon_cull_gpu` is `cfg(target_arch = "wasm32")`, so this is the native harness for it:
+/// the ownership is read off the source. Reverting either site to `self.params_buf` is the
+/// perturbation and turns [`per_lane_cull_params_not_shared`] red.
+#[must_use]
+pub fn cull_params_is_per_lane() -> bool {
+    let src = include_str!("icon_cull_gpu.rs");
+    let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+    // The uniform is written from, and bound out of, the lane slot — never the shared struct.
+    prod.contains("queue.write_buffer(&slot.params_buf, 0, &params);")
+        && prod.contains("resource: slot.params_buf.as_entire_binding(),")
+        // ...and no shared copy survives on IconComputeCull to be bound by accident.
+        && !prod.contains("self.params_buf")
+}
+
 /// GPU visible count as the workgroup-local reduce in `cs_icon_cull` would produce.
 ///
 /// With the reduce-barrier present this equals [`count_icons_in_frustum`]. Without it,
@@ -325,5 +352,15 @@ mod tests {
         let (src, frustum) = fixture_src_frustum();
         let n = cpu_count_for_encode(&src, frustum, true);
         assert_eq!(n, Some(3));
+    }
+
+    /// T-938.3 BLOCKER (wave 253): one shared `cull_params` uniform across nine lanes.
+    #[test]
+    fn per_lane_cull_params_not_shared() {
+        assert!(
+            cull_params_is_per_lane(),
+            "every cull lane must own its cull_params uniform: one shared buffer plus one \
+             staged write per lane makes all lanes read the last lane's src_count"
+        );
     }
 }

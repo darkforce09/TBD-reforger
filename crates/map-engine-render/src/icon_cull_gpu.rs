@@ -28,6 +28,11 @@ struct LaneGpu {
     dst_capacity: u32,
     counter_buf: wgpu::Buffer,
     indirect_buf: wgpu::Buffer,
+    /// PER LANE, never shared. `queue.write_buffer` is staged and applied at the start of the
+    /// next submit, before any pass in it runs, and `encode_cull` encodes every lane into ONE
+    /// encoder. A single shared uniform therefore hands all lanes whichever `src_count` was
+    /// written last — with one lane that was invisible, with nine it drops or over-draws icons.
+    params_buf: wgpu::Buffer,
     readback_buf: wgpu::Buffer,
     last_cpu_count: u32,
     last_gpu_count: Rc<Cell<u32>>,
@@ -60,6 +65,12 @@ impl LaneGpu {
             usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
+        let params_buf = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("cull-params"),
+            size: 32,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
         Self {
             src_buf: None,
             src_capacity: 0,
@@ -68,6 +79,7 @@ impl LaneGpu {
             dst_capacity: 0,
             counter_buf,
             indirect_buf,
+            params_buf,
             readback_buf,
             last_cpu_count: 0,
             last_gpu_count: Rc::new(Cell::new(0)),
@@ -81,7 +93,6 @@ impl LaneGpu {
 pub struct IconComputeCull {
     pub pipeline: wgpu::ComputePipeline,
     pub bind_layout: wgpu::BindGroupLayout,
-    pub params_buf: wgpu::Buffer,
     lanes: HashMap<u32, LaneGpu>,
     debug_hud: bool,
 }
@@ -146,16 +157,9 @@ impl IconComputeCull {
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             cache: None,
         });
-        let params_buf = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("cull-params"),
-            size: 32,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
         Self {
             pipeline,
             bind_layout,
-            params_buf,
             lanes: HashMap::new(),
             debug_hud: false,
         }
@@ -325,7 +329,7 @@ impl IconComputeCull {
             params[i * 4..(i + 1) * 4].copy_from_slice(&v.to_le_bytes());
         }
         params[16..20].copy_from_slice(&slot.src_count.to_le_bytes());
-        queue.write_buffer(&self.params_buf, 0, &params);
+        queue.write_buffer(&slot.params_buf, 0, &params);
 
         let bg = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("icon-cull"),
@@ -345,7 +349,7 @@ impl IconComputeCull {
                 },
                 wgpu::BindGroupEntry {
                     binding: 3,
-                    resource: self.params_buf.as_entire_binding(),
+                    resource: slot.params_buf.as_entire_binding(),
                 },
             ],
         });
