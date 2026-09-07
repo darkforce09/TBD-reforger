@@ -516,6 +516,10 @@ class TBD_BriefingService
 	//------------------------------------------------------------------------------------------------
 	//! The reader's own loadout, if the mission defined one. Only non-empty gear is listed -
 	//! progressive disclosure means a slot with three items shows three lines, not ten blanks.
+	//!
+	//! Row order: Primary, Launcher, Handgun, Throwable, Optic, Magazine, Uniform, Vest,
+	//! Helmet, Backpack, then Cargo. Pants, boots, and handwear stay hidden (deliberate
+	//! progressive disclosure). Empty fields skip the row via AddKitLine.
 	protected static void BuildKit(TBD_BriefingPayload payload, TBD_MissionSlotStruct own)
 	{
 		if (!own.loadout)
@@ -525,6 +529,9 @@ class TBD_BriefingService
 		if (gear)
 		{
 			AddKitLine(payload, "Primary", gear.primary);
+			AddKitLine(payload, "Launcher", gear.launcher);
+			AddKitLine(payload, "Handgun", gear.handgun);
+			AddKitLine(payload, "Throwable", gear.throwable);
 			AddKitLine(payload, "Optic", gear.optic);
 			AddKitLine(payload, "Magazine", gear.magazine);
 			AddKitLine(payload, "Uniform", gear.uniform);
