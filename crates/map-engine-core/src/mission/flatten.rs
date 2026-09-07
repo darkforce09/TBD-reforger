@@ -1417,6 +1417,16 @@ struct EditorPayload {
     /// in place of [`derive_radio_plan`].
     #[serde(rename = "radioPlan")]
     radio_plan: Option<serde_json::Value>,
+    /// T-936.4 / T-936.6 — named so [`Self::authored_blocks_root`] can copy every
+    /// `AUTHORED_BLOCKS` key without a `#[serde(flatten)]` map (see winConditions note).
+    #[serde(rename = "weatherTimeline")]
+    weather_timeline: Option<serde_json::Value>,
+    /// T-936.5 / T-936.6 — same generic-copy field as `weatherTimeline`.
+    audio: Option<serde_json::Value>,
+    /// T-936.6 — wave + garrison modules. Without this field serde drops the key and
+    /// `/compiled` never emits `spawnModules`.
+    #[serde(rename = "spawnModules")]
+    spawn_modules: Option<serde_json::Value>,
 }
 
 impl EditorPayload {
@@ -1426,16 +1436,24 @@ impl EditorPayload {
     /// carries the authored blocks and NOTHING else — an extensions reader cannot accidentally see
     /// `editor` or `payloadExtras`, and the cost is one small object rather than a second parse of
     /// a document that can be 8 MB.
+    fn authored_block_value(&self, key: &str) -> Option<&serde_json::Value> {
+        match key {
+            "winConditions" => self.win_conditions.as_ref(),
+            "tasks" => self.tasks.as_ref(),
+            "radioPlan" => self.radio_plan.as_ref(),
+            "weatherTimeline" => self.weather_timeline.as_ref(),
+            "audio" => self.audio.as_ref(),
+            "spawnModules" => self.spawn_modules.as_ref(),
+            _ => None,
+        }
+    }
+
     fn authored_blocks_root(&self) -> serde_json::Value {
         let mut root = serde_json::Map::new();
-        if let Some(v) = &self.win_conditions {
-            root.insert("winConditions".to_string(), v.clone());
-        }
-        if let Some(v) = &self.tasks {
-            root.insert("tasks".to_string(), v.clone());
-        }
-        if let Some(v) = &self.radio_plan {
-            root.insert("radioPlan".to_string(), v.clone());
+        for block in crate::mission::extensions::AUTHORED_BLOCKS {
+            if let Some(v) = self.authored_block_value(block.key) {
+                root.insert(block.key.to_string(), v.clone());
+            }
         }
         serde_json::Value::Object(root)
     }
@@ -6196,6 +6214,43 @@ mod tests {
         );
         assert_eq!(wire["tasks"][0]["tier"], "primary");
         assert_eq!(wire["tasks"].as_array().map(Vec::len), Some(1));
+    }
+
+    /// T-936.6 — a wave + garrison payload flattens to a `spawnModules` block.
+    #[test]
+    fn authored_spawn_modules_survive_flatten_to_mod_document() {
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["spawnModules"] = serde_json::json!([
+            {
+                "id": "sm-wave",
+                "kind": "wave",
+                "factionKey": "opfor",
+                "groupTemplate": "{000CD338713F2B5A}Prefabs/AI/Groups/Group_Base.et",
+                "x": 1200.0,
+                "z": 3400.0,
+                "count": 2,
+                "intervalSeconds": 45.0,
+                "maxAlive": 4
+            },
+            {
+                "id": "sm-gar",
+                "kind": "garrison",
+                "factionKey": "blufor",
+                "groupTemplate": "{000CD338713F2B5A}Prefabs/AI/Groups/Group_Base.et",
+                "zoneId": "z_spawn_blufor",
+                "count": 1
+            }
+        ]);
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        let wire = serde_json::to_value(&doc).expect("wire");
+        assert_eq!(
+            wire["spawnModules"][0]["kind"], "wave",
+            "spawnModules must survive flatten_to_mod_document: {wire:#}"
+        );
+        assert_eq!(wire["spawnModules"][1]["kind"], "garrison");
+        assert_eq!(wire["spawnModules"].as_array().map(Vec::len), Some(2));
+        assert_eq!(wire["spawnModules"][0]["factionKey"], "opfor");
+        assert_eq!(wire["spawnModules"][1]["zoneId"], "z_spawn_blufor");
     }
 
     // ── T-200 kit substitutions ──────────────────────────────────────────────────────────

@@ -43,4 +43,7 @@ pub mod weather_timeline;
 // in Mission Settings; that one line lives in settings_modal.rs (outside this slice's owns),
 // same as T-936.1/.2/.3/.4.
 pub mod audio_emitters;
+// T-936.6 — wave / garrison spawn modules. Mounts in Mission Settings (this slice owns
+// settings_modal.rs) so the panel is not a registered-but-unmounted dead mechanism.
+pub mod spawn_modules;
 pub mod zones_panel;
