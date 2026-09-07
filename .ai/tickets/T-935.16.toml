@@ -1,0 +1,60 @@
+id = "T-935.16"
+kind = "work"
+title = "Finish the gz-JSON cutover T-935.13 left half done"
+summary = "build.rs still writes chunks/{key}.json.gz and prefabs.json.gz, the SPA still fetches roads.json.gz and forest-regions.json.gz, and flate2 is still a world feature dep. T-935.13's title claims this was deleted."
+class = "bug"
+status = "ready"
+parent = "T-935"
+created_at = "2026-09-07T19:37:56Z"
+order = 7536
+priority = 2
+spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
+plan = "docs/plans/t-935_16_plan.md"
+executor = "claude-code"
+main_goal = "No gz-JSON is emitted or fetched for world data, and flate2 leaves the world feature."
+context = [
+    "T-935.13 is titled 'Cutover: everon rebuilt binary, gz-JSON emit deleted'. Its own requirements say the opposite: 'Do not delete gz-JSON emitters still read' and 'Keep gz-JSON that emitters still consume'.",
+    "Correct at the time — the emitters genuinely still read them — but nothing was filed to make the readers stop, so the title has misdescribed reality since wave 244.",
+    "Still emitted 2026-09-07: build.rs:483 prefabs.json.gz, :511 chunks/{key}.json.gz, :520 the manifest rows pointing at them, :525 chunks/manifest.json.",
+    "Still fetched at runtime: world_host.rs:205 objects/roads.json.gz and :209 objects/forest-regions.json.gz.",
+    "map-engine-core/Cargo.toml:32 keeps dep:flate2 in the world feature, while :49 states the neighbouring feature has none because 'binary formats are the thing that replaces gzip-JSON'.",
+    "Roads and forest regions already HAVE rkyv emitters — T-935.6 roads, T-935.11 forest regions — so the binary side of both is shipped and only the reader is stale.",
+]
+current_state = [
+    "The binary and gz-JSON worlds are both emitted and both read, so every world build pays twice and the SPA's roads and forest lanes still parse gzip JSON at boot.",
+]
+requirement = [
+    "world_host.rs reads roads and forest regions from their shipped rkyv archives (T-935.6, T-935.11); the two .json.gz fetches are deleted.",
+    "build.rs stops writing chunks/{key}.json.gz, chunks/manifest.json and prefabs.json.gz once no consumer reads them, and the manifest stops declaring them.",
+    "dep:flate2 leaves the world feature, or the ticket states exactly which surviving consumer still needs gzip and why.",
+    "T-935.13's title and summary are corrected in the same commit — a shipped ticket that misdescribes what shipped is how this stayed invisible for ten waves.",
+    "The catalog and world-los gates do not go silently vacuous when the files disappear: check schema_gates.rs and map_world_los.rs read the binary path, not an `if exists` branch.",
+]
+approach = [
+    "Verify on main: build everon and list what lands under objects/; grep world_host.rs for the two gz fetches. Paste both.",
+    "Repoint the roads and forest readers at the rkyv archives; prove the loaded set is byte-identical to the gz path before deleting the emitters.",
+    "Delete the emitters, the manifest rows and flate2; re-run the gates that read these files and confirm they went red for the right reason, not vacuous.",
+    "Perturbation: restore one gz fetch; the no-gz assertion must go red; restore, touch, green.",
+    "Coordinate with T-935.15 — both own build.rs and world_host.rs, so they cannot share a wave.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p website-frontend",
+    "cargo xtask schema validate",
+    "cargo xtask platform wave gate --slice T-935.16",
+]
+acceptance = [
+    "A world build emits no gz-JSON and the SPA fetches none; everon renders roads and forest identically to the gz path.",
+    "flate2 is gone from the world feature, or its one remaining consumer is named in code.",
+    "T-935.13 no longer claims to have deleted something it deliberately kept.",
+]
+owns = [
+    "tools/tbd-tools/src/world/build.rs",
+    "apps/website/frontend/src/editor/world_assets/world_host.rs",
+    "crates/map-engine-core/Cargo.toml",
+    "packages/map-assets/everon/manifest.json",
+]
+
+[scope]
+domain = "engine"
+layer = "core"

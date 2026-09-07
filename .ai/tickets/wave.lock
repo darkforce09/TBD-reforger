@@ -10,63 +10,63 @@ tickets = ["T-001", "T-002", "T-003", "T-004", "T-005", "T-006", "T-008", "T-009
 
 [[waves]]
 n = 256
-tickets = ["T-935.15", "T-242", "T-937.5", "T-257", "T-939.1"]
+tickets = ["T-935.15", "T-946.55", "T-242", "T-937.5", "T-257"]
 
 [[waves]]
 n = 257
-tickets = ["T-212", "T-932", "T-939.2", "T-939.3", "T-939.4"]
+tickets = ["T-212", "T-935.16", "T-932", "T-939.1", "T-939.2"]
 
 [[waves]]
 n = 258
-tickets = ["T-939.5", "T-939.6", "T-939.7", "T-939.8", "T-142"]
+tickets = ["T-939.3", "T-939.4", "T-939.5", "T-939.7", "T-129"]
 
 [[waves]]
 n = 259
-tickets = ["T-704", "T-158", "T-129", "T-141", "T-090.4"]
+tickets = ["T-939.6", "T-939.8", "T-142", "T-131", "T-141"]
 
 [[waves]]
 n = 260
-tickets = ["T-131", "T-090.6", "T-090.7", "T-146", "T-143"]
+tickets = ["T-704", "T-158", "T-090.4", "T-090.7", "T-146"]
 
 [[waves]]
 n = 261
-tickets = ["T-090.9", "T-940.1", "T-940.7", "T-940.10", "T-940.13"]
+tickets = ["T-090.6", "T-090.9", "T-143", "T-940.1", "T-940.7"]
 
 [[waves]]
 n = 262
-tickets = ["T-090.10.2", "T-940.2", "T-940.11", "T-135", "T-140"]
+tickets = ["T-090.10.2", "T-940.2", "T-940.10", "T-940.11", "T-940.13"]
 
 [[waves]]
 n = 263
-tickets = ["T-157", "T-940.3", "T-940.8", "T-136", "T-138"]
+tickets = ["T-940.3", "T-940.8", "T-135", "T-140", "T-136"]
 
 [[waves]]
 n = 264
-tickets = ["T-940.9", "T-940.12", "T-295", "T-294", "T-067.1"]
+tickets = ["T-157", "T-940.9", "T-940.12", "T-295", "T-138"]
 
 [[waves]]
 n = 265
-tickets = ["T-309", "T-132", "T-906", "T-933", "T-816"]
+tickets = ["T-309", "T-132", "T-294", "T-067.1", "T-906"]
 
 [[waves]]
 n = 266
-tickets = ["T-905", "T-823", "T-828", "T-850", "T-944"]
+tickets = ["T-905", "T-933", "T-823", "T-828", "T-850"]
 
 [[waves]]
 n = 267
-tickets = ["T-907", "T-817", "T-820", "T-821", "T-827"]
+tickets = ["T-907", "T-816", "T-817", "T-820", "T-821"]
 
 [[waves]]
 n = 268
-tickets = ["T-908", "T-822", "T-830", "T-831", "T-841"]
+tickets = ["T-908", "T-822", "T-827", "T-830", "T-831"]
 
 [[waves]]
 n = 269
-tickets = ["T-824", "T-848", "T-926", "T-945"]
+tickets = ["T-824", "T-841", "T-848", "T-944", "T-945"]
 
 [[waves]]
 n = 270
-tickets = ["T-833", "T-845", "T-849"]
+tickets = ["T-833", "T-845", "T-849", "T-926"]
 
 [[waves]]
 n = 271
@@ -907,6 +907,7 @@ T-933 = ["xtask/src/mk_build.rs", "docs/platform/EDITOR_FACTORY_FOR_CURSOR.md", 
 "T-935.13" = ["apps/website/frontend/src/editor/world_assets/mod.rs", "apps/website/frontend/src/editor/world_assets/world_host.rs", "apps/website/frontend/src/editor/world_assets/occluder_host.rs", "apps/website/frontend/src/editor/world_assets/labels.rs", "apps/website/frontend/src/editor/world_assets/water.rs", "apps/website/frontend/src/editor/world_assets/satellite.rs", "apps/website/frontend/src/editor/world_assets/dem_load.rs", "apps/website/frontend/src/editor/world_assets/tbd_sat.rs", "crates/map-engine-core/Cargo.toml", "crates/map-engine-core/src/world/store.rs", "packages/map-assets/everon/manifest.json", "packages/map-assets/everon/objects/chunks/manifest.json", "packages/tbd-schema/schema/terrain-manifest.schema.json", "tools/tbd-tools/src/world/build.rs", "tools/tbd-tools/src/world/reclassify.rs", "tools/tbd-tools/src/world/gates.rs", "xtask/src/map_world_los.rs", "xtask/src/verify_blas_manifest.rs", "xtask/src/label_gates.rs", "xtask/src/schema_gates.rs", "xtask/src/map_blueprint/library.rs", "xtask/src/map_blueprint/library_cli.rs", "xtask/src/map_blueprint/world_row.rs"]
 "T-935.14" = ["crates/map-engine-core/src/world/prefab_load.rs", "crates/map-engine-core/src/world/residency.rs", "crates/map-engine-core/src/world/mod.rs", "apps/website/frontend/src/editor/world_assets/world_host.rs"]
 "T-935.15" = ["crates/map-engine-core/src/world/residency.rs", "crates/map-engine-core/src/world/chunk_bin.rs", "crates/map-engine-core/src/world/chunk_math.rs", "crates/map-engine-core/src/world/index.rs", "crates/map-engine-core/src/world/manifest.rs", "tools/tbd-tools/src/world/build.rs", "tools/tbd-tools/src/world/binary_emit.rs", "apps/website/frontend/src/editor/world_assets/world_host.rs"]
+"T-935.16" = ["tools/tbd-tools/src/world/build.rs", "apps/website/frontend/src/editor/world_assets/world_host.rs", "crates/map-engine-core/Cargo.toml", "packages/map-assets/everon/manifest.json"]
 "T-935.2" = ["tools/tbd-tools/src/world/binary_emit.rs", "tools/tbd-tools/src/world/build.rs", "tools/tbd-tools/src/world/mod.rs", "tools/tbd-tools/Cargo.toml"]
 "T-935.3" = ["crates/map-engine-core/src/world/residency.rs", "crates/map-engine-core/src/world/chunk_bin.rs", "crates/map-engine-core/src/world/mod.rs", "apps/website/frontend/src/editor/world_assets/world_host.rs"]
 "T-935.4" = ["tools/tbd-tools/src/world/aux.rs", "crates/map-engine-core/src/dem/raw.rs", "crates/map-engine-core/src/dem/mod.rs", "apps/website/frontend/src/editor/world_assets/dem_load.rs", "apps/website/frontend/src/editor/world_assets/mod.rs"]
@@ -988,6 +989,7 @@ T-945 = ["xtask/src/tickets_store.rs", "xtask/src/schema_gates.rs", ".ai/tickets
 "T-946.48" = ["apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c", "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c", "apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c", "apps/mod/tbd-export/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c"]
 "T-946.49" = ["apps/website/frontend/src/editor/panels/settings_modal.rs"]
 "T-946.50" = ["apps/mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorHost.c", "apps/mod/tbd-export/Scripts/Game/TBD/Spectator/TBD_SpectatorHost.c"]
+"T-946.55" = ["apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c", "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c"]
 "T-946.64" = ["xtask/src/wave/changed.rs", "xtask/src/wave/gate.rs"]
 "T-946.81" = ["apps/website/frontend/src/core/auth.rs", "apps/website/frontend/src/core/client.rs"]
 
