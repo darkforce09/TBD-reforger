@@ -17,6 +17,10 @@ use yrs::{
     Update,
 };
 
+use super::id_arrays::{
+    ENTITY_IDS, SLOT_IDS, append_id, insert_empty_native, migrate_legacy_id_lists, read_field_ids,
+    read_id_array, replace_native, retain_ids, retain_in,
+};
 use super::soa::{Interner, NONE_IDX, STANCE_CROUCH, STANCE_PRONE, STANCE_STAND, SlotSoa};
 use crate::squad_links::SquadLinkInput;
 
@@ -517,6 +521,18 @@ impl MissionDocCore {
             .encode_state_as_update_v1(&StateVector::default())
     }
 
+    /// T-937.1 — whether `root[key].field` is a native `YArray` (hydrate migration probe).
+    #[cfg(test)]
+    pub(crate) fn id_list_is_native(&self, root: &str, key: &str, field: &str) -> bool {
+        let map = match root {
+            "squads" => &self.squads,
+            "editorLayers" => &self.editor_layers,
+            _ => return false,
+        };
+        let txn = self.doc.transact();
+        super::id_arrays::is_native_array(&txn, map, key, field)
+    }
+
     /// Serialize the 8 small root maps + `meta` to one JSON object shaped like the store's
     /// `MapSnapshot` minus `slotsById` (slots ride the fast SoA getters). The 367k-slot hot path never
     /// runs this — these maps hold hundreds of entities. `meta` is `null` when empty (matching
@@ -746,15 +762,11 @@ impl MissionDocCore {
         let mut slot_layer: HashMap<String, String> = HashMap::new();
         let mut hidden_layers: HashMap<String, bool> = HashMap::new();
         for (layer_id, out) in self.editor_layers.iter(&txn) {
-            if let Out::YMap(layer) = out
-                && let Some(Out::Any(Any::Array(arr))) = layer.get(&txn, "entityIds")
-            {
-                for a in arr.iter() {
-                    if let Any::String(sid) = a {
-                        slot_layer
-                            .entry(sid.to_string())
-                            .or_insert_with(|| layer_id.to_string());
-                    }
+            if let Out::YMap(layer) = out {
+                for sid in read_field_ids(&txn, &layer, ENTITY_IDS) {
+                    slot_layer
+                        .entry(sid)
+                        .or_insert_with(|| layer_id.to_string());
                 }
                 hidden_layers
                     .entry(layer_id.to_string())
@@ -927,7 +939,7 @@ impl MissionDocCore {
             sq.insert(&mut txn, "callsign", c);
         }
         sq.insert(&mut txn, "name", name);
-        sq.insert(&mut txn, "slotIds", Any::Array(Vec::new().into()));
+        insert_empty_native(&mut txn, &sq, SLOT_IDS);
         sq.insert(&mut txn, "vehicleIds", Any::Array(Vec::new().into()));
         append_id(&mut txn, &self.factions, faction_id, "squadIds", id);
     }
@@ -1009,7 +1021,7 @@ impl MissionDocCore {
             .cloned()
             .collect();
         if let Some(Out::YMap(src_sq)) = self.squads.get(&txn, source_squad_id.as_str()) {
-            src_sq.insert(&mut txn, "slotIds", Any::Array(kept.clone().into()));
+            retain_in(&mut txn, &src_sq, SLOT_IDS, &HashSet::from([slot_id]));
         }
 
         append_id(&mut txn, &self.squads, dest_squad_id, "slotIds", slot_id);
@@ -2461,8 +2473,7 @@ impl MissionDocCore {
             f.insert(&mut txn, "squadIds", Any::Array(Vec::new().into()));
         }
         // Slots filed into `layer_id`'s `entityIds`, accumulated once (the T-059 O(k) shape).
-        let mut layer_entities: Vec<Any> =
-            read_id_array(&txn, &self.editor_layers, layer_id, "entityIds");
+        // T-937.1 — membership is a native YArray; each filed id is appended, not clone-rewritten.
 
         let g_str = |m: &HashMap<String, Any>, k: &str| match m.get(k) {
             Some(Any::String(s)) => s.to_string(),
@@ -2526,7 +2537,7 @@ impl MissionDocCore {
                         slot.insert(&mut txn, "loadout", l.clone());
                     }
                     slot.insert(&mut txn, "position", position_any(wx, wy, elev, rot));
-                    layer_entities.push(Any::String(id.as_str().into()));
+                    append_id(&mut txn, &self.editor_layers, layer_id, ENTITY_IDS, id);
                     written.push(id.clone());
                 }
                 "vehicle" => {
@@ -2590,15 +2601,11 @@ impl MissionDocCore {
                         id.as_str(),
                         Any::Map(Arc::new(comment_row(id, &title, &tooltip, wx, wy))),
                     );
-                    layer_entities.push(Any::String(id.as_str().into()));
+                    append_id(&mut txn, &self.editor_layers, layer_id, ENTITY_IDS, id);
                     written.push(id.clone());
                 }
                 _ => {} // unknown kind — skip, do not guess a row type
             }
-        }
-        // One write of the layer's `entityIds` (the T-059 shape), only if slots were filed.
-        if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, layer_id) {
-            layer.insert(&mut txn, "entityIds", Any::Array(layer_entities.into()));
         }
         written
     }
@@ -3143,18 +3150,10 @@ impl MissionDocCore {
         };
 
         let mut txn = self.begin();
-        // Per-squad `slotIds` + per-layer `entityIds` append accumulators, seeded once from the doc.
-        let mut squad_slot_ids: HashMap<String, Vec<Any>> = HashMap::new();
-        let mut layer_entity_ids: HashMap<String, Vec<Any>> = HashMap::new();
         for i in 0..n {
             let squad_id = &squad_ids[i];
             let layer_id = &layer_ids[i];
-            let index = {
-                let arr = squad_slot_ids
-                    .entry(squad_id.clone())
-                    .or_insert_with(|| read_id_array(&txn, &self.squads, squad_id, "slotIds"));
-                arr.len() as i64
-            };
+            let index = read_id_array(&txn, &self.squads, squad_id, SLOT_IDS).len() as i64;
             let px = (src_x[i] + dx).clamp(0.0, width);
             let py = (src_y[i] + dy).clamp(0.0, height);
             let id = ids[i].as_str();
@@ -3204,24 +3203,8 @@ impl MissionDocCore {
                 }
             }
             slot.insert(&mut txn, "position", Any::Map(Arc::new(pos)));
-            if let Some(arr) = squad_slot_ids.get_mut(squad_id) {
-                arr.push(Any::String(id.into()));
-            }
-            layer_entity_ids
-                .entry(layer_id.clone())
-                .or_insert_with(|| read_id_array(&txn, &self.editor_layers, layer_id, "entityIds"))
-                .push(Any::String(id.into()));
-        }
-
-        for (sid, arr) in squad_slot_ids {
-            if let Some(Out::YMap(squad)) = self.squads.get(&txn, &sid) {
-                squad.insert(&mut txn, "slotIds", Any::Array(arr.into()));
-            }
-        }
-        for (lid, arr) in layer_entity_ids {
-            if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, &lid) {
-                layer.insert(&mut txn, "entityIds", Any::Array(arr.into()));
-            }
+            append_id(&mut txn, &self.squads, squad_id, SLOT_IDS, id);
+            append_id(&mut txn, &self.editor_layers, layer_id, ENTITY_IDS, id);
         }
     }
 
@@ -3271,14 +3254,8 @@ impl MissionDocCore {
         // Gather every slot filed in a subtree layer, cascade-remove them, then delete the layers.
         let mut slot_ids: Vec<String> = Vec::new();
         for lid in &subtree {
-            if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, lid)
-                && let Some(Out::Any(Any::Array(arr))) = layer.get(&txn, "entityIds")
-            {
-                for a in arr.iter() {
-                    if let Any::String(s) = a {
-                        slot_ids.push(s.to_string());
-                    }
-                }
+            if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, lid) {
+                slot_ids.extend(read_field_ids(&txn, &layer, ENTITY_IDS));
             }
         }
         remove_slots_in_txn(
@@ -3299,7 +3276,7 @@ impl MissionDocCore {
             );
             layer.insert(&mut txn, "name", "Default Layer");
             layer.insert(&mut txn, "parentId", Any::Null);
-            layer.insert(&mut txn, "entityIds", Any::Array(Vec::new().into()));
+            insert_empty_native(&mut txn, &layer, ENTITY_IDS);
         }
     }
 
@@ -3623,6 +3600,8 @@ impl MissionDocCore {
             );
         }
 
+        migrate_legacy_id_lists(&mut txn, &self.squads, &self.editor_layers);
+
         // T-219 — park every top-level key this loader does not understand. Nested values stay
         // opaque `Any` (same as `load_row`), so objects/arrays round-trip through yrs untouched.
         for (k, v) in payload.iter() {
@@ -3640,7 +3619,7 @@ impl MissionDocCore {
             );
             layer.insert(&mut txn, "name", "Default Layer");
             layer.insert(&mut txn, "parentId", Any::Null);
-            layer.insert(&mut txn, "entityIds", Any::Array(Vec::new().into()));
+            insert_empty_native(&mut txn, &layer, ENTITY_IDS);
         }
     }
 
@@ -3657,7 +3636,7 @@ impl MissionDocCore {
             Some(p) => layer.insert(&mut txn, "parentId", p),
             None => layer.insert(&mut txn, "parentId", Any::Null),
         };
-        layer.insert(&mut txn, "entityIds", Any::Array(Vec::new().into()));
+        insert_empty_native(&mut txn, &layer, ENTITY_IDS);
     }
 
     /// Rename an Outliner folder. Mirrors `ydoc.renameEditorLayer`.
@@ -3817,13 +3796,13 @@ impl MissionDocCore {
         // T-651 — the detach half is now [`remove_id_from_all_layers`], shared with
         // [`Self::remove_comment`] so "unfile this id" has exactly one implementation.
         remove_id_from_all_layers(&mut txn, &self.editor_layers, slot_id);
-        if let Some(Out::YMap(target)) = self.editor_layers.get(&txn, target_layer_id)
-            && let Some(Out::Any(Any::Array(arr))) = target.get(&txn, "entityIds")
-        {
-            let mut next: Vec<Any> = arr.iter().cloned().collect();
-            next.push(Any::String(slot_id.into()));
-            target.insert(&mut txn, "entityIds", Any::Array(next.into()));
-        }
+        append_id(
+            &mut txn,
+            &self.editor_layers,
+            target_layer_id,
+            ENTITY_IDS,
+            slot_id,
+        );
     }
 
     /// Is `node_id` inside `ancestor_id`'s subtree (or equal)? Walks up via `parentId`. Mirrors
@@ -4564,7 +4543,7 @@ impl MissionDocCore {
                 s,
                 &["id", "slotIds", "vehicleIds", "factionId", "leaderSlotId"],
             );
-            sq.insert(&mut txn, "slotIds", Any::Array(Vec::new().into()));
+            insert_empty_native(&mut txn, &sq, SLOT_IDS);
             sq.insert(&mut txn, "vehicleIds", Any::Array(Vec::new().into()));
             // factionId → the re-minted or deduped faction (dropped if it resolves nowhere).
             if let Some(fid) = json_str(s, "factionId").and_then(|f| remint.get(&f)) {
@@ -4649,18 +4628,17 @@ impl MissionDocCore {
                     Some(pid) => layer.insert(&mut txn, "parentId", pid.as_str()),
                     None => layer.insert(&mut txn, "parentId", Any::Null),
                 };
-                let entity_ids: Vec<Any> = m
+                let entity_ids: Vec<String> = m
                     .get("entityIds")
                     .and_then(serde_json::Value::as_array)
                     .map(|a| {
                         a.iter()
                             .filter_map(serde_json::Value::as_str)
                             .filter_map(|s| remint.get(s))
-                            .map(|s| Any::String(s.into()))
                             .collect()
                     })
                     .unwrap_or_default();
-                layer.insert(&mut txn, "entityIds", Any::Array(entity_ids.into()));
+                replace_native(&mut txn, &layer, ENTITY_IDS, &entity_ids);
             }
         }
 
@@ -5191,39 +5169,6 @@ const PASTE_KNOWN_SLOT_KEYS: &[&str] = &[
     "loadout",
 ];
 
-/// Keep every element of `arr` except `Any::String`s present in `remove` (removed slot ids). Used by
-/// the `remove_slots` cross-ref cascade to filter a `slotIds`/`entityIds` array.
-fn retain_ids(arr: &[Any], remove: &HashSet<&str>) -> Vec<Any> {
-    arr.iter()
-        .filter(|a| !matches!(a, Any::String(s) if remove.contains(s.as_ref())))
-        .cloned()
-        .collect()
-}
-
-/// Append `id` to `map[key].field` (an `Any::Array` of string ids), if that container map exists.
-/// Mirrors ydoc's `container.set(field, [...(container.get(field)), id])` cross-ref append.
-fn append_id(txn: &mut TransactionMut, map: &MapRef, key: &str, field: &str, id: &str) {
-    if let Some(Out::YMap(container)) = map.get(txn, key) {
-        let mut next: Vec<Any> = match container.get(txn, field) {
-            Some(Out::Any(Any::Array(arr))) => arr.iter().cloned().collect(),
-            _ => Vec::new(),
-        };
-        // Dedup the append: an id already in the array is not appended again. Without this a
-        // duplicate incoming id (two rows sharing one id — MINOR-4) or a re-merge whose mint collided
-        // pre-fix would double-append the same id into a `slotIds`/`squadIds`/`entityIds` array,
-        // inflating membership over the real row count. The membership arrays hold each id at most
-        // once by contract (a slot belongs to a squad once), so this is the invariant, not a patch.
-        if next
-            .iter()
-            .any(|a| matches!(a, Any::String(s) if s.as_ref() == id))
-        {
-            return;
-        }
-        next.push(Any::String(id.into()));
-        container.insert(txn, field, Any::Array(next.into()));
-    }
-}
-
 /// Write `leaderSlotId` only when `slot_id` is in the squad's `slotIds` (T-180.2 B-L1).
 fn set_leader_in_txn(txn: &mut TransactionMut, squads: &MapRef, squad_id: &str, slot_id: &str) {
     let ids = read_id_array(txn, squads, squad_id, "slotIds");
@@ -5630,19 +5575,6 @@ fn merge_shape_rows(
     added
 }
 
-/// Read `map[key].field` (an `Any::Array` of string ids) as an owned `Vec<Any>`; empty when the
-/// container map or the array field is absent. Seeds the `paste_slots` append accumulators and backs
-/// [`append_id`].
-fn read_id_array<T: ReadTxn>(txn: &T, map: &MapRef, key: &str, field: &str) -> Vec<Any> {
-    match map.get(txn, key) {
-        Some(Out::YMap(container)) => match container.get(txn, field) {
-            Some(Out::Any(Any::Array(arr))) => arr.iter().cloned().collect(),
-            _ => Vec::new(),
-        },
-        _ => Vec::new(),
-    }
-}
-
 /// Read `meta.environment` (an opaque `Any::Map`) as an owned `HashMap`; empty when absent. Backs
 /// the `update_environment` / `apply_row_meta` `{...env, ...patch}` merges.
 fn read_env_map<T: ReadTxn>(txn: &T, meta: &MapRef) -> HashMap<String, Any> {
@@ -5870,10 +5802,9 @@ fn layer_flag_effective<T: ReadTxn>(
 fn slot_first_layer<T: ReadTxn>(txn: &T, editor_layers: &MapRef, slot_id: &str) -> Option<String> {
     for (layer_id, out) in editor_layers.iter(txn) {
         if let Out::YMap(layer) = out
-            && let Some(Out::Any(Any::Array(arr))) = layer.get(txn, "entityIds")
-            && arr
+            && read_field_ids(txn, &layer, ENTITY_IDS)
                 .iter()
-                .any(|a| matches!(a, Any::String(s) if s.as_ref() == slot_id))
+                .any(|s| s == slot_id)
         {
             return Some(layer_id.to_string());
         }
@@ -5941,11 +5872,8 @@ fn remove_slots_in_txn(
         }
     }
     for sid in &affected {
-        if let Some(Out::YMap(squad)) = squads.get(&*txn, sid)
-            && let Some(Out::Any(Any::Array(arr))) = squad.get(&*txn, "slotIds")
-        {
-            let kept = retain_ids(&arr, &id_set);
-            squad.insert(&mut *txn, "slotIds", Any::Array(kept.into()));
+        if let Some(Out::YMap(squad)) = squads.get(&*txn, sid) {
+            retain_in(&mut *txn, &squad, SLOT_IDS, &id_set);
         }
     }
 
@@ -5955,14 +5883,8 @@ fn remove_slots_in_txn(
         .map(|(k, _)| k.to_string())
         .collect();
     for lid in &layer_ids {
-        if let Some(Out::YMap(layer)) = editor_layers.get(&*txn, lid)
-            && let Some(Out::Any(Any::Array(arr))) = layer.get(&*txn, "entityIds")
-            && arr
-                .iter()
-                .any(|a| matches!(a, Any::String(s) if id_set.contains(s.as_ref())))
-        {
-            let kept = retain_ids(&arr, &id_set);
-            layer.insert(&mut *txn, "entityIds", Any::Array(kept.into()));
+        if let Some(Out::YMap(layer)) = editor_layers.get(&*txn, lid) {
+            retain_in(&mut *txn, &layer, ENTITY_IDS, &id_set);
         }
     }
 
@@ -6623,18 +6545,8 @@ fn remove_id_from_all_layers(txn: &mut TransactionMut, editor_layers: &MapRef, i
         .map(|(k, _)| k.to_string())
         .collect();
     for lid in &layer_ids {
-        if let Some(Out::YMap(layer)) = editor_layers.get(txn, lid)
-            && let Some(Out::Any(Any::Array(arr))) = layer.get(txn, "entityIds")
-            && arr
-                .iter()
-                .any(|a| matches!(a, Any::String(s) if s.as_ref() == id))
-        {
-            let kept: Vec<Any> = arr
-                .iter()
-                .filter(|a| !matches!(a, Any::String(s) if s.as_ref() == id))
-                .cloned()
-                .collect();
-            layer.insert(txn, "entityIds", Any::Array(kept.into()));
+        if let Some(Out::YMap(layer)) = editor_layers.get(txn, lid) {
+            retain_in(txn, &layer, ENTITY_IDS, &HashSet::from([id]));
         }
     }
 }
