@@ -1,0 +1,22 @@
+id = "T-946.48"
+kind = "work"
+title = "Variant filter misses objectives and editorTriggers"
+summary = "T-654 filters typed MissionLoader arrays; objectives[] and editorTriggers[] still re-parse GetRawJson so variant-excluded rows still spawn."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T00:30:01Z"
+
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c",
+]
+verify = [
+    "a variant-excluded objective and editorTrigger must not arm when the variant is inactive",
+]
+
+[scope]
+domain = "repo"
+layer = "docs"

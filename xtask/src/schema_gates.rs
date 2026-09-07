@@ -2578,15 +2578,11 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         ticket: "T-705",
         why: "6 radio/gadget subsystem identifiers, unrelated to slot.gadgets, plus 27 from the T-705 reader",
     },
-    // T-654 — variant conditional-inclusion.
-    // The top-level `variants[]` registry itself — the only new top-level array that lacked a row
-    // (objectives/vehicles/editorTriggers/missionParams all have one). Measured clean 0.
-    UnreadField {
-        name: "variants",
-        expected: 0,
-        ticket: "T-654",
-        why: "clean",
-    },
+    // T-654 — variant conditional-inclusion: RETIRED 2026-09-07. `variants` gained
+    // identifiers when TBD_MissionLoader.c started filtering at ParseMissionJson
+    // (profile TBD_VariantConfig.json else default:true). Baseline was 0, so it
+    // retires rather than re-pin. objectives[] / editorTriggers[] still re-parse
+    // GetRawJson() (T-946.48); kept vehicles may still list a variant-excluded crew slotId.
     // T-674 — objective-style slot identity: RETIRED 2026-09-06, all six rows.
     //
     // T-674.2 landed the Enfusion reader, so `rank` (17), `stance` (11), `unitName` (5) and

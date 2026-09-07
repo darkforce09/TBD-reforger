@@ -1043,6 +1043,9 @@ T-945 = ["xtask/src/tickets_store.rs", "xtask/src/schema_gates.rs", ".ai/tickets
 "T-946.44" = ["crates/map-engine-core/src/mission/flatten.rs"]
 "T-946.45" = ["apps/website/frontend/src/editor/panels/settings_modal.rs"]
 "T-946.46" = ["apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c", "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c"]
+"T-946.47" = ["crates/map-engine-core/src/mission/flatten.rs"]
+"T-946.48" = ["apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c", "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c", "apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c", "apps/mod/tbd-export/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c"]
+"T-946.49" = ["apps/website/frontend/src/editor/panels/settings_modal.rs"]
 
 [depends_on]
 "T-067.1" = ["T-935.13"]

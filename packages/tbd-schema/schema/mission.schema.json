@@ -121,7 +121,7 @@
     },
     "variants": {
       "type": "array",
-      "description": "T-654 — the named-variant registry for conditional inclusion (schemaVersion 1.3). Generalises what FNF v3 built by hand with Eden layers: a template ships named modes (`FNF Gamemode: <Mode>`) and the setup script deletes every object/marker belonging to the modes not picked, making the layer name a HARD RUNTIME CONTRACT. Here each variant is declared ONCE by id, and any variant-gated subtree elsewhere in the document (an objective, a vehicle, an entity, a zone, a trigger) references it via `variantId` — the compiler emits that subtree only when the variant is selected. Declaring variants centrally is what lets the `variantId` predicate be validated (an unknown id is catchable) instead of being a free string. NOTHING reads it on any shipped build — the conditional-inclusion compile pass lands under T-654 (which is a DESIGN ticket first; this is the wire shape its design will target).",
+      "description": "T-654 — the named-variant registry for conditional inclusion (schemaVersion 1.3). Generalises what FNF v3 built by hand with Eden layers: a template ships named modes (`FNF Gamemode: <Mode>`) and the setup script deletes every object/marker belonging to the modes not picked, making the layer name a HARD RUNTIME CONTRACT. Here each variant is declared ONCE by id, and any variant-gated subtree elsewhere in the document (an objective, a vehicle, an entity, a zone, a trigger) references it via `variantId` — the compiler emits that subtree only when the variant is selected. Declaring variants centrally is what lets the `variantId` predicate be validated (an unknown id is catchable) instead of being a free string. T-654's TBD_MissionLoader now evaluates the registry at ParseMissionJson ($profile:TBD_VariantConfig.json activeVariants[] else default:true rows) and drops excluded subtrees before spawn. objectives[] and editorTriggers[] still re-parse GetRawJson() (T-946.48).",
       "items": { "$ref": "#/$defs/variant" }
     },
     "missionParams": {
@@ -314,7 +314,7 @@
         },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
-          "description": "T-654 (schemaVersion 1.3). When set, this group is emitted only if the named `variants[]` entry is selected (conditional inclusion). On the wire only — the variant compile pass lands under T-654."
+          "description": "T-654 (schemaVersion 1.3). When set, this group is emitted only if the named `variants[]` entry is selected (conditional inclusion). T-654's MissionLoader now drops this subtree when the named variant is inactive."
         },
         "leaderSlotId": {
           "$ref": "#/$defs/wireSafeString",
@@ -469,7 +469,7 @@
         },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
-          "description": "T-654 (schemaVersion 1.3). When set, this slot is emitted only if the named `variants[]` entry is selected. On the wire only — lands under T-654."
+          "description": "T-654 (schemaVersion 1.3). When set, this slot is emitted only if the named `variants[]` entry is selected. T-654's MissionLoader now drops this subtree when the named variant is inactive."
         }
       }
     },
@@ -611,7 +611,7 @@
         "rules": { "$ref": "#/$defs/zoneRules" },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
-          "description": "T-654 (schemaVersion 1.3). When set, this zone is emitted only if the named `variants[]` entry is selected. On the wire only — lands under T-654."
+          "description": "T-654 (schemaVersion 1.3). When set, this zone is emitted only if the named `variants[]` entry is selected. T-654's MissionLoader now drops this subtree when the named variant is inactive."
         }
       }
     },
@@ -806,7 +806,7 @@
         },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
-          "description": "T-654 (schemaVersion 1.3). When set, this entity is emitted only if the named `variants[]` entry is selected. On the wire only — lands under T-654."
+          "description": "T-654 (schemaVersion 1.3). When set, this entity is emitted only if the named `variants[]` entry is selected. T-654's MissionLoader now drops this subtree when the named variant is inactive."
         }
       }
     },
@@ -1017,7 +1017,7 @@
     },
     "variant": {
       "type": "object",
-      "description": "T-654 — one named variant in the conditional-inclusion registry (schemaVersion 1.3). Read the top-level `variants` description first: NOTHING reads this on any shipped build. Declaring a variant here by `id` is what makes a `variantId` reference elsewhere validatable (an unknown id is a catchable error rather than a silent free string), which is the whole point of a central registry — it turns FNF v3's by-hand `FNF Gamemode: <Mode>` layer-name convention into a checked contract.",
+      "description": "T-654 — one named variant in the conditional-inclusion registry (schemaVersion 1.3). Read the top-level `variants` description first: T-654's MissionLoader now reads this registry at parse. Declaring a variant here by `id` is what makes a `variantId` reference elsewhere validatable (an unknown id is a catchable error rather than a silent free string), which is the whole point of a central registry — it turns FNF v3's by-hand `FNF Gamemode: <Mode>` layer-name convention into a checked contract.",
       "required": ["id"],
       "additionalProperties": false,
       "properties": {
