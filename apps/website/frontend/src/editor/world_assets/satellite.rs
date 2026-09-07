@@ -79,9 +79,23 @@ fn report_chosen_level(index: &TbdSatIndex, base: usize, limit: TextureLimit) {
         "the device was granted less than the adapter offered — this is a renderer bug, not a GPU \
          limit"
     };
+    // T-938.6 — with a budget in the path there are now TWO reasons a level above 0 is on screen,
+    // and they call for opposite responses: a GPU limit is hardware and permanent, a budget raise
+    // is memory pressure the operator can lift (`?memBudgetMb=`) or that will clear when other
+    // assets release. Naming only the first would make the second unfalsifiable — the exact defect
+    // T-629 removed from this function.
+    let raised = super::memory_budget::with_ledger(|l| l.satellite_raised());
+    let budget_note = if raised > 0 {
+        format!(
+            " — and {raised} of those level(s) were taken by the MEMORY BUDGET, not by the GPU: \
+             see the `memory budget` warnings above"
+        )
+    } else {
+        String::new()
+    };
     leptos::logging::warn!(
         "satellite: DOWNSCALED basemap — showing level {} ({}x{}) instead of level 0 ({}x{}). GPU \
-         maxTextureDimension2D = {} (adapter {}); {}.",
+         maxTextureDimension2D = {} (adapter {}); {}{}.",
         base,
         mip.width,
         mip.height,
@@ -89,7 +103,8 @@ fn report_chosen_level(index: &TbdSatIndex, base: usize, limit: TextureLimit) {
         index.base_height_px,
         limit.device,
         limit.adapter,
-        cause
+        cause,
+        budget_note
     );
 }
 
@@ -491,6 +506,42 @@ async fn load_unified_full(
         return false;
     };
     let base = base as usize;
+    // T-938.6 — the GPU limit says what the hardware CAN hold as one texture; the memory budget
+    // says what this wasm instance can still afford to DECODE on the way there. They are different
+    // questions and this is the second one, deliberately a separate statement from the
+    // `pick_base_level_for_limit` line above: the level chosen there is the ceiling, and the budget
+    // may only walk down from it (`floor_for_budget` never returns a level above its `base`).
+    //
+    // The figures are exact, not estimated — every tile's `length` is in the index and every
+    // level's RGBA is its pixel count × 4 — and they are the *simultaneous* peak, because the
+    // decode loop below fills `levels` with every tile it is going to upload before it takes the
+    // engine borrow. On everon that is 978.97 MiB from level 0 and 248.53 MiB from level 1, and
+    // the old behaviour when the first of those could not be served was `abort()`.
+    let level_bytes: Vec<super::memory_budget::LevelBytes> = index
+        .mips
+        .iter()
+        .map(|m| super::memory_budget::LevelBytes {
+            width: m.width,
+            height: m.height,
+            compressed: m.tiles.iter().map(|t| t.length).sum(),
+        })
+        .collect();
+    let (budget_mib, held_mib) = super::memory_budget::with_ledger(|l| {
+        (
+            l.budget() / super::memory_budget::MIB,
+            l.held_total() / super::memory_budget::MIB,
+        )
+    });
+    let walk = super::memory_budget::claim_satellite_floor(&level_bytes, base);
+    for (level, bytes, decision) in &walk.rejected {
+        leptos::logging::warn!(
+            "satellite: memory budget {decision:?}d level {level} ({} MiB resident — RGBA plus \
+             tile bodies, held together across the decode) — raising the mip floor by one. \
+             Budget {budget_mib} MiB, {held_mib} MiB already held by the other world assets.",
+            bytes / super::memory_budget::MIB
+        );
+    }
+    let base = walk.base;
     let Some(base_mip) = index.mips.get(base).cloned() else {
         leptos::logging::error!("satellite: index has no mip at the chosen base level {base}");
         return false;

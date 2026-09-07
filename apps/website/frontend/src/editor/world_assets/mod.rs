@@ -11,8 +11,13 @@ mod dem_vectors;
 mod fetch;
 mod forest_mass;
 mod labels;
+/// T-938.6 — the wasm memory budget every loader in this module answers to. Public through the
+/// two narrow re-exports below only: `canvas/viewport.rs` needs the HUD tail, and nothing outside
+/// this module has any business writing the ledger.
+mod memory_budget;
 mod occluder_host;
 pub use fetch::{fetch_bytes, fetch_text};
+pub use memory_budget::hud_suffix as memory_hud_suffix;
 pub use occluder_host::OccluderHost;
 mod satellite;
 mod tbd_sat;
@@ -392,6 +397,25 @@ pub async fn bootstrap(
         Some(bytes) => serde_json::from_slice(&bytes).ok(),
         None => None,
     };
+    // T-938.6 — declare the terrain lane's cost BEFORE the join, because the two futures race and
+    // the satellite reaches its floor decision first (its index is two small Range requests; the
+    // DEM's is a 71.9 MB body). A budget that only knows about assets already loaded would hand
+    // the whole ceiling to whichever loader asked first and then refuse the DEM that was always
+    // going to follow — which is the original defect with extra steps. The figures come from the
+    // manifest's own `widthPx`/`heightPx`, so the prediction is the terrain's, not a guess; the
+    // real reservation replaces it inside `load_dem_and_hillshade`.
+    let terrain_forecast = manifest
+        .as_ref()
+        .and_then(|m| Some(u64::from(m.dem.width_px?) * u64::from(m.dem.height_px?)))
+        .map(|px| px * 4);
+    if let Some(bytes) = terrain_forecast {
+        // The raster and the hillshade RGBA built from it are the same pixel count and are alive
+        // together, so the lane's forecast is twice one raster. `hold`, not `reserve`: this
+        // allocation is going to happen whatever the budget says, and a budget that declined to
+        // record it would simply be wrong about how much room is left.
+        memory_budget::hold(memory_budget::Asset::Dem, bytes);
+        memory_budget::hold(memory_budget::Asset::Hillshade, bytes);
+    }
     // Both futures wrap their real body in an inner `async` block and close their segment OUTSIDE
     // it. The `?` on `manifest.as_ref()` returns from whichever block it sits in, so writing the
     // `Finish` in the same block as the `?` would skip it exactly when the manifest fetch failed —
@@ -464,17 +488,28 @@ pub async fn bootstrap(
         }
     }
 
+    // T-938.6 — the remaining four loaders live in files this slice does not own, so their cost is
+    // taken as measured wasm linear-memory growth across their phase rather than as a figure they
+    // declare. It is a LOWER bound (the heap never shrinks, so a phase reusing freed pages
+    // measures zero) and it is kept in `Entry::growth`, never in the budget arithmetic — see
+    // `memory_budget`'s "two currencies".
+    let mark = memory_budget::heap_mark();
     let _ = mh.world.init(&terrain, report.as_ref()).await;
+    memory_budget::observe_since(memory_budget::Asset::World, mark);
+    let mark = memory_budget::heap_mark();
     mh.forest.init(&terrain);
+    memory_budget::observe_since(memory_budget::Asset::Forest, mark);
 
     // T-935.9 — bathymetry + water vectors, and ONLY when the manifest declares them (spec §5):
     // no `water` block means no request goes out and nothing is added to the world budget, which
     // is everon today (water emitter skipped). The block is passed down rather than re-fetched
     // because `bootstrap` already has the manifest in hand.
     if let Some(m) = manifest.as_ref() {
+        let mark = memory_budget::heap_mark();
         mh.water
             .init(&base, m.water.as_ref(), m.world_bounds, report.as_ref())
             .await;
+        memory_budget::observe_since(memory_budget::Asset::Water, mark);
     }
 
     // T-173 H6 — build + upload the airfield apron ground polygon once (static). Needs both the
@@ -488,9 +523,11 @@ pub async fn bootstrap(
     // road segments are available, then push once for the initial camera.
     if let Some((meters, w, h)) = dem_kept {
         let roads = mh.world.road_segments_clone();
+        let mark = memory_budget::heap_mark();
         mh.labels
             .init(&base, &meters, w, h, roads, report.as_ref())
             .await;
+        memory_budget::observe_since(memory_budget::Asset::Labels, mark);
         let zoom = engine.borrow().as_ref().map(|e| e.zoom()).unwrap_or(-2.0);
         let prefs = crate::editor::world_layer_prefs::load_prefs();
         mh.labels.push(&engine, zoom, &prefs);
@@ -504,18 +541,25 @@ pub async fn bootstrap(
     // Each pass awaits chunk/density fetches, so the browser event loop advances between iterations.
     // T-173 P2 — break as soon as both hosts report idle instead of always running 12 passes.
     for _ in 0..12 {
+        let mark = memory_budget::heap_mark();
         let w = mh
             .world
             .run_viewport(&engine, &bridge, report.as_ref())
             .await;
+        // Accumulated, not maxed: the residency streams a different chunk set on every pass, so
+        // the lane's cost is the sum of what the passes claimed, not the largest one.
+        memory_budget::observe_since(memory_budget::Asset::World, mark);
+        let mark = memory_budget::heap_mark();
         let f = mh
             .forest
             .run_viewport(&engine, &bridge, report.as_ref())
             .await;
+        memory_budget::observe_since(memory_budget::Asset::Forest, mark);
         if !w && !f {
             break;
         }
     }
+    memory_budget::publish();
 
     if let Some(e) = engine.borrow().as_ref() {
         publish_engine(&bridge, e);
@@ -662,6 +706,15 @@ struct DemInfo {
     min_m: f64,
     #[serde(rename = "heightRangeMaxM")]
     max_m: f64,
+    /// T-938.6 — the raster's pixel dimensions, which are what the terrain lane's memory cost is
+    /// computed from before a byte of it is fetched (`bootstrap`'s forecast). Optional and
+    /// defaulted, deliberately: `ManifestDem` is deserialised strictly, so making these required
+    /// would let a terrain that omits them cost the whole basemap and DEM rather than just the
+    /// forecast. everon declares both (6400 × 6400).
+    #[serde(default, rename = "widthPx")]
+    width_px: Option<u32>,
+    #[serde(default, rename = "heightPx")]
+    height_px: Option<u32>,
     /// T-935.4 — `dem.raw` (spec §5): the `TBDE` twin of the PNG at `path`. Absent on everon
     /// (operator: no `.r16` / GetSurfaceY) — PNG is the only DEM there is. The
     /// block type is T-935.1's, not a second copy of it.
@@ -722,13 +775,32 @@ async fn load_dem_and_hillshade(
                 report,
             )
             .await?;
-            decode_png_to_meters(&dem_bytes, manifest.dem.min_m, manifest.dem.max_m).ok()?
+            // T-938.6 — the encoded body and the `Vec<f32>` it inflates into are alive at the same
+            // instant, and that sum — not either half — is the terrain lane's peak. `hold` adds it
+            // on top of `bootstrap`'s forecast (which is the raster), so the peak recorded across
+            // this decode is body + raster; `set_held` below then collapses the row to what is
+            // still resident afterwards.
+            memory_budget::hold(memory_budget::Asset::Dem, dem_bytes.len() as u64);
+            let decoded = decode_png_to_meters(&dem_bytes, manifest.dem.min_m, manifest.dem.max_m);
+            memory_budget::release(memory_budget::Asset::Dem, dem_bytes.len() as u64);
+            decoded.ok()?
         }
     };
+    // The raster outlives this function (it is returned, kept for the peak labels, and handed to
+    // `LabelHost::init`), so it stays held for the rest of the boot. This replaces the forecast
+    // with the figure that was actually allocated.
+    memory_budget::set_held(
+        memory_budget::Asset::Dem,
+        dem.meters.len() as u64 * std::mem::size_of::<f32>() as u64,
+    );
     let hs = build_hillshade_image(&dem.meters, dem.width as usize, dem.height as usize);
     if hs.data.is_empty() || hs.w == 0 || hs.h == 0 {
         return None;
     }
+    // The hillshade RGBA is transient: uploaded here, dropped when this function returns. Held
+    // across the upload so a concurrent satellite floor decision sees it, released after.
+    let hs_bytes = hs.data.len() as u64;
+    memory_budget::set_held(memory_budget::Asset::Hillshade, hs_bytes);
     let [min_x, min_y, max_x, max_y] = manifest.world_bounds;
     let (w, h) = (hs.w as u32, hs.h as u32);
     {
@@ -739,6 +811,7 @@ async fn load_dem_and_hillshade(
         e.tex_layer_write_rgba(1, 0, 0, 0, w, h, &hs.data).ok()?;
         e.tex_layer_commit(1, 0.4, true).ok()?;
     }
+    memory_budget::release(memory_budget::Asset::Hillshade, hs_bytes);
     Some((dem.meters, dem.width, dem.height, w, h))
 }
 
