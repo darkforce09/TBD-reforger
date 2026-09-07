@@ -9,6 +9,7 @@
 //! `editorLayers` map whose `entityIds` arrays give each slot its Outliner folder.
 
 mod apply_faction;
+mod id_arrays;
 mod place_orbat;
 mod soa;
 mod store;
