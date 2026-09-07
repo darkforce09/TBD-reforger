@@ -30,6 +30,10 @@ use crate::editor::mission_editor::{
     read_widget_pivot, set_map_cursor, transform, HoverPoints, HoverState, COMMENT_PICK_PX,
     CONN_PICK_PX,
 };
+// T-936.7 — the tactical-graphics pick tolerances. Straight from the sibling canvas module rather
+// than through `mission_editor`'s re-export hub: that hub is `mission_editor.rs`, which T-190 owns
+// this wave, and a new `pub(crate) use` line there would be a cross-slice edit for two constants.
+use crate::editor::canvas::tactical_graphics::{TG_PICK_PX, TG_VERTEX_PICK_PX};
 use crate::editor::state::history as mission_history;
 use crate::editor::state::operations as editor_ops;
 
@@ -249,6 +253,63 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 if editor_ops::has_pending() {
                     return;
                 }
+                // ══════ T-936.7 — the tactical-graphics press, BEFORE the Select machine ══════
+                //
+                // Two gestures claim the press here, and both must run ahead of
+                // `LG::Pending` for the same reason the armed place does: once Pending is
+                // open the pointerup takes the Select machine's path, and neither of these
+                // has a Select-machine arm to be taken by.
+                //
+                // (1) A DRAW is armed → this press is a vertex. A tactical draw does not ride
+                //     `Pending` (see `state/operations/tactical_graphics.rs`'s header), so
+                //     `has_pending()` above is a false negative for it — exactly the T-792
+                //     shape that let an Esc leave a zone draw armed.
+                // (2) A press within `TG_VERTEX_PICK_PX` of an AUTHORED vertex opens a vertex
+                //     drag. Against the FROZEN press camera like every other pick, with the
+                //     tolerance derived by unprojecting two points that far apart so the grab
+                //     radius is a constant SCREEN size at every zoom.
+                //
+                // The vertex drag captures the pointer immediately, unlike `LG::Pending`,
+                // because there is no sub-threshold interpretation to keep open: a press ON a
+                // vertex is unambiguously an edit gesture, and `commit_tactical_vertex_drag`
+                // already declines to write when the pointer never moved.
+                if editor_ops::tactical_draw_armed() {
+                    if let Some(e) = engine.borrow().as_ref() {
+                        let rect = container.get_bounding_client_rect();
+                        let cam = crate::editor::tools::select_tool::frozen_camera(
+                            rect.width(),
+                            rect.height(),
+                            e.target_x(),
+                            e.target_y(),
+                            e.zoom(),
+                        );
+                        let w = cam.unproject_xy(
+                            ev.client_x() as f64 - rect.left(),
+                            ev.client_y() as f64 - rect.top(),
+                        );
+                        editor_ops::tactical_draw_push_vertex(w[0], w[1]);
+                    }
+                    return;
+                }
+                if let Some(e) = engine.borrow().as_ref() {
+                    let rect = container.get_bounding_client_rect();
+                    let cam = crate::editor::tools::select_tool::frozen_camera(
+                        rect.width(),
+                        rect.height(),
+                        e.target_x(),
+                        e.target_y(),
+                        e.zoom(),
+                    );
+                    let sx = ev.client_x() as f64 - rect.left();
+                    let sy = ev.client_y() as f64 - rect.top();
+                    let w = cam.unproject_xy(sx, sy);
+                    let w2 = cam.unproject_xy(sx + TG_VERTEX_PICK_PX, sy);
+                    let tol = (w2[0] - w[0]).hypot(w2[1] - w[1]);
+                    if editor_ops::begin_tactical_vertex_drag(w[0], w[1], tol) {
+                        let _ = container.set_pointer_capture(ev.pointer_id());
+                        return;
+                    }
+                }
                 // T-159.18/.19 — LMB pending-left: freeze the ortho camera at press (X-05: the
                 // live engine unproject is deleted; a live unproject would feedback-loop
                 // mid-pan). No pointer capture yet — a sub-threshold release is a click; the
@@ -376,6 +437,26 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     map_host.clone(),
                     engine.clone(),
                 );
+                return;
+            }
+            // ══════ T-936.7 — the vertex-drag PREVIEW ══════
+            //
+            // Sits after the pan branch (an MMB pan must still work) and before the armed-place
+            // ghost and the gesture machine, both of which this gesture is mutually exclusive
+            // with: `onpointerdown` returned before opening `LG::Pending`, so `left` is None
+            // here and there is nothing for the Select machine to advance.
+            //
+            // NOTHING IS WRITTEN TO THE DOCUMENT. The provisional position goes into session
+            // state and the lane is re-packed from it — one gesture is one undo step, and a
+            // write per pointermove would leave a hundred behind one drag. The re-pack goes
+            // through the SAME `history::after_local_edit` rebind path the commit uses (via
+            // `refresh_tactical_lane`), so the previewed line and the committed line are packed
+            // by one function rather than two that must agree.
+            if editor_ops::tactical_vertex_drag_active() {
+                if let Some(c) = world.filter(|c| c[0].is_finite() && c[1].is_finite()) {
+                    editor_ops::tactical_vertex_drag_move(c[0], c[1]);
+                    mission_history::refresh_tactical_lane();
+                }
                 return;
             }
             // T-175 B2 — palette place ghost: while an asset is being dragged from the
@@ -712,6 +793,29 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
         // T-159.21 — no `mission_id` capture: the persist tail now runs inside
         // `mission_history::after_local_edit`, which reads the id from its ctx.
         move |ev: web_sys::PointerEvent| {
+            // ══════ T-936.7 — commit the vertex drag, before every other branch ══════
+            //
+            // `onpointerdown` returned before opening `LG::Pending` when it armed this drag, so
+            // `left` and `pan_px` are both None here and nothing below has an arm to take. It
+            // still runs FIRST for the reason T-723's palette place does: an unclaimed release
+            // is how a gesture strands.
+            //
+            // ONE `update_environment` for the whole drag ⇒ ONE Ctrl+Z. A release with no
+            // intervening pointermove commits nothing at all (`commit_tactical_vertex_drag`
+            // declines when the provisional position was never set), because a click on a vertex
+            // is a selection and filing an identity edit would make the next Ctrl+Z appear to do
+            // nothing.
+            if editor_ops::tactical_vertex_drag_active() {
+                if container.has_pointer_capture(ev.pointer_id()) {
+                    let _ = container.release_pointer_capture(ev.pointer_id());
+                }
+                if !editor_ops::commit_tactical_vertex_drag() {
+                    // Nothing was written, so `after_local_edit`'s rebind never runs — put the
+                    // lane back on committed truth by hand, or the preview would stay on screen.
+                    mission_history::refresh_tactical_lane();
+                }
+                return;
+            }
             // T-159.22 / T-723 — palette place. FIRST: a place is armed by a palette /
             // picker / composition surface. The ARMED state (`has_pending()`) is checked
             // before any gesture branch below. This branch used to assume `left`/`pan_px`
@@ -987,6 +1091,34 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                 pick_connection(&live_connection_segments(c), w[0], w[1], tol)
                             });
                             selected_connection.set(edge);
+                        }
+                        // ══════ T-936.7 — pick the TACTICAL GRAPHIC ══════
+                        //
+                        // Last in the miss chain, and only on a miss, for the ordering reason
+                        // the connection pick states above: an entity always wins its own
+                        // pixels, so a control measure can never steal a click from a slot it
+                        // passes under. A hit CLEARS the tactical selection in the same breath
+                        // the connection selection is cleared, which is what keeps the three
+                        // map selections mutually exclusive.
+                        //
+                        // Held in `editor_ops` session state rather than in a signal on
+                        // `EditorGestureContext`: that struct is built in `mission_editor.rs`,
+                        // which T-190 owns this wave, and a new field would be a cross-slice
+                        // edit for a selection nothing outside the map reads yet.
+                        //
+                        // `refresh_tactical_lane` (never `after_local_edit`) applies the tint:
+                        // a click changes the selection, not the document — T-159.21's rule, and
+                        // the reason a selection click files no undo step.
+                        if hit.is_some() {
+                            if editor_ops::clear_tactical_selection() {
+                                mission_history::refresh_tactical_lane();
+                            }
+                        } else if !additive {
+                            let w = p.cam.unproject_xy(p.start_x, p.start_y);
+                            let w2 = p.cam.unproject_xy(p.start_x + TG_PICK_PX, p.start_y);
+                            let tol = (w2[0] - w[0]).hypot(w2[1] - w[1]);
+                            editor_ops::select_tactical_graphic_at(w[0], w[1], tol);
+                            mission_history::refresh_tactical_lane();
                         }
                         {
                             let mut sel = selection.borrow_mut();
@@ -1390,6 +1522,24 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
         let selection = selection.clone();
         move |ev: web_sys::MouseEvent| {
             ev.prevent_default();
+            // ══════ T-936.7 — RIGHT-CLICK FINISHES an in-flight tactical draw ══════
+            //
+            // The ordinary polyline-finish gesture, and here it is also the ONLY one available:
+            // an "Enter to finish" arm in `commands.rs` would collide with the three other
+            // window listeners that claim `Enter` (`keymap_census::SHARED_CHANNELS` exempts only
+            // `Escape`) and would additionally fail `every_binding_has_a_help_entry` until
+            // `panels/help_modal.rs` — a file this slice does not own — grew a matching row.
+            // Right-click claims no key at all, and the draw is the only state that consumes it.
+            //
+            // Returning here also SUPPRESSES the context menu for this press, which is correct:
+            // while a draw is armed the right button means "done", and offering an entity menu
+            // over a half-drawn control measure would be the T-716 live-but-inert shape.
+            // `complete_tactical_draw` declines (and keeps the draft) below the kind's vertex
+            // floor, so a premature right-click costs the operator nothing.
+            if editor_ops::tactical_draw_armed() {
+                editor_ops::complete_tactical_draw();
+                return;
+            }
             let rect = container.get_bounding_client_rect();
             let (px, py) = (
                 ev.client_x() as f64 - rect.left(),
