@@ -35,7 +35,9 @@ pub fn run(args: &[String]) -> Result<u8> {
         Err(code) => return Ok(code),
     };
     if opts.selftest {
-        return Ok(mod_world_boot_verdict::cmd_selftest());
+        let v = mod_world_boot_verdict::cmd_selftest();
+        let t = t302_selftest();
+        return Ok(if v == 0 && t == 0 { 0 } else { 1 });
     }
     boot(&find_repo_root()?, opts)
 }
@@ -286,7 +288,11 @@ fn boot(root: &Path, mut opts: Opts) -> Result<u8> {
         })
     };
 
-    if mod_world_boot_verdict::assess_log(&log_path, &scenario, mission_ctx) {
+    let mut pass = mod_world_boot_verdict::assess_log(&log_path, &scenario, mission_ctx);
+    if opts.compiled {
+        pass = t302_assert(&text, true) && pass;
+    }
+    if pass {
         println!("WORLD BOOT: PASS");
         state.cleanup();
         Ok(0)
@@ -342,66 +348,42 @@ impl Drop for RunState {
     }
 }
 
+#[rustfmt::skip]
 fn env_fail(msg: &str, hint: Option<&str>) -> u8 {
-    println!();
-    println!("WORLD BOOT: ENV FAIL — {msg}");
-    println!(
-        "  This is the HARNESS's environment. The world was never booted, so this says NOTHING"
-    );
-    println!("  about the mod — do not read it as a code failure.");
-    if let Some(h) = hint {
-        println!("  {h}");
-    }
+    println!("\nWORLD BOOT: ENV FAIL — {msg}");
+    println!("  This is the HARNESS's environment. The world was never booted, so this says NOTHING about the mod — do not read it as a code failure.");
+    if let Some(h) = hint { println!("  {h}"); }
     3
 }
 
+#[rustfmt::skip]
 fn api_env_fail(api_base: &str, msg: &str, hint: Option<&str>) -> GateExit {
-    let default = format!(
-        "Bring the stack up and re-run:  cargo xtask db up && cargo xtask mk rust-api   (API expected at {api_base})"
-    );
-    println!();
-    println!("COMPILED BOOT: ENV FAIL — {msg}");
-    println!(
-        "  This is the HARNESS's environment. The mod was never started, so this says NOTHING"
-    );
-    println!("  about the mod or the compiler — do not read it as a code failure.");
+    let default = format!("Bring the stack up and re-run:  cargo xtask db up && cargo xtask mk rust-api   (API expected at {api_base})");
+    println!("\nCOMPILED BOOT: ENV FAIL — {msg}");
+    println!("  This is the HARNESS's environment. The mod was never started, so this says NOTHING about the mod or the compiler — do not read it as a code failure.");
     println!("  {}", hint.unwrap_or(&default));
     GateExit(3)
 }
 
+#[rustfmt::skip]
 fn api_doc_fail(msg: &str) -> GateExit {
-    println!();
-    println!("COMPILED BOOT: FAIL — {msg}");
-    println!(
-        "  The API would not produce a compiled document. That is a COMPILER/CONTRACT defect,"
-    );
-    println!(
-        "  not an environment one — re-running will not fix it. Check the API log: a 500 here is"
-    );
-    println!("  'compiled mission failed schema validation' (validated_compiled_body in");
-    println!("  apps/website/api/src/handlers/missions/missions.rs), a 409 is 'no placed slots'.");
+    println!("\nCOMPILED BOOT: FAIL — {msg}");
+    println!("  The API would not produce a compiled document. That is a COMPILER/CONTRACT defect, not an environment one — re-running will not fix it.");
+    println!("  Check the API log: a 500 is schema validation (validated_compiled_body in apps/website/api/src/handlers/missions/missions.rs); a 409 is no placed slots.");
     GateExit(1)
 }
 
+#[rustfmt::skip]
 fn api_http_fail(api_base: &str, code: u16, what: &str, doc_msg: &str) -> GateExit {
     if code == 404 {
-        return api_env_fail(
-            api_base,
-            &format!("{what} -> HTTP 404 — nothing at that id/route on {api_base}"),
-            Some("Check the mission id you passed and that the API is the one you think it is."),
-        );
+        return api_env_fail(api_base, &format!("{what} -> HTTP 404 — nothing at that id/route on {api_base}"),
+            Some("Check the mission id you passed and that the API is the one you think it is."));
     }
     if (500..600).contains(&code) {
-        let hint = format!(
-            "Check the API log first, then:  cargo xtask db up && cargo xtask mk rust-api   (API expected at {api_base})"
-        );
-        return api_env_fail(
-            api_base,
-            &format!(
-                "{what} -> HTTP {code} — the API could not serve the request. A stopped or unmigrated Postgres surfaces here as a 500; the API log says which."
-            ),
-            Some(&hint),
-        );
+        let hint = format!("Check the API log first, then:  cargo xtask db up && cargo xtask mk rust-api   (API expected at {api_base})");
+        return api_env_fail(api_base,
+            &format!("{what} -> HTTP {code} — the API could not serve the request. A stopped or unmigrated Postgres surfaces here as a 500; the API log says which."),
+            Some(&hint));
     }
     api_doc_fail(doc_msg)
 }
@@ -589,58 +571,86 @@ fn compiled_lane(
     Ok(())
 }
 
+#[rustfmt::skip]
+const T302_EQUIP_OK: usize = 4; // perturb to 3 → `mod world-boot --selftest` RED
+
+#[rustfmt::skip]
+fn t302_assert(text: &str, print: bool) -> bool {
+    let mut ok = 0usize; let mut bad = 0usize; let mut seen = [false; 4];
+    for line in text.lines() {
+        let Some(rest) = line.split("[TBD][Equip] slot=").nth(1) else { continue };
+        let slot = rest.as_bytes().first().copied().unwrap_or(0).saturating_sub(b'0') as usize;
+        if slot < 4 && rest.contains(" weapon=") && rest.contains("result=ok") {
+            ok += 1; seen[slot] = true;
+        } else if rest.contains("result=") { bad += 1; }
+    }
+    let pass = ok == T302_EQUIP_OK && bad == 0 && seen == [true, true, true, true];
+    if print {
+        if pass { println!("  ok    T-302 four-weapon equip ({ok} ok, slots 0-3)"); }
+        else { println!("  FAIL  T-302 four-weapon equip: ok={ok} other={bad} slots={seen:?} (want ok={T302_EQUIP_OK} other=0 slots 0-3)"); }
+    }
+    pass
+}
+
+#[rustfmt::skip]
+fn t302_selftest() -> u8 {
+    println!("==> T-302 four-weapon equip assertion");
+    let g = "[TBD][Equip] slot=0 weapon={3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et result=ok\n[TBD][Equip] slot=1 weapon={9C5C20FB0E01E64F}Prefabs/Weapons/Launchers/M72/Launcher_M72A3.et result=ok\n[TBD][Equip] slot=2 weapon={1353C6EAD1DCFE43}Prefabs/Weapons/Handguns/M9/Handgun_M9.et result=ok\n[TBD][Equip] slot=3 weapon={E8F00BF730225B00}Prefabs/Weapons/Grenades/Grenade_M67.et result=ok\n";
+    let mut rc = 0u8;
+    if !t302_assert(g, true) { rc = 1; }
+    let three: String = g.lines().take(3).collect::<Vec<_>>().join("\n");
+    if t302_assert(&three, false) { println!("  FAIL  T-302 selftest accepted 3 weapons"); rc = 1; }
+    else { println!("  ok    T-302 selftest rejects 3 weapons"); }
+    let r = g.replace("slot=1 weapon={9C5C20FB0E01E64F}Prefabs/Weapons/Launchers/M72/Launcher_M72A3.et result=ok", "slot=0 weapon={9C5C20FB0E01E64F}Prefabs/Weapons/Launchers/M72/Launcher_M72A3.et result=replaced");
+    if t302_assert(&r, false) { println!("  FAIL  T-302 selftest accepted a replaced line"); rc = 1; }
+    else { println!("  ok    T-302 selftest rejects replaced"); }
+    rc
+}
+
+#[rustfmt::skip]
 fn seed_fixture_body() -> String {
+    // T-302 four-weapon proof lives on sl_ar (Unarmed so each row inserts, result=ok).
     let v = json!({
-        "title": FIXTURE_TITLE,
-        "terrain": "everon",
-        "game_mode": "pvp",
-        "weather": "clear",
-        "time_of_day": "05:30",
-        "max_players": 8,
+        "title": FIXTURE_TITLE, "terrain": "everon", "game_mode": "pvp", "weather": "clear",
+        "time_of_day": "05:30", "max_players": 8,
         "briefing": "Generated by cargo xtask mod world-boot --compiled. Safe to delete.",
-        "payload": {
-            "schemaVersion": 1,
-            "editor": {
-                "factions": [{ "key": "blufor", "name": "US Army", "squadIds": ["sq_alpha"] }],
-                "squads": [{ "id": "sq_alpha", "callsign": "Alpha", "name": "Alpha", "slotIds": ["sl_sl", "sl_ar", "sl_rfl"] }],
-                "slots": [
-                    {
-                        "id": "sl_sl", "index": 0, "role": "SL",
-                        "assetId": "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et",
-                        "position": { "x": 4870.0, "y": 7760.0, "z": 0.0, "rotation": 45.0 }
+        "payload": { "schemaVersion": 1, "editor": {
+            "factions": [{ "key": "blufor", "name": "US Army", "squadIds": ["sq_alpha"] }],
+            "squads": [{ "id": "sq_alpha", "callsign": "Alpha", "name": "Alpha", "slotIds": ["sl_sl", "sl_ar", "sl_rfl"] }],
+            "slots": [
+                { "id": "sl_sl", "index": 0, "role": "SL",
+                  "assetId": "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et",
+                  "position": { "x": 4870.0, "y": 7760.0, "z": 0.0, "rotation": 45.0 } },
+                { "id": "sl_ar", "index": 1, "role": "AR",
+                  "assetId": "{2F912ED6E399FF47}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Unarmed.et",
+                  "position": { "x": 4880.0, "y": 7770.0, "z": 0.0, "rotation": 90.0 },
+                  "loadout": {
+                    "wear": {
+                      "jacket": "{293F577C298061E3}Prefabs/Characters/Uniforms/Jacket_US_BDU_02.et",
+                      "armoredVest": "{477A190AF2A17B8A}Prefabs/Characters/Vests/Vest_ALICE/Variants/Vest_ALICE_MG.et",
+                      "headCover": "{B74A4FF0DD8BB116}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01.et",
+                      "pants": "{604BB72BE8E023C2}Prefabs/Characters/Uniforms/Pants_US_BDU.et",
+                      "boots": "{DAAFD15478BDE1C3}Prefabs/Characters/Footwear/CombatBoots_US_01.et"
                     },
-                    {
-                        "id": "sl_ar", "index": 1, "role": "AR",
-                        "assetId": "{5B1996C05B1E51A4}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR.et",
-                        "position": { "x": 4880.0, "y": 7770.0, "z": 0.0, "rotation": 90.0 },
-                        "loadout": {
-                            "wear": {
-                                "jacket": "{293F577C298061E3}Prefabs/Characters/Uniforms/Jacket_US_BDU_02.et",
-                                "armoredVest": "{477A190AF2A17B8A}Prefabs/Characters/Vests/Vest_ALICE/Variants/Vest_ALICE_MG.et",
-                                "headCover": "{B74A4FF0DD8BB116}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01.et",
-                                "pants": "{604BB72BE8E023C2}Prefabs/Characters/Uniforms/Pants_US_BDU.et",
-                                "boots": "{DAAFD15478BDE1C3}Prefabs/Characters/Footwear/CombatBoots_US_01.et"
-                            },
-                            "weapons": [{
-                                "slotIndex": 0, "slotType": "primary",
-                                "weapon": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
-                                "magazine": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et"
-                            }],
-                            "cargo": [{
-                                "container": "vest",
-                                "item": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et",
-                                "qty": 6
-                            }]
-                        }
-                    },
-                    {
-                        "id": "sl_rfl", "index": 2, "role": "RFL",
-                        "assetId": "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et",
-                        "position": { "x": 4890.0, "y": 7780.0, "z": 136.0, "rotation": 315.0 }
-                    }
-                ]
-            }
-        }
+                    "weapons": [
+                      { "slotIndex": 0, "slotType": "primary",
+                        "weapon": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+                        "magazine": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et" },
+                      { "slotIndex": 1, "slotType": "primary",
+                        "weapon": "{9C5C20FB0E01E64F}Prefabs/Weapons/Launchers/M72/Launcher_M72A3.et" },
+                      { "slotIndex": 2, "slotType": "secondary",
+                        "weapon": "{1353C6EAD1DCFE43}Prefabs/Weapons/Handguns/M9/Handgun_M9.et" },
+                      { "slotIndex": 3, "slotType": "grenade",
+                        "weapon": "{E8F00BF730225B00}Prefabs/Weapons/Grenades/Grenade_M67.et" }
+                    ],
+                    "cargo": [{ "container": "vest",
+                      "item": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et", "qty": 6 }]
+                  } },
+                { "id": "sl_rfl", "index": 2, "role": "RFL",
+                  "assetId": "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et",
+                  "position": { "x": 4890.0, "y": 7780.0, "z": 136.0, "rotation": 315.0 } }
+            ]
+        } }
     });
     serde_json::to_string_pretty(&v).unwrap_or_else(|_| "{}".into())
 }
@@ -929,32 +939,26 @@ fn read_scenario_id(config: &Path) -> Option<String> {
         .map(|m| m.as_str().to_string())
 }
 
+#[rustfmt::skip]
 fn in_container() -> bool {
     Path::new("/run/.containerenv").is_file() || Path::new("/.dockerenv").is_file()
 }
 
+#[rustfmt::skip]
 fn host_bridge() -> Option<&'static str> {
     for b in ["distrobox-host-exec", "host-spawn"] {
-        if Command::new("sh")
-            .args(["-c", &format!("command -v {b} >/dev/null 2>&1")])
-            .status()
-            .map(|s| s.success())
-            .unwrap_or(false)
-        {
-            return Some(b);
-        }
+        let ok = Command::new("sh").args(["-c", &format!("command -v {b} >/dev/null 2>&1")])
+            .status().map(|s| s.success()).unwrap_or(false);
+        if ok { return Some(b); }
     }
     None
 }
 
+#[rustfmt::skip]
 fn require_host() -> bool {
-    if !in_container() {
-        return true;
-    }
+    if !in_container() { return true; }
     if host_bridge().is_none() {
-        eprintln!(
-            "require_host: no host bridge (distrobox-host-exec/host-spawn) — cannot reach the real machine."
-        );
+        eprintln!("require_host: no host bridge (distrobox-host-exec/host-spawn) — cannot reach the real machine.");
         return false;
     }
     true
@@ -971,30 +975,21 @@ fn host_command(program: &str) -> Command {
     Command::new(program)
 }
 
+#[rustfmt::skip]
 fn is_executable(path: &Path) -> bool {
     use std::os::unix::fs::PermissionsExt;
-    fs::metadata(path)
-        .map(|m| m.is_file() && m.permissions().mode() & 0o111 != 0)
-        .unwrap_or(false)
+    fs::metadata(path).map(|m| m.is_file() && m.permissions().mode() & 0o111 != 0).unwrap_or(false)
 }
 
+#[rustfmt::skip]
 fn tempfile_dir(prefix: &str) -> Result<PathBuf> {
-    let base = std::env::var_os("TMPDIR").unwrap_or_else(|| "/tmp".into());
-    let path = PathBuf::from(base).join(format!(
-        "{prefix}.{}.{}",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_nanos())
-            .unwrap_or(0)
-    ));
+    let ns = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
+    let path = PathBuf::from(std::env::var_os("TMPDIR").unwrap_or_else(|| "/tmp".into())).join(format!("{prefix}.{}.{}", std::process::id(), ns));
     fs::create_dir_all(&path)?;
     Ok(path)
 }
 
+#[rustfmt::skip]
 fn env_u64(key: &str, default: u64) -> u64 {
-    std::env::var(key)
-        .ok()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(default)
+    std::env::var(key).ok().and_then(|s| s.parse().ok()).unwrap_or(default)
 }
