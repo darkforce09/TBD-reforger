@@ -14,11 +14,12 @@
 //!   * per player: `arma_id`, `role_played` from the assigned slot, and `deaths` = 0 or 1, which
 //!     ONE LIFE makes exactly knowable.
 //!
-//! `kills`, `team_kills`, `longest_kill_m`, `vehicles_destroyed`, `is_command`, `command_win` and
-//! `aar_replay_url` are **OMITTED FROM THE PAYLOAD ENTIRELY** rather than sent as zeros. Every one
-//! of them is `#[serde(default)]` on the backend so the row still writes, and an absent field says
-//! "not measured" where a `0` would claim "measured, and it was none". A zero you can defend beats
-//! a statistic you cannot.
+//! T-940.4: each player row emits a complete nested `counters` block (unmeasured fields are 0 /
+//! false / null so the block is all-or-nothing) and **keeps** the flat `deaths` key for one
+//! release. `kills`, `team_kills`, `longest_kill_m`, `vehicles_destroyed` and `is_command` are
+//! still not measured here — they go in the nested block as zeros rather than being omitted,
+//! because ingest treats a present `counters` object as the full scoreline. `aar_replay_url` stays
+//! omitted from the match object: that is a different field, not a player counter.
 //!
 //! ══ IDENTITY LINKING (T-181.35 SHIPPED) ════════════════════════════════════════════════════
 //! The endpoint marks attendance, recomputes user stats and refreshes the leaderboard — all three
@@ -560,8 +561,8 @@ class TBD_ResultsReporter
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! One `players[]` entry. Only the four fields the mod can defend; everything else is absent on
-	//! purpose (see the class header).
+	//! One `players[]` entry. Nested `counters` is the contract (T-940.4); flat `deaths` is kept
+	//! for one release so a backend that still folds the old shape stores the same row.
 	protected static string BuildPlayerRow(string armaId, string role, int deaths, string sourceEventId)
 	{
 		string row = "{";
@@ -569,6 +570,7 @@ class TBD_ResultsReporter
 		row += string.Format(",\"role_played\":\"%1\"", JsonEscape(role));
 		row += string.Format(",\"deaths\":%1", deaths);
 		row += string.Format(",\"source_event_id\":\"%1\"", JsonEscape(sourceEventId));
+		row += string.Format(",\"counters\":{\"kills\":0,\"deaths\":%1,\"team_kills\":0,\"longest_kill_m\":0,\"vehicles_destroyed\":0,\"is_command\":false,\"command_win\":null}", deaths);
 		row += "}";
 		return row;
 	}

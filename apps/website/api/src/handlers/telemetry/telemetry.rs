@@ -6,7 +6,6 @@ use axum::extract::rejection::JsonRejection;
 use axum::response::Json;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
-use serde::de::IgnoredAny;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -591,11 +590,12 @@ pub struct MatchInput {
 ///   each source is precisely the corruption shape T-316 exists to prevent; an all-or-nothing
 ///   block is only all-or-nothing if it is complete.
 ///
-/// **Consequence, stated out loud:** the mod's top-level `"deaths"` key is now an unknown
-/// field and is silently ignored (serde does not deny unknown fields here, and it must not —
-/// denying them would 400 the shipping payload all over again). Its four-key row therefore
-/// lands as identity-core-only and writes no counters at all. Recovering that one number is a
-/// mod-side change — emit a complete `counters` object — not a contract change here.
+/// **T-940.4 — fold, do not drop.** A body that omits `counters` but still names any of
+/// kills/deaths/team_kills/longest_kill_m/vehicles_destroyed/is_command/command_win at the
+/// row's top level is a complete scoreline: present values are taken, unsent numeric fields
+/// are 0, unsent `is_command` is false, unsent `command_win` is NULL. When `counters` is
+/// present it is authoritative and the flat keys are ignored (nested wins; no double count).
+/// Identity-only rows — no nested block and no flat keys — still write no counters.
 ///
 /// `command_win` stays `Option<bool>` because it is a genuine tri-state: `NULL` means "not a
 /// command slot / not adjudicated", which is a different statement from `false`. It is the
@@ -609,71 +609,52 @@ pub struct PlayerStatInput {
     /// not name the counter columns at all. Present = authoritative for every one of them.
     counters: Option<PlayerCountersInput>,
 
-    // ---- legacy-shape tripwire (T-393 / T-402) — presence only; the values are discarded ----
-    //
-    // These six keys used to live here, at the row's top level. Serde ignores unknown fields
-    // (and must — denying them would 400 the shipping mod's extra `deaths`), so a sender still
-    // using the pre-T-393 flat body would be *silently* accepted and write no counters at all:
-    // a fresh row would store NULL counters (T-397) while the sender's 200 implied its scoreline
-    // landed. That is the T-316 failure mode wearing new clothes — a silent loss where the sender
-    // believes it stated something — so the flat shape is detected and rejected out loud by
-    // `legacy_counter_key` instead of being ignored into an unmeasured row.
-    //
-    // `deaths` is deliberately **not** on this list even though it moved with the others: the
-    // shipping `TBD_ResultsReporter.c` sends exactly `arma_id`/`role_played`/`deaths`/
-    // `source_event_id`, and rejecting a top-level `deaths` would 400 every production match
-    // report — which is the defect T-393 exists to fix. It is tolerated and ignored, and the
-    // struct doc says so out loud.
-    //
-    // **Every other moved counter is on this list**, including `command_win` (T-402). A genuine
-    // pre-split sender usually also carries `kills`/… and would trip anyway, but the comment
-    // that used to claim "nothing else that moved is tolerated" while omitting `command_win`
-    // was false about the code beneath it — the list and the prose now agree.
-    //
-    // **JSON `null` counts as presence (T-402).** `Option<IgnoredAny>` maps `null → None` under
-    // serde_json's `deserialize_option`, which would let `{"kills": null, …}` escape as a
-    // modern body. `LegacyPresence` is fail-closed: any present key, null included, trips.
-    #[serde(default, rename = "kills")]
-    legacy_kills: LegacyPresence,
-    #[serde(default, rename = "team_kills")]
-    legacy_team_kills: LegacyPresence,
-    #[serde(default, rename = "longest_kill_m")]
-    legacy_longest_kill_m: LegacyPresence,
-    #[serde(default, rename = "vehicles_destroyed")]
-    legacy_vehicles_destroyed: LegacyPresence,
-    #[serde(default, rename = "is_command")]
-    legacy_is_command: LegacyPresence,
-    #[serde(default, rename = "command_win")]
-    legacy_command_win: LegacyPresence,
-}
-
-/// Presence-only tripwire flag: absent → `false`; present at any value **including JSON
-/// `null`** → `true`. See the tripwire block on `PlayerStatInput` for why `Option` is wrong.
-#[derive(Debug, Default)]
-struct LegacyPresence(bool);
-
-impl<'de> Deserialize<'de> for LegacyPresence {
-    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let _ = IgnoredAny::deserialize(deserializer)?;
-        Ok(LegacyPresence(true))
-    }
+    // T-940.4 — flat top-level keys. Folded into a complete scoreline only when `counters`
+    // is absent; nested wins when both shapes are present. Unsent fold fields are 0 / false / NULL.
+    #[serde(default)]
+    kills: Option<i64>,
+    #[serde(default)]
+    deaths: Option<i64>,
+    #[serde(default)]
+    team_kills: Option<i64>,
+    #[serde(default)]
+    longest_kill_m: Option<i64>,
+    #[serde(default)]
+    vehicles_destroyed: Option<i64>,
+    #[serde(default)]
+    is_command: Option<bool>,
+    #[serde(default)]
+    command_win: Option<bool>,
 }
 
 impl PlayerStatInput {
-    /// `Some(key)` when this row carries a moved counter at its top level — i.e. it was built
-    /// against the pre-T-393 flat contract and its scoreline would otherwise be dropped on the
-    /// floor. See the tripwire fields above for why `deaths` is not among them.
-    fn legacy_counter_key(&self) -> Option<&'static str> {
-        [
-            ("kills", self.legacy_kills.0),
-            ("team_kills", self.legacy_team_kills.0),
-            ("longest_kill_m", self.legacy_longest_kill_m.0),
-            ("vehicles_destroyed", self.legacy_vehicles_destroyed.0),
-            ("is_command", self.legacy_is_command.0),
-            ("command_win", self.legacy_command_win.0),
-        ]
-        .into_iter()
-        .find_map(|(name, seen)| seen.then_some(name))
+    /// Nested `counters` wins. When that block is absent, any top-level counter key is folded
+    /// into a complete scoreline. Identity-only rows (neither shape) still write nothing.
+    fn effective_counters(&self) -> Option<PlayerCountersInput> {
+        self.counters.clone().or_else(|| self.fold_flat_counters())
+    }
+
+    fn fold_flat_counters(&self) -> Option<PlayerCountersInput> {
+        if self.kills.is_none()
+            && self.deaths.is_none()
+            && self.team_kills.is_none()
+            && self.longest_kill_m.is_none()
+            && self.vehicles_destroyed.is_none()
+            && self.is_command.is_none()
+            && self.command_win.is_none()
+        {
+            return None;
+        }
+        Some(PlayerCountersInput {
+            // Perturbation target (T-940.4): skip this kills fold — use `0` — and the flat golden goes red.
+            kills: self.kills.unwrap_or(0),
+            deaths: self.deaths.unwrap_or(0),
+            team_kills: self.team_kills.unwrap_or(0),
+            longest_kill_m: self.longest_kill_m.unwrap_or(0),
+            vehicles_destroyed: self.vehicles_destroyed.unwrap_or(0),
+            is_command: self.is_command.unwrap_or(false),
+            command_win: self.command_win,
+        })
     }
 }
 
@@ -684,7 +665,7 @@ impl PlayerStatInput {
 /// which is the T-393 fix; the fields inside it are not, which is the T-316 fix. A body that
 /// sends `{"kills": 17}` and stops is a sender that has half a scoreline and does not know it,
 /// and it gets a 400 rather than five zeros.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct PlayerCountersInput {
     kills: i64,
     deaths: i64,
@@ -802,18 +783,8 @@ pub async fn ingest_match_results(
         // T-379. Present-and-blank used to pass and replace a populated role on UPSERT —
         // same blank-reject as `outcome` / `source_match_id` (see `require_role_played`).
         require_role_played(&p.role_played)?;
-        // T-393. A pre-split flat body would otherwise be accepted silently and store zeros —
-        // read the tripwire fields on `PlayerStatInput`. The message names the key it found and
-        // the shape to move it to, because the sender is a game server whose only channel back
-        // is this string (`TBD_ResultsReporter.c` `OnSendError` logs the response body verbatim).
-        if let Some(key) = p.legacy_counter_key() {
-            return Err(ApiError::bad_request(format!(
-                "player counters moved into a nested \"counters\" object (T-393); found top-level \
-                 \"{key}\". Send all of kills/deaths/team_kills/longest_kill_m/vehicles_destroyed/\
-                 is_command/command_win inside \"counters\", or omit \"counters\" entirely to leave \
-                 the stored scoreline untouched"
-            )));
-        }
+        // T-940.4 folds flat top-level counters at write time via `effective_counters`.
+        // Nested `counters` still 400s at decode if the block is present-but-partial.
     }
 
     let mut tx = state.pool.begin().await?;
@@ -891,7 +862,7 @@ pub async fn ingest_match_results(
         // routine — would each read the pre-update values and the later writer would restore
         // the counters the earlier one had just replaced. Not naming a column on UPDATE cannot
         // lose a write that way; re-binding its old value can.
-        match &p.counters {
+        match p.effective_counters() {
             Some(c) => {
                 sqlx::query(
                     "INSERT INTO match_player_stats \
@@ -1270,32 +1241,45 @@ mod tests {
         serde_json::from_value(v).expect("PlayerStatInput decodes")
     }
 
-    /// Class-R: top-level `command_win` is on the tripwire (T-402).
+    /// Class-R (T-940.4): a lone top-level `deaths` folds into a complete scoreline.
     #[test]
-    fn legacy_tripwire_includes_command_win() {
-        let p = core_player(json!({ "command_win": true }));
-        assert_eq!(p.legacy_counter_key(), Some("command_win"));
-    }
-
-    /// Class-R: JSON `null` is presence — fail-closed (T-402). Pre-fix,
-    /// `Option<IgnoredAny>` mapped null → None and this escaped.
-    #[test]
-    fn legacy_tripwire_null_is_presence() {
-        let p = core_player(json!({ "kills": null }));
-        assert_eq!(p.legacy_counter_key(), Some("kills"));
-    }
-
-    /// Class-R: shipping mod's top-level `deaths` is still tolerated.
-    #[test]
-    fn deaths_top_level_still_tolerated() {
+    fn flat_deaths_folds_when_nested_absent() {
         let p = core_player(json!({ "deaths": 3 }));
-        assert_eq!(p.legacy_counter_key(), None);
+        let c = p.effective_counters().expect("flat deaths must fold");
+        assert_eq!(c.deaths, 3);
+        assert_eq!(c.kills, 0);
+        assert!(!c.is_command);
+        assert_eq!(c.command_win, None);
     }
 
-    /// Class-R: modern nested counters do not trip the legacy wire.
+    /// Class-R (T-940.4): a full flat scoreline folds every field, including kills.
     #[test]
-    fn nested_counters_do_not_trip_legacy() {
+    fn flat_kills_fold_into_nested() {
         let p = core_player(json!({
+            "kills": 17,
+            "deaths": 3,
+            "team_kills": 1,
+            "longest_kill_m": 842,
+            "vehicles_destroyed": 4,
+            "is_command": true,
+            "command_win": true
+        }));
+        let c = p.effective_counters().expect("flat scoreline must fold");
+        assert_eq!(c.kills, 17);
+        assert_eq!(c.deaths, 3);
+        assert_eq!(c.team_kills, 1);
+        assert_eq!(c.longest_kill_m, 842);
+        assert_eq!(c.vehicles_destroyed, 4);
+        assert!(c.is_command);
+        assert_eq!(c.command_win, Some(true));
+    }
+
+    /// Class-R (T-940.4): nested wins when both shapes are present (no double count).
+    #[test]
+    fn nested_counters_win_over_conflicting_flat() {
+        let p = core_player(json!({
+            "kills": 99,
+            "deaths": 99,
             "counters": {
                 "kills": 1,
                 "deaths": 0,
@@ -1306,8 +1290,18 @@ mod tests {
                 "command_win": true
             }
         }));
-        assert_eq!(p.legacy_counter_key(), None);
-        assert!(p.counters.is_some());
+        let c = p.effective_counters().expect("nested must win");
+        assert_eq!(c.kills, 1);
+        assert_eq!(c.deaths, 0);
+        assert_eq!(c.command_win, Some(true));
+    }
+
+    /// Class-R: identity-only (no nested, no flat keys) still writes nothing.
+    #[test]
+    fn identity_only_does_not_fold() {
+        let p = core_player(json!({}));
+        assert!(p.effective_counters().is_none());
+        assert!(p.counters.is_none());
     }
 
     /// Class-R: known terrains still map (do not break everon/arland/custom).
@@ -1614,6 +1608,10 @@ mod tests {
             2,
             "ingest_match_results must call require_role_played(&p.role_played) twice \
              (pre-tx roster guard + UPSERT bind); helper-only tests do not cover this"
+        );
+        assert!(
+            collapsed.contains("p.effective_counters()"),
+            "ingest must fold flat counters via effective_counters (T-940.4); nested still wins"
         );
     }
 
