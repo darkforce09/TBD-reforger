@@ -503,3 +503,11 @@ edit, in-editor play button.
     with the `VERIFY.md` titles and internal self-references corrected. The offset that produced them
     is gone — `wave_base = 255` with no pending `[[emptied]]`, so lock row 256 == label 256 from here.
     See `.ai/artifacts/editor_briefs/sept2026/README.md`.
+- 2026-09-08 Wave 256 pre-dispatch verification, all measured after the bookkeeping commit
+  (`dc073f7c2`) and the briefs (`17a6c9902`): `ticket check` 0 errors · `cargo test -p xtask` 804
+  passed / 0 failed · `wave check` OK (78 open in 19 waves) · the five dispatched sets proved
+  file-disjoint pairwise (`slice-collisions --check T-212` names its only collisions as T-935.20,
+  T-908 and T-945, none of them in this wave) · `platform preflight` PASS, 2 warns, both expected
+  (two unpushed commits, five fresh worktrees) · `mod compile` **OK: compiled clean, 5761 files,
+  11484 classes, 0 warnings** — the baseline both Enfusion slices are measured against · five
+  worktrees cut at `dc073f7c2`, branches `slice/{T-212,T-946.55,T-939.2,T-939.4,T-946.86}`.
