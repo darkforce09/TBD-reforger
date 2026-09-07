@@ -42,8 +42,11 @@ depends_on = [
 created_at = "2026-09-05T03:30:00Z"
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LoadoutPreview.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/UI/Lobby/TBD_LoadoutPreview.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c",
     "apps/mod/tbd-framework/UI/layouts/TBD_LoadoutPreview.layout",
+    "apps/mod/tbd-export/UI/layouts/TBD_LoadoutPreview.layout",
 ]
 
 [scope]
