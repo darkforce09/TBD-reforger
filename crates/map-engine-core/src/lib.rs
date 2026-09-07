@@ -32,6 +32,9 @@ pub mod building_compound_los;
 /// top-down heightfields + section cuts of the vertical faces, for any mesh.
 #[cfg(feature = "blueprint")]
 pub mod building_section;
+/// T-938.4 — y-interval BVH query for section cuts + sparse HeightField tiles.
+#[cfg(feature = "blueprint")]
+pub mod building_section_index;
 /// T-090.6 step 4 — per-level visibility rasters (multi-floor viewshed) over the [`bvh`]
 /// sidecar; the building viewer's wash textures.
 #[cfg(feature = "blueprint")]
