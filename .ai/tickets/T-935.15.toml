@@ -1,0 +1,66 @@
+id = "T-935.15"
+kind = "work"
+title = "Delete chunking: one container, spatial index, range fetch"
+summary = "Chunk files are a parse-cost workaround that cast_slice made obsolete. Replace objects/chunks/*.bin with one binary container plus a spatial index and HTTP range fetches, the shape T-935.10 already ships for satellite."
+class = "feature"
+status = "ready"
+parent = "T-935"
+created_at = "2026-09-07T19:28:40Z"
+order = 7535
+priority = 1
+spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
+plan = "docs/plans/t-935_15_plan.md"
+executor = "claude-code"
+main_goal = "Panning never fetches, allocates or evicts because the camera crossed a line on a grid."
+context = [
+    "Operator decision 2026-09-07: get rid of chunking. Rationale, verbatim: the pattern was inherited from a fifteen-year-old game engine and is not a method that should be considered in 2026.",
+    "Chunking exists to bound PARSE cost. T-935.1-.3 made the payload POD and loaded it with bytemuck cast_slice, so decode is effectively free and the reason is gone.",
+    "What chunking still costs is real: a boundary crossing triggers fetch, decode, upload and eviction. T-938.2 shipped a counter for exactly that and its ring buffer was deferred.",
+    "The replacement already ships in this repo. T-935.10's satellite is one TBDS container with an rkyv index: fetch_index_head reads bytes 0-11, parses the index, then range-fetches tiles.",
+    "Partial access is an HTTP property, not a filesystem layout. Range requests give residency without splitting the world into files.",
+    "Supersedes T-111 (lazy chunk residency @ 1M) and T-067.1 (byte-budget chunk eviction) — both are bookkeeping for a structure this ticket deletes.",
+]
+current_state = [
+    "objects/chunks/{cx}_{cy}.bin is emitted by build.rs and fetched per chunk by world_host.rs, with residency.rs (290 chunk references) and chunk_bin.rs (143) maintaining the grid.",
+]
+requirement = [
+    "One binary container for world objects, with a spatial index resolving a camera rect to byte ranges; no per-chunk files emitted and none fetched.",
+    "The loader range-fetches from the container. Crossing any line on the old grid costs nothing, because there is no grid.",
+    "residency.rs and chunk_bin.rs are DELETED, not adapted. Neither may be extended to keep a chunk concept alive under a new name.",
+    "chunk_math.rs, world/index.rs, manifest.rs and the density ladder lose their chunk coordinate vocabulary or justify keeping it in code.",
+    "The occluder and density lanes (occluder/trace.rs, density_ladder.rs) resolve through the index, not a chunk grid.",
+    "A pan across the whole terrain performs zero allocations attributable to residency; measured with T-938.2's counter, which becomes the acceptance instrument.",
+]
+approach = [
+    "Verify first: instrument a full-width pan with the T-938.2 counter behind ?t9382=1 and record allocations and frame spikes per boundary crossing. Paste the numbers as the before.",
+    "Read T-935.10 satellite (tbd_sat.rs parse_header/index, satellite.rs fetch_index_head) — it is the working precedent and the new container should not invent a second shape.",
+    "Emit the container plus index in build.rs beside the existing chunks; prove byte-equivalence of the object set before deleting anything.",
+    "Cut the loader over, then delete the chunk emit, then delete residency.rs and chunk_bin.rs.",
+    "Perturbation: reintroduce a per-chunk fetch on the pan path; the zero-allocation pan test must go red; restore, touch, green.",
+    "SLICE THIS. Sixteen files carry chunk vocabulary and residency.rs alone is 290 references and file-length allowlisted; the umbrella is not one agent's work.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p website-frontend",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-935.15",
+]
+acceptance = [
+    "No chunk file is emitted or fetched, and residency.rs and chunk_bin.rs no longer exist.",
+    "A full-width pan shows no residency allocations and no frame spike at former chunk boundaries.",
+    "The object set the editor renders is byte-identical to the chunked build on everon.",
+]
+owns = [
+    "crates/map-engine-core/src/world/residency.rs",
+    "crates/map-engine-core/src/world/chunk_bin.rs",
+    "crates/map-engine-core/src/world/chunk_math.rs",
+    "crates/map-engine-core/src/world/index.rs",
+    "crates/map-engine-core/src/world/manifest.rs",
+    "tools/tbd-tools/src/world/build.rs",
+    "tools/tbd-tools/src/world/binary_emit.rs",
+    "apps/website/frontend/src/editor/world_assets/world_host.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "core"

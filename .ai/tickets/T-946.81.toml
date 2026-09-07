@@ -1,0 +1,47 @@
+id = "T-946.81"
+kind = "work"
+title = "Auth callback persists a token with no user"
+summary = "auth.rs:454-455 persists refresh_token before GET /me returns, so persist_state writes user:null. Interrupt that window and the tab holds a valid token with no user: the header says Sign in while token-scoped state resolves."
+class = "bug"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T19:13:18Z"
+priority = 2
+main_goal = "A tab never holds a usable refresh token without the user it belongs to."
+context = [
+    "Found 2026-09-07 while the operator tested wave 254 in a browser. Reported as: Discord login worked and the admin panel rendered, but the UI still said sign in.",
+    "AuthCallbackPage (core/auth.rs:454-455) calls set_tokens then persist BEFORE spawning GET /me. persist_state (:302-308) reads self.user, which is None at that instant.",
+    "So localStorage tbd-auth holds {refreshToken, user: null, expiresAt} for the whole /me round trip. The second persist, after set_session, is what fills the user in.",
+    "The Err arm at :479-483 keeps the minted tokens deliberately (T-126 S6, so a reload can bootstrap via refresh) — which also keeps the user:null blob.",
+    "client::bootstrap (client.rs:924-928) restores refresh_token and expires_at unconditionally but user only `if let Some(u) = p.user`, so a null user survives every later cold load until /me succeeds.",
+]
+current_state = [
+    "Between the two persists the tab is authenticated but anonymous. Any interruption there — a slow or failed /me, a closed tab — leaves that state on disk.",
+]
+requirement = [
+    "The persisted blob never carries a refresh token without its user: either defer the first persist until /me resolves, or write the pair atomically.",
+    "If tokens must be kept on a /me failure (T-126 S6), the persisted record says so explicitly rather than being indistinguishable from a complete session.",
+    "A test drives the callback with a failing /me and asserts the resulting persisted state cannot render as signed-out-but-authorized.",
+]
+approach = [
+    "Verify on main: clear localStorage, stub /me to fail, run the callback, read tbd-auth — expect a refresh token beside user:null. Paste it.",
+    "Move the first persist after set_session, or add an explicit incomplete marker the bootstrap honours.",
+    "Perturbation: restore the early persist; the new test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p website-frontend",
+    "cargo xtask platform wave gate --slice T-946.81",
+]
+acceptance = [
+    "A failed or interrupted /me during callback never leaves a tab that is authorized but shows as signed out.",
+    "The happy path is unchanged: sign in still lands on / with the user in the header.",
+]
+owns = [
+    "apps/website/frontend/src/core/auth.rs",
+    "apps/website/frontend/src/core/client.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
