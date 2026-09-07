@@ -15,4 +15,9 @@ pub mod commands;
 pub mod gestures;
 pub mod overlays;
 pub mod render_sync;
+// T-936.7 — the tactical-graphics belt: ONE document read, drawn AND picked (`render_sync`'s
+// T-780/T-784 shape). Not wasm-gated: everything but the `MissionDocCore` read is pure geometry,
+// and keeping it native-testable is why the parse/pack/pick trio lives in its own file rather than
+// inside the wasm-only gesture and history modules that call it.
+pub mod tactical_graphics;
 pub mod viewport;

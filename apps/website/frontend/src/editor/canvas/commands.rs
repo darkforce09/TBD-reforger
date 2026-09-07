@@ -135,6 +135,23 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                             // browser default and stops any lower Esc layer (dialog/menu/tab)
                             // consuming the SAME press (one-Esc-one-layer, T-813/T-814).
                             let zone_draw_acted = editor_ops::cancel_zone_draw();
+                            // T-936.7 — a tactical draw and a tactical vertex drag both honour
+                            // Esc, and both need this explicit arm for the SAME reason
+                            // `cancel_zone_draw` does: neither rides `Pending`, so
+                            // `has_pending()` (and therefore `cancel_pending`) is a false
+                            // negative for them. Without this the F-31 shape returns — arm a
+                            // phase line, click a vertex, Esc, and the next click still extends
+                            // a draw the operator believes they abandoned.
+                            //
+                            // The drag cancel snaps the vertex back to its committed position,
+                            // so the lane has to be put back on committed truth by hand: the
+                            // drag never wrote to the document, so no `after_local_edit` rebind
+                            // is coming.
+                            let tg_draw_acted = editor_ops::cancel_tactical_draw();
+                            let tg_drag_acted = editor_ops::cancel_tactical_vertex_drag();
+                            if tg_drag_acted {
+                                mission_history::refresh_tactical_lane();
+                            }
                             // T-768 — Esc disarms an armed connect the same way it disarms an
                             // armed place (T-723). Completing stays LMB pick / RMB Complete.
                             let connect_acted = if editor_ops::pending_connect().is_some() {
@@ -164,6 +181,8 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                             }
                             place_acted
                                 || zone_draw_acted
+                                || tg_draw_acted
+                                || tg_drag_acted
                                 || connect_acted
                                 || ruler_acted
                                 || los_acted
@@ -329,6 +348,25 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                     // edge is gone; leaving it selected would leave Del pointing at a row that
                     // no longer exists, and a Ctrl+Z would silently re-arm it). On the stale
                     // branch it is the same disarm one keypress earlier than the reconcile.
+                    // T-936.7 — NO NEW KEYBINDING IS ADDED HERE, deliberately. Finishing a
+                    // tactical draw wants an "Enter" arm, and `Enter` is already claimed by
+                    // three other window listeners (`context_menu`, `attributes_modal`,
+                    // `orbat_manager`) while `keymap_census::SHARED_CHANNELS` exempts only
+                    // `Escape` — so the arm would fail `no_two_listeners_claim_the_same_chord`,
+                    // and ANY new code literal here also fails `every_binding_has_a_help_entry`
+                    // until `panels/help_modal.rs` grows a matching `Shortcut` row. The draw is
+                    // finished by RIGHT-CLICK on the canvas instead (`gestures.rs`'s
+                    // `oncontextmenu`), which is the ordinary polyline-finish gesture and claims
+                    // no key at all. Escape and Delete below are EXISTING bindings whose ACTS
+                    // this slice widened — that is not a keymap change and the census agrees.
+                    // T-936.7 adds a THIRD branch inside the same arm, on the same reasoning:
+                    // an armed tactical graphic is deleted through `editor_ops`' own verb (one
+                    // write, one Ctrl+Z, the same tail every other mutator runs), never through
+                    // a map-side second deletion path. It is ordered AFTER the connection
+                    // branch because a connection is armed by a click that already cleared the
+                    // tactical selection (the pointerup pick chain keeps the two mutually
+                    // exclusive), so at most one of them can be armed and the order is a
+                    // formality rather than a precedence claim.
                     "Delete" if !modk => {
                         let armed = selected_connection.try_get_untracked().flatten();
                         if armed.is_some() {
@@ -336,7 +374,10 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                         }
                         match armed.filter(|id| editor_ops::connection_exists(id)) {
                             Some(id) => editor_ops::delete_connection(&id),
-                            None => editor_ops::delete_selection(),
+                            None => {
+                                editor_ops::delete_selected_tactical_graphic()
+                                    || editor_ops::delete_selection()
+                            }
                         }
                     }
                     "Backspace" if !modk => {

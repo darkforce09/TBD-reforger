@@ -107,6 +107,11 @@
       "description": "T-936.6 — authored DYNAMIC SPAWN modules (schemaVersion 1.3). Each row is a wave or a garrison: `{id, kind: wave|garrison, factionKey, groupTemplate, x+z XOR zoneId, count, intervalSeconds?, maxAlive?, triggerId?}`. A wave spawns `count` groups on `intervalSeconds` (or after `triggerId` FIRED) while living groups stay below `maxAlive`. A garrison spawns once and holds. `maxAlive` is capped at 32 (spawn_modules.rs MAX_ALIVE). Absent array ⇒ a mission with no dynamic AI, which is every pre-T-936.6 document; the AUTHORED_BLOCKS carrier emits nothing in that case, so Class-R byte-parity fixtures stay identical.\n\nREAD SINCE T-936.6 (2026-09-07) by `Gamemode/TBD_DynamicSpawner.c` (both mod trees): the server spawns groups from `groupTemplate` at (x,z) or the named zone's centre; clients see replicated AI. JsonLoadContext allocates the array when the key is absent — presence is `Count()`. Flatten `EditorPayload::authored_blocks_root` copies every AUTHORED_BLOCKS key it has a named field for, including `spawnModules`.",
       "items": { "$ref": "#/$defs/spawnModule" }
     },
+    "tacticalGraphics": {
+      "type": "array",
+      "description": "T-936.7 — authored TACTICAL CONTROL MEASURES (schemaVersion 1.3): the multi-point graphics `markers[]` structurally cannot express. A marker is ONE point with a glyph — its icon enum even carries the word `phase_line`, which was a one-glyph stand-in for a line the author could not draw. Each row here is `{id, kind: phase_line|boundary|axis_of_advance|curved_arrow, points: [[x, z], …], label?, sideKey?, style?}`. Per-kind vertex floors live in `tactical_graphics.rs` `min_points`: two for the open polylines, THREE for `curved_arrow` (a Catmull-Rom through two points is the straight segment `axis_of_advance` already is, so allowing it would make the two kinds indistinguishable on the wire). `points` is capped at 128 (MAX_POINTS) because the compiled document is re-fetched by the game server and a draw tool can otherwise author a megabyte of vertices. Absent array ⇒ a mission with no control measures, which is every pre-T-936.7 document; the AUTHORED_BLOCKS carrier emits nothing in that case, so Class-R byte-parity fixtures stay identical.\n\nNOT YET READ BY THE MOD. Nothing under `Scripts/Game/TBD` binds this key today — the Enfusion reader is a later slice. It reaches the wire and stops there, which is a different state from `spawnModules`/`weatherTimeline` (read since T-936.4/.6) and is recorded here rather than implied.\n\nFlatten: `EditorPayload` declares a named `tacticalGraphics` field AND `authored_block_value` an arm for it. Both are required — the AUTHORED_BLOCKS row alone does NOT reach `/compiled`, because that `match` ends `_ => None` and drops an unregistered key silently (T-946.53). `flatten.rs` `every_authored_block_key_reaches_the_wire` is the guard that now refuses a row without them.",
+      "items": { "$ref": "#/$defs/tacticalGraphic" }
+    },
     "briefings": { "$ref": "#/$defs/briefings" },
     "settings": { "$ref": "#/$defs/settings" },
     "objectives": {
@@ -1471,6 +1476,82 @@
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
           "description": "Optional `editorTriggers[].id`. First spawn waits until that trigger FIRED. A missing id is logged and the module never arms."
+        }
+      }
+    },
+    "tacticalGraphic": {
+      "type": "object",
+      "description": "T-936.7 — one tactical control measure: an ORDERED RUN of world vertices with a doctrinal kind. Deliberately NOT `#/$defs/polygon`, which is `minItems: 3` and closed — these are OPEN polylines and a two-point phase line is the commonest case there is. `style` reuses T-673's MARKER vocabulary rather than inventing a second one (`color` is `#/$defs/hexColor`, `alpha` is 0..1, `brush` is the same eight Eden fill names `$defs/marker.brush` declares) so a reader that already styles markers styles these with the same table; `widthM` is the one addition and the geometry forces it — a marker is a glyph with a `size` multiplier, a control measure is a STROKE and a stroke needs a world width. Vertex-count floors are per kind and are enforced by `tactical_graphics.rs` `min_points`, not by this schema: JSON Schema cannot make `minItems` depend on a sibling's value without an `if`/`then` per kind, and putting the rule in one Rust function keeps the refusal a sentence the author can read.",
+      "required": ["id", "kind", "points"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "Stable graphic id. Unique across `tacticalGraphics[]`."
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["phase_line", "boundary", "axis_of_advance", "curved_arrow"],
+          "description": "phase_line = a control line units report crossing; boundary = the seam between two sides' areas of responsibility; axis_of_advance = a straight direction of attack; curved_arrow = the same intent along a curve, drawn Catmull-Rom through `points`. The first three need ≥ 2 vertices, `curved_arrow` needs ≥ 3 (see `$defs/tacticalGraphic`'s note on min_points)."
+        },
+        "points": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 128,
+          "description": "World `[x, z]` vertices in author order. `minItems` is the floor common to every kind; the per-kind floor (3 for `curved_arrow`) is `tactical_graphics.rs` `min_points`. `maxItems` mirrors MAX_POINTS.",
+          "items": {
+            "type": "array",
+            "items": { "type": "number" },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "label": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "Optional map label — \"PL BLUE\", \"AXIS SABRE\". `wireSafeString` for the same delimited-wire reason every other authored label is."
+        },
+        "sideKey": {
+          "$ref": "#/$defs/factionKey",
+          "description": "Optional owning side — a `factions[].key`. A PATTERN and not an enum because faction keys are authored; whether the key names a faction that exists is a cross-block question the document validator owns, not this block's."
+        },
+        "style": { "$ref": "#/$defs/tacticalGraphicStyle" }
+      }
+    },
+    "tacticalGraphicStyle": {
+      "type": "object",
+      "description": "T-936.7 — optional stroke style for a tactical graphic. Every key is optional; an absent `style` means the renderer picks its own defaults from `sideKey`, which is the common case and the reason nothing here is required.",
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "$ref": "#/$defs/hexColor",
+          "description": "Stroke colour, the same `#rrggbb` form `marker.color` and `faction.color` use."
+        },
+        "alpha": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Opacity, 0 (transparent) → 1 (opaque). Same range and meaning as `marker.alpha`."
+        },
+        "brush": {
+          "type": "string",
+          "enum": [
+            "solid",
+            "border",
+            "diagonal",
+            "cross_diagonal",
+            "horizontal",
+            "vertical",
+            "grid",
+            "fill_diagonal"
+          ],
+          "description": "Fill brush, spelled identically to `marker.brush` (T-673) so one reader can style both from one table."
+        },
+        "widthM": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Stroke width in world metres. The one key with no marker counterpart — a marker is a glyph scaled by `size`, a control measure is a stroke with a width."
         }
       }
     },

@@ -660,16 +660,19 @@ mod tests {
         assert!(carried.get("tasks").is_none());
     }
 
-    /// The unlisted-key witness now uses T-936.7's `tacticalGraphics`. T-936.6 registered
-    /// `spawnModules`, so that key is no longer a valid dummy.
+    /// The unlisted-key witness, and the LAST time it needs re-pointing. It has been passed from
+    /// slice to slice as "the next block's key, not registered yet"; T-936.7 registered
+    /// `tacticalGraphics`, the seventh and final T-936 block, so there is no eighth key to hand
+    /// it to. It now names something that is not a block and never will be — which is what the
+    /// assertion always meant, and which no future registration can falsify.
     #[test]
     fn an_unlisted_environment_key_is_not_promoted() {
-        let env = json!({"weather": "clear", "tacticalGraphics": []});
+        let env = json!({"weather": "clear", "notAnAuthoredBlock": []});
         let mut dst = Map::new();
         let copied = copy_authored_blocks(&env, &mut dst);
-        assert!(!copied.contains(&"tacticalGraphics"), "{copied:?}");
+        assert!(!copied.contains(&"notAnAuthoredBlock"), "{copied:?}");
         assert!(
-            !dst.contains_key("tacticalGraphics"),
+            !dst.contains_key("notAnAuthoredBlock"),
             "an unlisted key stays parked: {dst:?}"
         );
     }

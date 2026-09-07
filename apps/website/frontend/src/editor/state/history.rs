@@ -449,6 +449,11 @@ fn after_doc_change(ctx: &HistoryCtx) {
             let (mxy, mtints, micons, mcaptions) = marker_lane_xy_tints(doc);
             e.markers_bind(&mxy, &mtints, micons, mcaptions);
             e.comments_bind_ids(&comment_lane_xy(doc), comment_lane_ids(doc));
+            // T-936.7 — rebind the tactical-graphics lane from the COMMITTED document, on the
+            // same footing as every lane above it. This is the reason the lane can never go
+            // stale after an undo/redo/restore: a lane bound only from its authoring call site
+            // is exactly the defect `upload_squad_links`' own note warns about.
+            upload_tactical_graphics(e, doc);
         }
     }
     ctx.doc_ver.set(ctx.doc_ver.get().saturating_add(1));
@@ -601,6 +606,60 @@ fn upload_squad_links(e: &mut RenderEngine, doc: &MissionDocCore, soa: &SlotSoa)
     #[allow(clippy::cast_possible_truncation)]
     let segment_count = (verts.len() / 12) as u32;
     e.upload_hairline_segments(role_id::SQUAD_LINKS, &verts, segment_count, true);
+}
+
+/// T-936.7 — pack + upload the tactical-graphics hairline lane.
+///
+/// **No new render lane.** The graphics ride `role_id::MISSION_ZONES` through the generic
+/// `upload_hairline_segments`, the same path `upload_squad_links` takes one line above — nothing in
+/// `map-engine-render` changed. See `canvas/tactical_graphics.rs`'s header for why that role is the
+/// right one to squat and what the next zone-ring slice has to do about it.
+///
+/// `doc` is the single source of geometry; the in-flight VERTEX DRAG is then laid over it by
+/// `editor_ops::apply_tactical_drag_preview`. The drag deliberately writes nothing to the document
+/// until pointerup (one gesture, one undo step), so the committed rows alone would draw the vertex
+/// at its old position for the whole drag — the same reason `vehicles_bind_symbology` above is
+/// re-bound here after a mixed drag re-packed its lane.
+fn upload_tactical_graphics(e: &mut RenderEngine, doc: &MissionDocCore) {
+    use crate::editor::canvas::tactical_graphics as tg;
+    let mut rows = tg::live_tactical_graphics(doc);
+    editor_ops::apply_tactical_drag_preview(&mut rows);
+    let verts = tg::tactical_lane_verts(&rows, editor_ops::selected_tactical_graphic().as_deref());
+    e.upload_hairline_segments(
+        role_id::MISSION_ZONES,
+        &verts,
+        tg::lane_segment_count(&verts),
+        true,
+    );
+}
+
+/// T-936.7 — re-pack the tactical-graphics lane ALONE, with no document change.
+///
+/// The two callers are the vertex-drag preview (which must not touch the document — one gesture,
+/// one undo step) and the selection tint (a click changes the selection, not the document, so it
+/// takes the T-159.21 "SEL readout only" path: no rebind, no persist, no undo step). Both go
+/// through [`upload_tactical_graphics`] rather than packing the lane themselves, so the previewed
+/// line, the tinted line and the committed line are one packer — the T-780 rule that what is drawn
+/// and what a click can find are one set by construction.
+pub fn refresh_tactical_lane() {
+    HISTORY_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return;
+        };
+        // `engine` is borrowed FIRST and held in a named binding, and `doc` second. Doing it the
+        // other way round makes `ctx.engine.borrow_mut()` a temporary whose lifetime is tied to
+        // the `if let`, which outlives `guard` and does not compile — the same borrow discipline
+        // `after_doc_change` follows one function up.
+        let mut eg = ctx.engine.borrow_mut();
+        let Some(e) = eg.as_mut() else {
+            return;
+        };
+        let d = ctx.doc.borrow();
+        if let Some(doc) = d.as_ref() {
+            upload_tactical_graphics(e, doc);
+        }
+    });
 }
 
 /// Push the doc/selection state onto the HUD signals. `MissionDocCore` has no change subscription,
