@@ -433,3 +433,14 @@ edit, in-editor play button.
   on the shared `rust_it` scratch DB. Measured: this close created **zero** `tbd_wave255_close_cold*`
   databases. Both of this wave's full gates were therefore warm-DB runs, and earlier waves' cold DB
   names must have come from a separate `db test-it` invocation rather than from the gate.
+
+- 2026-09-08 **WAVE 255 CLOSED** (`3aad64790`) — lock row 256 claimed under wave label 255 due to the pending emptied wave 255 offset: T-242 emit T-216 slot deltas through flatten (verified already on main by T-674.1 `573c42724`), T-937.5 payload item schemas, duplicate slot guard and 8 MB ceiling, T-257 undo scope covers loadouts, items, objectives, and markers, T-939.1 outliner multi-select drag between layers, T-939.3 canvas Z gizmo arm and vertical drag.
+  GATE: PASS 32/32 (base `425478f87`, derived and corroborated).
+  Wave-level `mod compile` OK (5761 files, 11484 classes, 0 warnings).
+  **One BLOCKER fixed in-wave**: T-937.5 `minLength: 1` on `id` in `mission-editor-payload.schema.json` broke integration test `compiled_document_is_schema_validated_before_serving` in `website-api` (the test verifies empty `id` passes save-time and fails compile-time); fixed in `c4c299100` by removing `minLength: 1` from `editorSlot` and `editorLayer`.
+  **Adversarial verifier findings filed (T-946.82…T-946.85)**:
+  - T-946.82 (MAJOR): Canvas Z gizmo arm never advances gesture, updates readout, or commits elevation (T-939.3 hit-tests and sets `z_drag` on pointerdown, but `onpointermove` and `onpointerup` never read `z_drag`; `set_z_drag_readout` has 0 callers; elevation is never written; pointer capture leaks/strands).
+  - T-946.83 (MAJOR): Outliner multi-select drag still drops single item; `plan_drop` uncalled (T-939.1 added `DragSet` and `plan_drop`, but drop handler in `outliner_tree.rs` still calls `complete_layer_drop_onto_folder` with single item; multi-item drop is unbatched).
+  - T-946.84 (MAJOR): Tactical draw UI trigger was not folded in by T-939.1 (T-946.69 remains unfixed and uncalled; REPORT-T-939.1 falsely claimed button was added).
+  - T-946.85 (MAJOR): Duplicate slot ID guard uncalled on editor save path (T-937.5 added `duplicate_slot_ids(&MissionDocCore)` in `slot_ids.rs`, but it has zero callers; `save_now` in `commands_hotkeys.rs` does not check duplicates, only upload path checks via private helper).
+
