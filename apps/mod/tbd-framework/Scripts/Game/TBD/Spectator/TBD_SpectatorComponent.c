@@ -35,6 +35,10 @@ class TBD_SpectatorComponent : SCR_BaseGameModeComponent
 	//! controller polls, so it cannot miss a death that happened while it was waiting.
 	static const int START_DELAY_MS = 2000;
 
+	//! T-941.5 (2026-09-07) — metres a spectator may steer their streaming origin from death
+	//! when the prefab attribute is unset or non-positive. Never unlimited.
+	static const float DEFAULT_HOST_MAX_RANGE_M = 2000;
+
 	//! T-181.24 — the kill switch. Possession is the most invasive thing this mod does to a player
 	//! controller, so there is exactly one attribute that makes the whole streaming host stand down
 	//! and leaves the spectator behaving as it did before T-181.24 (camera works, streaming stays
@@ -51,14 +55,16 @@ class TBD_SpectatorComponent : SCR_BaseGameModeComponent
 	[Attribute("", desc: "Optional prefab for the spectator streaming host. EMPTY = the built-in prefab-free host (no resourceDatabase.rdb dependency). A character prefab is refused at runtime.", params: "et")]
 	protected ResourceName m_sHostPrefab;
 
-	//! T-181.24 — how far a spectator may steer their own streaming origin from where they died.
+	//! T-941.5 (2026-09-07) — how far a spectator may steer their own streaming origin from
+	//! where they died.
 	//!
-	//! 0 (the default) is unlimited, because watching the AO is the entire point of a spectator
-	//! camera. The cost of unlimited is stated plainly in the `TBD_SpectatorHost` header: it is the
-	//! engine's replication range that stops a MODIFIED client from seeing the enemy, and this
-	//! feature moves that range on request. An operator who cares more about that than about
-	//! spectator reach sets a number here.
-	[Attribute("0", desc: "Max metres a spectator may steer their streaming host from their own death position. 0 = unlimited.")]
+	//! Default is 2000 m. 0 (and any non-positive value) is that default, never unlimited: a
+	//! modified client used to pull the whole map by requesting a host far from their corpse.
+	//! The authority resolves the configured maximum here before arming `TBD_SpectatorHost`,
+	//! which then clamps every client position request to that leash. Operators who want a
+	//! shorter leash set a positive number below 2000; a longer leash is a larger positive
+	//! number. Prefabs that still store 0 pick up the 2000 m default.
+	[Attribute("2000", desc: "Max metres a spectator may steer their streaming host from their own death position. Default 2000. 0 uses the default; never unlimited.")]
 	protected float m_fHostMaxRangeM;
 
 	//------------------------------------------------------------------------------------------------
@@ -71,7 +77,7 @@ class TBD_SpectatorComponent : SCR_BaseGameModeComponent
 		// SERVER half. Authority is the only place that may spawn or possess anything, and a
 		// dedicated server reaches this line while a client never does.
 		if (m_bStreamingHost && RplSession.Mode() != RplMode.Client)
-			TBD_SpectatorHost.Start(m_sHostPrefab, m_fHostMaxRangeM);
+			TBD_SpectatorHost.Start(m_sHostPrefab, ClampHostMaxRangeM(m_fHostMaxRangeM));
 
 		// CLIENT half. A dedicated server has no workspace at all (measured — see TBD_UILayouts).
 		// That is the cleanest available "am I a machine with a screen" test, and it is the one the
@@ -100,5 +106,23 @@ class TBD_SpectatorComponent : SCR_BaseGameModeComponent
 		}
 
 		super.OnDelete(owner);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-941.5 — finite metres leash. 0 is the default, never unlimited. Called on the
+	//! authority before `TBD_SpectatorHost.Start` so every later client position request is
+	//! held to a configured maximum (`TBD_SpectatorHost.ClampToRange` treats a non-positive
+	//! stored max as unlimited, so this must never arm that path).
+	protected static float ClampHostMaxRangeM(float requestedM)
+	{
+		float ceiling = requestedM;
+		if (ceiling <= 0)
+			ceiling = DEFAULT_HOST_MAX_RANGE_M;
+
+		float value = requestedM;
+		if (value <= 0)
+			value = ceiling;
+
+		return Math.Clamp(value, 0, ceiling);
 	}
 }
