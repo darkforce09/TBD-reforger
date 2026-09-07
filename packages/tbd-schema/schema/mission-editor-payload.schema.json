@@ -59,7 +59,7 @@
     },
     "editor": {
       "type": "object",
-      "description": "Lossless editor graph. `squads`, `slots` and `editorLayers` are intentionally unconstrained (no per-item schema) so validation stays O(1) on missions with hundreds of thousands of slots; the rules those arrays do need are expressed in CODE instead — `crates/map-engine-core/src/mission/wire_safety.rs`, whose header records the measurement (615.6 ms parse vs 34.5 ms scan at 367k slots). `factions` is the one array that is BOUNDED — see its own note — so a per-item subschema there is a different cost class from the thing that rule refuses.",
+      "description": "Lossless editor graph. `squads` is intentionally unconstrained (no per-item schema) so validation stays O(1) on missions with hundreds of thousands of slots; the rules those arrays do need are expressed in CODE instead — `crates/map-engine-core/src/mission/wire_safety.rs`. `slots` and `editorLayers` carry per-item subschemas constraining known fields with additionalProperties: false.",
       "properties": {
         "factions": {
           "type": "array",
@@ -67,8 +67,14 @@
           "items": { "$ref": "#/$defs/editorFaction" }
         },
         "squads": { "type": "array" },
-        "slots": { "type": "array" },
-        "editorLayers": { "type": "array" }
+        "slots": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/editorSlot" }
+        },
+        "editorLayers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/editorLayer" }
+        }
       }
     }
   },
@@ -83,6 +89,57 @@
           "minLength": 1,
           "description": "The author's faction key, stored and read VERBATIM. Required and non-empty; deliberately NOT matched against `mission.schema.json#/$defs/factionKey` — see this row's note for the layer argument and the measurements."
         }
+      }
+    },
+    "editorSlot": {
+      "type": "object",
+      "description": "One authored slot row.",
+      "required": ["id"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "squadId": { "type": "string" },
+        "index": { "type": "integer" },
+        "role": { "type": "string" },
+        "tag": { "type": "string" },
+        "assetId": { "type": "string" },
+        "position": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "z": { "type": "number" },
+            "rotation": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        "stance": { "type": "string" },
+        "loadoutId": { "type": ["string", "null"] },
+        "loadout": { "type": ["object", "string", "null"] },
+        "callsign": { "type": "string" },
+        "rank": { "type": "string" },
+        "unitName": { "type": "string" },
+        "editorHidden": { "type": "boolean" },
+        "description": { "type": "string" }
+      }
+    },
+    "editorLayer": {
+      "type": "object",
+      "description": "One authored editor layer row.",
+      "required": ["id"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "parentId": { "type": ["string", "null"] },
+        "entityIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "hidden": { "type": "boolean" },
+        "locked": { "type": "boolean" },
+        "color": { "type": "string" },
+        "collapsed": { "type": "boolean" }
       }
     }
   }
