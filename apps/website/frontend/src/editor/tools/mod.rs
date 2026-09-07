@@ -15,3 +15,7 @@ pub mod select_tool;
 pub mod los_world;
 #[cfg(target_arch = "wasm32")]
 pub mod los_world_wasm;
+// T-938.5 — the viewshed job scheduler: one active job per tool, ≤4 ms animation-frame batches,
+// cancel on new placement, and the caps that refuse an unbounded request. Owns its own rAF closure
+// so `canvas/{gestures,viewport}.rs` keep their contracts.
+pub mod viewshed_scheduler;

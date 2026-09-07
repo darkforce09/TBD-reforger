@@ -200,6 +200,172 @@ fn level_wash_picks_one_level() {
     assert!(level_washes(&none, &sc, obs, &params()).is_empty());
 }
 
+// ── T-938.5 — the sliced wash, its cancel token, and the radius cap ─────────────────────────────
+
+/// Drive a job to completion in `budget_ms` batches; returns the batch count. The clock is a
+/// monotone fake (one "ms" per read), so a 0 ms budget is exactly one batch per `step` — the finest
+/// slicing — with no wall-clock flake.
+fn drain(job: &mut WashJob, budget_ms: f64, blocked: &dyn Fn([f64; 3], [f64; 3]) -> bool) -> usize {
+    let t = std::cell::Cell::new(0.0f64);
+    let now = || {
+        t.set(t.get() + 1.0);
+        t.get()
+    };
+    let mut batches = 0usize;
+    while !job.done {
+        assert!(
+            job.step(blocked, budget_ms, &now),
+            "a live job must decide cells"
+        );
+        batches += 1;
+        assert!(batches < 1_000_000, "job never finished");
+    }
+    batches
+}
+
+/// THE T-938.5 EQUALITY PIN: the sliced wash is BIT-IDENTICAL to the synchronous one — same
+/// geometry and the same `Visibility` in every cell — at three batch sizes, including the finest.
+/// This is the test the "skip the last row" perturbation of `WashJob::step` must turn RED.
+#[test]
+fn sliced_wash_is_bit_identical_to_the_sync_path() {
+    let bp = room_blueprint();
+    let sc = room_sidecar(&ceiling_with_stairwell());
+    let p = params();
+    let obs = [1.5, 1.4, 1.5];
+    let blocked = |a: [f64; 3], b: [f64; 3]| {
+        sc.bvh
+            .any_hit(&sc.verts, &sc.tris, a, b, 0.0, 1.0)
+            .is_some()
+    };
+    let lvl = &bp.levels[1];
+    let eye_y = lvl.elevation_range[0] + p.eye_m;
+    let sync = wash_band(lvl.level_index, eye_y, obs, &p, blocked);
+    // The fixture must exercise all three classes or "identical" is a cheap claim.
+    let (v, h, u) = sync.class_counts();
+    assert!(v > 0 && h > 0 && u > 0, "fixture classes: {v}/{h}/{u}");
+    for (i, budget) in [0.0, 3.0, 1e9].into_iter().enumerate() {
+        let mut job = WashJob::new(lvl.level_index, eye_y, obs, &p, 3).expect("under the cap");
+        let batches = drain(&mut job, budget, &blocked);
+        assert_eq!(
+            job.wash(),
+            &sync,
+            "budget {budget}: the sliced wash must equal the synchronous one ({batches} batches)"
+        );
+        let (done, total) = job.progress();
+        assert_eq!(done, total, "budget {budget}: every cell decided");
+        assert_eq!(total, sync.cols * sync.rows);
+        if i == 0 {
+            assert_eq!(
+                batches,
+                total.div_ceil(WASH_BATCH_CELLS),
+                "a zero budget slices to one WASH_BATCH_CELLS batch per step"
+            );
+        }
+    }
+}
+
+/// The cancel token: a retired job decides no further cell and keeps its partial raster; the
+/// undecided tail is still the `Unknown` sentinel, never a fabricated verdict.
+#[test]
+fn wash_job_cancels_mid_disc() {
+    let bp = room_blueprint();
+    let sc = room_sidecar(&[]);
+    let p = params();
+    let obs = [3.0, 1.4, 3.0];
+    let blocked = |a: [f64; 3], b: [f64; 3]| {
+        sc.bvh
+            .any_hit(&sc.verts, &sc.tris, a, b, 0.0, 1.0)
+            .is_some()
+    };
+    let lvl = &bp.levels[0];
+    let mut job = WashJob::new(
+        lvl.level_index,
+        lvl.elevation_range[0] + p.eye_m,
+        obs,
+        &p,
+        9,
+    )
+    .expect("under the cap");
+    assert_eq!(job.generation, 9);
+    let now = || 0.0f64;
+    assert!(job.step(&blocked, 0.0, &now), "one batch decided");
+    let (before, total) = job.progress();
+    assert_eq!(before, WASH_BATCH_CELLS);
+    assert!(before < total);
+    let partial = job.wash().clone();
+    job.cancel();
+    assert!(job.done);
+    assert!(
+        !job.step(&blocked, 1e9, &now),
+        "a cancelled job decides nothing"
+    );
+    assert_eq!(
+        job.progress().0,
+        before,
+        "cursor frozen at the cancel point"
+    );
+    assert_eq!(job.wash(), &partial, "partial raster preserved");
+    assert_eq!(partial.cells.len(), partial.cols * partial.rows);
+}
+
+/// THE RADIUS CAP (T-938.5, operator 2026-09-07): 400 m — 16× the shipped 25 m default. The
+/// default and the building viewer's footprint-diagonal radius both pass; an oversize disc is
+/// REFUSED by every surface, with a message naming the cap and the measured radius, and casts no
+/// ray at all. `grid_rect` is untouched: it still COARSENS (see the test above), which is its own
+/// contract.
+#[test]
+fn over_cap_wash_radius_is_refused_with_a_message() {
+    let bp = room_blueprint();
+    let sc = room_sidecar(&[]);
+    let obs = [3.0, 1.4, 3.0];
+    // Shipped radii pass.
+    for r in [WASH_RADIUS_M, 10f64.hypot(10.0) + 5.0, MAX_WASH_RADIUS_M] {
+        assert!(wash_cap_check(r).is_ok(), "radius {r} m must be accepted");
+    }
+    let err = wash_cap_check(1000.0).expect_err("1000 m is over the 400 m cap");
+    assert_eq!(err.cap, "building wash radius (m)");
+    assert!((err.limit - MAX_WASH_RADIUS_M).abs() < 1e-12);
+    assert!((err.measured - 1000.0).abs() < 1e-12);
+    let msg = err.to_string();
+    assert!(
+        msg.contains("building wash radius (m)") && msg.contains("1000") && msg.contains("400"),
+        "the refusal must name the cap AND the measured value: {msg}"
+    );
+
+    let over = WashParams {
+        radius_m: 1000.0,
+        ..WashParams::default()
+    };
+    assert_eq!(
+        WashJob::new(0, 1.0, obs, &over, 0)
+            .expect_err("job refused")
+            .cap,
+        "building wash radius (m)"
+    );
+    // Every infallible surface refuses too — an EMPTY raster, and NOT ONE ray cast.
+    let rays = std::cell::Cell::new(0u32);
+    let counting = |_: [f64; 3], _: [f64; 3]| {
+        rays.set(rays.get() + 1);
+        false
+    };
+    let refused = wash_band(0, 1.0, obs, &over, counting);
+    assert_eq!((refused.cols, refused.rows), (0, 0));
+    assert!(refused.cells.is_empty());
+    assert_eq!(rays.get(), 0, "an over-cap wash must cast no ray");
+    assert_eq!(refused.at(0, 0), Visibility::Unknown);
+    assert_eq!(refused.visibility_at(obs[0], obs[2]), Visibility::Unknown);
+    for w in level_washes(&bp, &sc, obs, &over) {
+        assert_eq!((w.cols, w.rows), (0, 0), "level_washes refuses too");
+    }
+    assert_eq!(
+        level_wash(&bp, &sc, obs, 0, &over)
+            .expect("level exists")
+            .cols,
+        0,
+        "level_wash refuses too"
+    );
+}
+
 /// Assertion-free timing print for the report (`--nocapture`): two 64 × 64 discs.
 #[test]
 fn wash_timing_envelope() {

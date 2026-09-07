@@ -389,6 +389,215 @@ pub struct ViewshedParams {
 /// measurement in the ticket).
 pub const VIEWSHED_DEFAULT_RADIUS_M: f64 = 2000.0;
 
+/// Hard cap on a terrain viewshed raster, in CELLS (T-938.5). The shipped 2000 m radius at the live
+/// 8 m cell is a 501 × 501 = 251,001-cell disc, so **the shipped default is unchanged** — the cap
+/// refuses only what the old code accepted without any limit at all. (Measured on this crate's
+/// `viewshed_perf_default_radius_is_reported`: 251,001 cells cost 56.8 ms in ONE blocking call, so
+/// the same 2000 m disc at a 1 m cell — 16 M cells — is roughly an hour's worth of frozen frames.)
+pub const MAX_VIEWSHED_CELLS: usize = 300_000;
+
+/// A viewshed request a cap refused: which cap, its limit, and the measured value that broke it.
+/// ONE type for both subsystems — terrain cells here, the building-wash radius in
+/// [`building_viewshed`](crate::building_viewshed) — so a caller has one thing to surface, and the
+/// [`Display`](std::fmt::Display) form always names the cap AND the number that broke it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ViewshedCapRefused {
+    /// What was measured, with its unit — e.g. `"terrain viewshed cells"`.
+    pub cap: &'static str,
+    /// The cap's limit, in the same unit as `measured`.
+    pub limit: f64,
+    /// The refused request's measured value.
+    pub measured: f64,
+}
+
+impl std::fmt::Display for ViewshedCapRefused {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "viewshed refused: {} {:.0} exceeds the cap of {:.0}",
+            self.cap, self.measured, self.limit
+        )
+    }
+}
+
+/// The raster lattice a [`ViewshedParams`] resolves to against a manifest: the coverage-clamped
+/// world rect, the cell pitch, the sight radius and the dims. Split out at T-938.5 so the
+/// synchronous [`compute_viewshed`] and the resumable [`ViewshedJob`] lay their cells on ONE
+/// geometry — a sliced result can then differ from the synchronous one only in HOW it iterates,
+/// never in where a cell is.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ViewshedGrid {
+    /// Cell pitch, metres (the resolved `cell_m`).
+    pub cell: f64,
+    /// Sight radius, metres (the resolved `radius_m`).
+    pub radius: f64,
+    pub min_x: f64,
+    pub min_y: f64,
+    pub max_x: f64,
+    pub max_y: f64,
+    pub cols: usize,
+    pub rows: usize,
+}
+
+/// Resolve `p` against `manifest`: substitute the defaults for a non-finite / non-positive cell or
+/// radius, clamp the radius disc's bounding box to the coverage box, and lay `cols × rows` cells on
+/// it at one cell spacing (`cols-1` spans `[min,max]` — the `DemVectorGrid` inclusive-endpoint
+/// convention). Pure geometry: no sampling, no cap, so a caller can measure a request before paying
+/// for it.
+#[must_use]
+pub fn viewshed_grid(manifest: &DemManifest, p: ViewshedParams) -> ViewshedGrid {
+    let cell = if p.cell_m.is_finite() && p.cell_m > 0.0 {
+        p.cell_m
+    } else {
+        8.0
+    };
+    let radius = if p.radius_m.is_finite() && p.radius_m > 0.0 {
+        p.radius_m
+    } else {
+        VIEWSHED_DEFAULT_RADIUS_M
+    };
+    let min_x = (p.obs_x - radius).max(manifest.min_x);
+    let min_y = (p.obs_y - radius).max(manifest.min_y);
+    let max_x = (p.obs_x + radius).min(manifest.max_x);
+    let max_y = (p.obs_y + radius).min(manifest.max_y);
+    let span_x = (max_x - min_x).max(0.0);
+    let span_y = (max_y - min_y).max(0.0);
+    let cols = ((span_x / cell).round() as usize) + 1;
+    let rows = ((span_y / cell).round() as usize) + 1;
+    ViewshedGrid {
+        cell,
+        radius,
+        min_x,
+        min_y,
+        max_x,
+        max_y,
+        cols,
+        rows,
+    }
+}
+
+impl ViewshedGrid {
+    /// Cells in the raster (`cols · rows`, saturating).
+    #[must_use]
+    pub fn cell_count(&self) -> usize {
+        self.cols.saturating_mul(self.rows)
+    }
+
+    /// `Err` when the raster is over [`MAX_VIEWSHED_CELLS`] — the T-938.5 refusal. Measured on the
+    /// CLAMPED dims, so a disc hanging off the map edge is charged only for the cells it covers.
+    ///
+    /// # Errors
+    /// [`ViewshedCapRefused`] naming the cell cap and the measured cell count.
+    pub fn cap_check(&self) -> Result<(), ViewshedCapRefused> {
+        let cells = self.cell_count();
+        if cells > MAX_VIEWSHED_CELLS {
+            return Err(ViewshedCapRefused {
+                cap: "terrain viewshed cells",
+                limit: MAX_VIEWSHED_CELLS as f64,
+                measured: cells as f64,
+            });
+        }
+        Ok(())
+    }
+
+    /// World `(x, y)` → the nearest raster cell index, or `None` outside the raster.
+    #[must_use]
+    pub fn idx_of(&self, x: f64, y: f64) -> Option<usize> {
+        let c = ((x - self.min_x) / self.cell).round();
+        let r = ((y - self.min_y) / self.cell).round();
+        if c < 0.0 || r < 0.0 {
+            return None;
+        }
+        let (c, r) = (c as usize, r as usize);
+        if c >= self.cols || r >= self.rows {
+            return None;
+        }
+        Some(r * self.cols + c)
+    }
+}
+
+/// The T-644 angular + along-ray density schedule for `(cell, radius)`:
+/// `(ray_count, d_theta, step_m, steps)`. See the [`compute_viewshed`] note — `OVERSAMPLE = 2`
+/// halves BOTH the angular step and the along-ray step so no interior disc cell is left unsplatted.
+fn march_schedule(cell: f64, radius: f64) -> (usize, f64, f64, usize) {
+    const OVERSAMPLE: f64 = 2.0;
+    let ray_count = ((2.0 * std::f64::consts::PI) / (cell / radius) * OVERSAMPLE)
+        .ceil()
+        .max(1.0) as usize;
+    let d_theta = (2.0 * std::f64::consts::PI) / ray_count as f64;
+    let step_m = cell / OVERSAMPLE;
+    // Steps along a ray: half-cell each, out to the radius.
+    let steps = (radius / step_m).floor().max(1.0) as usize;
+    (ray_count, d_theta, step_m, steps)
+}
+
+/// The radial march's per-sample state: the coverage box, the raster lattice and the observer eye.
+/// Both the synchronous [`compute_viewshed`] loop and the resumable [`ViewshedJob::step`] drive
+/// [`March::sample`], so the ONLY thing that can differ between the two paths is the ITERATION —
+/// which is exactly what the T-938.5 `sliced_viewshed_is_bit_identical_to_the_sync_path` fixture
+/// pins (and what a perturbation of the resume cursor breaks).
+struct March<'a> {
+    manifest: &'a DemManifest,
+    grid: ViewshedGrid,
+    obs_x: f64,
+    obs_y: f64,
+    eye_z: f64,
+}
+
+impl March<'_> {
+    /// One sample at `dist` metres along the unit direction `(dx, dy)`: classify the cell it lands
+    /// in and advance the ray's running horizon `max_angle`. Off coverage (or with no elevation) the
+    /// cell is `Unknown` unless already `Visible`, and the horizon does NOT advance — an unknown gap
+    /// neither reveals nor hides what lies beyond it (constraint 1's honesty).
+    fn sample(
+        &self,
+        cells: &mut [Visibility],
+        (dx, dy): (f64, f64),
+        dist: f64,
+        max_angle: &mut f64,
+        elev_at: &dyn Fn(f64, f64) -> Option<f64>,
+    ) {
+        let wx = self.obs_x + dx * dist;
+        let wy = self.obs_y + dy * dist;
+        if !in_coverage(self.manifest, wx, wy) {
+            if let Some(i) = self.grid.idx_of(wx, wy)
+                && cells[i] != Visibility::Visible
+            {
+                cells[i] = Visibility::Unknown;
+            }
+            return;
+        }
+        let Some(ground) = elev_at(wx, wy) else {
+            if let Some(i) = self.grid.idx_of(wx, wy)
+                && cells[i] != Visibility::Visible
+            {
+                cells[i] = Visibility::Unknown;
+            }
+            return;
+        };
+        // Elevation angle of THIS cell's ground from the observer eye: (ground − eye_z)/dist. Using
+        // the ground (not ground+target-eye) is the conservative viewshed convention — the observer
+        // sees the GROUND at the cell; a standing target there would be even easier to see.
+        // dist > 0 here (s ≥ 1), so no divide-by-zero.
+        let angle = (ground - self.eye_z) / dist;
+        let visible = angle >= *max_angle;
+        if let Some(i) = self.grid.idx_of(wx, wy) {
+            // A cell hit by several rays: once Visible, stays Visible (any ray that sees it wins;
+            // the horizon march makes rays agree on open terrain). An Unknown from an earlier ray is
+            // overwritten by a real Hidden/Visible verdict from this in-coverage sample.
+            if visible {
+                cells[i] = Visibility::Visible;
+            } else if cells[i] != Visibility::Visible {
+                cells[i] = Visibility::Hidden;
+            }
+        }
+        // Advance the occluding horizon: a taller ridge here shadows everything farther on the ray.
+        if angle > *max_angle {
+            *max_angle = angle;
+        }
+    }
+}
+
 /// Compute a viewshed raster by radial ray-march from an observer (T-644). Returns a `cols × rows`
 /// [`Visibility`] grid over the world rect around the observer, clamped to the manifest's coverage
 /// box; cells off coverage are [`Visibility::Unknown`]. `elev_at(x, y) -> Option<meters>` is the
@@ -411,29 +620,37 @@ where
 {
     // Raster rect: the radius disc's bounding box, CLAMPED to the manifest coverage box so the raster
     // never allocates cells that can only ever be Unknown off the map. Cell centres are laid on an
-    // 8 m lattice aligned to the clamped min corner.
-    let cell = if p.cell_m.is_finite() && p.cell_m > 0.0 {
-        p.cell_m
-    } else {
-        8.0
-    };
-    let radius = if p.radius_m.is_finite() && p.radius_m > 0.0 {
-        p.radius_m
-    } else {
-        VIEWSHED_DEFAULT_RADIUS_M
-    };
-    let min_x = (p.obs_x - radius).max(manifest.min_x);
-    let min_y = (p.obs_y - radius).max(manifest.min_y);
-    let max_x = (p.obs_x + radius).min(manifest.max_x);
-    let max_y = (p.obs_y + radius).min(manifest.max_y);
+    // 8 m lattice aligned to the clamped min corner. (T-938.5 moved this to `viewshed_grid` so the
+    // resumable `ViewshedJob` lays its cells on exactly the same lattice.)
+    let grid = viewshed_grid(manifest, p);
+    let ViewshedGrid {
+        min_x,
+        min_y,
+        max_x,
+        max_y,
+        cols,
+        rows,
+        ..
+    } = grid;
+    let n = grid.cell_count();
 
-    // Dims from the clamped rect at one cell spacing (at least 1×1). `cols-1` spans [min,max], so the
-    // last column centre lands on `max_x` — the same inclusive-endpoint convention as `DemVectorGrid`.
-    let span_x = (max_x - min_x).max(0.0);
-    let span_y = (max_y - min_y).max(0.0);
-    let cols = ((span_x / cell).round() as usize) + 1;
-    let rows = ((span_y / cell).round() as usize) + 1;
-    let n = cols.saturating_mul(rows);
+    // T-938.5 — an over-[`MAX_VIEWSHED_CELLS`] request is REFUSED, not silently run: an EMPTY
+    // (`cols == 0`) raster, no sampling, no blocked thread. The message — which cap, and the measured
+    // value — is `ViewshedGrid::cap_check`'s `Err`; the editor surfaces it through
+    // `viewshed_scheduler`, which checks the cap before it ever builds a job.
+    if grid.cap_check().is_err() {
+        return Viewshed {
+            cols: 0,
+            rows: 0,
+            cells: Vec::new(),
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+            obs_x: p.obs_x,
+            obs_y: p.obs_y,
+        };
+    }
 
     // Observer off coverage → the whole raster is Unknown (constraint 1: no honest eye to cast from,
     // so nothing is faked visible).
@@ -458,44 +675,31 @@ where
     // stays Hidden — correct: those corners are beyond the sight radius, genuine dead ground.
     let mut cells = vec![Visibility::Hidden; n];
 
-    // Helper: world (x,y) → nearest raster cell index, if inside the raster.
-    let idx_of = |x: f64, y: f64| -> Option<usize> {
-        let c = ((x - min_x) / cell).round();
-        let r = ((y - min_y) / cell).round();
-        if c < 0.0 || r < 0.0 {
-            return None;
-        }
-        let (c, r) = (c as usize, r as usize);
-        if c >= cols || r >= rows {
-            return None;
-        }
-        Some(r * cols + c)
-    };
-
     // The observer's own cell is Visible (constraint: you always see your own position). Guard both
     // the raster-bounds and coverage — the observer is in coverage by construction (obs_ground is
     // Some), but the bbox clamp could in principle drop it if radius is 0; the `.max(1)` dims keep at
     // least the observer cell.
-    if let Some(oi) = idx_of(p.obs_x, p.obs_y) {
+    if let Some(oi) = grid.idx_of(p.obs_x, p.obs_y) {
         cells[oi] = Visibility::Visible;
     }
 
     // Angular + step density so NO interior cell of the disc is missed by the radial splat (the
     // artifact that would otherwise leave flat-terrain cells stuck at the Hidden sentinel between
     // rays). The ticket's floor is "adjacent rays ≤1 cell apart at the rim" (arc = radius·dθ ≤ cell ⇒
-    // dθ ≤ cell/radius); we halve BOTH the angular step and the along-ray step (OVERSAMPLE = 2.0) so
-    // adjacent rays are ≤½ cell apart at the rim and each ray advances ½ cell per step. With rays and
-    // steps both at half-cell, every cell centre in the disc lies within ~½ cell of some sample and
-    // is splatted (nearest-cell rounding then lands on it). Cost stays O(rays × steps) — ~4× the
-    // 1-cell march, measured well under the ~100 ms budget (see `viewshed_perf_default_radius_is_reported`).
-    const OVERSAMPLE: f64 = 2.0;
-    let ray_count = ((2.0 * std::f64::consts::PI) / (cell / radius) * OVERSAMPLE)
-        .ceil()
-        .max(1.0) as usize;
-    let d_theta = (2.0 * std::f64::consts::PI) / ray_count as f64;
-    let step_m = cell / OVERSAMPLE;
-    // Steps along a ray: half-cell each, out to the radius.
-    let steps = (radius / step_m).floor().max(1.0) as usize;
+    // dθ ≤ cell/radius); `march_schedule` halves BOTH the angular step and the along-ray step
+    // (OVERSAMPLE = 2.0) so adjacent rays are ≤½ cell apart at the rim and each ray advances ½ cell
+    // per step. With rays and steps both at half-cell, every cell centre in the disc lies within ~½
+    // cell of some sample and is splatted (nearest-cell rounding then lands on it). Cost stays
+    // O(rays × steps) — ~4× the 1-cell march (see `viewshed_perf_default_radius_is_reported`).
+    let (ray_count, d_theta, step_m, steps) = march_schedule(grid.cell, grid.radius);
+    let march = March {
+        manifest,
+        grid,
+        obs_x: p.obs_x,
+        obs_y: p.obs_y,
+        eye_z,
+    };
+    let elev: &dyn Fn(f64, f64) -> Option<f64> = &elev_at;
 
     for ri in 0..ray_count {
         let theta = ri as f64 * d_theta;
@@ -506,49 +710,10 @@ where
         let mut max_angle = f64::NEG_INFINITY;
         for s in 1..=steps {
             let dist = s as f64 * step_m;
-            if dist > radius {
+            if dist > grid.radius {
                 break;
             }
-            let wx = p.obs_x + dx * dist;
-            let wy = p.obs_y + dy * dist;
-            // Off the manifest coverage box → Unknown at that cell; do NOT advance the horizon (an
-            // unknown gap neither reveals nor hides what lies beyond it — constraint 1's honesty).
-            if !in_coverage(manifest, wx, wy) {
-                if let Some(i) = idx_of(wx, wy)
-                    && cells[i] != Visibility::Visible
-                {
-                    cells[i] = Visibility::Unknown;
-                }
-                continue;
-            }
-            let Some(ground) = elev_at(wx, wy) else {
-                if let Some(i) = idx_of(wx, wy)
-                    && cells[i] != Visibility::Visible
-                {
-                    cells[i] = Visibility::Unknown;
-                }
-                continue;
-            };
-            // Elevation angle of THIS cell's ground from the observer eye: (ground − eye_z)/dist.
-            // Using the ground (not ground+target-eye) is the conservative viewshed convention — the
-            // observer sees the GROUND at the cell; a standing target there would be even easier to
-            // see. dist > 0 here (s ≥ 1), so no divide-by-zero.
-            let angle = (ground - eye_z) / dist;
-            let visible = angle >= max_angle;
-            if let Some(i) = idx_of(wx, wy) {
-                // A cell hit by several rays: once Visible, stays Visible (any ray that sees it wins;
-                // the horizon march makes rays agree on open terrain). An Unknown from an earlier ray
-                // is overwritten by a real Hidden/Visible verdict from this in-coverage sample.
-                if visible {
-                    cells[i] = Visibility::Visible;
-                } else if cells[i] != Visibility::Visible {
-                    cells[i] = Visibility::Hidden;
-                }
-            }
-            // Advance the occluding horizon: a taller ridge here shadows everything farther on the ray.
-            if angle > max_angle {
-                max_angle = angle;
-            }
+            march.sample(&mut cells, (dx, dy), dist, &mut max_angle, elev);
         }
     }
 
@@ -562,6 +727,167 @@ where
         max_y,
         obs_x: p.obs_x,
         obs_y: p.obs_y,
+    }
+}
+
+/// T-938.5 — the RESUMABLE, CANCELLABLE form of [`compute_viewshed`]: the same radial march over the
+/// same [`ViewshedGrid`], advanced one budgeted batch at a time so the caller's frame is never held
+/// for more than that budget.
+///
+/// **Checkpoint granularity is a whole RAY, and that is load-bearing.** The march is NOT pure over
+/// its index: each ray carries a running horizon (`max_angle`) and writes `Visible` *stickily* across
+/// rays. Suspending mid-ray would either drop the horizon (turning dead ground visible) or need it
+/// persisted with `(ray, step)`; a ray boundary needs neither, because `max_angle` is born and dies
+/// inside one ray. Ray ORDER is preserved (`0..ray_count`), which is what keeps the sticky
+/// `Visible`/`Unknown` overwrites identical to the synchronous path.
+///
+/// The core holds no cancellation state of its own (the `los_world::ObjectPass` split): `step`
+/// returns after its budget and the CALLER decides whether to call again. [`ViewshedJob::generation`]
+/// is the token a caller stamps and compares — a newer placement bumps it and simply drops the older
+/// job (see `viewshed_scheduler`); [`ViewshedJob::cancel`] retires one in place.
+#[derive(Clone, Debug)]
+pub struct ViewshedJob {
+    manifest: DemManifest,
+    grid: ViewshedGrid,
+    obs_x: f64,
+    obs_y: f64,
+    eye_z: f64,
+    ray_count: usize,
+    d_theta: f64,
+    step_m: f64,
+    steps: usize,
+    /// The raster under construction — a partial but always well-formed [`Viewshed`].
+    vs: Viewshed,
+    /// The next ray to march: the resume checkpoint, ALWAYS a ray boundary.
+    pub cursor: usize,
+    /// The caller's cancel token (the `ObjectPass::generation` idiom).
+    pub generation: u32,
+    pub done: bool,
+}
+
+impl ViewshedJob {
+    /// A job for `p` against `manifest`, stamped with `generation`.
+    ///
+    /// # Errors
+    /// [`ViewshedCapRefused`] when the raster is over [`MAX_VIEWSHED_CELLS`] — the same cap
+    /// [`compute_viewshed`] enforces, checked BEFORE a cell is allocated.
+    pub fn new(
+        manifest: &DemManifest,
+        p: ViewshedParams,
+        generation: u32,
+    ) -> Result<Self, ViewshedCapRefused> {
+        let grid = viewshed_grid(manifest, p);
+        grid.cap_check()?;
+        let n = grid.cell_count();
+        // Same two openings as the synchronous path: Unknown everywhere with no honest eye, else
+        // Hidden everywhere with the observer's own cell promoted.
+        let (cells, eye_z, done) = match p.observer_ground_m {
+            None => (vec![Visibility::Unknown; n], 0.0, true),
+            Some(g) => (vec![Visibility::Hidden; n], g + p.eye_height_m, false),
+        };
+        let mut vs = Viewshed {
+            cols: grid.cols,
+            rows: grid.rows,
+            cells,
+            min_x: grid.min_x,
+            min_y: grid.min_y,
+            max_x: grid.max_x,
+            max_y: grid.max_y,
+            obs_x: p.obs_x,
+            obs_y: p.obs_y,
+        };
+        if p.observer_ground_m.is_some()
+            && let Some(oi) = grid.idx_of(p.obs_x, p.obs_y)
+        {
+            vs.cells[oi] = Visibility::Visible;
+        }
+        let (ray_count, d_theta, step_m, steps) = march_schedule(grid.cell, grid.radius);
+        Ok(Self {
+            manifest: *manifest,
+            grid,
+            obs_x: p.obs_x,
+            obs_y: p.obs_y,
+            eye_z,
+            ray_count,
+            d_theta,
+            step_m,
+            steps,
+            vs,
+            cursor: 0,
+            generation,
+            done,
+        })
+    }
+
+    /// March whole rays until `budget_ms` of `now()` time has elapsed or the disc is finished.
+    /// Returns whether any ray was marched — ALWAYS at least one per call while the job is live, so a
+    /// zero budget slices as finely as possible and can never spin without progress.
+    pub fn step(
+        &mut self,
+        elev_at: &dyn Fn(f64, f64) -> Option<f64>,
+        budget_ms: f64,
+        now: &dyn Fn() -> f64,
+    ) -> bool {
+        if self.done {
+            return false;
+        }
+        let start = now();
+        let march = March {
+            manifest: &self.manifest,
+            grid: self.grid,
+            obs_x: self.obs_x,
+            obs_y: self.obs_y,
+            eye_z: self.eye_z,
+        };
+        let mut marched = false;
+        while self.cursor < self.ray_count {
+            let theta = self.cursor as f64 * self.d_theta;
+            let (dx, dy) = (theta.cos(), theta.sin());
+            let mut max_angle = f64::NEG_INFINITY;
+            for s in 1..=self.steps {
+                let dist = s as f64 * self.step_m;
+                if dist > self.grid.radius {
+                    break;
+                }
+                march.sample(&mut self.vs.cells, (dx, dy), dist, &mut max_angle, elev_at);
+            }
+            self.cursor += 1;
+            marched = true;
+            // Budget AFTER a whole ray: the check can never leave the job suspended mid-ray, and one
+            // ray always lands, so `budget_ms == 0.0` is the finest legal slicing rather than a spin.
+            if now() - start >= budget_ms {
+                break;
+            }
+        }
+        if self.cursor >= self.ray_count {
+            self.done = true;
+        }
+        marched
+    }
+
+    /// The raster so far — complete once [`ViewshedJob::done`], and a well-formed partial before
+    /// that (unmarched ground still carries the `Hidden` sentinel the synchronous path starts from).
+    #[must_use]
+    pub fn raster(&self) -> &Viewshed {
+        &self.vs
+    }
+
+    /// Take the raster out of a finished (or abandoned) job.
+    #[must_use]
+    pub fn into_raster(self) -> Viewshed {
+        self.vs
+    }
+
+    /// `(rays marched, rays total)` — the progress readout.
+    #[must_use]
+    pub fn progress(&self) -> (usize, usize) {
+        (self.cursor, self.ray_count)
+    }
+
+    /// Retire the job in place: no further ray is marched and [`ViewshedJob::step`] is a no-op. The
+    /// partial raster stays readable (a caller may still want the observer rect).
+    pub fn cancel(&mut self) {
+        self.done = true;
     }
 }
 
@@ -1180,6 +1506,200 @@ mod tests {
         assert!(
             vs.cols >= 500 && vs.rows >= 500,
             "2000 m / 8 m ≈ 501-cell radius disc"
+        );
+    }
+
+    // ── T-938.5 — the sliced march, its cancel token, and the cell cap ───────────────────────────
+
+    /// A ridged, partly-off-coverage fixture: the disc runs off the SOUTH-WEST corner of a small
+    /// world (so `Unknown` cells are in play), and a ridge east of the observer casts a shadow (so
+    /// `Hidden` cells and the running horizon are in play). Every branch of `March::sample` — and
+    /// the sticky `Visible` overwrite ACROSS rays — is exercised, which is what makes the equality
+    /// claim below mean something.
+    fn sliced_fixture() -> (
+        DemManifest,
+        ViewshedParams,
+        impl Fn(f64, f64) -> Option<f64>,
+    ) {
+        let m = flat_world(600.0);
+        // Observer near the SW corner: the 300 m disc is clamped by the coverage box on two sides
+        // and the march walks off it on the others.
+        let p = params(120.0, 140.0, Some(10.0), 300.0, 8.0);
+        let elev = |x: f64, y: f64| -> Option<f64> {
+            // One hole in the sampler (an off-grid tile) so the `elev_at → None` arm is taken too.
+            if (x - 300.0).abs() < 12.0 && (y - 300.0).abs() < 12.0 {
+                return None;
+            }
+            // A ridge wall east of the observer, plus a gentle north-south ramp.
+            let ridge = if (x - 220.0).abs() < 8.0 { 60.0 } else { 0.0 };
+            Some(10.0 + ridge + y * 0.02)
+        };
+        (m, p, elev)
+    }
+
+    /// Drive a job to completion in `budget_ms` batches and return `(raster, batches)`.
+    fn drain(
+        job: &mut ViewshedJob,
+        budget_ms: f64,
+        elev: &dyn Fn(f64, f64) -> Option<f64>,
+    ) -> usize {
+        // A monotone fake clock: one "ms" per read, so a 0 ms budget yields exactly one ray per
+        // batch and a 3 ms budget yields a handful — deterministic slicing, no wall clock.
+        let t = std::cell::Cell::new(0.0f64);
+        let now = || {
+            t.set(t.get() + 1.0);
+            t.get()
+        };
+        let mut batches = 0usize;
+        while !job.done {
+            assert!(job.step(elev, budget_ms, &now), "a live job must march");
+            batches += 1;
+            assert!(batches < 100_000, "job never finished");
+        }
+        batches
+    }
+
+    /// THE T-938.5 EQUALITY PIN: the sliced march is BIT-IDENTICAL to the synchronous one — same
+    /// dims, same rect, and the same `Visibility` in every single cell — at three different batch
+    /// sizes, including one ray per batch. This is the test the "skip the last row" perturbation of
+    /// `ViewshedJob::step`'s cursor must turn RED.
+    #[test]
+    fn sliced_viewshed_is_bit_identical_to_the_sync_path() {
+        let (m, p, elev) = sliced_fixture();
+        let sync = compute_viewshed(&m, p, &elev);
+        // The fixture must actually exercise all three classes, or "identical" is a cheap claim.
+        let (v, h, u) = sync.class_counts();
+        assert!(
+            v > 0 && h > 0 && u > 0,
+            "fixture must produce visible/hidden/unknown: {v}/{h}/{u}"
+        );
+        for (i, budget) in [0.0, 3.0, 1e9].into_iter().enumerate() {
+            let mut job = ViewshedJob::new(&m, p, 7).expect("under the cell cap");
+            let batches = drain(&mut job, budget, &elev);
+            let sliced = job.raster();
+            assert_eq!(
+                (sliced.cols, sliced.rows),
+                (sync.cols, sync.rows),
+                "budget {budget}: dims"
+            );
+            assert_eq!(
+                (sliced.min_x, sliced.min_y, sliced.max_x, sliced.max_y),
+                (sync.min_x, sync.min_y, sync.max_x, sync.max_y),
+                "budget {budget}: world rect"
+            );
+            assert_eq!(
+                sliced.cells, sync.cells,
+                "budget {budget}: every cell must match the synchronous march ({batches} batches)"
+            );
+            let (rays, total) = job.progress();
+            assert_eq!(rays, total, "budget {budget}: every ray marched");
+            if i == 0 {
+                assert_eq!(batches, total, "a zero budget slices to one ray per batch");
+            }
+        }
+    }
+
+    /// The observer-off-coverage opening is the same in both paths (all-`Unknown`, dims kept), and
+    /// the job reports itself finished without marching anything.
+    #[test]
+    fn sliced_viewshed_matches_the_off_coverage_opening() {
+        let m = flat_world(600.0);
+        let p = params(300.0, 300.0, None, 200.0, 8.0);
+        let sync = compute_viewshed(&m, p, |_, _| Some(0.0));
+        let job = ViewshedJob::new(&m, p, 1).expect("under the cell cap");
+        assert!(job.done, "no honest eye — nothing to march");
+        assert_eq!(job.raster().cells, sync.cells);
+        assert_eq!(
+            (job.raster().cols, job.raster().rows),
+            (sync.cols, sync.rows)
+        );
+    }
+
+    /// The cancel token: a retired job marches no further ray and keeps the partial raster it had,
+    /// and `generation` is the stamp a caller compares to decide whether a result is still wanted.
+    #[test]
+    fn viewshed_job_cancels_mid_disc() {
+        let (m, p, elev) = sliced_fixture();
+        let mut job = ViewshedJob::new(&m, p, 42).expect("under the cell cap");
+        assert_eq!(job.generation, 42);
+        let now = || 0.0f64;
+        assert!(job.step(&elev, 0.0, &now), "one ray marched");
+        let (before, total) = job.progress();
+        assert!(before > 0 && before < total);
+        let partial = job.raster().clone();
+        job.cancel();
+        assert!(job.done);
+        assert!(
+            !job.step(&elev, 1e9, &now),
+            "a cancelled job marches nothing"
+        );
+        assert_eq!(
+            job.progress().0,
+            before,
+            "cursor frozen at the cancel point"
+        );
+        assert_eq!(
+            job.raster().cells,
+            partial.cells,
+            "partial raster preserved"
+        );
+        // A partial raster is still WELL FORMED — full dims, every cell carrying a class.
+        assert_eq!(partial.cells.len(), partial.cols * partial.rows);
+    }
+
+    /// THE CAP (T-938.5, operator 2026-09-07): the SHIPPED 2000 m / 8 m default is unchanged and
+    /// passes; an unbounded request (the same disc at a 1 m cell) is refused by BOTH entry points,
+    /// with a message naming the cap and the measured value.
+    #[test]
+    fn over_cap_viewshed_is_refused_with_a_message() {
+        let m = DemManifest {
+            min_x: 0.0,
+            min_y: 0.0,
+            max_x: 12_800.0,
+            max_y: 12_800.0,
+            width_px: 6400,
+            height_px: 6400,
+            flip_x: false,
+            flip_z: false,
+            height_min_m: -204.78,
+            height_max_m: 375.53,
+        };
+        // The shipped default: 501 × 501 = 251,001 cells — UNDER the 300k cap, unchanged.
+        let shipped = params(6400.0, 6400.0, Some(64.0), VIEWSHED_DEFAULT_RADIUS_M, 8.0);
+        let g = viewshed_grid(&m, shipped);
+        assert_eq!((g.cols, g.rows), (501, 501));
+        assert_eq!(g.cell_count(), 251_001);
+        assert!(
+            g.cap_check().is_ok(),
+            "the shipped 2000 m / 8 m default must NOT be refused"
+        );
+        assert!(ViewshedJob::new(&m, shipped, 0).is_ok());
+
+        // The unbounded shape: the same disc at a 1 m cell — 4001² = 16 M cells.
+        let huge = params(6400.0, 6400.0, Some(64.0), VIEWSHED_DEFAULT_RADIUS_M, 1.0);
+        let hg = viewshed_grid(&m, huge);
+        assert_eq!(hg.cell_count(), 4001 * 4001);
+        let err = hg.cap_check().expect_err("16 M cells is over the cap");
+        assert_eq!(err.cap, "terrain viewshed cells");
+        assert!((err.limit - MAX_VIEWSHED_CELLS as f64).abs() < 1e-9);
+        assert!((err.measured - (4001.0 * 4001.0)).abs() < 1e-9);
+        let msg = err.to_string();
+        assert!(
+            msg.contains("terrain viewshed cells")
+                && msg.contains("16008001")
+                && msg.contains("300000"),
+            "the refusal must name the cap AND the measured value: {msg}"
+        );
+        assert_eq!(
+            ViewshedJob::new(&m, huge, 0).expect_err("job refused").cap,
+            "terrain viewshed cells"
+        );
+        // The synchronous entry point refuses too — an EMPTY raster, never a 16 M-cell march.
+        let refused = compute_viewshed(&m, huge, |_, _| Some(0.0));
+        assert_eq!(
+            (refused.cols, refused.rows, refused.cells.len()),
+            (0, 0, 0),
+            "an over-cap compute_viewshed is refused, not run"
         );
     }
 }
