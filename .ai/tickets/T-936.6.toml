@@ -48,10 +48,13 @@ owns = [
     "packages/tbd-schema/schema/mission.schema.json",
     "apps/website/frontend/src/editor/panels/spawn_modules.rs",
     "apps/website/frontend/src/editor/panels/mod.rs",
+    "apps/website/frontend/src/editor/panels/settings_modal.rs",
     "crates/map-engine-core/src/mission/spawn_modules.rs",
     "crates/map-engine-core/src/mission/mod.rs",
     "crates/map-engine-core/src/mission/extensions.rs",
+    "crates/map-engine-core/src/mission/flatten.rs",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c",
 ]
 
 [scope]
