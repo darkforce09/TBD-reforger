@@ -29,6 +29,14 @@ modded class SCR_ChatComponent
 	//! @authority server - admin chat commands are intercepted and executed on the server.
 	override void OnNewMessage(string msg, int channelId, int senderId)
 	{
+		// T-941.6 - consume `#tbd link ...` BEFORE vanilla distributes. `super.OnNewMessage` is
+		// the broadcast/display path (vanilla forwards it to `SCR_ChatPanelManager`). TRUE from
+		// this guard means: do not call super; the code must never reach public chat. Authority
+		// POSTs the code; every peer suppresses the echo. A bare token without this prefix is
+		// ordinary chat - we do not filter beyond the command.
+		if (TBD_IdentityLink.TryConsumeBeforeBroadcast(this, msg, senderId, RplSession.Mode() != RplMode.Client))
+			return;
+
 		super.OnNewMessage(msg, channelId, senderId);
 
 		// Authority only - commands execute on the server.
@@ -36,13 +44,6 @@ modded class SCR_ChatComponent
 			return;
 
 		if (!msg.StartsWith("#tbd"))
-			return;
-
-		// T-181.35 - `#tbd link <code>` is PLAYER-facing and must be reached BEFORE the admin gate
-		// below. It is the only path that ever writes `users.arma_id`, and without it the results
-		// POST joins on nothing: the endpoint returns 200 while attendance, stat recompute and the
-		// leaderboard all silently do nothing.
-		if (TBD_IdentityLink.TryHandleChat(this, msg, senderId))
 			return;
 
 		// One permission oracle for every admin surface - the vanilla listed-admin manager, asked
