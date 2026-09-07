@@ -33,7 +33,10 @@ acceptance = [
     "Pants, boots and handwear still do not appear.",
 ]
 created_at = "2026-09-05T03:30:00Z"
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c"]
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/UI/TBD_BriefingData.c",
+]
 
 [scope]
 domain = "mod"

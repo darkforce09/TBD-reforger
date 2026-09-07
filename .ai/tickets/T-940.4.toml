@@ -41,6 +41,7 @@ created_at = "2026-09-05T02:33:18Z"
 owns = [
     "apps/website/api/src/handlers/telemetry/telemetry.rs",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c",
     "apps/website/api/tests/deployments_combat.rs",
 ]
 
