@@ -8,9 +8,8 @@ use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
-use yrs::sync::{Clock, Timestamp};
 use yrs::types::ToJson;
-use yrs::undo::{Options as UndoOptions, UndoManager};
+use yrs::undo::UndoManager;
 use yrs::updates::decoder::Decode;
 use yrs::{
     Any, Doc, Map, MapPrelim, MapRef, Origin, Out, ReadTxn, StateVector, Transact, TransactionMut,
@@ -49,18 +48,6 @@ const CLIENT_ID_BITS: u32 = 53;
 /// `should_skip`), which is why every mutator stamps an origin.
 const LOCAL_ORIGIN: &str = "local-user";
 const INIT_ORIGIN: &str = "init";
-
-/// A constant clock. With `capture_timeout_millis = 0` the undo manager never extends a stack item,
-/// so the timestamp value is irrelevant — and building `undo::Options` explicitly (rather than via
-/// `Options::default()`, which is `#[cfg(not(target_family = "wasm"))]` because its default
-/// `SystemClock` needs std time) is what lets the core compile for `wasm32-unknown-unknown`.
-struct ZeroClock;
-
-impl Clock for ZeroClock {
-    fn now(&self) -> Timestamp {
-        0
-    }
-}
 
 /// T-732 — one per-entity transform patch for [`MissionDocCore::update_entity_transforms`].
 ///
@@ -273,6 +260,10 @@ pub struct MissionDocCore {
     init_mode: Cell<bool>,
     /// `M = ()`: no per-stack-item metadata needed.
     undo_mgr: UndoManager<()>,
+    /// T-937.2 — freeze `now()` for explicit `begin_group` / `end_group` batches.
+    undo_groups: Arc<super::undo_groups::GroupingClock>,
+    /// Prefix of the yrs undo stack forgotten by the 200-group cap (T-937.2).
+    undo_cap_hidden: Cell<usize>,
 }
 
 impl MissionDocCore {
@@ -338,6 +329,16 @@ impl MissionDocCore {
     /// Shared body of the two constructors: bind the root maps and scope the undo manager. Split out
     /// so `new` and `with_client_id` cannot drift — the identity is the only difference between them.
     fn from_doc(doc: Doc) -> Self {
+        Self::from_doc_with_clock(doc, super::undo_groups::default_inner_clock())
+    }
+
+    /// Deterministic / injectable-clock constructor for T-937.2 grouping tests.
+    #[must_use]
+    pub fn with_undo_clock(clock: Arc<dyn yrs::sync::Clock>) -> Self {
+        Self::from_doc_with_clock(Doc::new(), clock)
+    }
+
+    fn from_doc_with_clock(doc: Doc, inner_clock: Arc<dyn yrs::sync::Clock>) -> Self {
         let slots = doc.get_or_insert_map("slots");
         let squads = doc.get_or_insert_map("squads");
         let factions = doc.get_or_insert_map("factions");
@@ -351,27 +352,17 @@ impl MissionDocCore {
         let comments = doc.get_or_insert_map("comments");
         let connections = doc.get_or_insert_map("connections");
 
-        // capture_timeout_millis = 0 → every transaction is its own undo step. yrs extends the last
-        // stack item only when `last_change > 0 && now - last_change < capture_timeout_millis`
-        // (undo.rs `handle_after_transaction`); `u64 < 0` is never true, and ZeroClock pins
-        // `last_change` to 0 besides — so no same-millisecond merge, on either guard. This matches
-        // driving the JS `Y.UndoManager` with `{ captureTimeout: 0 }` (Yjs uses the same `<`), the
-        // basis for criterion-4 parity.
-        //
-        // T-159.22.1 pinned this empirically after T-159.22 reported it violated: see
-        // `two_local_moves_are_two_undo_steps` / `two_local_places_are_two_undo_steps` below, which
-        // assert `undo_depth()` across a step boundary on native AND (via the editor's undo gate) on
-        // wasm. The report was a gate-driver artifact, not a core defect.
-        let opts = UndoOptions::<()> {
-            capture_timeout_millis: 0,
-            // Track only LOCAL — user gestures are undoable; INIT (seed / hydrate / restore) is not.
-            // `expand_scope` also adds the manager's own origin, so no-origin txns are skipped too.
-            tracked_origins: HashSet::from([Origin::from(LOCAL_ORIGIN)]),
-            capture_transaction: None,
-            timestamp: Arc::new(ZeroClock),
-            init_undo_stack: Vec::new(),
-            init_redo_stack: Vec::new(),
-        };
+        // T-937.2 (2026-09-07): grouping supersedes T-159.22.1 Yjs-parity
+        // (`captureTimeout: 0` + ZeroClock). One *gesture* is one Ctrl+Z: a 300 ms window
+        // (injectable clock; real time on wasm) merges consecutive LOCAL transactions;
+        // begin_group/end_group win over the window; the stack is capped at 200 whole groups
+        // (oldest dropped). `two_local_moves_are_two_undo_steps` still holds when the clock
+        // advances past the window (the unit-test default clock does).
+        let undo_groups = super::undo_groups::GroupingClock::wrap(inner_clock);
+        let opts = super::undo_groups::undo_options(
+            undo_groups.clone(),
+            HashSet::from([Origin::from(LOCAL_ORIGIN)]),
+        );
         let mut undo_mgr = UndoManager::with_options(opts);
         undo_mgr.expand_scope(&doc, &slots);
         undo_mgr.expand_scope(&doc, &squads);
@@ -413,6 +404,8 @@ impl MissionDocCore {
             connections,
             init_mode: Cell::new(false),
             undo_mgr,
+            undo_groups,
+            undo_cap_hidden: Cell::new(0),
         }
     }
 
@@ -4103,15 +4096,41 @@ impl MissionDocCore {
         f.insert(&mut txn, "briefing", Any::Map(Arc::new(briefing)));
     }
 
-    /// How many undo steps are stacked. The capture side of the T-159.22.1 invariant (one LOCAL txn
-    /// = one step) — `can_undo` only says "≥ 1", which is what let the granularity defect hide.
+    /// How many undo *groups* are stacked (T-937.2). The yrs stack may be longer when the
+    /// depth cap has forgotten a prefix of oldest groups.
     #[must_use]
     pub fn undo_depth(&self) -> usize {
-        self.undo_mgr.undo_stack().len()
+        self.apply_undo_cap();
+        self.undo_mgr
+            .undo_stack()
+            .len()
+            .saturating_sub(self.undo_cap_hidden.get())
     }
 
-    /// Undo the most recent tracked transaction; `true` if anything was undone.
+    fn apply_undo_cap(&self) {
+        let n = self.undo_mgr.undo_stack().len();
+        let hidden = super::undo_groups::hidden_prefix_after(n, self.undo_cap_hidden.get());
+        self.undo_cap_hidden.set(hidden);
+    }
+
+    /// Open an explicit undo group. Nested calls are counted; the clock stays frozen until
+    /// the matching [`Self::end_group`].
+    pub fn begin_group(&self) {
+        self.undo_groups.begin_group();
+    }
+
+    /// Close an explicit undo group. The next LOCAL transaction is a new stack item.
+    pub fn end_group(&mut self) {
+        if self.undo_groups.end_group() {
+            self.undo_mgr.reset();
+        }
+    }
+
+    /// Undo the most recent tracked group; `true` if anything was undone.
     pub fn undo(&mut self) -> bool {
+        if self.undo_depth() == 0 {
+            return false;
+        }
         self.undo_mgr.undo_blocking()
     }
 
@@ -4122,7 +4141,7 @@ impl MissionDocCore {
 
     #[must_use]
     pub fn can_undo(&self) -> bool {
-        self.undo_mgr.can_undo()
+        self.undo_depth() > 0
     }
 
     #[must_use]
