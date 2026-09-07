@@ -33,6 +33,13 @@ pub mod save_status;
 // T-159.17 warm editor session — sessionStorage marker; wasm32-only (web-sys/js-sys).
 #[cfg(target_arch = "wasm32")]
 pub mod session;
+// T-190 — cross-tab presence for one mission (BroadcastChannel), the read-only role a second tab
+// takes, and the save-decision policy `persist.rs` obeys. Ungated for the `save_status` reason
+// (`:29-32`): the policy and the election are pure, and `cargo test -p website-frontend` has to be
+// able to reach them natively — this crate links `map-engine-core` WITHOUT the `doc` feature off
+// wasm32, so a yrs-level test is not available on the host and the pins here are the oracle.
+// The wasm-only halves (the channel, `window.__missionTabs`) sit behind `target_arch` inside.
+pub mod tab_lock;
 // T-522 — prefer-payload anti-stomp Class-R must run on native `cargo test`. The live hydrate
 // module stays wasm32-gated; the pure prefer helper + t505 pin live here.
 pub mod title_prefer;

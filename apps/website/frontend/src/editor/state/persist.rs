@@ -115,6 +115,31 @@
 //! `None`, and [`load_state`] reports that to the boot as "no local content" — a false negative that
 //! drives the cold path. Reads are now three-valued ([`RecordRead`]), a failure is reported, and
 //! [`run_save`] refuses to write over a key that is present but was unreadable this page lifetime.
+//!
+//! # T-190 — the write is a read-merge-write, because the key is shared between TABS
+//!
+//! Every guard above interrogates the **incoming** blob. None of them ever asked what was already
+//! at the key, and every tab of `/missions/:id/edit` writes the same one: the UX review's F-32
+//! repro deleted a mission in tab B while tab A still held it, both debounces fired, the last one
+//! won, and the reload prompt blamed the *server*. The CRDT could have merged the two the whole
+//! time and was never asked.
+//!
+//! Three things changed, and only the second is a guarantee about bytes:
+//!   * **A writer role.** [`crate::editor::state::tab_lock`] holds a `navigator.locks` lock per
+//!     mission; the tab that has it writes and every other tab shows a banner and re-arms. A lock,
+//!     not a heartbeat, because the browser releases it when the page **goes away** — a crashed tab
+//!     must not hold the role forever.
+//!   * **[`merge_before_write`].** Before the `put`, read the record and `apply_update` it into the
+//!     live document, then re-encode and write the union. This is what holds when the role does
+//!     not: an insecure context has no Web Locks, and the window between reading the write stamp
+//!     and the `put` belongs to nobody.
+//!   * **A write stamp** ([`crate::editor::state::tab_lock::Stamp`], a `localStorage` sidecar so no
+//!     record format changes). It says who wrote what is on disk, which is what lets the common
+//!     single-tab save skip an O(document) decode of its own last write, and what dates the "your
+//!     local copy" half of the conflict modal.
+//!
+//! The same slice made [`SAVE_IN_FLIGHT`] load-bearing (T-946.51 — see its declaration) and moved
+//! [`note_unreadable`]'s latch in front of its backoff (T-946.54 — see that function).
 #![allow(clippy::cast_precision_loss)] // usize slot count → f64 for the JS bridge; tiny.
 
 use std::cell::{Cell, RefCell};
@@ -129,6 +154,7 @@ use wasm_bindgen::JsCast;
 
 use crate::editor::state::doc_host::DocHandle;
 use crate::editor::state::save_status::{self, IDLE_DEBOUNCE_MS, UNREADABLE_RETRY_LIMIT};
+use crate::editor::state::tab_lock;
 
 /// IndexedDB coordinates — identical to `yrsPersist.ts` (`DB_NAME` / `STORE` / v1). Distinct from the
 /// legacy v1 `tbd-mission-${id}` and v2 `tbd-mission-persist`; **no migration** (legacy drafts drop).
@@ -248,15 +274,42 @@ thread_local! {
     /// inferring it from a record that merely happens to be unchanged.
     static BLOCKED_EMPTY: Cell<u32> = const { Cell::new(0) };
     static BLOCKED_UNREADABLE: Cell<u32> = const { Cell::new(0) };
+    /// T-190 — how many writes were re-armed because another tab holds the writer role, and how
+    /// many went out as a read-merge-write rather than a blind put. Same argument as the two
+    /// counters above: a guard that only ever declines to act is invisible, and "the record is
+    /// intact" is equally consistent with the guard firing and with nothing having been attempted.
+    /// `__missionPersist.blocked_writes()` reports both, so the two-tab acceptance can assert that
+    /// the merge **ran** instead of inferring it from a document that happens to look right.
+    static BLOCKED_READ_ONLY: Cell<u32> = const { Cell::new(0) };
+    static MERGED_WRITES: Cell<u32> = const { Cell::new(0) };
 }
 
-/// Retry a failed read of `physical_key` three times with backoff, then lock out. See
+/// Retry a failed read of `physical_key` three times with backoff, then stay locked out. See
 /// [`RecordRead::Failed`] and [`run_save`].
 ///
 /// T-937.4 — a single failed `get` used to latch the key for the rest of the page lifetime, so a
 /// transient IndexedDB blip silently disabled autosave until reload. Each failed attempt reports
 /// [`save_status::SaveStatus::Unreadable`]; after [`UNREADABLE_RETRY_LIMIT`] the chip offers Retry.
+///
+/// # T-946.54 — the latch goes on FIRST, and the retries run behind it
+///
+/// T-937.4 also moved the `UNREADABLE` insert to *after* the loop, and that inverted the guard it
+/// feeds. The backoffs are 80 + 160 + 320 ms, so for ~560 ms after a read failed the set was still
+/// empty — and [`run_save`]'s fourth guard consults exactly that set. A debounce firing inside the
+/// window therefore passed a guard whose whole purpose is "never write over a record this session
+/// could not read", and overwrote a record already known unreadable. The window is not exotic: the
+/// idle debounce is 1 s and the boot read is what fails, so a single edit during boot lands inside
+/// it.
+///
+/// Latching first costs nothing the retry does not give back — every arm below that *learns* the
+/// key is safe (`Hit`, and `Miss`, which means there is no record to protect) clears the latch in
+/// the same breath, and `retry_unreadable_keys` re-enters here from the chip. The trade is
+/// deliberate and one-sided: a false latch delays autosave by one debounce window; a false clear
+/// destroys the only copy.
 async fn note_unreadable(physical_key: &str) -> Option<Vec<u8>> {
+    UNREADABLE.with(|u| {
+        u.borrow_mut().insert(physical_key.to_string());
+    });
     for attempt in 1u8..=UNREADABLE_RETRY_LIMIT {
         sleep_ms(unreadable_backoff_ms(attempt)).await;
         match read_raw(physical_key).await {
@@ -278,9 +331,6 @@ async fn note_unreadable(physical_key: &str) -> Option<Vec<u8>> {
             }
         }
     }
-    UNREADABLE.with(|u| {
-        u.borrow_mut().insert(physical_key.to_string());
-    });
     save_status::report_unreadable(UNREADABLE_RETRY_LIMIT);
     None
 }
@@ -517,6 +567,17 @@ pub async fn load_state(id: &str) -> Option<Vec<u8>> {
         note_orphan(id);
     }
     None
+}
+
+/// T-190 — when the local draft for `id` was last written, epoch ms, or `None` when this browser
+/// holds no stamp for it (no draft yet, or one written before T-190).
+///
+/// Lives here rather than in `tab_lock` because the *key* is this module's business: `scoped_key`
+/// is private and account scoping (T-221) is the one thing a caller must not have to reproduce.
+/// `tab_lock` owns the stamp's shape; this owns which record it describes.
+#[must_use]
+pub fn draft_written_at(id: &str) -> Option<f64> {
+    tab_lock::read_stamp(&scoped_key(&owner_token(), id)).map(|s| s.at)
 }
 
 /// Delete the blob for `id` (React `clearState`).
@@ -774,10 +835,35 @@ thread_local! {
     // (a late `flush()` of the boot debounce would encode the moved doc anyway — the counter, not
     // the blob, is the sound signal that the edit itself re-armed the writer).
     static EDIT_PERSIST_COUNT: Cell<u32> = const { Cell::new(0) };
-    /// T-937.4 — one in-flight save per process. `visibilitychange` hidden flush and `pagehide`
-    /// both call [`flush_state`]; the mutex in [`run_save`] serializes the write, and this flag
-    /// is the observable guard those two listeners share so they never double-save one pending.
+    /// True from the moment [`run_save`] takes the per-mission lock until its write settles.
+    ///
+    /// # T-946.51 — what this flag does NOT do, and what it does
+    ///
+    /// It shipped at T-937.4 described as the guard that stops the `visibilitychange`-hidden flush
+    /// and `pagehide` double-saving one pending. It never did that and could not: both listeners
+    /// call [`flush_state`], which `PENDING.remove`s the entry **synchronously**, so the second one
+    /// finds `None` and returns — and where they do overlap, [`lock_for`] serializes them. The flag
+    /// was set, reset by [`SaveFlightGuard`], and **read by nothing**; its only test asserted the
+    /// identifier appeared in one of two function bodies, which it did.
+    ///
+    /// T-190 gave it the job the name always implied, because T-190 created the first caller that
+    /// genuinely needs it. A peer tab's `saved` announcement asks this tab to pull the record and
+    /// [`merge_stored`] it into the **live document**. Between [`run_save`]'s `get_bytes` and its
+    /// `put_raw` those bytes are already sampled, so a merge landing in that window would put
+    /// blocks into the document that the write about to land does not carry — the record would go
+    /// backwards relative to the document, silently, which is the very failure T-190 exists to
+    /// close. [`pull_peer_record`] therefore stands down while this is true and lets the in-flight
+    /// save's own merge (`decide_save` → `SaveDecision::Merge`) do the work under the lock.
     static SAVE_IN_FLIGHT: Cell<bool> = const { Cell::new(false) };
+    /// T-190 — the live document a merge applies into, with the mission it belongs to. Installed by
+    /// [`register_tab_sync`] from the boot seam.
+    ///
+    /// The id travels with the handle deliberately: `run_save` is keyed by mission and a stale
+    /// pending can outlive a route change, so "the doc the editor has open" is not by itself an
+    /// answer to "the doc these bytes came from". Matching the id makes the merge exact rather than
+    /// best-effort — the same argument `mission_hydrate::restore_snapshot` makes for its own
+    /// cross-mission refusal.
+    static MERGE_DOC: RefCell<Option<(String, DocHandle)>> = const { RefCell::new(None) };
 }
 
 struct SaveFlightGuard;
@@ -787,6 +873,12 @@ impl Drop for SaveFlightGuard {
     }
 }
 
+/// Is a save between taking the per-mission lock and completing its write? See [`SAVE_IN_FLIGHT`].
+#[must_use]
+pub fn save_in_flight() -> bool {
+    SAVE_IN_FLIGHT.with(Cell::get)
+}
+
 fn lock_for(id: &str) -> Rc<futures::lock::Mutex<()>> {
     LOCKS.with(|m| {
         m.borrow_mut()
@@ -794,6 +886,114 @@ fn lock_for(id: &str) -> Rc<futures::lock::Mutex<()>> {
             .or_insert_with(|| Rc::new(futures::lock::Mutex::new(())))
             .clone()
     })
+}
+
+/* ─────────────────────── T-190 — the read-merge-write ─────────────────────── */
+
+/// Wall-clock epoch ms. Split by target for the same reason [`note_flush_completed`] is.
+#[cfg(target_arch = "wasm32")]
+fn now_ms() -> f64 {
+    js_sys::Date::now()
+}
+#[cfg(not(target_arch = "wasm32"))]
+fn now_ms() -> f64 {
+    0.0
+}
+
+/// Apply a stored blob into the live document for `mission_id`, and report whether it landed.
+///
+/// **This is the whole of the merge, and it is `MissionDocCore::apply_update` — a CRDT union, never
+/// a JSON diff.** Two tabs that both restored from one record author under *different* client ids
+/// (`MissionDocCore::new()` mints a fresh 53-bit id per document), so the collision guard at
+/// `store.rs:483-503` does not fire on a sibling's blob: it fires only when `my_clock != 0 &&
+/// claimed > my_clock`, i.e. when an update claims **our own** id has progressed past the last
+/// clock we issued. Read `store.rs:462-478` for the two cases it deliberately lets through — the
+/// `my_clock == 0` fresh-restore, and a peer echoing our own already-integrated blocks back, "normal,
+/// idempotent traffic in any sync transport". Replaying *this* tab's own earlier blob is the second
+/// of those: its blocks sit inside a clock range we have already issued, so yrs discards them as
+/// already-seen. That is why the stamp exists — the replay is harmless but costs an O(document)
+/// decode to learn nothing, and [`tab_lock::decide_save`] answers `WriteThrough` to skip it.
+///
+/// `apply_update` always transacts under `INIT_ORIGIN` regardless of the core's mode, so a merge is
+/// **not** an undo step — Ctrl+Z after a sibling's edits arrive undoes the operator's own last
+/// action, not the sync. The HUD mirrors and the render SoA are rebound afterwards for the reason
+/// the boot restore rebinds them: the document changed underneath the counters.
+///
+/// No `.await` while the `RefCell` is borrowed — the engine task shares this `Rc`.
+fn merge_stored(mission_id: &str, stored: &[u8]) -> bool {
+    let Some((owner_id, doc)) = MERGE_DOC.with(|d| d.borrow().clone()) else {
+        return false;
+    };
+    if owner_id != mission_id {
+        return false;
+    }
+    let applied = {
+        let guard = doc.borrow();
+        let Some(core) = guard.as_ref() else {
+            return false;
+        };
+        core.apply_update(stored).is_ok()
+    };
+    if applied {
+        crate::editor::state::history::refresh_hud();
+        crate::editor::state::history::rebind_engine_from_doc();
+    }
+    applied
+}
+
+/// Read the record at `key`, merge it into the live document, and hand back the bytes to write.
+///
+/// Returns `bytes` unchanged when there is nothing to merge — no record, an unreadable one, a
+/// record byte-identical to what we are about to write, or a blob the CRDT refuses. Otherwise it
+/// **re-encodes**, because after the merge the document is the union and the pre-merge encode is
+/// no longer what it holds. That re-encode is the difference between "we looked" and "we merged".
+async fn merge_before_write(id: &str, key: &str, bytes: Vec<u8>, get_bytes: &GetBytes) -> Vec<u8> {
+    let RecordRead::Hit(stored) = read_raw(key).await else {
+        return bytes;
+    };
+    if stored == bytes || !merge_stored(id, &stored) {
+        return bytes;
+    }
+    get_bytes()
+}
+
+/// A peer tab announced it just wrote the shared record — pull it into this document.
+///
+/// This is what makes a read-only tab converge rather than merely wait: it cannot write, but it can
+/// (and must) see what the writer wrote, or the two documents drift until one of them reloads.
+///
+/// **It stands down while this tab's own save is in flight** ([`save_in_flight`], T-946.51): a merge
+/// between [`run_save`]'s `get_bytes` and its `put_raw` would put blocks into the document that the
+/// landing write does not carry. Nothing is lost by standing down — that in-flight save reads the
+/// stamp, sees a foreign writer and merges the same record under the lock.
+pub fn pull_peer_record() {
+    if save_in_flight() {
+        return;
+    }
+    let Some((id, _)) = MERGE_DOC.with(|d| d.borrow().clone()) else {
+        return;
+    };
+    spawn_local(async move {
+        let lock = lock_for(&id);
+        let _guard = lock.lock().await;
+        let key = scoped_key(&owner_token(), &id);
+        if let RecordRead::Hit(stored) = read_raw(&key).await {
+            merge_stored(&id, &stored);
+        }
+    });
+}
+
+/// T-190 — wire this editor mount into the cross-tab machinery: park the document a merge applies
+/// into, install the peer-saved reaction, join the mission's channel (which claims the writer lock)
+/// and install `window.__missionTabs`.
+///
+/// One call, from the boot seam beside [`register_flush_on_hide`], so `mission_editor.rs` gains a
+/// call site and no logic.
+pub fn register_tab_sync(doc: DocHandle, mission_id: String) {
+    MERGE_DOC.with(|d| *d.borrow_mut() = Some((mission_id.clone(), doc)));
+    tab_lock::set_peer_saved_handler(Box::new(pull_peer_record));
+    tab_lock::join(&mission_id);
+    tab_lock::register_bridge();
 }
 
 /// Clear (and drop) any live timer for `id`. Called only from arm/flush — never from inside a
@@ -807,8 +1007,8 @@ fn clear_timer(id: &str) {
 }
 
 /// Serialized write: take the per-mission lock, then apply the guards in order — cancel check
-/// **before** reading bytes, T-221 owner check, T-374 **content** check, T-374 unreadable-record
-/// check, then persist.
+/// **before** reading bytes, T-221 owner check, T-190 writer role, T-374 **content** check, T-374
+/// unreadable-record check, T-190 read-merge, then persist.
 ///
 /// A changed owner **drops** the write; it does not redirect it. The bytes were composed by the
 /// previous session, so writing them anywhere the new account can read is the cross-account leak
@@ -824,6 +1024,24 @@ fn clear_timer(id: &str) {
 /// happen.** In every refusal the document is still in RAM and the next edit re-arms the writer, so
 /// the cost of a false refusal is bounded by one debounce window; the cost of a false *acceptance*
 /// is an authored mission.
+///
+/// # T-190 — the two cross-tab steps, and why they sit where they sit
+///
+/// The **role check is before the encode.** A read-only tab's debounce re-arms every idle window
+/// for as long as the operator keeps typing, and `encode_state` is O(document) — 460 ms at 100k
+/// slots, measured for the T-374 probe. Paying that for a write that cannot land would make the
+/// second tab the slow one, which is precisely the tab whose work we are trying not to punish. It
+/// **re-arms rather than drops**: the read-only tab inherits the writer role the instant the other
+/// tab closes, and its whole session's work has to survive to that moment.
+///
+/// The **stamp read is late**, just before the write, rather than beside the role check. It answers
+/// "is the record on disk still the one I last wrote", and every millisecond between the answer and
+/// the `put` is a millisecond in which a peer could make it wrong. Reading it last shrinks that
+/// window to the merge's own `read_raw`. It cannot be closed entirely from one tab — IndexedDB has
+/// no cross-tab transaction here — and it does not need to be: a peer whose bytes this write passes
+/// over still holds them in its own live document, its `saved` announcement makes this tab pull,
+/// and its next save reads *this* record and writes the union. The system converges; what T-190
+/// removes is the silent, permanent loss.
 async fn run_save(id: &str, pending: PendingSave) {
     let lock = lock_for(id);
     let _guard = lock.lock().await;
@@ -833,6 +1051,12 @@ async fn run_save(id: &str, pending: PendingSave) {
         return;
     }
     if owner_token() != pending.owner {
+        return;
+    }
+    // T-190 — is this tab the writer? Before the encode; see the section above.
+    if !tab_lock::may_write() {
+        BLOCKED_READ_ONLY.with(|c| c.set(c.get().saturating_add(1)));
+        install_pending(id, pending, debounce_ms());
         return;
     }
     let bytes = (pending.get_bytes)();
@@ -884,6 +1108,29 @@ async fn run_save(id: &str, pending: PendingSave) {
             u.borrow_mut().remove(&key);
         });
     }
+    // T-190 — READ, MERGE, then write. Everything above this line interrogates the *incoming* blob;
+    // this is the first line that asks what is already on disk. `Merge` is the answer whenever the
+    // record was written by another tab or by nobody this browser can attribute; `WriteThrough`
+    // only when the stamp says these very bytes' document already contains it. See
+    // [`tab_lock::decide_save`] and [`merge_before_write`].
+    let bytes = match tab_lock::decide_save(
+        tab_lock::role(),
+        tab_lock::read_stamp(&key).as_ref(),
+        &tab_lock::tab_id(),
+    ) {
+        tab_lock::SaveDecision::Defer => {
+            // The role flipped during the encode — a peer took the writer lock. Same treatment as
+            // the early check: re-arm, never drop.
+            BLOCKED_READ_ONLY.with(|c| c.set(c.get().saturating_add(1)));
+            install_pending(id, pending, debounce_ms());
+            return;
+        }
+        tab_lock::SaveDecision::WriteThrough => bytes,
+        tab_lock::SaveDecision::Merge => {
+            MERGED_WRITES.with(|c| c.set(c.get().saturating_add(1)));
+            merge_before_write(id, &key, bytes, &pending.get_bytes).await
+        }
+    };
     save_status::report_saving();
     if let Err(e) = save_state_as(&pending.owner, id, &bytes).await {
         let reason = save_status::format_save_error(&format!("{e} {e:?}"));
@@ -894,6 +1141,13 @@ async fn run_save(id: &str, pending: PendingSave) {
         return;
     }
     save_status::report_saved();
+    // T-190 — stamp the record with this tab and this instant, then tell the other tabs it is
+    // there. Both AFTER the write settled, for the T-779/T-804 ack reason stated below: the stamp
+    // is what lets the next save skip a pointless O(document) merge and what dates the conflict
+    // modal's local option, and a stamp for bytes that never landed would be a lie in both roles.
+    let at = now_ms();
+    tab_lock::write_stamp(&key, at);
+    tab_lock::announce_saved(at);
     // T-804 — a flush COMPLETED. Recorded here, in the one branch where the bytes actually reached
     // IndexedDB, and nowhere earlier: the T-779 ack discipline is that this timestamp means "the
     // draft is on disk", not "a write was scheduled". Every refusal above (`is_cancelled`, the
@@ -932,17 +1186,29 @@ fn arm_debounced(
     content_probe: Option<ContentProbe>,
     delay_ms: i32,
 ) {
+    install_pending(
+        id,
+        PendingSave {
+            get_bytes,
+            is_cancelled,
+            owner: owner_token(),
+            content_probe,
+        },
+        delay_ms,
+    );
+}
+
+/// Park one [`PendingSave`] under `id` and (re)start its debounce window.
+///
+/// Split out of [`arm_debounced`] at T-190 so [`run_save`] can put a pending it has just declined
+/// to write straight back where it came from. That re-arm keeps the **original** `owner` rather
+/// than resolving a fresh one, which is the T-221 contract restated: a deferred write commits to
+/// the account it was *armed* under or to nothing at all, and a read-only tab waiting for the
+/// writer role must not quietly re-file its pending under whoever signs in next.
+fn install_pending(id: &str, pending: PendingSave, delay_ms: i32) {
     let id_owned = id.to_string();
     PENDING.with(|p| {
-        p.borrow_mut().insert(
-            id_owned.clone(),
-            PendingSave {
-                get_bytes,
-                is_cancelled,
-                owner: owner_token(),
-                content_probe,
-            },
-        );
+        p.borrow_mut().insert(id_owned.clone(), pending);
     });
     clear_timer(&id_owned); // reset — each call restarts the debounce window
 
@@ -1018,9 +1284,18 @@ pub fn register_flush_on_hide(mission_id: String) {
     }
 
     // pagehide stays fire-and-forget (`spawn_local`, never awaited in the handler). A concurrent
-    // hidden flush is serialized by SAVE_IN_FLIGHT inside [`run_save`].
+    // hidden flush cannot double-save the same pending: `flush_state` takes it out of `PENDING`
+    // synchronously, so the second call finds nothing, and where the two writes do overlap
+    // `lock_for(id)` serializes them. (T-946.51 — that is what this comment used to credit
+    // `SAVE_IN_FLIGHT` with; the flag's real job is stated on its declaration.)
+    //
+    // T-190 — announce departure on the same event, so the surviving tabs re-elect at once instead
+    // of waiting for the Web Lock release to propagate. Synchronous and best-effort by design:
+    // `postMessage` on a channel that is about to die either goes out or does not, and the lock
+    // release is the guarantee behind it either way.
     let id = mission_id;
     let on_hide = Closure::<dyn FnMut()>::new(move || {
+        tab_lock::leave();
         let id = id.clone();
         spawn_local(async move { flush_state(&id).await });
     });
@@ -1294,9 +1569,11 @@ pub fn register_mission_persist(
     // the guard ran rather than asserting the absence of damage.
     let blocked_fn = Closure::wrap(Box::new(move || -> JsValue {
         JsValue::from_str(&format!(
-            r#"{{"empty":{},"unreadable":{}}}"#,
+            r#"{{"empty":{},"unreadable":{},"read_only":{},"merged":{}}}"#,
             BLOCKED_EMPTY.with(Cell::get),
-            BLOCKED_UNREADABLE.with(Cell::get)
+            BLOCKED_UNREADABLE.with(Cell::get),
+            BLOCKED_READ_ONLY.with(Cell::get),
+            MERGED_WRITES.with(Cell::get)
         ))
     }) as Box<dyn FnMut() -> JsValue>);
     // T-374 — the crux, evaluated in the REAL wasm runtime rather than argued about.
