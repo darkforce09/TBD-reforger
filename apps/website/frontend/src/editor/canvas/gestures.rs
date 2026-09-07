@@ -158,6 +158,17 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
     let doc_tick = ctx.doc_tick;
     let sync_ruler = make_sync_ruler(ctx);
     let sync_los = make_sync_los(ctx);
+    let z_drag: std::rc::Rc<
+        std::cell::RefCell<
+            Option<(
+                f64,
+                Vec<String>,
+                Vec<String>,
+                Vec<f64>,
+                map_engine_core::camera::OrthoCamera,
+            )>,
+        >,
+    > = std::rc::Rc::new(std::cell::RefCell::new(None));
 
     // Wheel → zoom_at (engine self-clamps zoom to [-6, 6]). Capture + non-passive so we can
     // preventDefault and beat any child handler. CSS origin = the container rect (same basis
@@ -360,6 +371,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
         }
     });
     let onpointermove = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
+        let z_drag = z_drag.clone();
         let pan_px = pan_px.clone();
         let engine = engine.clone();
         let left = left.clone();
@@ -571,6 +583,53 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             cam: p.cam,
                         }
                     } else {
+                        // NEW Z-ARM HIT TEST
+                        let mut z_arm_hit = false;
+                        if widget_variant.get_untracked()
+                            == crate::editor::mission_editor::transform::WidgetVariant::Translate
+                            && !selection.borrow().is_empty()
+                        {
+                            if let Some(pv) = read_widget_pivot()
+                                .map(|(wx, wy)| p.cam.project([wx, wy, 0.0]))
+                                .filter(|pv| pv[0].is_finite() && pv[1].is_finite())
+                            {
+                                z_arm_hit = crate::editor::canvas::gizmo_z::hit_z_arm(
+                                    p.start_x, p.start_y, pv[0], pv[1], 1.0,
+                                );
+                            }
+                        }
+                        if z_arm_hit {
+                            let cur_sel = selection.borrow().clone();
+                            let slot_ids: Vec<String> = cur_sel
+                                .iter()
+                                .filter(|i| !editor_ops::is_vehicle_id(i))
+                                .cloned()
+                                .collect();
+                            let veh_ids: Vec<String> = cur_sel
+                                .iter()
+                                .filter(|i| editor_ops::is_vehicle_id(i))
+                                .cloned()
+                                .collect();
+
+                            let mut initial_zs = Vec::new();
+                            if let Some(core) = doc.borrow().as_ref() {
+                                let rows = editor_ops::keep_z_rows(core, None, None, Some(0.0));
+                                for id in &slot_ids {
+                                    let z = rows
+                                        .as_ref()
+                                        .and_then(|r| editor_ops::slot_z(r, id))
+                                        .unwrap_or(0.0);
+                                    initial_zs.push(z);
+                                }
+                            }
+
+                            *z_drag.borrow_mut() =
+                                Some((p.start_y, slot_ids, veh_ids, initial_zs, p.cam.clone()));
+                            let _ = container.set_pointer_capture(ev.pointer_id());
+                            left.borrow_mut().take(); // consume the gesture
+                            return;
+                        }
+
                         let hit = doc.borrow().as_ref().and_then(|c| {
                             st::pick_slot_or_vehicle(
                                 &p.cam,
@@ -770,6 +829,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
         }
     });
     let onpointerup = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
+        let z_drag = z_drag.clone();
         let pan_px = pan_px.clone();
         let container = container.clone();
         let engine = engine.clone();
