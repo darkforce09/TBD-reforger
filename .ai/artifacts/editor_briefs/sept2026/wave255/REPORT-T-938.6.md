@@ -273,7 +273,10 @@ is the right direction for a guard — it refuses slightly early rather than sli
 
 Unowned pins checked and left intact: `t629_satellite_resolution.rs` (the literal
 `pick_base_level_for_limit(&index, limit.map(|l| l.device))` survives verbatim;
-`max_texture_dimension_2d()` still appears in **exactly two** places — I added none;
+`max_texture_dimension_2d()` still appears **exactly twice in the scrubbed view the pin reads**
+(`satellite.rs:57` and `:58`, both inside `texture_limit`; a raw grep also hits a doc comment at
+`:48`, and `unwrap_or(8192)` survives only in comments at `:48`/`:705` — `live_code` blanks both, and
+my diff adds neither token, verified with `git diff main...HEAD | grep '^+'`);
 `report_chosen_level(&index, base, limit)`, the `logging::error!` + `return false;`, and the
 post-`tex_layer_commit` `logging::log!` all still present), `t628_boot_progress.rs` (no new
 `BootEvent::Budget`, no new early return in `load_unified_full`, `planned_density_bins()` still
