@@ -29,30 +29,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** The T-216 schema deltas (slot tag/callsign/rank/stance, group leaderSlotId, root vehicles $def) are all declared in mission.schema.json today, but flatten drops the four slot fields (DIAG_DROP_SLOT_*); emit them and pin with schema-validated goldens.
 
-## T-301 — Briefing kit lists 7 of 13 gear fields
-
-- **Slice spec:** `docs/specs/ideas/t301_briefing_kit.md`
-- **Program hub:** `docs/specs/ideas/t301_briefing_kit.md`
-- **Branch:** `ticket/T-301`
-- **Targets:** 
-- **Summary:** TBD_BriefingData.BuildKit (UI/TBD_BriefingData.c:519) lists seven gear fields; T-182's launcher, handgun and throwable never appear on the briefing screen. Add them while keeping pants/boots/handwear hidden.
-
-## T-302 — Prove T-182 weapon equip on a live body
-
-- **Slice spec:** `docs/specs/ideas/t302_weapon_equip_boot.md`
-- **Program hub:** `docs/specs/ideas/t302_weapon_equip_boot.md`
-- **Branch:** `ticket/T-302`
-- **Targets:** 
-- **Summary:** T-182's slot-indexed weapon equip compiles but was never observed in game; add a per-slot equip result log, a headless world-boot assertion that four authored weapons land in four slots, and a human checklist item.
-
-## T-304 — RegistryScan never reads weapon weight; 32 wrong rows
-
-- **Slice spec:** `docs/specs/ideas/t304_registry_scan_weight.md`
-- **Program hub:** `docs/specs/ideas/t304_registry_scan_weight.md`
-- **Branch:** `ticket/T-304`
-- **Targets:** 
-- **Summary:** TBD_RegistryScan ReadPhysAttrsPass treats SCR_WeaponAttachmentsStorageComponent as storage so weapon weight is never read (0/107), and its class-keyed foreach picks hash order over derivation depth, so 32 rows carry Item_Base.et's 0.01 kg.
-
 ## T-139 — Lobby loadout visual preview
 
 - **Slice spec:** `docs/platform/tbd_north_star_backlog.md`

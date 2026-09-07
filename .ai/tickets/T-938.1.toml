@@ -3,7 +3,7 @@ kind = "work"
 title = "Slot and cluster lane GPU buffer pool"
 summary = "upload_slot_role_lane (engine.rs:4907-4924) stops calling create_buffer_init per call; a new buffer_pool.rs keeps persistent buffers per lane, writes with queue.write_buffer and grows on demand across all seven call sites."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7800
 spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
 plan = "docs/plans/t-938_1_plan.md"
@@ -37,7 +37,10 @@ acceptance = [
     "Repeated lane uploads of equal size allocate zero new buffers; a larger upload allocates once and later smaller uploads reuse it.",
     "Rendered slots and clusters are unchanged across all seven lanes.",
 ]
+shipped_at = "e8eb9bbe299cf28b11824cf20ee91596c38c3f06"
 created_at = "2026-09-05T02:09:02Z"
+completed_at = "2026-09-07T00:57:34Z"
+estimated = ["tokens"]
 owns = [
     "crates/map-engine-render/src/engine.rs",
     "crates/map-engine-render/src/buffer_pool.rs",

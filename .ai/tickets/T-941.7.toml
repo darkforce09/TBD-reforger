@@ -3,7 +3,7 @@ kind = "work"
 title = "Radio: script fallback when the backbone is missing"
 summary = "When GetBackbone() is null the tuner falls back to a script-side channel table so radios still tune, logs one actionable warning, and the deferred world edit goes on the operator checklist."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7640
 spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
 plan = "docs/plans/t-941_7_plan.md"
@@ -36,7 +36,10 @@ acceptance = [
     "The mod compiles and boots on TBD_Dev_POC with radios tunable and one warning line naming RadioManagerEntity.",
     "Checklist: two players tune the same fallback channel and hear each other; the warning appears once.",
 ]
+shipped_at = "49d5ea8acbad512200a41a459910c32f54d285bf"
 created_at = "2026-09-05T02:33:18Z"
+completed_at = "2026-09-07T00:58:25Z"
+estimated = ["tokens"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioTuner.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Radio/TBD_RadioTuner.c",

@@ -3,7 +3,7 @@ kind = "work"
 title = "Spectator range default and server clamp"
 summary = "The spectator max range defaults to a finite value and the server clamps every client request to its configured maximum, so 0 no longer means unlimited."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7620
 spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
 plan = "docs/plans/t-941_5_plan.md"
@@ -34,7 +34,10 @@ acceptance = [
     "The mod compiles and boots.",
     "Checklist: a spectator requesting 10 km on a 2 km server is held at 2 km; an unset attribute yields 2 km.",
 ]
+shipped_at = "2b7e65ff92a9be6d8d789ecc19001d988b323a8e"
 created_at = "2026-09-05T02:33:18Z"
+completed_at = "2026-09-07T00:58:04Z"
+estimated = ["tokens"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c",

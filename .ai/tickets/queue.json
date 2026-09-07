@@ -34,27 +34,6 @@
       "branch": "ticket/T-242"
     },
     {
-      "id": "T-301",
-      "title": "Briefing kit lists 7 of 13 gear fields",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t301_briefing_kit.md",
-      "branch": "ticket/T-301"
-    },
-    {
-      "id": "T-302",
-      "title": "Prove T-182 weapon equip on a live body",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t302_weapon_equip_boot.md",
-      "branch": "ticket/T-302"
-    },
-    {
-      "id": "T-304",
-      "title": "RegistryScan never reads weapon weight; 32 wrong rows",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t304_registry_scan_weight.md",
-      "branch": "ticket/T-304"
-    },
-    {
       "id": "T-139",
       "title": "Lobby loadout visual preview",
       "status": "ready",

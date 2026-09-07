@@ -3,7 +3,7 @@ kind = "work"
 title = "RegistryScan never reads weapon weight; 32 wrong rows"
 summary = "TBD_RegistryScan ReadPhysAttrsPass treats SCR_WeaponAttachmentsStorageComponent as storage so weapon weight is never read (0/107), and its class-keyed foreach picks hash order over derivation depth, so 32 rows carry Item_Base.et's 0.01 kg."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7680
 spec = "docs/specs/ideas/t304_registry_scan_weight.md"
 plan = "docs/plans/t-304_plan.md"
@@ -34,7 +34,10 @@ acceptance = [
     "After the next Workbench scan every one of the 107 weapons has a weight_kg and the 32 rows carry their real weights.",
     "The two TBD_RegistryScan.c copies are byte-identical and no registry value was edited by hand.",
 ]
+shipped_at = "d8415afe7245084747645392237a4600df61ce55"
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-07T00:57:14Z"
+estimated = ["tokens"]
 owns = [
     "apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_RegistryScan.c",
     "apps/mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryScan.c",

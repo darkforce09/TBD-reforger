@@ -3,7 +3,7 @@ kind = "work"
 title = "Briefing kit lists 7 of 13 gear fields"
 summary = "TBD_BriefingData.BuildKit (UI/TBD_BriefingData.c:519) lists seven gear fields; T-182's launcher, handgun and throwable never appear on the briefing screen. Add them while keeping pants/boots/handwear hidden."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7660
 spec = "docs/specs/ideas/t301_briefing_kit.md"
 plan = "docs/plans/t-301_plan.md"
@@ -32,7 +32,10 @@ acceptance = [
     "A slot with a launcher shows it on the briefing kit list; slots without one show no empty row.",
     "Pants, boots and handwear still do not appear.",
 ]
+shipped_at = "11a785b055c1f1b71a25d5fd2a27a344fed77a3f"
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-07T00:56:54Z"
+estimated = ["tokens"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/UI/TBD_BriefingData.c",

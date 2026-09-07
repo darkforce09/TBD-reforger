@@ -3,7 +3,7 @@ kind = "work"
 title = "END and DEBRIEF screens with scoreboard"
 summary = "New End and Debrief screens with layouts show the result banner and a per-faction scoreboard; the framework manager opens them on the END and DEBRIEF stages and closes them on transition."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7600
 spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
 plan = "docs/plans/t-941_3_plan.md"
@@ -37,7 +37,10 @@ acceptance = [
     "The mod compiles and boots with both screens registered.",
     "Checklist: on END the banner names the winner and reason; on DEBRIEF the scoreboard lists every player with kills and deaths; both close on the next stage.",
 ]
+shipped_at = "8b934eefebdf8a5fd2375433c8d09803d7ccf9f3"
 created_at = "2026-09-05T02:33:18Z"
+completed_at = "2026-09-07T00:57:54Z"
+estimated = ["tokens"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_UILayouts.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/UI/TBD_UILayouts.c",
