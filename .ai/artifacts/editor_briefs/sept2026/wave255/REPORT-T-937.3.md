@@ -192,7 +192,7 @@ runs, both PASS at HEAD `c971780365eb`:
 SLICE GATE: PASS
 ```
 
-Recorded verdict: `{"sha": "c971780365ebe52bdeb47b2b4d1de756e65ef503", "verdict": "PASS", "at": "2026-09-07T16:21:42Z"}`.
+Recorded verdict at final HEAD: `{"sha": "2d87edf9b51e46cbaa42c0143aa1bf405c14c91a", "verdict": "PASS", "at": "2026-09-07T16:37:48Z"}` (re-gated after the report commit; an earlier identical PASS was recorded at `c971780365eb`, the last code commit).
 
 Direct suite runs, tails pasted:
 
