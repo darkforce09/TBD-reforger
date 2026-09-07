@@ -899,15 +899,26 @@ pub fn viewshed_texture_payload(vs: &Viewshed) -> ViewshedTexture {
 /// }
 /// ```
 ///
-/// It computes the raster ([`compute_viewshed_for`]), STORES it in the registered [`ViewshedState`]
-/// (so a pan re-projects the same rect without recompute), and returns the [`ViewshedTexture`].
-/// `None` when no sampler is registered (native / pre-mount) — the host then draws nothing. On
-/// dismissal (Esc / sub-mode or tool switch) the host calls `engine.viewshed_clear()` and clears the
-/// state (the `tool_mode`/sub-mode Effect, peer of the ruler's clear-on-switch).
+/// It SUBMITS the raster to [`viewshed_scheduler`](super::viewshed_scheduler) — which caps the
+/// request, cancels whatever was computing, runs one budgeted batch and publishes the raster into
+/// the registered [`ViewshedState`] (so a pan re-projects the same rect without recompute), then
+/// finishes the disc across later animation frames (T-938.5) — and returns the [`ViewshedTexture`]
+/// for the raster so far. `None` when no sampler is registered (native / pre-mount) or when a cap
+/// refused the request — the host then draws nothing, and `viewshed_scheduler::last_refusal` names
+/// the cap. On dismissal (Esc / sub-mode or tool switch) the host calls `engine.viewshed_clear()`
+/// and clears the state (the `tool_mode`/sub-mode Effect, peer of the ruler's clear-on-switch); the
+/// scheduler sees the cleared observer and drops the job rather than resurrecting the wash.
 #[must_use]
 pub fn place_viewshed(x: f64, y: f64) -> Option<ViewshedTexture> {
-    let vs = compute_viewshed_for(x, y)?;
-    let payload = viewshed_texture_payload(&vs);
+    let vs = super::viewshed_scheduler::submit_terrain(x, y)?;
+    Some(viewshed_texture_payload(&vs))
+}
+
+/// Store a computed raster for the observer at world `(x, y)` in the registered [`ViewshedState`] —
+/// the state write [`place_viewshed`] used to do inline, extracted at T-938.5 so the scheduler can
+/// repeat it when a sliced job finishes. Same two fields, same values (the click-time Z is the
+/// host's own `ViewshedState::place` write, not this one). No-op before the state is registered.
+pub fn publish_viewshed_raster(x: f64, y: f64, vs: Viewshed) {
     VIEWSHED_STATE.with(|c| {
         if let Some(rc) = c.borrow().as_ref() {
             let mut st = rc.borrow_mut();
@@ -915,7 +926,6 @@ pub fn place_viewshed(x: f64, y: f64) -> Option<ViewshedTexture> {
             st.raster = Some(vs);
         }
     });
-    Some(payload)
 }
 
 // ── Overlay geometry constants ──────────────────────────────────────────────────────────────────
@@ -1231,8 +1241,11 @@ fn build_profile(shot: &LosShot) -> Vec<ProfileSample> {
 /// to. Only the world box + dims matter for [`sample_segment`] (it reads coverage via `in_coverage`
 /// and calls the injected sampler for elevation), so the height range is the published Everon band.
 /// Mirrors `packages/map-assets/everon/manifest.json` (the ±0.204 m-verified 6400² DEM).
+///
+/// `pub(crate)` since T-938.5: `viewshed_scheduler` builds the same `ViewshedParams`
+/// [`compute_viewshed_for`] does and must bound its job to the SAME manifest.
 #[must_use]
-fn everon_manifest() -> map_engine_core::dem::sample::DemManifest {
+pub(crate) fn everon_manifest() -> map_engine_core::dem::sample::DemManifest {
     map_engine_core::dem::sample::DemManifest {
         min_x: 0.0,
         min_y: 0.0,
