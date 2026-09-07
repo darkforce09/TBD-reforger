@@ -45,6 +45,7 @@ owns = [
     "crates/map-engine-render/src/engine.rs",
     "crates/map-engine-render/src/icon_cull_gpu.rs",
     "crates/map-engine-render/src/shader.wgsl",
+    "crates/map-engine-render/src/compute_cull.rs",
 ]
 
 [scope]
