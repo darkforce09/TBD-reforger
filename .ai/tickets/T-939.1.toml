@@ -3,7 +3,7 @@ kind = "work"
 title = "Outliner: multi-select drag between layers"
 summary = "The outliner drags the whole multi-selection at once: begin_layer_slot_drag takes the selected id set, the drop applies one grouped move, and the drag ghost shows the row count."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7860
 spec = "docs/specs/audit_2026_09/t939_editor_usability.md"
 plan = "docs/plans/t-939_1_plan.md"
@@ -38,7 +38,10 @@ acceptance = [
     "One Ctrl+Z after a multi-row drop restores every moved row.",
     "Dragging an unselected row moves only that row, as today.",
 ]
+shipped_at = "2b32518ca09fa16be0e9d4aabddc0fa6725033d6"
 created_at = "2026-09-05T02:33:18Z"
+completed_at = "2026-09-07T21:46:24Z"
+estimated = ["tokens"]
 owns = [
     "apps/website/frontend/src/editor/panels/outliner_tree.rs",
     "apps/website/frontend/src/editor/panels/outliner_drag.rs",

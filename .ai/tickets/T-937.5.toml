@@ -1,15 +1,16 @@
 id = "T-937.5"
 kind = "work"
-parent = "T-937"
 title = "Payload item schemas, duplicate slot guard, 8 MB ceiling"
 summary = "mission-editor-payload.schema.json gets item schemas for slots and editorLayers, the editor refuses duplicate slot ids on one callsign, and the editor enforces the 8388608-byte ceiling with a size readout."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7740
-priority = 1
 spec = "docs/specs/audit_2026_09/t937_editor_data_layer.md"
 plan = "docs/plans/t-937_5_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = ["T-937.3"]
+parent = "T-937"
 main_goal = "Malformed, duplicated or oversize payloads are refused in the editor with a named reason."
 context = [
     "Anchor 2026-09-04: mission-editor-payload.schema.json:42 slots and :43 editorLayers are bare arrays; nothing constrains their items.",
@@ -22,9 +23,7 @@ requirement = [
     "New apps/website/frontend/src/editor/state/operations/slot_ids.rs (registered in operations.rs): duplicate_slot_ids(doc) -> Vec<(callsign, id)>; the save path refuses with a message naming them.",
     "mission_library.rs:1452 UPLOAD_MAX_BYTES becomes 8388608 from one shared constant; the library shows current bytes against the ceiling before upload.",
 ]
-current_state = [
-    "Schema items are unconstrained; no duplicate-id guard exists; the editor ceiling is 64 MiB versus the 8 MiB the API enforces.",
-]
+current_state = ["Schema items are unconstrained; no duplicate-id guard exists; the editor ceiling is 64 MiB versus the 8 MiB the API enforces."]
 approach = [
     "Verify on main: a payload with a slot item {bogus: 1} validates; paste the red.",
     "Edit the payload schema and golden; write slot_ids.rs with tests; change the ceiling and add the readout; run schema-validate.",
@@ -40,8 +39,10 @@ acceptance = [
     "Saving with two identical slot ids under one callsign is refused with a message naming both.",
     "The library refuses uploads above 8388608 bytes and shows the size against that ceiling.",
 ]
-depends_on = ["T-937.3"]
+shipped_at = "443912e1c70cf6ecde8f4ddc3f658276ce409d6a"
 created_at = "2026-09-05T02:09:02Z"
+completed_at = "2026-09-07T21:45:58Z"
+estimated = ["tokens"]
 owns = [
     "packages/tbd-schema/schema/mission-editor-payload.schema.json",
     "apps/website/frontend/src/editor/library/mission_library.rs",

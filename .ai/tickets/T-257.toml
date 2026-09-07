@@ -3,7 +3,7 @@ kind = "work"
 title = "Undo scope misses loadouts, items, objectives, markers"
 summary = "hydrate clears loadouts, items, objectives and markers but store.rs expand_scope covers slots, squads, factions and editor_layers only, so those roots become non-undoable the day something mutates them. Add them to the UndoManager scope with a test per root."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 7750
 spec = "docs/specs/ideas/t257_undo_scope.md"
 plan = "docs/plans/t-257_plan.md"
@@ -32,7 +32,10 @@ acceptance = [
     "A mutation on any of the four roots is undoable and redoable; hydrate remains outside history.",
     "Slots, squads, factions, editor_layers and vehicles behave exactly as before.",
 ]
+shipped_at = "73d9e7e2e283469c4a92a28ce752bb1c9250a98f"
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-07T21:46:12Z"
+estimated = ["tokens"]
 owns = ["crates/map-engine-core/src/doc/store.rs"]
 
 [scope]

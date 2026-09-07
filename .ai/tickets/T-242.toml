@@ -3,7 +3,7 @@ kind = "work"
 title = "Emit T-216 slot deltas through flatten"
 summary = "The T-216 schema deltas (slot tag/callsign/rank/stance, group leaderSlotId, root vehicles $def) are all declared in mission.schema.json today, but flatten drops the four slot fields (DIAG_DROP_SLOT_*); emit them and pin with schema-validated goldens."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7560
 spec = "docs/specs/ideas/t242_t216_deltas.md"
 plan = "docs/plans/t-242_plan.md"
@@ -36,7 +36,10 @@ acceptance = [
     "Authored slot tag, callsign, rank and stance appear in the compiled document and validate.",
     "No DIAG_DROP_SLOT_* diagnostic remains; generated contract files match the schema.",
 ]
+shipped_at = "573c4272406d8989a4b758eaf841fdd83c9dcb50"
 created_at = "2026-09-05T03:30:00Z"
+completed_at = "2026-09-07T21:45:43Z"
+estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/mission/flatten.rs",
     "packages/tbd-schema/schema/mission.schema.json",

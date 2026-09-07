@@ -27,20 +27,6 @@
       "branch": "ticket/T-290"
     },
     {
-      "id": "T-242",
-      "title": "Emit T-216 slot deltas through flatten",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t242_t216_deltas.md",
-      "branch": "ticket/T-242"
-    },
-    {
-      "id": "T-257",
-      "title": "Undo scope misses loadouts, items, objectives, markers",
-      "status": "ready",
-      "spec": "docs/specs/ideas/t257_undo_scope.md",
-      "branch": "ticket/T-257"
-    },
-    {
       "id": "T-932",
       "title": "Parked briefing markers survive server save/reload",
       "status": "ready",

@@ -168,8 +168,8 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-675** — Vehicle roster reaches game — T-076 compile half (`queued`)
 - **T-936** — Mission logic the audit found missing (`queued`)
 - **T-290** — Nine dead flatten fields mod never reads (`ready`)
-- **T-242** — Emit T-216 slot deltas through flatten (`ready`)
 - **T-941** — Enfusion mod lifecycle: safestart, lobby, screens, HUD (`queued`)
+- **T-937** — Editor data layer: id arrays, undo, persist (`queued`)
 <!-- ticket-sync:status:end -->
 
 **Shipped history — every slice, sha and tag — lives in**

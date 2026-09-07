@@ -21,22 +21,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** meta.author/templateId/playerRange, the environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds and the orbat block are emitted but never read by the mod; add readers where cheap and annotate the rest in an emit ledger.
 
-## T-242 — Emit T-216 slot deltas through flatten
-
-- **Slice spec:** `docs/specs/ideas/t242_t216_deltas.md`
-- **Program hub:** `docs/specs/ideas/t242_t216_deltas.md`
-- **Branch:** `ticket/T-242`
-- **Targets:** 
-- **Summary:** The T-216 schema deltas (slot tag/callsign/rank/stance, group leaderSlotId, root vehicles $def) are all declared in mission.schema.json today, but flatten drops the four slot fields (DIAG_DROP_SLOT_*); emit them and pin with schema-validated goldens.
-
-## T-257 — Undo scope misses loadouts, items, objectives, markers
-
-- **Slice spec:** `docs/specs/ideas/t257_undo_scope.md`
-- **Program hub:** `docs/specs/ideas/t257_undo_scope.md`
-- **Branch:** `ticket/T-257`
-- **Targets:** 
-- **Summary:** hydrate clears loadouts, items, objectives and markers but store.rs expand_scope covers slots, squads, factions and editor_layers only, so those roots become non-undoable the day something mutates them. Add them to the UndoManager scope with a test per root.
-
 ## T-932 — Parked briefing markers survive server save/reload
 
 - **Slice spec:** `docs/specs/existing/t932_parked_markers_persist.md`

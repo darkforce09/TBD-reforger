@@ -3,7 +3,7 @@ kind = "work"
 title = "Canvas: Z gizmo arm and vertical drag"
 summary = "The transform gizmo gains a Z arm: dragging it changes the selection's height with snapping and a metre readout, through the existing gesture pipeline and translate operation."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 7880
 spec = "docs/specs/audit_2026_09/t939_editor_usability.md"
 plan = "docs/plans/t-939_3_plan.md"
@@ -38,7 +38,10 @@ acceptance = [
     "Snapping applies by default and is suspended while Shift is held.",
     "One Ctrl+Z reverts a whole Z drag.",
 ]
+shipped_at = "c79fcb9c01ec6f5b9290f7020b528fc6f363224e"
 created_at = "2026-09-05T02:33:18Z"
+completed_at = "2026-09-07T21:46:37Z"
+estimated = ["tokens"]
 owns = [
     "apps/website/frontend/src/editor/canvas/overlays.rs",
     "apps/website/frontend/src/editor/canvas/gestures.rs",
