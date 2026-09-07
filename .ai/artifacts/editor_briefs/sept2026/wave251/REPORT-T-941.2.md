@@ -150,7 +150,7 @@ SLICE GATE: PASS
 
 ## commits
 
-(filled after `git commit` on explicit paths)
+- `dbc5f58fcebf9b7c0320ea6e6c4ef22816588a20` — T-941.2: deploy claimed holders on BRIEFING, lock DEPLOY, pause reopen.
 
 ## manual_checklist
 
