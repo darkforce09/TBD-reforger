@@ -101,6 +101,7 @@
       "items": { "$ref": "#/$defs/task" }
     },
     "weatherTimeline": { "$ref": "#/$defs/weatherTimeline" },
+    "audio": { "$ref": "#/$defs/audio" },
     "briefings": { "$ref": "#/$defs/briefings" },
     "settings": { "$ref": "#/$defs/settings" },
     "objectives": {
@@ -1322,6 +1323,83 @@
           "minimum": 0,
           "maximum": 1,
           "description": "Optional fog density, same axis as environment.fog (T-682). Omitted ⇒ leave the previous override alone."
+        }
+      }
+    },
+    "audio": {
+      "type": "object",
+      "description": "T-936.5 — authored positional AUDIO emitters and music cues (schemaVersion 1.3). `emitters[]` are world-space sound sources `{id, x, z, y?, sound, radiusM, loop, triggerId?}`; `musicCues[]` are `{id, event, track}` fired on mission_start / task_succeeded / task_failed / mission_end. radiusM must be > 0 (audio.rs; schema exclusiveMinimum). Ids are unique across both arrays.\n\nREAD SINCE T-936.5 by `Gamemode/TBD_AudioEmitter.c` (both mod trees): the server arms emitters (honouring triggerId via T-676) and plays cues on the named events; each client spawns one sound source per emitter and only raises the sound while the local player is inside radiusM. Absent object ⇒ a mission with no authored audio, which is every pre-T-936.5 document; the AUTHORED_BLOCKS carrier emits nothing in that case, so Class-R byte-parity fixtures stay identical. Flatten `EditorPayload::authored_blocks_root` still copies only `winConditions` / `tasks` / `radioPlan`, so live `/compiled` drops the block (T-946.44 class, same as weatherTimeline).",
+      "required": ["emitters", "musicCues"],
+      "additionalProperties": false,
+      "properties": {
+        "emitters": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/audioEmitter" }
+        },
+        "musicCues": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/musicCue" }
+        }
+      }
+    },
+    "audioEmitter": {
+      "type": "object",
+      "description": "T-936.5 — one positional sound source. `TBD_AudioEmitter` spawns a client-side source at (x, z) (y metres ASL when authored, otherwise terrain surface) and raises `sound` only while the listener is inside radiusM. `loop` keeps it repeating inside the radius; a one-shot fires once on first enter. `triggerId` delays arming until that editorTriggers[] row FIRED (T-676); omitted ⇒ arm at LIVE.",
+      "required": ["id", "x", "z", "sound", "radiusM", "loop"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "Stable emitter id. Unique across `audio.emitters[]` and `audio.musicCues[]`."
+        },
+        "x": { "type": "number", "description": "World X metres (same axis as `$defs/marker.x`)." },
+        "z": { "type": "number", "description": "World Z metres (same axis as `$defs/marker.z`)." },
+        "y": {
+          "type": "number",
+          "description": "Optional height, metres ASL. Omitted ⇒ terrain surface at (x, z)."
+        },
+        "sound": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "SCR_SoundEvent name (same vocabulary as T-676 play_sound `sound`). An unknown name raises nothing."
+        },
+        "radiusM": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Hearable radius in metres. Must be > 0 (audio.rs radius_above_zero)."
+        },
+        "loop": {
+          "type": "boolean",
+          "description": "When true, the source repeats while the listener stays inside radiusM. When false, it fires once on first enter. Absent and false are indistinguishable at JsonLoadContext (bools have no sentinel); default is false."
+        },
+        "triggerId": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "Optional `editorTriggers[].id`. The emitter stays silent until that trigger FIRED. A missing id is logged and the emitter never arms."
+        }
+      }
+    },
+    "musicCue": {
+      "type": "object",
+      "description": "T-936.5 — one 2D music/UI cue fired on a named mission event. `track` is an SCR_SoundEvent name; `event` is the closed vocabulary below.",
+      "required": ["id", "event", "track"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "Stable cue id. Unique across `audio.emitters[]` and `audio.musicCues[]`."
+        },
+        "event": {
+          "type": "string",
+          "enum": ["mission_start", "task_succeeded", "task_failed", "mission_end"],
+          "description": "When the cue plays. mission_start is LIVE entry; mission_end is END entry; task_succeeded / task_failed fire when TBD_TaskStateMachine commits that transition (any task)."
+        },
+        "track": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "SCR_SoundEvent name raised as a 2D cue (same path as T-676 play_sound)."
         }
       }
     },

@@ -661,16 +661,16 @@ mod tests {
     }
 
     /// The unlisted-key witness T-936.1 left in compile.rs (`tasks` as the dummy) goes red
-    /// once this slice registers the row. The assertion lives HERE now, using `audio`
-    /// (T-936.5), so compile.rs can stay at merge-base.
+    /// once this slice registers the row. The assertion lives HERE now, using `spawnModules`
+    /// (T-936.6), so compile.rs can stay at merge-base.
     #[test]
     fn an_unlisted_environment_key_is_not_promoted() {
-        let env = json!({"weather": "clear", "audio": {"emitters": []}});
+        let env = json!({"weather": "clear", "spawnModules": []});
         let mut dst = Map::new();
         let copied = copy_authored_blocks(&env, &mut dst);
-        assert!(!copied.contains(&"audio"), "{copied:?}");
+        assert!(!copied.contains(&"spawnModules"), "{copied:?}");
         assert!(
-            !dst.contains_key("audio"),
+            !dst.contains_key("spawnModules"),
             "an unlisted key stays parked: {dst:?}"
         );
     }
