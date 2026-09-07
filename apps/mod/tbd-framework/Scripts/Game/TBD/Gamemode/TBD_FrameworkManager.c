@@ -305,6 +305,30 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	[RplProp()]
 	protected bool m_bNightVision;
 
+
+	//! T-941.3 - winner key shown on the END banner. Replicated so dedicated-server clients
+	//! can paint the overlay; empty means no winner was named.
+	[RplProp()]
+	protected string m_sEndWinner;
+
+	//! T-941.3 - why the round ended (`faction_eliminated`, `time_limit`, an objective
+	//! trigger id, `admin`). Replicated with m_sEndWinner.
+	[RplProp()]
+	protected string m_sEndReason;
+
+	//! T-941.3 - packed scoreboard rows (`kills\tfaction\trole\tname` per line).
+	//! Built on the authority at END from TBD_ResultsReporter.FillScoreboard.
+	[RplProp()]
+	protected string m_sDebriefBoard;
+
+	//! T-941.3 - consumed by SnapshotEndBanner on the way into END. Not replicated.
+	protected string m_sPendingEndWinner;
+	protected string m_sPendingEndReason;
+
+	//! T-941.3 - live kill counts this round, playerId -> kills. Authority only.
+	protected ref map<int, int> m_mKills;
+
+
 	//! T-181.38 — the round clock is not running. Negative rather than 0 for the same reason
 	//! `TBD_SafestartManager.NOT_RUNNING` is: a 0 would read as "about to expire".
 	protected static const int ROUND_CLOCK_OFF = -1;
@@ -369,6 +393,39 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		return m_sLastStageRefusal;
 	}
 
+
+	//------------------------------------------------------------------------------------------------
+	//! T-941.3 - winning faction key for the END banner, or empty.
+	string GetEndWinner()
+	{
+		return m_sEndWinner;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-941.3 - why the round ended, or empty before the first END.
+	string GetEndReason()
+	{
+		return m_sEndReason;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-941.3 - packed DEBRIEF scoreboard. Empty before END.
+	string GetDebriefBoard()
+	{
+		return m_sDebriefBoard;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-941.3 - kills credited to playerId this round (authority live map). 0 if unknown.
+	int GetKills(int playerId)
+	{
+		int n;
+		if (m_mKills && m_mKills.Find(playerId, n))
+			return n;
+		return 0;
+	}
+
+
 	//------------------------------------------------------------------------------------------------
 	//! T-291 — authored `settings.spectatorPolicy`, or empty when the mission omitted the key.
 	//! SpectatorController on the client is the consumer.
@@ -389,6 +446,9 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	override void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);
+
+		if (!m_mKills)
+			m_mKills = new map<int, int>();
 
 		// T-291 — NVG strip on spawn. Same invoker SpawnManager uses: SCR_BaseGameModeComponent
 		// has no OnPlayerSpawned virtual in 1.7.
@@ -685,6 +745,181 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		GetGame().GetCallqueue().CallLater(StripNightVisionForPlayer, 1500, false, playerId);
 	}
 
+
+	//------------------------------------------------------------------------------------------------
+	//! T-941.3 - END/DEBRIEF overlays. Never refuses a stage change: Close/Open are local
+	//! widget ops and cannot feed back into SetStage.
+	protected void ApplyEndScreens()
+	{
+		if (!GetGame().GetWorkspace())
+			return;
+
+		if (m_Stage == TBD_EGameStage.END)
+			TBD_EndScreen.Open();
+		else
+			TBD_EndScreen.Close();
+
+		if (m_Stage == TBD_EGameStage.DEBRIEF)
+			TBD_DebriefScreen.Open();
+		else
+			TBD_DebriefScreen.Close();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-941.3 - named END stage hook. Overlay already opened from NotifyLocalStageUI;
+	//! this only announces the banner so a dedicated server log still names winner + reason.
+	protected void OnEnterEnd()
+	{
+		if (RplSession.Mode() == RplMode.Client)
+			return;
+
+		string winner = m_sEndWinner;
+		if (winner.IsEmpty())
+			winner = "(none named)";
+
+		string msg = "[TBD] END - winner=";
+		msg += winner;
+		msg += " reason=";
+		msg += m_sEndReason;
+		Broadcast(msg);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-941.3 - named DEBRIEF stage hook. Overlay already opened from NotifyLocalStageUI.
+	protected void OnEnterDebrief()
+	{
+		// Overlay is opened from NotifyLocalStageUI. The packed board was snapshotted
+		// before Replication.BumpMe() so clients already have it.
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void SnapshotEndBanner()
+	{
+		if (!m_sPendingEndReason.IsEmpty())
+		{
+			m_sEndReason = m_sPendingEndReason;
+			m_sEndWinner = m_sPendingEndWinner;
+			m_sPendingEndReason = string.Empty;
+			m_sPendingEndWinner = string.Empty;
+		}
+		else
+		{
+			InferEndBanner();
+		}
+
+		SnapshotDebriefBoard();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void InferEndBanner()
+	{
+		string objectiveWinner;
+		string trigger = TBD_ObjectiveRegistry.EvaluateEndTriggers(objectiveWinner);
+		if (!trigger.IsEmpty())
+		{
+			m_sEndReason = trigger;
+			m_sEndWinner = objectiveWinner;
+			return;
+		}
+
+		string winner;
+		int contesting;
+		int stillAlive;
+		ResolveEndWinner(winner, contesting, stillAlive);
+		if (stillAlive == 1 && contesting >= 2)
+		{
+			m_sEndReason = "faction_eliminated";
+			m_sEndWinner = winner;
+			return;
+		}
+
+		m_sEndReason = "admin";
+		m_sEndWinner = winner;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Same survivor arithmetic TBD_ResultsReporter.ResolveWinner uses.
+	protected void ResolveEndWinner(out string winner, out int contesting, out int stillAlive)
+	{
+		winner = string.Empty;
+		contesting = 0;
+		stillAlive = 0;
+
+		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
+		array<ref TBD_MissionFactionStruct> factions = TBD_MissionLoader.GetFactions();
+		if (!sm || !factions)
+			return;
+
+		foreach (TBD_MissionFactionStruct faction : factions)
+		{
+			if (!faction || faction.key.IsEmpty())
+				continue;
+
+			if (sm.CountClaimedForFaction(faction.key) == 0)
+				continue;
+
+			contesting++;
+			if (sm.CountAliveForFaction(faction.key) > 0)
+			{
+				stillAlive++;
+				winner = faction.key;
+			}
+		}
+
+		if (stillAlive != 1)
+			winner = string.Empty;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void ClearEndBanner()
+	{
+		m_sEndWinner = string.Empty;
+		m_sEndReason = string.Empty;
+		m_sDebriefBoard = string.Empty;
+		m_sPendingEndWinner = string.Empty;
+		m_sPendingEndReason = string.Empty;
+		if (m_mKills)
+			m_mKills.Clear();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void SnapshotDebriefBoard()
+	{
+		if (RplSession.Mode() == RplMode.Client)
+			return;
+
+		array<ref TBD_DebriefRow> rows = {};
+		TBD_ResultsReporter.FillScoreboard(rows);
+		m_sDebriefBoard = TBD_DebriefScreen.PackRows(rows);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-941.3 - credit a player kill while LIVE. Team-kills and world/AI kills are ignored.
+	override void OnPlayerKilled(notnull SCR_InstigatorContextData instigatorContextData)
+	{
+		super.OnPlayerKilled(instigatorContextData);
+
+		if (RplSession.Mode() == RplMode.Client)
+			return;
+
+		if (m_Stage != TBD_EGameStage.LIVE)
+			return;
+
+		int killerId = instigatorContextData.GetKillerPlayerID();
+		int victimId = instigatorContextData.GetVictimPlayerID();
+		if (killerId <= 0 || killerId == victimId)
+			return;
+
+		if (!m_mKills)
+			m_mKills = new map<int, int>();
+
+		int n;
+		if (!m_mKills.Find(killerId, n))
+			n = 0;
+		m_mKills.Set(killerId, n + 1);
+	}
+
+
 	//------------------------------------------------------------------------------------------------
 	//! @authority server
 	protected void StripNightVisionForPlayer(int playerId)
@@ -947,6 +1182,12 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 		TBD_EGameStage previous = m_Stage;
 		m_Stage = stage;
+		if (stage == TBD_EGameStage.END)
+			SnapshotEndBanner();
+		else if (stage == TBD_EGameStage.DEBRIEF)
+			SnapshotDebriefBoard();
+		else if (stage == TBD_EGameStage.LOADING || stage == TBD_EGameStage.LOBBY)
+			ClearEndBanner();
 		Replication.BumpMe();
 
 		// T-181.14 left this hook for whoever owned this file; T-181.17 owns it now. Logged
@@ -980,6 +1221,10 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			OnEnterBriefing();
 		else if (stage == TBD_EGameStage.LIVE)
 			OnEnterLive();
+		else if (stage == TBD_EGameStage.END)
+			OnEnterEnd();
+		else if (stage == TBD_EGameStage.DEBRIEF)
+			OnEnterDebrief();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1196,6 +1441,12 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		// THE SAME END PATH `faction_eliminated` uses. This slice adds a new REASON for a round to
 		// end, never a second way of ending one: every guard, log line and subsystem fan-out inside
 		// SetStage applies identically.
+		m_sPendingEndReason = "time_limit";
+		string clockWinner;
+		int clockContesting;
+		int clockAlive;
+		ResolveEndWinner(clockWinner, clockContesting, clockAlive);
+		m_sPendingEndWinner = clockWinner;
 		SetStage(TBD_EGameStage.END);
 
 		// SetStage can legitimately REFUSE a transition (T-181.17's safestart guard, T-181.32's
@@ -1297,6 +1548,8 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		{
 			GetGame().GetCallqueue().Remove(TickWinConditions);
 			PrintFormat("[TBD][Win] %1 — winner=%2", objectiveTrigger, objectiveWinner);
+			m_sPendingEndReason = objectiveTrigger;
+			m_sPendingEndWinner = objectiveWinner;
 			SetStage(TBD_EGameStage.END);
 			return;
 		}
@@ -1336,6 +1589,8 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		GetGame().GetCallqueue().Remove(TickWinConditions);
 		Print(string.Format("[TBD][Win] faction_eliminated — winner=%1 (%2 factions contested)",
 			lastAlive, contesting));
+		m_sPendingEndReason = "faction_eliminated";
+		m_sPendingEndWinner = lastAlive;
 		SetStage(TBD_EGameStage.END);
 	}
 
@@ -1446,6 +1701,8 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! method only ever drives local UI, and never feeds back into replication.
 	protected void NotifyLocalStageUI()
 	{
+		ApplyEndScreens();
+
 		// No workspace = dedicated server. It must never try to drive a menu.
 		if (!GetGame().GetWorkspace())
 			return;

@@ -30,6 +30,12 @@ class TBD_UILayouts
 	//! One pooled row of a TBD_ListBox.
 	static const ResourceName LIST_ROW     = "{7BD1A70000000702}UI/layouts/TBD_ListRow.layout";
 
+	//! T-941.3 — END stage banner: winning faction + reason.
+	static const ResourceName END_SCREEN     = "{7BD1A70000000801}UI/layouts/TBD_EndScreen.layout";
+
+	//! T-941.3 — DEBRIEF stage scoreboard.
+	static const ResourceName DEBRIEF_SCREEN = "{7BD1A70000000901}UI/layouts/TBD_DebriefScreen.layout";
+
 	//------------------------------------------------------------------------------------------------
 	//! Instantiate a layout under `parent`, retrying without the GUID prefix if the GUID does not
 	//! resolve. Returns null on a dead workspace (server-side) or an unresolvable layout — every

@@ -1,0 +1,316 @@
+FrameWidgetClass "{7BD1A70000000900}" {
+ Name "ScreenRoot"
+ components {
+  TBD_DebriefScreen "{7BD1A7000000090F}" {
+  }
+ }
+ {
+  ImageWidgetClass "{7BD1A70000000910}" {
+   Name "Backdrop"
+   Slot FrameWidgetSlot "{7BD1A70000000911}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 0.031 0.055 0.114 0.72
+  }
+  FrameWidgetClass "{7BD1A70000000912}" {
+   Name "PanelFrame"
+   Slot FrameWidgetSlot "{7BD1A70000000913}" {
+    Anchor 0 0 1 1
+    PositionX 240
+    OffsetLeft 240
+    PositionY 120
+    OffsetTop 120
+    SizeX -480
+    OffsetRight 240
+    SizeY -240
+    OffsetBottom 120
+   }
+   {
+    ImageWidgetClass "{7BD1A70000000914}" {
+     Name "Panel"
+     Slot FrameWidgetSlot "{7BD1A70000000915}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+     Color 0.051 0.075 0.133 1
+    }
+    TextWidgetClass "{7BD1A70000000916}" {
+     Name "Title"
+     Slot FrameWidgetSlot "{7BD1A70000000917}" {
+      Anchor 0 0 1 0
+      PositionX 48
+      OffsetLeft 48
+      PositionY 40
+      OffsetTop 40
+      SizeX -368
+      OffsetRight 320
+      SizeY 44
+      OffsetBottom -84
+     }
+     Clipping True
+     Color 0.867 0.886 0.969 1
+     Text "DEBRIEF"
+     "Font Size" 30
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+    TextWidgetClass "{7BD1A70000000918}" {
+     Name "Subtitle"
+     Slot FrameWidgetSlot "{7BD1A70000000919}" {
+      Anchor 0 0 1 0
+      PositionX 48
+      OffsetLeft 48
+      PositionY 88
+      OffsetTop 88
+      SizeX -368
+      OffsetRight 320
+      SizeY 26
+      OffsetBottom -114
+     }
+     Clipping True
+     Color 0.769 0.776 0.816 1
+     Text ""
+     "Font Size" 16
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+    ButtonWidgetClass "{7BD1A7000000091A}" {
+     Name "BackAction"
+     Slot FrameWidgetSlot "{7BD1A7000000091B}" {
+      Anchor 1 0 1 0
+      PositionX -208
+      OffsetLeft -208
+      PositionY 44
+      OffsetTop 44
+      SizeX 160
+      OffsetRight 48
+      SizeY 44
+      OffsetBottom -88
+     }
+     Color 1 1 1 0
+     components {
+      TBD_UIButton "{7BD1A7000000091C}" {
+       m_bPrimary 0
+       m_sLabel "BACK"
+      }
+     }
+     {
+      OverlayWidgetClass "{7BD1A7000000091D}" {
+       Name "BackBody"
+       Slot ButtonWidgetSlot "{7BD1A70000000936}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       {
+        ImageWidgetClass "{7BD1A7000000091E}" {
+         Name "Background"
+         Slot OverlayWidgetSlot "{7BD1A70000000937}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         Color 0 0 0 0
+        }
+        TextWidgetClass "{7BD1A7000000091F}" {
+         Name "Label"
+         Slot OverlayWidgetSlot "{7BD1A70000000938}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         Color 0.678 0.776 1 1
+         Text "BACK"
+         "Font Size" 14
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+       }
+      }
+     }
+    }
+    ImageWidgetClass "{7BD1A70000000921}" {
+     Name "HeaderRule"
+     Slot FrameWidgetSlot "{7BD1A70000000922}" {
+      Anchor 0 0 1 0
+      PositionX 48
+      OffsetLeft 48
+      PositionY 136
+      OffsetTop 136
+      SizeX -96
+      OffsetRight 48
+      SizeY 2
+      OffsetBottom -138
+     }
+     Color 0.267 0.278 0.310 1
+    }
+    FrameWidgetClass "{7BD1A70000000923}" {
+     Name "List"
+     Slot FrameWidgetSlot "{7BD1A70000000924}" {
+      Anchor 0 0 1 1
+      PositionX 48
+      OffsetLeft 48
+      PositionY 162
+      OffsetTop 162
+      SizeX -96
+      OffsetRight 48
+      SizeY -298
+      OffsetBottom 136
+     }
+     components {
+      TBD_ListBox "{7BD1A70000000925}" {
+       m_sContentName "Content"
+       m_sEmptyStateName "EmptyState"
+      }
+     }
+     {
+      ScrollLayoutWidgetClass "{7BD1A70000000926}" {
+       Name "Scroll"
+       Slot FrameWidgetSlot "{7BD1A70000000927}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       {
+        VerticalLayoutWidgetClass "{7BD1A70000000928}" {
+         Name "Content"
+         Slot AlignableSlot "{7BD1A70000000929}" {
+          HorizontalAlign 3
+          VerticalAlign 0
+         }
+        }
+       }
+      }
+      TextWidgetClass "{7BD1A7000000092A}" {
+       Name "EmptyState"
+       Slot FrameWidgetSlot "{7BD1A7000000092B}" {
+        Anchor 0 0 1 0
+        PositionX 0
+        OffsetLeft 0
+        PositionY 24
+        OffsetTop 24
+        SizeX 0
+        OffsetRight 0
+        SizeY 36
+        OffsetBottom -60
+       }
+       Clipping True
+       Color 0.769 0.776 0.816 1
+       Text "No players recorded."
+       "Font Size" 16
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+     }
+    }
+    ImageWidgetClass "{7BD1A7000000092C}" {
+     Name "FooterRule"
+     Slot FrameWidgetSlot "{7BD1A7000000092D}" {
+      Anchor 0 1 1 1
+      PositionX 48
+      OffsetLeft 48
+      PositionY -112
+      OffsetTop -112
+      SizeX -96
+      OffsetRight 48
+      SizeY 2
+      OffsetBottom 110
+     }
+     Color 0.267 0.278 0.310 1
+    }
+    TextWidgetClass "{7BD1A7000000092E}" {
+     Name "Status"
+     Slot FrameWidgetSlot "{7BD1A7000000092F}" {
+      Anchor 0 1 1 1
+      PositionX 48
+      OffsetLeft 48
+      PositionY -84
+      OffsetTop -84
+      SizeX -408
+      OffsetRight 360
+      SizeY 36
+      OffsetBottom 48
+     }
+     Clipping True
+     Color 0.769 0.776 0.816 1
+     Text ""
+     "Font Size" 16
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+    ButtonWidgetClass "{7BD1A70000000930}" {
+     Name "PrimaryAction"
+     Slot FrameWidgetSlot "{7BD1A70000000931}" {
+      Anchor 1 1 1 1
+      PositionX -288
+      OffsetLeft -288
+      PositionY -92
+      OffsetTop -92
+      SizeX 240
+      OffsetRight 48
+      SizeY 52
+      OffsetBottom 40
+     }
+     Color 1 1 1 0
+     components {
+      TBD_UIButton "{7BD1A70000000932}" {
+       m_bPrimary 1
+       m_sLabel ""
+      }
+     }
+     {
+      OverlayWidgetClass "{7BD1A70000000933}" {
+       Name "PrimaryBody"
+       Slot ButtonWidgetSlot "{7BD1A70000000939}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       {
+        ImageWidgetClass "{7BD1A70000000934}" {
+         Name "Background"
+         Slot OverlayWidgetSlot "{7BD1A7000000093A}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         Color 0.231 0.510 0.965 1
+        }
+        TextWidgetClass "{7BD1A70000000935}" {
+         Name "Label"
+         Slot OverlayWidgetSlot "{7BD1A7000000093B}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         Color 1 1 1 1
+         Text ""
+         "Font Size" 16
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}
