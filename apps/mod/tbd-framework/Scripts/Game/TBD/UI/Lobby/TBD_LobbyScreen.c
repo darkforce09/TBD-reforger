@@ -184,33 +184,25 @@ class TBD_LobbyScreen : TBD_ShellScreen
 	{
 		AdoptRoster(roster);
 
-		// A body ends this screen: a picker over the top of a live character is a menu nobody asked
-		// for, and one that cannot be dismissed for good is a trap.
-		//
-		// ── T-181.29: it is a BODY that ends it, not a click ─────────────────────────────────
-		// This used to read `IsDeployed()`, which is set by exactly one event — the verdict on a
-		// deploy the player clicked. Every server-side door into the world is silent to this client:
-		// `TBD_SpawnManager`'s LOBBY auto-deploy wave (`m_bAutoDeploy`, still 1 — it deploys every
-		// connected player ~250 ms into LOBBY), the JIP `DeployJoiner` path, and `AdminRespawn`.
-		// A player any of them deployed got a character with the picker still on top of it and
-		// nothing that would ever take it down: the T-181.28 guard in `TBD_LobbyStage.Tick` stands
-		// the RE-raise down, but says nothing about a screen that is already open.
-		//
-		// `ShouldStandDown()` adds the authority's own "this player has a body" to the click, so
-		// every door closes the screen and the picker is no longer the only one that does.
-		//
-		// Deferred by one frame, deliberately. This runs INSIDE `ScriptInvoker.Invoke`, and closing
-		// the screen synchronously would reach `OnScreenClose` and remove this very handler from
-		// the invoker that is mid-iteration over it. One frame costs nothing and sidesteps the
-		// whole question.
-		if (TBD_LobbyClient.ShouldStandDown())
-			GetGame().GetCallqueue().Call(DeferredClose);
+		// T-941.2 (2026-09-07) — a body does NOT close this screen. Closing was the old
+		// T-181.29 answer to the deploy race: ShouldStandDown deferred-closed the picker,
+		// which hid the control instead of locking it, so a second DEPLOY could still be
+		// in flight and a seated player could not change slot. See DeferredClose.
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Guarded: the stage watcher may have closed this screen already (LOBBY -> BRIEFING lands in
-	//! the same breath as a deploy), and closing a dead menu through the stack is not something to
-	//! find out about at an event.
+	//! T-941.2 (2026-09-07) DECISION: the guard is the DEPLOY button, not a close.
+	//!
+	//! The T-181.29 race note at this site used to say the stage watcher may have closed
+	//! this screen already (LOBBY -> BRIEFING landing in the same breath as a deploy) and
+	//! OnRosterChanged deferred-closed whenever ShouldStandDown(). That closed the race by
+	//! destroying the UI. The lock is now RefreshFooter: DEPLOY is shown disabled with a
+	//! reason while IsDeployPending() or the player is already in the world, and nothing
+	//! spawns during LOBBY (TBD_SpawnManager refuses). After BRIEFING the stage watcher
+	//! still drops the picker; PauseMenuUI "Change slot" reopens it so a seated player can
+	//! pick a different seat (despawn + redeploy).
+	//!
+	//! DeferredClose stays as a one-frame stack-safe closer; OnRosterChanged no longer calls it.
 	protected void DeferredClose()
 	{
 		if (IsScreenOpen())
@@ -218,7 +210,7 @@ class TBD_LobbyScreen : TBD_ShellScreen
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected void AdoptRoster(TBD_LobbyRoster roster)
+		protected void AdoptRoster(TBD_LobbyRoster roster)
 	{
 		m_Roster = roster;
 
@@ -487,6 +479,8 @@ class TBD_LobbyScreen : TBD_ShellScreen
 	//! The footer: one line of context, one loud button.
 	protected void RefreshFooter()
 	{
+		RefreshBackAffordance();
+
 		if (!m_Roster || !m_Roster.IsAvailable())
 		{
 			// Nothing to deploy into yet — but the button still shows, disabled, so the shape of
@@ -496,22 +490,23 @@ class TBD_LobbyScreen : TBD_ShellScreen
 			return;
 		}
 
-		// T-181.29 — `ShouldStandDown` rather than `IsDeployed`, for the same reason the close above
-		// uses it. The close makes this nearly moot, but only nearly: the roster that reports the
-		// body arrives one frame before the deferred close runs, and a DEPLOY button that is live
-		// for a player who already has a character is wrong in that frame too. Belt and braces on
-		// the one irreversible control.
+		// T-941.2 — lock DEPLOY in place rather than closing the screen. Disabled with a
+		// reason (DeriveStatus) while a deploy is pending, while the player already has a
+		// body, and for the whole of LOBBY (bodies wait for BRIEFING).
+		bool pending = TBD_LobbyClient.IsDeployPending();
+		bool inWorld = TBD_LobbyClient.ShouldStandDown();
 		bool ready = m_Roster.HasOwnSlot()
 			&& !m_Roster.m_bLifeSpent
-			&& !TBD_LobbyClient.ShouldStandDown()
-			&& !TBD_LobbyClient.IsDeployPending();
+			&& !pending
+			&& !inWorld
+			&& !IsLobbyPhase();
 
 		SetPrimaryAction("DEPLOY", ready);
 		SetStatus(DeriveStatus());
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! What the footer says. The client's own line wins while it has one (an in-flight claim, a
+		//! What the footer says. The client's own line wins while it has one (an in-flight claim, a
 	//! refusal, a deploy verdict); otherwise the line is derived from the roster, so it is always
 	//! about the player's ACTUAL situation rather than a stale acknowledgement.
 	protected string DeriveStatus()
@@ -519,6 +514,9 @@ class TBD_LobbyScreen : TBD_ShellScreen
 		string live = TBD_LobbyClient.GetStatus();
 		if (!live.IsEmpty())
 			return live;
+
+		if (TBD_LobbyClient.IsDeployPending())
+			return "Deploy in progress.";
 
 		if (!m_Roster)
 			return "Waiting for the server…";
@@ -529,14 +527,23 @@ class TBD_LobbyScreen : TBD_ShellScreen
 		if (m_Roster.m_bLifeSpent)
 			return "Your life is spent. Only an admin can put you back in.";
 
+		if (TBD_LobbyClient.ShouldStandDown())
+			return "You are in the world. Pick a different seat to change slot.";
+
 		if (m_Roster.HasOwnSlot())
-			return string.Format("You hold %1. Click it again to give it up.", m_Roster.m_sOwnLabel);
+		{
+			string hold = string.Format("You hold %1. Click it again to give it up.", m_Roster.m_sOwnLabel);
+			if (IsLobbyPhase())
+				return hold + " You deploy when briefing starts.";
+			return hold;
+		}
 
 		if (m_Roster.TotalOpen() == 0)
 			return "Every seat is taken. Wait for someone to give one up.";
 
 		return "Pick a seat. One life — there is no second chance.";
 	}
+
 
 	// ── Interaction ─────────────────────────────────────────────────────────────────────────
 
@@ -648,6 +655,8 @@ class TBD_LobbyScreen : TBD_ShellScreen
 	{
 		if (!m_Roster || !m_Roster.HasOwnSlot() || TBD_LobbyClient.IsDeployPending())
 			return;
+		if (IsLobbyPhase() || TBD_LobbyClient.ShouldStandDown())
+			return;
 
 		TBD_LobbyClient.Deploy();
 	}
@@ -663,7 +672,36 @@ class TBD_LobbyScreen : TBD_ShellScreen
 	// ── Helpers ─────────────────────────────────────────────────────────────────────────────
 
 	//------------------------------------------------------------------------------------------------
-	protected TBD_LobbySide FindSide(string key)
+	//! T-941.2 — LOBBY is bodiless. An empty stage string is the roster's pre-stage default.
+	protected bool IsLobbyPhase()
+	{
+		if (!m_Roster)
+			return true;
+
+		string stage = m_Roster.m_sStage;
+		return stage.IsEmpty() || stage == "LOBBY";
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! During LOBBY there is nowhere to go back TO, so Back stays hidden. After BRIEFING this
+	//! screen is a pause-menu overlay: Back (and Esc) dismiss it and return to the body.
+	protected void RefreshBackAffordance()
+	{
+		TBD_UITheme.Show(Find("BackAction"), !IsLobbyPhase());
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-941.2 — pause-menu "Change slot" lands here after the pause menu has closed.
+	static void OpenFromPause()
+	{
+		if (TBD_MenuStack.IsOpen(ChimeraMenuPreset.TBD_UILobby))
+			return;
+
+		TBD_MenuStack.Open(ChimeraMenuPreset.TBD_UILobby);
+	}
+
+	//------------------------------------------------------------------------------------------------
+		protected TBD_LobbySide FindSide(string key)
 	{
 		if (key.IsEmpty() || !m_Roster)
 			return null;
@@ -722,4 +760,73 @@ class TBD_LobbyScreen : TBD_ShellScreen
 modded enum ChimeraMenuPreset
 {
 	TBD_UILobby
+}
+
+//! T-941.2 — reopen the lobby from the pause menu so a player who already has a body can
+//! change slot. Reuses the vanilla LeaveFaction row: TBD_GameMode.et sets
+//! m_bAllowFactionChange 0, so that button is hidden and unwired; we show it, relabel it,
+//! and send it to TBD_LobbyScreen.OpenFromPause. Respawn is left alone (ONE LIFE).
+modded class PauseMenuUI
+{
+	protected SCR_ButtonTextComponent m_TbdChangeSlotButton;
+
+	//------------------------------------------------------------------------------------------------
+	override void OnMenuOpen()
+	{
+		super.OnMenuOpen();
+		HookTbdChangeSlot();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	override void OnMenuClose()
+	{
+		if (m_TbdChangeSlotButton)
+		{
+			m_TbdChangeSlotButton.m_OnClicked.Remove(OnTbdChangeSlot);
+			m_TbdChangeSlotButton = null;
+		}
+
+		super.OnMenuClose();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void HookTbdChangeSlot()
+	{
+		if (!TBD_FrameworkManager.IsFrameworkWorld())
+			return;
+
+		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
+		if (!fm)
+			return;
+
+		TBD_EGameStage stage = fm.GetStage();
+		if (stage != TBD_EGameStage.BRIEFING
+			&& stage != TBD_EGameStage.SAFE_START
+			&& stage != TBD_EGameStage.LIVE)
+			return;
+
+		Widget root = GetRootWidget();
+		if (!root)
+			return;
+
+		SCR_ButtonTextComponent btn = SCR_ButtonTextComponent.GetButtonText("LeaveFaction", root);
+		if (!btn)
+			return;
+
+		Widget row = btn.GetRootWidget();
+		if (row)
+			row.SetVisible(true);
+
+		btn.SetText("Change slot");
+		btn.SetEnabled(true);
+		btn.m_OnClicked.Insert(OnTbdChangeSlot);
+		m_TbdChangeSlotButton = btn;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnTbdChangeSlot()
+	{
+		Close();
+		GetGame().GetCallqueue().CallLater(TBD_LobbyScreen.OpenFromPause, 0, false);
+	}
 }
