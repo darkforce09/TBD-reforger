@@ -1,0 +1,702 @@
+FrameWidgetClass "{7BD1A70000000A00}" {
+ Name "LoadoutPreview"
+ Slot FrameWidgetSlot "{7BD1A70000000A02}" {
+  Anchor 1 0 1 1
+  PositionX -288
+  OffsetLeft -288
+  PositionY 162
+  OffsetTop 162
+  SizeX 240
+  OffsetRight 48
+  SizeY -298
+  OffsetBottom 136
+ }
+ components {
+  TBD_LoadoutPreview "{7BD1A70000000A0F}" {
+  }
+ }
+ {
+  ImageWidgetClass "{7BD1A70000000A03}" {
+   Name "PreviewPanel"
+   Slot FrameWidgetSlot "{7BD1A70000000A04}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 0.098 0.122 0.184 1
+  }
+  TextWidgetClass "{7BD1A70000000A05}" {
+   Name "PreviewTitle"
+   Slot FrameWidgetSlot "{7BD1A70000000A06}" {
+    Anchor 0 0 1 0
+    PositionX 12
+    OffsetLeft 12
+    PositionY 10
+    OffsetTop 10
+    SizeX -24
+    OffsetRight 12
+    SizeY 22
+    OffsetBottom -32
+   }
+   Clipping True
+   Color 0.867 0.886 0.969 1
+   Text "KIT"
+   "Font Size" 14
+   "Vertical Alignment" Center
+   Wrap 0
+  }
+  TextWidgetClass "{7BD1A70000000A07}" {
+   Name "PreviewEmpty"
+   Slot FrameWidgetSlot "{7BD1A70000000A08}" {
+    Anchor 0 0 1 0
+    PositionX 12
+    OffsetLeft 12
+    PositionY 40
+    OffsetTop 40
+    SizeX -24
+    OffsetRight 12
+    SizeY 48
+    OffsetBottom -88
+   }
+   Clipping True
+   Color 0.769 0.776 0.816 1
+   Text "Hover a seat to preview its kit."
+   "Font Size" 14
+   Wrap 1
+  }
+  VerticalLayoutWidgetClass "{7BD1A70000000A09}" {
+   Name "IconGrid"
+   Slot FrameWidgetSlot "{7BD1A70000000A0A}" {
+    Anchor 0 0 1 1
+    PositionX 8
+    OffsetLeft 8
+    PositionY 40
+    OffsetTop 40
+    SizeX -16
+    OffsetRight 8
+    SizeY -48
+    OffsetBottom 8
+   }
+   {
+    HorizontalLayoutWidgetClass "{7BD1A70000000A30}" {
+     Name "IconRow0"
+     Slot LayoutSlot "{7BD1A70000000A31}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+      Padding 0 0 0 0
+     }
+     {
+     SizeLayoutWidgetClass "{7BD1A70000000A10}" {
+      Name "Cell0"
+      Slot LayoutSlot "{7BD1A70000000A11}" {
+    HorizontalAlign 0
+    VerticalAlign 0
+    Padding 0 0 6 6
+   }
+      AllowWidthOverride 1
+      WidthOverride 52
+      AllowHeightOverride 1
+      HeightOverride 52
+      {
+       OverlayWidgetClass "{7BD1A70000000A12}" {
+        Name "Cell0Surface"
+        Slot AlignableSlot "{7BD1A70000000A13}" {
+     HorizontalAlign 3
+     VerticalAlign 3
+    }
+        {
+         ImageWidgetClass "{7BD1A70000000A14}" {
+          Name "Icon0"
+          Slot OverlayWidgetSlot "{7BD1A70000000A15}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 1 1 1 1
+         }
+         TextWidgetClass "{7BD1A70000000A16}" {
+          Name "Glyph0"
+          Slot OverlayWidgetSlot "{7BD1A70000000A17}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 0.867 0.886 0.969 1
+          Text ""
+          "Font Size" 16
+          "Horizontal Alignment" Center
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+        }
+       }
+      }
+     }
+     SizeLayoutWidgetClass "{7BD1A70000000A18}" {
+      Name "Cell1"
+      Slot LayoutSlot "{7BD1A70000000A19}" {
+    HorizontalAlign 0
+    VerticalAlign 0
+    Padding 0 0 6 6
+   }
+      AllowWidthOverride 1
+      WidthOverride 52
+      AllowHeightOverride 1
+      HeightOverride 52
+      {
+       OverlayWidgetClass "{7BD1A70000000A1A}" {
+        Name "Cell1Surface"
+        Slot AlignableSlot "{7BD1A70000000A1B}" {
+     HorizontalAlign 3
+     VerticalAlign 3
+    }
+        {
+         ImageWidgetClass "{7BD1A70000000A1C}" {
+          Name "Icon1"
+          Slot OverlayWidgetSlot "{7BD1A70000000A1D}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 1 1 1 1
+         }
+         TextWidgetClass "{7BD1A70000000A1E}" {
+          Name "Glyph1"
+          Slot OverlayWidgetSlot "{7BD1A70000000A1F}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 0.867 0.886 0.969 1
+          Text ""
+          "Font Size" 16
+          "Horizontal Alignment" Center
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+        }
+       }
+      }
+     }
+     SizeLayoutWidgetClass "{7BD1A70000000A20}" {
+      Name "Cell2"
+      Slot LayoutSlot "{7BD1A70000000A21}" {
+    HorizontalAlign 0
+    VerticalAlign 0
+    Padding 0 0 6 6
+   }
+      AllowWidthOverride 1
+      WidthOverride 52
+      AllowHeightOverride 1
+      HeightOverride 52
+      {
+       OverlayWidgetClass "{7BD1A70000000A22}" {
+        Name "Cell2Surface"
+        Slot AlignableSlot "{7BD1A70000000A23}" {
+     HorizontalAlign 3
+     VerticalAlign 3
+    }
+        {
+         ImageWidgetClass "{7BD1A70000000A24}" {
+          Name "Icon2"
+          Slot OverlayWidgetSlot "{7BD1A70000000A25}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 1 1 1 1
+         }
+         TextWidgetClass "{7BD1A70000000A26}" {
+          Name "Glyph2"
+          Slot OverlayWidgetSlot "{7BD1A70000000A27}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 0.867 0.886 0.969 1
+          Text ""
+          "Font Size" 16
+          "Horizontal Alignment" Center
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+        }
+       }
+      }
+     }
+     SizeLayoutWidgetClass "{7BD1A70000000A28}" {
+      Name "Cell3"
+      Slot LayoutSlot "{7BD1A70000000A29}" {
+    HorizontalAlign 0
+    VerticalAlign 0
+    Padding 0 0 6 6
+   }
+      AllowWidthOverride 1
+      WidthOverride 52
+      AllowHeightOverride 1
+      HeightOverride 52
+      {
+       OverlayWidgetClass "{7BD1A70000000A2A}" {
+        Name "Cell3Surface"
+        Slot AlignableSlot "{7BD1A70000000A2B}" {
+     HorizontalAlign 3
+     VerticalAlign 3
+    }
+        {
+         ImageWidgetClass "{7BD1A70000000A2C}" {
+          Name "Icon3"
+          Slot OverlayWidgetSlot "{7BD1A70000000A2D}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 1 1 1 1
+         }
+         TextWidgetClass "{7BD1A70000000A2E}" {
+          Name "Glyph3"
+          Slot OverlayWidgetSlot "{7BD1A70000000A2F}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 0.867 0.886 0.969 1
+          Text ""
+          "Font Size" 16
+          "Horizontal Alignment" Center
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+        }
+       }
+      }
+     }
+     }
+    }
+    HorizontalLayoutWidgetClass "{7BD1A70000000A52}" {
+     Name "IconRow1"
+     Slot LayoutSlot "{7BD1A70000000A53}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+      Padding 0 0 0 0
+     }
+     {
+     SizeLayoutWidgetClass "{7BD1A70000000A32}" {
+      Name "Cell4"
+      Slot LayoutSlot "{7BD1A70000000A33}" {
+    HorizontalAlign 0
+    VerticalAlign 0
+    Padding 0 0 6 6
+   }
+      AllowWidthOverride 1
+      WidthOverride 52
+      AllowHeightOverride 1
+      HeightOverride 52
+      {
+       OverlayWidgetClass "{7BD1A70000000A34}" {
+        Name "Cell4Surface"
+        Slot AlignableSlot "{7BD1A70000000A35}" {
+     HorizontalAlign 3
+     VerticalAlign 3
+    }
+        {
+         ImageWidgetClass "{7BD1A70000000A36}" {
+          Name "Icon4"
+          Slot OverlayWidgetSlot "{7BD1A70000000A37}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 1 1 1 1
+         }
+         TextWidgetClass "{7BD1A70000000A38}" {
+          Name "Glyph4"
+          Slot OverlayWidgetSlot "{7BD1A70000000A39}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 0.867 0.886 0.969 1
+          Text ""
+          "Font Size" 16
+          "Horizontal Alignment" Center
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+        }
+       }
+      }
+     }
+     SizeLayoutWidgetClass "{7BD1A70000000A3A}" {
+      Name "Cell5"
+      Slot LayoutSlot "{7BD1A70000000A3B}" {
+    HorizontalAlign 0
+    VerticalAlign 0
+    Padding 0 0 6 6
+   }
+      AllowWidthOverride 1
+      WidthOverride 52
+      AllowHeightOverride 1
+      HeightOverride 52
+      {
+       OverlayWidgetClass "{7BD1A70000000A3C}" {
+        Name "Cell5Surface"
+        Slot AlignableSlot "{7BD1A70000000A3D}" {
+     HorizontalAlign 3
+     VerticalAlign 3
+    }
+        {
+         ImageWidgetClass "{7BD1A70000000A3E}" {
+          Name "Icon5"
+          Slot OverlayWidgetSlot "{7BD1A70000000A3F}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 1 1 1 1
+         }
+         TextWidgetClass "{7BD1A70000000A40}" {
+          Name "Glyph5"
+          Slot OverlayWidgetSlot "{7BD1A70000000A41}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 0.867 0.886 0.969 1
+          Text ""
+          "Font Size" 16
+          "Horizontal Alignment" Center
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+        }
+       }
+      }
+     }
+     SizeLayoutWidgetClass "{7BD1A70000000A42}" {
+      Name "Cell6"
+      Slot LayoutSlot "{7BD1A70000000A43}" {
+    HorizontalAlign 0
+    VerticalAlign 0
+    Padding 0 0 6 6
+   }
+      AllowWidthOverride 1
+      WidthOverride 52
+      AllowHeightOverride 1
+      HeightOverride 52
+      {
+       OverlayWidgetClass "{7BD1A70000000A44}" {
+        Name "Cell6Surface"
+        Slot AlignableSlot "{7BD1A70000000A45}" {
+     HorizontalAlign 3
+     VerticalAlign 3
+    }
+        {
+         ImageWidgetClass "{7BD1A70000000A46}" {
+          Name "Icon6"
+          Slot OverlayWidgetSlot "{7BD1A70000000A47}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 1 1 1 1
+         }
+         TextWidgetClass "{7BD1A70000000A48}" {
+          Name "Glyph6"
+          Slot OverlayWidgetSlot "{7BD1A70000000A49}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 0.867 0.886 0.969 1
+          Text ""
+          "Font Size" 16
+          "Horizontal Alignment" Center
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+        }
+       }
+      }
+     }
+     SizeLayoutWidgetClass "{7BD1A70000000A4A}" {
+      Name "Cell7"
+      Slot LayoutSlot "{7BD1A70000000A4B}" {
+    HorizontalAlign 0
+    VerticalAlign 0
+    Padding 0 0 6 6
+   }
+      AllowWidthOverride 1
+      WidthOverride 52
+      AllowHeightOverride 1
+      HeightOverride 52
+      {
+       OverlayWidgetClass "{7BD1A70000000A4C}" {
+        Name "Cell7Surface"
+        Slot AlignableSlot "{7BD1A70000000A4D}" {
+     HorizontalAlign 3
+     VerticalAlign 3
+    }
+        {
+         ImageWidgetClass "{7BD1A70000000A4E}" {
+          Name "Icon7"
+          Slot OverlayWidgetSlot "{7BD1A70000000A4F}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 1 1 1 1
+         }
+         TextWidgetClass "{7BD1A70000000A50}" {
+          Name "Glyph7"
+          Slot OverlayWidgetSlot "{7BD1A70000000A51}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 0.867 0.886 0.969 1
+          Text ""
+          "Font Size" 16
+          "Horizontal Alignment" Center
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+        }
+       }
+      }
+     }
+     }
+    }
+    HorizontalLayoutWidgetClass "{7BD1A70000000A74}" {
+     Name "IconRow2"
+     Slot LayoutSlot "{7BD1A70000000A75}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+      Padding 0 0 0 0
+     }
+     {
+     SizeLayoutWidgetClass "{7BD1A70000000A54}" {
+      Name "Cell8"
+      Slot LayoutSlot "{7BD1A70000000A55}" {
+    HorizontalAlign 0
+    VerticalAlign 0
+    Padding 0 0 6 6
+   }
+      AllowWidthOverride 1
+      WidthOverride 52
+      AllowHeightOverride 1
+      HeightOverride 52
+      {
+       OverlayWidgetClass "{7BD1A70000000A56}" {
+        Name "Cell8Surface"
+        Slot AlignableSlot "{7BD1A70000000A57}" {
+     HorizontalAlign 3
+     VerticalAlign 3
+    }
+        {
+         ImageWidgetClass "{7BD1A70000000A58}" {
+          Name "Icon8"
+          Slot OverlayWidgetSlot "{7BD1A70000000A59}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 1 1 1 1
+         }
+         TextWidgetClass "{7BD1A70000000A5A}" {
+          Name "Glyph8"
+          Slot OverlayWidgetSlot "{7BD1A70000000A5B}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 0.867 0.886 0.969 1
+          Text ""
+          "Font Size" 16
+          "Horizontal Alignment" Center
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+        }
+       }
+      }
+     }
+     SizeLayoutWidgetClass "{7BD1A70000000A5C}" {
+      Name "Cell9"
+      Slot LayoutSlot "{7BD1A70000000A5D}" {
+    HorizontalAlign 0
+    VerticalAlign 0
+    Padding 0 0 6 6
+   }
+      AllowWidthOverride 1
+      WidthOverride 52
+      AllowHeightOverride 1
+      HeightOverride 52
+      {
+       OverlayWidgetClass "{7BD1A70000000A5E}" {
+        Name "Cell9Surface"
+        Slot AlignableSlot "{7BD1A70000000A5F}" {
+     HorizontalAlign 3
+     VerticalAlign 3
+    }
+        {
+         ImageWidgetClass "{7BD1A70000000A60}" {
+          Name "Icon9"
+          Slot OverlayWidgetSlot "{7BD1A70000000A61}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 1 1 1 1
+         }
+         TextWidgetClass "{7BD1A70000000A62}" {
+          Name "Glyph9"
+          Slot OverlayWidgetSlot "{7BD1A70000000A63}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 0.867 0.886 0.969 1
+          Text ""
+          "Font Size" 16
+          "Horizontal Alignment" Center
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+        }
+       }
+      }
+     }
+     SizeLayoutWidgetClass "{7BD1A70000000A64}" {
+      Name "Cell10"
+      Slot LayoutSlot "{7BD1A70000000A65}" {
+    HorizontalAlign 0
+    VerticalAlign 0
+    Padding 0 0 6 6
+   }
+      AllowWidthOverride 1
+      WidthOverride 52
+      AllowHeightOverride 1
+      HeightOverride 52
+      {
+       OverlayWidgetClass "{7BD1A70000000A66}" {
+        Name "Cell10Surface"
+        Slot AlignableSlot "{7BD1A70000000A67}" {
+     HorizontalAlign 3
+     VerticalAlign 3
+    }
+        {
+         ImageWidgetClass "{7BD1A70000000A68}" {
+          Name "Icon10"
+          Slot OverlayWidgetSlot "{7BD1A70000000A69}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 1 1 1 1
+         }
+         TextWidgetClass "{7BD1A70000000A6A}" {
+          Name "Glyph10"
+          Slot OverlayWidgetSlot "{7BD1A70000000A6B}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 0.867 0.886 0.969 1
+          Text ""
+          "Font Size" 16
+          "Horizontal Alignment" Center
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+        }
+       }
+      }
+     }
+     SizeLayoutWidgetClass "{7BD1A70000000A6C}" {
+      Name "Cell11"
+      Slot LayoutSlot "{7BD1A70000000A6D}" {
+    HorizontalAlign 0
+    VerticalAlign 0
+    Padding 0 0 6 6
+   }
+      AllowWidthOverride 1
+      WidthOverride 52
+      AllowHeightOverride 1
+      HeightOverride 52
+      {
+       OverlayWidgetClass "{7BD1A70000000A6E}" {
+        Name "Cell11Surface"
+        Slot AlignableSlot "{7BD1A70000000A6F}" {
+     HorizontalAlign 3
+     VerticalAlign 3
+    }
+        {
+         ImageWidgetClass "{7BD1A70000000A70}" {
+          Name "Icon11"
+          Slot OverlayWidgetSlot "{7BD1A70000000A71}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 1 1 1 1
+         }
+         TextWidgetClass "{7BD1A70000000A72}" {
+          Name "Glyph11"
+          Slot OverlayWidgetSlot "{7BD1A70000000A73}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 0.867 0.886 0.969 1
+          Text ""
+          "Font Size" 16
+          "Horizontal Alignment" Center
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+        }
+       }
+      }
+     }
+     }
+    }
+    HorizontalLayoutWidgetClass "{7BD1A70000000A7E}" {
+     Name "IconRow3"
+     Slot LayoutSlot "{7BD1A70000000A7F}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+      Padding 0 0 0 0
+     }
+     {
+     SizeLayoutWidgetClass "{7BD1A70000000A76}" {
+      Name "Cell12"
+      Slot LayoutSlot "{7BD1A70000000A77}" {
+    HorizontalAlign 0
+    VerticalAlign 0
+    Padding 0 0 6 6
+   }
+      AllowWidthOverride 1
+      WidthOverride 52
+      AllowHeightOverride 1
+      HeightOverride 52
+      {
+       OverlayWidgetClass "{7BD1A70000000A78}" {
+        Name "Cell12Surface"
+        Slot AlignableSlot "{7BD1A70000000A79}" {
+     HorizontalAlign 3
+     VerticalAlign 3
+    }
+        {
+         ImageWidgetClass "{7BD1A70000000A7A}" {
+          Name "Icon12"
+          Slot OverlayWidgetSlot "{7BD1A70000000A7B}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 1 1 1 1
+         }
+         TextWidgetClass "{7BD1A70000000A7C}" {
+          Name "Glyph12"
+          Slot OverlayWidgetSlot "{7BD1A70000000A7D}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+          Color 0.867 0.886 0.969 1
+          Text ""
+          "Font Size" 16
+          "Horizontal Alignment" Center
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+        }
+       }
+      }
+     }
+     }
+    }
+   }
+  }
+ }
+}
