@@ -1,0 +1,47 @@
+id = "T-946.64"
+kind = "work"
+title = "Slice gate runs no test step at all"
+summary = "platform wave gate --slice runs check, wasm32, fmt, clippy, schema, db_migrate and verify steps but no cargo test, so wave 253 shipped two deterministically-failing frontend tests that only the full wave gate caught."
+class = "chore"
+status = "ready"
+parent = "T-946"
+order = 7525
+priority = 1
+spec = "docs/platform/PLATFORM_FACTORY.md"
+plan = "docs/plans/t-946_64_plan.md"
+executor = "claude-code"
+main_goal = "A slice that breaks a frontend test learns it at slice time, not at wave gate."
+context = [
+    "Anchor 2026-09-07: gate_slice (xtask/src/wave/gate.rs:99-224) runs check, wasm32, fmt, clippy, schema, catalogue drift, db_migrate twice and VERIFY_STEPS. No cargo test step exists.",
+    "Wave 253 paid twice in one gate: T-937.4's Class-R probe was dead and T-938.4's f32 narrowing broke building_viewer.rs. Both deterministic; no slice gate could see them.",
+    "changed::wasm_scope_touched (changed.rs:220) walks the frontend Cargo.toml path deps, so map-engine-core is in scope — how T-938.4's core edit reached a frontend test.",
+]
+requirement = [
+    "gate_slice runs cargo test -p website-frontend when the slice diff touches the wasm scope, and reports a named skip when it does not.",
+    "The step uses the gate's private target dir (checkrun_argv + ctx.gate_check_target), not the shared warm cache — T-421.",
+    "A failing frontend test turns the step, and the slice gate verdict, red.",
+]
+current_state = [
+    "No gate step runs any test. A slice agent only runs tests if its brief tells it to, and wave 253 proved that is not enough.",
+]
+approach = [
+    "Add frontend_tests_changed to changed.rs beside wasm_changed, reusing wasm_scope_touched for the scope decision.",
+    "Register it in gate_slice after the clippy step.",
+    "Perturbation: break a website-frontend test, run gate --slice, capture the RED verbatim; restore, touch, green.",
+]
+verify = [
+    "cargo test -p xtask",
+    "cargo xtask platform wave gate --slice T-946.64",
+]
+acceptance = [
+    "A slice touching the wasm scope runs the frontend suite inside its own gate and goes red on a failing test.",
+    "A slice touching nothing in that scope reports a named skip rather than running the suite.",
+]
+owns = [
+    "xtask/src/wave/changed.rs",
+    "xtask/src/wave/gate.rs",
+]
+
+[scope]
+domain = "repo"
+layer = "xtask"

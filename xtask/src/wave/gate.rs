@@ -140,6 +140,12 @@ pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {
     r.run("wasm32 (frontend)", || changed::wasm_changed(ctx, ""));
     r.run("fmt (changed)", || changed::fmt_changed(ctx, ""));
     r.run("clippy (changed crates)", || touch::clippy_changed(ctx, ""));
+    // T-946.64. The first step in this gate that RUNS anything rather than compiling it. See
+    // `changed::frontend_tests_changed` for the two wave-253 failures that bought it: both were
+    // deterministic, both were in this gate's blind spot, and both were found only after merge.
+    r.run("test (frontend, changed)", || {
+        changed::frontend_tests_changed(ctx, "")
+    });
     // T-420. NOT change-scoped, and it is in the CHEAP gate on purpose: this is the step that would
     // have stopped T-244, whose diff is 0 .rs files — so every other step above it is change-scoped
     // down to nothing and its slice gate was green over a red `cargo xtask ci schema-validate`. ~1.4 s warm.

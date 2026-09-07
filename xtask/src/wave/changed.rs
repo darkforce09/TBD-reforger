@@ -264,6 +264,63 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
     rc
 }
 
+/// T-946.64 — THE SLICE GATE HAD NO TEST STEP AT ALL, AND WAVE 253 PAID FOR IT TWICE.
+///
+/// [`super::gate::gate_slice`] ran `cargo check`, wasm32, fmt, clippy, schema, the catalogue-drift
+/// probe, two `db_migrate` steps and the `VERIFY_STEPS` loop — every one of which asks "does this
+/// compile / is it formatted / does the schema still hold", and none of which runs a test. A slice
+/// only executed its own tests if its BRIEF told it to, and on 2026-09-07 two slices in one wave
+/// shipped deterministically-failing frontend tests that only the wave-level gate caught, after
+/// the merge:
+///
+///   * T-937.4's own Class-R probe was DEAD — a test-only helper sat above the production items it
+///     searched for, so the scrubbed haystack was 46 lines and the assertion could only fail.
+///   * T-938.4 narrowed a value to `f32`, widened five of its OWN goldens `1e-9` → `1e-5`, and left
+///     the identical assertions in `building_viewer.rs` — a file outside its `owns` — to break.
+///
+/// Both were deterministic in isolation. Neither slice gate could have seen them, and the fix for
+/// "the gate does not run the tests" is not a longer brief.
+///
+/// **Scope is [`wasm_scope_touched`], not a literal `apps/website/frontend/` prefix.** That helper
+/// walks the SPA's `Cargo.toml` path dependencies, so `map-engine-core` is inside it — which is
+/// precisely how T-938.4's core-crate edit reached a frontend test. A prefix check would have
+/// missed the very case this step exists for.
+///
+/// Native `cargo test`, not `--target wasm32-unknown-unknown`: the wasm target has no test runner
+/// here, and the two failures above were both in natively-reachable code (`save_status.rs` is
+/// deliberately left ungated for exactly this reason).
+///
+/// `checkrun_argv` + [`Ctx::gate_check_target`], never the shared warm cache — this is a cargo step
+/// and carries the T-421/T-596 exposure verbatim. Under five concurrent slices the shared dir
+/// replays cached verdicts, and a *test* step that reports a cached PASS is worse than no step.
+pub fn frontend_tests_changed(ctx: &Ctx, base: &str) -> i32 {
+    let base = if base.is_empty() { DEFAULT_BASE } else { base };
+    // Same committed-plus-working-tree union as fmt_changed and wasm_changed, for the same reason:
+    // a slice gate run before committing must not report a vacuous PASS. LFS-safe porcelain (T-401).
+    let wt = match ledger::git_porcelain_paths() {
+        Ok(v) => v,
+        Err(rc) => return rc,
+    };
+    let diff = git_stdout_lossy(&["diff", "--name-only", base]);
+    let touched = wasm_scope_touched(&ctx.root, diff.lines().chain(wt.iter().map(String::as_str)));
+    if !touched {
+        // A NAMED skip, printing the scope it decided against. "skip:" alone is how a step that
+        // silently checks nothing reads exactly like a step that checked something.
+        wprintln!(
+            "frontend untouched — no test step; scope: {}",
+            wasm_scope_prefixes(&ctx.root).join(" ")
+        );
+        return 0;
+    }
+    let argv = ctx.host.checkrun_argv(
+        &ctx.gate_check_target,
+        &host::v(&["cargo", "test", "-p", "website-frontend"]),
+    );
+    let (out, rc) = host::capture(&argv);
+    wprint!("{out}");
+    rc
+}
+
 /// Directory of the `[package]` `Cargo.toml` owning a `.rs` path, or `None`.
 ///
 /// Walk-up first; orphan fragments (`apps/website/shared/*.rs`) have no package ancestor — those
