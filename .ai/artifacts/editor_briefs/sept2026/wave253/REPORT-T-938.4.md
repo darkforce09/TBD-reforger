@@ -82,4 +82,4 @@ Lock wait ~120s (holders T-937.4 then T-930) then acquired. No `skip:` lines.
 
 ## commits
 
-(filled after commit)
+`efc8184b9a72d39c2bd53d9ce1e477c0fe85541c` — T-938.4: BVH y-interval section cuts and sparse HeightField
