@@ -1410,11 +1410,10 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
         )
     );
 
-    // Both player rows exist with their identity core intact, and — the T-393/T-397 contract —
-    // with no counters written, because the payload states none. T-397 made the columns
-    // NULLable: a fresh insert stores NULL ("not measured"), not the old DDL `DEFAULT 0`.
-    // On a *re*-ingest these columns are not named in the UPDATE, which is what
-    // `absent_counters_are_not_a_write_on_reingest` proves.
+    // Both player rows exist with their identity core intact. T-940.4 folds the shipping
+    // top-level `deaths` into a complete scoreline (zeros for fields the mod does not measure).
+    // Identity-only re-ingest (no nested block and no flat keys) still writes no counters —
+    // that is `absent_counters_are_not_a_write_on_reingest`.
     type Row = (
         String,
         String,
@@ -1441,40 +1440,36 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
             (
                 A1.into(),
                 "Squad Leader".into(),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
+                Some(0),
+                Some(1),
+                Some(0),
+                Some(0),
+                Some(0),
+                Some(false),
                 None
             ),
             (
                 A2.into(),
                 "Rifleman".into(),
-                None,
-                None,
-                None,
-                None,
-                None,
-                None,
+                Some(0),
+                Some(0),
+                Some(0),
+                Some(0),
+                Some(0),
+                Some(false),
                 None
             ),
         ],
-        "identity + role stored; no counter claimed, so NULL not 0"
+        "T-940.4: shipping flat deaths fold into a complete scoreline"
     );
 
-    // **Named out loud because it is a real cost, not an oversight:** the mod's top-level
-    // `"deaths":1` is an unknown field under the split contract and is ignored, so A1's stored
-    // `deaths` is NULL above rather than 1. `deaths` sits inside the counters block because
-    // `leaderboard_totals.kd_ratio` is `sum(kills)/sum(deaths)` — a `deaths` writable without
-    // `kills` is a `kd_ratio` corruptible by a low-fidelity re-ingest. Recovering that one
-    // number is a mod-side change (emit a complete `counters` object); it is not a reason to
-    // let one counter travel alone. The alternative — rejecting a top-level `deaths` — would
-    // 400 this very payload, which is the defect this test exists to prevent.
-    assert!(
-        rows[0].3.is_none(),
-        "top-level deaths is ignored; absent counters store NULL (T-397)"
+    // T-940.4 recovers the shipping `deaths` by folding the flat shape. Nested `counters`
+    // is still all-or-nothing when present; identity-only bodies still write no counters.
+
+    assert_eq!(
+        rows[0].3,
+        Some(1),
+        "top-level deaths is stored via the flat fold (T-940.4)"
     );
 
     sqlx::query("DELETE FROM audit_logs WHERE target_id = $1")
@@ -1586,12 +1581,9 @@ async fn a_partial_counters_object_is_still_a_400() {
     );
     assert_eq!(read(pool.clone()).await, SEEDED, "nothing written");
 
-    // (3) The pre-T-393 flat body. Unknown fields are ignored by serde (and must be — denying
-    // them would 400 the mod's extra `deaths` and re-open the defect), so without a tripwire
-    // this would have been a cheerful 200 that stored nothing: the sender's counters dropped
-    // on the floor, its 200 implying they landed. That is the T-316 failure mode in new
-    // clothes — a silent loss where the sender believes it stated something — so the flat
-    // shape is rejected by name instead.
+    // (3) The pre-T-393 flat body. T-940.4 folds it into nested counters when the nested
+    // block is absent, so this is a 200 that stores the stated scoreline (not a 400, and
+    // not a silent drop). Partial *nested* blocks above still 400.
     let (st, r) = post(
         app.clone(),
         body(format!(
@@ -1599,13 +1591,12 @@ async fn a_partial_counters_object_is_still_a_400() {
         )),
     )
     .await;
-    assert_eq!(st, StatusCode::BAD_REQUEST, "legacy flat body: {r}");
-    assert!(
-        r["error"].as_str().unwrap_or_default().contains("counters"),
-        "the error must name the shape to move to, since a game server's only channel back is \
-         this string: {r}"
+    assert_eq!(st, StatusCode::OK, "legacy flat body folds: {r}");
+    assert_eq!(
+        read(pool.clone()).await,
+        (9, 2, 0, 100, 1, false),
+        "flat payload stores the stated scoreline"
     );
-    assert_eq!(read(pool.clone()).await, SEEDED, "nothing written");
 
     clean(pool.clone()).await;
 }

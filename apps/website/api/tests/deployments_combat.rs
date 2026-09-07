@@ -349,3 +349,168 @@ async fn no_column_records_what_a_player_actually_used() {
          `vehicles_destroyed` counts vehicles killed, not driven."
     );
 }
+
+const SVC: &str = "test-service-token";
+
+type Scoreline = (i64, i64, i64, i64, i64, bool, Option<bool>);
+
+async fn ingest(app: &Router, body: &str) -> (StatusCode, Value) {
+    let req = Request::builder()
+        .method("POST")
+        .uri("/api/v1/ingest/match-results")
+        .header("x-service-token", SVC)
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(body.to_string()))
+        .unwrap();
+    let resp = app.clone().oneshot(req).await.unwrap();
+    let status = resp.status();
+    let bytes = to_bytes(resp.into_body(), 4 * 1024 * 1024).await.unwrap();
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
+}
+
+async fn read_score(pool: &PgPool, arma: &str) -> Scoreline {
+    sqlx::query_as(
+        "SELECT kills, deaths, team_kills, longest_kill_m, vehicles_destroyed, is_command, command_win \
+         FROM match_player_stats WHERE arma_id = $1",
+    )
+    .bind(arma)
+    .fetch_one(pool)
+    .await
+    .expect("scoreline row")
+}
+
+async fn wipe_ingest(pool: &PgPool, arma: &str, src: &str) {
+    sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
+        .bind(arma)
+        .execute(pool)
+        .await
+        .expect("wipe stats");
+    sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
+        .bind(src)
+        .execute(pool)
+        .await
+        .expect("wipe match");
+}
+
+/// T-940.4 golden: a complete pre-T-393 flat payload stores every counter, including kills.
+/// Perturbation: `fold_flat_counters` skipping the kills field makes this assert red.
+#[tokio::test]
+async fn flat_counter_payload_stores_the_scoreline() {
+    let Some((app, _, pool)) = setup().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    const ARMA: &str = "t9404-arma-flat";
+    const SRC: &str = "m-t9404-flat";
+    const EV: &str = "e-t9404-flat";
+    wipe_ingest(&pool, ARMA, SRC).await;
+
+    let body = format!(
+        r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}}]}}"#
+    );
+    let (st, r) = ingest(&app, &body).await;
+    assert_eq!(st, StatusCode::OK, "flat payload must ingest: {r}");
+    assert_eq!(
+        read_score(&pool, ARMA).await,
+        (17, 3, 1, 842, 4, true, Some(true)),
+        "flat kills/deaths/… must land, not NULL/0-drop"
+    );
+
+    wipe_ingest(&pool, ARMA, SRC).await;
+}
+
+/// T-940.4: flat, nested, and both-shapes (nested + leftover flat) store identical rows.
+/// Conflicting leftover flat is ignored — nested wins, no double count.
+#[tokio::test]
+async fn flat_and_nested_shapes_store_identical_rows() {
+    let Some((app, _, pool)) = setup().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    const ARMA_F: &str = "t9404-arma-shape-f";
+    const ARMA_N: &str = "t9404-arma-shape-n";
+    const ARMA_B: &str = "t9404-arma-shape-b";
+    const SRC_F: &str = "m-t9404-shape-f";
+    const SRC_N: &str = "m-t9404-shape-n";
+    const SRC_B: &str = "m-t9404-shape-b";
+    const EV: &str = "e-t9404-shape";
+    wipe_ingest(&pool, ARMA_F, SRC_F).await;
+    wipe_ingest(&pool, ARMA_N, SRC_N).await;
+    wipe_ingest(&pool, ARMA_B, SRC_B).await;
+
+    let counters = r#"{"kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}"#;
+    let flat = format!(
+        r#"{{"match":{{"source_match_id":"{SRC_F}","outcome":"success"}},"players":[{{"arma_id":"{ARMA_F}","role_played":"SL","source_event_id":"{EV}","kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}}]}}"#
+    );
+    let nested = format!(
+        r#"{{"match":{{"source_match_id":"{SRC_N}","outcome":"success"}},"players":[{{"arma_id":"{ARMA_N}","role_played":"SL","source_event_id":"{EV}","counters":{counters}}}]}}"#
+    );
+    // Reporter-after-T-940.4: nested + leftover flat deaths, with a conflicting leftover kills
+    // that must NOT win.
+    let both = format!(
+        r#"{{"match":{{"source_match_id":"{SRC_B}","outcome":"success"}},"players":[{{"arma_id":"{ARMA_B}","role_played":"SL","source_event_id":"{EV}","kills":99,"deaths":99,"counters":{counters}}}]}}"#
+    );
+
+    let (st, r) = ingest(&app, &flat).await;
+    assert_eq!(st, StatusCode::OK, "flat: {r}");
+    let (st, r) = ingest(&app, &nested).await;
+    assert_eq!(st, StatusCode::OK, "nested: {r}");
+    let (st, r) = ingest(&app, &both).await;
+    assert_eq!(st, StatusCode::OK, "both: {r}");
+
+    let a = read_score(&pool, ARMA_F).await;
+    let b = read_score(&pool, ARMA_N).await;
+    let c = read_score(&pool, ARMA_B).await;
+    assert_eq!(a, (17, 3, 1, 842, 4, true, Some(true)));
+    assert_eq!(a, b, "flat and nested must store identical rows");
+    assert_eq!(
+        b, c,
+        "nested wins when both shapes are present; leftover flat is ignored"
+    );
+
+    wipe_ingest(&pool, ARMA_F, SRC_F).await;
+    wipe_ingest(&pool, ARMA_N, SRC_N).await;
+    wipe_ingest(&pool, ARMA_B, SRC_B).await;
+}
+
+/// T-940.4: the shipping reporter's deaths-only row stores deaths (not NULL), matching its
+/// nested equivalent (zeros for unmeasured fields).
+#[tokio::test]
+async fn reporter_deaths_only_matches_nested_equivalent() {
+    let Some((app, _, pool)) = setup().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    const ARMA_F: &str = "t9404-arma-deaths-f";
+    const ARMA_N: &str = "t9404-arma-deaths-n";
+    const SRC_F: &str = "m-t9404-deaths-f";
+    const SRC_N: &str = "m-t9404-deaths-n";
+    const EV: &str = "e-t9404-deaths";
+    wipe_ingest(&pool, ARMA_F, SRC_F).await;
+    wipe_ingest(&pool, ARMA_N, SRC_N).await;
+
+    let flat = format!(
+        r#"{{"match":{{"source_match_id":"{SRC_F}","outcome":"success"}},"players":[{{"arma_id":"{ARMA_F}","role_played":"Squad Leader","deaths":1,"source_event_id":"{EV}"}}]}}"#
+    );
+    let nested = format!(
+        r#"{{"match":{{"source_match_id":"{SRC_N}","outcome":"success"}},"players":[{{"arma_id":"{ARMA_N}","role_played":"Squad Leader","deaths":1,"source_event_id":"{EV}","counters":{{"kills":0,"deaths":1,"team_kills":0,"longest_kill_m":0,"vehicles_destroyed":0,"is_command":false,"command_win":null}}}}]}}"#
+    );
+    let (st, r) = ingest(&app, &flat).await;
+    assert_eq!(st, StatusCode::OK, "reporter flat: {r}");
+    let (st, r) = ingest(&app, &nested).await;
+    assert_eq!(st, StatusCode::OK, "reporter nested: {r}");
+    let a = read_score(&pool, ARMA_F).await;
+    let b = read_score(&pool, ARMA_N).await;
+    assert_eq!(
+        a,
+        (0, 1, 0, 0, 0, false, None),
+        "flat deaths must be stored"
+    );
+    assert_eq!(a, b, "deaths-only flat equals nested equivalent");
+
+    wipe_ingest(&pool, ARMA_F, SRC_F).await;
+    wipe_ingest(&pool, ARMA_N, SRC_N).await;
+}
