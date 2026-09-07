@@ -226,6 +226,11 @@ pub fn pack_one_slot(x: f32, y: f32, selected: bool) -> [u8; SLOT_ICON_STRIDE] {
 
 /// T-180.8 — pack mission vehicle discs (tactical yellow, distinct from slot rings).
 /// `xy` is interleaved `[x0,y0,…]` in world meters. Empty → empty buffer.
+///
+/// **Not the first-paint path (T-930).** Catalog place and the engine-mount first bind must
+/// upload through [`pack_vehicle_symbology`] so the first GPU write carries kind + heading +
+/// side. This packer is the atlas-less / tint-less fallback (`vehicles_bind`) and the H8
+/// yellow-disc contract — a deliberate placeholder only when silhouettes cannot run.
 #[must_use]
 pub fn pack_vehicle_instances(xy: &[f32]) -> Vec<u8> {
     let n = xy.len() / 2;
@@ -1287,6 +1292,40 @@ mod tests {
         let tint = u32::from_le_bytes(bytes[16..20].try_into().unwrap());
         assert_eq!(tint, pack_rgba_u32(SLOT_SELECTED_RGBA));
         assert!(pack_vehicle_instances(&[]).is_empty());
+    }
+
+    /// T-930 — editor default camera (`INITIAL_ZOOM = -2` → 4 m/px) is inside the symbology
+    /// gate, so the first vehicle pack must be a silhouette cell, not the yellow disc
+    /// [`pack_vehicle_instances`] emits. A first-paint that routed through the disc packer
+    /// is the stuck-disc defect: moving later re-bound via [`pack_vehicle_symbology`].
+    #[test]
+    fn vehicle_first_paint_at_editor_default_zoom_is_silhouette_not_disc() {
+        let m_per_px = px_to_m_at_zoom(-2.0);
+        assert!(
+            (m_per_px - 4.0).abs() < 1e-6,
+            "INITIAL_ZOOM=-2 must be 4 m/px; got {m_per_px}"
+        );
+        assert!(
+            symbology_visible(m_per_px),
+            "default editor zoom must be inside SYMBOLOGY_MAX_M_PER_PX so first paint can be a glyph"
+        );
+        let xy = [6400.0_f32, 6370.0];
+        let aliases = vec!["veh:us_m1025".to_string()];
+        let tints = [SIDE_BLUFOR_RGBA];
+        let bytes = pack_vehicle_symbology(&xy, &aliases, &tints, &[0.0], m_per_px, 11);
+        assert_eq!(bytes.len(), SLOT_ICON_STRIDE);
+        let glyph = u16::from_le_bytes(bytes[14..16].try_into().unwrap());
+        assert_ne!(
+            glyph, SLOT_GLYPH_DISC,
+            "T-930: first paint at default zoom must not be the yellow disc; glyph={glyph}"
+        );
+        assert_eq!(
+            glyph,
+            11 + VEHICLE_CELL_BASE + VehicleKind::WheeledLight as u16
+        );
+        let disc = pack_vehicle_instances(&xy);
+        let disc_glyph = u16::from_le_bytes(disc[14..16].try_into().unwrap());
+        assert_eq!(disc_glyph, SLOT_GLYPH_DISC);
     }
 
     #[test]

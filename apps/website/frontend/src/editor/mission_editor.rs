@@ -2340,6 +2340,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // north-pointing riflemen until the first commit re-bound it.
                             // T-819 — map-render SoA (crewed slots derived-hidden; materialize untouched).
                             let soa = doc.borrow().as_ref().map(map_render_slot_soa);
+                            // T-930 — first vehicle upload must be the silhouette lane, not
+                            // `vehicles_bind`'s yellow disc. Columns from the same id-sorted
+                            // reader `after_doc_change` uses (T-808 alignment). Empty xy clears.
+                            let (vxy, valiases, vtints, vheadings) =
+                                mission_history::vehicle_lane_fields();
                             if let (Some(soa), Some(e)) =
                                 (soa.as_ref(), engine.borrow_mut().as_mut())
                             {
@@ -2353,6 +2358,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     mission_history::soa_roles(soa),
                                     &soa.rotations,
                                 );
+                                e.vehicles_bind_symbology(&vxy, valiases, &vtints, &vheadings);
                             }
                             // T-175 B1 — engine is mounted + first-bound. If the IDB restore + hydrate
                             // already settled, rebind now from the settled doc (the first bind above
@@ -3461,3 +3467,61 @@ mod t802_hover_cursor;
 #[cfg(test)]
 #[path = "mission_editor_tests/t819_crewed_render_hide.rs"]
 mod t819_crewed_render_hide;
+
+/// T-930 — vehicle first paint is a silhouette, not the yellow disc. Native Class-R pins:
+/// engine-mount first bind + catalog place-time invalidate. Needles split so this module
+/// cannot green itself.
+#[cfg(test)]
+mod t930_vehicle_first_paint {
+    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+
+    fn page() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        live_code(&raw[raw.find(anchor.as_str()).expect("MissionEditorPage")..])
+    }
+
+    #[test]
+    fn first_bind_uploads_vehicle_symbology_not_the_disc_lane() {
+        let mount = page();
+        let bind = format!("{}{}", "vehicles_bind_", "symbology(");
+        assert!(
+            mount.contains(&bind),
+            "T-930: engine-mount first bind must upload vehicle glyphs; otherwise a placed /
+             restored vehicle stays on pack_vehicle_instances' yellow disc until a later move"
+        );
+        let disc = format!("{}{}", "vehicles_bind", "(&");
+        assert!(
+            !mount.contains(&disc),
+            "T-930: first bind must not call the disc lane"
+        );
+    }
+
+    #[test]
+    fn place_path_invalidates_vehicle_lane() {
+        let raw = include_str!("state/operations/entity.rs");
+        let impl_body = only_body(raw, "fn place_at_impl(");
+        let rebind = format!("{}{}", "rebind_vehicle_lane_", "after_place");
+        assert!(
+            impl_body.contains("placed_vehicle"),
+            "T-930: catalog Vehicle arm must flag a vehicle place; body:\n{impl_body}"
+        );
+        assert!(
+            impl_body.contains(&rebind),
+            "T-930: place_at_impl must call the place-time vehicle invalidate; body:\n{impl_body}"
+        );
+        let helper = only_body(raw, &format!("fn rebind_vehicle_lane_{}", "after_place()"));
+        assert!(
+            helper.contains(&format!("{}{}", "vehicles_bind_", "symbology(")),
+            "T-930: place-time invalidate must bind silhouettes, not discs; body:\n{helper}"
+        );
+        assert!(
+            helper.contains("mark_dirty()"),
+            "T-930: place-time invalidate must mark damage so the first frame repaints; body:\n{helper}"
+        );
+        assert!(
+            !helper.contains("vehicles_bind(&"),
+            "T-930: place-time invalidate must not use the disc packer; body:\n{helper}"
+        );
+    }
+}

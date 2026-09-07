@@ -3199,6 +3199,26 @@ pub fn place_at_keep(x: f64, y: f64, alt_empty: bool) -> bool {
     placed
 }
 
+/// T-930 — place-time MissionVehicles invalidate: silhouette bind + damage mark.
+///
+/// `vehicle_lane_fields` is the T-808 id-sorted column builder; calling it here (OPS_CTX
+/// already dropped) is the same feed `after_doc_change` uses, so place cannot drift from move.
+fn rebind_vehicle_lane_after_place() {
+    let (vxy, valiases, vtints, vheadings) = mission_history::vehicle_lane_fields();
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return;
+        };
+        let mut engine = ctx.engine.borrow_mut();
+        let Some(e) = engine.as_mut() else {
+            return;
+        };
+        e.vehicles_bind_symbology(&vxy, valiases, &vtints, &vheadings);
+        e.mark_dirty();
+    });
+}
+
 /// The shared place body. `alt_empty` is the PLACE-CREW-001 override (T-647); `keep` is honoured by
 /// the [`place_at_keep`] wrapper (which re-arms after this returns) — this fn always `take`s the arm
 /// so its borrow discipline is unchanged, and the wrapper restores it.
@@ -3219,6 +3239,8 @@ fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
     // `select` block below states). Stays `None` for every non-composition arm and when the dock is
     // unmounted the invoke below no-ops (that is not a dropped ack — the stamp already committed).
     let mut recent_stamp: Option<(String, String)> = None;
+    // T-930 — catalog vehicle place must re-upload the silhouette lane after the doc commit.
+    let mut placed_vehicle = false;
     let placed = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
@@ -3255,6 +3277,7 @@ fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
                     {
                         return false;
                     }
+                    placed_vehicle = true;
                     None
                 }
                 Pending::Object(payload) => {
@@ -3356,6 +3379,14 @@ fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
         // Rebinds the glyphs from the new SoA, bumps `doc_ver`, schedules the persist, and refreshes
         // the HUD + docks — the same tail the drag commit and undo/redo run.
         mission_history::after_local_edit();
+        // T-930 — place-time vehicle-lane invalidate. `after_local_edit` rebinds every lane, but
+        // the engine-mount first bind historically uploaded slots only; a catalog drop that is
+        // the session's first vehicle therefore stuck on `pack_vehicle_instances`' yellow disc
+        // until a later move hit `vehicles_bind_symbology`. Re-upload silhouettes + mark damage
+        // so the first frame after drop matches post-move appearance.
+        if placed_vehicle {
+            rebind_vehicle_lane_after_place();
+        }
         // T-809 wave-203 — now the doc borrow is closed, head the recently-placed list with the stamp
         // (composition arm only; `None` otherwise). No-ops when the dock is unmounted — not a dropped
         // ack: the stamp above already committed.
