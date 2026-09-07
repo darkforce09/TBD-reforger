@@ -25,13 +25,17 @@
 //! radius from the observer are `Unknown` and get no ray — the wash is a DISC, the way the
 //! old boundary fan was, so it reads as "what A sees from here" rather than a building-shaped
 //! sheet. `cell_m` square cells, capped at [`MAX_WASH_DIM`] per axis by coarsening the cell
-//! rather than failing. The scanned FarmHouse (radius 30 m) at the defaults is 240 × 240 cells
+//! rather than failing — and the disc RADIUS is capped at [`MAX_WASH_RADIUS_M`] (T-938.5), an
+//! over-cap request being refused rather than run: coarsening bounds the RASTER but not the WORK,
+//! so without that cap a huge disc still pays 2048² rays per level. [`WashJob`] is the resumable
+//! form of the same raster, marched in budgeted batches so a placement never holds a frame.
+//! The scanned FarmHouse (radius 30 m) at the defaults is 240 × 240 cells
 //! ≈ 45k rays inside the disc per level; the viewer computes one level at a time.
 
 use crate::building_blueprint::BuildingBlueprint;
 use crate::building_compound::CompoundBuilding;
 use crate::bvh::BvhSidecar;
-use crate::dem::sample::Visibility;
+use crate::dem::sample::{ViewshedCapRefused, Visibility};
 
 /// Default cell pitch (m): the operator's "~0.25 m".
 pub const WASH_CELL_M: f64 = 0.25;
@@ -41,6 +45,36 @@ pub const WASH_EYE_M: f64 = 1.0;
 pub const WASH_RADIUS_M: f64 = 25.0;
 /// Hard cap on cells per axis; a larger disc coarsens the cell to fit.
 pub const MAX_WASH_DIM: usize = 2048;
+/// Hard cap on the wash disc RADIUS (m) — T-938.5, operator 2026-09-07. 16× the 25 m default, and
+/// far above every shipped caller (the building viewer asks for the footprint diagonal + 5 m).
+///
+/// This is a separate cap from the terrain viewshed's cell count on purpose: [`MAX_WASH_DIM`]
+/// already bounds the RASTER by coarsening the cell, so a cell cap here would refuse nothing — what
+/// is unbounded is the WORK, because coarsening keeps 2048 × 2048 = 4.2 M rays per level however
+/// large the disc gets. Measured on this crate's `t938_5_defect_probe` before the cap: a 1000 m
+/// radius on the two-level room fixture ran 8.4 M rays in **5,387 ms** of blocked thread, and was
+/// accepted without complaint.
+pub const MAX_WASH_RADIUS_M: f64 = 400.0;
+
+/// `Err` when `radius_m` is over [`MAX_WASH_RADIUS_M`] — the T-938.5 building-wash refusal, naming
+/// the cap and the measured radius. The ONE authority: [`WashJob::new`] returns it, and the
+/// infallible surfaces ([`wash_band`], [`level_wash`], …) refuse on exactly this predicate.
+///
+/// A non-finite or non-positive radius is NOT refused here — [`grid_rect`] already floors it to one
+/// cell, the long-standing behaviour its callers rely on.
+///
+/// # Errors
+/// [`ViewshedCapRefused`] naming `"building wash radius (m)"` and the measured radius.
+pub fn wash_cap_check(radius_m: f64) -> Result<(), ViewshedCapRefused> {
+    if radius_m > MAX_WASH_RADIUS_M {
+        return Err(ViewshedCapRefused {
+            cap: "building wash radius (m)",
+            limit: MAX_WASH_RADIUS_M,
+            measured: radius_m,
+        });
+    }
+    Ok(())
+}
 
 /// Sampling parameters for [`level_washes`] / [`level_wash`].
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -118,6 +152,29 @@ impl LevelWash {
     pub fn visibility_at(&self, x: f64, z: f64) -> Visibility {
         self.cell_at(x, z)
             .map_or(Visibility::Unknown, |(c, r)| self.at(c, r))
+    }
+
+    /// This cell's verdict under `blocked` — the ONE per-cell rule, shared by the synchronous
+    /// [`wash_band`] and the resumable [`WashJob::step`] (T-938.5) so the two paths can differ only
+    /// in HOW they iterate, never in what a cell decides. `Unknown` outside the disc: no ray is cast.
+    fn cell_verdict(
+        &self,
+        col: usize,
+        row: usize,
+        blocked: &dyn Fn([f64; 3], [f64; 3]) -> bool,
+    ) -> Visibility {
+        let [x, z] = self.cell_center(col, row);
+        if (x - self.obs[0]).hypot(z - self.obs[2]) > self.radius_m {
+            return Visibility::Unknown;
+        }
+        let tgt = [x, self.eye_y, z];
+        // A cell centred on the observer is a zero-length segment: clear by definition
+        // (nothing can lie between a point and itself).
+        if tgt == self.obs || !blocked(self.obs, tgt) {
+            Visibility::Visible
+        } else {
+            Visibility::Hidden
+        }
     }
 
     /// `(visible, hidden, unknown)` cell counts.
@@ -220,8 +277,36 @@ pub fn compound_wash(
     wash_band(level_index, eye_y, obs, p, |a, b| c.blocked(a, b))
 }
 
+/// The raster's GEOMETRY with no cells: the shared opening for the synchronous [`wash_band`] and
+/// the resumable [`WashJob`] (T-938.5), so the two lay their cells on one grid.
+fn wash_shell(level_index: usize, eye_y: f64, obs: [f64; 3], p: &WashParams) -> LevelWash {
+    let (min_x, min_z, n, cell_m) = grid_rect([obs[0], obs[2]], p.radius_m, p.cell_m);
+    let (cols, rows) = (n, n);
+    LevelWash {
+        level_index,
+        eye_y,
+        obs,
+        radius_m: p.radius_m,
+        min_x,
+        min_z,
+        max_x: min_x + cols as f64 * cell_m,
+        max_z: min_z + rows as f64 * cell_m,
+        cell_m,
+        cols,
+        rows,
+        cells: Vec::new(),
+    }
+}
+
 /// The raster itself: every cell's eye point inside the disc, `blocked(obs, eye_point)`
 /// deciding `Hidden`.
+///
+/// **T-938.5 cap.** A radius over [`MAX_WASH_RADIUS_M`] is REFUSED, not run: the returned wash is
+/// EMPTY (`cols == rows == 0`, no cells — every `at` / `visibility_at` reads `Unknown`), so no ray
+/// is cast and the caller's thread is not held. The refusal MESSAGE (which cap, and the measured
+/// radius) is [`wash_cap_check`]'s `Err`, which [`WashJob::new`] returns and the editor's
+/// `viewshed_scheduler` surfaces. The cap sits HERE and not in [`grid_rect`]: `grid_rect` coarsens
+/// an oversize disc to [`MAX_WASH_DIM`] rather than refusing it, which is its own (tested) contract.
 pub fn wash_band(
     level_index: usize,
     eye_y: f64,
@@ -229,44 +314,137 @@ pub fn wash_band(
     p: &WashParams,
     blocked: impl Fn([f64; 3], [f64; 3]) -> bool,
 ) -> LevelWash {
-    let (min_x, min_z, n, cell_m) = grid_rect([obs[0], obs[2]], p.radius_m, p.cell_m);
-    let (cols, rows) = (n, n);
-    let max_x = min_x + cols as f64 * cell_m;
-    let max_z = min_z + rows as f64 * cell_m;
-    let radius_m = p.radius_m;
-    let mut wash = LevelWash {
-        level_index,
-        eye_y,
-        obs,
-        radius_m,
-        min_x,
-        min_z,
-        max_x,
-        max_z,
-        cell_m,
-        cols,
-        rows,
-        cells: Vec::with_capacity(cols * rows),
-    };
+    let mut wash = wash_shell(level_index, eye_y, obs, p);
+    if wash_cap_check(p.radius_m).is_err() {
+        wash.cols = 0;
+        wash.rows = 0;
+        return wash;
+    }
+    let (cols, rows) = (wash.cols, wash.rows);
+    wash.cells.reserve_exact(cols * rows);
+    let blocked: &dyn Fn([f64; 3], [f64; 3]) -> bool = &blocked;
     for row in 0..rows {
         for col in 0..cols {
-            let [x, z] = wash.cell_center(col, row);
-            if (x - obs[0]).hypot(z - obs[2]) > radius_m {
-                wash.cells.push(Visibility::Unknown);
-                continue;
-            }
-            let tgt = [x, eye_y, z];
-            // A cell centred on the observer is a zero-length segment: clear by definition
-            // (nothing can lie between a point and itself).
-            let clear = tgt == obs || !blocked(obs, tgt);
-            wash.cells.push(if clear {
-                Visibility::Visible
-            } else {
-                Visibility::Hidden
-            });
+            let v = wash.cell_verdict(col, row, blocked);
+            wash.cells.push(v);
         }
     }
     wash
+}
+
+/// Cells a [`WashJob`] marches between budget checks. Reading the clock per cell would cost more
+/// than the ray it guards, and a whole ROW is too coarse at the [`MAX_WASH_DIM`] 2048-cell width;
+/// 256 cells is ~0.26 ms at the crate's measured ~1.03 µs/ray, comfortably inside a 4 ms budget.
+pub const WASH_BATCH_CELLS: usize = 256;
+
+/// T-938.5 — the RESUMABLE, CANCELLABLE form of [`wash_band`]: the same per-cell rule
+/// ([`LevelWash::cell_verdict`]) over the same grid, advanced one budgeted batch at a time so the
+/// caller's frame is never held for a whole sweep.
+///
+/// Unlike the terrain march, this loop is **pure over its index** — it carries no running horizon
+/// and every cell's verdict is a function of `(col, row)`, `obs`, `eye_y` and `blocked` alone — so a
+/// checkpoint is legal at ANY cell and the cells are written by index into a pre-sized raster. All
+/// the geometry is fixed by [`wash_shell`] up front, so resuming recomputes nothing.
+///
+/// The core holds no cancellation state of its own (the `los_world::ObjectPass` split): `step`
+/// returns after its budget and the CALLER decides whether to call again. [`WashJob::generation`] is
+/// the token a caller stamps and compares; [`WashJob::cancel`] retires one in place.
+#[derive(Clone, Debug, PartialEq)]
+pub struct WashJob {
+    wash: LevelWash,
+    total: usize,
+    /// The next cell index to decide — the resume checkpoint.
+    pub cursor: usize,
+    /// The caller's cancel token (the `ObjectPass::generation` idiom).
+    pub generation: u32,
+    pub done: bool,
+}
+
+impl WashJob {
+    /// A job over the same grid [`wash_band`] would build, stamped with `generation`.
+    ///
+    /// # Errors
+    /// [`ViewshedCapRefused`] when `p.radius_m` is over [`MAX_WASH_RADIUS_M`] — the same cap
+    /// [`wash_band`] enforces, checked BEFORE a cell is allocated, and carrying the message.
+    pub fn new(
+        level_index: usize,
+        eye_y: f64,
+        obs: [f64; 3],
+        p: &WashParams,
+        generation: u32,
+    ) -> Result<Self, ViewshedCapRefused> {
+        wash_cap_check(p.radius_m)?;
+        let mut wash = wash_shell(level_index, eye_y, obs, p);
+        let total = wash.cols * wash.rows;
+        // Pre-sized and written BY INDEX; every cell is overwritten exactly once, so the sentinel
+        // never survives into a finished raster.
+        wash.cells = vec![Visibility::Unknown; total];
+        Ok(Self {
+            wash,
+            total,
+            cursor: 0,
+            generation,
+            done: total == 0,
+        })
+    }
+
+    /// Decide cells in [`WASH_BATCH_CELLS`] batches until `budget_ms` of `now()` time has elapsed or
+    /// the disc is finished. Returns whether any cell was decided — ALWAYS at least one batch per
+    /// call while the job is live, so a zero budget slices as finely as possible and never spins.
+    pub fn step(
+        &mut self,
+        blocked: &dyn Fn([f64; 3], [f64; 3]) -> bool,
+        budget_ms: f64,
+        now: &dyn Fn() -> f64,
+    ) -> bool {
+        if self.done {
+            return false;
+        }
+        let start = now();
+        let mut decided = false;
+        while self.cursor < self.total {
+            let end = (self.cursor + WASH_BATCH_CELLS).min(self.total);
+            for i in self.cursor..end {
+                let (col, row) = (i % self.wash.cols, i / self.wash.cols);
+                let v = self.wash.cell_verdict(col, row, blocked);
+                self.wash.cells[i] = v;
+            }
+            self.cursor = end;
+            decided = true;
+            if now() - start >= budget_ms {
+                break;
+            }
+        }
+        if self.cursor >= self.total {
+            self.done = true;
+        }
+        decided
+    }
+
+    /// The raster so far — complete once [`WashJob::done`]; before that the cells from `cursor` on
+    /// still carry the `Unknown` sentinel (row-major, so a partial wash is a set of finished ROWS
+    /// plus one part-row, which is what a progressive draw should show).
+    #[must_use]
+    pub fn wash(&self) -> &LevelWash {
+        &self.wash
+    }
+
+    /// Take the raster out of a finished (or abandoned) job.
+    #[must_use]
+    pub fn into_wash(self) -> LevelWash {
+        self.wash
+    }
+
+    /// `(cells decided, cells total)` — the progress readout.
+    #[must_use]
+    pub fn progress(&self) -> (usize, usize) {
+        (self.cursor, self.total)
+    }
+
+    /// Retire the job in place: no further cell is decided and [`WashJob::step`] is a no-op.
+    pub fn cancel(&mut self) {
+        self.done = true;
+    }
 }
 
 /// One [`LevelWash`] per level of `bp`, in level order (empty for a level-less blueprint).
