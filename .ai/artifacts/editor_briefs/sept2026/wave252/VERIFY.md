@@ -1,6 +1,6 @@
 # Wave 252 adversarial verify
 
-HEAD at verify start: after ship+stamp+repack. Base `884fb3627` (wave 251 CLOSED). Dispatch HEAD `b59b99116`. Host cargo, `CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target`. `:3000` / `:8080` left listening.
+HEAD at verify start: after ship+stamp+repack. Base `884fb3627` (wave 251 CLOSED). Dispatch HEAD `b59b99116`. In-wave fix `edb7e69f8` (T-937.1 Class-R haystack). Host cargo, `CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target`. `:3000` / `:8080` left listening.
 
 This was a **custom 10-wide pack**, not lock row `n = 252` (`T-936.6 T-941.3 T-941.5`). T-936.6 stayed `ready` (depends on T-936.5; not dispatched). `--reserve` of the ten refused: carry already derived emptied `{T-301, T-302, T-304}` (lock wave 255, all three shipped) and relabeled it 252. Plain `wave repack` froze that 3-set as `[[emptied]] n = 252`. Close uses `--tickets` of all ten — the gated span since `884fb3627`.
 
@@ -67,7 +67,7 @@ T-938.3 shares `engine.rs`. In scope for later lock waves.
 - **T-301 kit rows:** launcher/handgun/throwable on briefing kit. Twins. Slice gate PASS.
 - **T-302 four-weapon:** `--selftest` + live `--compiled` assert `ok=4` slots 0–3. Ratchet FAIL is T-299, not this ticket.
 - **T-304 weight:** `StorageComponent`; most-derived buckets; twins 1793 lines identical. Scan JSON still empty until Workbench.
-- **T-937.1 YArray:** `squad.slotIds` / `layer.entityIds` native arrays. Other id lists unchanged (locked).
+- **T-937.1 YArray:** `squad.slotIds` / `layer.entityIds` native arrays. Other id lists unchanged (locked). Close-time `test frontend` FAIL was this slice: `#[cfg(test)] id_list_is_native` on `MissionDocCore` sat before `place_composition`, so Class-R `live_source` truncated the haystack (found 0). In-wave fix `edb7e69f8` / [T-937.1 Class-R haystack fix](bbe8c3e6-65c8-46df-8e64-b21f008c9db1) deleted the impl helper; hydrate asserts `is_native_array` inside `id_arrays` tests. Pin GREEN (1 passed / 1323 filtered).
 - **T-938.1 GPU pool:** slot/cluster lanes pooled. Other upload paths untouched.
 - **T-940.4 nested ingest:** flat counters folded; IT goldens updated (owns exception above).
 - **T-941.3 END/DEBRIEF:** overlays + FrameworkManager. chimeraMenus presets still missing (Workbench GUID; fallback path).
