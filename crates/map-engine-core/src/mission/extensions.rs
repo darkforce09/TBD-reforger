@@ -89,6 +89,10 @@ pub const AUTHORED_BLOCKS: &[AuthoredBlock] = &[
         key: "weatherTimeline",
         validate: crate::mission::weather::validate,
     },
+    AuthoredBlock {
+        key: "audio",
+        validate: crate::mission::audio::validate,
+    },
 ];
 
 /// The authored blocks the compiled document MODELS with a typed field of its own, and which
@@ -347,8 +351,13 @@ mod tests {
             "T-936.4 registers weatherTimeline; a missing row is a silent drop at flatten"
         );
         assert!(!DOCUMENT_OWNED_BLOCKS.contains(&"weatherTimeline"));
+        assert!(
+            is_authored_block("audio"),
+            "T-936.5 registers audio; a missing row is a silent drop at flatten"
+        );
+        assert!(!DOCUMENT_OWNED_BLOCKS.contains(&"audio"));
         assert!(!is_authored_block("payloadExtras"));
-        assert_eq!(AUTHORED_BLOCKS.len(), 4);
+        assert_eq!(AUTHORED_BLOCKS.len(), 5);
     }
 
     /// Every entry in [`DOCUMENT_OWNED_BLOCKS`] must be a registered block, or the withhold rule
@@ -366,7 +375,7 @@ mod tests {
             "weather": "clear",
             "timeLimitSeconds": 5400,
             "winConditions": {"mode": "vip", "endOn": ["faction_eliminated"], "vipSlotId": "s1"},
-            "audio": {"emitters": []},
+            "spawnModules": [],
         });
         let mut dst = Map::new();
         let copied = copy_authored_blocks(&env, &mut dst);
@@ -375,7 +384,7 @@ mod tests {
         assert_eq!(dst.len(), 1, "only the listed key travels: {dst:?}");
         assert_eq!(dst["winConditions"], env["winConditions"], "verbatim");
         assert!(
-            !dst.contains_key("audio"),
+            !dst.contains_key("spawnModules"),
             "an unlisted key stays parked in payloadExtras"
         );
         assert!(

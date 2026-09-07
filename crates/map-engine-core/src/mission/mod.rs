@@ -4,6 +4,9 @@
 //! (serde/serde_json) so the DEM-only wasm/backend builds don't pull it. The mod-document flatten
 //! (`flatten_to_mod_document`) lands here next, once decoupled from the backend `Mission` model.
 
+/// T-936.5 — the authored `audio` block: emitters, music cues, radius/event/id gates, and the
+/// validator [`extensions::AUTHORED_BLOCKS`] registers for it.
+pub mod audio;
 pub mod compile;
 /// T-936 — the AUTHORED_BLOCKS passthrough: the one list `compile.rs` copies from and `flatten.rs`
 /// reads back, so the seven T-936 blocks land without seven pairs of edits to those two contested

@@ -39,4 +39,8 @@ pub mod radio_panel;
 // in Mission Settings; that one line lives in settings_modal.rs (outside this slice's owns),
 // same as T-936.1/.2/.3.
 pub mod weather_timeline;
+// T-936.5 — positional audio emitters + music cues. Mounts beside weather_timeline
+// in Mission Settings; that one line lives in settings_modal.rs (outside this slice's owns),
+// same as T-936.1/.2/.3/.4.
+pub mod audio_emitters;
 pub mod zones_panel;
