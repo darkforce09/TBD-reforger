@@ -13,7 +13,7 @@ use map_engine_core::world::{
 // `const ROLE_AIRFIELD_APRON: u32 = 8` has no compile-time link to `lane_role_from_u32`, so a
 // renumber there silently uploads the apron to whatever lane 8 became instead of failing the build.
 use map_engine_render::draw_order::role_id;
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 
 use crate::editor::mission_editor::boot_progress::{BootEvent, BootSeg};
@@ -42,6 +42,71 @@ struct AtlasUpload {
     h: u32,
     uv: Vec<f32>,
     keys: Vec<String>,
+}
+
+/// T-938.2 — one warm chunk-crossing sample (camera already had resident chunks, then fetched).
+#[derive(Clone, Copy, Debug)]
+struct CrossingSample {
+    /// Host-local compose Vecs this settle (`push_roads` / `push_landcover` collect+mesh).
+    staging: u32,
+    /// The pending-chunk `Vec` in `fetch_and_queue` (not a GPU staging buffer).
+    fetch_batch: u32,
+    /// `WorldResidency::world_*()` packed clones taken in `push_to_engine`.
+    packed_clones: u32,
+}
+
+/// T-938.2 — allocation counter on the chunk-crossing path.
+///
+/// The audit claimed `world_host.rs:454-525` allocated ≥10 buffers per crossing. That span is the
+/// cached landcover compose (`T-173 P2`); a warm crossing does not re-enter it. Packed clones of
+/// residency GPU buffers live in `map-engine-core` (not owned here).
+struct CrossingAllocProbe {
+    pass_staging: u32,
+    pass_fetch_batch: u32,
+    pass_clones: u32,
+    total_warm: u32,
+    warm: VecDeque<CrossingSample>,
+}
+
+impl CrossingAllocProbe {
+    fn new() -> Self {
+        Self {
+            pass_staging: 0,
+            pass_fetch_batch: 0,
+            pass_clones: 0,
+            total_warm: 0,
+            warm: VecDeque::new(),
+        }
+    }
+
+    fn reset_pass(&mut self) {
+        self.pass_staging = 0;
+        self.pass_fetch_batch = 0;
+        self.pass_clones = 0;
+    }
+
+    fn commit_warm(&mut self) {
+        let sample = CrossingSample {
+            staging: self.pass_staging,
+            fetch_batch: self.pass_fetch_batch,
+            packed_clones: self.pass_clones,
+        };
+        self.total_warm += 1;
+        self.warm.push_back(sample);
+        if self.warm.len() > 8 {
+            self.warm.pop_front();
+        }
+        publish_crossing_probe(self.total_warm, self.warm.make_contiguous());
+        if chunk_alloc_log_enabled() {
+            web_sys::console::log_1(
+                &format!(
+                    "t9382 crossing #{} staging={} fetch_batch={} packed_clones={}",
+                    self.total_warm, sample.staging, sample.fetch_batch, sample.packed_clones
+                )
+                .into(),
+            );
+        }
+    }
 }
 
 pub struct WorldHost {
@@ -73,6 +138,8 @@ pub struct WorldHost {
     /// `inflight_empty` ride along because the sticky mid-hydration building guard can flip on the
     /// last chunk's arrival without the revision advancing in that same pass.
     last_pushed: Option<(u64, bool, bool)>,
+    /// T-938.2 — debug-flag allocation counter on the chunk-crossing path.
+    crossing_allocs: CrossingAllocProbe,
     /// T-090.12.5 — the world occluder mirror + its descriptor / BLAS fetches.
     occluder: OccluderHost,
 }
@@ -96,6 +163,7 @@ impl WorldHost {
             landcover_mesh: None,
             landcover_shown: false,
             last_pushed: None,
+            crossing_allocs: CrossingAllocProbe::new(),
             occluder: OccluderHost::new(),
         }
     }
@@ -307,6 +375,7 @@ impl WorldHost {
         if !self.ready {
             return false;
         }
+        self.crossing_allocs.reset_pass();
         self.ensure_atlas(engine, bridge);
         let (bounds, zoom) = {
             let g = engine.borrow();
@@ -323,6 +392,7 @@ impl WorldHost {
         // cheap no-op on a settle where the prefs didn't move.
         self.apply_layer_prefs(engine);
         let roads_changed = self.push_roads(engine, zoom);
+        let had_resident = self.residency.chunks_resident() > 0;
         let missing = self
             .residency
             .set_viewport(bounds[0], bounds[1], bounds[2], bounds[3], zoom);
@@ -343,6 +413,9 @@ impl WorldHost {
         }
         let drained = self.drain(engine, bridge);
         let pushed = self.push_to_engine(engine, bridge);
+        if fetched && had_resident {
+            self.crossing_allocs.commit_warm();
+        }
         // T-090.12.5 — mirror residency into the occluder and fetch what its chunks wait for.
         let occluded = self.occluder.run_viewport(&mut self.residency).await;
         roads_changed || landcover_changed || fetched || drained || pushed || occluded
@@ -465,6 +538,8 @@ impl WorldHost {
                     width_m: r.width_m,
                 })
                 .collect();
+            // inputs Vec + composed mesh store entry.
+            self.crossing_allocs.pass_staging += 2;
             self.road_meshes
                 .insert(sig, compose_roads_mesh(&inputs, zoom, true));
         }
@@ -510,6 +585,8 @@ impl WorldHost {
                     rings: r.polygon.as_slice(),
                 })
                 .collect();
+            // inputs Vec + composed mesh store entry. Audit cited this span as the 10+ burst.
+            self.crossing_allocs.pass_staging += 2;
             self.landcover_mesh = Some(compose_landcover_mesh(&inputs));
         }
         self.landcover_shown = true;
@@ -550,6 +627,7 @@ impl WorldHost {
         let chunks = self.chunks_path.clone();
         let chunks_bin = self.chunks_bin.clone();
         let mut fetched = Vec::with_capacity(ids.len());
+        self.crossing_allocs.pass_fetch_batch += 1;
         // T-175 H3 — fetch each batch of FETCH_CONCURRENCY chunks **concurrently** (was one serial
         // `await` per chunk, so a zoom-out / cold boot that pins dozens of new chunks stalled on
         // sequential RTTs). The browser runs the batch's requests in parallel; the futures poll
@@ -658,6 +736,8 @@ impl WorldHost {
         }
         self.last_pushed = Some(gate);
 
+        // Six packed-buffer clones from WorldResidency (fill/outline/strips + three glyph lanes).
+        self.crossing_allocs.pass_clones += 6;
         let fill = self.residency.world_building_fill();
         let outline = self.residency.world_building_outline();
         let stats = self.residency.stats_json();
@@ -782,4 +862,61 @@ async fn decode_webp_rgba(bytes: &[u8]) -> Option<(u32, u32, Vec<u8>)> {
         .get_image_data(0.0, 0.0, f64::from(w), f64::from(h))
         .ok()?;
     Some((w, h, image_data.data().0))
+}
+
+/// T-938.2 — console log is behind `?t9382=1` or `window.__t9382Log`.
+fn chunk_alloc_log_enabled() -> bool {
+    let search = web_sys::window()
+        .and_then(|w| w.location().search().ok())
+        .unwrap_or_default();
+    if search.contains("t9382=1") || search.contains("t9382=true") {
+        return true;
+    }
+    web_sys::window()
+        .and_then(|w| js_sys::Reflect::get(&w, &JsValue::from_str("__t9382Log")).ok())
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+}
+
+/// T-938.2 — always publish the last warm samples on `window.__t9382` so the editor console
+/// can read them without the log flag (three crossings: `window.__t9382.samples`).
+fn publish_crossing_probe(total_warm: u32, warm: &[CrossingSample]) {
+    let Some(win) = web_sys::window() else {
+        return;
+    };
+    let obj = js_sys::Object::new();
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("count"),
+        &JsValue::from_f64(f64::from(total_warm)),
+    );
+    let samples = js_sys::Array::new();
+    let mut max_staging = 0u32;
+    for s in warm {
+        max_staging = max_staging.max(s.staging);
+        let row = js_sys::Object::new();
+        let _ = js_sys::Reflect::set(
+            &row,
+            &JsValue::from_str("staging"),
+            &JsValue::from_f64(f64::from(s.staging)),
+        );
+        let _ = js_sys::Reflect::set(
+            &row,
+            &JsValue::from_str("fetch_batch"),
+            &JsValue::from_f64(f64::from(s.fetch_batch)),
+        );
+        let _ = js_sys::Reflect::set(
+            &row,
+            &JsValue::from_str("packed_clones"),
+            &JsValue::from_f64(f64::from(s.packed_clones)),
+        );
+        samples.push(&row);
+    }
+    let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("samples"), &samples);
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("max_staging"),
+        &JsValue::from_f64(f64::from(max_staging)),
+    );
+    let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__t9382"), &obj);
 }
