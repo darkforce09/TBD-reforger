@@ -25,6 +25,17 @@
 use leptos::prelude::*;
 
 use crate::editor::mission_editor::transform;
+
+thread_local! {
+    static Z_DRAG_READOUT: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
+}
+pub(crate) fn set_z_drag_readout(readout: Option<String>) {
+    Z_DRAG_READOUT.with(|c| *c.borrow_mut() = readout);
+}
+pub(crate) fn read_z_drag_readout() -> Option<String> {
+    Z_DRAG_READOUT.with(|c| c.borrow().clone())
+}
+
 #[cfg(target_arch = "wasm32")]
 use crate::editor::state::hydrate as mission_hydrate;
 #[cfg(target_arch = "wasm32")]
@@ -193,6 +204,26 @@ pub(crate) fn TransformWidgetOverlay(
                                     x1 = cx - HEAD * 0.7, y1 = cy - R + HEAD,
                                     x2 = cx + HEAD * 0.7)
                                 class="fill-primary" />
+                            // Z axis arrow (vertical, slightly thicker/styled if needed, but per prompt just "vertical axis arrow")
+                            // We use the new Z_ARM_LENGTH from gizmo_z
+                            <line x1=move || format!("{cx:.1}") y1=move || format!("{cy:.1}")
+                                  x2=move || format!("{cx:.1}") y2=move || format!("{:.1}", cy - crate::editor::canvas::gizmo_z::Z_ARM_LENGTH)
+                                  class="stroke-primary" stroke-width="2" />
+                            <polygon
+                                points=move || format!(
+                                    "{x0:.1},{y0:.1} {x1:.1},{y1:.1} {x2:.1},{y1:.1}",
+                                    x0 = cx, y0 = cy - crate::editor::canvas::gizmo_z::Z_ARM_LENGTH,
+                                    x1 = cx - HEAD * 0.7, y1 = cy - crate::editor::canvas::gizmo_z::Z_ARM_LENGTH + HEAD,
+                                    x2 = cx + HEAD * 0.7)
+                                class="fill-primary" />
+                            {
+                                crate::editor::canvas::overlays::read_z_drag_readout().map(|text| view! {
+                                    <text x=move || format!("{:.1}", cx + 15.0) y=move || format!("{:.1}", cy - crate::editor::canvas::gizmo_z::Z_ARM_LENGTH * 0.5) class="fill-primary font-mono text-[11px]">
+                                        {text}
+                                    </text>
+                                })
+                            }
+
                             <circle cx=move || format!("{cx:.1}") cy=move || format!("{cy:.1}")
                                     r="3" class="fill-primary" />
                         </g>
