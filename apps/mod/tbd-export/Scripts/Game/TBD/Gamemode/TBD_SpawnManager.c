@@ -1059,7 +1059,12 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		TBD_MissionVehicleRoster.SeatAuthoredCrews(this);
 		// T-680 -- authored lock / fuel / ammo. Vehicles exist only after the roster
 		// join-or-spawn above; unset attributes are sentinels and leave engine defaults.
+		// T-941.8 -- class / authored cargo BEFORE T-680 so ATTR-FIELD-OBJ-AMMO scales
+		// magazines that this pass just inserted. Fuel stays after, so we do not double-set.
+		TBD_VehicleSpawnDefaults.ApplyCargo();
 		TBD_VehicleState.ApplySpawned();
+		// T-941.8 -- default full fuel only when T-680 left fuel ABSENT (authored 0 is real).
+		TBD_VehicleSpawnDefaults.ApplyDefaultFuel();
 		// T-681 -- authored health / allowDamage / showModel / size (stamina logged, not applied).
 		// entities[] bodies were recorded at SpawnMissionEntities; unset attrs leave defaults.
 		TBD_EntityState.ApplySpawned();
@@ -3661,5 +3666,344 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		Print(string.Format("[TBD][Spawn] deployed player=%1 slot=%2 pos=%3 feetY=%4 surfaceY=%5 groundDelta=%6 yaw=%7",
 			playerId, slotId, org.ToString(), org[1], surfaceY, groundDelta, yaw));
+	}
+}
+
+//------------------------------------------------------------------------------------------------
+//! T-941.8 -- one vehicles[].inventory row. Field names ARE the JSON keys (item, qty).
+//! @contract mission.schema.json#/$defs/entityInventory
+class TBD_VehicleSpawnInvRow
+{
+	string item;
+	int qty;
+}
+
+//------------------------------------------------------------------------------------------------
+//! T-941.8 -- second JsonLoadContext pass over vehicles[] for fuel presence + inventory.
+//! TBD_MissionVehicleStruct does not declare those members (T-680 / T-675.2 own that file).
+//! Numeric fuel uses the same ABSENT sentinel as TBD_VehicleStateWireStruct so authored 0 is
+//! real and an omitted key is not. Inventory presence is Count(), never a null test:
+//! JsonLoadContext allocates the nested ref array even when the key is missing.
+class TBD_VehicleSpawnWire
+{
+	static const float FUEL_ABSENT = -1000000;
+	static const float XZ_M = 3.0;
+	static const float Y_M = 300.0;
+
+	string uid;
+	string alias;
+	float x;
+	float z;
+	float fuel = FUEL_ABSENT;
+	ref array<ref TBD_VehicleSpawnInvRow> inventory;
+
+	//------------------------------------------------------------------------------------------------
+	bool HasFuel()
+	{
+		return fuel != FUEL_ABSENT;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	bool HasInventory()
+	{
+		if (!inventory)
+			return false;
+		return inventory.Count() > 0;
+	}
+}
+
+//------------------------------------------------------------------------------------------------
+//! Root of the T-941.8 pass. Declares `vehicles` and nothing else.
+class TBD_VehicleSpawnDoc
+{
+	ref array<ref TBD_VehicleSpawnWire> vehicles;
+}
+
+//------------------------------------------------------------------------------------------------
+//! T-941.8 -- default FULL fuel (when T-680 left fuel ABSENT) and a per-class cargo table.
+//! Cargo runs BEFORE TBD_VehicleState.ApplySpawned so authored ammo scales inserted mags.
+//! Default fuel runs AFTER so authored fuel wins and this pass does not double-set ABSENT.
+//! A missing cargo prefab logs one warning naming it; the vehicle stays in the world.
+class TBD_VehicleSpawnDefaults
+{
+	protected static const string JERRYCAN = "{12D5AD21E383B768}Prefabs/Items/Fuel/Jerrycan_01/Jerrycan_01_item.et";
+	protected static const string DRESSING = "{A81F501D3EF6F38E}Prefabs/Items/Medicine/FieldDressing_01/FieldDressing_US_01.et";
+	protected static const string REPAIR = "{4AF9664BEE9263A4}Prefabs/Items/Equipment/Kits/RepairKit_01/RepairKit_01_base.et";
+	protected static const string MEDKIT = "{AE578EEA4244D41F}Prefabs/Items/Equipment/Kits/MedicalKit_01/MedicalKit_01_US.et";
+
+	protected static IEntity s_QueryHit;
+	protected static ref array<string> s_aWarnedPrefabs;
+
+	//------------------------------------------------------------------------------------------------
+	//! Cargo first: roster inventory rows override the class table; T-680 ammo then scales
+	//! whatever magazines ended up in the vehicle (prefab + this insert).
+	static void ApplyCargo()
+	{
+		array<ref TBD_VehicleSpawnWire> rows = Parse();
+		if (!rows || rows.Count() < 1)
+			return;
+
+		s_aWarnedPrefabs = new array<string>();
+
+		int cargoed = 0;
+		int missed = 0;
+
+		foreach (TBD_VehicleSpawnWire wire : rows)
+		{
+			if (!wire)
+				continue;
+
+			IEntity body = FindBody(wire);
+			if (!body)
+			{
+				missed++;
+				Print(string.Format("[TBD][Vehicles] spawn-cargo: no world vehicle for uid='%1' alias='%2' at %3,%4 -- cargo NOT applied",
+					wire.uid, wire.alias, wire.x, wire.z), LogLevel.WARNING);
+				continue;
+			}
+
+			array<ref TBD_VehicleSpawnInvRow> cargo;
+			if (wire.HasInventory())
+				cargo = wire.inventory;
+			else
+				cargo = DefaultCargoFor(wire.alias);
+
+			if (InsertCargo(body, cargo))
+				cargoed++;
+		}
+
+		Print(string.Format("[TBD][Vehicles] spawn-cargo cargoed=%1 missed=%2", cargoed, missed));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Default full fuel AFTER T-680. Skip when the wire carried fuel (including authored 0) so
+	//! this pass never double-sets and never treats ABSENT as 0.
+	static void ApplyDefaultFuel()
+	{
+		array<ref TBD_VehicleSpawnWire> rows = Parse();
+		if (!rows || rows.Count() < 1)
+			return;
+
+		int fueled = 0;
+		int missed = 0;
+		int skippedAuthored = 0;
+
+		foreach (TBD_VehicleSpawnWire wire : rows)
+		{
+			if (!wire)
+				continue;
+
+			IEntity body = FindBody(wire);
+			if (!body)
+			{
+				missed++;
+				Print(string.Format("[TBD][Vehicles] spawn-fuel: no world vehicle for uid='%1' alias='%2' at %3,%4 -- default fuel NOT applied",
+					wire.uid, wire.alias, wire.x, wire.z), LogLevel.WARNING);
+				continue;
+			}
+
+			if (wire.HasFuel())
+			{
+				skippedAuthored++;
+				continue;
+			}
+
+			TBD_VehicleState.Apply(body, false, 1.0, TBD_VehicleStateWireStruct.ABSENT);
+			fueled++;
+		}
+
+		Print(string.Format("[TBD][Vehicles] spawn-fuel defaultFull=%1 skippedAuthored=%2 missed=%3",
+			fueled, skippedAuthored, missed));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static array<ref TBD_VehicleSpawnWire> Parse()
+	{
+		array<ref TBD_VehicleSpawnWire> empty = {};
+
+		string raw = TBD_MissionLoader.GetRawJson();
+		if (raw.IsEmpty())
+			return empty;
+
+		JsonLoadContext ctx = new JsonLoadContext();
+		if (!ctx.LoadFromString(raw))
+		{
+			Print("[TBD][Vehicles] spawn-defaults: mission JSON did not parse -- default fuel/cargo NOT applied", LogLevel.ERROR);
+			return empty;
+		}
+
+		TBD_VehicleSpawnDoc doc = new TBD_VehicleSpawnDoc();
+		if (!ctx.ReadValue("", doc))
+		{
+			Print("[TBD][Vehicles] spawn-defaults: mission root would not read -- default fuel/cargo NOT applied", LogLevel.ERROR);
+			return empty;
+		}
+
+		if (!doc.vehicles)
+			return empty;
+		return doc.vehicles;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static IEntity FindBody(TBD_VehicleSpawnWire wire)
+	{
+		BaseWorld world = GetGame().GetWorld();
+		if (!world)
+			return null;
+
+		s_QueryHit = null;
+
+		float xz = TBD_VehicleSpawnWire.XZ_M;
+		float y = TBD_VehicleSpawnWire.Y_M;
+		vector mins = Vector(wire.x - xz, -y, wire.z - xz);
+		vector maxs = Vector(wire.x + xz, y, wire.z + xz);
+		world.QueryEntitiesByAABB(mins, maxs, OnQuery);
+
+		IEntity hit = s_QueryHit;
+		s_QueryHit = null;
+		return hit;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static bool OnQuery(IEntity entity)
+	{
+		if (!entity)
+			return true;
+		if (ChimeraCharacter.Cast(entity))
+			return true;
+		if (!Vehicle.Cast(entity))
+			return true;
+
+		s_QueryHit = entity;
+		return false;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Coarse class from the veh: alias. Keep the table small; unknown aliases use `default`.
+	protected static string VehicleClassOf(string alias)
+	{
+		string key = alias;
+		key.ToLower();
+		if (key.Contains("uh1") || key.Contains("mi8") || key.Contains("heli"))
+			return "helo";
+		if (key.Contains("btr") || key.Contains("brdm") || key.Contains("lav"))
+			return "apc";
+		if (key.Contains("ural") || key.Contains("m923") || key.Contains("s1203") || key.Contains("truck"))
+			return "truck";
+		if (key.Contains("uaz") || key.Contains("m151") || key.Contains("m1025") || key.Contains("m998") || key.Contains("humr") || key.Contains("jeep"))
+			return "jeep";
+		return "default";
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static array<ref TBD_VehicleSpawnInvRow> DefaultCargoFor(string alias)
+	{
+		string cls = VehicleClassOf(alias);
+		array<ref TBD_VehicleSpawnInvRow> rows = {};
+		if (cls == "helo")
+		{
+			AddCargoRow(rows, MEDKIT, 1);
+			AddCargoRow(rows, DRESSING, 2);
+			return rows;
+		}
+		if (cls == "apc")
+		{
+			AddCargoRow(rows, JERRYCAN, 1);
+			AddCargoRow(rows, REPAIR, 1);
+			AddCargoRow(rows, DRESSING, 2);
+			return rows;
+		}
+		if (cls == "truck")
+		{
+			AddCargoRow(rows, JERRYCAN, 2);
+			AddCargoRow(rows, REPAIR, 1);
+			AddCargoRow(rows, DRESSING, 2);
+			return rows;
+		}
+		if (cls == "jeep")
+		{
+			AddCargoRow(rows, JERRYCAN, 1);
+			AddCargoRow(rows, DRESSING, 2);
+			return rows;
+		}
+		AddCargoRow(rows, JERRYCAN, 1);
+		AddCargoRow(rows, DRESSING, 1);
+		return rows;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static void AddCargoRow(array<ref TBD_VehicleSpawnInvRow> rows, string item, int qty)
+	{
+		TBD_VehicleSpawnInvRow row = new TBD_VehicleSpawnInvRow();
+		row.item = item;
+		row.qty = qty;
+		rows.Insert(row);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static bool InsertCargo(IEntity vehicle, array<ref TBD_VehicleSpawnInvRow> rows)
+	{
+		if (!vehicle)
+			return false;
+		if (!rows || rows.Count() < 1)
+			return false;
+
+		SCR_InventoryStorageManagerComponent mgr = SCR_InventoryStorageManagerComponent.Cast(
+			vehicle.FindComponent(SCR_InventoryStorageManagerComponent));
+		if (!mgr)
+		{
+			Print("[TBD][Vehicles] cargo skipped -- body has no SCR_InventoryStorageManagerComponent", LogLevel.WARNING);
+			return false;
+		}
+
+		foreach (TBD_VehicleSpawnInvRow row : rows)
+		{
+			if (!row)
+				continue;
+			if (row.item.IsEmpty() || row.qty < 1)
+				continue;
+
+			for (int u = 0; u < row.qty; u++)
+			{
+				IEntity item = SpawnItem(vehicle, row.item);
+				if (!item)
+				{
+					WarnMissingOnce(row.item);
+					break;
+				}
+
+				bool ok = false;
+				if (mgr.CanInsertItem(item))
+					ok = mgr.TryInsertItem(item);
+				if (!ok)
+					SCR_EntityHelper.DeleteEntityAndChildren(item);
+			}
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static IEntity SpawnItem(IEntity vehicle, string resName)
+	{
+		Resource resource = Resource.Load(resName);
+		if (!resource || !resource.IsValid())
+			return null;
+
+		EntitySpawnParams params = new EntitySpawnParams();
+		params.TransformMode = ETransformMode.WORLD;
+		Math3D.MatrixIdentity4(params.Transform);
+		params.Transform[3] = vehicle.GetOrigin();
+		return GetGame().SpawnEntityPrefab(resource, GetGame().GetWorld(), params);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static void WarnMissingOnce(string prefab)
+	{
+		if (!s_aWarnedPrefabs)
+			s_aWarnedPrefabs = new array<string>();
+		if (s_aWarnedPrefabs.Contains(prefab))
+			return;
+		s_aWarnedPrefabs.Insert(prefab);
+		Print(string.Format("[TBD][Vehicles] cargo prefab missing: %1 -- vehicle still spawned", prefab), LogLevel.WARNING);
 	}
 }
