@@ -3,9 +3,11 @@ kind = "work"
 title = "Canvas Z gizmo arm never advances or commits elevation"
 summary = "T-939.3 hit-tests Z arm on pointerdown and sets z_drag, but z_drag is never read in onpointermove or onpointerup. set_z_drag_readout, dy_to_elevation, and snap_elevation have zero production callers. Elevation never changes and pointer capture strands."
 class = "feature"
-status = "idea"
+status = "cancelled"
+notes = 'CANCELLED 2026-09-08 into T-946.86, which repairs all four wave-255 dead-code findings plus T-946.69 in one slice. The finding itself is CONFIRMED, not withdrawn — see docs/specs/audit_2026_09/t946_86_wave255_dead_code.md for the anchors and the zero-call-site counts.'
 parent = "T-946"
 created_at = "2026-09-07T22:04:42Z"
+completed_at = "2026-09-07T23:21:08Z"
 
 [scope]
 domain = "repo"

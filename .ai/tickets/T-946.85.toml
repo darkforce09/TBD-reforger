@@ -3,9 +3,11 @@ kind = "work"
 title = "Duplicate slot ID guard uncalled on editor save"
 summary = "T-937.5 added duplicate_slot_ids in slot_ids.rs, but it has zero production callers. File upload uses check_duplicate_slot_ids_in_payload, while save_now in commands_hotkeys.rs performs no check, allowing duplicate slot saves."
 class = "feature"
-status = "idea"
+status = "cancelled"
+notes = 'CANCELLED 2026-09-08 into T-946.86, which repairs all four wave-255 dead-code findings plus T-946.69 in one slice. The finding itself is CONFIRMED, not withdrawn — see docs/specs/audit_2026_09/t946_86_wave255_dead_code.md for the anchors and the zero-call-site counts.'
 parent = "T-946"
 created_at = "2026-09-07T22:05:10Z"
+completed_at = "2026-09-07T23:21:34Z"
 
 [scope]
 domain = "repo"

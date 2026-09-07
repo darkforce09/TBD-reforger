@@ -1,0 +1,98 @@
+id = "T-935.20"
+kind = "work"
+title = "Delete residency chunk_bin and the chunk vocabulary"
+summary = "residency.rs and chunk_bin.rs cease to exist, and the sixteen files carrying chunk coordinate vocabulary lose it or justify keeping it."
+class = "chore"
+status = "queued"
+parent = "T-935"
+created_at = "2026-09-07T23:17:29Z"
+order = 7994
+priority = 2
+spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
+plan = "docs/plans/t-935_20_plan.md"
+executor = "claude-code"
+depends_on = ["T-935.19"]
+main_goal = "There is no grid, no residency bookkeeping and no chunk vocabulary left to maintain."
+notes = '''
+Step 3 of the T-935.15 program and the only step that deletes. Filed 2026-09-08.
+
+THIS IS THE ROW THAT PROVED T-935.15 COULD NOT BE ONE SLICE. residency.rs (3175 lines, allowlisted
+SIZE-3 at .coding-standards-allowlist.yaml:281-284) and chunk_bin.rs (734 lines, NOT allowlisted; the
+gate hard-fails over 1000 at xtask/src/node_free.rs:96-99) cannot be deleted without world/mod.rs:24,
+:44, :73, :129-131, and deleting them breaks compilation in occluder_host.rs:39,
+pages/debug/world_los.rs:76, world/prefab_load.rs:274, xtask/src/schema_gates.rs:24 and
+xtask/src/golden_gate.rs:16,27. None of those were in T-935.15's owns.
+
+ELEVEN READERS OF objects/chunks/ LIVE OUTSIDE THAT SET and all must move or go: gates.rs:119,153,
+205-225,395,419,456,648 (verify-phase G6 chunk partition); reclassify.rs:250-253,475; aux.rs:634-636;
+catalog_emit.rs:511,516 (WRITES the chunksPath manifest keys); smokes.rs:3777;
+schema_gates.rs:1247-1262,1578-1584 (manifest-binary gate demanding {cx}/{cy} in the template);
+golden_gate.rs:70-200,294,653-699; map_world_los.rs:74-75,420-421;
+map_blueprint/library.rs:103-106; pages/debug/world_los.rs:377; world/store.rs:27,104,405,419.
+
+WATCH schema_gates.rs:4044 — it goes SILENTLY VACUOUS under an `if catalog.exists()` guard. A gate that passes
+because its input disappeared is this repo's signature defect; fix it, do not let it pass quietly.
+'''
+context = [
+    "T-935.15 requirement 5 names world/occluder/trace.rs:24-25,465-473 and world/density_ladder.rs:6-7,14,79-80,116,136-150 as work items; both are chunk-id keyed end to end.",
+    "world/mod.rs:24 declares mod chunk_bin, :44 mod residency, :73 and :129-131 re-export them — deletion is impossible without this file.",
+    "8 of the 23 files under world/ carry chunk vocabulary and were not in T-935.15's owns: chunk.rs, store.rs, prefab_load.rs, mod.rs, density_ladder.rs, airfield.rs, occluder/*, binary/*.",
+    "packages/tbd-schema/golden/map-objects/map-object-chunk-sample.bin is 160 bytes of committed chunk format that golden_gate.rs S15 asserts byte identity against.",
+]
+current_state = [
+    "residency.rs (3175 lines) and chunk_bin.rs (734 lines) still exist and sixteen files still carry chunk coordinate vocabulary.",
+]
+requirement = [
+    "residency.rs and chunk_bin.rs are DELETED, not adapted; neither may be extended to keep a chunk concept alive under a new name.",
+    "Every reader of objects/chunks/ outside the loader either resolves through the index or is deleted with its gate.",
+    "chunk_math.rs, world/index.rs, manifest.rs, chunk.rs, occluder/trace.rs and density_ladder.rs lose the chunk coordinate vocabulary or justify each surviving name in a comment.",
+    "schema_gates.rs:4044 no longer passes vacuously when its catalog input is absent.",
+    "The S15 chunk golden is retired or re-cut; golden_gate.rs does not assert byte identity against a format nothing produces.",
+]
+approach = [
+    "Delete the two modules and their declarations in world/mod.rs, then follow the compiler.",
+    "Move each of the eleven outside readers onto the index, or delete the gate that only existed to check a chunk partition.",
+    "Perturbation: restore one chunk-grid lookup on the trace path; its test must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-935.20",
+]
+acceptance = [
+    "residency.rs and chunk_bin.rs no longer exist and the workspace builds.",
+    "No chunk file is emitted or fetched anywhere in the repo.",
+    "Surviving uses of the word chunk are listed in the report with a justification each.",
+]
+citations = [
+    "world/mod.rs:24",
+    "residency.rs",
+    "chunk_bin.rs",
+    "schema_gates.rs:4044",
+    "golden_gate.rs:70",
+]
+owns = [
+    "crates/map-engine-core/src/world/mod.rs",
+    "crates/map-engine-core/src/world/residency.rs",
+    "crates/map-engine-core/src/world/chunk_bin.rs",
+    "crates/map-engine-core/src/world/chunk_math.rs",
+    "crates/map-engine-core/src/world/chunk.rs",
+    "crates/map-engine-core/src/world/index.rs",
+    "crates/map-engine-core/src/world/manifest.rs",
+    "crates/map-engine-core/src/world/store.rs",
+    "crates/map-engine-core/src/world/prefab_load.rs",
+    "crates/map-engine-core/src/world/density_ladder.rs",
+    "crates/map-engine-core/src/world/occluder/trace.rs",
+    "apps/website/frontend/src/pages/debug/world_los.rs",
+    "xtask/src/schema_gates.rs",
+    "xtask/src/golden_gate.rs",
+    "xtask/src/map_world_los.rs",
+    "tools/tbd-tools/src/world/gates.rs",
+    "tools/tbd-tools/src/world/catalog_emit.rs",
+    "tools/tbd-tools/src/world/reclassify.rs",
+    "tools/tbd-tools/src/world/aux.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "world"

@@ -10,12 +10,12 @@ Read CLAUDE.md first. Implement **T-212** — typed per-side objectives with att
 ═══ READ ═══  docs/plans/t-212_plan.md; Objectives/TBD_ObjectiveRegistry.c:36-42; crates/map-engine-core/src/mission/compile.rs:228 (dead objectivesById); docs research wog.md 7/13.1, fnf_v4.md 7
 ═══ PROBLEM ═══  objectivesById is a dead container; objectives-as-zones is the only consumer; the corpus converges on typed, placed, per-side objectives with one attribute spine.
 ═══ SHIPPED ═══  T-685 volumes (packs first, shares the registry); T-241; T-706 schema.
-═══ LANGUAGE GATE ═══  Enfusion script (.c) under apps/mod/tbd-framework only; no schema JSON; no TypeScript.
+═══ LANGUAGE GATE ═══  Enfusion script (.c) in BOTH apps/mod/tbd-framework AND apps/mod/tbd-export (mirror_lockstep, xtask/src/gate_mod_compile.rs:427 — a framework-only edit to a mirrored file fails `cargo xtask mod compile`); Rust in xtask/src/schema_gates.rs for the UNREAD_WIRE_FIELDS re-pin; packages/tbd-schema/schema/mission.schema.json PROSE ONLY (description text; no shape, enum or required change). No TypeScript. Corrected 2026-09-08, wave 256 pre-dispatch — the previous line said "under apps/mod/tbd-framework only; no schema JSON", which mirror_lockstep and schema_gates.rs both make unsatisfiable.
 ═══ LOCKED ═══
   - Verify the gap on main first (rg the keys in apps/mod: zero readers)
   - Perturbation proof: red pasted verbatim, touch after restore
   - owns = the listed files only; new sibling .c files are named in the ticket
-  - No packages/tbd-schema edits (T-706 owns widening)
+  - packages/tbd-schema edits are PROSE ONLY (T-706 shipped the shape; only description text may change) — relaxed 2026-09-08
   - In-game behaviour goes on the human checklist; the gate is cargo xtask mod compile
   - Stable uid identity; no positional identity
   - Inferred WOG semantics stay marked inferred

@@ -8,7 +8,7 @@ order = 7320
 plan = "docs/plans/t-212_plan.md"
 spec = "docs/specs/existing/t212_typed_objectives.md"
 executor = "claude-code"
-notes = 'workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. EXTENDED (not superseded) 2026-08-01 from framework_synthesis.md B5 by the coverage audit (parity/coverage_audit.md); previous shape was `idea` / claude-code / order 2300 / targets [website]. T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-212 salvage/t853-dropped/T-212` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other. EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code. SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema. THE SPA AUTHORING UI IS DELIBERATELY NOT SPLIT OUT YET — it cannot be scoped until the shape is decided, and pre-filing it would be a duplicate. Split it as a `claude-code` follow-on with its own `owns` once this lands, the way T-076/T-675 and T-079/T-676 are split. | 2026-09-05 wave 248: T-257 restored to depends_on (xtask slice_collisions test pins it; the readiness pass had dropped it).'
+notes = 'STALE LINE STRUCK 2026-09-08 (wave 256 pre-dispatch): this ticket WAS marked "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row" and that is wrong twice over - the executor is claude-code and it now carries a six-file owns. EXTENDED (not superseded) 2026-08-01 from framework_synthesis.md B5 by the coverage audit (parity/coverage_audit.md); previous shape was `idea` / claude-code / order 2300 / targets [website]. T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-212 salvage/t853-dropped/T-212` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other. EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code. SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema. THE SPA AUTHORING UI IS DELIBERATELY NOT SPLIT OUT YET — it cannot be scoped until the shape is decided, and pre-filing it would be a duplicate. Split it as a `claude-code` follow-on with its own `owns` once this lands, the way T-076/T-675 and T-079/T-676 are split. | 2026-09-05 wave 248: T-257 restored to depends_on (xtask slice_collisions test pins it; the readiness pass had dropped it). | 2026-09-08 wave 256 pre-dispatch: owns WIDENED 1 -> 6. Measured reasons: (a) mirror_lockstep (xtask/src/gate_mod_compile.rs:427,641) fails cargo xtask mod compile on a framework-only edit to a mirrored file, and both TBD_ObjectiveRegistry.c copies are in lockstep today, so the declared verify line could not pass; (b) the typed per-side runtime lives in TBD_Objective.c (TBD_EObjectiveKind:34, StatusText:410, BoardLine:399), not in the registry; (c) schema_gates.rs:2449-2490 pins objectives==13 framing==0 autoLose==0 by EXACT equality inside gate_slice, and the salvaged prior attempt (salvage/t853-dropped/T-212, fc4f15121) measures 13->16, 0->9, 0->3. TBD_ObjectivesComponent.c is DELIBERATELY EXCLUDED - it is T-946.55 owns this wave; kind dispatch (:167-178) and per-player HUD composition (:806-861) are a follow-on that packs after T-946.55.'
 depends_on = [
     "T-685",
     "T-241",
@@ -63,7 +63,14 @@ citations = [
     "fnf_v4.md 7",
 ]
 estimated = ["scope"]
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c"]
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_Objective.c",
+    "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_Objective.c",
+    "xtask/src/schema_gates.rs",
+    "packages/tbd-schema/schema/mission.schema.json",
+]
 
 approach = [
     "Design the typed objective as a per-side entity with WOG's parameter spine on top of the objectives-as-zones registry; keep uid identity.",
@@ -76,8 +83,10 @@ verify = [
 ]
 
 acceptance = [
-    "TBD_ObjectiveRegistry resolves typed, per-side objectives with the uniform attribute spine from the compiled payload; objectives-as-zones keep working.",
-    "Inferred WOG semantics stay marked inferred; no packages/tbd-schema edits; compile clean.",
+    "TBD_ObjectiveRegistry resolves typed, per-side objectives with the uniform attribute spine, proven against the hand-staged 1.3 golden packages/tbd-schema/golden-missions/schema-1_3-wire-fields.json (the T-685 precedent) — flatten.rs still emits no objectives[] on /compiled, which is T-946.36; objectives-as-zones keep working.",
+    "Both Enfusion twins change identically and cargo xtask mod compile is clean — mirror_lockstep (xtask/src/gate_mod_compile.rs:427,641) refuses a framework-only edit to a mirrored file, and the export tree stays pure ASCII.",
+    "The UNREAD_WIRE_FIELDS rows objectives/framing/autoLose in xtask/src/schema_gates.rs are re-pinned to the measured new counts; the gate asserts exact equality, so a stale pin is a slice-gate red.",
+    "Inferred WOG semantics stay marked inferred. packages/tbd-schema edits are PROSE ONLY — description text may change, no shape, enum or required change (operator relaxation 2026-09-08; the original 'no packages/tbd-schema edits' clause was unsatisfiable because mission.schema.json:119 describes objectives[] as read by nothing).",
 ]
 
 [scope]

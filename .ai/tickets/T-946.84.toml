@@ -3,9 +3,11 @@ kind = "work"
 title = "Tactical draw UI trigger was not folded in"
 summary = "T-939.1 brief instructed folding in T-946.69 via an outliner UI button invoking begin_tactical_draw. REPORT-T-939.1 claimed it was added, but git commit d164435ca contains no such button and begin_tactical_draw still has zero call sites."
 class = "feature"
-status = "idea"
+status = "cancelled"
+notes = 'CANCELLED 2026-09-08 into T-946.86, which repairs all four wave-255 dead-code findings plus T-946.69 in one slice. The finding itself is CONFIRMED, not withdrawn — see docs/specs/audit_2026_09/t946_86_wave255_dead_code.md for the anchors and the zero-call-site counts.'
 parent = "T-946"
 created_at = "2026-09-07T22:05:01Z"
+completed_at = "2026-09-07T23:21:25Z"
 
 [scope]
 domain = "repo"

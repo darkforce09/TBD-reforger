@@ -444,3 +444,62 @@ edit, in-editor play button.
   - T-946.84 (MAJOR): Tactical draw UI trigger was not folded in by T-939.1 (T-946.69 remains unfixed and uncalled; REPORT-T-939.1 falsely claimed button was added).
   - T-946.85 (MAJOR): Duplicate slot ID guard uncalled on editor save path (T-937.5 added `duplicate_slot_ids(&MissionDocCore)` in `slot_ids.rs`, but it has zero callers; `save_now` in `commands_hotkeys.rs` does not check duplicates, only upload path checks via private helper).
 
+
+- 2026-09-08 **WAVE 256 SET UP — and the lock's row was two-fifths undispatchable.** The pre-dispatch
+  feasibility pass on lock row 256 (`T-212`, `T-935.15`, `T-946.55`, `T-932`, `T-939.2`) found two
+  tickets that could not ship as scoped and a third colliding with its own wave-mate. Dispatched set
+  is **T-212, T-946.55, T-946.86, T-939.2, T-939.4** — five agents. Bookkeeping in this commit.
+  * **T-935.15 PULLED and split into a program** (T-935.17 instruments → .18 emit → .19 loader → .20
+    delete; umbrella queued, order 7535→7990). Its own text said to split it twice
+    (`T-935.15.toml:40`, `t-935_15_plan.md:31`) and the measurement agrees: `residency.rs` and
+    `chunk_bin.rs` cannot cease to exist without `world/mod.rs:24,44,73,129-131`, deletion breaks
+    compilation in five unowned files, requirement 5 names `occluder/trace.rs` and `density_ladder.rs`
+    while owning neither, and the new container cannot be declared without
+    `binary/{chunk_container,archives}.rs`. **Both acceptance instruments are broken independently of
+    ownership** — A3's build input (`packages/map-assets/everon/staging/export/raw-entities.jsonl`,
+    358 MB) is `.gitignore:18` so no worktree can rebuild everon, and A2's only harness
+    (`smokes.rs` PERF_PROBE) never reads `window.__t9382` and counts `'/objects/chunks/'` fetches at
+    `:3777`, which read **vacuously zero** the moment chunks are gone. T-935.17 exists to fix that
+    first and is `executor: human` for its staging half.
+  * **T-212 WIDENED 1 → 6 files.** As packed it could not pass its own `verify` line:
+    `mirror_lockstep` (`gate_mod_compile.rs:427,641`) fails `mod compile` on a framework-only edit to
+    a mirrored file, and both `TBD_ObjectiveRegistry.c` copies are in lockstep today. The typed
+    per-side runtime lives in `TBD_Objective.c`, not the registry. And `schema_gates.rs:2449-2490`
+    pins `objectives==13 framing==0 autoLose==0` by **exact equality** inside `gate_slice` — the
+    salvaged prior attempt (`fc4f15121`) measures 13→16, 0→9, 0→3, three red rows. Owns now carries
+    both twins of both files plus `schema_gates.rs` and `mission.schema.json`; the acceptance clause
+    "no packages/tbd-schema edits" was relaxed to **prose only** (operator, 2026-09-08) and acceptance
+    pinned to the T-685 precedent, a hand-staged 1.3 golden, because `flatten.rs` still emits no
+    `objectives[]` (that is T-946.36). `TBD_ObjectivesComponent.c` is deliberately excluded — it is
+    T-946.55's this wave.
+  * **T-939.2 WIDENED +1 (`doc/store.rs`), T-932 slipped to 257** (order 7780→7875). Both needed
+    `store.rs`. `move_slot_to_squad` (`store.rs:1138`) calls `garbage_collect_squad_in_txn`
+    (`:1187-1196`→`:5367-5399`), which deletes the squad row, prunes `faction.squadIds` and **deletes
+    every attached vehicle** — so T-939.2's requirement "an emptied squad stays" was unsatisfiable
+    from its three files. Also corrected: **side keys are derived, not stored**
+    (`resolve_slot_side_key` `store.rs:6941`), so the requirement to "update side keys" had nothing to
+    update and its perturbation step had nothing to skip. T-932 was verified feasible unchanged for
+    257 and needs no schema or API change.
+  * **T-946.86 filed** — one repair slice folding T-946.82/.83/.84/.85 and closing T-946.69, all five
+    cancelled into it. **Three of wave 255's five tickets shipped code with zero production callers**:
+    `z_drag` is written at `gestures.rs:626-627` and never read; `plan_drop` and `DragSet` have no
+    caller and `outliner_tree.rs:1060` still drops through the single-id path; `duplicate_slot_ids`
+    is never called from `save_now`. The fourth is worse — `REPORT-T-939.1.md` claimed a Phase Line
+    button was added and commit `d164435caa5a` contains none. Spec:
+    `docs/specs/audit_2026_09/t946_86_wave255_dead_code.md`.
+  * **Lock repacked at `TBD_MAX_CONCURRENT=6`.** Note `hcargo` forwards only `CARGO_TARGET_DIR`,
+    `CARGO_BUILD_JOBS`, `TEST_DATABASE_URL` and `TBD_IT_BASE_DB`, so `TBD_MAX_CONCURRENT=6 hcargo …`
+    is **silently dropped** and the lock stays at 5 — the same whitelist that eats `TBD_IT_BASE_DB`
+    (T-946.80). Use the explicit `distrobox-host-exec env … cargo run -q -p xtask -- wave repack`
+    form. Row 256 packs six; the sixth (`T-939.5`) is plan-only and undispatched, so this wave closes
+    with `--tickets`.
+  * **`status = "queued"` DOES NOT KEEP A TICKET OUT OF A WAVE ROW.** The lock plans every *open*
+    ticket; status gates dispatch, not packing. Sequencing a ticket out of a wave is an `order` edit.
+  * **`ticket check` was green over two invented registry keys**; `cargo test -p xtask` caught both
+    (`tickets_store::tests::on_disk_keys_are_mapped_or_allowed_new`, `notes_wave256` and
+    `superseded_by`). The rule stands: `cargo test -p xtask` after every registry edit, not
+    `ticket check`.
+  * **Brief directories renumbered to the ledger label**: `wave255/`→`wave254/`, `wave256/`→`wave255/`,
+    with the `VERIFY.md` titles and internal self-references corrected. The offset that produced them
+    is gone — `wave_base = 255` with no pending `[[emptied]]`, so lock row 256 == label 256 from here.
+    See `.ai/artifacts/editor_briefs/sept2026/README.md`.

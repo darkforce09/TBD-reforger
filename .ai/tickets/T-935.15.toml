@@ -3,15 +3,38 @@ kind = "work"
 title = "Delete chunking: one container, spatial index, range fetch"
 summary = "Chunk files are a parse-cost workaround that cast_slice made obsolete. Replace objects/chunks/*.bin with one binary container plus a spatial index and HTTP range fetches, the shape T-935.10 already ships for satellite."
 class = "feature"
-status = "ready"
-parent = "T-935"
-created_at = "2026-09-07T19:28:40Z"
-order = 7535
-priority = 1
+status = "queued"
+order = 7990
 spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
 plan = "docs/plans/t-935_15_plan.md"
 executor = "claude-code"
+priority = 1
+parent = "T-935"
 main_goal = "Panning never fetches, allocates or evicts because the camera crossed a line on a grid."
+notes = '''
+STATUS queued AND ORDER 7535 -> 7990 ON 2026-09-08, wave 256 pre-dispatch. This row is now an UMBRELLA;
+its children carry the work. It was packed for wave 256 and pulled after a feasibility pass measured that
+no single agent can deliver its acceptance from its eight owns:
+  * residency.rs and chunk_bin.rs cannot cease to exist without crates/map-engine-core/src/world/mod.rs
+    :24, :44, :73, :129-131, which declares and re-exports them; deleting them breaks compilation in at
+    least occluder_host.rs:39, pages/debug/world_los.rs:76, world/prefab_load.rs:274,
+    xtask/src/schema_gates.rs:24 and xtask/src/golden_gate.rs:16,27 - none of them owned.
+  * requirement 5 names world/occluder/trace.rs and world/density_ladder.rs as work items and owns neither.
+  * the new container cannot be declared at all without world/binary/chunk_container.rs and
+    world/binary/archives.rs, where the T-935.10 precedent's TbdsHeader (:491-500) and TbdSatIndexV2
+    (:425-434) live.
+  * acceptance A3 (byte-identical everon object set) is unreachable in ANY worktree: build.rs:176-186
+    requires packages/map-assets/everon/staging/export/raw-entities.jsonl, 358 MB, kept out of git by
+    .gitignore:18. The committed .bin chunks smudge fine from the local LFS store, so a worktree gets the
+    BEFORE side of the comparison and no way to produce the AFTER side.
+  * acceptance A2 is measurable only through tools/tbd-tools/src/smokes.rs PERF_PROBE:3710-3800, which is
+    not owned, never reads window.__t9382 (the only non-doc references to t9382 anywhere are the seven
+    lines in world_host.rs), and whose fetch counter at :3777 matches the literal '/objects/chunks/' and
+    therefore reads VACUOUSLY ZERO the moment chunk URLs disappear.
+The ticket's own approach line and docs/plans/t-935_15_plan.md:31 both already said to split it before
+dispatch. T-935.16 owns tools/tbd-tools/src/world/build.rs and world_assets/world_host.rs too and cannot
+share a wave with the children that own them.
+'''
 context = [
     "Operator decision 2026-09-07: get rid of chunking. Rationale, verbatim: the pattern was inherited from a fifteen-year-old game engine and is not a method that should be considered in 2026.",
     "Chunking exists to bound PARSE cost. T-935.1-.3 made the payload POD and loaded it with bytemuck cast_slice, so decode is effectively free and the reason is gone.",
@@ -19,9 +42,6 @@ context = [
     "The replacement already ships in this repo. T-935.10's satellite is one TBDS container with an rkyv index: fetch_index_head reads bytes 0-11, parses the index, then range-fetches tiles.",
     "Partial access is an HTTP property, not a filesystem layout. Range requests give residency without splitting the world into files.",
     "Supersedes T-111 (lazy chunk residency @ 1M) and T-067.1 (byte-budget chunk eviction) — both are bookkeeping for a structure this ticket deletes.",
-]
-current_state = [
-    "objects/chunks/{cx}_{cy}.bin is emitted by build.rs and fetched per chunk by world_host.rs, with residency.rs (290 chunk references) and chunk_bin.rs (143) maintaining the grid.",
 ]
 requirement = [
     "One binary container for world objects, with a spatial index resolving a camera rect to byte ranges; no per-chunk files emitted and none fetched.",
@@ -31,6 +51,7 @@ requirement = [
     "The occluder and density lanes (occluder/trace.rs, density_ladder.rs) resolve through the index, not a chunk grid.",
     "A pan across the whole terrain performs zero allocations attributable to residency; measured with T-938.2's counter, which becomes the acceptance instrument.",
 ]
+current_state = ["objects/chunks/{cx}_{cy}.bin is emitted by build.rs and fetched per chunk by world_host.rs, with residency.rs (290 chunk references) and chunk_bin.rs (143) maintaining the grid."]
 approach = [
     "Verify first: instrument a full-width pan with the T-938.2 counter behind ?t9382=1 and record allocations and frame spikes per boundary crossing. Paste the numbers as the before.",
     "Read T-935.10 satellite (tbd_sat.rs parse_header/index, satellite.rs fetch_index_head) — it is the working precedent and the new container should not invent a second shape.",
@@ -50,6 +71,7 @@ acceptance = [
     "A full-width pan shows no residency allocations and no frame spike at former chunk boundaries.",
     "The object set the editor renders is byte-identical to the chunked build on everon.",
 ]
+created_at = "2026-09-07T19:28:40Z"
 owns = [
     "crates/map-engine-core/src/world/residency.rs",
     "crates/map-engine-core/src/world/chunk_bin.rs",

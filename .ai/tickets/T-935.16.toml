@@ -6,11 +6,20 @@ class = "bug"
 status = "ready"
 parent = "T-935"
 created_at = "2026-09-07T19:37:56Z"
-order = 7536
+order = 7995
 priority = 2
 spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
 plan = "docs/plans/t-935_16_plan.md"
 executor = "claude-code"
+notes = '''
+ORDER 7536 -> 7995 ON 2026-09-08, wave 256 pre-dispatch. This row must sequence WITH the T-935.15 program,
+not ahead of it: both own tools/tbd-tools/src/world/build.rs and
+apps/website/frontend/src/editor/world_assets/world_host.rs, and this ticket's own approach already says
+they cannot share a wave. T-935.15 was pulled from wave 256 and split into children that own those files;
+this row now packs after them. Its requirement 2 (build.rs stops writing chunks/{key}.json.gz and
+chunks/manifest.json) is a strict subset of what the T-935.15 children delete, so re-read its acceptance
+against the tree before dispatching it.
+'''
 main_goal = "No gz-JSON is emitted or fetched for world data, and flate2 leaves the world feature."
 context = [
     "T-935.13 is titled 'Cutover: everon rebuilt binary, gz-JSON emit deleted'. Its own requirements say the opposite: 'Do not delete gz-JSON emitters still read' and 'Keep gz-JSON that emitters still consume'.",

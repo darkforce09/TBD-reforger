@@ -3,8 +3,8 @@ kind = "work"
 title = "Parked briefing markers survive server save/reload"
 summary = "T-826 parking: pendingBriefingMarkers drop on server JSON save/reload before first faction mint"
 class = "bug"
-status = "ready"
-order = 7780
+status = "queued"
+order = 7875
 spec = "docs/specs/existing/t932_parked_markers_persist.md"
 plan = "docs/plans/t-932_plan.md"
 executor = "claude-code"
@@ -12,6 +12,29 @@ notes = """
 WAVE-211 VERIFIER MAJOR F1 (wave211.md). T-826 parks pre-mint markers on meta.pendingBriefingMarkers and promotes on add_faction — acceptance holds for local yrs. compile_payload does not emit the pending key; hydrate clears it — Save→server→reload can drop parked markers before first slot/faction.
 
 ACCEPTANCE: marker-only mission round-trips through server JSON save/load with parked markers intact (or an explicit wire key); after reload, first faction/slot mint still promotes and V1 behaves as T-826.
+ORDER 7780 -> 7875 AND STATUS queued ON 2026-09-08, wave 256 pre-dispatch. Operator decision: T-939.2 takes
+crates/map-engine-core/src/doc/store.rs for wave 256 and this row packs into 257. Both need store.rs and the
+lock refuses them in one wave. T-939.2 blocks 7 tickets to this row's 3, and its store.rs need changes
+behaviour (move_slot_to_squad GCs an emptied squad and deletes its attached vehicles) while this one is a
+self-contained emit/restore.
+
+FEASIBILITY CONFIRMED 2026-09-08 - dispatch it in 257 unchanged. The defect is real end to end: parked at
+store.rs:4050 (upsert_pending_briefing_marker, only on the faction-row-absent fallthrough at :4049),
+promoted at :1069 in add_faction, listed in the UI at :4157, gated in has_content at :4347 - and
+compile_payload (mission/compile.rs:156) reads only terrain :163, map :175, schemaVersion :187,
+environment :193 and title :258, so the key never reaches the wire; hydrate then removes it
+unconditionally at store.rs:3595. small_maps_json (:660) DOES emit meta whole at :702-706, so the park
+reaches the snapshot and is lost at compile.
+
+NO SCHEMA OR API CHANGE IS NEEDED: mission-editor-payload.schema.json declares no root
+additionalProperties and no required; wire_safety::scan_editor_payload (wire_safety.rs:262-265) returns
+empty unless payload.editor exists and only walks editor.*; EditorPayload (flatten.rs:1369) has no
+deny_unknown_fields. compiled_document_is_schema_validated_before_serving (api/tests/missions.rs:391)
+gates the COMPILED document, which is untouched. Both halves of the known-key lockstep are already in
+owns: compile.rs:46-62 and store.rs:6083-6128.
+
+TRAP: store.rs:3595 clears the key at the TOP of hydrate for a documented reason (a second hydrate must
+not leave a ghost). The fix is clear-then-restore-from-payload, never delete-the-clear.
 """
 main_goal = "Parked briefing markers survive server JSON save and hydrate."
 context = [

@@ -16,11 +16,14 @@ context = [
     "Depends on T-937.2 (undo groups, state/operations/batch.rs): the batch applies inside with_batch so one Ctrl+Z reverts it.",
     "state/operations.rs is shared with T-937.2 and T-937.5; this slice packs after them.",
     "Related, not re-minted: T-309 faction squads, T-141 slot naming.",
+    "Wave 256 pre-dispatch 2026-09-08: anchors re-verified exact; with_batch is batch.rs:11 re-exported at operations.rs:46; the multi-selection is already materialised as targets at attributes_modal.rs:408 via attrs_multi_ids (attrs.rs:488).",
+    "SIDE KEYS ARE DERIVED, NOT STORED: resolve_slot_side_key (store.rs:6941-6966) walks squadId -> factionId -> key, memoised by SideKeyMemo (store.rs:360,439,923).",
+    "store.rs joined owns 2026-09-08: move_slot_to_squad (store.rs:1138) GCs the emptied source squad at :1187-1196, so requirement 3 needs an additive keep-source entry point.",
 ]
 requirement = [
-    "New state/operations/reassign.rs (registered in state/operations.rs): reassign_slots(ids, target) moving slot ids between squad slotIds lists and updating side keys.",
+    "New state/operations/reassign.rs (registered in operations.rs): reassign_slots(ids, target) moves slot ids between squad slotIds lists; the derived side key follows and SideKeyMemo is invalidated.",
     "attributes_modal.rs: a faction selector listing the mission's factions and a squad picker for the chosen faction; both act on the whole selection.",
-    "Slots leaving a squad never delete it implicitly; an emptied squad stays.",
+    "Slots leaving a squad never delete it implicitly; an emptied squad keeps its row, its place in faction.squadIds, and its attached vehicles.",
     "A squad of another faction is refused with a named reason in the modal.",
 ]
 current_state = [
@@ -28,8 +31,8 @@ current_state = [
 ]
 approach = [
     "Verify on main: a test asserting the modal offers no faction control and no squad control; paste the red.",
-    "Write reassign.rs with unit tests over a doc fixture (moves, refusal, side-key update); mount the controls; wrap the apply in with_batch.",
-    "Perturbation: skip the side-key update in reassign_slots; its test must go red; restore, touch, green.",
+    "Write reassign.rs with unit tests over a doc fixture: moves, cross-faction refusal, emptied squad survives with vehicles, derived side key follows. Wrap the apply in with_batch.",
+    "Perturbation: route the batch through the GC-ing move_slot_to_squad; the emptied-squad test must go red on deleted vehicles; restore, touch, green.",
 ]
 verify = [
     "cargo xtask mk ci-local-leptos",
@@ -47,7 +50,39 @@ owns = [
     "apps/website/frontend/src/editor/panels/attributes_modal.rs",
     "apps/website/frontend/src/editor/state/operations/reassign.rs",
     "apps/website/frontend/src/editor/state/operations.rs",
+    "crates/map-engine-core/src/doc/store.rs",
 ]
+
+notes = '''
+WAVE 256 PRE-DISPATCH, 2026-09-08 — command-centre corrections, all measured against main at f71d2d0b2.
+
+owns WIDENED +1: crates/map-engine-core/src/doc/store.rs. move_slot_to_squad (store.rs:1138) is the only
+public path that moves a slot between squads, and it calls garbage_collect_squad_in_txn at :1187-1196,
+which deletes the squad row (:5398), prunes it out of faction.squadIds (:5390-5397) and DELETES EVERY
+ATTACHED VEHICLE (:5384-5389); ensure_leader_invariant_in_txn (:5402-5412) does the same on the dest side.
+The full public squad surface is store.rs:1101, :1107, :1116, :1138, :1209, :1335, :1380 — there is no
+non-GC path. Requirement 3 ("an emptied squad stays") was therefore unsatisfiable from the original three
+files. Add an ADDITIVE keep-source entry point; do not change the existing default. The in-owns workaround
+(re-add_squad from reassign.rs) was rejected: it still loses the attached vehicles, loses leaderSlotId, and
+re-appends to the tail of faction.squadIds rather than restoring position.
+
+T-932 also owns store.rs and was set queued for wave 256 so the two cannot share a wave; it packs into 257.
+
+REQUIREMENT 1 CORRECTED: side keys are DERIVED, not stored. resolve_slot_side_key (store.rs:6941-6966)
+walks slot.squadId -> squad.factionId -> faction.key, defaulting BLUFOR at every missing hop; the result is
+materialised into SlotSoa.side_keys (store.rs:965-976) and memoised per-squad by SideKeyMemo (store.rs:360,
+:439, :923). Nothing writes a side key, so "updating side keys" had nothing to update and the original
+perturbation step ("skip the side-key update") had nothing to skip. The perturbation target is now the
+keep-source path.
+
+ANCHORS RE-VERIFIED EXACT: attributes_modal.rs:1864-1872 (squad rendered read-only, inert div at
+:1924-1929); no faction control exists — every faction hit at :1546-1607 and :1749-1842 belongs to
+type_picker (:1583), which edits assetId. with_batch is batch.rs:11, re-exported at operations.rs:46 and
+reachable from both owned frontend files. The multi-selection is already materialised as targets at
+attributes_modal.rs:408-412 via attrs_multi_ids (attrs.rs:488-513). Faction and squad lists come from
+orbat_manager_snapshot (entity.rs:1995); FactionRow (panels/outliner.rs:343-350) carries key and ordered
+squad_ids, which is what the picker and the cross-faction refusal need.
+'''
 
 [scope]
 domain = "website"

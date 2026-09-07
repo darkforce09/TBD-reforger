@@ -1,0 +1,66 @@
+id = "T-935.17"
+kind = "work"
+title = "Acceptance instruments for deleting chunking"
+summary = "The pan-allocation probe and the everon rebuild input both have to exist before any chunking slice can be judged; today neither is reachable from a worktree."
+class = "chore"
+status = "queued"
+parent = "T-935"
+created_at = "2026-09-07T23:17:08Z"
+order = 7991
+priority = 1
+spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
+plan = "docs/plans/t-935_17_plan.md"
+executor = "human"
+main_goal = "A chunking slice can be judged, because both of its acceptance instruments actually read something."
+notes = '''
+FILED 2026-09-08 at wave 256 pre-dispatch, when T-935.15 was pulled and split. THIS ROW BLOCKS THE WHOLE
+PROGRAM: T-935.18/.19/.20 cannot be judged until it lands.
+
+EXECUTOR IS human FOR ONE HALF ONLY. The smokes.rs probe change is ordinary agent work; deciding how a
+slice worktree reaches the 358 MB gitignored everon staging tree is an operator decision (bind mount,
+read-only symlink, a --staging path override on build-world-objects, or an explicit per-wave operator
+step). Split this row if the operator wants the probe half dispatched to an agent first.
+'''
+context = [
+    "T-938.2's counter lives only in world_assets/world_host.rs: CrossingAllocProbe:58-108, chunk_alloc_log_enabled:867-879, publish_crossing_probe:881-921.",
+    "world_assets/mod.rs:4 is #![cfg(target_arch = \"wasm32\")], so cargo test -p website-frontend never compiles it, and the file has no wasm_bindgen_test.",
+    "The only harness that can drive it is smokes.rs PERF_PROBE:3710-3800, which never reads window.__t9382 — the only non-doc t9382 references are the seven lines in world_host.rs.",
+    "smokes.rs:3777 counts fetches matching the literal '/objects/chunks/', so it reads vacuously zero once chunk URLs stop existing.",
+    "build.rs:176-186 refuses without packages/map-assets/everon/staging/export/raw-entities.jsonl; .gitignore:18 keeps staging out of git and the file is 358 MB.",
+    "Committed .bin chunks smudge fine from the local 1.7 GB LFS store, so a worktree gets the BEFORE side of a comparison and no way to build the AFTER side.",
+]
+current_state = [
+    "Neither acceptance instrument reads anything: the allocation probe has no test harness, and the everon rebuild has no input inside a worktree.",
+]
+requirement = [
+    "smokes.rs PERF_PROBE reads window.__t9382 and asserts on residency allocations per pan, not on chunk-URL fetch counts.",
+    "The assertion fails loudly when there is nothing to measure; a zero that means 'the subject vanished' is a red, never a pass.",
+    "A slice worktree can reach the everon staging export, by a mechanism the operator has chosen and this ticket records.",
+    "A baseline allocation count for a full-width pan on unmodified main is measured and pasted; every later chunking slice is judged against it.",
+]
+approach = [
+    "Teach the probe to read window.__t9382; perturb by forcing an allocation, watch red, restore, touch, green.",
+    "Decide and record the staging-access mechanism; if it stays operator work, say so on the ticket rather than leaving it implied.",
+    "Measure and paste the baseline before any of T-935.18/.19/.20 is dispatched.",
+]
+verify = [
+    "cargo xtask platform wave gate --slice T-935.17",
+]
+acceptance = [
+    "The probe reports a non-zero, pasted allocation baseline for a full-width pan on unmodified main.",
+    "Deleting the counter's publisher makes the probe go red rather than quietly zero.",
+    "A fresh slice worktree can run build-world-objects on everon, by the recorded mechanism.",
+]
+citations = [
+    "world_host.rs:881",
+    "smokes.rs:3777",
+    "build.rs:176",
+    ".gitignore:18",
+]
+owns = [
+    "tools/tbd-tools/src/smokes.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "world"

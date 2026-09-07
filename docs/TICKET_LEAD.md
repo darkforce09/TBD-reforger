@@ -11,7 +11,6 @@
 - **T-090** (7079) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-212** (7320) — Typed per-side objectives with attributes [ready] — Objectives as typed, placed, per-side entities with one uniform attribute spine
 - **T-290** (7540) — Nine dead flatten fields mod never reads [ready] — meta.author/templateId/playerRange, the environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds and the orbat block are emitted but never read by the mod; add readers where cheap and annotate the rest in an emit ledger.
-- **T-932** (7780) — Parked briefing markers survive server save/reload [ready] — T-826 parking: pendingBriefingMarkers drop on server JSON save/reload before first faction mint
 - **T-704** (7940) — Command palette over every editor command [ready] — Alt+Space opens a fuzzy palette over every top-strip and toolbelt command, ranked by usage frequency stored per browser; Esc closes; Enter runs the command through its existing handler.
 - **T-142** (7950) — MC shell layout polish [ready] — Toolbelt placement, Attributes modal grouping and stub-tool visibility — layout UX without full T-082 field parity; no document-write changes.
 - **T-157** (7960) — Mission Create visual overhaul [ready] — The New Mission dialog gets a visual map picker with terrain thumbnails and a modset selection; time, weather and max players leave the dialog because they are editor settings.
@@ -78,7 +77,7 @@ Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
 - **T-937** (7699) — Editor data layer: id arrays, undo, persist [queued] — Fixes the audit's S2 findings in the mission editor data layer: native YArray id lists, gesture-grouped undo with a depth cap, a materialize side-key cache, surfaced save errors with hidden-tab flush, and payload schema hardening.
 - **T-938** (7799) — Engine and wasm performance [queued] — Closes the audit's S3 render and geometry findings: pooled lane buffers, measured chunk-crossing uploads, GPU culling for every icon lane, BVH section cuts with a sparse HeightField, frame-sliced viewsheds, and a wasm memory budget guard.
 - **T-939** (7859) — Editor usability: selection, gizmo, arrange, templates [queued] — Fixes the audit's S4 findings in the mission editor UI: outliner multi-select drag, batch faction and squad reassign, a Z gizmo, Arrange shortcuts, squad templates, canvas diagnostics with connection wires, vehicle-panel virtualization and Ctrl+F search.
-- **T-120** (8570) — Staging soak + golden mission smoke [queued] — Pinned game/mod version soak; golden-mission smoke on staging server.
+- **T-932** (7875) — Parked briefing markers survive server save/reload [queued] — T-826 parking: pendingBriefingMarkers drop on server JSON save/reload before first faction mint
 
 ## Dependency graph (scoped)
 

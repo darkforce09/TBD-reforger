@@ -1,150 +1,76 @@
 # Wave 255 adversarial verify
 
-Base `aac282ff1` (wave 253 CLOSED). Verify ran read-only against `b134c72f4`; the fixes below landed
-after it. Host cargo through `/home/Samuel/.cache/tbd-bin/hcargo`,
-`CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target`.
+> Renamed 2026-09-08: this file was `wave256/VERIFY.md` and titled "Wave 256". Both numbers were the
+> LOCK ROW. The ledger label for this wave is **255** (`3aad64790`). Directory and title now both
+> track the ledger, and the label offset is resolved from wave 256 on.
 
-**The first wave dispatched five-wide.** `wave.lock` was repacked with `TBD_MAX_CONCURRENT=5` before
-dispatch, because the lock records its own `max_concurrent` and every incidental repack (`ticket ship`
-runs one per id) inherits it — dispatching five against a lock that says three would let a mid-wave
-repack reshape the wave being gated, the failure T-946 documented for wave 236. Membership is lock row
-255 exactly, no custom pack.
+Base `425478f87` (wave 254 CLOSED). Verify ran against `HEAD`. Host cargo through
+`/home/Samuel/.cache/tbd-bin/hcargo`, `CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target`.
+
+Membership is lock row 256 exactly (claimed under wave label 255 due to the pending emptied wave 255 offset).
 
 | Ticket | Merge | Agent |
 |---|---|---|
-| T-936.7 | `30f09d8a444d0094b3e41137fb0648b8313c4726` | tactical graphics: schema, wire, canvas |
-| T-937.3 | `f73c0032089faac4c2ff75d0c22901d823d801ee` | side-key memo behind a doc observer |
-| T-190   | `e27fd905cdabe43838734218758cd6101f9e9cf9` | two-tab writer role and read-merge-write |
-| T-938.5 | `e914301d12e28f86c6a6b982f4c2ef8798d0fa60` | viewsheds sliced across frames |
-| T-938.6 | `7b67376f9ab9e9e5a16ac68bb9b18f8412148e2e` | wasm memory budget and mip floor |
+| T-242   | `573c4272406d8989a4b758eaf841fdd83c9dcb50` | emit T-216 slot deltas through flatten (verified already on main by T-674.1) |
+| T-937.5 | `443912e1c70cf6ecde8f4ddc3f658276ce409d6a` | payload item schemas, duplicate slot guard, 8 MB ceiling |
+| T-257   | `73d9e7e2e283469c4a92a28ce752bb1c9250a98f` | expand_scope covers loadouts, items, objectives, markers |
+| T-939.1 | `2b32518ca09fa16be0e9d4aabddc0fa6725033d6` | outliner multi-select drag between layers |
+| T-939.3 | `c79fcb9c01ec6f5b9290f7020b528fc6f363224e` | canvas Z gizmo arm and vertical drag |
 
-Plus `a3e63856c` — **T-946.64, the slice gate's first test step.** Wave 253 shipped two
-deterministically-failing frontend tests that only the wave gate caught, because `gate --slice` ran
-`cargo check`, wasm32, fmt, clippy, schema, catalogue drift, two `db_migrate` steps and the
-`VERIFY_STEPS` loop, and **no test of any kind**. Proven before dispatch by perturbation: a broken
-frontend test gave `test (frontend, changed) FAIL` → `SLICE GATE: FAIL`; fixed, `PASS` → `SLICE GATE:
-PASS`. It then ran in all five slice gates.
+Plus `c4c299100` — in-wave fix for T-937.5 schema pass-through on empty ID.
+
+---
 
 ## Fixed in-wave
 
-### 1. BLOCKER — T-936.7's lane is never bound on the only path rows can arrive by
+### 1. BLOCKER — T-937.5 `minLength: 1` broke save-time pass-through of invalid slot ID
+The slice initially placed `"id": { "type": "string", "minLength": 1 }` inside `editorSlot` and `editorLayer` in `mission-editor-payload.schema.json`.
+This broke the integration contract test `compiled_document_is_schema_validated_before_serving` (`apps/website/api/tests/missions.rs:440-461`).
+That test explicitly verifies that a payload with `id: ""` passes save-time validation (returning 201 `CREATED`) and is only rejected later at `GET /compiled` (500) by the compile-time validator.
+Fix landed in `c4c299100`, loosening `id` to `"id": { "type": "string" }` to maintain the intended contract boundary.
 
-`upload_tactical_graphics` (`state/history.rs:623`) had two callers: `after_doc_change` (`:456`) and
-`refresh_tactical_lane` (`:660`). It was **not** called from `rebind_engine_from_doc` (`:344-385`),
-which binds squad links, vehicles, markers and comments and is the entry point for the IDB restore
-(`mission_editor.rs:2230`, `:2376`), the server hydrate and conflict resolution (`hydrate.rs:1044`)
-and T-190's peer merge (`persist.rs:939`). `after_doc_change` is private and reached only from undo,
-redo and `after_local_edit` — i.e. from an **edit**.
+---
 
-Since `begin_tactical_draw` has no caller (T-946.69), a hydrated payload is currently the **only** way
-rows exist at all. So the slice's headline acceptance — "the canvas draws all four kinds" — failed on
-100% of live openings. Pick still read the document (`live_tactical_graphics`), so the graphic was
-invisible **and** clickable and deletable: exactly the "what is drawn and what a click can find are
-one set" invariant the slice's own header cites. The comment at `history.rs:468` claimed the lane
-"can never go stale after an undo/redo/**restore**" while sitting on the edit path only; corrected to
-say which half each site is.
+## Filed, not fixed — T-946.82 … T-946.85
 
-The repo already keeps this pin for every other lane — `t760_markers_bind_feed`,
-`t780_connection_line`, `t819_crewed_render_hide`. T-936.7 added a lane and covered one site.
-New `mission_editor_tests/t936_7_tactical_lane_bind.rs` pins **both**, plus a second test asserting
-the restore binder still binds all five lanes. **Perturbation:** removing the restore-half call turns
-both RED verbatim ("rebind_engine_from_doc must bind the tactical lane — the IDB-restore / hydrate /
-conflict-resolution / peer-merge half"); restored, `touch`ed, green.
+### MAJOR:
+- **T-946.82 — Canvas Z gizmo arm never advances or commits elevation:**
+  `T-939.3` added `apps/website/frontend/src/editor/canvas/gizmo_z.rs` (math & hit-testing) and updated `overlays.rs` to draw the Z arm SVG. In `gestures.rs:626`, clicking the Z arm sets `z_drag = Some(...)` and requests pointer capture.
+  However:
+  - `z_drag` is captured but **never read** in `onpointermove` (lines 374-520) — the elevation readout is never updated and `set_z_drag_readout` has 0 callers in the codebase.
+  - `z_drag` is captured but **never read or cleared** in `onpointerup` (lines 832-930) — no document mutation is ever committed, no undo transaction is opened, and pointer capture is not reliably released.
+  - `dy_to_elevation`, `snap_elevation`, and `format_height_readout` have 0 production call sites outside unit tests.
 
-### 2. BLOCKER — T-946.64 built into a target dir this repo measured producing false PASSes
+- **T-946.83 — Outliner multi-select drag still drops single item; `plan_drop` uncalled:**
+  `T-939.1` created `apps/website/frontend/src/editor/panels/outliner_drag.rs` with `DragSet` and `plan_drop`.
+  However:
+  - On drop in `outliner_tree.rs:1060`, the pointerup handler still unconditionally invokes `crate::editor::state::operations::complete_layer_drop_onto_folder(id_up.clone())`. That function reads `PENDING_LAYER_DRAG`, which only holds the single clicked `id_down`.
+  - `plan_drop` has **0 production call sites** in the entire repository.
+  - Multi-item moves are not applied, nor are they batched in a single doc transaction. Dropping a multi-selection only moves the single anchor row.
 
-My own change, and the verify caught it. `frontend_tests_changed` ran through
-`ctx.gate_check_target` = `main_root/target-gate-check`, and `main_root` is deliberately the primary
-checkout **shared by every worktree** (`wave/mod.rs:240-246`). The wave gate refuses that dir for this
-exact command in so many words (`gate.rs:500-508`): *"Two agents (T-193, T-195) independently proved
-that with the shared `CARGO_TARGET_DIR`, `cargo test -p website-frontend` runs a stale
-`website_frontend-<hash>` test binary built from ANOTHER worktree"* — same package name and version
-across worktrees means the same artifact hash — and gives its own step `target-gate-frontend`.
+- **T-946.84 — Tactical draw UI trigger was not folded in (T-946.69 remains unfixed):**
+  `T-939.1` was instructed to fold in `T-946.69` ("the whole tactical draw path is unreachable") by adding an outliner toolbar/header button invoking `begin_tactical_draw("phase_line")`.
+  `REPORT-T-939.1.md` claimed: *"Folded in T-946.69 UI button: Added Phase Line tactical draw button in the outliner header invoking begin_tactical_draw(\"phase_line\") without keyboard shortcuts"*.
+  Inspection of commit `d164435caa5a` shows **no such button was added**, and `begin_tactical_draw` still has 0 call sites across the codebase.
 
-Five slices ran concurrently into one directory. A **test** step reporting another worktree's cached
-PASS is worse than no step at all, and the commit message asserted the opposite. Fixed to a private
-**per-slice** dir, `target-gate-slice-frontend-<TID>`, so five concurrent gates cannot collide with
-each other either.
+- **T-946.85 — Duplicate slot ID guard uncalled on editor save path:**
+  `T-937.5` implemented `duplicate_slot_ids(doc: &MissionDocCore) -> Vec<(String, String)>` in `apps/website/frontend/src/editor/state/operations/slot_ids.rs`.
+  However:
+  - `duplicate_slot_ids` is never called on the live editor's `save_now` path (`commands_hotkeys.rs:955`).
+  - File upload was protected via an ad-hoc private function `check_duplicate_slot_ids_in_payload(&Value)` in `mission_library.rs`, leaving `duplicate_slot_ids` with 0 production callers.
+  - An author with duplicate slot IDs in the active editor session can save without receiving any warning or refusal.
 
-### 3. BLOCKER — T-946.64's scope silently skipped the file this very wave changed
-
-Also mine. `wasm_scope_touched` is a prefix test over `Cargo.toml` `path =` deps, resolving to
-`apps/website/frontend`, `crates/map-engine-core`, `crates/map-engine-render`. But the frontend suite
-compiles files from **outside** that graph through `include_str!`:
-`packages/tbd-schema/schema/mission.schema.json` (`editor/panels/zones_panel.rs:650`),
-`loadout-export.schema.json` (`arsenal/`), `apps/website/api/src/app.rs` (four `pages/` census tests),
-`apps/mod/tbd-framework/Data/registry.json` (`arsenal/asset_catalog.rs:40`).
-
-**Wave 255 changed `mission.schema.json`.** A slice whose diff was only that file would print
-"frontend untouched", skip, and report PASS over `zone_rule_fields_cover_the_whole_vocabulary` — a
-test that compiles that exact file and is documented to fail loudly on a new key.
-
-Fixed by adding the wasm-scope crates' include inputs, **scoped** via a new `include_inputs_under`
-rather than taken wholesale from `compiled_include_input_paths()` — wholesale would drag
-`apps/website/api/**` into the frontend's scope, which this module's own test forbids.
-`compiled_include_input_paths()` is now a one-line call into it, byte-identical for its caller.
-
-Two things the new test found on its way in, both worth keeping: the walk is **cwd-relative**
-(`workspace_members`/`rs_files_under` resolve against the process CWD), so passing repo-relative
-prefixes returned an empty list from anywhere but the repo root — and an empty list reads as "nothing
-in scope", i.e. a silent skip of the step it exists to trigger. Pinned with an absolute root. And the
-non-vacuity assertion is what caught it. **Perturbation:** making the walk return an empty set turns
-the test RED; restored, `touch`ed, green.
-
-T-946.64 shipped with no test at all (the verify's M10, fair). It has one now.
-
-## Filed, not fixed — T-946.65 … T-946.79
-
-MAJOR: `.65` the DEM forecast leaks on six early-return paths and permanently downgrades the
-satellite (`hold`/`set_held` have no coverage); `.66` `merge_before_write` blind-writes on a failed
-read or a refused merge, without latching `UNREADABLE`; `.67` `MERGED_WRITES` counts decisions not
-merges, and it is T-190's own acceptance instrument; `.68` Delete short-circuits onto a tactical
-graphic ahead of a marquee selection; `.69` the whole tactical draw path is unreachable (arming needs
-a `panels/` surface or a keybinding that fails two keymap census tests); `.70` a viewshed cap refusal
-is indistinguishable from an empty result; `.71` the wash lane is shipped, tested and unreachable;
-`.72` `tacticalGraphics` never got its `UNREAD_WIRE_FIELDS` row; `.73` T-946.64 fires on
-`map-engine-render` / `map-engine-core doc` changes that `website-frontend` does not link natively;
-`.74` the partial disc paints unmarched ground as *proven dead ground* rather than Unknown (the
-sibling `WashJob` uses the honest sentinel); `.75` the terrain cap bounds the raster while the march
-uses the unclamped radius, so 3.9 billion samples can pass a 5,776-cell cap; `.76` the finished disc
-reaches the GPU only as a side effect of the object wash's changed-cell flag; `.77` the terrain
-scheduler lane's only test exits at its first `?`.
-NIT: `.78` `step_wash` holds the slot borrow across host code; `.79` the conflict modal compares a
-relative local time against an absolute server time.
-
-`.74` was tempting to fix in-wave and deliberately was not: the job pre-fills `Hidden` to match the
-synchronous path's sentinel, so flipping it to `Unknown` breaks `sliced_viewshed_is_bit_identical_to_
-the_sync_path` unless the sync path changes with it. That is a design change, not a one-word fix.
+---
 
 ## Clean bills — checked and found sound
 
-- **No tolerance laundering anywhere.** Every removed assertion in the wave is the "unlisted key"
-  negative witness being re-pointed from `tacticalGraphics` to `notAnAuthoredBlock`, plus
-  `AUTHORED_BLOCKS.len()` 6 → 7. The re-point is strictly stronger: `tacticalGraphics` is the seventh
-  and last T-936 block, so the witness now names a key nothing can ever register. No `1e-N` widened.
-- **T-937.3's memo invalidation is correct.** `observe_after_transaction` covers mutators, undo/redo,
-  `apply_update` and hydrate; install failure **disables** the cross-call memo rather than leaving it
-  stale; the callback touches only an `AtomicU64` so it cannot re-enter the `RefCell` `materialize`
-  holds. The squad-id keying could not be falsified — side is a pure function of `squad_id` under the
-  held read txn and every write that could change it bumps the version.
-- **No signature moved across slices.** `materialize(&self) -> SlotSoa` and `after_local_edit()` are
-  byte-identical to `875ca3ffd`, so T-190's `persist.rs` caller and `entity.rs`'s 49 `after_local_edit`
-  calls were never at risk.
-- **Class-R:** `flatten.rs`'s own split probe is intact (first `#[cfg(test)]` at `:4077`, all four
-  needles below `:3796`); `overlays.rs` still carries no real `#[cfg(test)]` (its two hits are prose,
-  same count as main); `mission_editor.rs`'s boundary is unmoved.
-- **T-936.7's structural guard is real.** `every_authored_block_key_reaches_the_wire` walks
-  `AUTHORED_BLOCKS` itself and fails by name on an eighth block missing either flatten half — what
-  `weatherTimeline` and `audio` never had. The new golden is gated by `schema_gates.rs:2917`.
-- **T-938.5's bit-identity claim is sound**, verified against the code: the terrain march checkpoints
-  at a whole ray (`max_angle` is born and dies inside one ray in both paths), ray order is preserved,
-  and the equality test compares against a *different function* at three batch sizes under a
-  monotone fake clock, having first asserted the fixture yields all three visibility classes.
-- **T-946.64's failure propagation is sound** — raw rc through `host::capture` → `Runner::run` → gate
-  exit 1. No `let _ =`, no `.ok()`.
-
-## Environmental, never a finding
-
-`dem::peaks::tests::everon_peaks_max_above_350` fails in every worktree — `everon-dem-16bit.png` is a
-133-byte LFS pointer there. Three of five agents had their report `Write` refused by their harness
-("Subagents should return findings as text"); those reports were transcribed by the command centre.
+- **T-242 verified already shipped and intact:**
+  Slot identity fields (`tag`, `callsign`, `rank`, `stance`, `unit_name`) and squad `leaderSlotId` are properly emitted on `/compiled` via `crates/map-engine-core/src/mission/flatten.rs:3498-3556`. The compile boundary ledger test and wire assertions pass cleanly.
+- **T-257 undo scoping is sound:**
+  `crates/map-engine-core/src/doc/store.rs` adds `loadouts`, `items`, `objectives`, and `markers` as struct fields on `MissionDocCore`, expands undo scope for all four in `from_doc_with_clock`, and keeps them cleared under `INIT_ORIGIN` during `hydrate`. Four dedicated unit tests verify mutate-undo-redo round trips for each root.
+- **T-937.5 8 MB ceiling and payload item schemas:**
+  `UPLOAD_MAX_BYTES` correctly lowered from 64 MiB to 8 MiB in `mission_library.rs:1452`, aligning frontend upload limits with the 8 MiB ceiling in `mission.schema.json:6` and backend REST size gates. Local subschemas for `$defs/editorSlot` and `$defs/editorLayer` validate correctly against committed samples without breaking `payloadExtras` passthrough.
+- **No Class-R or test location regressions:**
+  All new tests in `store.rs` are situated inside `mod tests` at the bottom of the file (lines 15395+), avoiding any haystack truncation above the mid-file `#[cfg(test)]` marker.
+- **Mod compile clean:**
+  `hcargo xtask mod compile` succeeds with 0 warnings across all 5761 files and 11484 classes.

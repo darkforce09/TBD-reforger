@@ -21,14 +21,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** meta.author/templateId/playerRange, the environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds and the orbat block are emitted but never read by the mod; add readers where cheap and annotate the rest in an emit ledger.
 
-## T-932 — Parked briefing markers survive server save/reload
-
-- **Slice spec:** `docs/specs/existing/t932_parked_markers_persist.md`
-- **Program hub:** `docs/specs/existing/t932_parked_markers_persist.md`
-- **Branch:** `ticket/T-932`
-- **Targets:** 
-- **Summary:** T-826 parking: pendingBriefingMarkers drop on server JSON save/reload before first faction mint
-
 ## T-704 — Command palette over every editor command
 
 - **Slice spec:** `docs/specs/ideas/t704_command_palette.md`

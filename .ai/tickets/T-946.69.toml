@@ -3,9 +3,11 @@ kind = "work"
 title = "Tactical draw path is unreachable in production"
 summary = "begin_tactical_draw has zero call sites, so tactical_draw_armed is permanently false and push_vertex, complete and cancel are dead. Arming needs a panels surface or a keybinding that fails two keymap census tests."
 class = "feature"
-status = "idea"
+status = "cancelled"
+notes = 'CANCELLED 2026-09-08 into T-946.86, which repairs all four wave-255 dead-code findings plus T-946.69 in one slice. The finding itself is CONFIRMED, not withdrawn — see docs/specs/audit_2026_09/t946_86_wave255_dead_code.md for the anchors and the zero-call-site counts.'
 parent = "T-946"
 created_at = "2026-09-07T17:21:50Z"
+completed_at = "2026-09-07T23:21:42Z"
 
 [scope]
 domain = "repo"

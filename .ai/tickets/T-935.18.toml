@@ -1,0 +1,68 @@
+id = "T-935.18"
+kind = "work"
+title = "Emit the object container and spatial index beside the chunks"
+summary = "One TBDS container plus an rkyv spatial index emitted alongside objects/chunks, with byte-equivalence of the object set proved before anything is deleted."
+class = "feature"
+status = "queued"
+parent = "T-935"
+created_at = "2026-09-07T23:17:15Z"
+order = 7992
+priority = 2
+spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
+plan = "docs/plans/t-935_18_plan.md"
+executor = "claude-code"
+depends_on = ["T-935.17"]
+main_goal = "The container the loader will read exists, and its object set is provably the same as the chunked one."
+notes = '''
+Step 1 of the T-935.15 program, filed 2026-09-08 when T-935.15 was pulled from wave 256 and split.
+DELETES NOTHING. The chunk emitter must keep working through this step, because golden_gate.rs S15
+re-emits map-object-chunk-sample.bin through write_chunk_bin and demands byte identity.
+
+T-935.16 owns tools/tbd-tools/src/world/build.rs and world_assets/world_host.rs too, and cannot share a
+wave with this row or with T-935.19.
+'''
+context = [
+    "T-935.10's satellite is the working precedent and the new container must not invent a second shape.",
+    "TbdsHeader is 32 bytes at world/binary/chunk_container.rs:491-500: magic TBDS (:36), version u16 (:43), flags u16, index_len u32, reserved [u8;20], size_of assert at :500.",
+    "Accessors tiles_offset :529 and index :538; the shared ContainerHeader trait at :49-72 fixes magic-then-version validation order.",
+    "The index is a Tier-2 rkyv archive shaped like TbdSatIndexV2 at world/binary/archives.rs:425-434, read only through access_checked.",
+    "chunk_container.rs and archives.rs were NOT in T-935.15's owns, which is one of the reasons it could not be one slice.",
+]
+current_state = [
+    "objects/chunks/{cx}_{cy}.bin is emitted by build.rs and there is no whole-world container for objects; only the satellite has one.",
+]
+requirement = [
+    "build.rs and binary_emit.rs emit one container plus a spatial index resolving a camera rect to byte ranges, alongside the existing chunks.",
+    "The container declares its header and index types in chunk_container.rs and archives.rs, following the satellite shape.",
+    "No chunk file stops being emitted in this row, and golden_gate.rs S15 stays green.",
+    "The object set in the container is proved byte-equivalent to the chunked build on everon, and the comparison is pasted.",
+]
+approach = [
+    "Read tbd_sat.rs parse_header/index and satellite.rs fetch_index_head first; copy the shape, do not invent one.",
+    "Declare the container version and index archive, then emit both beside the chunks.",
+    "Run the byte-equivalence comparison using the staging access T-935.17 established; paste the result.",
+]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo xtask platform wave gate --slice T-935.18",
+]
+acceptance = [
+    "A container and index are emitted for everon and the object set matches the chunked build byte for byte.",
+    "Every existing chunk file is still emitted and golden_gate.rs S15 is green.",
+]
+citations = [
+    "chunk_container.rs:491",
+    "archives.rs:425",
+    "satellite.rs:185",
+    "golden_gate.rs:70",
+]
+owns = [
+    "tools/tbd-tools/src/world/build.rs",
+    "tools/tbd-tools/src/world/binary_emit.rs",
+    "crates/map-engine-core/src/world/binary/chunk_container.rs",
+    "crates/map-engine-core/src/world/binary/archives.rs",
+]
+
+[scope]
+domain = "engine"
+layer = "world"

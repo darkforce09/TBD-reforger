@@ -1,0 +1,67 @@
+id = "T-935.19"
+kind = "work"
+title = "Cut the world loader over to range fetches"
+summary = "world_host and the occluder host resolve a camera rect to byte ranges through the index instead of fetching per-chunk files."
+class = "feature"
+status = "queued"
+parent = "T-935"
+created_at = "2026-09-07T23:17:22Z"
+order = 7993
+priority = 2
+spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
+plan = "docs/plans/t-935_19_plan.md"
+executor = "claude-code"
+depends_on = ["T-935.18"]
+main_goal = "Crossing a line on the old chunk grid costs nothing, because the loader no longer knows the grid exists."
+notes = '''
+Step 2 of the T-935.15 program, filed 2026-09-08. Sequenced strictly after T-935.18 — the container has
+to exist first. T-935.16 owns build.rs and world_host.rs too and cannot share a wave with this row.
+Partial access is an HTTP property, not a filesystem layout: range requests give residency without
+splitting the world into files.
+'''
+context = [
+    "satellite.rs:185-199 fetch_index_head is the precedent: Range bytes=0-11, compute end, Range bytes=0-{end}, then per-tile ranges via fetch_range_resilient :266.",
+    "tbd_sat.rs:112-137 index_range_end sizes both versions off a 12-byte prefix; :145-160 parse_header dispatches on version.",
+    "world_assets/fetch.rs carries fetch_range_outcome and RangeBody and was not in T-935.15's owns.",
+    "occluder_host.rs:39,87,265,272,280 takes WorldResidency and drives occ.insert_chunk / remove_chunk; it has to move off residency here, not in the delete step.",
+    "packages/map-assets/everon/manifest.json still declares chunksPath, chunkSizeM 512 and binary.chunks; it flips in this row.",
+]
+current_state = [
+    "world_host.rs fetches objects/chunks/{cx}_{cy}.bin per chunk and residency.rs maintains the grid; a boundary crossing costs fetch, decode, upload and eviction.",
+]
+requirement = [
+    "world_host.rs range-fetches objects from the container through the index; no per-chunk file is fetched.",
+    "occluder_host.rs resolves through the index rather than taking a WorldResidency.",
+    "The everon manifest names the container instead of the chunk path template.",
+    "A full-width pan performs zero residency-attributable allocations, measured with T-935.17's instrument.",
+]
+approach = [
+    "Range-fetch the index head then the object ranges, reusing fetch.rs rather than writing a second range client.",
+    "Move occluder_host off WorldResidency; flip the manifest last.",
+    "Perturbation: reintroduce a per-chunk fetch on the pan path; the zero-allocation assertion must go red; restore, touch, green.",
+]
+verify = [
+    "cargo test -p website-frontend",
+    "cargo xtask platform wave gate --slice T-935.19",
+]
+acceptance = [
+    "The editor renders the same object set with no request to objects/chunks/.",
+    "A full-width pan shows zero residency allocations and no frame spike at former chunk boundaries.",
+]
+citations = [
+    "satellite.rs:185",
+    "tbd_sat.rs:112",
+    "occluder_host.rs:39",
+    "world_host.rs:867",
+]
+owns = [
+    "apps/website/frontend/src/editor/world_assets/world_host.rs",
+    "apps/website/frontend/src/editor/world_assets/mod.rs",
+    "apps/website/frontend/src/editor/world_assets/fetch.rs",
+    "apps/website/frontend/src/editor/world_assets/occluder_host.rs",
+    "packages/map-assets/everon/manifest.json",
+]
+
+[scope]
+domain = "engine"
+layer = "world"

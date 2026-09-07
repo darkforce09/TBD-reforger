@@ -3,9 +3,11 @@ kind = "work"
 title = "Outliner multi-select drag still drops single item"
 summary = "T-939.1 added DragSet and plan_drop in outliner_drag.rs, but complete_layer_drop_onto_folder in outliner_tree still passes a single id via PENDING_LAYER_DRAG. plan_drop has zero production callers, multi-item drop is unbatched, and only the clicked row moves."
 class = "feature"
-status = "idea"
+status = "cancelled"
+notes = 'CANCELLED 2026-09-08 into T-946.86, which repairs all four wave-255 dead-code findings plus T-946.69 in one slice. The finding itself is CONFIRMED, not withdrawn — see docs/specs/audit_2026_09/t946_86_wave255_dead_code.md for the anchors and the zero-call-site counts.'
 parent = "T-946"
 created_at = "2026-09-07T22:04:51Z"
+completed_at = "2026-09-07T23:21:16Z"
 
 [scope]
 domain = "repo"

@@ -1,0 +1,95 @@
+id = "T-946.86"
+kind = "work"
+title = "Wire the wave 255 dead code into production"
+summary = "T-946.82/.83/.84/.85 in one slice: Z gizmo commits elevation, multi-select drop moves the set, the tactical draw trigger exists, and save refuses duplicate slot ids."
+class = "bug"
+status = "ready"
+parent = "T-946"
+created_at = "2026-09-07T23:10:11Z"
+order = 7538
+priority = 1
+spec = "docs/specs/audit_2026_09/t946_86_wave255_dead_code.md"
+plan = "docs/plans/t-946_86_plan.md"
+executor = "claude-code"
+main_goal = "Four features wave 255 shipped are reachable from the running editor instead of having zero callers."
+notes = '''
+FILED 2026-09-08 at wave 256 pre-dispatch. Supersedes T-946.82, T-946.83, T-946.84 and T-946.85, all
+four cancelled into this row, and closes T-946.69 (the tactical draw path finding that T-946.84 says
+T-939.1 was told to fold in and did not).
+
+WHY ONE TICKET: all four are the same defect class in the same wave - code landed, tested in isolation,
+and never called from production. The wave 255 adversarial verifier found three of that wave's five
+tickets in this state. Repairing them one wave later, while the code is fresh, was the operator's call
+on 2026-09-08.
+
+DO NOT TOUCH state/operations.rs - it is T-939.2 owns this wave. Everything here is reachable without it:
+with_batch is already re-exported at operations.rs:46 and refile_slot is already public at entity.rs:3145.
+DO NOT TOUCH canvas/gizmo_z.rs - its math is correct and pinned; only its callers are missing.
+The tactical draw button lands in panels/zones_panel.rs. T-939.4 runs this wave and owns context_menu.rs,
+top_strip.rs and help_modal.rs; it has been told not to add a tactical-draw entry.
+
+REPORT-T-939.1.md claimed a Phase Line button was added in the outliner header. Commit d164435caa5a shows
+no such button. Treat every "already wired" claim in this area as unproven until grepped.
+'''
+context = [
+    "T-946.82: gestures.rs writes z_drag at :626-627 and never borrows it in onpointermove (:374) or onpointerup (:832).",
+    "set_pointer_capture at gestures.rs:628 has no matching release on that arm, so pointer capture strands.",
+    "set_z_drag_readout (overlays.rs:32) has 0 callers; its reader read_z_drag_readout (:35) is wired at :220, so the chip can never populate.",
+    "snap_elevation and format_height_readout (gizmo_z.rs:15,23) have 0 callers. dy_to_elevation (:11) has only its own test.",
+    "T-946.83: outliner_tree.rs:1045 builds the real DragSet, :1048 stores it, then :1049 also writes the single-id PENDING_LAYER_DRAG.",
+    "outliner_tree.rs:1060 drops through complete_layer_drop_onto_folder (entity.rs:1560), which reads the single id. Only the anchor row moves.",
+    "plan_drop (outliner_drag.rs:9) has 0 production callers. PENDING_DRAG is read only for is_some() at outliner_tree.rs:1428 and cleared at :1436.",
+    "T-946.84: begin_tactical_draw (operations/tactical_graphics.rs:188) has 0 call sites; every other hit is prose or an assert message.",
+    "tactical_graphics.rs:184-185 names the remedy: one call site under panels/ makes the whole path live. :175-182 rules out a keybinding.",
+    "T-946.85: duplicate_slot_ids (operations/slot_ids.rs:4) has 0 production callers; save_now (commands_hotkeys.rs:955-1010) never checks.",
+    "The upload twin check_duplicate_slot_ids_in_payload (mission_library.rs:1519) is private and DISAGREES: slot_ids.rs:32 gates on doc.slot_exists, it does not.",
+]
+current_state = [
+    "Four functions shipped in wave 255 with unit tests and zero production call sites; the features they implement are unreachable in the running editor.",
+]
+requirement = [
+    "The Z gizmo arm advances on pointermove, updates the readout through set_z_drag_readout, commits elevation on pointerup inside one undo group, and releases pointer capture.",
+    "Dropping a multi-selection in the outliner moves every selected row in one batched transaction, not just the anchor.",
+    "A production control invokes begin_tactical_draw, so the tactical draw path is reachable; follow the zones_panel.rs:37-44 precedent.",
+    "save_now refuses a document with duplicate slot ids, naming the callsign and the id, using duplicate_slot_ids rather than a second private twin.",
+]
+approach = [
+    "Verify each of the four on main first: grep the call sites, paste the zero counts, and drive the editor to show the feature is dead.",
+    "Wire .82 and .85 in their existing owner files; keep .83 inside outliner_drag.rs and outliner_tree.rs so operations.rs stays untouched.",
+    "Perturbation, one per fix: sever the new call site, watch the pin go red verbatim, restore, touch, green.",
+    "Tests go at the BOTTOM of each file: class_r_scrub::live_source truncates at the first cfg(test) and this trap has bitten three waves running.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask platform wave gate --slice T-946.86",
+]
+acceptance = [
+    "Dragging the Z arm changes the readout and writes elevation; one Ctrl+Z reverts it; pointer capture is released.",
+    "Dropping five selected rows onto a folder moves five, and one Ctrl+Z restores all five.",
+    "The tactical draw tool can be started from the UI and the drawn graphic appears, picks and deletes.",
+    "Saving with two slots sharing an id is refused with a message naming the callsign and the id.",
+    "Every function named in the four findings has at least one production call site, proven by grep in the report.",
+]
+citations = [
+    "gestures.rs:626",
+    "overlays.rs:32",
+    "outliner_tree.rs:1060",
+    "outliner_drag.rs:9",
+    "tactical_graphics.rs:188",
+    "slot_ids.rs:4",
+    "commands_hotkeys.rs:955",
+]
+owns = [
+    "apps/website/frontend/src/editor/canvas/gestures.rs",
+    "apps/website/frontend/src/editor/canvas/overlays.rs",
+    "apps/website/frontend/src/editor/panels/outliner_tree.rs",
+    "apps/website/frontend/src/editor/panels/outliner_drag.rs",
+    "apps/website/frontend/src/editor/panels/zones_panel.rs",
+    "apps/website/frontend/src/editor/state/commands_hotkeys.rs",
+]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["map_canvas", "outliner", "tools", "ops_undo", "doc_store"]

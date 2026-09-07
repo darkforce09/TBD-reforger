@@ -27,13 +27,6 @@
       "branch": "ticket/T-290"
     },
     {
-      "id": "T-932",
-      "title": "Parked briefing markers survive server save/reload",
-      "status": "ready",
-      "spec": "docs/specs/existing/t932_parked_markers_persist.md",
-      "branch": "ticket/T-932"
-    },
-    {
       "id": "T-704",
       "title": "Command palette over every editor command",
       "status": "ready",
