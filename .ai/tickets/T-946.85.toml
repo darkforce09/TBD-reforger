@@ -1,0 +1,12 @@
+id = "T-946.85"
+kind = "work"
+title = "Duplicate slot ID guard uncalled on editor save"
+summary = "T-937.5 added duplicate_slot_ids in slot_ids.rs, but it has zero production callers. File upload uses check_duplicate_slot_ids_in_payload, while save_now in commands_hotkeys.rs performs no check, allowing duplicate slot saves."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T22:05:10Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

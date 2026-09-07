@@ -1,0 +1,12 @@
+id = "T-946.84"
+kind = "work"
+title = "Tactical draw UI trigger was not folded in"
+summary = "T-939.1 brief instructed folding in T-946.69 via an outliner UI button invoking begin_tactical_draw. REPORT-T-939.1 claimed it was added, but git commit d164435ca contains no such button and begin_tactical_draw still has zero call sites."
+class = "feature"
+status = "idea"
+parent = "T-946"
+created_at = "2026-09-07T22:05:01Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
