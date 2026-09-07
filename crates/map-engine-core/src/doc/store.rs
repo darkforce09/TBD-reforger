@@ -15366,19 +15366,28 @@ mod tests {
     /// third invalidation trigger someone has to remember. This pins that it heals.
     #[test]
     fn side_key_memo_survives_a_slot_moving_sides() {
+        // Row ORDER is `yrs` map iteration order, which is neither insertion order nor stable —
+        // read the side back BY ID (`row_of`, the module's existing "parity is set-equality, not
+        // row order" helper) rather than by position.
+        let side_of = |doc: &MissionDocCore, id: &str| {
+            let soa = doc.materialize();
+            soa.side_keys[row_of(&soa, id)].clone()
+        };
+
         let doc = two_sided_core(2);
-        let before = doc.materialize();
-        assert_eq!(
-            before.side_keys,
-            vec!["BLUFOR".to_string(), "OPFOR".to_string()],
-            "n0 starts BLUFOR and n1 starts OPFOR"
-        );
+        assert_eq!(side_of(&doc, "n0"), "BLUFOR", "n0 starts under sq-blu");
+        assert_eq!(side_of(&doc, "n1"), "OPFOR", "n1 starts under sq-opf");
 
         doc.move_slot_to_squad("n0", "sq-opf");
         assert_eq!(
-            doc.materialize().side_keys,
-            vec!["OPFOR".to_string(), "OPFOR".to_string()],
+            side_of(&doc, "n0"),
+            "OPFOR",
             "T-937.3: the moved slot kept its old side — the memo answered under a stale key"
+        );
+        assert_eq!(
+            side_of(&doc, "n1"),
+            "OPFOR",
+            "T-937.3: the slot that did not move must be unaffected"
         );
     }
 }
