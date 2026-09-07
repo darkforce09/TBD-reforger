@@ -62,7 +62,7 @@ test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1331 filtered ou
 SLICE GATE: PASS
 ```
 
-(First gate was on dirty HEAD. Commits follow; re-gate so land SHA matches.)
+(First gate was on dirty HEAD `9f4a8c7d1dff`. Commit `01887527f219` follows; re-gate so land SHA matches.)
 
 ## files_outside_owns
 - `.ai/artifacts/editor_briefs/sept2026/wave253/REPORT-T-937.4.md` (this report, required by the brief)
@@ -76,7 +76,7 @@ SLICE GATE: PASS
 - Brief `verify` listed `ci-local-leptos` and `leptos-gates`; the slice brief forbids both. Gate used is `cargo xtask platform wave gate --slice T-937.4` only.
 
 ## commits
-- (filled after commit)
+- `01887527f219e012b79ab44949f9986cec31e011` T-937.4: surface persist save failures on chip and toast
 
 ## manual_checklist
 Fill localStorage/IDB to quota, edit, observe toast + Failed chip naming quota; switch tabs, reload, edits present; unreadable store retries three times then Retry.
