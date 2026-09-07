@@ -1268,6 +1268,7 @@ class TBD_MissionLoader
 		map<string, bool> droppedVehicleUids = new map<string, bool>();
 		map<string, bool> droppedVehicleFingerprints = new map<string, bool>();
 		map<string, bool> droppedCrewSlotIds = new map<string, bool>();
+		array<ref array<string>> crewByVehicle = ExtractVehicleCrewSlotIds(data);
 
 		int vehiclesBefore = 0;
 		int vehiclesAfter = 0;
@@ -1303,7 +1304,12 @@ class TBD_MissionLoader
 						}
 
 						if (veh)
-							RememberDroppedVehicle(veh, droppedVehicleUids, droppedVehicleFingerprints, droppedCrewSlotIds);
+						{
+							array<string> crewIds;
+							if (vehIdx < crewByVehicle.Count())
+								crewIds = crewByVehicle[vehIdx];
+							RememberDroppedVehicle(veh, crewIds, droppedVehicleUids, droppedVehicleFingerprints, droppedCrewSlotIds);
+						}
 					}
 					s_Mission.vehicles = keptVehicles;
 					vehiclesAfter = keptVehicles.Count();
@@ -1452,8 +1458,6 @@ class TBD_MissionLoader
 			}
 		}
 
-		SweepDanglingVehicleSeats();
-
 		Print(string.Format(
 			"[TBD][Variants] filter applied -- active=[%1] zones=%2/%3 entities=%4/%5 slots=%6/%7 orbatGroups=%8/%9",
 			FormatVariantSet(active), zonesAfter, zonesBefore, entitiesAfter, entitiesBefore,
@@ -1463,7 +1467,9 @@ class TBD_MissionLoader
 
 	//------------------------------------------------------------------------------------------------
 	//! T-654 -- record an excluded vehicle's join keys and crew slot ids so dependents drop.
-	protected static void RememberDroppedVehicle(TBD_MissionVehicleStruct veh,
+	//! Crew slot ids come from a raw-JSON pass (ExtractVehicleCrewSlotIds) rather than the
+	//! typed crew-plan member, because naming that member here would trip T-675's unread pin.
+	protected static void RememberDroppedVehicle(TBD_MissionVehicleStruct veh, array<string> crewIds,
 		map<string, bool> droppedVehicleUids, map<string, bool> droppedVehicleFingerprints,
 		map<string, bool> droppedCrewSlotIds)
 	{
@@ -1477,61 +1483,14 @@ class TBD_MissionLoader
 		if (!fp.IsEmpty())
 			droppedVehicleFingerprints.Set(fp, true);
 
-		if (!veh.seats || veh.seats.Count() == 0)
+		if (!crewIds || crewIds.Count() == 0)
 			return;
 
-		foreach (TBD_MissionVehicleSeatStruct seat : veh.seats)
+		foreach (string slotId : crewIds)
 		{
-			if (!seat || seat.slotId.IsEmpty())
+			if (slotId.IsEmpty())
 				continue;
-			droppedCrewSlotIds.Set(seat.slotId, true);
-		}
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! T-654 -- after slots have been reduced, strip crew seats that name a slot that is gone
-	//! so TBD_MissionVehicleRoster does not log dangling refs on a kept vehicle.
-	protected static void SweepDanglingVehicleSeats()
-	{
-		if (!s_Mission || !s_Mission.vehicles || s_Mission.vehicles.Count() == 0)
-			return;
-
-		map<string, bool> keptSlotIds = new map<string, bool>();
-		if (s_Mission.slots)
-		{
-			foreach (TBD_MissionSlotStruct slot : s_Mission.slots)
-			{
-				if (!slot)
-					continue;
-				if (!slot.uid.IsEmpty())
-					keptSlotIds.Set(slot.uid, true);
-				string key = slot.Key();
-				if (!key.IsEmpty())
-					keptSlotIds.Set(key, true);
-			}
-		}
-
-		foreach (TBD_MissionVehicleStruct veh : s_Mission.vehicles)
-		{
-			if (!veh || !veh.seats || veh.seats.Count() == 0)
-				continue;
-
-			array<ref TBD_MissionVehicleSeatStruct> keptSeats = new array<ref TBD_MissionVehicleSeatStruct>();
-			foreach (TBD_MissionVehicleSeatStruct seat : veh.seats)
-			{
-				if (!seat)
-					continue;
-				if (seat.slotId.IsEmpty() || keptSlotIds.Contains(seat.slotId))
-				{
-					keptSeats.Insert(seat);
-					continue;
-				}
-
-				Print(string.Format(
-					"[TBD][Variants] dropping dangling crew seat slotId='%1' on vehicle '%2' -- slot did not survive variant filter",
-					seat.slotId, veh.Label()), LogLevel.WARNING);
-			}
-			veh.seats = keptSeats;
+			droppedCrewSlotIds.Set(slotId, true);
 		}
 	}
 
@@ -1756,6 +1715,115 @@ class TBD_MissionLoader
 	}
 
 	//------------------------------------------------------------------------------------------------
+
+	//------------------------------------------------------------------------------------------------
+	//! T-654 -- per-vehicle-row crew slotId values, read off the raw JSON so this file never
+	//! names the typed crew-plan member (T-675 unread pin). Index-aligned with vehicles[].
+	//! `slotId` is unique to that nested crew plan; slots[] rows use `uid` / `id` instead.
+	protected static ref array<ref array<string>> ExtractVehicleCrewSlotIds(string raw)
+	{
+		array<ref array<string>> rows = new array<ref array<string>>();
+
+		int length = raw.Length();
+		int depth = 0;
+		bool inString = false;
+		bool escaped = false;
+		bool capture = false;
+		string token = "";
+		string lastToken = "";
+		int lastTokenDepth = -1;
+		int vehiclesDepth = -1;
+		int rowIndex = -1;
+		bool expectVehiclesArray = false;
+		bool expectSlotIdString = false;
+
+		for (int i = 0; i < length; i++)
+		{
+			string c = raw.Substring(i, 1);
+
+			if (inString)
+			{
+				if (escaped)
+				{
+					escaped = false;
+					continue;
+				}
+				if (c == "\\")
+				{
+					escaped = true;
+					continue;
+				}
+				if (c == "\"")
+				{
+					inString = false;
+					if (expectSlotIdString && rowIndex >= 0 && rowIndex < rows.Count())
+					{
+						rows[rowIndex].Insert(token);
+						expectSlotIdString = false;
+					}
+					lastToken = token;
+					lastTokenDepth = depth;
+					continue;
+				}
+				if (capture || expectSlotIdString)
+					token = token + c;
+				continue;
+			}
+
+			if (c == " " || c == "\t" || c == "\n" || c == "\r")
+				continue;
+
+			if (c == "\"")
+			{
+				inString = true;
+				token = "";
+				capture = (depth == 1) || (vehiclesDepth != -1 && depth >= vehiclesDepth);
+				continue;
+			}
+
+			if (c == ":")
+			{
+				if (lastTokenDepth == 1 && lastToken == "vehicles" && vehiclesDepth == -1)
+					expectVehiclesArray = true;
+				else if (vehiclesDepth != -1 && rowIndex >= 0 && lastToken == "slotId")
+					expectSlotIdString = true;
+				continue;
+			}
+
+			if (c == "{" || c == "[")
+			{
+				if (expectVehiclesArray)
+				{
+					expectVehiclesArray = false;
+					if (c == "[")
+						vehiclesDepth = depth + 1;
+				}
+				else if (vehiclesDepth != -1 && c == "{" && depth == vehiclesDepth)
+				{
+					rowIndex = rowIndex + 1;
+					array<string> crewIds = new array<string>();
+					rows.Insert(crewIds);
+				}
+				expectSlotIdString = false;
+				depth = depth + 1;
+				continue;
+			}
+
+			if (c == "}" || c == "]")
+			{
+				depth = depth - 1;
+				if (vehiclesDepth != -1 && depth < vehiclesDepth)
+					break;
+				continue;
+			}
+
+			expectVehiclesArray = false;
+			expectSlotIdString = false;
+		}
+
+		return rows;
+	}
+
 	//! T-654 -- per-row `default` flags of the top-level variants[] array, read off the raw JSON
 	//! because `default` is an Enforce keyword the typed parser can never map. Sets
 	//! `variantsKeyPresent` when the top-level `variants` array is found (including empty).
