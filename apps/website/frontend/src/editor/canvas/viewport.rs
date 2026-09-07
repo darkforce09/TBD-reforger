@@ -117,10 +117,16 @@ pub(crate) fn start_raf(
                     // (1000/ms — the off-vsync headroom number; rAF FPS stays vsync-capped).
                     let rf_ms = stats["render_cpu_ms_ema"].as_f64().unwrap_or(0.0);
                     let rf_eq = if rf_ms > 0.0 { 1000.0 / rf_ms } else { 0.0 };
+                    // T-938.6 — the memory cell rides the same ~1 Hz sample and the same
+                    // `hud_suffix()` seam as T-090.12's occluder cell: one `RwSignal<String>`
+                    // formatted in exactly one place, so a new readout is a concatenation here
+                    // rather than a second HUD. It reads the ledger, which is cheap and
+                    // allocation-free, and it is empty until the boot has something to say.
                     debug_hud.set(format!(
-                        "z {:.2} · c{chunks} · glyph {glyphs} · {fps:.0} FPS · rf {rf_ms:.2}ms ({rf_eq:.0} eq){}",
+                        "z {:.2} · c{chunks} · glyph {glyphs} · {fps:.0} FPS · rf {rf_ms:.2}ms ({rf_eq:.0} eq){}{}",
                         e.zoom(),
-                        crate::editor::tools::los_world_wasm::hud_suffix()
+                        crate::editor::tools::los_world_wasm::hud_suffix(),
+                        crate::editor::world_assets::memory_hud_suffix()
                     ));
                     frames = 0;
                     last_sample = now;
@@ -365,3 +371,21 @@ pub(crate) mod registry_session {
         COMPAT.with(|c| *c.borrow_mut() = None);
     }
 }
+
+/// T-938.6 — the memory budget's arithmetic, mounted a SECOND time so the host runner can execute
+/// it.
+///
+/// `world_assets` is `#![cfg(target_arch = "wasm32")]`, so `world_assets::memory_budget` and every
+/// test inside it are invisible to `cargo test -p website-frontend`: a `#[cfg(test)] mod` that only
+/// lived there would compile for nobody and report nothing, which is the signature defect (a green
+/// check over an input it never examined) wearing a test's clothes. The module's budget arithmetic,
+/// its `Decision` ladder and the mip floor it walks are all pure — every `web_sys`/`js_sys` item in
+/// it is `#[cfg(target_arch = "wasm32")]` with a host twin — so mounting the same file here under
+/// `not(wasm32)` runs the real code rather than a copy of it. Same device as
+/// `mission_editor::tbd_sat_pure` (mission_editor.rs), for the same reason.
+///
+/// The two mounts are never both live, and this one sits below `registry_session`'s `#[cfg(test)]`
+/// so `class_r_scrub`'s whole-file cut (first `#[cfg(test)]` → EOF) never sees it.
+#[cfg(all(test, not(target_arch = "wasm32")))]
+#[path = "../world_assets/memory_budget.rs"]
+mod memory_budget_pure;
