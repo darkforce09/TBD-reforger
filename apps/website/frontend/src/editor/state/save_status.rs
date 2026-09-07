@@ -42,14 +42,6 @@ pub fn status() -> SaveStatus {
     STATUS.with(|s| s.borrow().clone())
 }
 
-/// Last Failed toast payload this page/test lifetime, if any. Native tests read this because
-/// persist's wasm `save_state_as` cannot run on the host.
-#[cfg(test)]
-#[must_use]
-pub fn last_toast() -> Option<String> {
-    LAST_TOAST.with(|t| t.borrow().clone())
-}
-
 /// Chip copy, or `None` when the chip should hide (Saved — the draft-recency chip already covers
 /// a successful flush).
 #[must_use]
@@ -260,6 +252,18 @@ pub fn SaveStatusChip() -> impl IntoView {
             })
         }}
     }
+}
+
+// `last_toast` is test-only and MUST stay below every production item: the Class-R probe in
+// `unreadable_lockout_offers_retry` splits this file at the FIRST `#[cfg(test)]` and asserts over
+// what precedes it. An earlier test-gated item truncates that haystack and the probe silently
+// stops reading the code it exists to check — the T-937.1 failure of wave 252, one wave on.
+/// Last Failed toast payload this page/test lifetime, if any. Native tests read this because
+/// persist's wasm `save_state_as` cannot run on the host.
+#[cfg(test)]
+#[must_use]
+pub fn last_toast() -> Option<String> {
+    LAST_TOAST.with(|t| t.borrow().clone())
 }
 
 #[cfg(test)]

@@ -42,6 +42,7 @@ owns = [
     "crates/map-engine-core/src/building_section.rs",
     "crates/map-engine-core/src/building_section_index.rs",
     "crates/map-engine-core/src/building_section_tests.rs",
+    "apps/website/frontend/src/pages/debug/building_viewer.rs",
     "crates/map-engine-core/src/lib.rs",
 ]
 

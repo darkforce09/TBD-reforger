@@ -1492,10 +1492,13 @@ pub mod geom {
             assert_eq!(roof.roof_cell_count, 0, "no RoofGrid on the synthetic room");
             assert_eq!((roof.wall_count, roof.cut_count), (0, 0));
             assert_eq!(roof.hairline_count, 8, "4 + 4 blueprint centerlines");
-            assert!((d.roof_y[1] - 6.2).abs() < 1e-9);
+            // 1e-5, not 1e-9: T-938.4 made HeightField storage sparse `f32` + NaN, so every
+            // height that reaches here is f32-rounded (6.2 reads back 6.199999809…). The
+            // sibling goldens in building_section_tests.rs carry the same widened tolerance.
+            assert!((d.roof_y[1] - 6.2).abs() < 1e-5, "roof_y {:?}", d.roof_y);
             // Every painted roof cell is at the slab top (the highest surface wins).
             let top = d.roof.value_at(0.0, 0.0).expect("roof over the room");
-            assert!((top - 6.2).abs() < 1e-9);
+            assert!((top - 6.2).abs() < 1e-5, "roof top {top}");
         }
 
         #[test]
