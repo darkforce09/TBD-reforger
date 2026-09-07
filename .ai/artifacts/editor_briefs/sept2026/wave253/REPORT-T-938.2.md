@@ -42,7 +42,18 @@ N/A — ring not implemented.
 
 ## gate_verdict_tail
 
-Pending `cargo xtask platform wave gate --slice T-938.2` after this commit.
+```
+  T-437 destroy inert      PASS
+  T-586 route tags         PASS
+  T-296 reporter identity  PASS
+  T-452 player identity    PASS
+  no-python (T-620)        PASS
+
+  gate verdict PASS @ ba6329b5ced8 recorded: .ai/artifacts/verdicts/T-938.2.json
+SLICE GATE: PASS
+```
+
+~109 s. No lock wait.
 
 ## files_outside_owns
 
@@ -60,7 +71,7 @@ Pending `cargo xtask platform wave gate --slice T-938.2` after this commit.
 
 ## commits
 
-Pending after gate fill.
+- `ba6329b5ced88ae2f04dbf457021e6058ae5cc50` — T-938.2: measure chunk-crossing uploads; ship the allocation counter only.
 
 ## manual_checklist
 
