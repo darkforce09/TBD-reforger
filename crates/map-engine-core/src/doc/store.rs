@@ -335,6 +335,10 @@ pub struct MissionDocCore {
     /// dangling endpoint from a payload this editor did not author, and an edge nobody can enumerate
     /// or validate is what that cluster is made of.
     connections: MapRef,
+    loadouts: MapRef,
+    items: MapRef,
+    objectives: MapRef,
+    markers: MapRef,
     /// When true, mutators stamp `INIT` (untracked) instead of `LOCAL` — set around boot / hydrate /
     /// default-seeding so a load is not an undo step. Interior mutability: mutators take `&self`.
     init_mode: Cell<bool>,
@@ -445,6 +449,10 @@ impl MissionDocCore {
         let triggers = doc.get_or_insert_map("triggers");
         let comments = doc.get_or_insert_map("comments");
         let connections = doc.get_or_insert_map("connections");
+        let loadouts = doc.get_or_insert_map("loadouts");
+        let items = doc.get_or_insert_map("items");
+        let objectives = doc.get_or_insert_map("objectives");
+        let markers = doc.get_or_insert_map("markers");
 
         // T-937.2 (2026-09-07): grouping supersedes T-159.22.1 Yjs-parity
         // (`captureTimeout: 0` + ZeroClock). One *gesture* is one Ctrl+Z: a 300 ms window
@@ -481,6 +489,10 @@ impl MissionDocCore {
         // that has no glyph of its own, so the only way an operator recovers from deleting the wrong
         // edge is Ctrl+Z. Scoping the root is what makes that true.
         undo_mgr.expand_scope(&doc, &connections);
+        undo_mgr.expand_scope(&doc, &loadouts);
+        undo_mgr.expand_scope(&doc, &items);
+        undo_mgr.expand_scope(&doc, &objectives);
+        undo_mgr.expand_scope(&doc, &markers);
 
         Self {
             doc,
@@ -496,6 +508,10 @@ impl MissionDocCore {
             triggers,
             comments,
             connections,
+            loadouts,
+            items,
+            objectives,
+            markers,
             init_mode: Cell::new(false),
             undo_mgr,
             undo_groups,
@@ -3546,12 +3562,6 @@ impl MissionDocCore {
             return;
         };
         // Grab the non-tracked map handles before opening the txn (`get_or_insert_map` takes &self).
-        let loadouts = self.doc.get_or_insert_map("loadouts");
-        let items = self.doc.get_or_insert_map("items");
-        let objectives = self.doc.get_or_insert_map("objectives");
-        let vehicles = self.doc.get_or_insert_map("vehicles");
-        let entities = self.doc.get_or_insert_map("entities");
-        let markers = self.doc.get_or_insert_map("markers");
         let payload_extras = self.doc.get_or_insert_map("payloadExtras");
         let entity_order = self.doc.get_or_insert_map("entityOrder");
 
@@ -3561,16 +3571,16 @@ impl MissionDocCore {
             &self.squads,
             &self.factions,
             &self.editor_layers,
-            &loadouts,
-            &items,
-            &objectives,
-            &vehicles,
-            &entities,
+            &self.loadouts,
+            &self.items,
+            &self.objectives,
+            &self.vehicles,
+            &self.entities,
             &self.zones,
             &self.compositions,
             &self.triggers,
             &self.comments,
-            &markers,
+            &self.markers,
             &payload_extras,
             &entity_order,
         ] {
@@ -3609,21 +3619,21 @@ impl MissionDocCore {
 
         load_rows_ordered(
             &mut txn,
-            &objectives,
+            &self.objectives,
             payload.get("objectives"),
             &entity_order,
             "objectives",
         );
         load_rows_ordered(
             &mut txn,
-            &vehicles,
+            &self.vehicles,
             payload.get("vehicles"),
             &entity_order,
             "vehicles",
         );
         load_rows_ordered(
             &mut txn,
-            &entities,
+            &self.entities,
             payload.get("entities"),
             &entity_order,
             "entities",
@@ -3694,14 +3704,14 @@ impl MissionDocCore {
         );
         load_rows_ordered(
             &mut txn,
-            &markers,
+            &self.markers,
             payload.get("markers"),
             &entity_order,
             "markers",
         );
         if let Some(Any::Map(lo)) = payload.get("loadouts") {
             for v in lo.values() {
-                load_row(&mut txn, &loadouts, v);
+                load_row(&mut txn, &self.loadouts, v);
             }
         }
 
@@ -4318,16 +4328,12 @@ impl MissionDocCore {
     /// with unsaved work; omitting `zones` here would let the conflict gate discard it silently.
     #[must_use]
     pub fn has_content(&self) -> bool {
-        let objectives = self.doc.get_or_insert_map("objectives");
-        let vehicles = self.doc.get_or_insert_map("vehicles");
-        let entities = self.doc.get_or_insert_map("entities");
-        let markers = self.doc.get_or_insert_map("markers");
         let txn = self.doc.transact();
         self.factions.len(&txn) > 0
             || self.slots.len(&txn) > 0
-            || objectives.len(&txn) > 0
-            || vehicles.len(&txn) > 0
-            || entities.len(&txn) > 0
+            || self.objectives.len(&txn) > 0
+            || self.vehicles.len(&txn) > 0
+            || self.entities.len(&txn) > 0
             || self.zones.len(&txn) > 0
             // T-650 — a saved composition is authored work that persists with the mission (the
             // zones-alone precedent): the conflict gate must not discard a doc that has one.
@@ -4336,7 +4342,7 @@ impl MissionDocCore {
             // opened a mission, wrote a seven-paragraph brief into an annotation and nothing else has
             // unsaved work, and the conflict gate must not discard it as an empty document.
             || self.comments.len(&txn) > 0
-            || markers.len(&txn) > 0
+            || self.markers.len(&txn) > 0
             // T-826 — a pre-mint briefing marker is authored work even before a faction row exists.
             || !pending_briefing_markers_map(&txn, &self.meta).is_empty()
     }
@@ -4491,7 +4497,6 @@ impl MissionDocCore {
         // (the measured hang the `small_maps_json` note warns of). `markers` is the only entity map
         // this method writes that is not a struct field.
         let entity_order = self.doc.get_or_insert_map("entityOrder");
-        let markers = self.doc.get_or_insert_map("markers");
 
         // Resident dedup indices AND the resident id universe, read before the write txn opens. The
         // universe (every resident row's id — its doc KEY — across every entity map this method may
@@ -4512,7 +4517,7 @@ impl MissionDocCore {
                 &self.zones,
                 &self.triggers,
                 &self.compositions,
-                &markers,
+                &self.markers,
             ] {
                 for (id, _out) in map.iter(&txn) {
                     resident_ids.insert(id.to_string());
@@ -5000,7 +5005,7 @@ impl MissionDocCore {
                     continue;
                 };
                 let new_id = remint.get(&old_id).unwrap_or_else(|| old_id.clone());
-                let mk = markers.insert(
+                let mk = self.markers.insert(
                     &mut txn,
                     new_id.as_str(),
                     MapPrelim::from([("id", new_id.as_str())]),
@@ -15389,5 +15394,93 @@ mod tests {
             "OPFOR",
             "T-937.3: the slot that did not move must be unaffected"
         );
+    }
+    #[test]
+    fn t257_loadouts_undo_scoped() {
+        let mut doc = MissionDocCore::new();
+        let map = doc.doc.get_or_insert_map("loadouts");
+        {
+            let mut txn = doc.begin();
+            map.insert(&mut txn, "l1", "v");
+        }
+        let ok = doc.undo();
+        let l = {
+            let txn2 = doc.begin();
+            map.len(&txn2)
+        };
+        assert!(ok, "undo returned false");
+        assert_eq!(l, 0, "loadouts not undo-scoped");
+        assert!(doc.redo());
+        let l2 = {
+            let txn3 = doc.begin();
+            map.len(&txn3)
+        };
+        assert_eq!(l2, 1);
+    }
+    #[test]
+    fn t257_items_undo_scoped() {
+        let mut doc = MissionDocCore::new();
+        let map = doc.doc.get_or_insert_map("items");
+        {
+            let mut txn = doc.begin();
+            map.insert(&mut txn, "l1", "v");
+        }
+        let ok = doc.undo();
+        let l = {
+            let txn2 = doc.begin();
+            map.len(&txn2)
+        };
+        assert!(ok, "undo returned false");
+        assert_eq!(l, 0, "items not undo-scoped");
+        assert!(doc.redo());
+        let l2 = {
+            let txn3 = doc.begin();
+            map.len(&txn3)
+        };
+        assert_eq!(l2, 1);
+    }
+    #[test]
+    fn t257_objectives_undo_scoped() {
+        let mut doc = MissionDocCore::new();
+        let map = doc.doc.get_or_insert_map("objectives");
+        {
+            let mut txn = doc.begin();
+            map.insert(&mut txn, "l1", "v");
+        }
+        let ok = doc.undo();
+        let l = {
+            let txn2 = doc.begin();
+            map.len(&txn2)
+        };
+        assert!(ok, "undo returned false");
+        assert_eq!(l, 0, "objectives not undo-scoped");
+        assert!(doc.redo());
+        let l2 = {
+            let txn3 = doc.begin();
+            map.len(&txn3)
+        };
+        assert_eq!(l2, 1);
+    }
+    #[test]
+    fn t257_markers_undo_scoped() {
+        let mut doc = MissionDocCore::new();
+        let map = doc.doc.get_or_insert_map("markers");
+        {
+            let mut txn = doc.begin();
+            map.insert(&mut txn, "l1", "v");
+        }
+        let ok = doc.undo();
+        let l = {
+            let txn2 = doc.begin();
+            map.len(&txn2)
+        };
+        assert!(ok, "undo returned false");
+        assert_eq!(l, 0, "markers not undo-scoped");
+        assert!(doc.redo());
+        let l2 = {
+            let txn3 = doc.begin();
+            map.len(&txn3)
+        };
+        assert_eq!(l2, 1);
     }
 }
