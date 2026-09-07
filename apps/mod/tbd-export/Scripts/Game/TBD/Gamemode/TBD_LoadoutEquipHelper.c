@@ -577,6 +577,8 @@ class TBD_LoadoutApplication : Managed
 			m_Character.FindComponent(SCR_InventoryStorageManagerComponent));
 		if (!mgr)
 		{
+			if (isWeapon)
+				LogWeaponEquipResult(weaponSlotIndex, resName, "failed");
 			Fail(label, resName, "character has no SCR_InventoryStorageManagerComponent");
 			return;
 		}
@@ -596,6 +598,7 @@ class TBD_LoadoutApplication : Managed
 				m_Character.FindComponent(SCR_CharacterInventoryStorageComponent));
 			if (!weaponOwnerStorage)
 			{
+				LogWeaponEquipResult(weaponSlotIndex, resName, "failed");
 				Fail(label, resName, "character has no SCR_CharacterInventoryStorageComponent");
 				return;
 			}
@@ -603,6 +606,7 @@ class TBD_LoadoutApplication : Managed
 			pending.weaponStorage = weaponOwnerStorage.GetWeaponStorage();
 			if (!pending.weaponStorage)
 			{
+				LogWeaponEquipResult(weaponSlotIndex, resName, "failed");
 				Fail(label, resName, "character has no equipped-weapon storage");
 				return;
 			}
@@ -610,6 +614,7 @@ class TBD_LoadoutApplication : Managed
 			int slotCount = pending.weaponStorage.GetSlotsCount();
 			if (weaponSlotIndex < 0 || weaponSlotIndex >= slotCount)
 			{
+				LogWeaponEquipResult(weaponSlotIndex, resName, "failed");
 				Fail(label, resName, string.Format(
 					"engine weapon slot %1 does not exist on this character (storage has %2 slot(s))",
 					weaponSlotIndex, slotCount));
@@ -627,6 +632,7 @@ class TBD_LoadoutApplication : Managed
 			{
 				Print(string.Format("%1 slot=%2 %3 swap-skipped (already in weapon slot %4) %5",
 					m_sTag, m_sLabel, label, weaponSlotIndex, resName));
+				LogWeaponEquipResult(weaponSlotIndex, resName, "ok");
 				m_iGearApplied++;
 				return;
 			}
@@ -657,6 +663,8 @@ class TBD_LoadoutApplication : Managed
 		IEntity item = SpawnAtCharacter(resName);
 		if (!item)
 		{
+			if (isWeapon)
+				LogWeaponEquipResult(weaponSlotIndex, resName, "failed");
 			Fail(label, resName, "prefab failed to load/spawn (bad or missing asset)");
 			return;
 		}
@@ -669,13 +677,16 @@ class TBD_LoadoutApplication : Managed
 			if (mgr.CanInsertItemInStorage(item, pending.weaponStorage, weaponSlotIndex))
 			{
 				mgr.TryInsertItemInStorage(item, pending.weaponStorage, weaponSlotIndex);
+				LogWeaponEquipResult(weaponSlotIndex, resName, "ok");
 			}
 			else if (mgr.CanReplaceItem(item, pending.weaponStorage, weaponSlotIndex))
 			{
 				mgr.TryReplaceItem(item, pending.weaponStorage, weaponSlotIndex);
+				LogWeaponEquipResult(weaponSlotIndex, resName, "replaced");
 			}
 			else
 			{
+				LogWeaponEquipResult(weaponSlotIndex, resName, "failed");
 				Fail(label, resName, string.Format(
 					"engine weapon slot %1 accepts this item neither by insert nor by replace", weaponSlotIndex));
 				SCR_EntityHelper.DeleteEntityAndChildren(item);
@@ -1032,6 +1043,14 @@ class TBD_LoadoutApplication : Managed
 		if (ok)
 			result = "ok";
 		Print(string.Format("[TBD][Equip] attach=%1 result=%2", resName, result));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-302 per-weapon-slot equip log. Format is locked: xtask greps it.
+	//! `[TBD][Equip] slot=<n> weapon=<res> result=<ok|replaced|failed>`
+	protected void LogWeaponEquipResult(int slotIndex, string resName, string result)
+	{
+		Print(string.Format("[TBD][Equip] slot=%1 weapon=%2 result=%3", slotIndex, resName, result));
 	}
 
 	//------------------------------------------------------------------------------------------------
