@@ -15,6 +15,7 @@ pub mod help_modal;
 // wasm-free, native-tested).
 pub mod outliner;
 // eden_tree.rs renamed at the T-934.5 move: the virtualized outliner renderer.
+pub mod outliner_drag;
 pub mod outliner_tree;
 pub mod settings_modal;
 pub mod toolbelt;

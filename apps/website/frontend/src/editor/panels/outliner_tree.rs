@@ -461,6 +461,7 @@ struct RowAuthoring {
     renaming: RwSignal<Option<String>>,
     /// Live draft text for the open rename. Input-only — do not read from the list render.
     rename_draft: RwSignal<String>,
+    nodes: RwSignal<Vec<crate::editor::panels::outliner::OutlinerNode>>,
 }
 
 /// T-666 — the hover row actions on a Folder row: **rename** (arms the inline input) and **delete**
@@ -472,6 +473,7 @@ fn folder_row_actions(
     label: &str,
     renaming: RwSignal<Option<String>>,
     rename_draft: RwSignal<String>,
+    nodes: RwSignal<Vec<crate::editor::panels::outliner::OutlinerNode>>,
 ) -> AnyView {
     let rename_id = id.to_string();
     let rename_seed = label.to_string();
@@ -958,7 +960,13 @@ fn single_row(
             let authoring_dnd = authoring.enabled;
             // Hover row actions (rename / delete) — T-666. `group`/`group-hover` reveal them.
             let row_actions = if authoring.enabled {
-                folder_row_actions(&id, &label, authoring.renaming, authoring.rename_draft)
+                folder_row_actions(
+                    &id,
+                    &label,
+                    authoring.renaming,
+                    authoring.rename_draft,
+                    authoring.nodes,
+                )
             } else {
                 ().into_any()
             };
@@ -1018,10 +1026,30 @@ fn single_row(
                     on:click=click
                     on:pointerdown=move |_| {
                         if authoring_dnd {
+                            let mut ids = vec![id_down.clone()];
+                            let sel = selected.get_untracked();
+                            if sel.contains(&id_down) {
+                                let mut ordered = Vec::new();
+                                let sel_set: std::collections::HashSet<_> = sel.iter().collect();
+                                fn walk(ns: &[crate::editor::panels::outliner::OutlinerNode], sel_set: &std::collections::HashSet<&String>, out: &mut Vec<String>) {
+                                    for n in ns {
+                                        if sel_set.contains(&n.id) {
+                                            out.push(n.id.clone());
+                                        }
+                                        walk(&n.children, sel_set, out);
+                                    }
+                                }
+                                walk(&authoring.nodes.get_untracked(), &sel_set, &mut ordered);
+                                ids = ordered;
+                            }
+                            let drag = crate::editor::panels::outliner_drag::DragSet { anchor: id_down.clone(), ids };
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor::state::operations::begin_layer_drag(id_down.clone());
+                            {
+                                crate::editor::panels::outliner_drag::begin_layer_drag(drag);
+                                crate::editor::state::operations::begin_layer_drag(id_down.clone());
+                            }
                             #[cfg(not(target_arch = "wasm32"))]
-                            let _ = &id_down;
+                            let _ = drag;
                         }
                     }
                     on:pointerup=move |ev: web_sys::PointerEvent| {
@@ -1271,12 +1299,14 @@ pub(crate) fn virtual_tree(
         enabled: authoring,
         holds_slots,
         renaming,
+        nodes,
         rename_draft,
     };
     // Flatten once per doc/collapse change (O(n), like the mutation itself); the scroll path only
     // re-slices. Created ONCE per mount (this fn is called outside any reactive closure), so the
     // Effect never leaks — it re-runs on `nodes`/`collapsed` change, and the render `move ||`
     // re-slices on `rev`/scroll.
+    let drag_ghost_pos = RwSignal::new(None::<(i32, i32)>);
     let flat = StoredValue::new(Vec::<FlatRow>::new());
     let rev = RwSignal::new(0u64);
     Effect::new(move |_| {
@@ -1393,6 +1423,19 @@ pub(crate) fn virtual_tree(
                 <div
                     node_ref=scroller_ref
                     class="h-full min-h-0 overflow-y-auto"
+                    on:pointermove=move |ev: web_sys::PointerEvent| {
+                        #[cfg(target_arch = "wasm32")]
+                        if crate::editor::panels::outliner_drag::PENDING_DRAG.with(|p| p.borrow().is_some()) {
+                            drag_ghost_pos.set(Some((ev.client_x(), ev.client_y())));
+                        } else if drag_ghost_pos.get_untracked().is_some() {
+                            drag_ghost_pos.set(None);
+                        }
+                    }
+                    on:pointerup=move |_| {
+                        #[cfg(target_arch = "wasm32")]
+                        crate::editor::panels::outliner_drag::cancel_layer_drag();
+                        drag_ghost_pos.set(None);
+                    }
                     data-testid="outliner-window-scroller"
                     on:scroll=move |ev| {
                         #[cfg(target_arch = "wasm32")]
