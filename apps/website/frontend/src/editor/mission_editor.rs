@@ -2269,6 +2269,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                     crate::editor::state::session::mark_ready(&id, n, None);
                     // 4. Flush-on-hide listeners (visibilitychange/hidden + pagehide).
                     yrs_persist::register_flush_on_hide(id.clone());
+                    // 4.5 T-190 (F-32) — join this mission's cross-tab channel, claim the writer
+                    //     lock, and park the document a peer's bytes merge into. AFTER the restore
+                    //     and hydrate above, deliberately: the merge applies into the settled
+                    //     document, and announcing presence before the doc exists would invite a
+                    //     peer's `saved` pull against the 8-slot fixture seed — the T-380 hazard
+                    //     one level across.
+                    yrs_persist::register_tab_sync(doc.clone(), id.clone());
                     // 5. Ready LAST — the gate waits on this before asserting.
                     ready.set(true);
                 }
@@ -2820,6 +2827,14 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // user chooses which version wins before any Save.
                 <div class="pointer-events-auto">
                     <ConflictDialog conflict conflict_id=mission_id.clone() />
+                </div>
+                // T-190 (F-32) — the read-only banner a SECOND tab on this mission shows. Mounted
+                // beside the conflict prompt and outside the `chrome_hidden` gates for the same
+                // reason the context menu is (wave-101 N-1: a floating overlay is not dock chrome) —
+                // "this tab is not saving" must not be hideable with Backspace. Renders no DOM
+                // while this tab holds the writer role.
+                <div class="pointer-events-none absolute inset-x-0 top-3 z-30 px-4">
+                    <crate::editor::state::tab_lock::TabLockBanner />
                 </div>
                 // T-664 — the right-click context menu overlay. Mounted HERE, beside the ungated
                 // dialogs (Attributes / Settings / Faction / ORBAT / Conflict) and NOT inside the
