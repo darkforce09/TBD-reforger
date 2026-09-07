@@ -13,7 +13,6 @@
 - **T-290** (7540) — Nine dead flatten fields mod never reads [ready] — meta.author/templateId/playerRange, the environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds and the orbat block are emitted but never read by the mod; add readers where cheap and annotate the rest in an emit ledger.
 - **T-242** (7560) — Emit T-216 slot deltas through flatten [ready] — The T-216 schema deltas (slot tag/callsign/rank/stance, group leaderSlotId, root vehicles $def) are all declared in mission.schema.json today, but flatten drops the four slot fields (DIAG_DROP_SLOT_*); emit them and pin with schema-validated goldens.
 - **T-257** (7750) — Undo scope misses loadouts, items, objectives, markers [ready] — hydrate clears loadouts, items, objectives and markers but store.rs expand_scope covers slots, squads, factions and editor_layers only, so those roots become non-undoable the day something mutates them. Add them to the UndoManager scope with a test per root.
-- **T-190** (7760) — Two tabs on one mission clobber each other [ready] — Two tabs on one mission write one IndexedDB key; the last debounce wins and the reload prompt blames server drift. Detect the second tab, merge through the CRDT, and give the conflict modal counts, timestamps and a destructive marker.
 - **T-932** (7780) — Parked briefing markers survive server save/reload [ready] — T-826 parking: pendingBriefingMarkers drop on server JSON save/reload before first faction mint
 - **T-704** (7940) — Command palette over every editor command [ready] — Alt+Space opens a fuzzy palette over every top-strip and toolbelt command, ranked by usage frequency stored per browser; Esc closes; Enter runs the command through its existing handler.
 - **T-142** (7950) — MC shell layout polish [ready] — Toolbelt placement, Attributes modal grouping and stub-tool visibility — layout UX without full T-082 field parity; no document-write changes.
@@ -93,7 +92,6 @@ flowchart LR
   T241[T-241] --> T212[T-212]
   T257[T-257] --> T212[T-212]
   T076[T-076] --> T675[T-675]
-  T222[T-222] --> T190[T-190]
   T135[T-135] --> T157[T-157]
   T071[T-071] --> T141[T-141]
   T150[T-150] --> T146[T-146]

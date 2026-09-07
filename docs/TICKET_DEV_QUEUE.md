@@ -37,14 +37,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** hydrate clears loadouts, items, objectives and markers but store.rs expand_scope covers slots, squads, factions and editor_layers only, so those roots become non-undoable the day something mutates them. Add them to the UndoManager scope with a test per root.
 
-## T-190 — Two tabs on one mission clobber each other
-
-- **Slice spec:** `docs/specs/ideas/t190_tab_clobber.md`
-- **Program hub:** `docs/specs/ideas/t190_tab_clobber.md`
-- **Branch:** `ticket/T-190`
-- **Targets:** 
-- **Summary:** Two tabs on one mission write one IndexedDB key; the last debounce wins and the reload prompt blames server drift. Detect the second tab, merge through the CRDT, and give the conflict modal counts, timestamps and a destructive marker.
-
 ## T-932 — Parked briefing markers survive server save/reload
 
 - **Slice spec:** `docs/specs/existing/t932_parked_markers_persist.md`
