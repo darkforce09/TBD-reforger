@@ -902,6 +902,14 @@ pub(crate) fn ConnectionsPanelOverlay(
 pub struct ConflictInfo {
     pub payload_json: String,
     pub semver: Option<String>,
+    /// T-190 (F-32) — what each option holds and when it was written. The review's finding was that
+    /// the prompt "offers no way to compare (no object counts, no timestamps, no preview) so the
+    /// author is choosing blind between two things they cannot see". Pre-formatted by `hydrate.rs`,
+    /// which holds both documents and the clock — this component is ungated and reaches neither.
+    pub local_objects: usize,
+    pub server_objects: usize,
+    pub local_saved: String,
+    pub server_saved: String,
 }
 
 /// The conflict prompt (React `ConflictDialog`): renders only when `conflict` is `Some`. "Load
@@ -934,6 +942,15 @@ pub(crate) fn ConflictDialog(
                             {semver_label}
                             " on the server differs from your local copy. Which version should win?"
                         </p>
+                        <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-label-sm">
+                            <dt class="font-medium text-on-surface">"Your local copy"</dt>
+                            <dt class="font-medium text-error">"Server version"</dt>
+                            <dd class="text-on-surface-variant">{format!("{} objects · written {}", c.local_objects, c.local_saved)}</dd>
+                            <dd class="text-on-surface-variant">{format!("{} objects · saved {}", c.server_objects, c.server_saved)}</dd>
+                        </dl>
+                        <p class="mt-3 text-label-sm text-error">
+                            "Loading the server version will discard your local copy. One Ctrl/Cmd+Z puts it back."
+                        </p>
                     </div>
                     <div class="flex justify-end gap-2 px-6 py-4">
                         <button
@@ -952,8 +969,13 @@ pub(crate) fn ConflictDialog(
                         </button>
                         <button
                             type="button"
-                            aria-label="Load server version"
-                            class="rounded-lg bg-primary px-4 py-2 text-label-md font-medium text-on-primary"
+                            aria-label="Load server version — discards your local copy"
+                            // T-190 (F-32) — the DESTRUCTIVE choice, and now dressed as one. It was
+                            // `bg-primary`/`text-on-primary`, i.e. the affirmative button, for the
+                            // option that permanently replaces the local document. `bg-error/15` +
+                            // `text-error` is this codebase's destructive token pair
+                            // (`shell/layout.rs` Sign Out, `faction_manager.rs` Delete).
+                            class="rounded-lg bg-error/15 px-4 py-2 text-label-md font-medium text-error transition-colors hover:bg-error/25"
                             on:click=move |_| {
                                 #[cfg(target_arch = "wasm32")]
                                 mission_hydrate::resolve_conflict_server(

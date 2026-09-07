@@ -569,6 +569,17 @@ pub async fn load_state(id: &str) -> Option<Vec<u8>> {
     None
 }
 
+/// T-190 — when the local draft for `id` was last written, epoch ms, or `None` when this browser
+/// holds no stamp for it (no draft yet, or one written before T-190).
+///
+/// Lives here rather than in `tab_lock` because the *key* is this module's business: `scoped_key`
+/// is private and account scoping (T-221) is the one thing a caller must not have to reproduce.
+/// `tab_lock` owns the stamp's shape; this owns which record it describes.
+#[must_use]
+pub fn draft_written_at(id: &str) -> Option<f64> {
+    tab_lock::read_stamp(&scoped_key(&owner_token(), id)).map(|s| s.at)
+}
+
 /// Delete the blob for `id` (React `clearState`).
 ///
 /// Scoped-key only, deliberately. This is reached from `mission_hydrate::clear_local_backups` on a

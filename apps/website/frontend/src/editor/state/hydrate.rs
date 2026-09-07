@@ -118,6 +118,7 @@ use wasm_bindgen::prelude::*;
 use crate::core::auth::AuthStore;
 use crate::core::dto::MissionDetail;
 use crate::editor::state::doc_host::DocHandle;
+use crate::editor::state::tab_lock;
 
 /// React `UUID_RE` — an id that can exist on the API. `smoke`/`draft` fail this and stay local.
 fn is_uuid(id: &str) -> bool {
@@ -352,7 +353,26 @@ pub async fn hydrate_from_server(
             // "Load server" is reversible twice over (T-191), while a document silently replaced
             // by one it never derived from is neither.
             Local::Diverged => {
+                // T-190 (F-32) — describe BOTH options before asking. The counts are the same
+                // numbers `classify_local` just compared, so the modal cannot disagree with the
+                // decision that raised it, and the instants are measured rather than guessed: the
+                // local one is the write stamp `run_save` leaves on the record it actually landed
+                // (`None` ⇒ this browser has no draft stamp, which is the honest answer, not "now"),
+                // and the server one is the version row's own `created_at`.
+                let local_objects = doc.borrow().as_ref().map_or(0, MissionDocCore::slot_count);
+                let local_saved = crate::editor::state::persist::draft_written_at(&id).map_or_else(
+                    || "not recorded on this browser".to_string(),
+                    |at| tab_lock::ago(js_sys::Date::now(), at),
+                );
+                let server_saved = version.map_or_else(
+                    || tab_lock::short_utc(&detail.updated_at),
+                    |v| tab_lock::short_utc(&v.created_at),
+                );
                 conflict.set(Some(crate::editor::mission_editor::ConflictInfo {
+                    local_objects,
+                    server_objects: server_slot_count(server),
+                    local_saved,
+                    server_saved,
                     payload_json,
                     semver,
                 }));

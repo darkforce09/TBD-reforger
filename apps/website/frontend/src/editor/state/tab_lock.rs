@@ -882,8 +882,10 @@ mod tests {
     #[test]
     fn t190_load_server_version_is_marked_destructive() {
         let dialog = only_item(&overlays_src(), "pub(crate) fn ConflictDialog(").to_string();
+        // `rfind`, so the needle is the button's visible LABEL and not its `aria-label` — the two
+        // now differ, and slicing at the attribute would cut the arm before its own `class`.
         let at = dialog
-            .find("Load server version")
+            .rfind("Load server version")
             .unwrap_or_else(|| panic!("the dialog must still offer the server version. {dialog}"));
         let arm = &dialog[..at];
         let arm = &arm[arm.rfind("<button").unwrap_or(0)..];
