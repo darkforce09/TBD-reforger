@@ -1475,11 +1475,13 @@ pub(crate) fn virtual_tree(
                 release.as_ref().unchecked_ref(),
                 true,
             );
-            for event in ["pointercancel", "blur"] {
+            // Element blur happens after a trusted row pointerdown focuses that row. Capturing
+            // it here would immediately erase the drag just armed by the same press.
+            for (event, capture) in [("pointercancel", true), ("blur", false)] {
                 let _ = win.add_event_listener_with_callback_and_bool(
                     event,
                     cancel.as_ref().unchecked_ref(),
-                    true,
+                    capture,
                 );
             }
             let hooks = StoredValue::new_local((win, release, cancel));
@@ -1491,11 +1493,11 @@ pub(crate) fn virtual_tree(
                         release.as_ref().unchecked_ref(),
                         true,
                     );
-                    for event in ["pointercancel", "blur"] {
+                    for (event, capture) in [("pointercancel", true), ("blur", false)] {
                         let _ = win.remove_event_listener_with_callback_and_bool(
                             event,
                             cancel.as_ref().unchecked_ref(),
-                            true,
+                            capture,
                         );
                     }
                 });

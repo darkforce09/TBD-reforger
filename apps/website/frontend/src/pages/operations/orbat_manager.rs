@@ -735,6 +735,7 @@ pub fn OrbatManagerDialog(
                                 }
                                 tree_panel(
                                     squad_nodes,
+                                    orbat,
                                     detail_by_id.clone(),
                                     vehicle_by_squad.clone(),
                                     selected,
@@ -872,6 +873,7 @@ fn filter_search(nodes: Vec<OutlinerNode>, q: &str) -> Vec<OutlinerNode> {
 
 fn tree_panel(
     squad_nodes: Vec<OutlinerNode>,
+    drag_nodes: RwSignal<Vec<OutlinerNode>>,
     detail_by_id: HashMap<String, SlotDetail>,
     vehicle_by_squad: HashMap<String, usize>,
     selected: RwSignal<Vec<String>>,
@@ -919,7 +921,9 @@ fn tree_panel(
                             .map(|r| {
                                 stitch_row(
                                     r,
-                                    nodes_sig,
+                                    // Capture against complete live membership, while nodes_sig
+                                    // controls only the active faction/search rendering above.
+                                    drag_nodes,
                                     selected,
                                     collapsed,
                                     rename_squad,
@@ -2106,5 +2110,16 @@ mod t946_86_mounted_refile {
         assert!(row.contains("outliner_drag::complete_multi_refile_onto_squad(&id_drop)"));
         let dialog = only_body(&code, "pub fn OrbatManagerDialog(");
         assert!(dialog.contains("outliner_drag::cancel_layer_drag()"));
+        assert!(dialog
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .contains("tree_panel( squad_nodes, orbat,"));
+        let panel = only_body(&code, "fn tree_panel(");
+        assert!(panel
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .contains("stitch_row( r, drag_nodes,"));
     }
 }
