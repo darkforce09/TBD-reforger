@@ -21,6 +21,9 @@ context = [
     "Repair missing CMS/leave-request fixtures returning invalid 200 {} envelopes and Server Control ignoring T-385's terrain field. Preserve desired shipped application behavior.",
     "Approvals also needs both seeded pending-mission detail fixtures. Preserve Cold Anvil's authored briefing and Paper Tiger's intentionally absent briefing; neither may render a fixture decode failure.",
     "Server Intel's hardcoded intelligence events have no data source. Replace fabricated reports with an honest unavailable state while retaining actual server/status/environment/modpack information.",
+    "Independent screenshot review found broken vehicle profile images. Failed image loads must use the existing missing-image fallback, preserve vehicle data, and reset correctly when selection changes.",
+    "Mission Library hero, cards, and dossier also need a deterministic fallback when stored or placeholder artwork fails. Preserve valid artwork, URL safety, and layout dimensions.",
+    "The populated Event Schedule clips its inline hub hero through flex shrinking. Measure and repair the hero locally; preserve standalone hub layout and shared SplitPane behavior.",
     "Accept only independently reviewed intentional shipped visual divergences through per-route accept, preserving React references and specific provenance. Never bless error UI or blanket rebaseline.",
 ]
 requirement = [
@@ -54,6 +57,9 @@ owns = [
     "apps/website/frontend/src/editor/panels/top_strip.rs",
     "apps/website/frontend/src/pages/admin/server_control.rs",
     "apps/website/frontend/src/pages/public/server_intel.rs",
+    "apps/website/frontend/src/pages/public/vehicles.rs",
+    "apps/website/frontend/src/editor/library/mission_library.rs",
+    "apps/website/frontend/src/pages/operations/event_hub.rs",
     "apps/website/frontend/tests/fixtures/api/GET__cms__announcements.json",
     "apps/website/frontend/tests/fixtures/api/GET__me__leave-requests.json",
     "apps/website/frontend/tests/fixtures/api/GET__admin__leave-requests.json",
