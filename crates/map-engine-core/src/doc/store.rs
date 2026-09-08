@@ -15560,28 +15560,32 @@ mod tests {
 
         doc.move_slot_to_squad_keep_source("solo", "sq-a");
 
+        // COLLECTED, not short-circuited. The three losses are three separate things the GC takes,
+        // and a chain of `assert!`s reports only the first — which is how a perturbation that
+        // deletes the vehicles gets to look like a perturbation that only deleted the row.
         let root = small_maps(&doc);
+        let mut lost: Vec<&str> = Vec::new();
+        if root["squadsById"].get("sq-mid").is_none() {
+            lost.push("the squad row");
+        }
+        if root["vehiclesById"].get("v1").is_none() {
+            lost.push("the attached vehicle v1");
+        }
+        if root["squadsById"]["sq-mid"]["vehicleIds"]
+            .as_array()
+            .is_none_or(|a| a.len() != 1)
+        {
+            lost.push("the squad->vehicle attachment");
+        }
+        if squad_ids_of(&doc, "faction-BLUFOR") != before {
+            lost.push("its place in faction.squadIds");
+        }
         assert!(
-            root["squadsById"].get("sq-mid").is_some(),
-            "T-939.2: the emptied source squad must survive; squads were {}",
-            root["squadsById"]
-        );
-        assert!(
-            root["vehiclesById"].get("v1").is_some(),
-            "T-939.2: the emptied squad's attached vehicle must survive the move"
-        );
-        assert_eq!(
-            root["squadsById"]["sq-mid"]["vehicleIds"]
-                .as_array()
-                .expect("vehicleIds")
-                .len(),
-            1,
-            "T-939.2: the attachment itself must survive, not just the vehicle row"
-        );
-        assert_eq!(
-            squad_ids_of(&doc, "faction-BLUFOR"),
-            before,
-            "T-939.2: the emptied squad must keep its PLACE in faction.squadIds"
+            lost.is_empty(),
+            "T-939.2: the keep-source move lost {}; squads were {}, vehicles were {}",
+            lost.join(", "),
+            root["squadsById"],
+            root["vehiclesById"]
         );
         assert_eq!(
             root["squadsById"]["sq-mid"]["slotIds"]
