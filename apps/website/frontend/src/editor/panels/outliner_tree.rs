@@ -2427,3 +2427,101 @@ mod t784_comment_row_selects {
         }
     }
 }
+
+/// T-946.86 (.83) — the drop CONSUMES the multi-selection instead of moving only its anchor.
+#[cfg(test)]
+mod t946_86_multi_drop {
+    use super::node_descendant_ids;
+    use crate::editor::arsenal::class_r_scrub::live_code;
+    use crate::editor::panels::outliner::{NodeKind, OutlinerNode};
+
+    fn live() -> String {
+        live_code(include_str!("outliner_tree.rs"))
+    }
+
+    fn node(id: &str, children: Vec<OutlinerNode>) -> OutlinerNode {
+        OutlinerNode {
+            id: id.to_string(),
+            label: id.to_string(),
+            kind: NodeKind::Folder,
+            children,
+            is_leader: false,
+            hidden: false,
+            locked: false,
+            hidden_effective: false,
+            locked_effective: false,
+            tooltip: String::new(),
+        }
+    }
+
+    /// **The drop reads the SET.** Wave 255 armed the whole `DragSet` on pointerdown and then
+    /// completed through the single-id latch in `state/operations`, so a five-row drag moved one
+    /// row. PERTURB: drop the `complete_multi_drop_onto_folder` call and this goes RED.
+    #[test]
+    fn the_folder_drop_consumes_the_pending_drag_set() {
+        let src = live();
+        assert!(
+            src.contains("complete_multi_drop_onto_folder("),
+            "T-946.86 (.83): the folder-row drop must consume the multi-select DragSet — \
+             completing through the single-id latch alone moves only the anchor"
+        );
+        assert!(
+            src.contains("node_descendant_ids("),
+            "T-946.86 (.83): the drop must supply the subtree answer `plan_drop` asks for, or the \
+             planner cannot refuse a folder dropped into its own child"
+        );
+    }
+
+    /// The single-id completion survives as the FALLBACK, and is reached only when the multi path
+    /// declines. Two unconditional completions would double-apply the anchor's move.
+    #[test]
+    fn the_single_id_completion_is_the_fallback_not_a_second_commit() {
+        let src = live();
+        let at_multi = src
+            .find("complete_multi_drop_onto_folder(")
+            .expect("checked by the pin above");
+        let after = &src[at_multi..];
+        let at_legacy = after.find("complete_layer_drop_onto_folder(").expect(
+            "T-946.86 (.83): the single-id completion must survive for drags that arm \
+                    only that latch",
+        );
+        assert!(
+            after[..at_legacy].contains("if !claimed"),
+            "T-946.86 (.83): the legacy completion must be GATED on the multi drop declining — \
+             running both would apply the anchor's move twice"
+        );
+    }
+
+    /// `node_descendant_ids` answers "what is under this row", at any depth, excluding the row
+    /// itself. This is the input `plan_drop` refuses a parent-into-own-child drop with.
+    #[test]
+    fn descendants_are_the_whole_subtree_and_never_the_node_itself() {
+        let tree = vec![
+            node(
+                "a",
+                vec![node("b", vec![node("c", vec![])]), node("d", vec![])],
+            ),
+            node("e", vec![]),
+        ];
+        let mut under_a = node_descendant_ids(&tree, "a");
+        under_a.sort();
+        assert_eq!(
+            under_a,
+            vec!["b", "c", "d"],
+            "every depth, excluding `a` itself"
+        );
+        assert!(
+            node_descendant_ids(&tree, "e").is_empty(),
+            "a leaf has no descendants"
+        );
+        assert!(
+            node_descendant_ids(&tree, "nope").is_empty(),
+            "an unknown id answers empty — the core's cycle guard is the backstop"
+        );
+        assert_eq!(
+            node_descendant_ids(&tree, "b"),
+            vec!["c"],
+            "the walk finds nested nodes, not only roots"
+        );
+    }
+}
