@@ -15719,4 +15719,108 @@ mod tests {
             "dest is dense too"
         );
     }
+
+    /// Core proof of the modal's heterogeneous restore shape. Browser proof must additionally
+    /// click Revert: this fixture alone cannot prove the modal calls the membership operation.
+    #[test]
+    fn keep_source_revert_restores_five_mixed_memberships_and_authored_data_in_one_group() {
+        let mut doc = keep_source_fixture();
+        let snapshot = [
+            ("b0", "sq-mid"),
+            ("c0", "sq-c"),
+            ("o0", "sq-opf"),
+            ("b1", "sq-mid"),
+            ("o1", "sq-opf"),
+        ];
+        for (id, squad) in snapshot {
+            let index = read_id_array(&doc.doc.transact(), &doc.squads, squad, "slotIds").len();
+            doc.add_slot(
+                id,
+                squad,
+                "lyr",
+                u32::try_from(index).unwrap(),
+                "Medic",
+                None,
+                None,
+                1.0,
+                2.0,
+                3.0,
+                45.0,
+            );
+            if index == 0 {
+                doc.set_leader(squad, id);
+            }
+        }
+        for squad in ["sq-a", "sq-mid", "sq-c", "sq-opf"] {
+            let vehicle = format!("vehicle-{squad}");
+            doc.add_vehicle(&vehicle, "Prefab/Truck.et", None, None, None, None);
+            doc.attach_vehicle(squad, &vehicle);
+        }
+        doc.update_slot_loadout("b1", Some(r#"{"authored":"medic-kit"}"#.into()));
+        let original_maps = small_maps(&doc);
+        let original_slots = slots_map(&doc);
+        let depth = doc.undo_depth();
+
+        doc.begin_group();
+        for (id, _) in snapshot {
+            doc.move_slot_to_squad_keep_source(id, "sq-a");
+        }
+        doc.end_group();
+        assert_eq!(
+            doc.undo_depth(),
+            depth + 1,
+            "all five move as one undo step"
+        );
+        let reassigned_maps = small_maps(&doc);
+        let reassigned_slots = slots_map(&doc);
+        for (id, _) in snapshot {
+            assert_eq!(reassigned_slots[id]["squadId"], "sq-a");
+        }
+        assert_eq!(
+            reassigned_maps["vehiclesById"],
+            original_maps["vehiclesById"]
+        );
+        assert!(
+            doc.undo(),
+            "one undo restores the entire five-slot reassign"
+        );
+        assert_eq!(slots_map(&doc), original_slots);
+        assert_eq!(small_maps(&doc), original_maps);
+        assert!(doc.redo());
+
+        doc.begin_group();
+        for (id, original_squad) in snapshot {
+            doc.move_slot_to_squad_keep_source(id, original_squad);
+        }
+        doc.end_group();
+        assert_eq!(
+            doc.undo_depth(),
+            depth + 2,
+            "membership Revert is one group"
+        );
+        assert_eq!(
+            slots_map(&doc),
+            original_slots,
+            "every slot returns home with its authored data"
+        );
+        assert_eq!(
+            small_maps(&doc),
+            original_maps,
+            "original squads and all attached vehicles survive"
+        );
+        let restored = doc.materialize();
+        for (id, squad) in snapshot {
+            let expected_side = if squad == "sq-opf" { "OPFOR" } else { "BLUFOR" };
+            assert_eq!(restored.side_keys[row_of(&restored, id)], expected_side);
+        }
+        assert!(
+            doc.undo(),
+            "one undo reverses the heterogeneous membership Revert"
+        );
+        assert_eq!(slots_map(&doc), reassigned_slots);
+        assert_eq!(small_maps(&doc), reassigned_maps);
+        assert!(doc.redo());
+        assert_eq!(slots_map(&doc), original_slots);
+        assert_eq!(small_maps(&doc), original_maps);
+    }
 }

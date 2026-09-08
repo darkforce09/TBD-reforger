@@ -1464,6 +1464,9 @@ fn commit_slot(
 /// not compare against the current value, so Revert always re-stamps the snapshot and always fires
 /// the history tail; that is the intended "real write" semantics, not a bug. The end state is the
 /// readback equality the acceptance pins: after Revert, `read_attrs(id)` equals the captured snap.
+/// T-939.2 — membership is restored after these existing writes, as one additional undo group for
+/// all changed slots. Each destination comes from its own snapshot, including mixed factions;
+/// the membership operation leaves authored squads and vehicles in place.
 #[cfg(target_arch = "wasm32")]
 fn revert_to_snapshot(snapshot: StoredValue<Vec<crate::editor::state::operations::SlotAttrs>>) {
     for snap in snapshot.get_value() {
@@ -1483,6 +1486,7 @@ fn revert_to_snapshot(snapshot: StoredValue<Vec<crate::editor::state::operations
             Some(snap.description.clone()),
         );
     }
+    crate::editor::state::operations::restore_slot_squads(&snapshot.get_value());
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -4064,6 +4068,34 @@ mod t939_2_batch_reassign {
         assert!(
             picker_code.contains("refusal.set(reason)") && picker_code.contains("refusal.get()"),
             "T-939.2: the Err arm's reason must be the text the modal shows"
+        );
+    }
+
+    /// Wiring proof only; the doc fixture and browser Revert exercise the resulting moves.
+    #[test]
+    fn revert_restores_the_open_snapshot_squads_in_one_keep_source_group() {
+        let modal = live_code(include_str!("attributes_modal.rs"));
+        let revert = only_body(&modal, "fn revert_to_snapshot(");
+        assert!(
+            revert.contains("restore_slot_squads(&snapshot.get_value())"),
+            "T-939.2: Revert must restore each slot's original squad from the OPEN snapshot"
+        );
+        let ops = live_code(REASSIGN_RS);
+        let restore = only_body(&ops, "pub fn restore_slot_squads(");
+        for required in [
+            "snap.id",
+            "snap.squad",
+            "with_batch(",
+            "move_slot_to_squad_keep_source(",
+        ] {
+            assert!(
+                restore.contains(required),
+                "T-939.2: membership Revert must use {required}; body was:\n{restore}"
+            );
+        }
+        assert!(
+            !restore.contains("reassign_slots("),
+            "Revert has a destination per slot, not one faction/squad for the whole selection"
         );
     }
 }

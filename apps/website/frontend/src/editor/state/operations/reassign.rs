@@ -98,6 +98,55 @@ pub fn reassign_slots(ids: &[String], target: &ReassignTarget) -> Result<usize, 
     Ok(moved)
 }
 
+/// Restore each slot's own on-open squad, including a selection split across factions/squads.
+/// This adds one membership undo group after Revert's existing transform/identity writes. Slots
+/// already home contribute no writes or history tail. Keep both ends of each move, including any
+/// vehicles authored on a destination that becomes empty again during Revert.
+pub fn restore_slot_squads(snapshot: &[super::attrs::SlotAttrs]) -> usize {
+    let moves = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        let current = squads_by_slot(core);
+        let squads = squad_rows(core);
+        Some(
+            snapshot
+                .iter()
+                .filter(|snap| {
+                    current.get(&snap.id).is_some_and(|s| s != &snap.squad)
+                        && squads.iter().any(|s| s.id == snap.squad)
+                })
+                .map(|snap| (snap.id.clone(), snap.squad.clone()))
+                .collect::<Vec<_>>(),
+        )
+    });
+    let moves = moves.unwrap_or_default();
+    if moves.is_empty() {
+        return 0;
+    }
+    let moved = with_batch("revert-slot-squads", || {
+        OPS_CTX.with(|c| {
+            let guard = c.borrow();
+            let Some(ctx) = guard.as_ref() else {
+                return 0;
+            };
+            let d = ctx.doc.borrow();
+            let Some(core) = d.as_ref() else {
+                return 0;
+            };
+            for (id, squad) in &moves {
+                core.move_slot_to_squad_keep_source(id, squad);
+            }
+            moves.len()
+        })
+    });
+    if moved > 0 {
+        mission_history::after_local_edit();
+    }
+    moved
+}
+
 /// The live faction / squad rows the picker and the refusals are computed from, in one doc read.
 #[must_use]
 pub fn reassign_rows() -> (
