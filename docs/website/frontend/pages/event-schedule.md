@@ -9,9 +9,9 @@
 - **What:** Split-pane upcoming operations list with embedded Event Hub in the detail column.
 - **Why:** Players browse Tuesday ops and register without a full-page navigation away from the schedule.
 - **Route:** `/events`
-- **Live source:** `apps/website/frontend/src/events.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
+- **Live source:** `apps/website/frontend/src/pages/operations/event_schedule.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
 - **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/upcoming_operations_event_schedule/code.html` (archived — layout replaced by `SplitPane`)
-- **Min role:** `public-nav`
+- **Min role:** authenticated (`AuthGate`)
 - **Blueprint ref:** —
 
 ## Element Inventory
@@ -65,3 +65,7 @@
 ## Open Questions / Blockers
 
 - Calendar view deferred; master list is the only view. See [event-hub.md](event-hub.md) for standalone hub and ORBAT deep-link.
+
+## Wave 256 layout correction
+
+The inline shared hub hero does not shrink beneath its title, briefing or links when populated ORBAT content is long. Scroll the existing detail pane to reach lower squads and Withdraw; the schedule selection and standalone hub remain unchanged.

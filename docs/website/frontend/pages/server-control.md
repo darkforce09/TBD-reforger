@@ -2,57 +2,29 @@
 
 ## Status
 
-`doc-complete`
+`doc-complete` — live inventory and supported RCON requests (T-270/T-598); terrain consumes the existing joined API field (T-939.4 recovery).
 
 ## Summary
 
-- **What:** Planned admin panel for game server RCON: restart, change map, status.
-- **Why:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §2.B requires basic server controls in admin panel.
-- **Route:** `/admin/server`
-- **Stitch reference:** none (spec from [context handoff](../../../website/platform/context_handoff.md) §2)
-- **Min role:** `admin`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §2.B RCON
-
-## Element Inventory
-
-| # | Element | Type | Text / Content | Purpose | Data source | Blocked |
-|---|---------|------|----------------|---------|-------------|---------|
-| 1 | Page H1 | h1 | Server Control | Title | Static | — |
-| 2 | Alert banner | div | This feature is not yet available. See T-086 in the ticket registry. | Blocker notice | Static | T-086 |
-| 3 | Server name | h2 | TBD Main | Target server | Config | T-086 |
-| 4 | Status card | card | Online / Offline | Health | `GET /servers/:id/status` | Partial |
-| 5 | Restart btn | button | Restart Server | RCON restart | `POST /admin/server/restart` | T-086 |
-| 6 | Change map btn | button | Change Map | RCON mission | `POST /admin/server/map` | T-086 |
-| 7 | Map select | select | Mission list | Pick map | `GET /missions` | T-086 |
-| 8 | Console log | pre | RCON output stream | Live log | WebSocket/SSE | T-086 |
-| 9 | Link | a | View ticket registry | Documentation | [TICKET_LEAD.md](../../../TICKET_LEAD.md) | — |
+- **Route:** `/admin/server`; admin access through `AdminGate`.
+- **Live source:** `apps/website/frontend/src/pages/admin/server_control.rs`.
+- **Purpose:** select a configured server, inspect its status and modpack, and submit supported host-control requests.
 
 ## Behavior
 
-M1 stub page shows T-086 blocker message and intended layout wireframe. No API calls until backend exists.
+The page loads `GET /servers` as `DataEnvelope<ServerRowDto>` and selects the active server, falling back to the first row. The detail shows the real endpoint, player counts, FPS, uptime, current-match identifier and required modpack. Terrain uses the joined `ServerRowDto.terrain`: Everon/Arland receive display labels, other nonblank terrain names remain intact, and missing or blank values show an em dash.
+
+Restart, mapped quick actions and the console use `POST /admin/servers/{id}/rcon`. Request and response errors remain visible. Success wording reads the returned `accepted`, `delivered`, `state` and `detail`; it does not infer delivery from an HTTP acknowledgement alone. The transport supports restart; unsupported verbs can return 503.
+
+Stop, Launch, Swap Modpack and Global Broadcast retain their explicit disabled/unavailable behavior. The console records actual requests and outcomes; it does not display fabricated historical traffic. No-server, loading and request-error states remain distinct.
 
 ## API Dependencies
 
-| Endpoint | Method | When | Response |
-|----------|--------|------|----------|
-| `POST /admin/server/restart` | POST | Future | — |
-| `POST /admin/server/map` | POST | Future | — |
+- `GET /servers` → `{data:[ServerRowDto...]}` including cached status, required modpack and optional terrain.
+- `POST /admin/servers/{id}/rcon` → validated action body; successful response includes `action`, `accepted`, `delivered`, `state`, `detail` and `audited`.
 
-All blocked — see [T-086](../../../TICKET_REGISTRY.md) in the ticket registry.
+## Verification
 
-## Milestones
+Check an active server with terrain `everon`, then null/blank terrain: the display shows Everon or an em dash respectively. Switching servers must retain their own status, address and modpack. Non-admin users cannot access the page. RCON outcome tests cover the actual response fields; the initial visual fixture does not prove a live server restart.
 
-### M1 — [x] Stub route with T-086 notice
-### M2 — [ ] Wireframe UI per inventory
-### M3 — [ ] API when backend ready
-### M4 — [ ] RCON console stream
-
-## Test Plan
-
-1. Admin navigates to `/admin/server` → stub message visible.
-2. Link references T-086 in the ticket registry.
-3. Non-admin cannot access.
-
-## Open Questions / Blockers
-
-- **T-086** ([ticket registry](../../../TICKET_REGISTRY.md)): No Stitch, no API, no RCON integration.
+The recovery verification uses deterministic server fixtures and checks the supported T-270/T-598 behavior together with the terrain readout. Operator server actions still require the configured host control agent and real server environment.

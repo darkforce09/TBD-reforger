@@ -9,9 +9,9 @@
 - **What:** Operation container page: hero briefing, countdown, modpack link, and per-mission dossiers with inline ORBAT registration.
 - **Why:** Players review multi-mission events and claim slots without leaving the hub.
 - **Route:** `/events/:id`
-- **Live source:** `apps/website/frontend/src/event_hub.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
+- **Live source:** `apps/website/frontend/src/pages/operations/event_hub.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
 - **Stitch reference:** none (composed from campaign refactor UX)
-- **Min role:** `public-nav` (registration requires auth)
+- **Min role:** authenticated (`AuthGate`; registration also requires auth)
 - **Blueprint ref:** —
 
 ## Element Inventory
@@ -21,7 +21,7 @@
 | 1 | Back link | link | All Operations | Return to schedule | `/events` |
 | 2 | Hero | section | Op name, T-MINUS, briefing, banner | Operation context | `GET /events/:id` (`EventHub`) |
 | 3 | TS3 chip | span | ts.tbdevent.eu | Comms | Static |
-| 4 | Modpack chip | link | Current modpack name/version | Workshop link | `useCurrentModpack()` |
+| 4 | Modpack chip | link | Current modpack name/version | Workshop link | Event-bound modpack from `/modpacks`; `/modpacks/current` only when no modpack is bound |
 | 5 | Mission dossier | card | Intel, objectives, armory, ORBAT | Per attached mission | `event.missions[]` |
 | 6 | Inline ORBAT | widget | Faction → squad → slot selector | Register / claim | `GET /event-missions/:emid/orbat` |
 | 7 | Register btn | button | Register for mission | Per-mission registration | `POST /event-missions/:emid/register` |
@@ -40,7 +40,7 @@
 Standalone split-pane ORBAT selector for bookmarking a single mission:
 
 - **Route:** `/events/:id/missions/:emid/orbat`
-- **Live source:** the shared ORBAT selector in `apps/website/frontend/src/orbat_selection.rs` (reused by `event_hub.rs`)
+- **Live source:** `apps/website/frontend/src/pages/operations/orbat_selection.rs`, using the shared `OrbatSelector` defined in `apps/website/frontend/src/pages/operations/event_hub.rs`
 - **Use when:** Direct link to one mission's slot picker (e.g. Discord pin). Full hub context is optional; page focuses on ORBAT column layout.
 
 ### States
@@ -74,4 +74,8 @@ Standalone split-pane ORBAT selector for bookmarking a single mission:
 
 ## Open Questions / Blockers
 
-- Placeholder mission intel (maker, duration, structured objectives) still mocked in dossier UI until API fields exist.
+- Missing operation or mission briefings show “No briefing provided.” Invented maker and duration badges were removed at T-392; only supported dossier fields render.
+
+## Wave 256 layout correction
+
+The shared operation hero keeps its content height inside the Event Schedule flex pane. Operation title, countdown, date, briefing and links remain visible, while the lower mission/ORBAT content remains reachable through the existing scrollport. The standalone hub keeps the same layout; shared SplitPane behavior is unchanged.

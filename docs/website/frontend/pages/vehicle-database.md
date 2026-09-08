@@ -2,60 +2,22 @@
 
 ## Status
 
-`doc-complete`
+`doc-complete` — populated vehicle dossiers (T-263) with image failure fallback (T-939.4 recovery).
 
 ## Summary
 
-- **What:** Split-pane vehicle reference with search, faction filters, and per-vehicle dossier.
-- **Why:** IFF and armor intel separated from wiki SOPs for faster lookup during ops.
-- **Route:** `/vehicles`
-- **Live source:** `apps/website/frontend/src/vehicles.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
-- **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/sop_wiki_vehicle_database_iff/code.html` (archived — vehicles section split out)
-- **Min role:** `public-nav`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.6
-
-## Element Inventory
-
-| # | Element | Type | Text / Content | Purpose | Data source |
-|---|---------|------|----------------|---------|-------------|
-| 1 | Master list | `SplitPane` | Search + vehicle rows | Browse/filter | `GET /vehicle-database` |
-| 2 | Search input | input | Filter by name… | Client filter | Local |
-| 3 | Faction chips | buttons | US / USSR / FIA / … | Faction filter | Vehicle `faction` |
-| 4 | Detail dossier | panel | Name, stats, threat, gallery | Selected vehicle | `Vehicle` row |
-| 5 | Armor / amphibious | badges | Threat indicators | Quick scan | API fields |
-| 6 | Empty state | `SplitPaneEmpty` | Select a vehicle | No selection | Static |
+- **Route:** `/vehicles`; the page uses `AuthGate`.
+- **Live source:** `apps/website/frontend/src/pages/public/vehicles.rs`.
+- **Purpose:** search faction-grouped vehicles and inspect their recorded armor, amphibious and threat information.
 
 ## Behavior
 
-### Primary flow
-1. User opens `/vehicles` (nav: Doctrine & Info → Vehicle Database).
-2. `SplitPane` master lists vehicles from `useVehicleDatabase()`; detail shows dossier for selection.
-3. Search and faction filters narrow the master list client-side.
+`GET /vehicle-database` loads the vehicle list as `{data:[...]}`. A `GlassSplit` shows an 18rem master column and the selected dossier. The first row is selected initially. Search matches vehicle name, armor type and faction; faction headings follow first-seen order and disappear when no rows match.
 
-### States
-- **Loading:** `QueryState` skeleton in master column.
-- **Empty list:** No vehicles in API → empty copy in master.
-- **No selection:** `SplitPaneEmpty` in detail column.
+The dossier displays stored values without inventing capacity or tactical directives. Absent or failed profile imagery uses the existing vehicle icon placeholder. Each selected dossier starts a fresh image attempt, preserving valid artwork and image-area dimensions.
 
-## API Dependencies
+Loading and fetch failures have separate text states. An empty database displays “No vehicles in the database.” in the detail area.
 
-| Endpoint | Method | When called | Response shape |
-|----------|--------|-------------|----------------|
-| `GET /vehicle-database` | GET | Page load | `Vehicle[]` |
+## Verification
 
-## Milestones
-
-### M1 — [x] Route `/vehicles` full-bleed `SplitPane`
-### M2 — [x] Master/detail layout (Aegis glass)
-### M3 — [x] `useVehicleDatabase()` wired
-### M4 — [x] Search + faction filter
-
-## Test Plan
-
-1. Visit `/vehicles` → list populates from API.
-2. Select row → detail dossier updates.
-3. Faction chip → list filters; search narrows by name.
-
-## Open Questions / Blockers
-
-- None. Wiki vehicle table removed — see [wiki.md](wiki.md) scope note.
+Verify populated faction groups, search and selection against the API fixture. Exercise failed imagery, absent imagery, a valid image and selection from a failed image to a valid one. Dossier values and the image-area dimensions must remain intact throughout.
