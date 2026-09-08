@@ -10,7 +10,9 @@ const PAYLOAD: &str = "JSON.parse(window.__editorCommands.compile_save_json())";
 fn mission(duplicate: bool, large: bool) -> Value {
     let ids: Vec<String> = (0..5).map(|i| format!("roof-{i}")).collect();
     let mut squad_ids = ids.clone();
-    if duplicate { squad_ids.push(ids[0].clone()); }
+    if duplicate {
+        squad_ids.push(ids[0].clone());
+    }
     let slots: Vec<Value> = (0..5).map(|i| json!({
         "id": ids[i], "squadId":"sq", "role":"Rifleman", "tag":"", "index":i,
         "stance":"stand", "assetId":"", "position":{
@@ -20,7 +22,7 @@ fn mission(duplicate: bool, large: bool) -> Value {
     let mut payload = json!({
         "schemaVersion":1,"map":{"terrain":"everon","bounds":[0,0,12800,12800]},
         "environment":{"time":"12:00","weather":"clear"},"loadouts":{},"objectives":[],"markers":[],
-        "vehicles":[{"id":"vehicle-roof","resourceName":"Vehicle.et","position":{"x":6440.0,"y":6400.0,"z":81.5,"rotation":90.0}}],
+        "vehicles":[{"id":"vehicle-roof","resourceName":"Vehicle.et","position":{"x":6600.0,"y":6400.0,"z":81.5,"rotation":90.0}}],
         "editor":{
             "factions":[{"id":"f","name":"BLUFOR","side":"BLUFOR","squadIds":["sq","bravo","charlie"]}],
             "squads":[{"id":"sq","factionId":"f","name":"Alpha","callsign":"Alpha","slotIds":squad_ids,"vehicleIds":[]},
@@ -33,10 +35,18 @@ fn mission(duplicate: bool, large: bool) -> Value {
         }
     });
     if large {
-        let layers=payload["editor"]["editorLayers"].as_array_mut().unwrap();
-        for i in 0..60 { layers.push(json!({"id":format!("extra-{i}"),"name":format!("ZZ extra {i}"),"parentId":null,"entityIds":[]})); }
+        let layers = payload["editor"]["editorLayers"].as_array_mut().unwrap();
+        for i in 0..60 {
+            layers.push(json!({"id":format!("extra-{i}"),"name":format!("ZZ extra {i}"),"parentId":null,"entityIds":[]}));
+        }
     }
-    let id = if duplicate {DUP_ID} else if large {LARGE_ID} else {ID};
+    let id = if duplicate {
+        DUP_ID
+    } else if large {
+        LARGE_ID
+    } else {
+        ID
+    };
     json!({
         "id":id,"title":"T-946.86 regression","terrain":"everon","game_mode":"pve_coop",
         "weather":"clear","time_of_day":"12:00","max_players":32,"status":"draft",
@@ -49,107 +59,198 @@ fn mission(duplicate: bool, large: bool) -> Value {
 
 async fn intercept(page: &Arc<Page>) -> Result<Arc<StdMutex<u64>>> {
     let posts = Arc::new(StdMutex::new(0));
-    let me: Value = serde_json::from_str(&std::fs::read_to_string(repo_root().join("apps/website/frontend/tests/fixtures/api/GET__me.json"))?)?;
-    let registry: Value = serde_json::from_str(&std::fs::read_to_string(repo_root().join("apps/website/frontend/tests/fixtures/api/GET__registry.json"))?)?;
-    page.send("Fetch.enable", json!({"patterns":[{"urlPattern":"*/api/v1/*"}]})).await?;
+    let me: Value = serde_json::from_str(&std::fs::read_to_string(
+        repo_root().join("apps/website/frontend/tests/fixtures/api/GET__me.json"),
+    )?)?;
+    let registry: Value = serde_json::from_str(&std::fs::read_to_string(
+        repo_root().join("apps/website/frontend/tests/fixtures/api/GET__registry.json"),
+    )?)?;
+    page.send(
+        "Fetch.enable",
+        json!({"patterns":[{"urlPattern":"*/api/v1/*"}]}),
+    )
+    .await?;
     let mut paused = page.on_event("Fetch.requestPaused").await;
     let page = page.clone();
     let counter = posts.clone();
     tokio::spawn(async move {
         while let Some(event) = paused.recv().await {
-            let Some(id) = event["requestId"].as_str() else { continue; };
+            let Some(id) = event["requestId"].as_str() else {
+                continue;
+            };
             let url = event["request"]["url"].as_str().unwrap_or("");
             let method = event["request"]["method"].as_str().unwrap_or("");
             let (status, body) = if method == "POST" && url.contains("/versions") {
                 *counter.lock().unwrap() += 1;
                 (400, json!({"error":"smoke observed a save request"}))
             } else if url.contains("/auth/refresh") {
-                (200,json!({"access_token":"recovery-access","refresh_token":"rt-seed","expires_at":"2030-01-01T00:00:00Z"}))
-            } else if url.ends_with("/me") { (200,me.clone())
-            } else if url.contains("/registry") { (200,registry.clone())
-            } else if url.contains(DUP_ID) { (200,mission(true,false))
-            } else if url.contains(LARGE_ID) { (200,mission(false,true))
-            } else if url.contains(ID) { (200,mission(false,false))
-            } else { (200,json!({"data":[],"total":0,"limit":50,"offset":0})) };
-            let _ = page.fulfill_json(id,status,&body).await;
+                (
+                    200,
+                    json!({"access_token":"recovery-access","refresh_token":"rt-seed","expires_at":"2030-01-01T00:00:00Z"}),
+                )
+            } else if url.ends_with("/me") {
+                (200, me.clone())
+            } else if url.contains("/registry") {
+                (200, registry.clone())
+            } else if url.contains(DUP_ID) {
+                (200, mission(true, false))
+            } else if url.contains(LARGE_ID) {
+                (200, mission(false, true))
+            } else if url.contains(ID) {
+                (200, mission(false, false))
+            } else {
+                (200, json!({"data":[],"total":0,"limit":50,"offset":0}))
+            };
+            let _ = page.fulfill_json(id, status, &body).await;
         }
     });
     Ok(posts)
 }
 
-async fn payload(page: &Page) -> Result<Value> { eval(page, PAYLOAD).await }
-async fn depth(page: &Page) -> Result<i64> { eval_i64(page,"window.__editorHistory.undo_depth()").await }
-async fn settle() { cdp::sleep_ms(180).await; }
+async fn payload(page: &Page) -> Result<Value> {
+    eval(page, PAYLOAD).await
+}
+async fn depth(page: &Page) -> Result<i64> {
+    eval_i64(page, "window.__editorHistory.undo_depth()").await
+}
+async fn settle() {
+    cdp::sleep_ms(180).await;
+}
 async fn undo(page: &Page) -> Result<()> {
-    key_chord(page,"z","KeyZ",2,90).await?;
+    key_chord(page, "z", "KeyZ", 2, 90).await?;
     settle().await;
     Ok(())
 }
 async fn select_five(page: &Page) -> Result<()> {
-    click_selector(page,"[aria-label='No widget']").await?;
-    let probe = eval(page,"JSON.parse(window.__editorSelection.probe_marquee())").await?;
-    let r = &probe["rect"];
-    drag(page,r[0].as_f64().unwrap(),r[1].as_f64().unwrap(),r[2].as_f64().unwrap(),r[3].as_f64().unwrap()).await?;
+    click_selector(page, "[aria-label='No widget']").await?;
+    eval(page, "window.__editorCamSet(6404,6400,0)").await?;
     settle().await;
-    anyhow::ensure!(eval_i64(page,"window.__editorSelection.count()").await? == 5,"fixture must select exactly five slots");
-    click_selector(page,"[aria-label='Translate widget']").await?;
+    let probe = eval(page, "JSON.parse(window.__editorSelection.probe_marquee())").await?;
+    let r = &probe["rect"];
+    drag(
+        page,
+        r[0].as_f64().unwrap(),
+        r[1].as_f64().unwrap(),
+        r[2].as_f64().unwrap(),
+        r[3].as_f64().unwrap(),
+    )
+    .await?;
+    settle().await;
+    anyhow::ensure!(
+        eval_i64(page, "window.__editorSelection.count()").await? == 5,
+        "fixture must select exactly five slots"
+    );
+    click_selector(page, "[aria-label='Translate widget']").await?;
     settle().await;
     Ok(())
 }
-async fn widget(page: &Page) -> Result<(f64,f64)> {
+async fn widget(page: &Page) -> Result<(f64, f64)> {
     let p = eval(page,"(() => { const s=document.querySelector('[data-transform-widget]'); const l=s?.querySelector('line'); if(!l) throw Error('no translate widget'); const r=s.getBoundingClientRect(); return [r.left+Number(l.getAttribute('x1')),r.top+Number(l.getAttribute('y1'))]; })()").await?;
-    Ok((p[0].as_f64().unwrap(),p[1].as_f64().unwrap()))
+    Ok((p[0].as_f64().unwrap(), p[1].as_f64().unwrap()))
 }
 async fn z_start(page: &Page, x: f64, y: f64) -> Result<()> {
-    mouse(page,"mousePressed",x,y,json!({"button":"left","buttons":1,"clickCount":1})).await?;
-    mouse(page,"mouseMoved",x,y-8.0,json!({"button":"none","buttons":1})).await?;
-    mouse(page,"mouseMoved",x,y-12.0,json!({"button":"none","buttons":1})).await?;
+    mouse(
+        page,
+        "mousePressed",
+        x,
+        y,
+        json!({"button":"left","buttons":1,"clickCount":1}),
+    )
+    .await?;
+    mouse(
+        page,
+        "mouseMoved",
+        x,
+        y - 8.0,
+        json!({"button":"none","buttons":1}),
+    )
+    .await?;
+    mouse(
+        page,
+        "mouseMoved",
+        x,
+        y - 12.0,
+        json!({"button":"none","buttons":1}),
+    )
+    .await?;
     settle().await;
     Ok(())
 }
-fn same_positions(a: &Value,b: &Value) -> bool { a["editor"]["slots"]==b["editor"]["slots"] && a["vehicles"]==b["vehicles"] }
+fn same_positions(a: &Value, b: &Value) -> bool {
+    a["editor"]["slots"] == b["editor"]["slots"] && a["vehicles"] == b["vehicles"]
+}
 
 // A release outside the tree and a cancellation must clear both pending representations.
-async fn outside_drop_cases(page: &Page, checks: &mut Map<String,Value>, prefix: &str) -> Result<()> {
+async fn outside_drop_cases(
+    page: &Page,
+    checks: &mut Map<String, Value>,
+    prefix: &str,
+) -> Result<()> {
     for event in ["pointerup", "pointercancel"] {
-        let before=payload(page).await?;
-        let d=depth(page).await?;
+        let before = payload(page).await?;
+        let d = depth(page).await?;
         let armed=eval_bool(page,"(() => { const b=document.querySelector('aside button[aria-label=Rifleman]'); if(!b)return false; b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,button:0,buttons:1})); return true; })()").await?;
         eval(page,&format!("document.body.dispatchEvent(new PointerEvent('{event}',{{bubbles:true,pointerId:1,button:0}}))")).await?;
         settle().await;
         let released=eval_bool(page,"(() => { const b=[...document.querySelectorAll('aside button')].find(b=>(b.getAttribute('aria-label')||'').includes('Recovery destination')); if(!b)return false; b.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return true; })()").await?;
         settle().await;
-        checks.insert(format!("{prefix}_{event}_clears_outliner_latches"),json!(armed && released && payload(page).await?["editor"]["editorLayers"]==before["editor"]["editorLayers"] && depth(page).await?==d));
+        checks.insert(
+            format!("{prefix}_{event}_clears_outliner_latches"),
+            json!(
+                armed
+                    && released
+                    && payload(page).await?["editor"]["editorLayers"]
+                        == before["editor"]["editorLayers"]
+                    && depth(page).await? == d
+            ),
+        );
     }
     Ok(())
 }
 
-async fn orbat_cases(page: &Page, checks: &mut Map<String,Value>) -> Result<()> {
+async fn orbat_cases(page: &Page, checks: &mut Map<String, Value>) -> Result<()> {
     select_five(page).await?;
-    let opened=click_selector(page,"[aria-label='ORBAT Manager']").await?;
+    let opened = click_selector(page, "[aria-label='ORBAT Manager']").await?;
     settle().await;
-    let d=depth(page).await?;
+    let d = depth(page).await?;
     let drop=eval_bool(page,"(() => {const root=document.querySelector('[role=dialog]'); const row=root?.querySelector('button[aria-label=Rifleman]'); const dest=[...(root?.querySelectorAll('[title=\"Drop a slot here to refile into this squad\"]')||[])].find(e=>e.textContent.includes('Bravo')); if(!row||!dest)return false; row.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,button:0,buttons:1})); dest.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return true; })()").await?;
     settle().await;
-    let moved=payload(page).await?;
-    let n=moved["editor"]["squads"].as_array().and_then(|a|a.iter().find(|s|s["id"]=="bravo")).and_then(|s|s["slotIds"].as_array()).map_or(0,Vec::len);
-    checks.insert("orbat_five_row_one_undo".into(),json!(opened && drop && n==5 && depth(page).await?==d+1));
+    let moved = payload(page).await?;
+    let n = moved["editor"]["squads"]
+        .as_array()
+        .and_then(|a| a.iter().find(|s| s["id"] == "bravo"))
+        .and_then(|s| s["slotIds"].as_array())
+        .map_or(0, Vec::len);
+    checks.insert(
+        "orbat_five_row_one_undo".into(),
+        json!(opened && drop && n == 5 && depth(page).await? == d + 1),
+    );
     let click=eval_bool(page,"(() => { const e=[...document.querySelectorAll('[title=\"Drop a slot here to refile into this squad\"]')].find(e=>e.textContent.includes('Charlie')); if(!e)return false; e.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return true; })()").await?;
     settle().await;
-    checks.insert("orbat_later_squad_click_cannot_move_anchor".into(),json!(click && payload(page).await?["editor"]["squads"]==moved["editor"]["squads"] && depth(page).await?==d+1));
+    checks.insert(
+        "orbat_later_squad_click_cannot_move_anchor".into(),
+        json!(
+            click
+                && payload(page).await?["editor"]["squads"] == moved["editor"]["squads"]
+                && depth(page).await? == d + 1
+        ),
+    );
     // Cancel a fresh ORBAT row arm, then release a different squad.
     let armed=eval_bool(page,"(() => {const row=document.querySelector('[role=dialog] button[aria-label=Rifleman]'); if(!row)return false; row.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,button:0,buttons:1})); window.dispatchEvent(new PointerEvent('pointercancel',{bubbles:true,pointerId:1})); return true; })()").await?;
     eval(page,"(() => { const e=[...document.querySelectorAll('[title=\"Drop a slot here to refile into this squad\"]')].find(e=>e.textContent.includes('Charlie')); e?.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return !!e; })()").await?;
     settle().await;
-    checks.insert("orbat_cancel_clears_legacy_refile".into(),json!(armed && payload(page).await?["editor"]["squads"]==moved["editor"]["squads"]));
-    key_chord(page,"Escape","Escape",0,27).await?;
+    checks.insert(
+        "orbat_cancel_clears_legacy_refile".into(),
+        json!(armed && payload(page).await?["editor"]["squads"] == moved["editor"]["squads"]),
+    );
+    key_chord(page, "Escape", "Escape", 0, 27).await?;
     settle().await;
     undo(page).await?;
     Ok(())
 }
 
 pub(super) async fn run(dist: &str) -> Result<u8> {
-    let h = Harness::new(dist,5396,9496,None,None,&[]).await?;
+    let h = Harness::new(dist, 5396, 9496, None, None, &[]).await?;
     let run = async {
         let posts = intercept(&h.page).await?;
         h.page.navigate(&h.url(&format!("/missions/{ID}/edit?force=webgl&sat=preview"))).await?;

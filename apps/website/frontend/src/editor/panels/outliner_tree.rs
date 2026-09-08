@@ -1458,23 +1458,40 @@ pub(crate) fn virtual_tree(
                 gloo_timers::callback::Timeout::new(0, move || {
                     crate::editor::panels::outliner_drag::cancel_layer_drag();
                     let _ = drag_ghost_pos.try_set(None);
-                }).forget();
+                })
+                .forget();
             });
             let cancel = Closure::<dyn FnMut(web_sys::Event)>::new(move |_| {
                 crate::editor::panels::outliner_drag::cancel_layer_drag();
                 let _ = drag_ghost_pos.try_set(None);
             });
-            let _ = win.add_event_listener_with_callback_and_bool("pointerup", release.as_ref().unchecked_ref(), true);
+            let _ = win.add_event_listener_with_callback_and_bool(
+                "pointerup",
+                release.as_ref().unchecked_ref(),
+                true,
+            );
             for event in ["pointercancel", "blur"] {
-                let _ = win.add_event_listener_with_callback_and_bool(event, cancel.as_ref().unchecked_ref(), true);
+                let _ = win.add_event_listener_with_callback_and_bool(
+                    event,
+                    cancel.as_ref().unchecked_ref(),
+                    true,
+                );
             }
             let hooks = StoredValue::new_local((win, release, cancel));
             on_cleanup(move || {
                 crate::editor::panels::outliner_drag::cancel_layer_drag();
                 let _ = hooks.try_with_value(|(win, release, cancel)| {
-                    let _ = win.remove_event_listener_with_callback_and_bool("pointerup", release.as_ref().unchecked_ref(), true);
+                    let _ = win.remove_event_listener_with_callback_and_bool(
+                        "pointerup",
+                        release.as_ref().unchecked_ref(),
+                        true,
+                    );
                     for event in ["pointercancel", "blur"] {
-                        let _ = win.remove_event_listener_with_callback_and_bool(event, cancel.as_ref().unchecked_ref(), true);
+                        let _ = win.remove_event_listener_with_callback_and_bool(
+                            event,
+                            cancel.as_ref().unchecked_ref(),
+                            true,
+                        );
                     }
                 });
             });

@@ -123,7 +123,11 @@ pub(crate) fn z_drag_elevation_delta(py: f64, start_y: f64, scale: f64, step: f6
 /// Reads the snap state UNTRACKED: this runs inside a pointer closure, not a reactive scope, and a
 /// tracked read there would subscribe nothing and merely cost a lookup.
 pub(crate) fn z_drag_snap_step(snap: transform::SnapState, shift: bool) -> f64 {
-    let rung = if shift { 0 } else { snap.effective_translate_rung() };
+    let rung = if shift {
+        0
+    } else {
+        snap.effective_translate_rung()
+    };
     transform::TRANSLATE_LADDER_M
         .get(rung)
         .copied()
@@ -164,39 +168,65 @@ impl ZDrag {
                 continue;
             };
             if let Some(position) = row.get("position") {
-                let z = position.get("z").and_then(serde_json::Value::as_f64).unwrap_or(0.0);
+                let z = position
+                    .get("z")
+                    .and_then(serde_json::Value::as_f64)
+                    .unwrap_or(0.0);
                 if z.is_finite() {
                     target.push((id.clone(), z));
                 }
             }
         }
         (!slots.is_empty() || !vehicles.is_empty()).then_some(Self {
-            pointer_id, start_y, scale, slots, vehicles,
+            pointer_id,
+            start_y,
+            scale,
+            slots,
+            vehicles,
         })
     }
 
     pub(crate) fn height(&self, delta: f64) -> f64 {
-        self.slots.first().or_else(|| self.vehicles.first()).map_or(0.0, |(_, z)| *z) + delta
+        self.slots
+            .first()
+            .or_else(|| self.vehicles.first())
+            .map_or(0.0, |(_, z)| *z)
+            + delta
     }
 
     /// Both entity kinds share one undo group. Vehicle XY/rotation come from the current row,
     /// so a Z-only commit cannot overwrite another position attribute changed during the drag.
-    pub(crate) fn commit(self, core: &mut map_engine_core::doc::MissionDocCore, delta: f64) -> bool {
+    pub(crate) fn commit(
+        self,
+        core: &mut map_engine_core::doc::MissionDocCore,
+        delta: f64,
+    ) -> bool {
         if delta == 0.0 || !delta.is_finite() {
             return false;
         }
-        let maps: serde_json::Value = serde_json::from_str(&core.small_maps_json()).unwrap_or_default();
+        let maps: serde_json::Value =
+            serde_json::from_str(&core.small_maps_json()).unwrap_or_default();
         core.begin_group();
-        let (slot_ids, zs): (Vec<_>, Vec<_>) = self.slots.into_iter()
-            .map(|(id, z)| (id, z + delta)).unzip();
+        let (slot_ids, zs): (Vec<_>, Vec<_>) = self
+            .slots
+            .into_iter()
+            .map(|(id, z)| (id, z + delta))
+            .unzip();
         if !slot_ids.is_empty() {
             core.move_entities(slot_ids, 0.0, 0.0, zs);
         }
         for (id, z) in self.vehicles {
-            if let Some(p) = maps["vehiclesById"].get(&id).and_then(|row| row.get("position")) {
-                core.set_vehicle_position(&id,
-                    p["x"].as_f64().unwrap_or(0.0), p["y"].as_f64().unwrap_or(0.0),
-                    z + delta, p["rotation"].as_f64().unwrap_or(0.0));
+            if let Some(p) = maps["vehiclesById"]
+                .get(&id)
+                .and_then(|row| row.get("position"))
+            {
+                core.set_vehicle_position(
+                    &id,
+                    p["x"].as_f64().unwrap_or(0.0),
+                    p["y"].as_f64().unwrap_or(0.0),
+                    z + delta,
+                    p["rotation"].as_f64().unwrap_or(0.0),
+                );
             }
         }
         core.end_group();
@@ -206,7 +236,10 @@ impl ZDrag {
 
 /// A release/cancel from another pointer must neither consume nor commit the active drag.
 pub(crate) fn take_z_drag(drag: &mut Option<ZDrag>, pointer_id: i32) -> Option<ZDrag> {
-    if drag.as_ref().is_some_and(|arm| arm.pointer_id == pointer_id) {
+    if drag
+        .as_ref()
+        .is_some_and(|arm| arm.pointer_id == pointer_id)
+    {
         drag.take()
     } else {
         None
@@ -1244,7 +1277,9 @@ mod t946_86_z_arm {
              pointerdown and never reading it is the wave-255 defect this repairs"
         );
         assert!(
-            src.contains("ov::take_z_drag(&mut z_drag.borrow_mut(), ev.pointer_id())"),
+            src.split("let onpointerup")
+                .nth(1)
+                .is_some_and(|s| s.contains("ov::take_z_drag(")),
             "T-946.86 (.82): onpointerup must TAKE the arm — leaving it latched strands the next \
              gesture behind a drag that already ended"
         );
@@ -1284,8 +1319,12 @@ mod t946_86_z_arm {
     #[test]
     fn the_z_arm_releases_the_pointer_capture_before_it_commits() {
         let src = live();
+        let src = src
+            .split("let onpointerup")
+            .nth(1)
+            .expect("pointerup closure");
         let at_take = src
-            .find("ov::take_z_drag(&mut z_drag.borrow_mut(), ev.pointer_id())")
+            .find("ov::take_z_drag(")
             .expect("the pointerup arm is present");
         let after = &src[at_take..];
         let at_release = after
@@ -1304,9 +1343,30 @@ mod t946_86_z_arm {
     fn mixed_doc() -> map_engine_core::doc::MissionDocCore {
         let core = map_engine_core::doc::MissionDocCore::new();
         core.set_origin_init(true);
-        core.add_slot("roof", "sq", "layer", 0, "Rifleman", None, None, 100.0, 200.0, 50.123456789, 30.0);
-        core.add_slot("ground", "sq", "layer", 1, "Rifleman", None, None, 110.0, 210.0, -7.25, 45.0);
-        core.add_vehicle("vehicle", "Vehicle.et", Some(150.0), Some(250.0), Some(81.5), Some(90.0));
+        core.add_slot(
+            "roof",
+            "sq",
+            "layer",
+            0,
+            "Rifleman",
+            None,
+            None,
+            100.0,
+            200.0,
+            50.123456789,
+            30.0,
+        );
+        core.add_slot(
+            "ground", "sq", "layer", 1, "Rifleman", None, None, 110.0, 210.0, -7.25, 45.0,
+        );
+        core.add_vehicle(
+            "vehicle",
+            "Vehicle.et",
+            Some(150.0),
+            Some(250.0),
+            Some(81.5),
+            Some(90.0),
+        );
         core.set_origin_init(false);
         core
     }
@@ -1326,8 +1386,10 @@ mod t946_86_z_arm {
         let maps: serde_json::Value = serde_json::from_str(&core.small_maps_json()).unwrap();
         assert_eq!(slots["roof"]["position"]["z"], 52.123456789);
         assert_eq!(slots["ground"]["position"]["z"], -5.25);
-        assert_eq!(maps["vehiclesById"]["vehicle"]["position"],
-            serde_json::json!({"x":150.0,"y":250.0,"z":83.5,"rotation":90.0}));
+        assert_eq!(
+            maps["vehiclesById"]["vehicle"]["position"],
+            serde_json::json!({"x":150.0,"y":250.0,"z":83.5,"rotation":90.0})
+        );
         assert_eq!(core.undo_depth(), 1, "all kinds must share one undo group");
         assert!(core.undo());
         assert_eq!(core.slots_json(), slots_before);
@@ -1336,15 +1398,23 @@ mod t946_86_z_arm {
 
     #[test]
     fn cancelling_then_unrelated_pointerup_cannot_commit() {
-        use super::{ZDrag, take_z_drag};
+        use super::{take_z_drag, ZDrag};
         let mut core = mixed_doc();
         let before = core.slots_json();
         let mut active = ZDrag::begin(&core, &["roof".into()], 7, 100.0, 2.0);
-        assert!(take_z_drag(&mut active, 8).is_none(), "unrelated release cannot steal the arm");
+        assert!(
+            take_z_drag(&mut active, 8).is_none(),
+            "unrelated release cannot steal the arm"
+        );
         assert!(active.is_some());
-        assert!(take_z_drag(&mut active, 7).is_some(), "pointercancel consumes initiating arm");
+        assert!(
+            take_z_drag(&mut active, 7).is_some(),
+            "pointercancel consumes initiating arm"
+        );
         for pointer in [8, 7] {
-            if let Some(arm) = take_z_drag(&mut active, pointer) { arm.commit(&mut core, 2.0); }
+            if let Some(arm) = take_z_drag(&mut active, pointer) {
+                arm.commit(&mut core, 2.0);
+            }
         }
         assert_eq!(core.slots_json(), before);
         assert_eq!(core.undo_depth(), 0);
@@ -1352,9 +1422,13 @@ mod t946_86_z_arm {
 
     #[test]
     fn vehicle_only_drag_uses_same_snap_and_shift_suspension() {
-        use super::{ZDrag, z_drag_snap_step};
+        use super::{z_drag_snap_step, ZDrag};
         let mut core = mixed_doc();
-        let snap = super::transform::SnapState { enabled: true, translate_rung: 2, rotate_rung: 0 };
+        let snap = super::transform::SnapState {
+            enabled: true,
+            translate_rung: 2,
+            rotate_rung: 0,
+        };
         let snapped = z_drag_snap_step(snap, false);
         let suspended = z_drag_snap_step(snap, true);
         assert_eq!(snapped, 5.0);
@@ -1367,7 +1441,11 @@ mod t946_86_z_arm {
         assert!(core.undo());
         let arm = ZDrag::begin(&core, &["vehicle".into()], 7, 100.0, 2.0).unwrap();
         assert!(!arm.commit(&mut core, z_drag_elevation_delta(96.0, 100.0, 2.0, snapped)));
-        assert_eq!(core.undo_depth(), 0, "zero snapped travel must not create an undo step");
+        assert_eq!(
+            core.undo_depth(),
+            0,
+            "zero snapped travel must not create an undo step"
+        );
     }
 
     /// The preview and the commit must resolve the SAME number from the same inputs. Two copies of

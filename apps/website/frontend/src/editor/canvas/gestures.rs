@@ -182,7 +182,10 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     let _ = container.release_pointer_capture(arm.pointer_id);
                 }
             }
-            if vertex_pointer.get().is_some_and(|id| pointer.is_none_or(|p| p == id)) {
+            if vertex_pointer
+                .get()
+                .is_some_and(|id| pointer.is_none_or(|p| p == id))
+            {
                 if let Some(id) = vertex_pointer.take() {
                     if container.has_pointer_capture(id) {
                         let _ = container.release_pointer_capture(id);
@@ -205,26 +208,41 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
     let cancel_escape = Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new({
         let cancel_z = cancel_z.clone();
         move |ev: web_sys::KeyboardEvent| {
-            if ev.key() == "Escape" { cancel_z(None); }
+            if ev.key() == "Escape" {
+                cancel_z(None);
+            }
         }
     });
     for event in ["pointercancel", "lostpointercapture"] {
-        let _ = container.add_event_listener_with_callback(event, cancel_pointer.as_ref().unchecked_ref());
+        let _ = container
+            .add_event_listener_with_callback(event, cancel_pointer.as_ref().unchecked_ref());
     }
     if let Some(win) = web_sys::window() {
         let _ = win.add_event_listener_with_callback("blur", cancel_blur.as_ref().unchecked_ref());
-        let _ = win.add_event_listener_with_callback("keydown", cancel_escape.as_ref().unchecked_ref());
+        let _ =
+            win.add_event_listener_with_callback("keydown", cancel_escape.as_ref().unchecked_ref());
     }
-    let cleanup = StoredValue::new_local((container.clone(), cancel_z.clone(), cancel_pointer, cancel_blur, cancel_escape));
+    let cleanup = StoredValue::new_local((
+        container.clone(),
+        cancel_z.clone(),
+        cancel_pointer,
+        cancel_blur,
+        cancel_escape,
+    ));
     on_cleanup(move || {
         let _ = cleanup.try_with_value(|(container, cancel, pointer, blur, escape)| {
             cancel(None);
             for event in ["pointercancel", "lostpointercapture"] {
-                let _ = container.remove_event_listener_with_callback(event, pointer.as_ref().unchecked_ref());
+                let _ = container
+                    .remove_event_listener_with_callback(event, pointer.as_ref().unchecked_ref());
             }
             if let Some(win) = web_sys::window() {
-                let _ = win.remove_event_listener_with_callback("blur", blur.as_ref().unchecked_ref());
-                let _ = win.remove_event_listener_with_callback("keydown", escape.as_ref().unchecked_ref());
+                let _ =
+                    win.remove_event_listener_with_callback("blur", blur.as_ref().unchecked_ref());
+                let _ = win.remove_event_listener_with_callback(
+                    "keydown",
+                    escape.as_ref().unchecked_ref(),
+                );
             }
         });
     });
@@ -309,7 +327,9 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
         let engine = engine.clone();
         let left = left.clone();
         move |ev: web_sys::PointerEvent| {
-            if z_drag.borrow().is_some() || vertex_pointer.get().is_some() { return; }
+            if z_drag.borrow().is_some() || vertex_pointer.get().is_some() {
+                return;
+            }
             // T-662 — ONLY the middle button (1) pans. RMB (2) used to pan here too, which
             // ate the right-click before any handler downstream could see it; the button is
             // now free for T-664's context menu (and the six tickets behind it). MMB-pan is
@@ -544,7 +564,9 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // value through, which is why "no snap" needs no special case here.
             let z_arm = z_drag.borrow().clone();
             if let Some(arm) = z_arm {
-                if arm.pointer_id != ev.pointer_id() { return; }
+                if arm.pointer_id != ev.pointer_id() {
+                    return;
+                }
                 let delta = ov::z_drag_elevation_delta(
                     py,
                     arm.start_y,
@@ -573,7 +595,9 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // `refresh_tactical_lane`), so the previewed line and the committed line are packed
             // by one function rather than two that must agree.
             if editor_ops::tactical_vertex_drag_active() {
-                if vertex_pointer.get() != Some(ev.pointer_id()) { return; }
+                if vertex_pointer.get() != Some(ev.pointer_id()) {
+                    return;
+                }
                 if let Some(c) = world.filter(|c| c[0].is_finite() && c[1].is_finite()) {
                     editor_ops::tactical_vertex_drag_move(c[0], c[1]);
                     mission_history::refresh_tactical_lane();
@@ -714,8 +738,15 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         }
                         if z_arm_hit {
                             let cur_sel = selection.borrow().clone();
-                            *z_drag.borrow_mut() = doc.borrow().as_ref().and_then(|core|
-                                ov::ZDrag::begin(core, &cur_sel, ev.pointer_id(), p.start_y, p.cam.scale()));
+                            *z_drag.borrow_mut() = doc.borrow().as_ref().and_then(|core| {
+                                ov::ZDrag::begin(
+                                    core,
+                                    &cur_sel,
+                                    ev.pointer_id(),
+                                    p.start_y,
+                                    p.cam.scale(),
+                                )
+                            });
                             let _ = container.set_pointer_capture(ev.pointer_id());
                             left.borrow_mut().take(); // consume the gesture
                             return;
@@ -948,7 +979,11 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // Consume only the initiating pointer, then release capture before committing.
             // Cancellation takes this same arm, so a later unrelated release has nothing to write.
             {
-                if z_drag.borrow().as_ref().is_some_and(|arm| arm.pointer_id != ev.pointer_id()) {
+                if z_drag
+                    .borrow()
+                    .as_ref()
+                    .is_some_and(|arm| arm.pointer_id != ev.pointer_id())
+                {
                     return;
                 }
                 let z_arm = ov::take_z_drag(&mut z_drag.borrow_mut(), ev.pointer_id());
@@ -960,11 +995,18 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     let rect = container.get_bounding_client_rect();
                     let py = ev.client_y() as f64 - rect.top();
                     let delta = ov::z_drag_elevation_delta(
-                        py, arm.start_y, arm.scale,
+                        py,
+                        arm.start_y,
+                        arm.scale,
                         ov::z_drag_snap_step(snap.get_untracked(), ev.shift_key()),
                     );
-                    let changed = doc.borrow_mut().as_mut().is_some_and(|core| arm.commit(core, delta));
-                    if changed { mission_history::after_local_edit(); }
+                    let changed = doc
+                        .borrow_mut()
+                        .as_mut()
+                        .is_some_and(|core| arm.commit(core, delta));
+                    if changed {
+                        mission_history::after_local_edit();
+                    }
                     return;
                 }
             }
@@ -981,7 +1023,9 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // is a selection and filing an identity edit would make the next Ctrl+Z appear to do
             // nothing.
             if editor_ops::tactical_vertex_drag_active() {
-                if vertex_pointer.get() != Some(ev.pointer_id()) { return; }
+                if vertex_pointer.get() != Some(ev.pointer_id()) {
+                    return;
+                }
                 vertex_pointer.set(None);
                 if container.has_pointer_capture(ev.pointer_id()) {
                     let _ = container.release_pointer_capture(ev.pointer_id());
