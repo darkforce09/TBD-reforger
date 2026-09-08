@@ -938,9 +938,15 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! The UNGATED push, and it stays ungated on purpose. Its two callers are the paths that must never
-	//! be suppressed: the client's own `TBD_RequestObjectiveHud` pull, and the hide when the round
-	//! leaves LIVE. Both therefore RESET what this owner is known to hold - a hidden HUD is not a
-	//! clean one, and re-entering LIVE on an unchanged board must still re-open the panel.
+	//! be suppressed: `HideAllHuds` when the round leaves LIVE, and `PushHudTo`, the pull a client asks
+	//! for. Both therefore RESET what this owner is known to hold - a hidden HUD is not a clean one,
+	//! and re-entering LIVE on an unchanged board must still re-open the panel.
+	//!
+	//! MEASURED 2026-09-08, so the 1 Hz gate above cannot lean on it: the pull path is currently DEAD.
+	//! `TBD_ObjectiveHud.TBD_RequestObjectiveHud` reaches `PushHudTo`, but nothing in `apps/mod` calls
+	//! `TBD_RequestObjectiveHud` - its declaration is the only occurrence in either tree. So the sole
+	//! thing standing between a joiner and an empty HUD is `HudChanged` treating an unknown owner as a
+	//! send, which is why that rule is stated there rather than assumed here.
 	protected void PushHudToPlayer(notnull PlayerManager players, int playerId, notnull array<ref TBD_Objective> board, int show)
 	{
 		array<string> icons = new array<string>();
