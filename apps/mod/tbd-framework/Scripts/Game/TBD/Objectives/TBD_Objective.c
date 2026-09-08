@@ -215,6 +215,10 @@ class TBD_Objective
 	//! objective can be for a side that is not allowed to own the zone; those are different claims.
 	string m_sSide;
 
+	//! The explicitly authored side names no mission faction. Kept separate from an absent side:
+	//! invalid means neutral framing, while absent retains the zone-faction fallback.
+	bool m_bInvalidSide;
+
 	//! Does `m_sSide` DEFEND this objective rather than attack it?
 	//!
 	//! `hold` and `defend` are the defender framings; `capture` and `destroy` are the attacker
@@ -465,8 +469,9 @@ class TBD_Objective
 	//------------------------------------------------------------------------------------------------
 	//! T-212 -- which side of this objective `viewerFaction` is on.
 	//!
-	//! The side the objective is FOR is `objectives[].side` when a typed row bound, and
-	//! `zones[].faction` otherwise. That fallback is a restatement of semantics this file already
+	//! The side the objective is FOR is `objectives[].side` when authored and valid, and
+	//! `zones[].faction` when absent. An invalid authored side stays NEUTRAL without that fallback.
+	//! The absent-side fallback is a restatement of semantics this file already
 	//! documents on `m_sFaction`, not a new guess: a capture zone's faction is the side allowed to
 	//! take it, a destroy zone's is the side told to destroy it, and a hold zone's is the side
 	//! holding the ground. `m_bSideDefends` carries which of the two readings applies.
@@ -480,7 +485,7 @@ class TBD_Objective
 	//! faction parameter on this path that a client could phrase.
 	TBD_EObjectiveRole RoleOf(string viewerFaction)
 	{
-		if (viewerFaction.IsEmpty())
+		if (viewerFaction.IsEmpty() || m_bInvalidSide)
 			return TBD_EObjectiveRole.NEUTRAL;
 
 		string owningSide = m_sSide;
