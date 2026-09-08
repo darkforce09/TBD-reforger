@@ -16,6 +16,12 @@ context = [
     "The editor keymap is the wasm keydown closure in editor/mission_editor.rs (allowlisted SIZE-3 file); new arms stay thin callers of shared invokers.",
     "No file collides with T-939.1; depends_on keeps this slice after it so the context menu builds on the settled multi-select behaviour.",
     "Related, not re-minted: T-704 command palette.",
+    "2026-09-08 recovery: editor behavior smokes and independent targeted checks pass; required v-suite fails 21/25 routes. Wave acceptance remains blocked.",
+    "Unchanged captures produce identical normalized DOM on a6164c4d0 and repaired 514db787 across all 25 routes, twice each. These visual failures predate recovery.",
+    "Repair missing CMS/leave-request fixtures returning invalid 200 {} envelopes and Server Control ignoring T-385's terrain field. Preserve desired shipped application behavior.",
+    "Approvals also needs both seeded pending-mission detail fixtures. Preserve Cold Anvil's authored briefing and Paper Tiger's intentionally absent briefing; neither may render a fixture decode failure.",
+    "Server Intel's hardcoded intelligence events have no data source. Replace fabricated reports with an honest unavailable state while retaining actual server/status/environment/modpack information.",
+    "Accept only independently reviewed intentional shipped visual divergences through per-route accept, preserving React references and specific provenance. Never bless error UI or blanket rebaseline.",
 ]
 requirement = [
     "top_strip.rs exposes the Arrange entries as one shared list (label, chord, invoker) consumed by both menus.",
@@ -46,6 +52,14 @@ created_at = "2026-09-05T02:33:18Z"
 owns = [
     "apps/website/frontend/src/editor/panels/context_menu.rs",
     "apps/website/frontend/src/editor/panels/top_strip.rs",
+    "apps/website/frontend/src/pages/admin/server_control.rs",
+    "apps/website/frontend/src/pages/public/server_intel.rs",
+    "apps/website/frontend/tests/fixtures/api/GET__cms__announcements.json",
+    "apps/website/frontend/tests/fixtures/api/GET__me__leave-requests.json",
+    "apps/website/frontend/tests/fixtures/api/GET__admin__leave-requests.json",
+    "apps/website/frontend/tests/fixtures/api/GET__missions__00000000-0000-4000-c000-000000000004.json",
+    "apps/website/frontend/tests/fixtures/api/GET__missions__00000000-0000-4000-c000-000000000005.json",
+    "tools/tbd-tools/fixtures/t159/oracle-freeze/",
 ]
 
 [scope]
