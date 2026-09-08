@@ -3760,7 +3760,8 @@ mod t939_4_arrange_chords {
             .expect("T-939.4: the listener's cleanup");
         let body = &body[..end];
         assert_eq!(
-            body.matches("arrange_chord(top_strip::ArrangeKind::").count(),
+            body.matches("arrange_chord(top_strip::ArrangeKind::")
+                .count(),
             ARRANGE_CODES.len(),
             "T-939.4: every one of the {} arms must hand off to the shared helper. Body:\n{body}",
             ARRANGE_CODES.len()

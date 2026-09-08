@@ -663,11 +663,7 @@ pub(crate) mod keymap_census {
             // behind the `chrome_hidden` gate and would take the chords with it. Being censused is
             // what matters — these six are adjudicated against every other binding in the editor by
             // `no_two_listeners_claim_the_same_chord` below, wherever the closure sits.
-            (
-                "mission_editor.rs",
-                include_str!("../mission_editor.rs"),
-                1,
-            ),
+            ("mission_editor.rs", include_str!("../mission_editor.rs"), 1),
             // T-934.11 — the asset picker / comment editor / connections panel (each installing
             // one Escape listener) moved out of `mission_editor.rs` into the canvas overlays file.
             ("overlays.rs", include_str!("../canvas/overlays.rs"), 3),
@@ -1820,7 +1816,7 @@ mod t772_controls_hint_close_hitbox {
  */
 #[cfg(test)]
 mod t939_4_arrange_help_rows {
-    use super::{SHORTCUTS, GROUPS};
+    use super::{GROUPS, SHORTCUTS};
     use crate::editor::panels::top_strip::ARRANGE;
 
     /// Every chorded Arrange row has a help row filed under `Arrange` whose chord text CONTAINS the

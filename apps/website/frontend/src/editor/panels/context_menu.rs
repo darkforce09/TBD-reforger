@@ -2015,6 +2015,10 @@ mod t939_4_arrange_in_the_context_menu {
         let l = labels(&rows);
         let t = l.iter().position(|s| *s == "Transform").expect("Transform");
         let a = l.iter().position(|s| *s == "Arrange").expect("Arrange");
-        assert_eq!(a, t + 1, "T-939.4: Arrange must follow Transform; rows: {l:?}");
+        assert_eq!(
+            a,
+            t + 1,
+            "T-939.4: Arrange must follow Transform; rows: {l:?}"
+        );
     }
 }
