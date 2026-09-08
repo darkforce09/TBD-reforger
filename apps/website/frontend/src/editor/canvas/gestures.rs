@@ -1514,8 +1514,8 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             .cloned()
                             .partition(|id| editor_ops::is_vehicle_id(id));
                         if !slot_ids.is_empty() || !veh_ids.is_empty() {
-                            let guard = doc.borrow();
-                            let Some(core) = guard.as_ref() else {
+                            let mut guard = doc.borrow_mut();
+                            let Some(core) = guard.as_mut() else {
                                 return;
                             };
                             // wave-127 F-6 — the drag carries each slot's CURRENT z.
@@ -1556,7 +1556,12 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                         .unwrap_or(0.0)
                                 })
                                 .collect();
+                            // A release ends one gesture even when the next drag arrives inside
+                            // the core's 300 ms capture window. Close the group so consecutive
+                            // same-slot drags undo independently (the original undo smoke).
+                            core.begin_group();
                             core.move_entities_and_vehicles(slot_ids, &veh_ids, dx, dy, zs);
+                            core.end_group();
                             drop(guard);
                             mission_history::after_local_edit();
                         }
