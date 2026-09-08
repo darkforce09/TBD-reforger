@@ -65,6 +65,29 @@ enum TBD_EObjectiveOnEmpty
 }
 
 //------------------------------------------------------------------------------------------------
+//! T-212 -- which side of the SAME objective a viewer is on.
+//!
+//! FNF v4's insight is real: an objective reads differently to attacker and defender, and v4
+//! generates genuinely different task text, titles and separate task trees from that. Its
+//! IMPLEMENTATION is the part TBD does not copy. v4 ships TWO modules per objective, one per
+//! side, and pays for it four documented ways (fnf_v4.md 14.4): identity is POSITIONAL, the two
+//! halves are "the same objective" only because they share a sync target or a prefix string,
+//! NOTHING validates that both halves exist, and the lobby tool divides the objective count by 2
+//! so a forgotten second half yields a fractional count. `#/$defs/objective` forbids that shape
+//! outright -- ONE ENTITY, TWO FRAMINGS, never two rows for one objective.
+//!
+//! So the role is DERIVED here, once, from one row. NEUTRAL is not an error state: it is what a
+//! viewer with no resolved side gets, and what an objective naming no side at all reads as, which
+//! is why the framing lookup can be a switch on this instead of a string compare at each call
+//! site -- the same reason `TBD_EObjectiveKind.NONE` exists.
+enum TBD_EObjectiveRole
+{
+	NEUTRAL,
+	ATTACKER,
+	DEFENDER
+}
+
+//------------------------------------------------------------------------------------------------
 //! One prepared objective, with its resolved rules and its live state.
 class TBD_Objective
 {
@@ -164,6 +187,58 @@ class TBD_Objective
 	//! Player ids sampled inside this objective this tick. Recorded during sampling rather than
 	//! recomputed at delivery so containment is tested exactly once per player per objective.
 	ref array<int> m_aPresentPlayers;
+
+	// -- T-212: the typed `objectives[]` row bound to this objective, when one exists ------------
+	//
+	// Every field below is EMPTY on an untyped objective, and an untyped objective behaves exactly
+	// as it did before T-212. Objectives-as-zones is the floor this sits on, not a legacy path
+	// being migrated off: `zones[]` of `type: objective_*` remains the thing the runtime enforces,
+	// and a typed row is an OVERLAY that adds identity, per-side framing and the two WOG scalars.
+
+	//! True when a top-level `objectives[]` row named this objective's zone in `zoneId`.
+	bool m_bTyped;
+
+	//! `objectives[].id` -- the OBJECTIVE's own identity, which is not the zone's. Kept apart from
+	//! `m_sId` (the zone id) rather than folded into it: they are separate namespaces in the schema,
+	//! and collapsing them makes every log line ambiguous the first time an author lets them differ.
+	string m_sEntityId;
+
+	//! `objectives[].type` verbatim: capture | destroy | hold | defend. Empty when untyped.
+	//!
+	//! This records what the author SAID. `m_eKind`, resolved from `zones[].type`, remains what the
+	//! runtime ENFORCES. They are kept apart on purpose so a disagreement between the two can be
+	//! reported at load instead of silently resolved in favour of whichever was read last.
+	string m_sTaskType;
+
+	//! `objectives[].side` -- the faction this objective is FOR. Distinct from `m_sFaction`
+	//! (`zones[].faction`), which is the OWNERSHIP restriction the capture rules enforce. An
+	//! objective can be for a side that is not allowed to own the zone; those are different claims.
+	string m_sSide;
+
+	//! Does `m_sSide` DEFEND this objective rather than attack it?
+	//!
+	//! `hold` and `defend` are the defender framings; `capture` and `destroy` are the attacker
+	//! framings. An untyped objective falls back to its kind, which says the same thing: a
+	//! HOLD_UNTIL zone's `faction` is the side holding the ground, and a capture or destroy zone's
+	//! is the side told to take or break it.
+	bool m_bSideDefends;
+
+	//! `objectives[].lock`. SEMANTICS ARE INFERRED -- carried and reported, never enforced. See the
+	//! T-212 block in `TBD_ObjectiveRegistry`'s header for why enacting it would be a misreading
+	//! rather than a feature.
+	bool m_bLocked;
+
+	//! `objectives[].autoLose`. Also INFERRED, and also carried and reported only. Validated
+	//! against `factions[].key` at load and blanked when it names no side, so a consumer that
+	//! appears later never inherits a dangling key.
+	string m_sAutoLoseFaction;
+
+	//! `objectives[].framing.attacker` / `.defender` -- the per-side task title and body text.
+	//! Empty means that side was not framed, and the neutral `DisplayName()` stands in for it.
+	string m_sAttackerTitle;
+	string m_sAttackerText;
+	string m_sDefenderTitle;
+	string m_sDefenderText;
 
 	//------------------------------------------------------------------------------------------------
 	void TBD_Objective()
@@ -388,6 +463,103 @@ class TBD_Objective
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! T-212 -- which side of this objective `viewerFaction` is on.
+	//!
+	//! The side the objective is FOR is `objectives[].side` when a typed row bound, and
+	//! `zones[].faction` otherwise. That fallback is a restatement of semantics this file already
+	//! documents on `m_sFaction`, not a new guess: a capture zone's faction is the side allowed to
+	//! take it, a destroy zone's is the side told to destroy it, and a hold zone's is the side
+	//! holding the ground. `m_bSideDefends` carries which of the two readings applies.
+	//!
+	//! Everyone who is not that side gets the OPPOSITE role, and that is deliberate rather than a
+	//! two-faction assumption: with three sides, two of them are attacking the same defender and
+	//! both should read the attacker framing, which is exactly what this returns.
+	//!
+	//! The viewer's side is PASSED IN, never derived here, for the same reason `StatusText` takes
+	//! it: it must come from server-owned state (the player's assigned slot) and there must be no
+	//! faction parameter on this path that a client could phrase.
+	TBD_EObjectiveRole RoleOf(string viewerFaction)
+	{
+		if (viewerFaction.IsEmpty())
+			return TBD_EObjectiveRole.NEUTRAL;
+
+		string owningSide = m_sSide;
+		if (owningSide.IsEmpty())
+			owningSide = m_sFaction;
+
+		if (owningSide.IsEmpty())
+			return TBD_EObjectiveRole.NEUTRAL;
+
+		bool isOwningSide = viewerFaction == owningSide;
+
+		if (m_bSideDefends)
+		{
+			if (isOwningSide)
+				return TBD_EObjectiveRole.DEFENDER;
+
+			return TBD_EObjectiveRole.ATTACKER;
+		}
+
+		if (isOwningSide)
+			return TBD_EObjectiveRole.ATTACKER;
+
+		return TBD_EObjectiveRole.DEFENDER;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Was EITHER side framed? Read by the load log, so an operator can tell at a glance whether a
+	//! mission actually authored per-side text or is running on the neutral label everywhere.
+	bool HasFraming()
+	{
+		if (!m_sAttackerTitle.IsEmpty() || !m_sAttackerText.IsEmpty())
+			return true;
+
+		if (!m_sDefenderTitle.IsEmpty() || !m_sDefenderText.IsEmpty())
+			return true;
+
+		return false;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! The objective's title AS `viewerFaction` READS IT.
+	//!
+	//! Falls back to the neutral `DisplayName()` whenever that side was not framed, so a
+	//! half-framed objective -- which the schema allows, both `framing` halves being optional --
+	//! is still named to the side the author skipped rather than appearing as a blank row.
+	string TitleFor(string viewerFaction)
+	{
+		TBD_EObjectiveRole role = RoleOf(viewerFaction);
+
+		if (role == TBD_EObjectiveRole.ATTACKER && !m_sAttackerTitle.IsEmpty())
+			return m_sAttackerTitle;
+
+		if (role == TBD_EObjectiveRole.DEFENDER && !m_sDefenderTitle.IsEmpty())
+			return m_sDefenderTitle;
+
+		return DisplayName();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! The task BODY text for `viewerFaction`, or empty when that side was not framed.
+	//!
+	//! Empty rather than a fallback, and the asymmetry with `TitleFor` is on purpose: a title has
+	//! something sensible to fall back to (the label), and a body does not. Repeating the label as
+	//! a task description would be noise in a task list, so the caller is told there is no body and
+	//! decides what to render.
+	string TaskTextFor(string viewerFaction)
+	{
+		TBD_EObjectiveRole role = RoleOf(viewerFaction);
+
+		if (role == TBD_EObjectiveRole.ATTACKER)
+			return m_sAttackerText;
+
+		if (role == TBD_EObjectiveRole.DEFENDER)
+			return m_sDefenderText;
+
+		return string.Empty;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! One line of the objective board, from `viewerFaction`'s point of view.
 	//!
 	//! The viewer's side is passed in rather than derived here because it must be resolved from
@@ -398,7 +570,9 @@ class TBD_Objective
 	//! a tofu box in a line a player reads mid-firefight is not acceptable.
 	string BoardLine(string viewerFaction)
 	{
-		string line = DisplayName();
+		// T-212: the TITLE is per-side. `TitleFor` collapses to `DisplayName()` for an unframed
+		// objective, so an untyped mission board is byte-identical to what it was before T-212.
+		string line = TitleFor(viewerFaction);
 		line += " [";
 		line += StatusText(viewerFaction);
 		line += "]";
