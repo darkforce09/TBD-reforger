@@ -1151,11 +1151,12 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
                 }
             }
         };
-        // The node is replaced when accordion rows change. Wait for the mounted DOM before
-        // measuring; read the current signals so a close/reopen cannot apply an obsolete anchor.
+        // NodeRef updates after accordion rebuilds schedule this effect with the mounted DOM.
+        // Place it in that update, before the next animation frame can expose the initial anchor.
+        // Read current signals so a close/reopen cannot apply an obsolete anchor.
         Effect::new(move |_| {
             let _ = (menu.get(), panel_ref.get());
-            request_animation_frame(update_layout);
+            update_layout();
         });
         let resize = window_event_listener(leptos::ev::resize, move |_| update_layout());
         on_cleanup(move || {
