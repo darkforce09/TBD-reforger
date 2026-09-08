@@ -33,6 +33,10 @@
 
 use leptos::prelude::*;
 
+// T-939.4 — the Arrange rows are the TOP STRIP's list. This module renders and dispatches them; it
+// does not own, copy or re-order them. See `top_strip::ARRANGE`.
+use crate::editor::panels::top_strip::{ArrangeKind, ARRANGE, ARRANGE_MIN_SELECTION};
+
 /// T-672 (`CONN-START-001`) — the three relations Eden's `Connect ▸` submenu can make, as menu-row
 /// payload. Carried INSIDE [`ContextItem::ConnectStart`] rather than as three flat variants so the
 /// three rows share one dispatch arm and cannot drift apart.
@@ -264,6 +268,20 @@ pub enum ContextItem {
     /// `Reset Loadout` — revert to the class default loadout. Disabled: loadout reset is not a
     /// standalone editor action yet.
     ResetLoadout,
+    /// T-939.4 — `Arrange` submenu parent: the align / space / orient / pattern tools T-645 built,
+    /// finally reachable from the gesture that already holds the selection.
+    ///
+    /// **Present only on a selection of [`ARRANGE_MIN_SELECTION`] or more**, which is why it is
+    /// spliced by [`MenuState::entries`] and does not appear in either [`MenuTake`] builder: the
+    /// takes are a verbatim Eden transcription and cannot see how many things are selected. One
+    /// selected object has nothing to align to and no gaps to distribute, so the row is absent
+    /// rather than present-and-dark — a submenu of no-ops is worse than no submenu.
+    Arrange,
+    /// T-939.4 — run one Arrange command on the selection. A child of
+    /// [`Arrange`](ContextItem::Arrange). The payload is `top_strip`'s own id enum, so this row
+    /// dispatches through the SAME invoker the menu-bar row and the keyboard chord use; no label is
+    /// ever re-parsed and the three doors cannot drift.
+    ArrangeRun(ArrangeKind),
     /// `Attributes...` — open the entity attributes dialog. **Enabled** (T-664 wires it to
     /// `open_attributes`; this is the same modal the double-click opens). Also carries the
     /// `ATTR-MULTI-001` forward interest: when multi-select attributes lands, this row's dispatch
@@ -303,7 +321,11 @@ impl ContextItem {
     /// expands a leaf.
     #[must_use]
     pub const fn is_submenu_parent(self) -> bool {
-        matches!(self, ContextItem::Connect | ContextItem::Transform)
+        matches!(
+            self,
+            // T-939.4 — `Arrange` joins the two T-672 parents as the third row that expands.
+            ContextItem::Connect | ContextItem::Transform | ContextItem::Arrange
+        )
     }
 
     /// T-672 — the child rows this parent expands to, given whether a connect is currently ARMED.
@@ -334,6 +356,16 @@ impl ContextItem {
             ContextItem::Transform => FormationKind::ALL
                 .iter()
                 .map(|f| MenuEntry::on(ContextItem::MoveToFormation(*f), f.label()))
+                .collect(),
+            // T-939.4 — the nineteen Arrange rows, mapped straight off the top strip's list: the
+            // same labels in the same order, each carrying the chord that runs it. Nothing about
+            // the set is decided here, which is the point — the acceptance line is "entries match
+            // the top-strip menu", and the only way to guarantee that is not to have a second list.
+            ContextItem::Arrange => ARRANGE
+                .iter()
+                .map(|e| {
+                    MenuEntry::on(ContextItem::ArrangeRun(e.kind), e.label).with_shortcut(e.chord)
+                })
                 .collect(),
             _ => Vec::new(),
         }
@@ -691,6 +723,34 @@ pub struct MenuState {
 }
 
 impl MenuState {
+    /// T-939.4 — the take's rows plus the selection-dependent ones.
+    ///
+    /// Today that is exactly one row: `Arrange`, present only once the selection holds
+    /// [`ARRANGE_MIN_SELECTION`] entities. It is spliced HERE rather than added to
+    /// [`MenuTake::OnEntity`] for two reasons that both matter. The takes are pinned as a verbatim
+    /// Eden transcription (`on_entity_take_matches_eden_batch`) and are a pure function of WHICH
+    /// menu opened — they do not know, and must not learn, how many things are selected. And the
+    /// hide-on-single-selection behaviour is an acceptance line, so it belongs where the selection
+    /// is legible: `self.target.target_ids`, captured at open like everything else on the target.
+    ///
+    /// The row sits directly after `Transform`, its nearest neighbour in meaning — both rearrange
+    /// what is already selected — so the two rows an author reaches for are adjacent.
+    fn base_entries(&self) -> Vec<MenuEntry> {
+        let base = self.target.take.entries();
+        if self.target.target_ids.len() < ARRANGE_MIN_SELECTION {
+            return base;
+        }
+        let mut out = Vec::with_capacity(base.len() + 1);
+        for entry in base {
+            let after_transform = entry.item == Some(ContextItem::Transform);
+            out.push(entry);
+            if after_transform {
+                out.push(MenuEntry::open_parent(ContextItem::Arrange, "Arrange"));
+            }
+        }
+        out
+    }
+
     /// The rows to render for this open menu.
     ///
     /// **T-672 — submenus are rendered as an in-panel ACCORDION, not as an Eden flyout.** When
@@ -704,9 +764,12 @@ impl MenuState {
     /// hover/keyboard focus owner and a rule for what Left/Right do; the accordion means the
     /// submenu ticket adds ROWS and touches none of that machinery. Eden's `▶` becomes `▼` while
     /// expanded so the affordance still reads correctly.
+    ///
+    /// T-939.4 — the base is now [`Self::base_entries`], so the accordion splices children under
+    /// the selection-dependent `Arrange` parent with no change to the machinery above.
     #[must_use]
     pub fn entries(&self) -> Vec<MenuEntry> {
-        let base = self.target.take.entries();
+        let base = self.base_entries();
         let Some(open) = self.open_submenu else {
             return base;
         };
@@ -918,6 +981,14 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
             if let Some(id) = target_ids.first() {
                 let _ = crate::editor::state::operations::force_to_formation(id, f.token());
             }
+        }
+        // T-939.4 — run an Arrange command on the live selection. `target_ids` is not forwarded on
+        // purpose: every placement op reads the selection out of `editor_ops`' own `OPS_CTX`, the
+        // same source the menu-bar row and the chord use, and the right-click has already made the
+        // target BE the selection (`resolve_target` retargets an unselected hit before the menu
+        // opens). Passing ids here would introduce a second notion of "what this acts on".
+        ContextItem::ArrangeRun(kind) => {
+            crate::editor::panels::top_strip::run_arrange(kind);
         }
         // Every other id is a disabled row (feature not shipped / owned by a later ticket) — no-op.
         _ => {}

@@ -27,6 +27,10 @@ use leptos::prelude::*;
 // T-934.6 — editor_ops moved to `crate::editor::state::operations`; the alias keeps the dozens of
 // Class-S source-guard needles (`editor_ops::…`) and the page's own prose stable across the move.
 use crate::editor::panels::validation_panel;
+// T-939.4 — the Arrange chords resolve through the top strip's shared list; nothing about the
+// commands themselves is duplicated here.
+#[cfg(target_arch = "wasm32")]
+use crate::editor::panels::top_strip;
 #[cfg(target_arch = "wasm32")]
 use crate::editor::state::doc_host as mission_doc;
 #[cfg(target_arch = "wasm32")]
@@ -1002,6 +1006,27 @@ pub(crate) fn hover_hit(
 #[cfg(target_arch = "wasm32")]
 type SubjectResolver = std::rc::Rc<dyn Fn(&str) -> Option<(RouteTarget, f64, f64)>>;
 
+/// T-939.4 — one Arrange chord, as the thin caller the keydown arms all are.
+///
+/// Two lines of behaviour and neither of them is placement logic: the **inertness gate** (an Arrange
+/// chord on fewer than [`top_strip::ARRANGE_MIN_SELECTION`] entities does nothing, because aligning
+/// one object to itself moves nothing — the acceptance line), and the hand-off to
+/// [`top_strip::run_arrange`], which is the same invoker the menu-bar row and the right-click row
+/// call. Everything about WHAT each command does lives in `top_strip` / `editor_ops`; this file is
+/// SIZE-3 allowlisted and does not get to grow a second copy of it.
+///
+/// Returns whether the key ACTED, so the closure calls `prevent_default` only when something
+/// happened. A chord that found nothing to arrange falls through untouched rather than swallowing
+/// the key — the same courtesy the editor keydown's Escape arm extends.
+#[cfg(target_arch = "wasm32")]
+fn arrange_chord(kind: top_strip::ArrangeKind) -> bool {
+    if editor_ops::selection_len() < top_strip::ARRANGE_MIN_SELECTION {
+        return false;
+    }
+    top_strip::run_arrange(kind);
+    true
+}
+
 #[component]
 pub fn MissionEditorPage() -> impl IntoView {
     let container_ref = NodeRef::<leptos::html::Div>::new();
@@ -1130,6 +1155,64 @@ pub fn MissionEditorPage() -> impl IntoView {
                 timer.set(Some(id));
             }
         });
+    }
+
+    /* ═══════ T-939.4 — the Arrange chords ═══════════════════════════════════════════════════
+     *
+     * Six keys — `Alt` + L/R/T/B to align to an edge, `Alt` + H/V to distribute — running the same
+     * `top_strip::run_arrange` invoker the menu-bar row and the right-click row call. Every arm
+     * below is one line for exactly the reason the T-797 dispatch above is documented as it is:
+     * the arms MIRROR the invoker one-for-one, so a click and a chord cannot come to mean different
+     * things. No placement logic lives in this file.
+     *
+     * **Why the listener is here and not in `panels/top_strip.rs`**, where the list lives: the top
+     * strip is mounted INSIDE the `chrome_hidden` gate and unmounts on Backspace, taking its window
+     * listener with it (that is why the Controls Hint keeps its open state in a thread-local at
+     * all). Chords that stopped working the moment an author hid the chrome to look at a clean map
+     * would fail exactly when a big alignment pass is most likely. The page outlives the chrome.
+     *
+     * **Why it is not folded into `canvas/commands.rs`'s keydown**, which would otherwise be its
+     * natural home: that file is outside this slice's `owns`. Recorded in the report rather than
+     * widened unilaterally. The census in `panels/help_modal.rs` sees this listener (the file is
+     * back in `editor_surface`), so the two collision pins adjudicate these six chords against
+     * every other binding in the editor — which is the property that actually matters, and it
+     * holds wherever the closure lives.
+     */
+    #[cfg(target_arch = "wasm32")]
+    {
+        let arrange = window_event_listener(leptos::ev::keydown, move |ev| {
+            // The same two doors every editor chord goes through: never while typing, and never as
+            // someone else's Ctrl/Cmd shortcut.
+            if mission_history::in_editable_field() {
+                return;
+            }
+            let modk = ev.ctrl_key() || ev.meta_key();
+            let handled = match ev.code().as_str() {
+                "KeyL" if !modk && ev.alt_key() && !ev.shift_key() => {
+                    arrange_chord(top_strip::ArrangeKind::AlignLeft)
+                }
+                "KeyR" if !modk && ev.alt_key() && !ev.shift_key() => {
+                    arrange_chord(top_strip::ArrangeKind::AlignRight)
+                }
+                "KeyT" if !modk && ev.alt_key() && !ev.shift_key() => {
+                    arrange_chord(top_strip::ArrangeKind::AlignTop)
+                }
+                "KeyB" if !modk && ev.alt_key() && !ev.shift_key() => {
+                    arrange_chord(top_strip::ArrangeKind::AlignBottom)
+                }
+                "KeyH" if !modk && ev.alt_key() && !ev.shift_key() => {
+                    arrange_chord(top_strip::ArrangeKind::SpaceHorizontal)
+                }
+                "KeyV" if !modk && ev.alt_key() && !ev.shift_key() => {
+                    arrange_chord(top_strip::ArrangeKind::SpaceVertical)
+                }
+                _ => false,
+            };
+            if handled {
+                ev.prevent_default();
+            }
+        });
+        on_cleanup(move || arrange.remove());
     }
 
     // T-159.22 — dock state. `outliner_nodes` / `selected_ids` are the same kind of pull-mirror as
