@@ -2459,29 +2459,38 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
     // Authored `[]` and absent both Count()==0 (T-946.42); both confine everyone.
     // `objectives` collides with TBD_ObjectivesComponent's own member (the win-condition objective
     // list it already tracks) — NOT a reader of the new top-level `objectives[]` document array.
+    //
+    // RE-PINNED 13 -> 16 (2026-09-08, T-212), not retired. The 13 are still that unrelated
+    // component member and still worth a tripwire; T-212's `TBD_ObjectiveEntityReader` added 3
+    // (`TBD_ObjectiveEntityDocStruct.objectives`, which is what JsonLoadContext binds, plus the
+    // two Read() references to it). Same class as `seats` 8 -> 12 and `gadgets` 6 -> 33: retiring
+    // a non-zero-baseline row silently drops the tripwire the non-zero half exists for, which is
+    // exactly what the wave-242 verifier flagged.
     UnreadField {
         name: "objectives",
-        expected: 13,
+        expected: 16,
         ticket: "T-212",
-        why: "TBD_ObjectivesComponent's own objective-list field, unrelated to the mission-doc objectives[] array",
+        why: "13 are TBD_ObjectivesComponent's own objective-list field, unrelated to the mission-doc objectives[] array; 3 are T-212's TBD_ObjectiveEntityReader binding that array",
     },
-    // T-212 — objective per-side framing + WOG's _Lock/_AutoLose. `framing`/`autoLose` are new
-    // (W120 m-7). `lock` is not tracked here: it collides with the pre-existing vehicle-lock word
-    // and the objective spine deliberately DROPPED the sourceless rank/stance/callsign residue,
-    // so lock is the only WOG scalar carried and it shares the `entity.lock`/`vehicle.lock` word
-    // (already reader-free via those T-680 rows). `framing`/`autoLose` are clean 0.
-    UnreadField {
-        name: "framing",
-        expected: 0,
-        ticket: "T-212",
-        why: "clean",
-    },
-    UnreadField {
-        name: "autoLose",
-        expected: 0,
-        ticket: "T-212",
-        why: "clean",
-    },
+    // T-212 — objective per-side framing + WOG's _Lock/_AutoLose: RETIRED 2026-09-08. `framing`
+    // (0 -> 10) and `autoLose` (0 -> 2) gained readers when TBD_ObjectiveRegistry.c grew
+    // `TBD_ObjectiveEntityReader` — a third typed JsonLoadContext pass over GetRawJson(), which
+    // TBD_MissionDocumentStruct has no field for. Baselines were 0 — the whole assertion was "no
+    // reader yet" — so they RETIRE rather than re-pin, the T-674/T-680/T-681 handling.
+    //
+    // Re-pinning them at 10 and 2 was considered and rejected: a non-zero baseline in this table
+    // MEANS "these hits are a pre-existing UNRELATED identifier" (that is what
+    // `nonzero_baselines_explain_the_pre_existing_identifier` enforces in the `why` wording), and
+    // for these two it would be false — every hit is T-212's own reader. The same reasoning
+    // retired `callsign` and `tag` at T-674 rather than pin a sentence that lies.
+    //
+    // `lock` still has no row and still needs none: it shares the word with `entity.lock` /
+    // `vehicle.lock`, which T-680 already retired, so there was nothing left to pin. T-212 took
+    // its count 6 -> 8 (`TBD_ObjectiveEntityStruct.lock` and the copy onto the objective).
+    //
+    // What replaced the tripwire: `t212_objective_spine_tests` at the bottom of this file, which
+    // asserts the complement — every `$defs/objective` property must KEEP a reader in the
+    // objectives lane, so deleting the reader is a red instead of a silent regression.
     // T-675 / T-076 — vehicles[] roster: RETIRED 2026-09-06. `vehicles` gained its reader when
     // T-675.2 landed `TBD_MissionVehicleStruct.c` and the `TBD_MissionDocumentStruct.vehicles`
     // binding. Its baseline was 0 — the whole assertion was "no reader yet" — so it retires rather
@@ -2701,8 +2710,14 @@ mod unread_wire_field_tests {
             .join("apps/mod/tbd-framework")
     }
 
-    /// Green on the live tree: every 1.3 field is still at its baseline. This is the assertion the
-    /// gate makes; if it ever reds here, a reader landed and the schema wording must be updated.
+    /// Green on the live tree: every remaining row is at its pinned baseline. This is the assertion
+    /// the gate makes; if it reds here, a reader landed (or an unrelated identifier moved) and the
+    /// row must be retired or deliberately re-pinned.
+    ///
+    /// The name is kept for the CI logs and the wave verify notes that grep for it, but "unread" is
+    /// no longer true of every row: `objectives`, `seats`, `size`, `shape`, `area` and `gadgets`
+    /// each pin a MIXTURE now — an unrelated pre-existing identifier plus, for some, a landed
+    /// reader's own hits. See `UNREAD_WIRE_FIELDS` for which is which.
     #[test]
     fn all_1_3_fields_are_unread_on_the_live_tree() {
         let f = unread_wire_field_failures(&mod_root()).expect("scan mod tree");
@@ -2712,33 +2727,65 @@ mod unread_wire_field_tests {
         );
     }
 
-    /// The fire-once proof, MEASURED, not assumed. Drop a synthetic reader of a CLEAN field
-    /// (baseline 0) into a scratch mod tree and confirm the count rises to 1 — i.e. the day T-212
-    /// lands a `framing` reader, `unread_wire_field_failures` trips. Without this, "asserts ZERO
-    /// readers" could be a check that never notices a reader at all.
+    /// The fire-once proof, MEASURED, not assumed: without it, "asserts the baseline" could be a
+    /// check that never notices anything at all.
+    ///
+    /// It used to plant one `framing` identifier in a scratch tree and watch a CLEAN 0 baseline
+    /// trip. T-212 landed that reader and retired the row, and no clean-0 row is left to stand in
+    /// for it — so the proof is rebuilt on `objectives`, and in BOTH directions, which is strictly
+    /// stronger than the version it replaces:
+    ///
+    ///   * a scratch tree holding EXACTLY the pinned count reports no failure (the assertion is
+    ///     not simply always-red, which a one-directional test cannot rule out);
+    ///   * one more identifier — the shape a new reader has, since `JsonLoadContext` binds by
+    ///     member name and no reader can exist without spelling the key — trips it, by name and
+    ///     with its ticket.
     #[test]
     fn unread_gate_fires_when_a_reader_appears() {
+        let pinned = UNREAD_WIRE_FIELDS
+            .iter()
+            .find(|f| f.name == "objectives")
+            .expect("the objectives row must exist");
+
         let dir = std::env::temp_dir().join(format!("t706-unread-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         let scripts = dir.join("Scripts/Game/TBD/Gamemode");
         fs::create_dir_all(&scripts).expect("scratch mod tree");
-        // A plausible future reader: a struct member bound by JsonLoadContext (maps by name).
+        let reader = scripts.join("TBD_FutureObjectiveReader.c");
+
+        // A plausible reader: struct members bound by JsonLoadContext (which maps by name).
+        let at_baseline =
+            "class TBD_FutureObjectiveStruct { string objectives; }\n".repeat(pinned.expected);
+        fs::write(&reader, &at_baseline).expect("write baseline");
+        assert_eq!(
+            count_mod_readers(&dir, "objectives").expect("count"),
+            pinned.expected,
+            "the scratch tree must sit exactly on the pinned baseline"
+        );
+        assert!(
+            !unread_wire_field_failures(&dir)
+                .expect("scan scratch")
+                .iter()
+                .any(|m| m.contains("'objectives'")),
+            "a tree AT the baseline must not be reported — otherwise the assertion is vacuous"
+        );
+
+        // One more identifier is what a newly landed reader looks like.
         fs::write(
-            scripts.join("TBD_FutureObjectiveReader.c"),
-            "class TBD_FutureObjectiveStruct { string framing; }\n",
+            &reader,
+            format!("{at_baseline}class TBD_OneMore {{ string objectives; }}\n"),
         )
         .expect("write reader");
-
         assert_eq!(
-            count_mod_readers(&dir, "framing").expect("count"),
-            1,
-            "a framing identifier in a .c file must be counted as a reader"
+            count_mod_readers(&dir, "objectives").expect("count"),
+            pinned.expected + 1,
+            "an objectives identifier in a .c file must be counted as a reader"
         );
         let f = unread_wire_field_failures(&dir).expect("scan scratch");
         assert!(
             f.iter()
-                .any(|m| m.contains("'framing'") && m.contains("T-212")),
-            "the gate must fail and name framing + its ticket once a reader appears; got {f:#?}"
+                .any(|m| m.contains("'objectives'") && m.contains("T-212")),
+            "the gate must fail and name objectives + its ticket once a reader appears; got {f:#?}"
         );
         let _ = fs::remove_dir_all(&dir);
     }
