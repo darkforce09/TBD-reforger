@@ -1005,8 +1005,20 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 				continue;
 
 			icons.Insert(HudIcon(objective, factionKey));
-			titles.Insert(objective.DisplayName());
-			details.Insert(objective.StatusText(factionKey));
+			string title = objective.TitleFor(factionKey);
+			titles.Insert(title);
+
+			// T-212 framing must reach the rendered snapshot that T-946.55 signs and sends.
+			// Keep status first; an unframed legacy row remains exactly its original status.
+			string detail = objective.StatusText(factionKey);
+			string taskText = objective.TaskTextFor(factionKey);
+			if (!taskText.IsEmpty())
+			{
+				if (!detail.IsEmpty())
+					detail += " | ";
+				detail += taskText;
+			}
+			details.Insert(detail);
 
 			if (objective.m_eKind != TBD_EObjectiveKind.CAPTURE)
 				continue;
@@ -1018,7 +1030,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 				continue;
 
 			barVisible = 1;
-			barLabel = objective.DisplayName();
+			barLabel = title;
 			barPercent = objective.ProgressPercent();
 		}
 	}
