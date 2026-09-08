@@ -20,6 +20,8 @@ use serde_json::{Map, Value, json};
 use crate::cdp::{self, Browser, Page};
 use crate::serve::{RunningServer, ServeConfig, repo_root, start_server};
 
+mod t946_86;
+
 const DIST_DEFAULT: &str = "apps/website/frontend/dist";
 /// Default editor path for the suite. `sat=preview` keeps smokes off the 152 MB full TBDS GET
 /// (which freezes headless CDP mid-suite once `/map-assets` is live).
@@ -44,7 +46,7 @@ fn editor_auth_seed() -> Result<String> {
 }
 
 /// The Makefile glob `driver/*_editor.mjs` in shell-sort order (selfcheck sorts first).
-pub const EDITOR_SUITE: [&str; 20] = [
+pub const EDITOR_SUITE: [&str; 21] = [
     "selfcheck",
     "arsenal",
     "attributes",
@@ -63,6 +65,7 @@ pub const EDITOR_SUITE: [&str; 20] = [
     "save-dialog-rect",
     "save-export",
     "select",
+    "t946-86",
     "undo",
     "virtual-outliner",
 ];
@@ -3971,6 +3974,7 @@ pub async fn run_smoke(name: &str, dist: Option<String>, path: Option<String>) -
         "pan" => smoke_pan(&dist, &path).await,
         "persist" => smoke_persist(&dist, &path).await,
         "select" => smoke_select(&dist, &path).await,
+        "t946-86" => t946_86::run(&dist).await,
         "save-export" => smoke_save_export(&dist, &path).await,
         "save-dialog-rect" => smoke_save_dialog_rect(&dist, &path).await,
         "entrance-motion-rect" => smoke_entrance_motion_rect(&dist, &path).await,
