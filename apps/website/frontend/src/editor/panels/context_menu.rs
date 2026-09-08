@@ -712,7 +712,7 @@ pub fn resolve_target(hit: Option<&str>, selection: &[String]) -> MenuTarget {
 /// `None` = closed (no DOM — the overlay renders nothing).
 #[derive(Debug, Clone, PartialEq)]
 pub struct MenuState {
-    /// Screen pixel of the right-click (menu top-left anchor).
+    /// Screen pixel of the right-click (preferred menu anchor, clamped only for display).
     pub x: f64,
     pub y: f64,
     /// The resolved take + target (from [`resolve_target`]).
@@ -823,6 +823,67 @@ pub fn step_highlight(entries: &[MenuEntry], cur: Option<usize>, dir: i32) -> Op
         (Some(p), _) => p.saturating_sub(1),
     };
     Some(sel[next])
+}
+
+/// Clamp the measured panel on one axis; CSS caps its size to the same viewport gutter.
+#[cfg(any(target_arch = "wasm32", test))]
+fn menu_axis_position(anchor: f64, extent: f64, viewport: f64) -> f64 {
+    anchor.clamp(8.0, (viewport - extent - 8.0).max(8.0))
+}
+
+/// Scroll only as far as needed to expose a row in the panel's content coordinates.
+#[cfg(any(target_arch = "wasm32", test))]
+fn menu_scroll_top(scroll: f64, height: f64, row_top: f64, row_height: f64) -> f64 {
+    if row_top < scroll {
+        row_top.max(0.0)
+    } else if row_top + row_height > scroll + height {
+        (row_top + row_height - height).max(0.0)
+    } else {
+        scroll
+    }
+}
+
+// Keep the gutter in sync with `menu_axis_position`. A narrow viewport may shrink below 15rem.
+const MENU_BOUNDS: &str = "box-sizing:border-box;min-width:min(15rem,calc(100vw - 16px));max-width:min(20rem,calc(100vw - 16px));max-height:calc(100dvh - 16px);";
+
+#[cfg(target_arch = "wasm32")]
+fn reveal_menu_row(panel: &web_sys::HtmlDivElement, highlight: Option<usize>) {
+    let Some(idx) = highlight else { return };
+    let Ok(Some(row)) = panel.query_selector(&format!("[data-context-row='{idx}']")) else {
+        return;
+    };
+    let scroll = f64::from(panel.scroll_top());
+    let row_rect = row.get_bounding_client_rect();
+    let row_top =
+        row_rect.top() - panel.get_bounding_client_rect().top() - f64::from(panel.client_top())
+            + scroll;
+    let next = menu_scroll_top(
+        scroll,
+        f64::from(panel.client_height()),
+        row_top,
+        row_rect.height(),
+    );
+    panel.set_scroll_top(next.ceil() as i32);
+}
+
+#[cfg(target_arch = "wasm32")]
+fn place_context_menu(panel: &web_sys::HtmlDivElement, state: &MenuState) {
+    let Some(window) = web_sys::window() else {
+        return;
+    };
+    let Some(width) = window.inner_width().ok().and_then(|v| v.as_f64()) else {
+        return;
+    };
+    let Some(height) = window.inner_height().ok().and_then(|v| v.as_f64()) else {
+        return;
+    };
+    // Measure at the gutter so shrink-to-fit width is independent of the raw pointer position.
+    // This also remeasures the accordion after expansion and after viewport resize.
+    let _ = panel.set_attribute("style", &format!("{MENU_BOUNDS}left:8px;top:8px"));
+    let rect = panel.get_bounding_client_rect();
+    let x = menu_axis_position(state.x, rect.width(), width);
+    let y = menu_axis_position(state.y, rect.height(), height);
+    let _ = panel.set_attribute("style", &format!("{MENU_BOUNDS}left:{x}px;top:{y}px"));
 }
 
 // ─────────────────────────── wasm host bridge + dispatch + overlay ───────────────────────────
@@ -1015,6 +1076,7 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
     // Keyboard: Esc closes; ArrowUp/Down move the highlight; Enter fires it. Installed once; the
     // handler no-ops while the menu is closed. `highlight` is the highlighted **entry index**.
     let highlight = RwSignal::new(None::<usize>);
+    let panel_ref = NodeRef::<leptos::html::Div>::new();
     // T-726 — register with the modal stack so Esc closing this menu does not also fire the
     // editor's measure-tool Esc arm (wave108 MAJOR-2 / wave109–110).
     #[cfg(target_arch = "wasm32")]
@@ -1038,11 +1100,17 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
                     ev.prevent_default();
                     let entries = state.entries();
                     highlight.set(step_highlight(&entries, highlight.get_untracked(), 1));
+                    if let Some(panel) = panel_ref.get_untracked() {
+                        reveal_menu_row(&panel, highlight.get_untracked());
+                    }
                 }
                 "ArrowUp" => {
                     ev.prevent_default();
                     let entries = state.entries();
                     highlight.set(step_highlight(&entries, highlight.get_untracked(), -1));
+                    if let Some(panel) = panel_ref.get_untracked() {
+                        reveal_menu_row(&panel, highlight.get_untracked());
+                    }
                 }
                 "Enter" => {
                     ev.prevent_default();
@@ -1072,17 +1140,37 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
                 _ => {}
             }
         });
+        let update_layout = move || {
+            if let (Some(panel), Some(state)) = (
+                panel_ref.try_get_untracked().flatten(),
+                menu.try_get_untracked().flatten(),
+            ) {
+                if panel.is_connected() {
+                    place_context_menu(&panel, &state);
+                    reveal_menu_row(&panel, highlight.try_get_untracked().flatten());
+                }
+            }
+        };
+        // The node is replaced when accordion rows change. Wait for the mounted DOM before
+        // measuring; read the current signals so a close/reopen cannot apply an obsolete anchor.
+        Effect::new(move |_| {
+            let _ = (menu.get(), panel_ref.get());
+            request_animation_frame(update_layout);
+        });
+        let resize = window_event_listener(leptos::ev::resize, move |_| update_layout());
         on_cleanup(move || {
             key.remove();
+            resize.remove();
             crate::core::ui::modal_stack::unregister(modal_id);
         });
     }
-    // Reset the highlight every time the menu (re)opens so a stale highlight from a prior open never
-    // leaks in.
+    // A fresh open has no highlight. Expansion keeps its parent in view and highlighted so the
+    // next ArrowDown reaches its first child instead of restarting at the top of a long menu.
     Effect::new(move |_| {
-        if menu.get().is_some() {
-            highlight.set(None);
-        }
+        highlight.set(menu.get().and_then(|state| {
+            let parent = state.open_submenu?;
+            state.entries().iter().position(|e| e.item == Some(parent))
+        }));
     });
 
     move || {
@@ -1092,10 +1180,9 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
         // T-651 — the unprojected right-click point rides every row so `Place Comment` acts on the
         // ground that was clicked, not on a later camera read.
         let world = state.target.world;
-        // Anchor at the event pixel. `max-w` + the viewport keep it on screen; a fuller Eden-parity
-        // flip/clamp (batch rule 4/5) is a later polish — the ticket ships the menu, its targeting
-        // and dismissal.
-        let pos = format!("left:{:.0}px;top:{:.0}px", state.x, state.y);
+        // Hide until measured to avoid painting outside the viewport on the first frame.
+        // `state.x/y` and the world point remain the original right-click coordinates.
+        let pos = format!("{MENU_BOUNDS}left:8px;top:8px;visibility:hidden");
         // T-672 — the expanded parent, so its `\u{25B6}` can flip to `\u{25BC}`.
         let open_submenu = state.open_submenu;
         let rows = entries
@@ -1116,7 +1203,8 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
                 on:contextmenu=move |ev| ev.prevent_default()
             ></div>
             <div
-                class="glass animate-dialog-in fixed z-50 min-w-[15rem] max-w-[20rem] overflow-hidden rounded-md border border-outline-variant/30 py-1 shadow-2xl outline-none"
+                node_ref=panel_ref
+                class="glass animate-dialog-in fixed z-50 overflow-y-auto overscroll-contain rounded-md border border-outline-variant/30 py-1 shadow-2xl outline-none"
                 style=pos
                 // Keep a right-click *on the menu* from opening a second browser menu.
                 on:contextmenu=move |ev| ev.prevent_default()
@@ -1202,6 +1290,7 @@ fn render_row(
     view! {
         <button
             type="button"
+            data-context-row=idx
             disabled=!enabled
             title=title
             class=base
@@ -2020,5 +2109,52 @@ mod t939_4_arrange_in_the_context_menu {
             t + 1,
             "T-939.4: Arrange must follow Transform; rows: {l:?}"
         );
+    }
+}
+
+#[cfg(test)]
+mod t939_4_menu_geometry {
+    use super::{menu_axis_position, menu_scroll_top};
+
+    #[test]
+    fn measured_menu_fits_at_edges_after_expansion_and_resize() {
+        // The V12 panel was 309.15625 x 1044 at (720, 450) in a 1440 x 900 viewport.
+        // The DOM caps its extent before passing the measured box to this placement function.
+        for (width, height) in [(1440.0_f64, 900.0_f64), (320.0, 240.0), (180.0, 120.0)] {
+            for natural_height in [512.0_f64, 1044.0] {
+                let panel_width = 309.15625_f64.min(width - 16.0);
+                let panel_height = natural_height.min(height - 16.0);
+                for (x, y) in [
+                    (0.0, 0.0),
+                    (width, 0.0),
+                    (0.0, height),
+                    (width, height),
+                    (width / 2.0, height / 2.0),
+                    (1390.0, 830.0), // retained open-menu anchor after a smaller resize
+                ] {
+                    let left = menu_axis_position(x, panel_width, width);
+                    let top = menu_axis_position(y, panel_height, height);
+                    assert!(left >= 8.0 && left + panel_width <= width - 8.0);
+                    assert!(top >= 8.0 && top + panel_height <= height - 8.0);
+                }
+            }
+        }
+        assert_eq!(menu_axis_position(40.0, 300.0, 1440.0), 40.0);
+    }
+
+    #[test]
+    fn keyboard_scroll_exposes_rows_in_both_directions_and_after_resize() {
+        assert_eq!(menu_scroll_top(0.0, 400.0, 191.0, 28.0), 0.0);
+        assert_eq!(menu_scroll_top(0.0, 224.0, 723.0, 28.0), 527.0);
+        assert_eq!(menu_scroll_top(527.0, 224.0, 219.0, 28.0), 219.0);
+        assert_eq!(menu_scroll_top(219.0, 104.0, 303.0, 28.0), 227.0);
+        // Walk all 19 children in both directions through a short panel. The same helper runs
+        // against live DOM rects; the compiled-UI probe separately verifies CSS, clipping and hits.
+        let mut scroll = 0.0;
+        for row in (0..19).chain((0..19).rev()) {
+            let top = 219.0 + f64::from(row) * 28.0;
+            scroll = menu_scroll_top(scroll, 104.0, top, 28.0);
+            assert!(top >= scroll && top + 28.0 <= scroll + 104.0);
+        }
     }
 }
