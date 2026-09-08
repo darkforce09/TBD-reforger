@@ -3,10 +3,11 @@
 use super::*;
 
 const ID: &str = "94686000-0000-4000-a000-000000000001";
+const LARGE_ID: &str = "94686000-0000-4000-a000-000000000003";
 const DUP_ID: &str = "94686000-0000-4000-a000-000000000002";
 const PAYLOAD: &str = "JSON.parse(window.__editorCommands.compile_save_json())";
 
-fn mission(duplicate: bool) -> Value {
+fn mission(duplicate: bool, large: bool) -> Value {
     let ids: Vec<String> = (0..5).map(|i| format!("roof-{i}")).collect();
     let mut squad_ids = ids.clone();
     if duplicate { squad_ids.push(ids[0].clone()); }
@@ -16,20 +17,26 @@ fn mission(duplicate: bool) -> Value {
             "x":6400.0 + i as f64 * 2.0, "y":6400.0, "z":50.0 + i as f64 * 10.0, "rotation":15.0
         }
     })).collect();
-    let payload = json!({
+    let mut payload = json!({
         "schemaVersion":1,"map":{"terrain":"everon","bounds":[0,0,12800,12800]},
         "environment":{"time":"12:00","weather":"clear"},"loadouts":{},"objectives":[],"markers":[],
         "vehicles":[{"id":"vehicle-roof","resourceName":"Vehicle.et","position":{"x":6440.0,"y":6400.0,"z":81.5,"rotation":90.0}}],
         "editor":{
-            "factions":[{"id":"f","name":"BLUFOR","side":"BLUFOR","squadIds":["sq"]}],
-            "squads":[{"id":"sq","factionId":"f","name":"Alpha","callsign":"Alpha","slotIds":squad_ids,"vehicleIds":[]}],
+            "factions":[{"id":"f","name":"BLUFOR","side":"BLUFOR","squadIds":["sq","bravo","charlie"]}],
+            "squads":[{"id":"sq","factionId":"f","name":"Alpha","callsign":"Alpha","slotIds":squad_ids,"vehicleIds":[]},
+                {"id":"bravo","factionId":"f","name":"Bravo","callsign":"Bravo","slotIds":[],"vehicleIds":[]},
+                {"id":"charlie","factionId":"f","name":"Charlie","callsign":"Charlie","slotIds":[],"vehicleIds":[]}],
             "editorLayers":[
                 {"id":"source","name":"Recovery source","parentId":null,"entityIds":ids},
                 {"id":"destination","name":"Recovery destination","parentId":null,"entityIds":[]}
             ],"slots":slots
         }
     });
-    let id = if duplicate {DUP_ID} else {ID};
+    if large {
+        let layers=payload["editor"]["editorLayers"].as_array_mut().unwrap();
+        for i in 0..60 { layers.push(json!({"id":format!("extra-{i}"),"name":format!("ZZ extra {i}"),"parentId":null,"entityIds":[]})); }
+    }
+    let id = if duplicate {DUP_ID} else if large {LARGE_ID} else {ID};
     json!({
         "id":id,"title":"T-946.86 regression","terrain":"everon","game_mode":"pve_coop",
         "weather":"clear","time_of_day":"12:00","max_players":32,"status":"draft",
@@ -60,8 +67,9 @@ async fn intercept(page: &Arc<Page>) -> Result<Arc<StdMutex<u64>>> {
                 (200,json!({"access_token":"recovery-access","refresh_token":"rt-seed","expires_at":"2030-01-01T00:00:00Z"}))
             } else if url.ends_with("/me") { (200,me.clone())
             } else if url.contains("/registry") { (200,registry.clone())
-            } else if url.contains(DUP_ID) { (200,mission(true))
-            } else if url.contains(ID) { (200,mission(false))
+            } else if url.contains(DUP_ID) { (200,mission(true,false))
+            } else if url.contains(LARGE_ID) { (200,mission(false,true))
+            } else if url.contains(ID) { (200,mission(false,false))
             } else { (200,json!({"data":[],"total":0,"limit":50,"offset":0})) };
             let _ = page.fulfill_json(id,status,&body).await;
         }
@@ -100,6 +108,45 @@ async fn z_start(page: &Page, x: f64, y: f64) -> Result<()> {
     Ok(())
 }
 fn same_positions(a: &Value,b: &Value) -> bool { a["editor"]["slots"]==b["editor"]["slots"] && a["vehicles"]==b["vehicles"] }
+
+// A release outside the tree and a cancellation must clear both pending representations.
+async fn outside_drop_cases(page: &Page, checks: &mut Map<String,Value>, prefix: &str) -> Result<()> {
+    for event in ["pointerup", "pointercancel"] {
+        let before=payload(page).await?;
+        let d=depth(page).await?;
+        let armed=eval_bool(page,"(() => { const b=document.querySelector('aside button[aria-label=Rifleman]'); if(!b)return false; b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,button:0,buttons:1})); return true; })()").await?;
+        eval(page,&format!("document.body.dispatchEvent(new PointerEvent('{event}',{{bubbles:true,pointerId:1,button:0}}))")).await?;
+        settle().await;
+        let released=eval_bool(page,"(() => { const b=[...document.querySelectorAll('aside button')].find(b=>(b.getAttribute('aria-label')||'').includes('Recovery destination')); if(!b)return false; b.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return true; })()").await?;
+        settle().await;
+        checks.insert(format!("{prefix}_{event}_clears_outliner_latches"),json!(armed && released && payload(page).await?["editor"]["editorLayers"]==before["editor"]["editorLayers"] && depth(page).await?==d));
+    }
+    Ok(())
+}
+
+async fn orbat_cases(page: &Page, checks: &mut Map<String,Value>) -> Result<()> {
+    select_five(page).await?;
+    let opened=click_selector(page,"[aria-label='ORBAT Manager']").await?;
+    settle().await;
+    let d=depth(page).await?;
+    let drop=eval_bool(page,"(() => {const root=document.querySelector('[role=dialog]'); const row=root?.querySelector('button[aria-label=Rifleman]'); const dest=[...(root?.querySelectorAll('[title=\"Drop a slot here to refile into this squad\"]')||[])].find(e=>e.textContent.includes('Bravo')); if(!row||!dest)return false; row.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,button:0,buttons:1})); dest.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return true; })()").await?;
+    settle().await;
+    let moved=payload(page).await?;
+    let n=moved["editor"]["squads"].as_array().and_then(|a|a.iter().find(|s|s["id"]=="bravo")).and_then(|s|s["slotIds"].as_array()).map_or(0,Vec::len);
+    checks.insert("orbat_five_row_one_undo".into(),json!(opened && drop && n==5 && depth(page).await?==d+1));
+    let click=eval_bool(page,"(() => { const e=[...document.querySelectorAll('[title=\"Drop a slot here to refile into this squad\"]')].find(e=>e.textContent.includes('Charlie')); if(!e)return false; e.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return true; })()").await?;
+    settle().await;
+    checks.insert("orbat_later_squad_click_cannot_move_anchor".into(),json!(click && payload(page).await?["editor"]["squads"]==moved["editor"]["squads"] && depth(page).await?==d+1));
+    // Cancel a fresh ORBAT row arm, then release a different squad.
+    let armed=eval_bool(page,"(() => {const row=document.querySelector('[role=dialog] button[aria-label=Rifleman]'); if(!row)return false; row.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,button:0,buttons:1})); window.dispatchEvent(new PointerEvent('pointercancel',{bubbles:true,pointerId:1})); return true; })()").await?;
+    eval(page,"(() => { const e=[...document.querySelectorAll('[title=\"Drop a slot here to refile into this squad\"]')].find(e=>e.textContent.includes('Charlie')); e?.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return !!e; })()").await?;
+    settle().await;
+    checks.insert("orbat_cancel_clears_legacy_refile".into(),json!(armed && payload(page).await?["editor"]["squads"]==moved["editor"]["squads"]));
+    key_chord(page,"Escape","Escape",0,27).await?;
+    settle().await;
+    undo(page).await?;
+    Ok(())
+}
 
 pub(super) async fn run(dist: &str) -> Result<u8> {
     let h = Harness::new(dist,5396,9496,None,None,&[]).await?;
@@ -159,13 +206,16 @@ pub(super) async fn run(dist: &str) -> Result<u8> {
         select_five(&h.page).await?;
         let before=payload(&h.page).await?;
         let d=depth(&h.page).await?;
-        let dropped=eval_bool(&h.page,"(() => { const buttons=[...document.querySelectorAll('aside button')]; const source=buttons.find(b=>(b.getAttribute('aria-label')||'').includes('Recovery source')); if(source?.getAttribute('aria-expanded')==='false') source.click(); const row=[...document.querySelectorAll('aside button')].find(b=>(b.getAttribute('aria-label')||'').includes('roof-0')); const dest=buttons.find(b=>(b.getAttribute('aria-label')||'').includes('Recovery destination')); if(!row||!dest)return false; row.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,button:0,buttons:1})); dest.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return true; })()").await?;
+        let dropped=eval_bool(&h.page,"(() => { const buttons=[...document.querySelectorAll('aside button')]; const source=buttons.find(b=>(b.getAttribute('aria-label')||'').includes('Recovery source')); if(source?.getAttribute('aria-expanded')==='false') source.click(); const row=[...document.querySelectorAll('aside button')].find(b=>b.getAttribute('aria-label')==='Rifleman'); const dest=buttons.find(b=>(b.getAttribute('aria-label')||'').includes('Recovery destination')); if(!row||!dest)return false; row.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,button:0,buttons:1})); dest.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return true; })()").await?;
         settle().await;
         let after=payload(&h.page).await?;
         let moved=after["editor"]["editorLayers"].as_array().and_then(|a|a.iter().find(|r|r["id"]=="destination")).and_then(|r|r["entityIds"].as_array()).map_or(0,Vec::len);
         checks.insert("five_row_drop_one_undo".into(),json!(dropped && moved==5 && depth(&h.page).await?==d+1));
         undo(&h.page).await?;
         checks.insert("five_row_undo_restores_all".into(),json!(payload(&h.page).await?["editor"]["editorLayers"]==before["editor"]["editorLayers"]));
+
+        outside_drop_cases(&h.page,&mut checks,"eager").await?;
+        orbat_cases(&h.page,&mut checks).await?;
 
         // UI trigger → canvas vertices → finish → canvas pick → keyboard delete.
         click_selector(&h.page,"[aria-label='Zones']").await?;
@@ -177,11 +227,33 @@ pub(super) async fn run(dist: &str) -> Result<u8> {
         settle().await;
         let tg=payload(&h.page).await?;
         let count=tg["environment"]["tacticalGraphics"].as_array().map_or(0,Vec::len);
+        let tg_depth=depth(&h.page).await?;
+        mouse(&h.page,"mousePressed",700.0,550.0,json!({"button":"left","buttons":1,"clickCount":1})).await?;
+        mouse(&h.page,"mouseMoved",680.0,520.0,json!({"button":"none","buttons":1})).await?;
+        eval(&h.page,"(() => {const c=document.querySelector('canvas'); c.dispatchEvent(new PointerEvent('pointercancel',{bubbles:true,pointerId:1})); c.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:99,clientX:600,clientY:400,button:0})); return true;})()").await?;
+        mouse(&h.page,"mouseReleased",680.0,520.0,json!({"button":"left","buttons":0,"clickCount":1})).await?;
+        settle().await;
+        checks.insert("tactical_vertex_cancel_never_commits".into(),json!(count==1 && payload(&h.page).await?["environment"]["tacticalGraphics"]==tg["environment"]["tacticalGraphics"] && depth(&h.page).await?==tg_depth));
         click_at(&h.page,750.0,550.0,false).await?;
         key_chord(&h.page,"Delete","Delete",0,46).await?;
         settle().await;
         let deleted=payload(&h.page).await?["environment"]["tacticalGraphics"].as_array().map_or(0,Vec::len)==0;
         checks.insert("tactical_ui_draw_pick_delete".into(),json!(armed && count==1 && deleted));
+
+        // Undo deletion, then undo the creation: a stale tactical selection must not consume
+        // Delete ahead of the currently selected ordinary slot.
+        undo(&h.page).await?;
+        click_at(&h.page,750.0,550.0,false).await?;
+        undo(&h.page).await?;
+        click_selector(&h.page,"aside button[aria-label=Rifleman]").await?;
+        key_chord(&h.page,"Delete","Delete",0,46).await?;
+        settle().await;
+        checks.insert("stale_tactical_selection_does_not_eat_delete".into(),json!(eval_i64(&h.page,"window.__missionDoc.slot_count()").await?==4));
+
+        h.page.navigate(&h.url(&format!("/missions/{LARGE_ID}/edit?force=webgl&sat=preview"))).await?;
+        anyhow::ensure!(h.page.wait_for(&format!("{SEL_READY} && window.__missionDoc.slot_count()===5 && !!document.querySelector('[data-testid=outliner-window-scroller]')"),160,250).await?,"windowed fixture hydration failed");
+        settle().await;
+        outside_drop_cases(&h.page,&mut checks,"windowed").await?;
 
         h.page.navigate(&h.url(&format!("/missions/{DUP_ID}/edit?force=webgl&sat=preview"))).await?;
         anyhow::ensure!(h.page.wait_for(&format!("{SEL_READY} && typeof window.__editorCommands === 'object' && window.__missionDoc.slot_count()===5"),160,250).await?,"duplicate fixture hydration failed");

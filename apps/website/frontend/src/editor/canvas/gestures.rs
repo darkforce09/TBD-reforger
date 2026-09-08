@@ -160,11 +160,13 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
     let sync_ruler = make_sync_ruler(ctx);
     let sync_los = make_sync_los(ctx);
     let z_drag = Rc::new(RefCell::new(None::<ov::ZDrag>));
+    let vertex_pointer = Rc::new(Cell::new(None::<i32>));
     let left_pointer = Rc::new(Cell::new(None::<i32>));
     // Own cancellation beside the private arm. The page's pointercancel only knows `left`,
     // which promotion consumes. Take the state BEFORE releasing capture (lostcapture may fire).
     let cancel_z: Rc<dyn Fn(Option<i32>)> = Rc::new({
         let z_drag = z_drag.clone();
+        let vertex_pointer = vertex_pointer.clone();
         let container = container.clone();
         move |pointer| {
             let taken = {
@@ -178,6 +180,16 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 ov::set_z_drag_readout(None);
                 if container.has_pointer_capture(arm.pointer_id) {
                     let _ = container.release_pointer_capture(arm.pointer_id);
+                }
+            }
+            if vertex_pointer.get().is_some_and(|id| pointer.is_none_or(|p| p == id)) {
+                if let Some(id) = vertex_pointer.take() {
+                    if container.has_pointer_capture(id) {
+                        let _ = container.release_pointer_capture(id);
+                    }
+                }
+                if editor_ops::cancel_tactical_vertex_drag() {
+                    mission_history::refresh_tactical_lane();
                 }
             }
         }
@@ -217,7 +229,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
         });
     });
     Effect::new(move |_| {
-        let _ = (tool_mode.get(), widget_variant.get(), doc_tick.get());
+        let _ = (tool_mode.get(), widget_variant.get());
         cancel_z(None);
     });
 
@@ -290,13 +302,14 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
     // polish).
     let onpointerdown = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
         let z_drag = z_drag.clone();
+        let vertex_pointer = vertex_pointer.clone();
         let left_pointer = left_pointer.clone();
         let pan_px = pan_px.clone();
         let container = container.clone();
         let engine = engine.clone();
         let left = left.clone();
         move |ev: web_sys::PointerEvent| {
-            if z_drag.borrow().is_some() { return; }
+            if z_drag.borrow().is_some() || vertex_pointer.get().is_some() { return; }
             // T-662 — ONLY the middle button (1) pans. RMB (2) used to pan here too, which
             // ate the right-click before any handler downstream could see it; the button is
             // now free for T-664's context menu (and the six tickets behind it). MMB-pan is
@@ -371,6 +384,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     let w2 = cam.unproject_xy(sx + TG_VERTEX_PICK_PX, sy);
                     let tol = (w2[0] - w[0]).hypot(w2[1] - w[1]);
                     if editor_ops::begin_tactical_vertex_drag(w[0], w[1], tol) {
+                        vertex_pointer.set(Some(ev.pointer_id()));
                         let _ = container.set_pointer_capture(ev.pointer_id());
                         return;
                     }
@@ -427,6 +441,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
     });
     let onpointermove = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
         let z_drag = z_drag.clone();
+        let vertex_pointer = vertex_pointer.clone();
         let left_pointer = left_pointer.clone();
         let pan_px = pan_px.clone();
         let engine = engine.clone();
@@ -558,6 +573,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // `refresh_tactical_lane`), so the previewed line and the committed line are packed
             // by one function rather than two that must agree.
             if editor_ops::tactical_vertex_drag_active() {
+                if vertex_pointer.get() != Some(ev.pointer_id()) { return; }
                 if let Some(c) = world.filter(|c| c[0].is_finite() && c[1].is_finite()) {
                     editor_ops::tactical_vertex_drag_move(c[0], c[1]);
                     mission_history::refresh_tactical_lane();
@@ -632,6 +648,11 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // `left` borrow is held across the inner `left.borrow_mut()` put-back (the `if let`
             // temporary-lifetime footgun). Frozen cam (M2/X-05 — no live unproject). Live preview
             // via `engine.set_drag` (drag) / `engine.upload_marquee` (marquee rect).
+            if matches!(*left.borrow(), Some(LG::Pending(_)))
+                && left_pointer.get() != Some(ev.pointer_id())
+            {
+                return;
+            }
             let taken = left.borrow_mut().take();
             let Some(g0) = taken else { return };
             // Promote a Pending press once it clears the threshold; else keep the active drag.
@@ -692,7 +713,6 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             }
                         }
                         if z_arm_hit {
-                            if left_pointer.get() != Some(ev.pointer_id()) { return; }
                             let cur_sel = selection.borrow().clone();
                             *z_drag.borrow_mut() = doc.borrow().as_ref().and_then(|core|
                                 ov::ZDrag::begin(core, &cur_sel, ev.pointer_id(), p.start_y, p.cam.scale()));
@@ -901,6 +921,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
     });
     let onpointerup = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
         let z_drag = z_drag.clone();
+        let vertex_pointer = vertex_pointer.clone();
         let pan_px = pan_px.clone();
         let container = container.clone();
         let engine = engine.clone();
@@ -960,6 +981,8 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // is a selection and filing an identity edit would make the next Ctrl+Z appear to do
             // nothing.
             if editor_ops::tactical_vertex_drag_active() {
+                if vertex_pointer.get() != Some(ev.pointer_id()) { return; }
+                vertex_pointer.set(None);
                 if container.has_pointer_capture(ev.pointer_id()) {
                     let _ = container.release_pointer_capture(ev.pointer_id());
                 }
