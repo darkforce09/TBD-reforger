@@ -2,24 +2,25 @@
 //! and the toggleable **Controls Hint** overlay (rows MENU-BAR-008 / MENU-VIEW-017 /
 //! MENU-HELP-001).
 //!
-//! **The defect this closes.** The Mission Creator binds twenty-two distinct `KeyboardEvent` codes
-//! across thirteen window-level keydown listeners in nine editor-surface modules and, before this
+//! **The defect this closes.** The Mission Creator binds twenty-six distinct `KeyboardEvent` codes
+//! across fourteen window-level keydown listeners in ten editor-surface modules and, before this
 //! ticket, documented **none** of them anywhere in the UI: no Help menu, no hint overlay, and
 //! `context_menu`'s `with_shortcut` builder had zero callers. An operator's only route to `G`, `[`,
 //! `]`, `1`, `2`, `3`, `E`, `R` or Backspace was reading the Rust source.
 //!
 //! (T-795 added the third widget digit — `Digit3` — renumbering the widget row to Eden's `No Widget
-//! (1) / Translate (2) / Rotate (3)`, which is why the distinct-code count is twenty-two, not the
-//! twenty-one T-740 last derived.)
+//! (1) / Translate (2) / Rotate (3)`. T-939.4 then added the six Arrange chords on a fourteenth
+//! listener, four of them on codes nothing bound before — which is why the distinct-code count is
+//! twenty-six, not the twenty-two T-795 last derived.)
 //!
 //! Those four numbers are **derived, not typed**: `the_prose_census_numbers_are_derived` (T-740)
 //! spells the live census counts out in words and asserts this paragraph contains them, because
 //! this sentence has already gone stale twice by being retyped. If you widen what counts as a
 //! binding, the pin tells you the new numbers — it does not let you guess them. The fourth is the
-//! total the distinct-code count hides: those thirteen listeners carry thirty-five bindings in
+//! total the distinct-code count hides: those listeners carry forty-one bindings in
 //! total, most of the surplus being the Escape channel. (T-774 settled that one by measurement —
 //! the T-703 slice reported "39" and the wave-119 verifier's parser reported 32; the verifier was
-//! right, and 32 was the count over the eleven-listener input this ticket widened.)
+//! right, and 32 was the count over the eleven-listener input that ticket widened.)
 //!
 //! **T-774 widened the INPUT, which is where the last two lies came from.** T-703 replaced a census
 //! that read two listeners with one that read eleven and called that the editor surface. It was
@@ -84,10 +85,16 @@ pub struct Shortcut {
 }
 
 /// The overlay's section headings, in render order. A group naming no row renders nothing.
-pub const GROUPS: [&str; 6] = [
+///
+/// T-939.4 added `Arrange`. It sits beside `Transform & snapping` rather than inside it because the
+/// two answer different questions: snapping is about the grid a single drag quantises to, Arrange is
+/// about the relationship BETWEEN several selected objects. An author hunting for "align these six"
+/// should not have to read past the snap-step rows to find it.
+pub const GROUPS: [&str; 7] = [
     "Selection",
     "View",
     "Transform & snapping",
+    "Arrange",
     "History",
     "Tools",
     "Context menu",
@@ -221,6 +228,33 @@ pub const SHORTCUTS: &[Shortcut] = &[
         chord: "3",
         action: "Rotate widget (drag the ring to rotate the selection)",
         group: "Transform & snapping",
+    },
+    // ── Arrange (T-939.4 — the page's own chord listener) ─────────────────────────────────────
+    // Six chords, `Alt` + a mnemonic letter, and the chord STRINGS here are the ones
+    // `top_strip::ARRANGE` prints on both menu surfaces — `arrange_help_rows_match_the_shared_list`
+    // below refuses a spelling that drifts, so an operator reading this card and an operator
+    // reading the menu row are told the same thing.
+    //
+    // Every one of the six is inert on a selection of fewer than two, which the action copy says
+    // out loud: the tools have nothing to do with one object, and a chord that silently does
+    // nothing is the complaint this ticket family exists to answer.
+    Shortcut {
+        codes: &["KeyL", "KeyR"],
+        chord: "Alt + L  /  Alt + R",
+        action: "Align the selection to its left / right edge (needs 2+ selected)",
+        group: "Arrange",
+    },
+    Shortcut {
+        codes: &["KeyT", "KeyB"],
+        chord: "Alt + T  /  Alt + B",
+        action: "Align the selection to its top / bottom edge (needs 2+ selected)",
+        group: "Arrange",
+    },
+    Shortcut {
+        codes: &["KeyH", "KeyV"],
+        chord: "Alt + H  /  Alt + V",
+        action: "Space the selection equally, horizontally / vertically (needs 2+ selected)",
+        group: "Arrange",
     },
     // ── History (mission_history's keydown — the second window-level editor listener) ──────────
     Shortcut {
@@ -623,6 +657,13 @@ pub(crate) mod keymap_census {
             // `canvas/commands.rs` (the page keeps ZERO window-level keydown listeners now, so it
             // left the surface with its listener).
             ("commands.rs", include_str!("../canvas/commands.rs"), 1),
+            // T-939.4 — and the page is BACK on the surface with one listener: the six Arrange
+            // chords. It is not in `commands.rs` because that file is another slice's `owns`, and it
+            // is not in `top_strip.rs` (where the Arrange list lives) because the strip unmounts
+            // behind the `chrome_hidden` gate and would take the chords with it. Being censused is
+            // what matters — these six are adjudicated against every other binding in the editor by
+            // `no_two_listeners_claim_the_same_chord` below, wherever the closure sits.
+            ("mission_editor.rs", include_str!("../mission_editor.rs"), 1),
             // T-934.11 — the asset picker / comment editor / connections panel (each installing
             // one Escape listener) moved out of `mission_editor.rs` into the canvas overlays file.
             ("overlays.rs", include_str!("../canvas/overlays.rs"), 3),
@@ -1206,9 +1247,10 @@ pub(crate) mod keymap_census {
             );
             total += found;
         }
+        // T-939.4 — 14: the page rejoined the surface with the Arrange-chord listener.
         assert_eq!(
-            total, 13,
-            "T-703: the editor surface should carry 13 window-level keydown listeners, found \
+            total, 14,
+            "T-703: the editor surface should carry 14 window-level keydown listeners, found \
              {total}"
         );
         // A listener that yields no binding means the slicer lost the closure body (an unbalanced
@@ -1760,5 +1802,78 @@ mod t772_controls_hint_close_hitbox {
             !body.contains("BTN_ICON"),
             "T-772 hollow: BTN_ICON must not return to the ControlsHint close call"
         );
+    }
+}
+
+/* ═════════ T-939.4 — the Arrange chords: one spelling, three surfaces ═══════════════════════════
+ *
+ * The census pins above already prove the six chords are BOUND and DOCUMENTED. What they cannot see
+ * is whether the card and the menus tell the operator the same story: `SHORTCUTS` names codes, and
+ * `top_strip::ARRANGE` names the chord an operator reads off a menu row. Both are typed by hand, in
+ * different files, and nothing structural stops `Alt + L` on the menu from becoming `Alt + Shift +
+ * L` here. These pins close that gap — a chord string that drifts is exactly as misleading as a
+ * missing row, and considerably harder to notice.
+ */
+#[cfg(test)]
+mod t939_4_arrange_help_rows {
+    use super::{GROUPS, SHORTCUTS};
+    use crate::editor::panels::top_strip::ARRANGE;
+
+    /// Every chorded Arrange row has a help row filed under `Arrange` whose chord text CONTAINS the
+    /// spelling the menus print. `contains` rather than equality because a row may pair two chords
+    /// (`"Alt + L  /  Alt + R"`) — pairing is a presentation choice, printing a different chord is
+    /// not.
+    #[test]
+    fn arrange_help_rows_match_the_shared_list() {
+        let arrange_rows: Vec<&super::Shortcut> =
+            SHORTCUTS.iter().filter(|s| s.group == "Arrange").collect();
+        assert!(
+            !arrange_rows.is_empty(),
+            "T-939.4: the Controls Hint must carry an Arrange section"
+        );
+        assert!(
+            GROUPS.contains(&"Arrange"),
+            "T-939.4: `Arrange` must be a rendered heading, or every row above is invisible"
+        );
+        for entry in ARRANGE.iter().filter(|e| !e.code.is_empty()) {
+            let row = arrange_rows
+                .iter()
+                .find(|s| s.codes.contains(&entry.code))
+                .unwrap_or_else(|| {
+                    panic!(
+                        "T-939.4: `{}` binds `{}` and the Arrange section documents no row for it",
+                        entry.label, entry.code
+                    )
+                });
+            assert!(
+                row.chord.contains(entry.chord),
+                "T-939.4: the help card spells `{}`'s chord `{}`, the menus print `{}` — one of \
+                 them is lying to the operator",
+                entry.label,
+                row.chord,
+                entry.chord
+            );
+        }
+    }
+
+    /// The other direction: the Arrange section must not document a code the shared list does not
+    /// key. `no_help_entry_invents_a_binding` catches a code nothing in the EDITOR binds; this
+    /// catches the narrower rot of an Arrange row surviving after its chord moved off the list.
+    #[test]
+    fn the_arrange_section_documents_no_chord_the_list_dropped() {
+        let keyed: Vec<&str> = ARRANGE
+            .iter()
+            .filter(|e| !e.code.is_empty())
+            .map(|e| e.code)
+            .collect();
+        for row in SHORTCUTS.iter().filter(|s| s.group == "Arrange") {
+            for code in row.codes {
+                assert!(
+                    keyed.contains(code),
+                    "T-939.4: the Arrange section documents `{code}`, which `top_strip::ARRANGE` \
+                     no longer keys — drop the row or restore the chord"
+                );
+            }
+        }
     }
 }

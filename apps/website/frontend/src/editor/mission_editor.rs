@@ -27,6 +27,10 @@ use leptos::prelude::*;
 // T-934.6 — editor_ops moved to `crate::editor::state::operations`; the alias keeps the dozens of
 // Class-S source-guard needles (`editor_ops::…`) and the page's own prose stable across the move.
 use crate::editor::panels::validation_panel;
+// T-939.4 — the Arrange chords resolve through the top strip's shared list; nothing about the
+// commands themselves is duplicated here.
+#[cfg(target_arch = "wasm32")]
+use crate::editor::panels::top_strip;
 #[cfg(target_arch = "wasm32")]
 use crate::editor::state::doc_host as mission_doc;
 #[cfg(target_arch = "wasm32")]
@@ -1002,6 +1006,27 @@ pub(crate) fn hover_hit(
 #[cfg(target_arch = "wasm32")]
 type SubjectResolver = std::rc::Rc<dyn Fn(&str) -> Option<(RouteTarget, f64, f64)>>;
 
+/// T-939.4 — one Arrange chord, as the thin caller the keydown arms all are.
+///
+/// Two lines of behaviour and neither of them is placement logic: the **inertness gate** (an Arrange
+/// chord on fewer than [`top_strip::ARRANGE_MIN_SELECTION`] entities does nothing, because aligning
+/// one object to itself moves nothing — the acceptance line), and the hand-off to
+/// [`top_strip::run_arrange`], which is the same invoker the menu-bar row and the right-click row
+/// call. Everything about WHAT each command does lives in `top_strip` / `editor_ops`; this file is
+/// SIZE-3 allowlisted and does not get to grow a second copy of it.
+///
+/// Returns whether the key ACTED, so the closure calls `prevent_default` only when something
+/// happened. A chord that found nothing to arrange falls through untouched rather than swallowing
+/// the key — the same courtesy the editor keydown's Escape arm extends.
+#[cfg(target_arch = "wasm32")]
+fn arrange_chord(kind: top_strip::ArrangeKind) -> bool {
+    if editor_ops::selection_len() < top_strip::ARRANGE_MIN_SELECTION {
+        return false;
+    }
+    top_strip::run_arrange(kind);
+    true
+}
+
 #[component]
 pub fn MissionEditorPage() -> impl IntoView {
     let container_ref = NodeRef::<leptos::html::Div>::new();
@@ -1130,6 +1155,64 @@ pub fn MissionEditorPage() -> impl IntoView {
                 timer.set(Some(id));
             }
         });
+    }
+
+    /* ═══════ T-939.4 — the Arrange chords ═══════════════════════════════════════════════════
+     *
+     * Six keys — `Alt` + L/R/T/B to align to an edge, `Alt` + H/V to distribute — running the same
+     * `top_strip::run_arrange` invoker the menu-bar row and the right-click row call. Every arm
+     * below is one line for exactly the reason the T-797 dispatch above is documented as it is:
+     * the arms MIRROR the invoker one-for-one, so a click and a chord cannot come to mean different
+     * things. No placement logic lives in this file.
+     *
+     * **Why the listener is here and not in `panels/top_strip.rs`**, where the list lives: the top
+     * strip is mounted INSIDE the `chrome_hidden` gate and unmounts on Backspace, taking its window
+     * listener with it (that is why the Controls Hint keeps its open state in a thread-local at
+     * all). Chords that stopped working the moment an author hid the chrome to look at a clean map
+     * would fail exactly when a big alignment pass is most likely. The page outlives the chrome.
+     *
+     * **Why it is not folded into `canvas/commands.rs`'s keydown**, which would otherwise be its
+     * natural home: that file is outside this slice's `owns`. Recorded in the report rather than
+     * widened unilaterally. The census in `panels/help_modal.rs` sees this listener (the file is
+     * back in `editor_surface`), so the two collision pins adjudicate these six chords against
+     * every other binding in the editor — which is the property that actually matters, and it
+     * holds wherever the closure lives.
+     */
+    #[cfg(target_arch = "wasm32")]
+    {
+        let arrange = window_event_listener(leptos::ev::keydown, move |ev| {
+            // The same two doors every editor chord goes through: never while typing, and never as
+            // someone else's Ctrl/Cmd shortcut.
+            if mission_history::in_editable_field() {
+                return;
+            }
+            let modk = ev.ctrl_key() || ev.meta_key();
+            let handled = match ev.code().as_str() {
+                "KeyL" if !modk && ev.alt_key() && !ev.shift_key() => {
+                    arrange_chord(top_strip::ArrangeKind::AlignLeft)
+                }
+                "KeyR" if !modk && ev.alt_key() && !ev.shift_key() => {
+                    arrange_chord(top_strip::ArrangeKind::AlignRight)
+                }
+                "KeyT" if !modk && ev.alt_key() && !ev.shift_key() => {
+                    arrange_chord(top_strip::ArrangeKind::AlignTop)
+                }
+                "KeyB" if !modk && ev.alt_key() && !ev.shift_key() => {
+                    arrange_chord(top_strip::ArrangeKind::AlignBottom)
+                }
+                "KeyH" if !modk && ev.alt_key() && !ev.shift_key() => {
+                    arrange_chord(top_strip::ArrangeKind::SpaceHorizontal)
+                }
+                "KeyV" if !modk && ev.alt_key() && !ev.shift_key() => {
+                    arrange_chord(top_strip::ArrangeKind::SpaceVertical)
+                }
+                _ => false,
+            };
+            if handled {
+                ev.prevent_default();
+            }
+        });
+        on_cleanup(move || arrange.remove());
     }
 
     // T-159.22 — dock state. `outliner_nodes` / `selected_ids` are the same kind of pull-mirror as
@@ -3546,6 +3629,161 @@ mod t930_vehicle_first_paint {
         assert!(
             !helper.contains("vehicles_bind(&"),
             "T-930: place-time invalidate must not use the disc packer; body:\n{helper}"
+        );
+    }
+}
+
+/* ═════════ T-939.4 — the Arrange chords, on the editor's own keydown (the defect, as a test) ════
+ *
+ * T-645 gave the Arrange tools a menu and no keys. The census in `panels/help_modal.rs` proves it:
+ * `KeyL` / `KeyT` / `KeyB` / `KeyH` are bound by nothing in the whole editor surface, and `KeyR` /
+ * `KeyV` are bound only bare and only under Ctrl/Cmd — so `Alt` + any of the six reaches no arm and
+ * the operator's keypress does nothing at all.
+ *
+ * Source pins rather than behaviour, for the reason every keydown pin in this programme is one: the
+ * listener is a `#[cfg(target_arch = "wasm32")]` closure over `web_sys::KeyboardEvent`, so no native
+ * test can press a key at it — the arm list IS the binding. Read off `live_source`, which cuts the
+ * whole test half of this file first, so these needles can never match themselves.
+ */
+#[cfg(test)]
+mod t939_4_arrange_chords {
+    use crate::editor::arsenal::class_r_scrub::live_source;
+
+    /// The six chords this slice binds, as their `KeyboardEvent.code`. Kept here as bare literals
+    /// (not imported) so the pin still means something if the shared table is renamed out from
+    /// under it.
+    const ARRANGE_CODES: [&str; 6] = ["KeyL", "KeyR", "KeyT", "KeyB", "KeyH", "KeyV"];
+
+    /// THE DEFECT: `Alt` + each of the six reaches no keydown arm.
+    #[test]
+    fn the_editor_keydown_binds_the_arrange_chords() {
+        let src = live_source(include_str!("mission_editor.rs"));
+        for code in ARRANGE_CODES {
+            let arm = format!("\"{code}\" if !modk && ev.alt_key() && !ev.shift_key() =>");
+            assert!(
+                src.contains(&arm),
+                "T-939.4: the editor keydown has no `{arm}` arm — the Arrange chord is ignored and \
+                 align / space are reachable only with the mouse"
+            );
+        }
+    }
+
+    /// The six codes must be the six the shared list keys, and no others. Written against
+    /// `top_strip::ARRANGE` so the chords cannot be bound here and advertised as something else on
+    /// the menu row — the failure mode a source pin over this file alone could not see.
+    #[test]
+    fn the_bound_codes_are_exactly_the_shared_lists_chorded_rows() {
+        let mut from_list: Vec<&str> = crate::editor::panels::top_strip::ARRANGE
+            .iter()
+            .filter(|e| !e.code.is_empty())
+            .map(|e| e.code)
+            .collect();
+        let mut bound = ARRANGE_CODES.to_vec();
+        from_list.sort_unstable();
+        bound.sort_unstable();
+        assert_eq!(
+            from_list, bound,
+            "T-939.4: the keydown arms and `top_strip::ARRANGE`'s chorded rows must name the same \
+             codes — a chord bound here but not listed there is undiscoverable, and one listed \
+             there but not bound here is advertised and dead"
+        );
+        for entry in crate::editor::panels::top_strip::ARRANGE
+            .iter()
+            .filter(|e| !e.code.is_empty())
+        {
+            assert!(
+                !entry.chord.is_empty(),
+                "T-939.4: `{}` keys `{}` but prints no chord — the row would run on a key nobody \
+                 can find",
+                entry.label,
+                entry.code
+            );
+        }
+    }
+
+    /// **The acceptance line's other half: the chords are INERT on a single selection.**
+    ///
+    /// `arrange_chord` is wasm-only (it reads the live selection out of `editor_ops`), so this is a
+    /// source pin like every other keydown contract in this file. It asserts the shape that makes
+    /// the chord inert rather than the words around it: the helper returns EARLY, before any
+    /// `run_arrange` call, when the selection is under the shared floor — and because it returns
+    /// `false` there, the closure's `prevent_default` never runs either, so the key falls through
+    /// untouched instead of being swallowed by a command that did nothing.
+    #[test]
+    fn a_chord_below_the_selection_floor_does_nothing_and_keeps_the_key() {
+        let src = live_source(include_str!("mission_editor.rs"));
+        let at = src
+            .find("fn arrange_chord(")
+            .expect("T-939.4: the shared chord helper");
+        let body = &src[at..];
+        let end = body.find("\n}").map_or(body.len(), |i| i + 2);
+        let body = &body[..end];
+        let gate = body
+            .find("< top_strip::ARRANGE_MIN_SELECTION")
+            .expect("T-939.4: the chord helper must gate on the shared selection floor");
+        let ret = body
+            .find("return false")
+            .expect("T-939.4: the gate must bail rather than fall through");
+        let run = body
+            .find("top_strip::run_arrange(")
+            .expect("T-939.4: the chord must reach the shared invoker");
+        assert!(
+            gate < ret && ret < run,
+            "T-939.4: the selection gate must come BEFORE the early return and the early return \
+             BEFORE the invoker — a gate after the call would arrange first and check later. \
+             Body:\n{body}"
+        );
+        assert!(
+            body.contains("editor_ops::selection_len()"),
+            "T-939.4: the floor must be measured against the LIVE selection, not a mirror that can \
+             go stale between a click and a keypress. Body:\n{body}"
+        );
+    }
+
+    /// **"Each Arrange chord performs the same operation as its menu entry"**, held structurally.
+    ///
+    /// Every arm in the chord listener is a call to `arrange_chord`, which calls
+    /// `top_strip::run_arrange` — the same function `context_menu::dispatch` calls for its
+    /// `ArrangeRun` row and the same one `top_strip::run_action` routes its four placement arms
+    /// through. This pin refuses the drift that would break the claim: an arm that reaches
+    /// `editor_ops` (or anything else) DIRECTLY from this file would be a second implementation,
+    /// and it is the second implementation that eventually disagrees with the first.
+    #[test]
+    fn every_chord_arm_is_a_thin_caller_of_the_shared_invoker() {
+        let src = live_source(include_str!("mission_editor.rs"));
+        let at = src
+            .find("let arrange = window_event_")
+            .expect("T-939.4: the chord listener");
+        let body = &src[at..];
+        let end = body
+            .find("on_cleanup(move || arrange.remove())")
+            .expect("T-939.4: the listener's cleanup");
+        let body = &body[..end];
+        assert_eq!(
+            body.matches("arrange_chord(top_strip::ArrangeKind::")
+                .count(),
+            ARRANGE_CODES.len(),
+            "T-939.4: every one of the {} arms must hand off to the shared helper. Body:\n{body}",
+            ARRANGE_CODES.len()
+        );
+        for direct in [
+            "align_selection",
+            "space_selection",
+            "orient_selection",
+            "apply_pattern_to_selection",
+        ] {
+            assert!(
+                !body.contains(direct),
+                "T-939.4: the keydown must not call `{direct}` itself — placement logic belongs in \
+                 `top_strip` / `editor_ops`, and a second copy here is how a click and a chord come \
+                 to mean different things"
+            );
+        }
+        // A chord typed into an attribute field must never rearrange the map. Same guard every
+        // other editor chord sits behind.
+        assert!(
+            body.contains("in_editable_field()"),
+            "T-939.4: the chord listener must yield while the operator is typing. Body:\n{body}"
         );
     }
 }

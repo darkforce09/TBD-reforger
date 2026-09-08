@@ -76,6 +76,11 @@ const VALIDATION_CHIP: &str =
 /// leads with the unconditional [`MENU_GUTTER`] cell.
 const MENU_ROW: &str = "flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-label-sm text-on-surface disabled:cursor-default disabled:text-outline";
 
+/// T-939.4 — the right-aligned chord cell on a menu row that has one. `ml-auto` inside `MENU_ROW`'s
+/// flex box pushes it to the trailing edge; dimmer and smaller than the label because it is a hint,
+/// not the command. Same job as `context_menu`'s own shortcut cell, and deliberately the same look.
+const MENU_CHORD: &str = "ml-auto pl-4 text-label-sm text-outline";
+
 /// T-634 — the dropdown surface itself (menu bar and export menu alike).
 const MENU_PANEL: &str =
     "glass animate-menu-in absolute top-full z-50 mt-1 rounded-lg py-1 shadow-lg";
@@ -85,6 +90,10 @@ const MENU_PANEL: &str =
 
 /// One top-strip menu (T-172 B9). React rendered File/Edit/View/Mission/Environment as dead
 /// "(soon)" stubs; these open real dropdowns with the commands that exist. No DOM while closed.
+///
+/// T-939.4 — `Copy`, so [`ARRANGE_ITEMS`] can be BUILT from [`ARRANGE`] in a `const fn` instead of
+/// being a second hand-written copy of the same twenty rows.
+#[derive(Clone, Copy)]
 struct MenuItem {
     label: &'static str,
     /// None = disabled row (rendered, not clickable — parity with genuinely-future features).
@@ -138,6 +147,307 @@ enum MenuAction {
 }
 
 use crate::editor::tools::place_helpers::{AlignEdge, Orient, PatternKind, SpaceAxis};
+
+/* ═══════════ T-939.4 — the Arrange rows, as ONE list three surfaces read ══════════════════════
+ *
+ * T-645 built the Placement Tools as a top-strip dropdown and stopped there. T-939.4 adds two more
+ * doors to the same nineteen commands — the right-click menu (`panels/context_menu.rs`) and the
+ * keyboard (the `mission_editor` chord listener) — and the way three doors stay honest is that
+ * there is only ever one list behind them.
+ *
+ * [`ARRANGE`] is that list: identity, label, chord. Everything else is derived from it —
+ * [`ARRANGE_ITEMS`] (what the menu bar renders) is BUILT from it in a `const fn`, the context
+ * menu's submenu maps over it, and [`arrange_for_code`] is what the keydown looks a keypress up in.
+ * A twentieth tool is one row here and appears in all three places; that is the property, and
+ * `every_surface_reads_the_same_arrange_list` at the bottom of this file is what keeps it.
+ */
+
+/// One Arrange command's IDENTITY — an id enum, never a label string.
+///
+/// This is the payload `context_menu`'s `ArrangeRun` row carries and the value the keydown chord
+/// resolves to, so both cross the module boundary without either side re-parsing menu copy. The
+/// mapping to the internal [`MenuAction`] lives in exactly one place ([`Self::action`]), which is
+/// why a click and a chord cannot come to mean different things.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ArrangeKind {
+    PatternCircular,
+    PatternLine,
+    PatternGrid,
+    PatternFillArea,
+    AlignLeft,
+    AlignRight,
+    AlignTop,
+    AlignBottom,
+    AlignCentreH,
+    AlignCentreV,
+    SpaceHorizontal,
+    SpaceVertical,
+    SpaceAlongLine,
+    OrientNorth,
+    OrientEast,
+    OrientSouth,
+    OrientWest,
+    OrientFaceCentre,
+    OrientFaceAway,
+}
+
+impl ArrangeKind {
+    /// The strip's own dispatch value. Private on purpose: [`MenuAction`] is this module's business
+    /// and no other surface should learn it — they carry [`ArrangeKind`] and call [`run_arrange`].
+    const fn action(self) -> MenuAction {
+        match self {
+            Self::PatternCircular => MenuAction::Pattern(PatternKind::Circular),
+            Self::PatternLine => MenuAction::Pattern(PatternKind::Line),
+            Self::PatternGrid => MenuAction::Pattern(PatternKind::Grid),
+            Self::PatternFillArea => MenuAction::Pattern(PatternKind::FillArea),
+            Self::AlignLeft => MenuAction::Align(AlignEdge::Left),
+            Self::AlignRight => MenuAction::Align(AlignEdge::Right),
+            Self::AlignTop => MenuAction::Align(AlignEdge::Top),
+            Self::AlignBottom => MenuAction::Align(AlignEdge::Bottom),
+            Self::AlignCentreH => MenuAction::Align(AlignEdge::CentreH),
+            Self::AlignCentreV => MenuAction::Align(AlignEdge::CentreV),
+            Self::SpaceHorizontal => MenuAction::Space(SpaceAxis::Horizontal),
+            Self::SpaceVertical => MenuAction::Space(SpaceAxis::Vertical),
+            Self::SpaceAlongLine => MenuAction::Space(SpaceAxis::AlongLine),
+            Self::OrientNorth => MenuAction::Orient(Orient::North),
+            Self::OrientEast => MenuAction::Orient(Orient::East),
+            Self::OrientSouth => MenuAction::Orient(Orient::South),
+            Self::OrientWest => MenuAction::Orient(Orient::West),
+            Self::OrientFaceCentre => MenuAction::Orient(Orient::FaceCentre),
+            Self::OrientFaceAway => MenuAction::Orient(Orient::FaceAway),
+        }
+    }
+}
+
+/// One Arrange row: what it is, what it is called, and (for the six that have one) its chord.
+pub struct ArrangeEntry {
+    /// The id every surface dispatches on.
+    pub kind: ArrangeKind,
+    /// The row label, shared verbatim by the menu bar and the context submenu — so an operator who
+    /// learned a command in one place recognises it in the other.
+    pub label: &'static str,
+    /// The `KeyboardEvent.code` that runs this row, or `""` when it has no chord. **Only the six
+    /// the ticket names are keyed**: aligning to four edges and distributing on two axes are the
+    /// acts an author repeats; patterns and orient are deliberate one-off choices made from a menu,
+    /// and giving all nineteen a chord would spend most of the keyboard on rows nobody repeats.
+    pub code: &'static str,
+    /// The chord as an operator reads it (`"Alt + L"`), or `""`. Rendered on both menu surfaces and
+    /// documented in the Controls Hint — one spelling, three places.
+    pub chord: &'static str,
+}
+
+/// How many entities the Arrange chords and the context-menu submenu require.
+///
+/// **Two, and that is an acceptance line rather than a nicety.** Aligning one object to itself
+/// moves nothing and distributing one has no gaps to equalise, so a submenu offered on a single
+/// selection is a menu of no-ops — the dead-control shape T-668 exists to remove. The top-strip
+/// menu keeps its own looser `>= 1` gate (patterns and orient DO act on one entity); this constant
+/// governs only the two surfaces this slice adds.
+pub const ARRANGE_MIN_SELECTION: usize = 2;
+
+/// The nineteen Arrange commands, in menu order: patterns, align, space, orient.
+pub const ARRANGE: [ArrangeEntry; 19] = [
+    ArrangeEntry {
+        kind: ArrangeKind::PatternCircular,
+        label: "Pattern: Circular",
+        code: "",
+        chord: "",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::PatternLine,
+        label: "Pattern: Line",
+        code: "",
+        chord: "",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::PatternGrid,
+        label: "Pattern: Grid",
+        code: "",
+        chord: "",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::PatternFillArea,
+        label: "Pattern: Fill Area",
+        code: "",
+        chord: "",
+    },
+    // The four edge aligns + the two distributes carry the chords. `Alt` + a mnemonic letter:
+    // L/R/T/B for the four edges, H/V for the two distribute axes. Every one of the six is free of
+    // the rest of the editor's keymap under `Alt` — `KeyL`/`KeyT`/`KeyB`/`KeyH` are bound by
+    // nothing at all, and `KeyR` (bare, the right dock) / `KeyV` (Ctrl+V, paste) are claimed only
+    // under modifier predicates that `Alt`-without-Ctrl cannot satisfy. `keymap_census`'s
+    // `no_two_listeners_claim_the_same_chord` is what proves that rather than this comment.
+    ArrangeEntry {
+        kind: ArrangeKind::AlignLeft,
+        label: "Align Left",
+        code: "KeyL",
+        chord: "Alt + L",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::AlignRight,
+        label: "Align Right",
+        code: "KeyR",
+        chord: "Alt + R",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::AlignTop,
+        label: "Align Top",
+        code: "KeyT",
+        chord: "Alt + T",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::AlignBottom,
+        label: "Align Bottom",
+        code: "KeyB",
+        chord: "Alt + B",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::AlignCentreH,
+        label: "Align Centres (horizontal)",
+        code: "",
+        chord: "",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::AlignCentreV,
+        label: "Align Centres (vertical)",
+        code: "",
+        chord: "",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::SpaceHorizontal,
+        label: "Space Equally (horizontal)",
+        code: "KeyH",
+        chord: "Alt + H",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::SpaceVertical,
+        label: "Space Equally (vertical)",
+        code: "KeyV",
+        chord: "Alt + V",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::SpaceAlongLine,
+        label: "Space Equally (along line)",
+        code: "",
+        chord: "",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::OrientNorth,
+        label: "Orient North",
+        code: "",
+        chord: "",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::OrientEast,
+        label: "Orient East",
+        code: "",
+        chord: "",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::OrientSouth,
+        label: "Orient South",
+        code: "",
+        chord: "",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::OrientWest,
+        label: "Orient West",
+        code: "",
+        chord: "",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::OrientFaceCentre,
+        label: "Orient: Face Centre",
+        code: "",
+        chord: "",
+    },
+    ArrangeEntry {
+        kind: ArrangeKind::OrientFaceAway,
+        label: "Orient: Face Away",
+        code: "",
+        chord: "",
+    },
+];
+
+/// The Arrange dropdown's rows, DERIVED from [`ARRANGE`] rather than retyped beside it. A `const fn`
+/// because [`MENUS`] is a `const` and must be able to name this at compile time.
+const ARRANGE_ITEMS: [MenuItem; ARRANGE.len()] = arrange_items();
+
+const fn arrange_items() -> [MenuItem; ARRANGE.len()] {
+    let mut out = [MenuItem {
+        label: "",
+        action: None,
+    }; ARRANGE.len()];
+    let mut i = 0;
+    while i < ARRANGE.len() {
+        out[i] = MenuItem {
+            label: ARRANGE[i].label,
+            action: Some(ARRANGE[i].kind.action()),
+        };
+        i += 1;
+    }
+    out
+}
+
+/// The chord printed on the menu row `label`, or `""` when that row has none. The menu bar's own
+/// read of [`ARRANGE`] — the context menu reads the same field through [`ARRANGE`] directly.
+#[must_use]
+pub fn arrange_chord_for_label(label: &str) -> &'static str {
+    ARRANGE
+        .iter()
+        .find(|e| e.label == label)
+        .map_or("", |e| e.chord)
+}
+
+/// The Arrange row a `KeyboardEvent.code` runs, or `None` when the key is not an Arrange chord.
+///
+/// The empty `code` on the thirteen chord-less rows can never match: a real `KeyboardEvent.code` is
+/// never the empty string, and the guard below refuses it outright rather than relying on that.
+#[must_use]
+pub fn arrange_for_code(code: &str) -> Option<&'static ArrangeEntry> {
+    if code.is_empty() {
+        return None;
+    }
+    ARRANGE.iter().find(|e| e.code == code)
+}
+
+/// **THE Arrange invoker.** The top-strip row, the context-menu row and the keyboard chord all end
+/// here, which is what makes "the chord does the same thing as the menu entry" a fact about the
+/// code rather than a claim in a comment.
+///
+/// Ungated at the door and wasm-gated inside, like the rest of the strip's `editor_ops` calls: the
+/// native view shell has no document, so there is nothing for a placement to act on.
+pub fn run_arrange(kind: ArrangeKind) {
+    run_arrange_action(kind.action());
+}
+
+/// The invoker's body, in [`MenuAction`] terms — so [`run_action`]'s four placement arms and
+/// [`run_arrange`] are literally the same code path rather than two copies that agree today.
+fn run_arrange_action(action: MenuAction) {
+    #[cfg(target_arch = "wasm32")]
+    {
+        use crate::editor::state::operations as ops;
+        match action {
+            MenuAction::Pattern(kind) => {
+                ops::apply_pattern_to_selection(kind);
+            }
+            MenuAction::Align(edge) => {
+                ops::align_selection(edge);
+            }
+            MenuAction::Space(axis) => {
+                ops::space_selection(axis);
+            }
+            MenuAction::Orient(cmd) => {
+                ops::orient_selection(cmd);
+            }
+            // Not a placement action — `run_action` only routes the four here, and `ArrangeKind`
+            // cannot name anything else, so this arm is unreachable in practice.
+            _ => {}
+        }
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = action;
+}
 
 // T-797 — six menus after the View menu was removed (F-14 + F-15 emptied it). The count is a
 // compile-time invariant; the `.enumerate()` render and the `open_menu: Option<usize>` latch index
@@ -246,87 +556,11 @@ const MENUS: [(&str, &[MenuItem]); 6] = [
     // T-645 — Placement Tools. Patterns rearrange the selection LIVE; align/space snap it; orient
     // turns it. Ops moving > 10 entities confirm. Disabled (with a "select entities first" tooltip)
     // until at least one entity is selected — the T-668 dead-control rule: no clickable no-op.
-    (
-        "Arrange",
-        &[
-            MenuItem {
-                label: "Pattern: Circular",
-                action: Some(MenuAction::Pattern(PatternKind::Circular)),
-            },
-            MenuItem {
-                label: "Pattern: Line",
-                action: Some(MenuAction::Pattern(PatternKind::Line)),
-            },
-            MenuItem {
-                label: "Pattern: Grid",
-                action: Some(MenuAction::Pattern(PatternKind::Grid)),
-            },
-            MenuItem {
-                label: "Pattern: Fill Area",
-                action: Some(MenuAction::Pattern(PatternKind::FillArea)),
-            },
-            MenuItem {
-                label: "Align Left",
-                action: Some(MenuAction::Align(AlignEdge::Left)),
-            },
-            MenuItem {
-                label: "Align Right",
-                action: Some(MenuAction::Align(AlignEdge::Right)),
-            },
-            MenuItem {
-                label: "Align Top",
-                action: Some(MenuAction::Align(AlignEdge::Top)),
-            },
-            MenuItem {
-                label: "Align Bottom",
-                action: Some(MenuAction::Align(AlignEdge::Bottom)),
-            },
-            MenuItem {
-                label: "Align Centres (horizontal)",
-                action: Some(MenuAction::Align(AlignEdge::CentreH)),
-            },
-            MenuItem {
-                label: "Align Centres (vertical)",
-                action: Some(MenuAction::Align(AlignEdge::CentreV)),
-            },
-            MenuItem {
-                label: "Space Equally (horizontal)",
-                action: Some(MenuAction::Space(SpaceAxis::Horizontal)),
-            },
-            MenuItem {
-                label: "Space Equally (vertical)",
-                action: Some(MenuAction::Space(SpaceAxis::Vertical)),
-            },
-            MenuItem {
-                label: "Space Equally (along line)",
-                action: Some(MenuAction::Space(SpaceAxis::AlongLine)),
-            },
-            MenuItem {
-                label: "Orient North",
-                action: Some(MenuAction::Orient(Orient::North)),
-            },
-            MenuItem {
-                label: "Orient East",
-                action: Some(MenuAction::Orient(Orient::East)),
-            },
-            MenuItem {
-                label: "Orient South",
-                action: Some(MenuAction::Orient(Orient::South)),
-            },
-            MenuItem {
-                label: "Orient West",
-                action: Some(MenuAction::Orient(Orient::West)),
-            },
-            MenuItem {
-                label: "Orient: Face Centre",
-                action: Some(MenuAction::Orient(Orient::FaceCentre)),
-            },
-            MenuItem {
-                label: "Orient: Face Away",
-                action: Some(MenuAction::Orient(Orient::FaceAway)),
-            },
-        ],
-    ),
+    //
+    // T-939.4 — the rows are no longer written here. They are DERIVED from `ARRANGE`, the one
+    // list the context menu and the keyboard chords read too, so a twentieth tool is a single
+    // row above and appears in all three surfaces at once.
+    ("Arrange", &ARRANGE_ITEMS),
     // T-797 (F-14 + F-15) — the View menu is GONE. It held exactly two rows and both had to leave:
     //   • F-14 — `Map layers — render host (T-159.28)` was an inert, permanently-disabled row that
     //     named an unbuilt render host. The operator pass said ship-it-or-drop-it; there is no host
@@ -1235,38 +1469,15 @@ pub fn TopCommandStrip(
             // the selection/positions from its `OPS_CTX` (like Undo/Redo reach the undo stack). The
             // confirm (> 10 entities) lives inside each `editor_ops` fn. Wasm-gated bodies; the native
             // build compiles the match arms but does nothing (no doc).
-            MenuAction::Pattern(kind) => {
-                #[cfg(target_arch = "wasm32")]
-                {
-                    crate::editor::state::operations::apply_pattern_to_selection(kind);
-                }
-                #[cfg(not(target_arch = "wasm32"))]
-                let _ = kind;
-            }
-            MenuAction::Align(edge) => {
-                #[cfg(target_arch = "wasm32")]
-                {
-                    crate::editor::state::operations::align_selection(edge);
-                }
-                #[cfg(not(target_arch = "wasm32"))]
-                let _ = edge;
-            }
-            MenuAction::Space(axis) => {
-                #[cfg(target_arch = "wasm32")]
-                {
-                    crate::editor::state::operations::space_selection(axis);
-                }
-                #[cfg(not(target_arch = "wasm32"))]
-                let _ = axis;
-            }
-            MenuAction::Orient(cmd) => {
-                #[cfg(target_arch = "wasm32")]
-                {
-                    crate::editor::state::operations::orient_selection(cmd);
-                }
-                #[cfg(not(target_arch = "wasm32"))]
-                let _ = cmd;
-            }
+            //
+            // T-939.4 — all four now hand off to [`run_arrange_action`], which is also what
+            // [`run_arrange`] (the context-menu row and the keyboard chord) calls. Not a tidy-up: it
+            // is what makes "the chord performs the same operation as its menu entry" true by
+            // construction rather than by two copies happening to agree.
+            MenuAction::Pattern(_)
+            | MenuAction::Align(_)
+            | MenuAction::Space(_)
+            | MenuAction::Orient(_) => run_arrange_action(a),
             // T-692 — a TOGGLE, not a one-shot: picking it from either menu flips the overlay, so
             // the same row that opens the reference also puts it away. Ungated (no doc, no
             // web-sys) — the native view shell toggles it too.
@@ -1411,6 +1622,13 @@ pub fn TopCommandStrip(
                                                         .iter()
                                                         .map(|it| {
                                                             let label = it.label;
+                                                            // T-939.4 — the row's chord, or "" for
+                                                            // the rows that have none. Looked up
+                                                            // in `ARRANGE` by label rather than
+                                                            // stored on `MenuItem`, so the chord
+                                                            // has ONE home and the other 30-odd
+                                                            // menu rows need no new field.
+                                                            let chord = arrange_chord_for_label(label);
                                                             // T-668 conventions — every menu row leads with the
                                                             // UNCONDITIONAL checkmark gutter (MENU_GUTTER), so
                                                             // labels never shift between menus (Eden's jumping
@@ -1511,6 +1729,27 @@ pub fn TopCommandStrip(
                                                                                 }}
                                                                             </span>
                                                                             <span>{label}</span>
+                                                                            // T-939.4 — the chord,
+                                                                            // right-aligned, read
+                                                                            // off the SAME
+                                                                            // `ARRANGE` row the key
+                                                                            // listener resolves
+                                                                            // against. A menu that
+                                                                            // teaches its own
+                                                                            // keyboard: the only
+                                                                            // way an author
+                                                                            // discovers `Alt + L`
+                                                                            // is by reading it
+                                                                            // beside the row it
+                                                                            // runs. Empty for the
+                                                                            // rows with no chord —
+                                                                            // no DOM at all there.
+                                                                            {(!chord.is_empty())
+                                                                                .then(|| {
+                                                                                    view! {
+                                                                                        <span class=MENU_CHORD>{chord}</span>
+                                                                                    }
+                                                                                })}
                                                                         </button>
                                                                     }
                                                                         .into_any()
@@ -4358,6 +4597,157 @@ mod t798_validation_chip {
             region.contains("MENU_PANEL"),
             "T-798: the chip's dropdown must reuse MENU_PANEL (absolute/anchored), the export-menu \
              idiom — NOT a fixed-positioned panel the strip's backdrop-filter would mis-centre."
+        );
+    }
+}
+
+/* ═════════ T-939.4 — one Arrange list, three surfaces ═══════════════════════════════════════════
+ *
+ * The ticket's first requirement is that this file "exposes the Arrange entries as one shared list
+ * (label, chord, invoker) consumed by both menus". A list is only shared while nothing else keeps a
+ * copy, and the way copies get made is not malice — it is a menu row typed in a hurry beside the
+ * one that already exists. These pins make that mistake red instead of invisible.
+ */
+#[cfg(test)]
+mod t939_4_one_arrange_list {
+    use super::{
+        arrange_chord_for_label, arrange_for_code, MenuAction, ARRANGE, ARRANGE_ITEMS,
+        ARRANGE_MIN_SELECTION, MENUS,
+    };
+
+    fn menu_bar_arrange() -> &'static [super::MenuItem] {
+        MENUS
+            .into_iter()
+            .find(|(name, _)| *name == "Arrange")
+            .expect("T-939.4: the Arrange menu")
+            .1
+    }
+
+    /// The dropdown IS the list. Not "matches" it by a hand-kept parallel table — it is built from
+    /// it, and this asserts the build did not lose or reorder anything.
+    #[test]
+    fn the_menu_bar_renders_the_shared_list_in_order() {
+        let rows = menu_bar_arrange();
+        assert_eq!(
+            rows.len(),
+            ARRANGE.len(),
+            "T-939.4: the Arrange dropdown and the shared list must be the same length"
+        );
+        assert!(
+            std::ptr::eq(rows.as_ptr(), ARRANGE_ITEMS.as_ptr()),
+            "T-939.4: the Arrange menu must point AT the derived array — a fresh slice literal here \
+             would be the second copy this whole design exists to prevent"
+        );
+        for (row, src) in rows.iter().zip(ARRANGE.iter()) {
+            assert_eq!(row.label, src.label);
+            assert!(
+                matches!(
+                    row.action,
+                    Some(
+                        MenuAction::Pattern(_)
+                            | MenuAction::Align(_)
+                            | MenuAction::Space(_)
+                            | MenuAction::Orient(_)
+                    )
+                ),
+                "T-939.4: `{}` must dispatch a placement action, never `None` (a dead row)",
+                src.label
+            );
+        }
+    }
+
+    /// A chord is looked up by CODE and printed by LABEL, and both lookups have to agree with the
+    /// row they came from — otherwise the menu advertises one key and another one acts.
+    #[test]
+    fn code_and_label_lookups_agree_with_the_row() {
+        for entry in ARRANGE.iter() {
+            assert_eq!(
+                arrange_chord_for_label(entry.label),
+                entry.chord,
+                "T-939.4: `{}`'s printed chord must be its own",
+                entry.label
+            );
+            if entry.code.is_empty() {
+                assert!(
+                    entry.chord.is_empty(),
+                    "T-939.4: `{}` prints a chord but keys no code — an advertised dead key",
+                    entry.label
+                );
+            } else {
+                let found = arrange_for_code(entry.code)
+                    .unwrap_or_else(|| panic!("T-939.4: `{}` is unreachable", entry.code));
+                assert_eq!(found.kind, entry.kind);
+            }
+        }
+    }
+
+    /// The chord-less rows must never be reachable by a keypress. The empty `code` on thirteen of
+    /// the nineteen is a sentinel, and a lookup that took `""` as a match would make ALL of them
+    /// answer to the same phantom key — the shape a `find` on an empty needle produces by accident.
+    #[test]
+    fn the_empty_code_sentinel_matches_nothing() {
+        assert!(arrange_for_code("").is_none());
+        assert!(arrange_for_code("KeyQ").is_none());
+        let keyed = ARRANGE.iter().filter(|e| !e.code.is_empty()).count();
+        assert_eq!(
+            keyed, 6,
+            "T-939.4: six rows carry chords — the four edge aligns and the two distributes"
+        );
+    }
+
+    /// Labels are the join between the two menus (the context submenu renders them, and the strip
+    /// looks a chord up by them), so a duplicate would make one row shadow another's chord.
+    #[test]
+    fn every_label_and_kind_is_unique() {
+        let mut labels: Vec<&str> = ARRANGE.iter().map(|e| e.label).collect();
+        labels.sort_unstable();
+        let n = labels.len();
+        labels.dedup();
+        assert_eq!(labels.len(), n, "T-939.4: duplicate Arrange label");
+        let mut codes: Vec<&str> = ARRANGE
+            .iter()
+            .map(|e| e.code)
+            .filter(|c| !c.is_empty())
+            .collect();
+        codes.sort_unstable();
+        let n = codes.len();
+        codes.dedup();
+        assert_eq!(codes.len(), n, "T-939.4: two Arrange rows claim one code");
+    }
+
+    /// The floor the context submenu and the chords share. Two, not one: one object cannot be
+    /// aligned to anything and has no gap to distribute.
+    #[test]
+    fn the_selection_floor_is_two() {
+        assert_eq!(ARRANGE_MIN_SELECTION, 2);
+    }
+
+    /// The click path and the chord path must be the SAME body, not two that agree today.
+    /// `run_action`'s four placement arms hand off to `run_arrange_action`, which is what
+    /// `run_arrange` — the context menu's and the keydown's door — calls. Source-pinned because the
+    /// dispatch bodies are wasm-only.
+    #[test]
+    fn the_menu_click_and_the_chord_share_one_invoker() {
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_item};
+        let code = live_code(include_str!("top_strip.rs"));
+        // `run_action` is a CLOSURE over the strip's signals, not a free fn — `only_item` slices it
+        // from its `let` head all the same, and still refuses a second definition.
+        let run_action = only_item(&code, "let run_action = move |a: MenuAction|");
+        assert!(
+            run_action.contains("run_arrange_action(a)"),
+            "T-939.4: the top-strip click must go through the shared invoker"
+        );
+        for direct in ["align_selection", "space_selection", "orient_selection"] {
+            assert!(
+                !run_action.contains(direct),
+                "T-939.4: `run_action` must not call `{direct}` itself any more — that is the copy \
+                 the chord would drift away from"
+            );
+        }
+        let invoker = only_item(&code, "pub fn run_arrange(");
+        assert!(
+            invoker.contains("run_arrange_action("),
+            "T-939.4: `run_arrange` must delegate to the one body"
         );
     }
 }
