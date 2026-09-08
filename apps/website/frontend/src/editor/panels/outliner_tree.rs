@@ -1448,6 +1448,38 @@ pub(crate) fn virtual_tree(
     // Effect never leaks — it re-runs on `nodes`/`collapsed` change, and the render `move ||`
     // re-slices on `rev`/scroll.
     let drag_ghost_pos = RwSignal::new(None::<(i32, i32)>);
+    // Install once for BOTH eager and windowed trees. Capture sees outside releases even when
+    // another panel stops propagation; the zero-delay cleanup runs after the destination drop.
+    #[cfg(target_arch = "wasm32")]
+    {
+        use wasm_bindgen::{closure::Closure, JsCast};
+        if let Some(win) = web_sys::window() {
+            let release = Closure::<dyn FnMut(web_sys::PointerEvent)>::new(move |_| {
+                gloo_timers::callback::Timeout::new(0, move || {
+                    crate::editor::panels::outliner_drag::cancel_layer_drag();
+                    let _ = drag_ghost_pos.try_set(None);
+                }).forget();
+            });
+            let cancel = Closure::<dyn FnMut(web_sys::Event)>::new(move |_| {
+                crate::editor::panels::outliner_drag::cancel_layer_drag();
+                let _ = drag_ghost_pos.try_set(None);
+            });
+            let _ = win.add_event_listener_with_callback_and_bool("pointerup", release.as_ref().unchecked_ref(), true);
+            for event in ["pointercancel", "blur"] {
+                let _ = win.add_event_listener_with_callback_and_bool(event, cancel.as_ref().unchecked_ref(), true);
+            }
+            let hooks = StoredValue::new_local((win, release, cancel));
+            on_cleanup(move || {
+                crate::editor::panels::outliner_drag::cancel_layer_drag();
+                let _ = hooks.try_with_value(|(win, release, cancel)| {
+                    let _ = win.remove_event_listener_with_callback_and_bool("pointerup", release.as_ref().unchecked_ref(), true);
+                    for event in ["pointercancel", "blur"] {
+                        let _ = win.remove_event_listener_with_callback_and_bool(event, cancel.as_ref().unchecked_ref(), true);
+                    }
+                });
+            });
+        }
+    }
     let flat = StoredValue::new(Vec::<FlatRow>::new());
     let rev = RwSignal::new(0u64);
     Effect::new(move |_| {

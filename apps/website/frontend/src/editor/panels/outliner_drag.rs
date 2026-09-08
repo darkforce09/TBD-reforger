@@ -62,6 +62,13 @@ pub fn begin_refile(drag_set: DragSet) {
 
 pub fn cancel_layer_drag() {
     PENDING_DRAG.with(|p| *p.borrow_mut() = None);
+    // Rows arm the legacy latch alongside the set (including ORBAT's separate refile latch).
+    // Every completion/cancellation must consume all of them before a later click can see one.
+    #[cfg(target_arch = "wasm32")]
+    {
+        crate::editor::state::operations::cancel_layer_drag();
+        crate::editor::state::operations::cancel_refile();
+    }
 }
 
 /// T-946.86 (.83) — **CONSUME** the pending [`DragSet`] onto `dest_folder_id`, moving EVERY id in
@@ -103,7 +110,7 @@ pub fn complete_multi_drop_onto_folder(
     };
     // The SAME pointerdown also armed the single-id latch in `state/operations`. Drop it here or
     // it strands and is consumed by some later, unrelated drop — a move the operator never made.
-    ops::cancel_layer_drag();
+    cancel_layer_drag();
 
     let set = match &drag {
         LayerDrag::Folder(s) | LayerDrag::Slot(s) | LayerDrag::Comment(s) => s,
@@ -160,7 +167,7 @@ pub fn complete_multi_refile_onto_squad(dest_squad_id: &str) -> bool {
         return false;
     };
     // Drop the single-id latch the same pointerdown armed, so it cannot strand into a later drop.
-    ops::cancel_layer_drag();
+    cancel_layer_drag();
 
     let set = match &drag {
         LayerDrag::Folder(s) | LayerDrag::Slot(s) | LayerDrag::Comment(s) => s,
