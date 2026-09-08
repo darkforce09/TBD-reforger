@@ -29,7 +29,6 @@ use super::batch::with_batch;
 use super::context::{faction_rows, squad_rows, OPS_CTX};
 use crate::editor::panels::attributes_modal::plan_reassign;
 use crate::editor::state::history as mission_history;
-use map_engine_core::doc::{MissionDocCore, NONE_IDX};
 
 /// Where a batch reassign sends the selection.
 ///
@@ -71,17 +70,15 @@ pub fn reassign_slots(ids: &[String], target: &ReassignTarget) -> Result<usize, 
             let Some(core) = d.as_ref() else {
                 return 0usize;
             };
-            // ONE `materialize()` for the whole batch, not one per id: it is O(all slots), and a
-            // five-slot reassign paying it five times over is the kind of per-item full scan that
-            // turns a 300-slot mission's undo group into a visible stall.
-            let before = squads_by_slot(core);
             let mut moved = 0usize;
             for id in &ids {
                 // The core no-ops a move into the squad the slot is already in; counting those
                 // would report work that never happened, and the modal reports this number.
-                match before.get(id.as_str()) {
+                // Raw membership is also necessary for hidden single-slot Attributes: the SoA
+                // filters them out even though read_attrs keeps their authored values editable.
+                match core.slot_squad_id(id) {
                     None => continue, // gone from the doc since the selection was taken
-                    Some(current) if current == &dest => continue,
+                    Some(current) if current == dest => continue,
                     Some(_) => {}
                 }
                 core.move_slot_to_squad_keep_source(id, &dest);
@@ -108,13 +105,13 @@ pub fn restore_slot_squads(snapshot: &[super::attrs::SlotAttrs]) -> usize {
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        let current = squads_by_slot(core);
         let squads = squad_rows(core);
         Some(
             snapshot
                 .iter()
                 .filter(|snap| {
-                    current.get(&snap.id).is_some_and(|s| s != &snap.squad)
+                    core.slot_squad_id(&snap.id)
+                        .is_some_and(|s| s != snap.squad)
                         && squads.iter().any(|s| s.id == snap.squad)
                 })
                 .map(|snap| (snap.id.clone(), snap.squad.clone()))
@@ -177,25 +174,4 @@ fn resolve_destination(target: &ReassignTarget) -> Result<String, String> {
         );
     }
     plan_reassign(&factions, &squads, &target.faction_id, &target.squad_id)
-}
-
-/// `slot id → squad id` for every slot in the document, off ONE `materialize()`.
-///
-/// The SoA rather than the raw `slots_json`, because it is the same set `attrs_multi_ids` filtered
-/// the selection against: an id missing here is an id the modal should not be writing to either.
-fn squads_by_slot(core: &MissionDocCore) -> std::collections::HashMap<String, String> {
-    let soa = core.materialize();
-    soa.ids
-        .iter()
-        .enumerate()
-        .map(|(row, id)| {
-            let idx = soa.squad_idx[row];
-            let squad = if idx == NONE_IDX {
-                String::new()
-            } else {
-                soa.squads.get(idx as usize).cloned().unwrap_or_default()
-            };
-            (id.clone(), squad)
-        })
-        .collect()
 }

@@ -4098,4 +4098,20 @@ mod t939_2_batch_reassign {
             "Revert has a destination per slot, not one faction/squad for the whole selection"
         );
     }
+
+    #[test]
+    fn reassign_and_revert_read_raw_membership_for_hidden_single_slot_attributes() {
+        let ops = live_code(REASSIGN_RS);
+        for entry in ["pub fn reassign_slots(", "pub fn restore_slot_squads("] {
+            let body = only_body(&ops, entry);
+            assert!(
+                body.contains("core.slot_squad_id("),
+                "T-939.2: {entry} must read raw membership so hidden slots remain editable"
+            );
+        }
+        assert!(
+            !ops.contains(".materialize()"),
+            "Reassignment must not mistake a render-filtered slot for a missing slot"
+        );
+    }
 }
