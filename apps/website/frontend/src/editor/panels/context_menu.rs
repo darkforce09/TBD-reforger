@@ -1809,3 +1809,52 @@ mod t807_disabled_rows_show_why {
         );
     }
 }
+
+/* ═════════ T-939.4 — Arrange reaches the right-click menu (the defect, as a test) ═══════════════
+ *
+ * The Arrange tools (align / space / orient / pattern) shipped in T-645 as a TOP-STRIP menu and
+ * nowhere else: `context_menu.rs` contained the string `Arrange` exactly zero times. An author who
+ * had just marquee-selected six objects — the one moment the tools are for — had to travel to the
+ * menu bar, because the gesture that already holds the selection offered nothing.
+ *
+ * These tests are written against `MenuState::entries`, not against the Eden takes: the parent row
+ * is spliced in by SELECTION SIZE, which `MenuTake::entries` (a verbatim Eden transcription pinned
+ * above) cannot see and must not learn.
+ */
+#[cfg(test)]
+mod t939_4_arrange_in_the_context_menu {
+    use super::{resolve_target, ContextItem, MenuEntry, MenuState};
+
+    /// The state a right-click on `ids[0]` produces while `ids` are all selected — the multi-select
+    /// case (`resolve_target` targets the WHOLE selection when the hit is inside it).
+    fn state(ids: &[&str], open: Option<ContextItem>) -> MenuState {
+        let selection: Vec<String> = ids.iter().map(|s| (*s).to_string()).collect();
+        MenuState {
+            x: 12.0,
+            y: 34.0,
+            target: resolve_target(Some(ids[0]), &selection),
+            open_submenu: open,
+        }
+    }
+
+    fn labels(entries: &[MenuEntry]) -> Vec<&'static str> {
+        entries
+            .iter()
+            .filter(|e| e.item.is_some())
+            .map(|e| e.label)
+            .collect()
+    }
+
+    /// THE DEFECT: two or more entities selected is exactly when Arrange applies, and the menu the
+    /// selection gesture opens never mentioned it.
+    #[test]
+    fn a_multi_selection_offers_arrange() {
+        let rows = state(&["a", "b"], None).entries();
+        assert!(
+            labels(&rows).contains(&"Arrange"),
+            "T-939.4: the right-click menu over a multi-selection offers no Arrange row — the \
+             align / space / orient tools are reachable only from the top strip. Rows: {:?}",
+            labels(&rows)
+        );
+    }
+}

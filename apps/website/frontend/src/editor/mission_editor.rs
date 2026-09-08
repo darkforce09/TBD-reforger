@@ -3549,3 +3549,39 @@ mod t930_vehicle_first_paint {
         );
     }
 }
+
+/* ═════════ T-939.4 — the Arrange chords, on the editor's own keydown (the defect, as a test) ════
+ *
+ * T-645 gave the Arrange tools a menu and no keys. The census in `panels/help_modal.rs` proves it:
+ * `KeyL` / `KeyT` / `KeyB` / `KeyH` are bound by nothing in the whole editor surface, and `KeyR` /
+ * `KeyV` are bound only bare and only under Ctrl/Cmd — so `Alt` + any of the six reaches no arm and
+ * the operator's keypress does nothing at all.
+ *
+ * Source pins rather than behaviour, for the reason every keydown pin in this programme is one: the
+ * listener is a `#[cfg(target_arch = "wasm32")]` closure over `web_sys::KeyboardEvent`, so no native
+ * test can press a key at it — the arm list IS the binding. Read off `live_source`, which cuts the
+ * whole test half of this file first, so these needles can never match themselves.
+ */
+#[cfg(test)]
+mod t939_4_arrange_chords {
+    use crate::editor::arsenal::class_r_scrub::live_source;
+
+    /// The six chords this slice binds, as their `KeyboardEvent.code`. Kept here as bare literals
+    /// (not imported) so the pin still means something if the shared table is renamed out from
+    /// under it.
+    const ARRANGE_CODES: [&str; 6] = ["KeyL", "KeyR", "KeyT", "KeyB", "KeyH", "KeyV"];
+
+    /// THE DEFECT: `Alt` + each of the six reaches no keydown arm.
+    #[test]
+    fn the_editor_keydown_binds_the_arrange_chords() {
+        let src = live_source(include_str!("mission_editor.rs"));
+        for code in ARRANGE_CODES {
+            let arm = format!("\"{code}\" if !modk && ev.alt_key() && !ev.shift_key() =>");
+            assert!(
+                src.contains(&arm),
+                "T-939.4: the editor keydown has no `{arm}` arm — the Arrange chord is ignored and \
+                 align / space are reachable only with the mouse"
+            );
+        }
+    }
+}
