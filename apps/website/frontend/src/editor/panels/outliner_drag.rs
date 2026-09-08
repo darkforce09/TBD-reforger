@@ -137,6 +137,49 @@ pub fn complete_multi_drop_onto_folder(
     true
 }
 
+/// T-946.86 (.83) — **CONSUME** the pending set onto `dest_squad_id` (the ORBAT tree's squad-row
+/// drop). Peer of [`complete_multi_drop_onto_folder`]; returns whether a set was armed.
+///
+/// The ORBAT lane had the same shape of defect as the layer lane and needed the same repair: the
+/// slot row armed the single-id latch, so dragging a five-slot selection onto a squad refiled one.
+/// [`begin_refile`] here — the `DragSet` version — was among the functions this file shipped with
+/// no caller at all, shadowed by the `state/operations` single-id namesake.
+///
+/// `refile_slot` is the ORBAT mutator (slot → SQUAD), NOT `refile_slot_to_layer` (slot → folder):
+/// they are different destinations and the squad row is the wrong drop for a layer move. Every id
+/// rides one `with_batch` group, so a five-slot refile is one Ctrl+Z.
+///
+/// No `plan_drop` here, deliberately: that planner refuses a container dropped into its own
+/// subtree, and a squad is not an ancestor of the slots it holds — there is no cycle to guard. The
+/// only self-drop case (a slot already in the destination squad) is the core's own no-op.
+#[cfg(target_arch = "wasm32")]
+pub fn complete_multi_refile_onto_squad(dest_squad_id: &str) -> bool {
+    use crate::editor::state::operations as ops;
+
+    let Some(drag) = PENDING_DRAG.with(|p| p.borrow_mut().take()) else {
+        return false;
+    };
+    // Drop the single-id latch the same pointerdown armed, so it cannot strand into a later drop.
+    ops::cancel_layer_drag();
+
+    let set = match &drag {
+        LayerDrag::Folder(s) | LayerDrag::Slot(s) | LayerDrag::Comment(s) => s,
+    };
+    // A FOLDER or a COMMENT has no squad membership to change — the ORBAT tree does not render
+    // them, so this can only be reached by a slot drag; anything else is consumed and ignored
+    // rather than handed to a mutator that would not know what to do with it.
+    if !matches!(drag, LayerDrag::Slot(_)) || set.ids.is_empty() {
+        return true;
+    }
+    let ids = set.ids.clone();
+    ops::with_batch("orbat-multi-refile", || {
+        for id in &ids {
+            ops::refile_slot(id.clone(), dest_squad_id.to_string());
+        }
+    });
+    true
+}
+
 // ── TESTS LAST. See the module note: `live_source` cuts from the first `#[cfg(test)]` to EOF, so
 //    anything below this line is invisible to every source-scrubbing pin in the crate.
 #[cfg(test)]

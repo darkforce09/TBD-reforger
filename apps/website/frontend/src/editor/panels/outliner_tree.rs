@@ -113,6 +113,51 @@ pub(crate) fn node_descendant_ids(nodes: &[OutlinerNode], id: &str) -> Vec<Strin
     out
 }
 
+/// T-946.86 (.83) — build the [`crate::editor::panels::outliner_drag::DragSet`] a row's
+/// `pointerdown` arms: `anchor` plus, when the anchor is itself part of the current selection,
+/// every OTHER selected row, in the tree's own top-to-bottom order.
+///
+/// The order is the render order rather than the selection's arrival order because the drop
+/// applies the ids in sequence, and "the rows moved in the order you see them" is the only order an
+/// operator can predict. When the anchor is NOT selected the drag is a single row — pressing an
+/// unselected row and dragging it must not silently take the selection with it.
+///
+/// Lifted out of the folder row's `pointerdown`, where it was a local `fn walk` closure, so the
+/// slot and comment rows arm the same way. Three copies of this walk is how the three arms would
+/// drift into disagreeing about what a multi-drag contains.
+#[must_use]
+pub(crate) fn drag_set_for(
+    anchor: &str,
+    selection: &[String],
+    nodes: &[OutlinerNode],
+) -> crate::editor::panels::outliner_drag::DragSet {
+    let mut ids = vec![anchor.to_string()];
+    if selection.iter().any(|s| s == anchor) {
+        let sel_set: std::collections::HashSet<&String> = selection.iter().collect();
+        let mut ordered = Vec::new();
+        fn walk(
+            ns: &[OutlinerNode],
+            sel_set: &std::collections::HashSet<&String>,
+            out: &mut Vec<String>,
+        ) {
+            for n in ns {
+                if sel_set.contains(&n.id) {
+                    out.push(n.id.clone());
+                }
+                walk(&n.children, sel_set, out);
+            }
+        }
+        walk(nodes, &sel_set, &mut ordered);
+        if !ordered.is_empty() {
+            ids = ordered;
+        }
+    }
+    crate::editor::panels::outliner_drag::DragSet {
+        anchor: anchor.to_string(),
+        ids,
+    }
+}
+
 /// SEL-GROUP-ICON-001 — does this folder DIRECTLY contain any slots (vs only sub-folders)?
 /// Drives the distinct folder glyph: a folder holding slots reads differently from a pure
 /// grouping folder. "Directly" = its own `entityIds` is non-empty (a folder whose only content is
@@ -674,8 +719,12 @@ fn comment_row(
     selected: RwSignal<Vec<String>>,
     collapsed: RwSignal<std::collections::HashSet<String>>,
     toggle: AnyView,
-    authoring_enabled: bool,
+    // T-946.86 (.83) — the whole authoring context, not just its `enabled` flag: the comment row
+    // now arms a multi-row `DragSet` and needs `nodes` to order the set by the tree the operator
+    // is looking at. `RowAuthoring` is `Copy`, so this is the same cost as the bool it replaces.
+    authoring: RowAuthoring,
 ) -> AnyView {
+    let authoring_enabled = authoring.enabled;
     let id = row.id.clone();
     let label = row.label.clone();
     let aria = row.label.clone();
@@ -700,8 +749,18 @@ fn comment_row(
     };
     let on_down = move |_: web_sys::PointerEvent| {
         if authoring_enabled {
+            // T-946.86 (.83) — a comment row arms the SELECTION too, so refiling a group of
+            // notes into a folder is one drag and one Ctrl+Z rather than one drag per note.
             #[cfg(target_arch = "wasm32")]
-            crate::editor::state::operations::begin_layer_comment_drag(id_drag.clone());
+            {
+                let drag = drag_set_for(
+                    &id_drag,
+                    &selected.get_untracked(),
+                    &authoring.nodes.get_untracked(),
+                );
+                crate::editor::panels::outliner_drag::begin_layer_comment_drag(drag);
+                crate::editor::state::operations::begin_layer_comment_drag(id_drag.clone());
+            }
             #[cfg(not(target_arch = "wasm32"))]
             let _ = &id_drag;
         }
@@ -810,8 +869,14 @@ fn single_row(
                         title="Drop a slot here to refile into this squad"
                         on:pointerup=move |ev| {
                             ev.stop_propagation();
+                            // T-946.86 (.83) — same two-step as the folder drop: consume the set
+                            // if one is armed, else fall back to the single-id completion.
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor::state::operations::complete_refile_onto_squad(dest.clone());
+                            {
+                                if !crate::editor::panels::outliner_drag::complete_multi_refile_onto_squad(&dest) {
+                                    crate::editor::state::operations::complete_refile_onto_squad(dest.clone());
+                                }
+                            }
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &dest;
                         }
@@ -1069,26 +1134,19 @@ fn single_row(
                     on:click=click
                     on:pointerdown=move |_| {
                         if authoring_dnd {
-                            let mut ids = vec![id_down.clone()];
-                            let sel = selected.get_untracked();
-                            if sel.contains(&id_down) {
-                                let mut ordered = Vec::new();
-                                let sel_set: std::collections::HashSet<_> = sel.iter().collect();
-                                fn walk(ns: &[crate::editor::panels::outliner::OutlinerNode], sel_set: &std::collections::HashSet<&String>, out: &mut Vec<String>) {
-                                    for n in ns {
-                                        if sel_set.contains(&n.id) {
-                                            out.push(n.id.clone());
-                                        }
-                                        walk(&n.children, sel_set, out);
-                                    }
-                                }
-                                walk(&authoring.nodes.get_untracked(), &sel_set, &mut ordered);
-                                ids = ordered;
-                            }
-                            let drag = crate::editor::panels::outliner_drag::DragSet { anchor: id_down.clone(), ids };
+                            // T-946.86 (.83) — one shared set builder for all three arms.
+                            let drag = drag_set_for(
+                                &id_down,
+                                &selected.get_untracked(),
+                                &authoring.nodes.get_untracked(),
+                            );
                             #[cfg(target_arch = "wasm32")]
                             {
                                 crate::editor::panels::outliner_drag::begin_layer_drag(drag);
+                                // The single-id latch stays armed BESIDE the set: the header's
+                                // root dropzone still completes through
+                                // `complete_layer_drop_onto_root`, which reads only that latch.
+                                // Whichever drop claims the release clears both.
                                 crate::editor::state::operations::begin_layer_drag(id_down.clone());
                             }
                             #[cfg(not(target_arch = "wasm32"))]
@@ -1139,7 +1197,7 @@ fn single_row(
         // T-651 (`PLACE-COMMENT-001`) / T-784 — the editor-only COMMENT row. Lifted into its own
         // function so the shape pin can examine it without the rest of this kind match — see
         // [`comment_row`].
-        NodeKind::Comment => comment_row(row, selected, collapsed, toggle, authoring.enabled),
+        NodeKind::Comment => comment_row(row, selected, collapsed, toggle, authoring),
         NodeKind::Slot => {
             let is_sel = {
                 let id = id.clone();
@@ -1148,6 +1206,8 @@ fn single_row(
             let id_dbl = id.clone();
             let id_refile = id.clone();
             let id_layer_refile = id.clone();
+            // T-946.86 (.83) — the row tree the slot arm orders its DragSet by.
+            let drag_nodes = authoring.nodes;
             let authoring_slot = authoring.enabled;
             // T-665 — a slot on a hidden layer (or hidden ancestor) renders dimmed; one on a locked
             // layer shows a trailing lock hint (the store still refuses its move — this is the
@@ -1186,17 +1246,37 @@ fn single_row(
                         let _ = &id_dbl;
                     }
                     on:pointerdown=move |_| {
+                        // T-946.86 (.83) — a slot row arms the whole SELECTION, not just itself.
+                        // This is the lane where multi-drag is actually reachable: slot ids are
+                        // what the canvas selection mirror publishes, so a five-slot marquee then
+                        // dragged onto a folder (or a squad) now moves five.
                         if orbat_refile {
                             // T-180.6 — ORBAT tree: arm refile onto a squad.
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor::state::operations::begin_refile(id_refile.clone());
+                            {
+                                let drag = drag_set_for(
+                                    &id_refile,
+                                    &selected.get_untracked(),
+                                    &drag_nodes.get_untracked(),
+                                );
+                                crate::editor::panels::outliner_drag::begin_refile(drag);
+                                crate::editor::state::operations::begin_refile(id_refile.clone());
+                            }
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &id_refile;
                         } else if authoring_slot {
                             // T-666 — Editor-Layers tree: arm refile of this slot into a folder
                             // (a folder-row `pointerup` completes it via `move_slot_to_layer`).
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor::state::operations::begin_layer_slot_drag(id_layer_refile.clone());
+                            {
+                                let drag = drag_set_for(
+                                    &id_layer_refile,
+                                    &selected.get_untracked(),
+                                    &drag_nodes.get_untracked(),
+                                );
+                                crate::editor::panels::outliner_drag::begin_layer_slot_drag(drag);
+                                crate::editor::state::operations::begin_layer_slot_drag(id_layer_refile.clone());
+                            }
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &id_layer_refile;
                         }
@@ -2431,7 +2511,7 @@ mod t784_comment_row_selects {
 /// T-946.86 (.83) — the drop CONSUMES the multi-selection instead of moving only its anchor.
 #[cfg(test)]
 mod t946_86_multi_drop {
-    use super::node_descendant_ids;
+    use super::{drag_set_for, node_descendant_ids};
     use crate::editor::arsenal::class_r_scrub::live_code;
     use crate::editor::panels::outliner::{NodeKind, OutlinerNode};
 
@@ -2489,6 +2569,79 @@ mod t946_86_multi_drop {
             after[..at_legacy].contains("if !claimed"),
             "T-946.86 (.83): the legacy completion must be GATED on the multi drop declining — \
              running both would apply the anchor's move twice"
+        );
+    }
+
+    /// **All three drag arms build a SET, and both drops consume one.** The `outliner_drag`
+    /// versions of `begin_layer_slot_drag`, `begin_layer_comment_drag` and `begin_refile` shipped
+    /// in wave 255 shadowed by the single-id `state/operations` namesakes and were never called;
+    /// the slot lane is where multi-drag is actually REACHABLE, because slot ids are what the
+    /// canvas selection mirror publishes (folder ids never enter it).
+    #[test]
+    fn every_drag_arm_builds_a_set_and_every_drop_consumes_one() {
+        let src = live();
+        for arm in [
+            "outliner_drag::begin_layer_drag(drag)",
+            "outliner_drag::begin_layer_slot_drag(drag)",
+            "outliner_drag::begin_layer_comment_drag(drag)",
+            "outliner_drag::begin_refile(drag)",
+        ] {
+            assert!(
+                src.contains(arm),
+                "T-946.86 (.83): `{arm}` must be the armed form — the single-id namesake alone \
+                 moves the anchor and throws the rest of the selection away"
+            );
+        }
+        assert!(
+            src.contains("complete_multi_refile_onto_squad(&dest)"),
+            "T-946.86 (.83): the ORBAT squad drop must consume the set too — arming a set that \
+             nothing consumes is the exact defect this repairs"
+        );
+        assert_eq!(
+            src.matches("drag_set_for(").count(),
+            5,
+            "T-946.86 (.83): the definition plus exactly FOUR arms — the folder row, the slot \
+             row's two branches (ORBAT refile and layer refile) and the comment row. One shared \
+             builder: a second walk is how the arms drift into disagreeing about what a drag \
+             contains, which is how the anchor-only drop survived review in the first place"
+        );
+    }
+
+    /// The set is the SELECTION only when the pressed row is part of it. Pressing an UNSELECTED
+    /// row and dragging must move that row alone — silently dragging a selection the operator did
+    /// not grab is a worse outcome than moving one row too few.
+    #[test]
+    fn an_unselected_anchor_drags_alone() {
+        let tree = vec![node("a", vec![]), node("b", vec![]), node("c", vec![])];
+        let sel = vec!["b".to_string(), "c".to_string()];
+        let solo = drag_set_for("a", &sel, &tree);
+        assert_eq!(
+            solo.ids,
+            vec!["a".to_string()],
+            "unselected anchor drags alone"
+        );
+        assert_eq!(solo.anchor, "a");
+
+        let group = drag_set_for("b", &sel, &tree);
+        assert_eq!(
+            group.ids,
+            vec!["b".to_string(), "c".to_string()],
+            "a selected anchor drags the whole selection"
+        );
+        assert_eq!(group.anchor, "b", "the anchor is still the row pressed");
+    }
+
+    /// The set is ordered by the TREE, not by the selection's arrival order: the drop applies the
+    /// ids in sequence, and render order is the only order an operator can predict.
+    #[test]
+    fn the_set_is_ordered_by_the_tree_not_the_selection() {
+        let tree = vec![node("a", vec![node("b", vec![node("c", vec![])])])];
+        // Selection deliberately in reverse render order.
+        let sel = vec!["c".to_string(), "b".to_string(), "a".to_string()];
+        assert_eq!(
+            drag_set_for("c", &sel, &tree).ids,
+            vec!["a".to_string(), "b".to_string(), "c".to_string()],
+            "top-to-bottom, depth-first — the order the rows appear on screen"
         );
     }
 
