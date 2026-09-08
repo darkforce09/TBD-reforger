@@ -1199,6 +1199,7 @@ class TBD_ObjectiveRegistry
 
 		if (!TBD_ObjectiveEntityReader.FactionExists(row.side))
 		{
+			objective.m_bInvalidSide = true;
 			TBD_Log.Warn(CH, string.Format("objective '%1' names side='%2', which is no factions[].key. Nobody matches it, so the per-side framing reads NEUTRAL to every player and the objective falls back to its label.",
 				subject, row.side));
 			return;

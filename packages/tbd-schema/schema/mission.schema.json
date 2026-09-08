@@ -855,7 +855,7 @@
         },
         "side": {
           "$ref": "#/$defs/factionKey",
-          "description": "Which faction primarily owns / must complete this objective (a `factions[].key`). The other side's reading is authored via `framing`, not a separate objective row."
+          "description": "Which faction must complete this objective (a `factions[].key`): it attacks for capture/destroy and defends for hold/defend. The other side's reading is authored via `framing`, not a separate objective row. When side is absent, framing uses the zone's faction. An explicitly authored side naming no mission faction yields the neutral label and no task body for every viewer, without falling back to the zone's faction. The zone's faction remains its ownership restriction."
         },
         "zoneId": {
           "$ref": "#/$defs/wireSafeString",
