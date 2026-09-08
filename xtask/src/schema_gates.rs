@@ -4323,3 +4323,92 @@ mod tests {
         assert_eq!(before, fs::read_to_string(&path).unwrap());
     }
 }
+
+/// T-212 — the typed objective spine must actually be READ by the objectives lane.
+///
+/// `#/$defs/objective` (plus `#/$defs/objectiveFraming`) is the uniform attribute spine every
+/// objective carries. Enfusion's `JsonLoadContext` binds JSON keys onto identically-named class
+/// MEMBERS, so for this wire shape the identifier IS the contract: a property with no identifier
+/// under `Scripts/Game/TBD/Objectives` cannot be read by any objective code, whatever the rest of
+/// the mod happens to spell somewhere else.
+///
+/// Scoped to that ONE lane deliberately. A whole-tree count passes vacuously on the common words:
+/// measured on `main` before this slice, the tree held `id` 206, `label` 111, `text` 91, `side` 59
+/// — every one of them an unrelated subsystem's identifier. In the Objectives lane the same scan
+/// read `side` 0, `label` 0, `framing` 0, `lock` 0, `autoLose` 0, `variantId` 0: six of the eleven
+/// spine properties had no reader at all, which is the defect T-212 closes.
+///
+/// This is the complement of `UNREAD_WIRE_FIELDS`, not a duplicate of it. That table pins fields
+/// that must stay unread; this one pins a field set that must stay READ, so a later refactor that
+/// deletes the reader is a red rather than a silent regression back to a dead container.
+#[cfg(test)]
+mod t212_objective_spine_tests {
+    use super::{count_mod_readers, read_json, repo_root, schema_root};
+    use std::path::PathBuf;
+
+    /// `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives` — the lane that owns objectives.
+    fn objectives_lane() -> PathBuf {
+        repo_root()
+            .expect("repo root")
+            .join("apps/mod/tbd-framework/Scripts/Game/TBD/Objectives")
+    }
+
+    /// Property names of one `#/$defs/<name>` object, in schema order.
+    fn def_properties(name: &str) -> Vec<String> {
+        let root = repo_root().expect("repo root");
+        let schema =
+            read_json(&schema_root(&root).join("schema/mission.schema.json")).expect("schema");
+        let props = schema
+            .pointer(&format!("/$defs/{name}/properties"))
+            .and_then(|v| v.as_object())
+            .unwrap_or_else(|| panic!("$defs/{name}/properties must exist"));
+        props.keys().cloned().collect()
+    }
+
+    /// Every property of the typed-objective spine has at least one identifier in the lane.
+    #[test]
+    fn objective_spine_is_read_in_the_objectives_lane() {
+        let lane = objectives_lane();
+        assert!(lane.is_dir(), "objectives lane missing: {}", lane.display());
+
+        let mut names = def_properties("objective");
+        names.extend(def_properties("objectiveFraming"));
+        assert!(
+            names.len() >= 9,
+            "the spine collapsed to {} properties — check $defs/objective",
+            names.len()
+        );
+
+        let mut unread = Vec::new();
+        for name in &names {
+            if count_mod_readers(&lane, name).expect("scan objectives lane") == 0 {
+                unread.push(name.clone());
+            }
+        }
+
+        assert!(
+            unread.is_empty(),
+            "$defs/objective properties with NO identifier under {}: {unread:?}\n\
+             JsonLoadContext binds by member name, so an unspelled property is unreadable. \
+             Either the reader lost a field, or the schema grew one T-212's reader has not \
+             taken up yet.",
+            lane.display()
+        );
+    }
+
+    /// Non-vacuity: the scan must be capable of returning zero on this very corpus, or the test
+    /// above would pass no matter what the lane contains.
+    #[test]
+    fn the_lane_scan_can_still_report_zero() {
+        let lane = objectives_lane();
+        assert_eq!(
+            count_mod_readers(&lane, "zzNotAnObjectivePropertyZZ").expect("scan"),
+            0,
+            "a word that appears nowhere must count 0"
+        );
+        assert!(
+            count_mod_readers(&lane, "TBD_Objective").expect("scan") > 0,
+            "the scan must actually be reading the lane's .c files"
+        );
+    }
+}
