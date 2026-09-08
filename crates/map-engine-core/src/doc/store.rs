@@ -1135,7 +1135,36 @@ impl MissionDocCore {
     /// Move a slot from its current squad into `dest_squad_id` (T-180.2). Updates both `slotIds`
     /// arrays, rewrites dense `index` 0..n-1, promotes/GC source leader, and ensures dest leader.
     /// No-op if slot/dest missing or already in dest. **Not** [`Self::move_slot_to_layer`].
+    ///
+    /// Emptying the source squad **deletes it** — the row, its place in `faction.squadIds`, and
+    /// every vehicle attached to it (see [`garbage_collect_squad_in_txn`]). That is the drag-refile
+    /// contract and every existing caller depends on it; a batch reassign wants the opposite and
+    /// takes [`Self::move_slot_to_squad_keep_source`].
     pub fn move_slot_to_squad(&self, slot_id: &str, dest_squad_id: &str) {
+        self.move_slot_between_squads(slot_id, dest_squad_id, false);
+    }
+
+    /// T-939.2 — [`Self::move_slot_to_squad`] with the source squad **kept** when the move empties
+    /// it: the row survives, so do its attached vehicles and its position in `faction.squadIds`.
+    ///
+    /// Additive on purpose. The default above GCs an emptied source, which is right for a
+    /// one-slot drag ("I dragged the last man out of Bravo, Bravo is over") and wrong for a batch
+    /// reassign ("move these five to Alpha") — there the operator moved people, not squads, and
+    /// silently destroying Bravo's transport with them is data loss the undo group would have to
+    /// pay back. The two paths differ **only** in that one branch; everything else — the `slotIds`
+    /// splice, the dense `index` rewrite, the dest-side leader invariant — is shared below, so the
+    /// two can never drift into disagreeing about what a move is.
+    ///
+    /// The one thing the kept squad does *not* keep is a now-dangling `leaderSlotId`: the leader
+    /// left with the last slot, and a squad pointing at a member it no longer has is the state
+    /// [`ensure_leader_invariant_in_txn`] exists to prevent. An empty squad with no leader key is
+    /// exactly what [`Self::add_squad`] mints, so the kept row lands back in that shape.
+    pub fn move_slot_to_squad_keep_source(&self, slot_id: &str, dest_squad_id: &str) {
+        self.move_slot_between_squads(slot_id, dest_squad_id, true);
+    }
+
+    /// The shared body of the two moves above. `keep_source` picks the emptied-source branch only.
+    fn move_slot_between_squads(&self, slot_id: &str, dest_squad_id: &str, keep_source: bool) {
         let mut txn = self.begin();
         if self.squads.get(&txn, dest_squad_id).is_none() {
             return;
@@ -1184,7 +1213,12 @@ impl MissionDocCore {
         rewrite_slot_indices(&mut txn, &self.slots, &self.squads, &source_squad_id);
         rewrite_slot_indices(&mut txn, &self.slots, &self.squads, dest_squad_id);
 
-        if kept.is_empty() {
+        if kept.is_empty() && keep_source {
+            // T-939.2 — the whole point of the keep-source path. Drop only the dangling leader.
+            if let Some(Out::YMap(src_sq)) = self.squads.get(&txn, source_squad_id.as_str()) {
+                src_sq.remove(&mut txn, "leaderSlotId");
+            }
+        } else if kept.is_empty() {
             garbage_collect_squad_in_txn(
                 &mut txn,
                 &self.squads,
@@ -15482,5 +15516,203 @@ mod tests {
             map.len(&txn3)
         };
         assert_eq!(l2, 1);
+    }
+
+    /* ═══════ T-939.2 — the keep-source move, the batch reassign's core primitive ═══════ */
+
+    /// Three squads so "position in `faction.squadIds`" is a real claim: the one we empty sits in
+    /// the MIDDLE, where both a delete and a delete-then-re-add would move it.
+    fn keep_source_fixture() -> MissionDocCore {
+        let doc = MissionDocCore::new();
+        doc.add_editor_layer("lyr", "Layer", None);
+        doc.add_faction("faction-BLUFOR", "BLUFOR", "US Army");
+        doc.add_faction("faction-OPFOR", "OPFOR", "Soviet Army");
+        doc.add_squad("sq-a", "faction-BLUFOR", "Alpha", None);
+        doc.add_squad("sq-mid", "faction-BLUFOR", "Bravo", None);
+        doc.add_squad("sq-c", "faction-BLUFOR", "Charlie", None);
+        doc.add_squad("sq-opf", "faction-OPFOR", "Krasnyi", None);
+        doc
+    }
+
+    fn squad_ids_of(doc: &MissionDocCore, faction_id: &str) -> Vec<String> {
+        small_maps(doc)["factionsById"][faction_id]["squadIds"]
+            .as_array()
+            .expect("squadIds")
+            .iter()
+            .map(|v| v.as_str().unwrap_or_default().to_string())
+            .collect()
+    }
+
+    /// REQUIREMENT 3, whole. Moving the last slot out of `sq-mid` must leave the squad row, its
+    /// attached vehicle, and its POSITION in `faction.squadIds` exactly as they were — the three
+    /// things `garbage_collect_squad_in_txn` takes, and the three the re-`add_squad` workaround
+    /// could not give back (it appends to the tail and never restores the vehicle).
+    #[test]
+    fn move_slot_to_squad_keep_source_keeps_the_emptied_squad_its_vehicles_and_its_position() {
+        let doc = keep_source_fixture();
+        doc.add_slot(
+            "solo", "sq-mid", "lyr", 0, "Rifleman", None, None, 1.0, 1.0, 0.0, 0.0,
+        );
+        doc.set_leader("sq-mid", "solo");
+        doc.add_vehicle("v1", "Prefab/Truck.et", None, None, None, None);
+        doc.attach_vehicle("sq-mid", "v1");
+        let before = squad_ids_of(&doc, "faction-BLUFOR");
+
+        doc.move_slot_to_squad_keep_source("solo", "sq-a");
+
+        let root = small_maps(&doc);
+        assert!(
+            root["squadsById"].get("sq-mid").is_some(),
+            "T-939.2: the emptied source squad must survive; squads were {}",
+            root["squadsById"]
+        );
+        assert!(
+            root["vehiclesById"].get("v1").is_some(),
+            "T-939.2: the emptied squad's attached vehicle must survive the move"
+        );
+        assert_eq!(
+            root["squadsById"]["sq-mid"]["vehicleIds"]
+                .as_array()
+                .expect("vehicleIds")
+                .len(),
+            1,
+            "T-939.2: the attachment itself must survive, not just the vehicle row"
+        );
+        assert_eq!(
+            squad_ids_of(&doc, "faction-BLUFOR"),
+            before,
+            "T-939.2: the emptied squad must keep its PLACE in faction.squadIds"
+        );
+        assert_eq!(
+            root["squadsById"]["sq-mid"]["slotIds"]
+                .as_array()
+                .expect("slotIds")
+                .len(),
+            0,
+            "the source really is empty — the survival above is not a failed move"
+        );
+        // The slot itself moved, both arrays agree, and the dangling leader is gone.
+        assert_eq!(slots_map(&doc)["solo"]["squadId"], "sq-a");
+        assert!(
+            root["squadsById"]["sq-a"]["slotIds"]
+                .as_array()
+                .expect("slotIds")
+                .iter()
+                .any(|v| v == "solo"),
+            "the destination must list the moved slot"
+        );
+        assert!(
+            root["squadsById"]["sq-mid"]["leaderSlotId"].is_null(),
+            "T-939.2: the kept squad must not point at a leader it no longer has; got {}",
+            root["squadsById"]["sq-mid"]
+        );
+    }
+
+    /// ADDITIVE, proven rather than asserted in prose: the same fixture through the DEFAULT
+    /// `move_slot_to_squad` still garbage-collects. Other callers (the outliner drag-refile) rely
+    /// on that, so a keep-source implemented by changing the default would fail here.
+    #[test]
+    fn the_default_move_slot_to_squad_still_garbage_collects_an_emptied_source() {
+        let doc = keep_source_fixture();
+        doc.add_slot(
+            "solo", "sq-mid", "lyr", 0, "Rifleman", None, None, 1.0, 1.0, 0.0, 0.0,
+        );
+        doc.add_vehicle("v1", "Prefab/Truck.et", None, None, None, None);
+        doc.attach_vehicle("sq-mid", "v1");
+
+        doc.move_slot_to_squad("solo", "sq-a");
+
+        let root = small_maps(&doc);
+        assert!(
+            root["squadsById"].get("sq-mid").is_none(),
+            "the default path must still GC the emptied source (T-180.2 B2)"
+        );
+        assert!(
+            root["vehiclesById"].get("v1").is_none(),
+            "the default path must still cascade the attached vehicles"
+        );
+        assert!(
+            !squad_ids_of(&doc, "faction-BLUFOR")
+                .iter()
+                .any(|s| s == "sq-mid"),
+            "the default path must still prune the squad out of faction.squadIds"
+        );
+    }
+
+    /// REQUIREMENT 1's measured half: side keys are DERIVED (`slot.squadId → squad.factionId →
+    /// faction.key`), so the assertion is that the derived key FOLLOWS the move and the per-squad
+    /// `SideKeyMemo` does not answer under a stale key. Nothing writes a side key, so there is no
+    /// write to check — only this.
+    #[test]
+    fn keep_source_move_carries_the_derived_side_key_across_factions() {
+        let side_of = |doc: &MissionDocCore, id: &str| {
+            let soa = doc.materialize();
+            soa.side_keys[row_of(&soa, id)].clone()
+        };
+        let doc = keep_source_fixture();
+        doc.add_slot(
+            "solo", "sq-mid", "lyr", 0, "Rifleman", None, None, 1.0, 1.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "stay", "sq-a", "lyr", 0, "Medic", None, None, 2.0, 2.0, 0.0, 0.0,
+        );
+        // Warm the memo under the OLD sides first — a cold memo would pass this test by accident.
+        assert_eq!(side_of(&doc, "solo"), "BLUFOR");
+        assert_eq!(side_of(&doc, "stay"), "BLUFOR");
+
+        doc.move_slot_to_squad_keep_source("solo", "sq-opf");
+
+        assert_eq!(
+            side_of(&doc, "solo"),
+            "OPFOR",
+            "T-939.2: the derived side key must follow the slot into the new faction's squad"
+        );
+        assert_eq!(
+            side_of(&doc, "stay"),
+            "BLUFOR",
+            "T-939.2: a slot that did not move must keep its side"
+        );
+        // And the squad it left is still BLUFOR's, so the memo is keyed right, not merely cleared.
+        assert_eq!(
+            small_maps(&doc)["squadsById"]["sq-mid"]["factionId"],
+            "faction-BLUFOR"
+        );
+    }
+
+    /// The shared body really is shared: with members left behind, the keep-source path promotes
+    /// the next leader and rewrites the dense `index` exactly as the default does. This is what
+    /// stops the two entry points drifting into two different definitions of a move.
+    #[test]
+    fn keep_source_move_promotes_the_next_leader_and_keeps_indices_dense() {
+        let doc = keep_source_fixture();
+        for (i, id) in ["lead", "next", "tail"].iter().enumerate() {
+            doc.add_slot(
+                id,
+                "sq-mid",
+                "lyr",
+                u32::try_from(i).expect("fixture index fits u32"),
+                "Rifleman",
+                None,
+                None,
+                f64::from(u32::try_from(i).expect("fixture index fits u32")),
+                1.0,
+                0.0,
+                0.0,
+            );
+        }
+        doc.set_leader("sq-mid", "lead");
+
+        doc.move_slot_to_squad_keep_source("lead", "sq-a");
+
+        let root = small_maps(&doc);
+        assert_eq!(root["squadsById"]["sq-mid"]["leaderSlotId"], "next");
+        let slots = slots_map(&doc);
+        assert_eq!(slots["next"]["index"].as_i64(), Some(0));
+        assert_eq!(slots["tail"]["index"].as_i64(), Some(1));
+        assert_eq!(
+            slots["lead"]["index"].as_i64(),
+            Some(0),
+            "dest is dense too"
+        );
     }
 }
