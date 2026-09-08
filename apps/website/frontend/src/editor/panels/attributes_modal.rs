@@ -2042,13 +2042,24 @@ fn reassign_picker(targets: StoredValue<Vec<String>>) -> impl IntoView {
     ordered.sort_by(|a, b| a.id.cmp(&b.id));
 
     // The selection's current squads and factions, over the whole target set.
+    //
+    // Inverted from the squad rows already in hand — `SquadRow::slot_ids` — rather than asking
+    // `read_attrs` per id: that reader materializes the WHOLE slot SoA on every call, so a
+    // fifty-slot selection would pay fifty full scans on every render of this modal, which
+    // re-renders on every `doc_tick`. One inversion, then lookups.
     let ids = targets.get_value();
-    let squad_of = |id: &str| {
-        ops::read_attrs(id)
-            .map(|a| a.squad)
-            .filter(|s| !s.is_empty())
-    };
-    let current_squads: Vec<String> = ids.iter().filter_map(|id| squad_of(id)).collect();
+    let squad_by_slot: std::collections::HashMap<&str, &str> = squads
+        .iter()
+        .flat_map(|s| {
+            s.slot_ids
+                .iter()
+                .map(move |sid| (sid.as_str(), s.id.as_str()))
+        })
+        .collect();
+    let current_squads: Vec<String> = ids
+        .iter()
+        .filter_map(|id| squad_by_slot.get(id.as_str()).map(|s| (*s).to_string()))
+        .collect();
     let one_squad = current_squads
         .first()
         .filter(|first| {
