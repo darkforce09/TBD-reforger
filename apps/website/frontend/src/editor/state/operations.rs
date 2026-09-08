@@ -36,6 +36,12 @@ pub mod cargo;
 pub mod compositions;
 pub mod context;
 pub mod entity;
+// T-939.2 — the Attributes modal's batch faction / squad reassign. Its own module rather than more
+// of `entity.rs` for the reason `tactical_graphics` gives below — `entity.rs` is contested — and
+// because this is the one mutator that must never take `entity::refile_slot`'s core path: refile
+// GCs an emptied source squad (row, `faction.squadIds` place, attached vehicles), and a batch
+// reassign must not.
+pub mod reassign;
 // T-936.7 — the `tacticalGraphics[]` mutators (draw / select / vertex drag / delete). Its own
 // module rather than more of `entity.rs` because a control measure is not an entity: it has no
 // slot id, no layer, no squad and no SoA row, and `entity.rs` is contested by five other tickets.
@@ -78,6 +84,7 @@ pub use entity::{
     OwnerOption, PlacedSlotChoice, TriggerRow, VehicleCargoRow, VehicleRow, ZoneRow,
     TRIGGER_ACTIVATIONS,
 };
+pub use reassign::*;
 // T-936.7 — a GLOB, like `attrs`/`batch`/`cargo`/`compositions`/`context` above and unlike the
 // hand-listed `entity`/`transform` below. The named form warns on every item the wasm bin does not
 // yet call (`begin_tactical_draw`, `tactical_draft`, `tactical_draw_pop_vertex`, … — the draw
