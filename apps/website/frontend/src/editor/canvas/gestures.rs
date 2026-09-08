@@ -672,7 +672,10 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // `left` borrow is held across the inner `left.borrow_mut()` put-back (the `if let`
             // temporary-lifetime footgun). Frozen cam (M2/X-05 — no live unproject). Live preview
             // via `engine.set_drag` (drag) / `engine.upload_marquee` (marquee rect).
-            if matches!(*left.borrow(), Some(LG::Pending(_)))
+            if left
+                .borrow()
+                .as_ref()
+                .is_some_and(|g| matches!(g, LG::Pending(_)))
                 && left_pointer.get() != Some(ev.pointer_id())
             {
                 return;

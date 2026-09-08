@@ -1375,8 +1375,8 @@ mod t946_86_z_arm {
     fn authored_mixed_elevations_commit_and_undo_together() {
         use super::ZDrag;
         let mut core = mixed_doc();
-        let slots_before = core.slots_json();
-        let maps_before = core.small_maps_json();
+        let slots_before: serde_json::Value = serde_json::from_str(&core.slots_json()).unwrap();
+        let maps_before: serde_json::Value = serde_json::from_str(&core.small_maps_json()).unwrap();
         let ids = ["roof".into(), "ground".into(), "vehicle".into()];
         let arm = ZDrag::begin(&core, &ids, 7, 100.0, 2.0).unwrap();
         assert_eq!(arm.height(2.0), 52.123456789);
@@ -1388,19 +1388,25 @@ mod t946_86_z_arm {
         assert_eq!(slots["ground"]["position"]["z"], -5.25);
         assert_eq!(
             maps["vehiclesById"]["vehicle"]["position"],
-            serde_json::json!({"x":150.0,"y":250.0,"z":83.5,"rotation":90.0})
+            serde_json::json!({"x":150,"y":250,"z":83.5,"rotation":90})
         );
         assert_eq!(core.undo_depth(), 1, "all kinds must share one undo group");
         assert!(core.undo());
-        assert_eq!(core.slots_json(), slots_before);
-        assert_eq!(core.small_maps_json(), maps_before);
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&core.slots_json()).unwrap(),
+            slots_before
+        );
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&core.small_maps_json()).unwrap(),
+            maps_before
+        );
     }
 
     #[test]
     fn cancelling_then_unrelated_pointerup_cannot_commit() {
         use super::{take_z_drag, ZDrag};
         let mut core = mixed_doc();
-        let before = core.slots_json();
+        let before: serde_json::Value = serde_json::from_str(&core.slots_json()).unwrap();
         let mut active = ZDrag::begin(&core, &["roof".into()], 7, 100.0, 2.0);
         assert!(
             take_z_drag(&mut active, 8).is_none(),
@@ -1416,7 +1422,10 @@ mod t946_86_z_arm {
                 arm.commit(&mut core, 2.0);
             }
         }
-        assert_eq!(core.slots_json(), before);
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&core.slots_json()).unwrap(),
+            before
+        );
         assert_eq!(core.undo_depth(), 0);
     }
 
