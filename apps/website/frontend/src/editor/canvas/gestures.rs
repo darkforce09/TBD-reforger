@@ -33,6 +33,7 @@ use crate::editor::mission_editor::{
 // T-936.7 — the tactical-graphics pick tolerances. Straight from the sibling canvas module rather
 // than through `mission_editor`'s re-export hub: that hub is `mission_editor.rs`, which T-190 owns
 // this wave, and a new `pub(crate) use` line there would be a cross-slice edit for two constants.
+use crate::editor::canvas::overlays as ov;
 use crate::editor::canvas::tactical_graphics::{TG_PICK_PX, TG_VERTEX_PICK_PX};
 use crate::editor::state::history as mission_history;
 use crate::editor::state::operations as editor_ops;
@@ -451,6 +452,44 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 );
                 return;
             }
+            // ══════ T-946.86 (.82) — the Z-ARM drag PREVIEW ══════
+            //
+            // `onpointerdown` armed `z_drag` and returned (after consuming `left`), so this arm is
+            // mutually exclusive with the gesture machine exactly like the vertex drag below, and
+            // sits after the pan branch for the same reason: an MMB pan must still work.
+            //
+            // Before this, the arm was written at pointerdown and NEVER READ — the tuple was
+            // cloned into this closure and into `onpointerup` and neither body borrowed it. The
+            // gizmo's Z arm therefore armed, captured the pointer, and did nothing at all.
+            //
+            // NOTHING IS WRITTEN TO THE DOCUMENT HERE. The drag's elevation is provisional until
+            // the release commits it, so one gesture is one undo step (the T-936.7 rule, and the
+            // same reason the vertex drag previews rather than writes). What this publishes is the
+            // READOUT — `set_z_drag_readout`, whose reader was already wired into the gizmo chip
+            // and could never be populated because nothing called the writer.
+            //
+            // `snap_elevation` quantises against the TRANSLATE ladder: a Z drag is a translation
+            // along the third axis, so it obeys the operator's translate rung rather than a fourth
+            // snapping vocabulary. Rung 0 (or grid off) is step 0.0 ⇒ `snap_elevation` passes the
+            // value through, which is why "no snap" needs no special case here.
+            let z_arm = z_drag.borrow().clone();
+            if let Some((start_y, slot_ids, _veh_ids, initial_zs, cam)) = z_arm {
+                let delta = ov::z_drag_elevation_delta(
+                    py,
+                    start_y,
+                    cam.scale(),
+                    ov::z_drag_snap_step(snap),
+                );
+                // The chip shows the ANCHOR slot's resulting height — one number, in the same
+                // units the Attributes tab shows, rather than a delta the operator would have to
+                // add to a value that is not on screen.
+                let base = initial_zs.first().copied().unwrap_or(0.0);
+                let _ = &slot_ids;
+                crate::editor::canvas::overlays::set_z_drag_readout(Some(
+                    crate::editor::canvas::gizmo_z::format_height_readout(base + delta),
+                ));
+                return;
+            }
             // ══════ T-936.7 — the vertex-drag PREVIEW ══════
             //
             // Sits after the pan branch (an MMB pan must still work) and before the armed-place
@@ -853,6 +892,73 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
         // T-159.21 — no `mission_id` capture: the persist tail now runs inside
         // `mission_history::after_local_edit`, which reads the id from its ctx.
         move |ev: web_sys::PointerEvent| {
+            // ══════ T-946.86 (.82) — commit the Z-ARM drag, and RELEASE ITS CAPTURE ══════
+            //
+            // FIRST, ahead of every other branch, for the reason the vertex-drag commit below runs
+            // first: `onpointerdown` returned before opening `LG::Pending` when it armed this, so
+            // `left` and `pan_px` are both None and nothing below has an arm to take — and an
+            // unclaimed release is how a gesture strands.
+            //
+            // THE CAPTURE. `onpointerdown` called `container.set_pointer_capture()` on this arm and
+            // NONE of the eight `release_pointer_capture` calls in this file belonged to it, so the
+            // container held the pointer after the drag ended: every later click in the editor was
+            // retargeted to the container until some other gesture happened to release it. The
+            // release therefore runs UNCONDITIONALLY once the arm is taken — before the commit can
+            // decide it has nothing to write, and whether or not the document accepts the edit.
+            //
+            // ONE `move_entities` for the whole drag ⇒ ONE Ctrl+Z, matching the horizontal drag's
+            // contract. `dx`/`dy` are 0.0: this gesture moves the selection along Z only, and this
+            // is the mutator that writes a PER-SLOT z (`zs[i]` verbatim) in a single transaction —
+            // `attrs_update_position_multi` takes ONE z for the WHOLE selection, which would
+            // flatten a mixed-elevation selection onto the anchor's height.
+            //
+            // `move_entities`, not its `_and_vehicles` sibling, and that is the SEMANTIC choice as
+            // well as the tidy one: `move_vehicles_in_txn` has no z column at all, so a vehicle in
+            // the selection could not be elevated by either call — which is exactly why the arm
+            // only ever resolved `initial_zs` for the slot half. (It also keeps this block out of
+            // the reach of `t796_comment_drag`'s pin, which anchors on the FIRST
+            // `move_entities_and_vehicles(` in the file and walks back to the LG::Move arm's
+            // delta guard.)
+            //
+            // A release with no travel commits nothing (`delta == 0.0` ⇒ every z is unchanged),
+            // because a click on the Z arm is a click, and filing an identity edit would make the
+            // next Ctrl+Z appear to do nothing.
+            {
+                let z_arm = z_drag.borrow_mut().take();
+                if let Some((start_y, slot_ids, _veh_ids, initial_zs, cam)) = z_arm {
+                    if container.has_pointer_capture(ev.pointer_id()) {
+                        let _ = container.release_pointer_capture(ev.pointer_id());
+                    }
+                    crate::editor::canvas::overlays::set_z_drag_readout(None);
+                    let rect = container.get_bounding_client_rect();
+                    let py = ev.client_y() as f64 - rect.top();
+                    let delta = ov::z_drag_elevation_delta(
+                        py,
+                        start_y,
+                        cam.scale(),
+                        ov::z_drag_snap_step(snap),
+                    );
+                    if delta != 0.0 && !slot_ids.is_empty() {
+                        // `zs` is built by mapping over the very `slot_ids` Vec handed to the
+                        // translate — same length, same order, no re-sort between the two — so
+                        // `zs[i]` is `slot_ids[i]`'s elevation structurally, not by convention.
+                        // `initial_zs` was resolved at ARM time against the press camera, so a
+                        // slot deleted mid-drag simply drops out of the core's own id lookup.
+                        let zs: Vec<f64> = slot_ids
+                            .iter()
+                            .enumerate()
+                            .map(|(i, _)| initial_zs.get(i).copied().unwrap_or(0.0) + delta)
+                            .collect();
+                        let guard = doc.borrow();
+                        if let Some(core) = guard.as_ref() {
+                            core.move_entities(slot_ids, 0.0, 0.0, zs);
+                            drop(guard);
+                            mission_history::after_local_edit();
+                        }
+                    }
+                    return;
+                }
+            }
             // ══════ T-936.7 — commit the vertex drag, before every other branch ══════
             //
             // `onpointerdown` returned before opening `LG::Pending` when it armed this drag, so

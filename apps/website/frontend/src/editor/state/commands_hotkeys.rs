@@ -523,6 +523,31 @@ pub(crate) fn selection_summary_text(entities: &[SelectedEntity]) -> String {
     out
 }
 
+/// T-946.86 (.85) — render the [`crate::editor::state::operations::duplicate_slot_ids`] pairs as
+/// the per-problem lines `save_now` puts in the Save dialog's `findings`, one line per duplicate,
+/// each NAMING THE CALLSIGN AND THE ID. Those two strings are the whole point of the guard: "this
+/// mission has duplicate slot ids" is not actionable, "squad 1-1 lists slot s1 twice" is.
+///
+/// Pure and at file scope — `mod imp` below is `#[cfg(target_arch = "wasm32")]`, so a formatter
+/// defined inside it could not be exercised by `cargo test -p website-frontend`. The wasm caller
+/// and the native pin therefore read the SAME function rather than two that must agree.
+///
+/// The headline is returned beside the rows because `status` is also rendered in the top strip and
+/// has to stay short (the T-181.44 split the 400-handler below already uses).
+fn duplicate_slot_id_report(dups: &[(String, String)]) -> (String, Vec<String>) {
+    let rows: Vec<String> = dups
+        .iter()
+        .map(|(callsign, id)| {
+            format!("Squad {callsign}: slot id \"{id}\" is used more than once in this squad")
+        })
+        .collect();
+    let head = format!(
+        "Save refused — {}",
+        count_noun(rows.len(), "duplicate slot id", "duplicate slot ids")
+    );
+    (head, rows)
+}
+
 #[cfg(target_arch = "wasm32")]
 mod imp {
     use std::cell::RefCell;
@@ -710,6 +735,27 @@ mod imp {
                 auth: ctx.auth,
                 mission_id: ctx.mission_id.clone(),
             })
+        })
+    }
+
+    /// T-946.86 (.85) — the live document's duplicate (callsign, slot id) pairs, or empty when
+    /// there is no editor context yet.
+    ///
+    /// Separate from [`snapshot`] because `Snap` is a VALUE snapshot (JSON strings) and
+    /// [`crate::editor::state::operations::duplicate_slot_ids`] takes the `MissionDocCore` itself —
+    /// it needs `doc.slot_exists`, which the JSON alone cannot answer. Same one-borrow discipline
+    /// as `snapshot`: one `EDITOR_CTX` borrow, released before the caller does anything else.
+    fn live_duplicate_slot_ids() -> Vec<(String, String)> {
+        EDITOR_CTX.with(|c| {
+            let ctx = c.borrow();
+            let Some(ctx) = ctx.as_ref() else {
+                return Vec::new();
+            };
+            let doc = ctx.doc.borrow();
+            let Some(core) = doc.as_ref() else {
+                return Vec::new();
+            };
+            crate::editor::state::operations::duplicate_slot_ids(core)
         })
     }
 
@@ -963,6 +1009,31 @@ mod imp {
             status.set("Editor not ready".to_string());
             return;
         };
+        // ══════ T-946.86 (.85) — REFUSE a document with duplicate slot ids ══════
+        //
+        // `duplicate_slot_ids` shipped in wave 255 with a unit test and NO production caller, so
+        // the check it implements has never run against a real save. This is that call site.
+        //
+        // It sits BEFORE `compile_payload` deliberately: compiling and POSTing a document we
+        // already know the server will reject spends a round trip to learn what is knowable here,
+        // and the server's 400 does not name the squad.
+        //
+        // DIVERGENCE, DELIBERATE AND UNRESOLVED (see the slice report): the UPLOAD path has a
+        // private near-twin, `check_duplicate_slot_ids_in_payload` in `library/mission_library.rs`
+        // (defined :1519, called :1565), which reads `payload.editor.squads[]` JSON. The two do
+        // NOT agree — `state/operations/slot_ids.rs:32` gates each id on `doc.slot_exists(id)` and
+        // the library version does not, so a payload carrying a DANGLING duplicate id is refused
+        // on upload and passes here. Collapsing them onto this function is the right repair;
+        // `mission_library.rs` is outside T-946.86's owns, so the divergence is recorded rather
+        // than silently halved. Do not "fix" one side alone — that would make them disagree in a
+        // NEW way without anything failing.
+        let dups = live_duplicate_slot_ids();
+        if !dups.is_empty() {
+            let (head, rows) = super::duplicate_slot_id_report(&dups);
+            status.set(head);
+            findings.set(rows);
+            return;
+        }
         let payload = compile_payload(&snap.small, &snap.slots, false);
         let body = version_body(&semver, &notes, &payload);
         let auth = snap.auth;
@@ -2487,5 +2558,96 @@ mod tests {
             live_doc_title(r#"{"meta":{"title":"  Trimmed  "}}"#).as_deref(),
             Some("Trimmed")
         );
+    }
+}
+
+/// T-946.86 (.85) — `save_now` actually calls the duplicate slot-id guard.
+#[cfg(test)]
+mod t946_86_duplicate_guard {
+    use super::duplicate_slot_id_report;
+    use crate::editor::arsenal::class_r_scrub::live_code;
+
+    fn live() -> String {
+        live_code(include_str!("commands_hotkeys.rs"))
+    }
+
+    /// **The guard is CALLED, and before the POST.** `duplicate_slot_ids` shipped in wave 255
+    /// exported and consumed by nothing but its own test, while `save_now` cleared findings,
+    /// compiled and POSTed with no duplicate check at all.
+    ///
+    /// The ORDER is the pin, not just the presence: a check that runs after `api_post` has already
+    /// been spawned refuses nothing — it merely reports on a save that is already in flight.
+    #[test]
+    fn save_now_checks_duplicates_before_it_compiles_or_posts() {
+        let src = live();
+        let at_save = src
+            .find("pub fn save_now(")
+            .expect("T-946.86 (.85): save_now must survive");
+        let body = &src[at_save..];
+        let at_check = body
+            .find("live_duplicate_slot_ids()")
+            .expect("T-946.86 (.85): save_now must ask for the duplicate slot ids");
+        let at_compile = body
+            .find("compile_payload(")
+            .expect("save_now compiles a payload");
+        let at_post = body.find("api_post::").expect("save_now POSTs the version");
+        assert!(
+            at_check < at_compile && at_check < at_post,
+            "T-946.86 (.85): the duplicate check must precede the compile AND the POST — a check \
+             after either spends a round trip to learn what was knowable locally"
+        );
+        assert!(
+            body[at_check..at_compile].contains("return"),
+            "T-946.86 (.85): a document with duplicate slot ids must be REFUSED, not merely \
+             annotated on the way to the server"
+        );
+    }
+
+    /// The guard reads the LIVE DOC through `duplicate_slot_ids`, not a second private twin. The
+    /// upload path already has one of those (`check_duplicate_slot_ids_in_payload` in
+    /// `library/mission_library.rs`) and the two disagree; a third would make it worse.
+    #[test]
+    fn the_check_routes_through_the_shared_operation() {
+        let src = live();
+        assert!(
+            src.contains("operations::duplicate_slot_ids(core)"),
+            "T-946.86 (.85): the doc-side guard must call the shared `duplicate_slot_ids`, not a \
+             locally re-implemented scan"
+        );
+    }
+
+    /// The refusal NAMES the callsign and the id. "This mission has duplicate slot ids" is not
+    /// actionable; "squad 1-1 lists slot s1 twice" is — and naming both is what the ticket's
+    /// acceptance asks for.
+    #[test]
+    fn the_refusal_names_the_callsign_and_the_id() {
+        let (head, rows) = duplicate_slot_id_report(&[
+            ("1-1".to_string(), "s1".to_string()),
+            ("2-4".to_string(), "s9".to_string()),
+        ]);
+        assert!(
+            head.contains("refused") && head.contains('2'),
+            "the headline must say the save was refused and how many problems there are: {head}"
+        );
+        assert_eq!(rows.len(), 2, "one line per duplicate");
+        assert!(
+            rows[0].contains("1-1") && rows[0].contains("s1"),
+            "PERTURB: a line naming only one of the two is not actionable: {}",
+            rows[0]
+        );
+        assert!(
+            rows[1].contains("2-4") && rows[1].contains("s9"),
+            "every pair gets its own line: {}",
+            rows[1]
+        );
+    }
+
+    /// One duplicate reads as singular. A refusal that says "1 duplicate slot ids" is the kind of
+    /// seam that makes an operator distrust the rest of the message.
+    #[test]
+    fn the_headline_pluralizes() {
+        let (head, _) = duplicate_slot_id_report(&[("1-1".to_string(), "s1".to_string())]);
+        assert!(head.contains("1 duplicate slot id"), "{head}");
+        assert!(!head.contains("slot ids"), "{head}");
     }
 }
