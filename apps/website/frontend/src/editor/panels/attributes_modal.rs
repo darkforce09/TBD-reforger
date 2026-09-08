@@ -3491,3 +3491,34 @@ mod t810_type_picker_revert_axes {
         assert_eq!(seats[2].1, "Commander");
     }
 }
+
+/// T-939.2 — batch faction / squad reassign from the Attributes modal.
+#[cfg(test)]
+mod t939_2_batch_reassign {
+    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+
+    /// THE DEFECT (RED before this slice): the Identity tab offered NO faction control and the
+    /// Squad entry was an inert read-only div, so a faction/squad move was unreachable from the
+    /// modal at any selection size.
+    ///
+    /// Pinned on `identity_tab`'s body rather than the whole file because every other faction
+    /// mention in this file belongs to `type_picker` (it edits `assetId`, not faction) and would
+    /// green this test on code that cannot move a single slot.
+    #[test]
+    fn the_identity_tab_offers_a_faction_control_and_an_editable_squad_control() {
+        let code = live_code(include_str!("attributes_modal.rs"));
+        let body = only_body(&code, "fn identity_tab(");
+        assert!(
+            body.contains("reassign_picker("),
+            "T-939.2: the Identity tab must render the faction/squad reassign controls; body was:\n{body}"
+        );
+        // The read-only div was the defect: a `font-mono` box with no control in it. Its exact
+        // shape must not be what renders the squad any more.
+        let src = live_source(include_str!("attributes_modal.rs"));
+        let body_src = only_body(&src, "fn identity_tab(");
+        assert!(
+            !body_src.contains("{} entities"),
+            "T-939.2: the squad entry must no longer be the inert '{{n}} entities' text"
+        );
+    }
+}
