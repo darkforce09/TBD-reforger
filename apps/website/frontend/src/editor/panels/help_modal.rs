@@ -1808,3 +1808,76 @@ mod t772_controls_hint_close_hitbox {
         );
     }
 }
+
+/* ═════════ T-939.4 — the Arrange chords: one spelling, three surfaces ═══════════════════════════
+ *
+ * The census pins above already prove the six chords are BOUND and DOCUMENTED. What they cannot see
+ * is whether the card and the menus tell the operator the same story: `SHORTCUTS` names codes, and
+ * `top_strip::ARRANGE` names the chord an operator reads off a menu row. Both are typed by hand, in
+ * different files, and nothing structural stops `Alt + L` on the menu from becoming `Alt + Shift +
+ * L` here. These pins close that gap — a chord string that drifts is exactly as misleading as a
+ * missing row, and considerably harder to notice.
+ */
+#[cfg(test)]
+mod t939_4_arrange_help_rows {
+    use super::{SHORTCUTS, GROUPS};
+    use crate::editor::panels::top_strip::ARRANGE;
+
+    /// Every chorded Arrange row has a help row filed under `Arrange` whose chord text CONTAINS the
+    /// spelling the menus print. `contains` rather than equality because a row may pair two chords
+    /// (`"Alt + L  /  Alt + R"`) — pairing is a presentation choice, printing a different chord is
+    /// not.
+    #[test]
+    fn arrange_help_rows_match_the_shared_list() {
+        let arrange_rows: Vec<&super::Shortcut> =
+            SHORTCUTS.iter().filter(|s| s.group == "Arrange").collect();
+        assert!(
+            !arrange_rows.is_empty(),
+            "T-939.4: the Controls Hint must carry an Arrange section"
+        );
+        assert!(
+            GROUPS.contains(&"Arrange"),
+            "T-939.4: `Arrange` must be a rendered heading, or every row above is invisible"
+        );
+        for entry in ARRANGE.iter().filter(|e| !e.code.is_empty()) {
+            let row = arrange_rows
+                .iter()
+                .find(|s| s.codes.contains(&entry.code))
+                .unwrap_or_else(|| {
+                    panic!(
+                        "T-939.4: `{}` binds `{}` and the Arrange section documents no row for it",
+                        entry.label, entry.code
+                    )
+                });
+            assert!(
+                row.chord.contains(entry.chord),
+                "T-939.4: the help card spells `{}`'s chord `{}`, the menus print `{}` — one of \
+                 them is lying to the operator",
+                entry.label,
+                row.chord,
+                entry.chord
+            );
+        }
+    }
+
+    /// The other direction: the Arrange section must not document a code the shared list does not
+    /// key. `no_help_entry_invents_a_binding` catches a code nothing in the EDITOR binds; this
+    /// catches the narrower rot of an Arrange row surviving after its chord moved off the list.
+    #[test]
+    fn the_arrange_section_documents_no_chord_the_list_dropped() {
+        let keyed: Vec<&str> = ARRANGE
+            .iter()
+            .filter(|e| !e.code.is_empty())
+            .map(|e| e.code)
+            .collect();
+        for row in SHORTCUTS.iter().filter(|s| s.group == "Arrange") {
+            for code in row.codes {
+                assert!(
+                    keyed.contains(code),
+                    "T-939.4: the Arrange section documents `{code}`, which `top_strip::ARRANGE` \
+                     no longer keys — drop the row or restore the chord"
+                );
+            }
+        }
+    }
+}
