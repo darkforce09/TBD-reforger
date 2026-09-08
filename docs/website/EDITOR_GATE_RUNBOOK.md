@@ -10,7 +10,7 @@ Pins: [`tools/tbd-tools/gate-env.json`](../../tools/tbd-tools/gate-env.json).
 ```bash
 cargo xtask db up          # Postgres :5434 (hydrate/mutations smokes need the API)
 cargo xtask mk rust-api            # Axum API :8080 (migrates on boot)
-cargo xtask mk leptos-gates   # trunk release build → gate doctor → editor-suite (20 smokes) → v-suite verify
+cargo xtask mk leptos-gates   # trunk release build → gate doctor → editor-suite (21 smokes) → v-suite verify
 ```
 
 **Editor-factory pre-close (T-843 option b):** every editor factory wave must run
@@ -37,6 +37,14 @@ cargo run -q -p tbd-tools --bin gate -- v-suite verify    # frozen DOM oracle on
 
 CI: [`.github/workflows/editor-gates.yml`](../../.github/workflows/editor-gates.yml) (nightly + on
 demand + gate/editor-path PRs) runs the same, with a Postgres service + a curl-installed pinned chrome.
+
+## V-suite capture readiness and reference updates
+
+V-suite `verify` and per-route `accept` use the same capture function in `tools/tbd-tools/src/vsuite.rs`. Required fixture responses and their rendered consumers must be ready before two consecutive normalized DOM samples can establish stability. Missing fixtures, malformed JSON, invalid consumer payloads and request-dispatch failures fail capture; a stable loading or error screen is not an acceptable baseline. Waiting is bounded and reports pending resources or the consumer state when it times out.
+
+Fixtures remain under `apps/website/frontend/tests/fixtures/api/`. The Server Intel status-stream exception explicitly covers cached status rendering only; this suite does not prove live SSE. The frozen clock, 1440×900 viewport, serializer and structural diff remain unchanged. PNGs accompany the DOM evidence but this gate does not perform pixel comparison.
+
+Use `gate v-suite accept --only <slug> --note "<specific intended change and provenance>"` only after reviewing the populated state and complete differences. Preserve original React references, explain each route separately, and keep unchanged route references intact. A missing or broken fixture must be repaired before acceptance. Run the full V-suite again after the reviewed updates and after integration into main.
 
 ## Required environment
 
