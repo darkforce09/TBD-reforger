@@ -1455,11 +1455,16 @@ pub(crate) fn virtual_tree(
         use wasm_bindgen::{closure::Closure, JsCast};
         if let Some(win) = web_sys::window() {
             let release = Closure::<dyn FnMut(web_sys::PointerEvent)>::new(move |_| {
-                gloo_timers::callback::Timeout::new(0, move || {
-                    crate::editor::panels::outliner_drag::cancel_layer_drag();
-                    let _ = drag_ghost_pos.try_set(None);
-                })
-                .forget();
+                if let Some(win) = web_sys::window() {
+                    let cleanup = Closure::once_into_js(move || {
+                        crate::editor::panels::outliner_drag::cancel_layer_drag();
+                        let _ = drag_ghost_pos.try_set(None);
+                    });
+                    let _ = win.set_timeout_with_callback_and_timeout_and_arguments_0(
+                        cleanup.unchecked_ref(),
+                        0,
+                    );
+                }
             });
             let cancel = Closure::<dyn FnMut(web_sys::Event)>::new(move |_| {
                 crate::editor::panels::outliner_drag::cancel_layer_drag();
@@ -1538,7 +1543,9 @@ pub(crate) fn virtual_tree(
             };
             let el: web_sys::Element = node.unchecked_into();
             let h = el.client_height() as f64;
-            if h > 0.0 {
+            // Publishing the same height remounts the scroller, which changes its NodeRef and
+            // runs this effect again. Only a real measurement change may invalidate the slice.
+            if h > 0.0 && h != container_h.get_untracked() {
                 container_h.set(h);
             }
             if !resize_hooked.get_value() {
@@ -1549,7 +1556,7 @@ pub(crate) fn virtual_tree(
                             if let Some(node) = scroller_ref.get_untracked() {
                                 let el: web_sys::Element = node.unchecked_into();
                                 let h = el.client_height() as f64;
-                                if h > 0.0 {
+                                if h > 0.0 && h != container_h.get_untracked() {
                                     container_h.set(h);
                                 }
                             }
@@ -1633,7 +1640,7 @@ pub(crate) fn virtual_tree(
                             use wasm_bindgen::JsCast;
                             if let Some(el) = ev.target().and_then(|t| t.dyn_into::<web_sys::Element>().ok()) {
                                 let h = el.client_height() as f64;
-                                if h > 0.0 {
+                                if h > 0.0 && h != container_h.get_untracked() {
                                     container_h.set(h);
                                 }
                                 scroll_top.set(el.scroll_top() as f64);

@@ -260,6 +260,12 @@ pub fn OrbatManagerDialog(
     on_cleanup(move || {
         esc.remove();
         crate::core::ui::modal_stack::unregister(modal_id);
+        crate::editor::panels::outliner_drag::cancel_layer_drag();
+    });
+    Effect::new(move |_| {
+        if !open.get() {
+            crate::editor::panels::outliner_drag::cancel_layer_drag();
+        }
     });
 
     #[cfg(target_arch = "wasm32")]
@@ -365,7 +371,7 @@ pub fn OrbatManagerDialog(
                 on:click=move |ev| ev.stop_propagation()
                 on:pointerup=move |_| {
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor::state::operations::cancel_refile();
+                    crate::editor::panels::outliner_drag::cancel_layer_drag();
                 }
             >
                 // Header
@@ -913,6 +919,7 @@ fn tree_panel(
                             .map(|r| {
                                 stitch_row(
                                     r,
+                                    nodes_sig,
                                     selected,
                                     collapsed,
                                     rename_squad,
@@ -971,6 +978,7 @@ fn tree_panel(
 
 fn stitch_row(
     row: &FlatRow,
+    nodes: RwSignal<Vec<OutlinerNode>>,
     selected: RwSignal<Vec<String>>,
     collapsed: RwSignal<HashSet<String>>,
     rename_squad: RwSignal<Option<String>>,
@@ -1013,7 +1021,11 @@ fn stitch_row(
                         on:pointerup=move |ev| {
                             ev.stop_propagation();
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor::state::operations::complete_refile_onto_squad(id_drop.clone());
+                            {
+                                if !crate::editor::panels::outliner_drag::complete_multi_refile_onto_squad(&id_drop) {
+                                    crate::editor::state::operations::complete_refile_onto_squad(id_drop.clone());
+                                }
+                            }
                         }
                         on:click=move |_| {
                             collapsed.update(|c| {
@@ -1295,7 +1307,17 @@ fn stitch_row(
                         }
                         on:pointerdown=move |_| {
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor::state::operations::begin_refile(id_refile.clone());
+                            {
+                                // This mounted manager has its own rows; the legacy outliner
+                                // ORBAT branch does not handle these pointer events.
+                                let drag = crate::editor::panels::outliner_tree::drag_set_for(
+                                    &id_refile,
+                                    &selected.get_untracked(),
+                                    &nodes.get_untracked(),
+                                );
+                                crate::editor::panels::outliner_drag::begin_refile(drag);
+                                crate::editor::state::operations::begin_refile(id_refile.clone());
+                            }
                         }
                     >
                         <MaterialIcon name="drag_indicator" class="mr-2 cursor-grab text-[14px] text-on-surface-variant opacity-0 group-hover/slot:opacity-100" />
@@ -2069,5 +2091,20 @@ mod tests {
             body.contains("{total_slots} slot{}"),
             "F-17: the label must interpolate the pluralized suffix after `slot`"
         );
+    }
+}
+
+#[cfg(test)]
+mod t946_86_mounted_refile {
+    #[test]
+    fn the_mounted_manager_arms_and_consumes_the_shared_set() {
+        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        let code = live_code(include_str!("orbat_manager.rs"));
+        let row = only_body(&code, "fn stitch_row(");
+        assert!(row.contains("outliner_tree::drag_set_for("));
+        assert!(row.contains("outliner_drag::begin_refile(drag)"));
+        assert!(row.contains("outliner_drag::complete_multi_refile_onto_squad(&id_drop)"));
+        let dialog = only_body(&code, "pub fn OrbatManagerDialog(");
+        assert!(dialog.contains("outliner_drag::cancel_layer_drag()"));
     }
 }

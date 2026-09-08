@@ -207,8 +207,15 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
     });
     let cancel_escape = Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new({
         let cancel_z = cancel_z.clone();
+        // Read the actual private arms, rather than keeping a second activity latch. Escape is
+        // shared with editor dialogs, so this listener acts only while it owns a live gesture.
+        let gesture_active = Signal::derive_local({
+            let z_drag = z_drag.clone();
+            let vertex_pointer = vertex_pointer.clone();
+            move || z_drag.borrow().is_some() || vertex_pointer.get().is_some()
+        });
         move |ev: web_sys::KeyboardEvent| {
-            if ev.key() == "Escape" {
+            if ev.key() == "Escape" && gesture_active.get_untracked() {
                 cancel_z(None);
             }
         }

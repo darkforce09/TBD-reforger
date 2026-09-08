@@ -3,7 +3,7 @@
 //! MENU-HELP-001).
 //!
 //! **The defect this closes.** The Mission Creator binds twenty-six distinct `KeyboardEvent` codes
-//! across fourteen window-level keydown listeners in ten editor-surface modules and, before this
+//! across fifteen window-level keydown listeners in eleven editor-surface modules and, before this
 //! ticket, documented **none** of them anywhere in the UI: no Help menu, no hint overlay, and
 //! `context_menu`'s `with_shortcut` builder had zero callers. An operator's only route to `G`, `[`,
 //! `]`, `1`, `2`, `3`, `E`, `R` or Backspace was reading the Rust source.
@@ -17,7 +17,7 @@
 //! spells the live census counts out in words and asserts this paragraph contains them, because
 //! this sentence has already gone stale twice by being retyped. If you widen what counts as a
 //! binding, the pin tells you the new numbers — it does not let you guess them. The fourth is the
-//! total the distinct-code count hides: those listeners carry forty-one bindings in
+//! total the distinct-code count hides: those listeners carry forty-two bindings in
 //! total, most of the surplus being the Escape channel. (T-774 settled that one by measurement —
 //! the T-703 slice reported "39" and the wave-119 verifier's parser reported 32; the verifier was
 //! right, and 32 was the count over the eleven-listener input that ticket widened.)
@@ -458,7 +458,7 @@ pub fn ControlsHint(open: RwSignal<bool>) -> impl IntoView {
 ///
 /// # Escape, the one declared shared channel
 ///
-/// Escape is a shared channel by design, not by accident: twelve listeners claim Escape, each
+/// Escape is a shared channel by design, not by accident: thirteen listeners claim Escape, each
 /// claimant reads its own live state first (`get_untracked()`), and the editor keydown's arm only
 /// "acts" when a measurement was actually dismissed. That count is derived, not typed: T-774 put
 /// this doc block under `the_prose_census_numbers_are_derived` after finding it still said "nine"
@@ -657,6 +657,8 @@ pub(crate) mod keymap_census {
             // `canvas/commands.rs` (the page keeps ZERO window-level keydown listeners now, so it
             // left the surface with its listener).
             ("commands.rs", include_str!("../canvas/commands.rs"), 1),
+            // T-946.86 — the gesture owner cancels its private Z/vertex arm on Escape.
+            ("gestures.rs", include_str!("../canvas/gestures.rs"), 1),
             // T-939.4 — and the page is BACK on the surface with one listener: the six Arrange
             // chords. It is not in `commands.rs` because that file is another slice's `owns`, and it
             // is not in `top_strip.rs` (where the Arrange list lives) because the strip unmounts
@@ -1247,10 +1249,10 @@ pub(crate) mod keymap_census {
             );
             total += found;
         }
-        // T-939.4 — 14: the page rejoined the surface with the Arrange-chord listener.
+        // T-946.86 — 15: include the private-gesture Escape listener, measured by the census.
         assert_eq!(
-            total, 14,
-            "T-703: the editor surface should carry 14 window-level keydown listeners, found \
+            total, 15,
+            "T-703: the editor surface should carry 15 window-level keydown listeners, found \
              {total}"
         );
         // A listener that yields no binding means the slicer lost the closure body (an unbalanced

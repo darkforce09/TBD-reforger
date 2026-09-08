@@ -24,7 +24,7 @@ fn mission(duplicate: bool, large: bool) -> Value {
         "environment":{"time":"12:00","weather":"clear"},"loadouts":{},"objectives":[],"markers":[],
         "vehicles":[{"id":"vehicle-roof","resourceName":"Vehicle.et","position":{"x":6600.0,"y":6400.0,"z":81.5,"rotation":90.0}}],
         "editor":{
-            "factions":[{"id":"f","name":"BLUFOR","side":"BLUFOR","squadIds":["sq","bravo","charlie"]}],
+            "factions":[{"id":"f","name":"BLUFOR","key":"BLUFOR","squadIds":["sq","bravo","charlie"]}],
             "squads":[{"id":"sq","factionId":"f","name":"Alpha","callsign":"Alpha","slotIds":squad_ids,"vehicleIds":[]},
                 {"id":"bravo","factionId":"f","name":"Bravo","callsign":"Bravo","slotIds":[],"vehicleIds":[]},
                 {"id":"charlie","factionId":"f","name":"Charlie","callsign":"Charlie","slotIds":[],"vehicleIds":[]}],
@@ -58,6 +58,18 @@ fn mission(duplicate: bool, large: bool) -> Value {
 }
 
 async fn intercept(page: &Arc<Page>) -> Result<Arc<StdMutex<u64>>> {
+    // Baseline failures deliberately leave dirty history. Accept its real unload prompt so
+    // the following isolated fixture can load without a pending CDP navigation.
+    let mut dialogs = page.on_event("Page.javascriptDialogOpening").await;
+    let dialog_page = page.clone();
+    tokio::spawn(async move {
+        while let Some(dialog) = dialogs.recv().await {
+            eprintln!("t946-86 dialog: {}", dialog["type"]);
+            let _ = dialog_page
+                .send("Page.handleJavaScriptDialog", json!({"accept":true}))
+                .await;
+        }
+    });
     let posts = Arc::new(StdMutex::new(0));
     let me: Value = serde_json::from_str(&std::fs::read_to_string(
         repo_root().join("apps/website/frontend/tests/fixtures/api/GET__me.json"),
@@ -115,6 +127,20 @@ async fn depth(page: &Page) -> Result<i64> {
 }
 async fn settle() {
     cdp::sleep_ms(180).await;
+}
+async fn fixture_ready(page: &Page, expression: &str) -> Result<()> {
+    for _ in 0..160 {
+        if page
+            .evaluate_with_timeout(expression, false, std::time::Duration::from_secs(5))
+            .await?
+            .as_bool()
+            == Some(true)
+        {
+            return Ok(());
+        }
+        cdp::sleep_ms(250).await;
+    }
+    anyhow::bail!("fixture hydration failed: {expression}")
 }
 async fn undo(page: &Page) -> Result<()> {
     key_chord(page, "z", "KeyZ", 2, 90).await?;
@@ -180,6 +206,88 @@ fn same_positions(a: &Value, b: &Value) -> bool {
     a["editor"]["slots"] == b["editor"]["slots"] && a["vehicles"] == b["vehicles"]
 }
 
+async fn vehicle_point(page: &Page) -> Result<(f64, f64)> {
+    let p=eval(page,"(() => {const c=JSON.parse(window.__editorCam()); const r=document.querySelector('canvas').getBoundingClientRect(); return [r.left+r.width/2+(6600-c.tx)*2**c.z,r.top+r.height/2-(6400-c.ty)*2**c.z];})()").await?;
+    Ok((p[0].as_f64().unwrap(), p[1].as_f64().unwrap()))
+}
+async fn vehicle_snap_cases(page: &Page, checks: &mut Map<String, Value>) -> Result<()> {
+    click_at(page, 1000.0, 700.0, false).await?;
+    let (vx, vy) = vehicle_point(page).await?;
+    click_at(page, vx, vy, false).await?;
+    settle().await;
+    let selected=eval_bool(page,"JSON.parse(window.__editorSelection.ids()).length===1 && JSON.parse(window.__editorSelection.ids())[0]==='vehicle-roof'").await?;
+    click_selector(page, "[aria-label='Toggle snap grid']").await?;
+    for _ in 0..2 {
+        click_selector(page, "[aria-label='Increase snap step']").await?;
+    }
+    for (name, modifier, expected) in [
+        ("vehicle_snap", 0, 10.0),
+        ("vehicle_shift_suspends_snap", 8, 12.0),
+    ] {
+        let before = payload(page).await?;
+        let d = depth(page).await?;
+        let (x, cy) = widget(page).await?;
+        let y = cy - 45.0;
+        mouse(
+            page,
+            "mousePressed",
+            x,
+            y,
+            json!({"button":"left","buttons":1,"clickCount":1,"modifiers":modifier}),
+        )
+        .await?;
+        for offset in [8.0, 12.0] {
+            mouse(
+                page,
+                "mouseMoved",
+                x,
+                y - offset,
+                json!({"button":"none","buttons":1,"modifiers":modifier}),
+            )
+            .await?;
+        }
+        mouse(
+            page,
+            "mouseReleased",
+            x,
+            y - 12.0,
+            json!({"button":"left","buttons":0,"clickCount":1,"modifiers":modifier}),
+        )
+        .await?;
+        settle().await;
+        let after = payload(page).await?;
+        let z = |v: &Value| {
+            v["vehicles"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|r| r["id"] == "vehicle-roof")
+                .unwrap()["position"]["z"]
+                .as_f64()
+                .unwrap()
+        };
+        eprintln!(
+            "t946-86 {name}: {}",
+            json!({"selected":selected,"before_z":z(&before),"after_z":z(&after),"expected_delta":expected,"before_depth":d,"after_depth":depth(page).await?,"status":eval_str(page,"document.body.innerText.slice(-1500)").await?})
+        );
+        checks.insert(
+            name.into(),
+            json!(
+                selected
+                    && (z(&after) - z(&before) - expected).abs() < 1e-9
+                    && depth(page).await? == d + 1
+            ),
+        );
+        undo(page).await?;
+        checks.insert(
+            format!("{name}_undo"),
+            json!(same_positions(&before, &payload(page).await?)),
+        );
+    }
+    click_selector(page, "[aria-label='Toggle snap grid']").await?;
+    Ok(())
+}
+
 // A release outside the tree and a cancellation must clear both pending representations.
 async fn outside_drop_cases(
     page: &Page,
@@ -208,12 +316,77 @@ async fn outside_drop_cases(
     Ok(())
 }
 
+async fn z_lifecycle_cases(page: &Page, checks: &mut Map<String, Value>) -> Result<()> {
+    for event in ["lostpointercapture", "blur", "Escape", "widget", "tool"] {
+        select_five(page).await?;
+        let before = payload(page).await?;
+        let d = depth(page).await?;
+        let (x, cy) = widget(page).await?;
+        z_start(page, x, cy - 45.0).await?;
+        let armed = eval_bool(page,"!!document.querySelector('[data-transform-widget] text') && document.querySelector('canvas').parentElement.hasPointerCapture(1)").await?;
+        // An unrelated release must leave the real arm live, before cancellation is tested.
+        eval(page,"document.querySelector('canvas').parentElement.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:99,clientX:700,clientY:300,button:0}))").await?;
+        let unrelated_ignored =
+            same_positions(&before, &payload(page).await?) && depth(page).await? == d;
+        match event {
+            "lostpointercapture" => {
+                eval(
+                    page,
+                    "(() => {const c=document.querySelector('canvas').parentElement;if(c.hasPointerCapture(1))c.releasePointerCapture(1);})()",
+                )
+                .await?;
+            }
+            "blur" => {
+                eval(page, "window.dispatchEvent(new Event('blur'))").await?;
+            }
+            "Escape" => {
+                key_chord(page, "Escape", "Escape", 0, 27).await?;
+            }
+            "widget" => {
+                eval(
+                    page,
+                    "document.querySelector('[aria-label=\"No widget\"]').click()",
+                )
+                .await?;
+            }
+            "tool" => {
+                eval(page,"document.querySelector('button[title^=Ruler]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:2,button:0}))").await?;
+            }
+            _ => unreachable!(),
+        }
+        settle().await;
+        mouse(
+            page,
+            "mouseMoved",
+            x,
+            cy - 75.0,
+            json!({"button":"none","buttons":1}),
+        )
+        .await?;
+        mouse(
+            page,
+            "mouseReleased",
+            x,
+            cy - 75.0,
+            json!({"button":"left","buttons":0,"clickCount":1}),
+        )
+        .await?;
+        settle().await;
+        checks.insert(format!("z_{event}_cancels_real_capture"),json!(armed && unrelated_ignored && same_positions(&before,&payload(page).await?) && depth(page).await?==d && eval_bool(page,"!document.querySelector('[data-transform-widget] text') && !document.querySelector('canvas').parentElement.hasPointerCapture(1)").await?));
+        if event == "tool" {
+            eval(page,"document.querySelector('button[title=Select]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:2,button:0}))").await?;
+            settle().await;
+        }
+    }
+    Ok(())
+}
+
 async fn orbat_cases(page: &Page, checks: &mut Map<String, Value>) -> Result<()> {
     select_five(page).await?;
     let opened = click_selector(page, "[aria-label='ORBAT Manager']").await?;
     settle().await;
     let d = depth(page).await?;
-    let drop=eval_bool(page,"(() => {const root=document.querySelector('[role=dialog]'); const row=root?.querySelector('button[aria-label=Rifleman]'); const dest=[...(root?.querySelectorAll('[title=\"Drop a slot here to refile into this squad\"]')||[])].find(e=>e.textContent.includes('Bravo')); if(!row||!dest)return false; row.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,button:0,buttons:1})); dest.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return true; })()").await?;
+    let drop=eval_bool(page,"(() => {const row=document.querySelector('[role=button][aria-label=Rifleman]'); const dest=[...document.querySelectorAll('span')].find(e=>e.textContent==='Bravo')?.parentElement; if(!row||!dest)return false; row.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,button:0,buttons:1})); dest.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return true; })()").await?;
     settle().await;
     let moved = payload(page).await?;
     let n = moved["editor"]["squads"]
@@ -221,11 +394,15 @@ async fn orbat_cases(page: &Page, checks: &mut Map<String, Value>) -> Result<()>
         .and_then(|a| a.iter().find(|s| s["id"] == "bravo"))
         .and_then(|s| s["slotIds"].as_array())
         .map_or(0, Vec::len);
+    eprintln!(
+        "t946-86 ORBAT drop: {}",
+        json!({"opened":opened,"dispatched":drop,"moved":n,"depth_before":d,"depth_after":depth(page).await?,"squads":moved["editor"]["squads"]})
+    );
     checks.insert(
         "orbat_five_row_one_undo".into(),
         json!(opened && drop && n == 5 && depth(page).await? == d + 1),
     );
-    let click=eval_bool(page,"(() => { const e=[...document.querySelectorAll('[title=\"Drop a slot here to refile into this squad\"]')].find(e=>e.textContent.includes('Charlie')); if(!e)return false; e.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return true; })()").await?;
+    let click=eval_bool(page,"(() => { const e=[...document.querySelectorAll('span')].find(e=>e.textContent==='Charlie')?.parentElement; if(!e)return false; e.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return true; })()").await?;
     settle().await;
     checks.insert(
         "orbat_later_squad_click_cannot_move_anchor".into(),
@@ -236,8 +413,8 @@ async fn orbat_cases(page: &Page, checks: &mut Map<String, Value>) -> Result<()>
         ),
     );
     // Cancel a fresh ORBAT row arm, then release a different squad.
-    let armed=eval_bool(page,"(() => {const row=document.querySelector('[role=dialog] button[aria-label=Rifleman]'); if(!row)return false; row.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,button:0,buttons:1})); window.dispatchEvent(new PointerEvent('pointercancel',{bubbles:true,pointerId:1})); return true; })()").await?;
-    eval(page,"(() => { const e=[...document.querySelectorAll('[title=\"Drop a slot here to refile into this squad\"]')].find(e=>e.textContent.includes('Charlie')); e?.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return !!e; })()").await?;
+    let armed=eval_bool(page,"(() => {const row=document.querySelector('[role=button][aria-label=Rifleman]'); if(!row)return false; row.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:1,button:0,buttons:1})); window.dispatchEvent(new PointerEvent('pointercancel',{bubbles:true,pointerId:1})); return true; })()").await?;
+    eval(page,"(() => { const e=[...document.querySelectorAll('span')].find(e=>e.textContent==='Charlie')?.parentElement; e?.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return !!e; })()").await?;
     settle().await;
     checks.insert(
         "orbat_cancel_clears_legacy_refile".into(),
@@ -254,10 +431,14 @@ pub(super) async fn run(dist: &str) -> Result<u8> {
     let run = async {
         let posts = intercept(&h.page).await?;
         h.page.navigate(&h.url(&format!("/missions/{ID}/edit?force=webgl&sat=preview"))).await?;
-        anyhow::ensure!(h.page.wait_for(&format!("{SEL_READY} && {HIST_READY} && typeof window.__editorCommands === 'object' && window.__missionDoc.slot_count() === 5"),160,250).await?,"fixture hydration failed");
+        fixture_ready(&h.page,&format!("{SEL_READY} && {HIST_READY} && typeof window.__editorCommands === 'object' && window.__missionDoc.slot_count() === 5")).await?;
         settle().await;
         let mut checks = Map::new();
         select_five(&h.page).await?;
+        let (vx,vy)=vehicle_point(&h.page).await?;
+        click_at(&h.page,vx,vy,true).await?;
+        settle().await;
+        checks.insert("mixed_slots_vehicle_selection".into(),json!(eval_i64(&h.page,"window.__editorSelection.count()").await?==6));
         let initial = payload(&h.page).await?;
         let d0 = depth(&h.page).await?;
         let (x,cy) = widget(&h.page).await?;
@@ -275,10 +456,14 @@ pub(super) async fn run(dist: &str) -> Result<u8> {
             (s["position"]["z"].as_f64().unwrap()-old["position"]["z"].as_f64().unwrap()-delta).abs()<1e-9
         });
         checks.insert("z_mixed_heights_preserved".into(),json!(delta>0.0 && all));
+        let vehicle_z=|v:&Value|v["vehicles"].as_array().unwrap().iter().find(|r|r["id"]=="vehicle-roof").unwrap()["position"]["z"].as_f64().unwrap();
+        checks.insert("mixed_vehicle_has_same_z_delta".into(),json!((vehicle_z(&raised)-vehicle_z(&initial)-delta).abs()<1e-9));
         checks.insert("z_single_undo".into(),json!(depth(&h.page).await?==d0+1));
         checks.insert("z_capture_released".into(),json!(eval_bool(&h.page,"!document.querySelector('canvas').parentElement.hasPointerCapture(1)").await?));
         undo(&h.page).await?;
         checks.insert("z_undo_restores".into(),json!(same_positions(&initial,&payload(&h.page).await?)));
+
+        vehicle_snap_cases(&h.page,&mut checks).await?;
 
         // Cancel a REAL captured pointer, then move/release another id and the original id.
         select_five(&h.page).await?;
@@ -291,6 +476,7 @@ pub(super) async fn run(dist: &str) -> Result<u8> {
         settle().await;
         checks.insert("cancel_then_unrelated_release_never_commits".into(),json!(same_positions(&before,&payload(&h.page).await?) && depth(&h.page).await?==before_depth));
         checks.insert("cancel_clears_preview_and_capture".into(),json!(eval_bool(&h.page,"!document.querySelector('[data-transform-widget] text') && !document.querySelector('canvas').parentElement.hasPointerCapture(1)").await?));
+        z_lifecycle_cases(&h.page,&mut checks).await?;
 
         // A press on an already selected entity center must remain an ordinary XY drag.
         let probe=eval(&h.page,"JSON.parse(window.__editorSelection.probe())").await?;
@@ -351,19 +537,24 @@ pub(super) async fn run(dist: &str) -> Result<u8> {
         settle().await;
         checks.insert("stale_tactical_selection_does_not_eat_delete".into(),json!(eval_i64(&h.page,"window.__missionDoc.slot_count()").await?==4));
 
-        h.page.navigate(&h.url(&format!("/missions/{LARGE_ID}/edit?force=webgl&sat=preview"))).await?;
-        anyhow::ensure!(h.page.wait_for(&format!("{SEL_READY} && window.__missionDoc.slot_count()===5 && !!document.querySelector('[data-testid=outliner-window-scroller]')"),160,250).await?,"windowed fixture hydration failed");
-        settle().await;
-        outside_drop_cases(&h.page,&mut checks,"windowed").await?;
+        eprintln!("t946-86 primary fixture: {}",json!({"checks":checks,"preview":chip,"z_delta":delta,"five_moved":moved,"tactical_count":count}));
 
         h.page.navigate(&h.url(&format!("/missions/{DUP_ID}/edit?force=webgl&sat=preview"))).await?;
-        anyhow::ensure!(h.page.wait_for(&format!("{SEL_READY} && typeof window.__editorCommands === 'object' && window.__missionDoc.slot_count()===5"),160,250).await?,"duplicate fixture hydration failed");
+        fixture_ready(&h.page,&format!("{SEL_READY} && typeof window.__editorCommands === 'object' && window.__missionDoc.slot_count()===5")).await?;
         key_chord(&h.page,"s","KeyS",2,83).await?;
         settle().await;
         eval(&h.page,"(() => {const d=document.querySelector('[role=dialog]'); const b=[...(d?.querySelectorAll('button')||[])].find(b=>b.textContent?.trim()==='Save'); b?.click(); return !!b;})()").await?;
         settle().await;
         let text=eval_str(&h.page,"document.body.textContent").await?;
         checks.insert("duplicate_save_refused_before_request".into(),json!(*posts.lock().unwrap()==0 && text.contains("Alpha") && text.contains("roof-0") && text.contains("more than once")));
+        eprintln!("t946-86 duplicate fixture: {}",json!({"checks":checks,"posts":*posts.lock().unwrap(),"text":text}));
+
+        h.page.navigate(&h.url(&format!("/missions/{LARGE_ID}/edit?force=webgl&sat=preview"))).await?;
+        fixture_ready(&h.page,&format!("{SEL_READY} && window.__missionDoc.slot_count()===5 && !!document.querySelector('[data-testid=outliner-window-scroller]')")).await?;
+        settle().await;
+        outside_drop_cases(&h.page,&mut checks,"windowed").await?;
+        eprintln!("t946-86 windowed fixture: {}",json!({"checks":checks}));
+
         checks.insert("no_browser_panics".into(),json!(h.no_panics()));
         let pass=checks.values().all(|v|v==true);
         println!("{}",json!({"smoke":"t946-86","pass":pass,"checks":checks,"panics":h.panics_head(),"z_delta":delta,"preview":chip,"five_moved":moved,"tactical_count":count}));
