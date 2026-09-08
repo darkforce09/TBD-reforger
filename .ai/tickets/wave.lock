@@ -929,7 +929,7 @@ T-933 = ["xtask/src/mk_build.rs", "docs/platform/EDITOR_FACTORY_FOR_CURSOR.md", 
 "T-939.1" = ["apps/website/frontend/src/editor/panels/outliner_tree.rs", "apps/website/frontend/src/editor/panels/outliner_drag.rs", "apps/website/frontend/src/editor/panels/mod.rs"]
 "T-939.2" = ["apps/website/frontend/src/editor/panels/attributes_modal.rs", "apps/website/frontend/src/editor/state/operations/reassign.rs", "apps/website/frontend/src/editor/state/operations.rs", "crates/map-engine-core/src/doc/store.rs"]
 "T-939.3" = ["apps/website/frontend/src/editor/canvas/overlays.rs", "apps/website/frontend/src/editor/canvas/gestures.rs", "apps/website/frontend/src/editor/canvas/gizmo_z.rs", "apps/website/frontend/src/editor/canvas/mod.rs"]
-"T-939.4" = ["apps/website/frontend/src/editor/panels/context_menu.rs", "apps/website/frontend/src/editor/panels/top_strip.rs", "apps/website/frontend/src/editor/panels/help_modal.rs", "apps/website/frontend/src/editor/mission_editor.rs"]
+"T-939.4" = ["apps/website/frontend/src/editor/panels/context_menu.rs", "apps/website/frontend/src/editor/panels/top_strip.rs"]
 "T-939.5" = ["apps/website/frontend/src/editor/arsenal/asset_catalog.rs", "apps/website/frontend/src/editor/arsenal/squad_templates.rs", "apps/website/frontend/src/editor/arsenal/mod.rs", "apps/website/frontend/src/editor/panels/dock_right.rs"]
 "T-939.6" = ["apps/website/frontend/src/editor/canvas/overlays.rs", "apps/website/frontend/src/editor/canvas/diagnostics_overlay.rs", "apps/website/frontend/src/editor/canvas/mod.rs"]
 "T-939.7" = ["apps/website/frontend/src/editor/panels/vehicles_panel.rs", "apps/website/frontend/src/editor/panels/outliner.rs"]
@@ -984,7 +984,7 @@ T-945 = ["xtask/src/tickets_store.rs", "xtask/src/schema_gates.rs", ".ai/tickets
 "T-946.55" = ["apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c", "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c"]
 "T-946.64" = ["xtask/src/wave/changed.rs", "xtask/src/wave/gate.rs"]
 "T-946.81" = ["apps/website/frontend/src/core/auth.rs", "apps/website/frontend/src/core/client.rs"]
-"T-946.86" = ["apps/website/frontend/Cargo.toml", "apps/website/frontend/src/editor/canvas/gizmo_z.rs", "apps/website/frontend/src/editor/canvas/gestures.rs", "apps/website/frontend/src/editor/canvas/overlays.rs", "apps/website/frontend/src/editor/panels/outliner_tree.rs", "apps/website/frontend/src/editor/panels/outliner_drag.rs", "apps/website/frontend/src/editor/panels/zones_panel.rs", "apps/website/frontend/src/editor/state/commands_hotkeys.rs", "apps/website/frontend/src/editor/state/operations/tactical_graphics.rs", "tools/tbd-tools/src/smokes.rs", "tools/tbd-tools/src/smokes/t946_86.rs"]
+"T-946.86" = ["apps/website/frontend/Cargo.toml", "apps/website/frontend/src/editor/canvas/gizmo_z.rs", "apps/website/frontend/src/editor/canvas/gestures.rs", "apps/website/frontend/src/editor/canvas/overlays.rs", "apps/website/frontend/src/editor/panels/outliner_tree.rs", "apps/website/frontend/src/pages/operations/orbat_manager.rs", "apps/website/frontend/src/editor/panels/outliner_drag.rs", "apps/website/frontend/src/editor/panels/zones_panel.rs", "apps/website/frontend/src/editor/state/commands_hotkeys.rs", "apps/website/frontend/src/editor/state/operations/tactical_graphics.rs", "apps/website/frontend/src/editor/panels/help_modal.rs", "apps/website/frontend/src/editor/mission_editor.rs", "tools/tbd-tools/src/smokes.rs", "tools/tbd-tools/src/smokes/t946_86.rs"]
 
 [depends_on]
 "T-067.1" = ["T-935.13"]
