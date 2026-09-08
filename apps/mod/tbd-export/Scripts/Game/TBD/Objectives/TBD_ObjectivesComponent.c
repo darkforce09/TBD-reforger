@@ -33,6 +33,12 @@ class TBD_ObjectivesComponentClass : SCR_BaseGameModeComponentClass {}
 //! objective-complete line (`CAPTURED` / `DESTROYED` / `HELD`). The old per-tick
 //! `SCR_ChatComponent.SendPrivateMessage` pump is gone - it buried the log in progress spam.
 //!
+//! T-946.55: that HUD push is EVALUATED at 1 Hz but SENT only on a difference. `ReplicateHud` hashes
+//! each owner's rendered snapshot and skips the RPC when it matches the last one that owner was
+//! actually sent, so an idle round costs one board per player and nothing after it. Ungated it cost
+//! 60 Reliable Owner RPCs per player per minute with nothing happening, which is the same wire bill
+//! the chat pump was removed for.
+//!
 //! Everything is also logged server-side, so an operator can reconstruct the objective history of a
 //! round even if delivery to a particular client failed.
 //!
@@ -67,6 +73,18 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	//! This tick's COMPLETE lines only (captured / destroyed / held). Progress lives on the HUD.
 	protected ref array<string> m_aBroadcasts;
 
+	//! What each owner's HUD was LAST ACTUALLY SENT, keyed by playerId: the signature of the RENDERED
+	//! per-player snapshot, NOT of the shared board. `FillHudSnapshot` resolves the viewer's side and
+	//! carries that viewer's own capture bar, so two players reading the same board legitimately hold
+	//! different frames. A single global dirty flag would be wrong twice over - it would miss a
+	//! per-side text change, and it would suppress a bar that moves every tick for the one player
+	//! standing in the zone.
+	//!
+	//! Bounded by CONCURRENT players, never by round length: a key is written only when a push
+	//! actually went out, dropped by `PruneHudSignatures` on the first tick the owner is off the
+	//! connected list, and dropped again by `OnPlayerDisconnected`.
+	protected ref map<int, string> m_mHudSignatures;
+
 	//------------------------------------------------------------------------------------------------
 	static TBD_ObjectivesComponent GetInstance()
 	{
@@ -83,6 +101,11 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 
 		s_Instance = this;
 		m_aBroadcasts = new array<string>();
+
+		// Built before the client bail-out so no path can reach a null map. A client never replicates
+		// anything from here, but `OnDelete` runs on both sides and an empty map is cheaper than a
+		// null check on every teardown.
+		m_mHudSignatures = new map<int, string>();
 
 		if (RplSession.Mode() == RplMode.Client)
 			return;
@@ -111,9 +134,30 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			m_aBroadcasts.Clear();
 
 		HideAllHuds();
+
+		// `HideAllHuds` already dropped the signature of every owner it could still reach; whatever
+		// is left belonged to a player whose controller had gone before the world did.
+		if (m_mHudSignatures)
+			m_mHudSignatures.Clear();
+
 		s_Instance = null;
 
 		super.OnDelete(owner);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! `SCR_BaseGameMode.OnPlayerDisconnected` dispatches to every `SCR_BaseGameModeComponent`, so a
+	//! leaver's last-sent HUD signature goes the instant they do rather than on the next tick.
+	//! `PruneHudSignatures` would catch it a second later anyway; this is the belt to that pair of
+	//! braces, and it earns its place on RECYCLED playerIds - the next holder of that number must
+	//! never inherit the previous one's frame and be told their HUD is already up to date.
+	//! @authority server
+	override void OnPlayerDisconnected(int playerId, KickCauseCode cause, int timeout)
+	{
+		super.OnPlayerDisconnected(playerId, cause, timeout);
+
+		if (m_mHudSignatures)
+			m_mHudSignatures.Remove(playerId);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -743,12 +787,120 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Push the HUD snapshot to every connected player. 1 Hz, same cadence as the tick.
+	//! Push the HUD snapshot to every connected player whose frame ACTUALLY MOVED. Still evaluated at
+	//! the 1 Hz tick, but the wire cost is now proportional to CHANGE rather than to elapsed time.
+	//!
+	//! == WHY THIS IS GATED AT ALL =============================================================
+	//! T-941.4 replaced a per-tick private-chat pump with this HUD, which is the right answer; sending
+	//! it unconditionally was not. Ungated, this loop cost one Reliable Owner RPC of three string
+	//! arrays PER PLAYER PER SECOND - 60 per player per minute on a round where nothing whatsoever
+	//! happened, scaling with players x rows and never falling to zero. That is the very metric the
+	//! chat pump was removed for, so T-941.4 could regress it (T-946.55).
+	//!
+	//! The comparison is per OWNER and against the RENDERED snapshot, because the rendered snapshot is
+	//! what the RPC carries. An owner with no record is UNKNOWN, not clean, so a mid-round joiner -
+	//! or anyone who has only just gained a player controller - is sent a full board on the very next
+	//! tick rather than waiting for somebody else to move.
 	protected void ReplicateHud(notnull PlayerManager players, notnull array<int> connected, notnull array<ref TBD_Objective> board)
 	{
+		PruneHudSignatures(connected);
+
 		foreach (int playerId : connected)
 		{
-			PushHudToPlayer(players, playerId, board, 1);
+			array<string> icons = new array<string>();
+			array<string> titles = new array<string>();
+			array<string> details = new array<string>();
+			string barLabel;
+			int barPercent;
+			int barVisible;
+
+			FillHudSnapshot(playerId, board, icons, titles, details, barLabel, barPercent, barVisible);
+
+			string signature = HudSignature(icons, titles, details, barLabel, barPercent, barVisible);
+			if (!HudChanged(playerId, signature))
+				continue;
+
+			// Recorded ONLY when the RPC actually went out. A connected player with no controller yet
+			// is skipped by the push, and recording here would leave them holding a frame they were
+			// never sent and would never be offered again.
+			if (PushHudSnapshot(players, playerId, icons, titles, details, barLabel, barPercent, barVisible, 1))
+				m_mHudSignatures.Set(playerId, signature);
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Does this owner's rendered snapshot differ from the last one they were actually sent?
+	//!
+	//! A MISS IS A SEND, never a skip, and that single line is the whole anti-starvation argument: the
+	//! map holds only owners the server has provably pushed to, so everybody else - a new connection,
+	//! a recycled id, a player whose HUD was hidden when the round left LIVE - reads as unknown and
+	//! gets the entire board.
+	protected bool HudChanged(int playerId, string signature)
+	{
+		string previous;
+		if (!m_mHudSignatures.Find(playerId, previous))
+			return true;
+
+		return previous != signature;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! One string standing for exactly what the RPC would carry: every rendered row, plus the capture
+	//! bar triple.
+	//!
+	//! LENGTH-PREFIXED, and that is not decoration. With plain separators two different snapshots can
+	//! collide - ("A|B", "C") and ("A", "B|C") concatenate to the same bytes - and a HUD that MISSES a
+	//! real change is a far worse failure than one that sends a redundant frame. Prefixing each field
+	//! with its own length makes a collision impossible without needing a hash the engine does not
+	//! expose to script. Row count is clamped to the shortest array so a future edit to
+	//! `FillHudSnapshot` cannot turn this into an out-of-range read at 1 Hz.
+	protected string HudSignature(notnull array<string> icons, notnull array<string> titles,
+		notnull array<string> details, string barLabel, int barPercent, int barVisible)
+	{
+		string signature = string.Format("%1|%2|%3|%4", barVisible, barPercent, barLabel.Length(), barLabel);
+
+		int rows = icons.Count();
+		if (titles.Count() < rows)
+			rows = titles.Count();
+		if (details.Count() < rows)
+			rows = details.Count();
+
+		for (int i = 0; i < rows; i++)
+		{
+			string icon = icons.Get(i);
+			string title = titles.Get(i);
+			string detail = details.Get(i);
+			signature += string.Format("|%1|%2|%3|%4|%5|%6",
+				icon.Length(), icon, title.Length(), title, detail.Length(), detail);
+		}
+
+		return signature;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Drop the last-sent record for owners who are no longer connected. Collected first and removed
+	//! after: mutating a map while iterating it is not safe, and Enforce Script's `array.Remove` is by
+	//! INDEX (recorded landmine), so the removal below is by KEY on the map - the same shape
+	//! `TBD_PlayAreaComponent.PruneDeparted` uses for its violation rows.
+	//!
+	//! `Tick` re-reads the player list every second, so this ALONE bounds the map by concurrent
+	//! players. It does not depend on the disconnect hook firing, which is why the hook is a second
+	//! belt rather than the only one.
+	protected void PruneHudSignatures(notnull array<int> connected)
+	{
+		if (m_mHudSignatures.Count() == 0)
+			return;
+
+		array<int> stale = new array<int>();
+		foreach (int playerId, string signature : m_mHudSignatures)
+		{
+			if (connected.Find(playerId) == -1)
+				stale.Insert(playerId);
+		}
+
+		foreach (int playerId : stale)
+		{
+			m_mHudSignatures.Remove(playerId);
 		}
 	}
 
@@ -785,12 +937,18 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! The UNGATED push, and it stays ungated on purpose. Its two callers are the paths that must never
+	//! be suppressed: `HideAllHuds` when the round leaves LIVE, and `PushHudTo`, the pull a client asks
+	//! for. Both therefore RESET what this owner is known to hold - a hidden HUD is not a clean one,
+	//! and re-entering LIVE on an unchanged board must still re-open the panel.
+	//!
+	//! MEASURED 2026-09-08, so the 1 Hz gate above cannot lean on it: the pull path is currently DEAD.
+	//! `TBD_ObjectiveHud.TBD_RequestObjectiveHud` reaches `PushHudTo`, but nothing in `apps/mod` calls
+	//! `TBD_RequestObjectiveHud` - its declaration is the only occurrence in either tree. So the sole
+	//! thing standing between a joiner and an empty HUD is `HudChanged` treating an unknown owner as a
+	//! send, which is why that rule is stated there rather than assumed here.
 	protected void PushHudToPlayer(notnull PlayerManager players, int playerId, notnull array<ref TBD_Objective> board, int show)
 	{
-		SCR_PlayerController controller = SCR_PlayerController.Cast(players.GetPlayerController(playerId));
-		if (!controller)
-			return;
-
 		array<string> icons = new array<string>();
 		array<string> titles = new array<string>();
 		array<string> details = new array<string>();
@@ -799,7 +957,34 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		int barVisible;
 
 		FillHudSnapshot(playerId, board, icons, titles, details, barLabel, barPercent, barVisible);
+
+		if (!PushHudSnapshot(players, playerId, icons, titles, details, barLabel, barPercent, barVisible, show))
+			return;
+
+		if (show == 0)
+			m_mHudSignatures.Remove(playerId);
+		else
+			m_mHudSignatures.Set(playerId, HudSignature(icons, titles, details, barLabel, barPercent, barVisible));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! The wire itself: one Reliable Owner RPC, via `SCR_PlayerController.TBD_PushObjectiveHud` ->
+	//! `TBD_RpcDo_ObjectiveHud`.
+	//!
+	//! Returns whether it actually went out. A connected player with no player controller is not an
+	//! error - they are in the lobby, spectating or mid-deploy - but the caller must not record a
+	//! frame that never left the server, or that player would be treated as up to date and the gate in
+	//! `ReplicateHud` would starve them for the rest of the round.
+	protected bool PushHudSnapshot(notnull PlayerManager players, int playerId, notnull array<string> icons,
+		notnull array<string> titles, notnull array<string> details, string barLabel, int barPercent,
+		int barVisible, int show)
+	{
+		SCR_PlayerController controller = SCR_PlayerController.Cast(players.GetPlayerController(playerId));
+		if (!controller)
+			return false;
+
 		controller.TBD_PushObjectiveHud(icons, titles, details, barLabel, barPercent, barVisible, show);
+		return true;
 	}
 
 	//------------------------------------------------------------------------------------------------
