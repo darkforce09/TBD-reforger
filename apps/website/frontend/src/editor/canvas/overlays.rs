@@ -28,11 +28,49 @@ use crate::editor::mission_editor::transform;
 
 thread_local! {
     static Z_DRAG_READOUT: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
+
+    /// T-946.86 (.82) — the readout's REACTIVE PRESENCE.
+    ///
+    /// The chip below renders inside the gizmo's `move || projected()…` closure, which subscribes
+    /// to the CAMERA. A Z drag moves no camera, so without a signal of its own the chip's closure
+    /// would never re-run and the readout would be written to a cell nothing reads — the same
+    /// shape of dead as the missing call site this ticket repairs, one layer down.
+    ///
+    /// `ArcRwSignal` (not `RwSignal`) for the reason [`crate::editor::mission_editor`]'s
+    /// `TOOLBAR_DISPATCH_GEN` uses one: it is reference-counted and owner-INDEPENDENT, so it lives
+    /// for the process and survives the editor's unmount/remount (a mission switch) instead of
+    /// being disposed under the closure still reading it. Created lazily — an `ArcRwSignal` cannot
+    /// be a `const` initializer.
+    static Z_DRAG_READOUT_GEN: std::cell::RefCell<Option<ArcRwSignal<u32>>> =
+        const { std::cell::RefCell::new(None) };
 }
+
+/// The Z-readout generation signal (see [`Z_DRAG_READOUT_GEN`]), created on first access.
+fn z_drag_readout_generation() -> ArcRwSignal<u32> {
+    Z_DRAG_READOUT_GEN.with(|c| {
+        c.borrow_mut()
+            .get_or_insert_with(|| ArcRwSignal::new(0))
+            .clone()
+    })
+}
+
+/// T-946.86 (.82) — publish the height chip's text (`None` clears it), then bump the generation so
+/// the chip's closure re-runs. Called from the Z-arm drag in `canvas/gestures.rs`: once per
+/// pointermove while the arm is held, and once with `None` on release.
+///
+/// The bump reads the current value UNTRACKED, so writing the readout never subscribes the writer.
 pub(crate) fn set_z_drag_readout(readout: Option<String>) {
     Z_DRAG_READOUT.with(|c| *c.borrow_mut() = readout);
+    let generation = z_drag_readout_generation();
+    generation.set(generation.get_untracked().wrapping_add(1));
 }
+
+/// The chip's text. Reads the GENERATION first and unconditionally, so a caller inside a reactive
+/// closure subscribes even on the run where the readout is `None` — otherwise the first
+/// `set_z_drag_readout` of a drag would have nothing listening and the chip would stay empty for
+/// the whole gesture.
 pub(crate) fn read_z_drag_readout() -> Option<String> {
+    let _ = z_drag_readout_generation().get();
     Z_DRAG_READOUT.with(|c| c.borrow().clone())
 }
 
@@ -216,13 +254,18 @@ pub(crate) fn TransformWidgetOverlay(
                                     x1 = cx - HEAD * 0.7, y1 = cy - crate::editor::canvas::gizmo_z::Z_ARM_LENGTH + HEAD,
                                     x2 = cx + HEAD * 0.7)
                                 class="fill-primary" />
-                            {
+                            // T-946.86 (.82) — a TRACKING closure, not a bare expression. As a bare
+                            // expression this ran once when the gizmo was built, so even after the
+                            // drag started writing the readout the chip would have kept the value
+                            // it was born with (empty). `read_z_drag_readout` subscribes to the
+                            // generation signal, so each `set_z_drag_readout` re-runs this.
+                            {move || {
                                 crate::editor::canvas::overlays::read_z_drag_readout().map(|text| view! {
                                     <text x=move || format!("{:.1}", cx + 15.0) y=move || format!("{:.1}", cy - crate::editor::canvas::gizmo_z::Z_ARM_LENGTH * 0.5) class="fill-primary font-mono text-[11px]">
                                         {text}
                                     </text>
                                 })
-                            }
+                            }}
 
                             <circle cx=move || format!("{cx:.1}") cy=move || format!("{cy:.1}")
                                     r="3" class="fill-primary" />

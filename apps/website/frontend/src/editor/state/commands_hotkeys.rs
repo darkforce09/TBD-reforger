@@ -523,6 +523,31 @@ pub(crate) fn selection_summary_text(entities: &[SelectedEntity]) -> String {
     out
 }
 
+/// T-946.86 (.85) — render the [`crate::editor::state::operations::duplicate_slot_ids`] pairs as
+/// the per-problem lines `save_now` puts in the Save dialog's `findings`, one line per duplicate,
+/// each NAMING THE CALLSIGN AND THE ID. Those two strings are the whole point of the guard: "this
+/// mission has duplicate slot ids" is not actionable, "squad 1-1 lists slot s1 twice" is.
+///
+/// Pure and at file scope — `mod imp` below is `#[cfg(target_arch = "wasm32")]`, so a formatter
+/// defined inside it could not be exercised by `cargo test -p website-frontend`. The wasm caller
+/// and the native pin therefore read the SAME function rather than two that must agree.
+///
+/// The headline is returned beside the rows because `status` is also rendered in the top strip and
+/// has to stay short (the T-181.44 split the 400-handler below already uses).
+fn duplicate_slot_id_report(dups: &[(String, String)]) -> (String, Vec<String>) {
+    let rows: Vec<String> = dups
+        .iter()
+        .map(|(callsign, id)| {
+            format!("Squad {callsign}: slot id \"{id}\" is used more than once in this squad")
+        })
+        .collect();
+    let head = format!(
+        "Save refused — {}",
+        count_noun(rows.len(), "duplicate slot id", "duplicate slot ids")
+    );
+    (head, rows)
+}
+
 #[cfg(target_arch = "wasm32")]
 mod imp {
     use std::cell::RefCell;
@@ -710,6 +735,27 @@ mod imp {
                 auth: ctx.auth,
                 mission_id: ctx.mission_id.clone(),
             })
+        })
+    }
+
+    /// T-946.86 (.85) — the live document's duplicate (callsign, slot id) pairs, or empty when
+    /// there is no editor context yet.
+    ///
+    /// Separate from [`snapshot`] because `Snap` is a VALUE snapshot (JSON strings) and
+    /// [`crate::editor::state::operations::duplicate_slot_ids`] takes the `MissionDocCore` itself —
+    /// it needs `doc.slot_exists`, which the JSON alone cannot answer. Same one-borrow discipline
+    /// as `snapshot`: one `EDITOR_CTX` borrow, released before the caller does anything else.
+    fn live_duplicate_slot_ids() -> Vec<(String, String)> {
+        EDITOR_CTX.with(|c| {
+            let ctx = c.borrow();
+            let Some(ctx) = ctx.as_ref() else {
+                return Vec::new();
+            };
+            let doc = ctx.doc.borrow();
+            let Some(core) = doc.as_ref() else {
+                return Vec::new();
+            };
+            crate::editor::state::operations::duplicate_slot_ids(core)
         })
     }
 
@@ -963,6 +1009,31 @@ mod imp {
             status.set("Editor not ready".to_string());
             return;
         };
+        // ══════ T-946.86 (.85) — REFUSE a document with duplicate slot ids ══════
+        //
+        // `duplicate_slot_ids` shipped in wave 255 with a unit test and NO production caller, so
+        // the check it implements has never run against a real save. This is that call site.
+        //
+        // It sits BEFORE `compile_payload` deliberately: compiling and POSTing a document we
+        // already know the server will reject spends a round trip to learn what is knowable here,
+        // and the server's 400 does not name the squad.
+        //
+        // DIVERGENCE, DELIBERATE AND UNRESOLVED (see the slice report): the UPLOAD path has a
+        // private near-twin, `check_duplicate_slot_ids_in_payload` in `library/mission_library.rs`
+        // (defined :1519, called :1565), which reads `payload.editor.squads[]` JSON. The two do
+        // NOT agree — `state/operations/slot_ids.rs:32` gates each id on `doc.slot_exists(id)` and
+        // the library version does not, so a payload carrying a DANGLING duplicate id is refused
+        // on upload and passes here. Collapsing them onto this function is the right repair;
+        // `mission_library.rs` is outside T-946.86's owns, so the divergence is recorded rather
+        // than silently halved. Do not "fix" one side alone — that would make them disagree in a
+        // NEW way without anything failing.
+        let dups = live_duplicate_slot_ids();
+        if !dups.is_empty() {
+            let (head, rows) = super::duplicate_slot_id_report(&dups);
+            status.set(head);
+            findings.set(rows);
+            return;
+        }
         let payload = compile_payload(&snap.small, &snap.slots, false);
         let body = version_body(&semver, &notes, &payload);
         let auth = snap.auth;

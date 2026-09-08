@@ -75,6 +75,44 @@ pub(crate) fn layer_descendant_slots(layers: &[LayerRow], id: &str) -> Vec<Strin
     out
 }
 
+/// T-946.86 (.83) — every node id BENEATH `id` in the built `OutlinerNode` tree (folders, slots
+/// and comments alike), at any depth. `id` itself is not included.
+///
+/// This is what [`crate::editor::panels::outliner_drag::plan_drop`] asks for: "would this drop put
+/// a dragged row inside its own subtree?". It reads the RENDERED tree rather than `LayerRow`s
+/// because that is what the drop handler already holds (`RowAuthoring::nodes`), and because a
+/// multi-select drag can carry slot and comment rows, which the `parentId` chain in
+/// [`layer_descendant_slots`] does not model as containers.
+///
+/// Unknown `id` → empty, which reads as "nothing is under it", so the planner allows the drop and
+/// the core's own cycle guard remains the backstop. Depth-first, cycle-guarded by construction:
+/// `OutlinerNode` is a tree by ownership, so no `seen` set is needed here.
+#[must_use]
+pub(crate) fn node_descendant_ids(nodes: &[OutlinerNode], id: &str) -> Vec<String> {
+    fn collect(nodes: &[OutlinerNode], out: &mut Vec<String>) {
+        for n in nodes {
+            out.push(n.id.clone());
+            collect(&n.children, out);
+        }
+    }
+    fn find<'a>(nodes: &'a [OutlinerNode], id: &str) -> Option<&'a OutlinerNode> {
+        for n in nodes {
+            if n.id == id {
+                return Some(n);
+            }
+            if let Some(hit) = find(&n.children, id) {
+                return Some(hit);
+            }
+        }
+        None
+    }
+    let mut out = Vec::new();
+    if let Some(node) = find(nodes, id) {
+        collect(&node.children, &mut out);
+    }
+    out
+}
+
 /// SEL-GROUP-ICON-001 — does this folder DIRECTLY contain any slots (vs only sub-folders)?
 /// Drives the distinct folder glyph: a folder holding slots reads differently from a pure
 /// grouping folder. "Directly" = its own `entityIds` is non-empty (a folder whose only content is
@@ -958,6 +996,11 @@ fn single_row(
             let id_down = id.clone();
             let id_up = id.clone();
             let authoring_dnd = authoring.enabled;
+            // T-946.86 (.83) — the drop handler's own read of the row tree, for the
+            // "is the destination inside a dragged row's own subtree?" question `plan_drop` asks.
+            // Captured as the signal (not a snapshot) so the drop sees the tree as it stands at
+            // RELEASE — a drop is decided against what is on screen now, not at arm time.
+            let drop_nodes = authoring.nodes;
             // Hover row actions (rename / delete) — T-666. `group`/`group-hover` reveal them.
             let row_actions = if authoring.enabled {
                 folder_row_actions(
@@ -1055,9 +1098,27 @@ fn single_row(
                     on:pointerup=move |ev: web_sys::PointerEvent| {
                         if authoring_dnd {
                             ev.stop_propagation();
+                            // T-946.86 (.83) — CONSUME the multi-select DragSet armed on
+                            // pointerdown. Before this, `pointerdown` built the whole set into
+                            // `outliner_drag::PENDING_DRAG` and the drop then completed through
+                            // the SINGLE-id latch in `state/operations`, so a five-row drag
+                            // moved one row and the plan was thrown away unread.
+                            //
+                            // The fallback is not decoration: `complete_multi_drop_onto_folder`
+                            // returns false only when NO set was armed — a drag begun by some
+                            // other row kind that still arms the single-id latch — and
+                            // `complete_layer_drop_onto_folder` is the correct completion for
+                            // exactly that case. Whichever runs, the drop is claimed once.
                             #[cfg(target_arch = "wasm32")]
                             {
-                                let _ = crate::editor::state::operations::complete_layer_drop_onto_folder(id_up.clone());
+                                let nodes_now = drop_nodes.get_untracked();
+                                let claimed = crate::editor::panels::outliner_drag::complete_multi_drop_onto_folder(
+                                    &id_up,
+                                    |id| node_descendant_ids(&nodes_now, id),
+                                );
+                                if !claimed {
+                                    let _ = crate::editor::state::operations::complete_layer_drop_onto_folder(id_up.clone());
+                                }
                             }
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &id_up;

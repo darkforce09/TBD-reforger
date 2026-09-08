@@ -43,6 +43,27 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
         doc_tick.update(|n| *n = n.wrapping_add(1));
     };
 
+    // T-946.86 (.84) — the tactical-graphic kind the next draw will carry. Seeded from the core's
+    // own `KINDS` vocabulary rather than a list typed here, for the reason `zone_types()` reads the
+    // schema: a second copy of the vocabulary drifts the moment a kind is added, and `min_points`
+    // (which `begin_tactical_draw` refuses an unknown kind by) is the same core module's function.
+    let tactical_kind = RwSignal::new(
+        map_engine_core::mission::tactical_graphics::KINDS
+            .first()
+            .map_or_else(String::new, |k| (*k).to_string()),
+    );
+
+    // T-946.86 (.84) — THE ARM. Peer of `arm` above, and deliberately the same three lines:
+    // read the kind, press the ops call, bump the tick so the draft block below re-reads.
+    // `begin_tactical_draw` returns false for a kind `tactical_min_points` does not know; the
+    // select can only offer `KINDS`, so a false here means the vocabulary moved underneath us and
+    // the absent draft block is the honest result rather than a silently armed tool.
+    let arm_tactical = move || {
+        let kind = tactical_kind.get_untracked();
+        ops::begin_tactical_draw(&kind);
+        doc_tick.update(|n| *n = n.wrapping_add(1));
+    };
+
     view! {
         <div class="mt-2 flex items-center gap-2">
             <h3 class="text-label-md font-semibold text-on-surface">"Zones"</h3>
@@ -273,6 +294,131 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
             };
             zone_attributes(z, doc_tick, selected).into_any()
         }}
+
+        // ══════ T-946.86 (.84) — TACTICAL GRAPHICS: the arm the draw tool never had ══════
+        //
+        // `begin_tactical_draw` (state/operations/tactical_graphics.rs:188) shipped in wave 255
+        // with ZERO call sites. Everything downstream of the arm was already live — `gestures.rs`
+        // appends a vertex per canvas click, its `oncontextmenu` finishes the draw, `commands.rs`
+        // Esc abandons it — so the tool was complete and unreachable. Its own doc block names the
+        // remedy verbatim: "one call site under `panels/` makes the whole path live". This is it.
+        //
+        // A BUTTON, NOT A KEYBINDING, and that is a constraint rather than a preference: a chord
+        // in `canvas/commands.rs` compiles but reddens `help_modal.rs`'s
+        // `every_binding_has_a_help_entry` (no matching `Shortcut` row) and risks
+        // `no_two_listeners_claim_the_same_chord`. `help_modal.rs` is another slice's this wave.
+        //
+        // It rides in the Zones panel because a control measure is the same KIND of authoring act
+        // as a zone — arm a multi-click draw, click vertices on the map, close it — so the draw
+        // affordances live together and the `arm` closure above is the precedent this copies.
+        <div class="mt-4 border-t border-outline-variant/30 pt-3">
+            <div class="flex items-center gap-2">
+                <h3 class="text-label-md font-semibold text-on-surface">"Tactical graphics"</h3>
+                <span class="font-mono text-code-md text-outline">
+                    {move || {
+                        let _ = doc_tick.get();
+                        ops::tactical_graphic_count()
+                    }}
+                </span>
+            </div>
+            <p class="mt-0.5 text-label-sm normal-case text-outline">
+                "Control measures. Pick a kind, press Draw, then click each vertex on the map. Right-click finishes; Esc abandons."
+            </p>
+            <label class="mt-2 block text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+                "Kind"
+            </label>
+            <select
+                aria-label="Tactical graphic kind to draw"
+                data-testid="tactical-draw-kind"
+                class="mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
+                on:change=move |ev| tactical_kind.set(event_target_value(&ev))
+            >
+                {map_engine_core::mission::tactical_graphics::KINDS
+                    .iter()
+                    .map(|k| {
+                        let k = (*k).to_string();
+                        let label = humanize_token(&k);
+                        let is_sel = k.clone();
+                        view! {
+                            <option value=k.clone() selected=move || tactical_kind.get() == is_sel>
+                                {label}
+                            </option>
+                        }
+                    })
+                    .collect_view()}
+            </select>
+            <button
+                type="button"
+                data-testid="tactical-draw-arm"
+                title="Arm a tactical graphic draw — then click each vertex on the map"
+                class="mt-2 w-full rounded-md border border-primary/40 bg-primary/10 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-primary/20"
+                on:click=move |_| arm_tactical()
+            >
+                "Draw"
+            </button>
+
+            // Live draft state — the same shape the zone draw block above uses, so an armed
+            // tactical draw is as visible as an armed zone draw and cannot be silently in flight.
+            {move || {
+                let _ = doc_tick.get();
+                let Some(d) = ops::tactical_draft() else {
+                    return ().into_any();
+                };
+                let n = d.verts.len();
+                let floor = ops::tactical_min_points(&d.kind).unwrap_or(2);
+                let hint = if n < floor {
+                    format!("{n} of {floor} vertices — {} needs at least {floor}.", humanize_token(&d.kind))
+                } else {
+                    format!("{n} vertices. Right-click on the map to finish.")
+                };
+                view! {
+                    <div
+                        data-testid="tactical-draw-draft"
+                        class="mt-2 rounded-md border border-primary/40 bg-primary/10 p-2"
+                    >
+                        <p class="text-label-sm normal-case text-on-surface">
+                            {format!("Drawing {}", humanize_token(&d.kind))}
+                        </p>
+                        <p class="mt-0.5 text-label-sm normal-case text-outline">{hint}</p>
+                        <div class="mt-1.5 flex gap-1.5">
+                            <button
+                                type="button"
+                                disabled=n < floor
+                                class="rounded-md bg-primary/25 px-2 py-1 text-label-sm text-on-surface transition-colors hover:bg-primary/40 disabled:opacity-30 disabled:hover:bg-primary/25"
+                                on:click=move |_| {
+                                    ops::complete_tactical_draw();
+                                    doc_tick.update(|n| *n = n.wrapping_add(1));
+                                }
+                            >
+                                "Finish"
+                            </button>
+                            <button
+                                type="button"
+                                disabled=n == 0
+                                class="rounded-md px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 disabled:opacity-30"
+                                on:click=move |_| {
+                                    ops::tactical_draw_pop_vertex();
+                                    doc_tick.update(|n| *n = n.wrapping_add(1));
+                                }
+                            >
+                                "Undo vertex"
+                            </button>
+                            <button
+                                type="button"
+                                class="rounded-md px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10"
+                                on:click=move |_| {
+                                    ops::cancel_tactical_draw();
+                                    doc_tick.update(|n| *n = n.wrapping_add(1));
+                                }
+                            >
+                                "Cancel"
+                            </button>
+                        </div>
+                    </div>
+                }
+                    .into_any()
+            }}
+        </div>
     }
     .into_any()
 }
