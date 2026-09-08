@@ -80,12 +80,16 @@ citations = [
     "commands_hotkeys.rs:955",
 ]
 owns = [
+    "apps/website/frontend/Cargo.toml",
+    "apps/website/frontend/src/editor/canvas/gizmo_z.rs",
     "apps/website/frontend/src/editor/canvas/gestures.rs",
     "apps/website/frontend/src/editor/canvas/overlays.rs",
     "apps/website/frontend/src/editor/panels/outliner_tree.rs",
     "apps/website/frontend/src/editor/panels/outliner_drag.rs",
     "apps/website/frontend/src/editor/panels/zones_panel.rs",
     "apps/website/frontend/src/editor/state/commands_hotkeys.rs",
+    "tools/tbd-tools/src/smokes.rs",
+    "tools/tbd-tools/src/smokes/t946_86.rs",
 ]
 
 [scope]
