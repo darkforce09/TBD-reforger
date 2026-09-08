@@ -74,6 +74,62 @@ pub(crate) fn read_z_drag_readout() -> Option<String> {
     Z_DRAG_READOUT.with(|c| c.borrow().clone())
 }
 
+/* ─── T-946.86 (.82) — the Z-arm gesture's arithmetic ───────────────────────────────────────────
+ *
+ * These two live HERE, beside the readout they feed, and NOT in `canvas/gestures.rs` where they
+ * are called, for one hard reason: `canvas/mod.rs` declares `gestures` under
+ * `#[cfg(target_arch = "wasm32")]`, so a `#[cfg(test)]` module inside that file NEVER COMPILES on
+ * the native `cargo test -p website-frontend` harness. Pins written there are dead on arrival —
+ * which is the same defect class this ticket exists to repair, one level down, and it was caught
+ * only because the suite's test COUNT did not move when seven pins were added.
+ *
+ * `overlays` is ungated (see the module note above), so the pins at the bottom of this file both
+ * run and can `include_str!("gestures.rs")` — same directory — to scrub the live gesture source.
+ */
+
+/// T-946.86 (.82) — the Z-arm gesture's ONE piece of arithmetic: cursor travel in CSS pixels →
+/// SNAPPED metres of elevation change.
+///
+/// Pure and at file scope so the preview (`onpointermove`) and the commit (`onpointerup`) call the
+/// SAME function. Two copies of "pixels to metres" is the third-vocabulary defect class the
+/// `keep_z_rows`/`slot_z` note in `state/operations/attrs.rs` names — here it would be worse than
+/// untidy, because a preview that disagrees with its own commit shows the operator one number and
+/// stores another.
+///
+/// The math itself belongs to `canvas/gizmo_z.rs` and is not restated: [`gizmo_z::dy_to_elevation`]
+/// inverts the screen axis (up is +Z) and [`gizmo_z::snap_elevation`] quantises. This function
+/// only guards the divisor — a non-finite or non-positive `scale` (a degenerate camera) would make
+/// `-dy / scale` infinite, and an infinite elevation reaches the document as a `null` that the
+/// schema rejects at save time, a long way from the drag that caused it.
+///
+/// `step` is the TRANSLATE ladder rung in metres: a Z drag is a translation along the third axis,
+/// so it obeys the operator's existing translate snap rather than a fourth vocabulary. Step `0.0`
+/// (rung OFF, or the grid master latch off) passes the value through, which is `snap_elevation`'s
+/// own contract — "no snap" needs no special case at either call site.
+pub(crate) fn z_drag_elevation_delta(py: f64, start_y: f64, scale: f64, step: f64) -> f64 {
+    let scale = if scale.is_finite() && scale > 0.0 {
+        scale
+    } else {
+        1.0
+    };
+    let raw = crate::editor::canvas::gizmo_z::dy_to_elevation(py - start_y, scale);
+    if !raw.is_finite() {
+        return 0.0;
+    }
+    crate::editor::canvas::gizmo_z::snap_elevation(raw, step)
+}
+
+/// T-946.86 (.82) — the translate-ladder rung, in metres, that [`z_drag_elevation_delta`] snaps to.
+/// Reads the snap state UNTRACKED: this runs inside a pointer closure, not a reactive scope, and a
+/// tracked read there would subscribe nothing and merely cost a lookup.
+pub(crate) fn z_drag_snap_step(snap: RwSignal<transform::SnapState>) -> f64 {
+    let rung = snap.get_untracked().effective_translate_rung();
+    transform::TRANSLATE_LADDER_M
+        .get(rung)
+        .copied()
+        .unwrap_or(0.0)
+}
+
 #[cfg(target_arch = "wasm32")]
 use crate::editor::state::hydrate as mission_hydrate;
 #[cfg(target_arch = "wasm32")]
@@ -1064,5 +1120,168 @@ pub(crate) fn ConflictDialog(
                 </div>
             }
         })
+    }
+}
+
+// ── TESTS LAST. `class_r_scrub::live_source` cuts from the FIRST `#[cfg(test)]` to EOF, so every
+//    production item in this file must stay above this line. The module note at the top of this
+//    file said `overlays.rs` "deliberately carries no `#[cfg(test)]`" — it does now, and the
+//    guarantee that note relied on is unchanged BECAUSE this module is last: the evacuated
+//    definition pins (`t647_placement_interactions`, `t726_window_esc_stack`) scrub everything
+//    above it, which is all of the production source. Do not add production items below this line.
+//
+//    These pins scrub `canvas/gestures.rs` from HERE rather than from inside it: `canvas/mod.rs`
+//    gates `gestures` on `target_arch = "wasm32"`, so a test module in that file never compiles
+//    natively and never runs. That is the wave-255 defect class wearing a test's clothes, and it
+//    is why the `z_drag_elevation_delta` helper it exercises lives in this file too.
+#[cfg(test)]
+mod t946_86_z_arm {
+    use crate::editor::arsenal::class_r_scrub::live_code;
+    use crate::editor::canvas::overlays::z_drag_elevation_delta;
+
+    /// The GESTURE file's LIVE source — comments stripped, string/char literals blanked, test modules
+    /// (including this one) cut. Every needle below is therefore a real call in shipped code, not
+    /// a reassuring note about one, which is the whole failure mode T-946.86 exists to repair:
+    /// wave 255 shipped `z_drag` written-and-never-read with a doc block describing the wiring.
+    fn live() -> String {
+        live_code(include_str!("gestures.rs"))
+    }
+
+    /// **The arm is READ, not merely written.** The wave-255 defect verbatim: `z_drag` had exactly
+    /// four occurrences — the declaration, two closure clones, and the pointerdown write — and
+    /// neither closure body ever borrowed it, so the Z arm armed and then did nothing at all.
+    ///
+    /// PERTURB: delete either borrow and this goes RED.
+    #[test]
+    fn the_z_arm_is_borrowed_by_both_pointer_closures() {
+        let src = live();
+        assert!(
+            src.contains("z_drag.borrow()"),
+            "T-946.86 (.82): onpointermove must BORROW the armed z_drag — writing it at \
+             pointerdown and never reading it is the wave-255 defect this repairs"
+        );
+        assert!(
+            src.contains("z_drag.borrow_mut().take()"),
+            "T-946.86 (.82): onpointerup must TAKE the arm — leaving it latched strands the next \
+             gesture behind a drag that already ended"
+        );
+    }
+
+    /// **The readout writer is called.** `set_z_drag_readout` shipped with zero callers while its
+    /// reader was already wired into the gizmo chip, so the chip rendered and could never be
+    /// populated. Both halves are pinned: the call, and the tracking closure at the render site
+    /// (a bare expression there would run once and never re-read the value the drag writes).
+    #[test]
+    fn the_height_chip_is_written_and_its_render_site_tracks() {
+        let src = live();
+        assert!(
+            src.contains("set_z_drag_readout(Some("),
+            "T-946.86 (.82): the drag must publish the height readout — a reader with no writer \
+             is a chip that can never populate"
+        );
+        assert!(
+            src.contains("set_z_drag_readout(None)"),
+            "T-946.86 (.82): the release must clear the readout, or the chip keeps the last \
+             drag's height after the gesture is over"
+        );
+        let overlays = live_code(include_str!("overlays.rs"));
+        assert!(
+            overlays.contains("{move || {") && overlays.contains("read_z_drag_readout()"),
+            "T-946.86 (.82): the chip's render site must be a TRACKING closure — as a bare \
+             expression it is evaluated once, when the value is still None"
+        );
+    }
+
+    /// **The capture this arm takes is the capture this arm releases.** `onpointerdown` calls
+    /// `set_pointer_capture` on the Z arm and none of the file's other releases belonged to it, so
+    /// the container held the pointer after the drag ended and every later click was retargeted.
+    ///
+    /// The release is pinned as sitting BEFORE the commit: a release that only runs on the
+    /// success path strands the capture on every no-travel click of the arm.
+    #[test]
+    fn the_z_arm_releases_the_pointer_capture_before_it_commits() {
+        let src = live();
+        let at_take = src
+            .find("z_drag.borrow_mut().take()")
+            .expect("the pointerup arm is present");
+        let after = &src[at_take..];
+        let at_release = after
+            .find("release_pointer_capture")
+            .expect("T-946.86 (.82): the Z-arm release must release the capture it took");
+        let at_commit = after
+            .find("core.move_entities(")
+            .expect("T-946.86 (.82): the Z-arm release must commit the elevation");
+        assert!(
+            at_release < at_commit,
+            "T-946.86 (.82): release the capture BEFORE the commit — a release reached only when \
+             the document accepts the edit strands the pointer on every no-travel click"
+        );
+    }
+
+    /// **The commit is ONE transaction carrying a PER-SLOT z.** `move_entities` writes `zs[i]`
+    /// verbatim onto `ids[i]`, so the vector must be built from the very `slot_ids` handed to it —
+    /// a mismatched zip would give each slot a neighbour's elevation, which is worse than the
+    /// no-op this replaces.
+    #[test]
+    fn the_z_commit_is_one_txn_with_per_slot_elevations() {
+        let src = live();
+        let flat: String = src.chars().filter(|c| !c.is_whitespace()).collect();
+        assert!(
+            flat.contains("core.move_entities(slot_ids,0.0,0.0,zs)"),
+            "T-946.86 (.82): the Z commit is a z-only translate — dx/dy 0.0, one txn, one Ctrl+Z"
+        );
+        assert!(
+            flat.contains("slot_ids.iter().enumerate().map("),
+            "T-946.86 (.82): `zs` must be built by mapping over `slot_ids` ITSELF, in order — \
+             that is what pins zs[i] to slot_ids[i]"
+        );
+    }
+
+    /// The preview and the commit must resolve the SAME number from the same inputs. Two copies of
+    /// "pixels to metres" would show the operator one height and store another; both call sites
+    /// therefore go through `z_drag_elevation_delta`, and there are exactly two of them.
+    #[test]
+    fn the_preview_and_the_commit_share_one_arithmetic() {
+        let src = live();
+        let calls = src.matches("z_drag_elevation_delta(").count();
+        assert_eq!(
+            calls, 2,
+            "T-946.86 (.82): the gesture file must carry exactly two call sites — the preview and \
+             the commit — found {calls}. A third would be a second vocabulary; one means a call \
+             site was lost, and the preview would then show a height the commit does not store"
+        );
+        assert_eq!(
+            src.matches("ov::z_drag_snap_step(").count(),
+            2,
+            "T-946.86 (.82): both call sites must resolve the snap rung the same way"
+        );
+    }
+
+    /// Up is +Z, and the ladder quantises. `dy_to_elevation` inverts the screen axis (`-dy/scale`)
+    /// and `snap_elevation` rounds to the rung; step `0.0` is passthrough.
+    #[test]
+    fn dragging_up_raises_and_the_rung_quantises() {
+        // 20 px up at 2 px/m = 10 m up, unsnapped.
+        assert_eq!(z_drag_elevation_delta(80.0, 100.0, 2.0, 0.0), 10.0);
+        // Down is negative.
+        assert_eq!(z_drag_elevation_delta(120.0, 100.0, 2.0, 0.0), -10.0);
+        // 11 m of travel on the 5 m rung rounds to 10.
+        assert_eq!(z_drag_elevation_delta(78.0, 100.0, 2.0, 5.0), 10.0);
+        // No travel is no change, on any rung.
+        assert_eq!(z_drag_elevation_delta(100.0, 100.0, 2.0, 5.0), 0.0);
+    }
+
+    /// A degenerate camera must not reach the document. `-dy / 0.0` is infinite, and an infinite
+    /// elevation lands as a JSON `null` the schema rejects at SAVE time — a long way from the drag
+    /// that caused it, which is the kind of distance that makes a defect expensive.
+    #[test]
+    fn a_degenerate_camera_scale_cannot_produce_an_infinite_elevation() {
+        for scale in [0.0, -1.0, f64::NAN, f64::INFINITY] {
+            let d = z_drag_elevation_delta(80.0, 100.0, scale, 0.0);
+            assert!(
+                d.is_finite(),
+                "T-946.86 (.82): scale {scale} produced a non-finite elevation ({d})"
+            );
+        }
     }
 }
