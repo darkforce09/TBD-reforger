@@ -24,6 +24,8 @@ context = [
     "Independent screenshot review found broken vehicle profile images. Failed image loads must use the existing missing-image fallback, preserve vehicle data, and reset correctly when selection changes.",
     "Mission Library hero, cards, and dossier also need a deterministic fallback when stored or placeholder artwork fails. Preserve valid artwork, URL safety, and layout dimensions.",
     "The populated Event Schedule clips its inline hub hero through flex shrinking. Measure and repair the hero locally; preserve standalone hub layout and shared SplitPane behavior.",
+    "A delayed CMS request proved capture can stabilize on loading before data arrives. The actual accept and verify capture path must require completed requests and loaded consumers.",
+    "Keep route definitions, serializer, structural diff, frozen clock, viewport, and authentication semantics unchanged. Repair only readiness and explicit fixture or dispatch failure propagation.",
     "Accept only independently reviewed intentional shipped visual divergences through per-route accept, preserving React references and specific provenance. Never bless error UI or blanket rebaseline.",
 ]
 requirement = [
@@ -49,6 +51,8 @@ acceptance = [
     "Right-clicking a multi-selection shows an Arrange submenu whose entries match the top-strip menu.",
     "Each Arrange chord performs the same operation as its menu entry and appears in the help modal.",
     "With a single entity selected the submenu is hidden and the chords are inert.",
+    "Visual capture waits for required non-streaming data and loaded consumers within a bounded timeout; missing or malformed fixtures and dispatch failures produce errors.",
+    "Actual capture-path tests reject loading and error snapshots, including delayed CMS, missing fixtures and malformed payloads; cached Server Intel explicitly excludes live-stream proof.",
 ]
 depends_on = ["T-939.1"]
 created_at = "2026-09-05T02:33:18Z"
@@ -65,6 +69,8 @@ owns = [
     "apps/website/frontend/tests/fixtures/api/GET__admin__leave-requests.json",
     "apps/website/frontend/tests/fixtures/api/GET__missions__00000000-0000-4000-c000-000000000004.json",
     "apps/website/frontend/tests/fixtures/api/GET__missions__00000000-0000-4000-c000-000000000005.json",
+    "tools/tbd-tools/src/vsuite.rs",
+    "tools/tbd-tools/src/vsuite/",
     "tools/tbd-tools/fixtures/t159/oracle-freeze/",
 ]
 
