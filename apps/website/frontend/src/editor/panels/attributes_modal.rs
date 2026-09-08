@@ -250,6 +250,90 @@ pub(crate) fn attrs_multi_subtitle(slot_n: usize, selection_n: usize) -> String 
     }
 }
 
+/* ══════════════ T-939.2 — batch faction / squad reassign: the pure decision ══════════════ */
+
+/// How a faction reads in the picker and in a refusal: `name (KEY)`, because both halves carry
+/// information the operator needs and neither is reliably present. `key` is the side (`BLUFOR`)
+/// the compiled document and the derived slot side key are written in; `name` is what the mission
+/// author called it ("US Army"). Falling back through name → key → id means a faction row missing
+/// either field still names itself rather than rendering as an empty option.
+#[must_use]
+pub fn faction_label(f: &crate::editor::panels::outliner::FactionRow) -> String {
+    match (f.name.trim(), f.key.trim()) {
+        ("", "") => f.id.clone(),
+        ("", key) => key.to_string(),
+        (name, "") => name.to_string(),
+        (name, key) if name == key => name.to_string(),
+        (name, key) => format!("{name} ({key})"),
+    }
+}
+
+/// T-939.2 — resolve the modal's (faction, squad) pick to a **destination squad id**, or a NAMED
+/// refusal. An empty `squad_id` means "this faction, its first squad" — the faction selector's own
+/// commit, which is what makes picking a faction move the whole selection in one gesture.
+///
+/// Pure, and deliberately outside the `wasm32` block: the `axis_chip_class` / `nudge_step`
+/// precedent. The refusal strings are the user-visible half of requirement 4, and a message that
+/// only a source pin ever reads is a message nobody has proved the modal can produce — here
+/// `cargo test` calls the real function and reads the real sentence.
+///
+/// **Why the cross-faction arm exists at all**, given the squad `<select>` only ever lists the
+/// chosen faction's own squads: the modal is a live view over a `yrs` document. It re-reads on
+/// every `doc_tick`, and between the render that built the option list and the `change` event that
+/// commits it, an undo, a peer, or the Outliner can have re-filed that squad under another faction
+/// or deleted it. Moving the selection somewhere the operator did not choose is the wrong answer
+/// to that race; naming what changed is the right one.
+///
+/// The refusal names the squad and **both** factions, not merely "wrong faction": the operator is
+/// looking at a dialog that shows one faction and a squad list, and the useful sentence is which
+/// faction actually owns that squad.
+#[must_use]
+pub fn plan_reassign(
+    factions: &[crate::editor::panels::outliner::FactionRow],
+    squads: &[crate::editor::panels::outliner::SquadRow],
+    faction_id: &str,
+    squad_id: &str,
+) -> Result<String, String> {
+    let Some(faction) = factions.iter().find(|f| f.id == faction_id) else {
+        return Err(format!(
+            "That faction ({faction_id}) is no longer in this mission — reopen Attributes."
+        ));
+    };
+    let picked = faction_label(faction);
+    if squad_id.is_empty() {
+        // Faction-only pick: the faction's FIRST live squad, in `faction.squadIds` order, so the
+        // destination matches what the Outliner shows at the top of that faction.
+        return faction
+            .squad_ids
+            .iter()
+            .find(|sid| squads.iter().any(|s| &&s.id == sid))
+            .cloned()
+            .ok_or_else(|| {
+                format!("{picked} has no squads yet — add one in the ORBAT dock, then reassign.")
+            });
+    }
+    let Some(squad) = squads.iter().find(|s| s.id == squad_id) else {
+        return Err(format!(
+            "That squad ({squad_id}) is no longer in this mission — reopen Attributes."
+        ));
+    };
+    if squad.faction_id != faction_id {
+        let owner = factions
+            .iter()
+            .find(|f| f.id == squad.faction_id)
+            .map_or_else(|| squad.faction_id.clone(), faction_label);
+        let name = if squad.name.trim().is_empty() {
+            squad.id.clone()
+        } else {
+            squad.name.clone()
+        };
+        return Err(format!(
+            "Squad {name} belongs to {owner}, not {picked} — pick a squad under {picked}, or switch the faction first."
+        ));
+    }
+    Ok(squad.id.clone())
+}
+
 /// The modal host. Renders nothing while closed (`attrs_open == None`) — V-capture-safe like the
 /// suite Dialog. `doc_ver` is the re-read trigger (the doc has no change subscription).
 #[component]
@@ -1423,11 +1507,7 @@ fn transform_tab(
     // everything else stays the pre-T-649 always-live field with no checkbox.
     let g = move |differs: bool, latch| {
         let base = Gate::maybe(is_multi && differs, latch);
-        if all_locked {
-            base.refused()
-        } else {
-            base
-        }
+        if all_locked { base.refused() } else { base }
     };
     // Stance is NOT a transform in the core's sense — `update_slot` carries no lock check — so it
     // stays live on a locked slot. Gating it here would invent a refusal the core does not make.
@@ -1861,15 +1941,14 @@ fn identity_tab(
 ) -> impl IntoView {
     let a = attrs.get_value();
     let g = |differs: bool, latch| Gate::maybe(is_multi && differs, latch);
-    // Squad is READ-ONLY here, so it has no gate and no checkbox — but under a multi-selection it
-    // must not display the first slot's squad as if it were the group's.
-    let squad = if is_multi {
-        format!("{} entities", targets.get_value().len())
-    } else if a.squad.is_empty() {
-        "—".to_string()
-    } else {
-        a.squad.clone()
-    };
+    // T-939.2 — Squad used to be an inert read-only div here ("{n} entities" under a
+    // multi-selection, the raw `squadId` otherwise), so moving a slot between squads — let alone
+    // between factions — was unreachable from this modal at any selection size. It is now the
+    // two-control `reassign_picker` below, and it has NO per-field gate/checkbox on purpose: the
+    // T-649 gate exists for columns a blind multi-edit could overwrite with the first slot's value,
+    // and this control never shows a value it did not compute over the whole target set (a mixed
+    // selection reads "Mixed", not slot[0]'s squad). Picking is the opt-in.
+    let _ = is_multi;
     view! {
         <div class="flex flex-col gap-4">
             // T-082 ATTR-FIELD-OBJ-TYPE / T-810 (F-23 a). The entity TYPE — the slot's `assetId`, the
@@ -1921,12 +2000,204 @@ fn identity_tab(
                 g(diff.tag, opts.tag),
                 move |tag| commit_slot(targets, None, Some(tag), None, None, None),
             )}
+            {reassign_picker(targets)}
+        </div>
+    }
+}
+
+/// T-939.2 — the Attributes modal's **faction selector + squad picker**, both acting on the WHOLE
+/// selection in one undo group.
+///
+/// # Why there is no local "picked faction" signal
+///
+/// Both `<select>`s read their current value out of the document, and the faction one COMMITS on
+/// change (to that faction's first squad) rather than merely arming the squad list. That is the
+/// acceptance — "selecting five slots and choosing another faction moves all five" — and it is also
+/// what keeps this control stateless: the commit bumps `doc_tick`, the modal body re-renders, and
+/// the selects re-read. A `RwSignal` holding the pick would have to be minted on the component
+/// (the T-649 `MultiOpts` lesson: a latch minted inside the render closure un-ticks itself the
+/// instant its own commit lands), and there is nothing here that needs to survive a render.
+///
+/// The one signal that does exist, `refusal`, holds the named reason from a rejected pick. It is
+/// per-render on purpose: a refusal changes no document state, so no re-render wipes it, and the
+/// next SUCCESSFUL move does — which is exactly when the message stops being true.
+///
+/// # What "Mixed" means
+///
+/// Under a multi-selection whose slots do not all sit in the same squad (or faction), the select
+/// shows a `Mixed` placeholder rather than the first slot's value. Showing slot[0]'s squad as if it
+/// were the group's is the defect this replaces, one layer down.
+#[cfg(target_arch = "wasm32")]
+fn reassign_picker(targets: StoredValue<Vec<String>>) -> impl IntoView {
+    use crate::editor::state::operations as ops;
+
+    let (factions, squads) = ops::reassign_rows();
+    // Deterministic faction order, the same `id` sort `build_orbat` uses, so the dropdown and the
+    // Outliner list factions in the same order.
+    let mut ordered = factions.clone();
+    ordered.sort_by(|a, b| a.id.cmp(&b.id));
+
+    // The selection's current squads and factions, over the whole target set.
+    let ids = targets.get_value();
+    let squad_of = |id: &str| {
+        ops::read_attrs(id)
+            .map(|a| a.squad)
+            .filter(|s| !s.is_empty())
+    };
+    let current_squads: Vec<String> = ids.iter().filter_map(|id| squad_of(id)).collect();
+    let one_squad = current_squads
+        .first()
+        .filter(|first| {
+            current_squads.len() == ids.len() && current_squads.iter().all(|s| &s == first)
+        })
+        .cloned()
+        .unwrap_or_default();
+    let faction_of = |sid: &String| {
+        squads
+            .iter()
+            .find(|s| &s.id == sid)
+            .map(|s| s.faction_id.clone())
+            .unwrap_or_default()
+    };
+    let current_factions: Vec<String> = current_squads.iter().map(faction_of).collect();
+    let one_faction = current_factions
+        .first()
+        .filter(|first| {
+            current_factions.len() == ids.len() && current_factions.iter().all(|f| &f == first)
+        })
+        .cloned()
+        .unwrap_or_default();
+
+    // The squad list follows the DISPLAYED faction; with a mixed selection there is no one faction
+    // to list, so the operator picks a faction first and the squad list fills in on the re-render.
+    let listed_faction = one_faction.clone();
+    let squad_options: Vec<(String, String)> = ordered
+        .iter()
+        .find(|f| f.id == listed_faction)
+        .map(|f| {
+            f.squad_ids
+                .iter()
+                .filter_map(|sid| squads.iter().find(|s| &s.id == sid))
+                .map(|s| {
+                    let name = if s.name.trim().is_empty() {
+                        s.id.clone()
+                    } else {
+                        s.name.clone()
+                    };
+                    (s.id.clone(), format!("{name} ({})", s.slot_ids.len()))
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let no_squads = squad_options.is_empty();
+    let refusal = RwSignal::new(String::new());
+    let n = ids.len();
+    // One commit seam for both controls: the faction select passes an empty squad id ("this
+    // faction, its first squad"), the squad select names one. Everything else — the refusal, the
+    // undo group, the keep-source core path — is identical, so the two controls can never disagree
+    // about what a reassign is.
+    let commit = move |faction_id: String, squad_id: String| {
+        let target = ops::ReassignTarget {
+            faction_id,
+            squad_id,
+        };
+        match ops::reassign_slots(&targets.get_value(), &target) {
+            Ok(_) => refusal.set(String::new()),
+            Err(reason) => refusal.set(reason),
+        }
+    };
+    let commit_faction = commit;
+    let commit_squad = commit;
+    let faction_for_squad = one_faction.clone();
+
+    view! {
+        <div class="flex flex-col gap-3">
+            <label class="flex flex-col gap-1">
+                <span class="text-label-sm uppercase tracking-wider text-outline">"Faction"</span>
+                <select
+                    aria-label="Faction"
+                    class=CONTROL
+                    prop:value=one_faction.clone()
+                    on:change=move |ev| {
+                        let picked = event_target_value(&ev);
+                        if !picked.is_empty() {
+                            commit_faction(picked, String::new());
+                        }
+                    }
+                >
+                    // The mixed / unfiled placeholder is only ever a READ: picking it is not a
+                    // destination, so it commits nothing (the `is_empty` guard above).
+                    <option value="" selected=one_faction.is_empty()>
+                        {if n > 1 { "Mixed — pick a faction to move all" } else { "Unfiled" }}
+                    </option>
+                    {ordered
+                        .iter()
+                        .map(|f| {
+                            let sel = f.id == one_faction;
+                            view! {
+                                <option value=f.id.clone() selected=sel>
+                                    {faction_label(f)}
+                                </option>
+                            }
+                        })
+                        .collect_view()}
+                </select>
+            </label>
             <label class="flex flex-col gap-1">
                 <span class="text-label-sm uppercase tracking-wider text-outline">"Squad"</span>
-                <div class="rounded-md border border-outline-variant/20 bg-surface-container-lowest/30 px-2.5 py-1.5 font-mono text-code-md text-on-surface-variant">
-                    {squad}
-                </div>
+                <select
+                    aria-label="Squad"
+                    class=CONTROL
+                    prop:value=one_squad.clone()
+                    disabled=no_squads
+                    on:change=move |ev| {
+                        let picked = event_target_value(&ev);
+                        if !picked.is_empty() {
+                            commit_squad(faction_for_squad.clone(), picked);
+                        }
+                    }
+                >
+                    <option value="" selected=one_squad.is_empty()>
+                        {if no_squads {
+                            "No squads under this faction"
+                        } else if n > 1 {
+                            "Mixed — pick a squad to move all"
+                        } else {
+                            "Unfiled"
+                        }}
+                    </option>
+                    {squad_options
+                        .into_iter()
+                        .map(|(id, label)| {
+                            let sel = id == one_squad;
+                            view! { <option value=id selected=sel>{label}</option> }
+                        })
+                        .collect_view()}
+                </select>
             </label>
+            // Requirement 4 — the named reason, in the modal, where the pick was made.
+            {move || {
+                let why = refusal.get();
+                (!why.is_empty())
+                    .then(|| {
+                        view! {
+                            <p
+                                role="alert"
+                                class="rounded-md border border-error/40 bg-error/10 px-2.5 py-1.5 text-label-sm normal-case text-error"
+                            >
+                                {why}
+                            </p>
+                        }
+                    })
+            }}
+            <p class="text-label-sm normal-case text-outline">
+                {if n > 1 {
+                    format!("Applies to all {n} selected entities, as one undo step.")
+                } else {
+                    "Moving a slot out never deletes the squad it left.".to_string()
+                }}
+            </p>
         </div>
     }
 }
@@ -3089,7 +3360,9 @@ mod tests {
         let host = only_body(&src, "pub fn AttributesModal(");
         // (1) Assignment, not a dead call — hollow B (`let _ = attrs_selection_len(); let selection_n = multi.len()`) RED.
         assert!(
-            host.contains("let selection_n = crate::editor::state::operations::attrs_selection_len()"),
+            host.contains(
+                "let selection_n = crate::editor::state::operations::attrs_selection_len()"
+            ),
             "AttributesModal must bind `let selection_n = crate::editor::state::operations::attrs_selection_len()` (not a discarded call); body was:\n{host}"
         );
         // (2) That binding must be the modal_view selection-length argument — hollow B2
@@ -3492,18 +3765,185 @@ mod t810_type_picker_revert_axes {
     }
 }
 
-/// T-939.2 — batch faction / squad reassign from the Attributes modal.
+/// T-939.2 — batch faction / squad reassign: a faction selector and an editable squad picker that
+/// act on the whole selection in one undo group.
+///
+/// Pinned two ways, on purpose:
+///
+///   * the **decision** ([`super::plan_reassign`], [`super::faction_label`]) is pure and native, so
+///     these tests CALL it — the `axis_chip_class` / `nudge_step` precedent. The refusal reasons are
+///     user-visible copy, and a sentence only a source pin ever reads is a sentence nobody has
+///     proved the modal can produce;
+///   * the **wiring** is a `view!` tree over `web_sys` nodes that `cargo test` cannot instantiate,
+///     so it is pinned against the SCRUBBED live source of the two files that carry it — this one
+///     and `state/operations/reassign.rs`.
+///
+/// The doc-level behaviour — the emptied source squad keeping its row, its attached vehicles and
+/// its place in `faction.squadIds`, and the derived side key following the move — is native and
+/// lives with the primitive it exercises, in `store.rs`'s own test module
+/// (`move_slot_to_squad_keep_source_keeps_the_emptied_squad_its_vehicles_and_its_position`,
+/// `keep_source_move_carries_the_derived_side_key_across_factions`, and the additive-proof
+/// `the_default_move_slot_to_squad_still_garbage_collects_an_emptied_source`).
 #[cfg(test)]
 mod t939_2_batch_reassign {
+    use super::{faction_label, plan_reassign};
     use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::editor::panels::outliner::{FactionRow, SquadRow};
+
+    const REASSIGN_RS: &str = include_str!("../state/operations/reassign.rs");
+
+    /// Two factions, three squads: Alpha and Charlie under BLUFOR, Bravo under OPFOR. Bravo is the
+    /// cross-faction pick; `faction-EMPTY` is the faction with nowhere to put anyone.
+    fn rows() -> (Vec<FactionRow>, Vec<SquadRow>) {
+        let squad = |id: &str, name: &str, faction: &str| SquadRow {
+            id: id.to_string(),
+            name: name.to_string(),
+            faction_id: faction.to_string(),
+            slot_ids: vec!["s1".to_string()],
+            leader_slot_id: String::new(),
+            vehicle_ids: Vec::new(),
+        };
+        (
+            vec![
+                FactionRow {
+                    id: "faction-BLUFOR".to_string(),
+                    key: "BLUFOR".to_string(),
+                    name: "US Army".to_string(),
+                    squad_ids: vec!["sq-a".to_string(), "sq-c".to_string()],
+                },
+                FactionRow {
+                    id: "faction-OPFOR".to_string(),
+                    key: "OPFOR".to_string(),
+                    name: "Soviet Army".to_string(),
+                    squad_ids: vec!["sq-b".to_string()],
+                },
+                FactionRow {
+                    id: "faction-EMPTY".to_string(),
+                    key: "INDFOR".to_string(),
+                    name: "Militia".to_string(),
+                    squad_ids: Vec::new(),
+                },
+            ],
+            vec![
+                squad("sq-a", "Alpha", "faction-BLUFOR"),
+                squad("sq-b", "Bravo", "faction-OPFOR"),
+                squad("sq-c", "Charlie", "faction-BLUFOR"),
+            ],
+        )
+    }
+
+    /* ─────────────────────────── the decision, called ─────────────────────────── */
+
+    /// REQUIREMENT 4 — a squad of another faction is refused with a NAMED reason. Both faction
+    /// names and the squad name must be in the sentence: an operator looking at a dialog that says
+    /// "US Army" needs to be told the squad they picked is the Soviets', not merely that something
+    /// was wrong.
+    #[test]
+    fn a_squad_of_another_faction_is_refused_and_the_reason_names_squad_and_both_factions() {
+        let (factions, squads) = rows();
+        let why = plan_reassign(&factions, &squads, "faction-BLUFOR", "sq-b")
+            .expect_err("a squad under OPFOR must be refused for a BLUFOR pick");
+        for needle in ["Bravo", "Soviet Army", "OPFOR", "US Army", "BLUFOR"] {
+            assert!(
+                why.contains(needle),
+                "T-939.2: the refusal must name {needle}; got: {why}"
+            );
+        }
+        // And it must be a refusal, not a silent redirect: no destination comes back.
+        assert!(plan_reassign(&factions, &squads, "faction-BLUFOR", "sq-b").is_err());
+    }
+
+    /// The same-faction pick is NOT refused — the guard above must be about the faction, not about
+    /// naming a squad at all.
+    #[test]
+    fn a_squad_of_the_picked_faction_resolves_to_itself() {
+        let (factions, squads) = rows();
+        assert_eq!(
+            plan_reassign(&factions, &squads, "faction-BLUFOR", "sq-c"),
+            Ok("sq-c".to_string())
+        );
+    }
+
+    /// The FACTION selector's own commit: an empty squad id means "this faction, its first squad",
+    /// in `faction.squadIds` order — so choosing a faction moves the whole selection under it
+    /// without a second gesture, and lands where the Outliner shows that faction's first squad.
+    #[test]
+    fn picking_a_faction_alone_resolves_to_that_factions_first_squad_in_doc_order() {
+        let (mut factions, squads) = rows();
+        assert_eq!(
+            plan_reassign(&factions, &squads, "faction-BLUFOR", ""),
+            Ok("sq-a".to_string())
+        );
+        // Doc ORDER, not id order and not insertion order into `squads`: reversing the faction's
+        // own `squadIds` must change the answer.
+        factions[0].squad_ids = vec!["sq-c".to_string(), "sq-a".to_string()];
+        assert_eq!(
+            plan_reassign(&factions, &squads, "faction-BLUFOR", ""),
+            Ok("sq-c".to_string())
+        );
+        // A dangling id in `squadIds` is skipped rather than returned as a destination.
+        factions[0].squad_ids = vec!["sq-deleted".to_string(), "sq-a".to_string()];
+        assert_eq!(
+            plan_reassign(&factions, &squads, "faction-BLUFOR", ""),
+            Ok("sq-a".to_string())
+        );
+    }
+
+    /// A faction with no squads is a reachable pick (the selector lists every faction), so it must
+    /// refuse by name and say what to do — not move the selection to some other faction's squad.
+    #[test]
+    fn a_faction_with_no_squads_refuses_by_name_and_says_what_to_do() {
+        let (factions, squads) = rows();
+        let why = plan_reassign(&factions, &squads, "faction-EMPTY", "")
+            .expect_err("a faction with no squads has no destination");
+        assert!(
+            why.contains("Militia") && why.contains("INDFOR"),
+            "T-939.2: the refusal must name the faction; got: {why}"
+        );
+        assert!(
+            why.to_lowercase().contains("orbat"),
+            "T-939.2: the refusal must point at where squads are made; got: {why}"
+        );
+    }
+
+    /// A destination that vanished under the open modal (undo, a peer, the Outliner) refuses rather
+    /// than moving the selection somewhere nobody chose.
+    #[test]
+    fn a_destination_that_no_longer_exists_refuses_rather_than_guessing() {
+        let (factions, squads) = rows();
+        assert!(plan_reassign(&factions, &squads, "faction-GONE", "").is_err());
+        assert!(plan_reassign(&factions, &squads, "faction-BLUFOR", "sq-gone").is_err());
+    }
+
+    /// `faction_label` names both halves when both exist, and never renders empty: a faction row
+    /// missing its name still says something the operator can pick.
+    #[test]
+    fn faction_label_names_the_faction_and_its_side_key() {
+        let f = |id: &str, key: &str, name: &str| FactionRow {
+            id: id.to_string(),
+            key: key.to_string(),
+            name: name.to_string(),
+            squad_ids: Vec::new(),
+        };
+        assert_eq!(
+            faction_label(&f("f1", "BLUFOR", "US Army")),
+            "US Army (BLUFOR)"
+        );
+        assert_eq!(faction_label(&f("f1", "BLUFOR", "")), "BLUFOR");
+        assert_eq!(faction_label(&f("f1", "", "US Army")), "US Army");
+        assert_eq!(faction_label(&f("f1", "BLUFOR", "BLUFOR")), "BLUFOR");
+        assert_eq!(faction_label(&f("f1", "", "")), "f1");
+    }
+
+    /* ─────────────────────────── the wiring, pinned ─────────────────────────── */
 
     /// THE DEFECT (RED before this slice): the Identity tab offered NO faction control and the
-    /// Squad entry was an inert read-only div, so a faction/squad move was unreachable from the
+    /// Squad entry was an inert read-only div, so a faction/squad move was unreachable from this
     /// modal at any selection size.
     ///
-    /// Pinned on `identity_tab`'s body rather than the whole file because every other faction
-    /// mention in this file belongs to `type_picker` (it edits `assetId`, not faction) and would
-    /// green this test on code that cannot move a single slot.
+    /// Pinned on `identity_tab`'s own body rather than the whole file because every other faction
+    /// mention in `attributes_modal.rs` belongs to `type_picker` (it edits `assetId`, not faction)
+    /// and would green this test on code that cannot move a single slot.
     #[test]
     fn the_identity_tab_offers_a_faction_control_and_an_editable_squad_control() {
         let code = live_code(include_str!("attributes_modal.rs"));
@@ -3512,13 +3952,103 @@ mod t939_2_batch_reassign {
             body.contains("reassign_picker("),
             "T-939.2: the Identity tab must render the faction/squad reassign controls; body was:\n{body}"
         );
-        // The read-only div was the defect: a `font-mono` box with no control in it. Its exact
-        // shape must not be what renders the squad any more.
+        // The read-only div was the defect. Its exact shape must not be what renders the squad.
         let src = live_source(include_str!("attributes_modal.rs"));
         let body_src = only_body(&src, "fn identity_tab(");
         assert!(
             !body_src.contains("{} entities"),
             "T-939.2: the squad entry must no longer be the inert '{{n}} entities' text"
+        );
+        // Both controls are real form controls with accessible names, not styled divs.
+        let picker = only_body(&src, "fn reassign_picker(");
+        assert!(
+            picker.contains("aria-label=\"Faction\"") && picker.contains("aria-label=\"Squad\""),
+            "T-939.2: both controls must be labelled selects"
+        );
+    }
+
+    /// The controls act on the WHOLE selection and land as ONE undo group: the picker commits
+    /// through `reassign_slots` over `targets` (the multi-edit id set that `attrs_multi_ids`
+    /// built), and `reassign_slots` brackets its per-slot core transactions in `with_batch`.
+    #[test]
+    fn the_picker_commits_the_whole_selection_in_one_undo_group() {
+        let code = live_code(include_str!("attributes_modal.rs"));
+        let picker = only_body(&code, "fn reassign_picker(");
+        assert!(
+            picker.contains("reassign_slots(&targets.get_value()"),
+            "T-939.2: the picker must commit over the whole target set, not the open slot; body was:\n{picker}"
+        );
+        let ops = live_code(REASSIGN_RS);
+        let apply = only_body(&ops, "pub fn reassign_slots(");
+        assert!(
+            apply.contains("with_batch("),
+            "T-939.2: reassign_slots must bracket its moves in with_batch so one Ctrl+Z reverts the \
+             whole batch; body was:\n{apply}"
+        );
+    }
+
+    /// REQUIREMENT 3 — slots leaving a squad never delete it. The batch must route through the
+    /// ADDITIVE keep-source core entry point and must not be able to reach the default
+    /// `move_slot_to_squad`, whose emptied-source branch takes the row, its place in
+    /// `faction.squadIds`, and every vehicle attached to it.
+    #[test]
+    fn the_batch_uses_the_keep_source_core_path_not_the_garbage_collecting_one() {
+        let ops = live_code(REASSIGN_RS);
+        assert!(
+            ops.contains("move_slot_to_squad_keep_source("),
+            "T-939.2: the batch must move through move_slot_to_squad_keep_source"
+        );
+        // `move_slot_to_squad_keep_source(` does not contain `move_slot_to_squad(` — the next
+        // character is `_`, not `(` — so this is an exact check for the GC-ing call, not a
+        // prefix collision.
+        assert!(
+            !ops.contains("move_slot_to_squad("),
+            "T-939.2: the GC-ing move_slot_to_squad must not be reachable from the batch"
+        );
+        // Nor may it launder the same call through the existing frontend wrapper.
+        assert!(
+            !ops.contains("refile_slot("),
+            "T-939.2: refile_slot wraps the GC-ing core path; the batch must not use it"
+        );
+    }
+
+    /// A multi-selection must never be shown the first slot's squad as if it were the group's —
+    /// the same honesty rule the read-only field already followed, kept through the change.
+    #[test]
+    fn a_mixed_selection_reads_mixed_rather_than_the_first_slots_squad() {
+        let src = live_source(include_str!("attributes_modal.rs"));
+        let picker = only_body(&src, "fn reassign_picker(");
+        assert_eq!(
+            picker.matches("Mixed").count(),
+            2,
+            "T-939.2: both selects must have a Mixed placeholder; body was:\n{picker}"
+        );
+        let code = live_code(include_str!("attributes_modal.rs"));
+        let picker_code = only_body(&code, "fn reassign_picker(");
+        // The "all targets agree" test is what makes Mixed truthful: a `first()` with no
+        // all-equal check is exactly the defect.
+        assert!(
+            picker_code.contains("current_squads.iter().all(")
+                && picker_code.contains("current_factions.iter().all("),
+            "T-939.2: the displayed value must be computed over the whole target set"
+        );
+    }
+
+    /// The named reason is rendered where the pick was made. `live_source` (literals kept) because
+    /// this is about the copy actually reaching the DOM.
+    #[test]
+    fn the_refusal_reason_is_rendered_in_the_modal() {
+        let src = live_source(include_str!("attributes_modal.rs"));
+        let picker = only_body(&src, "fn reassign_picker(");
+        assert!(
+            picker.contains("role=\"alert\""),
+            "T-939.2: the refusal must be announced, not printed to the console"
+        );
+        let code = live_code(include_str!("attributes_modal.rs"));
+        let picker_code = only_body(&code, "fn reassign_picker(");
+        assert!(
+            picker_code.contains("refusal.set(reason)") && picker_code.contains("refusal.get()"),
+            "T-939.2: the Err arm's reason must be the text the modal shows"
         );
     }
 }
