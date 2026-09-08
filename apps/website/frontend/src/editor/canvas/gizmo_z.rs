@@ -4,7 +4,9 @@ pub const Z_ARM_WIDTH: f64 = 14.0;
 pub fn hit_z_arm(press_x: f64, press_y: f64, center_x: f64, center_y: f64, _scale: f64) -> bool {
     let dx = (press_x - center_x).abs();
     let on_x = dx <= Z_ARM_WIDTH / 2.0;
-    let on_y = press_y <= center_y && press_y >= center_y - Z_ARM_LENGTH;
+    // The entity/XY grab occupies the center. Only the exposed vertical shaft owns Z;
+    // including the center steals the second XY drag of an already selected entity.
+    let on_y = press_y < center_y - Z_ARM_WIDTH && press_y >= center_y - Z_ARM_LENGTH;
     on_x && on_y
 }
 
@@ -36,6 +38,9 @@ mod tests {
         );
         assert!(!hit_z_arm(100.0, 110.0, 100.0, 100.0, 1.0)); // below center
         assert!(!hit_z_arm(120.0, 50.0, 100.0, 100.0, 1.0)); // too far right
+        assert!(!hit_z_arm(100.0, 100.0, 100.0, 100.0, 1.0)); // XY center
+        assert!(!hit_z_arm(100.0, 86.0, 100.0, 100.0, 1.0)); // center boundary
+        assert!(hit_z_arm(100.0, 85.0, 100.0, 100.0, 1.0)); // exposed shaft
     }
 
     #[test]

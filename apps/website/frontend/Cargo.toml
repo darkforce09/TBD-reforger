@@ -135,5 +135,6 @@ wasm-bindgen-futures = "0.4"
 # native lib build, so the rkyv round-trip runs on the host instead of only compiling for wasm32.
 [dev-dependencies]
 map-engine-core = { path = "../../../crates/map-engine-core", default-features = false, features = [
+    "doc",
     "world",
 ] }

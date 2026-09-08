@@ -3307,7 +3307,8 @@ mod t644_los_button_submode;
 /// `select_tool`. The wasm wiring (the Shift-rotate gesture arm, the widget mount, the keydown
 /// bindings, the included comment fix) is proved by SOURCE PINS on `live_code` (comments + dead code
 /// stripped, so a stale note or an `if false` wrapper cannot satisfy them). The keydown CENSUS reads
-/// both window-level editor keydowns (this file + `mission_history`) as raw text.
+/// all fifteen window-level editor keydowns across eleven modules, including `canvas/gestures`,
+/// as raw text.
 #[cfg(test)]
 #[path = "mission_editor_tests/t648_transform.rs"]
 mod t648_transform;

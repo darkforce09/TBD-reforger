@@ -159,17 +159,104 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
     let doc_tick = ctx.doc_tick;
     let sync_ruler = make_sync_ruler(ctx);
     let sync_los = make_sync_los(ctx);
-    let z_drag: std::rc::Rc<
-        std::cell::RefCell<
-            Option<(
-                f64,
-                Vec<String>,
-                Vec<String>,
-                Vec<f64>,
-                map_engine_core::camera::OrthoCamera,
-            )>,
-        >,
-    > = std::rc::Rc::new(std::cell::RefCell::new(None));
+    let z_drag = Rc::new(RefCell::new(None::<ov::ZDrag>));
+    let vertex_pointer = Rc::new(Cell::new(None::<i32>));
+    let left_pointer = Rc::new(Cell::new(None::<i32>));
+    // Own cancellation beside the private arm. The page's pointercancel only knows `left`,
+    // which promotion consumes. Take the state BEFORE releasing capture (lostcapture may fire).
+    let cancel_z: Rc<dyn Fn(Option<i32>)> = Rc::new({
+        let z_drag = z_drag.clone();
+        let vertex_pointer = vertex_pointer.clone();
+        let container = container.clone();
+        move |pointer| {
+            let taken = {
+                let mut drag = z_drag.borrow_mut();
+                match pointer {
+                    Some(id) => ov::take_z_drag(&mut drag, id),
+                    None => drag.take(),
+                }
+            };
+            if let Some(arm) = taken {
+                ov::set_z_drag_readout(None);
+                if container.has_pointer_capture(arm.pointer_id) {
+                    let _ = container.release_pointer_capture(arm.pointer_id);
+                }
+            }
+            if vertex_pointer
+                .get()
+                .is_some_and(|id| pointer.is_none_or(|p| p == id))
+            {
+                if let Some(id) = vertex_pointer.take() {
+                    if container.has_pointer_capture(id) {
+                        let _ = container.release_pointer_capture(id);
+                    }
+                }
+                if editor_ops::cancel_tactical_vertex_drag() {
+                    mission_history::refresh_tactical_lane();
+                }
+            }
+        }
+    });
+    let cancel_pointer = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
+        let cancel_z = cancel_z.clone();
+        move |ev: web_sys::PointerEvent| cancel_z(Some(ev.pointer_id()))
+    });
+    let cancel_blur = Closure::<dyn FnMut(web_sys::Event)>::new({
+        let cancel_z = cancel_z.clone();
+        move |_| cancel_z(None)
+    });
+    let cancel_escape = Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new({
+        let cancel_z = cancel_z.clone();
+        // Read the actual private arms, rather than keeping a second activity latch. Escape is
+        // shared with editor dialogs, so this listener acts only while it owns a live gesture.
+        let gesture_active = Signal::derive_local({
+            let z_drag = z_drag.clone();
+            let vertex_pointer = vertex_pointer.clone();
+            move || z_drag.borrow().is_some() || vertex_pointer.get().is_some()
+        });
+        move |ev: web_sys::KeyboardEvent| {
+            if ev.key() == "Escape" && gesture_active.get_untracked() {
+                cancel_z(None);
+            }
+        }
+    });
+    for event in ["pointercancel", "lostpointercapture"] {
+        let _ = container
+            .add_event_listener_with_callback(event, cancel_pointer.as_ref().unchecked_ref());
+    }
+    if let Some(win) = web_sys::window() {
+        let _ = win.add_event_listener_with_callback("blur", cancel_blur.as_ref().unchecked_ref());
+        let _ =
+            win.add_event_listener_with_callback("keydown", cancel_escape.as_ref().unchecked_ref());
+    }
+    let cleanup = StoredValue::new_local((
+        container.clone(),
+        cancel_z.clone(),
+        cancel_pointer,
+        cancel_blur,
+        cancel_escape,
+    ));
+    on_cleanup(move || {
+        let _ = cleanup.try_with_value(|(container, cancel, pointer, blur, escape)| {
+            cancel(None);
+            for event in ["pointercancel", "lostpointercapture"] {
+                let _ = container
+                    .remove_event_listener_with_callback(event, pointer.as_ref().unchecked_ref());
+            }
+            if let Some(win) = web_sys::window() {
+                let _ =
+                    win.remove_event_listener_with_callback("blur", blur.as_ref().unchecked_ref());
+                let _ = win.remove_event_listener_with_callback(
+                    "keydown",
+                    escape.as_ref().unchecked_ref(),
+                );
+            }
+        });
+    });
+    Effect::new(move |_| {
+        let _ = (tool_mode.get(), widget_variant.get());
+        cancel_z(None);
+    });
 
     // Wheel → zoom_at (engine self-clamps zoom to [-6, 6]). Capture + non-passive so we can
     // preventDefault and beat any child handler. CSS origin = the container rect (same basis
@@ -239,11 +326,17 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
     // engine leaks too; `on_cleanup` only stops the loop — a `!Send` drop handle is later
     // polish).
     let onpointerdown = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
+        let z_drag = z_drag.clone();
+        let vertex_pointer = vertex_pointer.clone();
+        let left_pointer = left_pointer.clone();
         let pan_px = pan_px.clone();
         let container = container.clone();
         let engine = engine.clone();
         let left = left.clone();
         move |ev: web_sys::PointerEvent| {
+            if z_drag.borrow().is_some() || vertex_pointer.get().is_some() {
+                return;
+            }
             // T-662 — ONLY the middle button (1) pans. RMB (2) used to pan here too, which
             // ate the right-click before any handler downstream could see it; the button is
             // now free for T-664's context menu (and the six tickets behind it). MMB-pan is
@@ -318,6 +411,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     let w2 = cam.unproject_xy(sx + TG_VERTEX_PICK_PX, sy);
                     let tol = (w2[0] - w[0]).hypot(w2[1] - w[1]);
                     if editor_ops::begin_tactical_vertex_drag(w[0], w[1], tol) {
+                        vertex_pointer.set(Some(ev.pointer_id()));
                         let _ = container.set_pointer_capture(ev.pointer_id());
                         return;
                     }
@@ -347,6 +441,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     // button 0, so it always passes here); the constraint matters for the
                     // predicate's other callers. `should_begin_ruler` is false under Select,
                     // so the existing Pending path is byte-for-byte unchanged there.
+                    left_pointer.set(Some(ev.pointer_id()));
                     *left.borrow_mut() = Some(
                         if crate::editor::tools::ruler_tool::should_begin_ruler(
                             tool_mode.get_untracked(),
@@ -373,6 +468,8 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
     });
     let onpointermove = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
         let z_drag = z_drag.clone();
+        let vertex_pointer = vertex_pointer.clone();
+        let left_pointer = left_pointer.clone();
         let pan_px = pan_px.clone();
         let engine = engine.clone();
         let left = left.clone();
@@ -473,20 +570,21 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // snapping vocabulary. Rung 0 (or grid off) is step 0.0 ⇒ `snap_elevation` passes the
             // value through, which is why "no snap" needs no special case here.
             let z_arm = z_drag.borrow().clone();
-            if let Some((start_y, slot_ids, _veh_ids, initial_zs, cam)) = z_arm {
+            if let Some(arm) = z_arm {
+                if arm.pointer_id != ev.pointer_id() {
+                    return;
+                }
                 let delta = ov::z_drag_elevation_delta(
                     py,
-                    start_y,
-                    cam.scale(),
-                    ov::z_drag_snap_step(snap),
+                    arm.start_y,
+                    arm.scale,
+                    ov::z_drag_snap_step(snap.get_untracked(), ev.shift_key()),
                 );
                 // The chip shows the ANCHOR slot's resulting height — one number, in the same
                 // units the Attributes tab shows, rather than a delta the operator would have to
                 // add to a value that is not on screen.
-                let base = initial_zs.first().copied().unwrap_or(0.0);
-                let _ = &slot_ids;
                 crate::editor::canvas::overlays::set_z_drag_readout(Some(
-                    crate::editor::canvas::gizmo_z::format_height_readout(base + delta),
+                    crate::editor::canvas::gizmo_z::format_height_readout(arm.height(delta)),
                 ));
                 return;
             }
@@ -504,6 +602,9 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // `refresh_tactical_lane`), so the previewed line and the committed line are packed
             // by one function rather than two that must agree.
             if editor_ops::tactical_vertex_drag_active() {
+                if vertex_pointer.get() != Some(ev.pointer_id()) {
+                    return;
+                }
                 if let Some(c) = world.filter(|c| c[0].is_finite() && c[1].is_finite()) {
                     editor_ops::tactical_vertex_drag_move(c[0], c[1]);
                     mission_history::refresh_tactical_lane();
@@ -578,6 +679,14 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // `left` borrow is held across the inner `left.borrow_mut()` put-back (the `if let`
             // temporary-lifetime footgun). Frozen cam (M2/X-05 — no live unproject). Live preview
             // via `engine.set_drag` (drag) / `engine.upload_marquee` (marquee rect).
+            if left
+                .borrow()
+                .as_ref()
+                .is_some_and(|g| matches!(g, LG::Pending(_)))
+                && left_pointer.get() != Some(ev.pointer_id())
+            {
+                return;
+            }
             let taken = left.borrow_mut().take();
             let Some(g0) = taken else { return };
             // Promote a Pending press once it clears the threshold; else keep the active drag.
@@ -639,31 +748,15 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         }
                         if z_arm_hit {
                             let cur_sel = selection.borrow().clone();
-                            let slot_ids: Vec<String> = cur_sel
-                                .iter()
-                                .filter(|i| !editor_ops::is_vehicle_id(i))
-                                .cloned()
-                                .collect();
-                            let veh_ids: Vec<String> = cur_sel
-                                .iter()
-                                .filter(|i| editor_ops::is_vehicle_id(i))
-                                .cloned()
-                                .collect();
-
-                            let mut initial_zs = Vec::new();
-                            if let Some(core) = doc.borrow().as_ref() {
-                                let rows = editor_ops::keep_z_rows(core, None, None, Some(0.0));
-                                for id in &slot_ids {
-                                    let z = rows
-                                        .as_ref()
-                                        .and_then(|r| editor_ops::slot_z(r, id))
-                                        .unwrap_or(0.0);
-                                    initial_zs.push(z);
-                                }
-                            }
-
-                            *z_drag.borrow_mut() =
-                                Some((p.start_y, slot_ids, veh_ids, initial_zs, p.cam.clone()));
+                            *z_drag.borrow_mut() = doc.borrow().as_ref().and_then(|core| {
+                                ov::ZDrag::begin(
+                                    core,
+                                    &cur_sel,
+                                    ev.pointer_id(),
+                                    p.start_y,
+                                    p.cam.scale(),
+                                )
+                            });
                             let _ = container.set_pointer_capture(ev.pointer_id());
                             left.borrow_mut().take(); // consume the gesture
                             return;
@@ -869,6 +962,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
     });
     let onpointerup = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
         let z_drag = z_drag.clone();
+        let vertex_pointer = vertex_pointer.clone();
         let pan_px = pan_px.clone();
         let container = container.clone();
         let engine = engine.clone();
@@ -892,69 +986,36 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
         // T-159.21 — no `mission_id` capture: the persist tail now runs inside
         // `mission_history::after_local_edit`, which reads the id from its ctx.
         move |ev: web_sys::PointerEvent| {
-            // ══════ T-946.86 (.82) — commit the Z-ARM drag, and RELEASE ITS CAPTURE ══════
-            //
-            // FIRST, ahead of every other branch, for the reason the vertex-drag commit below runs
-            // first: `onpointerdown` returned before opening `LG::Pending` when it armed this, so
-            // `left` and `pan_px` are both None and nothing below has an arm to take — and an
-            // unclaimed release is how a gesture strands.
-            //
-            // THE CAPTURE. `onpointerdown` called `container.set_pointer_capture()` on this arm and
-            // NONE of the eight `release_pointer_capture` calls in this file belonged to it, so the
-            // container held the pointer after the drag ended: every later click in the editor was
-            // retargeted to the container until some other gesture happened to release it. The
-            // release therefore runs UNCONDITIONALLY once the arm is taken — before the commit can
-            // decide it has nothing to write, and whether or not the document accepts the edit.
-            //
-            // ONE `move_entities` for the whole drag ⇒ ONE Ctrl+Z, matching the horizontal drag's
-            // contract. `dx`/`dy` are 0.0: this gesture moves the selection along Z only, and this
-            // is the mutator that writes a PER-SLOT z (`zs[i]` verbatim) in a single transaction —
-            // `attrs_update_position_multi` takes ONE z for the WHOLE selection, which would
-            // flatten a mixed-elevation selection onto the anchor's height.
-            //
-            // `move_entities`, not its `_and_vehicles` sibling, and that is the SEMANTIC choice as
-            // well as the tidy one: `move_vehicles_in_txn` has no z column at all, so a vehicle in
-            // the selection could not be elevated by either call — which is exactly why the arm
-            // only ever resolved `initial_zs` for the slot half. (It also keeps this block out of
-            // the reach of `t796_comment_drag`'s pin, which anchors on the FIRST
-            // `move_entities_and_vehicles(` in the file and walks back to the LG::Move arm's
-            // delta guard.)
-            //
-            // A release with no travel commits nothing (`delta == 0.0` ⇒ every z is unchanged),
-            // because a click on the Z arm is a click, and filing an identity edit would make the
-            // next Ctrl+Z appear to do nothing.
+            // Consume only the initiating pointer, then release capture before committing.
+            // Cancellation takes this same arm, so a later unrelated release has nothing to write.
             {
-                let z_arm = z_drag.borrow_mut().take();
-                if let Some((start_y, slot_ids, _veh_ids, initial_zs, cam)) = z_arm {
-                    if container.has_pointer_capture(ev.pointer_id()) {
-                        let _ = container.release_pointer_capture(ev.pointer_id());
+                if z_drag
+                    .borrow()
+                    .as_ref()
+                    .is_some_and(|arm| arm.pointer_id != ev.pointer_id())
+                {
+                    return;
+                }
+                let z_arm = ov::take_z_drag(&mut z_drag.borrow_mut(), ev.pointer_id());
+                if let Some(arm) = z_arm {
+                    if container.has_pointer_capture(arm.pointer_id) {
+                        let _ = container.release_pointer_capture(arm.pointer_id);
                     }
-                    crate::editor::canvas::overlays::set_z_drag_readout(None);
+                    ov::set_z_drag_readout(None);
                     let rect = container.get_bounding_client_rect();
                     let py = ev.client_y() as f64 - rect.top();
                     let delta = ov::z_drag_elevation_delta(
                         py,
-                        start_y,
-                        cam.scale(),
-                        ov::z_drag_snap_step(snap),
+                        arm.start_y,
+                        arm.scale,
+                        ov::z_drag_snap_step(snap.get_untracked(), ev.shift_key()),
                     );
-                    if delta != 0.0 && !slot_ids.is_empty() {
-                        // `zs` is built by mapping over the very `slot_ids` Vec handed to the
-                        // translate — same length, same order, no re-sort between the two — so
-                        // `zs[i]` is `slot_ids[i]`'s elevation structurally, not by convention.
-                        // `initial_zs` was resolved at ARM time against the press camera, so a
-                        // slot deleted mid-drag simply drops out of the core's own id lookup.
-                        let zs: Vec<f64> = slot_ids
-                            .iter()
-                            .enumerate()
-                            .map(|(i, _)| initial_zs.get(i).copied().unwrap_or(0.0) + delta)
-                            .collect();
-                        let guard = doc.borrow();
-                        if let Some(core) = guard.as_ref() {
-                            core.move_entities(slot_ids, 0.0, 0.0, zs);
-                            drop(guard);
-                            mission_history::after_local_edit();
-                        }
+                    let changed = doc
+                        .borrow_mut()
+                        .as_mut()
+                        .is_some_and(|core| arm.commit(core, delta));
+                    if changed {
+                        mission_history::after_local_edit();
                     }
                     return;
                 }
@@ -972,6 +1033,10 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // is a selection and filing an identity edit would make the next Ctrl+Z appear to do
             // nothing.
             if editor_ops::tactical_vertex_drag_active() {
+                if vertex_pointer.get() != Some(ev.pointer_id()) {
+                    return;
+                }
+                vertex_pointer.set(None);
                 if container.has_pointer_capture(ev.pointer_id()) {
                     let _ = container.release_pointer_capture(ev.pointer_id());
                 }
@@ -1449,8 +1514,8 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             .cloned()
                             .partition(|id| editor_ops::is_vehicle_id(id));
                         if !slot_ids.is_empty() || !veh_ids.is_empty() {
-                            let guard = doc.borrow();
-                            let Some(core) = guard.as_ref() else {
+                            let mut guard = doc.borrow_mut();
+                            let Some(core) = guard.as_mut() else {
                                 return;
                             };
                             // wave-127 F-6 — the drag carries each slot's CURRENT z.
@@ -1491,7 +1556,12 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                         .unwrap_or(0.0)
                                 })
                                 .collect();
+                            // A release ends one gesture even when the next drag arrives inside
+                            // the core's 300 ms capture window. Close the group so consecutive
+                            // same-slot drags undo independently (the original undo smoke).
+                            core.begin_group();
                             core.move_entities_and_vehicles(slot_ids, &veh_ids, dx, dy, zs);
+                            core.end_group();
                             drop(guard);
                             mission_history::after_local_edit();
                         }

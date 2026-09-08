@@ -1448,6 +1448,62 @@ pub(crate) fn virtual_tree(
     // Effect never leaks — it re-runs on `nodes`/`collapsed` change, and the render `move ||`
     // re-slices on `rev`/scroll.
     let drag_ghost_pos = RwSignal::new(None::<(i32, i32)>);
+    // Install once for BOTH eager and windowed trees. Capture sees outside releases even when
+    // another panel stops propagation; the zero-delay cleanup runs after the destination drop.
+    #[cfg(target_arch = "wasm32")]
+    {
+        use wasm_bindgen::{closure::Closure, JsCast};
+        if let Some(win) = web_sys::window() {
+            let release = Closure::<dyn FnMut(web_sys::PointerEvent)>::new(move |_| {
+                if let Some(win) = web_sys::window() {
+                    let cleanup = Closure::once_into_js(move || {
+                        crate::editor::panels::outliner_drag::cancel_layer_drag();
+                        let _ = drag_ghost_pos.try_set(None);
+                    });
+                    let _ = win.set_timeout_with_callback_and_timeout_and_arguments_0(
+                        cleanup.unchecked_ref(),
+                        0,
+                    );
+                }
+            });
+            let cancel = Closure::<dyn FnMut(web_sys::Event)>::new(move |_| {
+                crate::editor::panels::outliner_drag::cancel_layer_drag();
+                let _ = drag_ghost_pos.try_set(None);
+            });
+            let _ = win.add_event_listener_with_callback_and_bool(
+                "pointerup",
+                release.as_ref().unchecked_ref(),
+                true,
+            );
+            // Element blur happens after a trusted row pointerdown focuses that row. Capturing
+            // it here would immediately erase the drag just armed by the same press.
+            for (event, capture) in [("pointercancel", true), ("blur", false)] {
+                let _ = win.add_event_listener_with_callback_and_bool(
+                    event,
+                    cancel.as_ref().unchecked_ref(),
+                    capture,
+                );
+            }
+            let hooks = StoredValue::new_local((win, release, cancel));
+            on_cleanup(move || {
+                crate::editor::panels::outliner_drag::cancel_layer_drag();
+                let _ = hooks.try_with_value(|(win, release, cancel)| {
+                    let _ = win.remove_event_listener_with_callback_and_bool(
+                        "pointerup",
+                        release.as_ref().unchecked_ref(),
+                        true,
+                    );
+                    for (event, capture) in [("pointercancel", true), ("blur", false)] {
+                        let _ = win.remove_event_listener_with_callback_and_bool(
+                            event,
+                            cancel.as_ref().unchecked_ref(),
+                            capture,
+                        );
+                    }
+                });
+            });
+        }
+    }
     let flat = StoredValue::new(Vec::<FlatRow>::new());
     let rev = RwSignal::new(0u64);
     Effect::new(move |_| {
@@ -1489,7 +1545,9 @@ pub(crate) fn virtual_tree(
             };
             let el: web_sys::Element = node.unchecked_into();
             let h = el.client_height() as f64;
-            if h > 0.0 {
+            // Publishing the same height remounts the scroller, which changes its NodeRef and
+            // runs this effect again. Only a real measurement change may invalidate the slice.
+            if h > 0.0 && h != container_h.get_untracked() {
                 container_h.set(h);
             }
             if !resize_hooked.get_value() {
@@ -1500,7 +1558,7 @@ pub(crate) fn virtual_tree(
                             if let Some(node) = scroller_ref.get_untracked() {
                                 let el: web_sys::Element = node.unchecked_into();
                                 let h = el.client_height() as f64;
-                                if h > 0.0 {
+                                if h > 0.0 && h != container_h.get_untracked() {
                                     container_h.set(h);
                                 }
                             }
@@ -1584,7 +1642,7 @@ pub(crate) fn virtual_tree(
                             use wasm_bindgen::JsCast;
                             if let Some(el) = ev.target().and_then(|t| t.dyn_into::<web_sys::Element>().ok()) {
                                 let h = el.client_height() as f64;
-                                if h > 0.0 {
+                                if h > 0.0 && h != container_h.get_untracked() {
                                     container_h.set(h);
                                 }
                                 scroll_top.set(el.scroll_top() as f64);

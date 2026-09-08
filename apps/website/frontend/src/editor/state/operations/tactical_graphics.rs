@@ -372,14 +372,13 @@ pub fn delete_tactical_graphic(id: &str) -> bool {
     let Some(rows) = read_env_value("tacticalGraphics").and_then(|v| v.as_array().cloned()) else {
         return false;
     };
+    let before = rows.len();
     let next: Vec<Value> = rows
         .into_iter()
         .filter(|r| r.get("id").and_then(Value::as_str) != Some(id))
         .collect();
     // Nothing matched ⇒ no write, so a stale selection cannot file an empty undo step.
-    let removed = !next
-        .iter()
-        .any(|r| r.get("id").and_then(Value::as_str) == Some(id));
+    let removed = next.len() < before;
     if !removed {
         return false;
     }
