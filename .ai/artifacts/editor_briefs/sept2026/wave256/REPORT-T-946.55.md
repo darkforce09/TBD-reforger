@@ -263,6 +263,10 @@ Final run is at the **final** commit (`885d6b7a2eb3`), not the first:
 SLICE GATE: PASS
 ```
 
+Re-run after the report was committed: `gate verdict PASS @ 6a6fa94422db` / `SLICE GATE: PASS`.
+So the gate is green at both the last code commit (`885d6b7a2eb3`) and at the report commit
+(`6a6fa94422db`). Anything committed after this line is report text only.
+
 All 20 steps PASS, including `schema PASS` — that is the step carrying the `objectives == 13`
 `UNREAD_WIRE_FIELDS` assertion.
 
