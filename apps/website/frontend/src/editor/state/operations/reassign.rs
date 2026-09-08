@@ -26,7 +26,7 @@
 #![cfg(target_arch = "wasm32")]
 
 use super::batch::with_batch;
-use super::context::{OPS_CTX, faction_rows, squad_rows};
+use super::context::{faction_rows, squad_rows, OPS_CTX};
 use crate::editor::panels::attributes_modal::plan_reassign;
 use crate::editor::state::history as mission_history;
 use map_engine_core::doc::{MissionDocCore, NONE_IDX};

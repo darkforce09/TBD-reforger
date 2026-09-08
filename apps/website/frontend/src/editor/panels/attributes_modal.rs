@@ -1507,7 +1507,11 @@ fn transform_tab(
     // everything else stays the pre-T-649 always-live field with no checkbox.
     let g = move |differs: bool, latch| {
         let base = Gate::maybe(is_multi && differs, latch);
-        if all_locked { base.refused() } else { base }
+        if all_locked {
+            base.refused()
+        } else {
+            base
+        }
     };
     // Stance is NOT a transform in the core's sense — `update_slot` carries no lock check — so it
     // stays live on a locked slot. Gating it here would invent a refusal the core does not make.
