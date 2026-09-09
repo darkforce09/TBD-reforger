@@ -1,0 +1,692 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+@layer base {
+  html, body { margin: 0; padding: 0; }
+  body { overscroll-behavior: none; }
+}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+</style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "primary-fixed": "#d8e2ff",
+        "tertiary-container": "#df7412",
+        "on-background": "#dde2f8",
+        "on-secondary-fixed-variant": "#3d4756",
+        "surface-container-lowest": "#080e1d",
+        "surface-bright": "#33394a",
+        "surface-container-highest": "#2f3445",
+        "primary-container": "#4d8eff",
+        "card-border": "#38bdf8",
+        "inverse-on-surface": "#2a3040",
+        "on-primary-fixed": "#001a42",
+        "on-secondary-container": "#afb9cb",
+        "primary": "#adc6ff",
+        "background": "#0d1322",
+        "on-primary-fixed-variant": "#004395",
+        "on-error": "#690005",
+        "on-surface-variant": "#9ba3b8",
+        "tertiary": "#ffb786",
+        "on-error-container": "#ffdad6",
+        "on-primary": "#002e6a",
+        "on-tertiary-fixed": "#311400",
+        "on-primary-container": "#00285d",
+        "secondary": "#bdc7d9",
+        "inverse-surface": "#dde2f8",
+        "surface": "#0a0f1d",
+        "surface-dim": "#0d1322",
+        "secondary-fixed": "#d9e3f6",
+        "surface-container-high": "#1c2336",
+        "on-tertiary-fixed-variant": "#723600",
+        "secondary-fixed-dim": "#bdc7d9",
+        "on-secondary-fixed": "#121c2a",
+        "on-surface": "#f1f5f9",
+        "outline": "#8c909f",
+        "error-container": "#93000a",
+        "surface-variant": "#232b40",
+        "on-secondary": "#27313f",
+        "error": "#f87171",
+        "secondary-container": "#2e374d",
+        "surface-container-low": "#111728",
+        "on-tertiary": "#502400",
+        "inverse-primary": "#005ac2",
+        "outline-variant": "#2d354a",
+        "tertiary-fixed-dim": "#ffb786",
+        "primary-fixed-dim": "#adc6ff",
+        "on-tertiary-container": "#461f00",
+        "surface-tint": "#adc6ff",
+        "tertiary-fixed": "#ffdcc6",
+        "surface-container": "#161d30"
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace']
+      }
+    }
+  }
+}
+</script>
+</head>
+<body class="bg-[#070b14] text-on-surface font-sans antialiased h-screen overflow-hidden flex flex-col selection:bg-card-border/30 selection:text-white select-none">
+<!-- macOS Pro Workstation Window Frame -->
+<div class="h-full w-full flex flex-col bg-surface overflow-hidden border border-outline-variant/40 rounded-none shadow-2xl">
+<!-- macOS Window Titlebar / Unified Toolbar -->
+<header class="h-12 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/50 flex items-center justify-between px-4 z-40 shrink-0 select-none">
+<!-- Left: Traffic Lights & Clean Text Section Title (No buttons/borders) -->
+<div class="flex items-center gap-4">
+<!-- Traffic Light Controls -->
+
+
+<!-- Clean Text Breadcrumb / Title (matching user feedback: no border/fill, just clean text) -->
+<div class="flex items-center gap-2"><h1 class="text-sm font-semibold tracking-wide text-on-surface uppercase">Scenario Selection</h1></div>
+</div>
+<!-- Center: Global Quick Filter Toolbar Search -->
+
+<!-- Right: Telemetry & Host Profile Badge -->
+<div class="flex items-center gap-3">
+
+<div class="flex items-center gap-2 pl-1">
+<div class="flex items-center gap-1.5 bg-surface-container-high/70 hover:bg-surface-container-high px-2.5 py-1 rounded-md border border-card-border/30 transition-all cursor-default">
+<span class="w-2 h-2 rounded-full bg-card-border"></span>
+<span class="text-xs font-semibold text-on-surface tracking-tight">Mission Maker</span>
+<span class="font-mono text-[9px] px-1 py-0.2 rounded bg-primary-container/20 text-card-border font-bold">ADMIN</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant text-xs font-mono bg-surface-container-low px-2 py-1 rounded-md border border-outline-variant/30">
+<span class="material-symbols-outlined text-[14px] text-primary">groups</span>
+<span class="font-bold text-on-surface">1</span><span class="text-on-surface-variant/60">/48</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Pro Workstation Three-Column Layout -->
+<div class="flex-1 flex overflow-hidden min-h-0 bg-surface">
+<!-- ========================================================= -->
+<!-- COLUMN 1 (LEFT): MAPS & TERRAINS BROWSER (Width: ~280px) -->
+<!-- ========================================================= -->
+<aside class="w-64 lg:w-72 shrink-0 border-r border-outline-variant/40 flex flex-col bg-surface-container-lowest/60 backdrop-blur-sm">
+<!-- Maps Header & Biome Filter -->
+<div class="p-3 border-b border-outline-variant/30 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-card-border">terrain</span>
+<span class="text-xs font-bold uppercase tracking-wider text-on-surface font-mono">TERRAINS</span>
+<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant">53 MAPS</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<button aria-label="Sort Alphabetical" class="p-1 rounded hover:bg-surface-container hover:text-on-surface text-xs font-mono flex items-center justify-center transition-colors" title="Sort Alphabetical">
+<span class="material-symbols-outlined text-[14px]">sort_by_alpha</span>
+</button>
+</div>
+</div>
+<!-- Terrains Search Filter -->
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[14px] text-on-surface-variant/60">filter_list</span>
+<input class="w-full bg-surface-container pl-7 pr-2 py-1 text-xs rounded border border-outline-variant/30 text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-card-border/60 font-mono" id="terrain-search" onkeyup="filterTerrains()" placeholder="Filter biomes, islands..." type="text">
+</div>
+</div>
+<!-- Maps Scrollable List -->
+<div class="flex-1 overflow-y-auto p-2 flex flex-col gap-0.5" id="terrain-list">
+<!-- Pinned Test Environment -->
+<div class="terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors group" onclick="selectTerrainItem(this, '!Virtual Reality', 1)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-primary group-hover:scale-110 transition-transform">view_in_ar</span>
+<span class="font-mono text-primary truncate font-semibold">!Virtual Reality</span>
+</div>
+<span class="text-[9px] font-mono px-1 rounded bg-primary/10 text-primary uppercase">DEV</span>
+</div>
+<!-- Altis (Active Default) -->
+<div class="terrain-entry active-terrain px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer bg-card-border/15 text-white border border-card-border/40 shadow-sm transition-all" onclick="selectTerrainItem(this, 'Altis', 30)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[16px] text-card-border">wb_sunny</span>
+<span class="font-semibold tracking-wide truncate">Altis</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="text-[10px] font-mono bg-card-border/20 text-card-border px-1.5 py-0.2 rounded font-semibold">30</span>
+<span class="material-symbols-outlined text-[14px] text-card-border">chevron_right</span>
+</div>
+</div>
+<!-- Anizay -->
+<div class="terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" onclick="selectTerrainItem(this, 'Anizay', 8)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-tertiary">wb_shade</span>
+<span class="truncate">Anizay</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant/60">8</span>
+</div>
+<!-- Beketov -->
+<div class="terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" onclick="selectTerrainItem(this, 'Beketov', 14)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-outline">forest</span>
+<span class="truncate">Beketov</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant/60">14</span>
+</div>
+<!-- Bukovina -->
+<div class="terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" onclick="selectTerrainItem(this, 'Bukovina', 6)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-outline">landscape</span>
+<span class="truncate">Bukovina</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant/60">6</span>
+</div>
+<!-- Chernarus -->
+<div class="terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" onclick="selectTerrainItem(this, 'Chernarus', 42)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-card-border/80">nature</span>
+<span class="truncate">Chernarus</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant/60">42</span>
+</div>
+<!-- Everon -->
+<div class="terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" onclick="selectTerrainItem(this, 'Everon', 27)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-primary">waves</span>
+<span class="truncate">Everon</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant/60">27</span>
+</div>
+<!-- Gabreta -->
+<div class="terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" onclick="selectTerrainItem(this, 'Gabreta', 9)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-outline">forest</span>
+<span class="truncate">Gabreta</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant/60">9</span>
+</div>
+<!-- Kolguyev -->
+<div class="terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" onclick="selectTerrainItem(this, 'Kolguyev', 11)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-card-border/70">ac_unit</span>
+<span class="truncate">Kolguyev</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant/60">11</span>
+</div>
+<!-- Livonia -->
+<div class="terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" onclick="selectTerrainItem(this, 'Livonia', 23)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-outline">park</span>
+<span class="truncate">Livonia</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant/60">23</span>
+</div>
+<!-- Malden -->
+<div class="terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" onclick="selectTerrainItem(this, 'Malden', 18)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-tertiary">wb_sunny</span>
+<span class="truncate">Malden</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant/60">18</span>
+</div>
+<!-- Sahrani -->
+<div class="terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" onclick="selectTerrainItem(this, 'Sahrani', 15)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-outline">water</span>
+<span class="truncate">Sahrani</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant/60">15</span>
+</div>
+<!-- Takistan -->
+<div class="terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" onclick="selectTerrainItem(this, 'Takistan', 22)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-tertiary">wb_twilight</span>
+<span class="truncate">Takistan</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant/60">22</span>
+</div>
+<!-- Tanoa -->
+<div class="terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" onclick="selectTerrainItem(this, 'Tanoa', 19)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-primary">palmtree</span>
+<span class="truncate">Tanoa</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant/60">19</span>
+</div>
+<!-- Zargabad -->
+<div class="terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" onclick="selectTerrainItem(this, 'Zargabad', 12)">
+<div class="flex items-center gap-2 truncate">
+<span class="material-symbols-outlined text-[15px] text-tertiary">location_city</span>
+<span class="truncate">Zargabad</span>
+</div>
+<span class="text-[10px] font-mono text-on-surface-variant/60">12</span>
+</div>
+</div>
+</aside>
+<!-- ========================================================= -->
+<!-- COLUMN 2 (MIDDLE): MISSIONS LIBRARY (Width: ~380-420px)   -->
+<!-- ========================================================= -->
+<section class="w-80 lg:w-96 shrink-0 border-r border-outline-variant/40 flex flex-col bg-surface-container-low/40">
+<!-- Library Toolbar & Filter Chips -->
+<div class="p-3 border-b border-outline-variant/30 flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-card-border">military_tech</span>
+<span class="text-xs font-bold uppercase tracking-wider text-on-surface font-mono" id="mission-heading">ALTIS MISSIONS</span>
+</div>
+<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-container text-card-border font-bold" id="mission-count">30 AVAILABLE</span>
+</div>
+<!-- Filter Chips Bar -->
+<div class="flex items-center gap-1 overflow-x-auto pb-0.5" id="filter-chips">
+<button class="filter-chip px-2.5 py-1 rounded text-[11px] font-semibold bg-primary-container text-on-surface font-mono whitespace-nowrap transition-all" onclick="filterByTag('ALL', this)">ALL</button>
+<button class="filter-chip px-2.5 py-1 rounded text-[11px] font-medium text-on-surface-variant bg-surface-container hover:text-on-surface font-mono whitespace-nowrap transition-all" onclick="filterByTag('COOP', this)">COOP</button>
+<button class="filter-chip px-2.5 py-1 rounded text-[11px] font-medium text-on-surface-variant bg-surface-container hover:text-on-surface font-mono whitespace-nowrap transition-all" onclick="filterByTag('WARLORDS', this)">WARLORDS</button>
+<button class="filter-chip px-2.5 py-1 rounded text-[11px] font-medium text-on-surface-variant bg-surface-container hover:text-on-surface font-mono whitespace-nowrap transition-all" onclick="filterByTag('PVP', this)">PvP</button>
+<button class="filter-chip px-2.5 py-1 rounded text-[11px] font-medium text-on-surface-variant bg-surface-container hover:text-on-surface font-mono whitespace-nowrap transition-all" onclick="filterByTag('RHS', this)">RHS MOD</button>
+<button class="filter-chip px-2.5 py-1 rounded text-[11px] font-medium text-on-surface-variant bg-surface-container hover:text-on-surface font-mono whitespace-nowrap transition-all" onclick="filterByTag('ZEUS', this)">ZEUS</button>
+</div>
+<!-- Search Input -->
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[14px] text-on-surface-variant/60">search</span>
+<input class="w-full bg-surface-container-lowest pl-8 pr-7 py-1 text-xs rounded border border-outline-variant/30 text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-card-border/60 font-mono" id="mission-search" onkeyup="searchMissions()" placeholder="Search scenario or mode..." type="text">
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[13px] text-on-surface-variant/40 cursor-pointer hover:text-on-surface" onclick="clearMissionSearch()">close</span>
+</div>
+</div>
+<!-- Missions List View -->
+<div class="flex-1 overflow-y-auto p-2 flex flex-col gap-1.5" id="mission-cards-container">
+<!-- Shortcut Eden Editor -->
+
+<!-- Mission: SC 48 Warlords (Whole Island) - ACTIVE SELECTED -->
+<div class="mission-card active-mission-card p-2.5 rounded-lg bg-surface-container-highest border-l-4 border-l-card-border border border-outline-variant/40 cursor-pointer shadow-md transition-all flex flex-col gap-1.5" data-tag="WARLORDS" onclick="inspectMission(this, 'SC 48 Warlords (Whole Island)', 'WARLORDS', '48 SLOTS', '1 - 48', 'BASE ONLY', 'REGULAR', 'Capture sectors. Through them, advance to the enemy base and raid it. Parameters allow you to change various rules within the mission.')">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary-container text-white font-bold tracking-wider">WARLORDS</span>
+<div class="flex items-center gap-1.5">
+<span class="text-[10px] font-mono font-bold text-card-border bg-card-border/10 px-1.5 py-0.2 rounded">48 SLOTS</span>
+<span class="material-symbols-outlined text-[16px] text-card-border">radio_button_checked</span>
+</div>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-semibold text-xs text-on-surface leading-tight">SC 48 Warlords (Whole Island)</span>
+<span class="w-1.5 h-1.5 rounded-full bg-card-border animate-pulse"></span>
+</div>
+<span class="text-[11px] text-on-surface-variant font-mono mt-0.5">Whole Island Domination · Altis</span>
+</div>
+</div>
+<!-- Mission: COOP 04 Firing From Vehicles -->
+<div class="mission-card p-2.5 rounded-lg bg-surface-container-lowest/70 hover:bg-surface-container-high border border-outline-variant/20 cursor-pointer transition-all flex flex-col gap-1.5" data-tag="COOP" onclick="inspectMission(this, 'COOP 04 Firing From Vehicles', 'COOP', '4 SLOTS', '1 - 4', 'RESPAWN TENT', 'REGULAR', 'Engage fast-moving hostile technicals and motorized reconnaissance patrols from mounted transport vehicles across western Altis.')">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-secondary-container text-on-surface font-semibold">COOP</span>
+<div class="flex items-center gap-1">
+<span class="text-[10px] font-mono text-on-surface-variant">4 SLOTS</span>
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant/40">chevron_right</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-medium text-xs text-on-surface leading-tight">COOP 04 Firing From Vehicles</span>
+<span class="text-[11px] text-on-surface-variant/80 font-mono mt-0.5">Altis Proving Grounds</span>
+</div>
+</div>
+<!-- Mission: COOP 12 Combat Patrol -->
+<div class="mission-card p-2.5 rounded-lg bg-surface-container-lowest/70 hover:bg-surface-container-high border border-outline-variant/20 cursor-pointer transition-all flex flex-col gap-1.5" data-tag="COOP" onclick="inspectMission(this, 'COOP 12 Combat Patrol', 'COOP', '12 SLOTS', '1 - 12', 'FOB', 'REGULAR', 'Cooperative dynamic sandbox patrol against guerrilla garrisons occupying military outposts with procedural objectives.')">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-secondary-container text-on-surface font-semibold">COOP</span>
+<div class="flex items-center gap-1">
+<span class="text-[10px] font-mono text-on-surface-variant">12 SLOTS</span>
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant/40">chevron_right</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-medium text-xs text-on-surface leading-tight">COOP 12 Combat Patrol</span>
+<span class="text-[11px] text-on-surface-variant/80 font-mono mt-0.5">Randomized Tactical Objectives</span>
+</div>
+</div>
+<!-- Mission: End Game 16 Kavala -->
+<div class="mission-card p-2.5 rounded-lg bg-surface-container-lowest/70 hover:bg-surface-container-high border border-outline-variant/20 cursor-pointer transition-all flex flex-col gap-1.5" data-tag="PVP" onclick="inspectMission(this, 'End Game 16 Kavala', 'PVP', '16 SLOTS', '2 - 16', 'RESPAWN POINT', 'REGULAR', 'Two opposing teams race to locate intel, secure key blueprints, and upload data at the central Kavala communications facility.')">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-semibold">PvP</span>
+<div class="flex items-center gap-1">
+<span class="text-[10px] font-mono text-on-surface-variant">16 SLOTS</span>
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant/40">chevron_right</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-medium text-xs text-on-surface leading-tight">End Game 16 Kavala</span>
+<span class="text-[11px] text-on-surface-variant/80 font-mono mt-0.5">Kavala Coastal Sector</span>
+</div>
+</div>
+<!-- Mission: Escape 10 Altis -->
+<div class="mission-card p-2.5 rounded-lg bg-surface-container-lowest/70 hover:bg-surface-container-high border border-outline-variant/20 cursor-pointer transition-all flex flex-col gap-1.5" data-tag="COOP" onclick="inspectMission(this, 'Escape 10 Altis', 'COOP', '10 SLOTS', '1 - 10', 'DISABLED', 'VETERAN', 'POWs stranded without gear must scavenge equipment, evade high-threat patrols, and secure an extraction boat or helicopter.')">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-secondary-container text-on-surface font-semibold">COOP</span>
+<div class="flex items-center gap-1">
+<span class="text-[10px] font-mono text-on-surface-variant">10 SLOTS</span>
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant/40">chevron_right</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-medium text-xs text-on-surface leading-tight">Escape 10 Altis</span>
+<span class="text-[11px] text-on-surface-variant/80 font-mono mt-0.5">Wilderness Survival &amp; Evasion</span>
+</div>
+</div>
+<!-- Mission: RHS BECTI 32 - Altis -->
+<div class="mission-card p-2.5 rounded-lg bg-surface-container-lowest/70 hover:bg-surface-container-high border border-outline-variant/20 cursor-pointer transition-all flex flex-col gap-1.5" data-tag="RHS" onclick="inspectMission(this, 'RHS BECTI 32 - Altis', 'RHS MOD', '32 SLOTS', '4 - 32', 'MHQ / BASE', 'REGULAR', 'Full-scale combined arms warfare with base building, factory logistics, resource procurement, and modern US / Russian weapon systems.')">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-card-border/20 text-card-border font-semibold">RHS MOD</span>
+<div class="flex items-center gap-1">
+<span class="text-[10px] font-mono text-on-surface-variant">32 SLOTS</span>
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant/40">chevron_right</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-medium text-xs text-on-surface leading-tight">RHS BECTI 32 - Altis</span>
+<span class="text-[11px] text-on-surface-variant/80 font-mono mt-0.5">Combined Arms Warfare &amp; Base Building</span>
+</div>
+</div>
+<!-- Mission: Support 04 Rodopoli -->
+<div class="mission-card p-2.5 rounded-lg bg-surface-container-lowest/70 hover:bg-surface-container-high border border-outline-variant/20 cursor-pointer transition-all flex flex-col gap-1.5" data-tag="COOP" onclick="inspectMission(this, 'Support 04 Rodopoli', 'SUPPORT', '4 SLOTS', '1 - 4', 'AIRFIELD', 'REGULAR', 'Provide close air support, medical evacuation, and artillery relay for allied AI ground platoons under heavy siege.')">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-variant text-on-surface-variant font-semibold">SUPPORT</span>
+<div class="flex items-center gap-1">
+<span class="text-[10px] font-mono text-on-surface-variant">4 SLOTS</span>
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant/40">chevron_right</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-medium text-xs text-on-surface leading-tight">Support 04 Rodopoli</span>
+<span class="text-[11px] text-on-surface-variant/80 font-mono mt-0.5">CAS Flight &amp; Logistics Relay</span>
+</div>
+</div>
+<!-- Mission: Vanguard 50 Syrta -->
+<div class="mission-card p-2.5 rounded-lg bg-surface-container-lowest/70 hover:bg-surface-container-high border border-outline-variant/20 cursor-pointer transition-all flex flex-col gap-1.5" data-tag="PVP" onclick="inspectMission(this, 'Vanguard 50 Syrta', 'VANGUARD', '50 SLOTS', '10 - 50', 'WAVE RESPAWN', 'REGULAR', 'High-intensity competitive infantry assault across shrinking tactical zones centered around the fortified Syrta compound.')">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-semibold">VANGUARD</span>
+<div class="flex items-center gap-1">
+<span class="text-[10px] font-mono text-on-surface-variant">50 SLOTS</span>
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant/40">chevron_right</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-medium text-xs text-on-surface leading-tight">Vanguard 50 Syrta</span>
+<span class="text-[11px] text-on-surface-variant/80 font-mono mt-0.5">Shrinking Zone Sector Defense</span>
+</div>
+</div>
+<!-- Mission: Zeus 16+2 Master Altis -->
+<div class="mission-card p-2.5 rounded-lg bg-surface-container-lowest/70 hover:bg-surface-container-high border border-outline-variant/20 cursor-pointer transition-all flex flex-col gap-1.5" data-tag="ZEUS" onclick="inspectMission(this, 'Zeus 16+2 Master Altis (NATO)', 'ZEUS', '18 SLOTS', '2 - 18', 'ZEUS DISCRETION', 'REGULAR', 'Expanded dual-Zeus command environment supervising multi-squad tactical NATO combined arms operations across Altis.')">
+<div class="flex items-center justify-between">
+<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/20 text-primary font-semibold">ZEUS</span>
+<div class="flex items-center gap-1">
+<span class="text-[10px] font-mono text-on-surface-variant">18 SLOTS</span>
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant/40">chevron_right</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="font-medium text-xs text-on-surface leading-tight">Zeus 16+2 Master Altis (NATO)</span>
+<span class="text-[11px] text-on-surface-variant/80 font-mono mt-0.5">Curated Sandbox Operations</span>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================================= -->
+<!-- COLUMN 3 (RIGHT): MISSION DETAIL INSPECTOR (Pro Workstation)-->
+<!-- ========================================================= -->
+<main class="flex-1 flex flex-col overflow-y-auto bg-surface-container-lowest/40 min-w-0">
+<div class="p-4 lg:p-6 flex flex-col gap-5 max-w-5xl">
+<!-- Hero Mission Banner Card with Artwork Box -->
+<div class="relative w-full h-52 rounded-xl overflow-hidden border border-outline-variant/40 bg-surface-container-lowest group shadow-lg">
+<!-- Topographic Satellite Artwork -->
+<div class="absolute inset-0 opacity-40 bg-cover bg-center mix-blend-screen transition-transform duration-700 group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDzTVtMKtxhBvthK9Zp08xdJ1qcC0fFNJaGmJRDJWiSXc0bBD7oCnJHSHnmAf7IhqznBVQNo3sXf2ZXqbIkicCnn22r59uJCfYrWdAfGhGHbKQJLQC6Kep3njz-o6Azef4syqsRHX8KFWvOv_W89vGCXFCQ3bpIsZr6dNskELPc-hDbxYKi-dc4p8wc1ty8m0JEJgbTrqWdekklZcIgBnYzTIozy0Io92GDrpNWd6UBC04lTQA4nFjmQw')"></div>
+<!-- Gradient Vignettes -->
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/70 to-transparent"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-surface-container-lowest/90 via-transparent to-surface-container-lowest/70"></div>
+<!-- Hero Content Overlay -->
+<div class="relative h-full p-4 lg:p-5 flex flex-col justify-between z-10">
+<!-- Top Badges -->
+<div class="flex items-center justify-between flex-wrap gap-2">
+<div class="flex items-center gap-2">
+<span class="flex items-center gap-1.5 bg-surface-container-highest/90 border border-outline-variant/40 px-2 py-0.5 rounded text-[10px] font-mono font-bold text-on-surface backdrop-blur-md">
+<span class="material-symbols-outlined text-tertiary text-[14px]">military_tech</span>
+                  BOHEMIA OFFICIAL CONTENT
+                </span>
+<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-primary-container/20 border border-primary/30 text-card-border font-bold uppercase" id="inspector-tag">WARLORDS</span>
+</div>
+<span class="font-mono text-on-surface-variant text-[11px] px-2 py-0.5 rounded bg-black/50 border border-white/10 backdrop-blur-md">VERSION 2.14.99</span>
+</div>
+<!-- Bottom Title & Author Info -->
+<div class="flex flex-col gap-1">
+<h2 class="text-xl lg:text-2xl font-black tracking-tight text-white drop-shadow-md" id="inspector-title">
+                SC 48 Warlords (Whole Island)
+              </h2>
+<div class="flex items-center gap-3 text-xs text-on-surface-variant flex-wrap font-mono">
+<span class="flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[15px] text-tertiary">verified</span>
+                  by Bohemia Interactive
+                </span>
+<span class="">·</span>
+<span class="text-card-border">MAP: ALTIS (ISLAND)</span>
+<span class="">·</span>
+<span class="text-on-surface-variant/80">SECTORS: 18 CONTESTED</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Key Mission Telemetry & Rules Strip -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+<div class="bg-surface-container-high/80 border border-outline-variant/40 p-3 rounded-lg flex flex-col">
+<span class="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider">PLAYERS RANGE</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-lg font-mono font-bold text-on-surface" id="inspector-players">1 - 48</span>
+<span class="text-[10px] font-mono text-on-surface-variant">SLOTS</span>
+</div>
+</div>
+<div class="bg-surface-container-high/80 border border-outline-variant/40 p-3 rounded-lg flex flex-col">
+<span class="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider">RESPAWN RULE</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-sm font-mono font-bold text-card-border" id="inspector-respawn">BASE ONLY</span>
+</div>
+</div>
+<div class="bg-surface-container-high/80 border border-outline-variant/40 p-3 rounded-lg flex flex-col">
+<span class="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider">DIFFICULTY PRESET</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-sm font-mono font-bold text-on-surface" id="inspector-difficulty">REGULAR</span>
+<span class="text-[9px] font-mono px-1 rounded bg-secondary-container text-on-surface-variant uppercase">ENFORCED</span>
+</div>
+</div>
+<div class="bg-surface-container-high/80 border border-outline-variant/40 p-3 rounded-lg flex flex-col">
+<span class="text-[10px] font-mono text-on-surface-variant uppercase tracking-wider">AI SKILL &amp; 3RD P.</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-sm font-mono font-bold text-tertiary">STANDARD</span>
+<span class="text-[10px] font-mono text-card-border">/ 3P ON</span>
+</div>
+</div>
+</div>
+<!-- Operational Briefing Synopsis Box -->
+<div class="bg-surface-container-high/60 border border-outline-variant/40 rounded-lg p-4 flex flex-col gap-2">
+<div class="flex items-center gap-2 pb-1 border-b border-outline-variant/30">
+<span class="material-symbols-outlined text-[16px] text-card-border">description</span>
+<span class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface">OPERATIONAL BRIEFING &amp; SYNOPSIS</span>
+</div>
+<p class="text-xs text-on-surface-variant leading-relaxed font-sans" id="inspector-synopsis">
+            Capture sectors. Through them, advance to the enemy base and raid it. Parameters allow you to change various rules within the mission, including initial Command Points, AI garrisons, vehicle availability, fast travel routes, and automated logistical drops.
+          </p>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 text-[11px] font-mono text-on-surface-variant border-t border-outline-variant/20">
+<div><span class="text-on-surface-variant/60">SYSTEM:</span> <span class="text-on-surface">CP Capture &amp; Spend</span></div>
+<div><span class="text-on-surface-variant/60">FAST TRAVEL:</span> <span class="text-tertiary">Conquered Sectors</span></div>
+<div><span class="text-on-surface-variant/60">REDEPLOYMENT:</span> <span class="text-card-border">FOB / Base Node</span></div>
+</div>
+</div>
+<!-- Required Mods & Mod Orchestration Breakdown -->
+<div class="bg-surface-container-high/60 border border-outline-variant/40 rounded-lg p-4 flex flex-col gap-3">
+<div class="flex items-center justify-between pb-1.5 border-b border-outline-variant/30">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">extension</span>
+<span class="text-xs font-mono font-bold uppercase tracking-wider text-on-surface">REQUIRED MODS BREAKDOWN</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-card-border animate-pulse"></span>
+<span class="text-[10px] font-mono text-card-border uppercase font-semibold">5 OF 5 SYNCED &amp; ACTIVE</span>
+</div>
+</div>
+<!-- Mod Preset Information -->
+<div class="flex items-center justify-between bg-surface-container-lowest/80 px-3 py-2 rounded border border-outline-variant/30">
+<div class="flex flex-col">
+<span class="text-xs font-semibold text-on-surface font-mono">TBD Tactical Ops v2.4 (Modern Combined Arms)</span>
+<span class="text-[10px] font-mono text-on-surface-variant">Host Modset Signature: SHA256-A89E · 14.8 GB Total</span>
+</div>
+<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-container-highest text-card-border font-bold">COMPATIBLE</span>
+</div>
+<!-- Specific Mods Table -->
+<div class="grid grid-cols-1 gap-1.5 font-mono text-xs">
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-lowest/50 border border-outline-variant/20">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-card-border">check_circle</span>
+<span class="text-on-surface font-semibold text-[11px]">ACE3 Reforger Core</span>
+<span class="text-[10px] text-on-surface-variant/60">v1.8.2 · Advanced Ballistics &amp; Medical</span>
+</div>
+<span class="text-[10px] text-on-surface-variant">2.4 GB</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-lowest/50 border border-outline-variant/20">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-card-border">check_circle</span>
+<span class="text-on-surface font-semibold text-[11px]">RHS: Status Quo (AFRF &amp; USAF)</span>
+<span class="text-[10px] text-on-surface-variant/60">v0.6.1 · Modern Weapons &amp; Vehicles</span>
+</div>
+<span class="text-[10px] text-on-surface-variant">7.1 GB</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-lowest/50 border border-outline-variant/20">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-card-border">check_circle</span>
+<span class="text-on-surface font-semibold text-[11px]">TFAR - Tactical Radio Comms</span>
+<span class="text-[10px] text-on-surface-variant/60">v1.2 · Long-Range Positional Audio</span>
+</div>
+<span class="text-[10px] text-on-surface-variant">420 MB</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-lowest/50 border border-outline-variant/20">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-card-border">check_circle</span>
+<span class="text-on-surface font-semibold text-[11px]">CBA_A3 NextGen Framework</span>
+<span class="text-[10px] text-on-surface-variant/60">v3.15 · Community Base Addons</span>
+</div>
+<span class="text-[10px] text-on-surface-variant">180 MB</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-lowest/50 border border-outline-variant/20">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-card-border">check_circle</span>
+<span class="text-on-surface font-semibold text-[11px]">Project Reality Altis HD Assets</span>
+<span class="text-[10px] text-on-surface-variant/60">Structures, Fortifications &amp; Caches</span>
+</div>
+<span class="text-[10px] text-on-surface-variant">4.7 GB</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- ========================================================= -->
+<!-- BOTTOM ACTION BAR: SEAMLESS FROSTED GLASS DOCK (No Workshop Button) -->
+<!-- ========================================================= -->
+<footer class="h-16 bg-surface-container-lowest/90 backdrop-blur-xl border-t border-outline-variant/40 px-5 flex items-center justify-between shrink-0 z-40">
+<!-- Bottom-Left: Back Action -->
+<div class="flex items-center">
+<a class="px-4 py-2 rounded-md bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/40 font-mono text-xs font-semibold uppercase tracking-widest transition-all flex items-center gap-1.5 shadow-sm active:scale-95" href="#">
+<span class="material-symbols-outlined text-[15px]">arrow_back</span>
+        BACK
+      </a>
+</div>
+<!-- Bottom-Right: Game Options & Primary Play/Launch Button -->
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 rounded-md bg-surface-container-high hover:bg-surface-bright text-on-surface border border-outline-variant/40 font-mono text-xs font-semibold uppercase tracking-wider transition-all shadow-sm active:scale-95 flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[15px] text-on-surface-variant">settings</span>
+        GAME OPTIONS
+      </button>
+<button class="px-8 py-2 rounded-md bg-primary-container hover:brightness-110 text-white font-sans text-sm uppercase tracking-widest font-black shadow-[0_0_20px_rgba(77,142,255,0.45)] active:scale-[0.98] transition-all flex items-center gap-2" type="button">
+<span class="">PLAY</span>
+<span class="material-symbols-outlined text-[18px]">sports_esports</span>
+</button>
+</div>
+</footer>
+</div>
+<!-- Real-time Interaction JavaScript -->
+<script>
+  function selectTerrainItem(element, mapName, missionCount) {
+    document.querySelectorAll('.terrain-entry').forEach(el => {
+      el.className = 'terrain-entry px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors';
+      // keep interior icons color intact
+    });
+    element.className = 'terrain-entry active-terrain px-2.5 py-2 rounded-md flex items-center justify-between text-xs cursor-pointer bg-card-border/15 text-white border border-card-border/40 shadow-sm transition-all';
+
+    const heading = document.getElementById('mission-heading');
+    if (heading) heading.innerText = mapName.toUpperCase() + ' MISSIONS';
+
+    const count = document.getElementById('mission-count');
+    if (count) count.innerText = missionCount + ' AVAILABLE';
+
+    const search = document.getElementById('mission-search');
+    if (search) search.placeholder = 'Search ' + mapName + ' scenarios...';
+  }
+
+  function inspectMission(element, title, tag, slots, players, respawn, difficulty, synopsis) {
+    document.querySelectorAll('.mission-card').forEach(el => {
+      el.className = 'mission-card p-2.5 rounded-lg bg-surface-container-lowest/70 hover:bg-surface-container-high border border-outline-variant/20 cursor-pointer transition-all flex flex-col gap-1.5';
+    });
+
+    element.className = 'mission-card active-mission-card p-2.5 rounded-lg bg-surface-container-highest border-l-4 border-l-card-border border border-outline-variant/40 cursor-pointer shadow-md transition-all flex flex-col gap-1.5';
+
+    document.getElementById('inspector-title').innerText = title;
+    document.getElementById('inspector-tag').innerText = tag;
+    document.getElementById('inspector-players').innerText = players;
+    document.getElementById('inspector-respawn').innerText = respawn;
+    document.getElementById('inspector-difficulty').innerText = difficulty;
+    document.getElementById('inspector-synopsis').innerText = synopsis;
+  }
+
+  function filterByTag(tag, btn) {
+    document.querySelectorAll('.filter-chip').forEach(c => {
+      c.className = 'filter-chip px-2.5 py-1 rounded text-[11px] font-medium text-on-surface-variant bg-surface-container hover:text-on-surface font-mono whitespace-nowrap transition-all';
+    });
+    btn.className = 'filter-chip px-2.5 py-1 rounded text-[11px] font-semibold bg-primary-container text-on-surface font-mono whitespace-nowrap transition-all';
+
+    const cards = document.querySelectorAll('.mission-card');
+    let count = 0;
+    cards.forEach(c => {
+      const cardTag = c.getAttribute('data-tag');
+      if (tag === 'ALL' || cardTag === tag) {
+        c.style.display = 'flex';
+        count++;
+      } else {
+        c.style.display = 'none';
+      }
+    });
+    document.getElementById('mission-count').innerText = count + ' AVAILABLE';
+  }
+
+  function searchMissions() {
+    const q = document.getElementById('mission-search').value.toLowerCase();
+    const cards = document.querySelectorAll('.mission-card');
+    let count = 0;
+    cards.forEach(c => {
+      const text = c.textContent.toLowerCase();
+      if (text.includes(q)) {
+        c.style.display = 'flex';
+        count++;
+      } else {
+        c.style.display = 'none';
+      }
+    });
+    document.getElementById('mission-count').innerText = count + ' AVAILABLE';
+  }
+
+  function clearMissionSearch() {
+    document.getElementById('mission-search').value = '';
+    searchMissions();
+  }
+
+  function filterTerrains() {
+    const q = document.getElementById('terrain-search').value.toLowerCase();
+    const terrains = document.querySelectorAll('.terrain-entry');
+    terrains.forEach(t => {
+      const text = t.textContent.toLowerCase();
+      t.style.display = text.includes(q) ? 'flex' : 'none';
+    });
+  }
+</script>
+
+
+</body></html>

@@ -41,10 +41,14 @@ class TBD_UITheme
 	static const int PRIMARY                  = 0xFFADC6FF; //!< --color-primary
 	static const int ON_PRIMARY               = 0xFF122F5F; //!< --color-on-primary
 	static const int PRIMARY_FIXED            = 0xFFD8E2FF; //!< --color-primary-fixed
+	static const int PRIMARY_CONTAINER        = 0xFF4D8EFF; //!< --color-primary-container
 	static const int ON_PRIMARY_CONTAINER     = 0xFF385283; //!< --color-on-primary-container
 	static const int ACTION                   = 0xFF3B82F6; //!< --color-action  (Deploy / Save)
 	static const int ON_ACTION                = 0xFFFFFFFF; //!< --color-on-action
 	static const int TERTIARY                 = 0xFFC3E7FF; //!< --color-tertiary
+	static const int TERTIARY_WARM            = 0xFFFFB786; //!< --color-tertiary-warm (#ffb786 in stitch mockup)
+	static const int TERTIARY_CONTAINER       = 0xFFDF7412; //!< --color-tertiary-container (#df7412 in stitch mockup)
+	static const int CARD_BORDER              = 0xFF38BDF8; //!< --color-card-border (#38bdf8 in stitch mockup)
 
 	// ── Lines ────────────────────────────────────────────────────────────────────────────────
 	static const int OUTLINE                  = 0xFF8E909A; //!< --color-outline

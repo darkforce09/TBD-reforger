@@ -1,0 +1,170 @@
+ButtonWidgetClass "{7BD1A70000000B21}" {
+ Name "TerrainRowBtn"
+ Slot AlignableSlot "{7BD1A70000000B22}" {
+  HorizontalAlign 3
+  VerticalAlign 3
+  Padding 8 0 8 3
+ }
+ Color 1 1 1 0
+ {
+  SizeLayoutWidgetClass "{7BD1A70000000B23}" {
+   Name "TerrainRowSize"
+   Slot ButtonWidgetSlot "{7BD1A70000000B24}" {
+    HorizontalAlign 3
+   }
+   AllowHeightOverride 1
+   HeightOverride 32
+   {
+    OverlayWidgetClass "{7BD1A70000000B25}" {
+     Name "TerrainRowOverlay"
+     Slot AlignableSlot "{7BD1A70000000B26}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000B27}" {
+       Name "RowBG"
+       Slot OverlayWidgetSlot "{7BD1A70000000B28}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 0.086 0.122 0.184 0
+      }
+      ImageWidgetClass "{7BD1A70000000B29}" {
+       Name "RowAccent"
+       Slot OverlayWidgetSlot "{7BD1A70000000B2A}" {
+        HorizontalAlign 0
+        VerticalAlign 3
+       }
+       Color 0.220 0.741 0.973 0
+       Size 3 32
+      }
+      FrameWidgetClass "{7BD1A70000000B2B}" {
+        Name "RowContent"
+        Slot OverlayWidgetSlot "{7BD1A70000000B2C}" {
+         HorizontalAlign 3
+         VerticalAlign 3
+        }
+        {
+         TextWidgetClass "{7BD1A70000000B3B}" {
+          Name "TerrainIcon"
+          Slot FrameWidgetSlot "{7BD1A70000000B3C}" {
+           Anchor 0 0.5 0 0.5
+           PositionX 8
+           OffsetLeft 8
+           PositionY -8
+           OffsetTop -8
+           SizeX 16
+           OffsetRight -24
+           SizeY 16
+           OffsetBottom 8
+          }
+          Clipping True
+          Color 0.220 0.741 0.973 1
+          Text "~"
+          "Font Size" 12
+          "Horizontal Alignment" Center
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+         TextWidgetClass "{7BD1A70000000B2D}" {
+          Name "TerrainName"
+          Slot FrameWidgetSlot "{7BD1A70000000B2E}" {
+           Anchor 0 0 1 1
+           PositionX 28
+           OffsetLeft 28
+           PositionY 0
+           OffsetTop 0
+           SizeX -75
+           OffsetRight 47
+           SizeY 0
+           OffsetBottom 0
+          }
+          Clipping True
+          Color 0.769 0.776 0.816 1
+          Text "Terrain Name"
+          "Font Size" 12
+          "Vertical Alignment" Center
+          Wrap 0
+         }
+         FrameWidgetClass "{7BD1A70000000B3D}" {
+          Name "BadgeContainer"
+          Slot FrameWidgetSlot "{7BD1A70000000B3E}" {
+           Anchor 1 0.5 1 0.5
+           PositionX -44
+           OffsetLeft -44
+           PositionY -9
+           OffsetTop -9
+           SizeX 38
+           OffsetRight 6
+           SizeY 18
+           OffsetBottom 9
+          }
+          {
+           ImageWidgetClass "{7BD1A70000000B3F}" {
+            Name "BadgeBG"
+            Slot FrameWidgetSlot "{7BD1A70000000B4F}" {
+             Anchor 0 0 1 1
+             PositionX 0
+             OffsetLeft 0
+             PositionY 0
+             OffsetTop 0
+             SizeX 0
+             OffsetRight 0
+             SizeY 0
+             OffsetBottom 0
+            }
+            Color 0.086 0.122 0.184 0
+           }
+           TextWidgetClass "{7BD1A70000000B2F}" {
+            Name "TerrainBadge"
+            Slot FrameWidgetSlot "{7BD1A70000000B3A}" {
+             Anchor 0 0 1 1
+             PositionX 0
+             OffsetLeft 0
+             PositionY 0
+             OffsetTop 0
+             SizeX -12
+             OffsetRight 12
+             SizeY 0
+             OffsetBottom 0
+            }
+            Clipping True
+            Color 0.447 0.467 0.541 1
+            Text "30"
+            "Font Size" 10
+            "Horizontal Alignment" Center
+            "Vertical Alignment" Center
+            Wrap 0
+           }
+           TextWidgetClass "{7BD1A70000000B48}" {
+            Name "TerrainChevron"
+            Slot FrameWidgetSlot "{7BD1A70000000B49}" {
+             Anchor 1 0.5 1 0.5
+             PositionX -10
+             OffsetLeft -10
+             PositionY -9
+             OffsetTop -9
+             SizeX 10
+             OffsetRight 0
+             SizeY 18
+             OffsetBottom 9
+            }
+            Clipping True
+            Color 0.220 0.741 0.973 0
+            Text ">"
+            "Font Size" 10
+            "Horizontal Alignment" Right
+            "Vertical Alignment" Center
+            Wrap 0
+           }
+          }
+         }
+        }
+       }
+     }
+    }
+   }
+  }
+ }
+}

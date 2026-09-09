@@ -1,0 +1,2736 @@
+FrameWidgetClass "{7BD1A70000000B00}" {
+ Name "ScreenRoot"
+ components {
+  TBD_MissionSelectorComponent "{7BD1A70000000B0F}" {
+  }
+ }
+ {
+  ImageWidgetClass "{7BD1A70000000B10}" {
+   Name "Backdrop"
+   Slot FrameWidgetSlot "{7BD1A70000000B11}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 0.027 0.043 0.078 1
+  }
+  FrameWidgetClass "{7BD1A70000000B12}" {
+   Name "WindowFrame"
+   Slot FrameWidgetSlot "{7BD1A70000000B13}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   {
+    FrameWidgetClass "{7BD1A70000000B14}" {
+     Name "HeaderBar"
+     Slot FrameWidgetSlot "{7BD1A70000000B15}" {
+      Anchor 0 0 1 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 48
+      OffsetBottom -48
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000B16}" {
+       Name "HeaderBG"
+       Slot FrameWidgetSlot "{7BD1A70000000B17}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       Color 0.031 0.055 0.114 0.95
+      }
+      ImageWidgetClass "{7BD1A70000000B18}" {
+       Name "HeaderBottomRule"
+       Slot FrameWidgetSlot "{7BD1A70000000B19}" {
+        Anchor 0 1 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY -1
+        OffsetTop -1
+        SizeX 0
+        OffsetRight 0
+        SizeY 1
+        OffsetBottom 0
+       }
+       Color 0.176 0.208 0.290 0.7
+      }
+      TextWidgetClass "{7BD1A70000000B1A}" {
+       Name "HeaderTitle"
+       Slot FrameWidgetSlot "{7BD1A70000000B1B}" {
+        Anchor 0 0 0 1
+        PositionX 20
+        OffsetLeft 20
+        PositionY 12
+        OffsetTop 12
+        SizeX 320
+        OffsetRight -340
+        SizeY 24
+        OffsetBottom -12
+       }
+       Clipping True
+       Color 0.945 0.961 0.976 1
+       Text "SCENARIO SELECTION"
+       "Font Size" 15
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      FrameWidgetClass "{7BD1A70000000B1C}" {
+       Name "AdminBadge"
+       Slot FrameWidgetSlot "{7BD1A70000000B1D}" {
+        Anchor 1 0 1 0
+        PositionX -320
+        OffsetLeft -320
+        PositionY 8
+        OffsetTop 8
+        SizeX 180
+        OffsetRight -140
+        SizeY 32
+        OffsetBottom -40
+       }
+       {
+        ImageWidgetClass "{7BD1A70000000B1E}" {
+         Name "AdminBadgeBG"
+         Slot FrameWidgetSlot "{7BD1A70000000B1F}" {
+          Anchor 0 0 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY 0
+          OffsetTop 0
+          SizeX 0
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
+         Color 0.110 0.137 0.212 0.85
+        }
+        ImageWidgetClass "{7BD1A70000000C40}" {
+         Name "AdminBadgeBorder"
+         Slot FrameWidgetSlot "{7BD1A70000000C41}" {
+          Anchor 0 0 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY 0
+          OffsetTop 0
+          SizeX 0
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
+         Color 0.220 0.741 0.973 0.35
+        }
+        TextWidgetClass "{7BD1A70000000B20}" {
+         Name "AdminDot"
+         Slot FrameWidgetSlot "{7BD1A70000000B21}" {
+          Anchor 0 0 0 0
+          PositionX 8
+          OffsetLeft 8
+          PositionY 8
+          OffsetTop 8
+          SizeX 12
+          OffsetRight -20
+          SizeY 16
+          OffsetBottom -24
+         }
+         Clipping True
+         Color 0.220 0.741 0.973 1
+         Text "*"
+         "Font Size" 14
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+        TextWidgetClass "{7BD1A70000000B22}" {
+         Name "AdminLabel"
+         Slot FrameWidgetSlot "{7BD1A70000000B23}" {
+          Anchor 0 0 0 1
+          PositionX 22
+          OffsetLeft 22
+          PositionY 0
+          OffsetTop 0
+          SizeX 90
+          OffsetRight -112
+          SizeY 0
+          OffsetBottom 0
+         }
+         Clipping True
+         Color 0.945 0.961 0.976 1
+         Text "Mission Maker"
+         "Font Size" 12
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+        FrameWidgetClass "{7BD1A70000000C42}" {
+         Name "AdminTagContainer"
+         Slot FrameWidgetSlot "{7BD1A70000000C43}" {
+          Anchor 1 0 1 0
+          PositionX -52
+          OffsetLeft -52
+          PositionY 6
+          OffsetTop 6
+          SizeX 44
+          OffsetRight 8
+          SizeY 20
+          OffsetBottom -26
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000C44}" {
+           Name "AdminTagBG"
+           Slot FrameWidgetSlot "{7BD1A70000000C45}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 0.15 0.35 0.70 0.35
+          }
+          TextWidgetClass "{7BD1A70000000B24}" {
+           Name "AdminTag"
+           Slot FrameWidgetSlot "{7BD1A70000000B25}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Clipping True
+           Color 0.220 0.741 0.973 1
+           Text "ADMIN"
+           "Font Size" 10
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+      FrameWidgetClass "{7BD1A70000000B26}" {
+       Name "PlayerCountBadge"
+       Slot FrameWidgetSlot "{7BD1A70000000B27}" {
+        Anchor 1 0 1 0
+        PositionX -120
+        OffsetLeft -120
+        PositionY 8
+        OffsetTop 8
+        SizeX 100
+        OffsetRight -20
+        SizeY 32
+        OffsetBottom -40
+       }
+       {
+        ImageWidgetClass "{7BD1A70000000B28}" {
+         Name "PlayerCountBG"
+         Slot FrameWidgetSlot "{7BD1A70000000B29}" {
+          Anchor 0 0 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY 0
+          OffsetTop 0
+          SizeX 0
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
+         Color 0.067 0.090 0.157 0.9
+        }
+        ImageWidgetClass "{7BD1A70000000C46}" {
+         Name "PlayerCountBorder"
+         Slot FrameWidgetSlot "{7BD1A70000000C47}" {
+          Anchor 0 0 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY 0
+          OffsetTop 0
+          SizeX 0
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
+         Color 0.176 0.208 0.290 0.5
+        }
+        TextWidgetClass "{7BD1A70000000C48}" {
+         Name "PlayerCountIcon"
+         Slot FrameWidgetSlot "{7BD1A70000000C49}" {
+          Anchor 0 0 0 0
+          PositionX 8
+          OffsetLeft 8
+          PositionY 8
+          OffsetTop 8
+          SizeX 16
+          OffsetRight -24
+          SizeY 16
+          OffsetBottom -24
+         }
+         Clipping True
+         Color 0.220 0.741 0.973 1
+         Text "~"
+         "Font Size" 12
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+        TextWidgetClass "{7BD1A70000000B2A}" {
+         Name "PlayerCountText"
+         Slot FrameWidgetSlot "{7BD1A70000000B2B}" {
+          Anchor 0 0 1 1
+          PositionX 24
+          OffsetLeft 24
+          PositionY 0
+          OffsetTop 0
+          SizeX -24
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
+         Clipping True
+         Color 0.945 0.961 0.976 1
+         Text "1 / 48"
+         "Font Size" 12
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+       }
+      }
+     }
+    }
+    FrameWidgetClass "{7BD1A70000000B2C}" {
+     Name "MainLayout"
+     Slot FrameWidgetSlot "{7BD1A70000000B2D}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 48
+      OffsetTop 48
+      SizeX 0
+      OffsetRight 0
+      SizeY -112
+      OffsetBottom 64
+     }
+     {
+      FrameWidgetClass "{7BD1A70000000B30}" {
+       Name "ColTerrains"
+       Slot FrameWidgetSlot "{7BD1A70000000B31}" {
+        Anchor 0 0 0 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 280
+        OffsetRight -280
+        SizeY 0
+        OffsetBottom 0
+       }
+       {
+        ImageWidgetClass "{7BD1A70000000B32}" {
+         Name "ColTerrainsBG"
+         Slot FrameWidgetSlot "{7BD1A70000000B33}" {
+          Anchor 0 0 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY 0
+          OffsetTop 0
+          SizeX 0
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
+         Color 0.031 0.055 0.114 0.6
+        }
+        ImageWidgetClass "{7BD1A70000000B34}" {
+         Name "ColTerrainsDivider"
+         Slot FrameWidgetSlot "{7BD1A70000000B35}" {
+          Anchor 1 0 1 1
+          PositionX -1
+          OffsetLeft -1
+          PositionY 0
+          OffsetTop 0
+          SizeX 1
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
+         Color 0.176 0.208 0.290 0.5
+        }
+        FrameWidgetClass "{7BD1A70000000B36}" {
+         Name "TerrainsHeader"
+         Slot FrameWidgetSlot "{7BD1A70000000B37}" {
+          Anchor 0 0 1 0
+          PositionX 0
+          OffsetLeft 0
+          PositionY 0
+          OffsetTop 0
+          SizeX 0
+          OffsetRight 0
+          SizeY 76
+          OffsetBottom -76
+         }
+         {
+          TextWidgetClass "{7BD1A70000000B38}" {
+           Name "TerrainsTitle"
+           Slot FrameWidgetSlot "{7BD1A70000000B39}" {
+            Anchor 0 0 0 0
+            PositionX 14
+            OffsetLeft 14
+            PositionY 10
+            OffsetTop 10
+            SizeX 100
+            OffsetRight -114
+            SizeY 22
+            OffsetBottom -32
+           }
+           Clipping True
+           Color 0.945 0.961 0.976 1
+           Text "TERRAINS"
+           "Font Size" 12
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+          TextWidgetClass "{7BD1A70000000B3A}" {
+           Name "TerrainsCount"
+           Slot FrameWidgetSlot "{7BD1A70000000B3B}" {
+            Anchor 1 0 1 0
+            PositionX -85
+            OffsetLeft -85
+            PositionY 10
+            OffsetTop 10
+            SizeX 70
+            OffsetRight 15
+            SizeY 22
+            OffsetBottom -32
+           }
+           Clipping True
+           Color 0.608 0.639 0.722 1
+           Text "53 MAPS"
+           "Font Size" 11
+           "Horizontal Alignment" Right
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+          FrameWidgetClass "{7BD1A70000000C50}" {
+           Name "TerrainSearchContainer"
+           Slot FrameWidgetSlot "{7BD1A70000000C51}" {
+            Anchor 0 0 1 0
+            PositionX 12
+            OffsetLeft 12
+            PositionY 38
+            OffsetTop 38
+            SizeX -24
+            OffsetRight -12
+            SizeY 28
+            OffsetBottom -66
+           }
+           {
+            ImageWidgetClass "{7BD1A70000000C52}" {
+             Name "TerrainSearchBG"
+             Slot FrameWidgetSlot "{7BD1A70000000C53}" {
+              Anchor 0 0 1 1
+              PositionX 0
+              OffsetLeft 0
+              PositionY 0
+              OffsetTop 0
+              SizeX 0
+              OffsetRight 0
+              SizeY 0
+              OffsetBottom 0
+             }
+             Color 0.086 0.114 0.188 1
+            }
+            ImageWidgetClass "{7BD1A70000000C54}" {
+             Name "TerrainSearchBorder"
+             Slot FrameWidgetSlot "{7BD1A70000000C55}" {
+              Anchor 0 0 1 1
+              PositionX 0
+              OffsetLeft 0
+              PositionY 0
+              OffsetTop 0
+              SizeX 0
+              OffsetRight 0
+              SizeY 0
+              OffsetBottom 0
+             }
+             Color 0.176 0.208 0.290 0.5
+            }
+            TextWidgetClass "{7BD1A70000000C56}" {
+             Name "TerrainSearchIcon"
+             Slot FrameWidgetSlot "{7BD1A70000000C57}" {
+              Anchor 0 0 0 0
+              PositionX 8
+              OffsetLeft 8
+              PositionY 8
+              OffsetTop 8
+              SizeX 14
+              OffsetRight -22
+              SizeY 14
+              OffsetBottom -22
+             }
+             Clipping True
+             Color 0.608 0.639 0.722 0.8
+             Text "Q"
+             "Font Size" 11
+             "Horizontal Alignment" Center
+             "Vertical Alignment" Center
+             Wrap 0
+            }
+            EditBoxWidgetClass "{7BD1A70000000B3C}" {
+             Name "TerrainSearch"
+             Slot FrameWidgetSlot "{7BD1A70000000B3D}" {
+              Anchor 0 0 1 1
+              PositionX 26
+              OffsetLeft 26
+              PositionY 0
+              OffsetTop 0
+              SizeX -32
+              OffsetRight -6
+              SizeY 0
+              OffsetBottom 0
+             }
+             Color 0.945 0.961 0.976 1
+             Text "Filter biomes, islands..."
+             "Font Size" 11
+            }
+           }
+          }
+         }
+        }
+        ScrollLayoutWidgetClass "{7BD1A70000000B3E}" {
+         Name "TerrainsScroll"
+         Slot FrameWidgetSlot "{7BD1A70000000B3F}" {
+          Anchor 0 0 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY 76
+          OffsetTop 76
+          SizeX 0
+          OffsetRight 0
+          SizeY -76
+          OffsetBottom 0
+         }
+         {
+          VerticalLayoutWidgetClass "{7BD1A70000000B40}" {
+           Name "TerrainListContent"
+           Slot AlignableSlot "{7BD1A70000000B41}" {
+            HorizontalAlign 3
+            VerticalAlign 0
+           }
+          }
+         }
+        }
+       }
+      }
+      FrameWidgetClass "{7BD1A70000000B50}" {
+       Name "ColMissions"
+       Slot FrameWidgetSlot "{7BD1A70000000B51}" {
+        Anchor 0 0 0 1
+        PositionX 280
+        OffsetLeft 280
+        PositionY 0
+        OffsetTop 0
+        SizeX 380
+        OffsetRight -660
+        SizeY 0
+        OffsetBottom 0
+       }
+       {
+        ImageWidgetClass "{7BD1A70000000B52}" {
+         Name "ColMissionsBG"
+         Slot FrameWidgetSlot "{7BD1A70000000B53}" {
+          Anchor 0 0 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY 0
+          OffsetTop 0
+          SizeX 0
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
+         Color 0.067 0.090 0.157 0.4
+        }
+        ImageWidgetClass "{7BD1A70000000B54}" {
+         Name "ColMissionsDivider"
+         Slot FrameWidgetSlot "{7BD1A70000000B55}" {
+          Anchor 1 0 1 1
+          PositionX -1
+          OffsetLeft -1
+          PositionY 0
+          OffsetTop 0
+          SizeX 1
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
+         Color 0.176 0.208 0.290 0.5
+        }
+        FrameWidgetClass "{7BD1A70000000B56}" {
+         Name "MissionsHeader"
+         Slot FrameWidgetSlot "{7BD1A70000000B57}" {
+          Anchor 0 0 1 0
+          PositionX 0
+          OffsetLeft 0
+          PositionY 0
+          OffsetTop 0
+          SizeX 0
+          OffsetRight 0
+          SizeY 110
+          OffsetBottom -110
+         }
+         {
+          TextWidgetClass "{7BD1A70000000B58}" {
+           Name "MissionsTitle"
+           Slot FrameWidgetSlot "{7BD1A70000000B59}" {
+            Anchor 0 0 0 0
+            PositionX 14
+            OffsetLeft 14
+            PositionY 10
+            OffsetTop 10
+            SizeX 200
+            OffsetRight -214
+            SizeY 22
+            OffsetBottom -32
+           }
+           Clipping True
+           Color 0.945 0.961 0.976 1
+           Text "ALTIS MISSIONS"
+           "Font Size" 12
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+          TextWidgetClass "{7BD1A70000000B5A}" {
+           Name "MissionsAvailableCount"
+           Slot FrameWidgetSlot "{7BD1A70000000B5B}" {
+            Anchor 1 0 1 0
+            PositionX -110
+            OffsetLeft -110
+            PositionY 10
+            OffsetTop 10
+            SizeX 96
+            OffsetRight 14
+            SizeY 22
+            OffsetBottom -32
+           }
+           Clipping True
+           Color 0.220 0.741 0.973 1
+           Text "30 AVAILABLE"
+           "Font Size" 11
+           "Horizontal Alignment" Right
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+           HorizontalLayoutWidgetClass "{7BD1A70000000B5C}" {
+            Name "FilterChipsBar"
+            Slot FrameWidgetSlot "{7BD1A70000000B5D}" {
+             Anchor 0 0 1 0
+             PositionX 12
+             OffsetLeft 12
+             PositionY 38
+             OffsetTop 38
+             SizeX -24
+             OffsetRight 12
+             SizeY 26
+             OffsetBottom -64
+            }
+            {
+             ButtonWidgetClass "{7BD1A70000000B60}" {
+              Name "ChipAll"
+              Slot LayoutSlot "{7BD1A70000000B61}" {
+               Padding 0 0 4 0
+              }
+              Color 1 1 1 0
+              {
+               OverlayWidgetClass "{7BD1A70000000C60}" {
+                Name "ChipAllOverlay"
+                Slot ButtonWidgetSlot "{7BD1A70000000C61}" {
+                 HorizontalAlign 3
+                 VerticalAlign 3
+                }
+                {
+                 ImageWidgetClass "{7BD1A70000000C62}" {
+                  Name "ChipAllBG"
+                  Slot OverlayWidgetSlot "{7BD1A70000000C63}" {
+                   HorizontalAlign 3
+                   VerticalAlign 3
+                  }
+                  Color 0.302 0.557 1 1
+                 }
+                 TextWidgetClass "{7BD1A70000000C64}" {
+                  Name "ChipAllText"
+                  Slot OverlayWidgetSlot "{7BD1A70000000C65}" {
+                   HorizontalAlign 3
+                   VerticalAlign 3
+                   Padding 8 2 8 2
+                  }
+                  Clipping True
+                  Color 1 1 1 1
+                  Text "ALL"
+                  "Font Size" 10
+                  "Horizontal Alignment" Center
+                  "Vertical Alignment" Center
+                  Wrap 0
+                 }
+                }
+               }
+              }
+             }
+             ButtonWidgetClass "{7BD1A70000000B62}" {
+              Name "ChipCoop"
+              Slot LayoutSlot "{7BD1A70000000B63}" {
+               Padding 0 0 4 0
+              }
+              Color 1 1 1 0
+              {
+               OverlayWidgetClass "{7BD1A70000000C66}" {
+                Name "ChipCoopOverlay"
+                Slot ButtonWidgetSlot "{7BD1A70000000C67}" {
+                 HorizontalAlign 3
+                 VerticalAlign 3
+                }
+                {
+                 ImageWidgetClass "{7BD1A70000000C68}" {
+                  Name "ChipCoopBG"
+                  Slot OverlayWidgetSlot "{7BD1A70000000C69}" {
+                   HorizontalAlign 3
+                   VerticalAlign 3
+                  }
+                  Color 0.098 0.125 0.196 1
+                 }
+                 TextWidgetClass "{7BD1A70000000C6A}" {
+                  Name "ChipCoopText"
+                  Slot OverlayWidgetSlot "{7BD1A70000000C6B}" {
+                   HorizontalAlign 3
+                   VerticalAlign 3
+                   Padding 8 2 8 2
+                  }
+                  Clipping True
+                  Color 0.608 0.639 0.722 1
+                  Text "COOP"
+                  "Font Size" 10
+                  "Horizontal Alignment" Center
+                  "Vertical Alignment" Center
+                  Wrap 0
+                 }
+                }
+               }
+              }
+             }
+             ButtonWidgetClass "{7BD1A70000000B64}" {
+              Name "ChipWarlords"
+              Slot LayoutSlot "{7BD1A70000000B65}" {
+               Padding 0 0 4 0
+              }
+              Color 1 1 1 0
+              {
+               OverlayWidgetClass "{7BD1A70000000C6C}" {
+                Name "ChipWarlordsOverlay"
+                Slot ButtonWidgetSlot "{7BD1A70000000C6D}" {
+                 HorizontalAlign 3
+                 VerticalAlign 3
+                }
+                {
+                 ImageWidgetClass "{7BD1A70000000C6E}" {
+                  Name "ChipWarlordsBG"
+                  Slot OverlayWidgetSlot "{7BD1A70000000C6F}" {
+                   HorizontalAlign 3
+                   VerticalAlign 3
+                  }
+                  Color 0.098 0.125 0.196 1
+                 }
+                 TextWidgetClass "{7BD1A70000000C70}" {
+                  Name "ChipWarlordsText"
+                  Slot OverlayWidgetSlot "{7BD1A70000000C71}" {
+                   HorizontalAlign 3
+                   VerticalAlign 3
+                   Padding 8 2 8 2
+                  }
+                  Clipping True
+                  Color 0.608 0.639 0.722 1
+                  Text "WARLORDS"
+                  "Font Size" 10
+                  "Horizontal Alignment" Center
+                  "Vertical Alignment" Center
+                  Wrap 0
+                 }
+                }
+               }
+              }
+             }
+             ButtonWidgetClass "{7BD1A70000000B66}" {
+              Name "ChipPvp"
+              Slot LayoutSlot "{7BD1A70000000B67}" {
+               Padding 0 0 4 0
+              }
+              Color 1 1 1 0
+              {
+               OverlayWidgetClass "{7BD1A70000000C72}" {
+                Name "ChipPvpOverlay"
+                Slot ButtonWidgetSlot "{7BD1A70000000C73}" {
+                 HorizontalAlign 3
+                 VerticalAlign 3
+                }
+                {
+                 ImageWidgetClass "{7BD1A70000000C74}" {
+                  Name "ChipPvpBG"
+                  Slot OverlayWidgetSlot "{7BD1A70000000C75}" {
+                   HorizontalAlign 3
+                   VerticalAlign 3
+                  }
+                  Color 0.098 0.125 0.196 1
+                 }
+                 TextWidgetClass "{7BD1A70000000C76}" {
+                  Name "ChipPvpText"
+                  Slot OverlayWidgetSlot "{7BD1A70000000C77}" {
+                   HorizontalAlign 3
+                   VerticalAlign 3
+                   Padding 8 2 8 2
+                  }
+                  Clipping True
+                  Color 0.608 0.639 0.722 1
+                  Text "PvP"
+                  "Font Size" 10
+                  "Horizontal Alignment" Center
+                  "Vertical Alignment" Center
+                  Wrap 0
+                 }
+                }
+               }
+              }
+             }
+             ButtonWidgetClass "{7BD1A70000000B68}" {
+              Name "ChipRhs"
+              Slot LayoutSlot "{7BD1A70000000B69}" {
+               Padding 0 0 4 0
+              }
+              Color 1 1 1 0
+              {
+               OverlayWidgetClass "{7BD1A70000000C78}" {
+                Name "ChipRhsOverlay"
+                Slot ButtonWidgetSlot "{7BD1A70000000C79}" {
+                 HorizontalAlign 3
+                 VerticalAlign 3
+                }
+                {
+                 ImageWidgetClass "{7BD1A70000000C7A}" {
+                  Name "ChipRhsBG"
+                  Slot OverlayWidgetSlot "{7BD1A70000000C7B}" {
+                   HorizontalAlign 3
+                   VerticalAlign 3
+                  }
+                  Color 0.098 0.125 0.196 1
+                 }
+                 TextWidgetClass "{7BD1A70000000C7C}" {
+                  Name "ChipRhsText"
+                  Slot OverlayWidgetSlot "{7BD1A70000000C7D}" {
+                   HorizontalAlign 3
+                   VerticalAlign 3
+                   Padding 8 2 8 2
+                  }
+                  Clipping True
+                  Color 0.608 0.639 0.722 1
+                  Text "RHS MOD"
+                  "Font Size" 10
+                  "Horizontal Alignment" Center
+                  "Vertical Alignment" Center
+                  Wrap 0
+                 }
+                }
+               }
+              }
+             }
+             ButtonWidgetClass "{7BD1A70000000B6A}" {
+              Name "ChipZeus"
+              Slot LayoutSlot "{7BD1A70000000B6B}" {
+               Padding 0 0 0 0
+              }
+              Color 1 1 1 0
+              {
+               OverlayWidgetClass "{7BD1A70000000C7E}" {
+                Name "ChipZeusOverlay"
+                Slot ButtonWidgetSlot "{7BD1A70000000C7F}" {
+                 HorizontalAlign 3
+                 VerticalAlign 3
+                }
+                {
+                 ImageWidgetClass "{7BD1A70000000C80}" {
+                  Name "ChipZeusBG"
+                  Slot OverlayWidgetSlot "{7BD1A70000000C81}" {
+                   HorizontalAlign 3
+                   VerticalAlign 3
+                  }
+                  Color 0.098 0.125 0.196 1
+                 }
+                 TextWidgetClass "{7BD1A70000000C82}" {
+                  Name "ChipZeusText"
+                  Slot OverlayWidgetSlot "{7BD1A70000000C83}" {
+                   HorizontalAlign 3
+                   VerticalAlign 3
+                   Padding 8 2 8 2
+                  }
+                  Clipping True
+                  Color 0.608 0.639 0.722 1
+                  Text "ZEUS"
+                  "Font Size" 10
+                  "Horizontal Alignment" Center
+                  "Vertical Alignment" Center
+                  Wrap 0
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+           FrameWidgetClass "{7BD1A70000000C84}" {
+            Name "MissionSearchContainer"
+            Slot FrameWidgetSlot "{7BD1A70000000C85}" {
+             Anchor 0 0 1 0
+             PositionX 12
+             OffsetLeft 12
+             PositionY 72
+             OffsetTop 72
+             SizeX -24
+             OffsetRight -12
+             SizeY 28
+             OffsetBottom -100
+            }
+            {
+             ImageWidgetClass "{7BD1A70000000C86}" {
+              Name "MissionSearchBG"
+              Slot FrameWidgetSlot "{7BD1A70000000C87}" {
+               Anchor 0 0 1 1
+               PositionX 0
+               OffsetLeft 0
+               PositionY 0
+               OffsetTop 0
+               SizeX 0
+               OffsetRight 0
+               SizeY 0
+               OffsetBottom 0
+              }
+              Color 0.051 0.075 0.133 1
+             }
+             ImageWidgetClass "{7BD1A70000000C88}" {
+              Name "MissionSearchBorder"
+              Slot FrameWidgetSlot "{7BD1A70000000C89}" {
+               Anchor 0 0 1 1
+               PositionX 0
+               OffsetLeft 0
+               PositionY 0
+               OffsetTop 0
+               SizeX 0
+               OffsetRight 0
+               SizeY 0
+               OffsetBottom 0
+              }
+              Color 0.176 0.208 0.290 0.5
+             }
+             TextWidgetClass "{7BD1A70000000C8A}" {
+              Name "MissionSearchIcon"
+              Slot FrameWidgetSlot "{7BD1A70000000C8B}" {
+               Anchor 0 0 0 0
+               PositionX 8
+               OffsetLeft 8
+               PositionY 8
+               OffsetTop 8
+               SizeX 14
+               OffsetRight -22
+               SizeY 14
+               OffsetBottom -22
+              }
+              Clipping True
+              Color 0.608 0.639 0.722 0.8
+              Text "Q"
+              "Font Size" 11
+              "Horizontal Alignment" Center
+              "Vertical Alignment" Center
+              Wrap 0
+             }
+             EditBoxWidgetClass "{7BD1A70000000B6C}" {
+              Name "MissionSearch"
+              Slot FrameWidgetSlot "{7BD1A70000000B6D}" {
+               Anchor 0 0 1 1
+               PositionX 26
+               OffsetLeft 26
+               PositionY 0
+               OffsetTop 0
+               SizeX -52
+               OffsetRight 26
+               SizeY 0
+               OffsetBottom 0
+              }
+              Color 0.945 0.961 0.976 1
+              Text "Search scenario or mode..."
+              "Font Size" 11
+             }
+             TextWidgetClass "{7BD1A70000000C8C}" {
+              Name "MissionSearchClear"
+              Slot FrameWidgetSlot "{7BD1A70000000C8D}" {
+               Anchor 1 0 1 0
+               PositionX -22
+               OffsetLeft -22
+               PositionY 8
+               OffsetTop 8
+               SizeX 14
+               OffsetRight 8
+               SizeY 14
+               OffsetBottom -22
+              }
+              Clipping True
+              Color 0.608 0.639 0.722 0.6
+              Text "x"
+              "Font Size" 10
+              "Horizontal Alignment" Center
+              "Vertical Alignment" Center
+              Wrap 0
+             }
+            }
+           }
+         }
+        }
+        ScrollLayoutWidgetClass "{7BD1A70000000B70}" {
+         Name "MissionsScroll"
+         Slot FrameWidgetSlot "{7BD1A70000000B71}" {
+          Anchor 0 0 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY 110
+          OffsetTop 110
+          SizeX 0
+          OffsetRight 0
+          SizeY -110
+          OffsetBottom 0
+         }
+         {
+          VerticalLayoutWidgetClass "{7BD1A70000000B72}" {
+           Name "MissionListContent"
+           Slot AlignableSlot "{7BD1A70000000B73}" {
+            HorizontalAlign 3
+            VerticalAlign 0
+           }
+          }
+         }
+        }
+       }
+      }
+      FrameWidgetClass "{7BD1A70000000B80}" {
+       Name "ColInspector"
+       Slot FrameWidgetSlot "{7BD1A70000000B81}" {
+        Anchor 0 0 1 1
+        PositionX 660
+        OffsetLeft 660
+        PositionY 0
+        OffsetTop 0
+        SizeX -660
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       {
+        ImageWidgetClass "{7BD1A70000000B82}" {
+         Name "ColInspectorBG"
+         Slot FrameWidgetSlot "{7BD1A70000000B83}" {
+          Anchor 0 0 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY 0
+          OffsetTop 0
+          SizeX 0
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
+         Color 0.031 0.055 0.114 0.4
+        }
+        ScrollLayoutWidgetClass "{7BD1A70000000B84}" {
+         Name "InspectorScroll"
+         Slot FrameWidgetSlot "{7BD1A70000000B85}" {
+          Anchor 0 0 1 1
+          PositionX 16
+          OffsetLeft 16
+          PositionY 12
+          OffsetTop 12
+          SizeX -32
+          OffsetRight 16
+          SizeY -24
+          OffsetBottom 12
+         }
+         {
+          VerticalLayoutWidgetClass "{7BD1A70000000B86}" {
+           Name "InspectorContent"
+           Slot AlignableSlot "{7BD1A70000000B87}" {
+            HorizontalAlign 3
+            VerticalAlign 0
+           }
+           {
+            SizeLayoutWidgetClass "{7BD1A70000000B90}" {
+             Name "HeroBannerSize"
+             Slot LayoutSlot "{7BD1A70000000B91}" {
+              HorizontalAlign 3
+              Padding 0 0 0 12
+             }
+             AllowHeightOverride 1
+             HeightOverride 190
+             {
+              FrameWidgetClass "{7BD1A70000000B92}" {
+               Name "HeroBannerFrame"
+               Slot AlignableSlot "{7BD1A70000000B93}" {
+                HorizontalAlign 3
+                VerticalAlign 3
+               }
+               {
+                ImageWidgetClass "{7BD1A70000000B94}" {
+                 Name "HeroBG"
+                 Slot FrameWidgetSlot "{7BD1A70000000B95}" {
+                  Anchor 0 0 1 1
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX 0
+                  OffsetRight 0
+                  SizeY 0
+                  OffsetBottom 0
+                 }
+                 Color 0.051 0.075 0.133 1
+                }
+                ImageWidgetClass "{7BD1A70000000B96}" {
+                 Name "HeroBorder"
+                 Slot FrameWidgetSlot "{7BD1A70000000B97}" {
+                  Anchor 0 0 1 1
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX 0
+                  OffsetRight 0
+                  SizeY 0
+                  OffsetBottom 0
+                 }
+                 Color 0.176 0.208 0.290 0.5
+                }
+                 FrameWidgetClass "{7BD1A70000000B98}" {
+                  Name "OfficialBadgeContainer"
+                  Slot FrameWidgetSlot "{7BD1A70000000B99}" {
+                   Anchor 0 0 0 0
+                   PositionX 16
+                   OffsetLeft 16
+                   PositionY 14
+                   OffsetTop 14
+                   SizeX 200
+                   OffsetRight -216
+                   SizeY 22
+                   OffsetBottom -36
+                  }
+                  {
+                   ImageWidgetClass "{7BD1A70000000C90}" {
+                    Name "OfficialBadgeBG"
+                    Slot FrameWidgetSlot "{7BD1A70000000C91}" {
+                     Anchor 0 0 1 1
+                     PositionX 0
+                     OffsetLeft 0
+                     PositionY 0
+                     OffsetTop 0
+                     SizeX 0
+                     OffsetRight 0
+                     SizeY 0
+                     OffsetBottom 0
+                    }
+                    Color 0.110 0.137 0.212 0.9
+                   }
+                   ImageWidgetClass "{7BD1A70000000C92}" {
+                    Name "OfficialBadgeBorder"
+                    Slot FrameWidgetSlot "{7BD1A70000000C93}" {
+                     Anchor 0 0 1 1
+                     PositionX 0
+                     OffsetLeft 0
+                     PositionY 0
+                     OffsetTop 0
+                     SizeX 0
+                     OffsetRight 0
+                     SizeY 0
+                     OffsetBottom 0
+                    }
+                    Color 0.176 0.208 0.290 0.5
+                   }
+                   TextWidgetClass "{7BD1A70000000C94}" {
+                    Name "HeroBadgeOfficial"
+                    Slot FrameWidgetSlot "{7BD1A70000000C95}" {
+                     Anchor 0 0 1 1
+                     PositionX 0
+                     OffsetLeft 0
+                     PositionY 0
+                     OffsetTop 0
+                     SizeX 0
+                     OffsetRight 0
+                     SizeY 0
+                     OffsetBottom 0
+                    }
+                    Clipping True
+                    Color 1 0.718 0.525 1
+                    Text "BOHEMIA OFFICIAL CONTENT"
+                    "Font Size" 10
+                    "Horizontal Alignment" Center
+                    "Vertical Alignment" Center
+                    Wrap 0
+                   }
+                  }
+                 }
+                 FrameWidgetClass "{7BD1A70000000B9A}" {
+                  Name "HeroTagContainer"
+                  Slot FrameWidgetSlot "{7BD1A70000000B9B}" {
+                   Anchor 0 0 0 0
+                   PositionX 224
+                   OffsetLeft 224
+                   PositionY 14
+                   OffsetTop 14
+                   SizeX 90
+                   OffsetRight -314
+                   SizeY 22
+                   OffsetBottom -36
+                  }
+                  {
+                   ImageWidgetClass "{7BD1A70000000C96}" {
+                    Name "HeroTagBG"
+                    Slot FrameWidgetSlot "{7BD1A70000000C97}" {
+                     Anchor 0 0 1 1
+                     PositionX 0
+                     OffsetLeft 0
+                     PositionY 0
+                     OffsetTop 0
+                     SizeX 0
+                     OffsetRight 0
+                     SizeY 0
+                     OffsetBottom 0
+                    }
+                    Color 0.15 0.35 0.70 0.35
+                   }
+                   ImageWidgetClass "{7BD1A70000000C98}" {
+                    Name "HeroTagBorder"
+                    Slot FrameWidgetSlot "{7BD1A70000000C99}" {
+                     Anchor 0 0 1 1
+                     PositionX 0
+                     OffsetLeft 0
+                     PositionY 0
+                     OffsetTop 0
+                     SizeX 0
+                     OffsetRight 0
+                     SizeY 0
+                     OffsetBottom 0
+                    }
+                    Color 0.220 0.741 0.973 0.35
+                   }
+                   TextWidgetClass "{7BD1A70000000C9A}" {
+                    Name "HeroTag"
+                    Slot FrameWidgetSlot "{7BD1A70000000C9B}" {
+                     Anchor 0 0 1 1
+                     PositionX 0
+                     OffsetLeft 0
+                     PositionY 0
+                     OffsetTop 0
+                     SizeX 0
+                     OffsetRight 0
+                     SizeY 0
+                     OffsetBottom 0
+                    }
+                    Clipping True
+                    Color 0.220 0.741 0.973 1
+                    Text "WARLORDS"
+                    "Font Size" 10
+                    "Horizontal Alignment" Center
+                    "Vertical Alignment" Center
+                    Wrap 0
+                   }
+                  }
+                 }
+                 FrameWidgetClass "{7BD1A70000000B9C}" {
+                  Name "HeroVersionContainer"
+                  Slot FrameWidgetSlot "{7BD1A70000000B9D}" {
+                   Anchor 1 0 1 0
+                   PositionX -130
+                   OffsetLeft -130
+                   PositionY 14
+                   OffsetTop 14
+                   SizeX 115
+                   OffsetRight -15
+                   SizeY 22
+                   OffsetBottom -36
+                  }
+                  {
+                   ImageWidgetClass "{7BD1A70000000C9C}" {
+                    Name "HeroVersionBG"
+                    Slot FrameWidgetSlot "{7BD1A70000000C9D}" {
+                     Anchor 0 0 1 1
+                     PositionX 0
+                     OffsetLeft 0
+                     PositionY 0
+                     OffsetTop 0
+                     SizeX 0
+                     OffsetRight 0
+                     SizeY 0
+                     OffsetBottom 0
+                    }
+                    Color 0.02 0.04 0.08 0.85
+                   }
+                   ImageWidgetClass "{7BD1A70000000C9E}" {
+                    Name "HeroVersionBorder"
+                    Slot FrameWidgetSlot "{7BD1A70000000C9F}" {
+                     Anchor 0 0 1 1
+                     PositionX 0
+                     OffsetLeft 0
+                     PositionY 0
+                     OffsetTop 0
+                     SizeX 0
+                     OffsetRight 0
+                     SizeY 0
+                     OffsetBottom 0
+                    }
+                    Color 0.2 0.2 0.2 0.4
+                   }
+                   TextWidgetClass "{7BD1A70000000CA0}" {
+                    Name "HeroVersion"
+                    Slot FrameWidgetSlot "{7BD1A70000000CA1}" {
+                     Anchor 0 0 1 1
+                     PositionX 0
+                     OffsetLeft 0
+                     PositionY 0
+                     OffsetTop 0
+                     SizeX 0
+                     OffsetRight 0
+                     SizeY 0
+                     OffsetBottom 0
+                    }
+                    Clipping True
+                    Color 0.608 0.639 0.722 1
+                    Text "VERSION 2.14.99"
+                    "Font Size" 10
+                    "Horizontal Alignment" Center
+                    "Vertical Alignment" Center
+                    Wrap 0
+                   }
+                  }
+                 }
+                TextWidgetClass "{7BD1A70000000B9E}" {
+                 Name "InspectorHeroTitle"
+                 Slot FrameWidgetSlot "{7BD1A70000000B9F}" {
+                  Anchor 0 1 1 1
+                  PositionX 16
+                  OffsetLeft 16
+                  PositionY -65
+                  OffsetTop -65
+                  SizeX -32
+                  OffsetRight 16
+                  SizeY 32
+                  OffsetBottom 33
+                 }
+                 Clipping True
+                 Color 1 1 1 1
+                 Text "SC 48 Warlords (Whole Island)"
+                 "Font Size" 22
+                 "Vertical Alignment" Center
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000BA0}" {
+                 Name "InspectorHeroMeta"
+                 Slot FrameWidgetSlot "{7BD1A70000000BA1}" {
+                  Anchor 0 1 1 1
+                  PositionX 16
+                  OffsetLeft 16
+                  PositionY -30
+                  OffsetTop -30
+                  SizeX -32
+                  OffsetRight 16
+                  SizeY 20
+                  OffsetBottom 10
+                 }
+                 Clipping True
+                 Color 0.608 0.639 0.722 1
+                 Text "by Bohemia Interactive  -  MAP: ALTIS (ISLAND)  -  SECTORS: 18 CONTESTED"
+                 "Font Size" 11
+                 "Vertical Alignment" Center
+                 Wrap 0
+                }
+               }
+              }
+             }
+            }
+            SizeLayoutWidgetClass "{7BD1A70000000BA2}" {
+             Name "TelemetryGridSize"
+             Slot LayoutSlot "{7BD1A70000000BA3}" {
+              HorizontalAlign 3
+              Padding 0 0 0 12
+             }
+             AllowHeightOverride 1
+             HeightOverride 66
+             {
+              HorizontalLayoutWidgetClass "{7BD1A70000000BA4}" {
+               Name "TelemetryGrid"
+               Slot AlignableSlot "{7BD1A70000000BA5}" {
+                HorizontalAlign 3
+                VerticalAlign 3
+               }
+               {
+                FrameWidgetClass "{7BD1A70000000BA6}" {
+                 Name "TilePlayers"
+                 Slot LayoutSlot "{7BD1A70000000BA7}" {
+                  SizeMode Fill
+                  FillWeight 1
+                  Padding 0 0 8 0
+                 }
+                 {
+                  ImageWidgetClass "{7BD1A70000000BA8}" {
+                   Name "TilePlayersBG"
+                   Slot FrameWidgetSlot "{7BD1A70000000BA9}" {
+                    Anchor 0 0 1 1
+                    PositionX 0
+                    OffsetLeft 0
+                    PositionY 0
+                    OffsetTop 0
+                    SizeX 0
+                    OffsetRight 0
+                    SizeY 0
+                    OffsetBottom 0
+                   }
+                   Color 0.110 0.137 0.212 0.7
+                  }
+                  TextWidgetClass "{7BD1A70000000BAA}" {
+                   Name "TilePlayersHdr"
+                   Slot FrameWidgetSlot "{7BD1A70000000BAB}" {
+                    Anchor 0 0 1 0
+                    PositionX 10
+                    OffsetLeft 10
+                    PositionY 8
+                    OffsetTop 8
+                    SizeX -20
+                    OffsetRight 10
+                    SizeY 16
+                    OffsetBottom -24
+                   }
+                   Clipping True
+                   Color 0.608 0.639 0.722 1
+                   Text "PLAYERS RANGE"
+                   "Font Size" 10
+                   Wrap 0
+                  }
+                  TextWidgetClass "{7BD1A70000000BAC}" {
+                   Name "InspectorPlayers"
+                   Slot FrameWidgetSlot "{7BD1A70000000BAD}" {
+                    Anchor 0 0 1 1
+                    PositionX 10
+                    OffsetLeft 10
+                    PositionY 24
+                    OffsetTop 24
+                    SizeX -20
+                    OffsetRight 10
+                    SizeY -32
+                    OffsetBottom 8
+                   }
+                   Clipping True
+                   Color 0.945 0.961 0.976 1
+                   Text "1 - 48 SLOTS"
+                   "Font Size" 14
+                   "Vertical Alignment" Center
+                   Wrap 0
+                  }
+                 }
+                }
+                FrameWidgetClass "{7BD1A70000000BAE}" {
+                 Name "TileRespawn"
+                 Slot LayoutSlot "{7BD1A70000000BAF}" {
+                  SizeMode Fill
+                  FillWeight 1
+                  Padding 0 0 8 0
+                 }
+                 {
+                  ImageWidgetClass "{7BD1A70000000BB0}" {
+                   Name "TileRespawnBG"
+                   Slot FrameWidgetSlot "{7BD1A70000000BB1}" {
+                    Anchor 0 0 1 1
+                    PositionX 0
+                    OffsetLeft 0
+                    PositionY 0
+                    OffsetTop 0
+                    SizeX 0
+                    OffsetRight 0
+                    SizeY 0
+                    OffsetBottom 0
+                   }
+                   Color 0.110 0.137 0.212 0.7
+                  }
+                  TextWidgetClass "{7BD1A70000000BB2}" {
+                   Name "TileRespawnHdr"
+                   Slot FrameWidgetSlot "{7BD1A70000000BB3}" {
+                    Anchor 0 0 1 0
+                    PositionX 10
+                    OffsetLeft 10
+                    PositionY 8
+                    OffsetTop 8
+                    SizeX -20
+                    OffsetRight 10
+                    SizeY 16
+                    OffsetBottom -24
+                   }
+                   Clipping True
+                   Color 0.608 0.639 0.722 1
+                   Text "RESPAWN RULE"
+                   "Font Size" 10
+                   Wrap 0
+                  }
+                  TextWidgetClass "{7BD1A70000000BB4}" {
+                   Name "InspectorRespawn"
+                   Slot FrameWidgetSlot "{7BD1A70000000BB5}" {
+                    Anchor 0 0 1 1
+                    PositionX 10
+                    OffsetLeft 10
+                    PositionY 24
+                    OffsetTop 24
+                    SizeX -20
+                    OffsetRight 10
+                    SizeY -32
+                    OffsetBottom 8
+                   }
+                   Clipping True
+                   Color 0.220 0.741 0.973 1
+                   Text "BASE ONLY"
+                   "Font Size" 14
+                   "Vertical Alignment" Center
+                   Wrap 0
+                  }
+                 }
+                }
+                FrameWidgetClass "{7BD1A70000000BB6}" {
+                 Name "TileDifficulty"
+                 Slot LayoutSlot "{7BD1A70000000BB7}" {
+                  SizeMode Fill
+                  FillWeight 1
+                  Padding 0 0 8 0
+                 }
+                 {
+                  ImageWidgetClass "{7BD1A70000000BB8}" {
+                   Name "TileDifficultyBG"
+                   Slot FrameWidgetSlot "{7BD1A70000000BB9}" {
+                    Anchor 0 0 1 1
+                    PositionX 0
+                    OffsetLeft 0
+                    PositionY 0
+                    OffsetTop 0
+                    SizeX 0
+                    OffsetRight 0
+                    SizeY 0
+                    OffsetBottom 0
+                   }
+                   Color 0.110 0.137 0.212 0.7
+                  }
+                  TextWidgetClass "{7BD1A70000000BBA}" {
+                   Name "TileDifficultyHdr"
+                   Slot FrameWidgetSlot "{7BD1A70000000BBB}" {
+                    Anchor 0 0 1 0
+                    PositionX 10
+                    OffsetLeft 10
+                    PositionY 8
+                    OffsetTop 8
+                    SizeX -20
+                    OffsetRight 10
+                    SizeY 16
+                    OffsetBottom -24
+                   }
+                   Clipping True
+                   Color 0.608 0.639 0.722 1
+                   Text "DIFFICULTY PRESET"
+                   "Font Size" 10
+                   Wrap 0
+                  }
+                   TextWidgetClass "{7BD1A70000000BBC}" {
+                    Name "InspectorDifficulty"
+                    Slot FrameWidgetSlot "{7BD1A70000000BBD}" {
+                     Anchor 0 0 1 1
+                     PositionX 10
+                     OffsetLeft 10
+                     PositionY 24
+                     OffsetTop 24
+                     SizeX -75
+                     OffsetRight 65
+                     SizeY -32
+                     OffsetBottom 8
+                    }
+                    Clipping True
+                    Color 0.945 0.961 0.976 1
+                    Text "REGULAR"
+                    "Font Size" 13
+                    "Vertical Alignment" Center
+                    Wrap 0
+                   }
+                   FrameWidgetClass "{7BD1A70000000CA2}" {
+                    Name "EnforcedBadgeContainer"
+                    Slot FrameWidgetSlot "{7BD1A70000000CA3}" {
+                     Anchor 1 0.5 1 0.5
+                     PositionX -62
+                     OffsetLeft -62
+                     PositionY -1
+                     OffsetTop -1
+                     SizeX 54
+                     OffsetRight -8
+                     SizeY 16
+                     OffsetBottom 15
+                    }
+                    {
+                     ImageWidgetClass "{7BD1A70000000CA4}" {
+                      Name "EnforcedBG"
+                      Slot FrameWidgetSlot "{7BD1A70000000CA5}" {
+                       Anchor 0 0 1 1
+                       PositionX 0
+                       OffsetLeft 0
+                       PositionY 0
+                       OffsetTop 0
+                       SizeX 0
+                       OffsetRight 0
+                       SizeY 0
+                       OffsetBottom 0
+                      }
+                      Color 0.18 0.22 0.32 0.8
+                     }
+                     TextWidgetClass "{7BD1A70000000CA6}" {
+                      Name "EnforcedText"
+                      Slot FrameWidgetSlot "{7BD1A70000000CA7}" {
+                       Anchor 0 0 1 1
+                       PositionX 0
+                       OffsetLeft 0
+                       PositionY 0
+                       OffsetTop 0
+                       SizeX 0
+                       OffsetRight 0
+                       SizeY 0
+                       OffsetBottom 0
+                      }
+                      Clipping True
+                      Color 0.608 0.639 0.722 1
+                      Text "ENFORCED"
+                      "Font Size" 9
+                      "Horizontal Alignment" Center
+                      "Vertical Alignment" Center
+                      Wrap 0
+                     }
+                    }
+                   }
+                 }
+                }
+                FrameWidgetClass "{7BD1A70000000BBE}" {
+                 Name "TileSkill"
+                 Slot LayoutSlot "{7BD1A70000000BBF}" {
+                  SizeMode Fill
+                  FillWeight 1
+                  Padding 0 0 0 0
+                 }
+                 {
+                  ImageWidgetClass "{7BD1A70000000BC0}" {
+                   Name "TileSkillBG"
+                   Slot FrameWidgetSlot "{7BD1A70000000BC1}" {
+                    Anchor 0 0 1 1
+                    PositionX 0
+                    OffsetLeft 0
+                    PositionY 0
+                    OffsetTop 0
+                    SizeX 0
+                    OffsetRight 0
+                    SizeY 0
+                    OffsetBottom 0
+                   }
+                   Color 0.110 0.137 0.212 0.7
+                  }
+                  TextWidgetClass "{7BD1A70000000BC2}" {
+                   Name "TileSkillHdr"
+                   Slot FrameWidgetSlot "{7BD1A70000000BC3}" {
+                    Anchor 0 0 1 0
+                    PositionX 10
+                    OffsetLeft 10
+                    PositionY 8
+                    OffsetTop 8
+                    SizeX -20
+                    OffsetRight 10
+                    SizeY 16
+                    OffsetBottom -24
+                   }
+                   Clipping True
+                   Color 0.608 0.639 0.722 1
+                   Text "AI SKILL & 3RD P."
+                   "Font Size" 10
+                   Wrap 0
+                  }
+                  TextWidgetClass "{7BD1A70000000BC4}" {
+                   Name "InspectorSkill"
+                   Slot FrameWidgetSlot "{7BD1A70000000BC5}" {
+                    Anchor 0 0 1 1
+                    PositionX 10
+                    OffsetLeft 10
+                    PositionY 24
+                    OffsetTop 24
+                    SizeX -20
+                    OffsetRight 10
+                    SizeY -32
+                    OffsetBottom 8
+                   }
+                   Clipping True
+                   Color 1 0.718 0.525 1
+                   Text "STANDARD / 3P ON"
+                   "Font Size" 14
+                   "Vertical Alignment" Center
+                   Wrap 0
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+            SizeLayoutWidgetClass "{7BD1A70000000BC6}" {
+             Name "SynopsisSize"
+             Slot LayoutSlot "{7BD1A70000000BC7}" {
+              HorizontalAlign 3
+              Padding 0 0 0 12
+             }
+             AllowHeightOverride 1
+             HeightOverride 140
+             {
+              FrameWidgetClass "{7BD1A70000000BC8}" {
+               Name "SynopsisFrame"
+               Slot AlignableSlot "{7BD1A70000000BC9}" {
+                HorizontalAlign 3
+                VerticalAlign 3
+               }
+               {
+                ImageWidgetClass "{7BD1A70000000BCA}" {
+                 Name "SynopsisBG"
+                 Slot FrameWidgetSlot "{7BD1A70000000BCB}" {
+                  Anchor 0 0 1 1
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX 0
+                  OffsetRight 0
+                  SizeY 0
+                  OffsetBottom 0
+                 }
+                 Color 0.110 0.137 0.212 0.6
+                }
+                TextWidgetClass "{7BD1A70000000BCC}" {
+                 Name "SynopsisHeader"
+                 Slot FrameWidgetSlot "{7BD1A70000000BCD}" {
+                  Anchor 0 0 1 0
+                  PositionX 14
+                  OffsetLeft 14
+                  PositionY 10
+                  OffsetTop 10
+                  SizeX -28
+                  OffsetRight 14
+                  SizeY 20
+                  OffsetBottom -30
+                 }
+                 Clipping True
+                 Color 0.945 0.961 0.976 1
+                 Text "OPERATIONAL BRIEFING & SYNOPSIS"
+                 "Font Size" 11
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000BCE}" {
+                 Name "InspectorSynopsis"
+                 Slot FrameWidgetSlot "{7BD1A70000000BCF}" {
+                  Anchor 0 0 1 0
+                  PositionX 14
+                  OffsetLeft 14
+                  PositionY 34
+                  OffsetTop 34
+                  SizeX -28
+                  OffsetRight 14
+                  SizeY 64
+                  OffsetBottom -98
+                 }
+                 Clipping True
+                 Color 0.608 0.639 0.722 1
+                 Text "Capture sectors. Through them, advance to the enemy base and raid it. Parameters allow you to change various rules within the mission, including initial Command Points, AI garrisons, vehicle availability, fast travel routes, and automated logistical drops."
+                 "Font Size" 12
+                 Wrap 1
+                }
+                TextWidgetClass "{7BD1A70000000BD0}" {
+                 Name "SynopsisFooterSpecs"
+                 Slot FrameWidgetSlot "{7BD1A70000000BD1}" {
+                  Anchor 0 1 1 1
+                  PositionX 14
+                  OffsetLeft 14
+                  PositionY -26
+                  OffsetTop -26
+                  SizeX -28
+                  OffsetRight 14
+                  SizeY 20
+                  OffsetBottom 6
+                 }
+                 Clipping True
+                 Color 0.447 0.467 0.541 1
+                 Text "SYSTEM: CP Capture & Spend      FAST TRAVEL: Conquered Sectors      REDEPLOYMENT: FOB / Base Node"
+                 "Font Size" 10
+                 Wrap 0
+                }
+               }
+              }
+             }
+            }
+            SizeLayoutWidgetClass "{7BD1A70000000BD2}" {
+             Name "ModsCardSize"
+             Slot LayoutSlot "{7BD1A70000000BD3}" {
+              HorizontalAlign 3
+              Padding 0 0 0 12
+             }
+             AllowHeightOverride 1
+             HeightOverride 250
+             {
+              FrameWidgetClass "{7BD1A70000000BD4}" {
+               Name "ModsFrame"
+               Slot AlignableSlot "{7BD1A70000000BD5}" {
+                HorizontalAlign 3
+                VerticalAlign 3
+               }
+               {
+                ImageWidgetClass "{7BD1A70000000BD6}" {
+                 Name "ModsBG"
+                 Slot FrameWidgetSlot "{7BD1A70000000BD7}" {
+                  Anchor 0 0 1 1
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX 0
+                  OffsetRight 0
+                  SizeY 0
+                  OffsetBottom 0
+                 }
+                 Color 0.110 0.137 0.212 0.6
+                }
+                TextWidgetClass "{7BD1A70000000BD8}" {
+                 Name "ModsHeader"
+                 Slot FrameWidgetSlot "{7BD1A70000000BD9}" {
+                  Anchor 0 0 0 0
+                  PositionX 14
+                  OffsetLeft 14
+                  PositionY 10
+                  OffsetTop 10
+                  SizeX 220
+                  OffsetRight -234
+                  SizeY 20
+                  OffsetBottom -30
+                 }
+                 Clipping True
+                 Color 0.945 0.961 0.976 1
+                 Text "REQUIRED MODS BREAKDOWN"
+                 "Font Size" 11
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000BDA}" {
+                 Name "ModsStatusBadge"
+                 Slot FrameWidgetSlot "{7BD1A70000000BDB}" {
+                  Anchor 1 0 1 0
+                  PositionX -170
+                  OffsetLeft -170
+                  PositionY 10
+                  OffsetTop 10
+                  SizeX 156
+                  OffsetRight 14
+                  SizeY 20
+                  OffsetBottom -30
+                 }
+                 Clipping True
+                 Color 0.220 0.741 0.973 1
+                 Text "5 OF 5 SYNCED & ACTIVE"
+                 "Font Size" 10
+                 "Horizontal Alignment" Right
+                 Wrap 0
+                }
+                FrameWidgetClass "{7BD1A70000000BDC}" {
+                 Name "ModPresetBanner"
+                 Slot FrameWidgetSlot "{7BD1A70000000BDD}" {
+                  Anchor 0 0 1 0
+                  PositionX 14
+                  OffsetLeft 14
+                  PositionY 34
+                  OffsetTop 34
+                  SizeX -28
+                  OffsetRight 14
+                  SizeY 34
+                  OffsetBottom -68
+                 }
+                 {
+                  ImageWidgetClass "{7BD1A70000000BDE}" {
+                   Name "ModPresetBG"
+                   Slot FrameWidgetSlot "{7BD1A70000000BDF}" {
+                    Anchor 0 0 1 1
+                    PositionX 0
+                    OffsetLeft 0
+                    PositionY 0
+                    OffsetTop 0
+                    SizeX 0
+                    OffsetRight 0
+                    SizeY 0
+                    OffsetBottom 0
+                   }
+                   Color 0.051 0.075 0.133 0.9
+                  }
+                  TextWidgetClass "{7BD1A70000000BE0}" {
+                   Name "ModPresetTitle"
+                   Slot FrameWidgetSlot "{7BD1A70000000BE1}" {
+                    Anchor 0 0 1 0
+                    PositionX 10
+                    OffsetLeft 10
+                    PositionY 3
+                    OffsetTop 3
+                    SizeX -100
+                    OffsetRight 90
+                    SizeY 16
+                    OffsetBottom -19
+                   }
+                   Clipping True
+                   Color 0.945 0.961 0.976 1
+                   Text "TBD Tactical Ops v2.4 (Modern Combined Arms)"
+                   "Font Size" 11
+                   Wrap 0
+                  }
+                  TextWidgetClass "{7BD1A70000000BE2}" {
+                   Name "ModPresetMeta"
+                   Slot FrameWidgetSlot "{7BD1A70000000BE3}" {
+                    Anchor 0 0 1 0
+                    PositionX 10
+                    OffsetLeft 10
+                    PositionY 18
+                    OffsetTop 18
+                    SizeX -100
+                    OffsetRight 90
+                    SizeY 14
+                    OffsetBottom -32
+                   }
+                   Clipping True
+                   Color 0.608 0.639 0.722 1
+                   Text "Host Modset Signature: SHA256-A89E  -  14.8 GB Total"
+                   "Font Size" 9
+                   Wrap 0
+                  }
+                   FrameWidgetClass "{7BD1A70000000BFD}" {
+                    Name "ModPresetCompatibleContainer"
+                    Slot FrameWidgetSlot "{7BD1A70000000BFE}" {
+                     Anchor 1 0.5 1 0.5
+                     PositionX -96
+                     OffsetLeft -96
+                     PositionY -10
+                     OffsetTop -10
+                     SizeX 86
+                     OffsetRight -10
+                     SizeY 20
+                     OffsetBottom 10
+                    }
+                    {
+                     ImageWidgetClass "{7BD1A70000000BFF}" {
+                      Name "ModPresetCompatibleBG"
+                      Slot FrameWidgetSlot "{7BD1A70000000C00}" {
+                       Anchor 0 0 1 1
+                       PositionX 0
+                       OffsetLeft 0
+                       PositionY 0
+                       OffsetTop 0
+                       SizeX 0
+                       OffsetRight 0
+                       SizeY 0
+                       OffsetBottom 0
+                      }
+                      Color 0.15 0.35 0.70 0.3
+                     }
+                     ImageWidgetClass "{7BD1A70000000C01}" {
+                      Name "ModPresetCompatibleBorder"
+                      Slot FrameWidgetSlot "{7BD1A70000000C02}" {
+                       Anchor 0 0 1 1
+                       PositionX 0
+                       OffsetLeft 0
+                       PositionY 0
+                       OffsetTop 0
+                       SizeX 0
+                       OffsetRight 0
+                       SizeY 0
+                       OffsetBottom 0
+                      }
+                      Color 0.220 0.741 0.973 0.4
+                     }
+                     TextWidgetClass "{7BD1A70000000BE4}" {
+                      Name "ModPresetCompatible"
+                      Slot FrameWidgetSlot "{7BD1A70000000BE5}" {
+                       Anchor 0 0 1 1
+                       PositionX 0
+                       OffsetLeft 0
+                       PositionY 0
+                       OffsetTop 0
+                       SizeX 0
+                       OffsetRight 0
+                       SizeY 0
+                       OffsetBottom 0
+                      }
+                      Clipping True
+                      Color 0.220 0.741 0.973 1
+                      Text "COMPATIBLE"
+                      "Font Size" 10
+                      "Horizontal Alignment" Center
+                      "Vertical Alignment" Center
+                      Wrap 0
+                     }
+                    }
+                   }
+                 }
+                }
+                 VerticalLayoutWidgetClass "{7BD1A70000000BE6}" {
+                  Name "ModItemsList"
+                  Slot FrameWidgetSlot "{7BD1A70000000BE7}" {
+                   Anchor 0 0 1 1
+                   PositionX 14
+                   OffsetLeft 14
+                   PositionY 74
+                   OffsetTop 74
+                   SizeX -28
+                   OffsetRight 14
+                   SizeY -80
+                   OffsetBottom 6
+                  }
+                  {
+                   SizeLayoutWidgetClass "{7BD1A70000000BE8}" {
+                    Name "ModItem1SizeLayout"
+                    Slot LayoutSlot "{7BD1A70000000BE9}" {
+                     HorizontalAlign 3
+                     Padding 0 0 0 4
+                    }
+                    AllowHeightOverride 1
+                    HeightOverride 26
+                    {
+                     FrameWidgetClass "{7BD1A70000000D01}" {
+                      Name "ModItem1"
+                      Slot AlignableSlot "{7BD1A70000000D02}" {
+                       HorizontalAlign 3
+                       VerticalAlign 3
+                      }
+                      {
+                       ImageWidgetClass "{7BD1A70000000BEA}" {
+                        Name "ModItem1BG"
+                        Slot FrameWidgetSlot "{7BD1A70000000BEB}" {
+                         Anchor 0 0 1 1
+                         PositionX 0
+                         OffsetLeft 0
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX 0
+                         OffsetRight 0
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Color 0.031 0.055 0.114 0.6
+                       }
+                       TextWidgetClass "{7BD1A70000000D03}" {
+                        Name "ModItem1Check"
+                        Slot FrameWidgetSlot "{7BD1A70000000D04}" {
+                         Anchor 0 0.5 0 0.5
+                         PositionX 8
+                         OffsetLeft 8
+                         PositionY -8
+                         OffsetTop -8
+                         SizeX 16
+                         OffsetRight -24
+                         SizeY 16
+                         OffsetBottom 8
+                        }
+                        Clipping True
+                        Color 0.220 0.741 0.973 1
+                        Text "[v]"
+                        "Font Size" 10
+                        "Horizontal Alignment" Center
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                       TextWidgetClass "{7BD1A70000000BEC}" {
+                        Name "ModItem1Text"
+                        Slot FrameWidgetSlot "{7BD1A70000000BED}" {
+                         Anchor 0 0 1 1
+                         PositionX 26
+                         OffsetLeft 26
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX -96
+                         OffsetRight 70
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Clipping True
+                        Color 0.945 0.961 0.976 1
+                        Text "ACE3 Reforger Core  v1.8.2 - Advanced Ballistics & Medical"
+                        "Font Size" 10
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                       TextWidgetClass "{7BD1A70000000BEE}" {
+                        Name "ModItem1Size"
+                        Slot FrameWidgetSlot "{7BD1A70000000BEF}" {
+                         Anchor 1 0 1 1
+                         PositionX -70
+                         OffsetLeft -70
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX 60
+                         OffsetRight 10
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Clipping True
+                        Color 0.608 0.639 0.722 1
+                        Text "2.4 GB"
+                        "Font Size" 10
+                        "Horizontal Alignment" Right
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                      }
+                     }
+                    }
+                   }
+                   SizeLayoutWidgetClass "{7BD1A70000000BF0}" {
+                    Name "ModItem2SizeLayout"
+                    Slot LayoutSlot "{7BD1A70000000BF1}" {
+                     HorizontalAlign 3
+                     Padding 0 0 0 4
+                    }
+                    AllowHeightOverride 1
+                    HeightOverride 26
+                    {
+                     FrameWidgetClass "{7BD1A70000000D05}" {
+                      Name "ModItem2"
+                      Slot AlignableSlot "{7BD1A70000000D06}" {
+                       HorizontalAlign 3
+                       VerticalAlign 3
+                      }
+                      {
+                       ImageWidgetClass "{7BD1A70000000BF2}" {
+                        Name "ModItem2BG"
+                        Slot FrameWidgetSlot "{7BD1A70000000BF3}" {
+                         Anchor 0 0 1 1
+                         PositionX 0
+                         OffsetLeft 0
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX 0
+                         OffsetRight 0
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Color 0.031 0.055 0.114 0.6
+                       }
+                       TextWidgetClass "{7BD1A70000000D07}" {
+                        Name "ModItem2Check"
+                        Slot FrameWidgetSlot "{7BD1A70000000D08}" {
+                         Anchor 0 0.5 0 0.5
+                         PositionX 8
+                         OffsetLeft 8
+                         PositionY -8
+                         OffsetTop -8
+                         SizeX 16
+                         OffsetRight -24
+                         SizeY 16
+                         OffsetBottom 8
+                        }
+                        Clipping True
+                        Color 0.220 0.741 0.973 1
+                        Text "[v]"
+                        "Font Size" 10
+                        "Horizontal Alignment" Center
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                       TextWidgetClass "{7BD1A70000000BF4}" {
+                        Name "ModItem2Text"
+                        Slot FrameWidgetSlot "{7BD1A70000000BF5}" {
+                         Anchor 0 0 1 1
+                         PositionX 26
+                         OffsetLeft 26
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX -96
+                         OffsetRight 70
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Clipping True
+                        Color 0.945 0.961 0.976 1
+                        Text "RHS: Status Quo (AFRF & USAF)  v0.6.1 - Modern Weapons"
+                        "Font Size" 10
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                       TextWidgetClass "{7BD1A70000000BF6}" {
+                        Name "ModItem2Size"
+                        Slot FrameWidgetSlot "{7BD1A70000000BF7}" {
+                         Anchor 1 0 1 1
+                         PositionX -70
+                         OffsetLeft -70
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX 60
+                         OffsetRight 10
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Clipping True
+                        Color 0.608 0.639 0.722 1
+                        Text "7.1 GB"
+                        "Font Size" 10
+                        "Horizontal Alignment" Right
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                      }
+                     }
+                    }
+                   }
+                   SizeLayoutWidgetClass "{7BD1A70000000BF8}" {
+                    Name "ModItem3SizeLayout"
+                    Slot LayoutSlot "{7BD1A70000000BF9}" {
+                     HorizontalAlign 3
+                     Padding 0 0 0 4
+                    }
+                    AllowHeightOverride 1
+                    HeightOverride 26
+                    {
+                     FrameWidgetClass "{7BD1A70000000D09}" {
+                      Name "ModItem3"
+                      Slot AlignableSlot "{7BD1A70000000D0A}" {
+                       HorizontalAlign 3
+                       VerticalAlign 3
+                      }
+                      {
+                       ImageWidgetClass "{7BD1A70000000BFA}" {
+                        Name "ModItem3BG"
+                        Slot FrameWidgetSlot "{7BD1A70000000BFB}" {
+                         Anchor 0 0 1 1
+                         PositionX 0
+                         OffsetLeft 0
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX 0
+                         OffsetRight 0
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Color 0.031 0.055 0.114 0.6
+                       }
+                       TextWidgetClass "{7BD1A70000000D0B}" {
+                        Name "ModItem3Check"
+                        Slot FrameWidgetSlot "{7BD1A70000000D0C}" {
+                         Anchor 0 0.5 0 0.5
+                         PositionX 8
+                         OffsetLeft 8
+                         PositionY -8
+                         OffsetTop -8
+                         SizeX 16
+                         OffsetRight -24
+                         SizeY 16
+                         OffsetBottom 8
+                        }
+                        Clipping True
+                        Color 0.220 0.741 0.973 1
+                        Text "[v]"
+                        "Font Size" 10
+                        "Horizontal Alignment" Center
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                       TextWidgetClass "{7BD1A70000000BFC}" {
+                        Name "ModItem3Text"
+                        Slot FrameWidgetSlot "{7BD1A70000000BFD}" {
+                         Anchor 0 0 1 1
+                         PositionX 26
+                         OffsetLeft 26
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX -96
+                         OffsetRight 70
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Clipping True
+                        Color 0.945 0.961 0.976 1
+                        Text "ACRE2 Audio Framework v1.0.4 - Realistic Radio Comms"
+                        "Font Size" 10
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                       TextWidgetClass "{7BD1A70000000BFE}" {
+                        Name "ModItem3Size"
+                        Slot FrameWidgetSlot "{7BD1A70000000BFF}" {
+                         Anchor 1 0 1 1
+                         PositionX -70
+                         OffsetLeft -70
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX 60
+                         OffsetRight 10
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Clipping True
+                        Color 0.608 0.639 0.722 1
+                        Text "420 MB"
+                        "Font Size" 10
+                        "Horizontal Alignment" Right
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                      }
+                     }
+                    }
+                   }
+                   SizeLayoutWidgetClass "{7BD1A70000000C00}" {
+                    Name "ModItem4SizeLayout"
+                    Slot LayoutSlot "{7BD1A70000000C01}" {
+                     HorizontalAlign 3
+                     Padding 0 0 0 4
+                    }
+                    AllowHeightOverride 1
+                    HeightOverride 26
+                    {
+                     FrameWidgetClass "{7BD1A70000000D0D}" {
+                      Name "ModItem4"
+                      Slot AlignableSlot "{7BD1A70000000D0E}" {
+                       HorizontalAlign 3
+                       VerticalAlign 3
+                      }
+                      {
+                       ImageWidgetClass "{7BD1A70000000C02}" {
+                        Name "ModItem4BG"
+                        Slot FrameWidgetSlot "{7BD1A70000000C03}" {
+                         Anchor 0 0 1 1
+                         PositionX 0
+                         OffsetLeft 0
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX 0
+                         OffsetRight 0
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Color 0.031 0.055 0.114 0.6
+                       }
+                       TextWidgetClass "{7BD1A70000000D0F}" {
+                        Name "ModItem4Check"
+                        Slot FrameWidgetSlot "{7BD1A70000000D10}" {
+                         Anchor 0 0.5 0 0.5
+                         PositionX 8
+                         OffsetLeft 8
+                         PositionY -8
+                         OffsetTop -8
+                         SizeX 16
+                         OffsetRight -24
+                         SizeY 16
+                         OffsetBottom 8
+                        }
+                        Clipping True
+                        Color 0.220 0.741 0.973 1
+                        Text "[v]"
+                        "Font Size" 10
+                        "Horizontal Alignment" Center
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                       TextWidgetClass "{7BD1A70000000C04}" {
+                        Name "ModItem4Text"
+                        Slot FrameWidgetSlot "{7BD1A70000000C05}" {
+                         Anchor 0 0 1 1
+                         PositionX 26
+                         OffsetLeft 26
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX -96
+                         OffsetRight 70
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Clipping True
+                        Color 0.945 0.961 0.976 1
+                        Text "TBD Reforger Core Framework - Tactical Operations Suite"
+                        "Font Size" 10
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                       TextWidgetClass "{7BD1A70000000C06}" {
+                        Name "ModItem4Size"
+                        Slot FrameWidgetSlot "{7BD1A70000000C07}" {
+                         Anchor 1 0 1 1
+                         PositionX -70
+                         OffsetLeft -70
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX 60
+                         OffsetRight 10
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Clipping True
+                        Color 0.608 0.639 0.722 1
+                        Text "180 MB"
+                        "Font Size" 10
+                        "Horizontal Alignment" Right
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                      }
+                     }
+                    }
+                   }
+                   SizeLayoutWidgetClass "{7BD1A70000000C08}" {
+                    Name "ModItem5SizeLayout"
+                    Slot LayoutSlot "{7BD1A70000000C09}" {
+                     HorizontalAlign 3
+                     Padding 0 0 0 0
+                    }
+                    AllowHeightOverride 1
+                    HeightOverride 26
+                    {
+                     FrameWidgetClass "{7BD1A70000000D11}" {
+                      Name "ModItem5"
+                      Slot AlignableSlot "{7BD1A70000000D12}" {
+                       HorizontalAlign 3
+                       VerticalAlign 3
+                      }
+                      {
+                       ImageWidgetClass "{7BD1A70000000C0A}" {
+                        Name "ModItem5BG"
+                        Slot FrameWidgetSlot "{7BD1A70000000C0B}" {
+                         Anchor 0 0 1 1
+                         PositionX 0
+                         OffsetLeft 0
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX 0
+                         OffsetRight 0
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Color 0.031 0.055 0.114 0.6
+                       }
+                       TextWidgetClass "{7BD1A70000000D13}" {
+                        Name "ModItem5Check"
+                        Slot FrameWidgetSlot "{7BD1A70000000D14}" {
+                         Anchor 0 0.5 0 0.5
+                         PositionX 8
+                         OffsetLeft 8
+                         PositionY -8
+                         OffsetTop -8
+                         SizeX 16
+                         OffsetRight -24
+                         SizeY 16
+                         OffsetBottom 8
+                        }
+                        Clipping True
+                        Color 0.220 0.741 0.973 1
+                        Text "[v]"
+                        "Font Size" 10
+                        "Horizontal Alignment" Center
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                       TextWidgetClass "{7BD1A70000000C0C}" {
+                        Name "ModItem5Text"
+                        Slot FrameWidgetSlot "{7BD1A70000000C0D}" {
+                         Anchor 0 0 1 1
+                         PositionX 26
+                         OffsetLeft 26
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX -96
+                         OffsetRight 70
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Clipping True
+                        Color 0.945 0.961 0.976 1
+                        Text "Project Reality Altis HD Assets - Structures, Fortifications"
+                        "Font Size" 10
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                       TextWidgetClass "{7BD1A70000000C0E}" {
+                        Name "ModItem5Size"
+                        Slot FrameWidgetSlot "{7BD1A70000000C0F}" {
+                         Anchor 1 0 1 1
+                         PositionX -70
+                         OffsetLeft -70
+                         PositionY 0
+                         OffsetTop 0
+                         SizeX 60
+                         OffsetRight 10
+                         SizeY 0
+                         OffsetBottom 0
+                        }
+                        Clipping True
+                        Color 0.608 0.639 0.722 1
+                        Text "4.7 GB"
+                        "Font Size" 10
+                        "Horizontal Alignment" Right
+                        "Vertical Alignment" Center
+                        Wrap 0
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+    FrameWidgetClass "{7BD1A70000000C20}" {
+     Name "FooterDock"
+     Slot FrameWidgetSlot "{7BD1A70000000C21}" {
+      Anchor 0 1 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY -64
+      OffsetTop -64
+      SizeX 0
+      OffsetRight 0
+      SizeY 64
+      OffsetBottom 0
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000C22}" {
+       Name "FooterBG"
+       Slot FrameWidgetSlot "{7BD1A70000000C23}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       Color 0.031 0.055 0.114 0.95
+      }
+      ImageWidgetClass "{7BD1A70000000C24}" {
+       Name "FooterTopRule"
+       Slot FrameWidgetSlot "{7BD1A70000000C25}" {
+        Anchor 0 0 1 0
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 1
+        OffsetBottom -1
+       }
+       Color 0.176 0.208 0.290 0.7
+      }
+      ButtonWidgetClass "{7BD1A70000000C26}" {
+       Name "BackAction"
+       Slot FrameWidgetSlot "{7BD1A70000000C27}" {
+        Anchor 0 0 0 0
+        PositionX 20
+        OffsetLeft 20
+        PositionY 14
+        OffsetTop 14
+        SizeX 110
+        OffsetRight -130
+        SizeY 36
+        OffsetBottom -50
+       }
+       Color 1 1 1 0
+       {
+        OverlayWidgetClass "{7BD1A70000000D40}" {
+         Name "BackOverlay"
+         Slot ButtonWidgetSlot "{7BD1A70000000D41}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D42}" {
+           Name "BackBG"
+           Slot OverlayWidgetSlot "{7BD1A70000000D43}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 0.098 0.122 0.184 1
+          }
+          ImageWidgetClass "{7BD1A70000000D44}" {
+           Name "BackBorder"
+           Slot OverlayWidgetSlot "{7BD1A70000000D45}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 0.220 0.250 0.330 0.5
+          }
+          TextWidgetClass "{7BD1A70000000D46}" {
+           Name "BackLabel"
+           Slot OverlayWidgetSlot "{7BD1A70000000D47}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Clipping True
+           Color 0.850 0.880 0.950 1
+           Text "< BACK"
+           "Font Size" 12
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+      ButtonWidgetClass "{7BD1A70000000C28}" {
+       Name "GameOptionsAction"
+       Slot FrameWidgetSlot "{7BD1A70000000C29}" {
+        Anchor 1 0 1 0
+        PositionX -320
+        OffsetLeft -320
+        PositionY 14
+        OffsetTop 14
+        SizeX 150
+        OffsetRight 170
+        SizeY 36
+        OffsetBottom -50
+       }
+       Color 1 1 1 0
+       {
+        OverlayWidgetClass "{7BD1A70000000D48}" {
+         Name "GameOptionsOverlay"
+         Slot ButtonWidgetSlot "{7BD1A70000000D49}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D4A}" {
+           Name "GameOptionsBG"
+           Slot OverlayWidgetSlot "{7BD1A70000000D4B}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 0.141 0.165 0.227 1
+          }
+          ImageWidgetClass "{7BD1A70000000D4C}" {
+           Name "GameOptionsBorder"
+           Slot OverlayWidgetSlot "{7BD1A70000000D4D}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 0.220 0.250 0.330 0.5
+          }
+          TextWidgetClass "{7BD1A70000000D4E}" {
+           Name "GameOptionsLabel"
+           Slot OverlayWidgetSlot "{7BD1A70000000D4F}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Clipping True
+           Color 0.850 0.880 0.950 1
+           Text "GAME OPTIONS"
+           "Font Size" 11
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+      ButtonWidgetClass "{7BD1A70000000C2A}" {
+       Name "PlayAction"
+       Slot FrameWidgetSlot "{7BD1A70000000C2B}" {
+        Anchor 1 0 1 0
+        PositionX -150
+        OffsetLeft -150
+        PositionY 12
+        OffsetTop 12
+        SizeX 130
+        OffsetRight 20
+        SizeY 40
+        OffsetBottom -52
+       }
+       Color 1 1 1 0
+       {
+        OverlayWidgetClass "{7BD1A70000000D50}" {
+         Name "PlayOverlay"
+         Slot ButtonWidgetSlot "{7BD1A70000000D51}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D52}" {
+           Name "PlayBG"
+           Slot OverlayWidgetSlot "{7BD1A70000000D53}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 0.302 0.557 1 1
+          }
+          TextWidgetClass "{7BD1A70000000D54}" {
+           Name "PlayLabel"
+           Slot OverlayWidgetSlot "{7BD1A70000000D55}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Clipping True
+           Color 1 1 1 1
+           Text "PLAY >"
+           "Font Size" 13
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

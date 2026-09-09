@@ -1,0 +1,209 @@
+ButtonWidgetClass "{7BD1A70000000B41}" {
+ Name "MissionCardBtn"
+ Slot AlignableSlot "{7BD1A70000000B42}" {
+  HorizontalAlign 3
+  VerticalAlign 3
+  Padding 8 0 8 6
+ }
+ Color 1 1 1 0
+ {
+  SizeLayoutWidgetClass "{7BD1A70000000B43}" {
+   Name "MissionCardSize"
+   Slot ButtonWidgetSlot "{7BD1A70000000B44}" {
+    HorizontalAlign 3
+   }
+   AllowHeightOverride 1
+   HeightOverride 68
+   {
+    OverlayWidgetClass "{7BD1A70000000B45}" {
+     Name "MissionCardOverlay"
+     Slot AlignableSlot "{7BD1A70000000B46}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000B47}" {
+       Name "CardBG"
+       Slot OverlayWidgetSlot "{7BD1A70000000B48}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 0.051 0.075 0.133 0.7
+      }
+      ImageWidgetClass "{7BD1A70000000B49}" {
+       Name "CardAccent"
+       Slot OverlayWidgetSlot "{7BD1A70000000B4A}" {
+        HorizontalAlign 0
+        VerticalAlign 3
+       }
+       Color 0.220 0.741 0.973 0
+       Size 4 68
+      }
+      FrameWidgetClass "{7BD1A70000000B4B}" {
+       Name "CardContent"
+       Slot OverlayWidgetSlot "{7BD1A70000000B4C}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       {
+        FrameWidgetClass "{7BD1A70000000B55}" {
+         Name "TagPillContainer"
+         Slot FrameWidgetSlot "{7BD1A70000000B56}" {
+          Anchor 0 0 0 0
+          PositionX 12
+          OffsetLeft 12
+          PositionY 7
+          OffsetTop 7
+          SizeX 76
+          OffsetRight -88
+          SizeY 16
+          OffsetBottom -23
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000B57}" {
+           Name "TagPillBG"
+           Slot FrameWidgetSlot "{7BD1A70000000B58}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 0.110 0.137 0.212 1
+          }
+          TextWidgetClass "{7BD1A70000000B4D}" {
+           Name "TagPill"
+           Slot FrameWidgetSlot "{7BD1A70000000B4E}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Clipping True
+           Color 0.220 0.741 0.973 1
+           Text "WARLORDS"
+           "Font Size" 10
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+        TextWidgetClass "{7BD1A70000000B4F}" {
+         Name "SlotCount"
+         Slot FrameWidgetSlot "{7BD1A70000000B50}" {
+          Anchor 1 0 1 0
+          PositionX -90
+          OffsetLeft -90
+          PositionY 8
+          OffsetTop 8
+          SizeX 66
+          OffsetRight 24
+          SizeY 16
+          OffsetBottom -24
+         }
+         Clipping True
+         Color 0.608 0.639 0.722 1
+         Text "48 SLOTS"
+         "Font Size" 10
+         "Horizontal Alignment" Right
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+        TextWidgetClass "{7BD1A70000000B59}" {
+         Name "CardChevron"
+         Slot FrameWidgetSlot "{7BD1A70000000B5A}" {
+          Anchor 1 0 1 0
+          PositionX -20
+          OffsetLeft -20
+          PositionY 8
+          OffsetTop 8
+          SizeX 14
+          OffsetRight 6
+          SizeY 16
+          OffsetBottom -24
+         }
+         Clipping True
+         Color 0.447 0.467 0.541 1
+         Text ">"
+         "Font Size" 10
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+        TextWidgetClass "{7BD1A70000000B51}" {
+         Name "TitleText"
+         Slot FrameWidgetSlot "{7BD1A70000000B52}" {
+          Anchor 0 0 1 0
+          PositionX 12
+          OffsetLeft 12
+          PositionY 26
+          OffsetTop 26
+          SizeX -24
+          OffsetRight 12
+          SizeY 20
+          OffsetBottom -46
+         }
+         Clipping True
+         Color 0.945 0.961 0.976 1
+         Text "SC 48 Warlords (Whole Island)"
+         "Font Size" 12
+         Wrap 0
+        }
+        TextWidgetClass "{7BD1A70000000B5B}" {
+         Name "ActiveDot"
+         Slot FrameWidgetSlot "{7BD1A70000000B5C}" {
+          Anchor 1 0 1 0
+          PositionX -22
+          OffsetLeft -22
+          PositionY 30
+          OffsetTop 30
+          SizeX 12
+          OffsetRight 10
+          SizeY 12
+          OffsetBottom -42
+         }
+         Clipping True
+         Color 0.220 0.741 0.973 1
+         Text "*"
+         "Font Size" 12
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+        TextWidgetClass "{7BD1A70000000B53}" {
+         Name "SubtitleText"
+         Slot FrameWidgetSlot "{7BD1A70000000B54}" {
+          Anchor 0 0 1 0
+          PositionX 12
+          OffsetLeft 12
+          PositionY 46
+          OffsetTop 46
+          SizeX -24
+          OffsetRight 12
+          SizeY 16
+          OffsetBottom -62
+         }
+         Clipping True
+         Color 0.608 0.639 0.722 1
+         Text "Whole Island Domination - Altis"
+         "Font Size" 10
+         Wrap 0
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

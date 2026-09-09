@@ -80,8 +80,18 @@ modded class SCR_PlayerController
 		// refusal and nothing else — no roster, no mission, no audit trail (see TBD_AdminData.c).
 		im.AddActionListener("TBD_AdminMenu", EActionTrigger.DOWN, TBD_OnAdminMenuAction);
 
+		// Stitch 1:1 Mission Selector Workstation UI (F9 or F6)
+		im.AddActionListener("TBD_MissionSelector", EActionTrigger.DOWN, TBD_OnMissionSelectorAction);
+
 		m_TBD_ListenersRegistered = true;
-		Print("[TBD][browser] admin keybinds registered (TBD_MissionCycle / TBD_MissionLoad / TBD_AdminMenu).");
+		Print("[TBD][browser] admin keybinds registered (TBD_MissionCycle / TBD_MissionLoad / TBD_AdminMenu / TBD_MissionSelector). Press F6 or F9 for Mission Selector!");
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Stitch 1:1 Mission Selector toggle.
+	protected void TBD_OnMissionSelectorAction(float value, EActionTrigger trigger)
+	{
+		TBD_MissionSelectorComponent.Toggle();
 	}
 
 	//------------------------------------------------------------------------------------------------

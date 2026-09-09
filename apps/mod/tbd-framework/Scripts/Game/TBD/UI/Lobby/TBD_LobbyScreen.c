@@ -69,6 +69,7 @@ class TBD_LobbyScreen : TBD_ShellScreen
 	//! cannot collide, so a tag decodes to a kind and an index with no lookup table.
 	protected static const int TAG_INERT = -1;
 	protected static const int TAG_BRIEFING = 1;
+	protected static const int TAG_SELECTOR = 2;
 	protected static const int TAG_SIDE_BASE = 1000;
 	protected static const int TAG_GROUP_BASE = 2000;
 	protected static const int TAG_SLOT_BASE = 3000;
@@ -136,11 +137,42 @@ class TBD_LobbyScreen : TBD_ShellScreen
 		// Ask immediately, then keep asking: other people are claiming seats while this is open.
 		TBD_LobbyClient.Request();
 		GetGame().GetCallqueue().CallLater(RequestRefresh, REFRESH_MS, true);
+
+		InputManager im = GetGame().GetInputManager();
+		if (im)
+		{
+			im.ActivateContext("TBD_BrowserContext");
+			im.AddActionListener("TBD_MissionSelector", EActionTrigger.DOWN, OnMissionSelectorKey);
+			im.AddActionListener("TBD_MissionCycle", EActionTrigger.DOWN, OnMissionSelectorKey);
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnMissionSelectorKey(float value, EActionTrigger trigger)
+	{
+		TBD_MissionSelectorComponent.Toggle();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	override protected void OnScreenUpdate(float tDelta)
+	{
+		super.OnScreenUpdate(tDelta);
+
+		InputManager im = GetGame().GetInputManager();
+		if (im)
+			im.ActivateContext("TBD_BrowserContext");
 	}
 
 	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenClose()
 	{
+		InputManager im = GetGame().GetInputManager();
+		if (im)
+		{
+			im.RemoveActionListener("TBD_MissionSelector", EActionTrigger.DOWN, OnMissionSelectorKey);
+			im.RemoveActionListener("TBD_MissionCycle", EActionTrigger.DOWN, OnMissionSelectorKey);
+		}
+
 		GetGame().GetCallqueue().Remove(RequestRefresh);
 		GetGame().GetCallqueue().Remove(DeferredClose);
 
@@ -487,6 +519,7 @@ class TBD_LobbyScreen : TBD_ShellScreen
 		}
 
 		list.AddItem("   View briefing", detail, TAG_BRIEFING, state, hasSlot);
+		list.AddItem("   Mission Selector (Mockup)", "open selector", TAG_SELECTOR, TBD_EUIState.NORMAL, true);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -631,6 +664,12 @@ class TBD_LobbyScreen : TBD_ShellScreen
 		if (tag == TAG_BRIEFING)
 		{
 			TBD_MenuStack.Open(ChimeraMenuPreset.TBD_UIBriefing);
+			return;
+		}
+
+		if (tag == TAG_SELECTOR)
+		{
+			TBD_MissionSelectorComponent.Toggle();
 			return;
 		}
 
