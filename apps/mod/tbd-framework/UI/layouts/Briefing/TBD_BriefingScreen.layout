@@ -1,0 +1,914 @@
+FrameWidgetClass "{7BD1A70000000D00}" {
+ Name "ScreenRoot"
+ {
+  FrameWidgetClass "{7BD1A70000000D02}" : "{0651202E9F2646DE}UI/layouts/Map/Map.layout" {
+   Name "MapFrame"
+   Slot FrameWidgetSlot "{7BD1A70000000D03}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   "Z Order" 0
+  }
+  FrameWidgetClass "{7BD1A70000000DF0}" {
+   Name "ToolMenu"
+   Slot FrameWidgetSlot "{7BD1A70000000DF1}" {
+    Anchor 0 0 0 0
+    PositionX 472
+    OffsetLeft 472
+    PositionY 58
+    OffsetTop 58
+    SizeX 320
+    OffsetRight -792
+    SizeY 36
+    OffsetBottom -94
+    SizeToContent 1
+   }
+   "Z Order" 5
+   Clipping False
+   "Ignore Cursor" 0
+   {
+    FrameWidgetClass "{7BD1A70000000DF2}" {
+     Name "ToolMenuBar"
+     Slot FrameWidgetSlot "{7BD1A70000000DF3}" {
+      OffsetLeft 0
+      OffsetTop 0
+      SizeX 36
+      OffsetRight -36
+      SizeY 36
+      OffsetBottom -36
+      SizeToContent 1
+     }
+     Clipping True
+     {
+      ImageWidgetClass "{7BD1A70000000DF4}" {
+       Name "MenuBackground"
+       Slot FrameWidgetSlot "{7BD1A70000000DF5}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+        SizeToContent 1
+       }
+       Opacity 0.95
+       Color 0.051 0.075 0.133 0.9
+       Size 40 40
+      }
+      HorizontalLayoutWidgetClass "{7BD1A70000000DF6}" {
+       Name "ToolMenuHoriz"
+       Slot FrameWidgetSlot "{7BD1A70000000DF7}" {
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+        SizeToContent 1
+       }
+      }
+     }
+    }
+   }
+  }
+  FrameWidgetClass "{7BD1A70000000D10}" {
+   Name "HeaderBar"
+   Slot FrameWidgetSlot "{7BD1A70000000D11}" {
+    Anchor 0 0 1 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 48
+    OffsetBottom -48
+   }
+   "Z Order" 10
+   {
+    ImageWidgetClass "{7BD1A70000000D12}" {
+     Name "HeaderBG"
+     Slot FrameWidgetSlot "{7BD1A70000000D13}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+     Color 0.082 0.106 0.169 0.88
+    }
+    ImageWidgetClass "{7BD1A70000000D14}" {
+     Name "HeaderBottomRule"
+     Slot FrameWidgetSlot "{7BD1A70000000D15}" {
+      Anchor 0 1 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY -1
+      OffsetTop -1
+      SizeX 0
+      OffsetRight 0
+      SizeY 1
+      OffsetBottom 0
+     }
+     Color 1 1 1 0.1
+    }
+    TextWidgetClass "{7BD1A70000000D16}" {
+     Name "HeaderTitle"
+     Slot FrameWidgetSlot "{7BD1A70000000D17}" {
+      Anchor 0 0 0 0
+      PositionX 16
+      OffsetLeft 16
+      PositionY 12
+      OffsetTop 12
+      SizeX 230
+      OffsetRight -246
+      SizeY 24
+      OffsetBottom -36
+     }
+     Clipping True
+     Color 1 1 1 1
+     Text "MISSION BRIEFING"
+     "Font Size" 14
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+    TextWidgetClass "{7BD1A70000000D18}" {
+     Name "HeaderDot"
+     Slot FrameWidgetSlot "{7BD1A70000000D19}" {
+      Anchor 0 0 0 0
+      PositionX 250
+      OffsetLeft 250
+      PositionY 12
+      OffsetTop 12
+      SizeX 14
+      OffsetRight -264
+      SizeY 24
+      OffsetBottom -36
+     }
+     Clipping True
+     Color 1 1 1 0.3
+     Text "*"
+     "Font Size" 13
+     "Horizontal Alignment" Center
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+    TextWidgetClass "{7BD1A70000000D1A}" {
+     Name "HeaderSubtitle"
+     Slot FrameWidgetSlot "{7BD1A70000000D1B}" {
+      Anchor 0 0 0 0
+      PositionX 268
+      OffsetLeft 268
+      PositionY 12
+      OffsetTop 12
+      SizeX 380
+      OffsetRight -648
+      SizeY 24
+      OffsetBottom -36
+     }
+     Clipping True
+     Color 0.761 0.776 0.839 0.85
+     Text "US ARMY - EVERON"
+     "Font Size" 13
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+    TextWidgetClass "{7BD1A70000000D1C}" {
+     Name "HeaderTimeText"
+     Slot FrameWidgetSlot "{7BD1A70000000D1D}" {
+      Anchor 1 0 1 0
+      PositionX -240
+      OffsetLeft -240
+      PositionY 12
+      OffsetTop 12
+      SizeX 90
+      OffsetRight 150
+      SizeY 24
+      OffsetBottom -36
+     }
+     Clipping True
+     Color 1 1 1 0.9
+     Text "12:00"
+     "Font Size" 13
+     "Horizontal Alignment" Center
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+    TextWidgetClass "{7BD1A70000000D1E}" {
+     Name "HeaderWeatherText"
+     Slot FrameWidgetSlot "{7BD1A70000000D1F}" {
+      Anchor 1 0 1 0
+      PositionX -140
+      OffsetLeft -140
+      PositionY 12
+      OffsetTop 12
+      SizeX 124
+      OffsetRight 16
+      SizeY 24
+      OffsetBottom -36
+     }
+     Clipping True
+     Color 0.761 0.776 0.839 0.85
+     Text "Weather: Clear"
+     "Font Size" 13
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+   }
+  }
+  FrameWidgetClass "{7BD1A70000000D20}" {
+   Name "BriefingDrawer"
+   Slot FrameWidgetSlot "{7BD1A70000000D21}" {
+    Anchor 0 0 0 1
+    PositionX 16
+    OffsetLeft 16
+    PositionY 56
+    OffsetTop 56
+    SizeX 440
+    OffsetRight -456
+    SizeY -112
+    OffsetBottom 56
+   }
+   "Z Order" 10
+   {
+    ImageWidgetClass "{7BD1A70000000D22}" {
+     Name "DrawerBG"
+     Slot FrameWidgetSlot "{7BD1A70000000D23}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+     Color 0.051 0.075 0.133 0.94
+    }
+    ImageWidgetClass "{7BD1A70000000D24}" {
+     Name "DrawerBorder"
+     Slot FrameWidgetSlot "{7BD1A70000000D25}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+     Color 1 1 1 0.08
+    }
+    FrameWidgetClass "{7BD1A70000000D26}" {
+     Name "DrawerHeader"
+     Slot FrameWidgetSlot "{7BD1A70000000D27}" {
+      Anchor 0 0 1 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 38
+      OffsetBottom -38
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000D28}" {
+       Name "DrawerHeaderBG"
+       Slot FrameWidgetSlot "{7BD1A70000000D29}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       Color 0.082 0.106 0.169 0.92
+      }
+      ImageWidgetClass "{7BD1A70000000D2A}" {
+       Name "DrawerHeaderRule"
+       Slot FrameWidgetSlot "{7BD1A70000000D2B}" {
+        Anchor 0 1 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY -1
+        OffsetTop -1
+        SizeX 0
+        OffsetRight 0
+        SizeY 1
+        OffsetBottom 0
+       }
+       Color 1 1 1 0.08
+      }
+      TextWidgetClass "{7BD1A70000000D2C}" {
+       Name "DrawerTitle"
+       Slot FrameWidgetSlot "{7BD1A70000000D2D}" {
+        Anchor 0 0 0 0
+        PositionX 14
+        OffsetLeft 14
+        PositionY 8
+        OffsetTop 8
+        SizeX 250
+        OffsetRight -264
+        SizeY 22
+        OffsetBottom -30
+       }
+       Clipping True
+       Color 1 1 1 1
+       Text "TACTICAL BRIEFING"
+       "Font Size" 12
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      ButtonWidgetClass "{7BD1A70000000D2E}" {
+       Name "ToggleDrawerBtn"
+       Slot FrameWidgetSlot "{7BD1A70000000D2F}" {
+        Anchor 1 0 1 0
+        PositionX -34
+        OffsetLeft -34
+        PositionY 6
+        OffsetTop 6
+        SizeX 26
+        OffsetRight 8
+        SizeY 26
+        OffsetBottom -32
+       }
+       Color 1 1 1 0
+       {
+        OverlayWidgetClass "{7BD1A70000000EA0}" {
+         Name "ToggleDrawerOverlay"
+         Slot ButtonWidgetSlot "{7BD1A70000000EA1}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D30}" {
+           Name "ToggleDrawerBG"
+           Slot OverlayWidgetSlot "{7BD1A70000000D31}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 1 1 1 0.08
+          }
+          TextWidgetClass "{7BD1A70000000D32}" {
+           Name "ToggleDrawerText"
+           Slot OverlayWidgetSlot "{7BD1A70000000D33}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Clipping True
+           Color 1 1 1 0.8
+           Text "<"
+           "Font Size" 13
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+    FrameWidgetClass "{7BD1A70000000D34}" {
+     Name "DrawerTabBar"
+     Slot FrameWidgetSlot "{7BD1A70000000D35}" {
+      Anchor 0 0 1 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY 40
+      OffsetTop 40
+      SizeX 0
+      OffsetRight 0
+      SizeY 34
+      OffsetBottom -74
+     }
+     {
+      ButtonWidgetClass "{7BD1A70000000D36}" {
+       Name "TabOrdersBtn"
+       Slot FrameWidgetSlot "{7BD1A70000000D37}" {
+        Anchor 0 0 0 0
+        PositionX 10
+        OffsetLeft 10
+        PositionY 3
+        OffsetTop 3
+        SizeX 98
+        OffsetRight -108
+        SizeY 28
+        OffsetBottom -31
+       }
+       Color 1 1 1 0
+       {
+        OverlayWidgetClass "{7BD1A70000000EA2}" {
+         Name "TabOrdersOverlay"
+         Slot ButtonWidgetSlot "{7BD1A70000000EA3}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D38}" {
+           Name "TabOrdersBG"
+           Slot OverlayWidgetSlot "{7BD1A70000000D39}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 0.118 0.529 0.898 0.25
+          }
+          TextWidgetClass "{7BD1A70000000D3A}" {
+           Name "TabOrdersText"
+           Slot OverlayWidgetSlot "{7BD1A70000000D3B}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Clipping True
+           Color 1 1 1 1
+           Text "ORDERS"
+           "Font Size" 11
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+      ButtonWidgetClass "{7BD1A70000000D3C}" {
+       Name "TabOrbatBtn"
+       Slot FrameWidgetSlot "{7BD1A70000000D3D}" {
+        Anchor 0 0 0 0
+        PositionX 114
+        OffsetLeft 114
+        PositionY 3
+        OffsetTop 3
+        SizeX 98
+        OffsetRight -212
+        SizeY 28
+        OffsetBottom -31
+       }
+       Color 1 1 1 0
+       {
+        OverlayWidgetClass "{7BD1A70000000EA4}" {
+         Name "TabOrbatOverlay"
+         Slot ButtonWidgetSlot "{7BD1A70000000EA5}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D3E}" {
+           Name "TabOrbatBG"
+           Slot OverlayWidgetSlot "{7BD1A70000000D3F}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 1 1 1 0.05
+          }
+          TextWidgetClass "{7BD1A70000000D40}" {
+           Name "TabOrbatText"
+           Slot OverlayWidgetSlot "{7BD1A70000000D41}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Clipping True
+           Color 0.761 0.776 0.839 0.7
+           Text "ORBAT"
+           "Font Size" 11
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+      ButtonWidgetClass "{7BD1A70000000D42}" {
+       Name "TabAoBtn"
+       Slot FrameWidgetSlot "{7BD1A70000000D43}" {
+        Anchor 0 0 0 0
+        PositionX 218
+        OffsetLeft 218
+        PositionY 3
+        OffsetTop 3
+        SizeX 104
+        OffsetRight -322
+        SizeY 28
+        OffsetBottom -31
+       }
+       Color 1 1 1 0
+       {
+        OverlayWidgetClass "{7BD1A70000000EA6}" {
+         Name "TabAoOverlay"
+         Slot ButtonWidgetSlot "{7BD1A70000000EA7}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D44}" {
+           Name "TabAoBG"
+           Slot OverlayWidgetSlot "{7BD1A70000000D45}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 1 1 1 0.05
+          }
+          TextWidgetClass "{7BD1A70000000D46}" {
+           Name "TabAoText"
+           Slot OverlayWidgetSlot "{7BD1A70000000D47}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Clipping True
+           Color 0.761 0.776 0.839 0.7
+           Text "AO & ROE"
+           "Font Size" 11
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+      ButtonWidgetClass "{7BD1A70000000D48}" {
+       Name "TabKitBtn"
+       Slot FrameWidgetSlot "{7BD1A70000000D49}" {
+        Anchor 0 0 0 0
+        PositionX 328
+        OffsetLeft 328
+        PositionY 3
+        OffsetTop 3
+        SizeX 100
+        OffsetRight -428
+        SizeY 28
+        OffsetBottom -31
+       }
+       Color 1 1 1 0
+       {
+        OverlayWidgetClass "{7BD1A70000000EA8}" {
+         Name "TabKitOverlay"
+         Slot ButtonWidgetSlot "{7BD1A70000000EA9}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D4A}" {
+           Name "TabKitBG"
+           Slot OverlayWidgetSlot "{7BD1A70000000D4B}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 1 1 1 0.05
+          }
+          TextWidgetClass "{7BD1A70000000D4C}" {
+           Name "TabKitText"
+           Slot OverlayWidgetSlot "{7BD1A70000000D4D}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Clipping True
+           Color 0.761 0.776 0.839 0.7
+           Text "MY KIT"
+           "Font Size" 11
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+    ImageWidgetClass "{7BD1A70000000D4E}" {
+     Name "DrawerTabBarRule"
+     Slot FrameWidgetSlot "{7BD1A70000000D4F}" {
+      Anchor 0 0 1 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY 74
+      OffsetTop 74
+      SizeX 0
+      OffsetRight 0
+      SizeY 1
+      OffsetBottom -75
+     }
+     Color 1 1 1 0.08
+    }
+    ScrollLayoutWidgetClass "{7BD1A70000000D50}" {
+     Name "DrawerBodyScroll"
+     Slot FrameWidgetSlot "{7BD1A70000000D51}" {
+      Anchor 0 0 1 1
+      PositionX 14
+      OffsetLeft 14
+      PositionY 82
+      OffsetTop 82
+      SizeX -28
+      OffsetRight 14
+      SizeY -88
+      OffsetBottom 10
+     }
+     {
+      VerticalLayoutWidgetClass "{7BD1A70000000D51}" {
+       Name "DrawerContentList"
+       Slot AlignableSlot "{7BD1A70000000D52}" {
+       }
+       {
+        TextWidgetClass "{7BD1A70000000D53}" {
+         Name "ContentTitle"
+         Slot LayoutSlot "{7BD1A70000000D54}" {
+          Padding 0 4 0 4
+         }
+         Clipping True
+         Color 0.118 0.529 0.898 1
+         Text "SITUATION"
+         "Font Size" 13
+         Wrap 0
+        }
+        TextWidgetClass "{7BD1A70000000D55}" {
+         Name "ContentBody"
+         Slot LayoutSlot "{7BD1A70000000D56}" {
+          Padding 0 2 0 14
+         }
+         Clipping False
+         Color 0.867 0.886 0.969 0.9
+         Text "Loading briefing orders..."
+         "Font Size" 11
+         Wrap 1
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+  ButtonWidgetClass "{7BD1A70000000D57}" {
+   Name "CollapsedDrawerBtn"
+   Slot FrameWidgetSlot "{7BD1A70000000D58}" {
+    Anchor 0 0 0 0
+    PositionX 16
+    OffsetLeft 16
+    PositionY 56
+    OffsetTop 56
+    SizeX 36
+    OffsetRight -52
+    SizeY 36
+    OffsetBottom -92
+   }
+   "Z Order" 10
+   "Is Visible" 0
+   Color 1 1 1 0
+   {
+    OverlayWidgetClass "{7BD1A70000000EAA}" {
+     Name "CollapsedDrawerOverlay"
+     Slot ButtonWidgetSlot "{7BD1A70000000EAB}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000D59}" {
+       Name "CollapsedDrawerBG"
+       Slot OverlayWidgetSlot "{7BD1A70000000D5A}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 0.082 0.106 0.169 0.95
+      }
+      ImageWidgetClass "{7BD1A70000000D5B}" {
+       Name "CollapsedDrawerBorder"
+       Slot OverlayWidgetSlot "{7BD1A70000000D5C}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.15
+      }
+      TextWidgetClass "{7BD1A70000000D5D}" {
+       Name "CollapsedDrawerIcon"
+       Slot OverlayWidgetSlot "{7BD1A70000000D5E}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Clipping True
+       Color 1 1 1 1
+       Text ">"
+       "Font Size" 16
+       "Horizontal Alignment" Center
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+     }
+    }
+   }
+  }
+  FrameWidgetClass "{7BD1A70000000D60}" {
+   Name "FooterBar"
+   Slot FrameWidgetSlot "{7BD1A70000000D61}" {
+    Anchor 0 1 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY -48
+    OffsetTop -48
+    SizeX 0
+    OffsetRight 0
+    SizeY 48
+    OffsetBottom 0
+   }
+   "Z Order" 10
+   {
+    ImageWidgetClass "{7BD1A70000000D62}" {
+     Name "FooterBG"
+     Slot FrameWidgetSlot "{7BD1A70000000D63}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+     Color 0.082 0.106 0.169 0.92
+    }
+    ImageWidgetClass "{7BD1A70000000D64}" {
+     Name "FooterTopRule"
+     Slot FrameWidgetSlot "{7BD1A70000000D65}" {
+      Anchor 0 0 1 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 1
+      OffsetBottom -1
+     }
+     Color 1 1 1 0.1
+    }
+    ButtonWidgetClass "{7BD1A70000000D66}" {
+     Name "LobbyReturnBtn"
+     Slot FrameWidgetSlot "{7BD1A70000000D67}" {
+      Anchor 0 0 0 0
+      PositionX 16
+      OffsetLeft 16
+      PositionY 8
+      OffsetTop 8
+      SizeX 140
+      OffsetRight -156
+      SizeY 32
+      OffsetBottom -40
+     }
+     Color 1 1 1 0
+     {
+      OverlayWidgetClass "{7BD1A70000000EAC}" {
+       Name "LobbyReturnOverlay"
+       Slot ButtonWidgetSlot "{7BD1A70000000EAD}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       {
+        ImageWidgetClass "{7BD1A70000000D68}" {
+         Name "LobbyReturnBG"
+         Slot OverlayWidgetSlot "{7BD1A70000000D69}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         Color 1 1 1 0.06
+        }
+        ImageWidgetClass "{7BD1A70000000D6A}" {
+         Name "LobbyReturnBorder"
+         Slot OverlayWidgetSlot "{7BD1A70000000D6B}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         Color 1 1 1 0.08
+        }
+        TextWidgetClass "{7BD1A70000000D6C}" {
+         Name "LobbyReturnText"
+         Slot OverlayWidgetSlot "{7BD1A70000000D6D}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         Clipping True
+         Color 1 1 1 0.8
+         Text "< Return to Lobby"
+         "Font Size" 11
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+       }
+      }
+     }
+    }
+    TextWidgetClass "{7BD1A70000000D6E}" {
+     Name "ReadinessStatusText"
+     Slot FrameWidgetSlot "{7BD1A70000000D6F}" {
+      Anchor 0 0 0 0
+      PositionX 170
+      OffsetLeft 170
+      PositionY 12
+      OffsetTop 12
+      SizeX 320
+      OffsetRight -490
+      SizeY 24
+      OffsetBottom -36
+     }
+     Clipping True
+     Color 1 1 1 0.9
+     Text "Ready - 0 of 0"
+     "Font Size" 12
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+    TextWidgetClass "{7BD1A70000000D70}" {
+     Name "FooterMapHint"
+     Slot FrameWidgetSlot "{7BD1A70000000D71}" {
+      Anchor 0 0 0 0
+      PositionX 500
+      OffsetLeft 500
+      PositionY 12
+      OffsetTop 12
+      SizeX 520
+      OffsetRight -1020
+      SizeY 24
+      OffsetBottom -36
+     }
+     Clipping True
+     Color 0.6 0.65 0.75 0.7
+     Text "Map Tools: Left Click + Drag Pan * Wheel Zoom * Toolbar Draw & Plan"
+     "Font Size" 11
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+    ButtonWidgetClass "{7BD1A70000000D72}" {
+     Name "ReadyBtn"
+     Slot FrameWidgetSlot "{7BD1A70000000D73}" {
+      Anchor 1 0 1 1
+      PositionX -180
+      OffsetLeft -180
+      PositionY 8
+      OffsetTop 8
+      SizeX 164
+      OffsetRight 16
+      SizeY 32
+      OffsetBottom -8
+     }
+     Color 1 1 1 0
+     {
+      OverlayWidgetClass "{7BD1A70000000EAE}" {
+       Name "ReadyBtnOverlay"
+       Slot ButtonWidgetSlot "{7BD1A70000000EAF}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       {
+        ImageWidgetClass "{7BD1A70000000D74}" {
+         Name "ReadyBtnBG"
+         Slot OverlayWidgetSlot "{7BD1A70000000D75}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         Color 0.118 0.529 0.898 1
+        }
+        TextWidgetClass "{7BD1A70000000D76}" {
+         Name "ReadyBtnText"
+         Slot OverlayWidgetSlot "{7BD1A70000000D77}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         Clipping True
+         Color 1 1 1 1
+         Text "I'M READY"
+         "Font Size" 12
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

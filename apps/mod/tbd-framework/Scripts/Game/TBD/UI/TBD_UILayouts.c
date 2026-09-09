@@ -50,6 +50,9 @@ class TBD_UILayouts
 	static const ResourceName LOBBY_ROSTER       = "{7BD1A70000000C08}UI/layouts/Lobby/TBD_LobbyCenterRoster.layout";
 	static const ResourceName LOBBY_INSPECTOR    = "{7BD1A70000000C09}UI/layouts/Lobby/TBD_LobbyInspector.layout";
 
+	//! Map-centric Tactical Briefing Workstation UI.
+	static const ResourceName BRIEFING_SCREEN    = "{7BD1A70000000D01}UI/layouts/Briefing/TBD_BriefingScreen.layout";
+
 	//------------------------------------------------------------------------------------------------
 	//! Instantiate a layout under `parent`, retrying without the GUID prefix if the GUID does not
 	//! resolve. Returns null on a dead workspace (server-side) or an unresolvable layout - every
