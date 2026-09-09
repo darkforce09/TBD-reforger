@@ -2370,7 +2370,7 @@ FrameWidgetClass "{7BD1A70000000B00}" {
                        }
                        TextWidgetClass "{7BD1A70000000C04}" {
                         Name "ModItem4Text"
-                        Slot FrameWidgetSlot "{7BD1A70000000C05}" {
+                        Slot FrameWidgetSlot "{7BD1A7000000B005}" {
                          Anchor 0 0 1 1
                          PositionX 26
                          OffsetLeft 26

@@ -1,4 +1,4 @@
-//! T-181.7 — every `.layout` the UI framework owns, named once.
+//! T-181.7 - every `.layout` the UI framework owns, named once.
 //!
 //! Enfusion resources are addressed as `"{GUID}relative/path.layout"`. The GUID is the primary
 //! key and lives in the file's `.meta`; the path is the fallback. Keeping both in one place means
@@ -6,17 +6,17 @@
 //! that can regenerate a GUID index), a changed GUID is a one-line edit here rather than a hunt
 //! through screens.
 //!
-//! ── OPERATOR NOTE — one Workbench pass is required, and this is why ─────────────────────────
+//! -- OPERATOR NOTE - one Workbench pass is required, and this is why -------------------------
 //! These `.layout`/`.meta` files were authored as text; Workbench cannot be driven from the
 //! headless lane. The mod's committed `resourceDatabase.rdb` therefore does not list them.
 //!
 //! Measured, on the headless server:
-//!   * **Scripts do not need an rdb entry.** A new `.c` absent from the rdb still compiled — and
+//!   * **Scripts do not need an rdb entry.** A new `.c` absent from the rdb still compiled - and
 //!     still reported its deliberate error. Script discovery is a directory scan.
 //!   * **The addon does need an rdb to exist at all.** Delete `resourceDatabase.rdb` and the mod's
-//!     script count drops from 5660 back to vanilla's 5633 — nothing in the addon loads.
+//!     script count drops from 5660 back to vanilla's 5633 - nothing in the addon loads.
 //!   * **Non-script resources are not directory-scanned.** A new `Configs/System/chimeraMenus.conf`
-//!     stayed invisible (`GUI (E): Menu preset '…' not found!`) at the vanilla path, at a custom
+//!     stayed invisible (`GUI (E): Menu preset '...' not found!`) at the vanilla path, at a custom
 //!     path, with and without a `.meta`.
 //!
 //! So: the code here is complete, and the resources become live the first time the project is
@@ -30,24 +30,35 @@ class TBD_UILayouts
 	//! One pooled row of a TBD_ListBox.
 	static const ResourceName LIST_ROW     = "{7BD1A70000000702}UI/layouts/TBD_ListRow.layout";
 
-	//! T-941.3 — END stage banner: winning faction + reason.
+	//! T-941.3 - END stage banner: winning faction + reason.
 	static const ResourceName END_SCREEN     = "{7BD1A70000000801}UI/layouts/TBD_EndScreen.layout";
 
-	//! T-941.3 — DEBRIEF stage scoreboard.
+	//! T-941.3 - DEBRIEF stage scoreboard.
 	static const ResourceName DEBRIEF_SCREEN = "{7BD1A70000000901}UI/layouts/TBD_DebriefScreen.layout";
 
 	//! Stitch 1:1 Mission Selector Workstation UI.
 	static const ResourceName MISSION_SELECTOR = "{7BD1A70000000B01}UI/layouts/TBD_MissionSelector.layout";
 
+	//! Modular Lobby / Slotting Workstation UI.
+	static const ResourceName LOBBY_SCREEN       = "{7BD1A70000000C01}UI/layouts/Lobby/TBD_LobbyScreen.layout";
+	static const ResourceName LOBBY_SQUAD_CARD   = "{7BD1A70000000C02}UI/layouts/Lobby/TBD_LobbySquadCard.layout";
+	static const ResourceName LOBBY_SLOT_ROW     = "{7BD1A70000000C03}UI/layouts/Lobby/TBD_LobbySlotRow.layout";
+	static const ResourceName LOBBY_FACTION_ROW  = "{7BD1A70000000C04}UI/layouts/Lobby/TBD_LobbyFactionRow.layout";
+	static const ResourceName LOBBY_HEADER       = "{7BD1A70000000C05}UI/layouts/Lobby/TBD_LobbyHeader.layout";
+	static const ResourceName LOBBY_FOOTER       = "{7BD1A70000000C06}UI/layouts/Lobby/TBD_LobbyFooter.layout";
+	static const ResourceName LOBBY_SIDEBAR      = "{7BD1A70000000C07}UI/layouts/Lobby/TBD_LobbySidebar.layout";
+	static const ResourceName LOBBY_ROSTER       = "{7BD1A70000000C08}UI/layouts/Lobby/TBD_LobbyCenterRoster.layout";
+	static const ResourceName LOBBY_INSPECTOR    = "{7BD1A70000000C09}UI/layouts/Lobby/TBD_LobbyInspector.layout";
+
 	//------------------------------------------------------------------------------------------------
 	//! Instantiate a layout under `parent`, retrying without the GUID prefix if the GUID does not
-	//! resolve. Returns null on a dead workspace (server-side) or an unresolvable layout — every
+	//! resolve. Returns null on a dead workspace (server-side) or an unresolvable layout - every
 	//! caller must handle null, because on a dedicated server there is no workspace at all.
 	static Widget Create(ResourceName layout, Widget parent)
 	{
 		WorkspaceWidget workspace = GetGame().GetWorkspace();
 		if (!workspace)
-			return null; // headless / server — nothing to draw on
+			return null; // headless / server - nothing to draw on
 
 		if (layout.IsEmpty())
 			return null;

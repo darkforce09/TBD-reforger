@@ -1,0 +1,371 @@
+FrameWidgetClass "{7BD1A70000000C82}" {
+ Name "ColSidebar"
+ Slot FrameWidgetSlot "{7BD1A70000000C83}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ {
+  ImageWidgetClass "{7BD1A70000000C84}" {
+   Name "SidebarBG"
+   Slot FrameWidgetSlot "{7BD1A70000000C85}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 0.051 0.075 0.133 0.95
+  }
+  ImageWidgetClass "{7BD1A70000000C86}" {
+   Name "SidebarRightRule"
+   Slot FrameWidgetSlot "{7BD1A70000000C87}" {
+    Anchor 1 0 1 1
+    PositionX -1
+    OffsetLeft -1
+    PositionY 0
+    OffsetTop 0
+    SizeX 1
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 1 1 1 0.08
+  }
+  ScrollLayoutWidgetClass "{7BD1A70000000C88}" {
+   Name "SidebarScroll"
+   Slot FrameWidgetSlot "{7BD1A70000000C89}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY -52
+    OffsetBottom 52
+   }
+   {
+    VerticalLayoutWidgetClass "{7BD1A70000000C8A}" {
+     Name "SidebarContent"
+     Slot AlignableSlot "{7BD1A70000000C8B}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+      Padding 8 10 8 10
+     }
+     {
+      SizeLayoutWidgetClass "{7BD1A70000000C8C}" {
+       Name "FactionsHeaderSize"
+       Slot AlignableSlot "{7BD1A70000000C8D}" {
+        HorizontalAlign 3
+       }
+       AllowHeightOverride 1
+       HeightOverride 24
+       {
+        FrameWidgetClass "{7BD1A70000000C8E}" {
+         Name "FactionsHeaderFrame"
+         Slot AlignableSlot "{7BD1A70000000C8F}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          TextWidgetClass "{7BD1A70000000C90}" {
+           Name "FactionsLabel"
+           Slot FrameWidgetSlot "{7BD1A70000000C91}" {
+            Anchor 0 0 0 1
+            PositionX 4
+            OffsetLeft 4
+            PositionY 0
+            OffsetTop 0
+            SizeX 100
+            OffsetRight -104
+            SizeY 0
+            OffsetBottom 0
+           }
+           Clipping True
+           Color 1 1 1 0.4
+           Text "FACTIONS"
+           "Font Size" 10
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+          TextWidgetClass "{7BD1A70000000C92}" {
+           Name "FactionsCount"
+           Slot FrameWidgetSlot "{7BD1A70000000C93}" {
+            Anchor 1 0 1 1
+            PositionX -80
+            OffsetLeft -80
+            PositionY 0
+            OffsetTop 0
+            SizeX 76
+            OffsetRight -4
+            SizeY 0
+            OffsetBottom 0
+           }
+           Clipping True
+           Color 1 1 1 0.3
+           Text "2 ACTIVE"
+           "Font Size" 9
+           "Horizontal Alignment" Right
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+      VerticalLayoutWidgetClass "{7BD1A70000000C94}" {
+       Name "FactionsContainer"
+       Slot AlignableSlot "{7BD1A70000000C95}" {
+        HorizontalAlign 3
+        VerticalAlign 0
+        Padding 0 0 0 8
+       }
+      }
+      SizeLayoutWidgetClass "{7BD1A70000000C96}" {
+       Name "ObserversHeaderSize"
+       Slot AlignableSlot "{7BD1A70000000C97}" {
+        HorizontalAlign 3
+       }
+       AllowHeightOverride 1
+       HeightOverride 24
+       {
+        FrameWidgetClass "{7BD1A70000000C98}" {
+         Name "ObserversHeaderFrame"
+         Slot AlignableSlot "{7BD1A70000000C99}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          TextWidgetClass "{7BD1A70000000C9A}" {
+           Name "ObserversLabel"
+           Slot FrameWidgetSlot "{7BD1A70000000C9B}" {
+            Anchor 0 0 0 1
+            PositionX 4
+            OffsetLeft 4
+            PositionY 0
+            OffsetTop 0
+            SizeX 100
+            OffsetRight -104
+            SizeY 0
+            OffsetBottom 0
+           }
+           Clipping True
+           Color 1 1 1 0.4
+           Text "OBSERVERS"
+           "Font Size" 10
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+      VerticalLayoutWidgetClass "{7BD1A70000000C9C}" {
+       Name "ObserversContainer"
+       Slot AlignableSlot "{7BD1A70000000C9D}" {
+        HorizontalAlign 3
+        VerticalAlign 0
+        Padding 0 0 0 8
+       }
+      }
+      SizeLayoutWidgetClass "{7BD1A70000000C9E}" {
+       Name "VoiceHeaderSize"
+       Slot AlignableSlot "{7BD1A70000000C9F}" {
+        HorizontalAlign 3
+       }
+       AllowHeightOverride 1
+       HeightOverride 24
+       {
+        FrameWidgetClass "{7BD1A70000000CA0}" {
+         Name "VoiceHeaderFrame"
+         Slot AlignableSlot "{7BD1A70000000CA1}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          TextWidgetClass "{7BD1A70000000CA2}" {
+           Name "VoiceLabel"
+           Slot FrameWidgetSlot "{7BD1A70000000CA3}" {
+            Anchor 0 0 0 1
+            PositionX 4
+            OffsetLeft 4
+            PositionY 0
+            OffsetTop 0
+            SizeX 110
+            OffsetRight -114
+            SizeY 0
+            OffsetBottom 0
+           }
+           Clipping True
+           Color 1 1 1 0.4
+           Text "VOICE / TFAR"
+           "Font Size" 10
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+          TextWidgetClass "{7BD1A70000000CA4}" {
+           Name "VoiceStatus"
+           Slot FrameWidgetSlot "{7BD1A70000000CA5}" {
+            Anchor 1 0 1 1
+            PositionX -80
+            OffsetLeft -80
+            PositionY 0
+            OffsetTop 0
+            SizeX 76
+            OffsetRight -4
+            SizeY 0
+            OffsetBottom 0
+           }
+           Clipping True
+           Color 0.2 0.8 0.5 1
+           Text "Connected"
+           "Font Size" 9
+           "Horizontal Alignment" Right
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+      VerticalLayoutWidgetClass "{7BD1A70000000CA6}" {
+       Name "VoiceTreeContainer"
+       Slot AlignableSlot "{7BD1A70000000CA7}" {
+        HorizontalAlign 3
+        VerticalAlign 0
+       }
+      }
+     }
+    }
+   }
+  }
+  FrameWidgetClass "{7BD1A70000000CA8}" {
+   Name "SidebarFooter"
+   Slot FrameWidgetSlot "{7BD1A70000000CA9}" {
+    Anchor 0 1 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY -52
+    OffsetTop -52
+    SizeX 0
+    OffsetRight 0
+    SizeY 52
+    OffsetBottom 0
+   }
+   {
+    ImageWidgetClass "{7BD1A70000000CAA}" {
+     Name "SidebarFooterBG"
+     Slot FrameWidgetSlot "{7BD1A70000000CAB}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+     Color 0.031 0.055 0.114 0.95
+    }
+    ImageWidgetClass "{7BD1A70000000CAC}" {
+     Name "SidebarFooterRule"
+     Slot FrameWidgetSlot "{7BD1A70000000CAD}" {
+      Anchor 0 0 1 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 1
+      OffsetBottom -1
+     }
+     Color 1 1 1 0.08
+    }
+    TextWidgetClass "{7BD1A70000000CAE}" {
+     Name "ConnectedPlayersLabel"
+     Slot FrameWidgetSlot "{7BD1A70000000CAF}" {
+      Anchor 0 0 0 0
+      PositionX 12
+      OffsetLeft 12
+      PositionY 8
+      OffsetTop 8
+      SizeX 120
+      OffsetRight -132
+      SizeY 18
+      OffsetBottom -26
+     }
+     Clipping True
+     Color 0.761 0.776 0.839 1
+     Text "Connected Players"
+     "Font Size" 11
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+    TextWidgetClass "{7BD1A70000000CB0}" {
+     Name "ConnectedPlayersValue"
+     Slot FrameWidgetSlot "{7BD1A70000000CB1}" {
+      Anchor 1 0 1 0
+      PositionX -70
+      OffsetLeft -70
+      PositionY 8
+      OffsetTop 8
+      SizeX 58
+      OffsetRight -12
+      SizeY 18
+      OffsetBottom -26
+     }
+     Clipping True
+     Color 1 1 1 1
+     Text "1 / 187"
+     "Font Size" 11
+     "Horizontal Alignment" Right
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+    ImageWidgetClass "{7BD1A70000000CB2}" {
+     Name "ProgressBG"
+     Slot FrameWidgetSlot "{7BD1A70000000CB3}" {
+      Anchor 0 0 1 0
+      PositionX 12
+      OffsetLeft 12
+      PositionY 32
+      OffsetTop 32
+      SizeX -24
+      OffsetRight 12
+      SizeY 4
+      OffsetBottom -36
+     }
+     Color 1 1 1 0.08
+    }
+    ImageWidgetClass "{7BD1A70000000CB4}" {
+     Name "ProgressFill"
+     Slot FrameWidgetSlot "{7BD1A70000000CB5}" {
+      Anchor 0 0 0 0
+      PositionX 12
+      OffsetLeft 12
+      PositionY 32
+      OffsetTop 32
+      SizeX 18
+      OffsetRight -30
+      SizeY 4
+      OffsetBottom -36
+     }
+     Color 0.302 0.557 1 1
+    }
+   }
+  }
+ }
+}

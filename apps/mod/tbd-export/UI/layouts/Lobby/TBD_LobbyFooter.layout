@@ -1,0 +1,206 @@
+FrameWidgetClass "{7BD1A70000000C60}" {
+ Name "BottomBar"
+ Slot FrameWidgetSlot "{7BD1A70000000C61}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ {
+  ImageWidgetClass "{7BD1A70000000C62}" {
+   Name "BottomBG"
+   Slot FrameWidgetSlot "{7BD1A70000000C63}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 0.082 0.106 0.169 0.95
+  }
+  ImageWidgetClass "{7BD1A70000000C64}" {
+   Name "BottomTopRule"
+   Slot FrameWidgetSlot "{7BD1A70000000C65}" {
+    Anchor 0 0 1 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 1
+    OffsetBottom -1
+   }
+   Color 1 1 1 0.08
+  }
+  ButtonWidgetClass "{7BD1A70000000C66}" {
+   Name "BackAction"
+   Slot FrameWidgetSlot "{7BD1A70000000C67}" {
+    Anchor 0 0 0 0
+    PositionX 16
+    OffsetLeft 16
+    PositionY 14
+    OffsetTop 14
+    SizeX 140
+    OffsetRight -156
+    SizeY 36
+    OffsetBottom -50
+   }
+   Color 1 1 1 0
+   {
+    OverlayWidgetClass "{7BD1A70000000C68}" {
+     Name "BackActionOverlay"
+     Slot ButtonWidgetSlot "{7BD1A70000000C69}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000C6A}" {
+       Name "BackActionBG"
+       Slot OverlayWidgetSlot "{7BD1A70000000C6B}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.06
+      }
+      ImageWidgetClass "{7BD1A70000000C6C}" {
+       Name "BackActionBorder"
+       Slot OverlayWidgetSlot "{7BD1A70000000C6D}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.08
+      }
+      TextWidgetClass "{7BD1A70000000C6E}" {
+       Name "BackActionText"
+       Slot OverlayWidgetSlot "{7BD1A70000000C6F}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Clipping True
+       Color 1 1 1 0.8
+       Text "< Back to Lobby"
+       "Font Size" 11
+       "Horizontal Alignment" Center
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+     }
+    }
+   }
+  }
+  ButtonWidgetClass "{7BD1A70000000C70}" {
+   Name "LockLobbyBtn"
+   Slot FrameWidgetSlot "{7BD1A70000000C71}" {
+    Anchor 1 0 1 0
+    PositionX -320
+    OffsetLeft -320
+    PositionY 14
+    OffsetTop 14
+    SizeX 130
+    OffsetRight 190
+    SizeY 36
+    OffsetBottom -50
+   }
+   Color 1 1 1 0
+   {
+    OverlayWidgetClass "{7BD1A70000000C72}" {
+     Name "LockLobbyOverlay"
+     Slot ButtonWidgetSlot "{7BD1A70000000C73}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000C74}" {
+       Name "LockLobbyBG"
+       Slot OverlayWidgetSlot "{7BD1A70000000C75}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.06
+      }
+      ImageWidgetClass "{7BD1A70000000C76}" {
+       Name "LockLobbyBorder"
+       Slot OverlayWidgetSlot "{7BD1A70000000C77}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.08
+      }
+      TextWidgetClass "{7BD1A70000000C78}" {
+       Name "LockLobbyText"
+       Slot OverlayWidgetSlot "{7BD1A70000000C79}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Clipping True
+       Color 1 0.72 0.52 1
+       Text "[*] Lock Lobby"
+       "Font Size" 11
+       "Horizontal Alignment" Center
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+     }
+    }
+   }
+  }
+  ButtonWidgetClass "{7BD1A70000000C7A}" {
+   Name "ReadyContinueBtn"
+   Slot FrameWidgetSlot "{7BD1A70000000C7B}" {
+    Anchor 1 0 1 0
+    PositionX -174
+    OffsetLeft -174
+    PositionY 12
+    OffsetTop 12
+    SizeX 158
+    OffsetRight 16
+    SizeY 40
+    OffsetBottom -52
+   }
+   Color 1 1 1 0
+   {
+    OverlayWidgetClass "{7BD1A70000000C7C}" {
+     Name "ReadyContinueOverlay"
+     Slot ButtonWidgetSlot "{7BD1A70000000C7D}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000C7E}" {
+       Name "ReadyContinueBG"
+       Slot OverlayWidgetSlot "{7BD1A70000000C7F}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 0.302 0.557 1 1
+      }
+      TextWidgetClass "{7BD1A70000000C80}" {
+       Name "ReadyContinueText"
+       Slot OverlayWidgetSlot "{7BD1A70000000C81}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Clipping True
+       Color 1 1 1 1
+       Text "> Ready & Continue"
+       "Font Size" 11
+       "Horizontal Alignment" Center
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+     }
+    }
+   }
+  }
+ }
+}

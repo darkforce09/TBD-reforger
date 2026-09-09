@@ -1,0 +1,545 @@
+FrameWidgetClass "{7BD1A70000000CB6}" {
+ Name "ColCenterRoster"
+ Slot FrameWidgetSlot "{7BD1A70000000CB7}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ {
+  ImageWidgetClass "{7BD1A70000000CB8}" {
+   Name "CenterBG"
+   Slot FrameWidgetSlot "{7BD1A70000000CB9}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 0.043 0.067 0.125 1
+  }
+  ImageWidgetClass "{7BD1A70000000CBA}" {
+   Name "CenterRightRule"
+   Slot FrameWidgetSlot "{7BD1A70000000CBB}" {
+    Anchor 1 0 1 1
+    PositionX -1
+    OffsetLeft -1
+    PositionY 0
+    OffsetTop 0
+    SizeX 1
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 1 1 1 0.08
+  }
+  FrameWidgetClass "{7BD1A70000000CBC}" {
+   Name "Subheader"
+   Slot FrameWidgetSlot "{7BD1A70000000CBD}" {
+    Anchor 0 0 1 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 76
+    OffsetBottom -76
+   }
+   {
+    ImageWidgetClass "{7BD1A70000000CBE}" {
+     Name "SubheaderBG"
+     Slot FrameWidgetSlot "{7BD1A70000000CBF}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+     Color 0.082 0.106 0.169 0.6
+    }
+    ImageWidgetClass "{7BD1A70000000CC0}" {
+     Name "SubheaderBottomRule"
+     Slot FrameWidgetSlot "{7BD1A70000000CC1}" {
+      Anchor 0 1 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY -1
+      OffsetTop -1
+      SizeX 0
+      OffsetRight 0
+      SizeY 1
+      OffsetBottom 0
+     }
+     Color 1 1 1 0.08
+    }
+    FrameWidgetClass "{7BD1A70000000CC2}" {
+     Name "SearchInputContainer"
+     Slot FrameWidgetSlot "{7BD1A70000000CC3}" {
+      Anchor 0 0 0 0
+      PositionX 14
+      OffsetLeft 14
+      PositionY 10
+      OffsetTop 10
+      SizeX 320
+      OffsetRight -334
+      SizeY 26
+      OffsetBottom -36
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000CC4}" {
+       Name "SearchBG"
+       Slot FrameWidgetSlot "{7BD1A70000000CC5}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       Color 1 1 1 0.06
+      }
+      ImageWidgetClass "{7BD1A70000000CC6}" {
+       Name "SearchBorder"
+       Slot FrameWidgetSlot "{7BD1A70000000CC7}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       Color 1 1 1 0.08
+      }
+      TextWidgetClass "{7BD1A70000000CC8}" {
+       Name "SearchIcon"
+       Slot FrameWidgetSlot "{7BD1A70000000CC9}" {
+        Anchor 0 0 0 1
+        PositionX 6
+        OffsetLeft 6
+        PositionY 0
+        OffsetTop 0
+        SizeX 16
+        OffsetRight -22
+        SizeY 0
+        OffsetBottom 0
+       }
+       Clipping True
+       Color 1 1 1 0.4
+       Text "[Q]"
+       "Font Size" 10
+       "Horizontal Alignment" Center
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      EditBoxWidgetClass "{7BD1A70000000CCA}" {
+       Name "SearchInput"
+       Slot FrameWidgetSlot "{7BD1A70000000CCB}" {
+        Anchor 0 0 1 1
+        PositionX 26
+        OffsetLeft 26
+        PositionY 0
+        OffsetTop 0
+        SizeX -60
+        OffsetRight 34
+        SizeY 0
+        OffsetBottom 0
+       }
+       Color 1 1 1 1
+       Text ""
+       "Font Size" 11
+      }
+      TextWidgetClass "{7BD1A70000000CCC}" {
+       Name "SearchShortcut"
+       Slot FrameWidgetSlot "{7BD1A70000000CCD}" {
+        Anchor 1 0 1 1
+        PositionX -28
+        OffsetLeft -28
+        PositionY 4
+        OffsetTop 4
+        SizeX 24
+        OffsetRight 4
+        SizeY -8
+        OffsetBottom 4
+       }
+       Clipping True
+       Color 1 1 1 0.4
+       Text "Cmd+F"
+       "Font Size" 8
+       "Horizontal Alignment" Center
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+     }
+    }
+    FrameWidgetClass "{7BD1A70000000CCE}" {
+     Name "RosterStatsBadge"
+     Slot FrameWidgetSlot "{7BD1A70000000CCF}" {
+      Anchor 1 0 1 0
+      PositionX -200
+      OffsetLeft -200
+      PositionY 10
+      OffsetTop 10
+      SizeX 186
+      OffsetRight 14
+      SizeY 26
+      OffsetBottom -36
+     }
+     {
+      TextWidgetClass "{7BD1A70000000CD0}" {
+       Name "RosterStatsLabel"
+       Slot FrameWidgetSlot "{7BD1A70000000CD1}" {
+        Anchor 0 0 0 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 80
+        OffsetRight -80
+        SizeY 0
+        OffsetBottom 0
+       }
+       Clipping True
+       Color 0.761 0.776 0.839 1
+       Text "BLUFOR Roster:"
+       "Font Size" 11
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      FrameWidgetClass "{7BD1A70000000CD2}" {
+       Name "RosterStatsPill"
+       Slot FrameWidgetSlot "{7BD1A70000000CD3}" {
+        Anchor 1 0 1 1
+        PositionX -104
+        OffsetLeft -104
+        PositionY 2
+        OffsetTop 2
+        SizeX 104
+        OffsetRight 0
+        SizeY -4
+        OffsetBottom 2
+       }
+       {
+        ImageWidgetClass "{7BD1A70000000CD4}" {
+         Name "RosterStatsPillBG"
+         Slot FrameWidgetSlot "{7BD1A70000000CD5}" {
+          Anchor 0 0 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY 0
+          OffsetTop 0
+          SizeX 0
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
+         Color 0.302 0.557 1 0.2
+        }
+        ImageWidgetClass "{7BD1A70000000CD6}" {
+         Name "RosterStatsPillBorder"
+         Slot FrameWidgetSlot "{7BD1A70000000CD7}" {
+          Anchor 0 0 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY 0
+          OffsetTop 0
+          SizeX 0
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
+         Color 0.302 0.557 1 0.3
+        }
+        TextWidgetClass "{7BD1A70000000CD8}" {
+         Name "RosterStatsPillText"
+         Slot FrameWidgetSlot "{7BD1A70000000CD9}" {
+          Anchor 0 0 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY 0
+          OffsetTop 0
+          SizeX 0
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
+         Clipping True
+         Color 0.678 0.776 1 1
+         Text "0 / 92 CLAIMED"
+         "Font Size" 10
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+       }
+      }
+     }
+    }
+    HorizontalLayoutWidgetClass "{7BD1A70000000CDA}" {
+     Name "FilterChipsRow"
+     Slot FrameWidgetSlot "{7BD1A70000000CDB}" {
+      Anchor 0 0 1 0
+      PositionX 14
+      OffsetLeft 14
+      PositionY 44
+      OffsetTop 44
+      SizeX -28
+      OffsetRight 14
+      SizeY 24
+      OffsetBottom -68
+     }
+     {
+      ButtonWidgetClass "{7BD1A70000000CDC}" {
+       Name "ChipAll"
+       Slot LayoutSlot "{7BD1A70000000CDD}" {
+        Padding 0 0 6 0
+       }
+       Color 1 1 1 0
+       {
+        OverlayWidgetClass "{7BD1A70000000CDE}" {
+         Name "ChipAllOverlay"
+         Slot ButtonWidgetSlot "{7BD1A70000000CDF}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000CE0}" {
+           Name "ChipAllBG"
+           Slot OverlayWidgetSlot "{7BD1A70000000CE1}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 1 1 1 0.14
+          }
+          TextWidgetClass "{7BD1A70000000CE2}" {
+           Name "ChipAllText"
+           Slot OverlayWidgetSlot "{7BD1A70000000CE3}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+            Padding 10 3 10 3
+           }
+           Clipping True
+           Color 1 1 1 1
+           Text "All Units"
+           "Font Size" 11
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+      ButtonWidgetClass "{7BD1A70000000CE4}" {
+       Name "ChipHq"
+       Slot LayoutSlot "{7BD1A70000000CE5}" {
+        Padding 0 0 6 0
+       }
+       Color 1 1 1 0
+       {
+        OverlayWidgetClass "{7BD1A70000000CE6}" {
+         Name "ChipHqOverlay"
+         Slot ButtonWidgetSlot "{7BD1A70000000CE7}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000CE8}" {
+           Name "ChipHqBG"
+           Slot OverlayWidgetSlot "{7BD1A70000000CE9}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 1 1 1 0.04
+          }
+          TextWidgetClass "{7BD1A70000000CEA}" {
+           Name "ChipHqText"
+           Slot OverlayWidgetSlot "{7BD1A70000000CEB}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+            Padding 10 3 10 3
+           }
+           Clipping True
+           Color 1 1 1 0.6
+           Text "HQ & Command"
+           "Font Size" 11
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+      ButtonWidgetClass "{7BD1A70000000CEC}" {
+       Name "ChipArmor"
+       Slot LayoutSlot "{7BD1A70000000CED}" {
+        Padding 0 0 6 0
+       }
+       Color 1 1 1 0
+       {
+        OverlayWidgetClass "{7BD1A70000000CEE}" {
+         Name "ChipArmorOverlay"
+         Slot ButtonWidgetSlot "{7BD1A70000000CEF}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000CF0}" {
+           Name "ChipArmorBG"
+           Slot OverlayWidgetSlot "{7BD1A70000000CF1}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 1 1 1 0.04
+          }
+          TextWidgetClass "{7BD1A70000000CF2}" {
+           Name "ChipArmorText"
+           Slot OverlayWidgetSlot "{7BD1A70000000CF3}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+            Padding 10 3 10 3
+           }
+           Clipping True
+           Color 1 1 1 0.6
+           Text "Armor Sections"
+           "Font Size" 11
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+      ButtonWidgetClass "{7BD1A70000000CF4}" {
+       Name "ChipMech"
+       Slot LayoutSlot "{7BD1A70000000CF5}" {
+        Padding 0 0 8 0
+       }
+       Color 1 1 1 0
+       {
+        OverlayWidgetClass "{7BD1A70000000CF6}" {
+         Name "ChipMechOverlay"
+         Slot ButtonWidgetSlot "{7BD1A70000000CF7}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000CF8}" {
+           Name "ChipMechBG"
+           Slot OverlayWidgetSlot "{7BD1A70000000CF9}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 1 1 1 0.04
+          }
+          TextWidgetClass "{7BD1A70000000CFA}" {
+           Name "ChipMechText"
+           Slot OverlayWidgetSlot "{7BD1A70000000CFB}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+            Padding 10 3 10 3
+           }
+           Clipping True
+           Color 1 1 1 0.6
+           Text "Mechanized Infantry"
+           "Font Size" 11
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+      ButtonWidgetClass "{7BD1A70000000CFC}" {
+       Name "ChipAvailable"
+       Slot LayoutSlot "{7BD1A70000000CFD}" {
+        Padding 0 0 0 0
+       }
+       Color 1 1 1 0
+       {
+        OverlayWidgetClass "{7BD1A70000000CFE}" {
+         Name "ChipAvailableOverlay"
+         Slot ButtonWidgetSlot "{7BD1A70000000CFF}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D00}" {
+           Name "ChipAvailableBorder"
+           Slot OverlayWidgetSlot "{7BD1A70000000D01}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 0.678 0.776 1 0.2
+          }
+          TextWidgetClass "{7BD1A70000000D02}" {
+           Name "ChipAvailableText"
+           Slot OverlayWidgetSlot "{7BD1A70000000D03}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+            Padding 10 3 10 3
+           }
+           Clipping True
+           Color 0.678 0.776 1 0.85
+           Text "* Available Only"
+           "Font Size" 11
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+  ScrollLayoutWidgetClass "{7BD1A70000000D04}" {
+   Name "RosterScroll"
+   Slot FrameWidgetSlot "{7BD1A70000000D05}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 76
+    OffsetTop 76
+    SizeX 0
+    OffsetRight 0
+    SizeY -76
+    OffsetBottom 0
+   }
+   {
+    VerticalLayoutWidgetClass "{7BD1A70000000D06}" {
+     Name "SquadCardsContainer"
+     Slot AlignableSlot "{7BD1A70000000D07}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+      Padding 14 14 14 14
+     }
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,1312 @@
+FrameWidgetClass "{7BD1A70000000D08}" {
+ Name "ColInspector"
+ Slot FrameWidgetSlot "{7BD1A70000000D09}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ {
+  ImageWidgetClass "{7BD1A70000000D0A}" {
+   Name "InspectorBG"
+   Slot FrameWidgetSlot "{7BD1A70000000D0B}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 0.051 0.075 0.133 0.95
+  }
+  FrameWidgetClass "{7BD1A70000000D0C}" {
+   Name "InspectorHeader"
+   Slot FrameWidgetSlot "{7BD1A70000000D0D}" {
+    Anchor 0 0 1 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 44
+    OffsetBottom -44
+   }
+   {
+    ImageWidgetClass "{7BD1A70000000D0E}" {
+     Name "InspectorHeaderBG"
+     Slot FrameWidgetSlot "{7BD1A70000000D0F}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+     Color 0.082 0.106 0.169 0.6
+    }
+    ImageWidgetClass "{7BD1A70000000D10}" {
+     Name "InspectorHeaderBottomRule"
+     Slot FrameWidgetSlot "{7BD1A70000000D11}" {
+      Anchor 0 1 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY -1
+      OffsetTop -1
+      SizeX 0
+      OffsetRight 0
+      SizeY 1
+      OffsetBottom 0
+     }
+     Color 1 1 1 0.08
+    }
+    TextWidgetClass "{7BD1A70000000D12}" {
+     Name "InspectorTitle"
+     Slot FrameWidgetSlot "{7BD1A70000000D13}" {
+      Anchor 0 0 0 1
+      PositionX 14
+      OffsetLeft 14
+      PositionY 0
+      OffsetTop 0
+      SizeX 140
+      OffsetRight -154
+      SizeY 0
+      OffsetBottom 0
+     }
+     Clipping True
+     Color 1 1 1 1
+     Text "(i) Slot Inspector"
+     "Font Size" 12
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+    FrameWidgetClass "{7BD1A70000000D14}" {
+     Name "SlotStatusBadge"
+     Slot FrameWidgetSlot "{7BD1A70000000D15}" {
+      Anchor 1 0 1 0
+      PositionX -90
+      OffsetLeft -90
+      PositionY 11
+      OffsetTop 11
+      SizeX 76
+      OffsetRight 14
+      SizeY 22
+      OffsetBottom -33
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000D16}" {
+       Name "SlotStatusBG"
+       Slot FrameWidgetSlot "{7BD1A70000000D17}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       Color 0.1 0.8 0.4 0.15
+      }
+      ImageWidgetClass "{7BD1A70000000D18}" {
+       Name "SlotStatusBorder"
+       Slot FrameWidgetSlot "{7BD1A70000000D19}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       Color 1 1 1 0.08
+      }
+      TextWidgetClass "{7BD1A70000000D1A}" {
+       Name "SlotStatusText"
+       Slot FrameWidgetSlot "{7BD1A70000000D1B}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       Clipping True
+       Color 0.2 0.8 0.5 1
+       Text "SLOT OPEN"
+       "Font Size" 9
+       "Horizontal Alignment" Center
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+     }
+    }
+   }
+  }
+  ScrollLayoutWidgetClass "{7BD1A70000000D1C}" {
+   Name "InspectorScroll"
+   Slot FrameWidgetSlot "{7BD1A70000000D1D}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 44
+    OffsetTop 44
+    SizeX 0
+    OffsetRight 0
+    SizeY -44
+    OffsetBottom 0
+   }
+   {
+    VerticalLayoutWidgetClass "{7BD1A70000000D1E}" {
+     Name "InspectorBody"
+     Slot AlignableSlot "{7BD1A70000000D1F}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+      Padding 14 14 14 14
+     }
+     {
+      SizeLayoutWidgetClass "{7BD1A70000000D20}" {
+       Name "RoleHeadlineCardSize"
+       Slot LayoutSlot "{7BD1A70000000D21}" {
+        HorizontalAlign 3
+        Padding 0 0 0 12
+       }
+       AllowHeightOverride 1
+       HeightOverride 120
+       {
+        FrameWidgetClass "{7BD1A70000000D22}" {
+         Name "RoleHeadlineCard"
+         Slot AlignableSlot "{7BD1A70000000D23}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D24}" {
+           Name "RoleHeadlineBG"
+           Slot FrameWidgetSlot "{7BD1A70000000D25}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 1 1 1 0.03
+          }
+          ImageWidgetClass "{7BD1A70000000D26}" {
+           Name "RoleHeadlineBorder"
+           Slot FrameWidgetSlot "{7BD1A70000000D27}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 1 1 1 0.08
+          }
+          VerticalLayoutWidgetClass "{7BD1A70000000D30}" {
+           Name "RoleHeadlineContent"
+           Slot FrameWidgetSlot "{7BD1A70000000D31}" {
+            Anchor 0 0 1 1
+            PositionX 10
+            OffsetLeft 10
+            PositionY 10
+            OffsetTop 10
+            SizeX -20
+            OffsetRight 10
+            SizeY -20
+            OffsetBottom 10
+           }
+           {
+            TextWidgetClass "{7BD1A70000000D32}" {
+             Name "SelectedRoleLabel"
+             Slot LayoutSlot "{7BD1A70000000D33}" {
+              HorizontalAlign 3
+             }
+             Clipping True
+             Color 0.678 0.776 1 1
+             Text "SELECTED ROLE"
+             "Font Size" 9
+             Wrap 0
+            }
+            TextWidgetClass "{7BD1A70000000D34}" {
+             Name "InspectorRoleTitle"
+             Slot LayoutSlot "{7BD1A70000000D35}" {
+              HorizontalAlign 3
+              Padding 0 2 0 0
+             }
+             Clipping True
+             Color 1 1 1 1
+             Text "Company Commander"
+             "Font Size" 14
+             Wrap 0
+            }
+            TextWidgetClass "{7BD1A70000000D36}" {
+             Name "InspectorRoleSquad"
+             Slot LayoutSlot "{7BD1A70000000D37}" {
+              HorizontalAlign 3
+              Padding 0 2 0 6
+             }
+             Clipping True
+             Color 0.761 0.776 0.839 1
+             Text "Assigned to: A1-1 Company HQ"
+             "Font Size" 11
+             Wrap 0
+            }
+            ImageWidgetClass "{7BD1A70000000D38}" {
+             Name "RoleDivider"
+             Slot LayoutSlot "{7BD1A70000000D39}" {
+              HorizontalAlign 3
+              Padding 0 0 0 6
+             }
+             Color 1 1 1 0.06
+             Size 0 1
+            }
+            SizeLayoutWidgetClass "{7BD1A70000000D3A}" {
+             Name "RoleMetaGridSize"
+             Slot LayoutSlot "{7BD1A70000000D3B}" {
+              HorizontalAlign 3
+              Padding 0 2 0 0
+             }
+             AllowHeightOverride 1
+             HeightOverride 32
+             {
+              FrameWidgetClass "{7BD1A70000000D3C}" {
+               Name "RoleMetaGrid"
+               Slot AlignableSlot "{7BD1A70000000D3D}" {
+                HorizontalAlign 3
+                VerticalAlign 3
+               }
+               {
+                TextWidgetClass "{7BD1A70000000D3E}" {
+                 Name "ClearanceLabel"
+                 Slot FrameWidgetSlot "{7BD1A70000000D3F}" {
+                  Anchor 0 0 0 0
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX 120
+                  OffsetRight -120
+                  SizeY 12
+                  OffsetBottom -12
+                 }
+                 Clipping True
+                 Color 1 1 1 0.4
+                 Text "CLEARANCE"
+                 "Font Size" 8
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000D40}" {
+                 Name "ClearanceValue"
+                 Slot FrameWidgetSlot "{7BD1A70000000D41}" {
+                  Anchor 0 0 0 0
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 14
+                  OffsetTop 14
+                  SizeX 120
+                  OffsetRight -120
+                  SizeY 16
+                  OffsetBottom -30
+                 }
+                 Clipping True
+                 Color 1 1 1 1
+                 Text "Full Command"
+                 "Font Size" 11
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000D42}" {
+                 Name "RankLabel"
+                 Slot FrameWidgetSlot "{7BD1A70000000D43}" {
+                  Anchor 0.5 0 0.5 0
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX 120
+                  OffsetRight -120
+                  SizeY 12
+                  OffsetBottom -12
+                 }
+                 Clipping True
+                 Color 1 1 1 0.4
+                 Text "RANK"
+                 "Font Size" 8
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000D44}" {
+                 Name "RankValue"
+                 Slot FrameWidgetSlot "{7BD1A70000000D45}" {
+                  Anchor 0.5 0 0.5 0
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 14
+                  OffsetTop 14
+                  SizeX 120
+                  OffsetRight -120
+                  SizeY 16
+                  OffsetBottom -30
+                 }
+                 Clipping True
+                 Color 1 1 1 1
+                 Text "Captain (O-3)"
+                 "Font Size" 11
+                 Wrap 0
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+          FrameWidgetClass "{7BD1A70000000D28}" {
+           Name "RoleBadgeFrame"
+           Slot FrameWidgetSlot "{7BD1A70000000D29}" {
+            Anchor 1 0 1 0
+            PositionX -40
+            OffsetLeft -40
+            PositionY 10
+            OffsetTop 10
+            SizeX 28
+            OffsetRight 12
+            SizeY 28
+            OffsetBottom -38
+           }
+           {
+            ImageWidgetClass "{7BD1A70000000D2A}" {
+             Name "RoleBadgeBG"
+             Slot FrameWidgetSlot "{7BD1A70000000D2B}" {
+              Anchor 0 0 1 1
+              PositionX 0
+              OffsetLeft 0
+              PositionY 0
+              OffsetTop 0
+              SizeX 0
+              OffsetRight 0
+              SizeY 0
+              OffsetBottom 0
+             }
+             Color 0.302 0.557 1 0.15
+            }
+            ImageWidgetClass "{7BD1A70000000D2C}" {
+             Name "RoleBadgeBorder"
+             Slot FrameWidgetSlot "{7BD1A70000000D2D}" {
+              Anchor 0 0 1 1
+              PositionX 0
+              OffsetLeft 0
+              PositionY 0
+              OffsetTop 0
+              SizeX 0
+              OffsetRight 0
+              SizeY 0
+              OffsetBottom 0
+             }
+             Color 0.302 0.557 1 0.3
+            }
+            TextWidgetClass "{7BD1A70000000D2E}" {
+             Name "RoleBadgeIcon"
+             Slot FrameWidgetSlot "{7BD1A70000000D2F}" {
+              Anchor 0 0 1 1
+              PositionX 0
+              OffsetLeft 0
+              PositionY 0
+              OffsetTop 0
+              SizeX 0
+              OffsetRight 0
+              SizeY 0
+              OffsetBottom 0
+             }
+             Clipping True
+             Color 0.678 0.776 1 1
+             Text "[*]"
+             "Font Size" 12
+             "Horizontal Alignment" Center
+             "Vertical Alignment" Center
+             Wrap 0
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+      TextWidgetClass "{7BD1A70000000D46}" {
+       Name "VehicleHeader"
+       Slot LayoutSlot "{7BD1A70000000D47}" {
+        HorizontalAlign 3
+        Padding 0 0 0 4
+       }
+       Clipping True
+       Color 1 1 1 0.4
+       Text "VEHICLE ASSIGNMENT"
+       "Font Size" 10
+       Wrap 0
+      }
+      SizeLayoutWidgetClass "{7BD1A70000000D48}" {
+       Name "VehicleCardSize"
+       Slot LayoutSlot "{7BD1A70000000D49}" {
+        HorizontalAlign 3
+        Padding 0 0 0 12
+       }
+       AllowHeightOverride 1
+       HeightOverride 74
+       {
+        FrameWidgetClass "{7BD1A70000000D4A}" {
+         Name "VehicleCard"
+         Slot AlignableSlot "{7BD1A70000000D4B}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D4C}" {
+           Name "VehicleBG"
+           Slot FrameWidgetSlot "{7BD1A70000000D4D}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 1 1 1 0.03
+          }
+          ImageWidgetClass "{7BD1A70000000D4E}" {
+           Name "VehicleBorder"
+           Slot FrameWidgetSlot "{7BD1A70000000D4F}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 1 1 1 0.06
+          }
+          VerticalLayoutWidgetClass "{7BD1A70000000D50}" {
+           Name "VehicleContent"
+           Slot FrameWidgetSlot "{7BD1A70000000D51}" {
+            Anchor 0 0 1 1
+            PositionX 8
+            OffsetLeft 8
+            PositionY 8
+            OffsetTop 8
+            SizeX -16
+            OffsetRight 8
+            SizeY -16
+            OffsetBottom 8
+           }
+           {
+            SizeLayoutWidgetClass "{7BD1A70000000D52}" {
+             Name "VehicleTitleRowSize"
+             Slot LayoutSlot "{7BD1A70000000D53}" {
+              HorizontalAlign 3
+              Padding 0 0 0 4
+             }
+             AllowHeightOverride 1
+             HeightOverride 18
+             {
+              FrameWidgetClass "{7BD1A70000000D54}" {
+               Name "VehicleTitleRow"
+               Slot AlignableSlot "{7BD1A70000000D55}" {
+                HorizontalAlign 3
+                VerticalAlign 3
+               }
+               {
+                TextWidgetClass "{7BD1A70000000D56}" {
+                 Name "VehicleName"
+                 Slot FrameWidgetSlot "{7BD1A70000000D57}" {
+                  Anchor 0 0 1 1
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX -60
+                  OffsetRight 60
+                  SizeY 0
+                  OffsetBottom 0
+                 }
+                 Clipping True
+                 Color 1 1 1 1
+                 Text "M113A3 MEV"
+                 "Font Size" 11
+                 "Vertical Alignment" Center
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000D58}" {
+                 Name "VehicleStatus"
+                 Slot FrameWidgetSlot "{7BD1A70000000D59}" {
+                  Anchor 1 0 1 1
+                  PositionX -56
+                  OffsetLeft -56
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX 56
+                  OffsetRight 0
+                  SizeY 0
+                  OffsetBottom 0
+                 }
+                 Clipping True
+                 Color 0.2 0.8 0.5 1
+                 Text "Operable"
+                 "Font Size" 9
+                 "Horizontal Alignment" Right
+                 "Vertical Alignment" Center
+                 Wrap 0
+                }
+               }
+              }
+             }
+            }
+            TextWidgetClass "{7BD1A70000000D5A}" {
+             Name "VehicleDesc"
+             Slot LayoutSlot "{7BD1A70000000D5B}" {
+              HorizontalAlign 3
+             }
+             Clipping True
+             Color 0.761 0.776 0.839 1
+             Text "Equipped with medical litter stations, smoke countermeasure launchers, and upgraded armor kit."
+             "Font Size" 10
+             Wrap 1
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+      TextWidgetClass "{7BD1A70000000D5C}" {
+       Name "WeaponsHeader"
+       Slot LayoutSlot "{7BD1A70000000D5D}" {
+        HorizontalAlign 3
+        Padding 0 0 0 4
+       }
+       Clipping True
+       Color 1 1 1 0.4
+       Text "PRIMARY WEAPON & SIDEARM"
+       "Font Size" 10
+       Wrap 0
+      }
+      SizeLayoutWidgetClass "{7BD1A70000000D5E}" {
+       Name "WeaponsCardSize"
+       Slot LayoutSlot "{7BD1A70000000D5F}" {
+        HorizontalAlign 3
+        Padding 0 0 0 12
+       }
+       AllowHeightOverride 1
+       HeightOverride 112
+       {
+        FrameWidgetClass "{7BD1A70000000D60}" {
+         Name "WeaponsCard"
+         Slot AlignableSlot "{7BD1A70000000D61}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D62}" {
+           Name "WeaponsBG"
+           Slot FrameWidgetSlot "{7BD1A70000000D63}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 1 1 1 0.03
+          }
+          ImageWidgetClass "{7BD1A70000000D64}" {
+           Name "WeaponsBorder"
+           Slot FrameWidgetSlot "{7BD1A70000000D65}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 1 1 1 0.06
+          }
+          VerticalLayoutWidgetClass "{7BD1A70000000D66}" {
+           Name "WeaponsContent"
+           Slot FrameWidgetSlot "{7BD1A70000000D67}" {
+            Anchor 0 0 1 1
+            PositionX 8
+            OffsetLeft 8
+            PositionY 8
+            OffsetTop 8
+            SizeX -16
+            OffsetRight 8
+            SizeY -16
+            OffsetBottom 8
+           }
+           {
+            SizeLayoutWidgetClass "{7BD1A70000000D68}" {
+             Name "PrimaryRowSize"
+             Slot LayoutSlot "{7BD1A70000000D69}" {
+              HorizontalAlign 3
+              Padding 0 0 0 4
+             }
+             AllowHeightOverride 1
+             HeightOverride 30
+             {
+              FrameWidgetClass "{7BD1A70000000D6A}" {
+               Name "PrimaryRow"
+               Slot AlignableSlot "{7BD1A70000000D6B}" {
+                HorizontalAlign 3
+                VerticalAlign 3
+               }
+               {
+                TextWidgetClass "{7BD1A70000000D6C}" {
+                 Name "PrimaryName"
+                 Slot FrameWidgetSlot "{7BD1A70000000D6D}" {
+                  Anchor 0 0 1 0
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX -60
+                  OffsetRight 60
+                  SizeY 16
+                  OffsetBottom -16
+                 }
+                 Clipping True
+                 Color 1 1 1 1
+                 Text "M16A2 Carbine / Rifle"
+                 "Font Size" 11
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000D6E}" {
+                 Name "PrimaryCaliber"
+                 Slot FrameWidgetSlot "{7BD1A70000000D6F}" {
+                  Anchor 0 0 1 0
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 15
+                  OffsetTop 15
+                  SizeX -60
+                  OffsetRight 60
+                  SizeY 14
+                  OffsetBottom -29
+                 }
+                 Clipping True
+                 Color 1 1 1 0.5
+                 Text "5.56x45mm NATO - STANAG"
+                 "Font Size" 9
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000D70}" {
+                 Name "PrimaryAmmo"
+                 Slot FrameWidgetSlot "{7BD1A70000000D71}" {
+                  Anchor 1 0 1 0
+                  PositionX -56
+                  OffsetLeft -56
+                  PositionY 4
+                  OffsetTop 4
+                  SizeX 56
+                  OffsetRight 0
+                  SizeY 18
+                  OffsetBottom -22
+                 }
+                 Clipping True
+                 Color 0.678 0.776 1 1
+                 Text "7x 30rnd"
+                 "Font Size" 10
+                 "Horizontal Alignment" Right
+                 "Vertical Alignment" Center
+                 Wrap 0
+                }
+               }
+              }
+             }
+            }
+            TextWidgetClass "{7BD1A70000000D72}" {
+             Name "PrimaryAttachments"
+             Slot LayoutSlot "{7BD1A70000000D73}" {
+              HorizontalAlign 3
+              Padding 0 2 0 6
+             }
+             Clipping True
+             Color 0.761 0.776 0.839 1
+             Text "[Aimpoint Optic]  [3-Point Sling]  [Condition: Clean]"
+             "Font Size" 9
+             Wrap 0
+            }
+            ImageWidgetClass "{7BD1A70000000D74}" {
+             Name "WeaponDivider"
+             Slot LayoutSlot "{7BD1A70000000D75}" {
+              HorizontalAlign 3
+              Padding 0 0 0 6
+             }
+             Color 1 1 1 0.04
+             Size 0 1
+            }
+            SizeLayoutWidgetClass "{7BD1A70000000D76}" {
+             Name "SidearmRowSize"
+             Slot LayoutSlot "{7BD1A70000000D77}" {
+              HorizontalAlign 3
+             }
+             AllowHeightOverride 1
+             HeightOverride 18
+             {
+              FrameWidgetClass "{7BD1A70000000D78}" {
+               Name "SidearmRow"
+               Slot AlignableSlot "{7BD1A70000000D79}" {
+                HorizontalAlign 3
+                VerticalAlign 3
+               }
+               {
+                TextWidgetClass "{7BD1A70000000D7A}" {
+                 Name "SidearmName"
+                 Slot FrameWidgetSlot "{7BD1A70000000D7B}" {
+                  Anchor 0 0 1 1
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX -60
+                  OffsetRight 60
+                  SizeY 0
+                  OffsetBottom 0
+                 }
+                 Clipping True
+                 Color 1 1 1 0.8
+                 Text "M9 Beretta 9x19mm"
+                 "Font Size" 11
+                 "Vertical Alignment" Center
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000D7C}" {
+                 Name "SidearmAmmo"
+                 Slot FrameWidgetSlot "{7BD1A70000000D7D}" {
+                  Anchor 1 0 1 1
+                  PositionX -56
+                  OffsetLeft -56
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX 56
+                  OffsetRight 0
+                  SizeY 0
+                  OffsetBottom 0
+                 }
+                 Clipping True
+                 Color 1 1 1 0.5
+                 Text "3x 15rnd"
+                 "Font Size" 10
+                 "Horizontal Alignment" Right
+                 "Vertical Alignment" Center
+                 Wrap 0
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+      TextWidgetClass "{7BD1A70000000D7E}" {
+       Name "GearHeader"
+       Slot LayoutSlot "{7BD1A70000000D7F}" {
+        HorizontalAlign 3
+        Padding 0 0 0 4
+       }
+       Clipping True
+       Color 1 1 1 0.4
+       Text "TACTICAL GEAR & UNIFORM"
+       "Font Size" 10
+       Wrap 0
+      }
+      SizeLayoutWidgetClass "{7BD1A70000000D80}" {
+       Name "GearCardSize"
+       Slot LayoutSlot "{7BD1A70000000D81}" {
+        HorizontalAlign 3
+        Padding 0 0 0 12
+       }
+       AllowHeightOverride 1
+       HeightOverride 96
+       {
+        FrameWidgetClass "{7BD1A70000000D82}" {
+         Name "GearCard"
+         Slot AlignableSlot "{7BD1A70000000D83}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D84}" {
+           Name "GearBG"
+           Slot FrameWidgetSlot "{7BD1A70000000D85}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 1 1 1 0.03
+          }
+          ImageWidgetClass "{7BD1A70000000D86}" {
+           Name "GearBorder"
+           Slot FrameWidgetSlot "{7BD1A70000000D87}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 1 1 1 0.06
+          }
+          VerticalLayoutWidgetClass "{7BD1A70000000D88}" {
+           Name "GearContent"
+           Slot FrameWidgetSlot "{7BD1A70000000D89}" {
+            Anchor 0 0 1 1
+            PositionX 8
+            OffsetLeft 8
+            PositionY 8
+            OffsetTop 8
+            SizeX -16
+            OffsetRight 8
+            SizeY -16
+            OffsetBottom 8
+           }
+           {
+            SizeLayoutWidgetClass "{7BD1A70000000D8A}" {
+             Name "HelmetRowSize"
+             Slot LayoutSlot "{7BD1A70000000D8B}" {
+              HorizontalAlign 3
+              Padding 0 0 0 4
+             }
+             AllowHeightOverride 1
+             HeightOverride 18
+             {
+              FrameWidgetClass "{7BD1A70000000D8C}" {
+               Name "HelmetRow"
+               Slot AlignableSlot "{7BD1A70000000D8D}" {
+                HorizontalAlign 3
+                VerticalAlign 3
+               }
+               {
+                TextWidgetClass "{7BD1A70000000D8E}" {
+                 Name "HelmetTitle"
+                 Slot FrameWidgetSlot "{7BD1A70000000D8F}" {
+                  Anchor 0 0 1 1
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX -60
+                  OffsetRight 60
+                  SizeY 0
+                  OffsetBottom 0
+                 }
+                 Clipping True
+                 Color 1 1 1 0.9
+                 Text "PASGT Helmet & Body Armor"
+                 "Font Size" 10
+                 "Vertical Alignment" Center
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000D90}" {
+                 Name "HelmetRating"
+                 Slot FrameWidgetSlot "{7BD1A70000000D91}" {
+                  Anchor 1 0 1 1
+                  PositionX -56
+                  OffsetLeft -56
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX 56
+                  OffsetRight 0
+                  SizeY 0
+                  OffsetBottom 0
+                 }
+                 Clipping True
+                 Color 1 1 1 0.4
+                 Text "Level III-A"
+                 "Font Size" 9
+                 "Horizontal Alignment" Right
+                 "Vertical Alignment" Center
+                 Wrap 0
+                }
+               }
+              }
+             }
+            }
+            SizeLayoutWidgetClass "{7BD1A70000000D92}" {
+             Name "RigRowSize"
+             Slot LayoutSlot "{7BD1A70000000D93}" {
+              HorizontalAlign 3
+              Padding 0 0 0 4
+             }
+             AllowHeightOverride 1
+             HeightOverride 18
+             {
+              FrameWidgetClass "{7BD1A70000000D94}" {
+               Name "RigRow"
+               Slot AlignableSlot "{7BD1A70000000D95}" {
+                HorizontalAlign 3
+                VerticalAlign 3
+               }
+               {
+                TextWidgetClass "{7BD1A70000000D96}" {
+                 Name "RigTitle"
+                 Slot FrameWidgetSlot "{7BD1A70000000D97}" {
+                  Anchor 0 0 1 1
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX -70
+                  OffsetRight 70
+                  SizeY 0
+                  OffsetBottom 0
+                 }
+                 Clipping True
+                 Color 1 1 1 0.9
+                 Text "ALICE LBE Rig (Woodland BDU)"
+                 "Font Size" 10
+                 "Vertical Alignment" Center
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000D98}" {
+                 Name "RigLoad"
+                 Slot FrameWidgetSlot "{7BD1A70000000D99}" {
+                  Anchor 1 0 1 1
+                  PositionX -70
+                  OffsetLeft -70
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX 70
+                  OffsetRight 0
+                  SizeY 0
+                  OffsetBottom 0
+                 }
+                 Clipping True
+                 Color 1 1 1 0.4
+                 Text "Load: 18.4 kg"
+                 "Font Size" 9
+                 "Horizontal Alignment" Right
+                 "Vertical Alignment" Center
+                 Wrap 0
+                }
+               }
+              }
+             }
+            }
+            SizeLayoutWidgetClass "{7BD1A70000000D9A}" {
+             Name "RadioRowSize"
+             Slot LayoutSlot "{7BD1A70000000D9B}" {
+              HorizontalAlign 3
+             }
+             AllowHeightOverride 1
+             HeightOverride 28
+             {
+              FrameWidgetClass "{7BD1A70000000D9C}" {
+               Name "RadioRow"
+               Slot AlignableSlot "{7BD1A70000000D9D}" {
+                HorizontalAlign 3
+                VerticalAlign 3
+               }
+               {
+                TextWidgetClass "{7BD1A70000000D9E}" {
+                 Name "RadioTitle"
+                 Slot FrameWidgetSlot "{7BD1A70000000D9F}" {
+                  Anchor 0 0 1 0
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX -60
+                  OffsetRight 60
+                  SizeY 14
+                  OffsetBottom -14
+                 }
+                 Clipping True
+                 Color 1 1 1 0.9
+                 Text "AN/PRC-77 Backpack Radio"
+                 "Font Size" 10
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000DA0}" {
+                 Name "RadioFreq"
+                 Slot FrameWidgetSlot "{7BD1A70000000DA1}" {
+                  Anchor 0 0 1 0
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 14
+                  OffsetTop 14
+                  SizeX -60
+                  OffsetRight 60
+                  SizeY 12
+                  OffsetBottom -26
+                 }
+                 Clipping True
+                 Color 1 1 1 0.4
+                 Text "VHF Long-Range - Ch 01 / 48.50 MHz"
+                 "Font Size" 8
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000DA2}" {
+                 Name "RadioStatus"
+                 Slot FrameWidgetSlot "{7BD1A70000000DA3}" {
+                  Anchor 1 0 1 0
+                  PositionX -56
+                  OffsetLeft -56
+                  PositionY 2
+                  OffsetTop 2
+                  SizeX 56
+                  OffsetRight 0
+                  SizeY 18
+                  OffsetBottom -20
+                 }
+                 Clipping True
+                 Color 0.2 0.8 0.5 1
+                 Text "Active Link"
+                 "Font Size" 9
+                 "Horizontal Alignment" Right
+                 "Vertical Alignment" Center
+                 Wrap 0
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+      TextWidgetClass "{7BD1A70000000DA4}" {
+       Name "InventoryHeader"
+       Slot LayoutSlot "{7BD1A70000000DA5}" {
+        HorizontalAlign 3
+        Padding 0 0 0 4
+       }
+       Clipping True
+       Color 1 1 1 0.4
+       Text "EQUIPMENT & INVENTORY"
+       "Font Size" 10
+       Wrap 0
+      }
+      SizeLayoutWidgetClass "{7BD1A70000000DA6}" {
+       Name "InventoryCardSize"
+       Slot LayoutSlot "{7BD1A70000000DA7}" {
+        HorizontalAlign 3
+        Padding 0 0 0 12
+       }
+       AllowHeightOverride 1
+       HeightOverride 104
+       {
+        FrameWidgetClass "{7BD1A70000000DA8}" {
+         Name "InventoryCard"
+         Slot AlignableSlot "{7BD1A70000000DA9}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000DAA}" {
+           Name "InventoryBG"
+           Slot FrameWidgetSlot "{7BD1A70000000DAB}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 1 1 1 0.03
+          }
+          ImageWidgetClass "{7BD1A70000000DAC}" {
+           Name "InventoryBorder"
+           Slot FrameWidgetSlot "{7BD1A70000000DAD}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 1 1 1 0.06
+          }
+          VerticalLayoutWidgetClass "{7BD1A70000000DAE}" {
+           Name "InventoryContent"
+           Slot FrameWidgetSlot "{7BD1A70000000DAF}" {
+            Anchor 0 0 1 1
+            PositionX 8
+            OffsetLeft 8
+            PositionY 8
+            OffsetTop 8
+            SizeX -16
+            OffsetRight 8
+            SizeY -16
+            OffsetBottom 8
+           }
+           {
+            TextWidgetClass "{7BD1A70000000DB0}" {
+             Name "InvItem1"
+             Slot LayoutSlot "{7BD1A70000000DB1}" {
+              HorizontalAlign 3
+              Padding 0 0 0 2
+             }
+             Clipping True
+             Color 1 1 1 0.8
+             Text "[o] Vector 21 / M22     [+] MicroDAGR & Lensatic"
+             "Font Size" 9
+             Wrap 0
+            }
+            TextWidgetClass "{7BD1A70000000DB2}" {
+             Name "InvItem2"
+             Slot LayoutSlot "{7BD1A70000000DB3}" {
+              HorizontalAlign 3
+              Padding 0 0 0 6
+             }
+             Clipping True
+             Color 1 1 1 0.8
+             Text "[~] 2x M18 White, 1x Grn  [!] 2x M67 Frag Grenade"
+             "Font Size" 9
+             Wrap 0
+            }
+            ImageWidgetClass "{7BD1A70000000DB4}" {
+             Name "IfakDivider"
+             Slot LayoutSlot "{7BD1A70000000DB5}" {
+              HorizontalAlign 3
+              Padding 0 0 0 6
+             }
+             Color 1 1 1 0.04
+             Size 0 1
+            }
+            SizeLayoutWidgetClass "{7BD1A70000000DB6}" {
+             Name "IfakHeaderRowSize"
+             Slot LayoutSlot "{7BD1A70000000DB7}" {
+              HorizontalAlign 3
+              Padding 0 0 0 4
+             }
+             AllowHeightOverride 1
+             HeightOverride 18
+             {
+              FrameWidgetClass "{7BD1A70000000DB8}" {
+               Name "IfakHeaderRow"
+               Slot AlignableSlot "{7BD1A70000000DB9}" {
+                HorizontalAlign 3
+                VerticalAlign 3
+               }
+               {
+                TextWidgetClass "{7BD1A70000000DBA}" {
+                 Name "IfakTitle"
+                 Slot FrameWidgetSlot "{7BD1A70000000DBB}" {
+                  Anchor 0 0 1 1
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX -60
+                  OffsetRight 60
+                  SizeY 0
+                  OffsetBottom 0
+                 }
+                 Clipping True
+                 Color 0.4 0.9 0.6 1
+                 Text "[+] IFAK Medical Kit"
+                 "Font Size" 10
+                 "Vertical Alignment" Center
+                 Wrap 0
+                }
+                TextWidgetClass "{7BD1A70000000DBC}" {
+                 Name "IfakStatus"
+                 Slot FrameWidgetSlot "{7BD1A70000000DBD}" {
+                  Anchor 1 0 1 1
+                  PositionX -56
+                  OffsetLeft -56
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX 56
+                  OffsetRight 0
+                  SizeY 0
+                  OffsetBottom 0
+                 }
+                 Clipping True
+                 Color 0.2 0.8 0.5 1
+                 Text "Complete"
+                 "Font Size" 9
+                 "Horizontal Alignment" Right
+                 "Vertical Alignment" Center
+                 Wrap 0
+                }
+               }
+              }
+             }
+            }
+            TextWidgetClass "{7BD1A70000000DBE}" {
+             Name "IfakPills"
+             Slot LayoutSlot "{7BD1A70000000DBF}" {
+              HorizontalAlign 3
+             }
+             Clipping True
+             Color 1 1 1 0.6
+             Text "[Tourniquet]  [QuikClot]  [Bandages x4]  [Morphine x2]"
+             "Font Size" 9
+             Wrap 0
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,271 @@
+ButtonWidgetClass "{7BD1A70000000C61}" {
+ Name "SlotRowBtn"
+ Slot LayoutSlot "{7BD1A70000000C62}" {
+  HorizontalAlign 3
+  Padding 0 0 0 1
+ }
+ Color 1 1 1 0
+ {
+  SizeLayoutWidgetClass "{7BD1A70000000C63}" {
+   Name "SlotRowSize"
+   Slot ButtonWidgetSlot "{7BD1A70000000C64}" {
+    HorizontalAlign 3
+   }
+   AllowHeightOverride 1
+   HeightOverride 36
+   {
+    OverlayWidgetClass "{7BD1A70000000C65}" {
+     Name "SlotRowOverlay"
+     Slot AlignableSlot "{7BD1A70000000C66}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000C67}" {
+       Name "RowBG"
+       Slot OverlayWidgetSlot "{7BD1A70000000C68}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.02
+      }
+      ImageWidgetClass "{7BD1A70000000C69}" {
+       Name "RowAccent"
+       Slot OverlayWidgetSlot "{7BD1A70000000C6A}" {
+        HorizontalAlign 0
+        VerticalAlign 3
+       }
+       Color 0.220 0.741 0.973 0
+       Size 2 36
+      }
+      FrameWidgetClass "{7BD1A70000000C6B}" {
+       Name "RowContent"
+       Slot OverlayWidgetSlot "{7BD1A70000000C6C}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       {
+        TextWidgetClass "{7BD1A70000000C6D}" {
+         Name "RoleIcon"
+         Slot FrameWidgetSlot "{7BD1A70000000C6E}" {
+          Anchor 0 0 0 1
+          PositionX 10
+          OffsetLeft 10
+          PositionY 0
+          OffsetTop 0
+          SizeX 16
+          OffsetRight -26
+          SizeY 0
+          OffsetBottom 0
+         }
+         Clipping True
+         Color 0.678 0.776 1 1
+         Text "*"
+         "Font Size" 13
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+        TextWidgetClass "{7BD1A70000000C6F}" {
+         Name "RoleTitle"
+         Slot FrameWidgetSlot "{7BD1A70000000C70}" {
+          Anchor 0 0 0 1
+          PositionX 32
+          OffsetLeft 32
+          PositionY 0
+          OffsetTop 0
+          SizeX 240
+          OffsetRight -272
+          SizeY 0
+          OffsetBottom 0
+         }
+         Clipping True
+         Color 0.945 0.961 0.976 1
+         Text "Company Commander"
+         "Font Size" 12
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+        FrameWidgetClass "{7BD1A70000000D01}" {
+         Name "SpecialtyBadgeContainer"
+         Slot FrameWidgetSlot "{7BD1A70000000D02}" {
+          Anchor 0 0 0 0
+          PositionX 280
+          OffsetLeft 280
+          PositionY 9
+          OffsetTop 9
+          SizeX 56
+          OffsetRight -336
+          SizeY 18
+          OffsetBottom -27
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D03}" {
+           Name "SpecialtyBadgeBG"
+           Slot FrameWidgetSlot "{7BD1A70000000D04}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 1 1 1 0.08
+          }
+          TextWidgetClass "{7BD1A70000000D05}" {
+           Name "SpecialtyBadgeText"
+           Slot FrameWidgetSlot "{7BD1A70000000D06}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Clipping True
+           Color 0.769 0.776 0.840 1
+           Text "OFFICER"
+           "Font Size" 9
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+        FrameWidgetClass "{7BD1A70000000D07}" {
+         Name "AiBadgeContainer"
+         Slot FrameWidgetSlot "{7BD1A70000000D08}" {
+          Anchor 1 0 1 0
+          PositionX -174
+          OffsetLeft -174
+          PositionY 9
+          OffsetTop 9
+          SizeX 64
+          OffsetRight 110
+          SizeY 18
+          OffsetBottom -27
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000D09}" {
+           Name "AiBadgeBG"
+           Slot FrameWidgetSlot "{7BD1A70000000D0A}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 0.874 0.455 0.070 0.25
+          }
+          ImageWidgetClass "{7BD1A70000000D15}" {
+           Name "AiBadgeBorder"
+           Slot FrameWidgetSlot "{7BD1A70000000D16}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 1 1 1 0.08
+          }
+          TextWidgetClass "{7BD1A70000000D0B}" {
+           Name "AiBadgeText"
+           Slot FrameWidgetSlot "{7BD1A70000000D0C}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Clipping True
+           Color 1 0.863 0.776 1
+           Text "AI READY"
+           "Font Size" 9
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+        ButtonWidgetClass "{7BD1A70000000D0D}" {
+         Name "ClaimActionBtn"
+         Slot FrameWidgetSlot "{7BD1A70000000D0E}" {
+          Anchor 1 0 1 0
+          PositionX -102
+          OffsetLeft -102
+          PositionY 7
+          OffsetTop 7
+          SizeX 92
+          OffsetRight 10
+          SizeY 22
+          OffsetBottom -29
+         }
+         Color 1 1 1 0
+         {
+          OverlayWidgetClass "{7BD1A70000000D0F}" {
+           Name "ClaimActionOverlay"
+           Slot ButtonWidgetSlot "{7BD1A70000000D10}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           {
+            ImageWidgetClass "{7BD1A70000000D11}" {
+             Name "ClaimActionBG"
+             Slot OverlayWidgetSlot "{7BD1A70000000D12}" {
+              HorizontalAlign 3
+              VerticalAlign 3
+             }
+             Color 0.302 0.557 1 1
+            }
+            ImageWidgetClass "{7BD1A70000000D17}" {
+             Name "ClaimActionBorder"
+             Slot OverlayWidgetSlot "{7BD1A70000000D18}" {
+              HorizontalAlign 3
+              VerticalAlign 3
+             }
+             Color 1 1 1 0.08
+            }
+            TextWidgetClass "{7BD1A70000000D13}" {
+             Name "ClaimActionText"
+             Slot OverlayWidgetSlot "{7BD1A70000000D14}" {
+              HorizontalAlign 3
+              VerticalAlign 3
+             }
+             Clipping True
+             Color 1 1 1 1
+             Text "Claimable"
+             "Font Size" 10
+             "Horizontal Alignment" Center
+             "Vertical Alignment" Center
+             Wrap 0
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

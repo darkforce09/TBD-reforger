@@ -1,0 +1,140 @@
+ButtonWidgetClass "{7BD1A70000000C71}" {
+ Name "FactionRowBtn"
+ Slot AlignableSlot "{7BD1A70000000C72}" {
+  HorizontalAlign 3
+  VerticalAlign 3
+  Padding 4 2 4 2
+ }
+ Color 1 1 1 0
+ {
+  SizeLayoutWidgetClass "{7BD1A70000000C73}" {
+   Name "FactionRowSize"
+   Slot ButtonWidgetSlot "{7BD1A70000000C74}" {
+    HorizontalAlign 3
+   }
+   AllowHeightOverride 1
+   HeightOverride 32
+   {
+    OverlayWidgetClass "{7BD1A70000000C75}" {
+     Name "FactionRowOverlay"
+     Slot AlignableSlot "{7BD1A70000000C76}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000C77}" {
+       Name "RowBG"
+       Slot OverlayWidgetSlot "{7BD1A70000000C78}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.05
+      }
+      FrameWidgetClass "{7BD1A70000000C79}" {
+       Name "RowContent"
+       Slot OverlayWidgetSlot "{7BD1A70000000C7A}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       {
+        TextWidgetClass "{7BD1A70000000C7B}" {
+         Name "FactionDot"
+         Slot FrameWidgetSlot "{7BD1A70000000C7C}" {
+          Anchor 0 0 0 1
+          PositionX 8
+          OffsetLeft 8
+          PositionY 0
+          OffsetTop 0
+          SizeX 12
+          OffsetRight -20
+          SizeY 0
+          OffsetBottom 0
+         }
+         Clipping True
+         Color 0.220 0.741 0.973 1
+         Text "*"
+         "Font Size" 14
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+        TextWidgetClass "{7BD1A70000000C7D}" {
+         Name "FactionName"
+         Slot FrameWidgetSlot "{7BD1A70000000C7E}" {
+          Anchor 0 0 1 1
+          PositionX 24
+          OffsetLeft 24
+          PositionY 0
+          OffsetTop 0
+          SizeX -90
+          OffsetRight 66
+          SizeY 0
+          OffsetBottom 0
+         }
+         Clipping True
+         Color 0.945 0.961 0.976 1
+         Text "BLUFOR"
+         "Font Size" 12
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+        FrameWidgetClass "{7BD1A70000000C7F}" {
+         Name "BadgeContainer"
+         Slot FrameWidgetSlot "{7BD1A70000000C80}" {
+          Anchor 1 0 1 1
+          PositionX -60
+          OffsetLeft -60
+          PositionY 5
+          OffsetTop 5
+          SizeX 52
+          OffsetRight -8
+          SizeY -10
+          OffsetBottom 5
+         }
+         {
+          ImageWidgetClass "{7BD1A70000000C81}" {
+           Name "BadgeBG"
+           Slot FrameWidgetSlot "{7BD1A70000000C82}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Color 0.302 0.557 1 0.35
+          }
+          TextWidgetClass "{7BD1A70000000C83}" {
+           Name "FactionBadge"
+           Slot FrameWidgetSlot "{7BD1A70000000C84}" {
+            Anchor 0 0 1 1
+            PositionX 0
+            OffsetLeft 0
+            PositionY 0
+            OffsetTop 0
+            SizeX 0
+            OffsetRight 0
+            SizeY 0
+            OffsetBottom 0
+           }
+           Clipping True
+           Color 0.945 0.961 0.976 1
+           Text "0 / 92"
+           "Font Size" 11
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

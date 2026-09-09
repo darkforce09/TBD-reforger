@@ -39,6 +39,17 @@ class TBD_UILayouts
 	//! Stitch 1:1 Mission Selector Workstation UI.
 	static const ResourceName MISSION_SELECTOR = "{7BD1A70000000B01}UI/layouts/TBD_MissionSelector.layout";
 
+	//! Modular Lobby / Slotting Workstation UI.
+	static const ResourceName LOBBY_SCREEN       = "{7BD1A70000000C01}UI/layouts/Lobby/TBD_LobbyScreen.layout";
+	static const ResourceName LOBBY_SQUAD_CARD   = "{7BD1A70000000C02}UI/layouts/Lobby/TBD_LobbySquadCard.layout";
+	static const ResourceName LOBBY_SLOT_ROW     = "{7BD1A70000000C03}UI/layouts/Lobby/TBD_LobbySlotRow.layout";
+	static const ResourceName LOBBY_FACTION_ROW  = "{7BD1A70000000C04}UI/layouts/Lobby/TBD_LobbyFactionRow.layout";
+	static const ResourceName LOBBY_HEADER       = "{7BD1A70000000C05}UI/layouts/Lobby/TBD_LobbyHeader.layout";
+	static const ResourceName LOBBY_FOOTER       = "{7BD1A70000000C06}UI/layouts/Lobby/TBD_LobbyFooter.layout";
+	static const ResourceName LOBBY_SIDEBAR      = "{7BD1A70000000C07}UI/layouts/Lobby/TBD_LobbySidebar.layout";
+	static const ResourceName LOBBY_ROSTER       = "{7BD1A70000000C08}UI/layouts/Lobby/TBD_LobbyCenterRoster.layout";
+	static const ResourceName LOBBY_INSPECTOR    = "{7BD1A70000000C09}UI/layouts/Lobby/TBD_LobbyInspector.layout";
+
 	//------------------------------------------------------------------------------------------------
 	//! Instantiate a layout under `parent`, retrying without the GUID prefix if the GUID does not
 	//! resolve. Returns null on a dead workspace (server-side) or an unresolvable layout - every

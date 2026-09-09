@@ -1,0 +1,578 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Role Assignment - macOS Pro Lobby</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+    @layer base {
+      html, body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        user-select: none;
+      }
+      body { overscroll-behavior: none; }
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "error-container": "#93000a",
+            "secondary-fixed-dim": "#bdc7d9",
+            "inverse-on-surface": "#2a3040",
+            "surface-tint": "#adc6ff",
+            "outline": "#8c909f",
+            "surface-dim": "#0d1322",
+            "surface-container-lowest": "#080e1d",
+            "on-error-container": "#ffdad6",
+            "outline-variant": "#424754",
+            "surface-container": "#191f2f",
+            "tertiary-fixed-dim": "#ffb786",
+            "tertiary-container": "#df7412",
+            "primary-fixed": "#d8e2ff",
+            "secondary": "#bdc7d9",
+            "on-surface": "#ffffff",
+            "surface": "#0b1120",
+            "secondary-fixed": "#d9e3f6",
+            "on-secondary-fixed": "#121c2a",
+            "on-secondary": "#27313f",
+            "on-tertiary": "#502400",
+            "primary": "#adc6ff",
+            "on-primary-container": "#00285d",
+            "primary-container": "#4d8eff",
+            "on-primary-fixed": "#001a42",
+            "on-tertiary-fixed-variant": "#723600",
+            "surface-variant": "#2f3445",
+            "error": "#f87171",
+            "surface-container-highest": "#2f3445",
+            "on-error": "#690005",
+            "inverse-primary": "#005ac2",
+            "surface-container-low": "#151b2b",
+            "on-primary-fixed-variant": "#004395",
+            "on-tertiary-fixed": "#311400",
+            "inverse-surface": "#dde2f8",
+            "background": "#0d1322",
+            "tertiary-fixed": "#ffdcc6",
+            "on-primary": "#002e6a",
+            "on-secondary-fixed-variant": "#3d4756",
+            "on-surface-variant": "#c2c6d6",
+            "on-secondary-container": "#afb9cb",
+            "primary-fixed-dim": "#adc6ff",
+            "surface-container-high": "#242a3a",
+            "on-background": "#dde2f8",
+            "on-tertiary-container": "#461f00",
+            "secondary-container": "#404a59",
+            "surface-bright": "#33394a",
+            "card-border": "#38bdf8",
+            "tertiary": "#ffb786"
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "0.75rem"
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#0b1120] text-on-surface h-screen w-screen overflow-hidden flex flex-col antialiased selection:bg-primary-container selection:text-on-primary-container text-[13px]">
+<!-- TOP BAR: Unified macOS Pro Toolbar -->
+<header class="h-12 w-full bg-[#151b2b]/80 backdrop-blur-xl border-b border-white/[0.08] px-4 flex items-center justify-between shrink-0 z-30 select-none">
+<!-- Left: Traffic Lights & Breadcrumbs / Segmented Control -->
+<div class="flex items-center gap-4">
+<!-- Window / Section Title -->
+<div class="flex items-center gap-2">
+<span class="text-white font-semibold text-[13px] tracking-tight">Role Assignment</span>
+<span class="text-white/30 text-xs">•</span>
+<span class="text-on-surface-variant/80 text-[12px] font-normal">wog_187_chollima_on_the_wing_10</span>
+<span class="px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-[11px] font-medium text-primary tracking-wide">187 Slots</span>
+</div>
+</div>
+<!-- Center: macOS Native Segmented Switcher -->
+<div class="hidden md:flex items-center bg-[#080e1d]/80 p-0.5 rounded-lg border border-white/[0.08] shadow-inner">
+<button class="px-3 py-1 rounded-[6px] text-xs font-medium text-white bg-white/10 shadow-sm border border-white/[0.06] flex items-center gap-1.5 transition-all">
+<span class="material-symbols-outlined text-[15px] text-primary">view_sidebar</span>
+<span class="">ORBAT Roster</span>
+</button>
+<button class="px-3 py-1 rounded-[6px] text-xs font-medium text-on-surface-variant hover:text-white transition-all flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px]">description</span>
+<span class="">Briefing</span>
+</button>
+
+</div>
+<!-- Right Controls: Host, Disable AI switch, Status -->
+<div class="flex items-center gap-3">
+<!-- macOS Style Toggle: Disable AI -->
+<div class="flex items-center gap-2 bg-white/[0.04] px-2.5 py-1 rounded-md border border-white/[0.06]">
+<span class="text-[11px] font-medium text-on-surface-variant">Disable AI</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value="">
+<div class="w-7 h-4 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<!-- Host Identity Badge -->
+<div class="flex items-center gap-2 pl-1">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.05] border border-white/[0.06]">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span class="text-[11px] text-white/50 uppercase tracking-wider">ADMIN</span>
+<span class="text-[12px] font-medium text-white">Mission Maker</span>
+</div>
+<div class="w-7 h-7 rounded-full bg-gradient-to-tr from-primary-container to-card-border flex items-center justify-center shadow">
+<span class="material-symbols-outlined text-white text-[15px]">shield_person</span>
+</div>
+</div>
+</div>
+</header>
+<!-- 3-COLUMN SPLIT VIEW -->
+<div class="flex-1 flex overflow-hidden w-full bg-[#080e1d]">
+<!-- COLUMN 1: LEFT SIDEBAR / SOURCE LIST (~220px) -->
+<aside class="w-[220px] shrink-0 bg-[#0d1322]/90 backdrop-blur-md border-r border-white/[0.08] flex flex-col justify-between select-none">
+<div class="p-3 flex flex-col gap-4 overflow-y-auto">
+<!-- Section: Factions -->
+<div>
+<div class="px-2 mb-1 flex items-center justify-between text-[11px] font-semibold text-white/40 uppercase tracking-wider">
+<span class="">Factions</span>
+<span class="text-[10px] text-white/30 font-normal">2 Active</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<!-- BLUFOR Item (Selected) -->
+<button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md bg-white/[0.12] text-white font-medium shadow-sm transition-colors group text-left">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#38bdf8] shadow-[0_0_8px_#38bdf8]"></span>
+<span class="text-[13px] font-medium tracking-tight">BLUFOR</span>
+</div>
+<span class="text-[11px] text-white/90 font-mono bg-primary-container/40 px-1.5 py-0.2 rounded border border-primary-container/50">0 / 92</span>
+</button>
+<!-- OPFOR Item -->
+<button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-white/[0.05] hover:text-white font-normal transition-colors group text-left">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#f87171]/70 group-hover:bg-[#f87171] transition-colors"></span>
+<span class="text-[13px] tracking-tight">OPFOR</span>
+</div>
+<span class="text-[11px] text-white/40 font-mono">0 / 95</span>
+</button>
+</div>
+</div>
+<!-- Section: Neutral & Observers -->
+<div>
+<div class="px-2 mb-1 text-[11px] font-semibold text-white/40 uppercase tracking-wider">
+<span class="">Observers</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-on-surface-variant hover:bg-white/[0.05] hover:text-white font-normal transition-colors text-left">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[15px] text-white/40">visibility</span>
+<span class="text-[13px]">Spectators</span>
+</div>
+<span class="text-[11px] text-white/30 font-mono">1</span>
+</button>
+</div>
+</div>
+<!-- Section: Communications / Radio Nets -->
+<div class=""><div class="px-2 mb-1.5 flex items-center justify-between text-[11px] font-semibold text-white/40 uppercase tracking-wider"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[13px] text-primary">cell_tower</span><span class="">VOICE / TFAR</span></div><span class="text-[9px] text-emerald-400 font-mono">Connected</span></div><div class="flex flex-col gap-2"><div class="flex flex-col gap-1"><div class="flex items-center justify-between px-1.5 text-[9px] uppercase font-mono text-white/40 tracking-wider"><span class="">In-Game Net</span><span class="text-[9px] px-1 py-0.2 rounded bg-tertiary-container/30 text-tertiary-fixed font-semibold border border-tertiary-container/40">Auto-Move</span></div><details class="group rounded-md bg-white/[0.02] border border-white/[0.06] overflow-hidden"><summary class="p-2 flex items-center justify-between cursor-pointer hover:bg-white/[0.04] transition-colors list-none select-none"><div class="flex items-center gap-1.5 min-w-0"><span class="material-symbols-outlined text-[13px] text-white/40 transition-transform group-open:rotate-90">chevron_right</span><span class="material-symbols-outlined text-[14px] text-white/40">lock_clock</span><span class="text-[12px] font-medium text-white/70 truncate">Arma 3 Comms Net</span></div><span class="px-1.5 py-0.2 rounded text-[10px] bg-white/[0.04] text-white/40 font-mono">Standby</span></summary><div class="px-2.5 pb-2 pt-1 border-t border-white/[0.04] flex flex-col gap-1 bg-[#080e1d]/40"><div class="flex items-center justify-between text-[10px] text-white/40 font-mono pl-4 mb-0.5"><span class="">Auto-switch on launch</span><span class="text-tertiary font-mono text-[9px]">Awaiting sync</span></div><div class="flex items-center justify-between py-1 px-1.5 rounded hover:bg-white/[0.03] text-white/60 text-[11px] pl-4"><div class="flex items-center gap-1.5 min-w-0"><span class="w-1.5 h-1.5 rounded-full bg-white/30 shrink-0"></span><span class="truncate">Ghost-Actual</span><span class="text-[9px] font-mono px-1 rounded bg-white/[0.06] text-white/40">SL</span></div><span class="material-symbols-outlined text-[12px] text-white/30">headphones</span></div></div></details></div><div class="flex flex-col gap-1"><div class="flex items-center justify-between px-1.5 text-[9px] uppercase font-mono text-white/40 tracking-wider"><span class="">Planning Channels</span><span class="text-[9px] text-white/30 font-mono">Click to inspect</span></div><details class="group rounded-md bg-white/[0.06] border border-primary/40 shadow-sm overflow-hidden" open=""><summary class="p-2 flex items-center justify-between cursor-pointer hover:bg-white/[0.08] transition-colors list-none select-none"><div class="flex items-center gap-1.5 min-w-0"><span class="material-symbols-outlined text-[13px] text-emerald-400 transition-transform group-open:rotate-90">chevron_right</span><span class="material-symbols-outlined text-[15px] text-emerald-400">volume_up</span><span class="text-[12px] font-medium text-white truncate">HQ &amp; Command Planning</span></div><div class="flex items-center gap-1.5"><span class="flex h-2 w-2 relative shrink-0"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span><span class="px-1.5 py-0.2 rounded text-[10px] bg-primary-container/30 text-primary font-mono">3 / 6</span></div></summary><div class="px-2 pb-2 pt-1 border-t border-white/[0.06] flex flex-col gap-1 bg-[#080e1d]/60"><div class="flex items-center justify-between text-[10px] px-2 py-0.5 text-emerald-400/90 font-mono"><span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>Active Net</span><div class="flex items-center gap-1 text-white/50"><span class="material-symbols-outlined text-[12px] text-emerald-400">mic</span><span class="material-symbols-outlined text-[12px] text-white/60">headphones</span></div></div><div class="flex items-center justify-between px-2 py-1 rounded bg-white/[0.04] text-[11px] border border-primary/20"><div class="flex items-center gap-1.5 min-w-0"><span class="material-symbols-outlined text-[13px] text-emerald-400 animate-pulse">graphic_eq</span><span class="font-medium text-white truncate">Mission Maker (You)</span><span class="text-[9px] font-mono px-1 rounded bg-primary-container/30 text-primary font-semibold">HOST</span></div><span class="material-symbols-outlined text-[12px] text-emerald-400">mic</span></div><div class="flex items-center justify-between px-2 py-1 rounded hover:bg-white/[0.03] text-[11px]"><div class="flex items-center gap-1.5 min-w-0"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400/60 shrink-0"></span><span class="text-white/80 truncate">Viper-1 (XO)</span><span class="text-[9px] font-mono px-1 rounded bg-white/[0.06] text-white/50">2IC</span></div><span class="material-symbols-outlined text-[12px] text-white/40">mic_none</span></div><div class="flex items-center justify-between px-2 py-1 rounded hover:bg-white/[0.03] text-[11px]"><div class="flex items-center gap-1.5 min-w-0"><span class="w-1.5 h-1.5 rounded-full bg-white/30 shrink-0"></span><span class="text-white/60 truncate">Doc_Hawkins</span><span class="text-[9px] font-mono px-1 rounded bg-white/[0.06] text-white/40">MEDIC</span></div><div class="flex items-center gap-1 text-white/30"><span class="material-symbols-outlined text-[12px] text-error">mic_off</span><span class="material-symbols-outlined text-[12px] text-white/40">headphones</span></div></div></div></details><details class="group rounded-md bg-white/[0.02] border border-white/[0.06] overflow-hidden"><summary class="p-2 flex items-center justify-between cursor-pointer hover:bg-white/[0.05] transition-colors list-none select-none"><div class="flex items-center gap-1.5 min-w-0"><span class="material-symbols-outlined text-[13px] text-white/40 transition-transform group-open:rotate-90">chevron_right</span><span class="material-symbols-outlined text-[14px] text-white/40 group-hover:text-primary/70">groups</span><span class="text-[12px] text-white/80 group-hover:text-white truncate">Armor Platoon Net</span></div><span class="px-1.5 py-0.2 rounded text-[10px] bg-white/[0.04] text-white/40 font-mono">4 / 8</span></summary><div class="px-2 pb-2 pt-1 border-t border-white/[0.06] flex flex-col gap-1 bg-[#080e1d]/50 text-[11px]"><div class="flex items-center justify-between px-2 py-1 rounded hover:bg-white/[0.03]"><div class="flex items-center gap-1.5 min-w-0"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span><span class="text-white/80 truncate">Tanker_Ace</span><span class="text-[9px] font-mono px-1 rounded bg-white/[0.06] text-white/50">A1-2 TC</span></div><span class="material-symbols-outlined text-[12px] text-emerald-400">mic</span></div><div class="flex items-center justify-between px-2 py-1 rounded hover:bg-white/[0.03]"><div class="flex items-center gap-1.5 min-w-0"><span class="w-1.5 h-1.5 rounded-full bg-white/30 shrink-0"></span><span class="text-white/60 truncate">SteelTrack</span><span class="text-[9px] font-mono px-1 rounded bg-white/[0.06] text-white/40">DRIVER</span></div><span class="material-symbols-outlined text-[12px] text-white/30">mic_none</span></div><div class="flex items-center justify-between px-2 py-1 rounded hover:bg-white/[0.03]"><div class="flex items-center gap-1.5 min-w-0"><span class="w-1.5 h-1.5 rounded-full bg-white/30 shrink-0"></span><span class="text-white/60 truncate">SabotLoader</span><span class="text-[9px] font-mono px-1 rounded bg-white/[0.06] text-white/40">GUNNER</span></div><span class="material-symbols-outlined text-[12px] text-white/30">mic_none</span></div><div class="flex items-center justify-between px-2 py-1 rounded hover:bg-white/[0.03]"><div class="flex items-center gap-1.5 min-w-0"><span class="w-1.5 h-1.5 rounded-full bg-white/30 shrink-0"></span><span class="text-white/60 truncate">IronClad_9</span><span class="text-[9px] font-mono px-1 rounded bg-white/[0.06] text-white/50">A1-3 TC</span></div><span class="material-symbols-outlined text-[12px] text-error">mic_off</span></div></div></details><details class="group rounded-md bg-white/[0.02] border border-white/[0.06] overflow-hidden"><summary class="p-2 flex items-center justify-between cursor-pointer hover:bg-white/[0.05] transition-colors list-none select-none"><div class="flex items-center gap-1.5 min-w-0"><span class="material-symbols-outlined text-[13px] text-white/40 transition-transform group-open:rotate-90">chevron_right</span><span class="material-symbols-outlined text-[14px] text-white/40 group-hover:text-white/70">forum</span><span class="text-[12px] text-white/80 group-hover:text-white truncate">Lobby / Common Room</span></div><span class="px-1.5 py-0.2 rounded text-[10px] bg-white/[0.04] text-white/40 font-mono">14</span></summary><div class="px-2.5 pb-2 pt-1 border-t border-white/[0.06] flex flex-col gap-1 bg-[#080e1d]/50 text-[11px]"><div class="text-[10px] text-white/40 pl-2 py-0.5 font-mono flex items-center justify-between"><span class="">Open unassigned channel</span><span class="">14 online</span></div><div class="flex items-center justify-between px-2 py-1 rounded hover:bg-white/[0.03]"><div class="flex items-center gap-1.5 min-w-0"><span class="w-1.5 h-1.5 rounded-full bg-white/30 shrink-0"></span><span class="text-white/60 truncate">Recruit_01 ... +13 others</span></div><span class="material-symbols-outlined text-[12px] text-white/30">volume_mute</span></div></div></details></div></div></div>
+</div>
+<!-- Sidebar Footer: Session Telemetry -->
+<div class="p-3 border-t border-white/[0.08] bg-[#080e1d]/50 flex flex-col gap-1.5">
+<div class="flex items-center justify-between text-xs">
+<span class="text-on-surface-variant">Connected Players</span>
+<span class="font-mono font-medium text-white">1 / 187</span>
+</div>
+<div class="w-full bg-white/[0.08] rounded-full h-1 overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 1%"></div>
+</div>
+</div>
+</aside>
+<!-- COLUMN 2: CENTER MASTER ORBAT ROSTER (Flexible Width) -->
+<main class="flex-1 bg-[#0b1120] flex flex-col overflow-hidden border-r border-white/[0.08]">
+<!-- Subheader: Search, Filter Chips, Summary Strip -->
+<div class="p-3 bg-[#151b2b]/60 backdrop-blur-md border-b border-white/[0.08] flex flex-col gap-2.5 shrink-0">
+<div class="flex items-center justify-between gap-3">
+<!-- Native macOS Search Input -->
+<div class="relative flex-1 max-w-md">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40 text-[16px]">search</span>
+<input class="w-full bg-white/[0.06] hover:bg-white/[0.08] focus:bg-white/[0.1] text-white placeholder:text-white/30 text-xs rounded-md pl-8 pr-8 py-1.5 border border-white/[0.08] focus:border-primary-container focus:ring-1 focus:ring-primary-container outline-none transition-all" placeholder="Search roles, vehicle callsigns, or tags..." type="text">
+<span class="absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.2 rounded text-[10px] bg-white/[0.08] text-white/40 font-mono border border-white/[0.06]">⌘F</span>
+</div>
+<!-- Roster Stats Overview -->
+<div class="flex items-center gap-2 text-xs">
+<span class="text-on-surface-variant">BLUFOR Roster:</span>
+<span class="px-2 py-0.5 rounded bg-primary-container/20 text-primary font-mono text-[11px] font-semibold border border-primary-container/30">0 / 92 CLAIMED</span>
+</div>
+</div>
+<!-- Filter Segment Chips -->
+<div class="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+<button class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/[0.14] text-white border border-white/[0.12] transition-colors shrink-0">
+            All Units
+          </button>
+<button class="px-2.5 py-0.5 rounded-full text-xs font-medium text-white/60 hover:text-white hover:bg-white/[0.06] border border-transparent transition-colors shrink-0">
+            HQ &amp; Command
+          </button>
+<button class="px-2.5 py-0.5 rounded-full text-xs font-medium text-white/60 hover:text-white hover:bg-white/[0.06] border border-transparent transition-colors shrink-0">
+            Armor Sections
+          </button>
+<button class="px-2.5 py-0.5 rounded-full text-xs font-medium text-white/60 hover:text-white hover:bg-white/[0.06] border border-transparent transition-colors shrink-0">
+            Mechanized Infantry
+          </button>
+<div class="h-3 w-px bg-white/10 mx-1 shrink-0"></div>
+<button class="px-2 py-0.5 rounded-full text-xs font-medium text-primary/80 hover:text-primary hover:bg-primary/10 border border-primary/20 transition-colors shrink-0 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
+<span class="">Available Only</span>
+</button>
+</div>
+</div>
+<!-- Scrollable Squad Roster Tree -->
+<div class="flex-1 overflow-y-auto p-3.5 space-y-3">
+<!-- SQUAD GROUP 1: Company HQ -->
+<div class="rounded-lg bg-white/[0.02] border border-white/[0.08] overflow-hidden shadow-sm">
+<!-- Squad Group Header -->
+<div class="px-3 py-2 bg-white/[0.03] border-b border-white/[0.06] flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[17px] text-primary">stars</span>
+<span class="font-semibold text-white tracking-tight">A1-1 Company HQ</span>
+<span class="text-white/40 text-xs font-normal">• M113A3 MEV</span>
+</div>
+<span class="text-[11px] font-mono text-white/40 uppercase bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06]">Command &amp; Medical</span>
+</div>
+<!-- Roles in Group -->
+<div class="divide-y divide-white/[0.04]">
+<!-- Role Row: Company Commander (Active Selection in Inspector) -->
+<div class="flex items-center justify-between px-3 py-2 bg-primary-container/15 hover:bg-primary-container/20 border-l-2 border-primary cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="material-symbols-outlined text-[17px] text-primary">military_tech</span>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-medium text-white text-[13px]">Company Commander</span>
+<span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-white/[0.08] text-white/70">OFFICER</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="px-1.5 py-0.5 rounded bg-tertiary-container/30 text-tertiary-fixed font-mono text-[10px] uppercase font-semibold border border-tertiary-container/40">AI Ready</span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-primary-container text-white text-[11px] font-semibold tracking-wide shadow-sm">
+<span class="material-symbols-outlined text-[13px]">check_circle</span>
+<span class="">Claimable</span>
+</span>
+</div>
+</div>
+<!-- Role Row: 2ic Deputy -->
+<div class="flex items-center justify-between px-3 py-2 hover:bg-white/[0.03] cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="material-symbols-outlined text-[17px] text-white/40">badge</span>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="text-white/80 text-[13px]">2ic (Executive Officer)</span>
+<span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-white/[0.05] text-white/40">NCO</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-white/40 font-mono text-[10px]">AI</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/[0.04] text-white/40 text-[11px] border border-white/[0.06]">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+<span class="">Restricted</span>
+</span>
+</div>
+</div>
+<!-- Role Row: Senior Medic -->
+<div class="flex items-center justify-between px-3 py-2 hover:bg-white/[0.03] cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="material-symbols-outlined text-[17px] text-white/40">medical_services</span>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="text-white/80 text-[13px]">Senior Medical Specialist</span>
+<span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">MED</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-white/40 font-mono text-[10px]">AI</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/[0.04] text-white/40 text-[11px] border border-white/[0.06]">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+<span class="">Restricted</span>
+</span>
+</div>
+</div>
+</div>
+</div>
+<!-- SQUAD GROUP 2: Armor Section #1 -->
+<div class="rounded-lg bg-white/[0.02] border border-white/[0.08] overflow-hidden shadow-sm">
+<div class="px-3 py-2 bg-white/[0.03] border-b border-white/[0.06] flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[17px] text-primary">front_loader</span>
+<span class="font-semibold text-white tracking-tight">A1-2 M60A1 Patton</span>
+<span class="text-white/40 text-xs font-normal">• Main Battle Tank</span>
+</div>
+<span class="text-[11px] font-mono text-white/40 uppercase bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06]">Armor Lead</span>
+</div>
+<div class="divide-y divide-white/[0.04]">
+<div class="flex items-center justify-between px-3 py-2 hover:bg-white/[0.03] cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="material-symbols-outlined text-[17px] text-white/40">shield_person</span>
+<span class="text-white/80 text-[13px]">Tank Commander</span>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-white/40 font-mono text-[10px]">AI</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/[0.04] text-white/40 text-[11px] border border-white/[0.06]">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+<span class="">Restricted</span>
+</span>
+</div>
+</div>
+<div class="flex items-center justify-between px-3 py-2 hover:bg-white/[0.03] cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="material-symbols-outlined text-[17px] text-white/40">engineering</span>
+<div class="flex items-center gap-2">
+<span class="text-white/80 text-[13px]">Driver</span>
+<span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">ENG</span>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-white/40 font-mono text-[10px]">AI</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/[0.04] text-white/40 text-[11px] border border-white/[0.06]">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+<span class="">Restricted</span>
+</span>
+</div>
+</div>
+<div class="flex items-center justify-between px-3 py-2 hover:bg-white/[0.03] cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="material-symbols-outlined text-[17px] text-white/40">track_changes</span>
+<span class="text-white/80 text-[13px]">Gunner</span>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-white/40 font-mono text-[10px]">AI</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/[0.04] text-white/40 text-[11px] border border-white/[0.06]">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+<span class="">Restricted</span>
+</span>
+</div>
+</div>
+</div>
+</div>
+<!-- SQUAD GROUP 3: Armor Section #2 -->
+<div class="rounded-lg bg-white/[0.02] border border-white/[0.08] overflow-hidden shadow-sm">
+<div class="px-3 py-2 bg-white/[0.03] border-b border-white/[0.06] flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[17px] text-primary">front_loader</span>
+<span class="font-semibold text-white tracking-tight">A1-3 M60A1 Patton</span>
+<span class="text-white/40 text-xs font-normal">• Main Battle Tank</span>
+</div>
+<span class="text-[11px] font-mono text-white/40 uppercase bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06]">Armor Wing</span>
+</div>
+<div class="divide-y divide-white/[0.04]">
+<div class="flex items-center justify-between px-3 py-2 hover:bg-white/[0.03] cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="material-symbols-outlined text-[17px] text-white/40">shield_person</span>
+<span class="text-white/80 text-[13px]">Tank Commander</span>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-white/40 font-mono text-[10px]">AI</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/[0.04] text-white/40 text-[11px] border border-white/[0.06]">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+<span class="">Restricted</span>
+</span>
+</div>
+</div>
+<div class="flex items-center justify-between px-3 py-2 hover:bg-white/[0.03] cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="material-symbols-outlined text-[17px] text-white/40">engineering</span>
+<div class="flex items-center gap-2">
+<span class="text-white/80 text-[13px]">Driver</span>
+<span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">ENG</span>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-white/40 font-mono text-[10px]">AI</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/[0.04] text-white/40 text-[11px] border border-white/[0.06]">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+<span class="">Restricted</span>
+</span>
+</div>
+</div>
+<div class="flex items-center justify-between px-3 py-2 hover:bg-white/[0.03] cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="material-symbols-outlined text-[17px] text-white/40">track_changes</span>
+<span class="text-white/80 text-[13px]">Gunner</span>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-white/40 font-mono text-[10px]">AI</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/[0.04] text-white/40 text-[11px] border border-white/[0.06]">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+<span class="">Restricted</span>
+</span>
+</div>
+</div>
+</div>
+</div>
+<!-- SQUAD GROUP 4: Armor Section #3 -->
+<div class="rounded-lg bg-white/[0.02] border border-white/[0.08] overflow-hidden shadow-sm">
+<div class="px-3 py-2 bg-white/[0.03] border-b border-white/[0.06] flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[17px] text-primary">front_loader</span>
+<span class="font-semibold text-white tracking-tight">A1-4 M60A1 Patton</span>
+<span class="text-white/40 text-xs font-normal">• Main Battle Tank</span>
+</div>
+<span class="text-[11px] font-mono text-white/40 uppercase bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06]">Armor Reserve</span>
+</div>
+<div class="divide-y divide-white/[0.04]">
+<div class="flex items-center justify-between px-3 py-2 hover:bg-white/[0.03] cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="material-symbols-outlined text-[17px] text-white/40">shield_person</span>
+<span class="text-white/80 text-[13px]">Tank Commander</span>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-white/40 font-mono text-[10px]">AI</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/[0.04] text-white/40 text-[11px] border border-white/[0.06]">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+<span class="">Restricted</span>
+</span>
+</div>
+</div>
+<div class="flex items-center justify-between px-3 py-2 hover:bg-white/[0.03] cursor-pointer transition-colors">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="material-symbols-outlined text-[17px] text-white/40">engineering</span>
+<div class="flex items-center gap-2">
+<span class="text-white/80 text-[13px]">Driver</span>
+<span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">ENG</span>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="px-1.5 py-0.5 rounded bg-white/[0.04] text-white/40 font-mono text-[10px]">AI</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/[0.04] text-white/40 text-[11px] border border-white/[0.06]">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+<span class="">Restricted</span>
+</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- COLUMN 3: RIGHT DETAIL INSPECTOR PANE (~320px) -->
+<aside class="w-[320px] shrink-0 bg-[#0d1322]/95 backdrop-blur-md flex flex-col justify-between overflow-hidden select-none">
+<!-- Top Inspector Header -->
+<div class="px-4 py-3 bg-[#151b2b]/60 border-b border-white/[0.08] flex items-center justify-between shrink-0">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">info</span>
+<span class="font-semibold text-white text-[13px]">Slot Inspector</span>
+</div>
+<span class="text-[10px] font-mono uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Slot Open</span>
+</div>
+<!-- Inspector Body: Role Specifications -->
+<div class="flex-1 overflow-y-auto p-4 space-y-4">
+<!-- Role Headline Card -->
+<div class="p-3 rounded-lg bg-white/[0.03] border border-white/[0.08] flex flex-col gap-2">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-[10px] font-mono text-primary uppercase font-bold tracking-widest">Selected Role</span>
+<h2 class="text-[15px] font-bold text-white tracking-tight mt-0.5">Company Commander</h2>
+<p class="text-[12px] text-on-surface-variant mt-0.5">Assigned to: A1-1 Company HQ</p>
+</div>
+<div class="w-8 h-8 rounded-md bg-primary-container/20 border border-primary/30 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[20px]">military_tech</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.06] text-xs">
+<div>
+<span class="text-[10px] uppercase text-white/40 block">Clearance</span>
+<span class="font-medium text-white">Full Command</span>
+</div>
+<div>
+<span class="text-[10px] uppercase text-white/40 block">Rank</span>
+<span class="font-medium text-white">Captain (O-3)</span>
+</div>
+</div>
+</div>
+<!-- Vehicle Allocation Details -->
+<div class="flex flex-col gap-2">
+<span class="text-[11px] font-semibold uppercase text-white/40 tracking-wider">Vehicle Assignment</span>
+<div class="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-2">
+<div class="flex items-center justify-between text-xs">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-white/60 text-[16px]">local_shipping</span>
+<span class="font-medium text-white">M113A3 MEV</span>
+</div>
+<span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">Operable</span>
+</div>
+<p class="text-[11px] text-on-surface-variant leading-relaxed">
+              Equipped with medical litter stations, smoke countermeasure launchers, and upgraded armor kit.
+            </p>
+</div>
+</div>
+<!-- Radio & Comms Frequency Specifications -->
+<!-- Equipment & Kit Loadout -->
+<div class="flex flex-col gap-2"><span class="text-[11px] font-semibold uppercase text-white/40 tracking-wider">Primary Weapon &amp; Sidearm</span><div class="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-2.5"><div class="flex items-start justify-between gap-2"><div class="flex items-start gap-2"><span class="material-symbols-outlined text-primary text-[17px] mt-0.5">military_tech</span><div><div class="font-medium text-white text-[12px]">M16A2 Carbine / Rifle</div><div class="text-[11px] text-white/50">5.56×45mm NATO • STANAG</div></div></div><span class="text-[10px] font-mono text-primary bg-primary-container/20 px-1.5 py-0.5 rounded border border-primary-container/30 shrink-0">7x 30rnd</span></div><div class="flex flex-wrap gap-1 pt-1 border-t border-white/[0.04]"><span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-white/[0.05] text-white/70 border border-white/[0.06]">Aimpoint Optic</span><span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-white/[0.05] text-white/70 border border-white/[0.06]">3-Point Sling</span><span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">Condition: Clean</span></div><div class="pt-2 border-t border-white/[0.04] flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-white/40 text-[15px]">crosshairs</span><span class="text-white/80 text-[12px]">M9 Beretta 9×19mm</span></div><span class="text-[10px] font-mono text-white/50 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.06]">3x 15rnd</span></div></div></div><div class="flex flex-col gap-2"><span class="text-[11px] font-semibold uppercase text-white/40 tracking-wider">Tactical Gear &amp; Uniform</span><div class="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-2 text-xs"><div class="flex items-center justify-between pb-1.5 border-b border-white/[0.04]"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-white/50 text-[15px]">shield</span><span class="text-white/90 text-[11px]">PASGT Helmet (Kevlar) &amp; Body Armor</span></div><span class="text-[9px] font-mono text-white/40">Level III-A</span></div><div class="flex items-center justify-between pb-1.5 border-b border-white/[0.04]"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-white/50 text-[15px]">checkroom</span><span class="text-white/90 text-[11px]">ALICE LBE Rig (Woodland BDU)</span></div><span class="text-[9px] font-mono text-white/40">Load: 18.4 kg</span></div><div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-400 text-[15px]">cell_tower</span><div><div class="text-white font-medium text-[11px]">AN/PRC-77 Backpack Radio</div><div class="text-[10px] text-white/40">VHF Long-Range • Ch 01 / 48.50 MHz</div></div></div><span class="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">Active Link</span></div></div></div><div class="flex flex-col gap-2"><span class="text-[11px] font-semibold uppercase text-white/40 tracking-wider">Equipment &amp; Inventory</span><div class="p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06] flex flex-col gap-2"><div class="grid grid-cols-2 gap-1.5 text-[11px]"><div class="flex items-center gap-1.5 p-1.5 rounded bg-white/[0.02] border border-white/[0.04]"><span class="material-symbols-outlined text-[14px] text-primary">visibility</span><span class="text-white/80 truncate">Vector 21 / M22</span></div><div class="flex items-center gap-1.5 p-1.5 rounded bg-white/[0.02] border border-white/[0.04]"><span class="material-symbols-outlined text-[14px] text-primary">explore</span><span class="text-white/80 truncate">MicroDAGR &amp; Lensatic</span></div><div class="flex items-center gap-1.5 p-1.5 rounded bg-white/[0.02] border border-white/[0.04]"><span class="material-symbols-outlined text-[14px] text-amber-300">wb_cloudy</span><span class="text-white/80 truncate">2x M18 White, 1x Grn</span></div><div class="flex items-center gap-1.5 p-1.5 rounded bg-white/[0.02] border border-white/[0.04]"><span class="material-symbols-outlined text-[14px] text-error">bomb</span><span class="text-white/80 truncate">2x M67 Frag Grenade</span></div></div><div class="pt-2 border-t border-white/[0.04]"><div class="flex items-center justify-between mb-1.5"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-emerald-300 text-[14px]">medical_services</span><span class="text-[11px] font-medium text-white">IFAK Medical Kit</span></div><span class="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1 rounded">Complete</span></div><div class="flex flex-wrap gap-1"><span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-white/[0.04] text-white/60">Tourniquet</span><span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-white/[0.04] text-white/60">QuikClot</span><span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-white/[0.04] text-white/60">Field Bandages (4x)</span><span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-white/[0.04] text-white/60">Morphine (2x)</span></div></div></div></div></div>
+<!-- Action Footer: Primary Claim Slot Button -->
+</aside>
+</div>
+<!-- BOTTOM ACTION BAR: Native macOS Pro Bottom Toolbar -->
+<footer class="h-12 w-full bg-[#151b2b]/90 backdrop-blur-xl border-t border-white/[0.08] px-4 flex items-center justify-between shrink-0 z-30 select-none">
+<!-- Left: Secondary Navigation Back -->
+<div class="flex items-center gap-2">
+<button class="px-3.5 py-1.5 rounded-md bg-white/[0.06] hover:bg-white/[0.1] text-white/80 hover:text-white border border-white/[0.08] font-medium text-xs transition-colors flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px]">arrow_back</span>
+<span class="">Back to Lobby</span>
+</button>
+</div>
+<!-- Center: Session Indicator -->
+<!-- Right: Ready & Lock Actions -->
+<div class="flex items-center gap-2.5">
+<button class="px-3 py-1.5 rounded-md bg-white/[0.06] hover:bg-white/[0.1] text-white/80 hover:text-white border border-white/[0.08] font-medium text-xs transition-colors flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[15px] text-tertiary">lock</span>
+<span class="">Lock Lobby</span>
+</button>
+<button class="px-5 py-1.5 rounded-md bg-primary-container hover:bg-[#3b82f6] text-white font-medium text-xs shadow-sm hover:shadow transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[15px]">play_arrow</span>
+<span class="">Ready &amp; Continue</span>
+</button>
+</div>
+</footer>
+<script>
+    // Interaction toggle demo for Claim Slot button
+    const claimBtn = document.getElementById('claim-btn');
+    if (claimBtn) {
+      let claimed = false;
+      claimBtn.addEventListener('click', () => {
+        claimed = !claimed;
+        if (claimed) {
+          claimBtn.innerHTML = `
+            <span class="material-symbols-outlined text-[16px]">logout</span>
+            <span>Relinquish Slot</span>
+          `;
+          claimBtn.classList.remove('bg-primary-container', 'hover:bg-[#3b82f6]');
+          claimBtn.classList.add('bg-error-container', 'hover:bg-red-700');
+        } else {
+          claimBtn.innerHTML = `
+            <span class="material-symbols-outlined text-[16px]">how_to_reg</span>
+            <span>Claim Selected Slot</span>
+          `;
+          claimBtn.classList.remove('bg-error-container', 'hover:bg-red-700');
+          claimBtn.classList.add('bg-primary-container', 'hover:bg-[#3b82f6]');
+        }
+      });
+    }
+  </script>
+
+
+</body></html>
