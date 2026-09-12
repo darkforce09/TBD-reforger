@@ -1,0 +1,208 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "secondary": "#bdc7d9", "on-primary": "#002e6a", "inverse-primary": "#005ac2", "on-secondary-container": "#afb9cb", "secondary-fixed-dim": "#bdc7d9", "inverse-surface": "#dde2f8", "surface-container-high": "#242a3a", "surface-container-low": "#151b2b", "surface": "#0b1120", "on-tertiary-fixed": "#311400", "on-secondary": "#27313f", "surface-dim": "#0d1322", "outline": "#8c909f", "tertiary": "#ffb786", "tertiary-fixed": "#ffdcc6", "on-error": "#690005", "surface-container": "#191f2f", "on-error-container": "#ffdad6", "inverse-on-surface": "#2a3040", "background": "#0d1322", "error": "#f87171", "on-tertiary": "#502400", "on-secondary-fixed": "#121c2a", "secondary-fixed": "#d9e3f6", "on-secondary-fixed-variant": "#3d4756", "error-container": "#93000a", "surface-variant": "#2f3445", "on-primary-container": "#00285d", "on-background": "#dde2f8", "primary-container": "#4d8eff", "surface-container-highest": "#2f3445", "tertiary-fixed-dim": "#ffb786", "primary": "#adc6ff", "on-primary-fixed": "#001a42", "surface-container-lowest": "#080e1d", "on-tertiary-container": "#461f00", "surface-tint": "#adc6ff", "primary-fixed": "#d8e2ff", "secondary-container": "#404a59", "tertiary-container": "#df7412", "on-surface-variant": "#c2c6d6", "outline-variant": "#424754", "primary-fixed-dim": "#adc6ff", "on-primary-fixed-variant": "#004395", "on-surface": "#dde2f8", "surface-bright": "#33394a", "card-border": "#38bdf8", "on-tertiary-fixed-variant": "#723600" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "space-lg": "1.5rem", "space-xs": "0.5rem", "space-xl": "2rem", "space-sm": "0.75rem", "space-md": "1rem", "space-2xl": "3rem", "space-2xs": "0.25rem" }, "fontFamily": { "headline-sm": ["Inter"], "label-md": ["Inter"], "label-lg": ["Inter"], "body-md": ["Inter"], "body-sm": ["Inter"], "headline-lg": ["Inter"], "body-lg": ["Inter"], "headline-md": ["Inter"], "label-sm": ["Inter"] }, "fontSize": { "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "700" }], "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }], "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "600" }], "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }], "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }], "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "700" }], "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }] } } } };</script></head><body class="bg-surface-container-lowest text-on-surface font-body-md text-body-md min-h-screen selection:bg-primary-container selection:text-on-primary-container"><main class="min-h-screen w-full flex items-center justify-center p-space-md lg:p-space-xl bg-surface-container-lowest"><div class="flex flex-col w-full items-center justify-center py-space-sm md:py-space-md">
+<!-- Standalone Tactical Radio Admin Console -->
+<div class="w-full max-w-4xl bg-surface-container-low rounded-xl shadow-2xl overflow-hidden p-space-md lg:p-space-lg flex flex-col gap-space-md relative">
+<!-- Top Decorative Status Bar / Tactical Trim -->
+
+<!-- Header Section -->
+<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pb-space-sm">
+<div class="flex items-center gap-space-sm">
+
+<div>
+<div class="flex items-center gap-space-xs">
+<h1 class="font-headline-sm text-headline-sm tracking-wider uppercase text-on-surface">RADIO</h1>
+<span class="bg-tertiary-container text-on-tertiary-fixed font-label-sm text-label-sm px-2 py-0.5 rounded font-bold tracking-widest uppercase">ADMIN</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+
+</p>
+</div>
+</div>
+<!-- Right Status Indicators -->
+<div class="flex items-center gap-2 self-start sm:self-center">
+
+</div>
+</header>
+<!-- Main Grid: Left Roster & Right Transmission Overrides -->
+<div class="grid grid-cols-1 gap-space-md items-start">
+<!-- LEFT COLUMN: Target Selection & Connected Roster (approx 45% -> 5 cols) -->
+<section class="flex flex-col gap-space-sm bg-surface-container-lowest p-space-sm rounded-xl w-full">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-1.5 text-on-surface font-label-lg text-label-lg uppercase tracking-wide">
+<span class="material-symbols-outlined text-label-md text-primary">hub</span>
+<span class="">Connected Roster (6)</span>
+</div>
+
+</div>
+<!-- Search Input -->
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-label-lg pointer-events-none">search</span>
+<input class="w-full bg-surface-container-high text-on-surface placeholder:text-outline font-body-sm text-body-sm pl-9 pr-3 py-2 rounded-lg outline-none focus:bg-surface-container transition-colors shadow-inner" id="player-search" placeholder="Search player or callsign..." type="text">
+</div>
+<!-- Scrollable List of Targets -->
+<div class="flex flex-col gap-1.5 max-h-[460px] overflow-y-auto pr-0.5" id="roster-list"><!-- Target 1: Mission Maker ★ -->
+<div class="roster-item cursor-pointer p-space-xs rounded-lg transition-all duration-150 flex flex-col gap-1 bg-surface-container-high shadow-md" data-target="true" onclick="selectRosterItem(this, 'Mission Maker ★', 'TFAR Master Host / Session Lead', 'BLUFOR HIGHCOM', '76.2 MHz', '390.7 MHz', 'mic')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="material-symbols-outlined text-tertiary text-label-md" style="font-variation-settings: &quot;FILL&quot; 1;">star</span>
+<span class="font-label-lg text-label-lg text-on-surface truncate font-bold">Mission Maker ★</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-primary font-mono font-medium">BLUFOR</span>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-tertiary-container text-on-tertiary-fixed font-mono font-bold">HOST</span>
+</div>
+</div>
+<div class="flex items-center justify-between font-mono text-label-sm text-on-surface-variant pt-0.5">
+<span class="text-primary font-medium tracking-wide">BLUFOR HIGHCOM</span>
+<div class="flex items-center gap-2 text-label-sm"><span class="text-primary-fixed-dim">LR: Equipped</span><span class="text-outline">/</span><span class="text-primary-fixed-dim">SR: Equipped</span></div>
+</div>
+</div>
+<!-- Target 2: 1LT Miller, J. -->
+<div class="roster-item cursor-pointer p-space-xs rounded-lg transition-all duration-150 flex flex-col gap-1 bg-surface-container hover:bg-surface-container-high" onclick="selectRosterItem(this, '1LT Miller, J.', 'Squad Leader - Infantry Element', 'Alpha 1-1 SL', '76.2 MHz', '390.7 MHz', 'mic')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="w-2 h-2 rounded-full bg-primary-container shrink-0"></span>
+<span class="font-label-md text-label-md text-on-surface truncate">1LT Miller, J.</span>
+</div>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-primary font-mono font-medium">BLUFOR</span>
+</div>
+<div class="flex items-center justify-between font-mono text-label-sm text-on-surface-variant pt-0.5">
+<span class="text-secondary font-medium tracking-wide">Alpha 1-1 SL</span>
+<div class="flex items-center gap-2 text-label-sm"><span class="text-secondary">LR: Equipped</span><span class="text-outline">/</span><span class="text-secondary">SR: Equipped</span></div>
+</div>
+</div>
+<!-- Target 3: CPL Davis, R. -->
+<div class="roster-item cursor-pointer p-space-xs rounded-lg transition-all duration-150 flex flex-col gap-1 bg-surface-container hover:bg-surface-container-high opacity-85" onclick="selectRosterItem(this, 'CPL Davis, R.', 'Combat Medical Technician', 'Alpha 1-1 Medic', '—', '390.7 MHz', 'mic_off')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="w-2 h-2 rounded-full bg-primary-container shrink-0"></span>
+<span class="font-label-md text-label-md text-on-surface truncate">CPL Davis, R.</span>
+</div>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-primary font-mono font-medium">BLUFOR</span>
+</div>
+<div class="flex items-center justify-between font-mono text-label-sm text-on-surface-variant pt-0.5">
+<span class="text-secondary font-medium tracking-wide">Alpha 1-1 Medic</span>
+<div class="flex items-center gap-2 text-label-sm"><span class="text-outline">LR: None</span><span class="text-outline">/</span><span class="text-secondary">SR: Equipped</span></div>
+</div>
+</div>
+<!-- Target 4: SSG Vance, D. -->
+<div class="roster-item cursor-pointer p-space-xs rounded-lg transition-all duration-150 flex flex-col gap-1 bg-surface-container hover:bg-surface-container-high" onclick="selectRosterItem(this, 'SSG Vance, D.', 'Squad Leader - Support Element', 'Alpha 2-1 SL', '74.0 MHz', '163.7 MHz', 'volume_up')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="w-2 h-2 rounded-full bg-primary-container shrink-0"></span>
+<span class="font-label-md text-label-md text-on-surface truncate">SSG Vance, D.</span>
+</div>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-primary font-mono font-medium">BLUFOR</span>
+</div>
+<div class="flex items-center justify-between font-mono text-label-sm text-on-surface-variant pt-0.5">
+<span class="text-secondary font-medium tracking-wide">Alpha 2-1 SL</span>
+<div class="flex items-center gap-2 text-label-sm"><span class="text-outline">LR: None</span><span class="text-outline">/</span><span class="text-secondary">SR: Equipped</span></div>
+</div>
+</div>
+<!-- Target 5: [XOF] Ales -->
+<div class="roster-item cursor-pointer p-space-xs rounded-lg transition-all duration-150 flex flex-col gap-1 bg-surface-container hover:bg-surface-container-high" onclick="selectRosterItem(this, '[XOF] Ales', 'Hostile Field Commander', 'OPFOR HQ', '52.0 MHz', '410.2 MHz', 'mic')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="w-2 h-2 rounded-full bg-error shrink-0"></span>
+<span class="font-label-md text-label-md text-on-surface truncate">[XOF] Ales</span>
+</div>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-error-container text-on-error-container font-mono font-bold">OPFOR</span>
+</div>
+<div class="flex items-center justify-between font-mono text-label-sm text-on-surface-variant pt-0.5">
+<span class="text-error font-medium tracking-wide">OPFOR Commander</span>
+<div class="flex items-center gap-2 text-label-sm"><span class="text-secondary">LR: Equipped</span><span class="text-outline">/</span><span class="text-secondary">SR: Equipped</span></div>
+</div>
+</div>
+<!-- Target 6: PFC Smith, K. -->
+<div class="roster-item cursor-pointer p-space-xs rounded-lg transition-all duration-150 flex flex-col gap-1 bg-surface-container hover:bg-surface-container-high" onclick="selectRosterItem(this, 'PFC Smith, K.', 'Rifleman First Class', 'Alpha 2-1 Rifleman', '—', '163.7 MHz', 'mic')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="w-2 h-2 rounded-full bg-primary-container shrink-0"></span>
+<span class="font-label-md text-label-md text-on-surface truncate">PFC Smith, K.</span>
+</div>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container-highest text-primary font-mono font-medium">BLUFOR</span>
+</div>
+<div class="flex items-center justify-between font-mono text-label-sm text-on-surface-variant pt-0.5">
+<span class="text-secondary font-medium tracking-wide">Alpha 2-1 Rifleman</span>
+<div class="flex items-center gap-2 text-label-sm"><span class="text-outline">LR: None</span><span class="text-outline">/</span><span class="text-secondary">SR: Equipped</span></div>
+</div>
+</div></div>
+<!-- Quick Info Footer -->
+
+</section><section class="w-full flex flex-col gap-space-sm bg-surface-container-lowest p-space-sm rounded-xl"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-surface-container-high"><div class="flex items-center gap-1.5 text-on-surface font-label-lg text-label-lg uppercase tracking-wide"><span class="material-symbols-outlined text-label-md text-primary">cell_tower</span><span class="">Give Radio</span></div><div class="flex items-center gap-2 font-mono text-label-sm"><span class="text-outline uppercase">Recipient:</span><span class="px-2 py-0.5 rounded bg-surface-container-highest text-primary font-bold flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary-container inline-block"></span> PFC Smith, K.</span></div></div><div class="grid grid-cols-1 lg:grid-cols-2 gap-space-sm pt-1"><div class="flex flex-col gap-2 bg-surface-container p-space-sm rounded-lg"><div class="flex items-center justify-between"><span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-bold">Selected Player Actions</span><span class="font-mono text-label-sm text-secondary">PFC Smith, K.</span></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-2"><button type="button" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm font-medium transition-colors border border-outline-variant/30 active:scale-95"><span class="material-symbols-outlined text-label-md text-primary">podcasts</span><span class="">Give SR Radio</span></button><button type="button" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm font-medium transition-colors border border-outline-variant/30 active:scale-95"><span class="material-symbols-outlined text-label-md text-tertiary">tower</span><span class="">Give LR Radio</span></button><button type="button" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded bg-primary-container text-on-primary-container font-label-sm text-label-sm font-bold transition-all shadow-md hover:brightness-110 active:scale-95"><span class="material-symbols-outlined text-label-md">done_all</span><span class="">Give Both (SR + LR)</span></button></div></div><div class="flex flex-col gap-2 bg-surface-container p-space-sm rounded-lg"><div class="flex items-center justify-between"><span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-bold">Global Bulk Distribution</span><span class="font-mono text-label-sm text-tertiary">All Connected (6)</span></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-2"><button type="button" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm font-medium transition-colors border border-outline-variant/30 active:scale-95"><span class="material-symbols-outlined text-label-md text-primary">group</span><span class="">Give SR to All</span></button><button type="button" class="flex items-center justify-center gap-1.5 px-3 py-2 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-sm text-label-sm font-medium transition-colors border border-outline-variant/30 active:scale-95"><span class="material-symbols-outlined text-label-md text-tertiary">hub</span><span class="">Give LR to leaders</span></button></div></div></div></section>
+<!-- RIGHT COLUMN: Transmission Overrides & Broadcast Nets (approx 55% -> 7 cols) -->
+
+</div>
+<!-- Active Broadcast Modal / Toast Notification Container -->
+<div class="hidden absolute bottom-4 left-1/2 -translate-x-1/2 bg-surface-bright text-on-surface font-mono text-label-md px-4 py-2 rounded-lg shadow-2xl flex items-center gap-2 tracking-wide z-50" id="ptt-notification">
+<span class="material-symbols-outlined text-primary-container animate-spin">sync</span>
+<span id="notification-msg" class="">TRANSMITTING...</span>
+</div>
+</div>
+</div>
+<script>
+  function selectRosterItem(el, name, desc, callsign, lr, sr, micStatus) {
+    // Update active highlight style on roster items
+    document.querySelectorAll('.roster-item').forEach(item => {
+      item.classList.remove('bg-surface-container-high', 'shadow-md');
+      item.classList.add('bg-surface-container');
+    });
+    el.classList.remove('bg-surface-container');
+    el.classList.add('bg-surface-container-high', 'shadow-md');
+
+    // Update active target details panel
+    document.getElementById('target-name').innerText = name;
+    document.getElementById('target-desc').innerText = desc;
+    document.getElementById('target-callsign').innerText = callsign;
+    document.getElementById('freq-lr').innerText = lr;
+    document.getElementById('freq-sr').innerText = sr;
+  }
+
+  let toastTimeout;
+  function triggerPtt(btn, actionText) {
+    const notify = document.getElementById('ptt-notification');
+    const notifyMsg = document.getElementById('notification-msg');
+    const statusText = document.getElementById('active-ptt-status');
+
+    notifyMsg.innerText = actionText;
+    statusText.innerText = 'TRANSMITTING [' + actionText.split(' ')[0] + ']';
+    statusText.className = 'font-mono text-label-sm text-tertiary font-bold animate-pulse';
+
+    notify.classList.remove('hidden');
+
+    // Simulate animated VU peak
+    ['vu-16', 'vu-17', 'vu-18'].forEach(id => {
+      const seg = document.getElementById(id);
+      if (seg) seg.className = 'h-3 flex-1 rounded-sm bg-error transition-all duration-75';
+    });
+
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+      notify.classList.add('hidden');
+      statusText.innerText = 'STANDBY';
+      statusText.className = 'font-mono text-label-sm text-outline';
+      ['vu-16', 'vu-17', 'vu-18'].forEach(id => {
+        const seg = document.getElementById(id);
+        if (seg) seg.className = 'h-3 flex-1 rounded-sm bg-surface-container-highest transition-all duration-75';
+      });
+    }, 2200);
+  }
+
+  // Live filter for search box
+  document.getElementById('player-search').addEventListener('input', function(e) {
+    const term = e.target.value.toLowerCase();
+    const items = document.querySelectorAll('.roster-item');
+    items.forEach(item => {
+      const text = item.innerText.toLowerCase();
+      if (text.includes(term)) {
+        item.style.display = 'flex';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  });
+</script></main>
+
+
+
+</body></html>

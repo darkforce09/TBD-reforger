@@ -1,0 +1,353 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TBD Reforger - Admin Chat Panel (Standalone)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            tactical: {
+              bg: '#0b1120',
+              panel: '#151b2b',
+              border: '#242a3a',
+              input: '#0d1322',
+              hover: '#1e2638',
+              active: '#283248',
+              accent: '#3b82f6',
+              amber: '#f59e0b',
+              red: '#ef4444',
+              green: '#10b981',
+              muted: '#64748b',
+              text: '#e2e8f0',
+              header: '#94a3b8'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar for game UI feel */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0d1322;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #242a3a;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3b82f6;
+    }
+  </style>
+</head>
+<body class="bg-[#070b14] text-tactical-text font-sans antialiased min-h-screen flex items-center justify-center p-4 selection:bg-tactical-accent selection:text-white">
+
+  <!-- Main Standalone Modal Panel Container -->
+  <div class="w-full max-w-[840px] bg-[#121826] border border-[#222c40] rounded-xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col">
+    
+    <!-- Top Header Bar -->
+    <div class="px-6 py-4 border-b border-[#20293d] flex items-center justify-between bg-[#151c2d]">
+      <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-2">
+          <!-- Chat / Speech Icon -->
+          <svg class="w-5 h-5 text-tactical-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+          </svg>
+          <h1 class="text-base font-bold tracking-wider uppercase text-white font-mono">Chat</h1>
+        </div>
+        <span class="bg-[#f59e0b] text-[#0b1120] text-[11px] font-bold px-2 py-0.5 rounded tracking-wider uppercase font-mono">Admin</span>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <!-- Telemetry / Clock metadata -->
+        <div class="flex items-center space-x-3 text-xs font-mono text-tactical-header">
+          <span class="">SERVER FPS: <span class="text-white font-medium">120</span></span>
+          <span class="text-[#334155]">•</span>
+          <span class="">TIME: <span class="text-white font-medium">11:30</span></span>
+        </div>
+        <!-- Close Button -->
+        
+      </div>
+    </div>
+
+    <!-- Quick Announcement / Global Broadcast Bar -->
+    
+
+    <!-- Main Chat Workspace (Split Grid) -->
+    <div class="grid grid-cols-12 min-h-[460px] max-h-[500px]">
+      
+      <!-- Left Column: Channel & Player Target Selector (5 cols) -->
+      <div class="col-span-5 border-r border-[#20293d] bg-[#101625] flex flex-col">
+        <!-- Target search filter -->
+        <div class="p-3 border-b border-[#1d2538] bg-[#121929]">
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-tactical-muted">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </span>
+            <input type="text" placeholder="Search channel or player..." class="w-full bg-[#0a0e18] border border-[#222c40] rounded pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-tactical-accent">
+          </div>
+        </div>
+
+        <!-- Channel Categories Tabs -->
+        
+
+        <!-- Channels & Roster List -->
+        <div class="flex-1 overflow-y-auto divide-y divide-[#182033] p-2 space-y-1">
+          
+          <!-- Section Header: Broadcast Channels -->
+          
+
+          <!-- Channel 1: Server Global -->
+          
+
+          <!-- Channel 2: Admin & Referees Only -->
+          
+
+          <!-- Section Header: Direct Player Targets -->
+          <div class="px-2 pt-2.5 py-1 text-[10px] font-mono tracking-widest text-slate-500 uppercase">
+            Direct Player Whisper
+          </div>
+
+          <!-- Player 1: Selected / Active (Mission Maker) -->
+          <div class="flex items-center justify-between p-2 rounded-lg bg-[#1a253b] border border-tactical-accent/40 cursor-pointer">
+            <div class="flex items-center space-x-2.5">
+              <div class="relative">
+                <div class="w-7 h-7 rounded bg-blue-900/60 border border-blue-500/50 flex items-center justify-center text-blue-300 text-xs font-bold">
+                  MM
+                </div>
+                <span class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-[#101625]"></span>
+              </div>
+              <div>
+                <div class="text-xs font-semibold text-white flex items-center gap-1.5">
+                  Mission Maker
+                  
+                </div>
+                <div class="text-[10px] text-tactical-muted font-mono">BLUFOR • Host</div>
+              </div>
+            </div>
+            <span class="text-[10px] font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30 px-1.5 py-0.5 rounded">Active</span>
+          </div>
+
+          <!-- Player 2: 1LT Miller -->
+          <div class="flex items-center justify-between p-2 rounded-lg hover:bg-[#182236] cursor-pointer transition-colors group">
+            <div class="flex items-center space-x-2.5">
+              <div class="relative">
+                <div class="w-7 h-7 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 text-xs font-medium">
+                  JM
+                </div>
+                <span class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-[#101625]"></span>
+              </div>
+              <div>
+                <div class="text-xs font-medium text-slate-200 group-hover:text-tactical-accent">1LT Miller, J.</div>
+                <div class="text-[10px] text-tactical-muted font-mono">BLUFOR • Alpha 1-1 SL</div>
+              </div>
+            </div>
+            <span class="text-[10px] font-mono text-slate-500">Idle</span>
+          </div>
+
+          <!-- Player 3: CPL Davis -->
+          <div class="flex items-center justify-between p-2 rounded-lg hover:bg-[#182236] cursor-pointer transition-colors group">
+            <div class="flex items-center space-x-2.5">
+              <div class="relative">
+                <div class="w-7 h-7 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 text-xs font-medium">
+                  RD
+                </div>
+                <span class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-[#101625]"></span>
+              </div>
+              <div>
+                <div class="text-xs font-medium text-slate-200 group-hover:text-tactical-accent">CPL Davis, R.</div>
+                <div class="text-[10px] text-tactical-muted font-mono">BLUFOR • Alpha 1-1 Medic</div>
+              </div>
+            </div>
+            <span class="text-[10px] font-mono text-slate-500">1m ago</span>
+          </div>
+
+          <!-- Player 4: [XOF] Ales (OPFOR) -->
+          <div class="flex items-center justify-between p-2 rounded-lg hover:bg-[#182236] cursor-pointer transition-colors group">
+            <div class="flex items-center space-x-2.5">
+              <div class="relative">
+                <div class="w-7 h-7 rounded bg-red-950/60 border border-red-800/40 flex items-center justify-center text-red-300 text-xs font-medium">
+                  XA
+                </div>
+                <span class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-[#101625]"></span>
+              </div>
+              <div>
+                <div class="text-xs font-medium text-slate-200 group-hover:text-tactical-accent">[XOF] Ales</div>
+                <div class="text-[10px] text-red-400 font-mono">OPFOR • Commander</div>
+              </div>
+            </div>
+            <span class="text-[10px] font-mono text-red-400 bg-red-950/40 px-1 py-0.5 rounded">OPFOR</span>
+          </div>
+
+          <!-- Player 5: PFC Smith, K. -->
+          <div class="flex items-center justify-between p-2 rounded-lg hover:bg-[#182236] cursor-pointer transition-colors group">
+            <div class="flex items-center space-x-2.5">
+              <div class="relative">
+                <div class="w-7 h-7 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 text-xs font-medium">
+                  KS
+                </div>
+                <span class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-[#101625]"></span>
+              </div>
+              <div>
+                <div class="text-xs font-medium text-slate-200 group-hover:text-tactical-accent">PFC Smith, K.</div>
+                <div class="text-[10px] text-tactical-muted font-mono">BLUFOR • Rifleman</div>
+              </div>
+            </div>
+            <span class="text-[10px] font-mono text-slate-500">Idle</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Right Column: Active Conversation Thread & Composer (7 cols) -->
+      <div class="col-span-7 bg-[#0d1322] flex flex-col justify-between">
+        
+        <!-- Recipient Subheader Bar -->
+        <div class="px-5 py-3 border-b border-[#1c2438] bg-[#121828] flex items-center justify-between">
+          <div class="flex items-center space-x-2.5">
+            
+            <div>
+              <div class="text-xs font-bold text-white flex items-center gap-1.5">Mission Maker
+                
+                <span class="text-[10px] font-mono bg-blue-500/20 text-blue-300 px-1.5 py-0.2 rounded border border-blue-500/30">BLUFOR</span>
+              </div>
+              
+            </div>
+          </div>
+
+          <!-- Action buttons for selected player -->
+          <div class="flex items-center space-x-2">
+            <button class="bg-[#1b2336] hover:bg-[#25304a] text-slate-300 text-[11px] font-mono px-2.5 py-1 rounded border border-[#27344f] transition-colors">
+              Clear Log
+            </button>
+            <button class="bg-[#1b2336] hover:bg-[#25304a] text-tactical-accent text-[11px] font-mono px-2.5 py-1 rounded border border-[#27344f] transition-colors">
+              Teleport To
+            </button>
+          </div>
+        </div>
+
+        <!-- Chat History Viewport -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-3.5 text-xs">
+          
+          <!-- Timestamp Divider -->
+          <div class="flex items-center justify-center my-1">
+            <div class="border-t border-[#1d273d] flex-1"></div>
+            <span class="px-3 text-[10px] font-mono text-slate-500 uppercase tracking-wider">Mission Started • 11:20 UTC</span>
+            <div class="border-t border-[#1d273d] flex-1"></div>
+          </div>
+
+          <!-- System Message: Admin Log -->
+          <div class="bg-[#141b2a] border border-[#202b42] rounded-lg p-2.5 flex items-start space-x-2 text-slate-400 text-[11px]">
+            <svg class="w-4 h-4 text-tactical-accent shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div class="">
+              <span class="font-mono text-slate-300 font-semibold">[SYSTEM RPC]:</span> Safe start initialized for 120 minutes. All weapons safe.
+            </div>
+          </div>
+
+          <!-- Incoming Message from Target (Mission Maker) -->
+          <div class="flex flex-col items-start max-w-[85%]">
+            <div class="flex items-baseline space-x-2 mb-1">
+              <span class="font-semibold text-blue-400 text-xs">Mission Maker ★</span>
+              <span class="text-[10px] font-mono text-slate-500">11:24:12</span>
+            </div>
+            <div class="bg-[#182236] border border-[#23314c] text-slate-200 rounded-lg rounded-tl-none px-3.5 py-2 leading-relaxed shadow-sm">
+              We're verifying the BLUFOR safe-start staging line at grid 042-088. Everything looks good on radios.
+            </div>
+          </div>
+
+          <!-- Outgoing Message from Admin (Current User) -->
+          <div class="flex flex-col items-end self-end max-w-[85%]">
+            <div class="flex items-baseline space-x-2 mb-1">
+              <span class="text-[10px] font-mono text-slate-500">11:25:05</span>
+              <span class="font-semibold text-[#f59e0b] text-xs font-mono">ADMIN [You]</span>
+            </div>
+            <div class="bg-[#21437c] border border-[#305ca7] text-white rounded-lg rounded-tr-none px-3.5 py-2 leading-relaxed shadow-sm">
+              Roger that. I verified OPFOR staging is also ready. Countdown is at 01:29.
+            </div>
+          </div>
+
+          <!-- Incoming Message from Target (Mission Maker) -->
+          <div class="flex flex-col items-start max-w-[85%]">
+            <div class="flex items-baseline space-x-2 mb-1">
+              <span class="font-semibold text-blue-400 text-xs">Mission Maker ★</span>
+              <span class="text-[10px] font-mono text-slate-500">11:28:40</span>
+            </div>
+            <div class="bg-[#182236] border border-[#23314c] text-slate-200 rounded-lg rounded-tl-none px-3.5 py-2 leading-relaxed shadow-sm">
+              Can you check if PFC Smith received his short range radio? He reported his vest slot was clear.
+            </div>
+          </div>
+
+          <!-- Outgoing Message from Admin (Current User) -->
+          <div class="flex flex-col items-end self-end max-w-[85%]">
+            <div class="flex items-baseline space-x-2 mb-1">
+              <span class="text-[10px] font-mono text-slate-500">11:29:15</span>
+              <span class="font-semibold text-[#f59e0b] text-xs font-mono">ADMIN [You]</span>
+            </div>
+            <div class="bg-[#21437c] border border-[#305ca7] text-white rounded-lg rounded-tr-none px-3.5 py-2 leading-relaxed shadow-sm">
+              Dispatching SR radio to Smith now via the Radio console. Stand by.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bottom Input Composer Bar -->
+        <div class="p-3.5 border-t border-[#1c2438] bg-[#121828]">
+          <!-- Quick Preset Macro Buttons -->
+          <div class="flex items-center space-x-1.5 mb-2 overflow-x-auto text-[11px] font-mono pb-1">
+            <span class="text-slate-500 text-[10px] uppercase tracking-wider shrink-0 mr-1">Quick Macros:</span>
+            <button class="bg-[#172033] hover:bg-[#202c46] text-slate-300 px-2 py-0.5 rounded border border-[#263553] shrink-0 transition-colors">
+              + Safe Start Ending
+            </button>
+            <button class="bg-[#172033] hover:bg-[#202c46] text-slate-300 px-2 py-0.5 rounded border border-[#263553] shrink-0 transition-colors">
+              + Cease Fire
+            </button>
+            <button class="bg-[#172033] hover:bg-[#202c46] text-slate-300 px-2 py-0.5 rounded border border-[#263553] shrink-0 transition-colors">
+              + Check Radio Freq
+            </button>
+          </div>
+
+          <!-- Message Composer Form -->
+          <div class="flex items-center gap-2">
+            <div class="relative flex-1">
+              <input type="text" placeholder="Type direct administrative reply to Mission Maker..." class="w-full bg-[#0a0e18] border border-[#222c40] rounded-lg pl-3.5 pr-10 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-tactical-accent font-sans">
+              <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center space-x-1 text-slate-500">
+                <span class="text-[10px] font-mono">RPC</span>
+              </div>
+            </div>
+            <!-- Send Button -->
+            <button class="bg-[#3b82f6] hover:bg-[#2563eb] active:bg-[#1d4ed8] text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5 shadow-md shadow-blue-500/20 font-mono uppercase tracking-wider">
+              <span class="">Send</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+
+</body></html>

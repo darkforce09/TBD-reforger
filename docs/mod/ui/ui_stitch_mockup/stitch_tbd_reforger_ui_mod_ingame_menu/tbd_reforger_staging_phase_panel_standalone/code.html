@@ -1,0 +1,165 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TBD Reforger - Staging Phase Panel (Standalone)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: '#0b1120',
+            'surface-dim': '#080e1d',
+            'surface-container': '#151b2b',
+            'surface-bright': '#1e2638',
+            primary: '#3b82f6',
+            amber: {
+              400: '#fbbf24',
+              500: '#f59e0b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #060a12;
+      background-image: 
+        radial-gradient(circle at 50% 30%, rgba(30, 58, 138, 0.15) 0%, transparent 60%),
+        linear-gradient(to bottom, rgba(11, 17, 32, 0.8), rgba(6, 10, 18, 0.95));
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 24px;
+      font-family: 'Inter', sans-serif;
+      color: #e2e8f0;
+    }
+    .custom-backdrop {
+      background: rgba(13, 19, 34, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(51, 65, 85, 0.4);
+      box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.05) inset;
+    }
+    .glow-amber {
+      text-shadow: 0 0 20px rgba(245, 158, 11, 0.35);
+    }
+  </style>
+</head>
+<body class="antialiased select-none">
+
+  <!-- Staging Phase Standalone Panel -->
+  <div class="w-full max-w-[440px] custom-backdrop rounded-2xl p-6 relative overflow-hidden transition-all duration-300">
+    
+    <!-- Top Header & Safe-Start Pill -->
+    <div class="flex items-center justify-between pb-4 border-b border-slate-800/80">
+      <div class="flex items-center space-x-2">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+        <h2 class="text-xs font-bold tracking-widest text-amber-400 uppercase font-mono">Staging Phase</h2>
+      </div>
+      <div class="px-2.5 py-0.5 rounded-full bg-slate-800/70 border border-slate-700/60 text-[11px] font-mono font-medium text-slate-300 tracking-wider flex items-center gap-1.5">
+        <svg class="w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+        <span>SAFE-START</span>
+      </div>
+    </div>
+
+    <!-- Countdown Center Display -->
+    <div class="my-6 text-center">
+      <div class="text-[11px] font-mono tracking-wider text-slate-400 uppercase mb-2">
+        Safe-start boundary drops in
+      </div>
+      <div id="countdown-timer" class="text-5xl font-extrabold font-mono tracking-tight text-white glow-amber">01:33</div>
+      
+      <!-- Squad Sync / Ready Status Badge -->
+      <div class="mt-3 flex items-center justify-center">
+        <div id="sync-status" class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
+          <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span class="font-medium">Alpha 1-1: READY (6/6 Synced)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons Group -->
+    <div class="space-y-3 pt-2">
+      <!-- Ready Button -->
+      <button id="btn-ready" class="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold text-xs tracking-wider uppercase font-mono shadow-lg shadow-blue-600/30 border border-blue-400/40 flex items-center justify-center gap-2 transition-all duration-150">
+        <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="m9 12 2 2 4-4"></path>
+        </svg>
+        <span>My Team Is Ready!</span>
+      </button>
+
+      <!-- Not Ready / Hold Button -->
+      <button id="btn-not-ready" class="w-full py-2.5 px-4 rounded-xl bg-slate-900/80 hover:bg-slate-800 active:scale-[0.98] text-slate-300 hover:text-white font-semibold text-xs tracking-wider uppercase font-mono border border-slate-700/60 flex items-center justify-center gap-2 transition-all duration-150">
+        <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="10" y1="15" x2="10" y2="9"></line>
+          <line x1="14" y1="15" x2="14" y2="9"></line>
+        </svg>
+        <span>My Team Is Not Ready!</span>
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    // Simple state toggle for user testing
+    const btnReady = document.getElementById('btn-ready');
+    const btnNotReady = document.getElementById('btn-not-ready');
+    const syncStatus = document.getElementById('sync-status');
+
+    btnReady.addEventListener('click', () => {
+      syncStatus.innerHTML = `
+        <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span class="font-medium">Alpha 1-1: READY (6/6 Synced)</span>
+      `;
+      syncStatus.className = 'inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs font-mono';
+      btnReady.classList.add('ring-2', 'ring-blue-400');
+      btnNotReady.classList.remove('ring-2', 'ring-amber-400');
+    });
+
+    btnNotReady.addEventListener('click', () => {
+      syncStatus.innerHTML = `
+        <svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span class="font-medium">Alpha 1-1: HOLD REQUESTED</span>
+      `;
+      syncStatus.className = 'inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-950/40 border border-amber-500/30 text-amber-400 text-xs font-mono';
+      btnNotReady.classList.add('ring-2', 'ring-amber-400');
+      btnReady.classList.remove('ring-2', 'ring-blue-400');
+    });
+
+    // Subtly update countdown timer
+    let seconds = 94;
+    setInterval(() => {
+      if (seconds > 0) {
+        seconds--;
+        const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+        const secs = String(seconds % 60).padStart(2, '0');
+        document.getElementById('countdown-timer').textContent = `${mins}:${secs}`;
+      }
+    }, 1000);
+  </script>
+
+
+</body></html>

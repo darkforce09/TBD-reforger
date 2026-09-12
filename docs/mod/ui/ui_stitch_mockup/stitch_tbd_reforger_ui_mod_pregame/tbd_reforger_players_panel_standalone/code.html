@@ -1,0 +1,468 @@
+<!DOCTYPE html><html lang="en" class="h-full" style=""><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TBD Reforger - Players Panel (Standalone)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: {
+              DEFAULT: '#0b1120',
+              dim: '#080e1d',
+              card: 'rgba(13, 19, 34, 0.82)',
+              glass: 'rgba(21, 27, 43, 0.72)',
+              hover: 'rgba(255, 255, 255, 0.04)',
+              border: 'rgba(255, 255, 255, 0.08)',
+              borderSubtle: 'rgba(255, 255, 255, 0.05)',
+            },
+            tacBlue: {
+              DEFAULT: '#3b82f6',
+              glow: 'rgba(59, 130, 246, 0.15)',
+              border: 'rgba(59, 130, 246, 0.3)',
+              text: '#60a5fa',
+            },
+            tacRed: {
+              DEFAULT: '#ef4444',
+              glow: 'rgba(239, 68, 68, 0.15)',
+              border: 'rgba(239, 68, 68, 0.3)',
+              text: '#f87171',
+            },
+            tacAmber: {
+              DEFAULT: '#f59e0b',
+              glow: 'rgba(245, 158, 11, 0.15)',
+              border: 'rgba(245, 158, 11, 0.3)',
+              text: '#fbbf24',
+            },
+            tacPurple: {
+              DEFAULT: '#a855f7',
+              glow: 'rgba(168, 85, 247, 0.15)',
+              border: 'rgba(168, 85, 247, 0.3)',
+              text: '#c084fc',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom thin scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+  </style>
+</head>
+<body class="bg-[#050811] text-slate-200 font-sans antialiased h-screen w-screen overflow-hidden flex items-center justify-center p-6 select-none">
+
+  <!-- Floating Background Ambient Glow & Map Texture Mock -->
+  <div class="fixed inset-0 pointer-events-none opacity-20">
+    <div class="absolute -top-[20%] -left-[10%] w-[55%] h-[55%] bg-blue-600/20 blur-[130px] rounded-full"></div>
+    <div class="absolute -bottom-[20%] -right-[10%] w-[55%] h-[55%] bg-red-600/20 blur-[130px] rounded-full"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
+  </div>
+
+  <!-- Standalone Players Modal Window (Pure macOS Translucent Glass Aesthetic) -->
+  <main class="relative z-10 w-full max-w-[1440px] h-[860px] max-h-[92vh] flex flex-col rounded-2xl bg-[#0b1120]/90 backdrop-blur-2xl border border-white/10 shadow-[0_30px_90px_rgba(0,0,0,0.8)] overflow-hidden">
+    
+    <!-- Top Header Bar: Clean Title & Total Roster Telemetry -->
+    <header class="h-14 border-b border-white/10 flex items-center justify-between bg-surface-dim/70 shrink-0 px-5">
+      
+
+      <!-- Live Headcount Pills Summary -->
+      <div class="flex items-center gap-3 font-mono text-xs">
+        
+        
+        
+        
+        
+        <div class="text-slate-400">
+          TOTAL: <span class="text-white font-semibold">94</span> PLAYERS
+        </div>
+      </div>
+    </header>
+
+    <!-- 4-Section Grid Container:
+         Top: 2 Dominant Lanes (BLUFOR Defending on Left, OPFOR Attacking on Right)
+         Bottom: 2 Secondary Panels (Spectator on Left, Unslotted on Right) -->
+    <div class="flex-1 p-5 gap-5 grid grid-cols-2 grid-rows-[minmax(0,1.85fr)_minmax(0,1fr)] overflow-hidden">
+
+      <!-- ============================================================ -->
+      <!-- 1. BLUFOR DEFENDING LANE (TOP LEFT - BLUE) -->
+      <!-- ============================================================ -->
+      <section class="flex flex-col rounded-xl bg-gradient-to-b from-[#0e172a]/95 to-[#0b1222]/90 border border-blue-500/25 shadow-[inset_0_1px_1px_rgba(59,130,246,0.2)] overflow-hidden">
+        
+        <!-- Lane Header -->
+        <div class="px-4 py-3 bg-blue-950/40 border-b border-blue-500/20 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2.5">
+            
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-blue-400 tracking-wider">BLUFOR</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium tracking-wide bg-blue-500/20 text-blue-200 border border-blue-400/30 uppercase">Defending</span>
+              </div>
+              
+            </div>
+          </div>
+          <!-- Slotted Counter Badge -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-400">Slotted:</span>
+            <span class="font-mono text-xs font-semibold px-2.5 py-1 rounded bg-blue-500/15 border border-blue-400/30 text-blue-300">
+              36 / 40
+            </span>
+          </div>
+        </div>
+
+        <!-- Column Headers -->
+        <div class="px-4 py-1.5 bg-black/20 border-b border-white/5 flex items-center text-[10px] font-mono text-slate-400 uppercase tracking-wider shrink-0"><div class="w-8 text-center">#</div>
+          <div class="flex-1">Player</div>
+          <div class="w-16 text-right font-mono pr-2">Ping</div>
+          </div>
+
+        <!-- Scrollable Player List -->
+        <div class="flex-1 overflow-y-auto divide-y divide-white/[0.03] text-xs font-sans"><div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">01</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-blue-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">Miller, J.</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">18ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">02</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-slate-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">Davis, R.</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">24ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">03</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-blue-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">Stone, B.</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">22ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">04</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-slate-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">Ramos, C.</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">31ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">05</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-slate-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">Clark, H.</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">19ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">06</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-blue-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">Vance, D.</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">27ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">07</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-slate-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">Kowalski, P.</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">35ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">08</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-slate-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">Jones, T.</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-amber-400 pr-2 tabular-nums">62ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">09</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-slate-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">Smith, K.</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">29ms</div>
+</div></div>
+      </section>
+
+
+      <!-- ============================================================ -->
+      <!-- 2. OPFOR ATTACKING LANE (TOP RIGHT - RED) -->
+      <!-- ============================================================ -->
+      <section class="flex flex-col rounded-xl bg-gradient-to-b from-[#1a0f14]/95 to-[#130b10]/90 border border-red-500/25 shadow-[inset_0_1px_1px_rgba(239,68,68,0.2)] overflow-hidden">
+        
+        <!-- Lane Header -->
+        <div class="px-4 py-3 bg-red-950/40 border-b border-red-500/20 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2.5">
+            
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-red-400 tracking-wider">OPFOR</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium tracking-wide bg-red-500/20 text-red-200 border border-red-400/30 uppercase">Attacking</span>
+              </div>
+              
+            </div>
+          </div>
+          <!-- Slotted Counter Badge -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-400">Slotted:</span>
+            <span class="font-mono text-xs font-semibold px-2.5 py-1 rounded bg-red-500/15 border border-red-400/30 text-red-300">
+              48 / 50
+            </span>
+          </div>
+        </div>
+
+        <!-- Column Headers -->
+        <div class="px-4 py-1.5 bg-black/20 border-b border-white/5 flex items-center text-[10px] font-mono text-slate-400 uppercase tracking-wider shrink-0"><div class="w-8 text-center">#</div>
+          <div class="flex-1">Player</div>
+          <div class="w-16 text-right font-mono pr-2">Ping</div>
+          </div>
+
+        <!-- Scrollable Player List -->
+        <div class="flex-1 overflow-y-auto divide-y divide-white/[0.03] text-xs font-sans"><div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">01</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-red-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">Ales [XOF]</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">21ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">02</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-slate-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">Vikhr [L-13]</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">32ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">03</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-red-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">ProrocK [L-13]</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">19ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">04</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-slate-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">Kolin [L-13]</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">25ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">05</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-slate-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">gHosT</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">17ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">06</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-red-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">Azmir [FDX]</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">28ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">07</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-slate-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">Eben [LG]</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">30ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">08</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-slate-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">western_fog [TERA]</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">38ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-8 text-center font-mono text-[11px] text-slate-500">09</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-slate-400">person</span>
+    <span class="font-medium text-slate-200 group-hover:text-white">teran [TERA]</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">41ms</div>
+</div></div>
+      </section>
+
+
+      <!-- ============================================================ -->
+      <!-- 3. SPECTATOR PANEL (BOTTOM LEFT - PURPLE) -->
+      <!-- ============================================================ -->
+      <section class="flex flex-col rounded-xl bg-gradient-to-b from-[#141024]/90 to-[#0d0a17]/90 border border-purple-500/20 shadow-[inset_0_1px_1px_rgba(168,85,247,0.15)] overflow-hidden">
+        
+        <!-- Panel Header -->
+        <div class="px-4 py-2.5 bg-purple-950/30 border-b border-purple-500/20 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2">
+            
+            <span class="text-xs font-bold text-purple-300 tracking-wider uppercase">Spectators</span>
+            
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[11px] text-slate-400 font-medium">Count:</span>
+            <span class="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-purple-500/15 border border-purple-400/30 text-purple-300">
+              4
+            </span>
+          </div>
+        </div>
+
+        <!-- Scrollable Spectator List -->
+        <div class="flex-1 overflow-y-auto divide-y divide-white/[0.03] text-xs"><div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-6 font-mono text-[10px] text-slate-500">1</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-purple-400">person</span>
+    <span class="font-medium text-slate-200">Caster_Broadcaster</span>
+    
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">14ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-6 font-mono text-[10px] text-slate-500">2</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-purple-400">person</span>
+    <span class="font-medium text-slate-200">Referee_Admin</span>
+    <span class="px-1.5 py-0.2 rounded text-[9px] font-mono bg-amber-500/20 text-amber-300">ADMIN</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">18ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-6 font-mono text-[10px] text-slate-500">3</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-slate-400">person</span>
+    <span class="font-medium text-slate-200">TacticalReviewer</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">34ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-6 font-mono text-[10px] text-slate-500">4</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-slate-400">person</span>
+    <span class="font-medium text-slate-200">ShadowObserver</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-amber-400 pr-2 tabular-nums">58ms</div>
+</div></div>
+      </section>
+
+
+      <!-- ============================================================ -->
+      <!-- 4. UNSLOTTED PANEL (BOTTOM RIGHT - AMBER) -->
+      <!-- ============================================================ -->
+      <section class="flex flex-col rounded-xl bg-gradient-to-b from-[#1c140d]/90 to-[#120d08]/90 border border-amber-500/20 shadow-[inset_0_1px_1px_rgba(245,158,11,0.15)] overflow-hidden">
+        
+        <!-- Panel Header -->
+        <div class="px-4 py-2.5 bg-amber-950/30 border-b border-amber-500/20 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2">
+            
+            <span class="text-xs font-bold text-amber-300 tracking-wider uppercase">Unslotted</span>
+            
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[11px] text-slate-400 font-medium">Pending:</span>
+            <span class="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-amber-500/15 border border-amber-400/30 text-amber-300">
+              6
+            </span>
+          </div>
+        </div>
+
+        <!-- Scrollable Unslotted List -->
+        <div class="flex-1 overflow-y-auto divide-y divide-white/[0.03] text-xs"><div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-6 font-mono text-[10px] text-slate-500">1</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-amber-400">person</span>
+    <span class="font-medium text-slate-200">ReconRanger</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">22ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-6 font-mono text-[10px] text-slate-500">2</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-amber-400">person</span>
+    <span class="font-medium text-slate-200">Delta_Sniper</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">29ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-6 font-mono text-[10px] text-slate-500">3</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-amber-400">person</span>
+    <span class="font-medium text-slate-200">IronClad_44</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-amber-400 pr-2 tabular-nums">74ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-6 font-mono text-[10px] text-slate-500">4</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-amber-400">person</span>
+    <span class="font-medium text-slate-200">GhostRider_09</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">31ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-6 font-mono text-[10px] text-slate-500">5</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-amber-400">person</span>
+    <span class="font-medium text-slate-200">ApexPredator</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-emerald-400 pr-2 tabular-nums">25ms</div>
+</div>
+<div class="px-4 py-1.5 flex items-center hover:bg-white/[0.03] transition-colors group">
+  <div class="w-6 font-mono text-[10px] text-slate-500">6</div>
+  <div class="flex-1 flex items-center gap-2">
+    <span class="material-symbols-outlined text-sm text-amber-400">person</span>
+    <span class="font-medium text-slate-200">VortexEcho</span>
+  </div>
+  <div class="w-16 text-right font-mono text-[11px] text-rose-400 pr-2 tabular-nums">112ms</div>
+</div></div>
+      </section>
+
+    </div>
+
+    <!-- Bottom Footer Status / Action Strip -->
+    
+
+  </main>
+
+
+
+
+
+
+
+
+
+</body></html>

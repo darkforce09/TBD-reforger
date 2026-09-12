@@ -1,0 +1,356 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>TBD Reforger - Admin Spawn Panel (Standalone)</title>
+<!-- Load Tailwind CSS v3 with forms & container queries plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts for Inter & JetBrains Mono for tactical telemetry -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            tactical: {
+              bg: '#080d19',
+              panel: '#0e1526',
+              surface: '#131c31',
+              card: '#18243c',
+              border: '#23324d',
+              borderLight: '#304163',
+              accentBlue: '#2563eb',
+              accentHover: '#1d4ed8',
+              amber: '#f59e0b',
+              blufor: '#3b82f6',
+              opfor: '#ef4444',
+              indfor: '#10b981',
+              logistics: '#cbd5e1'
+            }
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-[#050811] text-slate-200 min-h-screen flex items-center justify-center p-4 antialiased selection:bg-blue-600 selection:text-white font-sans">
+<!-- BEGIN: AdminSpawnPanelModal -->
+<main class="w-full max-w-[1100px] bg-[#0c1322] border border-[#23314c] rounded-xl shadow-2xl overflow-hidden flex flex-col backdrop-blur-md relative" data-purpose="spawn-panel-window">
+<!-- BEGIN: HeaderBar -->
+<header class="h-14 px-6 border-b border-[#1f2b45] bg-[#0f172a]/95 flex items-center justify-between text-xs tracking-wider font-mono">
+<!-- Title & Admin Status -->
+<div class="flex items-center space-x-3">
+<!-- Spawner Icon -->
+<div class="text-blue-400 flex items-center justify-center">
+
+</div>
+<span class="text-sm font-bold tracking-widest text-slate-100 uppercase font-sans">ASSET SPAWNER</span>
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-[#b45309]/30 text-amber-400 border border-[#d97706]/40 uppercase tracking-widest">ADMIN</span>
+
+</div>
+<!-- Telemetry Diagnostics & Close Window -->
+<div class="flex items-center space-x-4 text-slate-400">
+<div class="">SERVER FPS: <span class="text-emerald-400 font-semibold">120</span></div>
+<span class="text-slate-600">•</span>
+<div class="">TIME: <span class="text-slate-200 font-semibold">11:30</span></div>
+
+</div>
+</header>
+<!-- END: HeaderBar -->
+<!-- BEGIN: TopCategoryBar -->
+
+<!-- END: TopCategoryBar -->
+<!-- BEGIN: MainContentGrid -->
+<div class="p-6 grid grid-cols-12 gap-6 bg-[#0a101f]/90">
+<!-- BEGIN: LeftCatalogColumn -->
+<section class="col-span-7 flex flex-col space-y-3" data-purpose="catalog-browser">
+<!-- Search and Filter Controls -->
+<div class="space-y-2.5">
+<!-- Catalog Search Input -->
+<div class="relative">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<circle cx="11" cy="11" r="8"></circle>
+<path d="M21 21l-4.35-4.35" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</span>
+<input class="w-full pl-9 pr-4 py-2 bg-[#090f1e] border border-[#202d45] rounded-md text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition font-sans" placeholder="Search vehicle or item catalog..." type="text" value="">
+</div>
+<!-- Filter Pills -->
+<div class="flex items-center space-x-1.5 overflow-x-auto text-[11px] font-medium tracking-wide">
+<button class="px-2.5 py-1 bg-blue-600/20 text-blue-400 border border-blue-500/40 rounded transition">ALL (42)</button>
+<button class="px-2.5 py-1 bg-[#10172a] text-slate-400 hover:text-slate-200 border border-[#1e2a42] rounded transition">BLUFOR (US)</button>
+<button class="px-2.5 py-1 bg-[#10172a] text-slate-400 hover:text-slate-200 border border-[#1e2a42] rounded transition">OPFOR (USSR)</button>
+<button class="px-2.5 py-1 bg-[#10172a] text-slate-400 hover:text-slate-200 border border-[#1e2a42] rounded transition">INDFOR</button>
+<button class="px-2.5 py-1 bg-[#10172a] text-slate-400 hover:text-slate-200 border border-[#1e2a42] rounded transition">CRATES &amp; GEAR</button>
+</div>
+</div>
+<!-- Scrollable Asset Catalog List -->
+<div class="h-[430px] overflow-y-auto space-y-1.5 pr-1.5 custom-scrollbar" data-purpose="catalog-item-list">
+<!-- Item 1: BLUFOR M113A3 MEV -->
+<div class="group flex items-center justify-between p-2.5 rounded-lg border border-[#1e2a42] bg-[#0e1628] hover:bg-[#141f38] hover:border-[#2f4066] transition cursor-pointer">
+<div class="flex items-center space-x-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-blue-950/70 text-blue-400 border border-blue-600/40">BLUFOR</span>
+<div>
+<p class="text-xs font-semibold text-slate-100 group-hover:text-blue-300 transition">M113A3 (MEV - Ambulance)</p>
+<p class="text-[10px] font-mono text-slate-500">Prefabs/Vehicles/Tracked/M113A3_Ambulance.et</p>
+</div>
+</div>
+<span class="text-[10px] font-mono text-slate-400">Armored</span>
+</div>
+<!-- Item 2: BLUFOR M113A3 Mk19 -->
+<div class="group flex items-center justify-between p-2.5 rounded-lg border border-[#1e2a42] bg-[#0e1628] hover:bg-[#141f38] hover:border-[#2f4066] transition cursor-pointer">
+<div class="flex items-center space-x-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-blue-950/70 text-blue-400 border border-blue-600/40">BLUFOR</span>
+<div>
+<p class="text-xs font-semibold text-slate-100 group-hover:text-blue-300 transition">M113A3 (Mk19 / 40mm AGL)</p>
+<p class="text-[10px] font-mono text-slate-500">Prefabs/Vehicles/Tracked/M113A3_Mk19.et</p>
+</div>
+</div>
+<span class="text-[10px] font-mono text-slate-400">IFV / APC</span>
+</div>
+<!-- Item 3: ACTIVE SELECTED - M60A1 Patton Tank -->
+<div class="flex items-center justify-between p-2.5 rounded-lg border-2 border-blue-500 bg-[#16233d] shadow-md shadow-blue-950/30 transition cursor-pointer relative">
+<div class="flex items-center space-x-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-blue-600 text-white">BLUFOR</span>
+<div>
+<p class="text-xs font-bold text-white flex items-center gap-1.5">
+                  M60A1 Patton Tank
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+</p>
+<p class="text-[10px] font-mono text-blue-200/70">Prefabs/Vehicles/Tracked/M60A1_Patton.et</p>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<span class="text-[10px] font-mono font-semibold text-blue-300 uppercase px-1.5 py-0.5 rounded bg-blue-900/40">Active</span>
+<svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+<path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<!-- Item 4: BLUFOR M923A1 Transport -->
+<div class="group flex items-center justify-between p-2.5 rounded-lg border border-[#1e2a42] bg-[#0e1628] hover:bg-[#141f38] hover:border-[#2f4066] transition cursor-pointer">
+<div class="flex items-center space-x-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-blue-950/70 text-blue-400 border border-blue-600/40">BLUFOR</span>
+<div>
+<p class="text-xs font-semibold text-slate-100 group-hover:text-blue-300 transition">M923A1 Transport (Covered)</p>
+<p class="text-[10px] font-mono text-slate-500">Prefabs/Vehicles/Wheeled/M923A1_Covered.et</p>
+</div>
+</div>
+<span class="text-[10px] font-mono text-slate-400">Logistics</span>
+</div>
+<!-- Item 5: BLUFOR M923A1 Fuel Truck -->
+<div class="group flex items-center justify-between p-2.5 rounded-lg border border-[#1e2a42] bg-[#0e1628] hover:bg-[#141f38] hover:border-[#2f4066] transition cursor-pointer">
+<div class="flex items-center space-x-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-blue-950/70 text-blue-400 border border-blue-600/40">BLUFOR</span>
+<div>
+<p class="text-xs font-semibold text-slate-100 group-hover:text-blue-300 transition">M923A1 Fuel Truck</p>
+<p class="text-[10px] font-mono text-slate-500">Prefabs/Vehicles/Wheeled/M923A1_Fuel.et</p>
+</div>
+</div>
+<span class="text-[10px] font-mono text-slate-400">Support</span>
+</div>
+<!-- Item 6: OPFOR MT-LB ZU-23 AA -->
+<div class="group flex items-center justify-between p-2.5 rounded-lg border border-[#1e2a42] bg-[#0e1628] hover:bg-[#141f38] hover:border-[#2f4066] transition cursor-pointer">
+<div class="flex items-center space-x-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-red-950/70 text-red-400 border border-red-600/40">OPFOR</span>
+<div>
+<p class="text-xs font-semibold text-slate-100 group-hover:text-red-300 transition">MT-LB (ZU-23 AA)</p>
+<p class="text-[10px] font-mono text-slate-500">Prefabs/Vehicles/Tracked/MTLB_ZU23.et</p>
+</div>
+</div>
+<span class="text-[10px] font-mono text-slate-400">Anti-Air</span>
+</div>
+<!-- Item 7: OPFOR MT-LB Ambulance -->
+<div class="group flex items-center justify-between p-2.5 rounded-lg border border-[#1e2a42] bg-[#0e1628] hover:bg-[#141f38] hover:border-[#2f4066] transition cursor-pointer">
+<div class="flex items-center space-x-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-red-950/70 text-red-400 border border-red-600/40">OPFOR</span>
+<div>
+<p class="text-xs font-semibold text-slate-100 group-hover:text-red-300 transition">MT-LB Ambulance</p>
+<p class="text-[10px] font-mono text-slate-500">Prefabs/Vehicles/Tracked/MTLB_Med.et</p>
+</div>
+</div>
+<span class="text-[10px] font-mono text-slate-400">Armored</span>
+</div>
+<!-- Item 8: OPFOR MT-12 Rapira -->
+<div class="group flex items-center justify-between p-2.5 rounded-lg border border-[#1e2a42] bg-[#0e1628] hover:bg-[#141f38] hover:border-[#2f4066] transition cursor-pointer">
+<div class="flex items-center space-x-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-red-950/70 text-red-400 border border-red-600/40">OPFOR</span>
+<div>
+<p class="text-xs font-semibold text-slate-100 group-hover:text-red-300 transition">MT-12 Rapira 100mm AT Gun</p>
+<p class="text-[10px] font-mono text-slate-500">Prefabs/Static/MT12_ATGun.et</p>
+</div>
+</div>
+<span class="text-[10px] font-mono text-slate-400">Static Gun</span>
+</div>
+<!-- Item 9: OPFOR DShKM Heavy MG -->
+<div class="group flex items-center justify-between p-2.5 rounded-lg border border-[#1e2a42] bg-[#0e1628] hover:bg-[#141f38] hover:border-[#2f4066] transition cursor-pointer">
+<div class="flex items-center space-x-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-red-950/70 text-red-400 border border-red-600/40">OPFOR</span>
+<div>
+<p class="text-xs font-semibold text-slate-100 group-hover:text-red-300 transition">DShKM Tripod Heavy MG</p>
+<p class="text-[10px] font-mono text-slate-500">Prefabs/Static/DShKM_Tripod.et</p>
+</div>
+</div>
+<span class="text-[10px] font-mono text-slate-400">Turret</span>
+</div>
+<!-- Item 10: Logistics Supply Depot Ammo Crate -->
+<div class="group flex items-center justify-between p-2.5 rounded-lg border border-[#1e2a42] bg-[#0e1628] hover:bg-[#141f38] hover:border-[#2f4066] transition cursor-pointer">
+<div class="flex items-center space-x-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-slate-800 text-slate-300 border border-slate-600/40">LOGISTICS</span>
+<div>
+<p class="text-xs font-semibold text-slate-100 group-hover:text-slate-300 transition">Supply Depot Ammo Crate</p>
+<p class="text-[10px] font-mono text-slate-500">Prefabs/Props/Military/SupplyCrate_Universal.et</p>
+</div>
+</div>
+<span class="text-[10px] font-mono text-slate-400">Crate</span>
+</div>
+</div>
+</section>
+<!-- END: LeftCatalogColumn -->
+<!-- BEGIN: RightDeploymentControlsColumn -->
+<section class="col-span-5 flex flex-col space-y-3.5" data-purpose="deployment-controls">
+<!-- Asset Preview & Technical Specs Card -->
+<div class="bg-[#0f172a] border border-[#202d45] rounded-lg p-3.5 relative overflow-hidden" data-purpose="asset-specs-card">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2">
+<span class="text-xs font-mono text-blue-400 uppercase tracking-wide">SELECTED ASSET</span>
+<span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-blue-900/50 text-blue-300 border border-blue-500/30">BLUFOR</span>
+</div>
+<h3 class="text-sm font-bold text-white mt-1">M60A1 Patton (Main Battle Tank)</h3>
+</div>
+<span class="text-[11px] font-mono bg-slate-800/80 text-slate-300 px-2 py-0.5 rounded border border-slate-700">ARMOR AFV</span>
+</div>
+<!-- Specs Matrix Grid -->
+<div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-[#1e2a40] text-[11px] font-mono">
+<div class="bg-[#090e1a] p-2 rounded border border-[#1b2538]">
+<span class="text-[10px] text-slate-500 block uppercase">Crew Cap</span>
+<span class="text-slate-200 font-semibold">4 Crew</span>
+</div>
+<div class="bg-[#090e1a] p-2 rounded border border-[#1b2538]">
+<span class="text-[10px] text-slate-500 block uppercase">Main Arm</span>
+<span class="text-slate-200 font-semibold">105mm M68</span>
+</div>
+<div class="bg-[#090e1a] p-2 rounded border border-[#1b2538]">
+<span class="text-[10px] text-slate-500 block uppercase">Weight</span>
+<span class="text-slate-200 font-semibold">48.0 Tons</span>
+</div>
+</div>
+</div>
+<!-- Manual Classname Input Field -->
+
+<!-- Quick Cursor Tactical Tools -->
+<div class="bg-[#0f172a] border border-[#202d45] rounded-lg p-3 space-y-2" data-purpose="cursor-quick-tools">
+<p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Quick Cursor Tactical Tools</p>
+<div class="grid grid-cols-1 gap-1.5">
+<!-- Tool 1: Raycast Cursor Spawn -->
+<button class="w-full flex items-center justify-between px-3 py-2 rounded bg-[#0a101f] hover:bg-[#142036] border border-[#1e2a40] text-left transition group">
+<div class="flex items-center space-x-2.5">
+<span class="text-blue-400 font-mono text-sm">⌖🚚</span>
+<div>
+<div class="text-xs font-semibold text-slate-200 group-hover:text-blue-300">Spawn at Cursor Target</div>
+<div class="text-[10px] text-slate-500">Raycast &amp; instant drop entity on ground normal</div>
+</div>
+</div>
+<span class="text-[10px] font-mono bg-[#162137] text-blue-400 px-2 py-0.5 rounded border border-blue-900/50">2x Click</span>
+</button>
+<!-- Tool 2: Cursor Entity Delete -->
+<button class="w-full flex items-center justify-between px-3 py-2 rounded bg-[#0a101f] hover:bg-rose-950/30 border border-[#1e2a40] hover:border-rose-900/60 text-left transition group">
+<div class="flex items-center space-x-2.5">
+<span class="text-rose-400 font-mono text-sm">⌖🗑️</span>
+<div>
+<div class="text-xs font-semibold text-slate-200 group-hover:text-rose-300">Delete Asset at Cursor</div>
+<div class="text-[10px] text-slate-500">Removes aimed entity safely from world grid</div>
+</div>
+</div>
+<span class="text-[10px] font-mono bg-rose-950/50 text-rose-400 px-2 py-0.5 rounded border border-rose-800/40">2x Click</span>
+</button>
+<!-- Tool 3: Personal Medkit Drop -->
+<button class="w-full flex items-center justify-between px-3 py-2 rounded bg-[#0a101f] hover:bg-emerald-950/30 border border-[#1e2a40] hover:border-emerald-800/60 text-left transition group">
+<div class="flex items-center space-x-2.5">
+<span class="text-emerald-400 font-mono text-sm">✚📦</span>
+<div>
+<div class="text-xs font-semibold text-slate-200 group-hover:text-emerald-300">Personal Medkit Crate</div>
+<div class="text-[10px] text-slate-500">Drops emergency medical supplies at player feet</div>
+</div>
+</div>
+<span class="text-[10px] font-mono bg-emerald-950/50 text-emerald-400 px-2 py-0.5 rounded border border-emerald-800/40">2x Click</span>
+</button>
+</div>
+</div>
+<!-- Spawn Options & Modifiers -->
+<div class="bg-[#0f172a] border border-[#202d45] rounded-lg p-3 space-y-2.5" data-purpose="spawn-modifiers">
+<p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Spawn Parameters &amp; Position</p>
+<!-- Radio Target Position -->
+<div class="grid grid-cols-3 gap-1.5 text-[11px] font-mono">
+<label class="flex items-center justify-center p-1.5 bg-[#090e1a] border border-blue-500/80 rounded cursor-pointer text-blue-300 font-semibold">
+<input checked="" class="sr-only" name="spawn_pos" type="radio">
+<span class="">Cursor Aim</span>
+</label>
+<label class="flex items-center justify-center p-1.5 bg-[#090e1a] border border-[#1d293d] rounded cursor-pointer text-slate-400 hover:text-slate-200">
+<input class="sr-only" name="spawn_pos" type="radio">
+<span class="">Admin +5m</span>
+</label>
+<label class="flex items-center justify-center p-1.5 bg-[#090e1a] border border-[#1d293d] rounded cursor-pointer text-slate-400 hover:text-slate-200">
+<input class="sr-only" name="spawn_pos" type="radio">
+<span class="">Obj Marker</span>
+</label>
+</div>
+<!-- Modifiers Checkboxes -->
+<div class="space-y-1.5 pt-1 text-xs text-slate-300 font-medium">
+<label class="flex items-center space-x-2 cursor-pointer">
+<input checked="" class="rounded bg-[#090e1a] border-[#223049] text-blue-600 focus:ring-0 w-3.5 h-3.5" type="checkbox">
+<span class="text-[11px]">Align to terrain normal &amp; slope surface</span>
+</label>
+<label class="flex items-center space-x-2 cursor-pointer">
+<input class="rounded bg-[#090e1a] border-[#223049] text-blue-600 focus:ring-0 w-3.5 h-3.5" type="checkbox">
+<span class="text-[11px] text-slate-400">Clear cargo inventory (Spawn stripped empty)</span>
+</label>
+</div>
+</div>
+<!-- Primary Execution Button -->
+<button class="w-full py-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-sm tracking-wider uppercase rounded-lg shadow-lg shadow-blue-600/30 transition flex items-center justify-center space-x-2 border border-blue-400/40" type="button">
+<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+<path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="">SPAWN ASSET (M60A1)</span>
+</button>
+</section>
+<!-- END: RightDeploymentControlsColumn -->
+</div>
+<!-- END: MainContentGrid -->
+<!-- BEGIN: BottomStatusBar -->
+
+<!-- END: BottomStatusBar -->
+</main>
+<!-- END: AdminSpawnPanelModal -->
+<!-- BEGIN: CustomScrollbarStyles -->
+<style data-purpose="scrollbar-styling">
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #090e1a;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #1f2c42;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #2a3a57;
+    }
+  </style>
+<!-- END: CustomScrollbarStyles -->
+
+
+
+
+</body></html>

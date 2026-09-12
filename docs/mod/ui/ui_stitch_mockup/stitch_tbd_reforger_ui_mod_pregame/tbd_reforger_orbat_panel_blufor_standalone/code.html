@@ -1,0 +1,418 @@
+<!DOCTYPE html><html lang="en" class="dark" style=""><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TBD Reforger - ORBAT Panel (Standalone)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: {
+              DEFAULT: '#0b1120',
+              dim: '#080e1d',
+              container: '#151b2b',
+              high: '#1e2638',
+              card: '#0d1527',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar for sleek tactical UI */
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(11, 17, 32, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(59, 130, 246, 0.25);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(59, 130, 246, 0.5);
+    }
+  </style>
+</head>
+<body class="bg-[#060a12] text-slate-200 font-sans min-h-screen p-6 flex justify-start items-start select-none">
+
+  <!-- Standalone Panel Container (aligned with standalone briefing panels width ~460px - 500px) -->
+  <div class="w-full max-w-[500px] bg-surface/95 border border-slate-800/80 rounded-xl shadow-2xl backdrop-blur-md flex flex-col overflow-hidden text-sm">
+    
+    <!-- Header -->
+    <div class="px-4 py-3.5 border-b border-slate-800/80 flex items-center justify-between bg-surface-dim/70">
+      <div class="flex items-center gap-2.5">
+        <!-- Squads / ORBAT Icon -->
+        <svg class="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        <span class="font-mono text-xs font-semibold tracking-wider text-slate-200 uppercase">ROLES</span>
+      </div>
+
+      <!-- Faction Strength Badge -->
+      
+    </div>
+
+    <!-- Squads List (Scrollable) -->
+    <div class="p-3.5 space-y-2.5 overflow-y-auto max-h-[85vh]">
+
+      <!-- SQUAD 1: ALPHA 1-1 (HQ) -->
+      <div class="border border-slate-800/80 rounded-lg bg-surface-dim/50 overflow-hidden transition-colors">
+        <!-- Squad Header (Collapsible trigger) -->
+        <div class="w-full px-3.5 py-2.5 flex items-center justify-between bg-slate-800/40 text-left"><div class="flex items-center gap-2.5 min-w-0"><span class="font-mono text-xs font-bold text-blue-400 px-1.5 py-0.5 rounded bg-blue-500/15 border border-blue-500/25 shrink-0">Alpha 1-1</span><span class="font-mono text-[11px] font-medium text-slate-300 px-2 py-0.5 rounded bg-slate-800/80 border border-slate-700/70 shrink-0">UAZ-3151</span></div><div class="flex items-center gap-2 shrink-0 ml-2"><span class="font-mono text-[11px] text-slate-400 px-1.5 py-0.5 rounded bg-slate-800/60 border border-slate-700/50">2/3</span></div></div>
+
+        <!-- Squad Roster Details -->
+        <div id="content-squad-1" class="border-t border-slate-800/70 divide-y divide-slate-800/50 bg-[#080d19]/80"><!-- Slot 1: Platoon Commander (Filled) -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">1: Platoon Commander</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AK-74</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 font-medium text-xs">[1stID] Miller</span>
+  </div>
+</div>
+
+<!-- Slot 2: Platoon Sergeant (Unslotted) -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs bg-slate-900/40">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-500">2: Platoon Sergeant</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-400 border border-slate-700/50">AK-74</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1 py-0.5">
+    <span class="font-mono text-[10px] text-slate-500 italic px-1.5 py-0.5 rounded bg-slate-800/40 border border-slate-800">Unslotted</span>
+  </div>
+</div>
+
+<!-- Slot 3: Platoon Medic (Filled) -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center gap-1.5">
+    <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">3: Platoon Medic</span>
+    <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AK-74</span>
+    <span class="text-[10px] font-mono px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">MED</span>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 font-medium text-xs">CPL Davis, R.</span>
+  </div>
+</div></div>
+      </div>
+
+      <!-- SQUAD 2: ALPHA 2-1 (Rifle Squad) -->
+      <div class="border border-slate-800/80 rounded-lg bg-surface-dim/50 overflow-hidden transition-colors">
+        <!-- Squad Header -->
+        <div class="w-full px-3.5 py-2.5 flex items-center justify-between bg-slate-800/40 text-left"><div class="flex items-center gap-2.5 min-w-0"><span class="font-mono text-xs font-bold text-blue-400 px-1.5 py-0.5 rounded bg-blue-500/15 border border-blue-500/25 shrink-0">Alpha 2-1</span><span class="font-mono text-[11px] font-medium text-slate-300 px-2 py-0.5 rounded bg-slate-800/80 border border-slate-700/70 shrink-0">BMP-2</span></div><div class="flex items-center gap-2 shrink-0 ml-2"><span class="font-mono text-[11px] text-slate-400 px-1.5 py-0.5 rounded bg-slate-800/60 border border-slate-700/50">7/8</span></div></div>
+
+        <!-- Squad Roster Details -->
+        <div id="content-squad-2" class="border-t border-slate-800/70 divide-y divide-slate-800/50 bg-[#080d19]/80"><!-- Slot 1: Squad Leader -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">1: Squad Leader</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AK-74</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 font-medium text-xs">SSG Vance, D.</span>
+  </div>
+</div>
+
+<!-- Slot 2: Team Leader -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">2: Team Leader</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AK-74</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-sm tracking-wider font-medium">SGT Kowalski, P.</span>
+  </div>
+</div>
+
+<!-- Slot 3: Automatic Rifleman -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">3: Automatic Rifleman</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">RPK-74</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-xs">SPC Ramos, C.</span>
+  </div>
+</div>
+
+<!-- Slot 4: Grenadier -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center gap-1.5">
+    <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">4: Grenadier</span>
+    <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AK-74 GL</span>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-xs">PFC Harris, M.</span>
+  </div>
+</div>
+
+<!-- Slot 5: Team Leader -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">5: Team Leader</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AK-74</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-sm tracking-wider font-medium">SPC Clark, H.</span>
+  </div>
+</div>
+
+<!-- Slot 6: Machine Gunner -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">6: Machine Gunner</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">PKM</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-xs">PFC Jones, T.</span>
+  </div>
+</div>
+
+<!-- Slot 7: Combat Medic [MED] (Unslotted) -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs bg-slate-900/40">
+  <div class="flex items-center gap-1.5">
+    <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-500">7: Combat Medic</span>
+    <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-400 border border-slate-700/50">AK-74</span>
+    <span class="text-[10px] font-mono px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">MED</span>
+  </div>
+  <div class="flex items-center pl-1 py-0.5">
+    <span class="font-mono text-[10px] text-slate-500 italic px-1.5 py-0.5 rounded bg-slate-800/40 border border-slate-800">Unslotted</span>
+  </div>
+</div>
+
+<!-- Slot 8: Rifleman (AT) -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">8: Rifleman (AT)</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AK-74</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-amber-400/90 border border-slate-700/70">RPG-7</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-xs">CPL Smith, K.</span>
+  </div>
+</div></div>
+      </div>
+
+      <!-- SQUAD 3: ALPHA 2-2 (Rifle Squad) -->
+      <div class="border border-slate-800/80 rounded-lg bg-surface-dim/50 overflow-hidden transition-colors">
+        <!-- Squad Header -->
+        <div class="w-full px-3.5 py-2.5 flex items-center justify-between bg-slate-800/40 text-left"><div class="flex items-center gap-2.5 min-w-0"><span class="font-mono text-xs font-bold text-blue-400 px-1.5 py-0.5 rounded bg-blue-500/15 border border-blue-500/25 shrink-0">Alpha 2-2</span><span class="font-mono text-[11px] font-medium text-slate-300 px-2 py-0.5 rounded bg-slate-800/80 border border-slate-700/70 shrink-0">BTR-80</span></div><div class="flex items-center gap-2 shrink-0 ml-2"><span class="font-mono text-[11px] text-slate-400 px-1.5 py-0.5 rounded bg-slate-800/60 border border-slate-700/50">6/8</span></div></div>
+
+        <!-- Squad Roster Details (Collapsed by default) -->
+        <div id="content-squad-3" class="border-t border-slate-800/70 divide-y divide-slate-800/50 bg-[#080d19]/80"><!-- Slot 1: Squad Leader -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">1: Squad Leader</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AK-74</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-xs">SGT Petrov, N.</span>
+  </div>
+</div>
+
+<!-- Slot 2: Vehicle Commander (Unslotted) -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs bg-slate-900/40">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-500">2: Vehicle Commander</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-400 border border-slate-700/50">AKS-74U</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1 py-0.5">
+    <span class="font-mono text-[10px] text-slate-500 italic px-1.5 py-0.5 rounded bg-slate-800/40 border border-slate-800">Unslotted</span>
+  </div>
+</div>
+
+<!-- Slot 3: Gunner -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">3: Gunner</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AKS-74U</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-xs">PFC Ivanov, D.</span>
+  </div>
+</div>
+
+<!-- Slot 4: Driver -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center gap-1.5">
+    <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">4: Driver</span>
+    <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AKS-74U</span>
+    <span class="text-[10px] font-mono px-1 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">ENG</span>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-xs">PFC Sidorov, V.</span>
+  </div>
+</div>
+
+<!-- Slot 5: Automatic Rifleman -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">5: Automatic Rifleman</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">RPK-74</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-xs">PFC Morozov, A.</span>
+  </div>
+</div>
+
+<!-- Slot 6: AT Specialist -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">6: AT Specialist</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AK-74</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-xs">PFC Popov, E.</span>
+  </div>
+</div>
+
+<!-- Slot 7: Rifleman (AT) -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">7: Rifleman (AT)</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AK-74</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-amber-400/90 border border-slate-700/70">RPG-7</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-xs">PVT Sokolov, M.</span>
+  </div>
+</div>
+
+<!-- Slot 8: Combat Medic (Unslotted) -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs bg-slate-900/40">
+  <div class="flex items-center gap-1.5">
+    <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-500">8: Combat Medic</span>
+    <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-400 border border-slate-700/50">AK-74</span>
+    <span class="text-[10px] font-mono px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">MED</span>
+  </div>
+  <div class="flex items-center pl-1 py-0.5">
+    <span class="font-mono text-[10px] text-slate-500 italic px-1.5 py-0.5 rounded bg-slate-800/40 border border-slate-800">Unslotted</span>
+  </div>
+</div></div>
+      </div>
+
+      <!-- SQUAD 4: BRAVO 1-1 (Armor Section) -->
+      <div class="border border-slate-800/80 rounded-lg bg-surface-dim/50 overflow-hidden transition-colors">
+        <!-- Squad Header -->
+        <div class="w-full px-3.5 py-2.5 flex items-center justify-between bg-slate-800/40 text-left"><div class="flex items-center gap-2.5 min-w-0"><span class="font-mono text-xs font-bold text-blue-400 px-1.5 py-0.5 rounded bg-blue-500/15 border border-blue-500/25 shrink-0">Bravo 1-1</span><span class="font-mono text-[11px] font-medium text-slate-300 px-2 py-0.5 rounded bg-slate-800/80 border border-slate-700/70 shrink-0">T-72B</span></div><div class="flex items-center gap-2 shrink-0 ml-2"><span class="font-mono text-[11px] text-slate-400 px-1.5 py-0.5 rounded bg-slate-800/60 border border-slate-700/50">3/3</span></div></div>
+
+        <!-- Squad Roster Details (Collapsed by default) -->
+        <div id="content-squad-4" class="border-t border-slate-800/70 divide-y divide-slate-800/50 bg-[#080d19]/80"><!-- Slot 1: Tank Commander -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">1: Tank Commander</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AKS-74U</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-xs">1LT Stone, B.</span>
+  </div>
+</div>
+
+<!-- Slot 2: Gunner -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">2: Gunner</span>
+      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AKS-74U</span>
+    </div>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-xs">SGT Becker, T.</span>
+  </div>
+</div>
+
+<!-- Slot 3: Driver | Eng -->
+<div class="px-3.5 py-2.5 flex flex-col gap-1 text-xs hover:bg-slate-800/20 transition-colors">
+  <div class="flex items-center gap-1.5">
+    <span class="text-[11px] font-semibold tracking-wider uppercase text-slate-400">3: Driver</span>
+    <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800/80 text-slate-300 border border-slate-700/70">AKS-74U</span>
+    <span class="text-[10px] font-mono px-1 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">ENG</span>
+  </div>
+  <div class="flex items-center pl-1">
+    <span class="font-mono text-amber-400 text-xs">SPC Volkov, Y.</span>
+  </div>
+</div></div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    function toggleAccordion(id) {
+      const content = document.getElementById(`content-${id}`);
+      const chevron = document.getElementById(`chevron-${id}`);
+      if (!content || !chevron) return;
+
+      const isHidden = content.classList.contains('hidden');
+      if (isHidden) {
+        content.classList.remove('hidden');
+        chevron.classList.remove('-rotate-90');
+      } else {
+        content.classList.add('hidden');
+        chevron.classList.add('-rotate-90');
+      }
+    }
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body></html>

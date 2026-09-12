@@ -1,0 +1,201 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TBD Reforger - Rules Panel (Standalone)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #070b14;
+      color: #e2e8f0;
+      margin: 0;
+      padding: 32px;
+      display: flex;
+      justify-content: flex-start;
+      align-items: flex-start;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(11, 17, 32, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #25334d;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3b82f6;
+    }
+    details summary::-webkit-details-marker {
+      display: none;
+    }
+    details summary {
+      list-style: none;
+    }
+  </style>
+</head>
+<body class="bg-[#070b14] text-slate-200 antialiased p-8">
+
+  <!-- Standalone Rules Panel Container -->
+  <div class="w-[480px] bg-[#0d1322]/95 backdrop-blur-xl border border-slate-800/80 rounded-xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col">
+    
+    <!-- Panel Header -->
+    <div class="px-5 py-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/60">
+      <div class="flex items-center space-x-2.5">
+        <span class="material-symbols-outlined text-[20px] text-slate-400">warning</span>
+        <h2 class="text-xs font-bold tracking-widest text-slate-200 uppercase font-mono">Rules</h2>
+      </div>
+      
+    </div>
+
+    <!-- Scrollable Accordion Content -->
+    <div class="p-4 space-y-3.5 max-h-[760px] overflow-y-auto">
+
+      <!-- SECTION 1: MISSION RULES (Top Drop-down / Collapsible, Open by default) -->
+      <details open="" class="group bg-[#111827]/70 border border-slate-800 rounded-lg overflow-hidden transition-all duration-200">
+        <summary class="flex items-center justify-between p-3.5 cursor-pointer select-none bg-slate-800/40 hover:bg-slate-800/70 border-b border-transparent group-open:border-slate-800/80 transition-colors">
+          <div class="flex items-center space-x-2.5">
+            <span class="material-symbols-outlined text-slate-400 text-[18px]">assignment</span>
+            <span class="text-xs font-bold tracking-wider text-slate-100 uppercase font-mono">Mission Rules</span>
+            
+          </div>
+          <div class="flex items-center space-x-2">
+            
+            <span class="material-symbols-outlined text-slate-400 text-[18px] transform transition-transform duration-200 group-open:rotate-180">expand_more</span>
+          </div>
+        </summary>
+
+        <div class="p-3.5 space-y-2.5 text-xs text-slate-300">
+          <!-- Mission Rule 1 -->
+          <div class="p-3 rounded-md bg-slate-900/60 border border-slate-800/60 flex items-start space-x-3">
+            <div class="mt-0.5 w-5 h-5 rounded flex items-center justify-center bg-slate-800 text-slate-300 font-mono text-[11px] font-bold shrink-0">1</div>
+            <div>
+              <div class="font-medium text-slate-100 mb-0.5">Dual Zone Capture Requirement</div>
+              <div class="text-[11px] text-slate-400 leading-relaxed">
+                Attackers must capture and secure <span class="text-blue-300 font-mono">both</span> the Southern and Northern sectors to achieve victory. Defenders win by holding at least one sector at mission timeout.
+              </div>
+            </div>
+          </div>
+
+          <!-- Mission Rule 2 -->
+          <div class="p-3 rounded-md bg-slate-900/60 border border-slate-800/60 flex items-start space-x-3">
+            <div class="mt-0.5 w-5 h-5 rounded flex items-center justify-center bg-slate-800 text-slate-300 font-mono text-[11px] font-bold shrink-0">2</div>
+            <div>
+              <div class="font-medium text-slate-100 mb-0.5">Crewman &amp; Armor Operation Restrictions</div>
+              <div class="text-[11px] text-slate-400 leading-relaxed">
+                Armored combat vehicles (BMP-2, M60A1, BTR-80) may <span class="text-amber-300">only</span> be crewed and operated by designated <span class="text-slate-200 font-mono">Engineer / Crewman</span> slot qualifications. Regular infantry may not operate primary armament or drive.
+              </div>
+            </div>
+          </div>
+
+          <!-- Mission Rule 3 -->
+          <div class="p-3 rounded-md bg-slate-900/60 border border-slate-800/60 flex items-start space-x-3">
+            <div class="mt-0.5 w-5 h-5 rounded flex items-center justify-center bg-slate-800 text-slate-300 font-mono text-[11px] font-bold shrink-0">3</div>
+            <div>
+              <div class="font-medium text-slate-100 mb-0.5">Sector Fortification Perimeter</div>
+              <div class="text-[11px] text-slate-400 leading-relaxed">
+                Field fortifications, sandbag barriers, and trenching tools cannot be constructed within <span class="text-red-300 font-mono">50 meters</span> of the central objective flag markers.
+              </div>
+            </div>
+          </div>
+
+          <!-- Mission Rule 4 -->
+          <div class="p-3 rounded-md bg-slate-900/60 border border-slate-800/60 flex items-start space-x-3">
+            <div class="mt-0.5 w-5 h-5 rounded flex items-center justify-center bg-slate-800 text-slate-300 font-mono text-[11px] font-bold shrink-0">4</div>
+            <div>
+              <div class="font-medium text-slate-100 mb-0.5">Capture Activation Delay</div>
+              <div class="text-[11px] text-slate-400 leading-relaxed">
+                Sector capture flags become active exactly <span class="text-blue-300 font-mono">5 minutes</span> after Safe Start lifts to allow defender deployment and initial fortification.
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <!-- SECTION 2: GENERAL RULES (Bottom Drop-down / Collapsible, Open by default) -->
+      <details class="group bg-[#111827]/70 border border-slate-800 rounded-lg overflow-hidden transition-all duration-200" open="">
+        <summary class="flex items-center justify-between p-3.5 cursor-pointer select-none bg-slate-800/40 hover:bg-slate-800/70 border-b border-transparent group-open:border-slate-800/80 transition-colors">
+          <div class="flex items-center space-x-2.5">
+            <span class="material-symbols-outlined text-slate-400 text-[18px]">assignment</span>
+            <span class="text-xs font-bold tracking-wider text-slate-100 uppercase font-mono">General Rules</span>
+            
+          </div>
+          <div class="flex items-center space-x-2">
+            
+            <span class="material-symbols-outlined text-slate-400 text-[18px] transform transition-transform duration-200 group-open:rotate-180">expand_more</span>
+          </div>
+        </summary>
+
+        <div class="p-3.5 space-y-2.5 text-xs text-slate-300">
+          <!-- General Rule 1 -->
+          <div class="p-3 rounded-md bg-slate-900/60 border border-slate-800/60 flex items-start space-x-3">
+            <div class="mt-0.5 w-5 h-5 rounded flex items-center justify-center bg-slate-800 text-slate-300 font-mono text-[11px] font-bold shrink-0">1</div>
+            <div>
+              <div class="font-medium text-slate-100 mb-0.5">Strict One-Life Elimination</div>
+              <div class="text-[11px] text-slate-400 leading-relaxed">
+                Death is permanent with no respawns. Eliminated players are transitioned immediately into spectator mode. Leaking intel or ghosting over external comms results in an administrative ban.
+              </div>
+            </div>
+          </div>
+
+          <!-- General Rule 2 -->
+          <div class="p-3 rounded-md bg-slate-900/60 border border-slate-800/60 flex items-start space-x-3">
+            <div class="mt-0.5 w-5 h-5 rounded flex items-center justify-center bg-slate-800 text-slate-300 font-mono text-[11px] font-bold shrink-0">2</div>
+            <div>
+              <div class="font-medium text-slate-100 mb-0.5">Safe Start &amp; Staging Adherence</div>
+              <div class="text-[11px] text-slate-400 leading-relaxed">
+                Discharging weapons, throwing ordnance, or crossing designated faction staging boundaries prior to <span class="text-emerald-400 font-mono">"WEAPONS FREE"</span> is strictly prohibited.
+              </div>
+            </div>
+          </div>
+
+          <!-- General Rule 3 -->
+          <div class="p-3 rounded-md bg-slate-900/60 border border-slate-800/60 flex items-start space-x-3">
+            <div class="mt-0.5 w-5 h-5 rounded flex items-center justify-center bg-slate-800 text-slate-300 font-mono text-[11px] font-bold shrink-0">3</div>
+            <div>
+              <div class="font-medium text-slate-100 mb-0.5">Radio Discipline &amp; Net Scoping</div>
+              <div class="text-[11px] text-slate-400 leading-relaxed">
+                Players must operate exclusively on their designated Long Range (LR) and Short Range (SR) assigned frequencies. Do not scan or transmit on enemy frequencies unless authorized by scenario rules.
+              </div>
+            </div>
+          </div>
+
+          <!-- General Rule 4 -->
+          <div class="p-3 rounded-md bg-slate-900/60 border border-slate-800/60 flex items-start space-x-3">
+            <div class="mt-0.5 w-5 h-5 rounded flex items-center justify-center bg-slate-800 text-slate-300 font-mono text-[11px] font-bold shrink-0">4</div>
+            <div>
+              <div class="font-medium text-slate-100 mb-0.5">Area of Operations (AO) Boundary</div>
+              <div class="text-[11px] text-slate-400 leading-relaxed">
+                Exiting the active tactical polygon triggers a warning countdown. Failure to return within the allotted grace period results in automatic character elimination.
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+    </div>
+
+    <!-- Panel Footer -->
+    
+
+  </div>
+
+
+
+
+
+
+
+
+</body></html>

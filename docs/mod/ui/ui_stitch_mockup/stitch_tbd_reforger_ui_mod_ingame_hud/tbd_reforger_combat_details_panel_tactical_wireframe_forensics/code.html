@@ -1,0 +1,436 @@
+<!DOCTYPE html><html class="h-full bg-[#080e1d]" lang="en" style=""><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>TBD Reforger - Combat Details Forensics</title>
+<!-- Tailwind CSS CDN with forms and container-queries plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Custom Configuration -->
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+          },
+          colors: {
+            tactical: {
+              bg: '#080e1d',
+              surface: '#0d1322',
+              card: '#111827',
+              border: '#1e293b',
+              accent: '#3b82f6',
+              cyan: '#38bdf8',
+              opfor: '#ef4444',
+              blufor: '#3b82f6',
+              warning: '#f59e0b',
+              muted: '#64748b',
+              text: '#f1f5f9',
+            }
+          }
+        }
+      }
+    };
+  </script>
+<!-- Font loading -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Tactical Grid and Custom HUD Style Sheets -->
+<style data-purpose="tactical-grid-background">
+    .tactical-grid {
+      background-color: #080e1d;
+      background-image: 
+        linear-gradient(rgba(30, 41, 59, 0.35) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30, 41, 59, 0.35) 1px, transparent 1px),
+        linear-gradient(rgba(56, 189, 248, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+      background-size: 24px 24px, 24px 24px, 96px 96px, 96px 96px;
+      background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+    }
+  </style>
+<style data-purpose="hud-accents">
+    /* Subtle scanline and panel corner indicators */
+    .corner-bracket {
+      position: relative;
+    }
+    .corner-bracket::before,
+    .corner-bracket::after {
+      content: '';
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-color: #38bdf8;
+      pointer-events: none;
+    }
+    .corner-bracket::before {
+      top: -1px;
+      left: -1px;
+      border-top: 1px solid #38bdf8;
+      border-left: 1px solid #38bdf8;
+    }
+    .corner-bracket::after {
+      bottom: -1px;
+      right: -1px;
+      border-bottom: 1px solid #38bdf8;
+      border-right: 1px solid #38bdf8;
+    }
+
+    /* Custom scrollbar for tactical logs */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0d1322;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="h-full tactical-grid font-sans text-slate-200 antialiased flex items-center justify-center p-3 sm:p-6 select-none overflow-x-hidden">
+<!-- BEGIN: CombatDetailsModal -->
+<div class="w-full max-w-5xl bg-[#0d1322]/95 backdrop-blur-md border border-slate-700/80 rounded shadow-2xl shadow-black/80 flex flex-col overflow-hidden relative" data-purpose="combat-details-container">
+<!-- Top decorative technical readout bar -->
+
+<!-- BEGIN: PanelHeader -->
+<header class="border-b border-slate-800 px-6 py-4 bg-[#0a0f1d]/80 flex flex-col gap-3" data-purpose="panel-header">
+<!-- Top Row: Identity, Status, and Controls -->
+<div class="flex items-center justify-between flex-wrap gap-4">
+<!-- Left: Target Identity & Tag -->
+<div class="flex items-center gap-3">
+<div class="w-2.5 h-7 bg-blue-500 rounded-sm"></div>
+<div>
+
+<div class="flex items-center gap-3 mt-0.5">
+<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+<span class="text-blue-400 font-mono text-base">[LG]</span>
+<span class="">Yuki_Hattori</span>
+</h1>
+<!-- Status Pill -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono font-medium tracking-wide bg-red-950/60 text-red-400 border border-red-800/60">
+<span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                K.I.A.
+              </span>
+</div>
+</div>
+</div>
+<!-- Right: Metrics & ESC Command -->
+<div class="flex items-center gap-4">
+<!-- Combat Score Mini Chips -->
+<div class="flex items-center gap-2 font-mono text-xs">
+<div class="px-3 py-1 bg-slate-900/90 border border-slate-800 rounded">
+<span class="text-slate-400">KILLS:</span>
+<span class="font-bold text-emerald-400 ml-1">3</span>
+</div>
+<div class="px-3 py-1 bg-slate-900/90 border border-slate-800 rounded">
+<span class="text-slate-400">KILLER:</span>
+<span class="font-bold text-red-400 ml-1">[XOF] Ales</span>
+</div>
+</div>
+<!-- Close / ESC Button -->
+
+</div>
+</div>
+<!-- Fatal Blow Banner Strip -->
+<div class="bg-red-950/30 border border-red-900/40 rounded px-3 py-2 flex items-center justify-between flex-wrap gap-2 text-xs font-mono" data-purpose="fatal-blow-summary">
+<div class="flex items-center gap-2 text-slate-300">
+<span class="text-red-400 font-bold uppercase tracking-wider flex items-center gap-1">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewBox="0 0 24 24">
+<circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line>
+</svg>
+            Fatal Blow:
+          </span>
+<span class="text-white font-medium">AK-74M (5.45×39mm 7N22 AP) @ 142m</span>
+<span class="text-slate-500">•</span>
+<span class="text-red-300">Headshot</span>
+</div>
+
+</div>
+</header>
+<!-- END: PanelHeader -->
+<!-- BEGIN: PanelContent -->
+<main class="grid grid-cols-1 lg:grid-cols-12 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-800 bg-[#0b101e]" data-purpose="forensic-grid">
+<!-- ============================================== -->
+<!-- LEFT COLUMN: Incoming Damage & Wireframe      -->
+<!-- ============================================== -->
+<section class="lg:col-span-6 p-5 flex flex-col justify-between" data-purpose="incoming-damage-column">
+<div>
+<!-- Section Heading -->
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-red-500 rounded-sm"></div>
+<h2 class="text-xs font-mono font-bold tracking-wider text-slate-200 uppercase">
+                Incoming Damage &amp; Anatomical Trauma
+              </h2>
+</div>
+<span class="text-[11px] font-mono text-slate-400">Total Hits: 4</span>
+</div>
+<!-- Anatomical Wireframe Container -->
+<div class="relative bg-slate-900/70 border border-slate-800/80 rounded p-4 flex flex-col items-center justify-center corner-bracket">
+<!-- Wireframe Silhouette Graphic -->
+<div class="relative w-full max-w-[280px] h-[260px] flex items-center justify-center">
+<svg class="h-full w-auto drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 200 320">
+<!-- Grid background inside mannequin -->
+<defs>
+<pattern height="8" id="smallGrid" patternUnits="userSpaceOnUse" width="8">
+<path d="M 8 0 L 0 0 0 8" fill="none" stroke="#1e293b" stroke-width="0.5"></path>
+</pattern>
+<radialGradient cx="50%" cy="50%" id="fatalGlow" r="50%">
+<stop offset="0%" stop-color="#ef4444" stop-opacity="0.8"></stop>
+<stop offset="100%" stop-color="#ef4444" stop-opacity="0"></stop>
+</radialGradient>
+<radialGradient cx="50%" cy="50%" id="torsoGlow" r="50%">
+<stop offset="0%" stop-color="#f59e0b" stop-opacity="0.6"></stop>
+<stop offset="100%" stop-color="#f59e0b" stop-opacity="0"></stop>
+</radialGradient>
+</defs>
+<!-- Human Blueprint Wireframe -->
+<!-- Head -->
+<ellipse class="stroke-slate-600" cx="100" cy="38" fill="#0f172a" rx="16" ry="20" stroke-width="1.5"></ellipse>
+<!-- Fatal Impact Aura on Head -->
+<circle class="animate-pulse" cx="100" cy="36" fill="url(#fatalGlow)" r="19"></circle>
+<line stroke="#ef4444" stroke-width="1.5" x1="90" x2="110" y1="36" y2="36"></line>
+<line stroke="#ef4444" stroke-width="1.5" x1="100" x2="100" y1="26" y2="46"></line>
+<!-- Neck -->
+<line class="stroke-slate-600" stroke-width="1.5" x1="94" x2="94" y1="58" y2="66"></line>
+<line class="stroke-slate-600" stroke-width="1.5" x1="106" x2="106" y1="58" y2="66"></line>
+<!-- Torso / Body Armor Region -->
+<path class="stroke-slate-600" d="M72,68 L128,68 L122,154 L78,154 Z" fill="#0f172a" stroke-width="1.5"></path>
+<!-- Torso Damage Area (Upper Chest Penetrations) -->
+<path d="M76,74 L124,74 L120,118 L80,118 Z" fill="url(#torsoGlow)" stroke="#f59e0b" stroke-dasharray="2 2" stroke-width="1"></path>
+<circle cx="92" cy="92" fill="#f59e0b" r="3" stroke="#78350f" stroke-width="1"></circle>
+<circle cx="107" cy="98" fill="#f59e0b" r="3" stroke="#78350f" stroke-width="1"></circle>
+<!-- Abdomen / Pelvis -->
+<path class="stroke-slate-600" d="M78,154 L122,154 L114,190 L86,190 Z" fill="#0f172a" stroke-width="1.5"></path>
+<!-- Shrapnel in Lower Pelvis -->
+<circle cx="98" cy="172" fill="#f97316" r="2.5"></circle>
+<!-- Left Arm -->
+<path class="stroke-slate-600" d="M72,70 L52,120 L44,170" stroke-linecap="round" stroke-linejoin="round" stroke-width="6"></path>
+<path class="stroke-slate-900" d="M72,70 L52,120 L44,170" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path>
+<!-- Right Arm -->
+<path class="stroke-slate-600" d="M128,70 L148,120 L156,170" stroke-linecap="round" stroke-linejoin="round" stroke-width="6"></path>
+<path class="stroke-slate-900" d="M128,70 L148,120 L156,170" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path>
+<!-- Left Leg -->
+<path class="stroke-slate-600" d="M88,190 L82,250 L80,310" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"></path>
+<path class="stroke-slate-900" d="M88,190 L82,250 L80,310" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"></path>
+<!-- Right Leg -->
+<path class="stroke-slate-600" d="M112,190 L118,250 L120,310" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"></path>
+<path class="stroke-slate-900" d="M112,190 L118,250 L120,310" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"></path>
+<!-- Right Thigh Heavy Shrapnel -->
+<circle cx="115" cy="225" fill="#ef4444" r="4" stroke="#7f1d1d" stroke-width="1"></circle>
+<line stroke="#ef4444" stroke-width="1" x1="115" x2="115" y1="219" y2="231"></line>
+<line stroke="#ef4444" stroke-width="1" x1="109" x2="121" y1="225" y2="225"></line>
+</svg>
+<!-- Callout Pin: Head 100% Fatal -->
+<div class="absolute -top-1 right-2 sm:right-6 flex items-center gap-1 font-mono text-[11px] bg-red-950/80 border border-red-700/70 text-red-300 px-2 py-0.5 rounded shadow">
+<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+<span class="">HEAD: 100% (Fatal Blow)</span>
+</div>
+<!-- Callout Pin: Torso Plate -->
+<div class="absolute top-20 left-2 flex items-center gap-1 font-mono text-[10px] bg-amber-950/80 border border-amber-700/60 text-amber-300 px-1.5 py-0.5 rounded shadow">
+<span class="">TORSO: 45% Trauma</span>
+</div>
+<!-- Callout Pin: Right Thigh Shrapnel -->
+<div class="absolute bottom-10 right-0 sm:right-4 flex items-center gap-1 font-mono text-[10px] bg-orange-950/80 border border-orange-700/60 text-orange-300 px-1.5 py-0.5 rounded shadow">
+<span class="">R-THIGH: Art. Bleed</span>
+</div>
+</div>
+<!-- Mannequin Sub-legend -->
+<div class="w-full flex items-center justify-around border-t border-slate-800/80 pt-2.5 mt-2 font-mono text-[10px] text-slate-400">
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-red-500"></span> Lethal Penetration
+              </span>
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-amber-500"></span> Armor Damaged
+              </span>
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-orange-500"></span> Explosive Frag
+              </span>
+</div>
+</div>
+<!-- Chronological Incoming Forensic Damage Log -->
+<div class="mt-4">
+<h3 class="font-mono text-xs text-slate-400 font-semibold mb-2 uppercase tracking-wide">
+              Forensic Trauma Log
+            </h3>
+<div class="space-y-1.5 font-mono text-xs">
+<!-- Entry 1 (Head) -->
+<div class="p-2 rounded bg-red-950/20 border-l-2 border-red-500 border border-slate-800/60 flex items-center justify-between">
+<div>
+<div class="font-bold text-red-300 flex items-center gap-2">
+<span class="">HEAD</span>
+<span class="text-slate-500">|</span>
+<span class="text-slate-200">5.45×39mm 7N22 AP</span>
+</div>
+<div class="text-[11px] text-slate-400">Shooter: <span class="text-red-400 font-medium">[XOF] Ales</span> • Distance: 142m</div>
+</div>
+<span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-red-900/50 text-red-300 border border-red-700/50">LETHAL</span>
+</div>
+<!-- Entry 2 (Torso) -->
+<div class="p-2 rounded bg-slate-900/40 border-l-2 border-amber-500 border border-slate-800/60 flex items-center justify-between">
+<div>
+<div class="font-bold text-amber-300 flex items-center gap-2">
+<span class="">UPPER TORSO</span>
+<span class="text-slate-500">|</span>
+<span class="text-slate-200">2x 5.45×39mm 7N22</span>
+</div>
+<div class="text-[11px] text-slate-400">Shooter: <span class="text-red-400 font-medium">[XOF] Ales</span> • Distance: 145m</div>
+</div>
+<span class="text-[10px] text-slate-300">Vest Penetration</span>
+</div>
+<!-- Entry 3 (Right Thigh) -->
+<div class="p-2 rounded bg-slate-900/40 border-l-2 border-orange-500 border border-slate-800/60 flex items-center justify-between">
+<div>
+<div class="font-bold text-orange-300 flex items-center gap-2">
+<span class="">RIGHT THIGH</span>
+<span class="text-slate-500">|</span>
+<span class="text-slate-200">ace_frag_huge</span>
+</div>
+<div class="text-[11px] text-slate-400">Source: <span class="text-slate-300">[HF] 152mm Field Battery</span></div>
+</div>
+<span class="text-[10px] text-orange-400 font-semibold">Severe Bleed</span>
+</div>
+<!-- Entry 4 (Lower Abdomen) -->
+<div class="p-2 rounded bg-slate-900/40 border-l-2 border-slate-600 border border-slate-800/60 flex items-center justify-between">
+<div>
+<div class="font-bold text-slate-300 flex items-center gap-2">
+<span class="">LOWER ABDOMEN</span>
+<span class="text-slate-500">|</span>
+<span class="text-slate-200">ace_frag_small HD</span>
+</div>
+<div class="text-[11px] text-slate-400">Secondary indirect fragmentation</div>
+</div>
+<span class="text-[10px] text-slate-400">Light Spall</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ============================================== -->
+<!-- RIGHT COLUMN: Outgoing Combat & Eliminations  -->
+<!-- ============================================== -->
+<section class="lg:col-span-6 p-5 flex flex-col justify-between" data-purpose="outgoing-combat-column">
+<div>
+<!-- Section Heading -->
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-blue-500 rounded-sm"></div>
+<h2 class="text-xs font-mono font-bold tracking-wider text-slate-200 uppercase">
+                Outgoing Combat (Hits &amp; Eliminations)
+              </h2>
+</div>
+<span class="text-[11px] font-mono text-emerald-400 font-semibold">3 Confirmed Kills</span>
+</div>
+<!-- Combat Event Feed -->
+<div class="space-y-2.5">
+<!-- Kill Event 1 -->
+<div class="p-3 bg-slate-900/60 border border-slate-800 rounded hover:border-slate-700 transition-colors" data-purpose="combat-card-kill-1">
+<div class="flex items-center justify-between font-mono text-xs">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-700/60 text-emerald-400 font-bold">KILL</span>
+<span class="font-bold text-white text-sm">gHosT</span>
+<span class="text-slate-500 text-[11px]">(K.I.A.)</span>
+</div>
+<span class="text-slate-400 font-mono text-[11px]">08:12</span>
+</div>
+<div class="mt-2 text-xs font-mono text-slate-300 flex items-center gap-2 pl-2 border-l border-slate-700">
+<span class="text-slate-500">└─</span>
+<span class="">RGD-5 Frag Grenade</span>
+<span class="text-slate-400 text-[11px]">(Blast Shrapnel @ 18m)</span>
+</div>
+</div>
+<!-- Kill Event 2 -->
+<div class="p-3 bg-slate-900/60 border border-slate-800 rounded hover:border-slate-700 transition-colors" data-purpose="combat-card-kill-2">
+<div class="flex items-center justify-between font-mono text-xs">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-700/60 text-emerald-400 font-bold">KILL</span>
+<span class="font-bold text-white text-sm">[L-13] Kolin</span>
+<span class="text-slate-500 text-[11px]">(K.I.A.)</span>
+</div>
+<span class="text-slate-400 font-mono text-[11px]">14:45</span>
+</div>
+<div class="mt-2 text-xs font-mono text-slate-300 flex items-center gap-2 pl-2 border-l border-slate-700">
+<span class="text-slate-500">└─</span>
+<span class="">3x 5.45×39mm Torso (Penetration)</span>
+<span class="text-slate-400 text-[11px]">@ 85m</span>
+</div>
+</div>
+<!-- Kill Event 3 -->
+<div class="p-3 bg-slate-900/60 border border-slate-800 rounded hover:border-slate-700 transition-colors" data-purpose="combat-card-kill-3">
+<div class="flex items-center justify-between font-mono text-xs">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-700/60 text-emerald-400 font-bold">KILL</span>
+<span class="font-bold text-white text-sm">[L-13] ProrocK</span>
+<span class="text-slate-500 text-[11px]">(K.I.A.)</span>
+</div>
+<span class="text-slate-400 font-mono text-[11px]">17:03</span>
+</div>
+<div class="mt-2 text-xs font-mono text-slate-300 flex items-center gap-2 pl-2 border-l border-slate-700">
+<span class="text-slate-500">└─</span>
+<span class="text-amber-300">1x 5.45×39mm Headshot</span>
+<span class="text-slate-400 text-[11px]">(Terminal) @ 110m</span>
+</div>
+</div>
+<!-- Non-Lethal Hit Event 4 -->
+<div class="p-3 bg-slate-900/30 border border-slate-800/80 rounded hover:border-slate-700 transition-colors" data-purpose="combat-card-hit-1">
+<div class="flex items-center justify-between font-mono text-xs">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-blue-950/70 border border-blue-700/60 text-blue-400 font-semibold">HIT</span>
+<span class="font-semibold text-slate-200 text-sm">[XOF] Ales</span>
+<span class="text-amber-500 text-[11px]">(Wounded)</span>
+</div>
+<span class="text-slate-400 font-mono text-[11px]">23:18</span>
+</div>
+<div class="mt-2 text-xs font-mono text-slate-400 flex items-center gap-2 pl-2 border-l border-slate-800">
+<span class="text-slate-600">└─</span>
+<span class="">1x 5.45×39mm Right Leg</span>
+<span class="text-slate-500 text-[11px]">/ Non-lethal @ 142m</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Outgoing Ballistic Performance Metrics Summary -->
+<div class="mt-5 pt-4 border-t border-slate-800" data-purpose="accuracy-summary">
+<div class="text-[11px] font-mono text-slate-400 uppercase tracking-wider mb-2 font-semibold">Engagement Summary</div>
+<div class="grid grid-cols-3 gap-2 font-mono text-center">
+<div class="p-2 bg-slate-900/80 border border-slate-800 rounded">
+<div class="text-slate-400 text-[10px]">SHOTS FIRED</div>
+<div class="text-sm font-bold text-white mt-0.5">7</div>
+</div>
+<div class="p-2 bg-slate-900/80 border border-slate-800 rounded">
+<div class="text-slate-400 text-[10px]">TARGET ACCURACY</div>
+<div class="text-sm font-bold text-sky-400 mt-0.5">71.4% <span class="text-[10px] text-slate-400 font-normal">(5/7)</span></div>
+</div>
+
+</div>
+</div>
+</section>
+</main>
+<!-- END: PanelContent -->
+<!-- BEGIN: PanelFooter -->
+
+<!-- END: PanelFooter -->
+</div>
+<!-- END: CombatDetailsModal -->
+<!-- BEGIN: InteractiveScripts -->
+<script data-purpose="keyboard-esc-handler">
+    // Allow closing or toggling with standard game UI keyboard ESC key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        const container = document.querySelector('[data-purpose="combat-details-container"]');
+        if (container) {
+          container.classList.toggle('opacity-30');
+        }
+      }
+    });
+  </script>
+<!-- END: InteractiveScripts -->
+
+
+</body></html>

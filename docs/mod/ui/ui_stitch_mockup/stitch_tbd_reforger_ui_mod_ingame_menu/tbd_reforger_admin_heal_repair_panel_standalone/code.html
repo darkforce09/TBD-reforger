@@ -1,0 +1,494 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>TBD Reforger - Admin Heal &amp; Repair Panel (Standalone)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            tactical: {
+              bg: '#080e1d',
+              panel: '#0c1322',
+              card: '#121a2d',
+              cardAlt: '#0e1626',
+              cardHover: '#17223b',
+              border: '#1b273d',
+              borderLight: '#263553',
+              accent: '#2563eb',
+              accentHover: '#1d4ed8',
+              cyan: '#38bdf8',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              rose: '#f43f5e'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style data-purpose="custom-scrollbars">
+    /* Custom sleek military terminal scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b1120;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1f2c47;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2e4169;
+    }
+  </style>
+<style data-purpose="tactical-glows">
+    .glow-border-selected {
+      border-color: #3b82f6;
+      box-shadow: 0 0 14px rgba(37, 99, 235, 0.22);
+    }
+    .pulse-dot {
+      animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.92); }
+    }
+  </style>
+</head>
+<body class="bg-[#070c18] text-slate-200 font-sans min-h-screen flex items-center justify-center p-3 lg:p-6 select-none antialiased">
+<!-- BEGIN: StandaloneModalContainer -->
+<main class="w-full max-w-[1140px] bg-tactical-panel border border-[#1d2a44] rounded-xl shadow-2xl shadow-black/80 flex flex-col overflow-hidden text-xs" data-purpose="admin-heal-repair-panel">
+<!-- BEGIN: PanelHeader -->
+<header class="px-5 py-3.5 border-b border-[#182339] bg-[#0c1424] flex flex-col gap-2.5">
+<!-- Top Title & Network Diagnostic Bar -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<!-- Icon: Cross + Wrench dual tactical badge -->
+<div class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-inner">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 4v16m8-8H4M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div class="flex items-center gap-2">
+<h1 class="text-sm font-bold tracking-wider text-slate-100 uppercase">HEAL &amp; REPAIR</h1>
+<span class="bg-amber-500/15 text-amber-400 border border-amber-500/40 text-[10px] px-2 py-0.5 rounded font-semibold tracking-wider uppercase">ADMIN</span>
+</div>
+<!-- RPC Telemetry Badge -->
+
+</div>
+<!-- Server Performance Metrics & Dismiss Button -->
+<div class="flex items-center gap-4 text-[11px] font-mono text-slate-400">
+<div class="flex items-center gap-1.5">
+<span class="text-slate-500">SERVER FPS:</span>
+<span class="text-emerald-400 font-semibold">120</span>
+</div>
+<span class="text-slate-600">•</span>
+<div class="flex items-center gap-1.5">
+<span class="text-slate-500">TIME:</span>
+<span class="text-slate-200">11:30</span>
+</div>
+
+</div>
+</div>
+<!-- Quick Subheader Triage Metrics Bar -->
+
+</header>
+<!-- END: PanelHeader -->
+<!-- BEGIN: NavigationTabs -->
+
+<!-- END: NavigationTabs -->
+<!-- BEGIN: MainContentSplitGrid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-0 divide-y lg:divide-y-0 lg:divide-x divide-[#182339] bg-[#0a1120]">
+<!-- BEGIN: LeftColumn (Entity & Roster Browser) -->
+<section aria-label="Entity Roster Filter" class="lg:col-span-5 p-4 flex flex-col gap-3">
+<!-- Search bar input -->
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<input class="w-full bg-[#0e1628] border border-[#1b273f] rounded-lg pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors" placeholder="Search player, crew, or vehicle asset..." type="text">
+</div>
+<!-- Filter category pill pills -->
+<div class="flex items-center gap-1.5 overflow-x-auto pb-1">
+<button class="px-2.5 py-1 rounded bg-blue-600/25 border border-blue-500/50 text-blue-300 font-semibold text-[10px] whitespace-nowrap" type="button">
+            ALL (12)
+          </button>
+<button class="px-2.5 py-1 rounded bg-[#0f172a] hover:bg-[#162138] border border-[#1c2a44] text-slate-400 hover:text-slate-200 text-[10px] whitespace-nowrap transition-colors" type="button">
+            INFANTRY (6)
+          </button>
+<button class="px-2.5 py-1 rounded bg-[#0f172a] hover:bg-[#162138] border border-[#1c2a44] text-slate-400 hover:text-slate-200 text-[10px] whitespace-nowrap transition-colors" type="button">
+            VEHICLES (4)
+          </button>
+<button class="px-2.5 py-1 rounded bg-[#0f172a] hover:bg-[#162138] border border-[#1c2a44] text-slate-400 hover:text-slate-200 text-[10px] whitespace-nowrap transition-colors" type="button">
+            ARMOR (2)
+          </button>
+</div>
+<!-- Entity Scrollable List -->
+<div class="flex flex-col gap-2 overflow-y-auto max-h-[580px] pr-1">
+<!-- Card 1: ACTIVE / SELECTED TARGET (Captain Miller - Critical Bleed) -->
+<div class="p-3 rounded-lg bg-[#111a2f] border border-blue-500 shadow-md shadow-blue-950/40 relative cursor-pointer" data-purpose="roster-item-selected">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.5 rounded bg-blue-600/30 text-blue-300 border border-blue-500/40 font-bold text-[9px] font-mono">BLUFOR</span>
+<span class="font-bold text-slate-100 text-xs tracking-wide">[1stID] Cpt. Miller</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/40 text-rose-400 text-[9px] font-bold uppercase tracking-wider animate-pulse">
+                CRITICAL: 142 BPM
+              </span>
+</div>
+<div class="flex items-center justify-between text-[10px] text-slate-400 mb-2">
+<span class="">Alpha 1-1 • On Foot</span>
+<span class="text-rose-400 font-mono">BLEEDING (-0.4L/m)</span>
+</div>
+<!-- Health Bar -->
+<div class="w-full bg-[#080d18] rounded-full h-1.5 overflow-hidden flex items-center border border-slate-800">
+<div class="bg-rose-500 h-full rounded-full w-[38%] shadow-sm"></div>
+</div>
+<div class="flex justify-between items-center text-[9px] font-mono text-slate-400 mt-1">
+<span class="">HITPOINTS: 38%</span>
+<span class="text-rose-400">UNCONSCIOUS</span>
+</div>
+</div>
+<!-- Card 2: M60A1 Patton Tank (BLUFOR - Blown Track & Damaged Engine) -->
+<div class="p-3 rounded-lg bg-[#0e1628] hover:bg-[#121c32] border border-[#1b2842] cursor-pointer transition-colors" data-purpose="roster-item">
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.5 rounded bg-blue-600/20 text-blue-400 border border-blue-500/30 font-bold text-[9px] font-mono">BLUFOR</span>
+<span class="font-semibold text-slate-200 text-xs">M60A1 Patton Tank #101</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[9px] font-semibold">
+                ENGINE DAMAGED
+              </span>
+</div>
+<div class="text-[10px] text-slate-400 mb-2">
+              Driver: CPL Davis | Gunner: SSG Vance
+            </div>
+<!-- Health Bar -->
+<div class="w-full bg-[#080d18] rounded-full h-1.5 overflow-hidden flex items-center border border-slate-800">
+<div class="bg-amber-500 h-full rounded-full w-[45%]"></div>
+</div>
+<div class="flex justify-between items-center text-[9px] font-mono text-slate-400 mt-1">
+<span class="">HULL: 45% • FUEL: 72%</span>
+<span class="text-amber-400">TRACK BLOWN</span>
+</div>
+</div>
+<!-- Card 3: UH-1H Iroquois (BLUFOR - Mobility Kill) -->
+<div class="p-3 rounded-lg bg-[#0e1628] hover:bg-[#121c32] border border-[#1b2842] cursor-pointer transition-colors" data-purpose="roster-item">
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.5 rounded bg-blue-600/20 text-blue-400 border border-blue-500/30 font-bold text-[9px] font-mono">BLUFOR</span>
+<span class="font-semibold text-slate-200 text-xs">UH-1H Iroquois (Slick)</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[9px] font-semibold">
+                TAIL ROTOR CRIT
+              </span>
+</div>
+<div class="text-[10px] text-slate-400 mb-2">
+              Pilot: WO1 Jenkins • Chalk 2
+            </div>
+<div class="w-full bg-[#080d18] rounded-full h-1.5 overflow-hidden flex items-center border border-slate-800">
+<div class="bg-amber-500 h-full rounded-full w-[58%]"></div>
+</div>
+<div class="flex justify-between items-center text-[9px] font-mono text-slate-400 mt-1">
+<span class="">HULL: 58% • ROTOR: 12%</span>
+<span class="text-amber-400">MOBILITY KILL</span>
+</div>
+</div>
+<!-- Card 4: [XOF] Ales (OPFOR - Stable / Nominal) -->
+<div class="p-3 rounded-lg bg-[#0e1628] hover:bg-[#121c32] border border-[#1b2842] cursor-pointer transition-colors" data-purpose="roster-item">
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.5 rounded bg-rose-600/20 text-rose-400 border border-rose-500/30 font-bold text-[9px] font-mono">OPFOR</span>
+<span class="font-semibold text-slate-200 text-xs">[XOF] Ales</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[9px] font-semibold">
+                STABLE • 100%
+              </span>
+</div>
+<div class="text-[10px] text-slate-400 mb-2">
+              Opfor Commander • In BTR-70
+            </div>
+<div class="w-full bg-[#080d18] rounded-full h-1.5 overflow-hidden flex items-center border border-slate-800">
+<div class="bg-emerald-500 h-full rounded-full w-[100%]"></div>
+</div>
+<div class="flex justify-between items-center text-[9px] font-mono text-slate-400 mt-1">
+<span class="">HITPOINTS: 100%</span>
+<span class="text-emerald-400">VITALS OK</span>
+</div>
+</div>
+<!-- Card 5: M923A1 Repair Truck (BLUFOR - Overturned) -->
+<div class="p-3 rounded-lg bg-[#0e1628] hover:bg-[#121c32] border border-[#1b2842] cursor-pointer transition-colors" data-purpose="roster-item">
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.5 rounded bg-blue-600/20 text-blue-400 border border-blue-500/30 font-bold text-[9px] font-mono">BLUFOR</span>
+<span class="font-semibold text-slate-200 text-xs">M923A1 Repair Truck</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[9px] font-semibold">
+                FLIPPED / INVERTED
+              </span>
+</div>
+<div class="text-[10px] text-slate-400 mb-2">
+              Unmanned • Depot Perimeter
+            </div>
+<div class="w-full bg-[#080d18] rounded-full h-1.5 overflow-hidden flex items-center border border-slate-800">
+<div class="bg-blue-500 h-full rounded-full w-[88%]"></div>
+</div>
+<div class="flex justify-between items-center text-[9px] font-mono text-slate-400 mt-1">
+<span class="">HULL: 88% • ROLL: 178°</span>
+<span class="text-amber-400 font-semibold">REQUIRES FLIP</span>
+</div>
+</div>
+</div>
+</section>
+<!-- END: LeftColumn -->
+<!-- BEGIN: RightColumn (Inspection, Diagnostics & Action Interventions) -->
+<section aria-label="Target Diagnostics and Action Interventions" class="lg:col-span-7 p-4 flex flex-col gap-4 bg-[#0a1120]">
+<!-- BEGIN: TargetDossierHeader -->
+<div class="p-3.5 rounded-lg bg-[#0f172a] border border-[#1e2a44] flex flex-col gap-3" data-purpose="target-dossier">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+
+<div>
+<div class="flex items-center gap-2">
+
+<span class="font-bold text-slate-100 text-sm">[1stID] Cpt. Miller</span>
+<span class="px-1.5 py-0.2 rounded bg-blue-600/25 text-blue-300 border border-blue-500/40 text-[9px] font-mono">BLUFOR</span>
+</div>
+
+</div>
+</div>
+<!-- Quick Teleport & Spectate Shortcuts -->
+<div class="flex items-center gap-1.5">
+<button class="px-2.5 py-1.5 rounded bg-[#162035] hover:bg-[#1d2b47] border border-[#233352] text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 font-medium text-[11px]" type="button">
+<svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+                Teleport To
+              </button>
+<button class="px-2.5 py-1.5 rounded bg-[#162035] hover:bg-[#1d2b47] border border-[#233352] text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 font-medium text-[11px]" type="button">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+                Spectate
+              </button>
+</div>
+</div>
+<!-- Diagnostic Telemetry 3-Card Grid -->
+<div class="grid grid-cols-3 gap-2 text-[10px] font-mono">
+<!-- Vitals Card -->
+<div class="p-2 rounded bg-[#0b1120] border border-[#182339]">
+<div class="text-slate-500 mb-1">HEALTH &amp; VITALS</div>
+<div class="text-rose-400 font-bold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+                142 BPM • 3.8L / 5.0L
+              </div>
+
+</div>
+<!-- Posture & Status Card -->
+<div class="p-2 rounded bg-[#0b1120] border border-[#182339]">
+<div class="text-slate-500 mb-1">POSTURE / CASUALTY</div>
+<div class="text-amber-400 font-bold">UNCONSCIOUS</div>
+
+</div>
+<!-- Position Card -->
+<div class="p-2 rounded bg-[#0b1120] border border-[#182339]">
+<div class="text-slate-500 mb-1">MGRS COORDINATES</div>
+<div class="text-slate-200 font-bold">042 - 088</div>
+
+</div>
+</div>
+</div>
+<!-- END: TargetDossierHeader -->
+<!-- BEGIN: GranularAdjustmentSliders -->
+<div class="p-3.5 rounded-lg bg-[#0f172a] border border-[#1e2a44] flex flex-col gap-3" data-purpose="granular-adjustments">
+<div class="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+<span class="">Granular Adjustment Sliders &amp; States</span>
+
+</div>
+<!-- Health / HP Slider -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between text-[11px]">
+<span class="text-slate-300 font-medium">Health &amp; Hitpoint Level:</span>
+<span class="font-mono text-rose-400 font-bold text-xs">38% (Critical)</span>
+</div>
+<div class="flex items-center gap-2">
+<input class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500" max="100" min="0" type="range" value="38">
+<div class="flex items-center gap-1 font-mono text-[10px]">
+<button class="px-2 py-0.5 rounded bg-[#162035] hover:bg-[#1d2b47] border border-[#233352] text-slate-300 transition-colors" type="button">-10%</button>
+<button class="px-2 py-0.5 rounded bg-[#162035] hover:bg-[#1d2b47] border border-[#233352] text-slate-300 transition-colors" type="button">+10%</button>
+<button class="px-2 py-0.5 rounded bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/50 text-blue-300 transition-colors" type="button">Set 100%</button>
+</div>
+</div>
+</div>
+<!-- Fuel Slider (Vehicle Target) -->
+<div class="flex flex-col gap-1.5 pt-1">
+<div class="flex items-center justify-between text-[11px]">
+<span class="text-slate-300 font-medium">Fuel Level (Associated Vehicle / Asset):</span>
+<span class="font-mono text-emerald-400 font-bold text-xs">100% (Full)</span>
+</div>
+<div class="flex items-center gap-2">
+<input class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500" max="100" min="0" type="range" value="100">
+<div class="flex items-center gap-1 font-mono text-[10px]">
+<button class="px-2 py-0.5 rounded bg-[#162035] hover:bg-[#1d2b47] border border-[#233352] text-slate-300 transition-colors" type="button">-25%</button>
+<button class="px-2 py-0.5 rounded bg-[#162035] hover:bg-[#1d2b47] border border-[#233352] text-slate-300 transition-colors" type="button">+25%</button>
+<button class="px-2 py-0.5 rounded bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/50 text-emerald-300 transition-colors" type="button">Refuel 100%</button>
+</div>
+</div>
+</div>
+<!-- Option Toggles / Checkboxes -->
+<div class="pt-2 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-300">
+<label class="flex items-center gap-2 cursor-pointer">
+<input checked="" class="w-3.5 h-3.5 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0 focus:ring-offset-0" type="checkbox">
+<span class="">Reset Fracture &amp; Bleed States on Apply</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer">
+<input checked="" class="w-3.5 h-3.5 rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0 focus:ring-offset-0" type="checkbox">
+<span class="">Extinguish Active Fires &amp; Vent Cook-off</span>
+</label>
+</div>
+</div>
+<!-- END: GranularAdjustmentSliders -->
+<!-- BEGIN: QuickCursorTacticalTools -->
+<div class="flex flex-col gap-2" data-purpose="cursor-tactical-tools">
+<div class="flex items-center justify-between text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+<span class="">QUICK CURSOR TACTICAL TOOLS (RAYCAST AIM POINT)</span>
+<span class="text-[10px] font-mono text-slate-500">2x CLICK INSTANT TRIGGER</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+<!-- Tool 1: Heal / Revive at Cursor -->
+<div class="p-2.5 rounded-lg bg-[#0e1628] hover:bg-[#131e36] border border-[#1b2842] flex items-center justify-between cursor-pointer transition-colors group">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<div class="font-semibold text-slate-200 text-[11px] flex items-center gap-1">
+                    Heal / Revive at Cursor
+                  </div>
+<div class="text-[9px] text-slate-400">Raycast revive under crosshairs</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/30 text-blue-400 font-mono text-[9px] font-semibold whitespace-nowrap">
+                2x Click
+              </span>
+</div>
+<!-- Tool 2: Full Repair Vehicle at Cursor -->
+<div class="p-2.5 rounded-lg bg-[#0e1628] hover:bg-[#131e36] border border-[#1b2842] flex items-center justify-between cursor-pointer transition-colors group">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded bg-blue-500/10 border border-blue-500/30 text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<div class="font-semibold text-slate-200 text-[11px] flex items-center gap-1">
+                    Repair Vehicle at Cursor
+                  </div>
+<div class="text-[9px] text-slate-400">Fix 100% hull, engine &amp; tracks</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/30 text-blue-400 font-mono text-[9px] font-semibold whitespace-nowrap">
+                2x Click
+              </span>
+</div>
+<!-- Tool 3: Flip Vehicle at Cursor -->
+<div class="p-2.5 rounded-lg bg-[#0e1628] hover:bg-[#131e36] border border-[#1b2842] flex items-center justify-between cursor-pointer transition-colors group">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<div class="font-semibold text-slate-200 text-[11px] flex items-center gap-1">
+                    Flip Vehicle at Cursor
+                  </div>
+<div class="text-[9px] text-slate-400">Right upside-down roll &amp; pitch</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/30 text-blue-400 font-mono text-[9px] font-semibold whitespace-nowrap">
+                2x Click
+              </span>
+</div>
+<!-- Tool 4: Detach Towed Cargo at Cursor -->
+<div class="p-2.5 rounded-lg bg-[#0e1628] hover:bg-[#131e36] border border-[#1b2842] flex items-center justify-between cursor-pointer transition-colors group">
+<div class="flex items-center gap-2.5">
+<div class="w-7 h-7 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<div>
+<div class="font-semibold text-slate-200 text-[11px] flex items-center gap-1">
+                    Detach Towed Cargo
+                  </div>
+<div class="text-[9px] text-slate-400">Safely unhook stuck trailer / gun</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/30 text-blue-400 font-mono text-[9px] font-semibold whitespace-nowrap">
+                2x Click
+              </span>
+</div>
+</div>
+</div>
+<!-- END: QuickCursorTacticalTools -->
+<!-- BEGIN: PrimaryMasterActionBar -->
+<div class="pt-2 flex flex-col gap-2 mt-auto" data-purpose="primary-action-bar">
+<div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+<!-- Secondary Action Button: Unstagger & Flip -->
+<button class="sm:col-span-5 px-3 py-2.5 rounded-lg bg-[#15213b] hover:bg-[#1b2b4c] border border-blue-500/40 text-blue-300 font-semibold text-xs transition-all flex items-center justify-center gap-2" type="button">
+<svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+              UNSTAGGER &amp; FLIP VEHICLE
+            </button>
+<!-- Primary Glowing Button: FULL HEAL & REPAIR TARGET -->
+<button class="sm:col-span-7 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wider shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2 border border-blue-400" type="button">
+<svg class="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+              FULL HEAL &amp; REPAIR TARGET
+            </button>
+</div>
+<!-- Utility Bar / Respawn & Reset -->
+<div class="flex items-center justify-between pt-1">
+<button class="text-rose-400/80 hover:text-rose-300 hover:bg-rose-950/30 border border-rose-900/40 rounded px-2.5 py-1 text-[10px] font-mono transition-colors" type="button">
+              Respawn Target Player
+            </button>
+
+</div>
+</div>
+<!-- END: PrimaryMasterActionBar -->
+</section>
+<!-- END: RightColumn -->
+</div>
+<!-- END: MainContentSplitGrid -->
+<!-- BEGIN: PanelFooter -->
+
+<!-- END: PanelFooter -->
+</main>
+<!-- END: StandaloneModalContainer -->
+
+
+
+
+
+
+</body></html>

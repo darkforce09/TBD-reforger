@@ -1,0 +1,174 @@
+<!DOCTYPE html><html lang="en" class="h-full" style=""><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TBD Reforger - Briefing Navigation Sidebar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: {
+              DEFAULT: '#0b1120',
+              dim: '#0d1322',
+              bright: '#33394a',
+              container: '#151b2b',
+              lowest: '#080e1d',
+              low: '#0f172a',
+            },
+            tactical: {
+              blue: '#3b82f6',
+              cyan: '#38bdf8',
+              red: '#ef4444',
+              amber: '#f59e0b',
+              green: '#22c55e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="h-full bg-surface-lowest text-slate-200 font-sans antialiased overflow-hidden flex items-center justify-center p-6 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(59,130,246,0.12),rgba(8,14,29,0.9))]">
+
+  <!-- Main Standalone Left Panel Container -->
+  <div class="w-[340px] max-w-full h-[780px] max-h-[92vh] flex flex-col bg-[#0b1120]/95 backdrop-blur-xl border border-slate-800/80 rounded-2xl shadow-2xl shadow-black/80 overflow-hidden">
+    
+    <!-- Top Identity / Context Header -->
+    
+
+    <!-- Navigation Scrollable Body -->
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
+
+      <!-- SECTION 1: COMMS -->
+      <div>
+        
+        <div class="space-y-1">
+          <!-- Frequencies (Active) -->
+          <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-tactical-blue text-white shadow-lg shadow-blue-500/20 font-medium text-xs transition-all">
+            <div class="flex items-center gap-2.5">
+              <span class="material-symbols-outlined text-[18px]">radio</span>
+              <span class="">Frequencies</span>
+            </div>
+            
+          </button>
+        <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-800/50 text-slate-300 text-xs transition-colors border border-transparent hover:border-slate-700/40 group"><div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-[18px] text-slate-400 group-hover:text-slate-200">groups</span><span class="group-hover:text-slate-100 transition-colors">ORBAT</span></div></button></div>
+      </div>
+
+      <!-- SECTION 2: VISUAL PID & UNIFORMS -->
+      <div>
+        <div class="my-3 border-t border-slate-800/80"></div>
+        <div class="space-y-1"><!-- Friendly Assets -->
+          <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-800/50 text-slate-300 text-xs transition-colors border border-transparent hover:border-slate-700/40 group">
+            <div class="flex items-center gap-2.5">
+              <span class="material-symbols-outlined text-[18px] text-tactical-blue">directions_car</span>
+              <span class="group-hover:text-slate-100 transition-colors">Friendly Assets</span>
+            </div>
+          </button>
+
+          <!-- Friendly Uniforms -->
+          <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-800/50 text-slate-300 text-xs transition-colors border border-transparent hover:border-slate-700/40 group">
+            <div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-[18px] text-tactical-blue">checkroom</span>
+              <span class="group-hover:text-slate-100 transition-colors">Friendly Uniforms</span></div>
+          </button>
+
+          <!-- Enemy Assets -->
+          <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-800/50 text-slate-300 text-xs transition-colors border border-transparent hover:border-slate-700/40 group">
+            <div class="flex items-center gap-2.5">
+              <span class="material-symbols-outlined text-[18px] text-tactical-red">directions_car</span>
+              <span class="group-hover:text-slate-100 transition-colors">Enemy Assets</span>
+            </div>
+          </button>
+
+          <!-- Enemy Uniforms -->
+          <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-800/50 text-slate-300 text-xs transition-colors border border-transparent hover:border-slate-700/40 group">
+            <div class="flex items-center gap-2.5"><span class="material-symbols-outlined text-[18px] text-tactical-red">checkroom</span>
+              <span class="group-hover:text-slate-100 transition-colors">Enemy Uniforms</span></div>
+          </button></div>
+      </div>
+
+      <!-- SECTION 3: MISSION INFO -->
+      <div>
+        <div class="my-3 border-t border-slate-800/80"></div>
+        <div class="space-y-1">
+          <!-- Objectives -->
+          <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-800/50 text-slate-300 text-xs transition-colors border border-transparent hover:border-slate-700/40 group">
+            <div class="flex items-center gap-2.5">
+              <span class="material-symbols-outlined text-[18px] text-slate-400 group-hover:text-slate-200">adjust</span>
+              <span class="group-hover:text-slate-100 transition-colors">Objectives</span>
+            </div>
+          </button>
+
+          <!-- Rules -->
+          <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-800/50 text-slate-300 text-xs transition-colors border border-transparent hover:border-slate-700/40 group">
+            <div class="flex items-center gap-2.5">
+              <span class="material-symbols-outlined text-[18px] text-slate-400 group-hover:text-slate-200">warning</span>
+              <span class="group-hover:text-slate-100 transition-colors">Rules</span>
+            </div>
+          </button>
+
+          <!-- Lore -->
+          <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-800/50 text-slate-300 text-xs transition-colors border border-transparent hover:border-slate-700/40 group">
+            <div class="flex items-center gap-2.5">
+              <span class="material-symbols-outlined text-[18px] text-slate-400 group-hover:text-slate-200">description</span>
+              <span class="group-hover:text-slate-100 transition-colors">Background</span>
+            </div>
+          </button>
+
+          <!-- Parameters -->
+          <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-slate-800/50 text-slate-300 text-xs transition-colors border border-transparent hover:border-slate-700/40 group">
+            <div class="flex items-center gap-2.5">
+              <span class="material-symbols-outlined text-[18px] text-slate-400 group-hover:text-slate-200">tune</span>
+              <span class="group-hover:text-slate-100 transition-colors">Parameters</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- SECTION 4: ASSETS & ORBAT -->
+      
+
+    </div>
+
+    <!-- Bottom Status / Dock Footer -->
+    
+
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body></html>

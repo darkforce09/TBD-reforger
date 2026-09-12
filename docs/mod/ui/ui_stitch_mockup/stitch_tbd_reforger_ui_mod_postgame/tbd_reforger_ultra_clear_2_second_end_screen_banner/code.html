@@ -1,0 +1,283 @@
+<!DOCTYPE html><html lang="en" class="h-full" style=""><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TBD Reforger - Mission Verdict</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: '#0b1120',
+            'surface-container': '#131b2e',
+            'surface-container-high': '#1a243b',
+            'blufor-blue': '#2563eb',
+            'blufor-glow': '#3b82f6',
+            'opfor-red': '#dc2626',
+            'opfor-glow': '#ef4444',
+            'accent-amber': '#f59e0b',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .tactical-grid {
+      background-image: radial-gradient(rgba(59, 130, 246, 0.12) 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+    .blur-scrim {
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .text-glow-blue {
+      text-shadow: 0 0 35px rgba(59, 130, 246, 0.65), 0 0 70px rgba(37, 99, 235, 0.35);
+    }
+    .text-glow-red {
+      text-shadow: 0 0 35px rgba(239, 68, 68, 0.7), 0 0 70px rgba(220, 38, 38, 0.4);
+    }
+    .box-glow-blue {
+      box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.8), 0 0 45px rgba(37, 99, 235, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+    .box-glow-red {
+      box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.8), 0 0 45px rgba(220, 38, 38, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+    .radial-vignette {
+      background: radial-gradient(circle at center, rgba(11, 17, 32, 0.75) 0%, rgba(5, 9, 18, 0.96) 100%);
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.88; transform: scale(0.995); }
+    }
+    .animate-verdict {
+      animation: pulse-subtle 4s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="h-full bg-[#070b14] text-white font-sans antialiased select-none overflow-hidden flex flex-col justify-between">
+
+  <!-- Background 3D Tactical Scrim Mockup with Atmospheric Vignette -->
+  <div class="fixed inset-0 pointer-events-none z-0">
+    <!-- Tactical Grid & Vignette Overlay -->
+    <div class="absolute inset-0 radial-vignette"></div>
+    <div class="absolute inset-0 tactical-grid opacity-40"></div>
+    
+    <!-- Dynamic Ambient Victory/Defeat Aura (switches in JS) -->
+    <div id="ambientAura" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] transition-all duration-700"></div>
+  </div>
+
+  <!-- Top Minimal HUD Bar -->
+  
+
+  <!-- Main Center High-Impact Banner: 2-Second Cognitive Grasp -->
+  <main class="relative z-10 flex-1 flex flex-col items-center justify-center px-4 -mt-6">
+    
+    <!-- Focused Verdict Card -->
+    <div id="verdictCard" class="w-full max-w-3xl rounded-2xl bg-[#0d1527]/90 border border-blue-500/40 blur-scrim box-glow-blue p-10 md:p-12 text-center transition-all duration-500 relative overflow-hidden">
+      
+      <!-- Top Subtle Faction Watermark / Accent Lightbar -->
+      <div id="topAccentBar" class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
+      
+      <!-- Faction Tag & Role -->
+      <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-blue-500/40 mb-6 bg-blue-950/60 shadow-sm" id="factionBadge">
+        <div id="factionPill" class="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_8px_#3b82f6]"></div>
+        <span id="factionName" class="font-mono text-xs font-bold uppercase tracking-widest text-blue-300">BLUFOR // US MARINE CORPS</span>
+      </div>
+
+      <!-- Giant Primary Verdict Headline (Instant Win / Loss clarity) -->
+      <h1 id="verdictTitle" class="text-6xl md:text-7xl font-extrabold tracking-tight text-white uppercase text-glow-blue animate-verdict mb-4 font-sans">VICTORY</h1>
+
+      <!-- Decisive Trigger Headline: Clear, punchy, unmistakable -->
+      <div class="max-w-xl mx-auto mb-6">
+        <p id="verdictHeadline" class="text-xl md:text-2xl font-bold text-slate-100 uppercase tracking-wide">ALL OPPOSING FORCES ELIMINATED</p>
+        <p id="verdictDescription" class="text-sm md:text-base text-slate-300 font-normal mt-1.5 leading-relaxed">Hostile combatants sustained 100% casualties. Sector secured.</p>
+      </div>
+
+      <!-- Divider line -->
+      <div class="w-24 h-px bg-white/15 mx-auto mb-6"></div>
+
+      <!-- Auto-Transition Debrief Counter: Pacing towards full AAR -->
+      
+
+    </div>
+
+    <!-- Minimal Decisive Reason Quick Switchers (Demonstrating all 4 authoritative specs) -->
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-400">
+      <span class="font-mono text-[11px] uppercase tracking-wider text-slate-500 mr-1">Simulate Reason:</span>
+      <button onclick="setReason('elimination')" class="px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 font-mono transition-colors">
+        1. Faction Wiped
+      </button>
+      <button onclick="setReason('objective')" class="px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 font-mono transition-colors">
+        2. Objective Secured
+      </button>
+      <button onclick="setReason('timelimit')" class="px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 font-mono transition-colors">
+        3. Time Limit Expired
+      </button>
+      <button onclick="setReason('admin')" class="px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 font-mono transition-colors">
+        4. Admin Halt
+      </button>
+    </div>
+  </main>
+
+  <!-- Bottom Minimal Utility Bar -->
+  
+
+  <!-- Interactive State Controller Script -->
+  <script>
+    let currentPerspective = 'victory';
+    let currentReason = 'elimination';
+    let countdown = 8;
+
+    const reasons = {
+      elimination: {
+        victoryHeadline: 'ALL OPPOSING FORCES ELIMINATED',
+        victoryDesc: 'Hostile combatants sustained 100% casualties. Sector secured.',
+        defeatHeadline: 'YOUR FORCES HAVE BEEN WIPED',
+        defeatDesc: 'All squad combatants were neutralized. Sector operational command lost.',
+        drawHeadline: 'MUTUAL ATTRITION COLLAPSE',
+        drawDesc: 'Both task forces fell below combat-effective thresholds simultaneously.'
+      },
+      objective: {
+        victoryHeadline: 'PRIMARY OBJECTIVE SECURED',
+        victoryDesc: 'All strategic sectors captured and fortified before hostile reinforcements arrived.',
+        defeatHeadline: 'OBJECTIVE LOST TO ENEMY',
+        defeatDesc: 'Opposing forces completed capture and fortified all key operational zones.',
+        drawHeadline: 'OBJECTIVE CONTESTED AT TIMEOUT',
+        drawDesc: 'Neither force established uncontested operational perimeter dominance.'
+      },
+      timelimit: {
+        victoryHeadline: 'DEFENSIVE PERIMETER HELD',
+        victoryDesc: 'Mission clock expired. Defensive positions maintained operational territory.',
+        defeatHeadline: 'MISSION CLOCK EXPIRED',
+        defeatDesc: 'Failed to capture defensive objectives before the operation time limit elapsed.',
+        drawHeadline: 'TIME LIMIT REACHED',
+        drawDesc: 'Stalemate reached at T+45:00 with neutral sector control.'
+      },
+      admin: {
+        victoryHeadline: 'ADMINISTRATIVE VICTORY AWARDED',
+        victoryDesc: 'Game Master / Admin awarded decisive verdict to BLUFOR.',
+        defeatHeadline: 'ADMINISTRATIVE MATCH TERMINATION',
+        defeatDesc: 'Match halted by server administration before decisive objective resolution.',
+        drawHeadline: 'ADMINISTRATIVE STOPPAGE',
+        drawDesc: 'Session halted and declared null/stalemate by active server referee.'
+      }
+    };
+
+    function updateDisplay() {
+      const card = document.getElementById('verdictCard');
+      const title = document.getElementById('verdictTitle');
+      const headline = document.getElementById('verdictHeadline');
+      const desc = document.getElementById('verdictDescription');
+      const badge = document.getElementById('factionBadge');
+      const pill = document.getElementById('factionPill');
+      const fname = document.getElementById('factionName');
+      const aura = document.getElementById('ambientAura');
+      const topBar = document.getElementById('topAccentBar');
+
+      const r = reasons[currentReason];
+
+      if (currentPerspective === 'victory') {
+        // VICTORY STATE (Triumphant Blue Theme)
+        card.className = 'w-full max-w-3xl rounded-2xl bg-[#0d1527]/90 border border-blue-500/40 blur-scrim box-glow-blue p-10 md:p-12 text-center transition-all duration-500 relative overflow-hidden';
+        topBar.className = 'absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent';
+        aura.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] transition-all duration-700';
+
+        badge.className = 'inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-blue-500/40 mb-6 bg-blue-950/60 shadow-sm';
+        pill.className = 'w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_8px_#3b82f6]';
+        fname.className = 'font-mono text-xs font-bold uppercase tracking-widest text-blue-300';
+        fname.textContent = 'BLUFOR // US MARINE CORPS';
+
+        title.className = 'text-6xl md:text-7xl font-extrabold tracking-tight text-white uppercase text-glow-blue animate-verdict mb-4 font-sans';
+        title.textContent = 'VICTORY';
+
+        headline.textContent = r.victoryHeadline;
+        desc.textContent = r.victoryDesc;
+
+      } else if (currentPerspective === 'defeat') {
+        // DEFEAT STATE (Somber High-Impact Crimson Red Theme)
+        card.className = 'w-full max-w-3xl rounded-2xl bg-[#1c0e12]/90 border border-red-500/40 blur-scrim box-glow-red p-10 md:p-12 text-center transition-all duration-500 relative overflow-hidden';
+        topBar.className = 'absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-red-500 to-transparent';
+        aura.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-red-600/20 rounded-full blur-[120px] transition-all duration-700';
+
+        badge.className = 'inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-red-500/40 mb-6 bg-red-950/60 shadow-sm';
+        pill.className = 'w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]';
+        fname.className = 'font-mono text-xs font-bold uppercase tracking-widest text-red-300';
+        fname.textContent = 'OPFOR // RU ARMED FORCES';
+
+        title.className = 'text-6xl md:text-7xl font-extrabold tracking-tight text-white uppercase text-glow-red animate-verdict mb-4 font-sans';
+        title.textContent = 'DEFEAT';
+
+        headline.textContent = r.defeatHeadline;
+        desc.textContent = r.defeatDesc;
+
+      } else {
+        // DRAW / STALEMATE STATE (Neutral Slate/Silver Theme)
+        card.className = 'w-full max-w-3xl rounded-2xl bg-[#141822]/90 border border-slate-500/40 blur-scrim shadow-2xl p-10 md:p-12 text-center transition-all duration-500 relative overflow-hidden';
+        topBar.className = 'absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-slate-400 to-transparent';
+        aura.className = 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-slate-500/10 rounded-full blur-[120px] transition-all duration-700';
+
+        badge.className = 'inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-slate-600 mb-6 bg-slate-800/80 shadow-sm';
+        pill.className = 'w-2.5 h-2.5 rounded-full bg-slate-400 shadow-[0_0_6px_#94a3b8]';
+        fname.className = 'font-mono text-xs font-bold uppercase tracking-widest text-slate-300';
+        fname.textContent = 'ALL FORCES // COMBAT STALEMATE';
+
+        title.className = 'text-6xl md:text-7xl font-extrabold tracking-tight text-slate-100 uppercase mb-4 font-sans';
+        title.textContent = 'DRAW';
+
+        headline.textContent = r.drawHeadline;
+        desc.textContent = r.drawDesc;
+      }
+    }
+
+    function setPerspective(persp) {
+      currentPerspective = persp;
+      const bV = document.getElementById('btnVictory');
+      const bD = document.getElementById('btnDefeat');
+      const bDr = document.getElementById('btnDraw');
+
+      [bV, bD, bDr].forEach(b => {
+        b.className = 'px-3 py-1 rounded text-xs font-semibold tracking-wide transition-all text-slate-400 hover:text-white hover:bg-slate-800';
+      });
+
+      if (persp === 'victory') {
+        bV.className = 'px-3 py-1 rounded text-xs font-semibold tracking-wide transition-all bg-blue-600 text-white shadow-sm';
+      } else if (persp === 'defeat') {
+        bD.className = 'px-3 py-1 rounded text-xs font-semibold tracking-wide transition-all bg-red-600 text-white shadow-sm';
+      } else {
+        bDr.className = 'px-3 py-1 rounded text-xs font-semibold tracking-wide transition-all bg-slate-600 text-white shadow-sm';
+      }
+
+      updateDisplay();
+    }
+
+    function setReason(reasonKey) {
+      currentReason = reasonKey;
+      updateDisplay();
+    }
+
+    // Ticking countdown mock
+    setInterval(() => {
+      if (countdown > 1) {
+        countdown--;
+        document.getElementById('countdownSec').textContent = (countdown < 10 ? '0' + countdown : countdown) + 's';
+      } else {
+        countdown = 10;
+        document.getElementById('countdownSec').textContent = '10s';
+      }
+    }, 1000);
+
+    // Initial setup
+    updateDisplay();
+  </script>
+
+
+
+</body></html>

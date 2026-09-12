@@ -1,0 +1,273 @@
+<!DOCTYPE html><html class="h-full" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>TBD Reforger - Scenario Browser (Standalone)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            tactical: {
+              bg: '#080e1d',
+              surface: '#0b1120',
+              panel: '#0d1322',
+              card: '#151b2b',
+              border: 'rgba(51, 65, 85, 0.4)',
+              accent: '#3b82f6',
+              cyan: '#38bdf8',
+              amber: '#f59e0b',
+              red: '#ef4444'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(11, 17, 32, 0.4);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.6);
+      border-radius: 2px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(59, 130, 246, 0.5);
+    }
+
+    /* macOS Fluid Spring Transition & Tactile Feedback */
+    .macos-card-transition {
+      transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform, background, border-color, box-shadow;
+    }
+
+    /* Selected state visuals */
+    .mission-card.is-selected {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.28) 0%, rgba(59, 130, 246, 0.16) 100%) !important;
+      border-color: rgba(96, 165, 250, 0.8) !important;
+      box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.35), 0 8px 24px -4px rgba(37, 99, 235, 0.35), 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    .mission-card.is-selected .card-title {
+      color: #ffffff !important;
+      font-weight: 600;
+    }
+
+    .mission-card.is-selected .slot-count {
+      color: #7dd3fc !important;
+      font-weight: 600;
+    }
+
+    .mission-card.is-selected .icon-indicator {
+      color: #7dd3fc !important;
+      transform: scale(1.05);
+      opacity: 1 !important;
+    }
+
+    .mission-card.is-selected .status-pulse-dot {
+      display: inline-block !important;
+    }
+
+    /* Unselected default styling */
+    .mission-card:not(.is-selected) {
+      background: rgba(20, 29, 46, 0.7);
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .mission-card:not(.is-selected):hover {
+      background: rgba(26, 37, 58, 0.9);
+      border-color: rgba(96, 165, 250, 0.4);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .mission-card:not(.is-selected) .status-pulse-dot {
+      display: none !important;
+    }
+
+    .mission-card:active {
+      transform: scale(0.985) !important;
+    }
+  </style>
+</head>
+<body class="bg-tactical-bg text-slate-200 font-sans antialiased min-h-screen p-6 flex flex-col items-start justify-start">
+<!-- Standalone Scenario Browser Panel -->
+<div class="w-full max-w-[440px] bg-[#0c1220]/80 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden h-[740px] shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+<!-- Top Header Bar -->
+<div class="px-4 py-3.5 border-b border-white/[0.08] flex items-center justify-between bg-white/[0.03] backdrop-blur-md">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-blue-400 text-base leading-none">grid_view</span>
+<h2 class="text-[13px] font-sans font-semibold tracking-wider text-white uppercase antialiased">EVERON Missions</h2>
+</div>
+<span class="text-[11px] font-mono font-medium px-2.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-400/30 text-sky-400 uppercase tracking-wide shadow-sm">30 Available</span>
+</div>
+<!-- Category Filter Pills -->
+<div class="p-3 border-b border-white/[0.06] bg-black/10">
+<div class="relative flex items-center gap-2">
+<div class="relative flex-1 flex items-center">
+<span class="material-symbols-outlined absolute left-2.5 text-slate-400 text-sm pointer-events-none select-none">search</span>
+<input class="w-full bg-[#161f33]/80 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500/80 focus:ring-2 focus:ring-blue-500/20 font-mono transition-all leading-tight shadow-inner" placeholder="Search Scenario..." type="text">
+</div>
+<div class="relative" id="modes-dropdown-container">
+<button class="flex items-center gap-1.5 px-3 py-2 bg-[#161f33]/90 hover:bg-[#1e2942] border border-white/10 hover:border-blue-400/50 rounded-lg text-xs font-mono font-medium text-slate-200 hover:text-white transition-all shadow-sm leading-tight cursor-pointer active:scale-95" onclick="const menu = document.getElementById('modes-dropdown-menu'); const chev = document.getElementById('modes-chevron'); menu.classList.toggle('hidden'); chev.classList.toggle('rotate-180');" type="button">
+<span class="tracking-wider">Modes</span>
+<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/40 text-sky-400 font-bold leading-tight">5</span>
+<span class="material-symbols-outlined text-sm text-slate-400 transition-transform duration-200 rotate-180" id="modes-chevron">expand_more</span>
+</button>
+<div class="absolute right-0 top-full mt-2 w-52 bg-[#0d1526]/95 backdrop-blur-xl border border-white/15 rounded-xl shadow-2xl p-2.5 z-50 hidden" id="modes-dropdown-menu">
+<div class="flex items-center justify-between pb-2 mb-2 border-b border-white/10 text-[11px] font-mono">
+<button class="text-sky-400 hover:text-white font-semibold transition-colors cursor-pointer" onclick="document.querySelectorAll('#modes-checklist input').forEach(c =&gt; c.checked = true); document.querySelector('#modes-dropdown-container span.text-\[10px\]').textContent = '5';" type="button">Select All</button>
+<span class="text-slate-600">|</span>
+<button class="text-slate-400 hover:text-slate-200 transition-colors cursor-pointer" onclick="document.querySelectorAll('#modes-checklist input').forEach(c =&gt; c.checked = false); document.querySelector('#modes-dropdown-container span.text-\[10px\]').textContent = '0';" type="button">Deselect All</button>
+</div>
+<div class="space-y-1" id="modes-checklist">
+<label class="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] cursor-pointer text-xs font-mono text-slate-200 transition-colors">
+<span class="flex items-center gap-2">
+<input checked="" class="rounded bg-slate-900 border border-white/20 text-blue-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600" onchange="const count = document.querySelectorAll('#modes-checklist input:checked').length; document.querySelector('#modes-dropdown-container span.text-\[10px\]').textContent = count;" type="checkbox">
+<span class="font-medium">COOP</span>
+</span>
+<span class="text-[10px] text-slate-400 font-mono">14</span>
+</label>
+<label class="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] cursor-pointer text-xs font-mono text-slate-200 transition-colors">
+<span class="flex items-center gap-2">
+<input checked="" class="rounded bg-slate-900 border border-white/20 text-blue-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600" onchange="const count = document.querySelectorAll('#modes-checklist input:checked').length; document.querySelector('#modes-dropdown-container span.text-\[10px\]').textContent = count;" type="checkbox">
+<span class="font-medium">Warlords</span>
+</span>
+<span class="text-[10px] text-slate-400 font-mono">6</span>
+</label>
+<label class="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] cursor-pointer text-xs font-mono text-slate-200 transition-colors">
+<span class="flex items-center gap-2">
+<input checked="" class="rounded bg-slate-900 border border-white/20 text-blue-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600" onchange="const count = document.querySelectorAll('#modes-checklist input:checked').length; document.querySelector('#modes-dropdown-container span.text-\[10px\]').textContent = count;" type="checkbox">
+<span class="font-medium">PvP</span>
+</span>
+<span class="text-[10px] text-slate-400 font-mono">4</span>
+</label>
+<label class="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] cursor-pointer text-xs font-mono text-slate-200 transition-colors">
+<span class="flex items-center gap-2">
+<input checked="" class="rounded bg-slate-900 border border-white/20 text-blue-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600" onchange="const count = document.querySelectorAll('#modes-checklist input:checked').length; document.querySelector('#modes-dropdown-container span.text-\[10px\]').textContent = count;" type="checkbox">
+<span class="font-medium">RHS Mod</span>
+</span>
+<span class="text-[10px] text-slate-400 font-mono">3</span>
+</label>
+<label class="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-white/[0.06] cursor-pointer text-xs font-mono text-slate-200 transition-colors">
+<span class="flex items-center gap-2">
+<input checked="" class="rounded bg-slate-900 border border-white/20 text-blue-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600" onchange="const count = document.querySelectorAll('#modes-checklist input:checked').length; document.querySelector('#modes-dropdown-container span.text-\[10px\]').textContent = count;" type="checkbox">
+<span class="font-medium">Zeus</span>
+</span>
+<span class="text-[10px] text-slate-400 font-mono">3</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Scrollable Mission List -->
+<div class="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar" id="mission-list">
+<!-- Item 1 (Selected initially): PVP Test 1 -->
+<div class="mission-card is-selected group relative p-3 rounded-xl border macos-card-transition cursor-pointer select-none" role="button" tabindex="0">
+<div class="flex items-center justify-between mb-1.5 pointer-events-none">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase bg-blue-600 text-white shadow-sm tracking-wider ring-1 ring-white/20">PvP</span>
+<span class="text-[11px] font-mono text-blue-200/80 font-medium">Everon</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="slot-count text-[11px] font-mono tracking-wide">48 SLOTS</span>
+<span class="status-pulse-dot w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
+</div>
+</div>
+<div class="text-[13px] font-semibold text-white flex items-center justify-between pointer-events-none">
+<span class="card-title tracking-normal">PVP Test 1</span>
+<span class="icon-indicator material-symbols-outlined text-xs transition-all duration-200">check_circle</span>
+</div>
+</div>
+<!-- Item 2: Co-op Test 1 -->
+<div class="mission-card group relative p-3 rounded-xl border macos-card-transition cursor-pointer select-none" role="button" tabindex="0">
+<div class="flex items-center justify-between mb-1.5 pointer-events-none">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold uppercase bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 tracking-wider transition-colors">COOP</span>
+<span class="text-[11px] font-mono text-slate-400">Everon</span>
+</div>
+<div class="flex items-center gap-1.5 text-[11px] font-mono">
+<span class="slot-count text-slate-300 font-medium tracking-wide">4 SLOTS</span>
+<span class="status-pulse-dot w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse hidden"></span>
+</div>
+</div>
+<div class="text-[13px] font-medium text-slate-100 group-hover:text-white transition-colors flex items-center justify-between pointer-events-none">
+<span class="card-title">Co-op Test 1</span>
+<span class="icon-indicator material-symbols-outlined text-sm text-slate-500 group-hover:text-slate-200 group-hover:translate-x-0.5 transition-all duration-200">chevron_right</span>
+</div>
+</div>
+<!-- Item 3: Co-op Test 2 -->
+<div class="mission-card group relative p-3 rounded-xl border macos-card-transition cursor-pointer select-none" role="button" tabindex="0">
+<div class="flex items-center justify-between mb-1.5 pointer-events-none">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold uppercase bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 tracking-wider transition-colors">COOP</span>
+<span class="text-[11px] font-mono text-slate-400">Everon</span>
+</div>
+<div class="flex items-center gap-1.5 text-[11px] font-mono">
+<span class="slot-count text-slate-300 font-medium tracking-wide">12 SLOTS</span>
+<span class="status-pulse-dot w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse hidden"></span>
+</div>
+</div>
+<div class="text-[13px] font-medium text-slate-100 group-hover:text-white transition-colors flex items-center justify-between pointer-events-none">
+<span class="card-title">Co-op Test 2</span>
+<span class="icon-indicator material-symbols-outlined text-sm text-slate-500 group-hover:text-slate-200 group-hover:translate-x-0.5 transition-all duration-200">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+<script>
+    // Smooth macOS-style Interactive Mission Card Selection
+    document.addEventListener('DOMContentLoaded', () => {
+      const missionCards = document.querySelectorAll('.mission-card');
+
+      function selectCard(card) {
+        if (card.classList.contains('is-selected')) return;
+
+        missionCards.forEach(c => {
+          c.classList.remove('is-selected');
+          const indicator = c.querySelector('.icon-indicator');
+          if (indicator) {
+            indicator.textContent = 'chevron_right';
+            indicator.className = 'icon-indicator material-symbols-outlined text-sm text-slate-500 group-hover:text-slate-200 group-hover:translate-x-0.5 transition-all duration-200';
+          }
+          const pulse = c.querySelector('.status-pulse-dot');
+          if (pulse) pulse.classList.add('hidden');
+        });
+
+        // Activate clicked card
+        card.classList.add('is-selected');
+        const activeIndicator = card.querySelector('.icon-indicator');
+        if (activeIndicator) {
+          activeIndicator.textContent = 'check_circle';
+          activeIndicator.className = 'icon-indicator material-symbols-outlined text-xs text-sky-300 transition-all duration-200';
+        }
+        const activePulse = card.querySelector('.status-pulse-dot');
+        if (activePulse) activePulse.classList.remove('hidden');
+      }
+
+      missionCards.forEach(card => {
+        card.addEventListener('click', () => selectCard(card));
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            selectCard(card);
+          }
+        });
+      });
+    });
+  </script>
+</body></html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html><html class="h-full" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>TBD Reforger - Terrain Selector (Standalone)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            tactical: {
+              bg: '#080e1d',
+              surface: '#0b1120',
+              card: '#0f172a',
+              border: '#1e293b',
+              accent: '#3b82f6',
+              accentHover: '#2563eb',
+              textPrimary: '#f8fafc',
+              textSecondary: '#94a3b8',
+              textMuted: '#64748b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.6);
+      border-radius: 2px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.8);
+    }
+
+    /* Tactical radar sweep micro-interaction */
+    @keyframes tacticalGleam {
+      0% {
+        transform: translateX(-100%) skewX(-20deg);
+        opacity: 0;
+      }
+      30% {
+        opacity: 0.35;
+      }
+      100% {
+        transform: translateX(250%) skewX(-20deg);
+        opacity: 0;
+      }
+    }
+
+    .animate-tactical-gleam {
+      animation: tacticalGleam 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-tactical-bg text-tactical-textPrimary font-sans antialiased min-h-screen p-6 flex flex-col items-start justify-start select-none">
+<!-- Standalone Terrain Sidebar Panel Container -->
+<div class="w-80 h-[820px] bg-tactical-card/90 backdrop-blur-md border border-tactical-border/80 rounded-xl shadow-2xl flex flex-col overflow-hidden">
+<!-- Top Header / Counter Bar -->
+<div class="px-4 py-3 border-b border-tactical-border/80 flex items-center justify-between bg-tactical-surface/60">
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold tracking-wider text-slate-200 uppercase">TERRAINS</span>
+
+</div>
+</div>
+<!-- Search / Filter Input -->
+<div class="p-3 border-b border-tactical-border/60 bg-tactical-surface/30">
+<div class="relative flex items-center">
+<svg xmlns="http://www.w3.org/2000/svg" class="absolute left-2.5 text-slate-400 pointer-events-none w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input class="w-full bg-slate-900/80 border border-slate-700/60 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:border-blue-500/80 focus:ring-1 focus:ring-blue-500/40 transition-all font-sans" placeholder="Search Maps..." type="text">
+</div>
+</div>
+<!-- Scrollable Terrain List with Smooth Indicator Background -->
+<div class="relative flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1" id="terrain-container">
+<!-- Smooth macOS/Tactical Sliding Active Highlight Pill -->
+<div class="absolute left-2 right-2 rounded-lg pointer-events-none transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] bg-gradient-to-r from-blue-950/80 via-blue-900/40 to-blue-950/60 border border-blue-500/70 shadow-[0_0_18px_rgba(59,130,246,0.25)]" id="active-indicator" style="top: 12px; height: 40px;">
+<!-- Ambient corner light / tactical glow point -->
+<div class="absolute -top-[1px] left-3 w-8 h-[2px] bg-blue-400 shadow-[0_0_8px_#60a5fa]"></div>
+</div>
+<!-- Everon (Active by default) -->
+<button class="terrain-item relative z-10 w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-all duration-200 ease-out overflow-hidden active:scale-[0.98] text-white" data-terrain="everon">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="terrain-icon material-symbols-outlined text-base transition-colors duration-200 text-blue-400">water</span>
+<span class="terrain-title text-xs tracking-wide truncate transition-colors duration-200 font-semibold text-white">Everon</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="terrain-badge text-xs font-mono font-semibold px-2 py-0.5 rounded transition-all duration-200 border border-slate-700/60 text-slate-200 bg-slate-800">3</span>
+<div class="terrain-chevron-wrap flex items-center overflow-hidden transition-all duration-300 max-w-[20px] opacity-100 translate-x-0">
+<span class="material-symbols-outlined text-blue-400 text-sm">chevron_right</span>
+</div>
+</div>
+<div class="terrain-sweep absolute inset-0 pointer-events-none bg-gradient-to-r from-transparent via-blue-400/20 to-transparent -translate-x-full animate-tactical-gleam"></div>
+</button>
+<!-- Arland -->
+<button class="terrain-item relative z-10 w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-all duration-200 ease-out overflow-hidden active:scale-[0.98] hover:text-slate-100 hover:bg-slate-800/40 text-slate-300" data-terrain="arland">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="terrain-icon material-symbols-outlined text-base transition-colors duration-200 text-slate-500">landscape</span>
+<span class="terrain-title text-xs truncate transition-colors duration-200 font-medium text-slate-300">Arland</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="terrain-badge text-xs font-mono font-semibold px-2 py-0.5 rounded transition-all duration-200 border border-slate-700/50 text-slate-400 bg-slate-800/80">3</span>
+<div class="terrain-chevron-wrap flex items-center overflow-hidden transition-all duration-300 max-w-0 opacity-0 -translate-x-1.5">
+<span class="material-symbols-outlined text-blue-400 text-sm">chevron_right</span>
+</div>
+</div>
+<div class="terrain-sweep absolute inset-0 pointer-events-none bg-gradient-to-r from-transparent via-blue-400/20 to-transparent -translate-x-full animate-tactical-gleam"></div>
+</button>
+<!-- Kolguyev -->
+<button class="terrain-item relative z-10 w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-all duration-200 ease-out overflow-hidden active:scale-[0.98] hover:text-slate-100 hover:bg-slate-800/40 text-slate-300" data-terrain="kolguyev">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="terrain-icon material-symbols-outlined text-base transition-colors duration-200 text-slate-500">ac_unit</span>
+<span class="terrain-title text-xs truncate transition-colors duration-200 font-medium text-slate-300">Kolguyev</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="terrain-badge text-xs font-mono font-semibold px-2 py-0.5 rounded transition-all duration-200 border border-slate-700/50 text-slate-400 bg-slate-800/80">3</span>
+<div class="terrain-chevron-wrap flex items-center overflow-hidden transition-all duration-300 max-w-0 opacity-0 -translate-x-1.5">
+<span class="material-symbols-outlined text-blue-400 text-sm">chevron_right</span>
+</div>
+</div>
+<div class="terrain-sweep absolute inset-0 pointer-events-none bg-gradient-to-r from-transparent via-blue-400/20 to-transparent -translate-x-full animate-tactical-gleam"></div>
+</button>
+</div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('terrain-container');
+      const indicator = document.getElementById('active-indicator');
+      const items = Array.from(document.querySelectorAll('.terrain-item'));
+
+      // Positions the active pill indicator to mirror the targeted button
+      function updateIndicator(targetEl) {
+        const top = targetEl.offsetTop;
+        const height = targetEl.offsetHeight;
+        indicator.style.top = `${top}px`;
+        indicator.style.height = `${height}px`;
+      }
+
+      function setActiveItem(targetBtn) {
+        items.forEach(btn => {
+          const isCurrent = btn === targetBtn;
+          const icon = btn.querySelector('.terrain-icon');
+          const title = btn.querySelector('.terrain-title');
+          const badge = btn.querySelector('.terrain-badge');
+          const chevronWrap = btn.querySelector('.terrain-chevron-wrap');
+
+          if (isCurrent) {
+            // Apply active styles
+            btn.classList.remove('hover:bg-slate-800/40', 'text-slate-300');
+            btn.classList.add('text-white');
+
+            icon.classList.remove('text-slate-500');
+            icon.classList.add('text-blue-400');
+
+            title.classList.remove('font-medium', 'text-slate-300');
+            title.classList.add('font-semibold', 'text-white');
+
+            badge.classList.remove('text-slate-400', 'bg-slate-800/80');
+            badge.classList.add('text-slate-200', 'bg-slate-800');
+
+            // Slide & fade in chevron with slight spring
+            chevronWrap.classList.remove('max-w-0', 'opacity-0', '-translate-x-1.5');
+            chevronWrap.classList.add('max-w-[20px]', 'opacity-100', 'translate-x-0');
+
+            // Tactical radar sweep animation trigger
+            const sweep = btn.querySelector('.terrain-sweep');
+            sweep.classList.remove('animate-tactical-gleam');
+            // force reflow
+            void sweep.offsetWidth;
+            sweep.classList.add('animate-tactical-gleam');
+          } else {
+            // Revert to inactive hoverable styles
+            btn.classList.add('hover:bg-slate-800/40', 'text-slate-300');
+            btn.classList.remove('text-white');
+
+            icon.classList.remove('text-blue-400');
+            icon.classList.add('text-slate-500');
+
+            title.classList.remove('font-semibold', 'text-white');
+            title.classList.add('font-medium', 'text-slate-300');
+
+            badge.classList.remove('text-slate-200', 'bg-slate-800');
+            badge.classList.add('text-slate-400', 'bg-slate-800/80');
+
+            // Slide & fade out chevron
+            chevronWrap.classList.add('max-w-0', 'opacity-0', '-translate-x-1.5');
+            chevronWrap.classList.remove('max-w-[20px]', 'opacity-100', 'translate-x-0');
+          }
+        });
+
+        updateIndicator(targetBtn);
+      }
+
+      // Initial alignment on page load
+      const initialActive = items[0];
+      if (initialActive) {
+        updateIndicator(initialActive);
+      }
+
+      // Click event binding with micro-bounce
+      items.forEach(btn => {
+        btn.addEventListener('click', () => {
+          setActiveItem(btn);
+        });
+      });
+
+      // Handle window resize recalculations
+      window.addEventListener('resize', () => {
+        const currentActive = items.find(b => b.classList.contains('text-white'));
+        if (currentActive) updateIndicator(currentActive);
+      });
+    });
+  </script>
+
+
+</body></html>

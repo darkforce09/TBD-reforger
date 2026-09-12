@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+
+<html lang="en" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TBD Reforger - Spectator Bottom Bar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            surface: '#0b1120',
+            'surface-dim': '#0d1322',
+            'surface-container': '#151b2b',
+            'surface-container-high': '#1e2538',
+            'surface-container-highest': '#283149',
+            blufor: '#2563eb',
+            'blufor-dark': '#1d4ed8',
+            opfor: '#dc2626',
+            'opfor-dark': '#b91c1c',
+            indfor: '#16a34a',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .tactical-glow-subtle {
+      box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.85), 0 0 1px 1px rgba(56, 189, 248, 0.2);
+    }
+    .cut-corner-r {
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 100%, 0% 100%);
+    }
+    .cut-corner-l {
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 10px 100%);
+    }
+  </style>
+</head>
+<body class="bg-[#070b14] text-slate-200 font-sans min-h-screen flex flex-col justify-end p-6 md:p-8 relative overflow-x-hidden select-none">
+<!-- Background Battlefield Viewport Simulation -->
+<div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,#131c31_0%,#080c16_70%,#03050a_100%)] opacity-95 pointer-events-none"></div>
+<!-- Tactical Grid & Compass Reticle Simulation -->
+<div class="absolute inset-0 opacity-[0.045] pointer-events-none" style="background-image: linear-gradient(#38bdf8 1px, transparent 1px), linear-gradient(90deg, #38bdf8 1px, transparent 1px); background-size: 40px 40px;"></div>
+<!-- Top Right Interactive Switcher for Life State Preview -->
+<div class="fixed top-5 right-5 z-40 flex items-center gap-2 bg-[#0b1120]/95 border border-slate-700/80 rounded-lg p-2 shadow-2xl backdrop-blur-md font-mono text-xs">
+<span class="text-slate-400 text-[11px] uppercase tracking-wider font-semibold pl-1">Life State:</span>
+<button class="px-3 py-1.5 rounded border border-emerald-500/60 bg-emerald-950/60 text-emerald-300 font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-sm" id="btnStateAlive" onclick="setLifeState('alive')">
+<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>Alive
+  </button>
+<button class="px-3 py-1.5 rounded border border-slate-700 bg-slate-900/80 text-slate-400 hover:text-rose-300 hover:border-rose-500/50 font-medium transition cursor-pointer flex items-center gap-1.5" id="btnStateDead" onclick="setLifeState('dead')">
+<span class="w-2 h-2 rounded-full bg-slate-500"></span>Dead (K.I.A.)
+  </button>
+</div>
+<!-- Main Bottom Dock Container -->
+<div class="relative z-30 flex flex-col items-center w-full max-w-3xl mx-auto gap-2.5">
+<!-- Unified Cohesive Module: 2-Tier Stacked Left + Full-Height Combat Details Right Button -->
+<div class="flex items-stretch bg-[#0b1120]/95 border border-slate-700/80 rounded-lg p-1.5 gap-1.5 shadow-2xl backdrop-blur-md tactical-glow-subtle w-full">
+<!-- Left Section: 2-Tier Stack -->
+<div class="flex-1 flex flex-col gap-1.5 min-w-0">
+<!-- TIER 1: Top Bar Header (Alive: Solid BLUFOR Tactical Blue | Dead: Split BLUFOR / OPFOR Red) -->
+<div class="h-9 rounded overflow-hidden flex items-center transition-all duration-200" id="tier1TopBar">
+<!-- ALIVE STATE CONTAINER: Solid Tactical BLUFOR Blue spanning full width -->
+<div class="w-full h-full bg-blue-600 border border-blue-400/50 shadow-inner flex items-center justify-between px-3 font-mono" id="topBarAlive">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="material-symbols-outlined text-white text-[16px] shrink-0">military_tech</span>
+<span class="text-white font-extrabold text-[13px] tracking-wide truncate drop-shadow-sm font-mono">[LG] Yuki_Hattori</span>
+</div>
+</div>
+<!-- DEAD STATE CONTAINER: Split Horizontally into Continuous Blue (Spectated Player with black text) + Red (Killer) Segments -->
+<div class="w-full h-full flex items-stretch font-mono hidden" id="topBarDead">
+<!-- Left Continuous Segment: BLUFOR Blue container with player name in black & skull -->
+<div class="flex-1 min-w-0 bg-blue-700 border-y border-l border-blue-400/60 flex items-center px-3 gap-2 shadow-inner">
+<span class="material-symbols-outlined text-black text-[16px] shrink-0">skull</span>
+<span class="text-black font-extrabold text-[12px] tracking-tight truncate drop-shadow-sm">[LG] Yuki_Hattori</span>
+</div>
+<!-- Center Transition Divider / Text Badge bridging the two halves -->
+<div class="bg-[#0b1120] border-y border-slate-700 px-2.5 flex items-center justify-center shrink-0 z-10 shadow-md">
+<span class="text-[10px] font-extrabold text-slate-300 tracking-wider uppercase whitespace-nowrap flex items-center gap-1">
+<span class="text-rose-400">⚡</span> KILLED BY
+</span>
+</div>
+<!-- Right Continuous Segment: Solid OPFOR Red container spanning the rest with killer details -->
+<div class="flex-1 min-w-0 bg-red-600 border-y border-r border-red-400/60 flex items-center justify-between px-3 gap-2 shadow-inner">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-white text-[16px] shrink-0">my_location</span>
+<span class="text-white font-extrabold text-[12px] tracking-tight truncate drop-shadow-sm">[XOF] Ales</span>
+</div>
+<div class="flex items-center gap-1.5 shrink-0 pl-1">
+<span class="text-[10px] font-mono font-bold bg-red-800/90 text-red-100 border border-red-300/40 px-2 py-0.5 rounded shadow-sm">
+AK-74M <span class="text-red-200 font-normal">7N22</span>
+</span>
+</div>
+</div>
+</div>
+</div>
+<!-- TIER 2: Bottom Bar (Primary Weapon Badge + Inline Elimination Counters) -->
+<div class="flex items-center h-8 gap-1.5 text-xs font-mono w-full">
+<div class="flex items-center gap-1.5 shrink-0 px-2.5 h-full rounded bg-slate-900/90 border border-slate-800/90 text-amber-200 shadow-sm">
+<span class="text-[9px] font-bold uppercase tracking-wider text-amber-400/90 font-mono bg-amber-950/70 px-1 py-0.5 rounded border border-amber-500/30">PRI</span>
+<span class="font-bold tracking-wide text-[12px] text-amber-100 font-mono">AK-74M</span>
+</div>
+<div class="flex-1 flex items-center justify-between px-2.5 h-full bg-slate-900/85 border border-slate-800/90 rounded text-[11px] min-w-0 gap-2">
+<div class="flex-1 flex items-center justify-center gap-1.5 shrink-0">
+<span class="text-slate-400 text-[10px] uppercase tracking-wider">Inf:</span>
+<span class="font-bold text-slate-100 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700/80 text-[11px]">3</span>
+</div>
+<div class="h-3 w-px bg-slate-800 shrink-0"></div>
+<div class="flex-1 flex items-center justify-center gap-1.5 shrink-0">
+<span class="text-slate-400 text-[10px] uppercase tracking-wider">L.Veh:</span>
+<span class="font-bold text-slate-100 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700/80 text-[11px]">1</span>
+</div>
+<div class="h-3 w-px bg-slate-800 shrink-0"></div>
+<div class="flex-1 flex items-center justify-center gap-1.5 shrink-0">
+<span class="text-slate-500 text-[10px] uppercase tracking-wider">Tank:</span>
+<span class="font-medium text-slate-500 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800 text-[11px]">0</span>
+</div>
+<div class="h-3 w-px bg-slate-800 shrink-0"></div>
+<div class="flex-1 flex items-center justify-center gap-1.5 shrink-0">
+<span class="text-slate-500 text-[10px] uppercase tracking-wider">Air:</span>
+<span class="font-medium text-slate-500 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800 text-[11px]">0</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Adjacent Full-Height Combat Details Button (Preserved with animation and styling, without opening any popup drawer) -->
+<button class="self-stretch flex items-center justify-center gap-2 px-3.5 bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/90 hover:border-sky-500/60 rounded text-xs font-mono font-bold transition-all cursor-pointer group active:scale-[0.99] select-none shadow-sm shrink-0" id="combatDetailsBtn">
+<span class="text-sky-400 group-hover:-translate-y-0.5 transition-transform duration-150 text-[11px]" id="combatDetailsArrow">▲</span>
+<span class="tracking-wide">Combat Details</span>
+</button>
+</div>
+<!-- Bottom Helper Hint -->
+<div class="w-full flex items-center justify-between text-[11px] font-mono text-slate-500 px-1">
+</div>
+</div>
+<script>
+  let isDeadState = false;
+
+  function setLifeState(state) {
+    const topBarAlive = document.getElementById('topBarAlive');
+    const topBarDead = document.getElementById('topBarDead');
+    const btnAlive = document.getElementById('btnStateAlive');
+    const btnDead = document.getElementById('btnStateDead');
+
+    if (state === 'alive') {
+      isDeadState = false;
+      topBarAlive.classList.remove('hidden');
+      topBarDead.classList.add('hidden');
+
+      // Update interactive switcher buttons
+      btnAlive.className = 'px-3 py-1.5 rounded border border-emerald-500/60 bg-emerald-950/60 text-emerald-300 font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-sm';
+      btnDead.className = 'px-3 py-1.5 rounded border border-slate-700 bg-slate-900/80 text-slate-400 hover:text-rose-300 hover:border-rose-500/50 font-medium transition cursor-pointer flex items-center gap-1.5';
+    } else {
+      isDeadState = true;
+      topBarAlive.classList.add('hidden');
+      topBarDead.classList.remove('hidden');
+
+      // Update interactive switcher buttons
+      btnDead.className = 'px-3 py-1.5 rounded border border-rose-500/70 bg-rose-950/70 text-rose-200 font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-sm';
+      btnAlive.className = 'px-3 py-1.5 rounded border border-slate-700 bg-slate-900/80 text-slate-400 hover:text-emerald-300 hover:border-emerald-500/50 font-medium transition cursor-pointer flex items-center gap-1.5';
+    }
+  }
+</script>
+</body></html>

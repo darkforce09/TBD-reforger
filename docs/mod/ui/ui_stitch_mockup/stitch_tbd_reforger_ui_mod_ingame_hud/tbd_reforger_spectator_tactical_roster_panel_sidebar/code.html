@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+
+<html lang="en" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TBD Reforger - Spectator Tactical Roster Panel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom subtle tactical scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(11, 17, 32, 0.4);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(59, 130, 246, 0.25);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(59, 130, 246, 0.5);
+    }
+    .glass-panel {
+      background: rgba(8, 14, 29, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    /* macOS Seamless Tab Unification System */
+    /* Target shared surface color: #0d1424 */
+    .unified-roster-surface {
+      background-color: #0d1424;
+    }
+
+    /* Active Tab merges seamlessly into the body with rounded-t-lg and zero bottom border */
+    .macos-tab-active {
+      background-color: #0d1424 !important;
+      position: relative;
+      z-index: 30;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+      border-top: 1px solid rgba(56, 189, 248, 0.22);
+      border-left: 1px solid rgba(56, 189, 248, 0.18);
+      border-right: 1px solid rgba(56, 189, 248, 0.18);
+      border-bottom: none !important;
+    }
+
+    /* Smooth outward concave fillets (macOS tab inverted radii) at bottom corners */
+    .macos-tab-active::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: -8px;
+      width: 8px;
+      height: 8px;
+      background: transparent;
+      border-bottom-right-radius: 8px;
+      box-shadow: 4px 0 0 0 #0d1424;
+      pointer-events: none;
+    }
+
+    .macos-tab-active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: -8px;
+      width: 8px;
+      height: 8px;
+      background: transparent;
+      border-bottom-left-radius: 8px;
+      box-shadow: -4px 0 0 0 #0d1424;
+      pointer-events: none;
+    }
+
+    .macos-tab-inactive {
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom: none;
+      position: relative;
+      z-index: 10;
+      opacity: 0.72;
+    }
+    .macos-tab-inactive:hover {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.03);
+    }
+  </style>
+</head>
+<body class="text-slate-100 min-h-screen overflow-hidden relative flex bg-[#080e1d]">
+<!-- Background Simulation Viewport Layer (Simulated 3D battlefield context) -->
+<div class="fixed inset-0 z-0 bg-cover bg-center pointer-events-none opacity-40 scale-105" style="background-image: radial-gradient(circle at 60% 40%, rgba(13, 19, 34, 0.2) 0%, rgba(7, 11, 20, 0.95) 85%), url('https://lh3.googleusercontent.com/aida-public/AB6AXuA6HKQ4V_tnV1iTYm4wZzM7LbxMjmKamXcw7rDR0CFKvy3KHh4f9eygprC9JiSfmvOPqF1H17kB6fq4nJ70Kzq7R2gh3-X3VKCyInDia-5i1GlmMu_wkO6Y1OOaUCEXH7XrQ-q4e3uomXnz5_yEqgSBD-s5_o6I7USj1EaBwGGlYx0yUJlwAOz6TPoydULDtjBlopMxu5QHKJ6wdNjrG-awk-aUTKdvfb-O0St6okLMyzMilAk377k1'); filter: contrast(1.1) brightness(0.65) saturate(0.85);">
+</div>
+<!-- Ambient Tactical Vignette & Grid Lines -->
+<div class="fixed inset-0 z-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-[#070b14]/50 to-[#05080f]"></div>
+<div class="fixed inset-0 z-0 pointer-events-none opacity-5 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+<!-- ========================================================================= -->
+<!-- SPECTATOR ROSTER SIDEBAR (LEFT PANEL)                                     -->
+<!-- ========================================================================= -->
+<aside class="relative z-20 h-screen flex flex-col glass-panel shadow-2xl border-r border-slate-800/80 flex-1">
+<!-- FACTION TABS RECESSED SHELF (Directly sits flush on top of unified player container) -->
+<div class="px-3 pt-3 bg-[#080e1d] border-b-0 relative z-20">
+<div class="grid grid-cols-4 gap-2 items-end relative" id="faction-tab-group" role="tablist">
+<!-- BLUFOR TAB -->
+<button aria-selected="true" class="faction-tab macos-tab-active relative flex flex-col items-center justify-center pt-2.5 pb-2 px-1 transition-all duration-150 cursor-pointer" id="tab-blufor" onclick="switchFaction('blufor')" role="tab">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2 h-2 rounded-sm bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></span>
+<span class="text-[11px] font-bold tracking-wider font-mono text-white">BLU</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="text-xs font-bold font-mono text-white" id="count-blufor-alive">28</span>
+<span class="text-[10px] font-mono text-slate-400">/32</span>
+</div>
+</button>
+<!-- OPFOR TAB -->
+<button aria-selected="false" class="faction-tab macos-tab-inactive relative flex flex-col items-center justify-center pt-2.5 pb-2 px-1 transition-all duration-150 cursor-pointer rounded-t-lg" id="tab-opfor" onclick="switchFaction('opfor')" role="tab">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2 h-2 rounded-sm bg-red-500 opacity-80"></span>
+<span class="text-[11px] font-bold tracking-wider font-mono text-slate-300">OPF</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="text-xs font-bold font-mono text-slate-300" id="count-opfor-alive">34</span>
+<span class="text-[10px] font-mono text-slate-400">/36</span>
+</div>
+</button>
+<!-- INDFOR TAB -->
+<button aria-selected="false" class="faction-tab macos-tab-inactive relative flex flex-col items-center justify-center pt-2.5 pb-2 px-1 transition-all duration-150 cursor-pointer rounded-t-lg" id="tab-indfor" onclick="switchFaction('indfor')" role="tab">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2 h-2 rounded-sm bg-emerald-500 opacity-80"></span>
+<span class="text-[11px] font-bold tracking-wider font-mono text-slate-300">IND</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="text-xs font-bold font-mono text-slate-300" id="count-indfor-alive">12</span>
+<span class="text-[10px] font-mono text-slate-400">/14</span>
+</div>
+</button>
+<!-- CIV TAB -->
+<button aria-selected="false" class="faction-tab macos-tab-inactive relative flex flex-col items-center justify-center pt-2.5 pb-2 px-1 transition-all duration-150 cursor-pointer rounded-t-lg" id="tab-civ" onclick="switchFaction('civ')" role="tab">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="w-2 h-2 rounded-sm bg-purple-500 opacity-80"></span>
+<span class="text-[11px] font-bold tracking-wider font-mono text-slate-300">CIV</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="text-xs font-bold font-mono text-slate-300" id="count-civ-alive">6</span>
+<span class="text-[10px] font-mono text-slate-400">/6</span>
+</div>
+</button>
+</div>
+</div>
+<!-- SQUADS & PLAYERS LIST CONTAINER: Shares exact unified background `#0d1424` seamlessly joining active tab -->
+<div class="flex-1 overflow-y-auto px-3 py-3 space-y-3 unified-roster-surface relative z-10 border-slate-800/60" id="roster-container">
+<div class="squad-group bg-[#0d1424]/95 rounded-lg border border-slate-800/80 overflow-hidden shadow-sm">
+<!-- Squad Accordion Header (No square next to squad name) -->
+<div class="px-3 py-2 bg-[#121b30] border-b border-slate-800/90 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold text-slate-200 tracking-wide font-mono">Alpha 1-1</span>
+</div>
+</div>
+<!-- Squad Player Roster Rows -->
+<div class="divide-y divide-slate-800/50">
+<div class="p-2.5 cursor-pointer transition-all duration-150 flex items-center justify-between gap-2.5 bg-slate-950/50 opacity-60 hover:opacity-80" onclick="selectPlayer('p-b-1')">
+<!-- Left side: Player Name, Role -->
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-mono truncate text-slate-500 line-through decoration-slate-600">[LG] Yuki_Hattori</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+<span class="truncate">Squad Leader</span>
+</div>
+</div>
+</div>
+<!-- Right side: Clean segmented vehicle badge -->
+<div class="flex-shrink-0 flex items-center gap-1.5">
+</div>
+</div>
+<div class="p-2.5 cursor-pointer transition-all duration-150 flex items-center justify-between gap-2.5 hover:bg-slate-800/40" onclick="selectPlayer('p-b-2')">
+<!-- Left side: Player Name, Role -->
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-mono truncate text-slate-100 font-semibold">[LG] Eben</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+<span class="truncate">Lead Scout / Marksman</span>
+</div>
+</div>
+</div>
+<!-- Right side: Clean segmented vehicle badge -->
+<div class="flex-shrink-0 flex items-center gap-1.5">
+</div>
+</div>
+<div class="p-2.5 cursor-pointer transition-all duration-150 flex items-center justify-between gap-2.5 hover:bg-slate-800/40" onclick="selectPlayer('p-b-3')">
+<!-- Left side: Player Name, Role -->
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-mono truncate text-slate-100 font-semibold">[FDX] Azmir[LG]</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+<span class="truncate">Combat Medic</span>
+</div>
+</div>
+</div>
+<!-- Right side: Clean segmented vehicle badge -->
+<div class="flex-shrink-0 flex items-center gap-1.5">
+</div>
+</div>
+<div class="p-2.5 cursor-pointer transition-all duration-150 flex items-center justify-between gap-2.5 hover:bg-slate-800/40" onclick="selectPlayer('p-b-4')">
+<!-- Left side: Player Name, Role -->
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-mono truncate text-slate-100 font-semibold">Private Pyle</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+<span class="truncate">Rifleman / AT Specialist</span>
+</div>
+</div>
+</div>
+<!-- Right side: Clean segmented vehicle badge -->
+<div class="flex-shrink-0 flex items-center gap-1.5">
+</div>
+</div>
+</div>
+</div>
+<div class="squad-group bg-[#0d1424]/95 rounded-lg border border-slate-800/80 overflow-hidden shadow-sm">
+<!-- Squad Accordion Header (No square next to squad name) -->
+<div class="px-3 py-2 bg-[#121b30] border-b border-slate-800/90 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold text-slate-200 tracking-wide font-mono">Alpha 1-2</span>
+</div>
+</div>
+<!-- Squad Player Roster Rows -->
+<div class="divide-y divide-slate-800/50">
+<div class="p-2.5 cursor-pointer transition-all duration-150 flex items-center justify-between gap-2.5 hover:bg-slate-800/40" onclick="selectPlayer('p-b-5')">
+<!-- Left side: Player Name, Role -->
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-mono truncate text-slate-100 font-semibold">[FOX] Beast</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+<span class="truncate">Motor Lead / Heavy Driver</span>
+</div>
+</div>
+</div>
+<!-- Right side: Clean segmented vehicle badge -->
+<div class="flex-shrink-0 flex items-center gap-1.5">
+<div class="inline-flex items-center rounded overflow-hidden border border-cyan-500/40 bg-cyan-950/60 shadow-sm text-[10px] font-mono text-cyan-300">
+<div class="flex items-center gap-1 px-1.5 py-0.5 border-r border-cyan-500/30 text-slate-300">
+<span class="font-semibold truncate max-w-[95px]">M923A2</span>
+</div>
+<span class="px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 font-bold tracking-tight">Driver</span>
+</div>
+</div>
+</div>
+<div class="p-2.5 cursor-pointer transition-all duration-150 flex items-center justify-between gap-2.5 hover:bg-slate-800/40" onclick="selectPlayer('p-b-6')">
+<!-- Left side: Player Name, Role -->
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-mono truncate text-slate-100 font-semibold">[TERA] western_fog</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+<span class="truncate">Heavy Machine Gunner</span>
+</div>
+</div>
+</div>
+<!-- Right side: Clean segmented vehicle badge -->
+<div class="flex-shrink-0 flex items-center gap-1.5">
+<div class="inline-flex items-center rounded overflow-hidden border border-cyan-500/40 bg-cyan-950/60 shadow-sm text-[10px] font-mono text-cyan-300">
+<div class="flex items-center gap-1 px-1.5 py-0.5 border-r border-cyan-500/30 text-slate-300">
+<span class="font-semibold truncate max-w-[95px]">M923A2</span>
+</div>
+<span class="px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 font-bold tracking-tight">Gunner</span>
+</div>
+</div>
+</div>
+<div class="p-2.5 cursor-pointer transition-all duration-150 flex items-center justify-between gap-2.5 hover:bg-slate-800/40" onclick="selectPlayer('p-b-7')">
+<!-- Left side: Player Name, Role -->
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-mono truncate text-slate-100 font-semibold">[TERA] teran</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+<span class="truncate">Grenadier</span>
+</div>
+</div>
+</div>
+<!-- Right side: Clean segmented vehicle badge -->
+<div class="flex-shrink-0 flex items-center gap-1.5">
+<div class="inline-flex items-center rounded overflow-hidden border border-cyan-500/40 bg-cyan-950/60 shadow-sm text-[10px] font-mono text-cyan-300">
+<div class="flex items-center gap-1 px-1.5 py-0.5 border-r border-cyan-500/30 text-slate-300">
+<span class="font-semibold truncate max-w-[95px]">M923A2</span>
+</div>
+<span class="px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 font-bold tracking-tight">Passenger [1]</span>
+</div>
+</div>
+</div>
+<div class="p-2.5 cursor-pointer transition-all duration-150 flex items-center justify-between gap-2.5 bg-slate-950/50 opacity-60 hover:opacity-80" onclick="selectPlayer('p-b-8')">
+<!-- Left side: Player Name, Role -->
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-mono truncate text-slate-500 line-through decoration-slate-600">[2nd] Miller</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+<span class="truncate">Assistant Team Leader</span>
+</div>
+</div>
+</div>
+<!-- Right side: Clean segmented vehicle badge -->
+<div class="flex-shrink-0 flex items-center gap-1.5">
+</div>
+</div>
+</div>
+</div>
+<div class="squad-group bg-[#0d1424]/95 rounded-lg border border-slate-800/80 overflow-hidden shadow-sm">
+<!-- Squad Accordion Header (No square next to squad name) -->
+<div class="px-3 py-2 bg-[#121b30] border-b border-slate-800/90 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold text-slate-200 tracking-wide font-mono">Bravo 2-1</span>
+</div>
+</div>
+<!-- Squad Player Roster Rows -->
+<div class="divide-y divide-slate-800/50">
+<div class="p-2.5 cursor-pointer transition-all duration-150 flex items-center justify-between gap-2.5 hover:bg-slate-800/40" onclick="selectPlayer('p-b-9')">
+<!-- Left side: Player Name, Role -->
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-mono truncate text-slate-100 font-semibold">[KNBM] PANIDA</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+<span class="truncate">Crew Commander</span>
+</div>
+</div>
+</div>
+<!-- Right side: Clean segmented vehicle badge -->
+<div class="flex-shrink-0 flex items-center gap-1.5">
+<div class="inline-flex items-center rounded overflow-hidden border border-cyan-500/40 bg-cyan-950/60 shadow-sm text-[10px] font-mono text-cyan-300">
+<div class="flex items-center gap-1 px-1.5 py-0.5 border-r border-cyan-500/30 text-slate-300">
+<span class="font-semibold truncate max-w-[95px]">M113A3 APC</span>
+</div>
+<span class="px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 font-bold tracking-tight">Commander</span>
+</div>
+</div>
+</div>
+<div class="p-2.5 cursor-pointer transition-all duration-150 flex items-center justify-between gap-2.5 hover:bg-slate-800/40" onclick="selectPlayer('p-b-10')">
+<!-- Left side: Player Name, Role -->
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-mono truncate text-slate-100 font-semibold">[OWR] ZDRA</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+<span class="truncate">Vehicle Driver</span>
+</div>
+</div>
+</div>
+<!-- Right side: Clean segmented vehicle badge -->
+<div class="flex-shrink-0 flex items-center gap-1.5">
+<div class="inline-flex items-center rounded overflow-hidden border border-cyan-500/40 bg-cyan-950/60 shadow-sm text-[10px] font-mono text-cyan-300">
+<div class="flex items-center gap-1 px-1.5 py-0.5 border-r border-cyan-500/30 text-slate-300">
+<span class="font-semibold truncate max-w-[95px]">M113A3 APC</span>
+</div>
+<span class="px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 font-bold tracking-tight">Driver</span>
+</div>
+</div>
+</div>
+<div class="p-2.5 cursor-pointer transition-all duration-150 flex items-center justify-between gap-2.5 bg-blue-950/40" onclick="selectPlayer('p-b-11')">
+<!-- Left side: Player Name, Role -->
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-mono truncate text-slate-500 line-through decoration-slate-600">[OWR] Kaz</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+<span class="truncate">Vehicle Gunner</span>
+</div>
+</div>
+</div>
+<!-- Right side: Clean segmented vehicle badge -->
+<div class="flex-shrink-0 flex items-center gap-1.5">
+</div>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- ========================================================================= -->
+<!-- ROSTER LOGIC & DATA DEFINITIONS                                           -->
+<!-- ========================================================================= -->
+<script>
+    // Tactical Roster State & Data Store
+    const ROSTER_DATA = {
+      blufor: {
+        title: "TASK FORCE BLUFOR",
+        squads: [
+          {
+            squadId: "b-sq-1",
+            squadName: "Alpha 1-1",
+            players: [
+              {
+                id: "p-b-1",
+                name: "[LG] Yuki_Hattori",
+                role: "Squad Leader",
+                alive: false,
+                vehicle: null
+              },
+              {
+                id: "p-b-2",
+                name: "[LG] Eben",
+                role: "Lead Scout / Marksman",
+                alive: true,
+                vehicle: null
+              },
+              {
+                id: "p-b-3",
+                name: "[FDX] Azmir[LG]",
+                role: "Combat Medic",
+                alive: true,
+                vehicle: null
+              },
+              {
+                id: "p-b-4",
+                name: "Private Pyle",
+                role: "Rifleman / AT Specialist",
+                alive: true,
+                vehicle: null
+              }
+            ]
+          },
+          {
+            squadId: "b-sq-2",
+            squadName: "Alpha 1-2",
+            players: [
+              {
+                id: "p-b-5",
+                name: "[FOX] Beast",
+                role: "Motor Lead / Heavy Driver",
+                alive: true,
+                vehicle: { model: "M923A2", seat: "Driver" }
+              },
+              {
+                id: "p-b-6",
+                name: "[TERA] western_fog",
+                role: "Heavy Machine Gunner",
+                alive: true,
+                vehicle: { model: "M923A2", seat: "Gunner" }
+              },
+              {
+                id: "p-b-7",
+                name: "[TERA] teran",
+                role: "Grenadier",
+                alive: true,
+                vehicle: { model: "M923A2", seat: "Passenger [1]" }
+              },
+              {
+                id: "p-b-8",
+                name: "[2nd] Miller",
+                role: "Assistant Team Leader",
+                alive: false,
+                vehicle: null
+              }
+            ]
+          },
+          {
+            squadId: "b-sq-3",
+            squadName: "Bravo 2-1",
+            players: [
+              {
+                id: "p-b-9",
+                name: "[KNBM] PANIDA",
+                role: "Crew Commander",
+                alive: true,
+                vehicle: { model: "M113A3 APC", seat: "Commander" }
+              },
+              {
+                id: "p-b-10",
+                name: "[OWR] ZDRA",
+                role: "Vehicle Driver",
+                alive: true,
+                vehicle: { model: "M113A3 APC", seat: "Driver" }
+              },
+              {
+                id: "p-b-11",
+                name: "[OWR] Kaz",
+                role: "Vehicle Gunner",
+                alive: false,
+                vehicle: null
+              }
+            ]
+          }
+        ]
+      },
+
+      opfor: {
+        title: "OPFOR MOTORIZED REGIMENT",
+        squads: [
+          {
+            squadId: "o-sq-1",
+            squadName: "Zarya 1-1",
+            players: [
+              {
+                id: "p-o-1",
+                name: "[XOF] Ales",
+                role: "Marksman / Sniper",
+                alive: true,
+                vehicle: null
+              },
+              {
+                id: "p-o-2",
+                name: "[1xDB] Voron",
+                role: "Spotter / Forward Observer",
+                alive: true,
+                vehicle: null
+              },
+              {
+                id: "p-o-3",
+                name: "[L-13] Vikhr",
+                role: "Combat Sapper",
+                alive: true,
+                vehicle: { model: "UAZ-469", seat: "Driver" }
+              },
+              {
+                id: "p-o-4",
+                name: "gHosT",
+                role: "Assault Rifleman",
+                alive: false,
+                vehicle: null
+              }
+            ]
+          },
+          {
+            squadId: "o-sq-2",
+            squadName: "Zarya 1-2",
+            players: [
+              {
+                id: "p-o-7",
+                name: "[MSV] Chernov",
+                role: "Squad Leader",
+                alive: true,
+                vehicle: { model: "BTR-70", seat: "Commander" }
+              },
+              {
+                id: "p-o-8",
+                name: "[MSV] Antonov",
+                role: "Vehicle Gunner",
+                alive: true,
+                vehicle: { model: "BTR-70", seat: "Gunner" }
+              }
+            ]
+          }
+        ]
+      },
+
+      indfor: {
+        title: "INDFOR / GUERRILLA",
+        squads: [
+          {
+            squadId: "i-sq-1",
+            squadName: "Partisan Cell",
+            players: [
+              {
+                id: "p-i-1",
+                name: "[FIA] Radomir",
+                role: "Cell Commander",
+                alive: true,
+                vehicle: { model: "Technical DShKM", seat: "Driver" }
+              },
+              {
+                id: "p-i-2",
+                name: "[FIA] Bohuslav",
+                role: "Technical Gunner",
+                alive: true,
+                vehicle: { model: "Technical DShKM", seat: "Gunner" }
+              },
+              {
+                id: "p-i-3",
+                name: "[FIA] Jan",
+                role: "Sapper Specialist",
+                alive: true,
+                vehicle: null
+              }
+            ]
+          }
+        ]
+      },
+
+      civ: {
+        title: "CIVILIAN POPULATION",
+        squads: [
+          {
+            squadId: "c-sq-1",
+            squadName: "St. Philippe Township",
+            players: [
+              {
+                id: "p-c-1",
+                name: "Press_Henri_V",
+                role: "Combat Journalist",
+                alive: true,
+                vehicle: { model: "Sedan 1982", seat: "Driver" }
+              },
+              {
+                id: "p-c-2",
+                name: "AidWorker_Claire",
+                role: "Red Cross Paramedic",
+                alive: true,
+                vehicle: null
+              },
+              {
+                id: "p-c-3",
+                name: "Lukas_Farmer",
+                role: "Local Elder",
+                alive: true,
+                vehicle: { model: "Zetor Tractor", seat: "Driver" }
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    let currentFaction = 'blufor';
+    let selectedPlayerId = 'p-b-1';
+
+    // Roster Renderer
+    function renderRoster() {
+      const faction = ROSTER_DATA[currentFaction];
+      const container = document.getElementById('roster-container');
+      if (!container || !faction) return;
+
+      let html = '';
+
+      faction.squads.forEach(squad => {
+        html += `
+          <div class="squad-group bg-[#0d1424]/95 rounded-lg border border-slate-800/80 overflow-hidden shadow-sm">
+            
+            <!-- Squad Accordion Header (No square next to squad name) -->
+            <div class="px-3 py-2 bg-[#121b30] border-b border-slate-800/90 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-200 tracking-wide font-mono">${squad.squadName}</span>
+              </div>
+            </div>
+
+            <!-- Squad Player Roster Rows -->
+            <div class="divide-y divide-slate-800/50">
+        `;
+
+        squad.players.forEach(player => {
+          const isSelected = player.id === selectedPlayerId;
+          const isAlive = player.alive;
+
+          // Seamless row backgrounds: selected player gets subtle tint, NO vertical left border bar
+          const rowBg = isSelected 
+            ? 'bg-blue-950/40' 
+            : (isAlive ? 'hover:bg-slate-800/40' : 'bg-slate-950/50 opacity-60 hover:opacity-80');
+
+          const nameColor = isAlive 
+            ? 'text-slate-100 font-semibold' 
+            : 'text-slate-500 line-through decoration-slate-600';
+
+          // Vehicle segmented pill badges without generic labels/icons
+          let vehicleHtml = '';
+          if (isAlive && player.vehicle) {
+            vehicleHtml = `
+              <div class="inline-flex items-center rounded overflow-hidden border border-cyan-500/40 bg-cyan-950/60 shadow-sm text-[10px] font-mono text-cyan-300">
+                <div class="flex items-center gap-1 px-1.5 py-0.5 border-r border-cyan-500/30 text-slate-300">
+                  <span class="font-semibold truncate max-w-[95px]">${player.vehicle.model}</span>
+                </div>
+                <span class="px-1.5 py-0.5 bg-cyan-900/50 text-cyan-300 font-bold tracking-tight">${player.vehicle.seat}</span>
+              </div>
+            `;
+          }
+
+          html += `
+            <div onclick="selectPlayer('${player.id}')"
+                 class="p-2.5 cursor-pointer transition-all duration-150 flex items-center justify-between gap-2.5 ${rowBg}">
+              
+              <!-- Left side: Player Name, Role -->
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-mono truncate ${nameColor}">${player.name}</span>
+                  </div>
+                  
+                  <div class="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                    <span class="truncate">${player.role}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right side: Clean segmented vehicle badge -->
+              <div class="flex-shrink-0 flex items-center gap-1.5">
+                ${vehicleHtml}
+              </div>
+
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // Switch faction tabs with seamless active tab geometry
+    function switchFaction(factionKey) {
+      currentFaction = factionKey;
+
+      const tabs = ['blufor', 'opfor', 'indfor', 'civ'];
+      tabs.forEach(tab => {
+        const btn = document.getElementById(`tab-${tab}`);
+        if (!btn) return;
+
+        if (tab === factionKey) {
+          btn.setAttribute('aria-selected', 'true');
+          btn.className = 'faction-tab macos-tab-active relative flex flex-col items-center justify-center pt-2.5 pb-2 px-1 transition-all duration-150 cursor-pointer';
+          const nameEl = btn.querySelector('span.tracking-wider');
+          const countEl = btn.querySelector('span.font-bold:not(.tracking-wider)');
+          if (nameEl) nameEl.className = 'text-[11px] font-bold tracking-wider font-mono text-white';
+          if (countEl) countEl.className = 'text-xs font-bold font-mono text-white';
+        } else {
+          btn.setAttribute('aria-selected', 'false');
+          btn.className = 'faction-tab macos-tab-inactive relative flex flex-col items-center justify-center pt-2.5 pb-2 px-1 transition-all duration-150 cursor-pointer rounded-t-lg';
+          const nameEl = btn.querySelector('span.tracking-wider');
+          const countEl = btn.querySelector('span.font-bold:not(.tracking-wider)');
+          if (nameEl) nameEl.className = 'text-[11px] font-bold tracking-wider font-mono text-slate-300';
+          if (countEl) countEl.className = 'text-xs font-bold font-mono text-slate-300';
+        }
+      });
+
+      renderRoster();
+    }
+
+    // Select Player handler
+    function selectPlayer(id) {
+      selectedPlayerId = id;
+      renderRoster();
+    }
+
+    // Initial boot
+    document.addEventListener('DOMContentLoaded', () => {
+      renderRoster();
+    });
+  </script>
+</body></html>

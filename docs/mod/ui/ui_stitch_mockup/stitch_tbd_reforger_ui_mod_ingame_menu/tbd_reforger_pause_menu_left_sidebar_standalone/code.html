@@ -1,0 +1,143 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TBD Reforger - Pause Menu Left Sidebar (Standalone)</title>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <!-- Google Material Symbols Outlined -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            surface: {
+              DEFAULT: '#0b1120',
+              dim: '#080e1d',
+              card: '#0d1322',
+              container: '#151b2b',
+              high: '#1e2638',
+            },
+            primary: {
+              DEFAULT: '#3b82f6',
+              hover: '#2563eb',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    /* Subtle custom tactical scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+  </style>
+</head>
+<body class="bg-[#050811] text-[#dde2f7] min-h-screen p-8 flex items-start justify-center font-sans select-none antialiased">
+
+  <!-- Standalone Pause Menu Left Sidebar Card Container -->
+  <aside class="w-[320px] bg-[#0d1322]/95 backdrop-blur-xl border border-slate-800/90 rounded-2xl shadow-2xl p-4 flex flex-col gap-4 text-sm relative">
+    
+    <!-- Header Brand Section -->
+    <div class="flex items-center justify-between px-1.5 pt-1 pb-1">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-sm shadow-blue-500/10">
+          <span class="material-symbols-outlined text-[18px]">dashboard</span>
+        </div>
+        <div><div class="text-sm font-bold text-white tracking-tight">Main Menu</div></div>
+      </div>
+      
+    </div>
+
+    <!-- Divider Line -->
+    <div class="h-px w-full bg-slate-800/80"></div>
+
+    <!-- Navigation Menu Items -->
+    <div class="flex flex-col gap-1.5">
+      <!-- Player Options (Active / Selected) -->
+      <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-blue-600 text-white font-medium text-xs shadow-lg shadow-blue-600/20 transition-all text-left">
+        <div class="flex items-center gap-2.5">
+          <span class="material-symbols-outlined text-[18px]">tune</span>
+          <span class="tracking-wide">Player Options</span>
+        </div>
+        <span class="material-symbols-outlined text-[16px] text-blue-200">chevron_right</span>
+      </button>
+
+      <!-- Admin Panel -->
+      <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/70 border border-slate-800/60 hover:border-slate-700 text-slate-300 hover:text-white font-medium text-xs transition-all text-left group">
+        <div class="flex items-center gap-2.5">
+          <span class="material-symbols-outlined text-[18px] text-slate-400 group-hover:text-slate-200">admin_panel_settings</span>
+          <span class="tracking-wide">Admin Panel</span>
+        </div>
+        <span class="text-[9px] font-mono px-1.5 py-0.5 bg-blue-950/60 text-blue-400 rounded border border-blue-800/50 font-semibold tracking-wider">AUTH</span>
+      </button><button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/70 border border-slate-800/60 hover:border-slate-700 text-slate-300 hover:text-white font-medium text-xs transition-all text-left group">
+  <div class="flex items-center gap-2.5">
+    <span class="material-symbols-outlined text-[18px] text-slate-400 group-hover:text-slate-200">support_agent</span>
+    <span class="tracking-wide">Contact Admin</span>
+  </div>
+</button>
+<button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/70 border border-slate-800/60 hover:border-slate-700 text-slate-300 hover:text-white font-medium text-xs transition-all text-left group">
+  <div class="flex items-center gap-2.5">
+    <span class="material-symbols-outlined text-[18px] text-slate-400 group-hover:text-slate-200">meeting_room</span>
+    <span class="tracking-wide">Lobby</span>
+  </div>
+</button><button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/70 border border-slate-800/60 hover:border-slate-700 text-slate-300 hover:text-white font-medium text-xs transition-all text-left group">
+  <div class="flex items-center gap-2.5">
+    <span class="material-symbols-outlined text-[18px] text-slate-400 group-hover:text-slate-200">badge</span>
+    <span class="tracking-wide">Identity Link</span>
+  </div>
+</button><button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/70 border border-slate-800/60 hover:border-slate-700 text-slate-300 hover:text-white font-medium text-xs transition-all text-left group">
+  <div class="flex items-center gap-2.5">
+    <span class="material-symbols-outlined text-[18px] text-slate-400 group-hover:text-slate-200">close</span>
+    <span class="tracking-wide">Close</span>
+  </div>
+</button>
+
+      <!-- Debug Console -->
+      
+
+      <!-- Resume Game -->
+      
+    </div>
+
+    <!-- Quick Audio Tool: Tactical Earplugs -->
+    
+
+    <!-- Emergency Utility: Fix Uniform Bug -->
+    
+
+    <!-- Staging / Safe-Start Status Card -->
+    
+
+  </aside>
+
+
+
+
+
+
+
+</body></html>

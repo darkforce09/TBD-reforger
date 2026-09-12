@@ -1,0 +1,118 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TBD Reforger - Lobby Sidebar (Standalone)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: '#0b1120',
+            'surface-dim': '#0d1322',
+            'surface-container-lowest': '#080e1d',
+            'surface-container-low': '#151b2b',
+            'surface-container': '#1a2235',
+            'surface-container-high': '#222c42',
+            primary: '#3b82f6',
+            'primary-glow': 'rgba(59, 130, 246, 0.15)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #080e1d;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(13, 19, 34, 0.5);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(71, 85, 105, 0.5);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.7);
+    }
+  </style>
+</head>
+<body class="min-h-screen p-6 flex items-start justify-start">
+
+  <!-- Standalone Lobby Sidebar Panel -->
+  <div class="w-80 bg-surface-dim/95 backdrop-blur-md border border-slate-800/80 rounded-lg shadow-2xl flex flex-col overflow-hidden text-sm select-none">
+
+    <!-- Scrollable Sidebar Content -->
+    <div class="p-4 space-y-6 overflow-y-auto max-h-[820px]">
+
+      <!-- Section: Factions -->
+      <div>
+        <div class="flex items-center justify-between text-[11px] font-semibold tracking-wider text-slate-400 uppercase mb-2.5 px-1">
+          <span class="">Factions</span>
+          
+        </div>
+        <div class="space-y-1.5">
+          <!-- BLUFOR Active Selection -->
+          <button class="w-full flex items-center justify-between px-3 py-2 rounded-md bg-blue-950/80 border border-blue-500/40 text-blue-300 font-medium text-xs transition-all hover:bg-blue-600/25 group"><div class="flex items-center gap-2">
+              <span class="tracking-wide w-20 text-left font-semibold text-blue-300">BLUFOR</span>
+              <span class="text-[9px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded bg-slate-900 text-slate-200 border border-slate-700 font-medium shadow-sm">DEFENDING</span>
+            </div>
+            <span class="font-mono text-[11px] bg-slate-900 text-slate-200 px-2 py-0.5 rounded border border-slate-700 group-hover:text-white font-medium shadow-sm">
+              0 / 92
+            </span></button>
+
+          <!-- OPFOR Inactive -->
+          <button class="w-full flex items-center justify-between px-3 py-2 rounded-md bg-red-500/20 border border-red-500/30 text-rose-400 font-medium text-xs transition-all hover:bg-red-500/30 hover:border-red-500/60 hover:text-rose-300 group"><div class="flex items-center gap-2">
+              <span class="tracking-wide w-20 text-left font-semibold text-rose-400">OPFOR</span>
+              <span class="text-[9px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded bg-slate-900 text-slate-200 border border-slate-700 font-medium shadow-sm">ATTACKING</span>
+            </div>
+            <span class="font-mono text-[11px] bg-slate-900 text-slate-200 px-2 py-0.5 rounded border border-slate-700 group-hover:text-white font-medium shadow-sm">
+              0 / 95
+            </span></button>
+        </div>
+      </div>
+
+      <!-- Section: Observers -->
+      <div>
+        
+        <button class="w-full flex items-center justify-between px-3 py-2 rounded-md bg-slate-900/40 border border-slate-800/60 text-slate-400 font-medium text-xs transition-all hover:bg-slate-800/50 hover:text-slate-200 group">
+          <div class="flex items-center gap-2">
+            
+            <span class="tracking-wide w-20 text-left">Spectators</span>
+          </div>
+          <span class="font-mono text-[11px] bg-slate-900 text-slate-200 px-2 py-0.5 rounded border border-slate-700 group-hover:text-white font-medium shadow-sm">0 / 10</span>
+        </button>
+      </div>
+
+      <!-- Section: Voice / TFAR Comms -->
+      
+
+    </div>
+
+    <!-- Section: Connected Players Footer Dock -->
+    
+
+  </div>
+
+
+
+
+
+
+
+
+
+</body></html>
