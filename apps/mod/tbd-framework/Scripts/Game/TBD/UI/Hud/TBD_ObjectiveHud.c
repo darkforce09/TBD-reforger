@@ -1,14 +1,11 @@
 //! T-941.4 — objective list + capture bar. Replaces the per-tick chat pump.
 //!
-//! Layout path lives HERE, not in TBD_UILayouts.c (T-941.3 owns that file). Create() still
-//! falls back to the bare path when the GUID is missing from resourceDatabase.rdb — first
-//! Workbench pass indexes it. Transport hangs off SCR_PlayerController so Owner RPC delivers
+//! Layout is `TBD_UILayouts.OBJECTIVE_HUD` (UI reorg 2026-09-12; used to be pinned here). Transport hangs off SCR_PlayerController so Owner RPC delivers
 //! one snapshot per client, the same pattern TBD_TaskHud uses.
 
 class TBD_ObjectiveHud : ScriptedWidgetComponent
 {
-	//! HUD-local. Do not add this to TBD_UILayouts.c.
-	static const ResourceName LAYOUT = "{7BD1A70000000A01}UI/layouts/TBD_ObjectiveHud.layout";
+	static const ResourceName LAYOUT = TBD_UILayouts.OBJECTIVE_HUD;
 
 	//! Matches CaptureFill SizeX in TBD_ObjectiveHud.layout (C3: 328).
 	static const float BAR_WIDTH = 328.0;

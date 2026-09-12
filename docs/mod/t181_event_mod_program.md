@@ -161,7 +161,7 @@ rewritten; `.c` files are directory-scanned and are NOT affected.
 | Missing from rdb | Gates |
 |---|---|
 | `Configs/System/chimeraMenus.conf` | all five menu presets |
-| `UI/layouts/TBD_ScreenShell.layout`, `TBD_ListRow.layout` | every screen's widgets |
+| `UI/layouts/Core/TBD_ScreenShell.layout`, `TBD_ListRow.layout` (moved to `Core/` 2026-09-12) | every screen's widgets |
 | `Configs/System/ActionContext/TBD_SpectatorContext.conf` | spectator input context |
 | `Configs/System/Actions/TBD_Spec{Free,Next,Prev,Roster,View}.conf` | spectator keybinds |
 | `Configs/System/Actions/TBD_AdminMenu.conf` | admin menu keybind |

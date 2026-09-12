@@ -731,11 +731,11 @@ on every boot**, so read the new one from the new run, not from your scrollback.
 
 **Should see:**
 `TBD: #tbd missions | mission <n> | backend <url> [token] | refresh | validate | dead | respawn <playerId> | deploy <playerId> | stage [next|<NAME>] | safestart [status|go|<seconds>] | identity [status|override <phrase>|enforce] | audit | menu`
-([`TBD_AdminCommands.c:255`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c)).
+([`TBD_AdminCommands.c:255`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Admin/TBD_AdminCommands.c)).
 
 **`TBD: admin only.`** means you are not on the list. `IsAdmin` asks vanilla's
 `SCR_PlayerListedAdminManagerComponent`
-([`TBD_AdminService.c:60-70`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AdminService.c)),
+([`TBD_AdminService.c:60-70`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Admin/TBD_AdminService.c)),
 which is populated from `game.admins[]` — and **`game.admins[]` only exists in `-config` mode.**
 Without an admin you cannot do S13 (admin respawn) and T-181.16 cannot pass.
 
@@ -776,7 +776,7 @@ options:
 
 **Should see:** LOBBY opens for them too, and their client's roster shows **your** claim, without
 either of you doing anything — the open lobby re-asks the server every **2000 ms**
-([`TBD_LobbyScreen.c:58-66`](../../apps/mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c)).
+([`TBD_LobbyScreen.c:58-66`](../../apps/mod/tbd-framework/Scripts/Game/TBD/UI/PreGame/Lobby/TBD_LobbyScreen.c)).
 
 **If their screen is blank/black with no rows:** the roster arrived but the layout collapsed. That
 exact failure — a `~10px` sliver with one character per line — is a known shape from the first live
@@ -813,7 +813,7 @@ player is seated into their reserved slot rather than round-robin.
 
 **S7 — LOBBY: the slot picker.**
 
-**Should see** ([`TBD_LobbyScreen.c:8-28`](../../apps/mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c)):
+**Should see** ([`TBD_LobbyScreen.c:8-28`](../../apps/mod/tbd-framework/Scripts/Game/TBD/UI/PreGame/Lobby/TBD_LobbyScreen.c)):
 a header with the mission name, terrain, "N of M seats open" and the stage; a **PICK YOUR SEAT**
 section listing sides; **one** side expanded and **one** group within it, never a flat wall; an
 **ORDERS → View briefing** row; a footer status line and a single loud **DEPLOY** button, shown
@@ -830,7 +830,7 @@ listing **both** vanilla's and ours in `MenuConfigs`
 regressed.
 
 **Client-side log line to confirm the picker armed:** `[TBD][Lobby] Tick ARMED after N attempt(s)`
-([`TBD_LobbyController.c:816`](../../apps/mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyController.c)).
+([`TBD_LobbyStage.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Lobby/TBD_LobbyStage.c)).
 `[TBD][Lobby] Start GAVE UP` means `TBD_FrameworkManager` is not on the same prefab as
 `TBD_LobbyComponent` — wiring, not timing.
 
@@ -864,7 +864,7 @@ regressed.
 
 **Should see:** `[TBD][Stage] LOBBY -> BRIEFING` + `[TBD] Stage → BRIEFING` in the log, and the
 briefing screen opens **on both clients** — the controller opens it on the stage push and closes it
-on any other phase ([`TBD_BriefingController.c:337-350`](../../apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingController.c)).
+on any other phase ([`TBD_BriefingController.c:337-350`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Briefing/TBD_BriefingController.c)).
 Content should be side-specific: your side's orders, not both.
 
 **Nothing auto-advances out of BRIEFING** — `flow.briefingSeconds` is announced and advisory
@@ -1281,7 +1281,7 @@ The five spectator `.conf` action files and `TBD_AdminMenu.conf` do now carry `.
 this tree, but the "resource not registered: Setting null GUID" class of failure was live as
 recently as T-181's landmine list. If `F`/`←`/`→`/`TAB`/`V`/`F8` do nothing, check
 `grep -i "Setting null GUID" "$LOG"`. Chat (`#tbd`) is the surface that has always worked and is not
-gated on any of this ([`TBD_AdminCommands.c:23-25`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c)).
+gated on any of this ([`TBD_AdminCommands.c:23-25`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Admin/TBD_AdminCommands.c)).
 
 ### 6.6 `#tbd link <code>` leaks the code into chat (T-327, deferred)
 

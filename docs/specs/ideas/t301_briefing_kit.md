@@ -10,7 +10,7 @@ Owner: command center. Operator authorization 2026-09-04: "agents may edit the E
 cd .ai/artifacts/worktrees/T-301 && pwd && git branch --show-current   # must be slice/T-301
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target
 ═══ READ ═══
-apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c:380-560, the gear fields of TBD_MissionSlotStruct, docs/plans/t-301_plan.md
+apps/mod/tbd-framework/Scripts/Game/TBD/Briefing/TBD_BriefingService.c (was UI/TBD_BriefingData.c:380-560 before the 2026-09-12 UI reorg), the gear fields of TBD_MissionSlotStruct, docs/plans/t-301_plan.md
 ═══ PROBLEM ═══
 BuildKit renders seven gear rows; launcher, handgun and throwable (T-182) never reach the briefing screen.
 ═══ SHIPPED ═══
