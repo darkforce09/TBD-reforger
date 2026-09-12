@@ -34,6 +34,31 @@ See `Tbd_framework/REFERENCE-ONLY.md` (gitignored reference copy — present onl
 
 ---
 
+## Architecture Overview
+
+```mermaid
+graph TD
+    Root["apps/mod/tbd-framework/"]
+    Root --> Configs["Configs/ · Engine action contexts, keybinds, and chimera menu presets"]
+    Root --> Data["Data/ · Static mod lookup databases and default alias registry"]
+    Root --> Missions["Missions/ · Scenario headers (.conf) binding game mode, world, and limits"]
+    Root --> Prefabs["Prefabs/ · Reusable entity templates (.et) for GameMode and PlayerController"]
+    Root --> Scripts["Scripts/ · Enfusion script codebase (7-domain architecture under Scripts/Game/TBD/)"]
+    Root --> UI["UI/ · Enfusion native .layout hierarchies and widget definitions"]
+    Root --> Worlds["worlds/ · World entities (.ent) and subscenes defining terrain and entity placement"]
+```
+
+Top-level folder responsibilities:
+- **`Configs/`**: Enfusion engine configurations (`.conf`) defining input actions, action contexts (admin menu, spectator controls), and `chimeraMenus.conf` menu presets.
+- **`Data/`**: Static runtime data and schema configurations, including `registry.json` (alias to prefab GUID resolution) and `backend.example.json`.
+- **`Missions/`**: Playable mission headers (`.conf`) declaring scenario parameters, player limits, and initial world subscenes.
+- **`Prefabs/`**: Reusable entity templates (`.et`) defining component composition for `TBD_GameMode` and `TBD_PlayerController`.
+- **`Scripts/`**: Game mode logic and runtime simulation, authored under `Scripts/Game/TBD/` across 7 architectural domains.
+- **`UI/`**: Native Enfusion `.layout` files structured to mirror the screen and component hierarchy.
+- **`worlds/`**: World entities (`.ent`) and subscene layers placing scenario entities into terrain coordinates.
+
+---
+
 ## Dev scenario
 
 | Resource | Path |
@@ -143,13 +168,32 @@ Replace with TBD-Content export in Phase 1+.
 
 ---
 
-## Scripts layout
+## Scripts layout (6 Domains)
+
+All mod scripts live under `Scripts/Game/TBD/` and follow a strict 6-domain architecture.
+See the **[Scripts/Game/TBD/README.md](Scripts/Game/TBD/README.md)** Architecture Hub for architectural boundaries and communication patterns.
 
 ```
 Scripts/Game/TBD/
-  Backend/     TBD_BackendConfig.c, TBD_MissionLoader.c
-  Gamemode/    TBD_FrameworkManager.c, TBD_GameStage.c, TBD_SpawnManager.c,
-               TBD_SCR_MenuSpawnLogic.c, TBD_RosterLoader.c, TBD_LoadoutEquipComponent.c
-  Registry/    TBD_Registry.c, TBD_RegistryPocComponent.c (optional POC)
-  Radio/       TBD_RadioBridgeStub.c
+  Core/        Foundational zero-dependency utilities, structured logging, registry resolver
+  API/         REST communication with website-api (backend config, identity link, telemetry)
+  Gamemode/    Match rules & flow: Orchestrator/, Stages/, Objectives/
+  Systems/     In-world simulation, data ingestion & tools: Mission/, Spawning/, Loadouts/, Audio/, Zones/, Markers/, Radio/, AI/
+  Session/     Player & admin flows: Lobby/, Briefing/, Spectator/, Admin/, MissionSelector/, PostGame/
+  UI/          Shared component library: Core/, Common/, Hud/, Mock/
 ```
+
+---
+
+## UI Layouts (3 Domains)
+
+All native Enfusion `.layout` files live under `UI/layouts/` and mirror the script domains.
+See the **[UI/README.md](UI/README.md)** Architecture Hub for component contracts and layout guidelines.
+
+```
+UI/layouts/
+  Common/      Atomic design primitives & reusable screen shells (TBD_ScreenShell, TBD_ListRow)
+  Hud/         Persistent in-game HUD tactical overlays (TBD_ObjectiveHud)
+  Session/     Match lifecycle screens & dock sub-layouts (Lobby/, Briefing/, Admin/, ...)
+```
+

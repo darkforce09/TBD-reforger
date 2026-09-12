@@ -1,2 +1,10 @@
-# Scripts/Game/TBD/UI/Common
-`ScriptedWidgetComponent` handlers for the shared sub-layouts in `UI/layouts/Common/` (NavItem, FactionChip, PlayerRow, SquadCard, SearchBar, ModalChrome, Stepper, MetricTile). One class per file, `TBD_` prefix. No screen knowledge, no data access - bind-only.
+# UI/Common
+
+Reusable widget components and sub-layout binding handlers shared across multiple screens.
+
+### Roles & Responsibilities
+- `ScriptedWidgetComponent` handlers for shared sub-layouts authored in `UI/layouts/Common/` (NavItem, FactionChip, PlayerRow, SquadCard, SearchBar, ModalChrome, StepperRow, MetricTile).
+- Encapsulates isolated presentation widgets without holding screen knowledge or direct data network access.
+
+### Call Flow & Contracts
+Pure view-binding components. Instantiated by layout hierarchy or dynamically attached by `Session/*/UI` screens to bind model data to UI widgets.

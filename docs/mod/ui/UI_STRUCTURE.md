@@ -26,34 +26,32 @@ Shared player data, when it arrives, becomes a sibling module `Players/`.
 
 ```
 Scripts/Game/TBD/
-  UI/
-    Core/          TBD_UILayouts  TBD_UITheme  TBD_MenuBase  TBD_MenuStack  TBD_ShellScreen
-                   TBD_UIInteractive  TBD_UIButton  TBD_ListBox  TBD_ListBoxRow
-    Common/        shared widget handlers (NavItem, FactionChip, PlayerRow, SquadCard, SearchBar, …)
-    Mock/          TBD_LobbyMockData  TBD_MissionSelectorData   (all mock data, cross-screen)
-    PreGame/       MissionSelector/  Lobby/ (+TBD_LoadoutPreview)  Briefing/
-    InGameMenu/    Admin/ (TBD_AdminScreen)  Pause/
-    Hud/           TBD_ObjectiveHud  TBD_TaskHud  Spectator/ (TBD_SpectatorScreen)
-    PostGame/      TBD_EndScreen  TBD_DebriefScreen
-  Lobby/           Data  Service  Controller  Client  Stage  Component
-  Briefing/        Data  Service  Controller  Client
-  Admin/           Data  SnapshotService  Client  Audit  Commands  Service
-  Spectator/       camera / host / targets (no screen)
+  Core/            TBD_Log  TBD_Registry  TBD_RegistryPocComponent
+  API/             TBD_BackendConfig  TBD_ResultsReporter  TBD_IdentityLink  TBD_PlayerIdentity
+  Gamemode/        Orchestrator/ (TBD_FrameworkManager) · Stages/ (GameStage, Safestart, WinCondition) · Objectives/
+  Systems/         Mission/ (Data, Ingestion, Loaders) · Spawning/ · Loadouts/ · Audio/ · Zones/ · Radio/ · Markers/ · AI/
+  Session/         Lobby/ (+PreSlot, +UI) · Briefing/ (+UI) · Spectator/ (+UI) · Admin/ (+UI) · MissionSelector/ (+Browser, +Router, +UI) · PostGame/ (+UI)
+  UI/              Core/ (UILayouts, UITheme, MenuBase, MenuStack, ShellScreen, UIButton, ListBox)
+                   Common/ (shared row/chip handlers) · Hud/ (ObjectiveHud, TaskHud) · Mock/
 ```
 
 ## Layouts
 
-`UI/layouts/` mirrors the script tree. Each screen folder holds its screen layout plus its row / card
-sub-layouts. Every `.layout` has a sibling `.meta` whose `Name` is `"{GUID}UI/layouts/<same path>"`.
+`UI/layouts/` mirrors the 7-domain architecture. Every `.layout` has a sibling `.meta` whose `Name` is `"{GUID}UI/layouts/<same path>"`.
 
 ```
 UI/layouts/
-  Core/            TBD_ScreenShell  TBD_ListRow
-  Common/          shared sub-layouts
-  PreGame/         Shared/  MissionSelector/  Lobby/  Briefing/ (+ Panels/ when built)
-  InGameMenu/      Pause/  Admin/ (+ Panels/)
-  Hud/             TBD_ObjectiveHud  Spectator/
-  PostGame/        TBD_EndScreen  TBD_DebriefScreen
+  Common/          shared component library (TBD_ScreenShell, TBD_ListRow, future Button, Card)
+  Hud/             TBD_ObjectiveHud
+  Session/
+    Shared/        pregame bottom bar, voice panel, players modal
+    MissionSelector/ TBD_MissionSelector, TBD_TerrainRow, TBD_MissionCard
+    Lobby/         TBD_LobbyScreen (+9 docks: Header, Footer, Sidebar, Roster, Inspector, SquadCard...)
+    Briefing/      TBD_BriefingScreen (+Panels)
+    Spectator/     top/bottom bar, roster, combat_details
+    Admin/         admin_panel_sidebar + 10 panels
+    Pause/         pause_menu_left_sidebar, player_options, staging_phase, identity_link
+    PostGame/      TBD_EndScreen, TBD_DebriefScreen
 ```
 
 Folders that are empty today carry a `README.md` naming the mockup panels that land there.
@@ -62,14 +60,14 @@ Folders that are empty today carry a `README.md` naming the mockup panels that l
 
 | Mockup group / panel | Layout folder | Script folder |
 |---|---|---|
-| pregame · mission_selector_top_bar, lobby_bottom_bar, voice_panel, players_panel | `PreGame/Shared/` | `UI/PreGame/Shared/` |
-| pregame · terrain_selector, scenario_browser, mission_inspector | `PreGame/MissionSelector/` | `UI/PreGame/MissionSelector/` |
-| pregame · lobby_sidebar, orbat_panel, slot_kit_inspector | `PreGame/Lobby/` | `UI/PreGame/Lobby/` |
-| pregame · primary_navigation, briefing_navigation, frequencies, objectives, rules, lore, parameters, markers, friendly/enemy assets, uniforms | `PreGame/Briefing/` (+`Panels/`) | `UI/PreGame/Briefing/` |
-| ingame_menu · pause_menu_left_sidebar, player_options, staging_phase, identity_link | `InGameMenu/Pause/` | `UI/InGameMenu/Pause/` |
-| ingame_menu · admin_panel_sidebar + 10 admin panels | `InGameMenu/Admin/` (+`Panels/`) | `UI/InGameMenu/Admin/` |
-| ingame_hud · spectator top/bottom bar, roster, combat_details | `Hud/Spectator/` | `UI/Hud/Spectator/` |
-| postgame · end_screen_banner, aar | `PostGame/` | `UI/PostGame/` |
+| pregame · mission_selector_top_bar, lobby_bottom_bar, voice_panel, players_panel | `Session/Shared/` | `UI/Common/` |
+| pregame · terrain_selector, scenario_browser, mission_inspector | `Session/MissionSelector/` | `Session/MissionSelector/UI/` |
+| pregame · lobby_sidebar, orbat_panel, slot_kit_inspector | `Session/Lobby/` | `Session/Lobby/UI/` |
+| pregame · primary_navigation, briefing_navigation, frequencies, objectives, rules, lore, parameters, markers, friendly/enemy assets, uniforms | `Session/Briefing/` (+`Panels/`) | `Session/Briefing/UI/` |
+| ingame_menu · pause_menu_left_sidebar, player_options, staging_phase, identity_link | `Session/Pause/` | `Session/Pause/UI/` |
+| ingame_menu · admin_panel_sidebar + 10 admin panels | `Session/Admin/` (+`Panels/`) | `Session/Admin/UI/` |
+| ingame_hud · spectator top/bottom bar, roster, combat_details | `Session/Spectator/` | `Session/Spectator/UI/` |
+| postgame · end_screen_banner, aar | `Session/PostGame/` | `Session/PostGame/UI/` |
 | any row / chip / chrome reused by 2+ screens | `Common/` | `UI/Common/` |
 
 ## Rules

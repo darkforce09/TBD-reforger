@@ -33,7 +33,7 @@
 //! that inside a `ScrollLayoutWidget` in the layout and long lists scroll for free.
 class TBD_ListBox : ScriptedWidgetComponent
 {
-	[Attribute("{7BD1A70000000702}UI/layouts/Core/TBD_ListRow.layout", UIWidgets.ResourceNamePicker, "Layout instantiated for every pooled row", "layout")]
+	[Attribute("{7BD1A70000000702}UI/layouts/Common/TBD_ListRow.layout", UIWidgets.ResourceNamePicker, "Layout instantiated for every pooled row", "layout")]
 	protected ResourceName m_sRowLayout;
 
 	[Attribute("Content", UIWidgets.EditBox, "Name of the vertical layout rows are parented to")]

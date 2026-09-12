@@ -6,17 +6,12 @@
 //! one-line edit here rather than a hunt through screens.
 //!
 //! -- Tree (UI reorg 2026-09-12) ----------------------------------------------------------------
-//! `UI/layouts/` mirrors `Scripts/Game/TBD/UI/`. See `docs/mod/ui/UI_STRUCTURE.md`.
-//!   Core/        framework chrome (shell, list row)                  block 07
-//!   Common/      shared rows / chips / chrome sub-layouts            block 1B
-//!   PreGame/     Shared 16 · MissionSelector 0B · Lobby 0C (LoadoutPreview 15) · Briefing 0D (panels 17)
-//!   InGameMenu/  Pause 18 · Admin 19
-//!   Hud/         ObjectiveHud 0A · Spectator 1A
-//!   PostGame/    EndScreen 08 · DebriefScreen 09
+//! `UI/layouts/` mirrors the 7-domain architecture. See `docs/mod/ui/UI_STRUCTURE.md`.
+//!   Common/      shared component library (ScreenShell, ListRow, future Button, Card)  block 07
+//!   Hud/         ObjectiveHud 0A
+//!   Session/     Lobby 0C (LoadoutPreview 15) · Briefing 0D · Spectator 1A · Admin 19 · MissionSelector 0B · PostGame 08/09
 //! GUIDs are `7BD1A7000000XXnn`: `XX` = block, `nn` = 00 root widget, 01 the `.meta` resource id,
-//! 02+ child widgets. Older screens spilled past their block (Lobby into 0E, Briefing into 0EA0+,
-//! MissionSelector into A0/B0, 0F) - so before taking a block for a new screen run
-//! `grep -rho '{7BD1A7000000XX' UI Scripts` and pick one with zero hits.
+//! 02+ child widgets.
 //!
 //! -- Resource visibility (measured on the headless server) ----------------------------------
 //!   * **Scripts do not need an rdb entry.** Script discovery is a directory scan, so moved or
@@ -28,42 +23,42 @@
 //!     class of first-run failure but does not replace the rdb pass.
 class TBD_UILayouts
 {
-	// -- Core -------------------------------------------------------------------------------------
+	// -- Common Component Library -----------------------------------------------------------------
 	//! The chrome every TBD screen sits in: backdrop, header, content frame, one primary action.
-	static const ResourceName SCREEN_SHELL = "{7BD1A70000000701}UI/layouts/Core/TBD_ScreenShell.layout";
+	static const ResourceName SCREEN_SHELL = "{7BD1A70000000701}UI/layouts/Common/TBD_ScreenShell.layout";
 	//! One pooled row of a TBD_ListBox.
-	static const ResourceName LIST_ROW     = "{7BD1A70000000702}UI/layouts/Core/TBD_ListRow.layout";
+	static const ResourceName LIST_ROW     = "{7BD1A70000000702}UI/layouts/Common/TBD_ListRow.layout";
 
-	// -- PreGame / MissionSelector -------------------------------------------------------------
-	static const ResourceName MISSION_SELECTOR              = "{7BD1A70000000B01}UI/layouts/PreGame/MissionSelector/TBD_MissionSelector.layout";
-	static const ResourceName MISSION_SELECTOR_TERRAIN_ROW  = "{7BD1A70000000B20}UI/layouts/PreGame/MissionSelector/TBD_TerrainRow.layout";
-	static const ResourceName MISSION_SELECTOR_MISSION_CARD = "{7BD1A70000000B40}UI/layouts/PreGame/MissionSelector/TBD_MissionCard.layout";
+	// -- Session / MissionSelector -------------------------------------------------------------
+	static const ResourceName MISSION_SELECTOR              = "{7BD1A70000000B01}UI/layouts/Session/MissionSelector/TBD_MissionSelector.layout";
+	static const ResourceName MISSION_SELECTOR_TERRAIN_ROW  = "{7BD1A70000000B20}UI/layouts/Session/MissionSelector/TBD_TerrainRow.layout";
+	static const ResourceName MISSION_SELECTOR_MISSION_CARD = "{7BD1A70000000B40}UI/layouts/Session/MissionSelector/TBD_MissionCard.layout";
 
-	// -- PreGame / Lobby -----------------------------------------------------------------------
-	static const ResourceName LOBBY_SCREEN       = "{7BD1A70000000C01}UI/layouts/PreGame/Lobby/TBD_LobbyScreen.layout";
-	static const ResourceName LOBBY_SQUAD_CARD   = "{7BD1A70000000C02}UI/layouts/PreGame/Lobby/TBD_LobbySquadCard.layout";
-	static const ResourceName LOBBY_SLOT_ROW     = "{7BD1A70000000C03}UI/layouts/PreGame/Lobby/TBD_LobbySlotRow.layout";
-	static const ResourceName LOBBY_FACTION_ROW  = "{7BD1A70000000C04}UI/layouts/PreGame/Lobby/TBD_LobbyFactionRow.layout";
-	static const ResourceName LOBBY_HEADER       = "{7BD1A70000000C05}UI/layouts/PreGame/Lobby/TBD_LobbyHeader.layout";
-	static const ResourceName LOBBY_FOOTER       = "{7BD1A70000000C06}UI/layouts/PreGame/Lobby/TBD_LobbyFooter.layout";
-	static const ResourceName LOBBY_SIDEBAR      = "{7BD1A70000000C07}UI/layouts/PreGame/Lobby/TBD_LobbySidebar.layout";
-	static const ResourceName LOBBY_ROSTER       = "{7BD1A70000000C08}UI/layouts/PreGame/Lobby/TBD_LobbyCenterRoster.layout";
-	static const ResourceName LOBBY_INSPECTOR    = "{7BD1A70000000C09}UI/layouts/PreGame/Lobby/TBD_LobbyInspector.layout";
+	// -- Session / Lobby -----------------------------------------------------------------------
+	static const ResourceName LOBBY_SCREEN       = "{7BD1A70000000C01}UI/layouts/Session/Lobby/TBD_LobbyScreen.layout";
+	static const ResourceName LOBBY_SQUAD_CARD   = "{7BD1A70000000C02}UI/layouts/Session/Lobby/TBD_LobbySquadCard.layout";
+	static const ResourceName LOBBY_SLOT_ROW     = "{7BD1A70000000C03}UI/layouts/Session/Lobby/TBD_LobbySlotRow.layout";
+	static const ResourceName LOBBY_FACTION_ROW  = "{7BD1A70000000C04}UI/layouts/Session/Lobby/TBD_LobbyFactionRow.layout";
+	static const ResourceName LOBBY_HEADER       = "{7BD1A70000000C05}UI/layouts/Session/Lobby/TBD_LobbyHeader.layout";
+	static const ResourceName LOBBY_FOOTER       = "{7BD1A70000000C06}UI/layouts/Session/Lobby/TBD_LobbyFooter.layout";
+	static const ResourceName LOBBY_SIDEBAR      = "{7BD1A70000000C07}UI/layouts/Session/Lobby/TBD_LobbySidebar.layout";
+	static const ResourceName LOBBY_ROSTER       = "{7BD1A70000000C08}UI/layouts/Session/Lobby/TBD_LobbyCenterRoster.layout";
+	static const ResourceName LOBBY_INSPECTOR    = "{7BD1A70000000C09}UI/layouts/Session/Lobby/TBD_LobbyInspector.layout";
 	//! T-139 - kit icon grid beside the slot list (block 15; was 0A, which collided with the HUD).
-	static const ResourceName LOADOUT_PREVIEW    = "{7BD1A70000001501}UI/layouts/PreGame/Lobby/TBD_LoadoutPreview.layout";
+	static const ResourceName LOADOUT_PREVIEW    = "{7BD1A70000001501}UI/layouts/Session/Lobby/TBD_LoadoutPreview.layout";
 
-	// -- PreGame / Briefing --------------------------------------------------------------------
-	static const ResourceName BRIEFING_SCREEN    = "{7BD1A70000000D01}UI/layouts/PreGame/Briefing/TBD_BriefingScreen.layout";
+	// -- Session / Briefing --------------------------------------------------------------------
+	static const ResourceName BRIEFING_SCREEN    = "{7BD1A70000000D01}UI/layouts/Session/Briefing/TBD_BriefingScreen.layout";
 
 	// -- Hud -----------------------------------------------------------------------------------
 	//! T-941.4 - objective list + capture bar.
 	static const ResourceName OBJECTIVE_HUD      = "{7BD1A70000000A01}UI/layouts/Hud/TBD_ObjectiveHud.layout";
 
-	// -- PostGame ------------------------------------------------------------------------------
+	// -- Session / PostGame --------------------------------------------------------------------
 	//! T-941.3 - END stage banner: winning faction + reason.
-	static const ResourceName END_SCREEN     = "{7BD1A70000000801}UI/layouts/PostGame/TBD_EndScreen.layout";
+	static const ResourceName END_SCREEN     = "{7BD1A70000000801}UI/layouts/Session/PostGame/TBD_EndScreen.layout";
 	//! T-941.3 - DEBRIEF stage scoreboard.
-	static const ResourceName DEBRIEF_SCREEN = "{7BD1A70000000901}UI/layouts/PostGame/TBD_DebriefScreen.layout";
+	static const ResourceName DEBRIEF_SCREEN = "{7BD1A70000000901}UI/layouts/Session/PostGame/TBD_DebriefScreen.layout";
 
 	//------------------------------------------------------------------------------------------------
 	//! Instantiate a layout under `parent`, retrying without the GUID prefix if the GUID does not

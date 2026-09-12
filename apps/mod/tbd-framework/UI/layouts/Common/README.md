@@ -1,4 +1,9 @@
 # UI/layouts/Common
-Shared sub-layouts reused by more than one screen (GUID block `1B`). Filled as screens are rebuilt from the Stitch mockups:
-NavItem, FactionChip, PlayerRow, SquadCard, SearchBar + filter pills, ModalChrome (header/sub-banner/tabs/footer), StepperRow, MetricTile, TelemetryStrip.
-Script side: `Scripts/Game/TBD/UI/Common/`.
+
+Shared atomic design primitives and reusable component templates for the TBD Framework UI.
+
+## Contents
+
+- **`TBD_ScreenShell.layout`:** The standard fullscreen window chrome (backdrop, header bar, centered content frame, primary action dock). Extended by screens across the mod.
+- **`TBD_ListRow.layout`:** Standard pooled list row used by `TBD_ListBox` for table views and rosters.
+- *(Upcoming)*: Atomic 9-slice `ButtonPrimary.layout`, `ButtonSecondary.layout`, `TagChip.layout`, and `CardContainer.layout`.
