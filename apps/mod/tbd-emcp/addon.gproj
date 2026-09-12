@@ -1,0 +1,14 @@
+GameProject {
+ ID "TBD_EMCP"
+ GUID "D4E5F6A7B8C90123"
+ TITLE "TBD EMCP"
+ Dependencies {
+  "58D0FB3206B6F859"
+ }
+ Configurations {
+  GameProjectConfig PC {
+  }
+  GameProjectConfig HEADLESS {
+  }
+ }
+}

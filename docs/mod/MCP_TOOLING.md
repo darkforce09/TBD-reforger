@@ -1,7 +1,7 @@
 # Workbench MCP shell tooling
 
 **Shipped:** `e7e7232` (2026-06-30) · **Pinned package:** `enfusion-mcp@0.6.1` in `scripts/mod/package.json`  
-**Entry for agents:** [`CLAUDE-CODE-START.md`](CLAUDE-CODE-START.md) · **Bootstrap:** `cargo xtask mod dev-bootstrap`
+**Entry for agents:** [`CLAUDE-CODE-START.md`](CLAUDE-CODE-START.md) · **Bootstrap:** `cargo xtask mod dev-bootstrap` (launches Workbench on `apps/mod/tbd-export/addon.gproj`; the bridge handlers are committed in [`apps/mod/tbd-emcp/`](../../apps/mod/tbd-emcp/))
 
 Reliable shell access to **enfusion-mcp** for Claude Code terminal sessions. Replaces the old flaky one-shot `timeout 90 npx …` path that hung to the full timeout or returned empty mid-stream.
 
@@ -25,7 +25,7 @@ cargo xtask mcp call
 | Offline gates | `cargo xtask mcp selftest` | 19 fixture tests, no Workbench |
 | Live smoke | `cargo xtask mcp smoke` (`cargo xtask mcp smoke`) | `wb_connect` + `wb_state` after bootstrap |
 
-**Bootstrap** (`cargo xtask mod dev-bootstrap`) runs `npm ci` in `scripts/mod/` when needed, pre-warms the daemon, then `wb_connect` + `mod_validate`.
+**Bootstrap** (`cargo xtask mod dev-bootstrap`) runs `npm ci` in `scripts/mod/` when needed, launches Workbench with `steam -applaunch 1874910 -gproj <repo>/apps/mod/tbd-export/addon.gproj` (skips the project picker), pre-warms the daemon, then `wb_connect` + `mod_validate`. It no longer copies any handlers — they are committed in `apps/mod/tbd-emcp/`.
 
 ---
 
@@ -46,9 +46,25 @@ cargo xtask mcp call wb_connect '{}'
 cargo xtask mcp call wb_state '{}'
 cargo xtask mcp call api_search '{"query":"GetWorldBounds"}'
 cargo xtask mcp call mod_validate '{"modPath":"'"$PWD"'/apps/mod/tbd-framework"}'
+cargo xtask mcp call mod_validate '{"modPath":"'"$PWD"'/apps/mod/tbd-export"}'
 ```
 
 Warm daemon calls return in **~0.3 s**. First call (or after daemon idle/max-life) pays the **~35 s** one-time 8,693-class index load once, then stays warm.
+
+---
+
+## Handlers live in `apps/mod/tbd-emcp`
+
+The Workbench side of the bridge is **19 Net API handler scripts** (`Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_*.c`) taken from `enfusion-mcp@0.6.1` (MIT), plus a local `getAllText` patch in `EMCP_WB_ScriptEditor.c`. They are a **committed addon** — `TBD_EMCP`, GUID `D4E5F6A7B8C90123` — not a gitignored copy re-injected by bootstrap.
+
+**How it loads.** `TBD_EMCP` is a dependency of `TBD_Export`, so opening `apps/mod/tbd-export/addon.gproj` brings the bridge up with the rest of the dev session. For a framework-only Workbench session, load `TBD_EMCP` beside `TBD_Framework` — `tbd-framework` carries no `Scripts/WorkbenchGame/` of its own, so on its own it has no bridge.
+
+**Two rules:**
+
+- **Never** call `wb_launch` with `gprojPath` pointed at `tbd-framework` or `tbd-export` — it injects a second copy of the handlers into that addon's `Scripts/WorkbenchGame/EnfusionMCP/`, Workbench reports "Multiple declaration", and the bridge is dead.
+- **Never** call `wb_cleanup` with `apps/mod/tbd-emcp` — it `rm -rf`s the committed handlers.
+
+**Upgrade procedure:** see [`apps/mod/tbd-emcp/README.md`](../../apps/mod/tbd-emcp/README.md).
 
 ---
 

@@ -1,7 +1,7 @@
 # T-181.1 — headless Enfusion compile gate. The "HEMTT for Reforger".
 #
-# Compiles the Game scripts of tbd-framework AND tbd-export using the NATIVE Linux dedicated
-# server (ArmaReforgerServer) — no Workbench, no Proton, no GPU, no Steam client, no clicking.
+# Compiles the Game scripts of tbd-framework using the NATIVE Linux dedicated server
+# (ArmaReforgerServer) — no Workbench, no Proton, no GPU, no Steam client, no clicking.
 # Measured: the compile itself takes ~0.78 s and the whole gate ~1.3 s, versus a 90–120 s
 # Workbench restart that also needs a human to click "Open".
 #
@@ -24,10 +24,9 @@
 #      ticket for it. (T-209: the stale-rdb load-count guard below used to exit 1 — a fix agent
 #      handed that verdict spends its budget auditing sources that compile perfectly.)
 #
-# CALLER LANDMINE: `cargo xtask mod compile-selftest` inverts this script's status and treats ANY
-# non-zero as "the gate correctly rejected broken source" — so on a machine with no dedicated
-# server it prints SELFTEST OK for a run that never happened. `.github/workflows/mod-gates.yml`
-# therefore does its own three-way check instead of calling that target. Filed separately.
+# `cargo xtask mod compile-selftest` runs `--selftest` in-process and passes ONLY on exit 1 (a real
+# Enfusion rejection): 0 (gate is blind), 2 (no verdict) and 3 (environment) print SELFTEST FAIL
+# and exit 1. `.github/workflows/mod-gates.yml` calls that target directly (T-897 / T-901).
 #
 # ── MEASURED FACTS THIS DEPENDS ON (probed 2026-07-25, do not re-derive) ─────────────────
 #   * Diagnostics land in  <profile>/logs/logs_<ts>/error.log  as:
@@ -42,6 +41,9 @@
 #   * `int x = ;` compiles CLEAN — Enfusion is lenient. Undefined functions/types are what
 #     actually error. That is why --selftest uses an undefined symbol, not bad punctuation.
 #   * The server compiles ONLY the Game module (probed 2026-08-28): Scripts/WorkbenchGame is
-#     never read headless — not even lexed. Workbench rejects non-ASCII punctuation in those
-#     files at load, so the gate runs its own pure-ASCII byte scan over tbd-export/Scripts
-#     (exit 1 on hit). Symbol errors in WorkbenchGame still surface only inside Workbench.
+#     never read headless — not even lexed. Since 2026-09-12 the shipping mod carries no such
+#     directory at all (map-export plugins: apps/mod/tbd-export; enfusion-mcp handlers:
+#     apps/mod/tbd-emcp — thin addons that depend on tbd-framework and compile only inside
+#     Workbench), and the gate exits 1 if tbd-framework/Scripts/WorkbenchGame reappears. After a
+#     green verdict the load-count guard requires loaded >= vanilla baseline + the number of .c
+#     files under tbd-framework/Scripts/Game (exit 3 = stale resourceDatabase.rdb).

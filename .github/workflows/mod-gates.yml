@@ -83,12 +83,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # The anti-silent-skip guard. Everything below needs these three things; asserting them
+      # The anti-silent-skip guard. Everything below needs these two things; asserting them
       # here means a missing depot reads as "provision the runner" instead of surfacing as a
-      # confusing mid-compile failure. `resourceDatabase.rdb` IS committed (9 KB, not LFS), so a
-      # clean checkout has it — but it is checked anyway because the engine silently compiles
-      # ZERO of our scripts when it is stale, and compile.sh's load-count guard is the only thing
-      # standing between that and a green "compiled clean".
+      # confusing mid-compile failure. tbd-framework's `resourceDatabase.rdb` IS committed (not
+      # LFS), so a clean checkout has it — but it is checked anyway because the engine silently
+      # compiles ZERO of our scripts when it is stale, and the gate's load-count guard (vanilla
+      # baseline + every .c under tbd-framework/Scripts/Game) is the only thing standing between
+      # that and a green "compiled clean". The gate is framework-only (2026-09-12): tbd-export and
+      # tbd-emcp are Workbench-module addons the dedicated server cannot read.
       - name: preflight — runner must be provisioned for the mod gates
         run: cargo xtask mod compile-preflight
 

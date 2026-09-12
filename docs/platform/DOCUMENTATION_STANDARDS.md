@@ -177,7 +177,7 @@ The historical TS form:
 export interface RegistryItem { resource_name: string; /* ... */ }
 ```
 
-**Enfusion producer** — [`TBD_RegistryItemsExportPlugin.c`](../../apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c) hand-writes the snake_case keys; its header cites the schema in prose. Standardize:
+**Enfusion producer** — [`TBD_RegistryItemsExportPlugin.c`](../../apps/mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c) hand-writes the snake_case keys; its header cites the schema in prose. Standardize:
 
 ```cpp
 //! Workbench export → packages/tbd-schema/registry/registry-items.workbench.json

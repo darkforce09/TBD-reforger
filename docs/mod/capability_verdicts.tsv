@@ -78,7 +78,7 @@ Scripts/Game/Systems/Core/Managers/Gamemode/Misc/CRF_ForwardDeployManager.c	Forw
 Scripts/Game/Systems/Core/Managers/Gamemode/Misc/CRF_PersistenceManager.c	Persistence / save-load	SKIP
 scripts/Game/Systems/Components/Lottery	Slot lottery	SKIP
 scripts/Game/Systems/Components/Misc	Misc components	SKIP
-Scripts/WorkbenchGame	CRF Workbench plugins	SKIP	TBD has its own under apps/mod/tbd-framework/Scripts/WorkbenchGame
+Scripts/WorkbenchGame	CRF Workbench plugins	SKIP	TBD has its own under apps/mod/tbd-export/Scripts/WorkbenchGame
 !Docs	CRF documentation samples	SKIP	sample/helper snippets, not shipped code
 # ── added after the UNTRIAGED gate caught them (this is the mechanism working) ───────────
 Scripts/Game/Systems/VanillaOverrides/CRF_SCR_PossessSpawnHandlerComponent.c	Spawn / respawn	BUILD	the file that revealed the vanilla POSSESS pipeline (slot_materialization_handoff.md)

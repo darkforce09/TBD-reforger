@@ -8,6 +8,12 @@
 //! (`gate_setup_mcp_game_root`, T-876).
 //! `xtask mcp call` uses `cargo run -q -p xtask --` from mono root (former xtask-run).
 //!
+//! 2026-09-12: the enfusion-mcp handlers are COMMITTED in `apps/mod/tbd-emcp` (a dependency of
+//! `apps/mod/tbd-export`), so the former `cp -a` of the npx-cache copy into tbd-framework is gone —
+//! it would now plant a second handler set beside tbd-emcp's and kill the bridge. Workbench is
+//! launched with `-gproj apps/mod/tbd-export/addon.gproj` (skips the project picker; loads
+//! tbd-framework + tbd-emcp through the dependency).
+//!
 //! Fail-opens closed or pinned:
 //! - `steam -applaunch … 2>/dev/null || true` — preserved (launch attempt never fails the gate).
 //! - `npm ci || echo warn` — preserved non-fatal offline path.
@@ -16,28 +22,23 @@
 //! - `podman start … || true` / `setup server-profile … || true` on `--api`/`--server`.
 //!
 //! Preserved oddities:
-//! - Hardcoded npx-cache `HANDLERS_SRC` under `/home/Samuel/.npm/_npx/…` (former script).
 //! - ACTION REQUIRED re-run line still names `bash scripts/mod/tbd-dev-bootstrap.sh`
 //!   (historical `$0` parity; docs/callers use `cargo xtask mod dev-bootstrap`).
 //! - `port_open`: `ss` then `netstat` fallback, each with bash's `2>/dev/null` collapse.
 
-use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::Duration;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use tbd_gate::proc::Run;
 
 use crate::root::find_repo_root;
 
 /// Historical bash re-run string (byte parity with former script line 53).
 const RERUN_HISTORICAL: &str = "bash scripts/mod/tbd-dev-bootstrap.sh";
-
-/// Hardcoded enfusion-mcp handlers source from the former script (npx cache path).
-const HANDLERS_SRC: &str = "/home/Samuel/.npm/_npx/be402e1c82700767/node_modules/enfusion-mcp/mod/Scripts/WorkbenchGame/EnfusionMCP";
 
 struct Paths {
     mono_root: PathBuf,
@@ -74,8 +75,13 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
     let root = bash_logical_path(root);
     let p = Paths::from_root(&root);
     let mod_dir = p.mod_root.join("tbd-framework");
-    let gproj = mod_dir.join("addon.gproj");
-    let handlers_dst = mod_dir.join("Scripts/WorkbenchGame/EnfusionMCP");
+    let export_dir = p.mod_root.join("tbd-export");
+    // The session project: tbd-export depends on tbd-framework AND tbd-emcp, so opening it loads
+    // all three and the Net API handlers with them.
+    let gproj = export_dir.join("addon.gproj");
+    let emcp_ping = p
+        .mod_root
+        .join("tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Ping.c");
 
     let wb_port = std::env::var("ENFUSION_WORKBENCH_PORT").unwrap_or_else(|_| "5775".into());
     let wait_sec: u64 = std::env::var("TBD_WB_WAIT_SEC")
@@ -115,40 +121,26 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
         }
     }
 
-    let handlers_src = Path::new(HANDLERS_SRC);
-    if handlers_src.is_dir() && !handlers_dst.is_dir() {
-        if let Some(parent) = handlers_dst.parent() {
-            fs::create_dir_all(parent).with_context(|| format!("mkdir -p {}", parent.display()))?;
-        }
-        // bash: `cp -a "$HANDLERS_SRC" "$HANDLERS_DST"`
-        match Run::new("cp")
-            .arg("-a")
-            .arg(handlers_src)
-            .arg(&handlers_dst)
-            .merged_output()
-        {
-            Ok(m) if m.code == 0 => {
-                out_line(&format!(
-                    "Installed EMCP handlers to {}",
-                    handlers_dst.display()
-                ))?;
-            }
-            Ok(m) => {
-                eprint!("{}", m.text);
-                return Ok(code_u8(m.code));
-            }
-            Err(_) => return Ok(1),
-        }
+    if !emcp_ping.is_file() {
+        out_line(&format!(
+            "checkout incomplete: {} missing — the enfusion-mcp handlers are committed in apps/mod/tbd-emcp (2026-09-12); nothing is copied into any addon any more",
+            emcp_ping.display()
+        ))?;
+        return Ok(1);
     }
 
     if !port_open(&wb_port) {
         out_line(&format!(
             "Workbench Net API not on :{wb_port} — trying steam -applaunch 1874910 ..."
         ))?;
-        // Preserved fail-open: `steam -applaunch 1874910 2>/dev/null || true`
+        // Preserved fail-open: `steam -applaunch 1874910 2>/dev/null || true`. `-gproj` skips the
+        // project picker (a picker-stuck launch never opens the Net API) and opens tbd-export, which
+        // pulls in tbd-framework + tbd-emcp. Proton maps `/` to `Z:`.
         let _ = Run::new("steam")
             .arg("-applaunch")
             .arg("1874910")
+            .arg("-gproj")
+            .arg(format!("Z:{}", gproj.display()))
             .merged_output();
         let mut elapsed: u64 = 0;
         while !port_open(&wb_port) && elapsed < wait_sec {
@@ -196,36 +188,38 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
             let _ = io::stdout().flush();
             if m.code != 0 {
                 out_line(
-                    "wb_connect failed — reload tbd-framework addon in Workbench Resource Browser and retry.",
+                    "wb_connect failed — Workbench must have apps/mod/tbd-export/addon.gproj open (it loads tbd-emcp, which carries the Net API handlers); open it and retry.",
                 )?;
                 return Ok(1);
             }
         }
         Err(_) => {
             out_line(
-                "wb_connect failed — reload tbd-framework addon in Workbench Resource Browser and retry.",
+                "wb_connect failed — Workbench must have apps/mod/tbd-export/addon.gproj open (it loads tbd-emcp, which carries the Net API handlers); open it and retry.",
             )?;
             return Ok(1);
         }
     }
 
-    // Preserved fail-open: mod_validate || true
-    let mod_json = format!("{{\"modPath\":\"{}\"}}", mod_dir.display());
-    if let Ok(m) = Run::new("cargo")
-        .arg("run")
-        .arg("-q")
-        .arg("-p")
-        .arg("xtask")
-        .arg("--")
-        .arg("mcp")
-        .arg("call")
-        .arg("mod_validate")
-        .arg(&mod_json)
-        .cwd(&p.mono_root)
-        .merged_output()
-    {
-        print!("{}", m.text);
-        let _ = io::stdout().flush();
+    // Preserved fail-open: mod_validate || true — the shipping mod and the export tooling addon.
+    for dir in [&mod_dir, &export_dir] {
+        let mod_json = format!("{{\"modPath\":\"{}\"}}", dir.display());
+        if let Ok(m) = Run::new("cargo")
+            .arg("run")
+            .arg("-q")
+            .arg("-p")
+            .arg("xtask")
+            .arg("--")
+            .arg("mcp")
+            .arg("call")
+            .arg("mod_validate")
+            .arg(&mod_json)
+            .cwd(&p.mono_root)
+            .merged_output()
+        {
+            print!("{}", m.text);
+            let _ = io::stdout().flush();
+        }
     }
 
     for arg in args {
@@ -326,14 +320,6 @@ fn port_open(port: &str) -> bool {
         }
     }
     false
-}
-
-fn code_u8(code: i32) -> u8 {
-    if (0..=255).contains(&code) {
-        code as u8
-    } else {
-        1
-    }
 }
 
 fn out_line(s: &str) -> Result<()> {

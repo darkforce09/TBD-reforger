@@ -85,4 +85,6 @@ Folders that are empty today carry a `README.md` naming the mockup panels that l
   to rewrite `resourceDatabase.rdb` (non-script resources are not directory-scanned).
 - New `.c` files: Workbench cold restart (see `tbd-framework/README.md`). Headless compile gate:
   `cargo xtask mod compile` (`hcargo` from inside the container).
-- `apps/mod/tbd-export/` is a separate mod with a stale copy of the pre-reorg UI. Not mirrored.
+- `apps/mod/tbd-export/` is a thin addon that **depends on** `tbd-framework` (map-export tooling only —
+  no UI of its own, nothing to mirror). `apps/mod/tbd-emcp/` carries the enfusion-mcp Workbench
+  bridge handlers. Neither holds a copy of this UI tree.

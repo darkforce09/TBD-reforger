@@ -463,7 +463,9 @@ edit, in-editor play button.
     first and is `executor: human` for its staging half.
   * **T-212 WIDENED 1 → 6 files.** As packed it could not pass its own `verify` line:
     `mirror_lockstep` (`gate_mod_compile.rs:427,641`) fails `mod compile` on a framework-only edit to
-    a mirrored file, and both `TBD_ObjectiveRegistry.c` copies are in lockstep today. The typed
+    a mirrored file, and both `TBD_ObjectiveRegistry.c` copies are in lockstep today. (Superseded
+    2026-09-12: the mirror was dropped; tbd-export is a thin addon depending on tbd-framework and
+    `mod compile` is framework-only.) The typed
     per-side runtime lives in `TBD_Objective.c`, not the registry. And `schema_gates.rs:2449-2490`
     pins `objectives==13 framing==0 autoLose==0` by **exact equality** inside `gate_slice` — the
     salvaged prior attempt (`fc4f15121`) measures 13→16, 0→9, 0→3, three red rows. Owns now carries

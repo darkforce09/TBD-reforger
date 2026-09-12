@@ -230,7 +230,8 @@ pub fn rsync_argv(base: &SshBase, mono_root: &Path, host: &str, remote_dir: &str
         "--exclude=**/node_modules/".into(),
         "--exclude=apps/website/api/.tools/".into(),
         "--exclude=apps/website/api/.env".into(),
-        "--exclude=apps/mod/tbd-framework/Scripts/WorkbenchGame/".into(),
+        "--exclude=apps/mod/tbd-export/".into(),
+        "--exclude=apps/mod/tbd-emcp/".into(),
         "--exclude=scripts/deploy/deploy.env".into(),
         format!("{}/", mono_root.display()),
         format!("{host}:{remote_dir}/"),
@@ -890,7 +891,8 @@ mod tests {
             "--exclude=apps/mod/playable_selector/",
             "--exclude=scripts/deploy/deploy.env",
             "--exclude=apps/website/api/.env",
-            "--exclude=apps/mod/tbd-framework/Scripts/WorkbenchGame/",
+            "--exclude=apps/mod/tbd-export/",
+            "--exclude=apps/mod/tbd-emcp/",
         ] {
             assert!(argv.iter().any(|a| a == needed), "missing {needed}");
         }

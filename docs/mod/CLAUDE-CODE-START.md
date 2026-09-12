@@ -21,7 +21,7 @@ cargo xtask mod dev-bootstrap
 cargo xtask deploy staging --dry-run
 ```
 
-**Rules:** production mod = `apps/mod/tbd-framework/` only; **never guess Enfusion APIs or ResourceNames** — use **enfusion-mcp** first.
+**Rules:** production mod = `apps/mod/tbd-framework/` only; map-export tooling = `apps/mod/tbd-export/` (a thin addon that **depends on** the framework, not a mirror of it); MCP bridge handlers = `apps/mod/tbd-emcp/`; **never guess Enfusion APIs or ResourceNames** — use **enfusion-mcp** first.
 
 ---
 
@@ -33,8 +33,8 @@ cargo xtask deploy staging --dry-run
 
 1. Builds MCP pak symlink farm (`cargo xtask setup mcp-game-root`)
 2. Runs `npm ci` in `scripts/mod/` when `enfusion-mcp` is not installed (pinned @ 0.6.1)
-3. Copies gitignored `EnfusionMCP/` handlers from the npm package
-4. **Launches Workbench** if Net API port **5775** is closed (`steam -applaunch 1874910`, wait up to **180s**)
+3. (no handler copy — the `EnfusionMCP/` handlers are committed in `apps/mod/tbd-emcp/`)
+4. **Launches Workbench** if Net API port **5775** is closed (`steam -applaunch 1874910 -gproj <repo>/apps/mod/tbd-export/addon.gproj` — skips the project picker; wait up to **180s**)
 5. **Pre-warms the MCP daemon** (one-time ~35 s index load)
 6. Runs `wb_connect` + `mod_validate`
 
@@ -42,9 +42,9 @@ cargo xtask deploy staging --dry-run
 cargo xtask mod dev-bootstrap
 ```
 
-**Human only if** bootstrap prints `ACTION REQUIRED` (exit 1): open `apps/mod/tbd-framework/addon.gproj` in Workbench, enable **Net API**, then Claude Code re-runs bootstrap.
+**Human only if** bootstrap prints `ACTION REQUIRED` (exit 1): open `apps/mod/tbd-export/addon.gproj` in Workbench, enable **Net API**, then Claude Code re-runs bootstrap.
 
-Expect ~19 `.c` files under `EnfusionMCP/` after first run. Staging deploy excludes this tree.
+The ~19 `EnfusionMCP/` handler `.c` files are **committed** in `apps/mod/tbd-emcp/` — nothing is installed at runtime. Staging deploy excludes `apps/mod/tbd-export/` and `apps/mod/tbd-emcp/`.
 
 | Method | When |
 |--------|------|
@@ -59,6 +59,7 @@ Verify machine paths in `ENFUSION_GAME_PATH`, `ENFUSION_WORKBENCH_PATH`, `ENFUSI
 ```bash
 cargo xtask mcp smoke
 cargo xtask mcp call mod_validate '{"modPath":"'"$PWD"'/apps/mod/tbd-framework"}'
+cargo xtask mcp call mod_validate '{"modPath":"'"$PWD"'/apps/mod/tbd-export"}'
 ```
 
 **Offline self-test** (no Workbench):
@@ -73,7 +74,7 @@ cargo xtask mcp selftest   # 19/19 gates
 cargo xtask mcp daemon stop-all
 ```
 
-If `wb_connect` fails: reload `tbd-framework` in Workbench Resource Browser and retry.
+If `wb_connect` fails: check that Workbench has `apps/mod/tbd-export/addon.gproj` open (so `TBD_EMCP` is loaded and the bridge handlers exist), then retry.
 
 ---
 
@@ -82,7 +83,7 @@ If `wb_connect` fails: reload `tbd-framework` in Workbench Resource Browser and 
 ```
 cargo xtask mod dev-bootstrap  (auto-launch Workbench + daemon pre-warm)
 → wb_connect → asset_search / game_read / game_browse
-→ implement export script in tbd-framework
+→ implement export script in tbd-export
 → wb_reload → mod_validate → run export
 → commit packages/tbd-schema/registry/registry-items.workbench.json
 → cargo xtask ci schema-validate

@@ -4,6 +4,8 @@ GameProject {
  TITLE "TBD Export"
  Dependencies {
   "58D0FB3206B6F859"
+  "B2C3D4E5F6A78901"
+  "D4E5F6A7B8C90123"
  }
  Configurations {
   GameProjectConfig PC {

@@ -62,7 +62,7 @@
 //! * **Hit order is sorted, not `readdir` order** — `grep -r`'s fts order is measured to be
 //!   neither sorted nor stable across filesystems, so the script's own ordering is not
 //!   reproducible. [`scan::walk_files`] sorts. Moot: both identifier arms are `OK (none)`.
-//! * **A missing `tbd-framework`, or an absent `grep`, is exit 2 — not a green run.** In bash,
+//! * **A missing `tbd-framework` or `tbd-export`, or an absent `grep`, is exit 2 — not a green run.** In bash,
 //!   `grep -rn … 2>/dev/null || true` over an absent tree prints `OK (none)` *and* `OK (nothing to
 //!   compare)` and exits 0: the fail-open defect `tbd-gate` exists to remove. Here, a [`NotRun`].
 //! * **GNU grep's binary heuristic is approximated** by [`grep_visible`]; measured 2026-08-12,
@@ -86,6 +86,9 @@ use tbd_gate::{Kind, NotRun, Pattern, Verdict, scan};
 // The script's `MOD` and `CRF`. `crf_framework` is gitignored, so it is absent on a fresh clone —
 // which is what the advisory SKIP is for.
 const MOD_REL: &str = "apps/mod/tbd-framework";
+/// 2026-09-12: the map-export tooling left tbd-framework for this thin dependency addon, so the
+/// identifier and GUID arms scan it too (tbd-emcp is third-party enfusion-mcp code, not ours).
+const EXPORT_REL: &str = "apps/mod/tbd-export";
 const CRF_REL: &str = "apps/mod/crf_framework";
 /// bash line 39: the in-repo lane (a slice worktree's symlink) **overrides even `TBD_PS_ORACLE`**,
 /// because that assignment is unconditional in the script. `${VAR:-…}`, so *empty* falls back too;
@@ -129,6 +132,7 @@ const IDENT_LANES: &[(&str, &str)] = &[
 /// mutating `HOME` — `std::env::set_var` is `unsafe` in edition 2024 and races other test threads.
 struct Lanes {
     mod_dir: PathBuf,
+    export_dir: PathBuf,
     crf: PathBuf,
     ps: PathBuf,
     vanilla: PathBuf,
@@ -147,6 +151,7 @@ impl Lanes {
         }
         Lanes {
             mod_dir: repo_root.join(MOD_REL),
+            export_dir: repo_root.join(EXPORT_REL),
             crf: repo_root.join(CRF_REL),
             ps,
             vanilla: home.join(VANILLA_HOME_REL),
@@ -191,7 +196,8 @@ fn run(lanes: &Lanes, log: &mut Log) -> u8 {
     let mut memo: HashMap<String, bool> = HashMap::new();
 
     for (label, prefix) in IDENT_LANES {
-        match check_identifier_leak(log, &lanes.mod_dir, label, prefix) {
+        let ours = [lanes.mod_dir.as_path(), lanes.export_dir.as_path()];
+        match check_identifier_leak(log, &ours, label, prefix) {
             Ok(hit) => fail |= hit,
             Err(cause) => return refuse(log, cause),
         }
@@ -227,18 +233,18 @@ fn refuse(log: &mut Log, cause: NotRun) -> u8 {
 
 fn check_identifier_leak(
     log: &mut Log,
-    mod_dir: &Path,
+    roots: &[&Path],
     label: &str,
     prefix: &str,
 ) -> Result<bool, NotRun> {
     log.say(format!(
-        "==> {prefix} identifiers in tbd-framework code ({label})"
+        "==> {prefix} identifiers in tbd-framework + tbd-export code ({label})"
     ));
     let ident = pattern(&format!("(^|[^A-Za-z0-9_]){prefix}"))?;
     let comment = pattern(COMMENT_RE)?;
 
     let mut hits: Vec<String> = Vec::new();
-    for file in scan::walk_files(&[mod_dir], outside_excluded_dir)? {
+    for file in scan::walk_files(roots, outside_excluded_dir)? {
         let bytes = read(&file)?;
         for (line_no, line) in numbered(grep_visible(&bytes)) {
             if !ident.is_match(&line) {
@@ -258,7 +264,7 @@ fn check_identifier_leak(
         return Ok(false);
     }
     log.say(format!(
-        "FAIL: {prefix} symbols found in the production mod:"
+        "FAIL: {prefix} symbols found in our mod trees (tbd-framework, tbd-export):"
     ));
     for hit in hits.iter().take(HEAD) {
         log.say(hit.clone());
@@ -282,7 +288,7 @@ fn check_guid_leak(
     memo: &mut HashMap<String, bool>,
 ) -> Result<bool, NotRun> {
     log.say(format!(
-        "==> {label} layout/prefab GUIDs reused in tbd-framework"
+        "==> {label} layout/prefab GUIDs reused in tbd-framework or tbd-export"
     ));
     // `[ -d ]` follows symlinks, and so does `is_dir`.
     if !oracle.is_dir() {
@@ -304,7 +310,10 @@ fn check_guid_leak(
     let refs: Vec<&Path> = dirs.iter().map(PathBuf::as_path).collect();
     let oracle_guids = guids_under(&guid, &refs)?;
     // Recomputed per lane, as in the script. 143 files; the repeat costs nothing.
-    let ours = guids_under(&guid, &[lanes.mod_dir.as_path()])?;
+    let ours = guids_under(
+        &guid,
+        &[lanes.mod_dir.as_path(), lanes.export_dir.as_path()],
+    )?;
     if oracle_guids.is_empty() || ours.is_empty() {
         log.say("  OK (nothing to compare)");
         return Ok(false);
@@ -503,6 +512,7 @@ mod tests {
             let root = std::env::temp_dir().join(format!("tbd-crf-{}-{name}", std::process::id()));
             let _ = std::fs::remove_dir_all(&root);
             std::fs::create_dir_all(root.join("mod")).unwrap();
+            std::fs::create_dir_all(root.join("export")).unwrap();
             for (rel, body) in files {
                 let p = root.join(rel);
                 std::fs::create_dir_all(p.parent().unwrap()).unwrap();
@@ -526,6 +536,7 @@ mod tests {
         let at = |s: &str| root.join(s);
         let lanes = Lanes {
             mod_dir: at("mod"),
+            export_dir: at("export"),
             crf: at("crf"),
             ps: at("ps"),
             vanilla: at("vanilla"),
@@ -592,13 +603,17 @@ mod tests {
         let files = [("mod/S/Spawn.c", leaky), ("mod/S/Maps.c", words)];
         let (code, out) = Fixture::new("ident", &files).run();
         assert_eq!(code, 1, "{out}");
-        has(&out, "FAIL: CRF_ symbols found in the production mod:");
+        has(
+            &out,
+            "FAIL: CRF_ symbols found in our mod trees (tbd-framework, tbd-export):",
+        );
         has(&out, "Spawn.c:5:class TBD_SpawnManager");
         for commented in [":1:", ":2:", ":3:", ":4:"] {
             hasnt(&out, commented); // a comment naming the oracle is allowed
         }
         // PS_ must not hit MAPS_/GROUPS_/OPS_/TIPS_.
-        let ps_arm = "==> PS_ identifiers in tbd-framework code (PlayableSelector, NO LICENCE)";
+        let ps_arm =
+            "==> PS_ identifiers in tbd-framework + tbd-export code (PlayableSelector, NO LICENCE)";
         has(&out, &format!("{ps_arm}\n  OK (none)"));
         has(&out, "Oracles are reference-only.");
         has(&out, EPILOGUE_PS);
@@ -711,5 +726,6 @@ mod tests {
         let bare = Fixture::new("lanes2", &[]);
         assert_ne!(Lanes::from_env(&bare.0).ps, bare.0.join(PS_REPO_REL));
         assert_eq!(Lanes::from_env(&bare.0).mod_dir, bare.0.join(MOD_REL));
+        assert_eq!(Lanes::from_env(&bare.0).export_dir, bare.0.join(EXPORT_REL));
     }
 }

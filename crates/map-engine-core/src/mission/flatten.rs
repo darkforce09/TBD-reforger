@@ -3651,9 +3651,9 @@ pub fn flatten_to_mod_document(
     // flag rather than adding a second rung, which is the reuse the plan asks for.
     //
     // ⚠ WAS: "the mod's validator does not accept 1.3 on any shipped build" — T-674 wrote that when
-    // it was true and the allowlist bump was still ahead of it. **T-674.2 landed it.** Both copies
-    // of `TBD_MissionValidator` (tbd-framework AND tbd-export) now declare `SCHEMA_1_3` and
-    // `CheckSchemaVersion` accepts it beside 1.1/1.2, so a document that declares 1.3 loads. The
+    // it was true and the allowlist bump was still ahead of it. **T-674.2 landed it.** The mod's
+    // `TBD_MissionValidator` (tbd-framework; its tbd-export mirror was dropped 2026-09-12) declares
+    // `SCHEMA_1_3` and `CheckSchemaVersion` accepts it beside 1.1/1.2, so 1.3 documents load. The
     // note is corrected rather than deleted because a stale "this will not load" over a version
     // latch is the kind of comment a later slice steers by.
     //

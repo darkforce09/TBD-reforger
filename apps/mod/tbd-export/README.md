@@ -1,151 +1,41 @@
-# TBD Framework
+# TBD Export
 
-Greenfield Enfusion game mode for the TBD Reforger platform. **TBD-owned code only.**
+Workbench map-export tooling for the TBD Reforger platform, as a thin addon over **TBD_Framework**.
+Nothing here ships to players or servers: the addon exists to run inside Workbench (and, for the road
+exporter, inside a headless server pointed at the export scenario).
 
-Mod GUID: `B2C3D4E5F6A78901` · Vanilla dependency: `58D0FB3206B6F859`
+Mod GUID: `C3D4E5F6A7B89012` · ID `TBD_Export` · Dependencies: `58D0FB3206B6F859` (vanilla),
+`B2C3D4E5F6A78901` (TBD_Framework), `D4E5F6A7B8C90123` (TBD_EMCP — the enfusion-mcp bridge)
 
----
+## What is here (and only here)
 
-## Coalition / CRF — do not use in Workbench
-
-| Folder | Role | Open in Workbench? |
-|---|---|---|
-| **`tbd-framework/`** (this mod) | Production TBD framework | **Yes** |
-| **`Tbd_framework/`** | CRF reference (read patterns in Cursor only) | **No** — 60+ Coalition workshop deps |
-
-See `Tbd_framework/REFERENCE-ONLY.md` (gitignored reference copy — present only in local checkouts).
-
----
-
-## Features (current)
-
-- Backend config from `$profile:TBD_BackendConfig.json`
-- Mission loader: REST `GET /api/v1/missions/{id}/compiled` (service-token / `X-Service-Token`; handler `get_compiled_mission` at `apps/website/api/src/app.rs` + `handlers/missions.rs`, T-092.2) → `$profile:missions/{id}.json` fallback on REST failure
-- Registry alias resolution (`TBD_Registry.c`)
-- **Per-slot spawn:** `TBD_SpawnManager` + modded `SCR_MenuSpawnLogic` from mission `slots[]` (schema 1.1) — **kit aliases** + round-robin/roster assign; **no in-game slot picker yet** (**T-068.13** production LOBBY UI, after **T-092.2**)
-- **Player loadout on spawn:** **T-068.12** — per-slot compiled loadout → `EquipCloth`/`EquipWeapon` on **human player** (not test NPC)
-- **Loadout equip test (T-068.5 / T-068.5.1):** `TBD_LoadoutEquipComponent` — `$profile:TBD_LoadoutTest.json`, **test NPC** @ 6400 only
-- Roster loader (`TBD_RosterLoader.c`) — polls `GET /api/game/events/{id}/roster`
-- Game stage enum + manager (`LOADING → … → DEBRIEF`)
-- Radio bridge hook stubs (partner VOIP wires later)
-- **`TBD_GameMode.et`** prefab — managers + `TBD_LoadoutEquipComponent` (dev loadout test)
-
----
-
-## Dev scenario
-
-| Resource | Path |
+| Path | Role |
 |---|---|
-| Mission | `Missions/TBD_Dev_POC.conf` (`{69A85365FC09E2CA}`) |
-| World | `worlds/TBD_Dev_POC.ent` — Eden subscene (`{853E92315D1D9EFE}worlds/Eden/Eden.ent`) |
-| Layer | `worlds/TBD_Dev_POC_Layers/default.layer` — places `TBD_GameMode` at 6400,0,6400 |
-| Game mode prefab | `Prefabs/Systems/TBD_GameMode.et` |
+| `Scripts/WorkbenchGame/MapExport/**` | The map-export plugins (terrain DEM / satellite / water / roads, vegetation, objects, props, infrastructure, buildings + blueprints, locations, registry / arsenal). `Plugins,TBD,…` in Workbench. |
+| `Scripts/WorkbenchGame/MapExport/Objects/Buildings/EMCP_WB_TbdBlueprint.c` | Net API handler that drives the blueprint recon / trace / parity extractors from `cargo xtask mcp call`. Lives outside `EnfusionMCP/` on purpose: the MCP's `wb_cleanup` deletes that directory. |
+| `Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c`, `TBD_RegistryScan.c` | Registry item export (`packages/tbd-schema/registry/registry-items.workbench.json`); use the `TBD_ExportJson` / `TBD_ExportPaths` aliases from `MapExport/Core`. |
+| `Scripts/Game/TBD/Export/*.c` | `TBD_RoadExportComponent` — runtime road-network exporter (game-mode component). |
+| `Prefabs/Systems/TBD_GameMode.et` (+ `.meta`) | Path-override of the framework prefab (same resource GUID `7A5B8572ECC15707`) that adds `TBD_RoadExportComponent`. This addon loads last, so its copy wins; the shipping prefab never carries the component. |
+| `Missions/TBD_Export_Everon.conf` | The export scenario (framework world `{F652B97A6F497348}worlds/TBD_Dev_POC.ent`, game mode `TBD`). |
+| `tools/*.mjs` | PNG helpers (gitignored). |
 
-Golden mission `msn_8f3a2c` defines **18 slots** with exact spawn positions.
+Everything else — scripts, layouts, configs, worlds, data — comes from tbd-framework through the
+dependency. Do not copy framework files in here: `cargo xtask mod compile` fails on any relative path
+that exists in two addons (the only allowed overlap is the prefab above).
 
----
+## Workbench
 
-## Workbench setup
+Open `apps/mod/tbd-export/addon.gproj` (`cargo xtask mod dev-bootstrap` does it): Workbench resolves
+TBD_Framework and TBD_EMCP as dependencies, so this is the full dev session. Export output lands under
+`$profile:TBD_Export/…` (Proton: `…/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile/TBD_Export/`);
+`cargo xtask map ingest-blueprints` reads it from there.
 
-```bash
-cargo xtask setup workbench
-```
+New `.c` files need a Workbench cold restart (the script list is built at load). Headless compile gate:
+`cargo xtask mod compile` compiles `Scripts/Game` of all three addons; `Scripts/WorkbenchGame` compiles
+only inside Workbench.
 
-1. Locate `~/ArmaReforger-Base/data/ArmaReforger.gproj` as base game
-2. **+ Add Project → Add Existing** → `tbd-framework/addon.gproj`
-3. Open **TBD_Framework** in the launcher
-4. Use **enfusion-mcp** before editing any `.c` file
+## History
 
-**New script file:** Workbench builds its script-file list at project load — a freshly added `.c` stays "Unknown class" until **Workbench cold restart** (not just `wb_reload`). Kill Workbench + re-run `cargo xtask mod dev-bootstrap`.
-
-**MCP verify spawn:**
-
-```bash
-cargo xtask mod spawn-verify
-```
-
----
-
-## Dedicated server (Linux)
-
-```bash
-cargo xtask setup server-profile     # default profile: apps/mod/.local-test-profile/
-cargo xtask mod dev-server
-```
-
-Prereqs: Steam app **1890870** (Arma Reforger Server), website API on `:8080`.
-
-Local unpublished mods use **`-server` + `-addons`**, not `-config` + `-addons`.
-
-**Staging:** see [`docs/STAGING-SERVER.md`](../../../docs/mod/STAGING-SERVER.md) — `cargo xtask deploy staging`.
-
-### Profile layout
-
-Enfusion `$profile:` = `<profileDir>/profile/`:
-
-```
-profile/
-  TBD_BackendConfig.json    # copy from Data/backend.example.json
-  TBD_Registry.json         # optional override
-  TBD_LoadoutTest.json      # copy from web loadout-export.json (T-068.4 download) for loadout equip test
-  missions/
-    msn_8f3a2c.json         # cached after successful REST fetch
-```
-
-**Workbench `$profile:`** resolves under the Proton prefix, e.g.  
-`…/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile/`  
-(paste exact path in verify — differs from dedicated-server `.local-test-profile/`).
-
-Setup script writes these automatically; token from `GAME_SERVER_TOKEN` env or `apps/website/.env`.
-
-### Expected log lines
-
-Verified against a real boot (T-612, 2026-08-01). Everything after each tag/`key=` prefix is
-expected to vary — pin the prefix, never the sentence (`scripts/mod/remote-log-grep.sh:34`):
-
-```
-[TBD][Mission] loaded id=msn_8f3a2c name='Bridgehead at Levie' slots=18 source=backend
-[TBD] Registry loaded (21 aliases).
-[TBD][Slots] Slot-1 blufor:Alpha:SL:0 (blufor:Alpha:SL:0) kit kit:rifleman_m16 at <…>   ← ×18 for msn_8f3a2c
-[TBD][Loadout][Slot] slot=… primary equip OK {GUID}…Rifle_M16A2.et                      ← per authored gear item
-[TBD][Loadout][Slot] slot=… loadout pass complete gear=…/… cargo=…/…                    ← per dressed slot
-[TBD][Slots] materialized 18/18 bodies — … with a JSON loadout, … kit-only, 0 failed
-[TBD][Slots] loadout settle complete — … application(s), 0 unplayable, …
-[TBD][Stage] LOADING -> LOBBY
-[TBD] Stage → LOBBY
-NETWORK : Starting RPL server, listening on address 0.0.0.0:2001
-[TBD] Roster loaded (… assignments).                                                    ← when a roster is configured
-[TBD] SpawnManager: assigned slot blufor:Alpha:SL:0 to player 1 at (…)                  ← once a client joins
-[TBD] SpawnManager: bound player 1 to slot blufor:Alpha:SL:0 body (kit …)
-```
-
-**Gone since June (T-612 — do not grep for these):** `[TBD] Mission loaded from backend:`,
-`built slot spawn`, `spawn requested`, `[TBD][Loadout][Player]`. The only `Mission loaded`
-still printed is the **failure** line `[TBD] Mission loaded but invalid — staying in LOADING.`
-— a check satisfied by that string is passing on the error case.
-
-**Important:** `[TBD][Loadout][TestNPC]` = the Phase 1 dev harness (`$profile:TBD_LoadoutTest.json`).
-**`[TBD][Loadout][Slot]`** = the production slot-body path human players receive (**T-068.12**);
-pick slot in LOBBY = **T-068.13**; production roster sync = **T-114**.
-
----
-
-## Registry
-
-Shipped at `Data/registry.json` (vanilla POC aliases).  
-Spec: [`shared/tbd-schema/spikes/registry-poc-0.4.md`](../../../packages/tbd-schema/spikes/registry-poc-0.4.md) (historical spike).
-
-Replace with TBD-Content export in Phase 1+.
-
----
-
-## Scripts layout
-
-```
-Scripts/Game/TBD/
-  Backend/     TBD_BackendConfig.c, TBD_MissionLoader.c
-  Gamemode/    TBD_FrameworkManager.c, TBD_GameStage.c, TBD_SpawnManager.c,
-               TBD_SCR_MenuSpawnLogic.c, TBD_RosterLoader.c, TBD_LoadoutEquipComponent.c
-  Registry/    TBD_Registry.c, TBD_RegistryPocComponent.c (optional POC)
-  Radio/       TBD_RadioBridgeStub.c
-```
+Until 2026-09-12 this addon was a file-for-file mirror of tbd-framework, held in lockstep by the compile
+gate. The mirror was dropped for the dependency model above — see `apps/mod/README.md` and
+`docs/mod/MCP_TOOLING.md`.

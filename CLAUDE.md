@@ -22,12 +22,12 @@ leaderboards, doctrine wiki, CMS, and admin tooling.
 
 - **Backend:** Rust (Axum + sqlx), PostgreSQL — crate `website-api` in `apps/website/api/` (the T-145 Go→Rust rewrite).
 - **Frontend:** Leptos 0.8 CSR (Rust→wasm, Trunk) in `apps/website/frontend/` — the T-159 rewrite; the React app was deleted at T-159.29.3. All tooling is Rust (T-165 Node eradication); Node exists solely as the `enfusion-mcp` runtime (`scripts/mod`).
-- **Mod:** Enfusion framework in `apps/mod/tbd-framework/`; shared mission schema in `packages/tbd-schema/`.
+- **Mod:** three Enfusion addons under `apps/mod/` — the shipping mod `tbd-framework/` (`TBD_Framework`), the map-export tooling `tbd-export/` (`TBD_Export`, depends on the framework), and the enfusion-mcp Workbench bridge handlers `tbd-emcp/` (`TBD_EMCP`); shared mission schema in `packages/tbd-schema/`.
 - **Auth:** Discord OAuth2 → JWT access token + rotating single-use refresh token.
 
 ## Monorepo layout
 - `apps/website/` — app nest: `api/` (Axum, pkg `website-api`) + `frontend/` (Leptos Trunk, pkg `website-frontend`); seeds at `api/seeds/`
-- `apps/mod/` — Enfusion mod framework (`tbd-framework`, gitignored `crf_framework`/EnfusionMCP)
+- `apps/mod/` — Enfusion addons: `tbd-framework` (shipping mod) + `tbd-export` (dependency addon, export tooling) + `tbd-emcp` (committed MCP handlers); gitignored `crf_framework`
 - `packages/tbd-schema/` — mission JSON schema + golden missions
 - `packages/map-assets/` — terrain DEM/sat (LFS) + rebuildable staging/tiles; served by API `/map-assets`
 - `docs/specs/` — design specs (Mission Creator, blueprints); `docs/mod/`, `docs/website/` — app docs (frontend surface specs: `docs/website/frontend/pages/`, not under `apps/`)
@@ -101,7 +101,7 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 > Runbook: [`docs/platform/FACTORY_FOR_CURSOR.md`](docs/platform/FACTORY_FOR_CURSOR.md) · mode switch:
 > [`.cursor/rules/platform-factory-mode.mdc`](.cursor/rules/platform-factory-mode.mdc).
 
-**CRITICAL — Executor gate:** Agents may **ONLY** execute ticket slices where `executor` is `claude-code` (Claude Code) or `cursor-docs` (Cursor documentation pass). If the active slice has `executor: workbench`, `human`, or `ci`, the agent **must stop** and wait for human completion. Do not edit `apps/mod/tbd-framework` Enfusion scripts unless the slice explicitly assigns `claude-code` to a mod script path. `cargo run -q -p xtask -- ticket run` skips non-`claude-code` rows automatically.
+**CRITICAL — Executor gate:** Agents may **ONLY** execute ticket slices where `executor` is `claude-code` (Claude Code) or `cursor-docs` (Cursor documentation pass). If the active slice has `executor: workbench`, `human`, or `ci`, the agent **must stop** and wait for human completion. Do not edit `apps/mod/tbd-framework` or `apps/mod/tbd-export` Enfusion scripts unless the slice explicitly assigns `claude-code` to a mod script path. `cargo run -q -p xtask -- ticket run` skips non-`claude-code` rows automatically.
 **In platform-factory mode, `executor: claude-code` means "any AI coding agent may take this" — it is not a vendor claim,** and Grok now fills that role. Do **not** mass-edit the 95 open platform tickets to `cursor-docs`. `workbench` and `human` still mean stop.
 
 **Before every T-0xx commit, check what changed:**

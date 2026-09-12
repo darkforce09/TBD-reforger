@@ -27,9 +27,9 @@ one greenfield Enfusion mod runs them all, and the web stack handles auth, event
 ### Claude Code (Enfusion work)
 
 1. Read [`docs/mod/CLAUDE-CODE-START.md`](../../docs/mod/CLAUDE-CODE-START.md)
-2. Run **`cargo xtask mod dev-bootstrap`** (from monorepo root) — installs gitignored `EnfusionMCP` handlers from the `enfusion-mcp` npm package (not in git)
+2. Run **`cargo xtask mod dev-bootstrap`** (from monorepo root) — launches Workbench on `tbd-export/addon.gproj` (`-gproj`, skips the project picker) and pre-warms the MCP daemon; the `EnfusionMCP` handlers are committed in [`tbd-emcp/`](tbd-emcp/) and nothing is copied any more
 3. Enable **enfusion-mcp** before editing any `.c` file
-4. Open **only** `tbd-framework/addon.gproj` in Workbench — never the gitignored `Tbd_framework/` or `crf_framework/` reference copies
+4. Open `tbd-export/addon.gproj` in Workbench for the full dev session — it pulls in `tbd-framework` **and** `tbd-emcp` as dependencies, so the MCP bridge is alive. Opening `tbd-framework/addon.gproj` alone works but has **no MCP bridge** unless `TBD_EMCP` is loaded beside it. Never open the gitignored `Tbd_framework/` or `crf_framework/` reference copies
 
 ### Dedicated server (local POC)
 
@@ -71,7 +71,9 @@ cargo xtask mod test-phase1-api
 
 | Path | Purpose |
 |---|---|
-| [`tbd-framework/`](tbd-framework/) | **Production Enfusion mod** (TBD-owned) |
+| [`tbd-framework/`](tbd-framework/) | **Production Enfusion mod** (TBD-owned) — the shipping addon; carries no `Scripts/WorkbenchGame/` |
+| [`tbd-export/`](tbd-export/) | Thin addon — map-export tooling only (`Scripts/WorkbenchGame/MapExport/**`, registry export plugins, road exporter, `TBD_Export_Everon.conf`). **Depends on** `TBD_Framework` + `TBD_EMCP`; not a mirror |
+| [`tbd-emcp/`](tbd-emcp/) | The committed enfusion-mcp Workbench Net API bridge handlers (`Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_*.c`, MIT, from `enfusion-mcp@0.6.1`) |
 | [`packages/tbd-schema/`](../../packages/tbd-schema/) | Mission JSON schema, registry, golden missions, VOIP bridge contract |
 | [`apps/website/`](../website/) | Rust API + Leptos SPA |
 | `Tbd_framework/` | CRF reference only, **gitignored** — do not open in Workbench |
@@ -105,7 +107,9 @@ cargo xtask mod test-phase1-api
 
 | Item | Value |
 |---|---|
-| Mod GUID | `B2C3D4E5F6A78901` |
+| Framework GUID (`TBD_Framework`) | `B2C3D4E5F6A78901` |
+| Export GUID (`TBD_Export`) | `C3D4E5F6A7B89012` |
+| EMCP GUID (`TBD_EMCP`) | `D4E5F6A7B8C90123` |
 | Dev scenario | `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf` |
 | Dev world | `{F652B97A6F497348}worlds/TBD_Dev_POC.ent` (Eden subscene) |
 | Golden mission | `msn_8f3a2c` (Bridgehead at Levie) |
@@ -117,5 +121,8 @@ cargo xtask mod test-phase1-api
 
 - Do not open or ship `Tbd_framework/` (60+ Coalition deps)
 - Do not guess Enfusion APIs — use enfusion-mcp
+- Do not call the MCP's `wb_launch` with `gprojPath` on `tbd-framework` or `tbd-export` — it injects a second copy of the handlers into that addon's `Scripts/WorkbenchGame/EnfusionMCP/` → Workbench "Multiple declaration" → bridge dead
+- Do not call `wb_cleanup` with `apps/mod/tbd-emcp` — it `rm -rf`s the committed handlers
+- Do not copy `tbd-framework` files into `tbd-export` — it is a dependency addon, not a mirror
 - Do not use `-config` and `-addons` together for local dev mods
 - Payments / Stripe are out of scope; VOIP is partner-owned (external app)

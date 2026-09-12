@@ -208,7 +208,8 @@ that is not a correctness problem. Absence is loud, and design work that would h
 **stop and ask, not guess**. Point the lane elsewhere with `TBD_PS_ORACLE=/path/to/PlayableSelector-main`.
 
 **The gate.** `cargo xtask verify no-crf-leak` (name kept for the wave runner; it now covers every lane)
-fails the build on a `CRF_` **or** `PS_` identifier in `apps/mod/tbd-framework/**`, and on any
+fails the build on a `CRF_` **or** `PS_` identifier in `apps/mod/tbd-framework/**` and
+`apps/mod/tbd-export/**` (`apps/mod/tbd-emcp/**` is third-party and is not scanned), and on any
 oracle-only asset GUID reused in ours. Comments naming an oracle are allowed and encouraged —
 citing what you design-mirrored is the practice we want; it is the prefix in *code* that fails.
 

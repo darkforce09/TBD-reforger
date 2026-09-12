@@ -11,6 +11,8 @@ Mod GUID: `B2C3D4E5F6A78901` · Vanilla dependency: `58D0FB3206B6F859`
 | Folder | Role | Open in Workbench? |
 |---|---|---|
 | **`tbd-framework/`** (this mod) | Production TBD framework | **Yes** |
+| **`tbd-export/`** | Map-export tooling; depends on this addon + `tbd-emcp` | **Yes** — the full dev session (framework + EMCP + export) |
+| **`tbd-emcp/`** | enfusion-mcp Net API handlers (committed) | As a dependency of tbd-export; load it beside this addon for a bridge in a framework-only session |
 | **`Tbd_framework/`** | CRF reference (read patterns in Cursor only) | **No** — 60+ Coalition workshop deps |
 
 See `Tbd_framework/REFERENCE-ONLY.md` (gitignored reference copy — present only in local checkouts).
@@ -52,9 +54,11 @@ cargo xtask setup workbench
 ```
 
 1. Locate `~/ArmaReforger-Base/data/ArmaReforger.gproj` as base game
-2. **+ Add Project → Add Existing** → `tbd-framework/addon.gproj`
-3. Open **TBD_Framework** in the launcher
+2. **+ Add Project → Add Existing** → `tbd-export/addon.gproj` — it depends on this addon and on `tbd-emcp` (the enfusion-mcp bridge), so one project gives the full dev session
+3. Open **TBD_Export** in the launcher (`cargo xtask mod dev-bootstrap` launches it directly with `-gproj`)
 4. Use **enfusion-mcp** before editing any `.c` file
+
+Opening **TBD_Framework** alone works but has no MCP bridge unless `tbd-emcp` is loaded beside it — this addon carries no `Scripts/WorkbenchGame` by design (the shipping mod has zero Workbench tooling; the map-export plugins live in `tbd-export`).
 
 **New script file:** Workbench builds its script-file list at project load — a freshly added `.c` stays "Unknown class" until **Workbench cold restart** (not just `wb_reload`). Kill Workbench + re-run `cargo xtask mod dev-bootstrap`.
 

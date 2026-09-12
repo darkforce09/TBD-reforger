@@ -190,15 +190,6 @@ pub fn preflight_with_root(root: &Path) -> u8 {
         );
         fail = 1;
     }
-    let rdb_export = root.join("apps/mod/tbd-export/resourceDatabase.rdb");
-    let rdb_export_ok =
-        rdb_export.is_file() && rdb_export.metadata().map(|m| m.len() > 0).unwrap_or(false);
-    if !rdb_export_ok {
-        eprintln!(
-            "::error title=mod-gates checkout incomplete::apps/mod/tbd-export/resourceDatabase.rdb missing or empty. Without it the engine skips the loose addon and compiles none of the mod."
-        );
-        fail = 1;
-    }
     fail
 }
 
@@ -234,16 +225,6 @@ pub fn run_with_root(root: &Path, opts: &Opts) -> u8 {
             ),
         );
     }
-    let export_src = root.join("apps/mod/tbd-export");
-    if !export_src.join("addon.gproj").is_file() {
-        return env_fail(
-            &format!("no addon.gproj at {}", export_src.display()),
-            Some(
-                "The checkout does not look like this repo — verify the working tree before blaming the mod.",
-            ),
-        );
-    }
-
     if let Some(probe) = &opts.probe_dir
         && !probe.is_dir()
     {
@@ -289,26 +270,18 @@ fn compile_inner(
     let link = run_dir.join("addons/tbd-framework");
     let _ = fs::remove_file(&link);
     std::os::unix::fs::symlink(mod_src, &link)?;
-    let export_link = run_dir.join("addons/tbd-export");
-    let _ = fs::remove_file(&export_link);
-    std::os::unix::fs::symlink(root.join("apps/mod/tbd-export"), &export_link)?;
-
-    // T-946.23 — EXPORT FIRST, FRAMEWORK LAST, AND THE ORDER IS THE WHOLE POINT.
-    //
-    // The Enfusion VFS overlays addons BY PATH and the LAST one wins, so with the old
-    // `TBD_Framework,TBD_Export` order every one of the 139 script paths that exists in both trees
-    // was compiled from tbd-EXPORT and the tbd-framework copy was never read. The shipping server
-    // loads only `TBD_Framework` (`scripts/mod/tbd-staging-server.config.json`), so the gate was
-    // green over code that does not ship and silent about the code that does. Measured 2026-09-06
-    // by planting `void f(){ThisSymbolDoesNotExist_CC();}` in
-    // `tbd-framework/.../TBD_MissionSlotStruct.c`: `OK: compiled clean`, exit 0. The same line in
-    // the tbd-export copy fails the gate. Found by the T-674.2 slice agent, reproduced here before
-    // anything was changed.
-    //
-    // Framework last means the SHIPPING copies are the ones the engine reads. The export mirrors
-    // are then covered by [`mirror_lockstep`] instead of by compilation, which is the honest trade:
-    // the two trees are line-for-line identical by design, so a divergence is itself the defect.
-    let mut addons = String::from("TBD_Export,TBD_Framework");
+    // ONE ADDON. The gate compiles what ships: the staging server loads only `TBD_Framework`
+    // (`scripts/mod/tbd-staging-server.config.json`). Until 2026-09-12 `apps/mod/tbd-export` was a
+    // file-for-file mirror of this tree and the list read `TBD_Export,TBD_Framework` (T-946.23: the
+    // Enfusion VFS overlays addons by path, last wins, so the order decided which copy compiled and
+    // a lockstep check policed the rest). tbd-export is now a thin addon that DEPENDS on
+    // tbd-framework and on tbd-emcp; both are Workbench tooling the dedicated server never reads
+    // (`Scripts/WorkbenchGame`, see the help text), so they compile inside Workbench, where the
+    // dependency resolves. Operator decision: this gate is framework-only. tbd-export's five
+    // `Scripts/Game/TBD/Export/*.c` (the road exporter) are the one thing it could compile and does
+    // not — to cover them, symlink `apps/mod/tbd-export` beside the framework link above and append
+    // `,TBD_Export` here.
+    let mut addons = String::from("TBD_Framework");
 
     if opts.selftest {
         let st = run_dir.join("addons/tbd-selftest");
@@ -345,7 +318,7 @@ fn compile_inner(
         }
     }
 
-    println!("==> compiling tbd-framework + tbd-export (native headless server, no Workbench)");
+    println!("==> compiling tbd-framework (native headless server, no Workbench)");
 
     let log = OpenOptions::new()
         .create(true)
@@ -420,43 +393,25 @@ fn compile_inner(
     }
 
     let console = console.ok_or_else(|| io::Error::other("missing console"))?;
-    if let Some(code) = load_count_guard(root, server_dir, &console)? {
+    if let Some(code) = load_count_guard(root, mod_src, server_dir, &console)? {
         return Ok(code);
     }
 
-    let drift = mirror_lockstep(root)?;
-    if !drift.is_empty() {
+    let stray = workbench_tooling_guard(mod_src);
+    if !stray.is_empty() {
         println!();
-        println!("FAIL: tbd-framework and tbd-export are not in lockstep");
-        println!(
-            "      (scripts compared as code + string literals, with the ASCII rule's punctuation"
-        );
-        println!("       folded away; every other shared path compared byte-for-byte)");
-        for l in &drift {
+        println!("FAIL: tbd-framework carries Workbench tooling");
+        for l in &stray {
             println!("  {l}");
         }
+        println!("      The shipping mod has no Scripts/WorkbenchGame by design (2026-09-12): the");
         println!(
-            "      The engine compiles the tbd-framework copy (T-946.23) and the mirror ships too,"
+            "      map-export plugins live in apps/mod/tbd-export and the enfusion-mcp handlers"
         );
         println!(
-            "      so a divergence here is code that no gate reads. Make the two copies agree."
+            "      in apps/mod/tbd-emcp. An injected EnfusionMCP/ copy (wb_launch gprojPath=…)"
         );
-        return Ok(1);
-    }
-
-    let ascii_bad = ascii_check_export(&root.join("apps/mod/tbd-export"))?;
-    if !ascii_bad.is_empty() {
-        println!();
-        println!("FAIL: non-ASCII bytes in tbd-export scripts (first offending byte per file)");
-        println!("------------------------------------------------------------");
-        for l in &ascii_bad {
-            println!("{l}");
-        }
-        println!("------------------------------------------------------------");
-        println!("Workbench's lexer rejects these, and the headless server never reads the");
-        println!(
-            "WorkbenchGame module — this scan is the only pre-restart guard. Transliterate to ASCII."
-        );
+        println!("      lands here too — delete it; the server cannot compile any of it.");
         return Ok(1);
     }
 
@@ -477,270 +432,67 @@ fn compile_inner(
     Ok(0)
 }
 
-/// Scripts that live in tbd-export and have NO tbd-framework twin, on purpose.
-///
-/// T-946.24: this list is what makes the missing-twin case detectable. The engine reads the
-/// framework copy of a shared path and falls through to export only when framework HAS no copy, so
-/// "framework lost a file" and "this file is legitimately export-only" look identical to the
-/// compiler — and the first one means the shipping mod is missing a script while the gate stays
-/// green on export's. Measured 2026-09-06 by the wave-242 verifier: moving
-/// `tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c` aside left `OK: compiled clean` with the file
-/// count UNCHANGED, because export's copy stepped into its place. Naming the legitimate cases is
-/// the only way to tell the two apart.
-const EXPORT_ONLY_SCRIPTS: &[&str] = &[
-    // The road-export runtime: exists to run inside Workbench's Game module, not on a server.
-    "Scripts/Game/TBD/Export/TBD_RoadClassifier.c",
-    "Scripts/Game/TBD/Export/TBD_RoadExportComponent.c",
-    "Scripts/Game/TBD/Export/TBD_RoadExportJson.c",
-    "Scripts/Game/TBD/Export/TBD_RoadExportPaths.c",
-    "Scripts/Game/TBD/Export/TBD_RoadRecords.c",
-    // Workbench-only export plugins.
-    "Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_TbdBlueprint.c",
-    "Scripts/WorkbenchGame/MapExport/Objects/Buildings/TBD_BlueprintReconPlugin.c",
-    "Scripts/WorkbenchGame/MapExport/Objects/Buildings/TBD_BuildingArchitectExtractor.c",
-    "Scripts/WorkbenchGame/MapExport/Objects/Buildings/TBD_BuildingTraceExtract.c",
-    "Scripts/WorkbenchGame/MapExport/Objects/Buildings/TBD_BuildingTraceScanner.c",
-    "Scripts/WorkbenchGame/MapExport/Objects/Buildings/TBD_BuildingVoxelDump.c",
-    "Scripts/WorkbenchGame/MapExport/Objects/Buildings/TBD_BuildingsExportPlugin.c",
-    "Scripts/WorkbenchGame/MapExport/Objects/Buildings/TBD_MapExportBuildings.c",
-];
-
-/// Shared NON-script paths the two addons are allowed to differ on, and why.
-///
-/// T-946.24: the addon order decides which body of a shared path the engine resolves, and that is
-/// not only true of scripts. These three differ byte-for-byte while carrying the SAME resource
-/// GUID, so flipping the order flipped which one wins — measured by the wave-242 verifier, which is
-/// how the list came to exist. Each is a file an addon must own; anything else that differs is
-/// drift, and the check below refuses it.
-const MIRROR_DIVERGENT_ASSETS: &[(&str, &str)] = &[
-    (
-        "Prefabs/Systems/TBD_GameMode.et",
-        "the export game mode carries TBD_RoadExportComponent; the shipping one must not",
-    ),
-    (
-        "addon.gproj",
-        "each addon declares its own GUID, name and dependencies",
-    ),
-    (
-        "resourceDatabase.rdb",
-        "each addon indexes its own resources",
-    ),
-];
-
-/// The punctuation the pure-ASCII rule forces tbd-export to spell differently, folded so the two
-/// trees can be compared on meaning. Deliberately small and explicit: an unfolded character simply
-/// makes the comparison fail, which is a "make the two copies agree" message, not a silent pass.
-const ASCII_FOLD: &[(char, &str)] = &[
-    ('\u{2014}', "-"),
-    ('\u{2013}', "-"),
-    ('\u{2011}', "-"),
-    ('\u{2018}', "'"),
-    ('\u{2019}', "'"),
-    ('\u{201c}', "\""),
-    ('\u{201d}', "\""),
-    ('\u{2026}', "..."),
-    ('\u{00b7}', "."),
-    ('\u{00d7}', "x"),
-    ('\u{2192}', "->"),
-    ('\u{2190}', "<-"),
-    ('\u{2264}', "<="),
-    ('\u{2265}', ">="),
-    ('\u{00b2}', "^2"),
-    ('\u{00b3}', "^3"),
-    ('\u{00b0}', "deg"),
-    ('\u{00b1}', "+/-"),
-    ('\u{2248}', "~"),
-    ('\u{2022}', "*"),
-    ('\u{00a7}', "S"),
-    ('\u{2260}', "!="),
-    ('\u{2208}', "in"),
-];
-
-/// Strip comments while KEEPING string literals, then fold and collapse whitespace.
-///
-/// T-946.24 — two corrections to the first version of this check, both found by the wave-242
-/// verifier and both silent:
-///
-///   * it reused `schema_gates`' stripper, which finds `//` BEFORE blanking literals, so everything
-///     after a `"http://…"` on a line was discarded and any divergence there was invisible. Proved
-///     with a mirror whose export copy called an undefined function after such a literal: `OK:
-///     compiled clean`.
-///   * it ERASED literal contents. A resource GUID is a string literal and it decides which layout
-///     an addon instantiates, so two mirrors could load different UI and pass. Literals are kept
-///     and folded instead, which is all the ASCII rule actually requires of them.
-fn mirror_normalise(src: &str) -> String {
-    let mut out = String::with_capacity(src.len());
-    let b: Vec<char> = src.chars().collect();
-    let (mut i, n) = (0usize, b.len());
-    let (mut in_str, mut in_line, mut in_block) = (false, false, false);
-    while i < n {
-        let c = b[i];
-        let next = if i + 1 < n { b[i + 1] } else { '\0' };
-        if in_line {
-            if c == '\n' {
-                in_line = false;
-                out.push(c);
-            }
-            i += 1;
-        } else if in_block {
-            if c == '*' && next == '/' {
-                in_block = false;
-                out.push(' ');
-                i += 2;
-            } else {
-                i += 1;
-            }
-        } else if in_str {
-            out.push(c);
-            if c == '\\' && next != '\0' {
-                out.push(next);
-                i += 2;
-                continue;
-            }
-            if c == '"' {
-                in_str = false;
-            }
-            i += 1;
-        } else if c == '/' && next == '/' {
-            in_line = true;
-            i += 2;
-        } else if c == '/' && next == '*' {
-            in_block = true;
-            i += 2;
-        } else {
-            if c == '"' {
-                in_str = true;
-            }
-            out.push(c);
-            i += 1;
-        }
-    }
-    let mut folded = String::with_capacity(out.len());
-    for ch in out.chars() {
-        match ASCII_FOLD.iter().find(|(k, _)| *k == ch) {
-            Some((_, v)) => folded.push_str(v),
-            None => folded.push(ch),
-        }
-    }
-    folded.split_whitespace().collect::<Vec<_>>().join(" ")
-}
-
-/// T-946.23 / T-946.24 — the two mod trees must agree on everything the addon order can swap.
-///
-/// The compile reads the tbd-framework copy of a shared path (see the addon order above), so the
-/// tbd-export mirrors are checked here instead of by the compiler. Three questions, because the
-/// verifier showed the first version answered only one of them:
-///
-///   1. does export hold a script framework does not, that is not on [`EXPORT_ONLY_SCRIPTS`]? Then
-///      the shipping tree has lost a file and export's copy is silently standing in for it.
-///   2. do two mirrors of the same script differ in CODE OR IN A STRING LITERAL, once the ASCII
-///      rule's punctuation is folded away?
-///   3. do two mirrors of the same NON-script path differ, outside [`MIRROR_DIVERGENT_ASSETS`]?
-///
-/// Returns one line per problem; empty means lockstep.
-fn mirror_lockstep(root: &Path) -> io::Result<Vec<String>> {
-    let fw = root.join("apps/mod/tbd-framework");
-    let ex = root.join("apps/mod/tbd-export");
-    if !fw.join("Scripts").is_dir() || !ex.join("Scripts").is_dir() {
-        return Err(io::Error::other(
-            "mirror lockstep: one of apps/mod/{tbd-framework,tbd-export}/Scripts is missing — \
-             refusing to report lockstep over a tree that is not there",
-        ));
-    }
-    let mut out = Vec::new();
-    let every = |base: &Path| -> io::Result<Vec<PathBuf>> {
-        let mut found = Vec::new();
-        let mut stack = vec![base.to_path_buf()];
-        while let Some(dir) = stack.pop() {
-            for e in fs::read_dir(&dir)? {
-                let p = e?.path();
-                if p.is_dir() {
-                    if p.file_name().and_then(|n| n.to_str()) == Some(".git") {
-                        continue;
-                    }
-                    stack.push(p);
-                } else {
-                    found.push(p);
-                }
-            }
-        }
-        found.sort();
-        Ok(found)
-    };
-
-    for p in every(&ex)? {
-        let Ok(rel) = p.strip_prefix(&ex) else {
-            continue;
-        };
-        let rel_s = rel.to_string_lossy().replace('\\', "/");
-        let twin = fw.join(rel);
-        let is_script = rel_s.starts_with("Scripts/") && rel_s.ends_with(".c");
-
-        if !twin.is_file() {
-            if is_script && !EXPORT_ONLY_SCRIPTS.contains(&rel_s.as_str()) {
-                out.push(format!(
-                    "{rel_s}: in tbd-export only. Either tbd-framework lost it — in which case the \
-                     mod that SHIPS is missing this script and the gate compiled export's copy in \
-                     its place — or it is deliberately export-only and belongs in \
-                     EXPORT_ONLY_SCRIPTS with a reason."
-                ));
-            }
-            continue;
-        }
-
-        if is_script {
-            if mirror_normalise(&fs::read_to_string(&p)?)
-                != mirror_normalise(&fs::read_to_string(&twin)?)
-            {
-                out.push(format!(
-                    "{rel_s}: the two copies differ in code or in a string literal"
-                ));
-            }
-        } else if fs::read(&p)? != fs::read(&twin)?
-            && !MIRROR_DIVERGENT_ASSETS.iter().any(|(k, _)| *k == rel_s)
-        {
-            out.push(format!(
-                "{rel_s}: the two copies differ byte-for-byte, and the addon order decides which \
-                 one the engine resolves. Make them agree, or add it to MIRROR_DIVERGENT_ASSETS \
-                 with a reason."
-            ));
-        }
-    }
-    out.sort();
-    Ok(out)
-}
-
-/// The dedicated server compiles only the Game module: `Scripts/WorkbenchGame` sources are never
-/// read headless — a planted `Undefined function` there sails through (probed 2026-08-28), and
-/// their Workbench API symbols do not exist server-side, so no flag can compile them here.
-/// Workbench itself DOES lex them and hard-rejects non-ASCII punctuation, which makes this byte
-/// scan the only pre-restart guard for that module. Runs after the engine verdict so
-/// `compile-selftest`'s exit-1 still means a real Enfusion rejection. tbd-export is kept pure
-/// ASCII; tbd-framework predates the rule (non-ASCII comments, engine-green) and is exempt.
-fn ascii_check_export(export_src: &Path) -> io::Result<Vec<String>> {
-    let mut bad = Vec::new();
-    let mut stack = vec![export_src.join("Scripts")];
+/// Every file under `base`, sorted; `.git` pruned. A missing `base` is an `Err`, never an empty
+/// list — a tree that is not there must not read as "nothing to check".
+fn walk_files(base: &Path) -> io::Result<Vec<PathBuf>> {
+    let mut found = Vec::new();
+    let mut stack = vec![base.to_path_buf()];
     while let Some(dir) = stack.pop() {
         for e in fs::read_dir(&dir)? {
             let p = e?.path();
             if p.is_dir() {
-                stack.push(p);
-            } else if p.extension().and_then(|x| x.to_str()) == Some("c") {
-                let bytes = fs::read(&p)?;
-                let mut line = 1usize;
-                for &b in &bytes {
-                    if b == b'\n' {
-                        line += 1;
-                    } else if b > 0x7F {
-                        bad.push(format!("{}:{line}: non-ASCII byte 0x{b:02X}", p.display()));
-                        break;
-                    }
+                if p.file_name().and_then(|n| n.to_str()) == Some(".git") {
+                    continue;
                 }
+                stack.push(p);
+            } else {
+                found.push(p);
             }
         }
     }
-    bad.sort();
-    Ok(bad)
+    found.sort();
+    Ok(found)
+}
+
+/// How many `.c` files `addon/Scripts/Game` holds — the number of files the engine adds to the
+/// Game module for this addon, and so the term [`load_count_guard`] adds to the vanilla baseline.
+/// Only `.c` counts: the tree also carries `README.md` placeholders the engine never loads. A
+/// missing `Scripts/Game` is an `Err` (rc 2 upstream), never a silent 0 — a tree without its
+/// scripts must not pass as "nothing expected".
+fn count_game_scripts(addon: &Path) -> io::Result<u64> {
+    Ok(walk_files(&addon.join("Scripts/Game"))?
+        .iter()
+        .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("c"))
+        .count() as u64)
+}
+
+/// 2026-09-12 — the shipping mod carries no Workbench tooling, and this is what keeps it so.
+///
+/// `Scripts/WorkbenchGame` left tbd-framework when tbd-export stopped being a mirror of it: the
+/// map-export plugins live in `apps/mod/tbd-export`, the enfusion-mcp bridge handlers in
+/// `apps/mod/tbd-emcp`, and tbd-export depends on both. The dedicated server never reads that
+/// module, so nothing in this gate can compile it — this guard is the only thing that notices it
+/// coming back. It does come back: the MCP's `wb_launch gprojPath=…` copies 19 `EMCP_WB_*.c` into
+/// whichever addon was opened, and a second copy beside tbd-emcp's is a Workbench "Multiple
+/// declaration" that kills the bridge.
+///
+/// Returns one line per finding — the directory, then up to five of its files so the report says
+/// what landed there; empty means clean.
+fn workbench_tooling_guard(mod_src: &Path) -> Vec<String> {
+    let dir = mod_src.join("Scripts/WorkbenchGame");
+    if !dir.exists() {
+        return Vec::new();
+    }
+    let mut out = vec![format!("{}: must not exist", dir.display())];
+    if let Ok(files) = walk_files(&dir) {
+        for p in files.iter().take(5) {
+            out.push(format!("  {}", p.display()));
+        }
+        if files.len() > 5 {
+            out.push(format!("  … {} more", files.len() - 5));
+        }
+    }
+    out
 }
 
 fn report_compile_errors(mod_src: &Path, run_dir: &Path, errlog: &Path) -> io::Result<u8> {
@@ -761,7 +513,6 @@ fn report_compile_errors(mod_src: &Path, run_dir: &Path, errlog: &Path) -> io::R
     for line in &all {
         let p = line.split(':').next().unwrap_or("");
         if mod_src.join(p).exists()
-            || run_dir.join("addons/tbd-export").join(p).exists()
             || run_dir.join("addons/tbd-selftest").join(p).exists()
             || run_dir.join("addons/tbd-probe").join(p).exists()
         {
@@ -800,13 +551,22 @@ fn report_compile_errors(mod_src: &Path, run_dir: &Path, errlog: &Path) -> io::R
     Ok(1)
 }
 
-/// T-946.24 — THE COUNT IS THE UNION OF BOTH ADDONS, so this guard can only catch "the engine
-/// skipped the loose addons entirely", never "tbd-framework's copy of a file was missing and
-/// tbd-export's stood in for it" — the count is unchanged in that case, measured by the wave-242
-/// verifier. The message used to name tbd-framework specifically and could not have detected the
-/// thing it named. [`mirror_lockstep`]'s export-only check is what covers the substitution.
-fn load_count_guard(root: &Path, server_dir: &Path, console: &Path) -> io::Result<Option<u8>> {
+/// The Game module's file count is the vanilla baseline plus every `.c` under
+/// `tbd-framework/Scripts/Game` — one addon, one term (since 2026-09-12; before that the count was
+/// the union of the two mirror trees, which could not tell "framework lost a file" from "fine",
+/// T-946.24). The check is `loaded >= vanilla + ours`, not `==`: the baseline is calibrated once
+/// per machine and only ever goes stale LOW as the vanilla game grows (this box: 5633 calibrated
+/// 2026-07; green runs already reported 5761), and `--probe` adds files of its own. Anything below
+/// the sum means the engine skipped part or all of the addon — the stale-rdb failure this guard
+/// exists for, now including the partial case the union count could never see.
+fn load_count_guard(
+    root: &Path,
+    mod_src: &Path,
+    server_dir: &Path,
+    console: &Path,
+) -> io::Result<Option<u8>> {
     let loaded = last_num(console, r"Module: Game; loaded ([0-9]*)x files").unwrap_or(0);
+    let ours = count_game_scripts(mod_src)?;
     let baseline_file = root.join(".compile-vanilla-baseline");
     if !baseline_file.is_file() || fs::metadata(&baseline_file)?.len() == 0 {
         println!("    (calibrating vanilla-only baseline, one time)");
@@ -871,15 +631,30 @@ fn load_count_guard(root: &Path, server_dir: &Path, console: &Path) -> io::Resul
         .ok()
         .and_then(|s| s.trim().parse().ok())
         .unwrap_or(0);
-    if vanilla > 0 && loaded <= vanilla {
+    if vanilla > 0 && loaded < vanilla + ours {
+        let what = if loaded <= vanilla {
+            "NONE of tbd-framework's scripts were compiled — the engine skipped the loose addon entirely".to_string()
+        } else {
+            format!(
+                "only {} of tbd-framework's scripts were compiled — the engine skipped part of the loose addon",
+                loaded - vanilla
+            )
+        };
         return Ok(Some(env_fail(
             &format!(
-                "the Game module loaded {loaded} files and vanilla-only is {vanilla}, so NEITHER loose addon's scripts were compiled — the engine skipped them entirely"
+                "the Game module loaded {loaded} files; vanilla-only is {vanilla} and tbd-framework holds {ours} Scripts/Game .c files, so at least {} were expected: {what}",
+                vanilla + ours
             ),
             Some(
-                "Almost always a stale or unreadable apps/mod/tbd-framework/resourceDatabase.rdb (it IS committed, but the engine rejects it once it drifts from the script tree). Fix: open apps/mod/tbd-framework in Workbench once so it regenerates the rdb, then re-run.",
+                "Almost always a stale or unreadable apps/mod/tbd-framework/resourceDatabase.rdb (it IS committed, but the engine rejects it once it drifts from the script tree). Fix: open apps/mod/tbd-export/addon.gproj in Workbench (it loads tbd-framework as a dependency and regenerates the rdb), then re-run. If the vanilla game shrank instead, delete .compile-vanilla-baseline to recalibrate.",
             ),
         )));
+    }
+    if vanilla > 0 {
+        println!(
+            "    Game module: {loaded} files = {vanilla} vanilla + {ours} tbd-framework (+{} beyond the sum)",
+            loaded - vanilla - ours
+        );
     }
     Ok(None)
 }
@@ -1022,16 +797,54 @@ mod tests {
         let home = root.join("home");
         fake_server(&home);
         fs::write(root.join("apps/mod/tbd-framework/addon.gproj"), "x\n").unwrap();
-        // tbd-export is gate-checked since the voxel-dump split — the fixture must satisfy the
-        // env preconditions so the probe-arg check (the thing under test) is what fires.
-        fs::create_dir_all(root.join("apps/mod/tbd-export")).unwrap();
-        fs::write(root.join("apps/mod/tbd-export/addon.gproj"), "x\n").unwrap();
         let opts = Opts {
             probe_dir: Some(PathBuf::from("/tmp/t853/compile/no-such-probe-dir-ut")),
             ..Default::default()
         };
         let code = with_home(&home, || run_with_root(&root, &opts));
         assert_eq!(code, 2);
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn count_game_scripts_counts_only_c_and_refuses_a_missing_tree() {
+        let root = throwaway("count");
+        let fw = root.join("apps/mod/tbd-framework");
+        assert!(
+            count_game_scripts(&fw).is_err(),
+            "no Scripts/Game must be an error, never a silent 0"
+        );
+        fs::create_dir_all(fw.join("Scripts/Game/TBD/UI/Common")).unwrap();
+        fs::write(fw.join("Scripts/Game/TBD/A.c"), "class A {}\n").unwrap();
+        fs::write(fw.join("Scripts/Game/TBD/UI/B.c"), "class B {}\n").unwrap();
+        fs::write(
+            fw.join("Scripts/Game/TBD/UI/Common/README.md"),
+            "placeholder\n",
+        )
+        .unwrap();
+        assert_eq!(count_game_scripts(&fw).unwrap(), 2);
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn workbench_tooling_guard_reports_the_dir_and_what_is_in_it() {
+        let root = throwaway("wbguard");
+        let fw = root.join("apps/mod/tbd-framework");
+        fs::create_dir_all(fw.join("Scripts/Game")).unwrap();
+        assert!(workbench_tooling_guard(&fw).is_empty());
+        fs::create_dir_all(fw.join("Scripts/WorkbenchGame/EnfusionMCP")).unwrap();
+        fs::write(
+            fw.join("Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Ping.c"),
+            "class EMCP_WB_Ping {}\n",
+        )
+        .unwrap();
+        let lines = workbench_tooling_guard(&fw);
+        assert_eq!(lines.len(), 2, "{lines:?}");
+        assert!(
+            lines[0].ends_with("Scripts/WorkbenchGame: must not exist"),
+            "{lines:?}"
+        );
+        assert!(lines[1].ends_with("EMCP_WB_Ping.c"), "{lines:?}");
         let _ = fs::remove_dir_all(&root);
     }
 }

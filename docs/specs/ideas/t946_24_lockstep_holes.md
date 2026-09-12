@@ -1,3 +1,5 @@
+> **SUPERSEDED 2026-09-12.** tbd-export is no longer a mirror of tbd-framework; it is a thin addon that depends on it (plus the new tbd-emcp bridge addon). The lockstep/ASCII/addon-order machinery this note describes was deleted from `xtask/src/gate_mod_compile.rs`; `mod compile` is framework-only. Kept as history.
+
 # T-946.24 — four holes in the mirror-lockstep guard, and one real drift it found
 
 ## Why
