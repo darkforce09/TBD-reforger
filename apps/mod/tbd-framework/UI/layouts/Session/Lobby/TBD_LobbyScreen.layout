@@ -1,13 +1,9 @@
 FrameWidgetClass "{7BD1A70000000C00}" {
  Name "ScreenRoot"
- components {
-  TBD_LobbyScreenComponent "{7BD1A70000000C0F}" {
-  }
- }
  {
-  ImageWidgetClass "{7BD1A70000000C10}" {
+  ImageWidgetClass "{7BD1A70000000C02}" {
    Name "Backdrop"
-   Slot FrameWidgetSlot "{7BD1A70000000C11}" {
+   Slot FrameWidgetSlot "{7BD1A70000000C03}" {
     Anchor 0 0 1 1
     PositionX 0
     OffsetLeft 0
@@ -18,25 +14,25 @@ FrameWidgetClass "{7BD1A70000000C00}" {
     SizeY 0
     OffsetBottom 0
    }
-   Color 0.027 0.043 0.078 1
+   Color 0.024 0.035 0.075 1
   }
-  FrameWidgetClass "{7BD1A70000000C12}" {
+  FrameWidgetClass "{7BD1A70000000C04}" {
    Name "WindowFrame"
-   Slot FrameWidgetSlot "{7BD1A70000000C13}" {
+   Slot FrameWidgetSlot "{7BD1A70000000C05}" {
     Anchor 0 0 1 1
-    PositionX 0
-    OffsetLeft 0
-    PositionY 0
-    OffsetTop 0
-    SizeX 0
-    OffsetRight 0
-    SizeY 0
-    OffsetBottom 0
+    PositionX 16
+    OffsetLeft 16
+    PositionY 16
+    OffsetTop 16
+    SizeX -32
+    OffsetRight 16
+    SizeY -32
+    OffsetBottom 16
    }
    {
-    FrameWidgetClass "{7BD1A70000000C14}" {
-     Name "HeaderDock"
-     Slot FrameWidgetSlot "{7BD1A70000000C15}" {
+    FrameWidgetClass "{7BD1A70000000C06}" {
+     Name "TopDock"
+     Slot FrameWidgetSlot "{7BD1A70000000C07}" {
       Anchor 0 0 1 0
       PositionX 0
       OffsetLeft 0
@@ -44,71 +40,55 @@ FrameWidgetClass "{7BD1A70000000C00}" {
       OffsetTop 0
       SizeX 0
       OffsetRight 0
-      SizeY 48
-      OffsetBottom -48
+      SizeY 56
+      OffsetBottom -56
      }
     }
-    FrameWidgetClass "{7BD1A70000000E1B}" {
-     Name "MainLayout"
-     Slot FrameWidgetSlot "{7BD1A70000000E1C}" {
-      Anchor 0 0 1 1
+    FrameWidgetClass "{7BD1A70000000C08}" {
+     Name "LeftDock"
+     Slot FrameWidgetSlot "{7BD1A70000000C09}" {
+      Anchor 0 0 0 1
       PositionX 0
       OffsetLeft 0
-      PositionY 48
-      OffsetTop 48
-      SizeX 0
-      OffsetRight 0
-      SizeY -112
-      OffsetBottom 64
-     }
-     {
-      FrameWidgetClass "{7BD1A70000000E1D}" {
-       Name "SidebarDock"
-       Slot FrameWidgetSlot "{7BD1A70000000E1E}" {
-        Anchor 0 0 0 1
-        PositionX 0
-        OffsetLeft 0
-        PositionY 0
-        OffsetTop 0
-        SizeX 280
-        OffsetRight -280
-        SizeY 0
-        OffsetBottom 0
-       }
-      }
-      FrameWidgetClass "{7BD1A70000000E51}" {
-       Name "CenterRosterDock"
-       Slot FrameWidgetSlot "{7BD1A70000000E52}" {
-        Anchor 0 0 1 1
-        PositionX 280
-        OffsetLeft 280
-        PositionY 0
-        OffsetTop 0
-        SizeX -660
-        OffsetRight 380
-        SizeY 0
-        OffsetBottom 0
-       }
-      }
-      FrameWidgetClass "{7BD1A70000000E99}" {
-       Name "InspectorDock"
-       Slot FrameWidgetSlot "{7BD1A70000000E9A}" {
-        Anchor 1 0 1 1
-        PositionX -380
-        OffsetLeft -380
-        PositionY 0
-        OffsetTop 0
-        SizeX 380
-        OffsetRight 0
-        SizeY 0
-        OffsetBottom 0
-       }
-      }
+      PositionY 68
+      OffsetTop 68
+      SizeX 320
+      OffsetRight -320
+      SizeY -144
+      OffsetBottom 76
      }
     }
-    FrameWidgetClass "{7BD1A70000000F2D}" {
-     Name "FooterDock"
-     Slot FrameWidgetSlot "{7BD1A70000000F2E}" {
+    FrameWidgetClass "{7BD1A70000000C0A}" {
+     Name "CenterDock"
+     Slot FrameWidgetSlot "{7BD1A70000000C0B}" {
+      Anchor 0 0 0 1
+      PositionX 332
+      OffsetLeft 332
+      PositionY 68
+      OffsetTop 68
+      SizeX 500
+      OffsetRight -832
+      SizeY -144
+      OffsetBottom 76
+     }
+    }
+    FrameWidgetClass "{7BD1A70000000C0C}" {
+     Name "RightDock"
+     Slot FrameWidgetSlot "{7BD1A70000000C0D}" {
+      Anchor 0 0 1 1
+      PositionX 844
+      OffsetLeft 844
+      PositionY 68
+      OffsetTop 68
+      SizeX -844
+      OffsetRight 0
+      SizeY -144
+      OffsetBottom 76
+     }
+    }
+    FrameWidgetClass "{7BD1A70000000C0E}" {
+     Name "BottomDock"
+     Slot FrameWidgetSlot "{7BD1A70000000C0F}" {
       Anchor 0 1 1 1
       PositionX 0
       OffsetLeft 0
@@ -120,6 +100,20 @@ FrameWidgetClass "{7BD1A70000000C00}" {
       OffsetBottom 0
      }
     }
+   }
+  }
+  FrameWidgetClass "{7BD1A70000000C10}" {
+   Name "OverlayDock"
+   Slot FrameWidgetSlot "{7BD1A70000000C11}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
    }
   }
  }

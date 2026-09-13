@@ -1,0 +1,126 @@
+SizeLayoutWidgetClass "{7BD1A70000001200}" {
+ Name "SearchRoot"
+ Slot FrameWidgetSlot "{7BD1A70000001202}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ AllowHeightOverride 1
+ HeightOverride 34
+ components {
+  TBD_SearchBoxComponent "{7BD1A70000001203}" {
+  }
+ }
+ {
+  OverlayWidgetClass "{7BD1A70000001204}" {
+   Name "SearchOverlay"
+   Slot AlignableSlot "{7BD1A70000001205}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   {
+    FrameWidgetClass "{7BD1A70000001206}" {
+     Name "SearchBorder"
+     Slot OverlayWidgetSlot "{7BD1A70000001207}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     Color 0.2 0.255 0.333 0.6
+    }
+    FrameWidgetClass "{7BD1A70000001208}" {
+     Name "SearchBG"
+     Slot OverlayWidgetSlot "{7BD1A70000001209}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      Padding 1 1 1 1
+     }
+     Color 0.059 0.09 0.165 0.8
+    }
+    FrameWidgetClass "{7BD1A7000000120A}" {
+     Name "SearchContent"
+     Slot OverlayWidgetSlot "{7BD1A7000000120B}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     {
+      ImageWidgetClass "{7BD1A7000000120C}" {
+       Name "SearchIcon"
+       Slot FrameWidgetSlot "{7BD1A7000000120D}" {
+        Anchor 0 0.5 0 0.5
+        PositionX 10
+        OffsetLeft 10
+        PositionY -7
+        OffsetTop -7
+        SizeX 14
+        OffsetRight -24
+        SizeY 14
+        OffsetBottom 7
+       }
+       Color 0.58 0.639 0.722 1
+       Size 14 14
+      }
+      EditBoxWidgetClass "{7BD1A7000000120E}" {
+       Name "SearchInput"
+       Slot FrameWidgetSlot "{7BD1A7000000120F}" {
+        Anchor 0 0 1 1
+        PositionX 30
+        OffsetLeft 30
+        PositionY 0
+        OffsetTop 0
+        SizeX -58
+        OffsetRight 28
+        SizeY 0
+        OffsetBottom 0
+       }
+       Color 0.867 0.886 0.969 1
+       FontProperties FontProperties "{7BD1A70000001214}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 13
+      }
+      ButtonWidgetClass "{7BD1A70000001210}" {
+       Name "SearchClear"
+       Slot FrameWidgetSlot "{7BD1A70000001211}" {
+        Anchor 1 0 1 1
+        PositionX -26
+        OffsetLeft -26
+        PositionY 0
+        OffsetTop 0
+        SizeX 24
+        OffsetRight 2
+        SizeY 0
+        OffsetBottom 0
+       }
+       Color 1 1 1 0
+       {
+        TextWidgetClass "{7BD1A70000001212}" {
+         Name "SearchClearGlyph"
+         Slot ButtonWidgetSlot "{7BD1A70000001213}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         Clipping True
+         Color 0.58 0.639 0.722 1
+         Text "x"
+         FontProperties FontProperties "{7BD1A70000001215}" {
+          Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+         }
+         "Font Size" 13
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

@@ -1,0 +1,340 @@
+FrameWidgetClass "{7BD1A70000001740}" {
+ Name "MenuRoot"
+ Slot FrameWidgetSlot "{7BD1A70000001741}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ {
+  ButtonWidgetClass "{7BD1A70000001742}" {
+   Name "Scrim"
+   Slot FrameWidgetSlot "{7BD1A70000001743}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 1 1 1 0
+   {
+    ImageWidgetClass "{7BD1A70000001744}" {
+     Name "ScrimFill"
+     Slot ButtonWidgetSlot "{7BD1A70000001745}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     Color 0 0 0 0.001
+    }
+   }
+  }
+  FrameWidgetClass "{7BD1A70000001746}" {
+   Name "Menu"
+   Slot FrameWidgetSlot "{7BD1A70000001747}" {
+    Anchor 0 0 0 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 224
+    OffsetRight -224
+    SizeY 240
+    OffsetBottom -240
+   }
+   {
+    FrameWidgetClass "{7BD1A70000001748}" {
+     Name "MenuBorder"
+     Slot FrameWidgetSlot "{7BD1A70000001749}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+     Color 1 1 1 0.15
+    }
+    FrameWidgetClass "{7BD1A7000000174A}" {
+     Name "MenuBG"
+     Slot FrameWidgetSlot "{7BD1A7000000174B}" {
+      Anchor 0 0 1 1
+      PositionX 1
+      OffsetLeft 1
+      PositionY 1
+      OffsetTop 1
+      SizeX -2
+      OffsetRight 1
+      SizeY -2
+      OffsetBottom 1
+     }
+     Color 0.055 0.086 0.149 0.97
+    }
+    FrameWidgetClass "{7BD1A7000000174C}" {
+     Name "MenuHeader"
+     Slot FrameWidgetSlot "{7BD1A7000000174D}" {
+      Anchor 0 0 1 0
+      PositionX 1
+      OffsetLeft 1
+      PositionY 1
+      OffsetTop 1
+      SizeX -2
+      OffsetRight 1
+      SizeY 36
+      OffsetBottom -37
+     }
+     {
+      TextWidgetClass "{7BD1A7000000174E}" {
+       Name "MenuTitle"
+       Slot FrameWidgetSlot "{7BD1A7000000174F}" {
+        Anchor 0 0 1 1
+        PositionX 12
+        OffsetLeft 12
+        PositionY 0
+        OffsetTop 0
+        SizeX -12
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       Clipping True
+       Color 0.58 0.639 0.722 1
+       Text "SELECT"
+       FontProperties FontProperties "{7BD1A7000000176D}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 11
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      ButtonWidgetClass "{7BD1A70000001750}" {
+       Name "SelectAll"
+       Slot FrameWidgetSlot "{7BD1A70000001751}" {
+        Anchor 1 0 1 1
+        PositionX -150
+        OffsetLeft -150
+        PositionY 5
+        OffsetTop 5
+        SizeX 74
+        OffsetRight 76
+        SizeY -10
+        OffsetBottom 5
+       }
+       Color 1 1 1 0
+       components {
+        TBD_UIButton "{7BD1A70000001752}" {
+         m_bPrimary 0
+         m_sLabel "Select All"
+        }
+       }
+       {
+        OverlayWidgetClass "{7BD1A70000001753}" {
+         Name "SelectAllBody"
+         Slot ButtonWidgetSlot "{7BD1A70000001754}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A70000001755}" {
+           Name "Background"
+           Slot OverlayWidgetSlot "{7BD1A70000001756}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 0 0 0 0
+          }
+          TextWidgetClass "{7BD1A70000001757}" {
+           Name "Label"
+           Slot OverlayWidgetSlot "{7BD1A70000001758}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Clipping True
+           Color 0.678 0.776 1 1
+           Text "Select All"
+           FontProperties FontProperties "{7BD1A7000000176E}" {
+            Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+           }
+           "Font Size" 11
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+      ButtonWidgetClass "{7BD1A70000001759}" {
+       Name "DeselectAll"
+       Slot FrameWidgetSlot "{7BD1A7000000175A}" {
+        Anchor 1 0 1 1
+        PositionX -78
+        OffsetLeft -78
+        PositionY 5
+        OffsetTop 5
+        SizeX 74
+        OffsetRight 4
+        SizeY -10
+        OffsetBottom 5
+       }
+       Color 1 1 1 0
+       components {
+        TBD_UIButton "{7BD1A7000000175B}" {
+         m_bPrimary 0
+         m_sLabel "Deselect All"
+        }
+       }
+       {
+        OverlayWidgetClass "{7BD1A7000000175C}" {
+         Name "DeselectAllBody"
+         Slot ButtonWidgetSlot "{7BD1A7000000175D}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          ImageWidgetClass "{7BD1A7000000175E}" {
+           Name "Background"
+           Slot OverlayWidgetSlot "{7BD1A7000000175F}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 0 0 0 0
+          }
+          TextWidgetClass "{7BD1A70000001760}" {
+           Name "Label"
+           Slot OverlayWidgetSlot "{7BD1A70000001761}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Clipping True
+           Color 0.678 0.776 1 1
+           Text "Deselect All"
+           FontProperties FontProperties "{7BD1A7000000176F}" {
+            Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+           }
+           "Font Size" 11
+           "Horizontal Alignment" Center
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+    ImageWidgetClass "{7BD1A70000001762}" {
+     Name "MenuRule"
+     Slot FrameWidgetSlot "{7BD1A70000001763}" {
+      Anchor 0 0 1 0
+      PositionX 1
+      OffsetLeft 1
+      PositionY 37
+      OffsetTop 37
+      SizeX -2
+      OffsetRight 1
+      SizeY 1
+      OffsetBottom -38
+     }
+     Color 1 1 1 0.08
+    }
+    FrameWidgetClass "{7BD1A70000001764}" {
+     Name "MenuList"
+     Slot FrameWidgetSlot "{7BD1A70000001765}" {
+      Anchor 0 0 1 1
+      PositionX 1
+      OffsetLeft 1
+      PositionY 42
+      OffsetTop 42
+      SizeX -2
+      OffsetRight 1
+      SizeY -47
+      OffsetBottom 5
+     }
+     Clipping True
+     components {
+      TBD_ListBox "{7BD1A70000001766}" {
+       m_sContentName "Content"
+       m_sEmptyStateName "EmptyState"
+      }
+     }
+     {
+      ScrollLayoutWidgetClass "{7BD1A70000001767}" {
+       Name "Scroll"
+       Slot FrameWidgetSlot "{7BD1A70000001768}" {
+        Anchor 0 0 1 1
+        PositionX 6
+        OffsetLeft 6
+        PositionY 0
+        OffsetTop 0
+        SizeX 18
+        OffsetRight -24
+        SizeY 0
+        OffsetBottom 0
+       }
+       {
+        VerticalLayoutWidgetClass "{7BD1A70000001769}" {
+         Name "Content"
+         Slot AlignableSlot "{7BD1A7000000176A}" {
+          HorizontalAlign 3
+          VerticalAlign 0
+          Padding 0 0 34 0
+         }
+        }
+       }
+      }
+      FrameWidgetClass "{7BD1A700000017A0}" {
+       Name "ScrollBarDock"
+       Slot FrameWidgetSlot "{7BD1A700000017A1}" {
+        Anchor 1 0 1 1
+        PositionX -4
+        OffsetLeft -4
+        PositionY 0
+        OffsetTop 0
+        SizeX 4
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+      }
+      TextWidgetClass "{7BD1A7000000176B}" {
+       Name "EmptyState"
+       Slot FrameWidgetSlot "{7BD1A7000000176C}" {
+        Anchor 0 0 1 0
+        PositionX 0
+        OffsetLeft 0
+        PositionY 8
+        OffsetTop 8
+        SizeX 0
+        OffsetRight 0
+        SizeY 24
+        OffsetBottom -32
+       }
+       Clipping True
+       Color 0.58 0.639 0.722 1
+       Text "Nothing to pick."
+       FontProperties FontProperties "{7BD1A70000001770}" {
+        Font "{3E7733BAC8C831F6}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt"
+       }
+       "Font Size" 12
+       "Horizontal Alignment" Center
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+     }
+    }
+   }
+  }
+ }
+}

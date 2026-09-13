@@ -1,0 +1,89 @@
+FrameWidgetClass "{7BD1A70000001C00}" {
+ Name "BottomBar"
+ Slot FrameWidgetSlot "{7BD1A70000001C02}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ components {
+  TBD_SessionBottomBar "{7BD1A70000001C03}" {
+  }
+ }
+ {
+  FrameWidgetClass "{7BD1A70000001C04}" {
+   Name "BarBorder"
+   Slot FrameWidgetSlot "{7BD1A70000001C05}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 0.118 0.161 0.231 0.8
+  }
+  FrameWidgetClass "{7BD1A70000001C06}" {
+   Name "BarBG"
+   Slot FrameWidgetSlot "{7BD1A70000001C07}" {
+    Anchor 0 0 1 1
+    PositionX 1
+    OffsetLeft 1
+    PositionY 1
+    OffsetTop 1
+    SizeX -2
+    OffsetRight 1
+    SizeY -2
+    OffsetBottom 1
+   }
+   Color 0.059 0.09 0.165 0.9
+  }
+  HorizontalLayoutWidgetClass "{7BD1A70000001C08}" {
+   Name "LeftActions"
+   Slot FrameWidgetSlot "{7BD1A70000001C09}" {
+    Anchor 0 0 0 1
+    PositionX 18
+    OffsetLeft 18
+    PositionY 0
+    OffsetTop 0
+    SizeX 700
+    OffsetRight -718
+    SizeY 0
+    OffsetBottom 0
+   }
+  }
+  HorizontalLayoutWidgetClass "{7BD1A70000001C0A}" {
+   Name "RightActions"
+   Slot FrameWidgetSlot "{7BD1A70000001C0B}" {
+    Anchor 1 0 1 1
+    PositionX -718
+    OffsetLeft -718
+    PositionY 0
+    OffsetTop 0
+    SizeX 700
+    OffsetRight 18
+    SizeY 0
+    OffsetBottom 0
+   }
+   {
+    FrameWidgetClass "{7BD1A70000001C0C}" {
+     Name "RightSpacer"
+     Slot LayoutSlot "{7BD1A70000001C0D}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      SizeMode Fill
+      FillWeight 1
+     }
+    }
+   }
+  }
+ }
+}

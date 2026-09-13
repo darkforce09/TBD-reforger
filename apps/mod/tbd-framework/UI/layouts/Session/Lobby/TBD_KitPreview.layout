@@ -1,0 +1,108 @@
+SizeLayoutWidgetClass "{7BD1A70000003500}" {
+ Name "KitPreview"
+ Slot AlignableSlot "{7BD1A70000003502}" {
+  HorizontalAlign 3
+  VerticalAlign 0
+  Padding 0 0 0 12
+ }
+ AllowHeightOverride 1
+ HeightOverride 204
+ {
+  OverlayWidgetClass "{7BD1A70000003503}" {
+   Name "CardOverlay"
+   Slot AlignableSlot "{7BD1A70000003504}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   {
+    FrameWidgetClass "{7BD1A70000003505}" {
+     Name "CardBorder"
+     Slot OverlayWidgetSlot "{7BD1A70000003506}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     Color 0 0 0 0
+    }
+    FrameWidgetClass "{7BD1A70000003507}" {
+     Name "CardBG"
+     Slot OverlayWidgetSlot "{7BD1A70000003508}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      Padding 1 1 1 1
+     }
+     Color 0 0 0 0
+    }
+    OverlayWidgetClass "{7BD1A70000003509}" {
+     Name "Box"
+     Slot OverlayWidgetSlot "{7BD1A7000000350A}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      Padding 14 14 14 14
+     }
+     {
+      FrameWidgetClass "{7BD1A7000000350B}" {
+       Name "Border"
+       Slot OverlayWidgetSlot "{7BD1A7000000350C}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 0 0 0 0
+      }
+      FrameWidgetClass "{7BD1A7000000350D}" {
+       Name "Background"
+       Slot OverlayWidgetSlot "{7BD1A7000000350E}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+        Padding 1 1 1 1
+       }
+       Color 0 0 0 0
+      }
+      FrameWidgetClass "{7BD1A7000000350F}" {
+       Name "GridClip"
+       Slot OverlayWidgetSlot "{7BD1A70000003510}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+        Padding 6 6 6 6
+       }
+       Clipping True
+       {
+        ImageWidgetClass "{7BD1A70000003511}" {
+         Name "GridImage"
+         Slot FrameWidgetSlot "{7BD1A70000003512}" {
+          Anchor 0 0 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY 0
+          OffsetTop 0
+          SizeX 0
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
+         Color 1 1 1 1
+        }
+       }
+      }
+      TextWidgetClass "{7BD1A70000003513}" {
+       Name "Label"
+       Slot OverlayWidgetSlot "{7BD1A70000003514}" {
+        HorizontalAlign 1
+        VerticalAlign 1
+       }
+       Clipping True
+       Color 0.392 0.455 0.545 1
+       Text "PREVIEW"
+       FontProperties FontProperties "{7BD1A70000003515}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 11
+       "Horizontal Alignment" Center
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+     }
+    }
+   }
+  }
+ }
+}

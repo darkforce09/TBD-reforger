@@ -1,0 +1,114 @@
+SizeLayoutWidgetClass "{7BD1A70000001600}" {
+ Name "KeyValueRow"
+ Slot AlignableSlot "{7BD1A70000001602}" {
+  HorizontalAlign 3
+  VerticalAlign 0
+  Padding 0 0 0 6
+ }
+ AllowHeightOverride 1
+ HeightOverride 36
+ components {
+  TBD_KeyValueRowComponent "{7BD1A70000001603}" {
+  }
+ }
+ {
+  OverlayWidgetClass "{7BD1A70000001604}" {
+   Name "RowOverlay"
+   Slot AlignableSlot "{7BD1A70000001605}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   {
+    FrameWidgetClass "{7BD1A70000001606}" {
+     Name "RowBorder"
+     Slot OverlayWidgetSlot "{7BD1A70000001607}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     Color 1 1 1 0.05
+    }
+    FrameWidgetClass "{7BD1A70000001608}" {
+     Name "RowBG"
+     Slot OverlayWidgetSlot "{7BD1A70000001609}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      Padding 1 1 1 1
+     }
+     Color 0.078 0.114 0.18 0.35
+    }
+    HorizontalLayoutWidgetClass "{7BD1A7000000160A}" {
+     Name "RowContent"
+     Slot OverlayWidgetSlot "{7BD1A7000000160B}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      Padding 10 0 10 0
+     }
+     {
+      ImageWidgetClass "{7BD1A7000000160C}" {
+       Name "KeyIcon"
+       Slot LayoutSlot "{7BD1A7000000160D}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 0 0 8 0
+       }
+       Color 0.58 0.639 0.722 1
+       Size 14 14
+      }
+      OverlayWidgetClass "{7BD1A7000000160E}" {
+       Name "KeyChipDock"
+       Slot LayoutSlot "{7BD1A7000000160F}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 0 0 8 0
+       }
+      }
+      TextWidgetClass "{7BD1A70000001610}" {
+       Name "KeyText"
+       Slot LayoutSlot "{7BD1A70000001611}" {
+        HorizontalAlign 3
+        VerticalAlign 1
+        SizeMode Fill
+        FillWeight 1
+       }
+       Clipping True
+       Color 0.867 0.886 0.969 1
+       Text "Key"
+       FontProperties FontProperties "{7BD1A70000001616}" {
+        Font "{3E7733BAC8C831F6}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt"
+       }
+       "Font Size" 13
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      TextWidgetClass "{7BD1A70000001612}" {
+       Name "ValueText"
+       Slot LayoutSlot "{7BD1A70000001613}" {
+        HorizontalAlign 2
+        VerticalAlign 1
+        Padding 12 0 0 0
+       }
+       Clipping True
+       Color 0.867 0.886 0.969 1
+       Text ""
+       FontProperties FontProperties "{7BD1A70000001617}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 13
+       "Horizontal Alignment" Right
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      OverlayWidgetClass "{7BD1A70000001614}" {
+       Name "ValueChipDock"
+       Slot LayoutSlot "{7BD1A70000001615}" {
+        HorizontalAlign 2
+        VerticalAlign 1
+        Padding 12 0 0 0
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

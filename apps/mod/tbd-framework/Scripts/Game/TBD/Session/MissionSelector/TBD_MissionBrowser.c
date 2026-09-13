@@ -80,7 +80,7 @@ modded class SCR_PlayerController
 		// refusal and nothing else — no roster, no mission, no audit trail (see TBD_AdminData.c).
 		im.AddActionListener("TBD_AdminMenu", EActionTrigger.DOWN, TBD_OnAdminMenuAction);
 
-		// Stitch 1:1 Mission Selector Workstation UI (F9 or F6)
+		// Mission Selector (F9 or F6) — opens through TBD_MenuStack like every TBD screen.
 		im.AddActionListener("TBD_MissionSelector", EActionTrigger.DOWN, TBD_OnMissionSelectorAction);
 
 		m_TBD_ListenersRegistered = true;
@@ -88,10 +88,10 @@ modded class SCR_PlayerController
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Stitch 1:1 Mission Selector toggle.
+	//! Mission Selector toggle (Dock & Sub-Layout screen, 2026-09-12).
 	protected void TBD_OnMissionSelectorAction(float value, EActionTrigger trigger)
 	{
-		TBD_MissionSelectorComponent.Toggle();
+		TBD_MissionSelectorScreen.Toggle();
 	}
 
 	//------------------------------------------------------------------------------------------------

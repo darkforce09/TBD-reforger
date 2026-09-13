@@ -1,0 +1,41 @@
+OverlayWidgetClass "{7BD1A70000001800}" {
+ Name "InsetText"
+ Slot AlignableSlot "{7BD1A70000001802}" {
+  HorizontalAlign 3
+  VerticalAlign 0
+ }
+ {
+  FrameWidgetClass "{7BD1A70000001803}" {
+   Name "InsetBorder"
+   Slot OverlayWidgetSlot "{7BD1A70000001804}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   Color 1 1 1 0.05
+  }
+  FrameWidgetClass "{7BD1A70000001805}" {
+   Name "InsetBG"
+   Slot OverlayWidgetSlot "{7BD1A70000001806}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+    Padding 1 1 1 1
+   }
+   Color 0.078 0.114 0.18 0.35
+  }
+  TextWidgetClass "{7BD1A70000001807}" {
+   Name "Body"
+   Slot OverlayWidgetSlot "{7BD1A70000001808}" {
+    HorizontalAlign 3
+    VerticalAlign 0
+    Padding 14 12 14 12
+   }
+   Color 0.796 0.835 0.882 1
+   Text ""
+   FontProperties FontProperties "{7BD1A70000001809}" {
+    Font "{3E7733BAC8C831F6}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt"
+   }
+   "Font Size" 14
+   Wrap 1
+  }
+ }
+}

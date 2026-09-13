@@ -1,0 +1,72 @@
+ButtonWidgetClass "{7BD1A70000001400}" {
+ Name "Button"
+ Slot AlignableSlot "{7BD1A70000001402}" {
+  HorizontalAlign 0
+  VerticalAlign 1
+  Padding 6 0 6 0
+ }
+ Color 1 1 1 0
+ components {
+  TBD_UIButton "{7BD1A70000001403}" {
+   m_bPrimary 0
+   m_sLabel "Button"
+  }
+ }
+ {
+  SizeLayoutWidgetClass "{7BD1A70000001404}" {
+   Name "ButtonSize"
+   Slot ButtonWidgetSlot "{7BD1A70000001405}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   AllowHeightOverride 1
+   HeightOverride 36
+   {
+    OverlayWidgetClass "{7BD1A70000001406}" {
+     Name "ButtonBody"
+     Slot AlignableSlot "{7BD1A70000001407}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     {
+      FrameWidgetClass "{7BD1A70000001408}" {
+       Name "Border"
+       Slot OverlayWidgetSlot "{7BD1A70000001409}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.1
+      }
+      FrameWidgetClass "{7BD1A7000000140A}" {
+       Name "Background"
+       Slot OverlayWidgetSlot "{7BD1A7000000140B}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+        Padding 1 1 1 1
+       }
+       Color 0 0 0 0
+      }
+      TextWidgetClass "{7BD1A7000000140C}" {
+       Name "Label"
+       Slot OverlayWidgetSlot "{7BD1A7000000140D}" {
+        HorizontalAlign 1
+        VerticalAlign 1
+        Padding 20 0 20 0
+       }
+       Clipping True
+       Color 0.678 0.776 1 1
+       Text "Button"
+       FontProperties FontProperties "{7BD1A7000000140E}" {
+        Font "{CD2634D279AB011A}UI/Fonts/Roboto/Roboto_Bold.fnt"
+       }
+       "Font Size" 13
+       "Horizontal Alignment" Center
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+     }
+    }
+   }
+  }
+ }
+}

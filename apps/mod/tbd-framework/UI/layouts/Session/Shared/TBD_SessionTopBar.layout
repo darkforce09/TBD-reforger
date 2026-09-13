@@ -1,0 +1,235 @@
+FrameWidgetClass "{7BD1A70000001B00}" {
+ Name "TopBar"
+ Slot FrameWidgetSlot "{7BD1A70000001B02}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ components {
+  TBD_SessionTopBar "{7BD1A70000001B03}" {
+  }
+ }
+ {
+  FrameWidgetClass "{7BD1A70000001B04}" {
+   Name "BarBorder"
+   Slot FrameWidgetSlot "{7BD1A70000001B05}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 0.118 0.161 0.231 1
+  }
+  FrameWidgetClass "{7BD1A70000001B06}" {
+   Name "BarBG"
+   Slot FrameWidgetSlot "{7BD1A70000001B07}" {
+    Anchor 0 0 1 1
+    PositionX 1
+    OffsetLeft 1
+    PositionY 1
+    OffsetTop 1
+    SizeX -2
+    OffsetRight 1
+    SizeY -2
+    OffsetBottom 1
+   }
+   Color 0.051 0.075 0.133 0.95
+  }
+  TextWidgetClass "{7BD1A70000001B08}" {
+   Name "Title"
+   Slot FrameWidgetSlot "{7BD1A70000001B09}" {
+    Anchor 0 0 0 1
+    PositionX 20
+    OffsetLeft 20
+    PositionY 0
+    OffsetTop 0
+    SizeX 360
+    OffsetRight -380
+    SizeY 0
+    OffsetBottom 0
+   }
+   Clipping True
+   Color 0.945 0.961 0.976 1
+   Text "SCENARIO BROWSER"
+   FontProperties FontProperties "{7BD1A70000001B28}" {
+    Font "{CD2634D279AB011A}UI/Fonts/Roboto/Roboto_Bold.fnt"
+   }
+   "Font Size" 15
+   "Vertical Alignment" Center
+   Wrap 0
+  }
+  OverlayWidgetClass "{7BD1A70000001B0A}" {
+   Name "TabStripDock"
+   Slot FrameWidgetSlot "{7BD1A70000001B0B}" {
+    Anchor 0.5 0 0.5 1
+    PositionX -220
+    OffsetLeft -220
+    PositionY 0
+    OffsetTop 0
+    SizeX 440
+    OffsetRight -220
+    SizeY 0
+    OffsetBottom 0
+   }
+  }
+  HorizontalLayoutWidgetClass "{7BD1A70000001B0C}" {
+   Name "RightCluster"
+   Slot FrameWidgetSlot "{7BD1A70000001B0D}" {
+    Anchor 1 0 1 1
+    PositionX -540
+    OffsetLeft -540
+    PositionY 0
+    OffsetTop 0
+    SizeX 520
+    OffsetRight 20
+    SizeY 0
+    OffsetBottom 0
+   }
+   {
+    FrameWidgetClass "{7BD1A70000001B0E}" {
+     Name "RightSpacer"
+     Slot LayoutSlot "{7BD1A70000001B0F}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      SizeMode Fill
+      FillWeight 1
+     }
+    }
+    OverlayWidgetClass "{7BD1A70000001B10}" {
+     Name "IdentityBox"
+     Slot LayoutSlot "{7BD1A70000001B11}" {
+      HorizontalAlign 2
+      VerticalAlign 1
+      Padding 0 0 12 0
+     }
+     {
+      FrameWidgetClass "{7BD1A70000001B12}" {
+       Name "IdentityBorder"
+       Slot OverlayWidgetSlot "{7BD1A70000001B13}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 0.118 0.161 0.231 1
+      }
+      FrameWidgetClass "{7BD1A70000001B14}" {
+       Name "IdentityBG"
+       Slot OverlayWidgetSlot "{7BD1A70000001B15}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+        Padding 1 1 1 1
+       }
+       Color 0.082 0.106 0.169 1
+      }
+      HorizontalLayoutWidgetClass "{7BD1A70000001B16}" {
+       Name "IdentityContent"
+       Slot OverlayWidgetSlot "{7BD1A70000001B17}" {
+        HorizontalAlign 1
+        VerticalAlign 1
+        Padding 12 7 12 7
+       }
+       {
+        TextWidgetClass "{7BD1A70000001B18}" {
+         Name "IdentityName"
+         Slot LayoutSlot "{7BD1A70000001B19}" {
+          HorizontalAlign 0
+          VerticalAlign 1
+          Padding 0 0 8 0
+         }
+         Clipping True
+         Color 0.886 0.91 0.941 1
+         Text "Player"
+         FontProperties FontProperties "{7BD1A70000001B29}" {
+          Font "{3E7733BAC8C831F6}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt"
+         }
+         "Font Size" 13
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+        OverlayWidgetClass "{7BD1A70000001B1A}" {
+         Name "IdentityRoleDock"
+         Slot LayoutSlot "{7BD1A70000001B1B}" {
+          HorizontalAlign 0
+          VerticalAlign 1
+         }
+        }
+       }
+      }
+     }
+    }
+    OverlayWidgetClass "{7BD1A70000001B1C}" {
+     Name "CountBox"
+     Slot LayoutSlot "{7BD1A70000001B1D}" {
+      HorizontalAlign 2
+      VerticalAlign 1
+     }
+     {
+      FrameWidgetClass "{7BD1A70000001B1E}" {
+       Name "CountBorder"
+       Slot OverlayWidgetSlot "{7BD1A70000001B1F}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 0.118 0.161 0.231 1
+      }
+      FrameWidgetClass "{7BD1A70000001B20}" {
+       Name "CountBG"
+       Slot OverlayWidgetSlot "{7BD1A70000001B21}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+        Padding 1 1 1 1
+       }
+       Color 0.082 0.106 0.169 1
+      }
+      HorizontalLayoutWidgetClass "{7BD1A70000001B22}" {
+       Name "CountContent"
+       Slot OverlayWidgetSlot "{7BD1A70000001B23}" {
+        HorizontalAlign 1
+        VerticalAlign 1
+        Padding 12 7 12 7
+       }
+       {
+        ImageWidgetClass "{7BD1A70000001B24}" {
+         Name "CountIcon"
+         Slot LayoutSlot "{7BD1A70000001B25}" {
+          HorizontalAlign 0
+          VerticalAlign 1
+          Padding 0 0 6 0
+         }
+         Color 0.58 0.639 0.722 1
+         Size 16 16
+        }
+        TextWidgetClass "{7BD1A70000001B26}" {
+         Name "CountText"
+         Slot LayoutSlot "{7BD1A70000001B27}" {
+          HorizontalAlign 0
+          VerticalAlign 1
+         }
+         Clipping True
+         Color 0.945 0.961 0.976 1
+         Text "1"
+         FontProperties FontProperties "{7BD1A70000001B2A}" {
+          Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+         }
+         "Font Size" 13
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

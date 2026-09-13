@@ -1,0 +1,102 @@
+SizeLayoutWidgetClass "{7BD1A70000002000}" {
+ Name "ModGridItem"
+ Slot AlignableSlot "{7BD1A70000002002}" {
+  HorizontalAlign 3
+  VerticalAlign 0
+  Padding 0 0 0 8
+ }
+ AllowHeightOverride 1
+ HeightOverride 40
+ {
+  OverlayWidgetClass "{7BD1A70000002003}" {
+   Name "ItemOverlay"
+   Slot AlignableSlot "{7BD1A70000002004}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   {
+    FrameWidgetClass "{7BD1A70000002005}" {
+     Name "Border"
+     Slot OverlayWidgetSlot "{7BD1A70000002006}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     Color 1 1 1 0.05
+    }
+    FrameWidgetClass "{7BD1A70000002007}" {
+     Name "Background"
+     Slot OverlayWidgetSlot "{7BD1A70000002008}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      Padding 1 1 1 1
+     }
+     Color 0.118 0.161 0.231 0.4
+    }
+    HorizontalLayoutWidgetClass "{7BD1A70000002009}" {
+     Name "ItemContent"
+     Slot OverlayWidgetSlot "{7BD1A7000000200A}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      Padding 10 0 10 0
+     }
+     {
+      ImageWidgetClass "{7BD1A7000000200B}" {
+       Name "CheckIcon"
+       Slot LayoutSlot "{7BD1A7000000200C}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 0 0 8 0
+       }
+       Color 0.204 0.827 0.6 1
+       Size 15 15
+      }
+      TextWidgetClass "{7BD1A7000000200D}" {
+       Name "CheckGlyph"
+       Slot LayoutSlot "{7BD1A7000000200E}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 0 0 8 0
+       }
+       Clipping True
+       Color 0.204 0.827 0.6 1
+       Text "+"
+       FontProperties FontProperties "{7BD1A70000002013}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 13
+       "Horizontal Alignment" Center
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      TextWidgetClass "{7BD1A7000000200F}" {
+       Name "ModName"
+       Slot LayoutSlot "{7BD1A70000002010}" {
+        HorizontalAlign 3
+        VerticalAlign 1
+        SizeMode Fill
+        FillWeight 1
+       }
+       Clipping True
+       Color 0.886 0.91 0.941 1
+       Text "@Mod"
+       FontProperties FontProperties "{7BD1A70000002014}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 13
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      OverlayWidgetClass "{7BD1A70000002011}" {
+       Name "VersionChipDock"
+       Slot LayoutSlot "{7BD1A70000002012}" {
+        HorizontalAlign 2
+        VerticalAlign 1
+        Padding 8 0 0 0
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

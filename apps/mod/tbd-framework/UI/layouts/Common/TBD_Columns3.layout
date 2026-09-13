@@ -1,0 +1,39 @@
+HorizontalLayoutWidgetClass "{7BD1A70000003800}" {
+ Name "Columns3"
+ Slot AlignableSlot "{7BD1A70000003802}" {
+  HorizontalAlign 3
+  VerticalAlign 0
+ }
+ {
+  VerticalLayoutWidgetClass "{7BD1A70000003803}" {
+   Name "ColumnA"
+   Slot LayoutSlot "{7BD1A70000003804}" {
+    HorizontalAlign 3
+    VerticalAlign 0
+    SizeMode Fill
+    FillWeight 1
+    Padding 0 0 6 0
+   }
+  }
+  VerticalLayoutWidgetClass "{7BD1A70000003805}" {
+   Name "ColumnB"
+   Slot LayoutSlot "{7BD1A70000003806}" {
+    HorizontalAlign 3
+    VerticalAlign 0
+    SizeMode Fill
+    FillWeight 1
+    Padding 6 0 6 0
+   }
+  }
+  VerticalLayoutWidgetClass "{7BD1A70000003807}" {
+   Name "ColumnC"
+   Slot LayoutSlot "{7BD1A70000003808}" {
+    HorizontalAlign 3
+    VerticalAlign 0
+    SizeMode Fill
+    FillWeight 1
+    Padding 6 0 0 0
+   }
+  }
+ }
+}

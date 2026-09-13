@@ -58,7 +58,7 @@ class TBD_ShellScreen : TBD_MenuBase
 
 		// Backdrop and panel are painted from code, not baked into the layout, so a palette change
 		// is a one-line edit in TBD_UITheme rather than a sweep through every .layout.
-		TBD_UITheme.Paint(Find("Backdrop"), TBD_UITheme.SCRIM);
+		TBD_UITheme.PaintAlpha(Find("Backdrop"), TBD_UITheme.SCRIM);
 		TBD_UITheme.Paint(Find("Panel"), TBD_UITheme.SURFACE);
 		TBD_UITheme.Paint(Find("HeaderRule"), TBD_UITheme.OUTLINE_VARIANT);
 		TBD_UITheme.Paint(Find("FooterRule"), TBD_UITheme.OUTLINE_VARIANT);

@@ -109,7 +109,7 @@ class TBD_ObjectiveHud : ScriptedWidgetComponent
 		m_wCaptureFill = Find("CaptureFill");
 		m_List = TBD_ListBox.Cast(FindHandlerOn("List", TBD_ListBox));
 
-		TBD_UITheme.Paint(m_wPanel, TBD_UITheme.SURFACE_GLASS);
+		TBD_UITheme.PaintAlpha(m_wPanel, TBD_UITheme.SURFACE_GLASS);
 		TBD_UITheme.Paint(m_wTitle, TBD_UITheme.ON_SURFACE);
 		TBD_UITheme.Paint(m_wCaptureLabel, TBD_UITheme.ON_SURFACE_VARIANT);
 		TBD_UITheme.Paint(Find("CaptureTrack"), TBD_UITheme.SURFACE_CONTAINER_HIGH);

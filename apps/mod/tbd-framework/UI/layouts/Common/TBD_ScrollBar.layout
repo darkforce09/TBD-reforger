@@ -1,0 +1,46 @@
+FrameWidgetClass "{7BD1A70000002E00}" {
+ Name "ScrollBar"
+ Slot FrameWidgetSlot "{7BD1A70000002E02}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ {
+  ImageWidgetClass "{7BD1A70000002E03}" {
+   Name "Track"
+   Slot FrameWidgetSlot "{7BD1A70000002E04}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 0.059 0.09 0.165 0.5
+  }
+  ImageWidgetClass "{7BD1A70000002E05}" {
+   Name "Thumb"
+   Slot FrameWidgetSlot "{7BD1A70000002E06}" {
+    Anchor 0 0 1 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 24
+    OffsetBottom -24
+   }
+   Color 0.2 0.255 0.333 1
+  }
+ }
+}

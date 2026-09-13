@@ -1,265 +1,137 @@
-ButtonWidgetClass "{7BD1A70000000C61}" {
- Name "SlotRowBtn"
- Slot LayoutSlot "{7BD1A70000000C62}" {
+ButtonWidgetClass "{7BD1A70000003300}" {
+ Name "SlotRow"
+ Slot AlignableSlot "{7BD1A70000003302}" {
   HorizontalAlign 3
-  Padding 0 0 0 1
+  VerticalAlign 0
  }
  Color 1 1 1 0
+ components {
+  TBD_LobbySlotRowComponent "{7BD1A70000003303}" {
+  }
+ }
  {
-  SizeLayoutWidgetClass "{7BD1A70000000C63}" {
-   Name "SlotRowSize"
-   Slot ButtonWidgetSlot "{7BD1A70000000C64}" {
+  SizeLayoutWidgetClass "{7BD1A70000003304}" {
+   Name "RowSize"
+   Slot ButtonWidgetSlot "{7BD1A70000003305}" {
     HorizontalAlign 3
+    VerticalAlign 3
    }
    AllowHeightOverride 1
-   HeightOverride 36
+   HeightOverride 54
    {
-    OverlayWidgetClass "{7BD1A70000000C65}" {
-     Name "SlotRowOverlay"
-     Slot AlignableSlot "{7BD1A70000000C66}" {
+    OverlayWidgetClass "{7BD1A70000003306}" {
+     Name "RowOverlay"
+     Slot AlignableSlot "{7BD1A70000003307}" {
       HorizontalAlign 3
       VerticalAlign 3
      }
      {
-      ImageWidgetClass "{7BD1A70000000C67}" {
-       Name "RowBG"
-       Slot OverlayWidgetSlot "{7BD1A70000000C68}" {
+      ImageWidgetClass "{7BD1A70000003308}" {
+       Name "Background"
+       Slot OverlayWidgetSlot "{7BD1A70000003309}" {
         HorizontalAlign 3
         VerticalAlign 3
        }
-       Color 1 1 1 0.02
+       Color 0 0 0 0
       }
-      ImageWidgetClass "{7BD1A70000000C69}" {
-       Name "RowAccent"
-       Slot OverlayWidgetSlot "{7BD1A70000000C6A}" {
-        HorizontalAlign 0
-        VerticalAlign 3
-       }
-       Color 0.220 0.741 0.973 0
-       Size 2 36
-      }
-      FrameWidgetClass "{7BD1A70000000C6B}" {
+      FrameWidgetClass "{7BD1A7000000330A}" {
        Name "RowContent"
-       Slot OverlayWidgetSlot "{7BD1A70000000C6C}" {
+       Slot OverlayWidgetSlot "{7BD1A7000000330B}" {
         HorizontalAlign 3
         VerticalAlign 3
        }
        {
-        TextWidgetClass "{7BD1A70000000C6D}" {
-         Name "RoleIcon"
-         Slot FrameWidgetSlot "{7BD1A70000000C6E}" {
-          Anchor 0 0 0 1
-          PositionX 10
-          OffsetLeft 10
-          PositionY 0
-          OffsetTop 0
-          SizeX 16
-          OffsetRight -26
-          SizeY 0
-          OffsetBottom 0
+        HorizontalLayoutWidgetClass "{7BD1A7000000330C}" {
+         Name "TopRow"
+         Slot FrameWidgetSlot "{7BD1A7000000330D}" {
+          Anchor 0 0 1 0
+          PositionX 14
+          OffsetLeft 14
+          PositionY 9
+          OffsetTop 9
+          SizeX -28
+          OffsetRight 14
+          SizeY 18
+          OffsetBottom -27
          }
-         Clipping True
-         Color 0.678 0.776 1 1
-         Text "*"
-         "Font Size" 13
-         "Horizontal Alignment" Center
-         "Vertical Alignment" Center
-         Wrap 0
+         {
+          TextWidgetClass "{7BD1A7000000330E}" {
+           Name "RoleText"
+           Slot LayoutSlot "{7BD1A7000000330F}" {
+            HorizontalAlign 0
+            VerticalAlign 1
+           }
+           Clipping True
+           Color 0.58 0.639 0.722 1
+           Text "1: PLATOON COMMANDER"
+           FontProperties FontProperties "{7BD1A70000003310}" {
+            Font "{CD2634D279AB011A}UI/Fonts/Roboto/Roboto_Bold.fnt"
+           }
+           "Font Size" 11
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+          HorizontalLayoutWidgetClass "{7BD1A70000003311}" {
+           Name "ChipsDock"
+           Slot LayoutSlot "{7BD1A70000003312}" {
+            HorizontalAlign 0
+            VerticalAlign 1
+            Padding 6 0 0 0
+           }
+          }
+         }
         }
-        TextWidgetClass "{7BD1A70000000C6F}" {
-         Name "RoleTitle"
-         Slot FrameWidgetSlot "{7BD1A70000000C70}" {
-          Anchor 0 0 0 1
-          PositionX 32
-          OffsetLeft 32
-          PositionY 0
-          OffsetTop 0
-          SizeX 240
-          OffsetRight -272
-          SizeY 0
-          OffsetBottom 0
+        TextWidgetClass "{7BD1A70000003313}" {
+         Name "HolderText"
+         Slot FrameWidgetSlot "{7BD1A70000003314}" {
+          Anchor 0 0 1 0
+          PositionX 16
+          OffsetLeft 16
+          PositionY 29
+          OffsetTop 29
+          SizeX -32
+          OffsetRight 16
+          SizeY 18
+          OffsetBottom -47
          }
          Clipping True
-         Color 0.945 0.961 0.976 1
-         Text "Company Commander"
+         Color 0.984 0.749 0.141 1
+         Text "[1stID] Miller"
+         FontProperties FontProperties "{7BD1A70000003315}" {
+          Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+         }
          "Font Size" 12
          "Vertical Alignment" Center
          Wrap 0
         }
-        FrameWidgetClass "{7BD1A70000000D01}" {
-         Name "SpecialtyBadgeContainer"
-         Slot FrameWidgetSlot "{7BD1A70000000D02}" {
+        OverlayWidgetClass "{7BD1A70000003316}" {
+         Name "StatusChipDock"
+         Slot FrameWidgetSlot "{7BD1A70000003317}" {
           Anchor 0 0 0 0
-          PositionX 280
-          OffsetLeft 280
-          PositionY 9
-          OffsetTop 9
-          SizeX 56
-          OffsetRight -336
-          SizeY 18
-          OffsetBottom -27
-         }
-         {
-          ImageWidgetClass "{7BD1A70000000D03}" {
-           Name "SpecialtyBadgeBG"
-           Slot FrameWidgetSlot "{7BD1A70000000D04}" {
-            Anchor 0 0 1 1
-            PositionX 0
-            OffsetLeft 0
-            PositionY 0
-            OffsetTop 0
-            SizeX 0
-            OffsetRight 0
-            SizeY 0
-            OffsetBottom 0
-           }
-           Color 1 1 1 0.08
-          }
-          TextWidgetClass "{7BD1A70000000D05}" {
-           Name "SpecialtyBadgeText"
-           Slot FrameWidgetSlot "{7BD1A70000000D06}" {
-            Anchor 0 0 1 1
-            PositionX 0
-            OffsetLeft 0
-            PositionY 0
-            OffsetTop 0
-            SizeX 0
-            OffsetRight 0
-            SizeY 0
-            OffsetBottom 0
-           }
-           Clipping True
-           Color 0.769 0.776 0.840 1
-           Text "OFFICER"
-           "Font Size" 9
-           "Horizontal Alignment" Center
-           "Vertical Alignment" Center
-           Wrap 0
-          }
+          PositionX 16
+          OffsetLeft 16
+          PositionY 28
+          OffsetTop 28
+          SizeX 120
+          OffsetRight -136
+          SizeY 20
+          OffsetBottom -48
          }
         }
-        FrameWidgetClass "{7BD1A70000000D07}" {
-         Name "AiBadgeContainer"
-         Slot FrameWidgetSlot "{7BD1A70000000D08}" {
-          Anchor 1 0 1 0
-          PositionX -174
-          OffsetLeft -174
-          PositionY 9
-          OffsetTop 9
-          SizeX 64
-          OffsetRight 110
-          SizeY 18
-          OffsetBottom -27
+        ImageWidgetClass "{7BD1A70000003318}" {
+         Name "RowRule"
+         Slot FrameWidgetSlot "{7BD1A70000003319}" {
+          Anchor 0 1 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY -1
+          OffsetTop -1
+          SizeX 0
+          OffsetRight 0
+          SizeY 1
+          OffsetBottom 0
          }
-         {
-          ImageWidgetClass "{7BD1A70000000D09}" {
-           Name "AiBadgeBG"
-           Slot FrameWidgetSlot "{7BD1A70000000D0A}" {
-            Anchor 0 0 1 1
-            PositionX 0
-            OffsetLeft 0
-            PositionY 0
-            OffsetTop 0
-            SizeX 0
-            OffsetRight 0
-            SizeY 0
-            OffsetBottom 0
-           }
-           Color 0.874 0.455 0.070 0.25
-          }
-          ImageWidgetClass "{7BD1A70000000D15}" {
-           Name "AiBadgeBorder"
-           Slot FrameWidgetSlot "{7BD1A70000000D16}" {
-            Anchor 0 0 1 1
-            PositionX 0
-            OffsetLeft 0
-            PositionY 0
-            OffsetTop 0
-            SizeX 0
-            OffsetRight 0
-            SizeY 0
-            OffsetBottom 0
-           }
-           Color 1 1 1 0.08
-          }
-          TextWidgetClass "{7BD1A70000000D0B}" {
-           Name "AiBadgeText"
-           Slot FrameWidgetSlot "{7BD1A70000000D0C}" {
-            Anchor 0 0 1 1
-            PositionX 0
-            OffsetLeft 0
-            PositionY 0
-            OffsetTop 0
-            SizeX 0
-            OffsetRight 0
-            SizeY 0
-            OffsetBottom 0
-           }
-           Clipping True
-           Color 1 0.863 0.776 1
-           Text "AI READY"
-           "Font Size" 9
-           "Horizontal Alignment" Center
-           "Vertical Alignment" Center
-           Wrap 0
-          }
-         }
-        }
-        ButtonWidgetClass "{7BD1A70000000D0D}" {
-         Name "ClaimActionBtn"
-         Slot FrameWidgetSlot "{7BD1A70000000D0E}" {
-          Anchor 1 0 1 0
-          PositionX -102
-          OffsetLeft -102
-          PositionY 7
-          OffsetTop 7
-          SizeX 92
-          OffsetRight 10
-          SizeY 22
-          OffsetBottom -29
-         }
-         Color 1 1 1 0
-         {
-          OverlayWidgetClass "{7BD1A70000000D0F}" {
-           Name "ClaimActionOverlay"
-           Slot ButtonWidgetSlot "{7BD1A70000000D10}" {
-            HorizontalAlign 3
-            VerticalAlign 3
-           }
-           {
-            ImageWidgetClass "{7BD1A70000000D11}" {
-             Name "ClaimActionBG"
-             Slot OverlayWidgetSlot "{7BD1A70000000D12}" {
-              HorizontalAlign 3
-              VerticalAlign 3
-             }
-             Color 0.302 0.557 1 1
-            }
-            ImageWidgetClass "{7BD1A70000000D17}" {
-             Name "ClaimActionBorder"
-             Slot OverlayWidgetSlot "{7BD1A70000000D18}" {
-              HorizontalAlign 3
-              VerticalAlign 3
-             }
-             Color 1 1 1 0.08
-            }
-            TextWidgetClass "{7BD1A70000000D13}" {
-             Name "ClaimActionText"
-             Slot OverlayWidgetSlot "{7BD1A70000000D14}" {
-              HorizontalAlign 3
-              VerticalAlign 3
-             }
-             Clipping True
-             Color 1 1 1 1
-             Text "Claimable"
-             "Font Size" 10
-             "Horizontal Alignment" Center
-             "Vertical Alignment" Center
-             Wrap 0
-            }
-           }
-          }
-         }
+         Color 1 1 1 0.05
         }
        }
       }

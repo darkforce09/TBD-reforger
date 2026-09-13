@@ -1,0 +1,49 @@
+HorizontalLayoutWidgetClass "{7BD1A70000003900}" {
+ Name "Columns4"
+ Slot AlignableSlot "{7BD1A70000003902}" {
+  HorizontalAlign 3
+  VerticalAlign 0
+ }
+ {
+  VerticalLayoutWidgetClass "{7BD1A70000003903}" {
+   Name "ColumnA"
+   Slot LayoutSlot "{7BD1A70000003904}" {
+    HorizontalAlign 3
+    VerticalAlign 0
+    SizeMode Fill
+    FillWeight 1
+    Padding 0 0 6 0
+   }
+  }
+  VerticalLayoutWidgetClass "{7BD1A70000003905}" {
+   Name "ColumnB"
+   Slot LayoutSlot "{7BD1A70000003906}" {
+    HorizontalAlign 3
+    VerticalAlign 0
+    SizeMode Fill
+    FillWeight 1
+    Padding 6 0 6 0
+   }
+  }
+  VerticalLayoutWidgetClass "{7BD1A70000003907}" {
+   Name "ColumnC"
+   Slot LayoutSlot "{7BD1A70000003908}" {
+    HorizontalAlign 3
+    VerticalAlign 0
+    SizeMode Fill
+    FillWeight 1
+    Padding 6 0 6 0
+   }
+  }
+  VerticalLayoutWidgetClass "{7BD1A70000003909}" {
+   Name "ColumnD"
+   Slot LayoutSlot "{7BD1A7000000390A}" {
+    HorizontalAlign 3
+    VerticalAlign 0
+    SizeMode Fill
+    FillWeight 1
+    Padding 6 0 0 0
+   }
+  }
+ }
+}

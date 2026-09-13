@@ -148,7 +148,7 @@ class TBD_DebriefScreen : ScriptedWidgetComponent
 		m_BackAction = TBD_UIButton.Cast(FindHandlerOn("BackAction", TBD_UIButton));
 		m_PrimaryAction = TBD_UIButton.Cast(FindHandlerOn("PrimaryAction", TBD_UIButton));
 
-		TBD_UITheme.Paint(Find("Backdrop"), TBD_UITheme.SCRIM);
+		TBD_UITheme.PaintAlpha(Find("Backdrop"), TBD_UITheme.SCRIM);
 		TBD_UITheme.Paint(Find("Panel"), TBD_UITheme.SURFACE);
 		TBD_UITheme.Paint(Find("HeaderRule"), TBD_UITheme.OUTLINE_VARIANT);
 		TBD_UITheme.Paint(Find("FooterRule"), TBD_UITheme.OUTLINE_VARIANT);

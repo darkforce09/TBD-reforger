@@ -1,133 +1,95 @@
-ButtonWidgetClass "{7BD1A70000000C71}" {
- Name "FactionRowBtn"
- Slot AlignableSlot "{7BD1A70000000C72}" {
+ButtonWidgetClass "{7BD1A70000003000}" {
+ Name "FactionRow"
+ Slot AlignableSlot "{7BD1A70000003002}" {
   HorizontalAlign 3
-  VerticalAlign 3
-  Padding 4 2 4 2
+  VerticalAlign 0
+  Padding 0 0 0 6
  }
  Color 1 1 1 0
+ components {
+  TBD_LobbyFactionRowComponent "{7BD1A70000003003}" {
+  }
+ }
  {
-  SizeLayoutWidgetClass "{7BD1A70000000C73}" {
-   Name "FactionRowSize"
-   Slot ButtonWidgetSlot "{7BD1A70000000C74}" {
+  SizeLayoutWidgetClass "{7BD1A70000003004}" {
+   Name "RowSize"
+   Slot ButtonWidgetSlot "{7BD1A70000003005}" {
     HorizontalAlign 3
+    VerticalAlign 3
    }
    AllowHeightOverride 1
-   HeightOverride 32
+   HeightOverride 38
    {
-    OverlayWidgetClass "{7BD1A70000000C75}" {
-     Name "FactionRowOverlay"
-     Slot AlignableSlot "{7BD1A70000000C76}" {
+    OverlayWidgetClass "{7BD1A70000003006}" {
+     Name "RowOverlay"
+     Slot AlignableSlot "{7BD1A70000003007}" {
       HorizontalAlign 3
       VerticalAlign 3
      }
      {
-      ImageWidgetClass "{7BD1A70000000C77}" {
-       Name "RowBG"
-       Slot OverlayWidgetSlot "{7BD1A70000000C78}" {
+      FrameWidgetClass "{7BD1A70000003008}" {
+       Name "Border"
+       Slot OverlayWidgetSlot "{7BD1A70000003009}" {
         HorizontalAlign 3
         VerticalAlign 3
        }
-       Color 1 1 1 0.05
+       Color 0 0 0 0
       }
-      FrameWidgetClass "{7BD1A70000000C79}" {
-       Name "RowContent"
-       Slot OverlayWidgetSlot "{7BD1A70000000C7A}" {
+      FrameWidgetClass "{7BD1A7000000300A}" {
+       Name "Background"
+       Slot OverlayWidgetSlot "{7BD1A7000000300B}" {
         HorizontalAlign 3
         VerticalAlign 3
+        Padding 1 1 1 1
+       }
+       Color 0 0 0 0
+      }
+      HorizontalLayoutWidgetClass "{7BD1A7000000300C}" {
+       Name "RowContent"
+       Slot OverlayWidgetSlot "{7BD1A7000000300D}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+        Padding 12 0 10 0
        }
        {
-        TextWidgetClass "{7BD1A70000000C7B}" {
-         Name "FactionDot"
-         Slot FrameWidgetSlot "{7BD1A70000000C7C}" {
-          Anchor 0 0 0 1
-          PositionX 8
-          OffsetLeft 8
-          PositionY 0
-          OffsetTop 0
-          SizeX 12
-          OffsetRight -20
-          SizeY 0
-          OffsetBottom 0
+        TextWidgetClass "{7BD1A7000000300E}" {
+         Name "Name"
+         Slot LayoutSlot "{7BD1A7000000300F}" {
+          HorizontalAlign 0
+          VerticalAlign 1
          }
          Clipping True
-         Color 0.220 0.741 0.973 1
-         Text "*"
-         "Font Size" 14
-         "Horizontal Alignment" Center
-         "Vertical Alignment" Center
-         Wrap 0
-        }
-        TextWidgetClass "{7BD1A70000000C7D}" {
-         Name "FactionName"
-         Slot FrameWidgetSlot "{7BD1A70000000C7E}" {
-          Anchor 0 0 1 1
-          PositionX 24
-          OffsetLeft 24
-          PositionY 0
-          OffsetTop 0
-          SizeX -90
-          OffsetRight 66
-          SizeY 0
-          OffsetBottom 0
-         }
-         Clipping True
-         Color 0.945 0.961 0.976 1
+         Color 0.576 0.773 0.992 1
          Text "BLUFOR"
-         "Font Size" 12
+         FontProperties FontProperties "{7BD1A70000003010}" {
+          Font "{CD2634D279AB011A}UI/Fonts/Roboto/Roboto_Bold.fnt"
+         }
+         "Font Size" 13
          "Vertical Alignment" Center
          Wrap 0
         }
-        FrameWidgetClass "{7BD1A70000000C7F}" {
-         Name "BadgeContainer"
-         Slot FrameWidgetSlot "{7BD1A70000000C80}" {
-          Anchor 1 0 1 1
-          PositionX -60
-          OffsetLeft -60
-          PositionY 5
-          OffsetTop 5
-          SizeX 52
-          OffsetRight -8
-          SizeY -10
-          OffsetBottom 5
+        OverlayWidgetClass "{7BD1A70000003011}" {
+         Name "RoleChipDock"
+         Slot LayoutSlot "{7BD1A70000003012}" {
+          HorizontalAlign 0
+          VerticalAlign 1
+          Padding 10 0 0 0
          }
-         {
-          ImageWidgetClass "{7BD1A70000000C81}" {
-           Name "BadgeBG"
-           Slot FrameWidgetSlot "{7BD1A70000000C82}" {
-            Anchor 0 0 1 1
-            PositionX 0
-            OffsetLeft 0
-            PositionY 0
-            OffsetTop 0
-            SizeX 0
-            OffsetRight 0
-            SizeY 0
-            OffsetBottom 0
-           }
-           Color 0.302 0.557 1 0.35
-          }
-          TextWidgetClass "{7BD1A70000000C83}" {
-           Name "FactionBadge"
-           Slot FrameWidgetSlot "{7BD1A70000000C84}" {
-            Anchor 0 0 1 1
-            PositionX 0
-            OffsetLeft 0
-            PositionY 0
-            OffsetTop 0
-            SizeX 0
-            OffsetRight 0
-            SizeY 0
-            OffsetBottom 0
-           }
-           Clipping True
-           Color 0.945 0.961 0.976 1
-           Text "0 / 92"
-           "Font Size" 11
-           "Horizontal Alignment" Center
-           "Vertical Alignment" Center
-           Wrap 0
-          }
+        }
+        FrameWidgetClass "{7BD1A70000003013}" {
+         Name "Spacer"
+         Slot LayoutSlot "{7BD1A70000003014}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+          SizeMode Fill
+          FillWeight 1
+         }
+        }
+        OverlayWidgetClass "{7BD1A70000003015}" {
+         Name "CountChipDock"
+         Slot LayoutSlot "{7BD1A70000003016}" {
+          HorizontalAlign 2
+          VerticalAlign 1
          }
         }
        }

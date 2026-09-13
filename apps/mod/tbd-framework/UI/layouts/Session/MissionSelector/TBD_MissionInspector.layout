@@ -1,0 +1,436 @@
+FrameWidgetClass "{7BD1A70000001F00}" {
+ Name "MissionInspector"
+ Slot FrameWidgetSlot "{7BD1A70000001F02}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ {
+  FrameWidgetClass "{7BD1A70000001F03}" {
+   Name "PanelBorder"
+   Slot FrameWidgetSlot "{7BD1A70000001F04}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 1 1 1 0.1
+  }
+  FrameWidgetClass "{7BD1A70000001F05}" {
+   Name "PanelBG"
+   Slot FrameWidgetSlot "{7BD1A70000001F06}" {
+    Anchor 0 0 1 1
+    PositionX 1
+    OffsetLeft 1
+    PositionY 1
+    OffsetTop 1
+    SizeX -2
+    OffsetRight 1
+    SizeY -2
+    OffsetBottom 1
+   }
+   Color 0.055 0.086 0.149 0.9
+  }
+  FrameWidgetClass "{7BD1A70000001F07}" {
+   Name "Hero"
+   Slot FrameWidgetSlot "{7BD1A70000001F08}" {
+    Anchor 0 0 1 0
+    PositionX 1
+    OffsetLeft 1
+    PositionY 1
+    OffsetTop 1
+    SizeX -2
+    OffsetRight 1
+    SizeY 176
+    OffsetBottom -177
+   }
+   Clipping True
+   {
+    ImageWidgetClass "{7BD1A70000001F2F}" {
+     Name "HeroImage"
+     Slot FrameWidgetSlot "{7BD1A70000001F30}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+     Color 1 1 1 1
+    }
+    ImageWidgetClass "{7BD1A70000001F31}" {
+     Name "HeroDim"
+     Slot FrameWidgetSlot "{7BD1A70000001F32}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+     Color 0.043 0.067 0.125 0.45
+    }
+    ImageWidgetClass "{7BD1A70000001F33}" {
+     Name "HeroFade"
+     Slot FrameWidgetSlot "{7BD1A70000001F34}" {
+      Anchor 0 1 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY -110
+      OffsetTop -110
+      SizeX 0
+      OffsetRight 0
+      SizeY 110
+      OffsetBottom 0
+     }
+     Color 0.051 0.082 0.145 1
+    }
+    FrameWidgetClass "{7BD1A70000001F35}" {
+     Name "HeroMaskTL"
+     Slot FrameWidgetSlot "{7BD1A70000001F36}" {
+      Anchor 0 0 0 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 11
+      OffsetRight -11
+      SizeY 11
+      OffsetBottom -11
+     }
+     Clipping True
+     {
+      ImageWidgetClass "{7BD1A70000001F37}" {
+       Name "HeroMaskTLImg"
+       Slot FrameWidgetSlot "{7BD1A70000001F38}" {
+        Anchor 0 0 0 0
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 22
+        OffsetRight -22
+        SizeY 22
+        OffsetBottom -22
+       }
+       Color 1 1 1 1
+      }
+     }
+    }
+    FrameWidgetClass "{7BD1A70000001F39}" {
+     Name "HeroMaskTR"
+     Slot FrameWidgetSlot "{7BD1A70000001F3A}" {
+      Anchor 1 0 1 0
+      PositionX -11
+      OffsetLeft -11
+      PositionY 0
+      OffsetTop 0
+      SizeX 11
+      OffsetRight 0
+      SizeY 11
+      OffsetBottom -11
+     }
+     Clipping True
+     {
+      ImageWidgetClass "{7BD1A70000001F3B}" {
+       Name "HeroMaskTRImg"
+       Slot FrameWidgetSlot "{7BD1A70000001F3C}" {
+        Anchor 0 0 0 0
+        PositionX -11
+        OffsetLeft -11
+        PositionY 0
+        OffsetTop 0
+        SizeX 22
+        OffsetRight -11
+        SizeY 22
+        OffsetBottom -22
+       }
+       Color 1 1 1 1
+      }
+     }
+    }
+    HorizontalLayoutWidgetClass "{7BD1A70000001F11}" {
+     Name "TitleRow"
+     Slot FrameWidgetSlot "{7BD1A70000001F12}" {
+      Anchor 0 0 1 0
+      PositionX 20
+      OffsetLeft 20
+      PositionY 110
+      OffsetTop 110
+      SizeX -300
+      OffsetRight 280
+      SizeY 30
+      OffsetBottom -140
+     }
+     {
+      TextWidgetClass "{7BD1A70000001F13}" {
+       Name "HeroTitle"
+       Slot LayoutSlot "{7BD1A70000001F14}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+       }
+       Clipping True
+       Color 1 1 1 1
+       Text "Mission"
+       FontProperties FontProperties "{7BD1A70000001F2B}" {
+        Font "{CD2634D279AB011A}UI/Fonts/Roboto/Roboto_Bold.fnt"
+       }
+       "Font Size" 21
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      OverlayWidgetClass "{7BD1A70000001F15}" {
+       Name "HeroTagDock"
+       Slot LayoutSlot "{7BD1A70000001F16}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 10 0 0 0
+       }
+      }
+     }
+    }
+    HorizontalLayoutWidgetClass "{7BD1A70000001F17}" {
+     Name "AuthorRow"
+     Slot FrameWidgetSlot "{7BD1A70000001F18}" {
+      Anchor 0 0 1 0
+      PositionX 20
+      OffsetLeft 20
+      PositionY 142
+      OffsetTop 142
+      SizeX -300
+      OffsetRight 280
+      SizeY 20
+      OffsetBottom -162
+     }
+     {
+      ImageWidgetClass "{7BD1A70000001F19}" {
+       Name "AuthorIcon"
+       Slot LayoutSlot "{7BD1A70000001F1A}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 0 0 6 0
+       }
+       Color 0.58 0.639 0.722 1
+       Size 13 13
+      }
+      TextWidgetClass "{7BD1A70000001F1B}" {
+       Name "AuthorBy"
+       Slot LayoutSlot "{7BD1A70000001F1C}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 0 0 5 0
+       }
+       Clipping True
+       Color 0.58 0.639 0.722 1
+       Text "by"
+       FontProperties FontProperties "{7BD1A70000001F2C}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 12
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      TextWidgetClass "{7BD1A70000001F1D}" {
+       Name "AuthorName"
+       Slot LayoutSlot "{7BD1A70000001F1E}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 0 0 8 0
+       }
+       Clipping True
+       Color 0.886 0.91 0.941 1
+       Text "Author"
+       FontProperties FontProperties "{7BD1A70000001F2D}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 12
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      OverlayWidgetClass "{7BD1A70000001F1F}" {
+       Name "AuthorChipDock"
+       Slot LayoutSlot "{7BD1A70000001F20}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+       }
+      }
+     }
+    }
+    OverlayWidgetClass "{7BD1A70000001F21}" {
+     Name "VersionDock"
+     Slot FrameWidgetSlot "{7BD1A70000001F22}" {
+      Anchor 1 0 1 0
+      PositionX -260
+      OffsetLeft -260
+      PositionY 128
+      OffsetTop 128
+      SizeX 240
+      OffsetRight 20
+      SizeY 34
+      OffsetBottom -162
+     }
+    }
+   }
+  }
+  FrameWidgetClass "{7BD1A70000001F3D}" {
+   Name "PanelMaskTL"
+   Slot FrameWidgetSlot "{7BD1A70000001F3E}" {
+    Anchor 0 0 0 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 12
+    OffsetRight -12
+    SizeY 12
+    OffsetBottom -12
+   }
+   Clipping True
+   {
+    ImageWidgetClass "{7BD1A70000001F3F}" {
+     Name "PanelMaskTLImg"
+     Slot FrameWidgetSlot "{7BD1A70000001F40}" {
+      Anchor 0 0 0 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 24
+      OffsetRight -24
+      SizeY 24
+      OffsetBottom -24
+     }
+     Color 1 1 1 1
+    }
+   }
+  }
+  FrameWidgetClass "{7BD1A70000001F41}" {
+   Name "PanelMaskTR"
+   Slot FrameWidgetSlot "{7BD1A70000001F42}" {
+    Anchor 1 0 1 0
+    PositionX -12
+    OffsetLeft -12
+    PositionY 0
+    OffsetTop 0
+    SizeX 12
+    OffsetRight 0
+    SizeY 12
+    OffsetBottom -12
+   }
+   Clipping True
+   {
+    ImageWidgetClass "{7BD1A70000001F43}" {
+     Name "PanelMaskTRImg"
+     Slot FrameWidgetSlot "{7BD1A70000001F44}" {
+      Anchor 0 0 0 0
+      PositionX -12
+      OffsetLeft -12
+      PositionY 0
+      OffsetTop 0
+      SizeX 24
+      OffsetRight -12
+      SizeY 24
+      OffsetBottom -24
+     }
+     Color 1 1 1 1
+    }
+   }
+  }
+  FrameWidgetClass "{7BD1A70000001F23}" {
+   Name "BodyFrame"
+   Slot FrameWidgetSlot "{7BD1A70000001F24}" {
+    Anchor 0 0 1 1
+    PositionX 17
+    OffsetLeft 17
+    PositionY 193
+    OffsetTop 193
+    SizeX -34
+    OffsetRight 17
+    SizeY -209
+    OffsetBottom 16
+   }
+   Clipping True
+   {
+    ScrollLayoutWidgetClass "{7BD1A70000001F25}" {
+     Name "Scroll"
+     Slot FrameWidgetSlot "{7BD1A70000001F26}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 24
+      OffsetRight -24
+      SizeY 0
+      OffsetBottom 0
+     }
+     {
+      VerticalLayoutWidgetClass "{7BD1A70000001F27}" {
+       Name "CardsContent"
+       Slot AlignableSlot "{7BD1A70000001F28}" {
+        HorizontalAlign 3
+        VerticalAlign 0
+        Padding 0 0 34 0
+       }
+      }
+     }
+    }
+    FrameWidgetClass "{7BD1A70000001F45}" {
+     Name "ScrollBarDock"
+     Slot FrameWidgetSlot "{7BD1A70000001F46}" {
+      Anchor 1 0 1 1
+      PositionX -4
+      OffsetLeft -4
+      PositionY 0
+      OffsetTop 0
+      SizeX 4
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+    }
+    TextWidgetClass "{7BD1A70000001F29}" {
+     Name "EmptyState"
+     Slot FrameWidgetSlot "{7BD1A70000001F2A}" {
+      Anchor 0 0 1 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY 24
+      OffsetTop 24
+      SizeX 0
+      OffsetRight 0
+      SizeY 24
+      OffsetBottom -48
+     }
+     Clipping True
+     Color 0.58 0.639 0.722 1
+     Text "Pick a scenario to inspect it."
+     FontProperties FontProperties "{7BD1A70000001F2E}" {
+      Font "{3E7733BAC8C831F6}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt"
+     }
+     "Font Size" 14
+     "Horizontal Alignment" Center
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+   }
+  }
+ }
+}

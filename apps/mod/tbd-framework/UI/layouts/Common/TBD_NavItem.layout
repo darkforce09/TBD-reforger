@@ -1,0 +1,94 @@
+ButtonWidgetClass "{7BD1A70000001300}" {
+ Name "NavItem"
+ Slot AlignableSlot "{7BD1A70000001303}" {
+  HorizontalAlign 0
+  VerticalAlign 1
+  Padding 2 2 2 2
+ }
+ Color 1 1 1 0
+ components {
+  TBD_NavItemComponent "{7BD1A70000001304}" {
+  }
+ }
+ {
+  OverlayWidgetClass "{7BD1A70000001305}" {
+   Name "NavBody"
+   Slot ButtonWidgetSlot "{7BD1A70000001306}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   {
+    FrameWidgetClass "{7BD1A70000001307}" {
+     Name "Border"
+     Slot OverlayWidgetSlot "{7BD1A70000001308}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     Color 0 0 0 0
+    }
+    FrameWidgetClass "{7BD1A70000001309}" {
+     Name "Background"
+     Slot OverlayWidgetSlot "{7BD1A7000000130A}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      Padding 1 1 1 1
+     }
+     Color 0 0 0 0
+    }
+    HorizontalLayoutWidgetClass "{7BD1A7000000130B}" {
+     Name "NavContent"
+     Slot OverlayWidgetSlot "{7BD1A7000000130C}" {
+      HorizontalAlign 3
+      VerticalAlign 1
+      Padding 14 7 14 7
+     }
+     {
+      ImageWidgetClass "{7BD1A7000000130D}" {
+       Name "Icon"
+       Slot LayoutSlot "{7BD1A7000000130E}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 0 0 6 0
+       }
+       Color 0.58 0.639 0.722 1
+       Size 15 15
+      }
+      TextWidgetClass "{7BD1A7000000130F}" {
+       Name "Label"
+       Slot LayoutSlot "{7BD1A70000001310}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+       }
+       Clipping True
+       Color 0.58 0.639 0.722 1
+       Text "Tab"
+       FontProperties FontProperties "{7BD1A70000001313}" {
+        Font "{CD2634D279AB011A}UI/Fonts/Roboto/Roboto_Bold.fnt"
+       }
+       "Font Size" 13
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      TextWidgetClass "{7BD1A70000001311}" {
+       Name "Badge"
+       Slot LayoutSlot "{7BD1A70000001312}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 8 0 0 0
+       }
+       Clipping True
+       Color 0.678 0.776 1 1
+       Text ""
+       FontProperties FontProperties "{7BD1A70000001314}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 11
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+     }
+    }
+   }
+  }
+ }
+}

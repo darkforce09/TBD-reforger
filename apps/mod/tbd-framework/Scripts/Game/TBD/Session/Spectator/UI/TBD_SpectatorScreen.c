@@ -42,7 +42,7 @@ class TBD_SpectatorScreen : TBD_ShellScreen
 		// The shell paints a full-bleed scrim by default, which is right for the lobby and wrong
 		// here: this list sits over a live camera the player is still flying. Glass, not a wall.
 		TBD_UITheme.Paint(Find("Backdrop"), TBD_UITheme.TRANSPARENT);
-		TBD_UITheme.Paint(Find("Panel"), TBD_UITheme.SURFACE_GLASS);
+		TBD_UITheme.PaintAlpha(Find("Panel"), TBD_UITheme.SURFACE_GLASS);
 
 		TBD_ListBox list = GetList();
 		if (list)

@@ -1,0 +1,46 @@
+OverlayWidgetClass "{7BD1A70000001340}" {
+ Name "TabStrip"
+ Slot AlignableSlot "{7BD1A70000001341}" {
+  HorizontalAlign 1
+  VerticalAlign 1
+ }
+ components {
+  TBD_TabStripComponent "{7BD1A70000001342}" {
+  }
+ }
+ {
+  FrameWidgetClass "{7BD1A70000001343}" {
+   Name "StripBorder"
+   Slot OverlayWidgetSlot "{7BD1A70000001344}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   Color 0.118 0.161 0.231 0.8
+  }
+  FrameWidgetClass "{7BD1A70000001345}" {
+   Name "StripBG"
+   Slot OverlayWidgetSlot "{7BD1A70000001346}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+    Padding 1 1 1 1
+   }
+   Color 0.008 0.024 0.09 0.7
+  }
+  HorizontalLayoutWidgetClass "{7BD1A70000001347}" {
+   Name "ItemsRow"
+   Slot OverlayWidgetSlot "{7BD1A70000001348}" {
+    HorizontalAlign 1
+    VerticalAlign 1
+    Padding 3 3 3 3
+   }
+  }
+  VerticalLayoutWidgetClass "{7BD1A70000001349}" {
+   Name "ItemsColumn"
+   Slot OverlayWidgetSlot "{7BD1A7000000134A}" {
+    HorizontalAlign 3
+    VerticalAlign 0
+    Padding 3 3 3 3
+   }
+  }
+ }
+}

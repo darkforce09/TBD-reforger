@@ -1,0 +1,67 @@
+OverlayWidgetClass "{7BD1A70000001100}" {
+ Name "ChipRoot"
+ Slot AlignableSlot "{7BD1A70000001102}" {
+  HorizontalAlign 0
+  VerticalAlign 1
+ }
+ components {
+  TBD_ChipComponent "{7BD1A70000001103}" {
+  }
+ }
+ {
+  FrameWidgetClass "{7BD1A70000001104}" {
+   Name "ChipBorder"
+   Slot OverlayWidgetSlot "{7BD1A70000001105}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   Color 0.2 0.255 0.333 0.6
+  }
+  FrameWidgetClass "{7BD1A70000001106}" {
+   Name "ChipBG"
+   Slot OverlayWidgetSlot "{7BD1A70000001107}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+    Padding 1 1 1 1
+   }
+   Color 0.118 0.161 0.231 0.8
+  }
+  HorizontalLayoutWidgetClass "{7BD1A70000001108}" {
+   Name "ChipContent"
+   Slot OverlayWidgetSlot "{7BD1A70000001109}" {
+    HorizontalAlign 1
+    VerticalAlign 1
+    Padding 8 3 8 3
+   }
+   {
+    ImageWidgetClass "{7BD1A7000000110A}" {
+     Name "ChipDot"
+     Slot LayoutSlot "{7BD1A7000000110B}" {
+      HorizontalAlign 0
+      VerticalAlign 1
+      Padding 0 0 6 0
+     }
+     Color 0.42 0.906 0.6 1
+     Size 6 6
+    }
+    TextWidgetClass "{7BD1A7000000110C}" {
+     Name "ChipText"
+     Slot LayoutSlot "{7BD1A7000000110D}" {
+      HorizontalAlign 0
+      VerticalAlign 1
+     }
+     Clipping True
+     Color 0.796 0.835 0.882 1
+     Text "CHIP"
+     FontProperties FontProperties "{7BD1A7000000110E}" {
+      Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+     }
+     "Font Size" 11
+     "Horizontal Alignment" Center
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+   }
+  }
+ }
+}

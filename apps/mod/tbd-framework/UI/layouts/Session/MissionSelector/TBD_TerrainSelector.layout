@@ -1,0 +1,139 @@
+FrameWidgetClass "{7BD1A70000001D00}" {
+ Name "TerrainSelector"
+ Slot FrameWidgetSlot "{7BD1A70000001D02}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ {
+  ImageWidgetClass "{7BD1A70000001D10}" {
+   Name "SearchStrip"
+   Slot FrameWidgetSlot "{7BD1A70000001D11}" {
+    Anchor 0 0 1 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 54
+    OffsetBottom -54
+   }
+   Color 0.043 0.067 0.125 0.3
+  }
+  FrameWidgetClass "{7BD1A70000001D03}" {
+   Name "SearchDock"
+   Slot FrameWidgetSlot "{7BD1A70000001D04}" {
+    Anchor 0 0 1 0
+    PositionX 12
+    OffsetLeft 12
+    PositionY 10
+    OffsetTop 10
+    SizeX -24
+    OffsetRight 12
+    SizeY 34
+    OffsetBottom -44
+   }
+  }
+  ImageWidgetClass "{7BD1A70000001D05}" {
+   Name "SearchRule"
+   Slot FrameWidgetSlot "{7BD1A70000001D06}" {
+    Anchor 0 0 1 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 54
+    OffsetTop 54
+    SizeX 0
+    OffsetRight 0
+    SizeY 1
+    OffsetBottom -55
+   }
+   Color 1 1 1 0.06
+  }
+  FrameWidgetClass "{7BD1A70000001D07}" {
+   Name "ListFrame"
+   Slot FrameWidgetSlot "{7BD1A70000001D08}" {
+    Anchor 0 0 1 1
+    PositionX 8
+    OffsetLeft 8
+    PositionY 62
+    OffsetTop 62
+    SizeX -16
+    OffsetRight 8
+    SizeY -70
+    OffsetBottom 8
+   }
+   Clipping True
+   {
+    ScrollLayoutWidgetClass "{7BD1A70000001D09}" {
+     Name "Scroll"
+     Slot FrameWidgetSlot "{7BD1A70000001D0A}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 24
+      OffsetRight -24
+      SizeY 0
+      OffsetBottom 0
+     }
+     {
+      VerticalLayoutWidgetClass "{7BD1A70000001D0B}" {
+       Name "Content"
+       Slot AlignableSlot "{7BD1A70000001D0C}" {
+        HorizontalAlign 3
+        VerticalAlign 0
+        Padding 0 0 34 0
+       }
+      }
+     }
+    }
+    FrameWidgetClass "{7BD1A70000001D12}" {
+     Name "ScrollBarDock"
+     Slot FrameWidgetSlot "{7BD1A70000001D13}" {
+      Anchor 1 0 1 1
+      PositionX -4
+      OffsetLeft -4
+      PositionY 0
+      OffsetTop 0
+      SizeX 4
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+    }
+    TextWidgetClass "{7BD1A70000001D0D}" {
+     Name "EmptyState"
+     Slot FrameWidgetSlot "{7BD1A70000001D0E}" {
+      Anchor 0 0 1 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY 16
+      OffsetTop 16
+      SizeX 0
+      OffsetRight 0
+      SizeY 24
+      OffsetBottom -40
+     }
+     Clipping True
+     Color 0.58 0.639 0.722 1
+     Text "No terrain matches."
+     FontProperties FontProperties "{7BD1A70000001D0F}" {
+      Font "{3E7733BAC8C831F6}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt"
+     }
+     "Font Size" 13
+     "Horizontal Alignment" Center
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+   }
+  }
+ }
+}

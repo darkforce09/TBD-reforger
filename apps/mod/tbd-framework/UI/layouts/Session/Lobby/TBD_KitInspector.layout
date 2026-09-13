@@ -1,0 +1,250 @@
+FrameWidgetClass "{7BD1A70000003400}" {
+ Name "KitInspector"
+ Slot FrameWidgetSlot "{7BD1A70000003402}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ {
+  FrameWidgetClass "{7BD1A70000003403}" {
+   Name "PanelBorder"
+   Slot FrameWidgetSlot "{7BD1A70000003404}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 0 0 0 0
+  }
+  FrameWidgetClass "{7BD1A70000003405}" {
+   Name "PanelBG"
+   Slot FrameWidgetSlot "{7BD1A70000003406}" {
+    Anchor 0 0 1 1
+    PositionX 1
+    OffsetLeft 1
+    PositionY 1
+    OffsetTop 1
+    SizeX -2
+    OffsetRight 1
+    SizeY -2
+    OffsetBottom 1
+   }
+   Color 0 0 0 0
+  }
+  FrameWidgetClass "{7BD1A70000003407}" {
+   Name "Header"
+   Slot FrameWidgetSlot "{7BD1A70000003408}" {
+    Anchor 0 0 1 0
+    PositionX 1
+    OffsetLeft 1
+    PositionY 1
+    OffsetTop 1
+    SizeX -2
+    OffsetRight 1
+    SizeY 84
+    OffsetBottom -85
+   }
+   Clipping True
+   {
+    FrameWidgetClass "{7BD1A70000003409}" {
+     Name "HeaderBG"
+     Slot FrameWidgetSlot "{7BD1A7000000340A}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 12
+      OffsetBottom -12
+     }
+     Color 0 0 0 0
+    }
+    ImageWidgetClass "{7BD1A7000000340B}" {
+     Name "HeaderIcon"
+     Slot FrameWidgetSlot "{7BD1A7000000340C}" {
+      Anchor 0 0 0 0
+      PositionX 16
+      OffsetLeft 16
+      PositionY 16
+      OffsetTop 16
+      SizeX 22
+      OffsetRight -38
+      SizeY 22
+      OffsetBottom -38
+     }
+     Color 0.576 0.773 0.992 1
+    }
+    TextWidgetClass "{7BD1A7000000340D}" {
+     Name "Title"
+     Slot FrameWidgetSlot "{7BD1A7000000340E}" {
+      Anchor 0 0 1 0
+      PositionX 46
+      OffsetLeft 46
+      PositionY 12
+      OffsetTop 12
+      SizeX -62
+      OffsetRight 16
+      SizeY 30
+      OffsetBottom -42
+     }
+     Clipping True
+     Color 0.945 0.961 0.976 1
+     Text "KIT INSPECTOR"
+     FontProperties FontProperties "{7BD1A7000000340F}" {
+      Font "{CD2634D279AB011A}UI/Fonts/Roboto/Roboto_Bold.fnt"
+     }
+     "Font Size" 20
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+    HorizontalLayoutWidgetClass "{7BD1A70000003410}" {
+     Name "SlotRow"
+     Slot FrameWidgetSlot "{7BD1A70000003411}" {
+      Anchor 0 0 1 0
+      PositionX 48
+      OffsetLeft 48
+      PositionY 48
+      OffsetTop 48
+      SizeX -64
+      OffsetRight 16
+      SizeY 24
+      OffsetBottom -72
+     }
+     {
+      TextWidgetClass "{7BD1A70000003412}" {
+       Name "SlotTitle"
+       Slot LayoutSlot "{7BD1A70000003413}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+       }
+       Clipping True
+       Color 0.796 0.835 0.882 1
+       Text "8: RIFLEMAN (AT)"
+       FontProperties FontProperties "{7BD1A70000003414}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 14
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      HorizontalLayoutWidgetClass "{7BD1A70000003415}" {
+       Name "SlotChipsDock"
+       Slot LayoutSlot "{7BD1A70000003416}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 8 0 0 0
+       }
+      }
+     }
+    }
+   }
+  }
+  ImageWidgetClass "{7BD1A70000003417}" {
+   Name "HeaderRule"
+   Slot FrameWidgetSlot "{7BD1A70000003418}" {
+    Anchor 0 0 1 0
+    PositionX 1
+    OffsetLeft 1
+    PositionY 85
+    OffsetTop 85
+    SizeX -2
+    OffsetRight 1
+    SizeY 1
+    OffsetBottom -86
+   }
+   Color 1 1 1 0.08
+  }
+  FrameWidgetClass "{7BD1A70000003419}" {
+   Name "BodyFrame"
+   Slot FrameWidgetSlot "{7BD1A7000000341A}" {
+    Anchor 0 0 1 1
+    PositionX 15
+    OffsetLeft 15
+    PositionY 100
+    OffsetTop 100
+    SizeX -30
+    OffsetRight 15
+    SizeY -114
+    OffsetBottom 14
+   }
+   Clipping True
+   {
+    ScrollLayoutWidgetClass "{7BD1A7000000341B}" {
+     Name "Scroll"
+     Slot FrameWidgetSlot "{7BD1A7000000341C}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 24
+      OffsetRight -24
+      SizeY 0
+      OffsetBottom 0
+     }
+     {
+      VerticalLayoutWidgetClass "{7BD1A7000000341D}" {
+       Name "CardsContent"
+       Slot AlignableSlot "{7BD1A7000000341E}" {
+        HorizontalAlign 3
+        VerticalAlign 0
+        Padding 0 0 34 0
+       }
+      }
+     }
+    }
+    FrameWidgetClass "{7BD1A7000000341F}" {
+     Name "ScrollBarDock"
+     Slot FrameWidgetSlot "{7BD1A70000003420}" {
+      Anchor 1 0 1 1
+      PositionX -4
+      OffsetLeft -4
+      PositionY 0
+      OffsetTop 0
+      SizeX 4
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+    }
+    TextWidgetClass "{7BD1A70000003421}" {
+     Name "EmptyState"
+     Slot FrameWidgetSlot "{7BD1A70000003422}" {
+      Anchor 0 0 1 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY 24
+      OffsetTop 24
+      SizeX 0
+      OffsetRight 0
+      SizeY 24
+      OffsetBottom -48
+     }
+     Clipping True
+     Color 0.58 0.639 0.722 1
+     Text "Pick a slot to inspect its kit."
+     FontProperties FontProperties "{7BD1A70000003423}" {
+      Font "{3E7733BAC8C831F6}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt"
+     }
+     "Font Size" 14
+     "Horizontal Alignment" Center
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+   }
+  }
+ }
+}

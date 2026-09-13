@@ -1,0 +1,29 @@
+HorizontalLayoutWidgetClass "{7BD1A70000002400}" {
+ Name "Columns2"
+ Slot AlignableSlot "{7BD1A70000002402}" {
+  HorizontalAlign 3
+  VerticalAlign 0
+ }
+ {
+  VerticalLayoutWidgetClass "{7BD1A70000002403}" {
+   Name "ColumnA"
+   Slot LayoutSlot "{7BD1A70000002404}" {
+    HorizontalAlign 3
+    VerticalAlign 0
+    SizeMode Fill
+    FillWeight 1
+    Padding 0 0 6 0
+   }
+  }
+  VerticalLayoutWidgetClass "{7BD1A70000002405}" {
+   Name "ColumnB"
+   Slot LayoutSlot "{7BD1A70000002406}" {
+    HorizontalAlign 3
+    VerticalAlign 0
+    SizeMode Fill
+    FillWeight 1
+    Padding 6 0 0 0
+   }
+  }
+ }
+}

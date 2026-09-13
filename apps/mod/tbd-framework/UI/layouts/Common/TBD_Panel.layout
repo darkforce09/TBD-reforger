@@ -1,0 +1,162 @@
+OverlayWidgetClass "{7BD1A70000001000}" {
+ Name "PanelRoot"
+ Slot FrameWidgetSlot "{7BD1A70000001002}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ components {
+  TBD_PanelComponent "{7BD1A70000001003}" {
+  }
+ }
+ {
+  FrameWidgetClass "{7BD1A70000001004}" {
+   Name "PanelBorder"
+   Slot OverlayWidgetSlot "{7BD1A70000001005}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   Color 1 1 1 0.1
+  }
+  FrameWidgetClass "{7BD1A70000001006}" {
+   Name "PanelBG"
+   Slot OverlayWidgetSlot "{7BD1A70000001007}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+    Padding 1 1 1 1
+   }
+   Color 0.051 0.075 0.133 0.95
+  }
+  VerticalLayoutWidgetClass "{7BD1A70000001008}" {
+   Name "PanelStack"
+   Slot OverlayWidgetSlot "{7BD1A70000001009}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+    Padding 1 1 1 1
+   }
+   {
+    SizeLayoutWidgetClass "{7BD1A7000000100A}" {
+     Name "HeaderRow"
+     Slot LayoutSlot "{7BD1A7000000100B}" {
+      HorizontalAlign 3
+     }
+     AllowHeightOverride 1
+     HeightOverride 44
+     {
+      OverlayWidgetClass "{7BD1A7000000100C}" {
+       Name "HeaderOverlay"
+       Slot AlignableSlot "{7BD1A7000000100D}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Clipping True
+       {
+        FrameWidgetClass "{7BD1A7000000100E}" {
+         Name "HeaderBG"
+         Slot OverlayWidgetSlot "{7BD1A7000000100F}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+          Padding 0 0 0 -12
+         }
+         Color 1 1 1 0.03
+        }
+        HorizontalLayoutWidgetClass "{7BD1A70000001010}" {
+         Name "HeaderContent"
+         Slot OverlayWidgetSlot "{7BD1A70000001011}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+          Padding 16 0 12 0
+         }
+         {
+          ImageWidgetClass "{7BD1A70000001012}" {
+           Name "HeaderIcon"
+           Slot LayoutSlot "{7BD1A70000001013}" {
+            HorizontalAlign 0
+            VerticalAlign 1
+            Padding 0 0 8 0
+           }
+           Color 0.302 0.557 1 1
+           Size 16 16
+          }
+          TextWidgetClass "{7BD1A70000001014}" {
+           Name "HeaderTitle"
+           Slot LayoutSlot "{7BD1A70000001015}" {
+            HorizontalAlign 0
+            VerticalAlign 1
+           }
+           Clipping True
+           Color 0.973 0.98 0.988 1
+           Text "PANEL"
+           FontProperties FontProperties "{7BD1A70000001022}" {
+            Font "{CD2634D279AB011A}UI/Fonts/Roboto/Roboto_Bold.fnt"
+           }
+           "Font Size" 14
+           "Vertical Alignment" Center
+           Wrap 0
+          }
+          FrameWidgetClass "{7BD1A70000001016}" {
+           Name "HeaderSpacer"
+           Slot LayoutSlot "{7BD1A70000001017}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+            SizeMode Fill
+            FillWeight 1
+           }
+          }
+          HorizontalLayoutWidgetClass "{7BD1A70000001018}" {
+           Name "HeaderBadgeDock"
+           Slot LayoutSlot "{7BD1A70000001019}" {
+            HorizontalAlign 2
+            VerticalAlign 1
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+    SizeLayoutWidgetClass "{7BD1A7000000101A}" {
+     Name "HeaderRuleSize"
+     Slot LayoutSlot "{7BD1A7000000101B}" {
+      HorizontalAlign 3
+     }
+     AllowHeightOverride 1
+     HeightOverride 1
+     {
+      ImageWidgetClass "{7BD1A7000000101C}" {
+       Name "HeaderRule"
+       Slot AlignableSlot "{7BD1A7000000101D}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.08
+      }
+     }
+    }
+    OverlayWidgetClass "{7BD1A7000000101E}" {
+     Name "BodyDock"
+     Slot LayoutSlot "{7BD1A7000000101F}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      SizeMode Fill
+      FillWeight 1
+     }
+    }
+    OverlayWidgetClass "{7BD1A70000001020}" {
+     Name "FooterDock"
+     Slot LayoutSlot "{7BD1A70000001021}" {
+      HorizontalAlign 3
+      VerticalAlign 2
+     }
+    }
+   }
+  }
+ }
+}

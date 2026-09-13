@@ -1,0 +1,103 @@
+ButtonWidgetClass "{7BD1A70000001700}" {
+ Name "Dropdown"
+ Slot AlignableSlot "{7BD1A70000001703}" {
+  HorizontalAlign 0
+  VerticalAlign 1
+ }
+ Color 1 1 1 0
+ components {
+  TBD_DropdownComponent "{7BD1A70000001704}" {
+  }
+ }
+ {
+  SizeLayoutWidgetClass "{7BD1A70000001705}" {
+   Name "TriggerSize"
+   Slot ButtonWidgetSlot "{7BD1A70000001706}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   AllowHeightOverride 1
+   HeightOverride 34
+   {
+    OverlayWidgetClass "{7BD1A70000001707}" {
+     Name "TriggerBody"
+     Slot AlignableSlot "{7BD1A70000001708}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     {
+      FrameWidgetClass "{7BD1A70000001709}" {
+       Name "TriggerBorder"
+       Slot OverlayWidgetSlot "{7BD1A7000000170A}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.1
+      }
+      FrameWidgetClass "{7BD1A7000000170B}" {
+       Name "TriggerBG"
+       Slot OverlayWidgetSlot "{7BD1A7000000170C}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+        Padding 1 1 1 1
+       }
+       Color 0.086 0.122 0.2 0.9
+      }
+      HorizontalLayoutWidgetClass "{7BD1A7000000170D}" {
+       Name "TriggerContent"
+       Slot OverlayWidgetSlot "{7BD1A7000000170E}" {
+        HorizontalAlign 3
+        VerticalAlign 1
+        Padding 12 0 10 0
+       }
+       {
+        TextWidgetClass "{7BD1A7000000170F}" {
+         Name "TriggerLabel"
+         Slot LayoutSlot "{7BD1A70000001710}" {
+          HorizontalAlign 0
+          VerticalAlign 1
+         }
+         Clipping True
+         Color 0.867 0.886 0.969 1
+         Text "Select"
+         FontProperties FontProperties "{7BD1A70000001715}" {
+          Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+         }
+         "Font Size" 13
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+        OverlayWidgetClass "{7BD1A70000001711}" {
+         Name "TriggerBadgeDock"
+         Slot LayoutSlot "{7BD1A70000001712}" {
+          HorizontalAlign 0
+          VerticalAlign 1
+          Padding 8 0 0 0
+         }
+        }
+        TextWidgetClass "{7BD1A70000001713}" {
+         Name "Chevron"
+         Slot LayoutSlot "{7BD1A70000001714}" {
+          HorizontalAlign 0
+          VerticalAlign 1
+          Padding 8 0 0 0
+         }
+         Clipping True
+         Color 0.58 0.639 0.722 1
+         Text "v"
+         FontProperties FontProperties "{7BD1A70000001716}" {
+          Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+         }
+         "Font Size" 12
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

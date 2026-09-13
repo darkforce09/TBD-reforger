@@ -1,0 +1,117 @@
+SizeLayoutWidgetClass "{7BD1A70000003600}" {
+ Name "KitCell"
+ Slot AlignableSlot "{7BD1A70000003602}" {
+  HorizontalAlign 3
+  VerticalAlign 0
+  Padding 0 0 0 8
+ }
+ AllowHeightOverride 1
+ HeightOverride 46
+ {
+  OverlayWidgetClass "{7BD1A70000003603}" {
+   Name "CellOverlay"
+   Slot AlignableSlot "{7BD1A70000003604}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   {
+    FrameWidgetClass "{7BD1A70000003605}" {
+     Name "Border"
+     Slot OverlayWidgetSlot "{7BD1A70000003606}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     Color 0 0 0 0
+    }
+    FrameWidgetClass "{7BD1A70000003607}" {
+     Name "Background"
+     Slot OverlayWidgetSlot "{7BD1A70000003608}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      Padding 1 1 1 1
+     }
+     Color 0 0 0 0
+    }
+    FrameWidgetClass "{7BD1A70000003609}" {
+     Name "CellContent"
+     Slot OverlayWidgetSlot "{7BD1A7000000360A}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     {
+      TextWidgetClass "{7BD1A7000000360B}" {
+       Name "Label"
+       Slot FrameWidgetSlot "{7BD1A7000000360C}" {
+        Anchor 0 0 1 0
+        PositionX 10
+        OffsetLeft 10
+        PositionY 6
+        OffsetTop 6
+        SizeX -20
+        OffsetRight 10
+        SizeY 16
+        OffsetBottom -22
+       }
+       Clipping True
+       Color 0.58 0.639 0.722 1
+       Text "HELMET"
+       FontProperties FontProperties "{7BD1A7000000360D}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 10
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      TextWidgetClass "{7BD1A7000000360E}" {
+       Name "Value"
+       Slot FrameWidgetSlot "{7BD1A7000000360F}" {
+        Anchor 0 0 1 0
+        PositionX 10
+        OffsetLeft 10
+        PositionY 23
+        OffsetTop 23
+        SizeX -56
+        OffsetRight 46
+        SizeY 18
+        OffsetBottom -41
+       }
+       Clipping True
+       Color 0.886 0.91 0.941 1
+       Text "SSh-68 Steel Helmet"
+       FontProperties FontProperties "{7BD1A70000003610}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 12
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      TextWidgetClass "{7BD1A70000003611}" {
+       Name "Count"
+       Slot FrameWidgetSlot "{7BD1A70000003612}" {
+        Anchor 1 0 1 0
+        PositionX -46
+        OffsetLeft -46
+        PositionY 23
+        OffsetTop 23
+        SizeX 36
+        OffsetRight 10
+        SizeY 18
+        OffsetBottom -41
+       }
+       Clipping True
+       Color 0.984 0.749 0.141 1
+       Text "x4"
+       FontProperties FontProperties "{7BD1A70000003613}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 11
+       "Horizontal Alignment" Right
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+     }
+    }
+   }
+  }
+ }
+}

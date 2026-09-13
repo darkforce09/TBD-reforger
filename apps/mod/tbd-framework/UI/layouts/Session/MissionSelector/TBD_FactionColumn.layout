@@ -1,0 +1,123 @@
+VerticalLayoutWidgetClass "{7BD1A70000002100}" {
+ Name "FactionColumn"
+ Slot AlignableSlot "{7BD1A70000002102}" {
+  HorizontalAlign 3
+  VerticalAlign 0
+ }
+ {
+  SizeLayoutWidgetClass "{7BD1A70000002103}" {
+   Name "ColumnHeader"
+   Slot LayoutSlot "{7BD1A70000002104}" {
+    HorizontalAlign 3
+   }
+   AllowHeightOverride 1
+   HeightOverride 42
+   {
+    HorizontalLayoutWidgetClass "{7BD1A70000002105}" {
+     Name "HeaderContent"
+     Slot AlignableSlot "{7BD1A70000002106}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      Padding 14 0 14 0
+     }
+     {
+      OverlayWidgetClass "{7BD1A70000002107}" {
+       Name "FactionChipDock"
+       Slot LayoutSlot "{7BD1A70000002108}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+       }
+      }
+      TextWidgetClass "{7BD1A70000002109}" {
+       Name "RoleText"
+       Slot LayoutSlot "{7BD1A7000000210A}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 8 0 0 0
+       }
+       Clipping True
+       Color 0.796 0.835 0.882 1
+       Text "Defending"
+       FontProperties FontProperties "{7BD1A70000002117}" {
+        Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+       }
+       "Font Size" 12
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      FrameWidgetClass "{7BD1A7000000210B}" {
+       Name "HeaderSpacer"
+       Slot LayoutSlot "{7BD1A7000000210C}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+        SizeMode Fill
+        FillWeight 1
+       }
+      }
+      TextWidgetClass "{7BD1A7000000210D}" {
+       Name "CountText"
+       Slot LayoutSlot "{7BD1A7000000210E}" {
+        HorizontalAlign 2
+        VerticalAlign 1
+       }
+       Clipping True
+       Color 1 1 1 1
+       Text "24"
+       FontProperties FontProperties "{7BD1A70000002118}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 13
+       "Horizontal Alignment" Right
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      TextWidgetClass "{7BD1A7000000210F}" {
+       Name "CountLabel"
+       Slot LayoutSlot "{7BD1A70000002110}" {
+        HorizontalAlign 2
+        VerticalAlign 1
+        Padding 4 0 0 0
+       }
+       Clipping True
+       Color 0.58 0.639 0.722 1
+       Text "SLOTS"
+       FontProperties FontProperties "{7BD1A70000002119}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 11
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+     }
+    }
+   }
+  }
+  SizeLayoutWidgetClass "{7BD1A70000002111}" {
+   Name "HeaderRuleSize"
+   Slot LayoutSlot "{7BD1A70000002112}" {
+    HorizontalAlign 3
+    Padding 14 0 14 0
+   }
+   AllowHeightOverride 1
+   HeightOverride 1
+   {
+    ImageWidgetClass "{7BD1A70000002113}" {
+     Name "HeaderRule"
+     Slot AlignableSlot "{7BD1A70000002114}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     Color 1 1 1 0.1
+    }
+   }
+  }
+  VerticalLayoutWidgetClass "{7BD1A70000002115}" {
+   Name "Rows"
+   Slot LayoutSlot "{7BD1A70000002116}" {
+    HorizontalAlign 3
+    VerticalAlign 0
+    Padding 12 10 12 6
+   }
+  }
+ }
+}

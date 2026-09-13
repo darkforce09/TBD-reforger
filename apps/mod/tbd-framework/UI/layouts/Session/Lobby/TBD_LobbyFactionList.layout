@@ -1,0 +1,57 @@
+FrameWidgetClass "{7BD1A70000002F00}" {
+ Name "FactionList"
+ Slot FrameWidgetSlot "{7BD1A70000002F02}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ {
+  VerticalLayoutWidgetClass "{7BD1A70000002F03}" {
+   Name "Stack"
+   Slot FrameWidgetSlot "{7BD1A70000002F04}" {
+    Anchor 0 0 1 1
+    PositionX 12
+    OffsetLeft 12
+    PositionY 12
+    OffsetTop 12
+    SizeX -24
+    OffsetRight 12
+    SizeY -24
+    OffsetBottom 12
+   }
+   {
+    VerticalLayoutWidgetClass "{7BD1A70000002F05}" {
+     Name "Content"
+     Slot LayoutSlot "{7BD1A70000002F06}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+     }
+    }
+    VerticalLayoutWidgetClass "{7BD1A70000002F07}" {
+     Name "SpectatorDock"
+     Slot LayoutSlot "{7BD1A70000002F08}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+      Padding 0 12 0 0
+     }
+    }
+    FrameWidgetClass "{7BD1A70000002F09}" {
+     Name "VoiceDock"
+     Slot LayoutSlot "{7BD1A70000002F0A}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      SizeMode Fill
+      FillWeight 1
+      Padding 0 12 0 0
+     }
+    }
+   }
+  }
+ }
+}

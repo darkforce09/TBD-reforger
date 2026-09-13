@@ -1,6 +1,12 @@
 //! Lobby feature module - CLIENT stage watcher that raises/drops the lobby screen. Split out of TBD_LobbyController.c (UI reorg 2026-09-12); logic unchanged.
 //!
-//! CLIENT - watches the replicated game stage and raises/drops the lobby.
+//! CLIENT - watches the replicated game stage and raises/drops the pre-game screens.
+//!
+//! -- 2026-09-12: the first screen is the MISSION SELECTOR, not the lobby -------------------
+//! On the transition into LOBBY this watcher raises `TBD_UIMissionSelector`; the lobby is reached
+//! from its top bar (`TBD_DockScreen.OnTabSelected` -> `TBD_MenuStack.Replace(TBD_UILobby)`).
+//! The soft-modal re-raise below treats ANY pre-game screen (selector, lobby, briefing) as
+//! "the picker is up" - see `IsPreGameScreenOpen()` - so switching tabs never fights the poll.
 //!
 //! -- Why a poll, and why it is hosted on a game-mode component ------------------------------
 //! `TBD_FrameworkManager.m_Stage` is an `[RplProp(onRplName: "OnStageReplicated")]`, so the VALUE
@@ -205,6 +211,9 @@ class TBD_LobbyStage
 		// matters precisely because the Workbench pass that registers it may land between rounds.
 		s_bPresetUnavailable = false;
 
+		if (TBD_MenuStack.IsOpen(ChimeraMenuPreset.TBD_UIMissionSelector))
+			TBD_MenuStack.Close(ChimeraMenuPreset.TBD_UIMissionSelector);
+
 		if (TBD_MenuStack.IsOpen(ChimeraMenuPreset.TBD_UILobby))
 			TBD_MenuStack.Close(ChimeraMenuPreset.TBD_UILobby);
 
@@ -266,7 +275,21 @@ class TBD_LobbyStage
 		if (TBD_LobbyClient.ShouldStandDown() || SCR_PlayerController.GetLocalControlledEntity())
 			return;
 
+		// A player who moved Selector -> Lobby -> Briefing still has a pre-game screen up; only an
+		// empty stack (Esc) brings the first screen back.
+		if (IsPreGameScreenOpen())
+			return;
+
 		Raise();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! True while any of the three pre-game screens is on the TBD stack.
+	static bool IsPreGameScreenOpen()
+	{
+		return TBD_MenuStack.IsOpen(ChimeraMenuPreset.TBD_UIMissionSelector)
+			|| TBD_MenuStack.IsOpen(ChimeraMenuPreset.TBD_UILobby)
+			|| TBD_MenuStack.IsOpen(ChimeraMenuPreset.TBD_UIBriefing);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -310,20 +333,21 @@ class TBD_LobbyStage
 			return;
 		}
 
-		if (TBD_MenuStack.IsOpen(ChimeraMenuPreset.TBD_UILobby))
+		if (IsPreGameScreenOpen())
 		{
-			LogOutcome(RAISE_ALREADY_OPEN, "raise skipped - TBD_UILobby is already on the stack.");
+			LogOutcome(RAISE_ALREADY_OPEN, "raise skipped - a pre-game screen is already on the stack.");
 			return;
 		}
 
-		if (!TBD_MenuStack.Open(ChimeraMenuPreset.TBD_UILobby))
+		// The first screen of a round is the Mission Selector (2026-09-12). The lobby is one tab away.
+		if (!TBD_MenuStack.Open(ChimeraMenuPreset.TBD_UIMissionSelector))
 		{
 			s_bPresetUnavailable = true;
 			LogOutcome(RAISE_OPEN_FAILED, "raise FAILED - TBD_MenuStack.Open returned null. Latched off for this round; see the [TBD][ui] error above for the preset id.");
 			return;
 		}
 
-		LogOutcome(RAISE_OPENED, "picker OPEN - TBD_UILobby raised.");
+		LogOutcome(RAISE_OPENED, "picker OPEN - TBD_UIMissionSelector raised (Lobby is the next tab).");
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -385,6 +409,9 @@ class TBD_LobbyStage
 
 		// Any other phase: slotting is over. Closing through the stack hands input and focus back
 		// correctly (TBD_MenuStack invariants 3 and 4).
+		if (TBD_MenuStack.IsOpen(ChimeraMenuPreset.TBD_UIMissionSelector))
+			TBD_MenuStack.Close(ChimeraMenuPreset.TBD_UIMissionSelector);
+
 		if (TBD_MenuStack.IsOpen(ChimeraMenuPreset.TBD_UILobby))
 			TBD_MenuStack.Close(ChimeraMenuPreset.TBD_UILobby);
 	}

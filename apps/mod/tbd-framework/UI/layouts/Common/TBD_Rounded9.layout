@@ -1,0 +1,198 @@
+FrameWidgetClass "{7BD1A70000002D00}" {
+ Name "Rounded9"
+ Slot FrameWidgetSlot "{7BD1A70000002D02}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ Color 1 1 1 1
+ {
+  ImageWidgetClass "{7BD1A70000002D04}" {
+   Name "Centre"
+   Slot FrameWidgetSlot "{7BD1A70000002D05}" {
+    Anchor 0 0 1 1
+    PositionX 9
+    OffsetLeft 9
+    PositionY 0
+    OffsetTop 0
+    SizeX -18
+    OffsetRight 9
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 1 1 1 1
+  }
+  ImageWidgetClass "{7BD1A70000002D06}" {
+   Name "Left"
+   Slot FrameWidgetSlot "{7BD1A70000002D07}" {
+    Anchor 0 0 0 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 9
+    OffsetTop 9
+    SizeX 9
+    OffsetRight -9
+    SizeY -18
+    OffsetBottom 9
+   }
+   Color 1 1 1 1
+  }
+  ImageWidgetClass "{7BD1A70000002D08}" {
+   Name "Right"
+   Slot FrameWidgetSlot "{7BD1A70000002D09}" {
+    Anchor 1 0 1 1
+    PositionX -9
+    OffsetLeft -9
+    PositionY 9
+    OffsetTop 9
+    SizeX 9
+    OffsetRight 0
+    SizeY -18
+    OffsetBottom 9
+   }
+   Color 1 1 1 1
+  }
+  FrameWidgetClass "{7BD1A70000002D0A}" {
+   Name "CornerTL"
+   Slot FrameWidgetSlot "{7BD1A70000002D0B}" {
+    Anchor 0 0 0 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 9
+    OffsetRight -9
+    SizeY 9
+    OffsetBottom -9
+   }
+   Clipping True
+   Color 1 1 1 1
+   {
+    ImageWidgetClass "{7BD1A70000002D0C}" {
+     Name "DiscTL"
+     Slot FrameWidgetSlot "{7BD1A70000002D0D}" {
+      Anchor 0 0 0 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 18
+      OffsetRight -18
+      SizeY 18
+      OffsetBottom -18
+     }
+     Color 1 1 1 1
+     Texture "{1F2DC726318EC5AF}UI/Textures/TBD/TBD_Disc_UI.edds"
+    }
+   }
+  }
+  FrameWidgetClass "{7BD1A70000002D0E}" {
+   Name "CornerTR"
+   Slot FrameWidgetSlot "{7BD1A70000002D0F}" {
+    Anchor 1 0 1 0
+    PositionX -9
+    OffsetLeft -9
+    PositionY 0
+    OffsetTop 0
+    SizeX 9
+    OffsetRight 0
+    SizeY 9
+    OffsetBottom -9
+   }
+   Clipping True
+   Color 1 1 1 1
+   {
+    ImageWidgetClass "{7BD1A70000002D10}" {
+     Name "DiscTR"
+     Slot FrameWidgetSlot "{7BD1A70000002D11}" {
+      Anchor 0 0 0 0
+      PositionX -9
+      OffsetLeft -9
+      PositionY 0
+      OffsetTop 0
+      SizeX 18
+      OffsetRight -9
+      SizeY 18
+      OffsetBottom -18
+     }
+     Color 1 1 1 1
+     Texture "{1F2DC726318EC5AF}UI/Textures/TBD/TBD_Disc_UI.edds"
+    }
+   }
+  }
+  FrameWidgetClass "{7BD1A70000002D12}" {
+   Name "CornerBL"
+   Slot FrameWidgetSlot "{7BD1A70000002D13}" {
+    Anchor 0 1 0 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY -9
+    OffsetTop -9
+    SizeX 9
+    OffsetRight -9
+    SizeY 9
+    OffsetBottom 0
+   }
+   Clipping True
+   Color 1 1 1 1
+   {
+    ImageWidgetClass "{7BD1A70000002D14}" {
+     Name "DiscBL"
+     Slot FrameWidgetSlot "{7BD1A70000002D15}" {
+      Anchor 0 0 0 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY -9
+      OffsetTop -9
+      SizeX 18
+      OffsetRight -18
+      SizeY 18
+      OffsetBottom -9
+     }
+     Color 1 1 1 1
+     Texture "{1F2DC726318EC5AF}UI/Textures/TBD/TBD_Disc_UI.edds"
+    }
+   }
+  }
+  FrameWidgetClass "{7BD1A70000002D16}" {
+   Name "CornerBR"
+   Slot FrameWidgetSlot "{7BD1A70000002D17}" {
+    Anchor 1 1 1 1
+    PositionX -9
+    OffsetLeft -9
+    PositionY -9
+    OffsetTop -9
+    SizeX 9
+    OffsetRight 0
+    SizeY 9
+    OffsetBottom 0
+   }
+   Clipping True
+   Color 1 1 1 1
+   {
+    ImageWidgetClass "{7BD1A70000002D18}" {
+     Name "DiscBR"
+     Slot FrameWidgetSlot "{7BD1A70000002D19}" {
+      Anchor 0 0 0 0
+      PositionX -9
+      OffsetLeft -9
+      PositionY -9
+      OffsetTop -9
+      SizeX 18
+      OffsetRight -9
+      SizeY 18
+      OffsetBottom -9
+     }
+     Color 1 1 1 1
+     Texture "{1F2DC726318EC5AF}UI/Textures/TBD/TBD_Disc_UI.edds"
+    }
+   }
+  }
+ }
+}

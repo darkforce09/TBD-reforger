@@ -1,0 +1,143 @@
+FrameWidgetClass "{7BD1A70000001E00}" {
+ Name "ScenarioBrowser"
+ Slot FrameWidgetSlot "{7BD1A70000001E02}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ {
+  HorizontalLayoutWidgetClass "{7BD1A70000001E03}" {
+   Name "ToolRow"
+   Slot FrameWidgetSlot "{7BD1A70000001E04}" {
+    Anchor 0 0 1 0
+    PositionX 12
+    OffsetLeft 12
+    PositionY 10
+    OffsetTop 10
+    SizeX -24
+    OffsetRight 12
+    SizeY 34
+    OffsetBottom -44
+   }
+   {
+    FrameWidgetClass "{7BD1A70000001E05}" {
+     Name "SearchDock"
+     Slot LayoutSlot "{7BD1A70000001E06}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      SizeMode Fill
+      FillWeight 1
+     }
+    }
+    OverlayWidgetClass "{7BD1A70000001E07}" {
+     Name "ModesDock"
+     Slot LayoutSlot "{7BD1A70000001E08}" {
+      HorizontalAlign 2
+      VerticalAlign 1
+      Padding 8 0 0 0
+     }
+    }
+   }
+  }
+  ImageWidgetClass "{7BD1A70000001E09}" {
+   Name "ToolRule"
+   Slot FrameWidgetSlot "{7BD1A70000001E0A}" {
+    Anchor 0 0 1 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 54
+    OffsetTop 54
+    SizeX 0
+    OffsetRight 0
+    SizeY 1
+    OffsetBottom -55
+   }
+   Color 1 1 1 0.06
+  }
+  FrameWidgetClass "{7BD1A70000001E0B}" {
+   Name "ListFrame"
+   Slot FrameWidgetSlot "{7BD1A70000001E0C}" {
+    Anchor 0 0 1 1
+    PositionX 12
+    OffsetLeft 12
+    PositionY 64
+    OffsetTop 64
+    SizeX -24
+    OffsetRight 12
+    SizeY -76
+    OffsetBottom 12
+   }
+   Clipping True
+   {
+    ScrollLayoutWidgetClass "{7BD1A70000001E0D}" {
+     Name "Scroll"
+     Slot FrameWidgetSlot "{7BD1A70000001E0E}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 24
+      OffsetRight -24
+      SizeY 0
+      OffsetBottom 0
+     }
+     {
+      VerticalLayoutWidgetClass "{7BD1A70000001E0F}" {
+       Name "Content"
+       Slot AlignableSlot "{7BD1A70000001E10}" {
+        HorizontalAlign 3
+        VerticalAlign 0
+        Padding 0 0 34 0
+       }
+      }
+     }
+    }
+    FrameWidgetClass "{7BD1A70000001E14}" {
+     Name "ScrollBarDock"
+     Slot FrameWidgetSlot "{7BD1A70000001E15}" {
+      Anchor 1 0 1 1
+      PositionX -4
+      OffsetLeft -4
+      PositionY 0
+      OffsetTop 0
+      SizeX 4
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+    }
+    TextWidgetClass "{7BD1A70000001E11}" {
+     Name "EmptyState"
+     Slot FrameWidgetSlot "{7BD1A70000001E12}" {
+      Anchor 0 0 1 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY 16
+      OffsetTop 16
+      SizeX 0
+      OffsetRight 0
+      SizeY 24
+      OffsetBottom -40
+     }
+     Clipping True
+     Color 0.58 0.639 0.722 1
+     Text "No scenario matches."
+     FontProperties FontProperties "{7BD1A70000001E13}" {
+      Font "{3E7733BAC8C831F6}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt"
+     }
+     "Font Size" 13
+     "Horizontal Alignment" Center
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+   }
+  }
+ }
+}

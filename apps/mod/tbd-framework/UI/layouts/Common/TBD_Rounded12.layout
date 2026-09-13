@@ -1,0 +1,198 @@
+FrameWidgetClass "{7BD1A70000002600}" {
+ Name "Rounded12"
+ Slot FrameWidgetSlot "{7BD1A70000002602}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ Color 1 1 1 1
+ {
+  ImageWidgetClass "{7BD1A70000002604}" {
+   Name "Centre"
+   Slot FrameWidgetSlot "{7BD1A70000002605}" {
+    Anchor 0 0 1 1
+    PositionX 12
+    OffsetLeft 12
+    PositionY 0
+    OffsetTop 0
+    SizeX -24
+    OffsetRight 12
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 1 1 1 1
+  }
+  ImageWidgetClass "{7BD1A70000002606}" {
+   Name "Left"
+   Slot FrameWidgetSlot "{7BD1A70000002607}" {
+    Anchor 0 0 0 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 12
+    OffsetTop 12
+    SizeX 12
+    OffsetRight -12
+    SizeY -24
+    OffsetBottom 12
+   }
+   Color 1 1 1 1
+  }
+  ImageWidgetClass "{7BD1A70000002608}" {
+   Name "Right"
+   Slot FrameWidgetSlot "{7BD1A70000002609}" {
+    Anchor 1 0 1 1
+    PositionX -12
+    OffsetLeft -12
+    PositionY 12
+    OffsetTop 12
+    SizeX 12
+    OffsetRight 0
+    SizeY -24
+    OffsetBottom 12
+   }
+   Color 1 1 1 1
+  }
+  FrameWidgetClass "{7BD1A7000000260A}" {
+   Name "CornerTL"
+   Slot FrameWidgetSlot "{7BD1A7000000260B}" {
+    Anchor 0 0 0 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 12
+    OffsetRight -12
+    SizeY 12
+    OffsetBottom -12
+   }
+   Clipping True
+   Color 1 1 1 1
+   {
+    ImageWidgetClass "{7BD1A7000000260C}" {
+     Name "DiscTL"
+     Slot FrameWidgetSlot "{7BD1A7000000260D}" {
+      Anchor 0 0 0 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 24
+      OffsetRight -24
+      SizeY 24
+      OffsetBottom -24
+     }
+     Color 1 1 1 1
+     Texture "{1F2DC726318EC5AF}UI/Textures/TBD/TBD_Disc_UI.edds"
+    }
+   }
+  }
+  FrameWidgetClass "{7BD1A7000000260E}" {
+   Name "CornerTR"
+   Slot FrameWidgetSlot "{7BD1A7000000260F}" {
+    Anchor 1 0 1 0
+    PositionX -12
+    OffsetLeft -12
+    PositionY 0
+    OffsetTop 0
+    SizeX 12
+    OffsetRight 0
+    SizeY 12
+    OffsetBottom -12
+   }
+   Clipping True
+   Color 1 1 1 1
+   {
+    ImageWidgetClass "{7BD1A70000002610}" {
+     Name "DiscTR"
+     Slot FrameWidgetSlot "{7BD1A70000002611}" {
+      Anchor 0 0 0 0
+      PositionX -12
+      OffsetLeft -12
+      PositionY 0
+      OffsetTop 0
+      SizeX 24
+      OffsetRight -12
+      SizeY 24
+      OffsetBottom -24
+     }
+     Color 1 1 1 1
+     Texture "{1F2DC726318EC5AF}UI/Textures/TBD/TBD_Disc_UI.edds"
+    }
+   }
+  }
+  FrameWidgetClass "{7BD1A70000002612}" {
+   Name "CornerBL"
+   Slot FrameWidgetSlot "{7BD1A70000002613}" {
+    Anchor 0 1 0 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY -12
+    OffsetTop -12
+    SizeX 12
+    OffsetRight -12
+    SizeY 12
+    OffsetBottom 0
+   }
+   Clipping True
+   Color 1 1 1 1
+   {
+    ImageWidgetClass "{7BD1A70000002614}" {
+     Name "DiscBL"
+     Slot FrameWidgetSlot "{7BD1A70000002615}" {
+      Anchor 0 0 0 0
+      PositionX 0
+      OffsetLeft 0
+      PositionY -12
+      OffsetTop -12
+      SizeX 24
+      OffsetRight -24
+      SizeY 24
+      OffsetBottom -12
+     }
+     Color 1 1 1 1
+     Texture "{1F2DC726318EC5AF}UI/Textures/TBD/TBD_Disc_UI.edds"
+    }
+   }
+  }
+  FrameWidgetClass "{7BD1A70000002616}" {
+   Name "CornerBR"
+   Slot FrameWidgetSlot "{7BD1A70000002617}" {
+    Anchor 1 1 1 1
+    PositionX -12
+    OffsetLeft -12
+    PositionY -12
+    OffsetTop -12
+    SizeX 12
+    OffsetRight 0
+    SizeY 12
+    OffsetBottom 0
+   }
+   Clipping True
+   Color 1 1 1 1
+   {
+    ImageWidgetClass "{7BD1A70000002618}" {
+     Name "DiscBR"
+     Slot FrameWidgetSlot "{7BD1A70000002619}" {
+      Anchor 0 0 0 0
+      PositionX -12
+      OffsetLeft -12
+      PositionY -12
+      OffsetTop -12
+      SizeX 24
+      OffsetRight -12
+      SizeY 24
+      OffsetBottom -12
+     }
+     Color 1 1 1 1
+     Texture "{1F2DC726318EC5AF}UI/Textures/TBD/TBD_Disc_UI.edds"
+    }
+   }
+  }
+ }
+}

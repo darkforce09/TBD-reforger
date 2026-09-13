@@ -1,203 +1,132 @@
-OverlayWidgetClass "{7BD1A70000000C51}" {
- Name "SquadCardRoot"
- Slot LayoutSlot "{7BD1A70000000C52}" {
+OverlayWidgetClass "{7BD1A70000003200}" {
+ Name "SquadCard"
+ Slot AlignableSlot "{7BD1A70000003202}" {
   HorizontalAlign 3
+  VerticalAlign 0
   Padding 0 0 0 10
  }
+ components {
+  TBD_LobbySquadCardComponent "{7BD1A70000003203}" {
+  }
+ }
  {
-  ImageWidgetClass "{7BD1A70000000C55}" {
-   Name "CardBG"
-   Slot OverlayWidgetSlot "{7BD1A70000000C56}" {
+  FrameWidgetClass "{7BD1A70000003204}" {
+   Name "Border"
+   Slot OverlayWidgetSlot "{7BD1A70000003205}" {
     HorizontalAlign 3
     VerticalAlign 3
    }
-   Color 0.051 0.075 0.133 0.6
+   Color 0 0 0 0
   }
-  ImageWidgetClass "{7BD1A70000000C57}" {
-   Name "CardBorder"
-   Slot OverlayWidgetSlot "{7BD1A70000000C58}" {
+  FrameWidgetClass "{7BD1A70000003206}" {
+   Name "Background"
+   Slot OverlayWidgetSlot "{7BD1A70000003207}" {
     HorizontalAlign 3
     VerticalAlign 3
+    Padding 1 1 1 1
    }
-   Color 0.176 0.208 0.290 0.5
+   Color 0 0 0 0
   }
-  VerticalLayoutWidgetClass "{7BD1A70000000C59}" {
-   Name "CardContent"
-   Slot OverlayWidgetSlot "{7BD1A70000000C5A}" {
+  VerticalLayoutWidgetClass "{7BD1A70000003208}" {
+   Name "CardStack"
+   Slot OverlayWidgetSlot "{7BD1A70000003209}" {
     HorizontalAlign 3
-    VerticalAlign 0
+    VerticalAlign 3
+    Padding 1 1 1 1
    }
    {
-    SizeLayoutWidgetClass "{7BD1A70000000C5B}" {
-     Name "SquadHeaderSize"
-     Slot LayoutSlot "{7BD1A70000000C5C}" {
+    ButtonWidgetClass "{7BD1A7000000320A}" {
+     Name "HeaderButton"
+     Slot LayoutSlot "{7BD1A7000000320B}" {
       HorizontalAlign 3
+      VerticalAlign 0
      }
-     AllowHeightOverride 1
-     HeightOverride 34
+     Color 1 1 1 0
      {
-      FrameWidgetClass "{7BD1A70000000C5D}" {
-       Name "SquadHeader"
-       Slot AlignableSlot "{7BD1A70000000C5E}" {
+      SizeLayoutWidgetClass "{7BD1A7000000320C}" {
+       Name "HeaderSize"
+       Slot ButtonWidgetSlot "{7BD1A7000000320D}" {
         HorizontalAlign 3
         VerticalAlign 3
        }
+       AllowHeightOverride 1
+       HeightOverride 40
        {
-        ImageWidgetClass "{7BD1A70000000C5F}" {
-         Name "SquadHeaderBG"
-         Slot FrameWidgetSlot "{7BD1A70000000C60}" {
-          Anchor 0 0 1 1
-          PositionX 0
-          OffsetLeft 0
-          PositionY 0
-          OffsetTop 0
-          SizeX 0
-          OffsetRight 0
-          SizeY 0
-          OffsetBottom 0
-         }
-         Color 0.082 0.106 0.169 0.75
-        }
-        ImageWidgetClass "{7BD1A70000000D20}" {
-         Name "SquadHeaderRule"
-         Slot FrameWidgetSlot "{7BD1A70000000D21}" {
-          Anchor 0 1 1 1
-          PositionX 0
-          OffsetLeft 0
-          PositionY -1
-          OffsetTop -1
-          SizeX 0
-          OffsetRight 0
-          SizeY 1
-          OffsetBottom 0
-         }
-         Color 0.176 0.208 0.290 0.5
-        }
-        TextWidgetClass "{7BD1A70000000D24}" {
-         Name "SquadIcon"
-         Slot FrameWidgetSlot "{7BD1A70000000D25}" {
-          Anchor 0 0 0 1
-          PositionX 10
-          OffsetLeft 10
-          PositionY 0
-          OffsetTop 0
-          SizeX 16
-          OffsetRight -26
-          SizeY 0
-          OffsetBottom 0
+        OverlayWidgetClass "{7BD1A7000000320E}" {
+         Name "HeaderOverlay"
+         Slot AlignableSlot "{7BD1A7000000320F}" {
+          HorizontalAlign 3
+          VerticalAlign 3
          }
          Clipping True
-         Color 0.302 0.557 1 1
-         Text "*"
-         "Font Size" 14
-         "Horizontal Alignment" Center
-         "Vertical Alignment" Center
-         Wrap 0
-        }
-        TextWidgetClass "{7BD1A70000000D26}" {
-         Name "SquadTitle"
-         Slot FrameWidgetSlot "{7BD1A70000000D27}" {
-          Anchor 0 0 0 1
-          PositionX 32
-          OffsetLeft 32
-          PositionY 0
-          OffsetTop 0
-          SizeX 240
-          OffsetRight -272
-          SizeY 0
-          OffsetBottom 0
-         }
-         Clipping True
-         Color 1 1 1 1
-         Text "A1-1 Company HQ"
-         "Font Size" 12
-         "Vertical Alignment" Center
-         Wrap 0
-        }
-        TextWidgetClass "{7BD1A70000000D28}" {
-         Name "SquadVehicle"
-         Slot FrameWidgetSlot "{7BD1A70000000D29}" {
-          Anchor 0 0 0 1
-          PositionX 280
-          OffsetLeft 280
-          PositionY 0
-          OffsetTop 0
-          SizeX 200
-          OffsetRight -480
-          SizeY 0
-          OffsetBottom 0
-         }
-         Clipping True
-         Color 0.761 0.776 0.839 0.7
-         Text "- M113A3 MEV"
-         "Font Size" 11
-         "Vertical Alignment" Center
-         Wrap 0
-        }
-        FrameWidgetClass "{7BD1A70000000D2A}" {
-         Name "CategoryBadgeContainer"
-         Slot FrameWidgetSlot "{7BD1A70000000D2B}" {
-          Anchor 1 0 1 0
-          PositionX -160
-          OffsetLeft -160
-          PositionY 7
-          OffsetTop 7
-          SizeX 150
-          OffsetRight 10
-          SizeY 20
-          OffsetBottom -27
-         }
          {
-          ImageWidgetClass "{7BD1A70000000D2C}" {
-           Name "CategoryBadgeBG"
-           Slot FrameWidgetSlot "{7BD1A70000000D2D}" {
-            Anchor 0 0 1 1
-            PositionX 0
-            OffsetLeft 0
-            PositionY 0
-            OffsetTop 0
-            SizeX 0
-            OffsetRight 0
-            SizeY 0
-            OffsetBottom 0
+          FrameWidgetClass "{7BD1A70000003210}" {
+           Name "HeaderBG"
+           Slot OverlayWidgetSlot "{7BD1A70000003211}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+            Padding 0 0 0 -8
            }
-           Color 0.110 0.137 0.212 0.8
+           Color 0 0 0 0
           }
-          ImageWidgetClass "{7BD1A70000000D2E}" {
-           Name "CategoryBadgeBorder"
-           Slot FrameWidgetSlot "{7BD1A70000000D2F}" {
-            Anchor 0 0 1 1
-            PositionX 0
-            OffsetLeft 0
-            PositionY 0
-            OffsetTop 0
-            SizeX 0
-            OffsetRight 0
-            SizeY 0
-            OffsetBottom 0
+          HorizontalLayoutWidgetClass "{7BD1A70000003212}" {
+           Name "HeaderContent"
+           Slot OverlayWidgetSlot "{7BD1A70000003213}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+            Padding 12 0 10 0
            }
-           Color 0.176 0.208 0.290 0.4
-          }
-          TextWidgetClass "{7BD1A70000000D30}" {
-           Name "CategoryBadgeText"
-           Slot FrameWidgetSlot "{7BD1A70000000D31}" {
-            Anchor 0 0 1 1
-            PositionX 0
-            OffsetLeft 0
-            PositionY 0
-            OffsetTop 0
-            SizeX 0
-            OffsetRight 0
-            SizeY 0
-            OffsetBottom 0
+           {
+            OverlayWidgetClass "{7BD1A70000003214}" {
+             Name "CallsignChipDock"
+             Slot LayoutSlot "{7BD1A70000003215}" {
+              HorizontalAlign 0
+              VerticalAlign 1
+             }
+            }
+            OverlayWidgetClass "{7BD1A70000003216}" {
+             Name "VehicleChipDock"
+             Slot LayoutSlot "{7BD1A70000003217}" {
+              HorizontalAlign 0
+              VerticalAlign 1
+              Padding 8 0 0 0
+             }
+            }
+            FrameWidgetClass "{7BD1A70000003218}" {
+             Name "Spacer"
+             Slot LayoutSlot "{7BD1A70000003219}" {
+              HorizontalAlign 3
+              VerticalAlign 3
+              SizeMode Fill
+              FillWeight 1
+             }
+            }
+            OverlayWidgetClass "{7BD1A7000000321A}" {
+             Name "CountChipDock"
+             Slot LayoutSlot "{7BD1A7000000321B}" {
+              HorizontalAlign 2
+              VerticalAlign 1
+             }
+            }
+            TextWidgetClass "{7BD1A7000000321C}" {
+             Name "Chevron"
+             Slot LayoutSlot "{7BD1A7000000321D}" {
+              HorizontalAlign 2
+              VerticalAlign 1
+              Padding 8 0 0 0
+             }
+             Clipping True
+             Color 0.58 0.639 0.722 1
+             Text "v"
+             FontProperties FontProperties "{7BD1A7000000321E}" {
+              Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+             }
+             "Font Size" 12
+             "Horizontal Alignment" Center
+             "Vertical Alignment" Center
+             Wrap 0
+            }
            }
-           Clipping True
-           Color 0.761 0.776 0.839 0.8
-           Text "COMMAND & MEDICAL"
-           "Font Size" 10
-           "Horizontal Alignment" Center
-           "Vertical Alignment" Center
-           Wrap 0
           }
          }
         }
@@ -205,10 +134,30 @@ OverlayWidgetClass "{7BD1A70000000C51}" {
       }
      }
     }
-    VerticalLayoutWidgetClass "{7BD1A70000000D32}" {
-     Name "RolesContainer"
-     Slot LayoutSlot "{7BD1A70000000D33}" {
+    SizeLayoutWidgetClass "{7BD1A7000000321F}" {
+     Name "HeaderRuleSize"
+     Slot LayoutSlot "{7BD1A70000003220}" {
       HorizontalAlign 3
+      VerticalAlign 0
+     }
+     AllowHeightOverride 1
+     HeightOverride 1
+     {
+      ImageWidgetClass "{7BD1A70000003221}" {
+       Name "HeaderRule"
+       Slot AlignableSlot "{7BD1A70000003222}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.08
+      }
+     }
+    }
+    VerticalLayoutWidgetClass "{7BD1A70000003223}" {
+     Name "SlotsContent"
+     Slot LayoutSlot "{7BD1A70000003224}" {
+      HorizontalAlign 3
+      VerticalAlign 0
      }
     }
    }
