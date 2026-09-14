@@ -42,11 +42,6 @@
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/pages/admin/content.rs
-  reason: T-159 Leptos port god-files; split follow-up
-  expires: 2026-11-13
-
-- rule: SIZE-3
   path: apps/website/frontend/src/editor/panels/context_menu.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
@@ -102,11 +97,6 @@
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/pages/admin/event_manager.rs
-  reason: T-159 Leptos port god-files; split follow-up
-  expires: 2026-11-13
-
-- rule: SIZE-3
   path: apps/website/frontend/src/editor/tools/los_tool.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
@@ -137,22 +127,12 @@
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/pages/admin/personnel.rs
-  reason: T-159 Leptos port god-files; split follow-up
-  expires: 2026-11-13
-
-- rule: SIZE-3
   path: apps/website/frontend/src/editor/tools/place_helpers.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 
 - rule: SIZE-3
   path: apps/website/frontend/src/editor/tools/ruler_tool.rs
-  reason: T-159 Leptos port god-files; split follow-up
-  expires: 2026-11-13
-
-- rule: SIZE-3
-  path: apps/website/frontend/src/pages/admin/server_control.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13
 

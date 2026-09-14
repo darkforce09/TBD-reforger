@@ -8,6 +8,7 @@
 //! `core` may import from here.
 
 pub mod account;
+pub mod administration;
 pub mod command_center;
 pub mod doctrine_and_info;
 pub mod field_tools;
