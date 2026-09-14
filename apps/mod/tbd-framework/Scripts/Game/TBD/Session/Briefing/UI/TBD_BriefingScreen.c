@@ -46,8 +46,16 @@ class TBD_BriefingScreen : TBD_DockScreen
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! MapContext only while the cursor is off our chrome. TBD_MenuBase arms this every tick BEFORE
+	//! OnScreenUpdate, so a gate there never released it (the preset's ActionContext went at the
+	//! rebuild and this override replaced it — unconditionally, 2026-09-14). Empty = arm nothing =
+	//! the wheel scrolls the panel under the cursor instead of reaching SCR_MapCursorModule's
+	//! OnInputZoomWheelUp/Down listeners.
 	override protected string GetInputContext()
 	{
+		if (CursorOverChrome())
+			return string.Empty;
+
 		return "MapContext";
 	}
 
@@ -124,22 +132,6 @@ class TBD_BriefingScreen : TBD_DockScreen
 
 		Print("[TBD][briefing] Briefing closed.");
 		super.OnScreenClose();
-	}
-
-	//------------------------------------------------------------------------------------------------
-	override protected void OnScreenUpdate(float tDelta)
-	{
-		super.OnScreenUpdate(tDelta);
-
-		// Keep MapContext armed for map interaction — except while the cursor is over our chrome, so
-		// the wheel scrolls a panel instead of zooming the map (MEASURED run 3). The preset no longer
-		// declares the context, so this is the only place it is armed.
-		if (m_MapEntity && m_MapEntity.IsOpen() && !CursorOverChrome())
-		{
-			InputManager inputMgr = GetGame().GetInputManager();
-			if (inputMgr)
-				inputMgr.ActivateContext("MapContext");
-		}
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -236,32 +228,59 @@ class TBD_BriefingScreen : TBD_DockScreen
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! True when the pointer is over a visible dock (top bar, navs, page, bottom bar).
+	//! True when the pointer is over a visible piece of our chrome. Probes the panels, not the docks:
+	//! LeftDock and CenterDock run the full height between the bars while the navs and the markers
+	//! panel are short, so a dock rect would also swallow the map under them. Rule: a dock's visible
+	//! children are chrome; a panel whose root outruns its glass names the glass `PanelBorder` (the
+	//! navs stretch it over a shrink-wrapped root, the markers panel's is the 132 px box). RightDock
+	//! probes `PageHost`, the page column — ORBAT mounts two panels side by side, so one border
+	//! would under-cover.
 	protected bool CursorOverChrome()
 	{
 		int mouseX, mouseY;
 		WidgetManager.GetMousePos(mouseX, mouseY);
-		array<string> docks = {"TopDock", "LeftDock", "CenterDock", "RightDock", "WideDock", "BottomDock", "OverlayDock"};
+
+		array<string> docks = {"TopDock", "LeftDock", "CenterDock", "WideDock", "BottomDock", "OverlayDock"};
 		foreach (string name : docks)
 		{
 			Widget dock = GetDock(name);
 			if (!dock || !dock.IsVisible())
 				continue;
 
-			Widget probe = dock;
-			if (name == "RightDock")
-				probe = PageHost();
-			if (!probe)
-				continue;
+			Widget child = dock.GetChildren();
+			while (child)
+			{
+				if (child.IsVisible())
+				{
+					Widget probe = child.FindAnyWidget("PanelBorder");
+					if (!probe)
+						probe = child;
 
-			float x, y, w, h;
-			probe.GetScreenPos(x, y);
-			probe.GetScreenSize(w, h);
-			if (mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h)
-				return true;
+					if (Contains(probe, mouseX, mouseY))
+						return true;
+				}
+
+				child = child.GetSibling();
+			}
 		}
 
+		Widget rightDock = GetDock("RightDock");
+		if (rightDock && rightDock.IsVisible() && Contains(Find("PageHost"), mouseX, mouseY))
+			return true;
+
 		return false;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static bool Contains(Widget w, int mouseX, int mouseY)
+	{
+		if (!w)
+			return false;
+
+		float x, y, width, height;
+		w.GetScreenPos(x, y);
+		w.GetScreenSize(width, height);
+		return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
 	}
 
 	//------------------------------------------------------------------------------------------------
