@@ -3,5 +3,3 @@
 
 pub mod deployments;
 pub mod leaderboards;
-pub mod mortar;
-pub mod settings;

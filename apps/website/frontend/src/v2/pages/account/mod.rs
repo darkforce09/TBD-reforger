@@ -10,3 +10,4 @@
 
 pub mod auth_callback;
 pub mod login;
+pub mod settings;

@@ -1,23 +1,32 @@
-//! Settings (/settings) — ported from pages/Settings.tsx. `<AuthGate>` → `/me` + `/me/link/status`
-//! Resources → `QueryState` → Profile / Arma Identity / Service Stats cards. This is a POPULATED
-//! render: the dev goldens carry a linked Arma identity + a real profile, so every field (username,
-//! handle, role badge, linked status string, deployment + attendance stats) is byte-exact-verified.
+//! The account settings route: the viewer's profile, their Arma identity, and their service
+//! record.
 //!
-//! T-159.25: the mutation pair is live — **Generate Link Code** (`POST /me/link` →
-//! `LinkCodeResponse`, shows the mono "Link code: …" panel, toast, link-status refetch) and
-//! **Unlink Arma ID** (`DELETE /me/link`, clears the panel, toast, me + link refetch) — the
-//! useGenerateLinkCode / useUnlinkArma port, invalidations mapped to `LocalResource::refetch`.
+//! **Role:** fetches the signed-in user and the state of their game-account link, renders the
+//! three cards, and owns the two mutations that link and unlink that account.
+//! **Position:** the `/settings` route, behind the authentication gate, inside the navigation
+//! frame.
+//! **Signals & state:** two `LocalResource`s — the user and the link status — plus the
+//! `pending_code`, `gen_busy` and `unlink_busy` signals carried in [`ArmaLinkCtx`]; the
+//! authentication store and the toast queue come from context.
+//! **Invariants:** the cards render only once *both* fetches have settled, so the link status is
+//! never shown as unlinked merely because it has not arrived. Both mutations are `wasm32`-only;
+//! natively the resources resolve to `None` and the page renders its failure line.
 #![allow(dead_code)]
 use crate::v2::core::api::dto::{LinkStatus, MeResponse};
 use crate::v2::core::ui::{AuthGate, MaterialIcon, PageHeader};
 use leptos::prelude::*;
 
-/// Badge (variant="primary") class from ui/badge.tsx. React's `cn` (tailwind-merge) DROPS the base
-/// `text-label-sm`: twMerge reads it + the variant's `text-primary` as colliding `text-*` utilities
-/// and keeps the last, so the chip inherits the default 16px/400 — matched here by omitting it (same
-/// twMerge quirk as the nav links; a general Rust tw_merge is still deferred).
+#[cfg(test)]
+#[path = "tests/settings.rs"]
+mod tests;
+
+/// The role chip's class. The base label size is deliberately absent: it collides with the
+/// variant's own `text-*` utility, and the merge the design system performs keeps the later of the
+/// two, so the chip takes the default size. Spelling the collision out here is what keeps the
+/// rendered chip identical to the primitive's.
 const BADGE_PRIMARY: &str = "inline-flex items-center gap-1 rounded border px-2 py-0.5 uppercase whitespace-nowrap border-primary/30 bg-primary/10 text-primary";
 
+/// The settings page, behind the authentication gate.
 #[component]
 pub fn SettingsPage() -> impl IntoView {
     view! {
@@ -27,8 +36,11 @@ pub fn SettingsPage() -> impl IntoView {
     }
 }
 
-/// The mutation-side handles (all `Copy`) threaded into the settled render. Lives above the
-/// Suspense re-render so `pending_code` survives a refetch — the React `useState` parity.
+/// The mutation handles threaded into the settled render.
+///
+/// All three are `Copy` signals created *above* the suspense boundary, so a freshly generated code
+/// survives the re-render a refetch causes; created inside, it would be discarded the moment the
+/// link status it triggered came back.
 #[derive(Clone, Copy)]
 struct ArmaLinkCtx {
     pending_code: RwSignal<Option<String>>,
@@ -36,6 +48,8 @@ struct ArmaLinkCtx {
     unlink_busy: RwSignal<bool>,
 }
 
+/// Fetches the viewer and their link status, owns the two mutations, and renders the cards, a
+/// loading line or a failure line.
 #[component]
 fn SettingsInner() -> impl IntoView {
     let store = expect_context::<crate::v2::core::auth::AuthStore>();
@@ -71,8 +85,8 @@ fn SettingsInner() -> impl IntoView {
         unlink_busy: RwSignal::new(false),
     };
 
-    // Generate Link Code — useGenerateLinkCode port (POST /me/link → code panel + toast + link
-    // refetch). The handler is a plain fn so both buttons stay in the settled `body()` render.
+    // Requesting a code shows it, toasts, and refetches the link status. The handler is built
+    // here and passed down so both buttons stay inside the settled render.
     let on_generate = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
@@ -98,7 +112,7 @@ fn SettingsInner() -> impl IntoView {
             });
         }
     };
-    // Unlink — useUnlinkArma port (DELETE /me/link → clear panel + toast + me/link refetch).
+    // Unlinking clears the code panel and refetches both the user and the link status.
     let on_unlink = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
@@ -122,8 +136,8 @@ fn SettingsInner() -> impl IntoView {
         }
     };
 
-    // Gate on BOTH resources so the settled DOM (linked status resolved) is what renders — matches
-    // React's final render after useMe + useLinkStatus both land.
+    // Gate on BOTH resources, so what renders is the settled page with the link status resolved
+    // rather than a profile above an "Unlinked" line that has not been fetched yet.
     view! {
         <Suspense fallback=move || {
             view! { <p class="text-on-surface-variant">"Loading…"</p> }
@@ -141,6 +155,8 @@ fn SettingsInner() -> impl IntoView {
     }
 }
 
+/// The three cards, rendered from settled data: the profile, the Arma identity with its two
+/// actions, and the service statistics.
 fn body(
     me: MeResponse,
     link: Option<LinkStatus>,
@@ -207,8 +223,8 @@ fn body(
                     "Status: "
                     <span class=status_class>{link_label}</span>
                 </p>
-                // Settings.tsx panel ladder: a freshly generated code (mono) beats the
-                // server-side pending_code notice; neither shows by default (golden parity).
+                // A code generated in this session outranks the server's "one is already
+                // pending" notice; with neither, no panel shows at all.
                 {move || match ctx.pending_code.get() {
                     Some(code) => {
                         view! {
@@ -279,35 +295,5 @@ fn body(
                 </div>
             </div>
         </div>
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::v2::core::ui::DEFAULT_AVATAR;
-
-    include!("../../../../shared/is_http_url_cases.rs");
-
-    #[test]
-    fn profile_avatar_src_only_keeps_http_urls() {
-        let mut wrong = Vec::new();
-        for (input, ok) in IS_HTTP_URL_CASES {
-            let got = crate::v2::core::utils::safe_avatar_url(input);
-            if *ok {
-                if got != *input {
-                    wrong.push(format!("  dropped a legitimate avatar {input:?}"));
-                }
-            } else if got != DEFAULT_AVATAR {
-                wrong.push(format!("  kept a non-http avatar {input:?} (got {got:?})"));
-            }
-        }
-        assert!(
-            wrong.is_empty(),
-            "settings avatar sink wrong on {} of {} cases:\n{}",
-            wrong.len(),
-            IS_HTTP_URL_CASES.len(),
-            wrong.join("\n")
-        );
-        assert_eq!(crate::v2::core::utils::safe_avatar_url(""), DEFAULT_AVATAR);
     }
 }
