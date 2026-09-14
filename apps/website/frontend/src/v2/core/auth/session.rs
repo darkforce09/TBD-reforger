@@ -12,7 +12,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::shell::nav_config::Role;
+use crate::v2::core::auth::Role;
 
 /// The signed-in account, as the backend describes it.
 ///

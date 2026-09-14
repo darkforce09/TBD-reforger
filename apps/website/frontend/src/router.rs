@@ -7,7 +7,7 @@
 //! [`auth_denial_redirect`]); the SPA still serves 200 for every path — the guard redirects after
 //! mount, it does not change the server's catch-all.
 
-use crate::shell::nav_config::{has_min_role_authed, Role};
+use crate::v2::core::auth::{has_min_role_authed, Role};
 
 /// One route. `auth` is the ProtectedRoute tier ("none" | "mission_maker" | "admin"); `full_bleed`
 /// / `chromeless` are the route-handle layout flags.
@@ -331,7 +331,7 @@ pub fn auth_denial_redirect(path: &str) -> Option<String> {
 #[cfg(test)]
 mod t805_route_auth {
     use super::{auth_denial_redirect, required_role, role_may_enter, ROUTES};
-    use crate::shell::nav_config::Role;
+    use crate::v2::core::auth::Role;
 
     #[test]
     fn editor_route_declares_mission_maker() {

@@ -1,8 +1,8 @@
 //! Server Modpacks (/modpacks) — load from `GET /modpacks`, admin Save → `PUT /modpacks/:id`
 //! (T-271). Create / set-current / delete hit the matching write routes. No MOCK_MODPACKS.
 #![allow(dead_code)]
-use crate::shell::nav_config::{has_min_role_authed, Role};
 use crate::v2::core::api::dto::{DataEnvelope, ModpackDto};
+use crate::v2::core::auth::{has_min_role_authed, Role};
 use crate::v2::core::ui::split_pane::{GlassSplit, ListDetailItem, SidebarSearch};
 use crate::v2::core::ui::MaterialIcon;
 use leptos::prelude::*;

@@ -10,12 +10,15 @@
 //! so several callers wanting a refresh at once must share one attempt or all but the first are
 //! refused, wrongly ending the session. The access token is never written to durable storage.
 
+pub mod role;
 pub mod route_guard;
 pub mod session;
 pub mod single_flight;
 pub mod store;
 pub mod url_guard;
 
+#[allow(unused_imports)]
+pub use role::{has_min_role, has_min_role_authed, Role};
 #[allow(unused_imports)]
 pub use route_guard::route_auth_redirect;
 #[allow(unused_imports)]

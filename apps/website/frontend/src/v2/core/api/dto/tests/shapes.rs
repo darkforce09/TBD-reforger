@@ -1,7 +1,7 @@
 //! Serialisation shape checks that need no captured fixture.
 
 use super::*;
-use crate::shell::nav_config::Role;
+use crate::v2::core::auth::Role;
 
 #[test]
 fn paginated_shape() {

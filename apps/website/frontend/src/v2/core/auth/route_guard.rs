@@ -15,7 +15,7 @@ use leptos::prelude::*;
 
 #[cfg(target_arch = "wasm32")]
 use super::store::AuthStore;
-use crate::shell::nav_config::Role;
+use crate::v2::core::auth::Role;
 
 /// Where the viewer must be sent, if the current role may not stay on `path`.
 ///

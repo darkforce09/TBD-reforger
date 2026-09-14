@@ -61,7 +61,7 @@ pub struct AdminUserRow {
     #[serde(default)]
     pub arma_id: Option<String>,
     pub arma_character: String,
-    pub role: crate::shell::nav_config::Role,
+    pub role: crate::v2::core::auth::Role,
     pub is_banned: bool,
     pub warnings: i64,
     pub total_deployments: i64,

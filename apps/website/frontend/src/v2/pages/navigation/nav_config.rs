@@ -1,74 +1,26 @@
-//! Navigation model + role gate — ported from config/navigation.ts + lib/roles.ts.
-//! Field-for-field identical to the React nav so the Sidebar renders the same items in the same
-//! order (the S-components / V-shell gates check this).
+//! The sidebar's contents: which links exist, how they are grouped, and who may see them.
+//!
+//! **Role:** a single static registry of navigation sections and the links inside them. It is
+//! data only — the rendering lives in `sidebar.rs` and the tier comparison in `core::auth`.
+//! **Position:** read by the sidebar on every render, on desktop and in the mobile drawer alike.
+//! **Signals & state:** none. [`NAVIGATION`] is a `'static` table with no interior mutability;
+//! the viewer's tier arrives as an argument at render time.
+//! **Invariants:** order is meaningful — sections render top to bottom and items in the order
+//! written here. `path` values must match the route table, since the active-link rule compares
+//! them against the live pathname by prefix. Exactly one section is marked `admin`, which gives
+//! it both its own visibility check and its distinct framing.
+//!
+//! Every item currently declares [`Role::Enlisted`], so browse mode shows the first five sections
+//! to everyone; only the Administration section, and its six items, ask for [`Role::Admin`].
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "snake_case")]
-// The full four-tier ladder = the API's UserRole ('enlisted' < 'leader' < 'mission_maker' <
-// 'admin'). Leader/MissionMaker aren't referenced by nav filtering yet (guest browse-mode shows
-// all) — they wire in with the real auth store at T-159.3.
-#[allow(dead_code)]
-pub enum Role {
-    Enlisted,
-    Leader,
-    MissionMaker,
-    Admin,
-}
+use crate::v2::core::auth::Role;
 
-impl Role {
-    fn rank(self) -> u8 {
-        match self {
-            Role::Enlisted => 1,
-            Role::Leader => 2,
-            Role::MissionMaker => 3,
-            Role::Admin => 4,
-        }
-    }
-
-    /// The API/display string (snake_case), matching the serde wire form — what React renders for
-    /// `{user.role}`.
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Role::Enlisted => "enlisted",
-            Role::Leader => "leader",
-            Role::MissionMaker => "mission_maker",
-            Role::Admin => "admin",
-        }
-    }
-
-    /// Parse a `RouteDef.auth` tier (`"none"` | `"mission_maker"` | `"admin"` | …).
-    /// `"none"` / unknown → `None` (no client-side RequireMinRole gate).
-    pub fn from_route_auth(auth: &str) -> Option<Role> {
-        match auth {
-            "enlisted" => Some(Role::Enlisted),
-            "leader" => Some(Role::Leader),
-            "mission_maker" => Some(Role::MissionMaker),
-            "admin" => Some(Role::Admin),
-            _ => None,
-        }
-    }
-}
-
-/// Browse mode: unauthenticated users (`None`) see all nav (mirrors lib/roles.ts `hasMinRole`).
-/// **Sidebar / chrome only.** Do not use this for action affordances (New Mission, admin tools) —
-/// guests and pre-bootstrap `None` would flash as authorized. Use [`has_min_role_authed`] instead.
-pub fn has_min_role(user: Option<Role>, min: Role) -> bool {
-    match user {
-        None => true,
-        Some(r) => r.rank() >= min.rank(),
-    }
-}
-
-/// Action / affordance gate: `None` (guest or not-yet-bootstrapped) never meets a role.
-/// T-286 — Mission Library `is_maker` and sibling action checks must use this, not browse-mode
-/// [`has_min_role`], so a pre-bootstrap `None` cannot flash maker UI and freeze wrong.
-pub fn has_min_role_authed(user: Option<Role>, min: Role) -> bool {
-    match user {
-        None => false,
-        Some(r) => r.rank() >= min.rank(),
-    }
-}
-
+/// One sidebar link.
+///
+/// * `label` — the visible text.
+/// * `path` — the destination, matched against the live pathname to decide the active link.
+/// * `icon` — the Material Symbols ligature rendered ahead of the label.
+/// * `min_role` — the lowest tier that may see this link.
 pub struct NavItem {
     pub label: &'static str,
     pub path: &'static str,
@@ -76,12 +28,18 @@ pub struct NavItem {
     pub min_role: Role,
 }
 
+/// A titled group of sidebar links.
+///
+/// * `title` — the group heading.
+/// * `admin` — marks the privileged group: it is hidden below its tier and framed distinctly.
+/// * `items` — the links, rendered in this order.
 pub struct NavSection {
     pub title: &'static str,
     pub admin: bool,
     pub items: &'static [NavItem],
 }
 
+/// The sidebar, top to bottom: the six command hubs and the links inside each.
 pub static NAVIGATION: &[NavSection] = &[
     NavSection {
         title: "Command Center",
@@ -218,42 +176,3 @@ pub static NAVIGATION: &[NavSection] = &[
         ],
     },
 ];
-
-#[cfg(test)]
-mod tests {
-    use super::{has_min_role, has_min_role_authed, Role};
-
-    #[test]
-    fn browse_mode_none_sees_all_nav() {
-        // Intentional: unauthenticated browse-mode keeps every nav item visible.
-        assert!(has_min_role(None, Role::Admin));
-        assert!(has_min_role(None, Role::MissionMaker));
-    }
-
-    #[test]
-    fn action_gate_none_is_never_authorized() {
-        // T-286 — pre-bootstrap / guest must not satisfy maker (or any) action affordances.
-        assert!(!has_min_role_authed(None, Role::MissionMaker));
-        assert!(!has_min_role_authed(None, Role::Enlisted));
-        assert!(has_min_role_authed(
-            Some(Role::MissionMaker),
-            Role::MissionMaker
-        ));
-        assert!(has_min_role_authed(Some(Role::Admin), Role::MissionMaker));
-        assert!(!has_min_role_authed(
-            Some(Role::Enlisted),
-            Role::MissionMaker
-        ));
-    }
-
-    #[test]
-    fn from_route_auth_parses_declared_tiers() {
-        assert_eq!(
-            Role::from_route_auth("mission_maker"),
-            Some(Role::MissionMaker)
-        );
-        assert_eq!(Role::from_route_auth("admin"), Some(Role::Admin));
-        assert_eq!(Role::from_route_auth("none"), None);
-        assert_eq!(Role::from_route_auth(""), None);
-    }
-}

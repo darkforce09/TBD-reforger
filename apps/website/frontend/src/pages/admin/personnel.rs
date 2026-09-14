@@ -940,8 +940,8 @@ mod tests {
         classify_ban_reason, reason_confirm_enabled, roles_sync_success_message,
         roles_sync_updated_count, BanReason, FilterMode, SortMode, ADMIN_ROLES_SYNC_PATH,
     };
-    use crate::shell::nav_config::Role;
     use crate::v2::core::api::dto::AdminUserRow;
+    use crate::v2::core::auth::Role;
 
     fn production_src() -> &'static str {
         include_str!("personnel.rs")

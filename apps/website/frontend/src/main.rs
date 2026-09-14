@@ -5,7 +5,6 @@
 //! (S/V/R/T), not just `cargo check`.
 
 mod app_routes;
-mod shell;
 // T-934.2/.3 — standard application pages (pages/{public,operations,admin}/…).
 mod pages;
 // T-934.4–.6 — the Mission Creator nest: library, tools, world assets, eden chrome
@@ -25,7 +24,7 @@ mod v2;
 pub fn start_app() {
     use leptos::prelude::*;
     use leptos_router::components::Router;
-    use shell::layout::AppLayout;
+    use v2::pages::navigation::layout::AppLayout;
     console_error_panic_hook::set_once();
     // Mount inside a `<div id="root">` to mirror React's Vite mount node exactly (body > #root >
     // app). Beyond drop-in structural parity, it keeps the V-gate's positional-id numbering

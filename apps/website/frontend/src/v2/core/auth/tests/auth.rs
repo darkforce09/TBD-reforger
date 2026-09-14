@@ -3,7 +3,7 @@
 use std::future::Future;
 
 use super::*;
-use crate::shell::nav_config::Role;
+use crate::v2::core::auth::Role;
 use futures::executor::block_on;
 use futures::future::join_all;
 use std::cell::Cell;

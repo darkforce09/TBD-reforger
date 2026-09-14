@@ -11,8 +11,8 @@
 
 use leptos::prelude::*;
 
-use crate::shell::nav_config::{has_min_role_authed, Role};
 use crate::v2::core::auth::AuthStore;
+use crate::v2::core::auth::{has_min_role_authed, Role};
 
 /// Render `children` only to a signed-in viewer.
 ///

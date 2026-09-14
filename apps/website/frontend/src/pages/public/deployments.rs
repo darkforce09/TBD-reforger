@@ -30,11 +30,11 @@
 //! Each LOA panel owns its own `LocalResource` so a submit/review refetch cannot go stale against
 //! the deployments payload.
 #![allow(dead_code)]
-use crate::shell::nav_config::Role;
 use crate::v2::core::api::dto::{
     CreateLeaveInput, DataEnvelope, Deployments, LeaveRequest, Paginated,
 };
 use crate::v2::core::auth::AuthStore;
+use crate::v2::core::auth::Role;
 use crate::v2::core::ui::{badge_class, MaterialIcon};
 use crate::v2::core::utils::countdown::countdown_label;
 use crate::v2::core::utils::datefmt::{format_local_datetime, format_short_date};

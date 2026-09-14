@@ -21,12 +21,12 @@
 //! per-faction vehicle roster. See [`briefing_text`] for the one that was a live defect and
 //! [`meta_badges`] for the shape the rest were removed into.
 #![allow(dead_code)]
-use crate::shell::nav_config::{has_min_role_authed, Role};
 #[cfg(target_arch = "wasm32")]
 use crate::v2::core::api::client::api_get;
 use crate::v2::core::api::dto::{
     DataEnvelope, EventHub, EventMissionDossier, Member, ModpackDto, OrbatSquad,
 };
+use crate::v2::core::auth::{has_min_role_authed, Role};
 use crate::v2::core::ui::{cn, AuthGate, MaterialIcon, DEFAULT_AVATAR};
 use crate::v2::core::utils::countdown::countdown_label;
 use crate::v2::core::utils::datefmt::format_local_datetime;

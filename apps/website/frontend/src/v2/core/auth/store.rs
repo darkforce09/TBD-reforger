@@ -16,7 +16,7 @@ use super::route_guard::install_route_auth_guard;
 #[cfg(target_arch = "wasm32")]
 use super::session::load_persisted;
 use super::session::{PersistState, RefreshResponse, Session, User};
-use crate::shell::nav_config::{has_min_role, has_min_role_authed, Role};
+use crate::v2::core::auth::{has_min_role, has_min_role_authed, Role};
 
 /// The session as signals, provided at the application root and read through context.
 ///

@@ -1,8 +1,15 @@
-//! leptos_router `<Routes>` — the render side of the route contract in router.rs. Every route
-//! mounts its real page component (T-159.8+). The "*" catch-all (NotFoundPage) is the
-//! `<Routes fallback>`. The chrome (Sidebar/TopNav) lives in AppLayout OUTSIDE `<Routes>`, so it
-//! persists across navigation — `<Routes>` swaps only `<main>`. The path list mirrors router.rs
-//! `ROUTES` (the S-routes gate's source of truth).
+//! The router's route table, in render form.
+//!
+//! **Role:** binds every path to the component that renders it, and names the fallback used when
+//! none match.
+//! **Position:** rendered by the frame — inside `<main>` for a chromed route, and directly for
+//! the bare and chromeless ones. The chrome lives outside this component, so navigation swaps
+//! only what is declared here.
+//! **Signals & state:** none. Each route component owns its own.
+//! **Invariants:** this list mirrors the route table in `router.rs`, which is the contract the
+//! layout flags and the required tiers are read from; a path added here without a row there
+//! renders with default layout and no tier requirement.
+
 use crate::editor::library::mission_library::MissionLibraryPage;
 use crate::pages::admin::approvals::MissionApprovalsPage;
 use crate::pages::admin::audit::AuditLogsPage;
@@ -19,59 +26,13 @@ use crate::pages::public::mortar::MortarCalculatorPage;
 use crate::pages::public::server_intel::ServerIntelPage;
 use crate::pages::public::settings::SettingsPage;
 use crate::pages::public::vehicles::VehicleDatabasePage;
+use crate::v2::pages::account::login::LoginPage;
+use crate::v2::pages::navigation::not_found::NotFoundPage;
 use leptos::prelude::*;
 use leptos_router::components::{Route, Routes};
 use leptos_router::path;
 
-/// Login page (auth.tsx) — rendered bare (no chrome). A guest sees the sign-in card; the button
-/// starts the real Discord OAuth flow (full-page redirect — the API 302s to Discord and lands
-/// back on /auth/callback). T-172 H9.
-#[component]
-fn LoginPage() -> impl IntoView {
-    view! {
-        <div class="flex min-h-screen flex-col items-center justify-center bg-background p-6">
-            <div class="w-full max-w-md rounded-xl border border-border-subtle bg-surface-container p-8 text-center">
-                <h1 class="text-2xl font-bold">
-                    <span class="text-primary">"TBD"</span>
-                    " Reforger"
-                </h1>
-                <p class="mt-2 text-on-surface-variant">
-                    "Sign in to register, deploy, and manage operations."
-                </p>
-                <button
-                    type="button"
-                    class="mt-6 w-full rounded-lg bg-primary py-3 font-medium text-on-primary"
-                    on:click=move |_| {
-                        if let Some(win) = web_sys::window() {
-                            let _ = win.location().set_href("/api/v1/auth/discord/login");
-                        }
-                    }
-                >
-                    "Sign in with Discord"
-                </button>
-                <a href="/" class="mt-4 block text-sm text-on-surface-variant hover:text-primary">
-                    "Continue browsing without signing in"
-                </a>
-            </div>
-        </div>
-    }
-}
-
-/// 404 (utility.tsx) — renders inside the chrome (the <Routes fallback>).
-#[component]
-fn NotFoundPage() -> impl IntoView {
-    view! {
-        <div class="flex flex-col items-center justify-center py-24 text-center">
-            <span class="text-6xl font-bold text-primary">"404"</span>
-            <h1 class="mt-4 text-2xl font-bold">"Sector Not Found"</h1>
-            <p class="mt-2 text-on-surface-variant">
-                "The requested route does not exist in this AO."
-            </p>
-            <a href="/" class="mt-6 text-primary hover:underline">"Return to Dashboard"</a>
-        </div>
-    }
-}
-
+/// Every route the application answers, plus the fallback.
 #[component]
 pub fn AppRoutes() -> impl IntoView {
     view! {

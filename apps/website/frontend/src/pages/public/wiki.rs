@@ -5,8 +5,8 @@
 //! List items ride `DataEnvelope<Value>` (dto.rs already pins the wiki golden that way — no
 //! typed WikiPage DTO consumer yet).
 #![allow(dead_code)]
-use crate::shell::nav_config::{has_min_role_authed, Role};
 use crate::v2::core::api::dto::DataEnvelope;
+use crate::v2::core::auth::{has_min_role_authed, Role};
 use crate::v2::core::ui::split_pane::{GlassSplit, ListDetailItem, SidebarSearch};
 use leptos::prelude::*;
 use serde_json::Value;

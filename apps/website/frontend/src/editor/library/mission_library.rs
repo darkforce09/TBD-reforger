@@ -8,9 +8,9 @@
 //! CreateMissionDialog (New Mission button + true-empty CTA + Cmd/Ctrl+N), toasts.
 #![allow(dead_code)]
 use crate::editor::library::create_dialog::CreateMissionDialog;
-use crate::shell::nav_config::{has_min_role_authed, Role};
 use crate::v2::core::api::dto::{MissionCard, MissionDetail, Paginated};
 use crate::v2::core::auth::url_guard;
+use crate::v2::core::auth::{has_min_role_authed, Role};
 use crate::v2::core::ui::{badge_class, AuthGate, MaterialIcon, Sheet};
 use leptos::prelude::*;
 // T-282 — the version differ indexes rows by id; these are its only two containers.

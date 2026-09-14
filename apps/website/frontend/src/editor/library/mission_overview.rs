@@ -20,8 +20,8 @@
 //! The editor is an **Edit Armory** Dialog on this page (author/admin only), not in
 //! [`dossier_body`] — see the note there for why the shared body must stay read-only.
 #![allow(dead_code)]
-use crate::shell::nav_config::Role;
 use crate::v2::core::api::dto::MissionDetail;
+use crate::v2::core::auth::Role;
 use crate::v2::core::ui::{cn, AuthGate, Dialog, MaterialIcon};
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
