@@ -10,7 +10,6 @@
 //! layout flags and the required tiers are read from; a path added here without a row there
 //! renders with default layout and no tier requirement.
 
-use crate::editor::library::mission_library::MissionLibraryPage;
 use crate::pages::admin::approvals::MissionApprovalsPage;
 use crate::pages::admin::audit::AuditLogsPage;
 use crate::pages::admin::content::ContentManagerPage;
@@ -28,6 +27,7 @@ use crate::v2::pages::doctrine_and_info::modpacks::ModpacksPage;
 use crate::v2::pages::doctrine_and_info::vehicles::VehicleDatabasePage;
 use crate::v2::pages::doctrine_and_info::wiki::WikiPage;
 use crate::v2::pages::field_tools::mortar::MortarCalculatorPage;
+use crate::v2::pages::mission_hub::library::MissionLibraryPage;
 use crate::v2::pages::navigation::not_found::NotFoundPage;
 use leptos::prelude::*;
 use leptos_router::components::{Route, Routes};
@@ -47,7 +47,7 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/deployments") view=DeploymentsPage />
             <Route path=path!("/leaderboards") view=LeaderboardsPage />
             <Route path=path!("/missions") view=MissionLibraryPage />
-            <Route path=path!("/missions/:id") view=crate::editor::library::mission_overview::MissionOverviewPage />
+            <Route path=path!("/missions/:id") view=crate::v2::pages::mission_hub::overview::MissionOverviewPage />
             <Route
                 path=path!("/missions/:id/edit")
                 view=crate::editor::mission_editor::MissionEditorPage

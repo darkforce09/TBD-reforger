@@ -137,16 +137,6 @@
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: apps/website/frontend/src/editor/library/mission_overview.rs
-  reason: T-159 Leptos port god-files; split follow-up
-  expires: 2026-11-13
-
-- rule: SIZE-3
-  path: apps/website/frontend/src/editor/library/mission_library.rs
-  reason: T-159 Leptos port god-files; split follow-up
-  expires: 2026-11-13
-
-- rule: SIZE-3
   path: apps/website/frontend/src/pages/operations/orbat_manager.rs
   reason: T-159 Leptos port god-files; split follow-up
   expires: 2026-11-13

@@ -13,7 +13,6 @@ pub mod canvas;
 pub mod eden_chrome;
 // T-661 — layout consts feed `tools/select_tool` / `mission_editor`.
 pub mod layout;
-pub mod library;
 // The editor page itself — decomposes through Phase B/B2 of T-934.
 pub mod mission_editor;
 pub mod panels;
