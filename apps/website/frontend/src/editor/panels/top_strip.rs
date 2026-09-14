@@ -1573,6 +1573,56 @@ pub fn TopCommandStrip(
             // Identity and commands: what this mission IS and the eight ways into it. Nothing that
             // acts on the map lives here any more — that is row 2's job.
             <div class=ROW_MENUS>
+            // Editable mission title (React setTitle) + the dirty dot (anchored on far left).
+            <div class="flex shrink-0 items-center">
+                {move || {
+                    if let Some(t) = doc_tick {
+                        t.track();
+                    }
+                    #[cfg(target_arch = "wasm32")]
+                    let doc_title = {
+                        let t = crate::editor::state::operations::read_title();
+                        if t.is_empty() { title_fallback.get_value() } else { t }
+                    };
+                    #[cfg(not(target_arch = "wasm32"))]
+                    let doc_title = title_fallback.get_value();
+                    view! {
+                        <input
+                            type="text"
+                            aria-label="Mission title"
+                            // T-634 — `py-0` not `py-0.5`: a 20 px `text-label-md` line box plus
+                            // the 1 px focus border is 22, which clears a 24 px row; `py-0.5`
+                            // made it exactly 24 and the focus ring touched both edges.
+                            class="w-36 sm:w-48 max-w-[16rem] truncate rounded border border-transparent bg-transparent px-1.5 py-0 text-label-md font-semibold text-on-surface outline-none transition-colors focus:border-outline-variant/40 focus:bg-surface-container"
+                            prop:value=doc_title
+                            on:change=move |ev| {
+                                #[cfg(target_arch = "wasm32")]
+                                {
+                                    let v = event_target_value(&ev);
+                                    if !v.trim().is_empty() {
+                                        crate::editor::state::operations::set_title(v.trim());
+                                    }
+                                }
+                                #[cfg(not(target_arch = "wasm32"))]
+                                let _ = &ev;
+                            }
+                        />
+                    }
+                }}
+                {dirty
+                    .map(|d| {
+                        view! {
+                            <span
+                                class=move || if d.get() { "ml-1.5 text-primary" } else { "hidden" }
+                                title="Unsaved changes"
+                                aria-label="Unsaved changes"
+                            >
+                                "•"
+                            </span>
+                        }
+                    })}
+            </div>
+            <span class=DIVIDER></span>
             // Menu bar (T-797: File / Edit / Arrange / Mission / Environment / Help — the View menu
             // was removed, F-14 + F-15). The ORBAT Manager button follows the bar, still in row 1.
             <div class="flex shrink-0 items-center">
@@ -1824,61 +1874,8 @@ pub fn TopCommandStrip(
             >
                 "ORBAT Manager"
             </button>
-            <span class=DIVIDER></span>
-            // Editable mission title (React setTitle) + the dirty dot.
-            <div class="flex min-w-0 flex-1 items-center">
-                {move || {
-                    if let Some(t) = doc_tick {
-                        t.track();
-                    }
-                    #[cfg(target_arch = "wasm32")]
-                    let doc_title = {
-                        let t = crate::editor::state::operations::read_title();
-                        if t.is_empty() { title_fallback.get_value() } else { t }
-                    };
-                    #[cfg(not(target_arch = "wasm32"))]
-                    let doc_title = title_fallback.get_value();
-                    view! {
-                        <input
-                            type="text"
-                            aria-label="Mission title"
-                            // T-634 — `py-0` not `py-0.5`: a 20 px `text-label-md` line box plus
-                            // the 1 px focus border is 22, which clears a 24 px row; `py-0.5`
-                            // made it exactly 24 and the focus ring touched both edges.
-                            class="w-full min-w-0 truncate rounded border border-transparent bg-transparent px-1.5 py-0 text-label-md font-semibold text-on-surface outline-none transition-colors focus:border-outline-variant/40 focus:bg-surface-container"
-                            prop:value=doc_title
-                            on:change=move |ev| {
-                                #[cfg(target_arch = "wasm32")]
-                                {
-                                    let v = event_target_value(&ev);
-                                    if !v.trim().is_empty() {
-                                        crate::editor::state::operations::set_title(v.trim());
-                                    }
-                                }
-                                #[cfg(not(target_arch = "wasm32"))]
-                                let _ = &ev;
-                            }
-                        />
-                    }
-                }}
-                {dirty
-                    .map(|d| {
-                        view! {
-                            <span
-                                class=move || if d.get() { "ml-1.5 text-primary" } else { "hidden" }
-                                title="Unsaved changes"
-                                aria-label="Unsaved changes"
-                            >
-                                "•"
-                            </span>
-                        }
-                    })}
-                // T-804 (F-24) — the draft-safety chip. Anchored INLINE right after the dirty dot
-                // (NOT fixed: a `position:fixed` descendant would resolve against the strip's
-                // `backdrop-filter` containing block, the T-789 trap). A passive readout — no Escape
-                // consumer, no modal_stack entry. It renders only when a real draft flush has landed
-                // (`last_flush.is_some()`), so a never-edited mission shows nothing; the recency
-                // recomputes off the 1 s `recency_tick`, never a per-frame timer.
+            // T-804 (F-24) — the draft-safety chip. Anchored at the trailing edge of the menu row.
+            <div class="flex min-w-0 flex-1 items-center justify-end">
                 {move || {
                     recency_tick.track();
                     last_flush
@@ -1919,7 +1916,7 @@ pub fn TopCommandStrip(
             // tooltips, same truncation — laid side by side across the row instead of down it, with
             // the hairline between them. Nothing is dropped: the summary's full text was already its
             // own tooltip, because it was already truncated at `max-w-[22rem]`.
-            <div class="flex shrink-0 items-center gap-2 leading-none">
+            <div class="hidden">
                 <div
                     class="flex items-center gap-1.5 font-mono text-[11px] leading-none tabular-nums text-on-surface-variant"
                     title="Per-side slot census (WEST · EAST · IND · TOTAL)"
