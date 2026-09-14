@@ -43,7 +43,7 @@ fn the_scrubber_actually_removes_every_decoy_shape() {
         ("after return", "fn f() { return; set_loadout(x); }"),
         (
             "match guard",
-            "match  { _ if false => { set_loadout(x); } _ => {} }",
+            "match () { _ if false => { set_loadout(x); } _ => {} }",
         ),
         (
             "const false binding",
@@ -62,7 +62,7 @@ fn the_scrubber_actually_removes_every_decoy_shape() {
         ),
         (
             "cfg(any()) inner spaces",
-            "#[cfg(any())]\nfn d { set_loadout(x); }",
+            "#[cfg(any( ))]\nfn d() { set_loadout(x); }",
         ),
         (
             "if condition with odd spacing",
@@ -86,11 +86,11 @@ fn the_scrubber_actually_removes_every_decoy_shape() {
         ),
         (
             "const behind an unrelated non-bool const",
-            "const OTHER: &str = \"x\";\nconst T601C: bool = false;\nfn f { if T601C { set_loadout(x); } }",
+            "const OTHER: &str = \"x\";\nconst T601C: bool = false;\nfn f() { if T601C { set_loadout(x); } }",
         ),
         (
             "const behind a let-else",
-            "fn g() { let Ok(v) = h else { return; }; }\nconst T601C: bool = false;\nfn f { if T601C { set_loadout(x); } }",
+            "fn g() { let Ok(v) = h() else { return; }; }\nconst T601C: bool = false;\nfn f() { if T601C { set_loadout(x); } }",
         ),
         // ── THE ONE THAT SHIPPED GREEN. `sse.rs`, `client.rs` and `arsenal.rs` all park their
         // live path inside a binding whose initializer is a block (`let run = async { … };`,
@@ -113,15 +113,15 @@ fn the_scrubber_actually_removes_every_decoy_shape() {
         // thing that closes the family is `the_unknown_condition_fails_closed`.
         (
             "const referencing const",
-            "const W_A: bool = false; const W_B: bool = W_A;\nfn f { if W_B { set_loadout(x); } }",
+            "const W_A: bool = false; const W_B: bool = W_A;\nfn f() { if W_B { set_loadout(x); } }",
         ),
         (
             "the same chain, declared out of order",
-            "const W_B: bool = W_A; const W_A: bool = false;\nfn f { if W_B { set_loadout(x); } }",
+            "const W_B: bool = W_A; const W_A: bool = false;\nfn f() { if W_B { set_loadout(x); } }",
         ),
         (
             "block-expression initialiser",
-            "const W_NEVER: bool = { false };\nfn f { if W_NEVER { set_loadout(x); } }",
+            "const W_NEVER: bool = { false };\nfn f() { if W_NEVER { set_loadout(x); } }",
         ),
         (
             "tuple index",
@@ -148,7 +148,7 @@ fn the_scrubber_actually_removes_every_decoy_shape() {
         ),
         (
             "if-expression const initialiser",
-            "const W_C: bool = if true { false } else { true };\nfn f { if W_C { set_loadout(x); } }",
+            "const W_C: bool = if true { false } else { true };\nfn f() { if W_C { set_loadout(x); } }",
         ),
         (
             "immediately-invoked closure",
@@ -172,7 +172,7 @@ fn the_scrubber_actually_removes_every_decoy_shape() {
         assert!(
             !scrubbed.contains("set_loadout"),
             "{label}: decoy survived scrubbing — every pin built on this scrubber is hollow \
-             while staying green, which is the exact defect  exists to remove.\n{scrubbed}"
+             while staying green, which is the exact defect this scrubber exists to remove.\n{scrubbed}"
         );
     }
 
@@ -186,7 +186,7 @@ fn the_scrubber_actually_removes_every_decoy_shape() {
         "#[cfg(target_arch = \"wasm32\")] fn d() { set_loadout(a); }",
         "#[cfg(feature = \"never-enabled\")] fn d() { set_loadout(a); }",
         "const C: bool = true; fn f() { if C { set_loadout(a); } }",
-        "match  { _ if x => { set_loadout(a); } _ => {} }",
+        "match () { _ if x => { set_loadout(a); } _ => {} }",
         "fn f() { if a { return; } set_loadout(a); }",
         // The shapes a fail-closed evaluator could plausibly eat. Every one of these names
         // something the program computes, so none is constant-shaped and none may be scrubbed.
@@ -194,9 +194,9 @@ fn the_scrubber_actually_removes_every_decoy_shape() {
         // above by deleting the crate.
         "fn f() { if let Some(v) = opt { set_loadout(v); } }",
         "fn f() { while let Some(v) = it.next() { set_loadout(v); } }",
-        "fn f() { if resp.ok { set_loadout(a); } }",
-        "fn f() { let ok = resp.ok; if ok { set_loadout(a); } }",
-        "fn f() { let ok: bool = resp.ok; if ok { set_loadout(a); } }",
+        "fn f() { if resp.ok() { set_loadout(a); } }",
+        "fn f() { let ok = resp.ok(); if ok { set_loadout(a); } }",
+        "fn f() { let ok: bool = resp.ok(); if ok { set_loadout(a); } }",
         "fn f() { if !items.is_empty() { set_loadout(a); } }",
         "fn f() { if i < n { set_loadout(a); } }",
         "fn f() { if cfg!(feature = \"x\") { set_loadout(a); } }",
@@ -215,7 +215,7 @@ fn the_scrubber_actually_removes_every_decoy_shape() {
     // A lifetime is not a char literal; a `;` inside a type is not an item terminator.
     assert!(live_code("fn f<'a>(x: &'a str) { set_loadout(x); }").contains("'a"));
     assert!(
-        live_code("#[cfg(any())] const D: [u8; 3] = [1, 2, 3];\nfn f { set_loadout(x); }")
+        live_code("#[cfg(any())] const D: [u8; 3] = [1, 2, 3];\nfn f() { set_loadout(x); }")
             .contains("set_loadout"),
         "the `;` inside `[u8; 3]` must not end the cfg'd item early"
     );
@@ -299,8 +299,8 @@ fn the_unknown_condition_fails_closed() {
         "n + 1 > 3",
         "flag | false",
         "[flag, true][0]",
-        "(|| flag)",
-        "resp.ok",
+        "(|| flag)()",
+        "resp.ok()",
         "!items.is_empty()",
         "cfg!(feature = \"x\")",
         "let Some(v) = opt",
@@ -317,10 +317,10 @@ fn the_unknown_condition_fails_closed() {
     // ── the residual, pinned so it cannot grow in silence ────────────────────────────────
     //
     // These DO survive, and the module doc says so. A call is the boundary: to this pass
-    // `Option::<bool>::None.unwrap_or(false)` and `resp.ok` are the same three tokens in the
+    // `Option::<bool>::None.unwrap_or(false)` and `resp.ok()` are the same three tokens in the
     // same order, and there is no reading of the text that separates them. Folding calls by
     // name would be the blocklist again, one level down — and folding them *all* would delete
-    // every `if resp.ok` in the crate. So an opaque call stays live, loudly documented,
+    // every `if resp.ok()` in the crate. So an opaque call stays live, loudly documented,
     // rather than quietly half-handled.
     //
     // Asserted rather than omitted: if a later change closes one of these, this test fails and
@@ -328,7 +328,7 @@ fn the_unknown_condition_fails_closed() {
     // how the last five rounds of this defect were "fixed".
     for cond in [
         "Option::<bool>::None.unwrap_or(false)",
-        "bool::default",
+        "bool::default()",
         "\"\".is_empty() && false == true",
     ] {
         let src = format!("fn f() {{ if {cond} {{ set_loadout(x); }} }}");
@@ -383,7 +383,7 @@ pub fn cargo_panel() { /* wire cut */ }
     );
 
     // A2 — the constant never spells `false`.
-    let a2 = "const NEVER: bool = 1 > 2;\nfn f { if NEVER { on_change(&items); } }";
+    let a2 = "const NEVER: bool = 1 > 2;\nfn f() { if NEVER { on_change(&items); } }";
     assert!(
         !live_code(a2).contains("on_change"),
         "A2: `const NEVER: bool = 1 > 2` must fold — a fixer that grepped for `= false` \

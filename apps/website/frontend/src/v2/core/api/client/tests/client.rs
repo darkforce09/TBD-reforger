@@ -435,7 +435,7 @@ fn the_raw_body_arm_sets_the_json_content_type() {
     let raw = f
         .split("Body::Raw(s) =>")
         .nth(1)
-        .expect("request must have a Body::Raw arm")
+        .expect("request() must have a Body::Raw arm")
         .split("Body::None")
         .next()
         .unwrap();
@@ -458,7 +458,7 @@ fn the_shared_error_arm_still_folds_the_details_array() {
     let err = f
         .split("} else {")
         .nth(1)
-        .expect("request must have a non-2xx else arm");
+        .expect("request() must have a non-2xx else arm");
     assert!(
         err.contains("error_body_message(&v)"),
         "the non-2xx arm must fold `details` via error_body_message (perturbation: read only \
@@ -745,7 +745,7 @@ fn the_refresh_post_is_reachable_only_from_inside_the_cross_tab_lock() {
         "with_refresh_lock",
         "refresh_via_gloo(store, token)",
         "peer_rotation_supersedes(",
-        "load_persisted",
+        "load_persisted()",
     ] {
         assert!(
             locked.contains(needed),
@@ -884,7 +884,7 @@ fn the_source_pins_reject_every_dead_code_wrapper() {
         ),
         (
             "const C: bool = false; if C",
-            format!("const C: bool = false;\nfn d {{ if C {{ {needle}; }} }}"),
+            format!("const C: bool = false;\nfn d() {{ if C {{ {needle}; }} }}"),
         ),
         ("return; above", format!("fn d() {{ return; {needle}; }}")),
         (
@@ -893,7 +893,7 @@ fn the_source_pins_reject_every_dead_code_wrapper() {
         ),
         (
             "match guard",
-            format!("match  {{ _ if false => {{ {needle}; }} _ => {{}} }}"),
+            format!("match () {{ _ if false => {{ {needle}; }} _ => {{}} }}"),
         ),
         ("comment", format!("// {needle}")),
     ];

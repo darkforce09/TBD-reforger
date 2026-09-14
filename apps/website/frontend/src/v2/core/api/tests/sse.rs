@@ -54,13 +54,13 @@ fn class_r_sse_abort_teardown_exists() {
          route-leave has nothing to take"
     );
     assert!(
-        stream.contains("abort_server_status_stream"),
+        stream.contains("abort_server_status_stream()"),
         "a re-subscribe must abort the prior controller first, or a remount leaks a stream"
     );
 
-    let abort = only_body(&production, "pub fn abort_server_status_stream");
+    let abort = only_body(&production, "pub fn abort_server_status_stream()");
     assert!(
-        abort.contains("SSE_ABORT.with(") && abort.contains(".abort"),
+        abort.contains("SSE_ABORT.with(") && abort.contains(".abort()"),
         "the zero-capture entry point must actually take the parked controller and abort it"
     );
 
@@ -112,7 +112,7 @@ fn the_teardown_pin_rejects_every_dead_code_wrapper() {
         ),
         (
             "const C: bool = false; if C",
-            format!("const C: bool = false;\nfn d {{ if C {{ {needle}; }} }}"),
+            format!("const C: bool = false;\nfn d() {{ if C {{ {needle}; }} }}"),
         ),
         ("return; above", format!("fn d() {{ return; {needle}; }}")),
         (
@@ -121,7 +121,7 @@ fn the_teardown_pin_rejects_every_dead_code_wrapper() {
         ),
         (
             "match guard",
-            format!("match  {{ _ if false => {{ {needle}; }} _ => {{}} }}"),
+            format!("match () {{ _ if false => {{ {needle}; }} _ => {{}} }}"),
         ),
         ("comment", format!("// {needle}")),
     ];

@@ -28,3 +28,4 @@ must be at or above that, with nothing newly failing or ignored.
 | Phase | commit | tests before→after | notes |
 |-------|--------|--------------------|-------|
 | Phase 1 | `4f67010bd` | 1449 → 1450 | `core/` retired: `api/`, `auth/`, `ui/`, `utils/`, `test_support/`. The OAuth callback page moved to `pages/account/`. One new test: the v2 documentation audit. |
+| Phase 1 fix-up | follows `7a2abf8ed` | 1450 → 1450 | A stray `\(\s*\)` pass late in Phase 1 had emptied parentheses inside string literals; the compiler could not see those. Restored 26 weakened guard-test needles (SSE, client and scrubber batteries), rewrote six comment lines left with stripped-reference residue, and gated two wasm-only imports the split had exposed to the native build. |

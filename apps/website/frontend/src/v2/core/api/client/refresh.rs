@@ -24,7 +24,9 @@ use wasm_bindgen::JsCast;
 
 #[cfg(target_arch = "wasm32")]
 use super::API_BASE;
-use crate::v2::core::auth::{AuthStore, RefreshResponse, SingleFlight};
+#[cfg(target_arch = "wasm32")]
+use crate::v2::core::auth::AuthStore;
+use crate::v2::core::auth::{RefreshResponse, SingleFlight};
 use futures::future::{FutureExt, LocalBoxFuture};
 
 use super::errors::ApiErr;

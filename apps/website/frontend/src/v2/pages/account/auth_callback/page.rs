@@ -14,7 +14,9 @@ use leptos::prelude::*;
 
 #[cfg(target_arch = "wasm32")]
 use crate::v2::core::auth::persist;
-use crate::v2::core::auth::{AuthStore, RefreshResponse, Session};
+use crate::v2::core::auth::AuthStore;
+#[cfg(target_arch = "wasm32")]
+use crate::v2::core::auth::{RefreshResponse, Session};
 
 /// The message shown for each failure code the backend can redirect with.
 fn auth_error_copy(code: &str) -> &'static str {

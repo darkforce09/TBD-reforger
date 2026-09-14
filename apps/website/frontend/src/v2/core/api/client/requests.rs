@@ -159,7 +159,7 @@ pub async fn api_post<T: DeserializeOwned + Clone + 'static>(
 }
 
 /// `PUT` `path` with a JSON body. Returns the deserialised 2xx body, or the status.
-#[allow(dead_code)] // wired by the  suite live-wire
+#[allow(dead_code)] // Called only from browser-side pages; the native build has no caller.
 pub async fn api_put<T: DeserializeOwned + Clone + 'static>(
     store: AuthStore,
     path: &str,
@@ -176,7 +176,7 @@ pub async fn api_put<T: DeserializeOwned + Clone + 'static>(
 }
 
 /// `PATCH` `path` with a JSON body. Returns the deserialised 2xx body, or the status.
-#[allow(dead_code)] // wired by the  suite live-wire
+#[allow(dead_code)] // Called only from browser-side pages; the native build has no caller.
 pub async fn api_patch<T: DeserializeOwned + Clone + 'static>(
     store: AuthStore,
     path: &str,
@@ -193,7 +193,7 @@ pub async fn api_patch<T: DeserializeOwned + Clone + 'static>(
 }
 
 /// `DELETE` `path`. The response body is ignored.
-#[allow(dead_code)] // wired by the  suite live-wire
+#[allow(dead_code)] // Called only from browser-side pages; the native build has no caller.
 pub async fn api_delete(store: AuthStore, path: &str) -> Result<(), ApiErr> {
     request(
         store,
@@ -206,7 +206,7 @@ pub async fn api_delete(store: AuthStore, path: &str) -> Result<(), ApiErr> {
 }
 
 /// `POST` `path` with a JSON body whose response the caller discards.
-#[allow(dead_code)] // wired by the  suite live-wire
+#[allow(dead_code)] // Called only from browser-side pages; the native build has no caller.
 pub async fn api_post_ok(
     store: AuthStore,
     path: &str,
@@ -224,13 +224,13 @@ pub async fn api_post_ok(
 
 /// `POST` an already-serialised JSON document, without re-serialising or duplicating it.
 ///
-/// Returns `` rather than a deserialised body on purpose: the routes that take a whole document
+/// Returns `()` rather than a deserialised body on purpose: the routes that take a whole document
 /// echo it back in their response, and a generic return would invite the caller to parse a second
 /// copy of it only to throw that away.
 ///
 /// Everything else matches [`api_post`] — the same request path, so the same bearer injection, the
 /// same single flight, the same one retry, and the same error-body handling.
-#[allow(dead_code)] // caller is missions.rs:1919 — a later slice; see this fn's doc + .
+#[allow(dead_code)] // Reserved for the whole-document upload path; no caller today.
 pub async fn api_post_raw(store: AuthStore, path: &str, body: String) -> Result<(), ApiErr> {
     request(
         store,
