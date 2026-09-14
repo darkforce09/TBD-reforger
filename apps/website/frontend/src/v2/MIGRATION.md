@@ -27,4 +27,4 @@ must be at or above that, with nothing newly failing or ignored.
 
 | Phase | commit | tests before→after | notes |
 |-------|--------|--------------------|-------|
-| Phase 1 | `d32eace19` | 1449 → 1450 | `core/` retired: `api/`, `auth/`, `ui/`, `utils/`, `test_support/`. The OAuth callback page moved to `pages/account/`. One new test: the v2 documentation audit. |
+| Phase 1 | `4f67010bd` | 1449 → 1450 | `core/` retired: `api/`, `auth/`, `ui/`, `utils/`, `test_support/`. The OAuth callback page moved to `pages/account/`. One new test: the v2 documentation audit. |
