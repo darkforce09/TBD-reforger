@@ -8,7 +8,7 @@
 //!  │ Map·Briefing·       markers panel (CenterDock)  hidden            — MARKERS mode           │
 //!  │ Players·Markers     players panel (WideDock, to the right edge)   — PLAYERS mode           │
 //!  │ Players·Markers     hidden                    hidden              — MAP mode               │
-//!  └ BottomDock ─ TBD_SessionBottomBar (Lock Lobby · Ready & Continue, mock toggles) ──────────┘
+//!  └ BottomDock ─ TBD_SessionBottomBar (Lock Lobby mock · Ready & Continue deploys) ──────────┘
 //! ```
 //! Everything floats over the map; the shell has no Backdrop. Pages are `TBD_BriefingPage`s
 //! built by `TBD_BriefingNav.CreatePage` from `TBD_BriefingCatalog` (mock until the adapter
@@ -35,7 +35,6 @@ class TBD_BriefingScreen : TBD_DockScreen
 	protected TBD_EBriefingMode m_eMode = TBD_EBriefingMode.BRIEFING;
 	protected TBD_EBriefingPage m_ePage = TBD_EBriefingPage.FREQUENCIES;
 	protected bool m_bLocked;
-	protected bool m_bReady;
 
 	//------------------------------------------------------------------------------------------------
 	override void OnMenuInit()
@@ -89,6 +88,8 @@ class TBD_BriefingScreen : TBD_DockScreen
 			m_BottomBar.AddAction(ACTION_READY, "Ready & Continue", true);
 		}
 
+		TBD_SpawnClient.GetOnDeployResult().Insert(OnDeployResult);
+
 		SetMode(TBD_EBriefingMode.BRIEFING);
 
 		if (!m_MapEntity)
@@ -103,6 +104,8 @@ class TBD_BriefingScreen : TBD_DockScreen
 	//------------------------------------------------------------------------------------------------
 	override protected void OnScreenClose()
 	{
+		TBD_SpawnClient.GetOnDeployResult().Remove(OnDeployResult);
+		GetGame().GetCallqueue().Remove(CloseAfterDeploy);
 		GetGame().GetCallqueue().Remove(OpenMap);
 		GetGame().GetCallqueue().Remove(OpenMapWrap);
 		GetGame().GetCallqueue().Remove(OpenMapWrapZoomChange);
@@ -369,7 +372,8 @@ class TBD_BriefingScreen : TBD_DockScreen
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Mock pass: the lobby's two toggles, one log line each (the wire step routes them).
+	//! Lock Lobby is still the lobby's mock toggle; Ready & Continue reports readiness and asks the
+	//! authority for a body (TBD_SpawnClient -> TBD_SpawnManager.DeployOnReady).
 	override protected void OnBottomAction(TBD_SessionBottomBar bar, string id)
 	{
 		if (id == ACTION_LOCK)
@@ -395,23 +399,47 @@ class TBD_BriefingScreen : TBD_DockScreen
 
 		if (id == ACTION_READY)
 		{
-			m_bReady = !m_bReady;
-			TBD_UIButton button = bar.GetAction(ACTION_READY);
-			if (m_bReady)
-			{
-				bar.SetActionLabel(ACTION_READY, "Ready (Waiting for Admin)");
-				if (button)
-					button.SetTint(TBD_EUITint.SUCCESS);
-			}
-			else
-			{
-				bar.SetActionLabel(ACTION_READY, "Ready & Continue");
-				if (button)
-					button.SetTint(TBD_EUITint.PRIMARY);
-			}
-
-			Print(string.Format("[TBD][briefing] READY -> %1", m_bReady));
+			// Ready & Continue = "I have read my orders, put me in a body". The tally is the existing
+			// one (TBD_ReportReady); the body comes from TBD_SpawnManager.DeployOnReady through
+			// TBD_SpawnClient, and the answer lands in OnDeployResult.
+			bar.SetActionLabel(ACTION_READY, "Deploying…");
+			bar.SetActionEnabled(ACTION_READY, false);
+			TBD_BriefingClient.ReportReady();
+			TBD_SpawnClient.Request();
+			Print("[TBD][briefing] READY -> deploy requested");
 		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! The authority's answer to Ready & Continue. Deployed: every pre-game screen goes (the map
+	//! closes with this one; TBD_LobbyStage does not re-raise — the stage is off LOBBY or the
+	//! player now controls a body). Deferred one tick so the stack never tears this screen down
+	//! from inside the invoker it is bound to. Refused: the button carries the reason and can be
+	//! pressed again.
+	protected void OnDeployResult(bool ok, string why)
+	{
+		if (ok)
+		{
+			Print("[TBD][briefing] deployed — closing the pre-game screens");
+			GetGame().GetCallqueue().Call(CloseAfterDeploy);
+			return;
+		}
+
+		Print(string.Format("[TBD][briefing] deploy refused: %1", why), LogLevel.WARNING);
+		if (!m_BottomBar)
+			return;
+
+		m_BottomBar.SetActionLabel(ACTION_READY, why);
+		m_BottomBar.SetActionEnabled(ACTION_READY, true);
+		TBD_UIButton button = m_BottomBar.GetAction(ACTION_READY);
+		if (button)
+			button.SetTint(TBD_EUITint.WARNING);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void CloseAfterDeploy()
+	{
+		TBD_MenuStack.CloseAll();
 	}
 
 	// ── Map lifecycle (kept verbatim from the previous screen) ──────────────────────────────

@@ -86,6 +86,19 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! larger deltas usually mean a stale DEM or a mis-authored slot. Start 2.0 (T-092.1).
 	protected const float MAX_Y_DELTA_M = 2.0;
 
+	//! Ready & Continue walk-on (PIE only, see DeployOnReady): the body a player gets when no
+	//! mission slot can deliver one. Vanilla US rifleman — a default kit, nothing authored.
+	protected static const ResourceName WALK_ON_PREFAB = "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et";
+
+	//! Random terrain samples FindDryLandPoint rolls before falling back to the game mode origin.
+	protected const int WALK_ON_SAMPLES = 64;
+
+	//! Keep walk-on samples this far (m) inside the world bound box — the map edge is sea.
+	protected const float WALK_ON_EDGE_MARGIN_M = 250.0;
+
+	//! Minimum terrain height (m) for a dry sample: sea level is 0 on Everon.
+	protected const float WALK_ON_MIN_ALTITUDE_M = 2.0;
+
 	//! A1 — the LOBBY auto-deploy wave (PIE/dev convenience: deploy everyone on stage
 	//! entry without the deploy menu). The T-068.13 slot picker will default this off;
 	//! the pull path (SCR_MenuSpawnLogic → DeployPlayerEx) is the production entry.
@@ -2576,6 +2589,200 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Ready & Continue's door (2026-09-14): the briefing's primary button asks the authority to put
+	//! this player into a body NOW. Precedence:
+	//!   1. a framework mission is loaded → the slot path, DeployPlayerEx. In PIE
+	//!      (RplSession.Mode() == RplMode.None) a round still sitting in LOBBY is advanced to
+	//!      BRIEFING first — T-941.2 keeps bodies out of LOBBY, and in PIE the operator IS the admin.
+	//!      On a listen host or dedicated server the stage stays admin-driven.
+	//!   2. the slot path could not deliver (no mission document, bodies still settling, the LOBBY
+	//!      gate, an unplayable loadout) → PIE only: a WALK-ON body, a vanilla rifleman on dry
+	//!      random ground (SpawnWalkOnBody). Never on Listen/Dedicated, and never past ONE LIFE:
+	//!      a spent life is refused here exactly as DeployPlayerInternal refuses it.
+	//! `why` carries the refusal for the button label; one `[TBD][Spawn] ready …` line per press.
+	//! @authority server
+	bool DeployOnReady(int playerId, out string why)
+	{
+		why = string.Empty;
+		if (RplSession.Mode() == RplMode.Client)
+		{
+			why = "not the authority";
+			return false;
+		}
+
+		bool pie = RplSession.Mode() == RplMode.None;
+		bool missionLoaded = TBD_MissionLoader.IsLoaded() && TBD_MissionLoader.IsValid();
+		TBD_FrameworkManager framework = TBD_FrameworkManager.GetInstance();
+		TBD_EGameStage stage = m_eStage;
+		if (framework)
+			stage = framework.GetStage();
+
+		string mode = typename.EnumToString(RplMode, RplSession.Mode());
+		string stageName = typename.EnumToString(TBD_EGameStage, stage);
+
+		if (m_bOneLife && IsPlayerDead(playerId))
+		{
+			why = "one life spent — only an admin respawn puts you back in";
+			Print(string.Format("[TBD][Spawn] ready player=%1 mode=%2 stage=%3 → REFUSED (%4)", playerId, mode, stageName, why), LogLevel.WARNING);
+			return false;
+		}
+
+		string skipped = "no mission document loaded";
+		if (missionLoaded)
+		{
+			if (pie && stage == TBD_EGameStage.LOBBY && framework)
+			{
+				framework.SetStage(TBD_EGameStage.BRIEFING);
+				if (framework.GetStage() != TBD_EGameStage.BRIEFING)
+					Print(string.Format("[TBD][Spawn] ready player=%1 — PIE advance LOBBY→BRIEFING refused: %2", playerId, framework.GetLastStageRefusal()), LogLevel.WARNING);
+				stageName = typename.EnumToString(TBD_EGameStage, framework.GetStage());
+			}
+
+			TBD_EDeployResult r = DeployPlayerEx(playerId);
+			string resultName = typename.EnumToString(TBD_EDeployResult, r);
+			if (r == TBD_EDeployResult.DEPLOYED || r == TBD_EDeployResult.ALREADY)
+			{
+				MarkHolderDeployed(playerId);
+				Print(string.Format("[TBD][Spawn] ready player=%1 mode=%2 stage=%3 → path=slot result=%4", playerId, mode, stageName, resultName));
+				return true;
+			}
+
+			if (!pie)
+			{
+				if (r == TBD_EDeployResult.RETRY)
+				{
+					ScheduleDeployRetry(playerId);
+					why = "deploying — bodies still settling";
+				}
+				else if (r == TBD_EDeployResult.FAILED && stage == TBD_EGameStage.LOBBY)
+				{
+					why = "bodies wait for BRIEFING — an admin advances the stage";
+				}
+				else
+				{
+					why = "deploy " + resultName + " — see the server log";
+				}
+
+				Print(string.Format("[TBD][Spawn] ready player=%1 mode=%2 stage=%3 → path=slot result=%4 (%5)", playerId, mode, stageName, resultName, why), LogLevel.WARNING);
+				return false;
+			}
+
+			skipped = "slot path " + resultName;
+		}
+		else if (!pie)
+		{
+			why = skipped;
+			Print(string.Format("[TBD][Spawn] ready player=%1 mode=%2 stage=%3 → REFUSED (%4)", playerId, mode, stageName, why), LogLevel.WARNING);
+			return false;
+		}
+
+		// PIE walk-on: any character, anywhere dry.
+		SCR_PlayerController pc = SCR_PlayerController.Cast(GetGame().GetPlayerManager().GetPlayerController(playerId));
+		if (!pc)
+		{
+			why = "no player controller";
+			Print(string.Format("[TBD][Spawn] ready player=%1 — walk-on refused: no player controller", playerId), LogLevel.ERROR);
+			return false;
+		}
+
+		IEntity body = SpawnWalkOnBody(playerId, why);
+		if (!body)
+			return false;
+
+		HandPlayerOntoBody(pc, body, playerId, BodyFactionKey(body), "walk-on");
+		MarkHolderDeployed(playerId);
+		vector pos = body.GetOrigin();
+		Print(string.Format("[TBD][Spawn] ready player=%1 mode=%2 stage=%3 → path=walk-on pos=%4 %5 %6 reason=%7",
+			playerId, mode, stageName, Math.Round(pos[0]), Math.Round(pos[1]), Math.Round(pos[2]), skipped));
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! PIE walk-on: a vanilla rifleman on dry random ground. Same spawn recipe as SpawnSlotBody
+	//! (WORLD transform, CAPSULE_GROUND_OFFSET_M, AI off) minus everything a slot carries —
+	//! identity, rank, stance, authored loadout. `why` is set on failure.
+	//! @authority server
+	protected IEntity SpawnWalkOnBody(int playerId, out string why)
+	{
+		Resource resource = Resource.Load(WALK_ON_PREFAB);
+		if (!resource || !resource.IsValid())
+		{
+			why = "walk-on prefab failed to load";
+			Print(string.Format("[TBD][Spawn] walk-on player=%1 — prefab failed to load: %2", playerId, WALK_ON_PREFAB), LogLevel.ERROR);
+			return null;
+		}
+
+		vector pos;
+		if (!FindDryLandPoint(pos))
+		{
+			IEntity owner = GetOwner();
+			if (owner)
+				pos = owner.GetOrigin();
+			pos[1] = GetGame().GetWorld().GetSurfaceY(pos[0], pos[2]);
+			Print(string.Format("[TBD][Spawn] walk-on player=%1 — no dry sample in %2 rolls, falling back to the game mode origin", playerId, WALK_ON_SAMPLES), LogLevel.WARNING);
+		}
+		pos[1] = pos[1] + CAPSULE_GROUND_OFFSET_M;
+
+		EntitySpawnParams params = new EntitySpawnParams();
+		params.TransformMode = ETransformMode.WORLD;
+		Math3D.MatrixIdentity4(params.Transform);
+		params.Transform[3] = pos;
+		float yawRad = Math.RandomFloat(0, Math.PI2);
+		params.Transform[0] = Vector(Math.Cos(yawRad), 0, Math.Sin(yawRad));
+		params.Transform[2] = Vector(-Math.Sin(yawRad), 0, Math.Cos(yawRad));
+
+		IEntity body = GetGame().SpawnEntityPrefab(resource, GetGame().GetWorld(), params);
+		if (!body)
+		{
+			why = "walk-on body failed to spawn";
+			Print(string.Format("[TBD][Spawn] walk-on player=%1 — SpawnEntityPrefab failed for %2", playerId, WALK_ON_PREFAB), LogLevel.ERROR);
+			return null;
+		}
+
+		DisableBodyAI(body);
+		return body;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Random point on the terrain that is above the sea and not under water (lakes, ponds):
+	//! GetBoundBox for the extent (the pattern TBD_PreSlotCamera.ResolveFocus uses), an edge
+	//! margin, then up to WALK_ON_SAMPLES rolls of Math.RandomFloat.
+	protected bool FindDryLandPoint(out vector pos)
+	{
+		BaseWorld world = GetGame().GetWorld();
+		if (!world)
+			return false;
+
+		vector mins;
+		vector maxs;
+		world.GetBoundBox(mins, maxs);
+		float minX = mins[0] + WALK_ON_EDGE_MARGIN_M;
+		float maxX = maxs[0] - WALK_ON_EDGE_MARGIN_M;
+		float minZ = mins[2] + WALK_ON_EDGE_MARGIN_M;
+		float maxZ = maxs[2] - WALK_ON_EDGE_MARGIN_M;
+		if (minX >= maxX || minZ >= maxZ)
+			return false;
+
+		for (int i = 0; i < WALK_ON_SAMPLES; i++)
+		{
+			float x = Math.RandomFloat(minX, maxX);
+			float z = Math.RandomFloat(minZ, maxZ);
+			float y = world.GetSurfaceY(x, z);
+			if (y < WALK_ON_MIN_ALTITUDE_M)
+				continue;
+
+			vector candidate = Vector(x, y, z);
+			if (ChimeraWorldUtils.TryGetWaterSurfaceSimple(world, candidate))
+				continue;
+
+			pos = candidate;
+			return true;
+		}
+
+		return false;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! T-181.22 — the real body of DeployPlayerEx. `protected` on purpose: `adminOverride`
 	//! disables ONE LIFE for this call, so the compiler — not a code-review convention — is what
 	//! keeps it inside the class. Callers: DeployPlayerEx (never overrides), AdminRespawn, and
@@ -2709,20 +2916,37 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			return TBD_EDeployResult.RETRY;
 		}
 
+		// Mission key first; if it maps to nothing (modded kit faction, unmapped side)
+		// fall back to whatever faction the body itself was built as, so the player is
+		// never registered under an empty key.
+		string engineKey = EngineFactionKey(slot.faction);
+		if (engineKey.IsEmpty())
+			engineKey = BodyFactionKey(body);
+
+		// T-181.10 — this body is now spoken for. A later deploy by anyone else on this slot
+		// sees the mismatch and materializes a fresh dressed body instead of inheriting it.
+		m_mBodyBoundTo.Set(slot.Key(), bindKey);
+
+		HandPlayerOntoBody(pc, body, playerId, engineKey, string.Format("slot=%1 faction=%2", slot.id, slot.faction));
+		Print(string.Format("[TBD] SpawnManager: bound player %1 to slot %2 body (kit %3)", playerId, slot.Key(), slot.kit));
+		return TBD_EDeployResult.DEPLOYED;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! The takeover, shared by the slot path (DeployPlayerInternal) and the PIE walk-on
+	//! (DeployOnReady): affiliation, spectator release, spawn ticket, possess, bookkeeping,
+	//! watchdog — in exactly the order the slot path always ran them (2026-09-14 extraction).
+	//! `label` only names the caller in the affiliation warning.
+	//! @authority server
+	protected void HandPlayerOntoBody(SCR_PlayerController pc, IEntity body, int playerId, string engineFactionKey, string label)
+	{
 		SCR_PlayerFactionAffiliationComponent factionComp = SCR_PlayerFactionAffiliationComponent.Cast(
 			pc.FindComponent(SCR_PlayerFactionAffiliationComponent));
 		if (factionComp)
 		{
-			// Mission key first; if it maps to nothing (modded kit faction, unmapped side)
-			// fall back to whatever faction the body itself was built as, so the player is
-			// never registered under an empty key.
-			string engineKey = EngineFactionKey(slot.faction);
-			if (engineKey.IsEmpty())
-				engineKey = BodyFactionKey(body);
-
-			if (!engineKey.IsEmpty())
+			if (!engineFactionKey.IsEmpty())
 			{
-				factionComp.SetAffiliatedFactionByKey(engineKey);
+				factionComp.SetAffiliatedFactionByKey(engineFactionKey);
 				// Vanilla only learns about the affiliation through the manager (the
 				// PlayableSelector finalize); without it the player is faction-correct
 				// locally but invisible to faction-keyed vanilla systems.
@@ -2732,8 +2956,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			}
 			else
 			{
-				Print(string.Format("[TBD][Spawn] slot=%1 faction=%2 has no engine mapping — affiliation left untouched",
-					slot.id, slot.faction), LogLevel.WARNING);
+				Print(string.Format("[TBD][Spawn] %1 has no engine mapping — affiliation left untouched", label), LogLevel.WARNING);
 			}
 		}
 
@@ -2779,12 +3002,8 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		m_mDeployRequested.Set(playerId, true);
 
-		// T-181.10 — this body is now spoken for. A later deploy by anyone else on this slot
-		// sees the mismatch and materializes a fresh dressed body instead of inheriting it.
-		m_mBodyBoundTo.Set(slot.Key(), bindKey);
 		m_mRetryCount.Remove(playerId);
 		m_mSpawnSeen.Remove(playerId);
-		Print(string.Format("[TBD] SpawnManager: bound player %1 to slot %2 body (kit %3)", playerId, slot.Key(), slot.kit));
 
 		// Announce the spawn ourselves ONLY on the fallback route. The possess pipeline
 		// fires the game mode's spawn invoker itself, and our hook is subscribed to it —
@@ -2793,13 +3012,13 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (!possessed)
 			NotifySpawnedManually(playerId);
 
+
 		// A1 watchdog: if control never materializes, re-arm so the next pull
 		// attempt can deploy instead of wedging on ALREADY forever.
 		// T-181.15 — stamped with the connection epoch: this fires 10 s later, which is ample time
 		// for the player to drop and the server to hand their number to somebody else, and the
 		// unstamped version would then clear the NEW player's deploy latch.
 		GetGame().GetCallqueue().CallLater(CheckSpawnArrived, 10000, false, playerId, EnsureConnectEpoch(playerId));
-		return TBD_EDeployResult.DEPLOYED;
 	}
 
 	//------------------------------------------------------------------------------------------------
