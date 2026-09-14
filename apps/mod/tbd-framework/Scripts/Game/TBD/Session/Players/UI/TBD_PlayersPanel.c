@@ -110,7 +110,6 @@ class TBD_PlayerLane : Managed
 {
 	protected Widget m_wRoot;
 	protected ref TBD_ScrollList m_List;
-	protected string m_sName;
 
 	//------------------------------------------------------------------------------------------------
 	bool Build(Widget dock, string name, string role, TBD_EUITint tint, array<TBD_PlayerInfo> rows, string countLabel, string countText)
@@ -180,40 +179,8 @@ class TBD_PlayerLane : Managed
 
 		m_List.ResetScroll();
 
-		// Diagnostic (MEASURED run 6: rows created, list 0x0 when measured at once) — measure after a
-		// layout pass, every level from the dock down.
-		m_sName = name;
 		Print(string.Format("[TBD][players] lane %1: %2 rows asked, %3 created", name, rows.Count(), created));
-		GetGame().GetCallqueue().CallLater(Measure, 250, false);
 		return true;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected void Measure()
-	{
-		if (!m_wRoot || !m_List)
-			return;
-
-		Widget content = m_List.GetContent();
-		Widget first;
-		if (content)
-			first = content.GetChildren();
-
-		Print(string.Format("[TBD][players] %1 rects: lane %2 · dock %3 · list %4 · frame %5 · scroll %6 · content %7 · row %8",
-			m_sName, Rect(m_wRoot), Rect(m_wRoot.FindAnyWidget("ListDock")), Rect(m_List.GetRoot()),
-			Rect(m_List.GetRoot().FindAnyWidget("ListFrame")), Rect(m_List.GetRoot().FindAnyWidget("Scroll")), Rect(content), Rect(first)));
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected static string Rect(Widget w)
-	{
-		if (!w)
-			return "null";
-
-		float x, y, sx, sy;
-		w.GetScreenPos(x, y);
-		w.GetScreenSize(sx, sy);
-		return string.Format("%1,%2 %3x%4 vis=%5", Math.Round(x), Math.Round(y), Math.Round(sx), Math.Round(sy), w.IsVisible());
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -252,6 +219,8 @@ class TBD_PlayerLane : Managed
 		TBD_UITheme.Paint(ping, TBD_UITheme.ChipInk(pingTint));
 
 		TBD_UITheme.PaintOver(row.FindAnyWidget("Background"), TBD_UITheme.TRANSPARENT, ground);
+		// The rule's 1 px is the RowRuleSize SizeLayout in the layout: an untextured image in a
+		// bottom-aligned overlay slot has no height of its own and swallowed the whole row (2026-09-14).
 		TBD_UITheme.PaintOver(row.FindAnyWidget("RowRule"), TBD_UITheme.SLOT_RULE, ground);
 		return true;
 	}
@@ -259,7 +228,6 @@ class TBD_PlayerLane : Managed
 	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
-		GetGame().GetCallqueue().Remove(Measure);
 		if (m_List)
 			m_List.Destroy();
 

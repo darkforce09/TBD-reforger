@@ -120,13 +120,24 @@ SizeLayoutWidgetClass "{7BD1A70000004500}" {
       }
      }
     }
-    ImageWidgetClass "{7BD1A7000000451A}" {
-     Name "RowRule"
-     Slot OverlayWidgetSlot "{7BD1A7000000451B}" {
+    SizeLayoutWidgetClass "{7BD1A7000000451C}" {
+     Name "RowRuleSize"
+     Slot OverlayWidgetSlot "{7BD1A7000000451D}" {
       HorizontalAlign 3
       VerticalAlign 2
      }
-     Color 1 1 1 0.03
+     AllowHeightOverride 1
+     HeightOverride 1
+     {
+      ImageWidgetClass "{7BD1A7000000451A}" {
+       Name "RowRule"
+       Slot AlignableSlot "{7BD1A7000000451B}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.03
+      }
+     }
     }
    }
   }
