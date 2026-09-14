@@ -95,3 +95,34 @@ pub(crate) fn server_intel_source() -> String {
     .map(production)
     .concat()
 }
+
+/// The doctrine wiki, as one text: the route component, the index, the article surface and the
+/// Markdown renderer.
+pub(crate) fn wiki_source() -> String {
+    [
+        include_str!("../../pages/doctrine_and_info/wiki/mod.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/category_nav.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/helpers.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/markdown.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/markdown_article.rs"),
+        include_str!("../../pages/doctrine_and_info/wiki/page.rs"),
+    ]
+    .map(production)
+    .concat()
+}
+
+/// The modpacks page, as one text: the route component, the list, the manifest, the edit form,
+/// the mode switch and the draft type.
+pub(crate) fn modpacks_source() -> String {
+    [
+        include_str!("../../pages/doctrine_and_info/modpacks/mod.rs"),
+        include_str!("../../pages/doctrine_and_info/modpacks/mod_table.rs"),
+        include_str!("../../pages/doctrine_and_info/modpacks/mode_toggle.rs"),
+        include_str!("../../pages/doctrine_and_info/modpacks/pack_edit.rs"),
+        include_str!("../../pages/doctrine_and_info/modpacks/pack_editor.rs"),
+        include_str!("../../pages/doctrine_and_info/modpacks/page.rs"),
+        include_str!("../../pages/doctrine_and_info/modpacks/preset_list.rs"),
+    ]
+    .map(production)
+    .concat()
+}

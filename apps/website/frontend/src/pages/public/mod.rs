@@ -3,8 +3,5 @@
 
 pub mod deployments;
 pub mod leaderboards;
-pub mod modpacks;
 pub mod mortar;
 pub mod settings;
-pub mod vehicles;
-pub mod wiki;

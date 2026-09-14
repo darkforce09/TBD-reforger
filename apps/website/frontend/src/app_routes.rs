@@ -19,14 +19,15 @@ use crate::pages::admin::server_control::ServerControlPage;
 use crate::pages::operations::event_schedule::EventSchedulePage;
 use crate::pages::public::deployments::DeploymentsPage;
 use crate::pages::public::leaderboards::LeaderboardsPage;
-use crate::pages::public::modpacks::ModpacksPage;
 use crate::pages::public::mortar::MortarCalculatorPage;
 use crate::pages::public::settings::SettingsPage;
-use crate::pages::public::vehicles::VehicleDatabasePage;
 use crate::v2::pages::account::login::LoginPage;
 use crate::v2::pages::command_center::announcements::AnnouncementsPage;
 use crate::v2::pages::command_center::dashboard::DashboardPage;
 use crate::v2::pages::command_center::server_intel::ServerIntelPage;
+use crate::v2::pages::doctrine_and_info::modpacks::ModpacksPage;
+use crate::v2::pages::doctrine_and_info::vehicles::VehicleDatabasePage;
+use crate::v2::pages::doctrine_and_info::wiki::WikiPage;
 use crate::v2::pages::navigation::not_found::NotFoundPage;
 use leptos::prelude::*;
 use leptos_router::components::{Route, Routes};
@@ -57,8 +58,8 @@ pub fn AppRoutes() -> impl IntoView {
                 path=path!("/events/:id/missions/:emid/orbat")
                 view=crate::pages::operations::orbat_selection::OrbatSelectionPage
             />
-            <Route path=path!("/wiki") view=crate::pages::public::wiki::WikiPage />
-            <Route path=path!("/wiki/:slug") view=crate::pages::public::wiki::WikiPage />
+            <Route path=path!("/wiki") view=WikiPage />
+            <Route path=path!("/wiki/:slug") view=WikiPage />
             <Route path=path!("/vehicles") view=VehicleDatabasePage />
             <Route path=path!("/modpacks") view=ModpacksPage />
             <Route path=path!("/tools/mortar") view=MortarCalculatorPage />
