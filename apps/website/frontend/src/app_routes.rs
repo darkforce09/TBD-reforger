@@ -11,16 +11,16 @@
 //! renders with default layout and no tier requirement.
 
 use crate::editor::library::mission_library::MissionLibraryPage;
-use crate::pages::admin::approvals::MissionApprovalsPage;
-use crate::pages::admin::audit::AuditLogsPage;
-use crate::pages::admin::content::ContentManagerPage;
-use crate::pages::admin::personnel::PersonnelRosterPage;
-use crate::pages::admin::server_control::ServerControlPage;
 use crate::pages::operations::event_schedule::EventSchedulePage;
 use crate::pages::public::deployments::DeploymentsPage;
 use crate::pages::public::leaderboards::LeaderboardsPage;
 use crate::v2::pages::account::login::LoginPage;
 use crate::v2::pages::account::settings::SettingsPage;
+use crate::v2::pages::administration::approvals::MissionApprovalsPage;
+use crate::v2::pages::administration::audit_logs::AuditLogsPage;
+use crate::v2::pages::administration::content_manager::ContentManagerPage;
+use crate::v2::pages::administration::personnel::PersonnelRosterPage;
+use crate::v2::pages::administration::server_control::ServerControlPage;
 use crate::v2::pages::command_center::announcements::AnnouncementsPage;
 use crate::v2::pages::command_center::dashboard::DashboardPage;
 use crate::v2::pages::command_center::server_intel::ServerIntelPage;
@@ -72,7 +72,7 @@ pub fn AppRoutes() -> impl IntoView {
                 view=crate::pages::debug::world_los::WorldLosPage
             />
             <Route path=path!("/settings") view=SettingsPage />
-            <Route path=path!("/admin/events") view=crate::pages::admin::event_manager::EventManagerPage />
+            <Route path=path!("/admin/events") view=crate::v2::pages::administration::event_manager::EventManagerPage />
             <Route path=path!("/admin/approvals") view=MissionApprovalsPage />
             <Route path=path!("/admin/server") view=ServerControlPage />
             <Route path=path!("/admin/personnel") view=PersonnelRosterPage />

@@ -1,57 +1,27 @@
-//! Mission Approvals (/admin/approvals) — ported from pages/admin.tsx `MissionApprovalsPage` +
-//! `ReviewInspector`. `<AdminGate>` → `/approvals` Resource → a `SplitPane`: the pending queue
-//! master + the `ReviewInspector` detail pane with the LIVE approve/reject mutations
-//! (POST /approvals/:id/{approve,reject}); the queue refetches on success.
+//! The review drawer: the mission being decided on, and the two decisions.
 //!
-//! T-218 — this surface stopped inventing things:
-//!
-//! - REJECT SENDS ITS REASON. `POST /approvals/:id/reject` takes `RejectInput { reason }` and
-//!   writes it to `missions.rejection_reason`. This page posted `serde_json::json!({})`, so the
-//!   column was overwritten with `""` on every rejection and the author was told their mission was
-//!   returned with no word on why. The action bar now owns the reason field and the button will
-//!   not fire without one — an empty reason is the bug, not a shortcut.
-//!
-//! - THE APPROVED / REJECTED TABS ARE GONE. They were `mock_approved()` / `mock_rejected()`: three
-//!   invented missions by two invented authors, rendered as review history. The same mocks fed the
-//!   tab counters, so an empty database advertised "Approved (2) / Rejected (1)" and a reviewer
-//!   could open "Operation Iron Veil" and act on it. `GET /approvals` selects
-//!   `status = 'pending_approval'` and nothing else, and no endpoint lists the other two states, so
-//!   there is no honest tab to put there — deleted rather than gated, per T-195: a "demo data"
-//!   ribbon is still a queue of missions that do not exist. They return with the endpoint (T-283).
-//!
-//! - THE TWO BUTTONS THAT LIED WENT WITH THEM. "Revoke Approval & Unpublish" and the rejected
-//!   tab's "Approve & Publish" existed only in those mock tabs and only ever raised a toast —
-//!   "Mission unpublished — pulled from the live server" over a mission that was still live.
-//!
-//! - THE BRIEFING AND STAT TILES ARE THE MISSION'S OWN. They were a fixed paragraph about
-//!   contested farmland plus "BLUFOR Slots 32 / OPFOR Type Mechanized / Est. Duration ~90 min",
-//!   printed under whichever real mission was selected. That is the one screen where fabricated
-//!   facts do direct damage: it is the page where someone decides. They now come from
-//!   `GET /missions/:id` (an admin passes `can_edit`, so a pending mission is readable), and a
-//!   mission that supplied no briefing says so.
-//!
-//! STILL NOT REAL, AND LABELLED AS SUCH: the reviewer comment box is a local signal with no
-//! backing table in any migration. That is T-283's ticket, so the box stays — but it now says on
-//! screen that nothing it holds is saved or visible to the author, which is the part that mattered.
+//! **Role:** the submission's header, its own briefing and settings read from the mission itself,
+//! the local scratch notes, and the action bar carrying the rejection reason.
+//! **Position:** the detail pane of the approvals route, beside the pending queue.
+//! **Signals & state:** owns `reason` (what the author will be told), `approve_busy` and
+//! `reject_busy`, and the scratch notes. The mission's own record lives in a `LocalResource` keyed
+//! on the selected submission. Both decisions refetch the queue on success.
+//! **Invariants:** requesting changes **sends its reason**, and the control stays disabled while
+//! the box is blank — an empty reason returns a mission to its author with no word on why. The
+//! reason is trimmed, because whitespace reaches them as nothing at all. The briefing and the four
+//! settings come from the mission being reviewed; a mission that supplied no briefing says so
+//! rather than borrowing someone else's words. This is a component rather than a plain function
+//! because it owns a fetch and the caller invokes it per selected row: a component gets its own
+//! owner, so changing rows disposes the previous fetch instead of stacking them.
 #![allow(dead_code)]
-use crate::v2::core::api::dto::{ApprovalRow, MissionDetail, Paginated};
-use crate::v2::core::ui::split_pane::{SplitPane, SplitPaneEmpty};
-use crate::v2::core::ui::{cn, AdminGate, MaterialIcon};
-use crate::v2::core::utils::datefmt::{format_local_datetime, format_short_date};
+
+use super::submission_queue::terrain_label;
+use crate::v2::core::api::dto::{ApprovalRow, MissionDetail};
+use crate::v2::core::ui::{cn, MaterialIcon};
+use crate::v2::core::utils::datefmt::format_local_datetime;
 use leptos::prelude::*;
 
-fn terrain_label(t: &str) -> String {
-    if t.is_empty() {
-        return "—".into();
-    }
-    let mut c = t.chars();
-    match c.next() {
-        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-        None => String::new(),
-    }
-}
-
-/// `gameModeLabel` (lib/format.ts) — matches mission_overview.rs.
+/// A game mode's wire value as the label the review surface shows.
 fn game_mode_label(mode: &str) -> &str {
     match mode {
         "pve_coop" => "COOP",
@@ -61,7 +31,7 @@ fn game_mode_label(mode: &str) -> &str {
     }
 }
 
-/// `heavy_rain` → `Heavy rain`. The wire enums are snake_case; nothing else renders them here.
+/// A snake_case wire enum as a readable label, or a dash when it is empty.
 fn enum_label(v: &str) -> String {
     if v.is_empty() {
         return "—".into();
@@ -74,190 +44,25 @@ fn enum_label(v: &str) -> String {
     }
 }
 
-#[component]
-pub fn MissionApprovalsPage() -> impl IntoView {
-    view! {
-        <AdminGate>
-            <MissionApprovalsInner />
-        </AdminGate>
-    }
-}
-
-#[component]
-fn MissionApprovalsInner() -> impl IntoView {
-    let store = expect_context::<crate::v2::core::auth::AuthStore>();
-    let approvals = LocalResource::new(move || async move {
-        #[cfg(target_arch = "wasm32")]
-        {
-            crate::v2::core::api::client::api_get::<Paginated<ApprovalRow>>(store, "/approvals")
-                .await
-                .ok()
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            let _ = store;
-            None::<Paginated<ApprovalRow>>
-        }
-    });
-    let selected_id = RwSignal::new(None::<String>);
-    let refetch = Callback::new(move |()| approvals.refetch());
-    view! {
-        <Suspense fallback=move || {
-            view! { <p class="text-on-surface-variant">"Loading…"</p> }
-        }>
-            {move || {
-                approvals
-                    .get()
-                    .map(|opt| match opt {
-                        Some(page) => {
-                            board(page.data, page.total, selected_id, refetch).into_any()
-                        }
-                        None => {
-                            view! { <p class="text-error">"Failed to load data."</p> }.into_any()
-                        }
-                    })
-            }}
-    </Suspense>
-    }
-}
-
-fn board(
-    pending: Vec<ApprovalRow>,
-    total: i64,
-    selected_id: RwSignal<Option<String>>,
-    refetch: Callback<()>,
-) -> impl IntoView {
-    let rows_sv = StoredValue::new(pending);
-    // The count is the server's `total`, not the length of this page — the queue is paginated and
-    // a 20-row page of a 40-row backlog must not read "20". The old counter was
-    // `mock_approved().len()`, which is why an empty database claimed two approvals.
-    let master_header = view! {
-        <div class="flex w-full items-center justify-between gap-2">
-            <h2 class="text-label-md font-semibold tracking-wide text-on-surface uppercase">
-                "Pending Review"
-            </h2>
-            <span class="font-mono text-code-md text-on-surface-variant tabular-nums">{total}</span>
-        </div>
-    }
-    .into_any();
-
-    let selected = move || {
-        let rows = rows_sv.get_value();
-        selected_id
-            .get()
-            .and_then(|id| rows.iter().find(|r| r.mission_id == id).cloned())
-            .or_else(|| rows.first().cloned())
-    };
-
-    let master = view! {
-        {move || {
-            let rows = rows_sv.get_value();
-            if rows.is_empty() {
-                view! {
-                    <p class="px-1 py-4 text-label-md text-on-surface-variant">
-                        "No pending approvals."
-                    </p>
-                }
-                    .into_any()
-            } else {
-                let sel = selected();
-                rows.into_iter()
-                    .map(|r| {
-                        let active = sel
-                            .as_ref()
-                            .map(|s| s.mission_id == r.mission_id)
-                            .unwrap_or(false);
-                        let rid = r.mission_id.clone();
-                        view! {
-                            <button
-                                type="button"
-                                on:click=move |_| selected_id.set(Some(rid.clone()))
-                                class=cn(
-                                    &[
-                                        "group w-full rounded-r-xl border-l-4 px-4 py-3 text-left transition-all duration-200",
-                                        if active {
-                                            "border-primary bg-primary/15 shadow-[inset_0_0_18px_rgba(173,198,255,0.15)]"
-                                        } else {
-                                            "border-transparent hover:bg-white/[0.03]"
-                                        },
-                                    ],
-                                )
-                            >
-                                <span class=cn(
-                                    &[
-                                        "font-mono text-code-md",
-                                        if active { "text-primary" } else { "text-outline" },
-                                    ],
-                                )>"[" {format_short_date(&r.submitted_at)} "]"</span>
-                                <h3 class=cn(
-                                    &[
-                                        "mt-1 truncate text-label-md font-semibold",
-                                        if active {
-                                            "text-on-surface"
-                                        } else {
-                                            "text-on-surface-variant group-hover:text-on-surface"
-                                        },
-                                    ],
-                                )>{r.title.clone()}</h3>
-                                <p class="mt-0.5 truncate text-label-sm text-on-surface-variant">
-                                    "By " {r.author_name.clone()} " · " {terrain_label(&r.terrain)}
-                                </p>
-                            </button>
-                        }
-                    })
-                    .collect_view()
-                    .into_any()
-            }
-        }}
-    }
-        .into_any();
-
-    let detail = view! {
-        {move || match selected() {
-            Some(row) => view! { <ReviewInspector row=row refetch=refetch /> }.into_any(),
-            None => {
-                view! {
-                    <SplitPaneEmpty
-                        icon=view! { <MaterialIcon name="task_alt" class="text-4xl" /> }.into_any()
-                        message="Queue clear — no pending approvals."
-                    />
-                }
-                    .into_any()
-            }
-        }}
-    }
-    .into_any();
-
-    view! { <SplitPane master_header=master_header master=master detail=detail /> }
-}
-
-/// The GitHub-PR-meets-chat review surface (admin.tsx `ReviewInspector`): cinematic header, the
-/// mission's real briefing + stats, the (local, labelled) comment box, and the sticky action bar
-/// carrying the rejection reason. Every row reaching here is `pending_approval`, so both actions
-/// hit the API.
+/// The review surface for one pending submission.
 ///
-/// A component rather than a plain `fn` (which is what it was) because it now owns a
-/// `LocalResource`, and the caller invokes it from inside a reactive closure — one per selected
-/// row. A component gets its own owner, so switching rows disposes the previous fetch and its
-/// signals instead of stacking them on the enclosing effect. Same reason `MissionDossierSheet`
-/// (missions.rs) is a component.
+/// Renders the header, the mission's briefing and settings, the scratch notes, and the action bar
+/// with the rejection reason.
 #[component]
-fn ReviewInspector(row: ApprovalRow, refetch: Callback<()>) -> impl IntoView {
+pub(super) fn ReviewInspector(row: ApprovalRow, refetch: Callback<()>) -> impl IntoView {
     let store = expect_context::<crate::v2::core::auth::AuthStore>();
     #[cfg(not(target_arch = "wasm32"))]
     let _ = (&store, &refetch);
     let mid = StoredValue::new(row.mission_id.clone());
     let approve_busy = RwSignal::new(false);
     let reject_busy = RwSignal::new(false);
-    // The rejection reason. This is the whole ticket: it is read at POST time and sent as
-    // `RejectInput { reason }`, and "Request Changes" stays disabled while it is blank so a
-    // reviewer cannot repeat the silent-discard by accident.
+    // The rejection reason. It is read when the decision is sent, and the control stays disabled
+    // while it is blank, so a mission cannot be returned with nothing said.
     let reason = RwSignal::new(String::new());
     let reason_blank = move || reason.get().trim().is_empty();
 
-    // The mission's own briefing + settings. Admins pass `can_edit`, so a pending mission is
-    // readable; this replaces the fixed "contested farmland" paragraph that used to print under
-    // every mission in the queue.
+    // The mission's own briefing and settings. An administrator may read a pending mission, so
+    // the words under the header belong to the mission being reviewed.
     let detail = LocalResource::new(move || {
         let id = mid.get_value();
         async move {
@@ -276,8 +81,8 @@ fn ReviewInspector(row: ApprovalRow, refetch: Callback<()>) -> impl IntoView {
         }
     });
 
-    // Local comment feed — no comments table exists in any migration (T-283). Kept so the slice
-    // does not delete a queued feature out from under it, captioned so nobody mistakes it for one.
+    // A local note feed: there is no review-comments table behind it. Kept, and captioned on
+    // screen so nobody mistakes it for something the author will see.
     let comments = RwSignal::new(Vec::<String>::new());
     let draft = RwSignal::new(String::new());
     let post_comment = move || {
@@ -540,6 +345,7 @@ fn ReviewInspector(row: ApprovalRow, refetch: Callback<()>) -> impl IntoView {
     }
 }
 
+/// One of the four setting tiles under the briefing.
 fn stat_tile(label: &'static str, value: String) -> impl IntoView {
     view! {
         <div class="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">

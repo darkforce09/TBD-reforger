@@ -126,3 +126,78 @@ pub(crate) fn modpacks_source() -> String {
     .map(production)
     .concat()
 }
+
+/// The operations calendar, as one text: the route component, the state, the calendar body, the
+/// two forms, the mission pickers and the destructive confirmations.
+pub(crate) fn event_manager_source() -> String {
+    [
+        include_str!("../../pages/administration/event_manager/mod.rs"),
+        include_str!("../../pages/administration/event_manager/confirm_dialogs.rs"),
+        include_str!("../../pages/administration/event_manager/dates.rs"),
+        include_str!("../../pages/administration/event_manager/edit_dialog.rs"),
+        include_str!("../../pages/administration/event_manager/event_table.rs"),
+        include_str!("../../pages/administration/event_manager/lifecycle.rs"),
+        include_str!("../../pages/administration/event_manager/mission_picker.rs"),
+        include_str!("../../pages/administration/event_manager/page.rs"),
+        include_str!("../../pages/administration/event_manager/schedule_dialog.rs"),
+        include_str!("../../pages/administration/event_manager/state.rs"),
+    ]
+    .map(production)
+    .concat()
+}
+
+/// Server control, as one text: the route component, the picker and card, the console, and the
+/// RCON channel behind them.
+pub(crate) fn server_control_source() -> String {
+    [
+        include_str!("../../pages/administration/server_control/mod.rs"),
+        include_str!("../../pages/administration/server_control/page.rs"),
+        include_str!("../../pages/administration/server_control/rcon.rs"),
+        include_str!("../../pages/administration/server_control/rcon_console.rs"),
+        include_str!("../../pages/administration/server_control/server_cards.rs"),
+    ]
+    .map(production)
+    .concat()
+}
+
+/// The personnel roster, as one text: the route component, the roster table, the dossier and the
+/// role and sanction controls.
+pub(crate) fn personnel_source() -> String {
+    [
+        include_str!("../../pages/administration/personnel/mod.rs"),
+        include_str!("../../pages/administration/personnel/dossier.rs"),
+        include_str!("../../pages/administration/personnel/member_roster.rs"),
+        include_str!("../../pages/administration/personnel/page.rs"),
+        include_str!("../../pages/administration/personnel/role_dialog.rs"),
+    ]
+    .map(production)
+    .concat()
+}
+
+/// The content manager, as one text: the route component first, so the guards that read the boot
+/// path, the hydrate and the two panes see them in the order the file declares them, then the post
+/// shape, the list row, the editor form and the hero upload.
+pub(crate) fn content_source() -> String {
+    [
+        include_str!("../../pages/administration/content_manager/page.rs"),
+        include_str!("../../pages/administration/content_manager/mod.rs"),
+        include_str!("../../pages/administration/content_manager/article_table.rs"),
+        include_str!("../../pages/administration/content_manager/doc.rs"),
+        include_str!("../../pages/administration/content_manager/editor_form.rs"),
+        include_str!("../../pages/administration/content_manager/hero_upload.rs"),
+    ]
+    .map(production)
+    .concat()
+}
+
+/// The audit trail, as one text: the route component, the filter box and the trail itself.
+pub(crate) fn audit_source() -> String {
+    [
+        include_str!("../../pages/administration/audit_logs/mod.rs"),
+        include_str!("../../pages/administration/audit_logs/filter_bar.rs"),
+        include_str!("../../pages/administration/audit_logs/log_table.rs"),
+        include_str!("../../pages/administration/audit_logs/page.rs"),
+    ]
+    .map(production)
+    .concat()
+}
