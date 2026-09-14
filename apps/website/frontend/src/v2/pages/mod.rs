@@ -8,4 +8,5 @@
 //! `core` may import from here.
 
 pub mod account;
+pub mod command_center;
 pub mod navigation;

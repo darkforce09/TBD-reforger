@@ -81,3 +81,17 @@ pub(crate) fn auth_source() -> String {
     .map(production)
     .concat()
 }
+
+/// The live server panel, as one text: the route component, the connect header, the telemetry
+/// grid, and the picker and shell that compose them.
+pub(crate) fn server_intel_source() -> String {
+    [
+        include_str!("../../pages/command_center/server_intel/mod.rs"),
+        include_str!("../../pages/command_center/server_intel/page.rs"),
+        include_str!("../../pages/command_center/server_intel/direct_connect.rs"),
+        include_str!("../../pages/command_center/server_intel/player_census.rs"),
+        include_str!("../../pages/command_center/server_intel/server_list.rs"),
+    ]
+    .map(production)
+    .concat()
+}

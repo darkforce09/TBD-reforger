@@ -20,11 +20,11 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 fn class_r_sse_abort_teardown_exists() {
     let src = crate::v2::core::test_support::pins::sse_source();
     let src: &str = &src;
-    const INTEL: &str = include_str!("../../../../pages/public/server_intel.rs");
+    let intel = crate::v2::core::test_support::pins::server_intel_source();
     let production = live_code(src);
     // The page-side needle is scrubbed too, so commenting out the live cleanup registration
     // while leaving its text in a comment fails rather than passes.
-    let intel_code = live_code(INTEL);
+    let intel_code = live_code(&intel);
 
     assert_eq!(
         super::SSE_ABORT_CLEANUP_FN,
