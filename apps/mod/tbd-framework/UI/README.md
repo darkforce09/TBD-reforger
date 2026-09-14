@@ -16,7 +16,7 @@ UI/
         ├── Shared/                <-- Session-wide chrome: TBD_SessionTopBar, TBD_SessionBottomBar
         ├── MissionSelector/       <-- Scenario browser: dock shell + 7 sub-layouts (shipped 2026-09-12)
         ├── Lobby/                 <-- ORBAT slotting: dock shell + 9 sub-layouts (rebuilt 2026-09-13)
-        ├── Briefing/              <-- Tactical briefing tabs & panels
+        ├── Briefing/              <-- Briefing dock shell over the map + page sub-layouts (2026-09-14)
         ├── Admin/                 <-- Mission control & referee console panels
         ├── Spectator/             <-- Broadcast glass pod & forensic trauma panels
         ├── Pause/                 <-- In-game pause & player options sidebar

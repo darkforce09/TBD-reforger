@@ -8,6 +8,9 @@ Layouts that two or more session screens wear unchanged. Handlers live in
 |---|---|---|---|---|
 | `TBD_SessionTopBar.layout` | `TBD_SessionTopBar` | `1B` | `BarBorder`, `BarBG`, `Title`, `TabStripDock`, `IdentityBox` (`IdentityBorder`, `IdentityBG`, `IdentityName`, `IdentityRoleDock`), `CountBox` (`CountBorder`, `CountBG`, `CountIcon`, `CountText`) | `SetTitle(text, mono)`, `SetActiveTab(TBD_ESessionTab)`, `SetIdentity(TBD_SessionIdentity)`, `SetPlayerCount(n, cap)`, `GetOnTabSelected()(bar, tab)`, `GetStrip()` |
 | `TBD_SessionBottomBar.layout` | `TBD_SessionBottomBar` | `1C` | `BarBorder`, `BarBG`, `LeftActions`, `RightActions` | `AddAction(id, label, primary, left)`, `SetActionLabel/Enabled/Visible/Primary`, `RemoveAll`, `FocusPrimary`, `GetOnAction()(bar, id)` |
+| `TBD_PlayersPanel.layout` | `TBD_PlayersPanel` (`Session/Players/UI/`, a briefing mode in `WideDock`) | `43` | `Window` (fills the dock: `WindowBorder`, `WindowBG`, `Header`: `Title`, `TotalText`, `HeaderRule`), `BluforDock`, `OpforDock` (top 63 %), `SpectatorDock`, `UnslottedDock` (anchor-based, resize with the dock) | `Build(dock)` / `Destroy()` |
+| `TBD_PlayerLane.layout` | `TBD_PlayerLane` (same file) | `44` | `Border`, `Background`, `HeaderClip`/`HeaderBG`, `NameText`, `RoleChipDock`, `CountLabel`, `CountChipDock`, `ColIndex`/`ColPlayer`/`ColPing`, `ColumnRule`, `ListDock` (a `TBD_ScrollList`) | `Build(dock, name, role, tint, rows, countLabel, countText)` |
+| `TBD_PlayerRow.layout` | none (rows written by the lane) | `45` | `Index`, `Icon`, `Name`, `TagChipDock`, `Ping`, `RowRule` | ping ink SUCCESS < 40 ms, WARNING < 80, DANGER above |
 
 ## How a screen wears them
 
@@ -28,8 +31,8 @@ second `primary = true` demotes the earlier one and logs it (one loud button per
 
 ## Status
 
-- **Shipped (2026-09-12):** both bars, worn by the Mission Selector.
-- **Next:** the Lobby and Briefing shells swap their `TBD_LobbyHeader` / `TBD_LobbyFooter` for
-  these two (a `Mount()` swap in their screen classes — operator-gated, not this pass).
-- **Pending mockups for this folder:** `voice_panel` (`TBD_VoicePanel.layout`) and
-  `players_panel` (`TBD_PlayersModal.layout`).
+- **Shipped:** both bars, worn by all three pre-game screens (selector 2026-09-12, lobby
+  2026-09-13, briefing 2026-09-14); the players modal (2026-09-14, opened from the briefing's
+  primary nav; any screen may open it).
+- **Pending mockup for this folder:** `voice_panel` (`TBD_VoicePanel.layout`, mounts into the
+  lobby's `VoiceDock`).

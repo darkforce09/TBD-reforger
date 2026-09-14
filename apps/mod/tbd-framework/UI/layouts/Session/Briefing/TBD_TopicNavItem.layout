@@ -1,0 +1,106 @@
+ButtonWidgetClass "{7BD1A70000004800}" {
+ Name "TopicNavItem"
+ Slot AlignableSlot "{7BD1A70000004802}" {
+  HorizontalAlign 3
+  VerticalAlign 0
+  Padding 0 0 0 4
+ }
+ Color 1 1 1 0
+ components {
+  TBD_TopicNavItemComponent "{7BD1A70000004803}" {
+  }
+ }
+ {
+  VerticalLayoutWidgetClass "{7BD1A70000004804}" {
+   Name "ItemStack"
+   Slot ButtonWidgetSlot "{7BD1A70000004805}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   {
+    SizeLayoutWidgetClass "{7BD1A70000004806}" {
+     Name "SeparatorSize"
+     Slot LayoutSlot "{7BD1A70000004807}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+      Padding 0 8 0 12
+     }
+     AllowHeightOverride 1
+     HeightOverride 1
+     {
+      ImageWidgetClass "{7BD1A70000004808}" {
+       Name "Separator"
+       Slot AlignableSlot "{7BD1A70000004809}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.08
+      }
+     }
+    }
+    OverlayWidgetClass "{7BD1A7000000480A}" {
+     Name "ItemBody"
+     Slot LayoutSlot "{7BD1A7000000480B}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+     }
+     {
+      FrameWidgetClass "{7BD1A7000000480C}" {
+       Name "Border"
+       Slot OverlayWidgetSlot "{7BD1A7000000480D}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 0 0 0 0
+      }
+      FrameWidgetClass "{7BD1A7000000480E}" {
+       Name "Background"
+       Slot OverlayWidgetSlot "{7BD1A7000000480F}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+        Padding 1 1 1 1
+       }
+       Color 0 0 0 0
+      }
+      HorizontalLayoutWidgetClass "{7BD1A70000004810}" {
+       Name "Content"
+       Slot OverlayWidgetSlot "{7BD1A70000004811}" {
+        HorizontalAlign 3
+        VerticalAlign 1
+        Padding 12 10 12 10
+       }
+       {
+        ImageWidgetClass "{7BD1A70000004812}" {
+         Name "Icon"
+         Slot LayoutSlot "{7BD1A70000004813}" {
+          HorizontalAlign 0
+          VerticalAlign 1
+          Padding 0 0 10 0
+         }
+         Color 0.58 0.639 0.722 1
+         Size 16 16
+        }
+        TextWidgetClass "{7BD1A70000004814}" {
+         Name "Label"
+         Slot LayoutSlot "{7BD1A70000004815}" {
+          HorizontalAlign 0
+          VerticalAlign 1
+         }
+         Clipping True
+         Color 0.796 0.835 0.882 1
+         Text "Frequencies"
+         FontProperties FontProperties "{7BD1A70000004816}" {
+          Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+         }
+         "Font Size" 13
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

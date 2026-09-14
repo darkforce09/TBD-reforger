@@ -48,12 +48,12 @@ UI/layouts/
                    TBD_InsetText, TBD_Columns2
   Hud/             TBD_ObjectiveHud
   Session/
-    Shared/        TBD_SessionTopBar, TBD_SessionBottomBar (shipped) · voice panel, players modal (pending)
+    Shared/        TBD_SessionTopBar, TBD_SessionBottomBar, TBD_PlayersPanel + PlayerLane + PlayerRow (shipped) · voice panel (pending)
     MissionSelector/ TBD_MissionSelector (dock shell) + TBD_TerrainSelector, TBD_TerrainRow, TBD_ScenarioBrowser,
                    TBD_MissionCard, TBD_MissionInspector, TBD_ModGridItem, TBD_FactionColumn
     Lobby/         TBD_LobbyScreen (dock shell) + TBD_LobbyFactionList, TBD_LobbyFactionRow, TBD_LobbyRoster,
-                   TBD_LobbySquadCard, TBD_LobbySlotRow, TBD_KitInspector, TBD_KitPreview, TBD_KitCell, TBD_KitWeaponCard
-    Briefing/      TBD_BriefingScreen (+Panels)
+                   TBD_LobbySquadCard, TBD_LobbySlotRow, TBD_KitInspector, TBD_KitPreview, TBD_KitWeaponCard (TBD_KitCell moved to Common/TBD_StatCell)
+    Briefing/      TBD_BriefingScreen (dock shell over the map) + TBD_FreqRow, TBD_OrbatPage, TBD_AssetPreview, TBD_UniformCard, TBD_MarkersPanel
     Spectator/     top/bottom bar, roster, combat_details
     Admin/         admin_panel_sidebar + 10 panels
     Pause/         pause_menu_left_sidebar, player_options, staging_phase, identity_link
@@ -76,10 +76,11 @@ empty) hosts popovers. Column widths are the shell's own. Reference:
 | Mockup group / panel | Layout folder | Script folder | Status |
 |---|---|---|---|
 | pregame · mission_selector_top_bar, lobby_bottom_bar | `Session/Shared/` | `UI/Common/` | **shipped** as `TBD_SessionTopBar` / `TBD_SessionBottomBar` |
-| pregame · voice_panel, players_panel | `Session/Shared/` | `UI/Common/` | pending |
+| pregame · players_panel | `Session/Shared/` | `Session/Players/UI/` | **shipped** (2026-09-14) as `TBD_PlayersPanel`, a briefing mode beside the primary nav (a stacked menu would close the map) |
+| pregame · voice_panel | `Session/Shared/` | `UI/Common/` | pending |
 | pregame · terrain_selector, scenario_browser, mission_inspector | `Session/MissionSelector/` | `Session/MissionSelector/UI/` | **shipped** |
-| pregame · lobby_sidebar, orbat_panel, slot_kit_inspector | `Session/Lobby/` | `Session/Lobby/UI/` | **shipped** (2026-09-13); kit visual preview pending |
-| pregame · primary_navigation, briefing_navigation, frequencies, objectives, rules, lore, parameters, markers, friendly/enemy assets, uniforms | `Session/Briefing/` (+`Panels/`) | `Session/Briefing/UI/` | current screen; nav = vertical `TBD_TabStrip`, panels = `TBD_Panel` + `TBD_KeyValueRow` / `TBD_InsetText` |
+| pregame · lobby_sidebar, orbat_panel, slot_kit_inspector | `Session/Lobby/` | `Session/Lobby/UI/` | **shipped** (2026-09-13) incl. the kit visual preview (3D doll, exact kit) |
+| pregame · primary_navigation, briefing_navigation, frequencies, objectives, rules, lore, parameters, markers, friendly/enemy assets, uniforms | `Session/Briefing/` | `Session/Briefing/UI/` | **shipped** (2026-09-14): dock shell over the map, both navs = vertical `TBD_TabStrip`, pages from `TBD_Section` / `TBD_NumberedCard` / `TBD_KeyValueRow` / `TBD_StatCell` / `TBD_InsetText`, real 3D vehicle + uniform previews, ORBAT = the lobby roster + kit inspector |
 | ingame_menu · pause_menu_left_sidebar, player_options, staging_phase, identity_link | `Session/Pause/` | `Session/Pause/UI/` | pending |
 | ingame_menu · admin_panel_sidebar + 10 admin panels | `Session/Admin/` (+`Panels/`) | `Session/Admin/UI/` | pending |
 | ingame_hud · spectator top/bottom bar, roster, combat_details | `Session/Spectator/` | `Session/Spectator/UI/` | pending |

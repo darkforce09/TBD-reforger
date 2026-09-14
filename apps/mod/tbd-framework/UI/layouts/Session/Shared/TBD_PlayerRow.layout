@@ -1,0 +1,134 @@
+SizeLayoutWidgetClass "{7BD1A70000004500}" {
+ Name "PlayerRow"
+ Slot AlignableSlot "{7BD1A70000004502}" {
+  HorizontalAlign 3
+  VerticalAlign 0
+ }
+ AllowHeightOverride 1
+ HeightOverride 30
+ {
+  OverlayWidgetClass "{7BD1A70000004503}" {
+   Name "RowOverlay"
+   Slot AlignableSlot "{7BD1A70000004504}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   {
+    ImageWidgetClass "{7BD1A70000004505}" {
+     Name "Background"
+     Slot OverlayWidgetSlot "{7BD1A70000004506}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     Color 0 0 0 0
+    }
+    HorizontalLayoutWidgetClass "{7BD1A70000004507}" {
+     Name "RowContent"
+     Slot OverlayWidgetSlot "{7BD1A70000004508}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      Padding 14 0 14 0
+     }
+     {
+      SizeLayoutWidgetClass "{7BD1A70000004509}" {
+       Name "IndexSize"
+       Slot LayoutSlot "{7BD1A7000000450A}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+       }
+       AllowWidthOverride 1
+       WidthOverride 32
+       {
+        TextWidgetClass "{7BD1A7000000450B}" {
+         Name "Index"
+         Slot AlignableSlot "{7BD1A7000000450C}" {
+          HorizontalAlign 3
+          VerticalAlign 1
+         }
+         Color 0.392 0.455 0.545 1
+         Text "01"
+         FontProperties FontProperties "{7BD1A7000000450D}" {
+          Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+         }
+         "Font Size" 11
+         "Horizontal Alignment" Center
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+       }
+      }
+      ImageWidgetClass "{7BD1A7000000450E}" {
+       Name "Icon"
+       Slot LayoutSlot "{7BD1A7000000450F}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 6 0 6 0
+       }
+       Color 0.58 0.639 0.722 1
+       Size 14 14
+      }
+      TextWidgetClass "{7BD1A70000004510}" {
+       Name "Name"
+       Slot LayoutSlot "{7BD1A70000004511}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+       }
+       Clipping True
+       Color 0.886 0.91 0.941 1
+       Text "Miller, J."
+       FontProperties FontProperties "{7BD1A70000004512}" {
+        Font "{3E7733BAC8C831F6}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt"
+       }
+       "Font Size" 13
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      OverlayWidgetClass "{7BD1A70000004513}" {
+       Name "TagChipDock"
+       Slot LayoutSlot "{7BD1A70000004514}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 8 0 0 0
+       }
+      }
+      FrameWidgetClass "{7BD1A70000004515}" {
+       Name "Spacer"
+       Slot LayoutSlot "{7BD1A70000004516}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+        SizeMode Fill
+        FillWeight 1
+       }
+      }
+      TextWidgetClass "{7BD1A70000004517}" {
+       Name "Ping"
+       Slot LayoutSlot "{7BD1A70000004518}" {
+        HorizontalAlign 2
+        VerticalAlign 1
+        Padding 0 0 10 0
+       }
+       Clipping True
+       Color 0.204 0.827 0.6 1
+       Text "18ms"
+       FontProperties FontProperties "{7BD1A70000004519}" {
+        Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+       }
+       "Font Size" 11
+       "Horizontal Alignment" Right
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+     }
+    }
+    ImageWidgetClass "{7BD1A7000000451A}" {
+     Name "RowRule"
+     Slot OverlayWidgetSlot "{7BD1A7000000451B}" {
+      HorizontalAlign 3
+      VerticalAlign 2
+     }
+     Color 1 1 1 0.03
+    }
+   }
+  }
+ }
+}

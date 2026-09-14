@@ -5,7 +5,7 @@
 //!   ┌ 👤 KIT INSPECTOR ─────────────────────────────────────────────┐
 //!   │    8: RIFLEMAN (AT) [AK-74] [RPG-7] [Alpha 2-1]               │
 //!   ├───────────────────────────────────────────────────────────────┤
-//!   │ ┌ PREVIEW (empty frame until the visual-preview pass) ┐       │
+//!   │ ┌ PREVIEW ── the 3D doll wearing the seat's exact kit ─┐        │
 //!   │ ┌ GEAR ─────┐ 4 cells a row · BACKPACK spans the last row     │
 //!   │ ┌ WEAPONS ──┐ 3 slot cards: name · MOUNTED ATTACHMENTS · AMMO │
 //!   │ ┌ GRENADES ─┐ ┌ GADGETS ─┐ ┌ TOOLS ─┐ ┌ MEDICAL ─┐ ┌ MISC ─┐   │
@@ -17,7 +17,7 @@
 //! `TBD_KitInspector.layout`: `PanelBorder`, `PanelBG`, `Header`, `HeaderBG`, `HeaderIcon`,
 //! `Title`, `SlotTitle`, `SlotChipsDock`, `HeaderRule`, `BodyFrame`, `Scroll`, `CardsContent`,
 //! `ScrollBarDock`, `EmptyState`. Section cards are `TBD_Panel`s; grids are `TBD_Columns3/4` of
-//! `TBD_KitCell`; weapons are `TBD_KitWeaponCard`s with `TBD_KeyValueRow`s inside.
+//! `Common/TBD_StatCell`; weapons are `TBD_KitWeaponCard`s with `TBD_KeyValueRow`s inside.
 class TBD_KitInspectorPanel
 {
 	protected Widget m_wRoot;
@@ -28,6 +28,7 @@ class TBD_KitInspectorPanel
 	protected Widget m_wCardsContent;
 	protected Widget m_wEmptyState;
 	protected ref TBD_UIScrollBar m_ScrollBar;
+	protected ref TBD_KitPreviewComponent m_Preview; //!< the doll; rebuilt with the cards
 	protected ScrollLayoutWidget m_wScroll;
 
 	protected TBD_LobbyCatalog m_Catalog;
@@ -85,6 +86,7 @@ class TBD_KitInspectorPanel
 	//------------------------------------------------------------------------------------------------
 	void Destroy()
 	{
+		DestroyPreview();
 		if (m_ScrollBar)
 			m_ScrollBar.Destroy();
 
@@ -98,6 +100,7 @@ class TBD_KitInspectorPanel
 	//! Rebind to a seat. Null shows the empty state.
 	void Show(TBD_LobbySlotInfo slot, TBD_LobbySquadInfo squad)
 	{
+		DestroyPreview();
 		TBD_UILayouts.Clear(m_wCardsContent);
 		TBD_UILayouts.Clear(m_wSlotChipsDock);
 
@@ -128,7 +131,7 @@ class TBD_KitInspectorPanel
 		if (m_Catalog)
 			kit = m_Catalog.GetKit(slot.m_sKitKey);
 
-		MountPreview();
+		MountPreview(kit);
 		if (!kit)
 		{
 			ResetScroll();
@@ -171,7 +174,7 @@ class TBD_KitInspectorPanel
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected void MountPreview()
+	protected void MountPreview(TBD_KitInfo kit)
 	{
 		Widget preview = TBD_UILayouts.CreateStretched(TBD_UILayouts.LOBBY_KIT_PREVIEW, m_wCardsContent);
 		if (!preview)
@@ -196,6 +199,22 @@ class TBD_KitInspectorPanel
 		ImageWidget grid = ImageWidget.Cast(preview.FindAnyWidget("GridImage"));
 		if (TBD_UILayouts.LoadTexture(grid, TBD_UILayouts.HERO_TOPO))
 			TBD_UITheme.PaintAlpha(grid, 0x3338BDF8);
+
+		Widget caption = preview.FindAnyWidget("Label");
+		m_Preview = TBD_KitPreviewComponent.Attach(preview.FindAnyWidget("Preview"), caption);
+		if (m_Preview)
+			m_Preview.Show(kit);
+		else
+			TBD_UITheme.Write(TextWidget.Cast(caption), "PREVIEW UNAVAILABLE");
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void DestroyPreview()
+	{
+		if (m_Preview)
+			m_Preview.Destroy();
+
+		m_Preview = null;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -333,7 +352,7 @@ class TBD_KitInspectorPanel
 		if (!column)
 			return;
 
-		Widget cell = TBD_UILayouts.CreateStretched(TBD_UILayouts.LOBBY_KIT_CELL, column);
+		Widget cell = TBD_UILayouts.CreateStretched(TBD_UILayouts.STAT_CELL, column);
 		if (!cell)
 			return;
 

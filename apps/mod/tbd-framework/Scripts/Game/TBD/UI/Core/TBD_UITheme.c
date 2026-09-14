@@ -186,6 +186,26 @@ class TBD_UITheme
 	static const int BTN_WARNING_BORDER       = 0x99B45309; //!< border-amber-700/60
 	static const int BTN_WARNING_INK          = 0xFFFCD34D; //!< text-amber-300
 
+	// Briefing primary navigation (primary_navigation_panel mockup, 2026-09-14). sRGB, composited by Over().
+	static const int GLASS_PANEL_FILL        = 0xEB0D1322; //!< .glass-panel rgba(13,19,34,.92)
+	static const int GLASS_PANEL_BORDER      = 0x14FFFFFF; //!< white/8
+	static const int NAV_ITEM_ACTIVE_FILL    = 0xE63078F0; //!< blue-600 -> blue-500 gradient mean at .9
+	static const int NAV_ITEM_ACTIVE_BORDER  = 0x4D60A5FA; //!< blue-400/30
+	static const int NAV_ITEM_HOVER_FILL     = 0x0DFFFFFF; //!< white/5
+	static const int NAV_ACCENT              = 0x99FFFFFF; //!< white/60 — the active item's right bar
+	static const int ICON_BOX_FILL           = 0x0AFFFFFF; //!< white/4
+	static const int ICON_BOX_BORDER         = 0x0FFFFFFF; //!< white/6
+	static const int ICON_BOX_HOVER_FILL     = 0x1A3B82F6; //!< primary/10
+	static const int ICON_BOX_HOVER_BORDER   = 0x4D3B82F6; //!< primary/30
+	static const int ICON_BOX_ACTIVE_FILL    = 0x33FFFFFF; //!< white/20
+	static const int ICON_BOX_ACTIVE_BORDER  = 0x40FFFFFF; //!< white/25
+
+	// Briefing topic navigation (briefing_navigation_panel mockup, 2026-09-14).
+	static const int TOPIC_NAV_FILL          = 0xF20B1120; //!< bg-[#0b1120]/95
+	static const int TOPIC_ITEM_ACTIVE_FILL  = 0xFF3B82F6; //!< tactical-blue, solid
+	static const int TOPIC_ITEM_HOVER_FILL   = 0x801E293B; //!< slate-800/50
+	static const int TOPIC_ITEM_HOVER_BORDER = 0x66334155; //!< slate-700/40
+
 	//! Memoised linear Color per sRGB token — one allocation per distinct colour, ever. Every
 	//! paint goes through here (`SetColor(Color)`); nothing in the framework uses SetColorInt.
 	protected static ref map<int, ref Color> m_mColours;

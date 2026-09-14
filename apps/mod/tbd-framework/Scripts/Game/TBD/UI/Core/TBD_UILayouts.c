@@ -7,10 +7,10 @@
 //!
 //! -- Tree (UI reorg 2026-09-12) ----------------------------------------------------------------
 //! `UI/layouts/` mirrors the 7-domain architecture. See `docs/mod/ui/UI_STRUCTURE.md`.
-//!   Common/      shared component library                     blocks 07, 10-14, 16-18, 24-2E, 38-39
+//!   Common/      shared component library                     blocks 07, 10-14, 16-18, 24-2E, 36, 38-3D
 //!   Hud/         ObjectiveHud                                  0A
 //!   Session/     Shared 1B-1C · MissionSelector 0B, 1D-23 · Lobby 0C, 2F-37 ·
-//!                Briefing 0D · Spectator 1A · Admin 19 · PostGame 08/09
+//!                Briefing 0D, 3E-42, 46-49 · Shared 1B-1C, 43-45 · Spectator 1A · Admin 19 · PostGame 08/09
 //! GUIDs are `7BD1A7000000XXnn`: `XX` = block, `nn` = 00 root widget, 01 the `.meta` resource id,
 //! 02+ child widgets.
 //!
@@ -19,9 +19,13 @@
 //!   13 NavItem + TabStrip             14 Button           16 KeyValueRow      17 Dropdown + Menu
 //!   24 Columns2                       18 InsetText        25 PanelFill        1B SessionTopBar    1C SessionBottomBar
 //!   26 Rounded12   27 Rounded8   28 Rounded6   29 Rounded10   2A Rounded11   2B Rounded7   2C Rounded5   2D Rounded9
-//!   2E ScrollBar   38 Columns3   39 Columns4
+//!   2E ScrollBar   38 Columns3   39 Columns4   36 StatCell (ex KitCell)
+//!   3A Section     3B NumberedCard   3C Caption   3D ScrollList
+//!   0D Briefing shell   3E FreqRow   3F OrbatPage   40 AssetPreview   41 UniformCard   42 MarkersPanel
+//!   46 PrimaryNav   47 PrimaryNavItem   48 TopicNavItem   49 TopicNav
+//!   43 PlayersPanel     44 PlayerLane   45 PlayerRow (Session/Shared)
 //!   0C Lobby shell   2F LobbyFactionList   30 LobbyFactionRow   31 LobbyRoster   32 LobbySquadCard
-//!   33 LobbySlotRow  34 KitInspector       35 KitPreview        36 KitCell        37 KitWeaponCard
+//!   33 LobbySlotRow  34 KitInspector       35 KitPreview        37 KitWeaponCard
 //!   0B MissionSelector shell          1D TerrainSelector  1E ScenarioBrowser  1F MissionInspector
 //!   20 ModGridItem                    21 FactionColumn    22 TerrainRow       23 MissionCard
 //!   0E/0F lobby shell children        A0 lobby header     B0 misc
@@ -71,6 +75,18 @@ class TBD_UILayouts
 	static const ResourceName COLUMNS_4      = "{7BD1A70000003901}UI/layouts/Common/TBD_Columns4.layout";
 	//! Wrapped paragraph in an inset box (`Body`). Summary, lore, rules.
 	static const ResourceName INSET_TEXT     = "{7BD1A70000001801}UI/layouts/Common/TBD_InsetText.layout";
+	// Briefing pass (2026-09-14).
+	//! Collapsible card (header button + body). `TBD_SectionComponent`.
+	static const ResourceName SECTION        = "{7BD1A70000003A01}UI/layouts/Common/TBD_Section.layout";
+	//! `(n) Title [chip]` card with paragraph, body dock and right-aligned footer. `TBD_NumberedCardComponent`.
+	static const ResourceName NUMBERED_CARD  = "{7BD1A70000003B01}UI/layouts/Common/TBD_NumberedCard.layout";
+	//! Uppercase mono section label + trailing note. `TBD_Caption.Mount`.
+	static const ResourceName CAPTION        = "{7BD1A70000003C01}UI/layouts/Common/TBD_Caption.layout";
+	//! Scrolling vertical list with the TBD scrollbar (the clip recipe). `TBD_ScrollList.Mount`.
+	static const ResourceName SCROLL_LIST    = "{7BD1A70000003D01}UI/layouts/Common/TBD_ScrollList.layout";
+	//! Label / value / count cell (kit inspector grids, objective stats, asset inventories).
+	//! Promoted from Session/Lobby/TBD_KitCell (same GUIDs) in the briefing pass.
+	static const ResourceName STAT_CELL      = "{7BD1A70000003601}UI/layouts/Common/TBD_StatCell.layout";
 	//! Rounded rectangle, radius baked per file (Enfusion has no corner radius and no 9-slice).
 	//! Seven images: centre, two strips, four clipped quarter-discs (see CORNER_DISC). Mounted into
 	//! a `Border` / `Background` frame dock by `MountRounded`; the dock is painted and
@@ -151,12 +167,33 @@ class TBD_UILayouts
 	//! The preview card (empty frame until the visual-preview pass).
 	static const ResourceName LOBBY_KIT_PREVIEW   = "{7BD1A70000003501}UI/layouts/Session/Lobby/TBD_KitPreview.layout";
 	//! One labelled cell of a kit grid (`HELMET` / `SSh-68 Steel Helmet`, `Bandages` / `x4`).
-	static const ResourceName LOBBY_KIT_CELL      = "{7BD1A70000003601}UI/layouts/Session/Lobby/TBD_KitCell.layout";
 	//! One WEAPON SLOT card: name, mounted attachments, ammunition.
 	static const ResourceName LOBBY_KIT_WEAPON    = "{7BD1A70000003701}UI/layouts/Session/Lobby/TBD_KitWeaponCard.layout";
 
 	// -- Session / Briefing --------------------------------------------------------------------
 	static const ResourceName BRIEFING_SCREEN    = "{7BD1A70000000D01}UI/layouts/Session/Briefing/TBD_BriefingScreen.layout";
+	// Briefing rebuild (2026-09-14). Contracts: `UI/layouts/Session/Briefing/README.md`.
+	//! One radio net (name · MHz chip · aux channels).
+	static const ResourceName BRIEFING_FREQ_ROW      = "{7BD1A70000003E01}UI/layouts/Session/Briefing/TBD_FreqRow.layout";
+	//! ORBAT page: `RosterDock` 500 + `KitDock` (the lobby roster + kit inspector, read-only).
+	static const ResourceName BRIEFING_ORBAT_PAGE    = "{7BD1A70000003F01}UI/layouts/Session/Briefing/TBD_OrbatPage.layout";
+	//! Vehicle Info render box (`Preview` ItemPreviewWidget, 168 tall).
+	static const ResourceName BRIEFING_ASSET_PREVIEW = "{7BD1A70000004001}UI/layouts/Session/Briefing/TBD_AssetPreview.layout";
+	//! One faction uniform card (name · doll · chips · camo).
+	static const ResourceName BRIEFING_UNIFORM_CARD  = "{7BD1A70000004101}UI/layouts/Session/Briefing/TBD_UniformCard.layout";
+	//! Markers panel (plan dropdown + Load Plan).
+	static const ResourceName BRIEFING_MARKERS_PANEL = "{7BD1A70000004201}UI/layouts/Session/Briefing/TBD_MarkersPanel.layout";
+	//! Primary navigation glass panel (Map · Briefing · Players · Markers) + one item. `TBD_BriefingPrimaryNav`.
+	static const ResourceName BRIEFING_PRIMARY_NAV      = "{7BD1A70000004601}UI/layouts/Session/Briefing/TBD_PrimaryNav.layout";
+	static const ResourceName BRIEFING_PRIMARY_NAV_ITEM = "{7BD1A70000004701}UI/layouts/Session/Briefing/TBD_PrimaryNavItem.layout";
+	//! Topic navigation glass panel (10 topics, 3 groups) + one item. `TBD_BriefingTopicNav`.
+	static const ResourceName BRIEFING_TOPIC_NAV      = "{7BD1A70000004901}UI/layouts/Session/Briefing/TBD_TopicNav.layout";
+	static const ResourceName BRIEFING_TOPIC_NAV_ITEM = "{7BD1A70000004801}UI/layouts/Session/Briefing/TBD_TopicNavItem.layout";
+
+	// Players panel (2026-09-14) — a briefing MODE beside the primary nav, `TBD_PlayersPanel`.
+	static const ResourceName PLAYERS_PANEL  = "{7BD1A70000004301}UI/layouts/Session/Shared/TBD_PlayersPanel.layout";
+	static const ResourceName PLAYERS_LANE   = "{7BD1A70000004401}UI/layouts/Session/Shared/TBD_PlayerLane.layout";
+	static const ResourceName PLAYERS_ROW    = "{7BD1A70000004501}UI/layouts/Session/Shared/TBD_PlayerRow.layout";
 
 	// -- Hud -----------------------------------------------------------------------------------
 	//! T-941.4 - objective list + capture bar.

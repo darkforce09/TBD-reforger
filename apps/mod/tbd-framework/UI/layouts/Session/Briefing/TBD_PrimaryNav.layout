@@ -1,0 +1,42 @@
+OverlayWidgetClass "{7BD1A70000004600}" {
+ Name "PrimaryNav"
+ Slot FrameWidgetSlot "{7BD1A70000004602}" {
+  Anchor 0 0 1 0
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+  SizeToContent 1
+ }
+ {
+  FrameWidgetClass "{7BD1A70000004603}" {
+   Name "PanelBorder"
+   Slot OverlayWidgetSlot "{7BD1A70000004604}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   Color 0 0 0 0
+  }
+  FrameWidgetClass "{7BD1A70000004605}" {
+   Name "PanelBG"
+   Slot OverlayWidgetSlot "{7BD1A70000004606}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+    Padding 1 1 1 1
+   }
+   Color 0 0 0 0
+  }
+  VerticalLayoutWidgetClass "{7BD1A70000004607}" {
+   Name "Items"
+   Slot OverlayWidgetSlot "{7BD1A70000004608}" {
+    HorizontalAlign 3
+    VerticalAlign 0
+    Padding 12 12 12 6
+   }
+  }
+ }
+}

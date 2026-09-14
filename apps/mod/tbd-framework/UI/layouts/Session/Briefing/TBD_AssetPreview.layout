@@ -1,0 +1,95 @@
+SizeLayoutWidgetClass "{7BD1A70000004000}" {
+ Name "AssetPreview"
+ Slot AlignableSlot "{7BD1A70000004002}" {
+  HorizontalAlign 3
+  VerticalAlign 0
+  Padding 0 0 0 8
+ }
+ AllowHeightOverride 1
+ HeightOverride 168
+ {
+  OverlayWidgetClass "{7BD1A70000004003}" {
+   Name "PreviewOverlay"
+   Slot AlignableSlot "{7BD1A70000004004}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   {
+     FrameWidgetClass "{7BD1A70000004005}" {
+      Name "PreviewBorder"
+      Slot OverlayWidgetSlot "{7BD1A70000004006}" {
+       HorizontalAlign 3
+       VerticalAlign 3
+      }
+      Color 0 0 0 0
+     }
+     FrameWidgetClass "{7BD1A70000004007}" {
+      Name "PreviewBG"
+      Slot OverlayWidgetSlot "{7BD1A70000004008}" {
+       HorizontalAlign 3
+       VerticalAlign 3
+       Padding 1 1 1 1
+      }
+      Color 0 0 0 0
+     }
+     FrameWidgetClass "{7BD1A70000004009}" {
+      Name "GridClip"
+      Slot OverlayWidgetSlot "{7BD1A7000000400A}" {
+       HorizontalAlign 3
+       VerticalAlign 3
+       Padding 6 6 6 6
+      }
+      Clipping True
+      {
+       ImageWidgetClass "{7BD1A7000000400B}" {
+        Name "GridImage"
+        Slot FrameWidgetSlot "{7BD1A7000000400C}" {
+         Anchor 0 0 1 1
+         PositionX 0
+         OffsetLeft 0
+         PositionY 0
+         OffsetTop 0
+         SizeX 0
+         OffsetRight 0
+         SizeY 0
+         OffsetBottom 0
+        }
+        Color 1 1 1 1
+       }
+       ItemPreviewWidgetClass "{7BD1A7000000400D}" {
+        Name "Preview"
+        Slot FrameWidgetSlot "{7BD1A7000000400E}" {
+         Anchor 0 0 1 1
+         PositionX 0
+         OffsetLeft 0
+         PositionY 0
+         OffsetTop 0
+         SizeX 0
+         OffsetRight 0
+         SizeY 0
+         OffsetBottom 0
+        }
+       }
+      }
+     }
+     TextWidgetClass "{7BD1A7000000400F}" {
+      Name "Label"
+      Slot OverlayWidgetSlot "{7BD1A70000004010}" {
+       HorizontalAlign 1
+       VerticalAlign 1
+      }
+      Clipping True
+      Color 0.392 0.455 0.545 1
+      Text "PREVIEW"
+      FontProperties FontProperties "{7BD1A70000004011}" {
+       Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+      }
+      "Font Size" 11
+      "Horizontal Alignment" Center
+      "Vertical Alignment" Center
+      Wrap 0
+     }
+   }
+  }
+ }
+}

@@ -1,0 +1,71 @@
+FrameWidgetClass "{7BD1A70000003D00}" {
+ Name "ScrollList"
+ Slot FrameWidgetSlot "{7BD1A70000003D02}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ {
+  FrameWidgetClass "{7BD1A70000003D03}" {
+   Name "ListFrame"
+   Slot FrameWidgetSlot "{7BD1A70000003D04}" {
+    Anchor 0 0 1 1
+    PositionX 12
+    OffsetLeft 12
+    PositionY 12
+    OffsetTop 12
+    SizeX -24
+    OffsetRight 12
+    SizeY -24
+    OffsetBottom 12
+   }
+   Clipping True
+   {
+    ScrollLayoutWidgetClass "{7BD1A70000003D05}" {
+     Name "Scroll"
+     Slot FrameWidgetSlot "{7BD1A70000003D06}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 24
+      OffsetRight -24
+      SizeY 0
+      OffsetBottom 0
+     }
+     {
+      VerticalLayoutWidgetClass "{7BD1A70000003D07}" {
+       Name "Content"
+       Slot AlignableSlot "{7BD1A70000003D08}" {
+        HorizontalAlign 3
+        VerticalAlign 0
+        Padding 0 0 34 0
+       }
+      }
+     }
+    }
+    FrameWidgetClass "{7BD1A70000003D09}" {
+     Name "ScrollBarDock"
+     Slot FrameWidgetSlot "{7BD1A70000003D0A}" {
+      Anchor 1 0 1 1
+      PositionX -4
+      OffsetLeft -4
+      PositionY 0
+      OffsetTop 0
+      SizeX 4
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+    }
+   }
+  }
+ }
+}

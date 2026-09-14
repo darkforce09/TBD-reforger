@@ -6,7 +6,7 @@ SizeLayoutWidgetClass "{7BD1A70000003500}" {
   Padding 0 0 0 12
  }
  AllowHeightOverride 1
- HeightOverride 204
+ HeightOverride 430
  {
   OverlayWidgetClass "{7BD1A70000003503}" {
    Name "CardOverlay"
@@ -80,6 +80,20 @@ SizeLayoutWidgetClass "{7BD1A70000003500}" {
           OffsetBottom 0
          }
          Color 1 1 1 1
+        }
+        ItemPreviewWidgetClass "{7BD1A70000003516}" {
+         Name "Preview"
+         Slot FrameWidgetSlot "{7BD1A70000003517}" {
+          Anchor 0 0 1 1
+          PositionX 0
+          OffsetLeft 0
+          PositionY 0
+          OffsetTop 0
+          SizeX 0
+          OffsetRight 0
+          SizeY 0
+          OffsetBottom 0
+         }
         }
        }
       }

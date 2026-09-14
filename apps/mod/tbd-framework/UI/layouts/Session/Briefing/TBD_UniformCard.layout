@@ -1,0 +1,193 @@
+OverlayWidgetClass "{7BD1A70000004100}" {
+ Name "UniformCard"
+ Slot AlignableSlot "{7BD1A70000004102}" {
+  HorizontalAlign 3
+  VerticalAlign 0
+  Padding 0 0 0 12
+ }
+ {
+  FrameWidgetClass "{7BD1A70000004103}" {
+   Name "Border"
+   Slot OverlayWidgetSlot "{7BD1A70000004104}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   Color 0 0 0 0
+  }
+  FrameWidgetClass "{7BD1A70000004105}" {
+   Name "Background"
+   Slot OverlayWidgetSlot "{7BD1A70000004106}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+    Padding 1 1 1 1
+   }
+   Color 0 0 0 0
+  }
+  VerticalLayoutWidgetClass "{7BD1A70000004107}" {
+   Name "CardStack"
+   Slot OverlayWidgetSlot "{7BD1A70000004108}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+    Padding 14 14 14 14
+   }
+   {
+    TextWidgetClass "{7BD1A70000004109}" {
+     Name "Name"
+     Slot LayoutSlot "{7BD1A7000000410A}" {
+      HorizontalAlign 0
+      VerticalAlign 1
+     }
+     Clipping True
+     Color 0.945 0.961 0.976 1
+     Text "CDF (12th Mechanized)"
+     FontProperties FontProperties "{7BD1A7000000410B}" {
+      Font "{CD2634D279AB011A}UI/Fonts/Roboto/Roboto_Bold.fnt"
+     }
+     "Font Size" 14
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+    SizeLayoutWidgetClass "{7BD1A7000000410C}" {
+     Name "HeaderRuleSize"
+     Slot LayoutSlot "{7BD1A7000000410D}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+      Padding 0 10 0 0
+     }
+     AllowHeightOverride 1
+     HeightOverride 1
+     {
+      ImageWidgetClass "{7BD1A7000000410E}" {
+       Name "HeaderRule"
+       Slot AlignableSlot "{7BD1A7000000410F}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.08
+      }
+     }
+    }
+    SizeLayoutWidgetClass "{7BD1A70000004110}" {
+     Name "PreviewSize"
+     Slot LayoutSlot "{7BD1A70000004111}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+      Padding 0 12 0 0
+     }
+     AllowHeightOverride 1
+     HeightOverride 240
+     {
+      OverlayWidgetClass "{7BD1A70000004112}" {
+       Name "PreviewOverlay"
+       Slot AlignableSlot "{7BD1A70000004113}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       {
+     FrameWidgetClass "{7BD1A70000004114}" {
+      Name "PreviewBorder"
+      Slot OverlayWidgetSlot "{7BD1A70000004115}" {
+       HorizontalAlign 3
+       VerticalAlign 3
+      }
+      Color 0 0 0 0
+     }
+     FrameWidgetClass "{7BD1A70000004116}" {
+      Name "PreviewBG"
+      Slot OverlayWidgetSlot "{7BD1A70000004117}" {
+       HorizontalAlign 3
+       VerticalAlign 3
+       Padding 1 1 1 1
+      }
+      Color 0 0 0 0
+     }
+     FrameWidgetClass "{7BD1A70000004118}" {
+      Name "GridClip"
+      Slot OverlayWidgetSlot "{7BD1A70000004119}" {
+       HorizontalAlign 3
+       VerticalAlign 3
+       Padding 6 6 6 6
+      }
+      Clipping True
+      {
+       ImageWidgetClass "{7BD1A7000000411A}" {
+        Name "GridImage"
+        Slot FrameWidgetSlot "{7BD1A7000000411B}" {
+         Anchor 0 0 1 1
+         PositionX 0
+         OffsetLeft 0
+         PositionY 0
+         OffsetTop 0
+         SizeX 0
+         OffsetRight 0
+         SizeY 0
+         OffsetBottom 0
+        }
+        Color 1 1 1 1
+       }
+       ItemPreviewWidgetClass "{7BD1A7000000411C}" {
+        Name "Preview"
+        Slot FrameWidgetSlot "{7BD1A7000000411D}" {
+         Anchor 0 0 1 1
+         PositionX 0
+         OffsetLeft 0
+         PositionY 0
+         OffsetTop 0
+         SizeX 0
+         OffsetRight 0
+         SizeY 0
+         OffsetBottom 0
+        }
+       }
+      }
+     }
+     TextWidgetClass "{7BD1A7000000411E}" {
+      Name "Label"
+      Slot OverlayWidgetSlot "{7BD1A7000000411F}" {
+       HorizontalAlign 1
+       VerticalAlign 1
+      }
+      Clipping True
+      Color 0.392 0.455 0.545 1
+      Text "PREVIEW"
+      FontProperties FontProperties "{7BD1A70000004120}" {
+       Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+      }
+      "Font Size" 11
+      "Horizontal Alignment" Center
+      "Vertical Alignment" Center
+      Wrap 0
+     }
+       }
+      }
+     }
+    }
+    HorizontalLayoutWidgetClass "{7BD1A70000004121}" {
+     Name "ChipsDock"
+     Slot LayoutSlot "{7BD1A70000004122}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+      Padding 0 10 0 0
+     }
+    }
+    TextWidgetClass "{7BD1A70000004123}" {
+     Name "CamoLabel"
+     Slot LayoutSlot "{7BD1A70000004124}" {
+      HorizontalAlign 0
+      VerticalAlign 1
+      Padding 0 8 0 0
+     }
+     Clipping True
+     Color 0.58 0.639 0.722 1
+     Text "TTsKO / Dubok"
+     FontProperties FontProperties "{7BD1A70000004125}" {
+      Font "{0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt"
+     }
+     "Font Size" 12
+     "Vertical Alignment" Center
+     Wrap 0
+    }
+   }
+  }
+ }
+}

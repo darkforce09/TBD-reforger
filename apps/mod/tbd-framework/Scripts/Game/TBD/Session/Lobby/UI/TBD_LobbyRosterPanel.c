@@ -225,6 +225,7 @@ class TBD_LobbySquadCardComponent : ScriptedWidgetComponent
 	protected Widget m_wCallsignDock;
 	protected Widget m_wVehicleDock;
 	protected Widget m_wCountDock;
+	protected Widget m_wActionDock;
 	protected TextWidget m_wChevron;
 	protected Widget m_wHeaderRule;
 	protected Widget m_wSlotsContent;
@@ -250,6 +251,7 @@ class TBD_LobbySquadCardComponent : ScriptedWidgetComponent
 		m_wCallsignDock = w.FindAnyWidget("CallsignChipDock");
 		m_wVehicleDock = w.FindAnyWidget("VehicleChipDock");
 		m_wCountDock = w.FindAnyWidget("CountChipDock");
+		m_wActionDock = w.FindAnyWidget("ActionDock");
 		m_wChevron = TextWidget.Cast(w.FindAnyWidget("Chevron"));
 		m_wHeaderRule = w.FindAnyWidget("HeaderRule");
 		m_wSlotsContent = w.FindAnyWidget("SlotsContent");
@@ -327,6 +329,17 @@ class TBD_LobbySquadCardComponent : ScriptedWidgetComponent
 		return m_bExpanded;
 	}
 
+	//! Header dock before the count chip (the briefing's Locate button).
+	Widget GetActionDock()
+	{
+		return m_wActionDock;
+	}
+
+	string GetCallsign()
+	{
+		return m_sCallsign;
+	}
+
 	//------------------------------------------------------------------------------------------------
 	Widget GetSlotsContent()
 	{
@@ -386,6 +399,12 @@ class TBD_LobbyRosterPanel
 	protected ref array<TBD_LobbySquadCardComponent> m_aCards;
 	protected ref array<TBD_LobbySlotRowComponent> m_aRows;
 	protected ref map<string, bool> m_mCollapsed; //!< callsign -> user collapsed it (survives rebuilds)
+	protected bool m_bReadOnly; //!< briefing ORBAT: select only, never claim / release
+	protected bool m_bShowLocate; //!< briefing ORBAT: a Locate button on every squad header
+	protected ref array<TBD_UIButton> m_aLocateButtons;
+	protected ref array<string> m_aLocateCallsigns;
+	//! (TBD_LobbyRosterPanel panel, string callsign)
+	protected ref ScriptInvoker m_OnLocate;
 
 	//! (TBD_LobbyRosterPanel panel, string slotKey)
 	protected ref ScriptInvoker m_OnSelected;
@@ -430,6 +449,8 @@ class TBD_LobbyRosterPanel
 		if (m_Catalog)
 			m_Catalog.GetOnChanged().Remove(OnCatalogChanged);
 
+		ClearLocateButtons();
+
 		if (m_ScrollBar)
 			m_ScrollBar.Destroy();
 
@@ -446,6 +467,57 @@ class TBD_LobbyRosterPanel
 
 	//------------------------------------------------------------------------------------------------
 	//! Point the roster at a faction and rebuild its squad cards.
+	//! Briefing ORBAT: clicks select (the kit inspector follows) and never touch the seat.
+	void SetReadOnly(bool readOnly)
+	{
+		m_bReadOnly = readOnly;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Briefing ORBAT: every squad header carries a quiet Locate button; clicks raise GetOnLocate.
+	void SetShowLocate(bool show)
+	{
+		m_bShowLocate = show;
+	}
+
+	ScriptInvoker GetOnLocate()
+	{
+		if (!m_OnLocate)
+			m_OnLocate = new ScriptInvoker();
+
+		return m_OnLocate;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnLocate(TBD_UIButton button)
+	{
+		if (!m_aLocateButtons || !m_OnLocate)
+			return;
+
+		int index = m_aLocateButtons.Find(button);
+		if (index < 0)
+			return;
+
+		m_OnLocate.Invoke(this, m_aLocateCallsigns[index]);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void ClearLocateButtons()
+	{
+		if (m_aLocateButtons)
+		{
+			foreach (TBD_UIButton button : m_aLocateButtons)
+			{
+				if (button)
+					button.GetOnActivate().Remove(OnLocate);
+			}
+		}
+
+		m_aLocateButtons = {};
+		m_aLocateCallsigns = {};
+	}
+
+	//------------------------------------------------------------------------------------------------
 	void SetFaction(string factionKey)
 	{
 		m_sFactionKey = factionKey;
@@ -520,6 +592,12 @@ class TBD_LobbyRosterPanel
 		if (!m_Catalog)
 			return;
 
+		if (m_bReadOnly)
+		{
+			Select(slotKey, true);
+			return;
+		}
+
 		TBD_LobbySlotInfo slot = m_Catalog.GetSlot(slotKey);
 		if (!slot)
 			return;
@@ -567,6 +645,7 @@ class TBD_LobbyRosterPanel
 		TBD_UILayouts.Clear(m_wContent);
 		m_aCards.Clear();
 		m_aRows.Clear();
+		ClearLocateButtons();
 
 		array<ref TBD_LobbySquadInfo> squads = m_Catalog.GetSquads(m_sFactionKey);
 		TBD_UITheme.Show(m_wEmptyState, squads.IsEmpty());
@@ -586,6 +665,22 @@ class TBD_LobbyRosterPanel
 			AlignableSlot.SetHorizontalAlign(card.GetRootWidget(), LayoutHorizontalAlign.Stretch);
 			card.Bind(this, squad, ground, tint);
 			m_aCards.Insert(card);
+
+			if (m_bShowLocate)
+			{
+				Widget buttonRoot = TBD_UILayouts.Create(TBD_UILayouts.BUTTON, card.GetActionDock());
+				TBD_UIButton locate;
+				if (buttonRoot)
+					locate = TBD_UIButton.Cast(buttonRoot.FindHandler(TBD_UIButton));
+				if (locate)
+				{
+					locate.SetLabel("Locate");
+					locate.SetPrimary(false);
+					locate.GetOnActivate().Insert(OnLocate);
+					m_aLocateButtons.Insert(locate);
+					m_aLocateCallsigns.Insert(squad.m_sCallsign);
+				}
+			}
 
 			int rowGround = card.GetBodyGround();
 			int count = squad.m_aSlots.Count();

@@ -1,5 +1,5 @@
 MetaFileClass {
- Name "{7BD1A70000003601}UI/layouts/Session/Lobby/TBD_KitCell.layout"
+ Name "{7BD1A70000003F01}UI/layouts/Session/Briefing/TBD_OrbatPage.layout"
  Configurations {
   LayoutResourceClass PC {
   }

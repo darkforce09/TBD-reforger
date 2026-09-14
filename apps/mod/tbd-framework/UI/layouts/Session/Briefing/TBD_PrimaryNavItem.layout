@@ -1,0 +1,153 @@
+ButtonWidgetClass "{7BD1A70000004700}" {
+ Name "PrimaryNavItem"
+ Slot AlignableSlot "{7BD1A70000004702}" {
+  HorizontalAlign 3
+  VerticalAlign 0
+  Padding 0 0 0 6
+ }
+ Color 1 1 1 0
+ components {
+  TBD_PrimaryNavItemComponent "{7BD1A70000004703}" {
+  }
+ }
+ {
+  OverlayWidgetClass "{7BD1A70000004704}" {
+   Name "ItemBody"
+   Slot ButtonWidgetSlot "{7BD1A70000004705}" {
+    HorizontalAlign 3
+    VerticalAlign 3
+   }
+   {
+    FrameWidgetClass "{7BD1A70000004706}" {
+     Name "Border"
+     Slot OverlayWidgetSlot "{7BD1A70000004707}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     Color 0 0 0 0
+    }
+    FrameWidgetClass "{7BD1A70000004708}" {
+     Name "Background"
+     Slot OverlayWidgetSlot "{7BD1A70000004709}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+      Padding 1 1 1 1
+     }
+     Color 0 0 0 0
+    }
+    SizeLayoutWidgetClass "{7BD1A7000000470A}" {
+     Name "AccentSize"
+     Slot OverlayWidgetSlot "{7BD1A7000000470B}" {
+      HorizontalAlign 2
+      VerticalAlign 3
+      Padding 0 10 1 10
+     }
+     AllowWidthOverride 1
+     WidthOverride 4
+     {
+      ImageWidgetClass "{7BD1A7000000470C}" {
+       Name "Accent"
+       Slot AlignableSlot "{7BD1A7000000470D}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Color 1 1 1 0.6
+      }
+     }
+    }
+    HorizontalLayoutWidgetClass "{7BD1A7000000470E}" {
+     Name "Content"
+     Slot OverlayWidgetSlot "{7BD1A7000000470F}" {
+      HorizontalAlign 3
+      VerticalAlign 1
+      Padding 14 12 14 12
+     }
+     {
+      SizeLayoutWidgetClass "{7BD1A70000004710}" {
+       Name "IconBoxSize"
+       Slot LayoutSlot "{7BD1A70000004711}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+       }
+       AllowWidthOverride 1
+       WidthOverride 32
+       AllowHeightOverride 1
+       HeightOverride 32
+       {
+        OverlayWidgetClass "{7BD1A70000004712}" {
+         Name "IconBox"
+         Slot AlignableSlot "{7BD1A70000004713}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         {
+          FrameWidgetClass "{7BD1A70000004714}" {
+           Name "IconBoxBorder"
+           Slot OverlayWidgetSlot "{7BD1A70000004715}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Color 0 0 0 0
+          }
+          FrameWidgetClass "{7BD1A70000004716}" {
+           Name "IconBoxBG"
+           Slot OverlayWidgetSlot "{7BD1A70000004717}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+            Padding 1 1 1 1
+           }
+           Color 0 0 0 0
+          }
+          ImageWidgetClass "{7BD1A70000004718}" {
+           Name "Icon"
+           Slot OverlayWidgetSlot "{7BD1A70000004719}" {
+            HorizontalAlign 1
+            VerticalAlign 1
+           }
+           Color 0.58 0.639 0.722 1
+           Size 16 16
+          }
+         }
+        }
+       }
+      }
+      TextWidgetClass "{7BD1A7000000471A}" {
+       Name "Label"
+       Slot LayoutSlot "{7BD1A7000000471B}" {
+        HorizontalAlign 0
+        VerticalAlign 1
+        Padding 12 0 0 0
+       }
+       Clipping True
+       Color 0.886 0.91 0.941 1
+       Text "Map"
+       FontProperties FontProperties "{7BD1A7000000471C}" {
+        Font "{CD2634D279AB011A}UI/Fonts/Roboto/Roboto_Bold.fnt"
+       }
+       "Font Size" 14
+       "Vertical Alignment" Center
+       Wrap 0
+      }
+      FrameWidgetClass "{7BD1A7000000471D}" {
+       Name "Spacer"
+       Slot LayoutSlot "{7BD1A7000000471E}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+        SizeMode Fill
+        FillWeight 1
+       }
+      }
+      HorizontalLayoutWidgetClass "{7BD1A7000000471F}" {
+       Name "BadgeDock"
+       Slot LayoutSlot "{7BD1A70000004720}" {
+        HorizontalAlign 2
+        VerticalAlign 1
+        Padding 0 0 6 0
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

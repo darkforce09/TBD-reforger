@@ -23,11 +23,14 @@ Foundational UI framework primitives, layout registry, Aegis styling system, and
   Also the glass-chrome tokens of the Stitch pre-game mockups and the `TBD_EUITint` enum with
   `ChipFill/ChipBorder/ChipInk` and `PanelFill/PanelBorder` — the only place a chip or tinted
   panel colour is defined.
-- `TBD_UIIcons.c`: mockup icon key → vanilla `icons_wrapperUI-64.imageset` quad. `Load(widget,
-  key)` hides the slot and warns once when a quad does not resolve. **Honest status:** the table
-  holds only quads that resolved on a real run (`search`, `player`, `check`, `scenarios`,
-  `cancel`, `settings`, `general`); every other key hides silently. The class header lists the
-  keys still wanting a quad — the imageset is pak-only and cannot be listed offline.
+- `TBD_UIIcons.c`: mockup icon key → image. **Our textures first** (2026-09-14): 38 Material Symbols
+  keys shipped as 64 px white-on-alpha PNGs under `UI/Textures/TBD/Icons/TBD_Icon_<key>_UI.png`
+  (`Texture(key)`; bare `.edds` path until the operator imports the batch and pins the `.meta` GUIDs
+  in `s_mTextureGuids`), then the measured vanilla `icons_wrapperUI-64.imageset` quads (`search`,
+  `player`, `check`, `scenarios`, `cancel`, `settings`, `general`), else the slot hides and warns
+  once. Regenerate / add a key from the repo root:
+  `curl -s https://cdn.jsdelivr.net/npm/@material-symbols/svg-400/outlined/<key>.svg -o /tmp/<key>.svg && ffmpeg -i /tmp/<key>.svg -vf "scale=64:64:flags=lanczos,format=rgba,negate=negate_alpha=0" apps/mod/tbd-framework/UI/Textures/TBD/Icons/TBD_Icon_<key>_UI.png`
+  and add the key to `BuildShipped()`.
 - `TBD_UIScrollBar.c`: the 4 px scrollbar every TBD list wears (`Mount(dock, scroll, content,
   ground)`, `Destroy`). Not a widget handler: it ticks at 30 Hz through the call queue, sizes the
   thumb from viewport/content, follows `GetSliderPos`, hides when nothing scrolls. The engine's own

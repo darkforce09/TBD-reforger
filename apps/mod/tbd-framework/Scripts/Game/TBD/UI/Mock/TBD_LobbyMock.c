@@ -6,6 +6,11 @@
 //! drawn roles, weapons, tags and holders; OPFOR mirrors them under Soviet callsigns. Three kits
 //! (`rifleman_at` = the mockup's `8: RIFLEMAN (AT)` in full, `medic`, `crew`) keyed by role.
 //!
+//! Kit-preview pass (2026-09-13): every kit also carries its WIRE half — kit alias + a real
+//! `TBD_SlotLoadoutStruct` of GUID-pinned vanilla prefabs (read off golden-missions/
+//! slot-loadout-coverage.json, Character_USSR_AT.et, Character_USSR_SL.et) — so the 3D doll wears
+//! exactly what the server pass would spawn. `crew` is deliberately kit-only (no loadout).
+//!
 //! Counts the UI shows (`0 / 92`, `2/3`) are COMPUTED by the screen from these rows. Consumed only
 //! through `TBD_LobbyCatalog.Get()`; replaces the retired `TBD_LobbyMockData` (voice channels
 //! return with the voice-panel pass, from its own mockup).
@@ -111,6 +116,7 @@ class TBD_LobbyMock
 	protected static TBD_KitInfo BuildRiflemanAtKit()
 	{
 		TBD_KitInfo kit = new TBD_KitInfo("rifleman_at");
+		DressRiflemanAt(kit);
 		AddGear(kit);
 		kit.m_aGear.Insert(new TBD_KitEntry("Backpack", "RPG-7 Rocket Pack (Backpack)"));
 
@@ -152,6 +158,7 @@ class TBD_LobbyMock
 	protected static TBD_KitInfo BuildRiflemanKit()
 	{
 		TBD_KitInfo kit = new TBD_KitInfo("rifleman");
+		DressRifleman(kit);
 		AddGear(kit);
 		kit.m_aGear.Insert(new TBD_KitEntry("Backpack", "RD-54 Assault Pack"));
 		kit.m_aWeapons.Insert(BuildAk("WEAPON SLOT 1", 8));
@@ -168,6 +175,7 @@ class TBD_LobbyMock
 	protected static TBD_KitInfo BuildMedicKit()
 	{
 		TBD_KitInfo kit = new TBD_KitInfo("medic");
+		DressMedic(kit);
 		AddGear(kit);
 		kit.m_aGear.Insert(new TBD_KitEntry("Backpack", "Medical Backpack (Large)"));
 		kit.m_aWeapons.Insert(BuildAk("WEAPON SLOT 1", 5));
@@ -186,6 +194,7 @@ class TBD_LobbyMock
 	protected static TBD_KitInfo BuildCrewKit()
 	{
 		TBD_KitInfo kit = new TBD_KitInfo("crew");
+		DressCrew(kit);
 		kit.m_aGear.Insert(new TBD_KitEntry("Helmet", "TSh-4 Tanker Helmet"));
 		kit.m_aGear.Insert(new TBD_KitEntry("Vest", "None"));
 		kit.m_aGear.Insert(new TBD_KitEntry("Jacket", "Tanker Coverall (Black)"));
@@ -289,5 +298,110 @@ class TBD_LobbyMock
 		kit.m_aMisc.Insert(new TBD_KitEntry("Chemlights", "Chemlight (Green)", 2));
 		kit.m_aMisc.Insert(new TBD_KitEntry("Signal Flare", "RSP-30 Flare (Green)", 1));
 		kit.m_aMisc.Insert(new TBD_KitEntry("Field Utility", "Earplugs", 1));
+	}
+
+	// ── The wire half of each kit ────────────────────────────────────────────────────────────
+	// GUID-pinned vanilla prefabs, all read off files on record (see the header). The Makarov the
+	// text card lists has no GUID on record, so `handgun` stays empty until one is pinned.
+	static const string KIT_SOV_RIFLEMAN = "kit:sov_rifleman";
+	static const ResourceName PREFAB_SOV_RIFLEMAN = "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et";
+	static const string AK74            = "{43497A18DD888667}Prefabs/Weapons/Rifles/AK74/Rifle_AK74_base.et";
+	static const string AK74N_1P29      = "{EB404DC9E1BCB750}Prefabs/Weapons/Rifles/AK74/Rifle_AK74N_1P29.et";
+	static const string AKS74U          = "{BFEA719491610A45}Prefabs/Weapons/Rifles/AKS74U/Rifle_AKS74U.et";
+	static const string RPG7_PGO7       = "{E8A55396050E1762}Prefabs/Weapons/Launchers/RPG7/Launcher_RPG7_PGO7.et";
+	static const string RGD5            = "{645C73791ECA1698}Prefabs/Weapons/Grenades/Grenade_RGD5.et";
+	static const string OPTIC_1P29      = "{ACDF49FACD0701A8}Prefabs/Weapons/Attachments/Optics/Optic_1P29/Optic_1P29.et";
+	static const string OPTIC_PSO1      = "{C850A33226B8F9C1}Prefabs/Weapons/Attachments/Optics/Optic_PSO1/Optic_PSO1.et";
+	static const string MAG_AK_30       = "{63C1E699345B24F9}Prefabs/Weapons/Magazines/Magazine_545x39_AK_30rnd_Base.et";
+	static const string MAG_RPK_45      = "{BC74DAC891D48540}Prefabs/Weapons/Magazines/Magazine_545x39_RPK_45rnd_Ball.et";
+	static const string HELMET_SSH68_NET  = "{22963D69CA50EB9E}Prefabs/Characters/HeadGear/Helmet_SSh68_01/Helmet_SSh68_01_net.et";
+	static const string HELMET_SSH68_CAMO = "{66196D85AB93D2BE}Prefabs/Characters/HeadGear/Helmet_SSh68_01/Helmet_SSh68_01_camo.et";
+	static const string VEST_HARNESS    = "{08155E701A949620}Prefabs/Characters/Vests/Vest_SovietHarness/Variants/Vest_SovietHarness_rifleman.et";
+	static const string VEST_LIFCHIK_GL = "{C8516078375CBE45}Prefabs/Characters/Vests/Vest_Lifchik/Vest_Lifchik_GL.et";
+	static const string VEST_6B2        = "{ADE19B33DCBB9005}Prefabs/Characters/Vests/Vest_6B2/Vest_6B2.et";
+	static const string JACKET_M88      = "{9F546CCA2582D16F}Prefabs/Characters/Uniforms/Jacket_M88.et";
+	static const string PANTS_M88       = "{DCF980831E880F6A}Prefabs/Characters/Uniforms/Pants_M88.et";
+	static const string BOOTS_SOVIET    = "{4C6029AB8BF5C044}Prefabs/Characters/Footwear/CombatBoots_Soviet_01_Dirty.et";
+	static const string BACKPACK_RPG    = "{0D39750E5695B9D8}Prefabs/Items/Equipment/Backpacks/Backpack_RPG_Gunner.et";
+	static const string TOURNIQUET_USSR = "{80E75A71C29190DB}Prefabs/Items/Medicine/Tourniquet_01/Tourniquet_USSR_01.et";
+
+	//------------------------------------------------------------------------------------------------
+	protected static void SetBase(TBD_KitInfo kit)
+	{
+		kit.m_sKitAlias = KIT_SOV_RIFLEMAN;
+		kit.m_sBasePrefab = PREFAB_SOV_RIFLEMAN;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static TBD_SlotGearStruct NewLoadout(TBD_KitInfo kit)
+	{
+		kit.m_Loadout = new TBD_SlotLoadoutStruct();
+		kit.m_Loadout.gear = new TBD_SlotGearStruct();
+		kit.m_Loadout.cargo = {};
+		return kit.m_Loadout.gear;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static void AddCargo(TBD_KitInfo kit, string container, string item, int qty)
+	{
+		TBD_SlotCargoStruct row = new TBD_SlotCargoStruct();
+		row.container = container;
+		row.item = item;
+		row.qty = qty;
+		kit.m_Loadout.cargo.Insert(row);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! The full mockup kit: AK-74 + 1P29 in hand, RPG-7 slung, rocket pack, SSh-68, harness.
+	protected static void DressRiflemanAt(TBD_KitInfo kit)
+	{
+		SetBase(kit);
+		TBD_SlotGearStruct gear = NewLoadout(kit);
+		gear.primary = AK74;
+		gear.optic = OPTIC_1P29;
+		gear.magazine = MAG_AK_30;
+		gear.launcher = RPG7_PGO7;
+		gear.throwable = RGD5;
+		gear.helmet = HELMET_SSH68_NET;
+		gear.vest = VEST_HARNESS;
+		gear.uniform = JACKET_M88;
+		gear.pants = PANTS_M88;
+		gear.boots = BOOTS_SOVIET;
+		gear.backpack = BACKPACK_RPG;
+		AddCargo(kit, "vest", MAG_AK_30, 5);
+		AddCargo(kit, "jacket", TOURNIQUET_USSR, 1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Partial loadout: weapon + head + vest authored, everything else is the kit prefab's own.
+	protected static void DressRifleman(TBD_KitInfo kit)
+	{
+		SetBase(kit);
+		TBD_SlotGearStruct gear = NewLoadout(kit);
+		gear.primary = AK74N_1P29;
+		gear.optic = OPTIC_PSO1;
+		gear.magazine = MAG_RPK_45;
+		gear.helmet = HELMET_SSH68_CAMO;
+		gear.vest = VEST_LIFCHIK_GL;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static void DressMedic(TBD_KitInfo kit)
+	{
+		SetBase(kit);
+		TBD_SlotGearStruct gear = NewLoadout(kit);
+		gear.primary = AKS74U;
+		gear.vest = VEST_6B2;
+		gear.uniform = JACKET_M88;
+		gear.pants = PANTS_M88;
+		gear.boots = BOOTS_SOVIET;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Kit-only: no JSON loadout, the doll is the prefab as shipped. This is the cache-reset proof —
+	//! picked after `rifleman_at`, every garment must fall back to the prefab's own.
+	protected static void DressCrew(TBD_KitInfo kit)
+	{
+		SetBase(kit);
 	}
 }

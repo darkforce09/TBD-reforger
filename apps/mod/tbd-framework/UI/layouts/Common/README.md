@@ -12,11 +12,11 @@ Read this table before authoring a new panel: if the shape is here, mount it; do
 |---|---|---|---|---|---|
 | `TBD_ScreenShell.layout` | `TBD_ShellScreen` (Core) | `07` | `Backdrop`, `Panel`, `Title`, `Subtitle`, `BackAction`, `List`, `Status`, `PrimaryAction` | `SetTitle`, `SetSubtitle`, `SetStatus`, `SetPrimaryAction`, `GetList` | Spectator, Admin, bare `TBD_UIShell` |
 | `TBD_ListRow.layout` | `TBD_ListBoxRow` (Core) | `07` (`0750+`) | `Background`, `Accent`, `Title`, `Detail` | pooled by `TBD_ListBox` | every `TBD_ListBox`, dropdown menus |
-| `TBD_Panel.layout` | `TBD_PanelComponent` | `10` | `PanelBorder`, `PanelBG`, `HeaderRow`, `HeaderBG`, `HeaderIcon`, `HeaderTitle`, `HeaderBadgeDock` (row), `HeaderRule`, `BodyDock`, `FooterDock` | `SetTitle` (shouts), `SetIcon`, `ShowHeader`, `SetTint`, `GetBadgeDock`, `GetBodyDock`, `GetFooterDock` | Mission Selector columns + inspector cards; every briefing / lobby panel to come |
+| `TBD_Panel.layout` | `TBD_PanelComponent` | `10` | `PanelBorder`, `PanelBG`, `HeaderRow`, `HeaderBG`, `HeaderIcon`, `HeaderTitle`, `HeaderBadgeDock` (row), `HeaderRule`, `BodyDock`, `FooterDock` | `SetTitle` (shouts), `SetIconTint`, `SetIcon`, `ShowHeader`, `SetTint`, `GetBadgeDock`, `GetBodyDock`, `GetFooterDock` | Mission Selector columns + inspector cards; every briefing / lobby panel to come |
 | `TBD_PanelFill.layout` | `TBD_PanelComponent` | `25` | same names as `TBD_Panel` | same API; **frame-anchored** — fills its dock, body takes the remaining height. Columns use this; cards use `TBD_Panel` (a frame-anchored body inside `TBD_Panel` collapses to zero height) | selector TERRAINS + MISSIONS columns |
 | `TBD_Chip.layout` | `TBD_ChipComponent` | `11` | `ChipBorder`, `ChipBG`, `ChipDot`, `ChipText` | `Set(text, tint)`, `SetText`, `SetTint`, `SetDotVisible`, static `Mount(dock, text, tint)` | every badge / tag / count pill |
 | `TBD_SearchBox.layout` | `TBD_SearchBoxComponent` | `12` | `SearchBorder`, `SearchBG`, `SearchIcon`, `SearchInput` (EditBox), `SearchClear`, `SearchClearGlyph` | `GetQuery`, `Clear`, `SetPlaceholder`, `GetOnChanged()(box, query)`, static `Matches(query, text)` | terrain + scenario search; lobby roster next |
-| `TBD_NavItem.layout` | `TBD_NavItemComponent` | `13` (`1300`, children `1303+`) | `Border`, `Background`, `Icon`, `Label`, `Badge` | `Bind(strip, index, TBD_NavItemData)`, `SetActive` | instantiated by `TBD_TabStrip` only |
+| `TBD_NavItem.layout` | `TBD_NavItemComponent` | `13` (`1300`, children `1303+`) | `Border`, `Background`, `Icon`, `Label`, `Badge`, `SeparatorSize`/`Separator` (1 px rule above the item; `TBD_NavItemData.m_bSeparatorBefore` — the briefing nav's groups) | `Bind(strip, index, TBD_NavItemData)`, `SetActive` | instantiated by `TBD_TabStrip` only |
 | `TBD_TabStrip.layout` | `TBD_TabStripComponent` | `13` (`1340+`, meta `1302`) | `StripBorder`, `StripBG`, `ItemsRow`, `ItemsColumn` | `SetItems(array<ref TBD_NavItemData>)`, `SetActive`, `GetOnSelected()(strip, index)`, `FocusActive`; attrs `m_bVertical`, `m_bChrome` | top bar (row); briefing primary + topic nav (column) next |
 | `TBD_Button.layout` | `TBD_UIButton` (Core) | `14` | `Border`, `Background`, `Label` | `SetLabel`, `SetPrimary`, `SetTint` (PRIMARY / SUCCESS / WARNING for toggled states), `SetInteractive`, `GetOnActivate()` | `TBD_SessionBottomBar.AddAction` |
 | `TBD_KeyValueRow.layout` | `TBD_KeyValueRowComponent` | `16` | `RowBorder`, `RowBG`, `KeyIcon`, `KeyChipDock`, `KeyText`, `ValueText`, `ValueChipDock` | `Set(key, value, valueTint)`, `SetKeyChip`, `SetValueChip`, `SetIcon`, `SetTint`, static `Mount(container)` | inspector ORBAT / objective rows; parameters, frequencies, kit lines next |
@@ -25,6 +25,11 @@ Read this table before authoring a new panel: if the shape is here, mount it; do
 | `TBD_InsetText.layout` | none (screen writes `Body`) | `18` | `InsetBorder`, `InsetBG`, `Body` (wrapping text) | — | mission summary; lore, rules next |
 | `TBD_Columns2.layout` | none | `24` | `ColumnA`, `ColumnB` (vertical layouts, equal fill) | — | mod grid, ORBAT + objective faction pairs |
 | `TBD_Columns3.layout`, `TBD_Columns4.layout` | none | `38`, `39` | `ColumnA..C` / `ColumnA..D` (equal fill, 6 px gutters) | — | kit inspector grids (weapons ×3; gear / gadgets / tools / misc ×4) |
+| `TBD_Section.layout` | `TBD_SectionComponent` | `3A` | `Border`, `Background`, `HeaderButton`, `HeaderOverlay`/`HeaderBG` (clip trick), `HeaderIcon`, `Title`, `BadgeDock`, `ActionDock`, `Chevron`, `HeaderRule`, `Body` | `Mount(parent, title, ground)`, `SetTitle/Icon/Badge/Tint/Ground`, `SetExpanded`, `GetBody`, `GetActionDock`, `GetBodyGround`, `GetOnToggled` — header click folds the body | briefing rules groups, asset types, Vehicle Info, asset instances |
+| `TBD_NumberedCard.layout` | `TBD_NumberedCardComponent` | `3B` | `Border`, `Background`, `NumberPill`/`Number`, `Title`, `ChipDock`, `Body` (paragraph, hidden when empty), `BodyDock`, `FooterRule`, `FooterDock` (`FooterSpacer` pushes children right) | `Mount(parent, number, title, ground)`, `Set`, `SetBody`, `SetChip`, `GetBodyDock`, `GetFooterDock` (shows the footer), `GetGround` | objectives, rules |
+| `TBD_Caption.layout` | none (`TBD_Caption.Mount(parent, text, trailing)`) | `3C` | `Caption` (10 px mono, uppercased), `Trailing` (right, dim) | — | section labels in every briefing page, the markers panel |
+| `TBD_ScrollList.layout` | none (`TBD_ScrollList.Mount(dock, ground, inset)`) | `3D` | `ListFrame` (clip), `Scroll` (24 px overhang), `Content` (pad 34), `ScrollBarDock` | `GetContent`, `Clear`, `ResetScroll`, `Destroy` — the scroll-clip recipe as one mountable piece | briefing page bodies, player lanes |
+| `TBD_StatCell.layout` | none | `36` | `Border`, `Background`, `Label` (mono 10 upper), `Value` (mono 12), `Count` (amber `x4`) | painted by the owner (`TBD_KitInspectorPanel.MountCell`, `TBD_BriefingPage.AddCell`) | kit inspector grids, objective stats, asset inventories — promoted from `Session/Lobby/TBD_KitCell` (2026-09-14, same GUIDs) |
 | `TBD_Rounded5…12.layout` (8 files) | none (`TBD_UILayouts.MountRounded`) | `26-2D` | `Centre`, `Left`, `Right`, `CornerTL/TR/BL/BR` (clipping frames) each holding `Disc*` (our `UI/Textures/TBD/TBD_Disc_UI.edds` filled disc, GUID `{1F2DC726318EC5AF}`; vanilla `circleFull.edds` is a ring); painted by `TBD_UITheme.PaintOver` on the dock (it walks the `Rounded*` subtree — `"Inherit Color"` does NOT propagate from a frame) | mounted into a `*Border` / `*BG` frame dock; radius is the file | every rounded surface below |
 
 ## Rules that make the table true
@@ -73,9 +78,11 @@ Read this table before authoring a new panel: if the shape is here, mount it; do
   logs once when a texture is missing, so a not-yet-imported PNG costs a hidden slot, not a white
   quad. Sources: disc / inverse disc / fade / topo art from a scratch Node rasteriser; the Everon
   hero is `ffmpeg -i packages/map-assets/everon/tiles/satellite/full.webp -vf "crop=4096:560:0:1600,scale=1024:140"`.
-- **Icons are keys.** Image slots are fed by `TBD_UIIcons.Load(widget, key)`; an unresolved key
-  hides the slot and logs once. See `Scripts/Game/TBD/UI/Core/README.md` for the honest status of
-  the quad table.
+- **Icons are keys, and the textures are ours.** Image slots are fed by `TBD_UIIcons.Load(widget, key)`:
+  our 64 px white-on-alpha PNGs under `UI/Textures/TBD/Icons/` first (38 Material Symbols keys,
+  `TBD_Icon_<key>_UI.png`; the operator imports the batch and pins the GUIDs in `TBD_UIIcons`),
+  the measured vanilla quads second; an unresolved key hides the slot and logs once. The
+  generation command lives in `Scripts/Game/TBD/UI/Core/README.md`.
 - **Shrink-wrap vs stretch.** Chips, buttons, nav items and dropdown triggers declare an
   `AlignableSlot` root and size to their text. Panels, search boxes and rows declare a stretched
   root; when mounted into a layout widget the mounting code calls

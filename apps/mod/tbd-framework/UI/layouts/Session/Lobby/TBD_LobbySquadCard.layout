@@ -101,6 +101,14 @@ OverlayWidgetClass "{7BD1A70000003200}" {
               FillWeight 1
              }
             }
+            OverlayWidgetClass "{7BD1A70000003225}" {
+             Name "ActionDock"
+             Slot LayoutSlot "{7BD1A70000003226}" {
+              HorizontalAlign 2
+              VerticalAlign 1
+              Padding 0 0 8 0
+             }
+            }
             OverlayWidgetClass "{7BD1A7000000321A}" {
              Name "CountChipDock"
              Slot LayoutSlot "{7BD1A7000000321B}" {

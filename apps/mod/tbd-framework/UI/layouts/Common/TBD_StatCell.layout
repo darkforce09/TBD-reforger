@@ -1,5 +1,5 @@
 SizeLayoutWidgetClass "{7BD1A70000003600}" {
- Name "KitCell"
+ Name "StatCell"
  Slot AlignableSlot "{7BD1A70000003602}" {
   HorizontalAlign 3
   VerticalAlign 0

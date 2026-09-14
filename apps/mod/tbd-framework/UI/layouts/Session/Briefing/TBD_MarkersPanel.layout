@@ -1,0 +1,84 @@
+FrameWidgetClass "{7BD1A70000004200}" {
+ Name "MarkersPanel"
+ Slot FrameWidgetSlot "{7BD1A70000004202}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ {
+  FrameWidgetClass "{7BD1A70000004203}" {
+   Name "PanelBorder"
+   Slot FrameWidgetSlot "{7BD1A70000004204}" {
+    Anchor 0 0 1 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 132
+    OffsetBottom -132
+   }
+   Color 0 0 0 0
+  }
+  FrameWidgetClass "{7BD1A70000004205}" {
+   Name "PanelBG"
+   Slot FrameWidgetSlot "{7BD1A70000004206}" {
+    Anchor 0 0 1 0
+    PositionX 1
+    OffsetLeft 1
+    PositionY 1
+    OffsetTop 1
+    SizeX -2
+    OffsetRight 1
+    SizeY 130
+    OffsetBottom -131
+   }
+   Color 0 0 0 0
+  }
+  VerticalLayoutWidgetClass "{7BD1A70000004207}" {
+   Name "Content"
+   Slot FrameWidgetSlot "{7BD1A70000004208}" {
+    Anchor 0 0 1 0
+    PositionX 16
+    OffsetLeft 16
+    PositionY 14
+    OffsetTop 14
+    SizeX -32
+    OffsetRight 16
+    SizeY 104
+    OffsetBottom -118
+   }
+   {
+    VerticalLayoutWidgetClass "{7BD1A70000004209}" {
+     Name "CaptionDock"
+     Slot LayoutSlot "{7BD1A7000000420A}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+     }
+    }
+    OverlayWidgetClass "{7BD1A7000000420B}" {
+     Name "PlanDropdownDock"
+     Slot LayoutSlot "{7BD1A7000000420C}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+     }
+    }
+    OverlayWidgetClass "{7BD1A7000000420D}" {
+     Name "LoadButtonDock"
+     Slot LayoutSlot "{7BD1A7000000420E}" {
+      HorizontalAlign 3
+      VerticalAlign 0
+      Padding 0 12 0 0
+     }
+    }
+   }
+  }
+ }
+}

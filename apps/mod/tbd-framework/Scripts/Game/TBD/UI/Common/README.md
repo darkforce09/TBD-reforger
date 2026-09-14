@@ -15,6 +15,10 @@ exposes a small API plus, where it has an output, one `ScriptInvoker`.
 | `TBD_DropdownComponent.c` | `TBD_DropdownItem`, `TBD_DropdownMenuBridge`, `TBD_DropdownComponent` | `TBD_Dropdown`, `TBD_DropdownMenu` | `GetOnChanged()(dropdown, tag)` |
 | `TBD_SessionTopBar.c` | `TBD_ESessionTab`, `TBD_SessionIdentity`, `TBD_SessionTopBar` | `Session/Shared/TBD_SessionTopBar` | `GetOnTabSelected()(bar, tab)` |
 | `TBD_SessionBottomBar.c` | `TBD_SessionBottomBar` | `Session/Shared/TBD_SessionBottomBar` | `GetOnAction()(bar, id)` |
+| `TBD_SectionComponent.c` | `TBD_SectionComponent` | `Common/TBD_Section` | `GetOnToggled()(section, expanded)` — collapsible card: header button folds `Body`; `SetBadge`, `SetTint` (BLUFOR / OPFOR borders), `GetActionDock`, `GetBodyGround` |
+| `TBD_NumberedCardComponent.c` | `TBD_NumberedCardComponent` | `Common/TBD_NumberedCard` | — `(n) Title [chip]`, optional paragraph, `GetBodyDock`, right-aligned `GetFooterDock` |
+| `TBD_Caption.c` | `TBD_Caption` (static) | `Common/TBD_Caption` | — `Mount(parent, text, trailing)`: uppercase mono section label |
+| `TBD_ScrollList.c` | `TBD_ScrollList : Managed` | `Common/TBD_ScrollList` | — `Mount(dock, ground, inset)`, `GetContent`, `Clear`, `ResetScroll`, `Destroy` (mounts `TBD_UIScrollBar`) |
 
 Both bars are rounded-xl cards (`MountRounded` on `BarBorder`/`BarBG` at `RADIUS_PANEL`); the top bar's identity and player-count boxes are rounded-lg (`RADIUS_ROW`) on the bar fill — the mockup's `bg-[#151b2b] border-[#1e293b]`.
 

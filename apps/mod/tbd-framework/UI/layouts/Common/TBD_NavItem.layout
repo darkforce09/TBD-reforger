@@ -11,11 +11,38 @@ ButtonWidgetClass "{7BD1A70000001300}" {
   }
  }
  {
-  OverlayWidgetClass "{7BD1A70000001305}" {
-   Name "NavBody"
-   Slot ButtonWidgetSlot "{7BD1A70000001306}" {
+  VerticalLayoutWidgetClass "{7BD1A70000001315}" {
+   Name "NavStack"
+   Slot ButtonWidgetSlot "{7BD1A70000001316}" {
     HorizontalAlign 3
     VerticalAlign 3
+   }
+   {
+   SizeLayoutWidgetClass "{7BD1A70000001317}" {
+    Name "SeparatorSize"
+    Slot LayoutSlot "{7BD1A70000001318}" {
+     HorizontalAlign 3
+     VerticalAlign 0
+     Padding 4 4 4 10
+    }
+    AllowHeightOverride 1
+    HeightOverride 1
+    {
+     ImageWidgetClass "{7BD1A70000001319}" {
+      Name "Separator"
+      Slot AlignableSlot "{7BD1A7000000131A}" {
+       HorizontalAlign 3
+       VerticalAlign 3
+      }
+      Color 1 1 1 0.08
+     }
+    }
+   }
+  OverlayWidgetClass "{7BD1A70000001305}" {
+   Name "NavBody"
+   Slot LayoutSlot "{7BD1A7000000131B}" {
+    HorizontalAlign 3
+    VerticalAlign 0
    }
    {
     FrameWidgetClass "{7BD1A70000001307}" {
@@ -88,6 +115,8 @@ ButtonWidgetClass "{7BD1A70000001300}" {
       }
      }
     }
+   }
+  }
    }
   }
  }

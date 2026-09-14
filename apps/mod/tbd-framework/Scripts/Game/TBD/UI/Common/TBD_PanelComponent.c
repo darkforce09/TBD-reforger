@@ -122,6 +122,13 @@ class TBD_PanelComponent : ScriptedWidgetComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Header icon ink (default PRIMARY_CONTAINER): faction pages paint it BLUFOR / OPFOR.
+	void SetIconTint(int argb)
+	{
+		TBD_UITheme.Paint(m_wHeaderIcon, argb);
+	}
+
+	//------------------------------------------------------------------------------------------------
 	void ShowHeader(bool shown)
 	{
 		m_bHeader = shown;

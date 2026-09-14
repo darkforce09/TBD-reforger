@@ -1,0 +1,44 @@
+FrameWidgetClass "{7BD1A70000003F00}" {
+ Name "OrbatPage"
+ Slot FrameWidgetSlot "{7BD1A70000003F02}" {
+  Anchor 0 0 1 1
+  PositionX 0
+  OffsetLeft 0
+  PositionY 0
+  OffsetTop 0
+  SizeX 0
+  OffsetRight 0
+  SizeY 0
+  OffsetBottom 0
+ }
+ {
+  FrameWidgetClass "{7BD1A70000003F03}" {
+   Name "RosterDock"
+   Slot FrameWidgetSlot "{7BD1A70000003F04}" {
+    Anchor 0 0 0 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 500
+    OffsetRight -500
+    SizeY 0
+    OffsetBottom 0
+   }
+  }
+  FrameWidgetClass "{7BD1A70000003F05}" {
+   Name "KitDock"
+   Slot FrameWidgetSlot "{7BD1A70000003F06}" {
+    Anchor 0 0 1 1
+    PositionX 512
+    OffsetLeft 512
+    PositionY 0
+    OffsetTop 0
+    SizeX -512
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+  }
+ }
+}

@@ -1,4 +1,12 @@
-//! Pre-game UI rebuild (2026-09-12) — the one place an icon key becomes an imageset quad.
+//! Pre-game UI rebuild (2026-09-12) — the one place an icon key becomes an image.
+//!
+//! Briefing pass (2026-09-14): icons are OUR textures first. `UI/Textures/TBD/Icons/TBD_Icon_<key>_UI.png`
+//! is a 64 px white-on-alpha raster of the Material Symbols outlined glyph the mockups use
+//! (`curl https://cdn.jsdelivr.net/npm/@material-symbols/svg-400/outlined/<key>.svg`, then `ffmpeg -vf
+//! "scale=64:64:flags=lanczos,format=rgba,negate=negate_alpha=0"`; 38 keys shipped). The operator
+//! imports the batch in Workbench (TextureUI.conf) and the `.meta` GUIDs get pinned in
+//! `s_mTextureGuids`; until then `Load()` addresses the `.edds` by bare path. The vanilla quad
+//! table below is the fallback for keys without a PNG.
 //!
 //! The Stitch mockups draw Material Symbols (`search`, `grid_view`, `water`, …). Enfusion has no
 //! icon font, so every icon slot is an `ImageWidget` fed from the vanilla wrapper-UI imageset via
@@ -17,6 +25,14 @@
 class TBD_UIIcons
 {
 	static const ResourceName IMAGESET = "{2EFEA2AF1F38E7F0}UI/Textures/Icons/icons_wrapperUI-64.imageset";
+	//! Folder of our own icon rasters (see the header). Key -> `TBD_Icon_<key>_UI.edds`.
+	static const string ICON_DIR = "UI/Textures/TBD/Icons/";
+
+	//! Pinned `.meta` GUIDs after the Workbench import: key -> "{GUID}UI/Textures/TBD/Icons/...edds".
+	//! Empty until the operator pastes them; a bare path still resolves once the .edds exists.
+	protected static ref map<string, ResourceName> s_mTextureGuids;
+	protected static ref set<string> s_sShipped;
+	protected static ref set<string> s_sTextureMisses;
 
 	protected static ref map<string, string> m_mQuads;
 	protected static ref set<string> m_sWarned;
@@ -43,6 +59,20 @@ class TBD_UIIcons
 		if (!w)
 			return false;
 
+		ResourceName texture = Texture(key);
+		if (!texture.IsEmpty() && !TextureMissed(key))
+		{
+			if (w.LoadImageTexture(0, texture))
+			{
+				w.SetImage(0);
+				w.SetVisible(true);
+				return true;
+			}
+
+			// Not imported yet: remember the miss so the engine logs "Wrong GUID" once, not per widget.
+			s_sTextureMisses.Insert(key);
+		}
+
 		string quad = Quad(key);
 		if (quad.IsEmpty())
 		{
@@ -57,6 +87,54 @@ class TBD_UIIcons
 			WarnOnce(key, quad);
 
 		return loaded;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static bool TextureMissed(string key)
+	{
+		if (!s_sTextureMisses)
+			s_sTextureMisses = new set<string>();
+
+		return s_sTextureMisses.Contains(key);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Our own raster for `key`, or empty when none was shipped for it.
+	static ResourceName Texture(string key)
+	{
+		if (!s_sShipped)
+			BuildShipped();
+
+		if (!s_sShipped.Contains(key))
+			return string.Empty;
+
+		ResourceName pinned;
+		if (s_mTextureGuids && s_mTextureGuids.Find(key, pinned))
+			return pinned;
+
+		return ICON_DIR + "TBD_Icon_" + key + "_UI.edds";
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! The 38 PNGs under UI/Textures/TBD/Icons/ (keep in step with the folder).
+	protected static void BuildShipped()
+	{
+		s_sShipped = new set<string>();
+		array<string> keys = {
+			"map", "description", "groups", "edit_location_alt", "radio", "directions_car", "checkroom",
+			"adjust", "warning", "tune", "cell_tower", "timer", "target", "visibility", "shield", "schedule",
+			"hourglass_bottom", "thermostat", "my_location", "download", "assignment", "expand_more",
+			"chevron_right", "person", "search", "check", "grid_view", "water", "landscape", "ac_unit",
+			"extension", "flag", "notes", "meeting_room", "close", "lock", "play_arrow", "settings"
+		};
+		foreach (string key : keys)
+		{
+			s_sShipped.Insert(key);
+		}
+
+		// Pinned GUIDs go here after the import, e.g.
+		// s_mTextureGuids.Insert("map", "{GUID}UI/Textures/TBD/Icons/TBD_Icon_map_UI.edds");
+		s_mTextureGuids = new map<string, ResourceName>();
 	}
 
 	//------------------------------------------------------------------------------------------------

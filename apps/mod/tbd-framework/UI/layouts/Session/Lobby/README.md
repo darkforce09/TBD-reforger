@@ -26,14 +26,13 @@ Same shape as the selector shell; same GUID + path as the retired monolith so
 | `TBD_LobbyFactionList.layout` | `2F` | body of the FACTIONS panel | `Stack`, `Content` (faction rows), `SpectatorDock` (the Spectators row), `VoiceDock` (empty; the voice panel mounts here in its own pass) |
 | `TBD_LobbyFactionRow.layout` | `30` | one faction / spectators row (`TBD_LobbyFactionRowComponent`) | `Border`, `Background`, `Name`, `RoleChipDock` (`DEFENDING`), `CountChipDock` (`0 / 92`) |
 | `TBD_LobbyRoster.layout` | `31` | body of the ROLES panel | `ListFrame` (clips), `Scroll` (−24 overhang), `Content` (pad 34), `ScrollBarDock`, `EmptyState` |
-| `TBD_LobbySquadCard.layout` | `32` | one collapsible squad (`TBD_LobbySquadCardComponent`) | `Border`, `Background`, `HeaderButton` (`HeaderOverlay` clips; `HeaderBG`, `CallsignChipDock`, `VehicleChipDock`, `CountChipDock`, `Chevron`), `HeaderRule`, `SlotsContent` |
+| `TBD_LobbySquadCard.layout` | `32` | one collapsible squad (`TBD_LobbySquadCardComponent`) | `Border`, `Background`, `HeaderButton` (`HeaderOverlay` clips; `HeaderBG`, `CallsignChipDock`, `VehicleChipDock`, `CountChipDock`, `ActionDock` (briefing Locate button), `Chevron`), `HeaderRule`, `SlotsContent` |
 | `TBD_LobbySlotRow.layout` | `33` | one seat (`TBD_LobbySlotRowComponent`) | `Background` (square image — rows sit inside the card), `RoleText`, `ChipsDock` (weapons + `MED`/`ENG` tags), `HolderText` (amber mono), `StatusChipDock` (`Unslotted` / `DEAD`), `RowRule` |
 | `TBD_KitInspector.layout` | `34` | right column: title band + scrolling section cards | `PanelBorder`, `PanelBG`, `Header` (clips; `HeaderBG`, `HeaderIcon`, `Title`, `SlotRow`: `SlotTitle`, `SlotChipsDock`), `HeaderRule`, `BodyFrame` (clips), `Scroll`, `CardsContent`, `ScrollBarDock`, `EmptyState` |
-| `TBD_KitPreview.layout` | `35` | the preview card (empty frame until the visual-preview pass) | `CardBorder`, `CardBG`, `Box` (`Border`, `Background`, `GridClip`/`GridImage`, `Label`) |
-| `TBD_KitCell.layout` | `36` | one cell of a kit grid | `Border`, `Background`, `Label` (mono 10 upper), `Value` (mono 12), `Count` (amber `x4`) |
+| `TBD_KitPreview.layout` | `35` | the preview card: a 320 px render target showing the seat's exact kit on the character (`TBD_KitPreviewComponent` + `TBD_LoadoutPreviewDresser`); `Label` is the fallback caption (`PREVIEW UNAVAILABLE`) | `CardBorder`, `CardBG`, `Box` (`Border`, `Background`, `GridClip`/`GridImage`/`Preview` [ItemPreviewWidget], `Label`) |
 | `TBD_KitWeaponCard.layout` | `37` | one WEAPON SLOT card | `Border`, `Background`, `SlotChipDock`, `NameBorder`/`NameBG`/`Name`, `AttachmentsTitle`, `AttachmentsContent`, `AmmoRule`, `AmmoTitle`, `AmmoSummary`, `AmmoContent` (both contents take `TBD_KeyValueRow`s) |
 
-Grids inside the kit cards are `Common/TBD_Columns3` / `TBD_Columns4` rows of `TBD_KitCell`
+Grids inside the kit cards are `Common/TBD_Columns3` / `TBD_Columns4` rows of `Common/TBD_StatCell` (was `TBD_KitCell` here until 2026-09-14; the briefing needed it too)
 (GEAR / GADGETS / TOOLS / MISC four wide; GRENADES / MEDICAL three wide; WEAPONS three
 `TBD_KitWeaponCard`s). Section cards are `Common/TBD_Panel`.
 

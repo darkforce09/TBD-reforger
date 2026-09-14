@@ -170,9 +170,18 @@ class TBD_KitWeapon
 }
 
 //! Everything the KIT INSPECTOR draws for one slot. Sections in mockup order.
+//!
+//! Kit-preview pass (2026-09-13): the sheet is WIRE-SHAPED — `m_sKitAlias` + `m_Loadout` are exactly
+//! the two inputs `TBD_SpawnManager.SpawnSlotBody` hands to the server equip pass (kit alias through
+//! `TBD_Registry`, then `TBD_LoadoutApplication` layers the JSON loadout). The 3D preview
+//! (`TBD_KitPreviewComponent` / `TBD_LoadoutPreviewDresser`) consumes the same two, so what the
+//! doll wears is what the slot spawns. The display arrays stay hand-written mock text.
 class TBD_KitInfo
 {
 	string m_sKey;
+	string m_sKitAlias;              //!< "kit:sov_rifleman" — the slot's `kit`; resolved through TBD_Registry
+	ResourceName m_sBasePrefab;      //!< resolved character prefab; empty = resolve m_sKitAlias on demand
+	ref TBD_SlotLoadoutStruct m_Loadout; //!< the JSON loadout the server applies; null = kit-only slot
 	ref array<ref TBD_KitEntry> m_aGear;
 	ref array<ref TBD_KitWeapon> m_aWeapons;
 	ref array<ref TBD_KitEntry> m_aGrenades;
@@ -191,6 +200,25 @@ class TBD_KitInfo
 		m_aTools = {};
 		m_aMedical = {};
 		m_aMisc = {};
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! The character prefab the preview dresses: the pinned one, else the alias through the registry
+	//! (the addon ships `Data/registry.json`, so this resolves on clients too). Empty = unknown kit.
+	ResourceName BasePrefab()
+	{
+		if (!m_sBasePrefab.IsEmpty())
+			return m_sBasePrefab;
+
+		if (m_sKitAlias.IsEmpty())
+			return string.Empty;
+
+		bool ok;
+		ResourceName resolved = TBD_Registry.Resolve(m_sKitAlias, ok);
+		if (!ok)
+			return string.Empty;
+
+		return resolved;
 	}
 }
 

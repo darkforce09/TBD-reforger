@@ -21,6 +21,7 @@ class TBD_NavItemData
 	string m_sIcon;   //!< TBD_UIIcons key; empty = no glyph
 	string m_sBadge;  //!< trailing count text; empty = hidden
 	bool m_bEnabled = true;
+	bool m_bSeparatorBefore; //!< draw a rule above this item (briefing nav groups)
 
 	void TBD_NavItemData(string label, string icon = "", string badge = "", bool enabled = true)
 	{
@@ -38,6 +39,8 @@ class TBD_NavItemComponent : TBD_UIInteractive
 	protected ImageWidget m_wIcon;
 	protected TextWidget m_wLabel;
 	protected TextWidget m_wBadge;
+	protected Widget m_wSeparatorSize;
+	protected Widget m_wSeparator;
 
 	protected TBD_TabStripComponent m_Owner; //!< weak — the strip owns its items
 	protected int m_iIndex = -1;
@@ -51,6 +54,9 @@ class TBD_NavItemComponent : TBD_UIInteractive
 		m_wIcon = ImageWidget.Cast(w.FindAnyWidget("Icon"));
 		m_wLabel = TextWidget.Cast(w.FindAnyWidget("Label"));
 		m_wBadge = TextWidget.Cast(w.FindAnyWidget("Badge"));
+		m_wSeparatorSize = w.FindAnyWidget("SeparatorSize");
+		m_wSeparator = w.FindAnyWidget("Separator");
+		TBD_UITheme.Show(m_wSeparatorSize, false);
 
 		TBD_UILayouts.MountRounded(m_wBorder, TBD_UITheme.RADIUS_ROW);
 		TBD_UILayouts.MountRounded(m_wBackground, TBD_UITheme.RADIUS_ROW - 1);
@@ -65,6 +71,7 @@ class TBD_NavItemComponent : TBD_UIInteractive
 		TBD_UITheme.Write(m_wLabel, data.m_sLabel);
 		TBD_UITheme.Write(m_wBadge, data.m_sBadge);
 		TBD_UITheme.Show(m_wBadge, !data.m_sBadge.IsEmpty());
+		TBD_UITheme.Show(m_wSeparatorSize, data.m_bSeparatorBefore);
 
 		if (m_wIcon)
 		{
@@ -129,6 +136,7 @@ class TBD_NavItemComponent : TBD_UIInteractive
 		TBD_UITheme.Paint(m_wLabel, ink);
 		TBD_UITheme.Paint(m_wIcon, ink);
 		TBD_UITheme.Paint(m_wBadge, TBD_UITheme.PRIMARY);
+		TBD_UITheme.PaintOver(m_wSeparator, TBD_UITheme.STRIP_BORDER, ground);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -192,6 +200,15 @@ class TBD_TabStripComponent : ScriptedWidgetComponent
 	//------------------------------------------------------------------------------------------------
 	//! Opaque colour under the strip (the top bar sits on the backdrop; a briefing nav column
 	//! sits on a panel). Items recompute their ground from it.
+	//! Stack the items vertically (call before SetItems; the layout attribute is the default).
+	void SetVertical(bool vertical)
+	{
+		m_bVertical = vertical;
+		TBD_UITheme.Show(m_wItemsRow, !vertical);
+		TBD_UITheme.Show(m_wItemsColumn, vertical);
+	}
+
+	//------------------------------------------------------------------------------------------------
 	void SetGround(int opaqueArgb)
 	{
 		m_iGround = opaqueArgb;
