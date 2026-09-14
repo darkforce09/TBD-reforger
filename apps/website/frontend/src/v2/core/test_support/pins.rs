@@ -126,3 +126,53 @@ pub(crate) fn modpacks_source() -> String {
     .map(production)
     .concat()
 }
+
+/// The mission library, as one text: the route component, the header and its controls, the hero
+/// and the card grid, the dossier sheet and its sections, and the payload comparison behind them.
+pub(crate) fn mission_library_source() -> String {
+    [
+        include_str!("../../pages/mission_hub/library/mod.rs"),
+        include_str!("../../pages/mission_hub/library/card_grid.rs"),
+        include_str!("../../pages/mission_hub/library/dossier_body.rs"),
+        include_str!("../../pages/mission_hub/library/dossier_collaboration.rs"),
+        include_str!("../../pages/mission_hub/library/dossier_lifecycle.rs"),
+        include_str!("../../pages/mission_hub/library/dossier_sheet.rs"),
+        include_str!("../../pages/mission_hub/library/dossier_upload.rs"),
+        include_str!("../../pages/mission_hub/library/dossier_upload_panel.rs"),
+        include_str!("../../pages/mission_hub/library/dossier_versions.rs"),
+        include_str!("../../pages/mission_hub/library/featured_hero.rs"),
+        include_str!("../../pages/mission_hub/library/filter_bar.rs"),
+        include_str!("../../pages/mission_hub/library/header.rs"),
+        include_str!("../../pages/mission_hub/library/mission_diff.rs"),
+        include_str!("../../pages/mission_hub/library/page.rs"),
+        include_str!("../../pages/mission_hub/library/search_bar.rs"),
+    ]
+    .map(production)
+    .concat()
+}
+
+/// The mission overview, as one text: the route component, the dossier header, the shared body
+/// and its briefing, and the armory editor's state and dialog.
+pub(crate) fn mission_overview_source() -> String {
+    [
+        include_str!("../../pages/mission_hub/overview/mod.rs"),
+        include_str!("../../pages/mission_hub/overview/armory_dialog.rs"),
+        include_str!("../../pages/mission_hub/overview/armory_editor.rs"),
+        include_str!("../../pages/mission_hub/overview/dossier_body.rs"),
+        include_str!("../../pages/mission_hub/overview/header.rs"),
+        include_str!("../../pages/mission_hub/overview/intel_briefing.rs"),
+        include_str!("../../pages/mission_hub/overview/page.rs"),
+    ]
+    .map(production)
+    .concat()
+}
+
+/// The new-mission dialog, as one text.
+pub(crate) fn create_dialog_source() -> String {
+    [
+        include_str!("../../pages/mission_hub/create_dialog/mod.rs"),
+        include_str!("../../pages/mission_hub/create_dialog/dialog.rs"),
+    ]
+    .map(production)
+    .concat()
+}
