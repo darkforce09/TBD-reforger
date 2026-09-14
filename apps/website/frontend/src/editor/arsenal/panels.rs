@@ -6,10 +6,10 @@ use std::collections::HashMap;
 
 use leptos::prelude::*;
 
-use crate::core::dto::RegistryItem;
 use crate::editor::arsenal::arsenal_rules::{
     self as rules, index_by_name, row_options, CompatFeed,
 };
+use crate::v2::core::api::dto::RegistryItem;
 
 use super::loadout::{attachments_key, attachments_of, pack_attachments, ATTACHMENT_EDGE};
 use super::{region_title, MaterialCheck};
@@ -543,7 +543,7 @@ fn paper_doll(
 
 #[cfg(test)]
 mod tests {
-    use super::super::class_r_scrub::{live_code, only_body as fn_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, only_body as fn_body};
 
     /// The live production surface this pin examines spans two files since T-934.8 —
     /// `ArsenalTab` (mod.rs) wires the commit, `cargo_panel` (this file) owns the mutations.

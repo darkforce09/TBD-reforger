@@ -192,7 +192,7 @@ const ANON_OWNER: &str = "anon";
 fn current_owner() -> Option<String> {
     let storage = web_sys::window()?.local_storage().ok()??;
     let raw = storage
-        .get_item(crate::core::auth::AUTH_PERSIST_KEY)
+        .get_item(crate::v2::core::auth::AUTH_PERSIST_KEY)
         .ok()??;
     let blob: serde_json::Value = serde_json::from_str(&raw).ok()?;
     let id = blob

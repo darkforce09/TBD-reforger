@@ -258,9 +258,9 @@ pub fn set_ctx(
 
 /* ───────────────────────── Mission Settings (T-159.26 — environment half) ───────────────────────── */
 
-/// The doc's terrain + environment fields — relocated to the always-compiled [`crate::core::dto`] so the
+/// The doc's terrain + environment fields — relocated to the always-compiled [`crate::v2::core::api::dto`] so the
 /// native `eden_chrome` view shell can build a default; re-exported here for wasm callers.
-pub use crate::core::dto::MissionEnv;
+pub use crate::v2::core::api::dto::MissionEnv;
 
 /// Read terrain + environment from the doc meta (`small_maps_json` → `meta`).
 pub fn read_env() -> MissionEnv {

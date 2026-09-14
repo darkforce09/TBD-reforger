@@ -1,4 +1,4 @@
-use crate::editor::arsenal::class_r_scrub::live_code;
+use crate::v2::core::test_support::class_r_scrub::live_code;
 
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");

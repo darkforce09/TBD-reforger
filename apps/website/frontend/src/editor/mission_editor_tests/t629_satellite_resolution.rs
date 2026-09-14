@@ -116,7 +116,7 @@ fn an_unknown_limit_yields_no_level_at_all() {
 
 #[test]
 fn no_call_site_may_guess_a_texture_limit() {
-    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let src = live_code(include_str!("../world_assets/satellite.rs"));
 
     assert!(
@@ -174,7 +174,7 @@ fn no_call_site_may_guess_a_texture_limit() {
 
 #[test]
 fn a_downscaled_basemap_warns_and_a_stuck_placeholder_warns() {
-    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let src = live_code(include_str!("../world_assets/satellite.rs"));
 
     let report = only_body(&src, "fn report_chosen_level(");

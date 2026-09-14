@@ -2,7 +2,7 @@ use super::{
     connection_lane_verts, connection_segments, pick_connection, ConnSegment, CONN_LINE_RGBA,
     CONN_LINE_SELECTED_RGBA,
 };
-use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 use std::collections::HashMap;
 
 fn positions() -> HashMap<String, (f64, f64)> {

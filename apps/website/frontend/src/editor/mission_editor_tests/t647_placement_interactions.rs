@@ -1,4 +1,4 @@
-use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 /// The editor page region (comments stripped, string literals blanked). The `#[cfg(wasm32)]`
 /// blocks the pointer/dblclick handlers live in are KEPT by the scrubber (it decides only

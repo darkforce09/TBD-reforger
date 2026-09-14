@@ -100,7 +100,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                         // pickers). Those register with `modal_stack`; without this guard,
                         // Esc closing the menu also steps the measure machines (wave108
                         // MAJOR-2; LoS/viewshed victims in waves 109–110).
-                        if crate::core::ui::modal_stack::any_open() {
+                        if crate::v2::core::ui::modal_stack::any_open() {
                             false
                         } else {
                             // T-723 — Esc disarms an armed place BEFORE the measure-tool seam.

@@ -1,7 +1,7 @@
 use super::{
     comment_lane_xy, comment_points, pick_comment, route_target, RouteTarget, COMMENT_PICK_PX,
 };
-use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 /// Three notes, deliberately NOT in id order in the JSON text, so a reader that trusted the
 /// map's iteration order would produce a different sequence from one that sorts.

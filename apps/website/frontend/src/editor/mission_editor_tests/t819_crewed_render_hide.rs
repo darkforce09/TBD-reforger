@@ -1,5 +1,5 @@
 use super::{crewed_slot_ids, map_render_keep_indices, selectable_ids};
-use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 use std::collections::HashSet;
 
 fn slots_json() -> String {

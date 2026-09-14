@@ -8,8 +8,10 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 
-use crate::core::dto::{FactionDoc, FactionRole, FactionVehicle, RegistryItem, FACTION_SIDES};
-use crate::core::ui::Dialog;
+use crate::v2::core::api::dto::{
+    FactionDoc, FactionRole, FactionVehicle, RegistryItem, FACTION_SIDES,
+};
+use crate::v2::core::ui::Dialog;
 
 const CTRL: &str = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60";
 const BTN: &str =
@@ -33,7 +35,7 @@ pub fn FactionManagerDialog(
     registry: RwSignal<Option<Vec<RegistryItem>>>,
 ) -> impl IntoView {
     // Library + editor state.
-    let library = RwSignal::new(Vec::<crate::core::dto::UserFaction>::new());
+    let library = RwSignal::new(Vec::<crate::v2::core::api::dto::UserFaction>::new());
     let editing = RwSignal::new(FactionDoc {
         side: "BLUFOR".into(),
         ..Default::default()
@@ -44,7 +46,7 @@ pub fn FactionManagerDialog(
     let confirm_delete_open = RwSignal::new(false);
 
     #[cfg(target_arch = "wasm32")]
-    let auth = expect_context::<crate::core::auth::AuthStore>();
+    let auth = expect_context::<crate::v2::core::auth::AuthStore>();
 
     // Load the library whenever the dialog opens.
     #[cfg(target_arch = "wasm32")]
@@ -54,12 +56,10 @@ pub fn FactionManagerDialog(
                 return;
             }
             leptos::task::spawn_local(async move {
-                if let Ok(r) =
-                    crate::core::client::api_get::<crate::core::dto::FactionListResponse>(
-                        auth,
-                        "/factions",
-                    )
-                    .await
+                if let Ok(r) = crate::v2::core::api::client::api_get::<
+                    crate::v2::core::api::dto::FactionListResponse,
+                >(auth, "/factions")
+                .await
                 {
                     library.set(r.data);
                 }
@@ -71,20 +71,20 @@ pub fn FactionManagerDialog(
     // T-726 — register + is_topmost_open so a stacked dialog above Faction Manager owns Esc alone.
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id = crate::core::ui::modal_stack::register(move || {
+        let modal_id = crate::v2::core::ui::modal_stack::register(move || {
             open.try_get_untracked().unwrap_or(false)
         });
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
             if open.get_untracked()
                 && ev.key() == "Escape"
-                && crate::core::ui::modal_stack::is_topmost_open(modal_id)
+                && crate::v2::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 open.set(false);
             }
         });
         on_cleanup(move || {
             esc.remove();
-            crate::core::ui::modal_stack::unregister(modal_id);
+            crate::v2::core::ui::modal_stack::unregister(modal_id);
         });
     }
 
@@ -97,7 +97,7 @@ pub fn FactionManagerDialog(
         status.set(String::new());
     };
 
-    let select_faction = move |f: crate::core::dto::UserFaction| {
+    let select_faction = move |f: crate::v2::core::api::dto::UserFaction| {
         editing.set(f.doc.clone());
         editing_id.set(Some(f.id.clone()));
         status.set(String::new());
@@ -129,19 +129,15 @@ pub fn FactionManagerDialog(
             leptos::task::spawn_local(async move {
                 let res = match id {
                     Some(id) => {
-                        crate::core::client::api_put::<crate::core::dto::UserFaction>(
-                            auth,
-                            &format!("/factions/{id}"),
-                            body,
-                        )
+                        crate::v2::core::api::client::api_put::<
+                            crate::v2::core::api::dto::UserFaction,
+                        >(auth, &format!("/factions/{id}"), body)
                         .await
                     }
                     None => {
-                        crate::core::client::api_post::<crate::core::dto::UserFaction>(
-                            auth,
-                            "/factions",
-                            body,
-                        )
+                        crate::v2::core::api::client::api_post::<
+                            crate::v2::core::api::dto::UserFaction,
+                        >(auth, "/factions", body)
                         .await
                     }
                 };
@@ -149,8 +145,8 @@ pub fn FactionManagerDialog(
                     Ok(f) => {
                         editing_id.set(Some(f.id.clone()));
                         status.set("Saved.".into());
-                        if let Ok(r) = crate::core::client::api_get::<
-                            crate::core::dto::FactionListResponse,
+                        if let Ok(r) = crate::v2::core::api::client::api_get::<
+                            crate::v2::core::api::dto::FactionListResponse,
                         >(auth, "/factions")
                         .await
                         {
@@ -165,30 +161,30 @@ pub fn FactionManagerDialog(
         let _ = doc;
     };
 
-    let delete =
-        move |_| {
-            #[cfg(target_arch = "wasm32")]
-            if let Some(id) = editing_id.get_untracked() {
-                leptos::task::spawn_local(async move {
-                    let _ = crate::core::client::api_delete(auth, &format!("/factions/{id}")).await;
-                    editing.set(FactionDoc {
-                        side: "BLUFOR".into(),
-                        ..Default::default()
-                    });
-                    editing_id.set(None);
-                    confirm_delete_open.set(false);
-                    if let Ok(r) = crate::core::client::api_get::<
-                        crate::core::dto::FactionListResponse,
-                    >(auth, "/factions")
-                    .await
-                    {
-                        library.set(r.data);
-                    }
+    let delete = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        if let Some(id) = editing_id.get_untracked() {
+            leptos::task::spawn_local(async move {
+                let _ = crate::v2::core::api::client::api_delete(auth, &format!("/factions/{id}"))
+                    .await;
+                editing.set(FactionDoc {
+                    side: "BLUFOR".into(),
+                    ..Default::default()
                 });
-            }
-            #[cfg(not(target_arch = "wasm32"))]
-            confirm_delete_open.set(false);
-        };
+                editing_id.set(None);
+                confirm_delete_open.set(false);
+                if let Ok(r) = crate::v2::core::api::client::api_get::<
+                    crate::v2::core::api::dto::FactionListResponse,
+                >(auth, "/factions")
+                .await
+                {
+                    library.set(r.data);
+                }
+            });
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        confirm_delete_open.set(false);
+    };
 
     move || {
         if !open.get() {
@@ -441,7 +437,7 @@ mod tests {
     /// T-726 — Faction Manager Esc must gate on modal_stack topmost (wave139 F3).
     #[test]
     fn faction_manager_gates_escape_on_modal_stack() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let code = live_code(include_str!("faction_manager.rs"));
         let body = only_body(&code, "pub fn FactionManagerDialog(");
         let reg = ["modal_stack", "::", "register("].concat();

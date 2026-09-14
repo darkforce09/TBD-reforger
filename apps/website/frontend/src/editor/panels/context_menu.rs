@@ -1081,14 +1081,14 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
     // editor's measure-tool Esc arm (wave108 MAJOR-2 / wave109–110).
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id = crate::core::ui::modal_stack::register(move || {
+        let modal_id = crate::v2::core::ui::modal_stack::register(move || {
             menu.try_get_untracked().flatten().is_some()
         });
         let key = window_event_listener(leptos::ev::keydown, move |ev| {
             let Some(state) = menu.get_untracked() else {
                 return;
             };
-            if !crate::core::ui::modal_stack::is_topmost_open(modal_id) {
+            if !crate::v2::core::ui::modal_stack::is_topmost_open(modal_id) {
                 return;
             }
             match ev.key().as_str() {
@@ -1162,7 +1162,7 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
         on_cleanup(move || {
             key.remove();
             resize.remove();
-            crate::core::ui::modal_stack::unregister(modal_id);
+            crate::v2::core::ui::modal_stack::unregister(modal_id);
         });
     }
     // A fresh open has no highlight. Expansion keeps its parent in view and highlighted so the
@@ -1877,7 +1877,7 @@ mod tests {
 /// T-726 — context menu Esc is a modal-stack citizen (wave108 MAJOR-2).
 #[cfg(test)]
 mod t726_context_menu_esc_stack {
-    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
     #[test]
     fn context_menu_gates_escape_on_modal_stack() {
@@ -1908,7 +1908,7 @@ mod t726_context_menu_esc_stack {
 #[cfg(test)]
 mod t807_disabled_rows_show_why {
     use super::*;
-    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
     /// The one place the tooltip text is decided. A disabled row's title is the blocking ticket if
     /// it has one, else the item's [`ContextItem::why`] reason — so this mirrors `menu_row`.

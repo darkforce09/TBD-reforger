@@ -682,7 +682,7 @@ pub use live::{announce_saved, join, leave, read_stamp, register_bridge, write_s
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_item};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_item};
 
     fn persist_live() -> String {
         live_code(include_str!("persist.rs"))

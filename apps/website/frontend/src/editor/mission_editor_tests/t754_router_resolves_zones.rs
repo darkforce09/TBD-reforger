@@ -1,5 +1,5 @@
 use super::{route_target, RouteTarget};
-use crate::editor::arsenal::class_r_scrub::live_code;
+use crate::v2::core::test_support::class_r_scrub::live_code;
 use serde_json::json;
 
 fn doc() -> serde_json::Value {

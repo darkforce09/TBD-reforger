@@ -123,15 +123,15 @@ const EDITOR_COMPAT_EDGE_TYPES: &str = "optic_on_weapon,mag_in_weapon,attachment
 /// Assemble the flat catalog via bounded pages (T-427). Never hits the unpaginated dump.
 #[cfg(target_arch = "wasm32")]
 async fn fetch_registry_pages(
-    auth: crate::core::auth::AuthStore,
-) -> Result<Vec<crate::core::dto::RegistryItem>, crate::core::client::ApiErr> {
-    use crate::core::dto::{RegistryItem, RegistryResponse};
+    auth: crate::v2::core::auth::AuthStore,
+) -> Result<Vec<crate::v2::core::api::dto::RegistryItem>, crate::v2::core::api::client::ApiErr> {
+    use crate::v2::core::api::dto::{RegistryItem, RegistryResponse};
 
     let mut all: Vec<RegistryItem> = Vec::new();
     let mut offset: i64 = 0;
     loop {
         let path = format!("/registry?limit={REGISTRY_COLD_PAGE}&offset={offset}");
-        let page: RegistryResponse = crate::core::client::api_get(auth, &path).await?;
+        let page: RegistryResponse = crate::v2::core::api::client::api_get(auth, &path).await?;
         let n = page.data.len() as i64;
         let total = page.total.unwrap_or(offset + n);
         all.extend(page.data);
@@ -151,22 +151,23 @@ async fn fetch_registry_pages(
 /// Does **not** GET unfiltered `/registry/compat` and does **not** walk raw cargo edges client-side.
 #[cfg(target_arch = "wasm32")]
 async fn fetch_compat_cold(
-    auth: crate::core::auth::AuthStore,
+    auth: crate::v2::core::auth::AuthStore,
 ) -> Result<
     (
         crate::editor::arsenal::arsenal_rules::CompatFeed,
         std::collections::HashMap<String, Vec<crate::editor::arsenal::arsenal_rules::CargoRow>>,
     ),
-    crate::core::client::ApiErr,
+    crate::v2::core::api::client::ApiErr,
 > {
-    use crate::core::dto::{RegistryCargoDefaultsResponse, RegistryCompatResponse};
     use crate::editor::arsenal::arsenal_rules::{CargoRow, CompatFeed, CompatGraph, CompatStatus};
+    use crate::v2::core::api::dto::{RegistryCargoDefaultsResponse, RegistryCompatResponse};
     use std::collections::HashMap;
 
     let edges_path = format!("/registry/compat?edge_type={EDITOR_COMPAT_EDGE_TYPES}");
-    let edges: RegistryCompatResponse = crate::core::client::api_get(auth, &edges_path).await?;
+    let edges: RegistryCompatResponse =
+        crate::v2::core::api::client::api_get(auth, &edges_path).await?;
     let cargo_resp: RegistryCargoDefaultsResponse =
-        crate::core::client::api_get(auth, "/registry/compat?view=cargo_defaults").await?;
+        crate::v2::core::api::client::api_get(auth, "/registry/compat?view=cargo_defaults").await?;
 
     let mut cargo: HashMap<String, Vec<CargoRow>> = HashMap::new();
     for (character, rows) in cargo_resp.data {
@@ -1317,7 +1318,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     let dock_right_collapsed = RwSignal::new(false);
     // T-159.27 — the flat registry gear rows for the Attributes Arsenal tab (populated by the same
     // /registry fetch that builds the Factions palette). None until it lands.
-    let registry_items = RwSignal::new(None::<Vec<crate::core::dto::RegistryItem>>);
+    let registry_items = RwSignal::new(None::<Vec<crate::v2::core::api::dto::RegistryItem>>);
     // T-750 — terminal failure of the `/registry` fetch. Distinct from `registry_items == None`
     // (still in flight): the Favourites panel must not spin on "Resolving…" forever when the
     // catalogue never arrives. `registry_fetch_gen` bumps re-kick the cold fetch (Retry).
@@ -1385,7 +1386,7 @@ pub fn MissionEditorPage() -> impl IntoView {
         // T-159.20 — auth store for the Save Version POST. Read here in the reactive body (the
         // owner is live); `on_load` is a non-reactive closure, and `AuthStore` is `Copy` so it moves
         // into it cleanly. Provided by `AppLayout` above `<AppRoutes/>`, so present on this route.
-        let auth = expect_context::<crate::core::auth::AuthStore>();
+        let auth = expect_context::<crate::v2::core::auth::AuthStore>();
 
         // T-159.22 — the Factions palette catalog. Engine-independent so the dock fills even if
         // wgpu never comes up. `kind == "character"` rows only — `build_catalog_tree` is the
@@ -3581,7 +3582,7 @@ mod t819_crewed_render_hide;
 /// cannot green itself.
 #[cfg(test)]
 mod t930_vehicle_first_paint {
-    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
     fn page() -> String {
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
@@ -3648,7 +3649,7 @@ mod t930_vehicle_first_paint {
  */
 #[cfg(test)]
 mod t939_4_arrange_chords {
-    use crate::editor::arsenal::class_r_scrub::live_source;
+    use crate::v2::core::test_support::class_r_scrub::live_source;
 
     /// The six chords this slice binds, as their `KeyboardEvent.code`. Kept here as bare literals
     /// (not imported) so the pin still means something if the shared table is renamed out from

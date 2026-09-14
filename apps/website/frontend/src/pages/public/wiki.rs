@@ -5,9 +5,9 @@
 //! List items ride `DataEnvelope<Value>` (dto.rs already pins the wiki golden that way — no
 //! typed WikiPage DTO consumer yet).
 #![allow(dead_code)]
-use crate::core::dto::DataEnvelope;
-use crate::core::split_pane::{GlassSplit, ListDetailItem, SidebarSearch};
 use crate::shell::nav_config::{has_min_role_authed, Role};
+use crate::v2::core::api::dto::DataEnvelope;
+use crate::v2::core::ui::split_pane::{GlassSplit, ListDetailItem, SidebarSearch};
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -230,11 +230,11 @@ fn callout(quoted: &[String]) -> AnyView {
         .map(|s| s.as_str())
         .collect::<Vec<_>>()
         .join(" ");
-    let outer = crate::core::ui::cn(&[
+    let outer = crate::v2::core::ui::cn(&[
         "my-6 rounded-2xl border border-l-4 p-4 shadow-lg backdrop-blur-md",
         box_cls,
     ]);
-    let label = crate::core::ui::cn(&[
+    let label = crate::v2::core::ui::cn(&[
         "mb-1 font-mono text-xs font-bold tracking-widest uppercase",
         label_cls,
     ]);
@@ -272,19 +272,19 @@ enum WikiMode {
 #[component]
 pub fn WikiPage() -> impl IntoView {
     view! {
-        <crate::core::ui::AuthGate>
+        <crate::v2::core::ui::AuthGate>
             <WikiInner />
-        </crate::core::ui::AuthGate>
+        </crate::v2::core::ui::AuthGate>
     }
 }
 
 #[component]
 fn WikiInner() -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let pages = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::core::client::api_get::<DataEnvelope<Value>>(store, "/wiki")
+            crate::v2::core::api::client::api_get::<DataEnvelope<Value>>(store, "/wiki")
                 .await
                 .ok()
         }
@@ -316,7 +316,7 @@ fn wiki_board(
     page_list: Vec<Value>,
     pages_res: LocalResource<Option<DataEnvelope<Value>>>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     // T-454 — reactive + authed: browse-mode `has_min_role(None)=>true` must NOT drive Edit/Save.
     let is_admin =
         Memo::new(move |_| has_min_role_authed(store.user.get().map(|u| u.role), Role::Admin));
@@ -417,7 +417,7 @@ fn manual_index(active_slug: Option<String>, query: &str, pages: &[Value]) -> im
                 .iter()
                 .filter(|p| vstr(p, "category") == category)
                 .filter(|p| {
-                    crate::core::split_pane::search_matches(
+                    crate::v2::core::ui::split_pane::search_matches(
                         &query,
                         &format!("{} {}", vstr(p, "title"), vstr(p, "category")),
                     )
@@ -466,7 +466,7 @@ fn article(
     save_busy: RwSignal<bool>,
     save_err: RwSignal<Option<String>>,
     is_admin: bool,
-    store: crate::core::auth::AuthStore,
+    store: crate::v2::core::auth::AuthStore,
     pages_res: LocalResource<Option<DataEnvelope<Value>>>,
 ) -> impl IntoView {
     let slug = vstr(&page, "slug");
@@ -532,7 +532,7 @@ fn article(
                                                 #[cfg(target_arch = "wasm32")]
                                                 {
                                                     leptos::task::spawn_local(async move {
-                                                        match crate::core::client::api_put::<Value>(
+                                                        match crate::v2::core::api::client::api_put::<Value>(
                                                             store, &path, body,
                                                         )
                                                         .await
@@ -546,7 +546,7 @@ fn article(
                                                             }
                                                             Err(e) => {
                                                                 save_err.set(Some(
-                                                                    crate::core::client::api_error_message(
+                                                                    crate::v2::core::api::client::api_error_message(
                                                                         &e,
                                                                         "Failed to save wiki page",
                                                                     ),

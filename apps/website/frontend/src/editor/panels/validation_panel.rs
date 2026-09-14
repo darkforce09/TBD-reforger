@@ -640,7 +640,7 @@ pub fn finding_is_routable(f: &PanelFinding) -> bool {
 /// unresolved — the correct reading of "the catalogue is loaded and holds nothing").
 #[must_use]
 pub fn known_asset_ids_from_registry(
-    items: &[crate::core::dto::RegistryItem],
+    items: &[crate::v2::core::api::dto::RegistryItem],
 ) -> std::collections::HashSet<String> {
     let mut set = std::collections::HashSet::with_capacity(items.len() * 2);
     for item in items {
@@ -1031,7 +1031,7 @@ pub fn findings_dropdown(rows: Vec<PanelFinding>) -> AnyView {
                         class="flex items-center gap-2 px-3 py-2.5 text-label-md text-on-surface-variant opacity-80"
                         data-validation-empty
                     >
-                        <crate::core::ui::MaterialIcon name="check_circle" />
+                        <crate::v2::core::ui::MaterialIcon name="check_circle" />
                         <span>"No issues"</span>
                     </div>
                 }
@@ -1640,8 +1640,8 @@ mod tests {
 #[cfg(test)]
 mod w129_the_panel_asks_the_router {
     use super::{finding_is_routable, register_route_probe, row_cursor_class, PanelFinding};
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
     use crate::editor::mission_editor::route_target;
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
     use map_engine_core::mission::validate::{Primitive, Severity};
     use serde_json::json;
 
@@ -1828,7 +1828,7 @@ mod w132_inert_finding_row_a11y {
         finding_is_routable, inert_finding_row_reason, register_route_probe, row_cursor_class,
         PanelFinding,
     };
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
     use map_engine_core::mission::validate::{Primitive, Severity};
 
     fn pf(rule_id: &str, subject_id: Option<&str>) -> PanelFinding {
@@ -2270,7 +2270,7 @@ mod f5_seam_lifecycle {
                     .unwrap_or(path)
                     .display()
                     .to_string();
-                let live = crate::editor::arsenal::class_r_scrub::live_code(&raw);
+                let live = crate::v2::core::test_support::class_r_scrub::live_code(&raw);
                 (name, raw, live)
             })
             .collect();
@@ -2374,7 +2374,7 @@ mod t761_compile_findings_do_not_survive_mission_switch {
         // wave-136 F3 — scope to the production body only. Whole-file `src.contains(…)` self-feeds
         // off this assert's own string literal, and a string decoy in production greened without
         // `live_code`.
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let src = live_code(include_str!("validation_panel.rs"));
         let body = only_body(&src, "pub fn clear_compile_findings(");
         assert!(
@@ -2395,7 +2395,7 @@ mod t798_top_bar_chip {
     use super::{
         chip_findings, findings_dropdown, register_panel_sink, PanelFinding, INITIAL_EVAL_MAX_TICKS,
     };
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
     use leptos::prelude::*;
     use map_engine_core::mission::validate::{Primitive, Severity};
 

@@ -11,13 +11,13 @@ use leptos::prelude::*;
 
 use serde::{Deserialize, Serialize};
 
-use crate::core::dto::RegistryItem;
-use crate::core::ui::MaterialIcon;
 use crate::editor::arsenal::asset_catalog::{CatalogNode, CatalogPalette, CatalogState};
 use crate::editor::layout::{DOCK_R, STUB_PX};
 use crate::editor::panels::dock_left::collapse_chevron;
 use crate::editor::panels::outliner_tree::{chevron_or_spacer, guide_spans, PALETTE_LEAF};
 use crate::editor::panels::zones_panel::zones_panel;
+use crate::v2::core::api::dto::RegistryItem;
+use crate::v2::core::ui::MaterialIcon;
 
 /// T-076 (RIGHT-CREW-001) — the "place vehicle with crew" toggle rendered beside the Vehicles
 /// search. A checkbox bound to `with_crew`: a change writes the [`crate::editor::state::operations`] placement
@@ -405,7 +405,7 @@ fn faction_palette_rows(
     id_prefix: &[String],
     collapsed: RwSignal<std::collections::HashSet<String>>,
     favourites: RwSignal<Favourites>,
-    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
     recent: RwSignal<Vec<RecentPlaced>>,
 ) -> AnyView {
     let len = nodes.len();
@@ -1582,7 +1582,7 @@ pub fn DockRight(
     /// T-215 — the `kind == "vehicle"` half of the same registry fetch.
     vehicle_catalog: RwSignal<CatalogState>,
     /// T-215 — the raw registry rows, for the placed-vehicle cargo picker's labels and options.
-    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
     /// T-750 — terminal `/registry` failure (distinct from `registry_items == None` = still loading).
     registry_failed: RwSignal<bool>,
     /// T-750 — bump to re-kick the cold `/registry` fetch (Favourites Retry).
@@ -1729,7 +1729,7 @@ pub fn DockRight(
     let registry_no_modpack = RwSignal::new(false);
     #[cfg(target_arch = "wasm32")]
     {
-        let auth = use_context::<crate::core::auth::AuthStore>();
+        let auth = use_context::<crate::v2::core::auth::AuthStore>();
         Effect::new(move |_| {
             if !registry_failed.get() {
                 // Loading or Ready — no failure to attribute; a successful Retry clears the cause.
@@ -1742,8 +1742,10 @@ pub fn DockRight(
             leptos::task::spawn_local(async move {
                 // A single row is enough to learn the status; success and any non-404 both mean
                 // "not the no-modpack case", so the arm falls back to the request-failed wording.
-                let got: Result<crate::core::dto::RegistryResponse, crate::core::client::ApiErr> =
-                    crate::core::client::api_get(auth, "/registry?limit=1&offset=0").await;
+                let got: Result<
+                    crate::v2::core::api::dto::RegistryResponse,
+                    crate::v2::core::api::client::ApiErr,
+                > = crate::v2::core::api::client::api_get(auth, "/registry?limit=1&offset=0").await;
                 registry_no_modpack.set(matches!(got, Err((404, _))));
             });
         });
@@ -2421,7 +2423,7 @@ pub(crate) fn compositions_panel(
                                     };
                                     // Author = the current user's display string (as-authored) —
                                     // read off the AuthStore context; "You" when unauthenticated.
-                                    let author = use_context::<crate::core::auth::AuthStore>()
+                                    let author = use_context::<crate::v2::core::auth::AuthStore>()
                                         .and_then(|s| s.user.get_untracked().map(|u| u.username))
                                         .filter(|u| !u.is_empty())
                                         .unwrap_or_else(|| "You".to_string());
@@ -4263,7 +4265,7 @@ mod tests {
         const SRC: &str = include_str!("dock_right.rs");
         // Fragment the marker — a contiguous fn-name needle in this test would be a second hit.
         let marker = format!("{}{}", "fn arm_favourite_place", "(");
-        let fav_arm = crate::editor::arsenal::class_r_scrub::only_body(SRC, &marker);
+        let fav_arm = crate::v2::core::test_support::class_r_scrub::only_body(SRC, &marker);
         assert!(
             !fav_arm.contains(".clone()"),
             "T-751: arm_favourite_place must stay clone-free across Character/Object/Vehicle;              body was:\n{fav_arm}"
@@ -4371,8 +4373,8 @@ mod tests {
     /// after a BLUFOR default must drop NATO leaves and keep only the USSR perturbation row.
     #[test]
     fn eden_chip_side_rebuilds_filtered_catalog() {
-        use crate::core::dto::RegistryResponse;
         use crate::editor::arsenal::asset_catalog::build_catalog_tree;
+        use crate::v2::core::api::dto::RegistryResponse;
 
         let golden: RegistryResponse = serde_json::from_str(include_str!(
             "../../../tests/fixtures/api/GET__registry.json"
@@ -4457,7 +4459,7 @@ mod tests {
         // `save_composition`), so a raw `include_str!` haystack would let a comment satisfy a
         // presence check — the T-759 hollow-pin class. `live_source` blanks comments and KEEPS string
         // literals, which the `"Compositions"` / `ops::<fn>(` needles below need.
-        use crate::editor::arsenal::class_r_scrub::live_source;
+        use crate::v2::core::test_support::class_r_scrub::live_source;
         let src = live_source(include_str!("dock_right.rs"));
         let src = src.as_str();
         // The panel aliases `use crate::editor::state::operations as ops`, so the calls read `ops::<fn>(`.
@@ -4535,7 +4537,7 @@ mod tests {
     /// time, this file's standing rule.
     #[test]
     fn a_composition_captures_comments_and_authored_elevation() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
         // T-934.7 — capture_selection_entities lives in operations/compositions.rs and
         // mint_ids in operations/entity.rs; the haystack is their concatenation.
@@ -4623,7 +4625,7 @@ mod tests {
     /// assembled at run time, this file's standing rule.
     #[test]
     fn both_id_minters_prove_uniqueness_against_hidden_slots_too() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
         let ops_code = live_code(include_str!("../state/operations/entity.rs"));
         let helper_call = format!("{}(", "live_slot_ids");
@@ -4676,7 +4678,7 @@ mod tests {
     /// needles that carry no literal are assembled at run time so this test body cannot match itself.
     #[test]
     fn composition_arm_rides_the_shared_pending_machine() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         // T-934.7 — the Pending enum lives in operations/context.rs, the arm verbs and
         // place_at_impl in operations/entity.rs; the haystack is their concatenation.
         let ops = live_code(
@@ -5115,8 +5117,8 @@ mod tests {
     #[test]
     fn stale_favourite_is_kept_and_marked_not_dropped() {
         use super::{resolve_favourites, FavouriteAsset, FavouriteRow, Favourites};
-        use crate::core::dto::RegistryResponse;
         use crate::editor::arsenal::asset_catalog::CatalogPalette;
+        use crate::v2::core::api::dto::RegistryResponse;
 
         let golden: RegistryResponse = serde_json::from_str(include_str!(
             "../../../tests/fixtures/api/GET__registry.json"
@@ -5287,7 +5289,7 @@ mod tests {
     /// module is not its own haystack.
     #[test]
     fn favourites_panel_failure_arm_has_retry() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
         let code = live_code(include_str!("dock_right.rs"));
         let body = only_body(&code, "fn favourites_panel(");
         let failed_get = format!("{}{}", "registry_failed.", "get()");
@@ -5325,7 +5327,7 @@ mod tests {
     /// `live_source`; needles fragment-assembled so this module is not its own haystack.
     #[test]
     fn catalog_failure_view_names_cause_and_offers_retry() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
         let code = live_code(include_str!("dock_right.rs"));
         let body = only_body(&code, "fn catalog_failure_view(");
         let cause_branch = format!("{}{}", "no_modpack.", "get()");
@@ -5366,7 +5368,7 @@ mod tests {
     /// can trip the negative.
     #[test]
     fn both_catalog_failed_arms_use_the_named_failure_view() {
-        use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_source, only_body};
         let sourced = live_source(include_str!("dock_right.rs"));
         let dock = only_body(&sourced, "pub fn DockRight(");
         // Two call sites: character catalog + vehicle catalog, each naming its noun.
@@ -5396,7 +5398,7 @@ mod tests {
     /// so the gate needles are the two `CatalogState::Failed` matches guarding the hint.
     #[test]
     fn grammar_hint_hides_while_the_tree_is_failed() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let code = live_code(include_str!("dock_right.rs"));
         let dock = only_body(&code, "pub fn DockRight(");
         // Both tab bodies must gate the hint on a not-Failed check. `.then(search_grammar_hint)` is
@@ -5454,7 +5456,7 @@ mod tests {
     /// `palette_rows(… PaletteKind::Character …)` character-only draw is gone from the Factions arm.
     #[test]
     fn factions_tab_draws_the_merged_tree() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let code = live_code(include_str!("dock_right.rs"));
         let dock = only_body(&code, "pub fn DockRight(");
         assert!(
@@ -5480,7 +5482,7 @@ mod tests {
     /// seam (`install_recent_recorder` / `record_placed`), pinned by the two tests below.
     #[test]
     fn a_merged_leaf_press_feeds_recently_placed() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let code = live_code(include_str!("dock_right.rs"));
         let rows = only_body(&code, "fn faction_palette_rows(");
         assert!(
@@ -5505,7 +5507,7 @@ mod tests {
     /// the pins; the fn-name needles are assembled at run time so the body cannot match itself.
     #[test]
     fn off_dock_placements_feed_recently_placed_through_the_recorder_seam() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let dock = live_code(include_str!("dock_right.rs"));
 
         // The dock installs the recorder (register + on_cleanup unregister) at mount, and the closure
@@ -5558,7 +5560,7 @@ mod tests {
     /// ALONGSIDE Favourites, per the summary, rather than adding an eighth glyph to the tight strip.
     #[test]
     fn favourites_and_history_share_one_tab() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
         let code = live_code(include_str!("dock_right.rs"));
         let dock = only_body(&code, "pub fn DockRight(");
         // Tab 6 calls BOTH panels behind the `history_open` toggle.
@@ -5582,7 +5584,7 @@ mod tests {
     /// cargo editor) is GONE. Crew editing lives in the vehicle Attributes modal now.
     #[test]
     fn vehicles_tab_is_catalog_only_without_the_placed_strip() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
         let code = live_code(include_str!("dock_right.rs"));
         let dock = only_body(&code, "pub fn DockRight(");
         assert!(
@@ -5887,7 +5889,7 @@ mod tests {
     /// presence check fails.
     #[test]
     fn picker_rows_draw_glyph_svgs_and_arm_the_canonical_slug() {
-        use crate::editor::arsenal::class_r_scrub::only_body;
+        use crate::v2::core::test_support::class_r_scrub::only_body;
         const SRC: &str = include_str!("dock_right.rs");
 
         // `markers_panel` has two definitions (the wasm picker + the native shell), so it is not a

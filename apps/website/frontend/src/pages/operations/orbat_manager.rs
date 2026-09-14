@@ -19,12 +19,12 @@ use std::collections::{HashMap, HashSet};
 use leptos::prelude::*;
 use map_engine_core::slot_line::format_slot_line;
 
-use crate::core::dto::{FactionDoc, RegistryItem, UserFaction};
-use crate::core::ui::MaterialIcon;
 use crate::editor::panels::outliner::{
     filter_orbat_squads_by_side_key, flatten_visible, FlatRow, NodeKind, OutlinerNode,
     ORBAT_MANAGER_DIALOG_CLASS, ORBAT_MANAGER_EMPTY, VIRTUAL_SLOT_THRESHOLD,
 };
+use crate::v2::core::api::dto::{FactionDoc, RegistryItem, UserFaction};
+use crate::v2::core::ui::MaterialIcon;
 
 /// Near-fullscreen class pin (G1 / G9).
 pub const DIALOG_CLASS: &str = ORBAT_MANAGER_DIALOG_CLASS;
@@ -247,19 +247,20 @@ pub fn OrbatManagerDialog(
 
     // Esc closes (Faction Manager / suite Dialog behavior).
     // T-726 — register + is_topmost_open so a stacked dialog above ORBAT owns Esc alone.
-    let modal_id =
-        crate::core::ui::modal_stack::register(move || open.try_get_untracked().unwrap_or(false));
+    let modal_id = crate::v2::core::ui::modal_stack::register(move || {
+        open.try_get_untracked().unwrap_or(false)
+    });
     let esc = window_event_listener(leptos::ev::keydown, move |ev| {
         if open.get_untracked()
             && ev.key() == "Escape"
-            && crate::core::ui::modal_stack::is_topmost_open(modal_id)
+            && crate::v2::core::ui::modal_stack::is_topmost_open(modal_id)
         {
             open.set(false);
         }
     });
     on_cleanup(move || {
         esc.remove();
-        crate::core::ui::modal_stack::unregister(modal_id);
+        crate::v2::core::ui::modal_stack::unregister(modal_id);
         crate::editor::panels::outliner_drag::cancel_layer_drag();
     });
     Effect::new(move |_| {
@@ -269,7 +270,7 @@ pub fn OrbatManagerDialog(
     });
 
     #[cfg(target_arch = "wasm32")]
-    let auth = expect_context::<crate::core::auth::AuthStore>();
+    let auth = expect_context::<crate::v2::core::auth::AuthStore>();
 
     // Load faction library whenever the dialog opens.
     #[cfg(target_arch = "wasm32")]
@@ -279,12 +280,10 @@ pub fn OrbatManagerDialog(
                 return;
             }
             leptos::task::spawn_local(async move {
-                if let Ok(r) =
-                    crate::core::client::api_get::<crate::core::dto::FactionListResponse>(
-                        auth,
-                        "/factions",
-                    )
-                    .await
+                if let Ok(r) = crate::v2::core::api::client::api_get::<
+                    crate::v2::core::api::dto::FactionListResponse,
+                >(auth, "/factions")
+                .await
                 {
                     library.set(r.data);
                 }
@@ -355,7 +354,7 @@ pub fn OrbatManagerDialog(
         // Arsenal (Attributes) opens *over* ORBAT from a slot row it must paint on top; the stack
         // says ORBAT is no longer last-opened, so this drops to `z-40` and the Arsenal's `z-50`
         // wins the hit-test. Scrim and panel take the SAME tier so they stay one surface.
-        let z = crate::core::ui::modal_stack::z_class(modal_id);
+        let z = crate::v2::core::ui::modal_stack::z_class(modal_id);
         let scrim_class =
             format!("animate-overlay-fade fixed inset-0 {z} bg-black/50 backdrop-blur-sm");
         // `DIALOG_CLASS` (outliner.rs, sibling-owned) bakes in `z-50`; swap that one token for the
@@ -513,7 +512,7 @@ pub fn OrbatManagerDialog(
                                     // would resurrect a stale emblem over a newer one. There is
                                     // still no If-Match on the endpoint (see the module note), so
                                     // this narrows the race, it does not close it.
-                                    let Ok(stored) = crate::core::client::api_get::<UserFaction>(
+                                    let Ok(stored) = crate::v2::core::api::client::api_get::<UserFaction>(
                                         auth,
                                         &format!("/factions/{tid}"),
                                     )
@@ -551,7 +550,7 @@ pub fn OrbatManagerDialog(
                                         }
                                     }
                                     let body = serde_json::to_value(&doc).unwrap_or_default();
-                                    match crate::core::client::api_put::<UserFaction>(
+                                    match crate::v2::core::api::client::api_put::<UserFaction>(
                                         auth,
                                         &format!("/factions/{tid}"),
                                         body,
@@ -560,8 +559,8 @@ pub fn OrbatManagerDialog(
                                     {
                                         Ok(_) => {
                                             status.set("Saved.".into());
-                                            if let Ok(r) = crate::core::client::api_get::<
-                                                crate::core::dto::FactionListResponse,
+                                            if let Ok(r) = crate::v2::core::api::client::api_get::<
+                                                crate::v2::core::api::dto::FactionListResponse,
                                             >(auth, "/factions")
                                             .await
                                             {
@@ -614,7 +613,7 @@ pub fn OrbatManagerDialog(
                                 doc.side = side;
                                 let body = serde_json::to_value(&doc).unwrap_or_default();
                                 leptos::task::spawn_local(async move {
-                                    match crate::core::client::api_post::<UserFaction>(
+                                    match crate::v2::core::api::client::api_post::<UserFaction>(
                                         auth, "/factions", body,
                                     )
                                     .await
@@ -622,8 +621,8 @@ pub fn OrbatManagerDialog(
                                         Ok(f) => {
                                             selected_template.set(f.id.clone());
                                             status.set("Saved as new faction.".into());
-                                            if let Ok(r) = crate::core::client::api_get::<
-                                                crate::core::dto::FactionListResponse,
+                                            if let Ok(r) = crate::v2::core::api::client::api_get::<
+                                                crate::v2::core::api::dto::FactionListResponse,
                                             >(auth, "/factions")
                                             .await
                                             {
@@ -1556,7 +1555,7 @@ fn set_orbat_stats(_total: usize, _rendered: usize) {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::dto::{FactionDoc, FactionRole, FactionVehicle, UserFaction};
+    use crate::v2::core::api::dto::{FactionDoc, FactionRole, FactionVehicle, UserFaction};
 
     fn uf(id: &str, side: &str, name: &str) -> UserFaction {
         UserFaction {
@@ -2015,7 +2014,7 @@ mod tests {
     fn orbat_squad_rename_focuses_via_noderef_on_load() {
         // Scope to stitch_row live body so the ban needle cannot self-match this test's
         // string literal (include_str of the whole file always contains the assert text).
-        use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_source, only_body};
         let code = live_source(include_str!("orbat_manager.rs"));
         let body = only_body(&code, "fn stitch_row(");
         assert!(
@@ -2053,7 +2052,7 @@ mod tests {
     /// T-726 — ORBAT Manager Esc must gate on modal_stack topmost (wave139 F3).
     #[test]
     fn orbat_manager_gates_escape_on_modal_stack() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let code = live_code(include_str!("orbat_manager.rs"));
         let body = only_body(&code, "pub fn OrbatManagerDialog(");
         let reg = ["modal_stack", "::", "register("].concat();
@@ -2078,7 +2077,7 @@ mod tests {
     /// `" slots · server cap"` literal must be gone and the `== 1` conditional present.
     #[test]
     fn cap_label_pluralizes_the_slot_count() {
-        use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_source, only_body};
         let code = live_source(include_str!("orbat_manager.rs"));
         let body = only_body(&code, "pub fn OrbatManagerDialog(");
         // Concat so this test's own literals cannot self-match (T-726 idiom).
@@ -2102,7 +2101,7 @@ mod tests {
 mod t946_86_mounted_refile {
     #[test]
     fn the_mounted_manager_arms_and_consumes_the_shared_set() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let code = live_code(include_str!("orbat_manager.rs"));
         let row = only_body(&code, "fn stitch_row(");
         assert!(row.contains("outliner_tree::drag_set_for("));

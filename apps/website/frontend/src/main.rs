@@ -5,9 +5,6 @@
 //! (S/V/R/T), not just `cargo check`.
 
 mod app_routes;
-// T-934.1 — core framework utilities (auth, client, dto, sse, datefmt, toast, ui,
-// url_guard, split_pane) and the app shell (layout, nav_config).
-mod core;
 mod shell;
 // T-934.2/.3 — standard application pages (pages/{public,operations,admin}/…).
 mod pages;
@@ -16,6 +13,8 @@ mod pages;
 // comments live in the folder mod.rs files.
 mod editor;
 mod router;
+// The domain-driven tree the frontend is being reorganised into (see `v2/README.md`).
+mod v2;
 
 // The wasm entry is a `#[wasm_bindgen(start)]`, not the bin `main`, because linking
 // map-engine-render (T-159.15) pulls in ITS `#[wasm_bindgen(start)]` (the panic hook); wasm-bindgen

@@ -1,4 +1,4 @@
-use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
 /// (toggle on re-click) The LoS button's `on:pointerdown` toggles `los_mode` when LoS is ALREADY
 /// active (`is_los()` true → `los_mode.update(… toggled())`) and otherwise sets `tool_mode = LoS`.

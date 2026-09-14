@@ -10,9 +10,9 @@ use leptos::prelude::*;
 use std::collections::HashMap;
 
 #[cfg(target_arch = "wasm32")]
-use crate::core::ui::{cn, MaterialIcon};
-#[cfg(target_arch = "wasm32")]
 use crate::editor::layout::HOVER_FILL;
+#[cfg(target_arch = "wasm32")]
+use crate::v2::core::ui::{cn, MaterialIcon};
 
 /// T-215 — registry kinds the vehicle cargo picker offers.
 ///
@@ -97,7 +97,7 @@ const VEHICLE_CARGO_KINDS: &[&str] = &[
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn placed_vehicles_panel(
     doc_tick: RwSignal<u64>,
-    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
     expanded: RwSignal<std::collections::HashSet<String>>,
 ) -> AnyView {
     use crate::editor::state::operations::{VehicleCargoRow, VehicleRow};
@@ -399,7 +399,7 @@ pub(crate) fn placed_vehicles_panel(
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn placed_vehicles_panel(
     doc_tick: RwSignal<u64>,
-    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
     expanded: RwSignal<std::collections::HashSet<String>>,
 ) -> AnyView {
     let _ = (doc_tick, registry_items, expanded);
@@ -477,7 +477,7 @@ mod tests {
     /// satisfy the absence check.
     #[test]
     fn header_row_uses_hover_fill_not_the_weak_ad_hoc_fill() {
-        use crate::editor::arsenal::class_r_scrub::live_code;
+        use crate::v2::core::test_support::class_r_scrub::live_code;
         let code = live_code(include_str!("vehicles_panel.rs"));
         assert!(
             code.contains("HOVER_FILL"),

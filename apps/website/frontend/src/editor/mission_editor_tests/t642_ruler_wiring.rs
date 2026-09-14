@@ -1,4 +1,4 @@
-use crate::editor::arsenal::class_r_scrub::live_code;
+use crate::v2::core::test_support::class_r_scrub::live_code;
 
 /// The page from its component anchor PLUS the T-934.13 gesture file: the ruler wiring spans the
 /// page body (tool signals, keydown Esc, overlay mounts) and the pointer/dblclick closures, which

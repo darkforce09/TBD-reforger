@@ -26,11 +26,12 @@
 //! **T-353:** detail column renders `event_hub::event_hub_view` (same body as `/events/:id`) so
 //! inline ORBAT register matches the surface spec — no dossier summary + deep-link stand-in.
 #![allow(dead_code)]
-use crate::core::datefmt::{countdown_label, format_local_datetime};
-use crate::core::dto::{EventHub, Paginated};
-use crate::core::split_pane::{SplitPane, SplitPaneEmpty};
-use crate::core::ui::{badge_class, cn, AuthGate, MaterialIcon};
 use crate::pages::operations::event_hub::event_hub_view;
+use crate::v2::core::api::dto::{EventHub, Paginated};
+use crate::v2::core::ui::split_pane::{SplitPane, SplitPaneEmpty};
+use crate::v2::core::ui::{badge_class, cn, AuthGate, MaterialIcon};
+use crate::v2::core::utils::countdown::countdown_label;
+use crate::v2::core::utils::datefmt::format_local_datetime;
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -80,11 +81,11 @@ pub fn EventSchedulePage() -> impl IntoView {
 
 #[component]
 fn EventScheduleInner() -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let events = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::core::client::api_get::<Paginated<Value>>(store, "/events")
+            crate::v2::core::api::client::api_get::<Paginated<Value>>(store, "/events")
                 .await
                 .ok()
         }
@@ -113,7 +114,7 @@ fn EventScheduleInner() -> impl IntoView {
 }
 
 fn board(events: Vec<Value>) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let events = StoredValue::new(events);
     // `None` = "the user has not picked yet", which resolves to the first row rather than to no
     // selection (spec §Behavior step 2). Derived instead of seeded through an `Effect` so there is
@@ -136,7 +137,7 @@ fn board(events: Vec<Value>) -> impl IntoView {
             {
                 match id {
                     Some(id) => {
-                        match crate::core::client::api_get::<EventHub>(
+                        match crate::v2::core::api::client::api_get::<EventHub>(
                             store,
                             &format!("/events/{id}"),
                         )

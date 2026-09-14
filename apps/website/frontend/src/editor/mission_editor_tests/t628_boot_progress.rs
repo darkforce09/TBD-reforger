@@ -487,7 +487,7 @@ fn the_caption_reports_bytes_for_bytes_and_files_for_files() {
 /// be satisfied by code that ships.
 #[test]
 fn the_satellite_fetch_is_bounded_concurrent_ordered_and_fails_fast() {
-    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let src = live_code(include_str!("../world_assets/satellite.rs"));
     let body = only_body(&src, "async fn fetch_tiles(");
 
@@ -576,7 +576,7 @@ fn the_overlay_draws_one_measured_bar_and_no_sweep_anywhere() {
 /// very end — indistinguishable from a stall for the whole download.
 #[test]
 fn the_terrain_dem_is_streamed_against_its_content_length() {
-    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let src = live_code(include_str!("../world_assets/mod.rs"));
     let body = only_body(&src, "async fn load_dem_and_hillshade(");
     assert!(
@@ -620,7 +620,7 @@ fn the_terrain_dem_is_streamed_against_its_content_length() {
 /// and then finds more work, which reads to the operator as a lie either way round.
 #[test]
 fn every_world_batch_declares_its_files_before_it_fetches_them() {
-    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let world = live_code(include_str!("../world_assets/world_host.rs"));
     let queue = only_body(&world, "async fn fetch_and_queue(");
     let declare = queue
@@ -676,7 +676,7 @@ fn every_world_batch_declares_its_files_before_it_fetches_them() {
 /// not come down until it is full.
 #[test]
 fn every_segment_is_closed_and_the_overlay_waits_for_a_full_bar() {
-    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let boot = live_code(include_str!("../world_assets/mod.rs"));
     let bootstrap = only_body(&boot, "pub async fn bootstrap(");
     for seg in ["BootSeg::Terrain", "BootSeg::Satellite", "BootSeg::World"] {
@@ -734,7 +734,7 @@ fn every_segment_is_closed_and_the_overlay_waits_for_a_full_bar() {
 /// map-asset host, and the one that must not grow a second copy of the auth contract.
 #[test]
 fn the_mission_document_is_measured_and_still_defers_to_the_single_flight_client() {
-    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let src = live_code(include_str!("../state/hydrate.rs"));
     let body = only_body(&src, "async fn get_mission_measured(");
     // `live_code` blanks string literals — see the terrain pin for why the shape, not the
@@ -750,7 +750,7 @@ fn the_mission_document_is_measured_and_still_defers_to_the_single_flight_client
         "its progress must be the bytes off the body reader"
     );
     assert!(
-        body.contains("crate::core::client::api_get::<MissionDetail>(auth, path)"),
+        body.contains("crate::v2::core::api::client::api_get::<MissionDetail>(auth, path)"),
         "anything that is not a 2xx — the 401 above all — must fall through to `api_get`, \
          which owns the single-flight refresh. A second refresh path would double-spend the \
          rotating token, and that is a data-safety bug, not a loading-bar bug"

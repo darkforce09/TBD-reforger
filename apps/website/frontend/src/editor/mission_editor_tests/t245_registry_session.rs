@@ -1,6 +1,6 @@
 use super::registry_session;
-use crate::core::dto::RegistryItem;
 use crate::editor::arsenal::arsenal_rules::{CompatFeed, CompatStatus};
+use crate::v2::core::api::dto::RegistryItem;
 use std::collections::HashMap;
 
 fn sample_item(resource_name: &str) -> RegistryItem {

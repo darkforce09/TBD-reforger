@@ -7,10 +7,10 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::core::dto::RegistryItem;
 use crate::editor::arsenal::arsenal_rules::{
     self as rules, index_by_name, validate_loadout, CompatFeed,
 };
+use crate::v2::core::api::dto::RegistryItem;
 
 /// A loadout row: the pick key (matches `arsenalRules` `LoadoutKey`), its label, the registry kind
 /// it sources from, and whether it is a weapon slot (→ `weapons[]`) or wear (→ `wear{}`).
@@ -1173,20 +1173,22 @@ mod tests {
 
     /// A ready compat feed carrying only `attachment_on_weapon` edges.
     fn attachment_feed(edges: &[(&str, &str)]) -> CompatFeed {
-        let rows: Vec<crate::core::dto::RegistryCompatEdge> = edges
+        let rows: Vec<crate::v2::core::api::dto::RegistryCompatEdge> = edges
             .iter()
             .enumerate()
-            .map(|(i, (from, to))| crate::core::dto::RegistryCompatEdge {
-                id: i.to_string(),
-                modpack_id: "m".into(),
-                from_node: (*from).into(),
-                to_node: (*to).into(),
-                edge_type: ATTACHMENT_EDGE.into(),
-                evidence: String::new(),
-                qty: 1,
-                created_at: String::new(),
-                updated_at: String::new(),
-            })
+            .map(
+                |(i, (from, to))| crate::v2::core::api::dto::RegistryCompatEdge {
+                    id: i.to_string(),
+                    modpack_id: "m".into(),
+                    from_node: (*from).into(),
+                    to_node: (*to).into(),
+                    edge_type: ATTACHMENT_EDGE.into(),
+                    evidence: String::new(),
+                    qty: 1,
+                    created_at: String::new(),
+                    updated_at: String::new(),
+                },
+            )
             .collect();
         CompatFeed {
             status: rules::CompatStatus::Ready,
@@ -1693,7 +1695,7 @@ mod tests {
     #[test]
     fn the_modpack_id_comes_from_the_catalog_the_picks_were_made_against() {
         assert_eq!(export_modpack_id(&[]), "");
-        let it = crate::core::dto::RegistryItem {
+        let it = crate::v2::core::api::dto::RegistryItem {
             id: "1".into(),
             modpack_id: "00000000-0000-4000-a000-000000000001".into(),
             resource_name: "res://rifle_m16".into(),
@@ -1934,11 +1936,11 @@ mod tests {
         // `kit_default_items` is the seam between the UI and the pure rule, so it gets its own
         // test: the vouching set must come from the character's `character_default_cargo` edges,
         // and must answer `None` — "no evidence", the silent case — whenever it cannot.
-        let edges: Vec<crate::core::dto::RegistryCompatEdge> =
+        let edges: Vec<crate::v2::core::api::dto::RegistryCompatEdge> =
             ["res://mag_stanag", "res://bandage"]
                 .iter()
                 .enumerate()
-                .map(|(i, item)| crate::core::dto::RegistryCompatEdge {
+                .map(|(i, item)| crate::v2::core::api::dto::RegistryCompatEdge {
                     id: i.to_string(),
                     modpack_id: "mp".into(),
                     from_node: (*item).into(),
@@ -2745,20 +2747,22 @@ mod tests {
         /// `attachment_on_weapon`; the two rows this defect is about (`optic`, `magazine`) are
         /// `RowSource::Edge` rows on two *other* edge types, so they need their own feed.
         fn typed_feed(edges: &[(&str, &str, &str)]) -> CompatFeed {
-            let rows: Vec<crate::core::dto::RegistryCompatEdge> = edges
+            let rows: Vec<crate::v2::core::api::dto::RegistryCompatEdge> = edges
                 .iter()
                 .enumerate()
-                .map(|(i, (from, to, ty))| crate::core::dto::RegistryCompatEdge {
-                    id: i.to_string(),
-                    modpack_id: "m".into(),
-                    from_node: (*from).into(),
-                    to_node: (*to).into(),
-                    edge_type: (*ty).into(),
-                    evidence: String::new(),
-                    qty: 1,
-                    created_at: String::new(),
-                    updated_at: String::new(),
-                })
+                .map(
+                    |(i, (from, to, ty))| crate::v2::core::api::dto::RegistryCompatEdge {
+                        id: i.to_string(),
+                        modpack_id: "m".into(),
+                        from_node: (*from).into(),
+                        to_node: (*to).into(),
+                        edge_type: (*ty).into(),
+                        evidence: String::new(),
+                        qty: 1,
+                        created_at: String::new(),
+                        updated_at: String::new(),
+                    },
+                )
                 .collect();
             CompatFeed {
                 status: rules::CompatStatus::Ready,

@@ -1,4 +1,4 @@
-use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 /// Page-from-anchor + the T-934.13 gesture file (`canvas/gestures.rs`), where the pointerup
 /// closure (the LMB complete arm) moved verbatim; `onpointercancel` stays page-side. Each half

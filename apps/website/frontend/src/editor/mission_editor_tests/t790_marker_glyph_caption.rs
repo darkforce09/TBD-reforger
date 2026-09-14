@@ -1,5 +1,5 @@
 use super::marker_lane_fields;
-use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 /// Three markers of THREE different icons, one with a caption, one faction each — the acceptance
 /// shape. Emitted in the `briefing_marker_rows_json` field vocabulary (x/z/factionId/icon/label).

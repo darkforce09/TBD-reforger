@@ -22,9 +22,9 @@
 //! Retry/error UI must sit in a reachable `if let Some(err) = list_error` branch (not behind
 //! `.filter(|_| false)` or `if false { … }`).
 #![allow(dead_code)]
-use crate::core::dto::Paginated;
-use crate::core::split_pane::{ListDetailItem, SplitPane, SplitPaneEmpty};
-use crate::core::ui::MaterialIcon;
+use crate::v2::core::api::dto::Paginated;
+use crate::v2::core::ui::split_pane::{ListDetailItem, SplitPane, SplitPaneEmpty};
+use crate::v2::core::ui::MaterialIcon;
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -210,7 +210,7 @@ fn today_iso() -> String {
 
 #[component]
 pub fn ContentManagerPage() -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     #[cfg(not(target_arch = "wasm32"))]
     let _ = &store;
     // Mutable working set: seeded once from the CMS list Resource, then New/Publish/Delete mutate.
@@ -226,12 +226,16 @@ pub fn ContentManagerPage() -> impl IntoView {
     let list_res = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::core::client::api_get::<Paginated<Value>>(store, announcement_list_path()).await
+            crate::v2::core::api::client::api_get::<Paginated<Value>>(
+                store,
+                announcement_list_path(),
+            )
+            .await
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
             let _ = store;
-            Err::<Paginated<Value>, crate::core::client::ApiErr>((
+            Err::<Paginated<Value>, crate::v2::core::api::client::ApiErr>((
                 0,
                 Some("CMS list unavailable off wasm".into()),
             ))
@@ -258,7 +262,7 @@ pub fn ContentManagerPage() -> impl IntoView {
                 docs.set(mapped);
             }
             Err(e) => {
-                list_error.set(Some(crate::core::client::api_error_message(
+                list_error.set(Some(crate::v2::core::api::client::api_error_message(
                     &e,
                     "Failed to load announcements",
                 )));
@@ -290,7 +294,7 @@ pub fn ContentManagerPage() -> impl IntoView {
     };
 
     view! {
-        <crate::core::ui::AdminGate>
+        <crate::v2::core::ui::AdminGate>
             <div class="relative h-full w-full overflow-hidden">
                 <div class="bg-topo-map bg-grid-overlay absolute inset-0 z-0"></div>
                 <div class="relative z-10 flex h-full w-full bg-surface-glass backdrop-blur-xl">
@@ -430,7 +434,7 @@ pub fn ContentManagerPage() -> impl IntoView {
                     </Suspense>
                 </div>
             </div>
-        </crate::core::ui::AdminGate>
+        </crate::v2::core::ui::AdminGate>
     }
 }
 
@@ -440,7 +444,7 @@ fn editor(
     selected_id: RwSignal<Option<String>>,
     publish_busy: RwSignal<bool>,
     delete_busy: RwSignal<bool>,
-    store: crate::core::auth::AuthStore,
+    store: crate::v2::core::auth::AuthStore,
 ) -> impl IntoView {
     #[cfg(not(target_arch = "wasm32"))]
     let _ = (&store, publish_busy, delete_busy, docs, selected_id);
@@ -492,14 +496,14 @@ fn editor(
         #[cfg(target_arch = "wasm32")]
         {
             apply(false, None);
-            crate::core::toast::use_toasts().success("Draft saved");
+            crate::v2::core::ui::toast::use_toasts().success("Draft saved");
         }
     };
 
     let handle_publish = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let t = title.get_untracked().trim().to_string();
             let b = body.get_untracked().trim().to_string();
             if t.is_empty() || b.is_empty() {
@@ -529,7 +533,7 @@ fn editor(
             leptos::task::spawn_local(async move {
                 let result = if is_server_id(&id) {
                     // Edit existing row — never POST again (that duplicated announcements).
-                    match crate::core::client::api_patch::<serde_json::Value>(
+                    match crate::v2::core::api::client::api_patch::<serde_json::Value>(
                         store,
                         &announcement_id_path(&id),
                         payload,
@@ -540,7 +544,7 @@ fn editor(
                             // PATCH only auto-pushes on first publish / never-pushed. Re-push an
                             // already-published row through the dedicated route.
                             if push && already_published {
-                                match crate::core::client::api_post_ok(
+                                match crate::v2::core::api::client::api_post_ok(
                                     store,
                                     &announcement_push_path(&id),
                                     serde_json::json!({}),
@@ -557,7 +561,7 @@ fn editor(
                         Err(e) => Err(e),
                     }
                 } else {
-                    match crate::core::client::api_post::<serde_json::Value>(
+                    match crate::v2::core::api::client::api_post::<serde_json::Value>(
                         store,
                         announcement_create_path(),
                         payload,
@@ -589,7 +593,10 @@ fn editor(
                         });
                     }
                     Err(e) => {
-                        toasts.error(crate::core::client::api_error_message(&e, "Publish failed"));
+                        toasts.error(crate::v2::core::api::client::api_error_message(
+                            &e,
+                            "Publish failed",
+                        ));
                     }
                 }
                 publish_busy.set(false);
@@ -600,7 +607,7 @@ fn editor(
     let handle_delete = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             if delete_busy.get_untracked() {
                 return;
             }
@@ -608,15 +615,22 @@ fn editor(
             if is_server_id(&id) {
                 delete_busy.set(true);
                 leptos::task::spawn_local(async move {
-                    match crate::core::client::api_delete(store, &announcement_id_path(&id)).await {
+                    match crate::v2::core::api::client::api_delete(
+                        store,
+                        &announcement_id_path(&id),
+                    )
+                    .await
+                    {
                         Ok(()) => {
                             docs.update(|list| list.retain(|d| d.id != id));
                             selected_id.set(None);
                             toasts.success("Announcement archived");
                         }
                         Err(e) => {
-                            toasts
-                                .error(crate::core::client::api_error_message(&e, "Delete failed"));
+                            toasts.error(crate::v2::core::api::client::api_error_message(
+                                &e,
+                                "Delete failed",
+                            ));
                         }
                     }
                     delete_busy.set(false);
@@ -636,7 +650,7 @@ fn editor(
             use wasm_bindgen::closure::Closure;
             use wasm_bindgen::JsCast;
 
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let Some(document) = web_sys::window().and_then(|w| w.document()) else {
                 toasts.error("Hero image upload failed — no document");
                 return;
@@ -658,7 +672,7 @@ fn editor(
                     return;
                 };
                 leptos::task::spawn_local(async move {
-                    match crate::core::client::api_upload_file::<serde_json::Value>(
+                    match crate::v2::core::api::client::api_upload_file::<serde_json::Value>(
                         store,
                         cms_uploads_path(),
                         file,
@@ -686,7 +700,7 @@ fn editor(
                             toasts.success("Hero image uploaded");
                         }
                         Err(e) => {
-                            toasts.error(crate::core::client::api_error_message(
+                            toasts.error(crate::v2::core::api::client::api_error_message(
                                 &e,
                                 "Hero upload failed",
                             ));
@@ -905,27 +919,27 @@ mod tests {
             announcement_push_path("44fa4c17-5bd5-4c6b-b02d-4ccd52af6910"),
             "/cms/announcements/44fa4c17-5bd5-4c6b-b02d-4ccd52af6910/push-discord"
         );
-        const APP_RS: &str =
-            include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../api/src/app.rs"));
+        let app_rs = crate::v2::core::test_support::fixtures::api_app_source();
+        let app_rs: &str = app_rs;
         assert!(
-            APP_RS.contains(r#""/cms/announcements""#),
+            app_rs.contains(r#""/cms/announcements""#),
             "app.rs must register /cms/announcements"
         );
         // T-447 Class-R — GET must share the POST route (was POST-only → 405 on list).
         assert!(
-            APP_RS.contains("get(handlers::cms::list_cms_announcements).post(handlers::cms::create_announcement)"),
+            app_rs.contains("get(handlers::cms::list_cms_announcements).post(handlers::cms::create_announcement)"),
             "app.rs must register GET+POST on /cms/announcements (perturbation: post-only)"
         );
         assert!(
-            APP_RS.contains(r#""/cms/announcements/{id}""#),
+            app_rs.contains(r#""/cms/announcements/{id}""#),
             "app.rs must register PATCH|DELETE /cms/announcements/{{id}}"
         );
         assert!(
-            APP_RS.contains(r#""/cms/announcements/{id}/push-discord""#),
+            app_rs.contains(r#""/cms/announcements/{id}/push-discord""#),
             "app.rs must register POST …/push-discord"
         );
         assert!(
-            APP_RS.contains(r#""/cms/uploads""#),
+            app_rs.contains(r#""/cms/uploads""#),
             "app.rs must still register POST /cms/uploads"
         );
         assert_eq!(super::cms_uploads_path(), "/cms/uploads");
@@ -953,7 +967,7 @@ mod tests {
     /// definition.
     #[test]
     fn content_boots_from_cms_list_not_mock_docs() {
-        use crate::editor::arsenal::class_r_scrub::live_code;
+        use crate::v2::core::test_support::class_r_scrub::live_code;
         const SRC: &str = include_str!("content.rs");
         let prod = live_code(SRC);
         assert!(
@@ -970,7 +984,8 @@ mod tests {
         );
         assert!(
             prod.contains("LocalResource::new")
-                && prod.contains("api_get::<Paginated<Value>>(store, announcement_list_path())"),
+                && prod.contains("api_get::<Paginated<Value>>(")
+                && prod.contains("announcement_list_path()"),
             "boot must LocalResource api_get the CMS list (perturbation: drop Resource)"
         );
         // B2 — Effect must map `page.data` and write it into `docs`. Needles assembled so
@@ -998,7 +1013,7 @@ mod tests {
     /// exact bug T-447 shipped to fix.
     #[test]
     fn the_boot_pin_rejects_every_dead_code_wrapper() {
-        use crate::editor::arsenal::class_r_scrub::live_code;
+        use crate::v2::core::test_support::class_r_scrub::live_code;
         let needle = "LocalResource::new";
         let attacks: [(&str, String); 12] = [
             (
@@ -1187,15 +1202,15 @@ mod tests {
             .expect("content.rs must have a #[cfg(test)] module");
 
         // List Resource must not collapse Err→None (perturbation: restore `.await.ok()`).
-        let list_get = "api_get::<Paginated<Value>>(store, announcement_list_path())";
+        let list_get = "api_get::<Paginated<Value>>(";
         let list_region = prod
             .split("LocalResource::new")
             .nth(1)
             .and_then(|s| s.split("Effect::new").next())
             .expect("LocalResource block before Effect");
         assert!(
-            list_region.contains(list_get),
-            "list LocalResource must call {list_get}"
+            list_region.contains(list_get) && list_region.contains("announcement_list_path()"),
+            "list LocalResource must call {list_get} on announcement_list_path()"
         );
         assert!(
             !list_region.contains(".ok()"),
@@ -1332,7 +1347,7 @@ mod tests {
             "re-Publish of a server id must PATCH (perturbation: remove api_patch)"
         );
         assert!(
-            prod.contains("api_delete(store, &announcement_id_path"),
+            prod.contains("api_delete(") && prod.contains("&announcement_id_path("),
             "Delete must call api_delete on /cms/announcements/{{id}}"
         );
         assert!(
@@ -1393,19 +1408,17 @@ mod tests {
     /// Publish keeps T-405 absolute http(s) thumbnails.
     #[test]
     fn hero_multipart_upload_is_wired_not_stubbed() {
-        const CARGO: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml"));
-        const CLIENT: &str = include_str!("../../core/client.rs");
+        let cargo = crate::v2::core::test_support::fixtures::crate_cargo_toml();
+        let client = crate::v2::core::test_support::pins::client_source();
+        let client: &str = &client;
         const SRC: &str = include_str!("content.rs");
         let prod = SRC
             .split("#[cfg(test)]")
             .next()
             .expect("content.rs must have a #[cfg(test)] module");
         let prod_code = strip_rust_comments(prod);
-        let cargo_live = strip_toml_comments(CARGO);
-        let client_prod = CLIENT
-            .split("#[cfg(test)]")
-            .next()
-            .expect("client.rs must have a #[cfg(test)] module");
+        let cargo_live = strip_toml_comments(cargo);
+        let client_prod = client;
 
         assert!(
             cargo_live.contains("\"FormData\"") && cargo_live.contains("\"File\""),

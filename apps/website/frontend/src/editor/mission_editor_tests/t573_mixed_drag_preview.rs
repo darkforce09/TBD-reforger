@@ -1,4 +1,4 @@
-use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 /// Both lanes must be driven from the same unfiltered `ids`, and the T-425 slot-only pre-filter
 /// must be gone from the drag branch — that filter WAS the bug (vehicles never previewed).

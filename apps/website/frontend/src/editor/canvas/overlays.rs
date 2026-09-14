@@ -531,7 +531,7 @@ pub(crate) fn SnapReadout(snap: RwSignal<transform::SnapState>) -> impl IntoView
 #[component]
 pub(crate) fn AssetPickerOverlay(
     picker: RwSignal<Option<AssetPickerState>>,
-    registry: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
+    registry: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
     active_side: RwSignal<String>,
 ) -> impl IntoView {
     // A live query filters the flat leaf list (Eden's create-menu type-ahead). Reset on each open so
@@ -547,13 +547,13 @@ pub(crate) fn AssetPickerOverlay(
     // measure-tool Esc seam) owns Escape alone; topmost consumes.
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id = crate::core::ui::modal_stack::register(move || {
+        let modal_id = crate::v2::core::ui::modal_stack::register(move || {
             picker.try_get_untracked().flatten().is_some()
         });
         let key = window_event_listener(leptos::ev::keydown, move |ev| {
             if picker.get_untracked().is_some()
                 && ev.key() == "Escape"
-                && crate::core::ui::modal_stack::is_topmost_open(modal_id)
+                && crate::v2::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 ev.prevent_default();
                 editor_ops::close_asset_picker();
@@ -561,7 +561,7 @@ pub(crate) fn AssetPickerOverlay(
         });
         on_cleanup(move || {
             key.remove();
-            crate::core::ui::modal_stack::unregister(modal_id);
+            crate::v2::core::ui::modal_stack::unregister(modal_id);
         });
     }
 
@@ -682,13 +682,13 @@ pub(crate) fn CommentEditorOverlay(
     // T-726 — modal-stack gate; topmost consumes.
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id = crate::core::ui::modal_stack::register(move || {
+        let modal_id = crate::v2::core::ui::modal_stack::register(move || {
             open.try_get_untracked().flatten().is_some()
         });
         let key = window_event_listener(leptos::ev::keydown, move |ev| {
             if open.get_untracked().is_some()
                 && ev.key() == "Escape"
-                && crate::core::ui::modal_stack::is_topmost_open(modal_id)
+                && crate::v2::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 ev.prevent_default();
                 editor_ops::close_comment_editor();
@@ -696,7 +696,7 @@ pub(crate) fn CommentEditorOverlay(
         });
         on_cleanup(move || {
             key.remove();
-            crate::core::ui::modal_stack::unregister(modal_id);
+            crate::v2::core::ui::modal_stack::unregister(modal_id);
         });
     }
 
@@ -930,13 +930,13 @@ pub(crate) fn ConnectionsPanelOverlay(
     // T-726 — modal-stack gate; topmost consumes.
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id = crate::core::ui::modal_stack::register(move || {
+        let modal_id = crate::v2::core::ui::modal_stack::register(move || {
             open.try_get_untracked().unwrap_or(false)
         });
         let key = window_event_listener(leptos::ev::keydown, move |ev| {
             if open.get_untracked()
                 && ev.key() == "Escape"
-                && crate::core::ui::modal_stack::is_topmost_open(modal_id)
+                && crate::v2::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 ev.prevent_default();
                 editor_ops::close_connections_panel();
@@ -944,7 +944,7 @@ pub(crate) fn ConnectionsPanelOverlay(
         });
         on_cleanup(move || {
             key.remove();
-            crate::core::ui::modal_stack::unregister(modal_id);
+            crate::v2::core::ui::modal_stack::unregister(modal_id);
         });
     }
 
@@ -1252,8 +1252,8 @@ pub(crate) fn ConflictDialog(
 //    is why the `z_drag_elevation_delta` helper it exercises lives in this file too.
 #[cfg(test)]
 mod t946_86_z_arm {
-    use crate::editor::arsenal::class_r_scrub::live_code;
     use crate::editor::canvas::overlays::z_drag_elevation_delta;
+    use crate::v2::core::test_support::class_r_scrub::live_code;
 
     /// The GESTURE file's LIVE source — comments stripped, string/char literals blanked, test modules
     /// (including this one) cut. Every needle below is therefore a real call in shipped code, not

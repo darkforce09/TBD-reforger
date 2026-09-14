@@ -2,10 +2,9 @@
 //! class strings matched 1:1 to the React output (V-shell gate, byte-equal). Auth (role, user
 //! menu, breadcrumb source) and routing are stubbed to the guest "/" render until T-159.3 / .4.
 use crate::app_routes::AppRoutes;
-use crate::core::auth::AuthStore;
-use crate::core::ui::{cn, MaterialIcon, DEFAULT_AVATAR};
-use crate::core::url_guard;
 use crate::shell::nav_config::{has_min_role, NavItem, Role, NAVIGATION};
+use crate::v2::core::auth::AuthStore;
+use crate::v2::core::ui::{cn, MaterialIcon, DEFAULT_AVATAR};
 use leptos::prelude::*;
 use leptos_router::hooks::use_location;
 
@@ -16,18 +15,6 @@ fn is_active(path: &str, current: &str) -> bool {
         current == "/"
     } else {
         current == path || current.starts_with(&format!("{path}/"))
-    }
-}
-
-/// Top-nav avatar `src`: http(s) Discord CDN, else the local SVG placeholder. **T-413.**
-///
-/// `DEFAULT_AVATAR` is a `data:` URL — it must bypass the scheme allowlist (it is ours, not a
-/// stored column). Only the *stored* `users.avatar_url` is filtered.
-fn safe_avatar_url(stored: &str) -> String {
-    if url_guard::is_http_url(stored) {
-        stored.to_string()
-    } else {
-        DEFAULT_AVATAR.to_string()
     }
 }
 
@@ -59,10 +46,12 @@ pub fn AppLayout() -> impl IntoView {
     // Cold-load bootstrap (refresh from tbd-auth) + the gloo-net client populate it next.
     provide_context(AuthStore::new());
     // Toasts context (sonner parity — React mounts <Toaster/> once in main.tsx). T-159.25.
-    crate::core::toast::provide_toasts();
+    crate::v2::core::ui::toast::provide_toasts();
     // Cold-load bootstrap: hydrate the session from tbd-auth (no-op for a guest with nothing stored).
     #[cfg(target_arch = "wasm32")]
-    leptos::task::spawn_local(crate::core::client::bootstrap(expect_context::<AuthStore>()));
+    leptos::task::spawn_local(crate::v2::core::api::client::bootstrap(expect_context::<
+        AuthStore,
+    >()));
     // Route determines the frame — reactive on SPA nav (T-172 A2/A8). The Memo dedups by
     // FrameKind, so navigating between two Chrome routes never remounts Sidebar/TopNav; only
     // crossing a login/editor boundary swaps the frame.
@@ -129,7 +118,7 @@ pub fn AppLayout() -> impl IntoView {
     // DOM while the toast list is empty, so byte-equal V captures are unaffected.
     view! {
         {frame}
-        <crate::core::toast::ToastViewport />
+        <crate::v2::core::ui::toast::ToastViewport />
     }
 }
 
@@ -157,10 +146,10 @@ fn TopNav() -> impl IntoView {
         {
             let rt = auth.refresh_token.get_untracked();
             auth.clear_session();
-            crate::core::auth::persist(&auth.persist_state());
+            crate::v2::core::auth::persist(&auth.persist_state());
             leptos::task::spawn_local(async move {
                 if let Some(rt) = rt {
-                    let _ = crate::core::client::api_post_ok(
+                    let _ = crate::v2::core::api::client::api_post_ok(
                         auth,
                         "/auth/logout",
                         serde_json::json!({ "refresh_token": rt }),
@@ -208,7 +197,7 @@ fn TopNav() -> impl IntoView {
                     let avatar = user
                         .as_ref()
                         .map(|u| u.avatar_url.clone())
-                        .map(|u| safe_avatar_url(&u))
+                        .map(|u| crate::v2::core::utils::safe_avatar_url(&u))
                         .unwrap_or_else(|| DEFAULT_AVATAR.to_string());
                     // StatusPill: linked iff arma_id is present/non-empty.
                     let arma_id = user.as_ref().and_then(|u| u.arma_id.clone()).filter(|s| !s.is_empty());
@@ -412,8 +401,8 @@ fn SidebarNav(
 
 #[cfg(test)]
 mod tests {
-    use super::{classify_frame, is_active, safe_avatar_url, FrameKind};
-    use crate::core::ui::DEFAULT_AVATAR;
+    use super::{classify_frame, is_active, FrameKind};
+    use crate::v2::core::ui::DEFAULT_AVATAR;
 
     #[test]
     fn is_active_dashboard_exact() {
@@ -447,7 +436,7 @@ mod tests {
     fn topnav_avatar_src_only_keeps_http_urls() {
         let mut wrong = Vec::new();
         for (input, ok) in IS_HTTP_URL_CASES {
-            let got = safe_avatar_url(input);
+            let got = crate::v2::core::utils::safe_avatar_url(input);
             if *ok {
                 if got != *input {
                     wrong.push(format!("  dropped a legitimate avatar {input:?}"));
@@ -464,6 +453,6 @@ mod tests {
             wrong.join("\n")
         );
         // Empty → placeholder (same as before T-413).
-        assert_eq!(safe_avatar_url(""), DEFAULT_AVATAR);
+        assert_eq!(crate::v2::core::utils::safe_avatar_url(""), DEFAULT_AVATAR);
     }
 }

@@ -1,8 +1,8 @@
-use crate::editor::arsenal::class_r_scrub::live_code;
 /// T-703/T-738 — THE keydown arm-list extractor, consumed rather than re-copied. This module
 /// carried the raw-text variant of it; the shared one scrubs comments, which is strictly
 /// stronger for the census below (a note that MENTIONS `KeyA` can no longer read as a binding).
 use crate::editor::panels::help_modal::keymap_census::keydown_arms;
+use crate::v2::core::test_support::class_r_scrub::live_code;
 
 /// Everything after the editor page's own signature — the live editor body — plus the T-934.13
 /// gesture file (`canvas/gestures.rs`), where the pointer closures (the F-27 click arm among

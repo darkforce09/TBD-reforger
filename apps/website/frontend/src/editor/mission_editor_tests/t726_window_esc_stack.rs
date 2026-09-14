@@ -1,4 +1,4 @@
-use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 fn gate_needles() -> (String, String, String) {
     (

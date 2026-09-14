@@ -57,7 +57,7 @@ fn dto_paginated_registry_and_cargo_defaults_round_trip() {
         "limit": 500,
         "offset": 0
     });
-    let r: crate::core::dto::RegistryResponse = serde_json::from_value(page).unwrap();
+    let r: crate::v2::core::api::dto::RegistryResponse = serde_json::from_value(page).unwrap();
     assert_eq!(r.total, Some(1857));
     assert_eq!(r.limit, Some(500));
     assert_eq!(r.offset, Some(0));
@@ -72,7 +72,8 @@ fn dto_paginated_registry_and_cargo_defaults_round_trip() {
         "modpack_version": "1",
         "source_edge_count": 16223
     });
-    let c: crate::core::dto::RegistryCargoDefaultsResponse = serde_json::from_value(cargo).unwrap();
+    let c: crate::v2::core::api::dto::RegistryCargoDefaultsResponse =
+        serde_json::from_value(cargo).unwrap();
     assert_eq!(c.view, "cargo_defaults");
     assert_eq!(c.source_edge_count, Some(16223));
     let rows = c.data.get("char_a").unwrap();

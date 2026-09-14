@@ -1,9 +1,9 @@
-use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
 use crate::editor::mission_editor::transform::{
     bearing_to_face, norm_deg, press_on_ring, snap_rotate, snap_translate, snap_value, step, Axis,
     SnapState, WidgetVariant, RING_HIT_TOL_PX, ROTATE_LADDER_DEG, TRANSLATE_LADDER_M,
     WIDGET_RADIUS_PX,
 };
+use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 /// Page-from-anchor + the T-934.13 gesture file (`canvas/gestures.rs`) — the transform wiring
 /// spans the page body (keydown arms, widget mounts) and the moved pointer closures (the ring

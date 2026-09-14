@@ -21,15 +21,15 @@
 //! per-faction vehicle roster. See [`briefing_text`] for the one that was a live defect and
 //! [`meta_badges`] for the shape the rest were removed into.
 #![allow(dead_code)]
+use crate::shell::nav_config::{has_min_role_authed, Role};
 #[cfg(target_arch = "wasm32")]
-use crate::core::client::api_get;
-use crate::core::datefmt::{countdown_label, format_local_datetime};
-use crate::core::dto::{
+use crate::v2::core::api::client::api_get;
+use crate::v2::core::api::dto::{
     DataEnvelope, EventHub, EventMissionDossier, Member, ModpackDto, OrbatSquad,
 };
-use crate::core::ui::{cn, AuthGate, MaterialIcon, DEFAULT_AVATAR};
-use crate::core::url_guard;
-use crate::shell::nav_config::{has_min_role_authed, Role};
+use crate::v2::core::ui::{cn, AuthGate, MaterialIcon, DEFAULT_AVATAR};
+use crate::v2::core::utils::countdown::countdown_label;
+use crate::v2::core::utils::datefmt::format_local_datetime;
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 
@@ -111,15 +111,6 @@ fn sort_factions(mut factions: Vec<String>) -> Vec<String> {
     factions
 }
 
-/// Member-picker avatar `src`. **T-413** — http(s) Discord CDN only; else local SVG placeholder.
-fn safe_avatar_url(stored: &str) -> String {
-    if url_guard::is_http_url(stored) {
-        stored.to_string()
-    } else {
-        DEFAULT_AVATAR.to_string()
-    }
-}
-
 #[component]
 pub fn EventHubPage() -> impl IntoView {
     view! {
@@ -131,7 +122,7 @@ pub fn EventHubPage() -> impl IntoView {
 
 #[component]
 fn EventHubInner() -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let params = use_params_map();
     let event = LocalResource::new(move || {
         let id = params
@@ -143,7 +134,7 @@ fn EventHubInner() -> impl IntoView {
             #[cfg(target_arch = "wasm32")]
             {
                 let path = format!("/events/{id}");
-                crate::core::client::api_get::<EventHub>(store, &path)
+                crate::v2::core::api::client::api_get::<EventHub>(store, &path)
                     .await
                     .ok()
             }
@@ -212,7 +203,7 @@ fn hub_modpack_fetch(modpack_id: Option<&str>) -> HubModpackFetch {
 /// Shared hub body — standalone `/events/:id` shell and the `/events` schedule detail column
 /// (T-353). Callers own chrome (back link, scroll shell) and the `on_change` refetch.
 pub(crate) fn event_hub_view(ev: EventHub, on_change: Callback<()>) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let event_modpack_id = ev.modpack_id.clone();
     let modpack = LocalResource::new(move || {
         let event_modpack_id = event_modpack_id.clone();
@@ -227,9 +218,12 @@ pub(crate) fn event_hub_view(ev: EventHub, on_change: Callback<()>) -> impl Into
                         }
                     }
                     HubModpackFetch::Current => {
-                        crate::core::client::api_get::<ModpackDto>(store, "/modpacks/current")
-                            .await
-                            .ok()
+                        crate::v2::core::api::client::api_get::<ModpackDto>(
+                            store,
+                            "/modpacks/current",
+                        )
+                        .await
+                        .ok()
                     }
                 }
             }
@@ -512,7 +506,7 @@ fn mission_dossier(index: usize, m: EventMissionDossier, on_change: Callback<()>
 
 fn faction_dossier_card(
     faction: String,
-    items: Vec<crate::core::dto::ArmoryItem>,
+    items: Vec<crate::v2::core::api::dto::ArmoryItem>,
 ) -> impl IntoView {
     view! {
         <div class="rounded-lg border border-border-subtle bg-surface-container p-3">
@@ -591,7 +585,7 @@ pub fn OrbatSelector(
     my_state: Option<String>,
     #[prop(optional)] on_change: Option<Callback<()>>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let emid_res = emid.clone();
     let orbat = LocalResource::new(move || {
         let emid = emid_res.clone();
@@ -599,7 +593,7 @@ pub fn OrbatSelector(
             #[cfg(target_arch = "wasm32")]
             {
                 let path = format!("/event-missions/{emid}/orbat");
-                crate::core::client::api_get::<DataEnvelope<OrbatSquad>>(store, &path)
+                crate::v2::core::api::client::api_get::<DataEnvelope<OrbatSquad>>(store, &path)
                     .await
                     .ok()
             }
@@ -680,7 +674,7 @@ fn selector_shell(
     busy: OrbatBusy,
     changed: Callback<()>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let factions = sort_factions(
         squads
             .iter()
@@ -742,10 +736,10 @@ fn selector_shell(
                 return;
             }
             busy.register.set(true);
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let path = format!("/event-missions/{}/register", emid_reg.get_value());
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_post_ok(
+                match crate::v2::core::api::client::api_post_ok(
                     store,
                     &path,
                     serde_json::json!({ "slot_id": slot }),
@@ -757,7 +751,7 @@ fn selector_shell(
                         selected_slot.set(None);
                         changed.run(());
                     }
-                    Err(e) => toasts.error(crate::core::client::api_error_message(
+                    Err(e) => toasts.error(crate::v2::core::api::client::api_error_message(
                         &e,
                         "Could not claim that slot",
                     )),
@@ -778,10 +772,10 @@ fn selector_shell(
                 return;
             }
             busy.withdraw.set(true);
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let path = format!("/event-missions/{emid_wd}/register");
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_delete(store, &path).await {
+                match crate::v2::core::api::client::api_delete(store, &path).await {
                     Ok(()) => {
                         toasts.success("Withdrawn from mission");
                         changed.run(());
@@ -1053,7 +1047,7 @@ fn squad_pane(
     emid_rsv: String,
     emid_rel: String,
 ) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let _ = my_state;
     // The store/callback feed only the wasm-gated mutation closures.
     #[cfg(not(target_arch = "wasm32"))]
@@ -1074,11 +1068,11 @@ fn squad_pane(
                 return;
             }
             busy.reserve.set(true);
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let path = format!("/event-missions/{emid_rsv}/squads/reserve");
             let squad = squad_rsv.clone();
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_post_ok(
+                match crate::v2::core::api::client::api_post_ok(
                     store,
                     &path,
                     serde_json::json!({ "squad": squad }),
@@ -1089,7 +1083,7 @@ fn squad_pane(
                         toasts.success(format!("Reserved {squad}"));
                         changed.run(());
                     }
-                    Err(e) => toasts.error(crate::core::client::api_error_message(
+                    Err(e) => toasts.error(crate::v2::core::api::client::api_error_message(
                         &e,
                         "Could not reserve squad",
                     )),
@@ -1110,11 +1104,11 @@ fn squad_pane(
                 return;
             }
             busy.release.set(true);
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let path = format!("/event-missions/{emid_rel}/squads/release");
             let squad = squad_rel.clone();
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_post_ok(
+                match crate::v2::core::api::client::api_post_ok(
                     store,
                     &path,
                     serde_json::json!({ "squad": squad }),
@@ -1125,7 +1119,7 @@ fn squad_pane(
                         toasts.success("Squad released");
                         changed.run(());
                     }
-                    Err(e) => toasts.error(crate::core::client::api_error_message(
+                    Err(e) => toasts.error(crate::v2::core::api::client::api_error_message(
                         &e,
                         "Could not release squad",
                     )),
@@ -1295,14 +1289,14 @@ fn squad_pane(
                                                             ev.stop_propagation();
                                                             #[cfg(target_arch = "wasm32")]
                                                             {
-                                                                let toasts = crate::core::toast::use_toasts();
+                                                                let toasts = crate::v2::core::ui::toast::use_toasts();
                                                                 let path = format!(
                                                                     "/event-missions/{}/slots/{}/assign",
                                                                     emid_clear,
                                                                     sid_clear
                                                                 );
                                                                 leptos::task::spawn_local(async move {
-                                                                    match crate::core::client::api_delete(
+                                                                    match crate::v2::core::api::client::api_delete(
                                                                         store, &path,
                                                                     )
                                                                     .await
@@ -1314,7 +1308,7 @@ fn squad_pane(
                                                                             changed.run(());
                                                                         }
                                                                         Err(e) => toasts.error(
-                                                                            crate::core::client::api_error_message(
+                                                                            crate::v2::core::api::client::api_error_message(
                                                                                 &e,
                                                                                 "Could not clear slot",
                                                                             ),
@@ -1448,7 +1442,7 @@ fn AssignPicker(
     assigning: RwSignal<Option<String>>,
     changed: Callback<()>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     // StoredValues so `on_pick` is Copy (it's used inside the reactive members-list closure).
     let emid = StoredValue::new(emid);
     let slot_id = StoredValue::new(slot_id);
@@ -1464,7 +1458,7 @@ fn AssignPicker(
                         .as_string()
                         .unwrap_or_default()
                 );
-                crate::core::client::api_get::<DataEnvelope<Member>>(store, &path)
+                crate::v2::core::api::client::api_get::<DataEnvelope<Member>>(store, &path)
                     .await
                     .ok()
                     .map(|e| e.data)
@@ -1487,14 +1481,14 @@ fn AssignPicker(
                 return;
             }
             assign_busy.set(true);
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let path = format!(
                 "/event-missions/{}/slots/{}/assign",
                 emid.get_value(),
                 slot_id.get_value()
             );
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_put::<serde_json::Value>(
+                match crate::v2::core::api::client::api_put::<serde_json::Value>(
                     store,
                     &path,
                     serde_json::json!({ "discord_id": m.discord_id }),
@@ -1506,7 +1500,7 @@ fn AssignPicker(
                         assigning.set(None);
                         changed.run(());
                     }
-                    Err(e) => toasts.error(crate::core::client::api_error_message(
+                    Err(e) => toasts.error(crate::v2::core::api::client::api_error_message(
                         &e,
                         "Could not assign member",
                     )),
@@ -1546,7 +1540,7 @@ fn AssignPicker(
                                         let avatar = m
                                             .avatar_url
                                             .as_deref()
-                                            .map(safe_avatar_url)
+                                            .map(crate::v2::core::utils::safe_avatar_url)
                                             .unwrap_or_else(|| DEFAULT_AVATAR.to_string());
                                         let username = m.username.clone();
                                         let pick = m.clone();
@@ -1663,9 +1657,9 @@ mod tests {
         );
     }
 
-    /// The shipped half of this module, scrubbed (T-601 — [`crate::editor::arsenal::class_r_scrub`]).
+    /// The shipped half of this module, scrubbed (T-601 — [`crate::v2::core::test_support::class_r_scrub`]).
     fn live() -> String {
-        crate::editor::arsenal::class_r_scrub::live_code(include_str!("event_hub.rs"))
+        crate::v2::core::test_support::class_r_scrub::live_code(include_str!("event_hub.rs"))
     }
 
     /// T-407 — the hub hero must actually *read* `EventHub.briefing`. A pure call above is not
@@ -1691,7 +1685,8 @@ mod tests {
     #[test]
     fn hub_hero_reads_event_briefing() {
         let prod = live();
-        let hero = crate::editor::arsenal::class_r_scrub::only_body(&prod, "fn event_hub_view(");
+        let hero =
+            crate::v2::core::test_support::class_r_scrub::only_body(&prod, "fn event_hub_view(");
         assert!(
             hero.contains("briefing_text(ev.briefing.as_deref())"),
             "event_hub hero must render EventHub.briefing via briefing_text — \
@@ -1715,7 +1710,7 @@ mod tests {
     fn briefing_text_source_ratchet_requires_trim() {
         let prod = live();
         let dossier =
-            crate::editor::arsenal::class_r_scrub::only_body(&prod, "fn mission_dossier(");
+            crate::v2::core::test_support::class_r_scrub::only_body(&prod, "fn mission_dossier(");
         assert!(
             dossier.contains("briefing_text(m.briefing.as_deref())"),
             "mission dossier must route briefing through briefing_text"
@@ -1734,7 +1729,8 @@ mod tests {
             !prod.contains(old_arm),
             "match-arm !b.is_empty() without trim must not return on briefing paths"
         );
-        let helper = crate::editor::arsenal::class_r_scrub::only_body(&prod, "fn briefing_text(");
+        let helper =
+            crate::v2::core::test_support::class_r_scrub::only_body(&prod, "fn briefing_text(");
         let trim_arm = concat!("Some(b) if !b.trim().", "is_empty()");
         assert!(
             helper.contains(trim_arm),
@@ -1756,7 +1752,7 @@ mod tests {
     /// exactly how a whole-file grep gets fed a pristine decoy).
     #[test]
     fn the_briefing_pins_reject_every_dead_code_wrapper() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let needle = "briefing_text(ev.briefing.as_deref())";
         let attacks: [(&str, String); 12] = [
             (
@@ -2021,7 +2017,7 @@ mod tests {
     fn member_picker_avatar_src_only_keeps_http_urls() {
         let mut wrong = Vec::new();
         for (input, ok) in IS_HTTP_URL_CASES {
-            let got = safe_avatar_url(input);
+            let got = crate::v2::core::utils::safe_avatar_url(input);
             if *ok {
                 if got != *input {
                     wrong.push(format!("  dropped a legitimate avatar {input:?}"));
@@ -2037,6 +2033,6 @@ mod tests {
             IS_HTTP_URL_CASES.len(),
             wrong.join("\n")
         );
-        assert_eq!(safe_avatar_url(""), DEFAULT_AVATAR);
+        assert_eq!(crate::v2::core::utils::safe_avatar_url(""), DEFAULT_AVATAR);
     }
 }

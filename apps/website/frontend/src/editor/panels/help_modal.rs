@@ -59,8 +59,8 @@ use std::cell::Cell;
 
 use leptos::prelude::*;
 
-use crate::core::ui::{cn, MaterialIcon};
 use crate::editor::layout::HOVER_FILL;
+use crate::v2::core::ui::{cn, MaterialIcon};
 
 /// T-772 — ControlsHint close-button geometry. Dense strip/dock rows keep
 /// [`crate::editor::layout::BTN_ICON`]'s `p-0.5`; this overlay dismiss is not in a dense row, so the
@@ -470,7 +470,7 @@ pub fn ControlsHint(open: RwSignal<bool>) -> impl IntoView {
 /// [`every_shared_channel_claimant_reads_live_state`] fails if a claimant stops gating itself.
 #[cfg(test)]
 pub(crate) mod keymap_census {
-    use crate::editor::arsenal::class_r_scrub::live_source;
+    use crate::v2::core::test_support::class_r_scrub::live_source;
     use std::collections::{BTreeMap, BTreeSet};
 
     /// A modifier PREDICATE, as read out of a live arm guard. `Some(true)` = the modifier is
@@ -1498,7 +1498,7 @@ pub(crate) mod keymap_census {
 mod t692_help_covers_every_binding {
     use super::keymap_census;
     use super::{Shortcut, GROUPS, SHORTCUTS};
-    use crate::editor::arsenal::class_r_scrub::live_code;
+    use crate::v2::core::test_support::class_r_scrub::live_code;
     use std::collections::BTreeSet;
 
     /// Every window-level editor keydown listener, as one set of bound codes. One line, because the
@@ -1736,8 +1736,8 @@ mod t772_controls_hint_close_hitbox {
     //!    under `live_code` (literals blanked) and exclusive `p-1.5` on the call-site recipe.
 
     use super::HINT_CLOSE_BTN;
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
     use crate::editor::layout::BTN_ICON;
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     fn hint_body_source() -> String {
         let src = live_source(include_str!("help_modal.rs"));

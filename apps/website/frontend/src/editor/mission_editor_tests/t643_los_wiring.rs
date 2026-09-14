@@ -1,4 +1,4 @@
-use crate::editor::arsenal::class_r_scrub::live_code;
+use crate::v2::core::test_support::class_r_scrub::live_code;
 
 /// Page-from-anchor + the T-934.13 gesture file (`canvas/gestures.rs`) — the LoS wiring spans the
 /// page body (tool signals, keydown Esc, overlay mounts) and the moved pointer/dblclick closures.

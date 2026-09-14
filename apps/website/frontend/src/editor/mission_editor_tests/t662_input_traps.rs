@@ -1,4 +1,4 @@
-use crate::editor::arsenal::class_r_scrub::live_code;
+use crate::v2::core::test_support::class_r_scrub::live_code;
 
 /// The keydown region, comment- and dead-code-stripped. The file's first `#[cfg(test)]` is the
 /// `clear_for_test` helper near the top, so `live_code` on the whole file would cut everything

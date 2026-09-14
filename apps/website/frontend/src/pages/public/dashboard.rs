@@ -29,9 +29,10 @@
 //! `next_event` / `my_assignment` / `recent_announcements` stay `serde_json::Value` until those
 //! nested bodies get their own DTOs.
 #![allow(dead_code)]
-use crate::core::datefmt::{countdown_label, format_short_date, format_uptime};
-use crate::core::dto::DashboardResponse;
-use crate::core::ui::{cn, AuthGate, MaterialIcon};
+use crate::v2::core::api::dto::DashboardResponse;
+use crate::v2::core::ui::{cn, AuthGate, MaterialIcon};
+use crate::v2::core::utils::countdown::countdown_label;
+use crate::v2::core::utils::datefmt::{format_short_date, format_uptime};
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -69,14 +70,14 @@ pub fn DashboardPage() -> impl IntoView {
 
 #[component]
 fn DashboardInner() -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     // useDashboard() → GET /dashboard. LocalResource (not Resource): the gloo-net + single-flight
     // client future is `!Send` (client-only), which the Send-bounded Resource rejects. Native builds
     // don't fetch (the browser V-gate exercises the real path).
     let dash = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::core::client::api_get::<DashboardResponse>(store, "/dashboard")
+            crate::v2::core::api::client::api_get::<DashboardResponse>(store, "/dashboard")
                 .await
                 .ok()
         }

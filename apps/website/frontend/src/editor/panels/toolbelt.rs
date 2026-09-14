@@ -24,8 +24,8 @@
 use leptos::prelude::*;
 use map_engine_core::camera::OrthoCamera;
 
-use crate::core::ui::{cn, MaterialIcon};
 use crate::editor::layout::{HOVER_FILL, TOGGLED_PLATE};
+use crate::v2::core::ui::{cn, MaterialIcon};
 
 // ── T-667 — map furniture: scale bar + edge grid references (pure geometry) ─────────────────────────
 //
@@ -954,7 +954,7 @@ pub fn BottomToolbelt(
 /// signature defect: a check reporting success over an input it never truly examined).
 #[cfg(test)]
 mod t636_status_bar {
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source};
 
     /// This module's file, with comments blanked but string literals KEPT — so the Tailwind class
     /// strings and the readout labels survive as structural landmarks for ordering proofs.
@@ -1151,8 +1151,9 @@ mod t636_status_bar {
     /// `key=` binding, not a mention in a comment or class string.
     #[test]
     fn grid_ref_for_is_keyed_by_position_not_text() {
-        let code = crate::editor::arsenal::class_r_scrub::live_code(include_str!("toolbelt.rs"));
-        let body = crate::editor::arsenal::class_r_scrub::only_body(
+        let code =
+            crate::v2::core::test_support::class_r_scrub::live_code(include_str!("toolbelt.rs"));
+        let body = crate::v2::core::test_support::class_r_scrub::only_body(
             &code,
             &format!("pub fn {}", "MapGridRefs("),
         );
@@ -1218,7 +1219,7 @@ mod t636_status_bar {
     #[test]
     fn status_bar_axis_readout_uses_the_eden_unit_formatter() {
         let src = live_source(include_str!("toolbelt.rs"));
-        let body = crate::editor::arsenal::class_r_scrub::only_body(
+        let body = crate::v2::core::test_support::class_r_scrub::only_body(
             &src,
             &format!("pub fn {}", "StatusBar("),
         );
@@ -1289,7 +1290,7 @@ mod t636_status_bar {
 /// satisfies an absence check.
 #[cfg(test)]
 mod t642_ruler {
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source};
 
     /// This file with comments blanked but strings KEPT (class strings + labels survive as landmarks).
     fn src_kept() -> String {
@@ -1896,7 +1897,7 @@ mod t793_grid_labels_live_camera {
 /// Source-inspection on scrubbed code (the toolbar is a Leptos view); needles assembled at run time.
 #[cfg(test)]
 mod t668_state_vocabulary {
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     /// The `cls` closure composes TOOL_BASE with the recipes — TOGGLED_PLATE for the current mode,
     /// HOVER_FILL for the rest. Proven on scrubbed code so the needle is the real `cn` call.
@@ -1965,7 +1966,9 @@ mod t668_state_vocabulary {
 #[cfg(test)]
 mod t670_scale_readout {
     use super::{format_m_per_px, m_per_px, pick_scale_bar};
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body, only_item};
+    use crate::v2::core::test_support::class_r_scrub::{
+        live_code, live_source, only_body, only_item,
+    };
     use map_engine_core::camera::{MAX_ZOOM, MIN_ZOOM};
 
     /// The readout across the whole zoom clamp, at the real rungs the operator sees. `MIN_ZOOM −6`

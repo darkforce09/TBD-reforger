@@ -266,7 +266,7 @@ pub fn loadout_buffer_len() -> usize {
 /// atomicity this comment refuses. The author is told the real number: `arsenal::apply_receipt`
 /// builds its line from the returned commit count.
 pub fn apply_loadout_buffer_to_selection(
-    items: &[crate::core::dto::RegistryItem],
+    items: &[crate::v2::core::api::dto::RegistryItem],
     feed: &crate::editor::arsenal::arsenal_rules::CompatFeed,
 ) -> Result<(usize, usize), Vec<crate::editor::arsenal::arsenal_rules::RowError>> {
     let buffer = loadout_buffer();

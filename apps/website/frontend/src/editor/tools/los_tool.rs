@@ -1702,7 +1702,8 @@ mod tests {
     /// this is the "no store.rs writes" guarantee.
     #[test]
     fn no_los_doc_writes() {
-        let code = crate::editor::arsenal::class_r_scrub::live_code(include_str!("los_tool.rs"));
+        let code =
+            crate::v2::core::test_support::class_r_scrub::live_code(include_str!("los_tool.rs"));
         for banned in [
             "MissionDocCore",
             "move_entities",

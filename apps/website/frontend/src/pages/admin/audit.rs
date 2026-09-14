@@ -25,11 +25,11 @@
 //! entry's id under another entry's chrome. Items stay `serde_json::Value`; `severity` is pinned by
 //! the `audit_severity` enum (`info` / `warn` / `crit`).
 #![allow(dead_code)]
-use crate::core::auth::AuthStore;
-use crate::core::datefmt::log_stamp;
-use crate::core::dto::CursorList;
-use crate::core::split_pane::{search_matches, SplitPane, SplitPaneEmpty};
-use crate::core::ui::{badge_class, AdminGate, MaterialIcon};
+use crate::v2::core::api::dto::CursorList;
+use crate::v2::core::auth::AuthStore;
+use crate::v2::core::ui::split_pane::{search_matches, SplitPane, SplitPaneEmpty};
+use crate::v2::core::ui::{badge_class, AdminGate, MaterialIcon};
+use crate::v2::core::utils::datefmt::log_stamp;
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -123,13 +123,16 @@ pub fn AuditLogsPage() -> impl IntoView {
 
 #[component]
 fn AuditLogsInner() -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let logs = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::core::client::api_get::<CursorList<Value>>(store, &audit_logs_path(None))
-                .await
-                .ok()
+            crate::v2::core::api::client::api_get::<CursorList<Value>>(
+                store,
+                &audit_logs_path(None),
+            )
+            .await
+            .ok()
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -177,7 +180,8 @@ fn board(store: AuthStore, page: CursorList<Value>) -> impl IntoView {
             load_more_error.set(false);
             let path = audit_logs_path(Some(before));
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_get::<CursorList<Value>>(store, &path).await {
+                match crate::v2::core::api::client::api_get::<CursorList<Value>>(store, &path).await
+                {
                     Ok(page) => {
                         let mut rows = lines.get_untracked();
                         let cursor = merge_audit_page(&mut rows, page);
@@ -246,7 +250,7 @@ fn board(store: AuthStore, page: CursorList<Value>) -> impl IntoView {
                             type="button"
                             on:click=move |_| selected.set(Some(id))
                             class=move || {
-                                crate::core::ui::cn(
+                                crate::v2::core::ui::cn(
                                     &[
                                         "flex w-full items-start gap-2 rounded px-2 py-1 text-left transition",
                                         if selected.get() == Some(id) {

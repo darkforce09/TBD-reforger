@@ -34,10 +34,10 @@
 //! backing table in any migration. That is T-283's ticket, so the box stays — but it now says on
 //! screen that nothing it holds is saved or visible to the author, which is the part that mattered.
 #![allow(dead_code)]
-use crate::core::datefmt::{format_local_datetime, format_short_date};
-use crate::core::dto::{ApprovalRow, MissionDetail, Paginated};
-use crate::core::split_pane::{SplitPane, SplitPaneEmpty};
-use crate::core::ui::{cn, AdminGate, MaterialIcon};
+use crate::v2::core::api::dto::{ApprovalRow, MissionDetail, Paginated};
+use crate::v2::core::ui::split_pane::{SplitPane, SplitPaneEmpty};
+use crate::v2::core::ui::{cn, AdminGate, MaterialIcon};
+use crate::v2::core::utils::datefmt::{format_local_datetime, format_short_date};
 use leptos::prelude::*;
 
 fn terrain_label(t: &str) -> String {
@@ -85,11 +85,11 @@ pub fn MissionApprovalsPage() -> impl IntoView {
 
 #[component]
 fn MissionApprovalsInner() -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let approvals = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::core::client::api_get::<Paginated<ApprovalRow>>(store, "/approvals")
+            crate::v2::core::api::client::api_get::<Paginated<ApprovalRow>>(store, "/approvals")
                 .await
                 .ok()
         }
@@ -243,7 +243,7 @@ fn board(
 /// (missions.rs) is a component.
 #[component]
 fn ReviewInspector(row: ApprovalRow, refetch: Callback<()>) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     #[cfg(not(target_arch = "wasm32"))]
     let _ = (&store, &refetch);
     let mid = StoredValue::new(row.mission_id.clone());
@@ -264,7 +264,7 @@ fn ReviewInspector(row: ApprovalRow, refetch: Callback<()>) -> impl IntoView {
             #[cfg(target_arch = "wasm32")]
             {
                 let path = format!("/missions/{id}");
-                crate::core::client::api_get::<MissionDetail>(store, &path)
+                crate::v2::core::api::client::api_get::<MissionDetail>(store, &path)
                     .await
                     .ok()
             }
@@ -296,10 +296,12 @@ fn ReviewInspector(row: ApprovalRow, refetch: Callback<()>) -> impl IntoView {
                 return;
             }
             approve_busy.set(true);
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let path = format!("/approvals/{}/approve", mid.get_value());
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_post_ok(store, &path, serde_json::json!({})).await {
+                match crate::v2::core::api::client::api_post_ok(store, &path, serde_json::json!({}))
+                    .await
+                {
                     Ok(()) => {
                         toasts.success("Mission approved & published");
                         refetch.run(());
@@ -322,11 +324,11 @@ fn ReviewInspector(row: ApprovalRow, refetch: Callback<()>) -> impl IntoView {
                 return;
             }
             reject_busy.set(true);
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let path = format!("/approvals/{}/reject", mid.get_value());
             leptos::task::spawn_local(async move {
                 let payload = serde_json::json!({ "reason": body });
-                match crate::core::client::api_post_ok(store, &path, payload).await {
+                match crate::v2::core::api::client::api_post_ok(store, &path, payload).await {
                     Ok(()) => {
                         toasts.success("Changes requested — the author gets your reason");
                         reason.set(String::new());
@@ -341,7 +343,7 @@ fn ReviewInspector(row: ApprovalRow, refetch: Callback<()>) -> impl IntoView {
     let stub_toast = move |msg: &'static str| {
         move |_| {
             #[cfg(target_arch = "wasm32")]
-            crate::core::toast::use_toasts().success(msg);
+            crate::v2::core::ui::toast::use_toasts().success(msg);
             #[cfg(not(target_arch = "wasm32"))]
             let _ = msg;
         }

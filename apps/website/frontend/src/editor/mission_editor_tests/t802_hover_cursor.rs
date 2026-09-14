@@ -2,7 +2,7 @@ use super::{
     hover_cursor_css, hover_due, hover_next, hover_suppressed, HoverState, COMMENT_PICK_PX,
     HOVER_CURSOR_PICKABLE, HOVER_CURSOR_PLAIN, HOVER_RELEASE_PX, HOVER_THROTTLE_MS,
 };
-use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 /// The editor page, scrubbed. Sliced from the RAW source at the component anchor first (the
 /// `t784_comment_glyph::page` idiom): `live_code` truncates at the first `#[cfg(test)]`, and

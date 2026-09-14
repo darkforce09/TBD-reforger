@@ -1,4 +1,4 @@
-use crate::editor::arsenal::class_r_scrub::{live_code, live_source};
+use crate::v2::core::test_support::class_r_scrub::{live_code, live_source};
 
 /// The editor page region with comments stripped but string literals KEPT (so Tailwind class
 /// strings survive as structural landmarks). Same slice boundary as `editor_live`.

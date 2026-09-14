@@ -26,9 +26,11 @@
 //! Missions roster now has the matching Attach Mission dropdown so an admin who detaches the
 //! last mission does not have to delete and recreate the operation.
 #![allow(dead_code)]
-use crate::core::datefmt::format_local_datetime;
-use crate::core::dto::{EventHub, EventListItem, EventMissionDossier, MissionCard, Paginated};
-use crate::core::ui::{badge_class, cn, AdminGate, Dialog, MaterialIcon};
+use crate::v2::core::api::dto::{
+    EventHub, EventListItem, EventMissionDossier, MissionCard, Paginated,
+};
+use crate::v2::core::ui::{badge_class, cn, AdminGate, Dialog, MaterialIcon};
+use crate::v2::core::utils::datefmt::format_local_datetime;
 use leptos::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -286,7 +288,7 @@ pub fn EventManagerPage() -> impl IntoView {
 
 #[component]
 fn EventManagerInner() -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     // today = selectedDate = viewMonth basis — new Date() under the frozen clock.
     let today = js_sys::Date::new_0();
     let today_key = day_key(
@@ -306,9 +308,12 @@ fn EventManagerInner() -> impl IntoView {
     let events = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::core::client::api_get::<Paginated<EventListItem>>(store, "/events?scope=all")
-                .await
-                .ok()
+            crate::v2::core::api::client::api_get::<Paginated<EventListItem>>(
+                store,
+                "/events?scope=all",
+            )
+            .await
+            .ok()
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -319,9 +324,12 @@ fn EventManagerInner() -> impl IntoView {
     let missions = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::core::client::api_get::<Paginated<MissionCard>>(store, "/missions?scope=global")
-                .await
-                .ok()
+            crate::v2::core::api::client::api_get::<Paginated<MissionCard>>(
+                store,
+                "/missions?scope=global",
+            )
+            .await
+            .ok()
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -384,7 +392,7 @@ fn EventManagerInner() -> impl IntoView {
             {
                 match id {
                     Some(id) => {
-                        match crate::core::client::api_get::<EventHub>(
+                        match crate::v2::core::api::client::api_get::<EventHub>(
                             store,
                             &format!("/events/{id}"),
                         )
@@ -443,7 +451,7 @@ fn EventManagerInner() -> impl IntoView {
     let on_publish = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let t = time.get_untracked();
             if t.is_empty() {
                 toasts.error("Start time is required");
@@ -471,8 +479,10 @@ fn EventManagerInner() -> impl IntoView {
             }
             let to_attach = staged.get_untracked();
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_post::<serde_json::Value>(store, "/events", body)
-                    .await
+                match crate::v2::core::api::client::api_post::<serde_json::Value>(
+                    store, "/events", body,
+                )
+                .await
                 {
                     Ok(created) => {
                         let id = created
@@ -483,7 +493,7 @@ fn EventManagerInner() -> impl IntoView {
                         let n = to_attach.len();
                         if !id.is_empty() {
                             for (mid, _) in to_attach {
-                                let _ = crate::core::client::api_post::<serde_json::Value>(
+                                let _ = crate::v2::core::api::client::api_post::<serde_json::Value>(
                                     store,
                                     &format!("/events/{id}/missions"),
                                     serde_json::json!({ "mission_id": mid, "start_time": start_iso }),
@@ -524,9 +534,11 @@ fn EventManagerInner() -> impl IntoView {
                 return;
             }
             delete_busy.set(true);
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_delete(store, &format!("/events/{id}")).await {
+                match crate::v2::core::api::client::api_delete(store, &format!("/events/{id}"))
+                    .await
+                {
                     Ok(()) => {
                         toasts.success("Operation deleted");
                         selected_event.set(None);
@@ -579,7 +591,7 @@ fn EventManagerInner() -> impl IntoView {
     let on_save_edit = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let Some(orig) = edit_orig.get_untracked() else {
                 return;
             };
@@ -647,7 +659,7 @@ fn EventManagerInner() -> impl IntoView {
             save_busy.set(true);
             let path = format!("/events/{}", orig.id);
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_patch::<serde_json::Value>(
+                match crate::v2::core::api::client::api_patch::<serde_json::Value>(
                     store,
                     &path,
                     serde_json::Value::Object(body),
@@ -662,7 +674,7 @@ fn EventManagerInner() -> impl IntoView {
                     // The transition 409s carry the server's own sentence (including "reschedule
                     // it in the same request to postpone it"), which is more useful than anything
                     // this page could invent — show it verbatim.
-                    Err(e) => toasts.error(crate::core::client::api_error_message(
+                    Err(e) => toasts.error(crate::v2::core::api::client::api_error_message(
                         &e,
                         "Could not update operation",
                     )),
@@ -690,9 +702,9 @@ fn EventManagerInner() -> impl IntoView {
                 return;
             }
             detach_busy.set(true);
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_delete(
+                match crate::v2::core::api::client::api_delete(
                     store,
                     &format!("/events/{id}/missions/{emid}"),
                 )
@@ -704,7 +716,7 @@ fn EventManagerInner() -> impl IntoView {
                         hub.refetch();
                         events.refetch();
                     }
-                    Err(e) => toasts.error(crate::core::client::api_error_message(
+                    Err(e) => toasts.error(crate::v2::core::api::client::api_error_message(
                         &e,
                         "Could not detach mission",
                     )),
@@ -721,7 +733,7 @@ fn EventManagerInner() -> impl IntoView {
     let on_attach_mission = move |mission_id: String, title: String| {
         #[cfg(target_arch = "wasm32")]
         {
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let (Some(id), Some(orig)) =
                 (selected_event.get_untracked(), edit_orig.get_untracked())
             else {
@@ -734,7 +746,7 @@ fn EventManagerInner() -> impl IntoView {
             edit_attach_open.set(false);
             let start = orig.start_time.clone();
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_post::<serde_json::Value>(
+                match crate::v2::core::api::client::api_post::<serde_json::Value>(
                     store,
                     &format!("/events/{id}/missions"),
                     serde_json::json!({ "mission_id": mission_id, "start_time": start }),
@@ -746,7 +758,7 @@ fn EventManagerInner() -> impl IntoView {
                         hub.refetch();
                         events.refetch();
                     }
-                    Err(e) => toasts.error(crate::core::client::api_error_message(
+                    Err(e) => toasts.error(crate::v2::core::api::client::api_error_message(
                         &e,
                         "Could not attach mission",
                     )),
@@ -1755,8 +1767,9 @@ mod tests {
         // Scrubbed production source (T-601/T-622): `live_source` keeps string literals, because
         // user-visible copy *is* the thing being pinned here, but folds comments and any dead
         // branch a decoy could hide in.
-        let prod =
-            crate::editor::arsenal::class_r_scrub::live_source(include_str!("event_manager.rs"));
+        let prod = crate::v2::core::test_support::class_r_scrub::live_source(include_str!(
+            "event_manager.rs"
+        ));
         assert!(
             prod.contains("description=DELETE_EVENT_CONFIRM_DESC"),
             "the delete confirm Dialog must render DELETE_EVENT_CONFIRM_DESC — a constant nothing \

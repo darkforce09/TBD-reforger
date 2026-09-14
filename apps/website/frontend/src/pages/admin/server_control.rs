@@ -19,8 +19,8 @@
 //! client-side honesty as Server Intel ("requires the Reforger client"). Swap Modpack / Global
 //! Broadcast have no matching RCON action → disabled.
 #![allow(dead_code)]
-use crate::core::dto::{DataEnvelope, ModpackDto, ServerRowDto, ServerStatusDto};
-use crate::core::ui::{cn, AdminGate, MaterialIcon};
+use crate::v2::core::api::dto::{DataEnvelope, ModpackDto, ServerRowDto, ServerStatusDto};
+use crate::v2::core::ui::{cn, AdminGate, MaterialIcon};
 use leptos::prelude::*;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -225,11 +225,11 @@ pub fn ServerControlPage() -> impl IntoView {
 
 #[component]
 fn ServerControlInner() -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let servers = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::core::client::api_get::<DataEnvelope<ServerRowDto>>(store, "/servers")
+            crate::v2::core::api::client::api_get::<DataEnvelope<ServerRowDto>>(store, "/servers")
                 .await
                 .ok()
         }
@@ -275,7 +275,7 @@ fn control_board(list: Vec<ServerRowDto>) -> impl IntoView {
     let list_detail = list;
 
     view! {
-        <crate::core::split_pane::SplitPane
+        <crate::v2::core::ui::split_pane::SplitPane
             transparent=true
             master_width="17rem"
             master_header=master_header(list_master.len()).into_any()
@@ -386,13 +386,13 @@ fn append_log(console_log: RwSignal<Vec<String>>, line: impl Into<String>) {
 }
 
 fn post_rcon(
-    store: crate::core::auth::AuthStore,
+    store: crate::v2::core::auth::AuthStore,
     server_id: String,
     body: Value,
     echo: String,
     console_log: RwSignal<Vec<String>>,
     busy: RwSignal<bool>,
-    toasts: crate::core::toast::Toasts,
+    toasts: crate::v2::core::ui::toast::Toasts,
 ) {
     if busy.get_untracked() || server_id.is_empty() {
         return;
@@ -403,7 +403,7 @@ fn post_rcon(
     {
         leptos::task::spawn_local(async move {
             let path = admin_server_rcon_path(&server_id);
-            match crate::core::client::api_post::<RconAccepted>(store, &path, body).await {
+            match crate::v2::core::api::client::api_post::<RconAccepted>(store, &path, body).await {
                 Ok(resp) => {
                     let msg = rcon_accepted_message(&resp);
                     // T-598 — a 2xx is not a delivery. The console colours `RCON:` green
@@ -419,7 +419,8 @@ fn post_rcon(
                     }
                 }
                 Err(e) => {
-                    let msg = crate::core::client::api_error_message(&e, "RCON request failed");
+                    let msg =
+                        crate::v2::core::api::client::api_error_message(&e, "RCON request failed");
                     append_log(console_log, format!("RCON error: {msg}"));
                     toasts.error(msg);
                 }
@@ -440,8 +441,8 @@ fn server_detail(
     busy: RwSignal<bool>,
     command: RwSignal<String>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
-    let toasts = crate::core::toast::use_toasts();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
+    let toasts = crate::v2::core::ui::toast::use_toasts();
     let server_id = s.id.clone();
     let name = s.name.clone();
     let endpoint = format_endpoint(&s.ip, s.port);
@@ -581,12 +582,12 @@ fn telemetry_col(
 }
 
 fn fire_custom_command(
-    store: crate::core::auth::AuthStore,
+    store: crate::v2::core::auth::AuthStore,
     server_id: String,
     command: RwSignal<String>,
     console_log: RwSignal<Vec<String>>,
     busy: RwSignal<bool>,
-    toasts: crate::core::toast::Toasts,
+    toasts: crate::v2::core::ui::toast::Toasts,
 ) {
     let cmd = command.get_untracked();
     let trimmed = cmd.trim().to_string();
@@ -612,8 +613,8 @@ fn rcon_console(
     busy: RwSignal<bool>,
     command: RwSignal<String>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
-    let toasts = crate::core::toast::use_toasts();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
+    let toasts = crate::v2::core::ui::toast::use_toasts();
 
     let change_map = {
         let server_id = server_id.clone();
@@ -816,10 +817,10 @@ mod t270 {
 
     #[test]
     fn rcon_path_tracks_app_rs() {
-        const APP_RS: &str =
-            include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../api/src/app.rs"));
+        let app_rs = crate::v2::core::test_support::fixtures::api_app_source();
+        let app_rs: &str = app_rs;
         assert!(
-            APP_RS.contains(r#""/admin/servers/{id}/rcon""#),
+            app_rs.contains(r#""/admin/servers/{id}/rcon""#),
             "app.rs must register POST /admin/servers/{{id}}/rcon"
         );
         assert_eq!(
@@ -842,10 +843,10 @@ mod t270 {
         assert_eq!(rcon_body_kick(), json!({ "action": "kick" }));
     }
 
-    /// The shipped half of this page, scrubbed (T-601 — [`crate::editor::arsenal::class_r_scrub`]).
+    /// The shipped half of this page, scrubbed (T-601 — [`crate::v2::core::test_support::class_r_scrub`]).
     /// Literals survive: a route path and a `data-testid` are the contract, not a mention of it.
     fn live() -> String {
-        crate::editor::arsenal::class_r_scrub::live_source(include_str!("server_control.rs"))
+        crate::v2::core::test_support::class_r_scrub::live_source(include_str!("server_control.rs"))
     }
 
     /// **Cure 2** — these are pure source-shape bans and wiring seams inside `view!` macros, with
@@ -1084,7 +1085,7 @@ mod t270 {
     /// * **Does:** for each of the four `(delivered, accepted)` bodies and for a transport error,
     ///   the source as committed raises exactly one toast, on the severity the body warrants, with
     ///   the text the real [`rcon_accepted_message`] produces — and clears `busy` either way.
-    /// * **Does not:** say anything about `crate::core::toast::Toasts` itself, or about the colour the
+    /// * **Does not:** say anything about `crate::v2::core::ui::toast::Toasts` itself, or about the colour the
     ///   console renders `RCON:` in. Those are other modules' pins.
     /// * **Residual:** the harness reads its evidence from the generated program's stdout, so
     ///   production source that printed the sentinels could forge a record. That is the
@@ -1354,7 +1355,7 @@ mod core {
             }
         }
         pub async fn api_post<T: Scripted>(
-            _store: crate::core::auth::AuthStore,
+            _store: crate::v2::core::auth::AuthStore,
             _path: &str,
             _body: crate::Value,
         ) -> Result<T, crate::ApiErr> {
@@ -1365,6 +1366,20 @@ mod core {
                 Some(m) => m.clone(),
                 None => fallback.to_string(),
             }
+        }
+    }
+}
+
+// The pinned source reaches auth, the HTTP verbs and toasts through the v2 tree; alias them
+// onto the mocks above.
+mod v2 {
+    pub mod core {
+        pub use crate::core::auth;
+        pub mod api {
+            pub use crate::core::client;
+        }
+        pub mod ui {
+            pub use crate::core::toast;
         }
     }
 }
@@ -1402,13 +1417,13 @@ fn drive(channel: &str, script: Result<RconAccepted, ApiErr>) {
     let console: RwSignal<Vec<String>> = RwSignal::new(Vec::new());
     let busy: RwSignal<bool> = RwSignal::new(false);
     post_rcon(
-        crate::core::auth::AuthStore,
+        crate::v2::core::auth::AuthStore,
         "T601-SERVER".to_string(),
         Value,
         "T601-ECHO".to_string(),
         console,
         busy,
-        crate::core::toast::Toasts,
+        crate::v2::core::ui::toast::Toasts,
     );
     for line in console.get_untracked() {
         emit("console", &line);
@@ -1429,9 +1444,9 @@ fn reply(delivered: bool, accepted: bool) -> RconAccepted {
 "###;
 
         fn item(sig: &str) -> String {
-            let prod = crate::editor::arsenal::class_r_scrub::live_source(SRC);
-            let raw = crate::editor::arsenal::class_r_scrub::only_item(&prod, sig);
-            crate::editor::arsenal::class_r_scrub::resolve_wasm_cfg(raw)
+            let prod = crate::v2::core::test_support::class_r_scrub::live_source(SRC);
+            let raw = crate::v2::core::test_support::class_r_scrub::only_item(&prod, sig);
+            crate::v2::core::test_support::class_r_scrub::resolve_wasm_cfg(raw)
         }
 
         /// The verbatim `post_rcon`, renamed, plus the `post_rcon` the driver actually calls: a
@@ -1446,13 +1461,13 @@ fn reply(delivered: bool, accepted: bool) -> RconAccepted {
         /// under test stays *reachability*.
         const SHIM: &str = r###"
 fn post_rcon(
-    store: crate::core::auth::AuthStore,
+    store: crate::v2::core::auth::AuthStore,
     server_id: String,
     body: Value,
     echo: String,
     console_log: RwSignal<Vec<String>>,
     busy: RwSignal<bool>,
-    toasts: crate::core::toast::Toasts,
+    toasts: crate::v2::core::ui::toast::Toasts,
 ) {
     let call = move || {
         post_rcon_live(

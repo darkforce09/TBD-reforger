@@ -8,10 +8,10 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 
-use crate::core::ui::MaterialIcon;
 use crate::editor::panels::outliner::{
     flatten_visible, FlatRow, LayerRow, NodeKind, OutlinerNode, VIRTUAL_SLOT_THRESHOLD,
 };
+use crate::v2::core::ui::MaterialIcon;
 
 /* ───────────────────────── T-666 — folder-click selection rules ───────────────────────── */
 
@@ -1936,7 +1936,7 @@ mod tests {
         /// windowed), so the list is present regardless of tree size.
         #[test]
         fn placed_vehicles_are_listed_in_the_outliner_with_slot_affordances() {
-            use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+            use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
             let code = live_code(TREE);
             // Two cfg variants share the name; the wasm one (no leading `_` on the params) is the one
             // with the real body — match its unique signature so `only_body` is unambiguous.
@@ -1999,7 +1999,7 @@ mod tests {
         fn layer_rename_uses_noderef_onload_and_decoupled_draft() {
             // Raw TREE includes this test module, so every needle below would self-match its own
             // assertion string (the T-759 hollow-pin class); scrub to the production half.
-            let tree = crate::editor::arsenal::class_r_scrub::live_source(TREE);
+            let tree = crate::v2::core::test_support::class_r_scrub::live_source(TREE);
             assert!(
                 tree.contains("NodeRef::<leptos::html::Input>::new()"),
                 "the layer rename input must carry a NodeRef so it can be focused on mount"
@@ -2062,7 +2062,7 @@ mod tests {
         /// `is_active`-predicate count.
         #[test]
         fn t803_drop_target_reads_differently() {
-            use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
+            use crate::v2::core::test_support::class_r_scrub::{live_source, only_body};
             let src = live_source(TREE);
             let body = only_body(&src, "fn single_row(");
 
@@ -2317,7 +2317,7 @@ mod t637_one_dense_row_geometry {
     /// the measured `clientHeight`. A fixed `height:420px` coming back is the defect this pin guards.
     #[test]
     fn the_windowed_scroller_is_measured_h_full_not_a_fixed_budget() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, live_source};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, live_source};
         let raw = include_str!("outliner_tree.rs");
         let code = live_code(raw);
         let source = live_source(raw);
@@ -2384,11 +2384,11 @@ mod t637_one_dense_row_geometry {
 #[cfg(test)]
 mod t784_comment_row_selects {
     use super::{inert_row_reason, row_router_subject, row_routes};
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
     use crate::editor::panels::outliner::NodeKind;
     use crate::editor::panels::validation_panel::{
         register_route_probe, register_select_by_id, route_select_by_subject_id,
     };
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     /// A dense ordinal per `NodeKind`. **The compiler is the completeness check**: the match is
     /// exhaustive, so a new variant cannot build until it is given an ordinal, and the coverage
@@ -2570,8 +2570,8 @@ mod t784_comment_row_selects {
 #[cfg(test)]
 mod t946_86_multi_drop {
     use super::{drag_set_for, node_descendant_ids};
-    use crate::editor::arsenal::class_r_scrub::live_code;
     use crate::editor::panels::outliner::{NodeKind, OutlinerNode};
+    use crate::v2::core::test_support::class_r_scrub::live_code;
 
     fn live() -> String {
         live_code(include_str!("outliner_tree.rs"))

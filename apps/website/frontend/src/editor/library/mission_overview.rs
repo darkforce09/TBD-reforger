@@ -20,9 +20,9 @@
 //! The editor is an **Edit Armory** Dialog on this page (author/admin only), not in
 //! [`dossier_body`] — see the note there for why the shared body must stay read-only.
 #![allow(dead_code)]
-use crate::core::dto::MissionDetail;
-use crate::core::ui::{cn, AuthGate, Dialog, MaterialIcon};
 use crate::shell::nav_config::Role;
+use crate::v2::core::api::dto::MissionDetail;
+use crate::v2::core::ui::{cn, AuthGate, Dialog, MaterialIcon};
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 use serde_json::Value;
@@ -494,7 +494,7 @@ pub fn MissionOverviewPage() -> impl IntoView {
 
 #[component]
 fn MissionOverviewInner() -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let params = use_params_map();
     // T-368. Created before the resource because the resource *depends* on it: `saved` is one of its
     // reactive inputs, so a successful PUT re-runs the GET and the read-only armory below (whose
@@ -512,7 +512,7 @@ fn MissionOverviewInner() -> impl IntoView {
             #[cfg(target_arch = "wasm32")]
             {
                 let path = format!("/missions/{id}");
-                crate::core::client::api_get::<MissionDetail>(store, &path)
+                crate::v2::core::api::client::api_get::<MissionDetail>(store, &path)
                     .await
                     .ok()
             }
@@ -564,7 +564,7 @@ fn MissionOverviewInner() -> impl IntoView {
 /// a half-typed row must not sit in the same column as published content and read as if it were
 /// part of it. Same frosted vocabulary as `event_manager.rs`.
 fn armory_dialog(ed: ArmoryEditor) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let on_save = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
@@ -576,16 +576,16 @@ fn armory_dialog(ed: ArmoryEditor) -> impl IntoView {
             // The button is already disabled on this condition; re-checked because the disabled
             // attribute is the browser's promise, not the handler's.
             if let Some(problem) = draft_problem(&rows) {
-                crate::core::toast::use_toasts().error(problem);
+                crate::v2::core::ui::toast::use_toasts().error(problem);
                 return;
             }
             let body = armory_body(&rows);
             let count = rows.len();
             ed.busy.set(true);
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             leptos::task::spawn_local(async move {
                 let path = format!("/missions/{id}/armory");
-                match crate::core::client::api_put::<Value>(store, &path, body).await {
+                match crate::v2::core::api::client::api_put::<Value>(store, &path, body).await {
                     Ok(_) => {
                         toasts.success(if count == 0 {
                             "Armory cleared".to_string()
@@ -598,7 +598,7 @@ fn armory_dialog(ed: ArmoryEditor) -> impl IntoView {
                     // The endpoint's 400s name the offending `items[i]` field; showing them verbatim
                     // is more use than anything this page could invent — and it is the only channel
                     // through which a guard this editor does not yet mirror can reach the operator.
-                    Err(e) => toasts.error(crate::core::client::api_error_message(
+                    Err(e) => toasts.error(crate::v2::core::api::client::api_error_message(
                         &e,
                         "Could not save the armory",
                     )),
@@ -1007,7 +1007,7 @@ pub fn dossier_body(m: &MissionDetail) -> impl IntoView {
                                                 type="button"
                                                 on:click=move |_| faction_sel.set(Some(f_click.clone()))
                                                 class=move || {
-                                                    crate::core::ui::cn(
+                                                    crate::v2::core::ui::cn(
                                                         &[
                                                             "rounded-lg px-3 py-1.5 text-label-md",
                                                             if af_tabs().as_deref() == Some(f_active.as_str()) {
@@ -1376,14 +1376,14 @@ mod tests {
     /// **The drift lock.** T-395 exists because T-389 fixed the badge and left a second copy of the
     /// same mapping in the grid. One mapper is only one mapper while the badge actually calls it —
     /// so pin the call, on the scrubbed production half of `missions.rs` (T-601/T-622
-    /// [`crate::editor::arsenal::class_r_scrub`], which folds comments, dead `cfg` items and const-false
+    /// [`crate::v2::core::test_support::class_r_scrub`], which folds comments, dead `cfg` items and const-false
     /// blocks away and fails closed on anything it cannot read).
     ///
     /// `live_code` blanks string literals as well, so a `"mission_status_label"` mention inside a
     /// doc string or a copy literal cannot green this.
     #[test]
     fn the_card_badge_and_the_dossier_grid_share_one_label_mapper() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let prod = live_code(include_str!("mission_library.rs"));
         let badge = only_body(&prod, "fn visibility_badge(status: &str)");
         assert!(

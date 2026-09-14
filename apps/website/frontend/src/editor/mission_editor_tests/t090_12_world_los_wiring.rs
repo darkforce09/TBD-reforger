@@ -3,7 +3,7 @@
 //! object verdict through the live occluder seam. The t644 `editor_live` scrub idiom, with the
 //! viewport loop and the overlay source scrubbed in as well.
 
-use crate::editor::arsenal::class_r_scrub::live_code;
+use crate::v2::core::test_support::class_r_scrub::live_code;
 
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");

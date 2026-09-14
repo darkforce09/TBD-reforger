@@ -486,7 +486,7 @@ pub(crate) const MENU_GUTTER: &str = "flex size-4 shrink-0 items-center justify-
 /// `#[cfg(target_arch = "wasm32")]` and so invisible to a native `cargo test`.
 #[cfg(test)]
 mod t636_band_readers_agree {
-    use crate::editor::arsenal::class_r_scrub::live_code;
+    use crate::v2::core::test_support::class_r_scrub::live_code;
 
     /// The band has ONE definition here (its expanded value), and both chokepoint readers reference
     /// the LIVE inset via the accessor — neither smuggles in a bare `96.0`/`240.0`/`48.0`.
@@ -996,8 +996,8 @@ mod t637_dock_geometry {
         DOCK_RIGHT_MOUNT, DOCK_RIGHT_MOUNT_COLLAPSED, DOCK_RIGHT_PX, ROW_MENUS, ROW_MENUS_PX,
         ROW_TOOLS, ROW_TOOLS_PX, STRIP_ROWS, STRIP_TOP_PX,
     };
-    use crate::editor::arsenal::class_r_scrub::live_code;
     use crate::editor::panels::toolbelt::STATUSBAR_H_PX;
+    use crate::v2::core::test_support::class_r_scrub::live_code;
     use map_engine_core::camera::OrthoCamera;
 
     /// Both collapse latches off and the chrome shown, so the accessors report the EXPANDED consts.

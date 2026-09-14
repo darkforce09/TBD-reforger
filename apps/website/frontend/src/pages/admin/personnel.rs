@@ -29,8 +29,8 @@
 //! T-448: dossier Deployments binds `AdminUserRow.total_deployments` (API `RosterRow` projects
 //! `users.total_deployments`) — integer string, including `0` (no em-dash placeholder).
 #![allow(dead_code)]
-use crate::core::dto::{AdminUserRow, Paginated};
-use crate::core::ui::{cn, AdminGate, Dialog, MaterialIcon};
+use crate::v2::core::api::dto::{AdminUserRow, Paginated};
+use crate::v2::core::ui::{cn, AdminGate, Dialog, MaterialIcon};
 use leptos::prelude::*;
 
 /// Badge variant="success" class (ui/badge.tsx cn(), text-label-sm twMerge-dropped).
@@ -221,7 +221,7 @@ pub fn PersonnelRosterPage() -> impl IntoView {
 
 #[component]
 fn PersonnelInner() -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let q = RwSignal::new(String::new());
     let selected_id = RwSignal::new(None::<String>);
     let roster = LocalResource::new(move || {
@@ -239,7 +239,7 @@ fn PersonnelInner() -> impl IntoView {
                             .unwrap_or_default()
                     )
                 };
-                crate::core::client::api_get::<Paginated<AdminUserRow>>(store, &path)
+                crate::v2::core::api::client::api_get::<Paginated<AdminUserRow>>(store, &path)
                     .await
                     .ok()
             }
@@ -261,9 +261,9 @@ fn PersonnelInner() -> impl IntoView {
                 return;
             }
             sync_busy.set(true);
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_post::<serde_json::Value>(
+                match crate::v2::core::api::client::api_post::<serde_json::Value>(
                     store,
                     ADMIN_ROLES_SYNC_PATH,
                     serde_json::json!({}),
@@ -279,7 +279,7 @@ fn PersonnelInner() -> impl IntoView {
                             toasts.error("Role sync returned an unexpected response");
                         }
                     },
-                    Err(e) => toasts.error(crate::core::client::api_error_message(
+                    Err(e) => toasts.error(crate::v2::core::api::client::api_error_message(
                         &e,
                         "Role sync failed",
                     )),
@@ -542,7 +542,7 @@ fn reason_confirm_enabled(reason: &str) -> bool {
 /// inline role editor (live PATCH), Issue Warning (live POST …/warnings), Ban (live POST …/ban),
 /// and Unban when banned (live DELETE …/ban). Ban/warn reasons open a `Dialog` (T-342).
 fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     #[cfg(not(target_arch = "wasm32"))]
     let _ = (&store, &refetch);
     let name = display_name(&u);
@@ -577,10 +577,10 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
         role.set(next.clone());
         #[cfg(target_arch = "wasm32")]
         {
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let path = format!("/admin/users/{}", uid.get_value());
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_patch::<serde_json::Value>(
+                match crate::v2::core::api::client::api_patch::<serde_json::Value>(
                     store,
                     &path,
                     serde_json::json!({ "role": next }),
@@ -592,7 +592,7 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
                         refetch.run(());
                     }
                     Err(e) => {
-                        toasts.error(crate::core::client::api_error_message(
+                        toasts.error(crate::v2::core::api::client::api_error_message(
                             &e,
                             "Failed to update role",
                         ));
@@ -617,7 +617,7 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
             if banned.get_untracked() || ban_busy.get_untracked() {
                 return;
             }
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let reason = match classify_ban_reason(Some(ban_reason.get_untracked().as_str())) {
                 BanReason::Abort | BanReason::Reject => return,
                 BanReason::Send(reason) => reason,
@@ -626,7 +626,7 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
             let path = admin_user_ban_path(&uid.get_value());
             let body = serde_json::json!({ "reason": reason });
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_post_ok(store, &path, body).await {
+                match crate::v2::core::api::client::api_post_ok(store, &path, body).await {
                     Ok(()) => {
                         toasts.success("Personnel banned");
                         banned.set(true);
@@ -636,9 +636,10 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
                     }
                     // The 400 body says exactly what is wrong; a flat "Ban failed" threw that
                     // away. `api_error_message` is the house helper (event_hub/missions/…).
-                    Err(e) => {
-                        toasts.error(crate::core::client::api_error_message(&e, "Ban failed"))
-                    }
+                    Err(e) => toasts.error(crate::v2::core::api::client::api_error_message(
+                        &e,
+                        "Ban failed",
+                    )),
                 }
                 ban_busy.set(false);
             });
@@ -655,19 +656,20 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
             if !banned.get_untracked() || ban_busy.get_untracked() {
                 return;
             }
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             ban_busy.set(true);
             let path = admin_user_ban_path(&uid.get_value());
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_delete(store, &path).await {
+                match crate::v2::core::api::client::api_delete(store, &path).await {
                     Ok(()) => {
                         toasts.success("Personnel unbanned");
                         banned.set(false);
                         refetch.run(());
                     }
-                    Err(e) => {
-                        toasts.error(crate::core::client::api_error_message(&e, "Unban failed"))
-                    }
+                    Err(e) => toasts.error(crate::v2::core::api::client::api_error_message(
+                        &e,
+                        "Unban failed",
+                    )),
                 }
                 ban_busy.set(false);
             });
@@ -688,7 +690,7 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
             if warn_busy.get_untracked() {
                 return;
             }
-            let toasts = crate::core::toast::use_toasts();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             let reason = match classify_ban_reason(Some(warn_reason.get_untracked().as_str())) {
                 BanReason::Abort | BanReason::Reject => return,
                 BanReason::Send(reason) => reason,
@@ -697,7 +699,7 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
             let path = admin_user_warnings_path(&uid.get_value());
             let body = serde_json::json!({ "reason": reason });
             leptos::task::spawn_local(async move {
-                match crate::core::client::api_post_ok(store, &path, body).await {
+                match crate::v2::core::api::client::api_post_ok(store, &path, body).await {
                     Ok(()) => {
                         toasts.success("Warning issued");
                         warnings.update(|n| *n = n.saturating_add(1));
@@ -705,9 +707,10 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
                         warn_reason.set(String::new());
                         refetch.run(());
                     }
-                    Err(e) => {
-                        toasts.error(crate::core::client::api_error_message(&e, "Warning failed"))
-                    }
+                    Err(e) => toasts.error(crate::v2::core::api::client::api_error_message(
+                        &e,
+                        "Warning failed",
+                    )),
                 }
                 warn_busy.set(false);
             });
@@ -937,8 +940,8 @@ mod tests {
         classify_ban_reason, reason_confirm_enabled, roles_sync_success_message,
         roles_sync_updated_count, BanReason, FilterMode, SortMode, ADMIN_ROLES_SYNC_PATH,
     };
-    use crate::core::dto::AdminUserRow;
     use crate::shell::nav_config::Role;
+    use crate::v2::core::api::dto::AdminUserRow;
 
     fn production_src() -> &'static str {
         include_str!("personnel.rs")
@@ -1025,11 +1028,11 @@ mod tests {
         // T-247: Personnel is the only SPA caller. Open the live Axum router source so a
         // drift off `.route("/admin/roles/sync", …)` fails this test — not a const echo of
         // itself (which stayed green while never examining app.rs).
-        const APP_RS: &str =
-            include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../api/src/app.rs"));
+        let app_rs = crate::v2::core::test_support::fixtures::api_app_source();
+        let app_rs: &str = app_rs;
         let live_registration = format!(r#".route("{ADMIN_ROLES_SYNC_PATH}""#);
         assert!(
-            APP_RS.contains(&live_registration),
+            app_rs.contains(&live_registration),
             "apps/website/api/src/app.rs must register {live_registration}, …); \
              Personnel posts ADMIN_ROLES_SYNC_PATH"
         );
@@ -1040,18 +1043,18 @@ mod tests {
     fn admin_ban_and_warnings_paths_match_live_api_routes() {
         // T-268: path helpers must track app.rs — a const echo of itself stays green forever.
         // Ban/warnings registrations are multi-line `.route(\n  "…"` — match the path string.
-        const APP_RS: &str =
-            include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../api/src/app.rs"));
+        let app_rs = crate::v2::core::test_support::fixtures::api_app_source();
+        let app_rs: &str = app_rs;
         assert!(
-            APP_RS.contains(r#""/admin/users/{discordId}/ban""#),
+            app_rs.contains(r#""/admin/users/{discordId}/ban""#),
             "app.rs must register ban/unban on /admin/users/{{discordId}}/ban"
         );
         assert!(
-            APP_RS.contains(r#""/admin/users/{discordId}/warnings""#),
+            app_rs.contains(r#""/admin/users/{discordId}/warnings""#),
             "app.rs must register warnings on /admin/users/{{discordId}}/warnings"
         );
         assert!(
-            APP_RS.contains("unban_user"),
+            app_rs.contains("unban_user"),
             "app.rs ban route must wire DELETE to unban_user"
         );
         assert_eq!(admin_user_ban_path("42"), "/admin/users/42/ban");

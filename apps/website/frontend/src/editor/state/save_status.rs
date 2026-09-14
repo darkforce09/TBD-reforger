@@ -33,7 +33,7 @@ thread_local! {
     #[cfg(target_arch = "wasm32")]
     static CHIP_MOUNTED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     #[cfg(target_arch = "wasm32")]
-    static TOASTS: RefCell<Option<crate::core::toast::Toasts>> = const { RefCell::new(None) };
+    static TOASTS: RefCell<Option<crate::v2::core::ui::toast::Toasts>> = const { RefCell::new(None) };
 }
 
 /// Current status. Source of truth is the cell so persist timers (no reactive owner) can write it.
@@ -102,7 +102,7 @@ pub fn invoke_retry() {
 /// Capture the shell toast context (if a reactive owner is live) and mount the chip overlay.
 #[cfg(target_arch = "wasm32")]
 pub fn bind_runtime() {
-    if let Some(t) = use_context::<crate::core::toast::Toasts>() {
+    if let Some(t) = use_context::<crate::v2::core::ui::toast::Toasts>() {
         TOASTS.with(|c| *c.borrow_mut() = Some(t));
     }
     ensure_chip_mounted();
@@ -219,7 +219,7 @@ pub fn SaveStatusChip() -> impl IntoView {
     let sig = RwSignal::new(status());
     STATUS_SIG.with(|s| *s.borrow_mut() = Some(sig));
     #[cfg(target_arch = "wasm32")]
-    if let Some(t) = use_context::<crate::core::toast::Toasts>() {
+    if let Some(t) = use_context::<crate::v2::core::ui::toast::Toasts>() {
         TOASTS.with(|c| *c.borrow_mut() = Some(t));
     }
 
@@ -269,7 +269,7 @@ pub fn last_toast() -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_item};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_item};
 
     fn reset() {
         STATUS.with(|s| *s.borrow_mut() = SaveStatus::Saved);

@@ -343,7 +343,7 @@ pub fn AttributesModal(
     attrs_tab: RwSignal<usize>,
     doc_tick: RwSignal<u64>,
     /// T-159.27 — flat registry gear rows for the Arsenal tab.
-    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
     /// T-167 — compat edge feed for the Smart Arsenal (optic/magazine rows + validation).
     compat: RwSignal<crate::editor::arsenal::arsenal_rules::CompatFeed>,
 ) -> impl IntoView {
@@ -352,20 +352,20 @@ pub fn AttributesModal(
     // T-726 — modal-stack gate; topmost consumes.
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id = crate::core::ui::modal_stack::register(move || {
+        let modal_id = crate::v2::core::ui::modal_stack::register(move || {
             attrs_open.try_get_untracked().flatten().is_some()
         });
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
             if attrs_open.get_untracked().is_some()
                 && ev.key() == "Escape"
-                && crate::core::ui::modal_stack::is_topmost_open(modal_id)
+                && crate::v2::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 crate::editor::state::operations::close_attributes();
             }
         });
         on_cleanup(move || {
             esc.remove();
-            crate::core::ui::modal_stack::unregister(modal_id);
+            crate::v2::core::ui::modal_stack::unregister(modal_id);
         });
     }
     // T-649 ATTR-MULTI-CHK-001 — the per-field opt-in latches, minted ONCE on the component (see
@@ -480,7 +480,7 @@ fn modal_view(
     // T-810 (F-23 b) — the pre-open snapshot the Revert button restores. Captured on open (see
     // `AttributesModal`), one entry per edited slot.
     snapshot: StoredValue<Vec<crate::editor::state::operations::SlotAttrs>>,
-    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
     compat: RwSignal<crate::editor::arsenal::arsenal_rules::CompatFeed>,
     tab: RwSignal<usize>,
 ) -> AnyView {
@@ -558,7 +558,7 @@ fn modal_view(
                         on:click=move |_| crate::editor::state::operations::close_attributes()
                         class="rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
                     >
-                        <crate::core::ui::MaterialIcon name="close" />
+                        <crate::v2::core::ui::MaterialIcon name="close" />
                     </button>
                 </div>
             </div>
@@ -698,7 +698,7 @@ const VEHICLE_CARGO_KINDS: &[&str] = &[
 #[cfg(target_arch = "wasm32")]
 fn vehicle_attrs_view(
     id: String,
-    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
 ) -> AnyView {
     use crate::editor::state::operations::VehicleCargoRow;
     use std::collections::HashMap;
@@ -796,7 +796,7 @@ fn vehicle_attrs_view(
                             crate::editor::state::operations::set_vehicle_cargo(id_r.clone(), next);
                         }
                     >
-                        <crate::core::ui::MaterialIcon name="close" class="block text-sm" />
+                        <crate::v2::core::ui::MaterialIcon name="close" class="block text-sm" />
                     </button>
                 </div>
             }
@@ -875,7 +875,7 @@ fn vehicle_attrs_view(
                     on:click=move |_| crate::editor::state::operations::close_attributes()
                     class="rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
                 >
-                    <crate::core::ui::MaterialIcon name="close" />
+                    <crate::v2::core::ui::MaterialIcon name="close" />
                 </button>
             </div>
             <div class="custom-scrollbar flex-1 overflow-y-auto px-6 py-5">
@@ -883,7 +883,7 @@ fn vehicle_attrs_view(
                     {heading_row}
                     <div class="flex flex-col gap-1">
                         <div class="flex items-center gap-1.5">
-                            <crate::core::ui::MaterialIcon
+                            <crate::v2::core::ui::MaterialIcon
                                 name="inventory_2"
                                 class="block shrink-0 text-sm text-outline"
                             />
@@ -919,7 +919,7 @@ fn vehicle_attrs_view(
                     </div>
                     <div class="flex flex-col gap-1">
                         <div class="flex items-center gap-1.5">
-                            <crate::core::ui::MaterialIcon
+                            <crate::v2::core::ui::MaterialIcon
                                 name="group"
                                 class="block shrink-0 text-sm text-outline"
                             />
@@ -1668,7 +1668,7 @@ fn type_picker(
     label: &'static str,
     value: String,
     gate: Gate,
-    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
     // `+ Send` because the popover is a reactive render closure (it rebuilds the leaf list as the
     // query changes) and Leptos requires such closures to be `Send`. The only caller passes a
     // closure capturing `targets: StoredValue<Vec<String>>` (which is `Send`), so the bound is free
@@ -1741,7 +1741,7 @@ fn type_picker(
                             "truncate text-on-surface"
                         }
                     }>{trigger_text}</span>
-                    <crate::core::ui::MaterialIcon name="search" />
+                    <crate::v2::core::ui::MaterialIcon name="search" />
                 </button>
                 {move || {
                     open.get().then(|| {
@@ -1945,7 +1945,7 @@ fn identity_tab(
     diff: crate::editor::state::operations::AttrDiff,
     opts: MultiOpts,
     // T-810 (F-23 a) — the live catalog source for the TYPE picker.
-    registry_items: RwSignal<Option<Vec<crate::core::dto::RegistryItem>>>,
+    registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
 ) -> impl IntoView {
     let a = attrs.get_value();
     let g = |differs: bool, latch| Gate::maybe(is_multi && differs, latch);
@@ -2254,7 +2254,7 @@ fn states_tab() -> impl IntoView {
 // those tests cannot see: that the modal actually calls them, on the fields it claims to.
 #[cfg(test)]
 mod tests {
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     fn attrs_src() -> String {
         live_code(include_str!("attributes_modal.rs"))
@@ -3435,7 +3435,7 @@ mod tests {
 /// T-726 — Attributes modal Esc through the modal stack.
 #[cfg(test)]
 mod t726_attributes_esc_stack {
-    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
     #[test]
     fn attributes_modal_gates_escape_on_modal_stack() {
@@ -3461,7 +3461,7 @@ mod t726_attributes_esc_stack {
 /// KEPT — `live_code` would blank the very copy under test and make the pin hollow, the T-759 class).
 #[cfg(test)]
 mod t807_transform_tab_copy {
-    use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_source, only_body};
 
     /// F-23 — DEM shipped, so the "Z is manual until terrain elevation (DEM) ships" hint is stale.
     /// The old promise must be gone from the whole live source.
@@ -3499,7 +3499,7 @@ mod t807_transform_tab_copy {
 /// T-810 (F-23) — the searchable TYPE picker, the Revert affordance, and Eden's axis colours.
 #[cfg(test)]
 mod t810_type_picker_revert_axes {
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     /// F-23 (c) — the axis labels carry THREE DISTINCT colours (X/Y/Z), plus a fourth for Rotation,
     /// and no other field is tinted. This is the acceptance's "3 distinct colours" pinned by CALLING
@@ -3806,8 +3806,8 @@ mod t810_type_picker_revert_axes {
 #[cfg(test)]
 mod t939_2_batch_reassign {
     use super::{faction_label, plan_reassign};
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
     use crate::editor::panels::outliner::{FactionRow, SquadRow};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     const REASSIGN_RS: &str = include_str!("../state/operations/reassign.rs");
 

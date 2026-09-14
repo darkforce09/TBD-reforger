@@ -49,9 +49,9 @@ const TAB_LABEL_PLACES: &str = "Locations";
 const UPPERCASE_LABEL_ADVANCE_PX: f64 = 8.5;
 /// T-637 — a tab cell's horizontal padding (`px-1.5` ⇒ 6 px each side).
 const TAB_LABEL_PAD_PX: f64 = 12.0;
-use crate::core::ui::MaterialIcon;
 use crate::editor::panels::outliner::OutlinerNode;
 use crate::editor::panels::outliner_tree::virtual_tree;
+use crate::v2::core::ui::MaterialIcon;
 
 /// T-638 — the collapse/expand chevron shared by both docks. `outward_icon` is the glyph shown while
 /// EXPANDED (points out of the dock — `chevron_left` for the left dock, `chevron_right` for the
@@ -1820,13 +1820,13 @@ mod tests {
     /// on raw `SRC`: for "this must NOT appear", the widest unscrubbed haystack is the strongest
     /// one, and scrubbing could only ever hide a hit.
     fn live_src() -> String {
-        crate::editor::arsenal::class_r_scrub::live_source(SRC)
+        crate::v2::core::test_support::class_r_scrub::live_source(SRC)
     }
 
     /// The same production half with string/char literals blanked as well — for needles that mean
     /// "this is real CODE", where the same text sitting in a literal is precisely the decoy.
     fn live_rust() -> String {
-        crate::editor::arsenal::class_r_scrub::live_code(SRC)
+        crate::v2::core::test_support::class_r_scrub::live_code(SRC)
     }
 
     fn place(name: &str, x: f64, y: f64) -> NamedPlace {
@@ -2143,7 +2143,7 @@ mod tests {
     /// this assertion line cannot satisfy itself.
     #[test]
     fn fly_to_and_named_locations_bodies_are_live() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let src = live_code(include_str!("../world_assets/mod.rs"));
         let fly = only_body(&src, "pub fn fly_to");
         let render = format!("{}{}", "RENDER", "_CTX");
@@ -2544,10 +2544,10 @@ mod t697_document_search {
         DocEntity, DocHit, DocKind, HIT_GAP_PX, HIT_ICON_PX, HIT_MIN_LABEL_PX, HIT_ROW_PAD_PX,
         LIST_SCROLLBAR_PX, MAX_DOC_HITS, UPPERCASE_LABEL_ADVANCE_PX,
     };
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
     use crate::editor::layout::{tw_len_px, DOCK_L, DOCK_PX};
     use crate::editor::mission_editor::route_target;
     use crate::editor::panels::validation_panel::register_route_probe;
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     /// The dock's own production text — comments, test modules and unreachable arms removed.
     fn dock_code() -> String {

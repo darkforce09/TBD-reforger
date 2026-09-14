@@ -1,4 +1,4 @@
-use crate::editor::arsenal::class_r_scrub::{live_code, only_item};
+use crate::v2::core::test_support::class_r_scrub::{live_code, only_item};
 
 /// The editor page region onward, comments stripped and string literals blanked — the same
 /// slice `t635_debug_hud` uses.

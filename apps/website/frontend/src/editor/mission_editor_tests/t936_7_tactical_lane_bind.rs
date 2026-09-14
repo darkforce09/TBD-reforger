@@ -18,7 +18,7 @@
 //! bound at one site is indistinguishable from a lane bound at both until someone opens a document
 //! that was not just edited.
 
-use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 fn history_src() -> String {
     live_code(include_str!("../state/history.rs"))

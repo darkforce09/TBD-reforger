@@ -3,10 +3,10 @@
 //! triggers, markers and the document index.
 //! Split from `operations.rs`; the façade re-exports keep call-site paths stable.
 
-use crate::core::dto::{FactionDoc, FactionRole, FactionVehicle};
 use crate::editor::arsenal::asset_catalog::PlacePayload;
 use crate::editor::panels::outliner::CommentRow;
 use crate::editor::state::history as mission_history;
+use crate::v2::core::api::dto::{FactionDoc, FactionRole, FactionVehicle};
 use leptos::prelude::{GetUntracked, Set};
 use map_engine_core::doc::place_character_under_side;
 use map_engine_core::doc::{

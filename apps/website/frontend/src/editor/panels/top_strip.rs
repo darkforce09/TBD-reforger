@@ -25,7 +25,7 @@ use crate::editor::layout::{
 };
 // T-633 — the scrubber and the weather picker are the shared Aegis primitives now, not raw
 // `<input type="range">` / `<select>`.
-use crate::core::ui::{cn, MaterialIcon, Select, Slider};
+use crate::v2::core::ui::{cn, MaterialIcon, Select, Slider};
 
 // ═══════════════ T-634 — two rows, and one action hierarchy ═══════════════
 //
@@ -736,7 +736,7 @@ struct MirroredField {
 }
 
 /// T-633 — the inline weather picker's `(wire value, label)` table. A const rather than four
-/// `<option>` tags in the view, because [`crate::core::ui::Select`] takes its options as data: the wire
+/// `<option>` tags in the view, because [`crate::v2::core::ui::Select`] takes its options as data: the wire
 /// enum and the words the author reads then have ONE definition in this file instead of markup that
 /// drifts. Values are the schema's snake_case weather enum — the same strings `MIRROR_WEATHER`
 /// mirrors onto the `missions` row, so the picker and the PATCH cannot disagree by construction.
@@ -781,7 +781,10 @@ const MIRROR_DEBOUNCE_MS: i32 = 400;
 ///
 /// Both say the setting will revert, because it will: the row still holds the old value, and the row
 /// wins on the next hydrate.
-fn mirror_failure_message(field: MirroredField, err: &crate::core::client::ApiErr) -> String {
+fn mirror_failure_message(
+    field: MirroredField,
+    err: &crate::v2::core::api::client::ApiErr,
+) -> String {
     let label = field.label;
     if err.0 == 403 {
         return format!(
@@ -791,7 +794,7 @@ fn mirror_failure_message(field: MirroredField, err: &crate::core::client::ApiEr
     format!(
         "Could not save {}: {}. It will revert when the editor reloads — try again.",
         label.to_lowercase(),
-        crate::core::client::api_error_message(err, "the server did not respond")
+        crate::v2::core::api::client::api_error_message(err, "the server did not respond")
     )
 }
 
@@ -820,11 +823,11 @@ fn mirror_failure_message(field: MirroredField, err: &crate::core::client::ApiEr
 #[cfg(target_arch = "wasm32")]
 #[derive(Clone, Copy)]
 pub(crate) struct RowMirror {
-    auth: crate::core::auth::AuthStore,
+    auth: crate::v2::core::auth::AuthStore,
     mission_id: StoredValue<String>,
     /// Where a failed mirror is reported. Resolved at setup for the same reason `auth` is —
     /// `use_toasts()` is an `expect_context` and would panic from a DOM handler or a timer.
-    toasts: crate::core::toast::Toasts,
+    toasts: crate::v2::core::ui::toast::Toasts,
 }
 
 /// Per-column mirror bookkeeping: the dedupe memory, the debounce queue, and the single-flight slot.
@@ -952,9 +955,9 @@ impl RowMirror {
             .map(|s| s.to_string())
             .unwrap_or_default();
         Self {
-            auth: expect_context::<crate::core::auth::AuthStore>(),
+            auth: expect_context::<crate::v2::core::auth::AuthStore>(),
             mission_id: StoredValue::new(id),
-            toasts: crate::core::toast::use_toasts(),
+            toasts: crate::v2::core::ui::toast::use_toasts(),
         }
     }
 
@@ -1023,7 +1026,7 @@ impl RowMirror {
         let column = field.column;
         leptos::task::spawn_local(async move {
             let body = serde_json::json!({ column: value.clone() });
-            let res = crate::core::client::api_patch::<serde_json::Value>(
+            let res = crate::v2::core::api::client::api_patch::<serde_json::Value>(
                 auth,
                 &format!("/missions/{id}"),
                 body,
@@ -1043,7 +1046,10 @@ impl RowMirror {
                 leptos::logging::warn!(
                     "T-192: could not mirror {} onto the mission row: {}",
                     column,
-                    crate::core::client::api_error_message(e, "PATCH /missions/:id failed")
+                    crate::v2::core::api::client::api_error_message(
+                        e,
+                        "PATCH /missions/:id failed"
+                    )
                 );
                 // A stale generation describes a value the author has already replaced, and its
                 // successor is queued and will report its own outcome. Toasting here would stack one
@@ -1220,7 +1226,7 @@ pub fn TopCommandStrip(
     // The wasm open-edge pump in `modal_stack` observes closed→open without per-dialog wiring.
     #[cfg(target_arch = "wasm32")]
     let transient_closer_id =
-        crate::core::ui::modal_stack::register_transient_closer(close_transients);
+        crate::v2::core::ui::modal_stack::register_transient_closer(close_transients);
     // T-192 — row mirror for the inline scrubber / weather select. Setup-time, not handler-time.
     #[cfg(target_arch = "wasm32")]
     let row_mirror = RowMirror::from_route();
@@ -1228,7 +1234,7 @@ pub fn TopCommandStrip(
     // reason `row_mirror` is: `use_toasts()` is an `expect_context` and a DOM click handler has no
     // reactive owner to resolve it through.
     #[cfg(target_arch = "wasm32")]
-    let toasts = crate::core::toast::use_toasts();
+    let toasts = crate::v2::core::ui::toast::use_toasts();
     // T-181.44 — per-problem lines from a rejected Save (`details` from the 400). Local to the
     // strip because the Save dialog is the only place they are read; `save_status` stays a
     // one-liner because it also renders in the strip itself.
@@ -1285,7 +1291,7 @@ pub fn TopCommandStrip(
                 // capture-phase sentinel marks before any bubble listener runs; checking the mark
                 // (not live `any_open()`) survives a peer Dialog closing in the same keydown
                 // (wave200 F4 / wave139 F3 pile-up).
-                if crate::core::ui::modal_stack::escape_consumed() {
+                if crate::v2::core::ui::modal_stack::escape_consumed() {
                     return;
                 }
                 // One surface per press — each arm returns after closing its layer.
@@ -1317,7 +1323,7 @@ pub fn TopCommandStrip(
         });
         on_cleanup(move || {
             esc.remove();
-            crate::core::ui::modal_stack::unregister_transient_closer(transient_closer_id);
+            crate::v2::core::ui::modal_stack::unregister_transient_closer(transient_closer_id);
         });
     }
     // T-789 F-04 — FRESH STATE on reopen. `save_status` is a shared prop (it also paints inline in
@@ -1352,7 +1358,7 @@ pub fn TopCommandStrip(
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
-            crate::core::dto::MissionEnv::default()
+            crate::v2::core::api::dto::MissionEnv::default()
         }
     });
     // T-659 — per-side slot census + generated summary line, on the SAME `doc_tick` channel as `env`
@@ -2923,7 +2929,7 @@ mod tests {
     /// T-746 — the row-id predicate is crate-visible so `eden_settings` does not keep a twin.
     #[test]
     fn t746_row_id_predicate_is_crate_visible() {
-        use crate::editor::arsenal::class_r_scrub::live_code;
+        use crate::v2::core::test_support::class_r_scrub::live_code;
         let src = live_code(include_str!("top_strip.rs"));
         assert!(
             src.contains("pub(crate) fn is_mission_row_id"),
@@ -3392,7 +3398,7 @@ mod tests {
 #[cfg(test)]
 mod t668_state_vocabulary {
     use super::{MenuAction, MENUS};
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     /// This file with comments blanked but class STRINGS kept, so the Tailwind literals survive as
     /// the structural landmarks the class pins read.
@@ -3641,9 +3647,12 @@ mod t692_help_surface {
     /// mount string exists somewhere after the open tag.
     #[test]
     fn the_toggle_is_checked_in_the_gutter_and_mounted_here() {
-        let code = crate::editor::arsenal::class_r_scrub::live_code(include_str!("top_strip.rs"));
-        let body =
-            crate::editor::arsenal::class_r_scrub::only_body(&code, "pub fn TopCommandStrip(");
+        let code =
+            crate::v2::core::test_support::class_r_scrub::live_code(include_str!("top_strip.rs"));
+        let body = crate::v2::core::test_support::class_r_scrub::only_body(
+            &code,
+            "pub fn TopCommandStrip(",
+        );
         let mount = format!("{} open=hint_open", "ControlsHint");
         let mount_at = body.find(&mount).expect(
             "T-692/T-755: the Controls Hint must be mounted inside TopCommandStrip's body — that              is the chrome_hidden-gated subtree",
@@ -3701,7 +3710,7 @@ mod t692_help_surface {
 /// The defect was narrow and visible: the time scrubber was a raw `<input type="range">` whose only
 /// styling was `accent-[--color-primary]` — which tints the UA widget and nothing else, so it still
 /// drew a browser-blue rail and a browser-shaped thumb against Aegis `#adc6ff` — and the weather
-/// picker was a raw `<select>` wearing the platform's native arrow. Both are now `crate::core::ui`
+/// picker was a raw `<select>` wearing the platform's native arrow. Both are now `crate::v2::core::ui`
 /// primitives (created by this ticket; see the pins in `ui.rs` for what they guarantee).
 ///
 /// Source pins, on scrubbed source: this is a Leptos view a native test cannot render. Absence
@@ -3709,7 +3718,7 @@ mod t692_help_surface {
 #[cfg(test)]
 mod t633_aegis_controls {
     use super::WEATHER_OPTIONS;
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     /// THE FIX, stated as an absence. No raw range input and no raw select may remain in the strip.
     /// Checked on the string-KEPT source, because `type="range"` is a literal and that is exactly
@@ -3751,7 +3760,7 @@ mod t633_aegis_controls {
         }
         // The import is by name, so a stale `ui::` glob cannot make the pin above pass on nothing.
         assert!(
-            code.contains("use crate::core::ui::{cn, MaterialIcon, Select, Slider}"),
+            code.contains("use crate::v2::core::ui::{cn, MaterialIcon, Select, Slider}"),
             "T-633: the strip must import the two primitives by name from the shared ui module"
         );
     }
@@ -3817,7 +3826,7 @@ mod t633_aegis_controls {
 #[cfg(test)]
 mod t634_two_rows_and_a_hierarchy {
     use super::MENUS;
-    use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_source, only_body};
     // T-637 — the row recipes moved to `eden_layout` (the T-634 fold-back) and the dead one-row
     // `STRIP` is deleted. `DOCK_L` stands in for it below: "the strip is the same glass as the docks
     // it sits above" is what comparing the two shells always meant.
@@ -4117,7 +4126,7 @@ mod t634_two_rows_and_a_hierarchy {
 /// T-726 / T-814 — top-strip Esc yields when modal_stack consumed Escape (wave139 F3 / wave200 F4).
 #[cfg(test)]
 mod t726_top_strip_esc_stack {
-    use crate::editor::arsenal::class_r_scrub::{live_source, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_source, only_body};
 
     #[test]
     fn top_command_strip_escape_yields_when_modal_stack_consumed_escape() {
@@ -4197,7 +4206,7 @@ mod t726_top_strip_esc_stack {
 /// T-786 O-5 — opening a dialog closes the strip's popovers/help surfaces (the Controls Hint).
 #[cfg(test)]
 mod t786_dialog_closes_popovers {
-    use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
     /// The `close_transients` helper must actually close all three transient surfaces — the open
     /// menu, the export dropdown, and the Controls Hint — or the exclusivity is hollow. Scrubbed
@@ -4294,7 +4303,7 @@ mod t786_dialog_closes_popovers {
 /// it, wave-203 MAJOR); it is now proven by the live-rect smoke in `tools/tbd-tools`, not a class pin.
 #[cfg(test)]
 mod t789_save_version_dialog {
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     /// FRESH STATE. `save_status` is a shared prop (it also paints inline in the strip) and
     /// `save_now` writes it to `Saved v{semver}`, where it stays — so on reopen the dialog would
@@ -4467,7 +4476,7 @@ mod t789_save_version_dialog {
 /// count unchanged on a marker, Backspace clean-screenshot diff, contrast calc) is the playtest lane.
 #[cfg(test)]
 mod t798_validation_chip {
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     /// THE CHIP EXISTS, IN THE STRIP, READING THE SEAM. The count comes from the headless eval loop
     /// via `validation_panel::chip_findings`, and the drop is `validation_panel::findings_dropdown` —
@@ -4725,7 +4734,7 @@ mod t939_4_one_arrange_list {
     /// dispatch bodies are wasm-only.
     #[test]
     fn the_menu_click_and_the_chord_share_one_invoker() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_item};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_item};
         let code = live_code(include_str!("top_strip.rs"));
         // `run_action` is a CLOSURE over the strip's signals, not a free fn — `only_item` slices it
         // from its `let` head all the same, and still refuses a second definition.

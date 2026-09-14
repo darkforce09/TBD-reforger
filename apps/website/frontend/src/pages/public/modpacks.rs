@@ -1,10 +1,10 @@
 //! Server Modpacks (/modpacks) — load from `GET /modpacks`, admin Save → `PUT /modpacks/:id`
 //! (T-271). Create / set-current / delete hit the matching write routes. No MOCK_MODPACKS.
 #![allow(dead_code)]
-use crate::core::dto::{DataEnvelope, ModpackDto};
-use crate::core::split_pane::{GlassSplit, ListDetailItem, SidebarSearch};
-use crate::core::ui::MaterialIcon;
 use crate::shell::nav_config::{has_min_role_authed, Role};
+use crate::v2::core::api::dto::{DataEnvelope, ModpackDto};
+use crate::v2::core::ui::split_pane::{GlassSplit, ListDetailItem, SidebarSearch};
+use crate::v2::core::ui::MaterialIcon;
 use leptos::prelude::*;
 use serde_json::{json, Value};
 
@@ -102,19 +102,19 @@ enum MpMode {
 #[component]
 pub fn ModpacksPage() -> impl IntoView {
     view! {
-        <crate::core::ui::AuthGate>
+        <crate::v2::core::ui::AuthGate>
             <ModpacksInner />
-        </crate::core::ui::AuthGate>
+        </crate::v2::core::ui::AuthGate>
     }
 }
 
 #[component]
 fn ModpacksInner() -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let packs = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::core::client::api_get::<DataEnvelope<ModpackDto>>(store, "/modpacks")
+            crate::v2::core::api::client::api_get::<DataEnvelope<ModpackDto>>(store, "/modpacks")
                 .await
                 .ok()
         }
@@ -145,7 +145,7 @@ fn modpacks_board(
     list: Vec<ModpackDto>,
     packs_res: LocalResource<Option<DataEnvelope<ModpackDto>>>,
 ) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     // T-454 — reactive + authed: browse-mode `has_min_role(None)=>true` must NOT drive Create/Edit.
     let is_admin =
         Memo::new(move |_| has_min_role_authed(store.user.get().map(|u| u.role), Role::Admin));
@@ -156,7 +156,7 @@ fn modpacks_board(
     );
     let search = RwSignal::new(String::new());
     let mode = RwSignal::new(MpMode::Read);
-    let toasts = crate::core::toast::use_toasts();
+    let toasts = crate::v2::core::ui::toast::use_toasts();
     let create_busy = RwSignal::new(false);
 
     Effect::new(move |prev: Option<String>| {
@@ -214,9 +214,9 @@ fn master_header(
     create_busy: RwSignal<bool>,
     packs_res: LocalResource<Option<DataEnvelope<ModpackDto>>>,
     selected_id: RwSignal<String>,
-    toasts: crate::core::toast::Toasts,
+    toasts: crate::v2::core::ui::toast::Toasts,
 ) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     view! {
         <div class="w-full space-y-3">
             <div class="flex items-center justify-between gap-2">
@@ -244,7 +244,7 @@ fn master_header(
                                     #[cfg(target_arch = "wasm32")]
                                     {
                                         leptos::task::spawn_local(async move {
-                                            match crate::core::client::api_post::<ModpackDto>(
+                                            match crate::v2::core::api::client::api_post::<ModpackDto>(
                                                 store, "/modpacks", body,
                                             )
                                             .await
@@ -258,7 +258,7 @@ fn master_header(
                                                     packs_res.refetch();
                                                 }
                                                 Err(e) => {
-                                                    toasts.error(crate::core::client::api_error_message(
+                                                    toasts.error(crate::v2::core::api::client::api_error_message(
                                                         &e,
                                                         "Failed to create modpack",
                                                     ));
@@ -296,7 +296,10 @@ fn pack_list(packs: &[ModpackDto], selected_id: RwSignal<String>, query: &str) -
                 .map(|m| vstr(m, "name"))
                 .collect::<Vec<_>>()
                 .join(" ");
-            crate::core::split_pane::search_matches(&query, &format!("{} {mods}", p.modpack.name))
+            crate::v2::core::ui::split_pane::search_matches(
+                &query,
+                &format!("{} {mods}", p.modpack.name),
+            )
         })
         .cloned()
         .map(|p| {
@@ -337,9 +340,9 @@ fn dossier(
     mode: RwSignal<MpMode>,
     is_admin: bool,
     packs_res: LocalResource<Option<DataEnvelope<ModpackDto>>>,
-    toasts: crate::core::toast::Toasts,
+    toasts: crate::v2::core::ui::toast::Toasts,
 ) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let data = PackEdit::from_dto(p);
     let mod_count = data.mods.len() as i64;
     let pack_id = p.modpack.id.clone();
@@ -444,7 +447,7 @@ fn dossier(
                                             #[cfg(target_arch = "wasm32")]
                                             {
                                                 leptos::task::spawn_local(async move {
-                                                    match crate::core::client::api_post_ok(
+                                                    match crate::v2::core::api::client::api_post_ok(
                                                         store,
                                                         &path,
                                                         json!({}),
@@ -457,7 +460,7 @@ fn dossier(
                                                         }
                                                         Err(e) => {
                                                             toasts.error(
-                                                                crate::core::client::api_error_message(
+                                                                crate::v2::core::api::client::api_error_message(
                                                                     &e,
                                                                     "Failed to set current",
                                                                 ),
@@ -497,13 +500,13 @@ fn dossier(
                                     #[cfg(target_arch = "wasm32")]
                                     {
                                         leptos::task::spawn_local(async move {
-                                            match crate::core::client::api_delete(store, &path).await {
+                                            match crate::v2::core::api::client::api_delete(store, &path).await {
                                                 Ok(()) => {
                                                     toasts.success("Modpack deleted");
                                                     packs_res.refetch();
                                                 }
                                                 Err(e) => {
-                                                    toasts.error(crate::core::client::api_error_message(
+                                                    toasts.error(crate::v2::core::api::client::api_error_message(
                                                         &e,
                                                         "Failed to delete modpack",
                                                     ));
@@ -557,9 +560,9 @@ fn editor(
     p: &ModpackDto,
     mode: RwSignal<MpMode>,
     packs_res: LocalResource<Option<DataEnvelope<ModpackDto>>>,
-    toasts: crate::core::toast::Toasts,
+    toasts: crate::v2::core::ui::toast::Toasts,
 ) -> impl IntoView {
-    let store = expect_context::<crate::core::auth::AuthStore>();
+    let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let initial = PackEdit::from_dto(p);
     let name = RwSignal::new(initial.name.clone());
     let version = RwSignal::new(initial.version.clone());
@@ -787,7 +790,7 @@ fn editor(
                             #[cfg(target_arch = "wasm32")]
                             {
                                 leptos::task::spawn_local(async move {
-                                    match crate::core::client::api_put::<ModpackDto>(store, &path, body)
+                                    match crate::v2::core::api::client::api_put::<ModpackDto>(store, &path, body)
                                         .await
                                     {
                                         Ok(saved) => {
@@ -799,7 +802,7 @@ fn editor(
                                             packs_res.refetch();
                                         }
                                         Err(e) => {
-                                            save_err.set(Some(crate::core::client::api_error_message(
+                                            save_err.set(Some(crate::v2::core::api::client::api_error_message(
                                                 &e,
                                                 "Failed to save modpack",
                                             )));

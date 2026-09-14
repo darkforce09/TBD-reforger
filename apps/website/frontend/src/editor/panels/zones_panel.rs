@@ -10,9 +10,9 @@
 use leptos::prelude::*;
 
 #[cfg(target_arch = "wasm32")]
-use crate::core::ui::MaterialIcon;
-#[cfg(target_arch = "wasm32")]
 use crate::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
+#[cfg(target_arch = "wasm32")]
+use crate::v2::core::ui::MaterialIcon;
 
 /// T-582 — the Zones panel: draw controls, the authored-zone list, and the schema-driven
 /// Attributes panel.
@@ -1582,7 +1582,7 @@ mod tests {
     /// — then append the commands file, scrubbed separately (the T-934.13 concat idiom).
     /// `live_code` deletes comments + blanks string literals.
     fn editor_live_from_page() -> String {
-        use crate::editor::arsenal::class_r_scrub::live_code;
+        use crate::v2::core::test_support::class_r_scrub::live_code;
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
         let raw = include_str!("../mission_editor.rs");
         assert_eq!(
@@ -1641,7 +1641,7 @@ mod tests {
     /// bump elsewhere in the file cannot satisfy it.
     #[test]
     fn t792_cancel_zone_draw_bumps_the_dock_tick() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let ops = live_code(include_str!("../state/operations/entity.rs"));
         let body = only_body(&ops, "pub fn cancel_zone_draw() -> bool");
         assert!(
@@ -1944,7 +1944,7 @@ mod tests {
     /// defect in miniature.
     #[test]
     fn whole_terrain_affordance_is_wired() {
-        use crate::editor::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
         let ops = live_code(include_str!("../state/operations/entity.rs"));
         let body = only_body(&ops, "pub fn add_whole_terrain_zone() -> Option<String>");
 
@@ -2063,7 +2063,7 @@ mod tests {
 /// That is why this pin scrubs the LIVE source rather than trusting a report.
 #[cfg(test)]
 mod t946_86_tactical_trigger {
-    use crate::editor::arsenal::class_r_scrub::{live_code, live_source};
+    use crate::v2::core::test_support::class_r_scrub::{live_code, live_source};
 
     fn live_calls() -> String {
         live_code(include_str!("zones_panel.rs"))
