@@ -26,9 +26,7 @@ use crate::v2::core::api::dto::{DataEnvelope, FireSolution, Paginated};
 #[cfg(test)]
 use grid::{fmt_grid, parse_grid, preview_pos};
 #[cfg(test)]
-use saved_fires::{
-    hydration_step, restore, save_body, EventOption, SavedFire, SavedFor, Shown,
-};
+use saved_fires::{hydration_step, restore, save_body, EventOption, SavedFire, SavedFor, Shown};
 #[cfg(test)]
 use std::collections::HashSet;
 #[cfg(test)]

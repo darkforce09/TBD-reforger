@@ -3,4 +3,3 @@
 pub mod admin;
 pub mod debug;
 pub mod operations;
-pub mod public;

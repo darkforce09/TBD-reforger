@@ -16,9 +16,6 @@ use crate::pages::admin::audit::AuditLogsPage;
 use crate::pages::admin::content::ContentManagerPage;
 use crate::pages::admin::personnel::PersonnelRosterPage;
 use crate::pages::admin::server_control::ServerControlPage;
-use crate::pages::operations::event_schedule::EventSchedulePage;
-use crate::pages::public::deployments::DeploymentsPage;
-use crate::pages::public::leaderboards::LeaderboardsPage;
 use crate::v2::pages::account::login::LoginPage;
 use crate::v2::pages::account::settings::SettingsPage;
 use crate::v2::pages::command_center::announcements::AnnouncementsPage;
@@ -29,6 +26,9 @@ use crate::v2::pages::doctrine_and_info::vehicles::VehicleDatabasePage;
 use crate::v2::pages::doctrine_and_info::wiki::WikiPage;
 use crate::v2::pages::field_tools::mortar::MortarCalculatorPage;
 use crate::v2::pages::navigation::not_found::NotFoundPage;
+use crate::v2::pages::operations::deployments::DeploymentsPage;
+use crate::v2::pages::operations::leaderboards::LeaderboardsPage;
+use crate::v2::pages::operations::schedule::EventSchedulePage;
 use leptos::prelude::*;
 use leptos_router::components::{Route, Routes};
 use leptos_router::path;
@@ -53,10 +53,10 @@ pub fn AppRoutes() -> impl IntoView {
                 view=crate::editor::mission_editor::MissionEditorPage
             />
             <Route path=path!("/events") view=EventSchedulePage />
-            <Route path=path!("/events/:id") view=crate::pages::operations::event_hub::EventHubPage />
+            <Route path=path!("/events/:id") view=crate::v2::pages::operations::event_detail::EventHubPage />
             <Route
                 path=path!("/events/:id/missions/:emid/orbat")
-                view=crate::pages::operations::orbat_selection::OrbatSelectionPage
+                view=crate::v2::pages::operations::orbat_selection::OrbatSelectionPage
             />
             <Route path=path!("/wiki") view=WikiPage />
             <Route path=path!("/wiki/:slug") view=WikiPage />

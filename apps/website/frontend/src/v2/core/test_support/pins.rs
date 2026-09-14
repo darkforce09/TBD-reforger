@@ -126,3 +126,48 @@ pub(crate) fn modpacks_source() -> String {
     .map(production)
     .concat()
 }
+
+/// The operations schedule, as one text: the route component with its split pane, and the
+/// operation card the master column repeats.
+pub(crate) fn event_schedule_source() -> String {
+    [
+        include_str!("../../pages/operations/schedule/mod.rs"),
+        include_str!("../../pages/operations/schedule/page.rs"),
+        include_str!("../../pages/operations/schedule/upcoming_ops.rs"),
+    ]
+    .map(production)
+    .concat()
+}
+
+/// The operation dossier, as one text: the route component, the hub body, the mission dossier
+/// card, the faction cards, and the slotting selector with its squad pane and assign picker.
+pub(crate) fn event_hub_source() -> String {
+    [
+        include_str!("../../pages/operations/event_detail/mod.rs"),
+        include_str!("../../pages/operations/event_detail/page.rs"),
+        include_str!("../../pages/operations/event_detail/hero_countdown.rs"),
+        include_str!("../../pages/operations/event_detail/mission_dossier.rs"),
+        include_str!("../../pages/operations/event_detail/faction_armory.rs"),
+        include_str!("../../pages/operations/event_detail/slotting_selector.rs"),
+        include_str!("../../pages/operations/event_detail/squad_pane.rs"),
+        include_str!("../../pages/operations/event_detail/assign_picker.rs"),
+    ]
+    .map(production)
+    .concat()
+}
+
+/// The service record, as one text: the route component, the active-orders banner, the combat
+/// history table, both leave panels, and the column heading they share.
+pub(crate) fn deployments_source() -> String {
+    [
+        include_str!("../../pages/operations/deployments/mod.rs"),
+        include_str!("../../pages/operations/deployments/page.rs"),
+        include_str!("../../pages/operations/deployments/active_orders.rs"),
+        include_str!("../../pages/operations/deployments/service_record.rs"),
+        include_str!("../../pages/operations/deployments/leave_of_absence.rs"),
+        include_str!("../../pages/operations/deployments/leave_review_queue.rs"),
+        include_str!("../../pages/operations/deployments/table_head.rs"),
+    ]
+    .map(production)
+    .concat()
+}
