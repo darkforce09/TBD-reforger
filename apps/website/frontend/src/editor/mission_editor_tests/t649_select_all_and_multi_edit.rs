@@ -122,7 +122,7 @@ fn select_all_is_viewport_scoped_through_the_marquee_primitive() {
         "a non-finite unproject must select NOTHING (the marquee's own behaviour)"
     );
 
-    let ops = live_code(include_str!("../state/operations/entity.rs"));
+    let ops = live_code(crate::v2::core::test_support::editor_operations::ENTITY);
     let sel_fn = fn_source(&ops, "pub fn select_all_in_view(");
     assert!(
         sel_fn.contains("select_tool::view_ids_with_vehicles(")
@@ -158,8 +158,12 @@ fn multi_selection_no_longer_suppresses_the_attributes_modal() {
             include_str!("../state/operations/attrs.rs"),
             include_str!("../state/operations/cargo.rs"),
             include_str!("../state/operations/compositions.rs"),
-            include_str!("../state/operations/context.rs"),
-            include_str!("../state/operations/entity.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../mission-core/src/doc/operations/compositions.rs"
+            )),
+            crate::v2::core::test_support::editor_operations::CONTEXT,
+            crate::v2::core::test_support::editor_operations::ENTITY,
             include_str!("../state/operations/transform.rs"),
         ]
         .concat(),
@@ -288,13 +292,17 @@ fn multi_edit_commits_fan_out_to_every_selected_id() {
              otherwise"
         );
     }
-    let ops = live_code(include_str!("../state/operations/attrs.rs"));
+    let ops = live_code(include_str!(
+        "../../../../mission-core/src/doc/operations/attrs.rs"
+    ));
+    let host = live_code(include_str!("../state/operations/attrs.rs"));
     // T-732 — position multi is ONE LOCAL txn via update_entity_transforms (not N×
     // update_slot_position). F-26 (T-788) — identity multi is now ATOMIC too, via
     // `update_slots_attr_batch` (one txn, one undo step); the per-id fan-out moved INTO the core.
     {
         let f = "pub fn attrs_update_position_multi(";
         let src = fn_source(&ops, f);
+        let host_src = fn_source(&host, f);
         let batch = ["update_entity", "_transforms("].concat();
         let per_id = ["core.update_slot", "_position(id,"].concat();
         assert!(
@@ -310,13 +318,13 @@ fn multi_edit_commits_fan_out_to_every_selected_id() {
             "{f} must build a patch list over every id in the target set"
         );
         assert_eq!(
-            src.matches("after_local_edit()").count(),
+            host_src.matches("after_local_edit()").count(),
             1,
             "{f} must fire exactly ONE history/persist tail for the whole commit"
         );
-        assert_after_local_edit_outside_ids_loop(f, &src);
+        assert_after_local_edit_outside_ids_loop(f, &src, &host_src);
         assert!(
-            src.contains("is_none()") && src.contains("return;"),
+            host_src.contains("is_none()") && host_src.contains("return;"),
             "{f} must no-op when nothing was opted in"
         );
     }
@@ -331,6 +339,7 @@ fn multi_edit_commits_fan_out_to_every_selected_id() {
         let batch = ["update_slots_attr", "_batch("].concat();
         let per_id = ["core.update_slot", "(id,"].concat();
         let src = fn_source(&ops, f);
+        let host_src = fn_source(&host, f);
         assert!(
             src.contains(&batch),
             "F-26: {f} must commit via update_slots_attr_batch (one LOCAL txn, one undo step)"
@@ -345,12 +354,12 @@ fn multi_edit_commits_fan_out_to_every_selected_id() {
             "{f} must hand the whole id set (and its opt-in `slot_half`) to the batch"
         );
         assert_eq!(
-            src.matches("after_local_edit()").count(),
+            host_src.matches("after_local_edit()").count(),
             1,
             "{f} must fire exactly ONE history/persist tail for the whole commit"
         );
         assert!(
-            src.contains("is_none()") && src.contains("return;"),
+            host_src.contains("is_none()") && host_src.contains("return;"),
             "{f} must no-op when nothing was opted in"
         );
     }
@@ -366,7 +375,7 @@ fn multi_edit_commits_fan_out_to_every_selected_id() {
 /// Wave-112 MINOR-2 / T-736: `matches("after_local_edit()").count() == 1` cannot tell "one
 /// tail after the loop" from "one tail inside it". Brace-match `for id in ids {…}` and
 /// require the call to sit strictly after that span.
-fn assert_after_local_edit_outside_ids_loop(fn_name: &str, src: &str) {
+fn assert_after_local_edit_outside_ids_loop(fn_name: &str, src: &str, host: &str) {
     const LOOP: &str = "for id in ids {";
     let at = src
         .find(LOOP)
@@ -398,7 +407,11 @@ fn assert_after_local_edit_outside_ids_loop(fn_name: &str, src: &str) {
          after_local_edit() inside `for id in ids`"
     );
     assert!(
-        src[end + 1..].contains("after_local_edit()"),
+        host.find("website_mission_core::doc::operations::attrs::attrs_update_position_multi(")
+            .expect("adapter calls the domain operation")
+            < host
+                .find("after_local_edit()")
+                .expect("adapter refreshes after the call"),
         "{fn_name} must fire the history/persist tail after the fan-out loop closes"
     );
 }
@@ -455,7 +468,7 @@ fn t788_plain_click_inside_a_multi_selection_does_not_collapse_it() {
     // unconditional `= vec![id]` replace in select_slot collapsed SEL9→SEL1 before activate
     // fired and the modal could only ever open single-edit from a row. Same guard, same
     // outside-click-still-replaces Eden semantics (the contract context_menu::open documents).
-    let ops = live_code(include_str!("../state/operations/entity.rs"));
+    let ops = live_code(crate::v2::core::test_support::editor_operations::ENTITY);
     let sel_fn = fn_source(&ops, "pub fn select_slot(");
     assert!(
         squash(&sel_fn).contains(&squash("sel.len() > 1 && sel.iter().any(|s| *s == id)")),
@@ -483,7 +496,7 @@ fn t788_plain_click_inside_a_multi_selection_does_not_collapse_it() {
 /// → "must re-render (or close) the open Attributes modal when the selection changes".
 #[test]
 fn t788_open_attributes_modal_follows_a_selection_change() {
-    let ops = live_code(include_str!("../state/operations/context.rs"));
+    let ops = live_code(crate::v2::core::test_support::editor_operations::CONTEXT);
     let f = fn_source(&ops, "pub fn refresh_selection_mirrors(");
     // Reads the open id WITHOUT subscribing (untracked — this is a plain fn, not an effect).
     assert!(

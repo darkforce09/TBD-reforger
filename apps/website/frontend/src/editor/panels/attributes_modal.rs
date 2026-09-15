@@ -38,7 +38,12 @@
 //! field's local draft only, so a burst coalesces into the one blur/Enter commit the field already
 //! made, and a field the T-082 gate has shut refuses the keyboard exactly as it refuses typing.
 #![allow(dead_code)]
+
 use leptos::prelude::*;
+#[cfg(any(test, target_arch = "wasm32"))]
+pub use website_mission_core::doc::operations::reassign::faction_label;
+#[cfg(any(test, target_arch = "wasm32"))]
+pub use website_mission_core::doc::operations::reassign::plan_reassign;
 
 const CONTROL: &str = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60";
 /// T-649 — added to a field that is disabled because its values differ and its checkbox is
@@ -251,88 +256,6 @@ pub(crate) fn attrs_multi_subtitle(slot_n: usize, selection_n: usize) -> String 
 }
 
 /* ══════════════ T-939.2 — batch faction / squad reassign: the pure decision ══════════════ */
-
-/// How a faction reads in the picker and in a refusal: `name (KEY)`, because both halves carry
-/// information the operator needs and neither is reliably present. `key` is the side (`BLUFOR`)
-/// the compiled document and the derived slot side key are written in; `name` is what the mission
-/// author called it ("US Army"). Falling back through name → key → id means a faction row missing
-/// either field still names itself rather than rendering as an empty option.
-#[must_use]
-pub fn faction_label(f: &crate::editor::panels::outliner::FactionRow) -> String {
-    match (f.name.trim(), f.key.trim()) {
-        ("", "") => f.id.clone(),
-        ("", key) => key.to_string(),
-        (name, "") => name.to_string(),
-        (name, key) if name == key => name.to_string(),
-        (name, key) => format!("{name} ({key})"),
-    }
-}
-
-/// T-939.2 — resolve the modal's (faction, squad) pick to a **destination squad id**, or a NAMED
-/// refusal. An empty `squad_id` means "this faction, its first squad" — the faction selector's own
-/// commit, which is what makes picking a faction move the whole selection in one gesture.
-///
-/// Pure, and deliberately outside the `wasm32` block: the `axis_chip_class` / `nudge_step`
-/// precedent. The refusal strings are the user-visible half of requirement 4, and a message that
-/// only a source pin ever reads is a message nobody has proved the modal can produce — here
-/// `cargo test` calls the real function and reads the real sentence.
-///
-/// **Why the cross-faction arm exists at all**, given the squad `<select>` only ever lists the
-/// chosen faction's own squads: the modal is a live view over a `yrs` document. It re-reads on
-/// every `doc_tick`, and between the render that built the option list and the `change` event that
-/// commits it, an undo, a peer, or the Outliner can have re-filed that squad under another faction
-/// or deleted it. Moving the selection somewhere the operator did not choose is the wrong answer
-/// to that race; naming what changed is the right one.
-///
-/// The refusal names the squad and **both** factions, not merely "wrong faction": the operator is
-/// looking at a dialog that shows one faction and a squad list, and the useful sentence is which
-/// faction actually owns that squad.
-#[must_use]
-pub fn plan_reassign(
-    factions: &[crate::editor::panels::outliner::FactionRow],
-    squads: &[crate::editor::panels::outliner::SquadRow],
-    faction_id: &str,
-    squad_id: &str,
-) -> Result<String, String> {
-    let Some(faction) = factions.iter().find(|f| f.id == faction_id) else {
-        return Err(format!(
-            "That faction ({faction_id}) is no longer in this mission — reopen Attributes."
-        ));
-    };
-    let picked = faction_label(faction);
-    if squad_id.is_empty() {
-        // Faction-only pick: the faction's FIRST live squad, in `faction.squadIds` order, so the
-        // destination matches what the Outliner shows at the top of that faction.
-        return faction
-            .squad_ids
-            .iter()
-            .find(|sid| squads.iter().any(|s| &&s.id == sid))
-            .cloned()
-            .ok_or_else(|| {
-                format!("{picked} has no squads yet — add one in the ORBAT dock, then reassign.")
-            });
-    }
-    let Some(squad) = squads.iter().find(|s| s.id == squad_id) else {
-        return Err(format!(
-            "That squad ({squad_id}) is no longer in this mission — reopen Attributes."
-        ));
-    };
-    if squad.faction_id != faction_id {
-        let owner = factions
-            .iter()
-            .find(|f| f.id == squad.faction_id)
-            .map_or_else(|| squad.faction_id.clone(), faction_label);
-        let name = if squad.name.trim().is_empty() {
-            squad.id.clone()
-        } else {
-            squad.name.clone()
-        };
-        return Err(format!(
-            "Squad {name} belongs to {owner}, not {picked} — pick a squad under {picked}, or switch the faction first."
-        ));
-    }
-    Ok(squad.id.clone())
-}
 
 /// The modal host. Renders nothing while closed (`attrs_open == None`) — V-capture-safe like the
 /// suite Dialog. `doc_ver` is the re-read trigger (the doc has no change subscription).
@@ -2380,8 +2303,13 @@ mod tests {
     /// column — not because the mutator was missing.
     #[test]
     fn read_attrs_reads_asset_id_and_description_from_the_raw_slot_rows() {
-        let ops = live_code(include_str!("../state/operations/attrs.rs"));
-        let body = only_body(&ops, "pub fn read_attrs(id: &str) -> Option<SlotAttrs>");
+        let ops = live_code(include_str!(
+            "../../../../mission-core/src/doc/operations/attrs.rs"
+        ));
+        let body = only_body(
+            &ops,
+            "pub fn read_attrs(core: &MissionDocCore, id: &str) -> Option<SlotAttrs>",
+        );
         assert!(
             body.contains("raw_slot_rows(core)"),
             "read_attrs must consult the raw rows, not `materialize()` alone"
@@ -2404,8 +2332,13 @@ mod tests {
     /// drop the existence needle (proves the pin is about production, not this test module).
     #[test]
     fn read_attrs_gates_existence_on_raw_rows_not_soa_membership() {
-        let ops = live_code(include_str!("../state/operations/attrs.rs"));
-        let body = only_body(&ops, "pub fn read_attrs(id: &str) -> Option<SlotAttrs>");
+        let ops = live_code(include_str!(
+            "../../../../mission-core/src/doc/operations/attrs.rs"
+        ));
+        let body = only_body(
+            &ops,
+            "pub fn read_attrs(core: &MissionDocCore, id: &str) -> Option<SlotAttrs>",
+        );
         let raw_gate = "!rows.contains_key(id)";
         assert!(
             body.contains(raw_gate),
@@ -2479,7 +2412,9 @@ mod tests {
     /// original columns are not dragged along by a commit that only touches a new one.
     #[test]
     fn attrs_update_slot_routes_the_new_fields_through_update_slot_object() {
-        let ops = live_code(include_str!("../state/operations/attrs.rs"));
+        let ops = live_code(include_str!(
+            "../../../../mission-core/src/doc/operations/attrs.rs"
+        ));
         let body = only_body(&ops, "pub fn attrs_update_slot(");
         assert!(
             body.contains("core.update_slot_object(id, asset_id, description)"),
@@ -2527,6 +2462,10 @@ mod tests {
         );
 
         // (2) `!raw_slot_rows(core).contains_key(id)` → false arm
+        let domain = live_code(include_str!(
+            "../../../../mission-core/src/doc/operations/attrs.rs"
+        ));
+        let body = only_body(&domain, "pub fn attrs_update_slot(");
         let raw_gate = "!raw_slot_rows(core).contains_key(id)";
         assert!(
             body.contains(raw_gate),
@@ -3065,7 +3004,9 @@ mod tests {
     /// A source pin because `editor_ops` is wasm32-only and `cargo test` cannot build it.
     #[test]
     fn an_attributes_x_or_y_commit_carries_the_slots_current_z_back_in() {
-        let ops = live_code(include_str!("../state/operations/attrs.rs"));
+        let ops = live_code(include_str!(
+            "../../../../mission-core/src/doc/operations/attrs.rs"
+        ));
         // Single-slot still goes through update_slot_position.
         {
             let f = "pub fn attrs_update_position(";
@@ -3124,7 +3065,9 @@ mod tests {
         // And the read is off the EXACT raw row, not the materialized SoA: the SoA's `zs` is f32 (a
         // round-trip would rewrite the authored value) and it OMITS slots on hidden layers (T-665),
         // where a failed read is a zeroed z.
-        let live_ops = live_source(include_str!("../state/operations/attrs.rs"));
+        let live_ops = live_source(include_str!(
+            "../../../../mission-core/src/doc/operations/attrs.rs"
+        ));
         let read = only_body(&live_ops, "fn slot_z(");
         assert!(
             read.contains("\"position\"") && read.contains("\"z\""),
@@ -3150,7 +3093,10 @@ mod tests {
     /// test inside it is built by the native harness.
     #[test]
     fn a_placement_commit_carries_each_slots_current_z_back_in() {
-        let ops = live_code(include_str!("../state/operations/transform.rs"));
+        let ops = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../mission-core/src/doc/operations/transform.rs"
+        )));
         let body = only_body(&ops, "fn commit_positions(");
         // The old zeroing write, verbatim: x and y set, z hard-coded absent.
         assert!(
@@ -3227,8 +3173,13 @@ mod tests {
             include_str!("../state/operations/attrs.rs"),
             include_str!("../state/operations/cargo.rs"),
             include_str!("../state/operations/compositions.rs"),
-            include_str!("../state/operations/context.rs"),
-            include_str!("../state/operations/entity.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../mission-core/src/doc/operations/compositions.rs"
+            )),
+            crate::v2::core::test_support::editor_operations::CONTEXT,
+            crate::v2::core::test_support::editor_operations::ENTITY,
+            crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY,
             include_str!("../state/operations/transform.rs"),
         ]
         .concat();
@@ -3249,7 +3200,8 @@ mod tests {
             "the paste's parity rationale was overruled on 2026-08-08 and must not be left standing"
         );
 
-        let body = only_body(&ops, "pub fn paste_at_cursor(");
+        let domain = live_code(crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY);
+        let body = only_body(&domain, "pub fn paste_at_cursor(");
         // Resolved through the SHARED reader. A second z-resolution vocabulary is its own defect
         // class here — F-2, F-5, F-6 and this path must all read a z the same way.
         assert!(
@@ -4012,7 +3964,10 @@ mod t939_2_batch_reassign {
     /// `faction.squadIds`, and every vehicle attached to it.
     #[test]
     fn the_batch_uses_the_keep_source_core_path_not_the_garbage_collecting_one() {
-        let ops = live_code(REASSIGN_RS);
+        let ops = live_code(concat!(
+            include_str!("../state/operations/reassign.rs"),
+            include_str!("../../../../mission-core/src/doc/operations/reassign.rs")
+        ));
         assert!(
             ops.contains("move_slot_to_squad_keep_source("),
             "T-939.2: the batch must move through move_slot_to_squad_keep_source"
@@ -4081,7 +4036,15 @@ mod t939_2_batch_reassign {
             "T-939.2: Revert must restore each slot's original squad from the OPEN snapshot"
         );
         let ops = live_code(REASSIGN_RS);
-        let restore = only_body(&ops, "pub fn restore_slot_squads(");
+        let domain = live_code(include_str!(
+            "../../../../mission-core/src/doc/operations/reassign.rs"
+        ));
+        let restore = [
+            only_body(&ops, "pub fn restore_slot_squads("),
+            only_body(&domain, "pub fn restore_moves("),
+            only_body(&domain, "pub fn restore_slot_squads("),
+        ]
+        .concat();
         for required in [
             "snap.id",
             "snap.squad",
@@ -4101,8 +4064,10 @@ mod t939_2_batch_reassign {
 
     #[test]
     fn reassign_and_revert_read_raw_membership_for_hidden_single_slot_attributes() {
-        let ops = live_code(REASSIGN_RS);
-        for entry in ["pub fn reassign_slots(", "pub fn restore_slot_squads("] {
+        let ops = live_code(include_str!(
+            "../../../../mission-core/src/doc/operations/reassign.rs"
+        ));
+        for entry in ["pub fn reassign_slots(", "pub fn restore_moves("] {
             let body = only_body(&ops, entry);
             assert!(
                 body.contains("core.slot_squad_id("),

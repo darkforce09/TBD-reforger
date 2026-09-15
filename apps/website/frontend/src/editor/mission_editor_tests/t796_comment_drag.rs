@@ -173,13 +173,13 @@ fn the_move_commit_partitions_comments_to_their_own_mutator() {
 /// pins the mutator's one-txn contract at its source.
 #[test]
 fn move_comment_is_one_transaction() {
-    let ops = live_code(include_str!("../state/operations/entity.rs"));
+    let ops = live_code(crate::v2::core::test_support::editor_operations::ENTITY);
     let body = only_body(&ops, "pub fn move_comment(");
     assert!(
         body.contains("set_comment_position("),
         "T-796: move_comment must write through the core's set_comment_position"
     );
-    let store = include_str!("../../../../../../crates/map-engine-core/src/doc/store.rs");
+    let store = include_str!("../../../../mission-core/src/doc/store/comments.rs");
     // set_comment_position delegates the write to set_comment_field (the shared read-modify-write
     // for all three comment field edits), which is where the SINGLE transaction is opened.
     let sp = only_body(store, "pub fn set_comment_position(");

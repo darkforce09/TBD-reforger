@@ -137,7 +137,7 @@ fn undo_assignment_round_trips_visibility() {
 /// Trap 1 — assign path must not stamp `editorHidden` / call the T-701 mutator.
 #[test]
 fn assign_crew_seat_does_not_write_editor_hidden() {
-    let ops = live_code(include_str!("../state/operations/entity.rs"));
+    let ops = live_code(crate::v2::core::test_support::editor_operations::ENTITY);
     let body = only_body(&ops, "pub fn assign_crew_seat");
     assert!(
         !body.contains("editorHidden") && !body.contains("set_slots_editor_hidden"),

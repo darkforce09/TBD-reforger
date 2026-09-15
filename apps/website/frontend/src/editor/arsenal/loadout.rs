@@ -6,6 +6,9 @@
 //! public item, so the `crate::editor::arsenal::X` paths external callers use are stable.
 
 use std::collections::{HashMap, HashSet};
+pub use website_mission_core::doc::operations::cargo::commit_writes;
+pub use website_mission_core::doc::operations::cargo::BufferedLoadout;
+pub use website_mission_core::doc::operations::cargo::LoadoutWrite;
 
 use crate::editor::arsenal::arsenal_rules::{
     self as rules, index_by_name, validate_loadout, CompatFeed,
@@ -790,51 +793,6 @@ pub(super) fn import_summary(name: &str, doc: &ImportedLoadout, catalog_modpack:
 
 /* ═════ T-699 (3DEN-LOAD-001 / -002 / -010) — the loadout BUFFER: Copy · Apply · Remove Everything ═════ */
 
-/// **A buffer, not an inheritance hierarchy — and that is the whole design.**
-///
-/// T-687 proposed OFCRA-style loadout INHERITANCE (parent kits, defaults-by-role, children that
-/// *resolve* against a template) and the operator cancelled it outright; it is filed REJECTED, not
-/// deferred, precisely so a later synthesis pass cannot revive it without asking again. T-699 is
-/// the practical half that survives, and the difference is structural rather than a matter of
-/// taste: **nothing in this module stores a relationship.** `editor_ops::copy_loadouts_from_selection`
-/// snapshots bytes that already exist on the sources, [`plan_apply`] writes them onto other entities, and
-/// from that instant the two documents are strangers — editing the source later changes nothing,
-/// because no target holds a reference to it. There is no parent, no template, no default-by-role
-/// and no resolution step, and the [`BufferedLoadout`] type below is the evidence: a source id kept
-/// for the receipt, and a `String` of JSON. Add a field pointing the other way and you have built
-/// the cancelled ticket.
-///
-/// **Three verbs, and the exclusions are as load-bearing as the inclusions.** Copy, Apply and
-/// Remove Everything ship. The nine per-category strip variants that 3den E7 also lists (remove
-/// NVGs / vests / goggles / headgear / weapons / …) are marked `maybe` upstream and are deliberately
-/// **not** here: each would be a second, narrower writer over the same document field, and nine of
-/// them is nine chances for `wear`-key vocabulary to drift out of step with [`ROWS`]. Remove
-/// Everything needs no vocabulary at all — see [`stripped_loadout`].
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BufferedLoadout {
-    /// The entity the bytes were copied off. Reported in the receipt and in refusal messages so a
-    /// rejected Apply names *which* buffered loadout is unusable; it is never resolved or followed.
-    pub source_id: String,
-    /// The source's `SlotLoadoutV2` JSON, verbatim. `None` when the source carried no `loadout` key
-    /// at all — a **bare** entity, which is a legitimate thing to buffer and to apply (it is how you
-    /// say "make these look like that empty one"), and which is not the same value as
-    /// [`stripped_loadout`]; see there for why the two differ.
-    pub loadout_json: Option<String>,
-}
-
-/// One document write an accepted plan wants to make: exactly one `editor_ops::set_loadout`, which
-/// is exactly one core transaction, which is exactly one undo step. The plan is a `Vec` of these
-/// **because that is the honest shape of the operation** — see [`commit_writes`] for the undo
-/// arithmetic and why it is reported rather than papered over.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct LoadoutWrite {
-    pub target_id: String,
-    /// Which buffered entity this loadout was drawn from; `None` for Remove Everything, which has
-    /// no source.
-    pub source_id: Option<String>,
-    pub loadout_json: Option<String>,
-}
-
 /// The odd 64-bit constant SplitMix64 advances its state by (the odd-gamma Weyl sequence from
 /// Steele/Lea/Flood 2014). Used both as the per-Apply seed step and to decorrelate the ordinal.
 const APPLY_SEED_GAMMA: u64 = 0x9E37_79B9_7F4A_7C15;
@@ -1031,43 +989,6 @@ pub fn plan_remove(targets: &[String]) -> Vec<LoadoutWrite> {
         .collect()
 }
 
-/// Push a plan into the document, and **return how many writes actually reached it**.
-///
-/// ⚠️ **THE UNDO ARITHMETIC, STATED HONESTLY (T-732).** Every `commit` here is one
-/// `editor_ops::set_loadout` → one `MissionDocCore::update_slot_loadout` → one Yrs transaction, and
-/// the store runs with `capture_timeout_millis = 0`, which makes **every transaction its own undo
-/// step**. So an Apply over N entities costs **N** Ctrl+Z presses, not one. That is not a choice
-/// this slice made; it is the absence of an atomic multi-entity loadout write in the core, filed as
-/// **T-732** and hit before by wave 111's T-645 and by the position lane's `commit_positions`. The
-/// core *does* have per-entity one-txn batches where somebody built one — `set_slots_editor_hidden`
-/// is exactly that shape for `editorHidden` — but there is none for `loadout`, and `store.rs` is not
-/// this slice's to change. T-686 got one undo step for free because an import is one entity; Apply
-/// is not, and pretending otherwise would be the lie this comment exists to refuse.
-///
-/// What this function does about it: it **counts sink acknowledgements**, and
-/// [`apply_receipt`] reports that number to the author rather than the number that was planned. A
-/// commit path that silently dropped writes would produce a receipt that says so, instead of a
-/// receipt that says "applied 6" over 4 landed documents. The sink returns `bool` (T-770) — the
-/// production path is `MissionDocCore::update_slot_loadout`, which returns `false` on an unknown
-/// id — so the WARNING arm is reachable when the document refused a write, not merely when the
-/// loop itself was skipped. `commit` is a parameter and not a direct `set_loadout` call for the
-/// same reason: it makes the arithmetic testable natively, where `editor_ops` (a wasm32-only
-/// module) cannot be reached at all. This is also the single seam a future T-732 fix touches —
-/// when a batch API exists, this loop becomes one call, the returned count becomes 1, and the
-/// receipt starts telling the truth about *that* without another edit.
-pub fn commit_writes(
-    writes: &[LoadoutWrite],
-    mut commit: impl FnMut(&str, Option<String>) -> bool,
-) -> usize {
-    let mut done = 0usize;
-    for w in writes {
-        if commit(&w.target_id, w.loadout_json.clone()) {
-            done += 1;
-        }
-    }
-    done
-}
-
 /// **T-779 — the single-write sibling of [`commit_writes`]: the history tail fires only if the
 /// document acknowledged the write.**
 ///
@@ -1231,7 +1152,7 @@ mod tests {
         let (rows, present) = rules::cargo_from_loadout(Some(&lo));
         assert!(present && rows.is_empty());
         // Seeded rows survive a pick-edit persist verbatim.
-        let seeded = rules::seed_cargo(
+        let seeded = website_mission_core::doc::operations::cargo_rules::seed_cargo(
             Some(&picks_to_loadout(&p, &names(), None).unwrap()),
             &[rules::CargoRow {
                 container: "pants".into(),
@@ -2602,11 +2523,16 @@ mod tests {
             // a cleared field, and really does not fire on this document.
             let defaults = vec![row("vest", "res://mag_stanag", 3)];
             assert!(
-                rules::seed_cargo(None, &defaults).is_some(),
+                website_mission_core::doc::operations::cargo_rules::seed_cargo(None, &defaults)
+                    .is_some(),
                 "a cleared loadout field re-seeds — this is what the strip must not leave behind"
             );
             assert!(
-                rules::seed_cargo(Some(&stripped), &defaults).is_none(),
+                website_mission_core::doc::operations::cargo_rules::seed_cargo(
+                    Some(&stripped),
+                    &defaults
+                )
+                .is_none(),
                 "the stripped document must be seed-ineligible, or Remove Everything undoes itself"
             );
 

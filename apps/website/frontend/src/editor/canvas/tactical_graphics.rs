@@ -56,6 +56,9 @@
 
 use serde_json::Value;
 
+#[cfg(any(test, target_arch = "wasm32"))]
+pub use website_mission_core::doc::operations::tactical_graphics::TacticalDraft;
+
 /// Click tolerance for [`pick_tactical_graphic`], in SCREEN pixels. Matches `CONN_PICK_PX`: a
 /// hairline is 1 px and nobody can click a 1 px target.
 pub(crate) const TG_PICK_PX: f64 = 6.0;
@@ -501,55 +504,6 @@ pub(crate) fn pick_tactical_vertex(
  * the wasm module is left as thin glue.
  */
 
-/// An in-flight multi-click draw.
-#[derive(Clone, Debug, PartialEq)]
-pub struct TacticalDraft {
-    /// The armed kind — one of `map_engine_core::mission::tactical_graphics::KINDS`.
-    pub kind: String,
-    /// Vertices placed so far, in click order.
-    pub verts: Vec<(f64, f64)>,
-}
-
-impl TacticalDraft {
-    /// How many more vertices before the draw may commit.
-    ///
-    /// Delegates to the CORE validator's own floor rather than restating it, so the canvas can
-    /// never complete a graphic `/compiled` would refuse — the two numbers are one function.
-    #[must_use]
-    pub fn needed(&self) -> usize {
-        map_engine_core::mission::tactical_graphics::min_points(&self.kind)
-            .unwrap_or(2)
-            .saturating_sub(self.verts.len())
-    }
-
-    // NO `hint()` HELPER HERE. A "3 vertices — one more needed" string wants a dock row to render
-    // it, and the only surfaces that could are under `panels/`, which this slice does not own —
-    // so the method would be dead code that only its own test ever called, which is the shape a
-    // reader mistakes for a live feature. `needed()` is the fact; the wording is the caller's.
-}
-
-/// A stable id unique within `rows`: `tg_{kind initials}_{n}`, `n` the first free index.
-///
-/// Minted against the LIVE rows rather than from a monotonic counter, so an id can never collide
-/// after an undo has removed the row a counter would have skipped past — the hazard
-/// `OpsCtx::next_id` guards against by re-proving uniqueness against the document.
-#[must_use]
-pub(crate) fn mint_graphic_id(rows: &[Value], kind: &str) -> String {
-    let stem: String = kind.split('_').filter_map(|w| w.chars().next()).collect();
-    for n in 1..=u32::MAX {
-        let candidate = format!("tg_{stem}_{n}");
-        let taken = rows
-            .iter()
-            .any(|r| r.get("id").and_then(Value::as_str) == Some(candidate.as_str()));
-        if !taken {
-            return candidate;
-        }
-    }
-    // Unreachable in practice (the schema caps the block at 128 rows long before 2^32); the stem
-    // alone is still a legal non-empty id rather than a panic on a live document.
-    format!("tg_{stem}")
-}
-
 /// The live graphics for `core` — the wasm-side document read.
 ///
 /// Reads `meta.environment.tacticalGraphics` out of `small_maps_json`, the SAME projection
@@ -572,6 +526,7 @@ pub(crate) fn live_tactical_graphics(
 mod tests {
     use super::*;
     use serde_json::json;
+    use website_mission_core::doc::operations::tactical_graphics::mint_graphic_id;
 
     fn env(rows: Value) -> Value {
         json!({"weather": "clear", "tacticalGraphics": rows})

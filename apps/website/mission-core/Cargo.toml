@@ -10,14 +10,13 @@ description = "Headless mission compilation, validation, and document operations
 [features]
 default = ["compiler"]
 compiler = ["dep:serde", "dep:serde_json", "dep:thiserror"]
-doc = ["compiler"]
+doc = ["compiler", "dep:yrs"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", features = ["preserve_order"], optional = true }
 thiserror = { version = "2", optional = true }
+yrs = { version = "0.27", optional = true }
 
 [dev-dependencies]
-# Temporary test-only access while document ownership moves in the next phase.
-map-engine-core = { path = "../../../crates/map-engine-core", features = ["mission", "doc"] }
 serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }

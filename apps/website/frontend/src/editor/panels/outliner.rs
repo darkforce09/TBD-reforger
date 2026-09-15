@@ -31,6 +31,11 @@
 #![allow(dead_code)]
 
 use std::collections::HashSet;
+pub use website_mission_core::doc::operations::rows::CommentRow;
+pub use website_mission_core::doc::operations::rows::FactionRow;
+pub use website_mission_core::doc::operations::rows::LayerRow;
+pub use website_mission_core::doc::operations::rows::SlotRow;
+pub use website_mission_core::doc::operations::rows::SquadRow;
 
 /// The virtual root's id. Not a doc id — see the module docs.
 pub const UNFILED_ID: &str = "__unfiled";
@@ -42,46 +47,6 @@ const SLOT_FALLBACK_LABEL: &str = "Unit";
 /// T-651 — an untitled comment's row label (the `SLOT_FALLBACK_LABEL` idiom: a row must always be
 /// clickable, and a blank title would render a zero-width row you cannot select to fix).
 pub const COMMENT_FALLBACK_LABEL: &str = "Comment";
-
-/// An `editorLayers` row, as carried by the doc's `small_maps_json()` → `editorLayersById`.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct LayerRow {
-    pub id: String,
-    pub name: String,
-    pub parent_id: Option<String>,
-    pub entity_ids: Vec<String>,
-    /// T-665 — the layer's own `hidden` VIEW flag (per-layer visibility). Absent in the doc ⇒
-    /// `false`. This is the layer's OWN bit, not the resolved one: [`build_outliner`] passes the
-    /// inherited-hidden state to the glyph via [`OutlinerNode::hidden`] so a child under a hidden
-    /// parent renders dimmed too, but the eye toggle flips only this layer's own flag.
-    pub hidden: bool,
-    /// T-665 — the layer's own `locked` transform-lock flag (absent ⇒ `false`); same own-vs-resolved
-    /// split as [`Self::hidden`].
-    pub locked: bool,
-}
-
-/// The two slot fields the tree needs, adapted from the materialized SoA.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SlotRow {
-    pub id: String,
-    pub role: String,
-}
-
-/// T-651 — one `commentsById` row as the tree needs it (`PLACE-COMMENT-001`).
-///
-/// A comment is an **editor-only virtual entity**: it appears here, files into a layer and drags
-/// like a slot, and it NEVER reaches the compiled mission (the exclusion is structural, in
-/// `map-engine-core`'s `doc/store.rs` — `mission::flatten::EditorPayload` declares no `comments`
-/// key). This row carries no position: the tree does not draw the map, and leaving `x`/`z` out
-/// means a drag that moves a comment cannot desync a stale copy held by the outliner.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CommentRow {
-    pub id: String,
-    /// ATTR-FIELD-CMT-TITLE — the row label. Empty falls back to [`COMMENT_FALLBACK_LABEL`].
-    pub title: String,
-    /// ATTR-FIELD-CMT-TOOLTIP — the long body, rendered as the row's hover text.
-    pub tooltip: String,
-}
 
 /// What a row represents — the view needs this to route a click (folder → active layer, slot →
 /// selection) and to pick a glyph.
@@ -337,31 +302,6 @@ fn build_layer<'a>(
 }
 
 /* ───────────────────────────── T-168 — ORBAT tree ───────────────────────────── */
-
-/// A `factions` row from the doc's `small_maps_json()` → `factionsById`.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct FactionRow {
-    pub id: String,
-    /// Side / faction key (`BLUFOR` / `OPFOR` / `INDFOR`) — T-180.1; must not be dropped.
-    pub key: String,
-    pub name: String,
-    /// Ordered squad ids under this faction (`faction.squadIds`).
-    pub squad_ids: Vec<String>,
-}
-
-/// A `squads` row from the doc's `small_maps_json()` → `squadsById`.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SquadRow {
-    pub id: String,
-    pub name: String,
-    pub faction_id: String,
-    /// Ordered slot ids in this squad (`squad.slotIds`).
-    pub slot_ids: Vec<String>,
-    /// T-180.6 — `squad.leaderSlotId` (empty when absent); drives ORBAT SL badge.
-    pub leader_slot_id: String,
-    /// T-180.7 — `squad.vehicleIds` (badge when non-empty; attach wiring in T-180.8).
-    pub vehicle_ids: Vec<String>,
-}
 
 /// Build the ORBAT browse tree: faction → squad → slot, in doc order (`squadIds` / `slotIds`).
 /// A dangling id (deleted slot/squad, container not yet patched) is skipped — the `build_outliner`

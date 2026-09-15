@@ -5,4 +5,6 @@
 //! string id); a uniform CSR grid answers rect + nearest queries. No external deps.
 
 pub mod cluster;
+/// World-space queries that return row handles without document identifiers.
+pub mod picking;
 pub mod point_index;

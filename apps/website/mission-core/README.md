@@ -1,20 +1,20 @@
 # Mission core
 
-`website-mission-core` owns headless mission compilation and validation. The API consumes the default `compiler` feature. The frontend currently reaches these interfaces through the temporary `map-engine-core` re-exports while the document store moves into this crate.
+`website-mission-core` owns headless mission compilation, validation, and the interactive mission document. The API uses the default `compiler` feature; the editor enables `doc` for Yrs and document operations.
 
 ## Layout
 
-- `src/mission/ast`: authored payload and compiled wire structures, faction hierarchy projections.
-- `src/mission/compiler`: saved payloads, export envelopes, game-document compilation, and kit aliases.
-- `src/mission/extensions`: the supported authored-block registry and validators.
-- `src/mission/validation`: validation registry, failure fixtures, wire safety, and cargo constraints.
+- `src/mission/ast`: authored payloads and compiled wire structures.
+- `src/mission/compiler`: payload export, game-document compilation, and kit aliases.
+- `src/mission/extensions`: authored-block contracts and validators.
+- `src/mission/validation`: validation rules, failure fixtures, wire safety, and cargo constraints.
 - `src/slot_line`: plain-text ORBAT summaries.
-- `src/doc`: scaffold for the document store and operations relocation.
+- `src/doc`: CRDT storage, ordered membership, row-based picking, and editor operations.
 
 ## Contracts
 
-Mission wire keys, numeric conversions, authored order, diagnostics, and resource-substitution behavior are preserved. The crate does not import graphics, DOM, or UI types. The temporary development dependency keeps compiler/document round-trip tests live until document ownership is transferred; it is not a production dependency.
+Wire keys, numeric conversions, authored order, diagnostics, and resource substitutions are preserved. Mission-core has no graphics, DOM, or UI dependencies. Host interaction state remains in the frontend; document operations accept explicit values and callbacks. The document and compiler tests use this crate directly.
 
 ## Verification
 
-Run `cargo test -p website-mission-core --all-features`. The feature tripwire rejects incomplete test selections. Each production Rust file stays below 500 lines and tests below 1,000; tests are declared out of line.
+Run `cargo test -p website-mission-core --all-features` with the workspace target directory configured. The feature tripwire rejects incomplete test selections. Production Rust files remain below 500 lines, and out-of-line test files below 1,000.

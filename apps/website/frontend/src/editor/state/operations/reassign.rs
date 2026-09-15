@@ -1,28 +1,8 @@
-//! T-939.2 — batch faction / squad reassignment for the Attributes modal.
-//!
-//! One entry point, [`reassign_slots`], which moves **every** id it is given into one destination
-//! squad inside **one** undo group. It is the operation half of the modal's faction selector and
-//! squad picker; the pure decision that picks the destination (and writes the refusals) is
-//! [`crate::editor::panels::attributes_modal::plan_reassign`], which lives beside the modal because
-//! it must be reachable from `cargo test` — this module is `wasm32`-only (its parent façade is), so
-//! a decision buried in here could only ever be pinned by scraping source.
-//!
-//! **Two things this module is careful about.**
-//!
-//! *The source squad survives.* Moves go through
-//! [`map_engine_core::doc::MissionDocCore::move_slot_to_squad_keep_source`], **not** the default
-//! `move_slot_to_squad`, whose emptied-source branch garbage-collects the squad row, prunes it out
-//! of `faction.squadIds` and deletes every vehicle attached to it. That is the right contract for a
-//! one-slot drag-refile and exactly the wrong one here: "move these five to Alpha" is the operator
-//! moving people, not disbanding Bravo and scrapping its transport.
-//!
-//! *Side keys are DERIVED, not stored.* `resolve_slot_side_key` walks `slot.squadId →
-//! squad.factionId → faction.key`, so there is no side-key column for this module to write and no
-//! way for it to forget one: rewriting `squadId` **is** the side change. The core's `SideKeyMemo` is
-//! keyed by squad id and is invalidated by the `observe_after_transaction` bump every committed
-//! transaction fires, so the next `materialize()` re-derives. The doc-level proof of both halves is
-//! native and sits with the primitive, in `store.rs`'s own tests
-//! (`keep_source_move_carries_the_derived_side_key_across_factions` and siblings).
+//! Role: reassign.
+//! Position: `editor/state/operations` in the frontend editor adapter.
+//! Signals & state: host signals, input state, and explicit mission-core calls.
+//! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
+
 #![cfg(target_arch = "wasm32")]
 
 use super::batch::with_batch;
@@ -30,34 +10,15 @@ use super::context::{faction_rows, squad_rows, OPS_CTX};
 use crate::editor::panels::attributes_modal::plan_reassign;
 use crate::editor::state::history as mission_history;
 
-/// Where a batch reassign sends the selection.
-///
-/// `squad_id` empty means "this faction, its first squad" — the faction selector's commit. Keeping
-/// the faction on the target even when a squad is named is what makes the cross-faction refusal
-/// possible at all: without it the operation could not tell a deliberate pick from a squad that
-/// drifted under another faction while the modal was open.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct ReassignTarget {
-    /// The faction picked in the modal (a `factionsById` row id).
-    pub faction_id: String,
-    /// The squad picked in the modal, or empty for "the faction's first squad".
-    pub squad_id: String,
-}
+/// Expose website mission core :: doc :: operations :: reassign ::  reassign target at this domain boundary.
+pub use website_mission_core::doc::operations::reassign::ReassignTarget;
 
 /// Move every id in `ids` into the squad `target` resolves to, as ONE undo group.
-///
-/// Returns the number of slots actually moved, or the refusal reason the modal shows. A slot
-/// already in the destination is not a failure and not a move: the core's own no-op guard skips it
-/// and it is not counted, so re-picking the current squad reports `0` rather than pretending.
-///
-/// The `with_batch` bracket is the whole reason this is one function and not a loop at the call
-/// site: each id is its own core transaction, and without the group a five-slot reassign would cost
-/// five Ctrl+Z presses to undo — the acceptance says one.
 pub fn reassign_slots(ids: &[String], target: &ReassignTarget) -> Result<usize, String> {
     if ids.is_empty() {
         return Err("Nothing is selected.".to_string());
     }
-    // Resolve BEFORE opening the undo group: a refusal must not leave an empty group behind.
+
     let dest = resolve_destination(target)?;
     let ids = ids.to_vec();
     let moved = with_batch("reassign-slots", move || {
@@ -70,53 +31,23 @@ pub fn reassign_slots(ids: &[String], target: &ReassignTarget) -> Result<usize, 
             let Some(core) = d.as_ref() else {
                 return 0usize;
             };
-            let mut moved = 0usize;
-            for id in &ids {
-                // The core no-ops a move into the squad the slot is already in; counting those
-                // would report work that never happened, and the modal reports this number.
-                // Raw membership is also necessary for hidden single-slot Attributes: the SoA
-                // filters them out even though read_attrs keeps their authored values editable.
-                match core.slot_squad_id(id) {
-                    None => continue, // gone from the doc since the selection was taken
-                    Some(current) if current == dest => continue,
-                    Some(_) => {}
-                }
-                core.move_slot_to_squad_keep_source(id, &dest);
-                moved += 1;
-            }
-            moved
+            website_mission_core::doc::operations::reassign::reassign_slots(core, ids, dest)
         })
     });
     if moved > 0 {
-        // Outside the borrow above, like every other mutator here: `after_local_edit` opens its own
-        // read borrows (rebind + persist + the ORBAT rebuild the Outliner reads).
         mission_history::after_local_edit();
     }
     Ok(moved)
 }
 
-/// Restore each slot's own on-open squad, including a selection split across factions/squads.
-/// This adds one membership undo group after Revert's existing transform/identity writes. Slots
-/// already home contribute no writes or history tail. Keep both ends of each move, including any
-/// vehicles authored on a destination that becomes empty again during Revert.
+/// Restore each slot's own on-open squad, including a selection split across factions/squads. This adds one membership undo group after Revert's existing transform/identity writes. Slots already home contribute no writes or history tail. Keep both ends of each move, including any vehicles authored on a destination that becomes empty again during Revert.
 pub fn restore_slot_squads(snapshot: &[super::attrs::SlotAttrs]) -> usize {
     let moves = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        let squads = squad_rows(core);
-        Some(
-            snapshot
-                .iter()
-                .filter(|snap| {
-                    core.slot_squad_id(&snap.id)
-                        .is_some_and(|s| s != snap.squad)
-                        && squads.iter().any(|s| s.id == snap.squad)
-                })
-                .map(|snap| (snap.id.clone(), snap.squad.clone()))
-                .collect::<Vec<_>>(),
-        )
+        website_mission_core::doc::operations::reassign::restore_moves(core, snapshot)
     });
     let moves = moves.unwrap_or_default();
     if moves.is_empty() {
@@ -132,10 +63,7 @@ pub fn restore_slot_squads(snapshot: &[super::attrs::SlotAttrs]) -> usize {
             let Some(core) = d.as_ref() else {
                 return 0;
             };
-            for (id, squad) in &moves {
-                core.move_slot_to_squad_keep_source(id, squad);
-            }
-            moves.len()
+            website_mission_core::doc::operations::reassign::restore_slot_squads(core, moves)
         })
     });
     if moved > 0 {
@@ -163,8 +91,6 @@ pub fn reassign_rows() -> (
     })
 }
 
-/// `target` → destination squad id, or the refusal reason. Reads the rows live so the decision is
-/// made against the document as it is now, not as the last render saw it.
 fn resolve_destination(target: &ReassignTarget) -> Result<String, String> {
     let (factions, squads) = reassign_rows();
     if factions.is_empty() {

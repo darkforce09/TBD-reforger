@@ -8,5 +8,6 @@
 //! on a split file sees exactly the text the single file used to hold.
 
 pub mod class_r_scrub;
+pub mod editor_operations;
 pub mod fixtures;
 pub mod pins;

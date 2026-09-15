@@ -10,9 +10,9 @@ pub mod mission;
 /// Plain-text ORBAT slot formatting.
 pub mod slot_line;
 
-/// Expose map engine core :: doc at this domain boundary.
-#[cfg(all(test, feature = "doc"))]
-pub use map_engine_core::doc;
+/// Mission CRDT state, projections, and document operations.
+#[cfg(feature = "doc")]
+pub mod doc;
 
 #[cfg(test)]
 #[path = "tests/feature_gate.rs"]

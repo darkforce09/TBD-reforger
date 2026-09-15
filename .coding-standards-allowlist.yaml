@@ -189,16 +189,6 @@
   expires: 2026-11-13
 
 - rule: SIZE-3
-  path: crates/map-engine-core/src/doc/apply_faction.rs
-  reason: T-151 map-engine; split follow-up
-  expires: 2026-11-13
-
-- rule: SIZE-3
-  path: crates/map-engine-core/src/doc/store.rs
-  reason: T-151 map-engine; split follow-up
-  expires: 2026-11-13
-
-- rule: SIZE-3
   path: crates/map-engine-core/src/slots_gpu.rs
   reason: T-151 map-engine; split follow-up
   expires: 2026-11-13

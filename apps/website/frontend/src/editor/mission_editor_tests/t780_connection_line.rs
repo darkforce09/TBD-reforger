@@ -215,8 +215,9 @@ fn map_delete_calls_the_panels_delete_connection() {
 /// the core's `remove_connection` returns unit and cannot report what it removed afterwards.
 #[test]
 fn delete_connection_answers_the_document_not_a_count() {
-    let ops = live_code(include_str!("../state/operations/entity.rs"));
-    let verb = only_body(&ops, "pub fn delete_connection(");
+    let ops = live_code(crate::v2::core::test_support::editor_operations::ENTITY);
+    let domain = live_code(crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY);
+    let verb = only_body(&domain, "pub fn delete_connection(");
     let count = ["connection", "_count("].concat();
     assert!(
         !verb.contains(&count),
@@ -259,8 +260,12 @@ fn an_edge_selection_and_an_entity_selection_cannot_coexist() {
             include_str!("../state/operations/attrs.rs"),
             include_str!("../state/operations/cargo.rs"),
             include_str!("../state/operations/compositions.rs"),
-            include_str!("../state/operations/context.rs"),
-            include_str!("../state/operations/entity.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../mission-core/src/doc/operations/compositions.rs"
+            )),
+            crate::v2::core::test_support::editor_operations::CONTEXT,
+            crate::v2::core::test_support::editor_operations::ENTITY,
             include_str!("../state/operations/transform.rs"),
         ]
         .concat(),
@@ -340,7 +345,7 @@ fn no_second_delete_path_and_no_hardcoded_kind_list() {
 #[test]
 fn every_history_path_reaches_the_doc_tick_the_lane_binds_on() {
     let hist = live_code(include_str!("../state/history.rs"));
-    let ops = live_code(include_str!("../state/operations/context.rs"));
+    let ops = live_code(crate::v2::core::test_support::editor_operations::CONTEXT);
     let signals = ["refresh_", "signals("].concat();
     let docks = ["editor_ops", "::", "refresh_docks()"].concat();
     let tail = ["after_doc", "_change(ctx)"].concat();
@@ -416,14 +421,19 @@ fn connection_pins_are_load_bearing() {
             include_str!("../state/operations/attrs.rs"),
             include_str!("../state/operations/cargo.rs"),
             include_str!("../state/operations/compositions.rs"),
-            include_str!("../state/operations/context.rs"),
-            include_str!("../state/operations/entity.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../mission-core/src/doc/operations/compositions.rs"
+            )),
+            crate::v2::core::test_support::editor_operations::CONTEXT,
+            crate::v2::core::test_support::editor_operations::ENTITY,
             include_str!("../state/operations/transform.rs"),
         ]
         .concat(),
     );
     let gate = ["connection_id", "_in_doc("].concat();
-    let verb_body = only_body(&ops, "pub fn delete_connection(");
+    let domain = live_code(crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY);
+    let verb_body = only_body(&domain, "pub fn delete_connection(");
     assert!(verb_body.contains(&gate), "canary: the real verb gates");
     assert!(
         !verb_body.replacen(&gate, "/* hollow */", 1).contains(&gate),

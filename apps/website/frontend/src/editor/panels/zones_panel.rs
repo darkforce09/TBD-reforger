@@ -7,7 +7,10 @@
 #![allow(dead_code)]
 // Ungated: the native `zones_panel` stub returns `AnyView` and calls `.into_any()`, so it needs
 // leptos in scope too (the wasm views additionally use the tree row recipes + MaterialIcon).
+
 use leptos::prelude::*;
+#[cfg(any(test, target_arch = "wasm32"))]
+pub use website_mission_core::doc::operations::zones::DrawTarget;
 
 #[cfg(target_arch = "wasm32")]
 use crate::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
@@ -1194,38 +1197,6 @@ where
     ProjectedOwnerLine { x1, y1, x2, y2 }
 }
 
-/// T-079 — WHICH COLLECTION a draw commits into. The trigger AREA is a SECOND CONSUMER of the
-/// shipped zone draw tool (the ticket's explicit constraint: "parameterize the draw flow by
-/// target-kind, do not fork it"). Every stage of the draw — the arm, the multi-click accumulation,
-/// the reshape, the commit — is identical for a zone and a trigger; the ONLY difference is which pair
-/// of core mutators the final commit calls (`add_*_zone` / `set_zone_*` vs `add_*_trigger` /
-/// `set_trigger_*`). So the difference is carried as this one-bit target on the in-flight draft
-/// rather than as a forked `begin_trigger_draw` / `advance_trigger_draw` / … set that would duplicate
-/// the whole geometry state machine and be free to drift from it.
-///
-/// It lives here beside [`ZoneShape`] — the pure, native-tested home — for the same reason `ZoneShape`
-/// does: `editor_ops` (wasm-only) branches on it, and keeping it here is what lets a native
-/// `cargo test -p website-frontend` prove any pure logic that reads it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum DrawTarget {
-    /// The play-area / objective zones the T-582 panel authors (`zonesById`).
-    Zone,
-    /// T-079 — the trigger areas the Triggers palette authors (`triggersById`).
-    Trigger,
-}
-
-impl DrawTarget {
-    /// A human word for the target, for the live draw hint ("Drawing a boundary circle" vs
-    /// "Drawing a presence trigger circle"). Presentation only.
-    #[must_use]
-    pub fn noun(self) -> &'static str {
-        match self {
-            Self::Zone => "zone",
-            Self::Trigger => "trigger",
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::{
@@ -1518,7 +1489,13 @@ mod tests {
     /// not, and the alternative is no assertion at all.
     #[test]
     fn every_t211_mutator_has_a_caller() {
-        const OPS: &str = include_str!("../state/operations/entity.rs");
+        let ops = [
+            crate::v2::core::test_support::editor_operations::ENTITY,
+            crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY,
+        ]
+        .concat();
+        #[allow(non_snake_case)]
+        let OPS: &str = &ops;
         // The eleven, verbatim from `doc/store.rs`'s T-211 block.
         for m in [
             "add_circle_zone",
@@ -1642,7 +1619,7 @@ mod tests {
     #[test]
     fn t792_cancel_zone_draw_bumps_the_dock_tick() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-        let ops = live_code(include_str!("../state/operations/entity.rs"));
+        let ops = live_code(crate::v2::core::test_support::editor_operations::ENTITY);
         let body = only_body(&ops, "pub fn cancel_zone_draw() -> bool");
         assert!(
             body.contains("bump_doc_tick()"),
@@ -1945,7 +1922,7 @@ mod tests {
     #[test]
     fn whole_terrain_affordance_is_wired() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
-        let ops = live_code(include_str!("../state/operations/entity.rs"));
+        let ops = live_code(crate::v2::core::test_support::editor_operations::ENTITY);
         let body = only_body(&ops, "pub fn add_whole_terrain_zone() -> Option<String>");
 
         // It reads the LIVE terrain off the document — both halves, so the world guard has two

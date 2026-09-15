@@ -23,7 +23,7 @@ fn editor_live() -> String {
 /// `editor_ops.rs`, scrubbed to live code. It is wasm-only, so nothing in it runs — but its
 /// wiring is pinnable as source (multiple modules already `include_str!` it for this).
 fn ops_live() -> String {
-    live_code(include_str!("../state/operations/entity.rs"))
+    live_code(crate::v2::core::test_support::editor_operations::ENTITY)
 }
 
 // ───────────────────────── ATTR-OPEN-001 — dblclick opens Attributes for vehicles too ────────

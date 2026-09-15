@@ -77,8 +77,8 @@ use tbd_gate::{Finding, Kind, NotRun, Pattern, Verdict, gate};
 const WB_REL: &str = "packages/tbd-schema/registry/registry-items.workbench.json";
 /// What `SpawnMissionEntities` actually reads at mission load.
 const MOD_REL: &str = "apps/mod/tbd-framework/Data/registry.json";
-/// The frontend derivation this file mirrors; pinned by two `require`s, never parsed.
-const FE_REL: &str = "apps/website/frontend/src/editor/arsenal/asset_catalog.rs";
+/// The mission-domain derivation used by the frontend; pinned independently of this mirror.
+const FE_REL: &str = "apps/website/mission-core/src/doc/operations/assets.rs";
 /// Kinds the Objects palette offers. Anything else is a character, vehicle or gear item, and
 /// belongs to a different palette with a different alias namespace.
 const OBJECT_KINDS: &[&str] = &["crate", "other"];
@@ -106,8 +106,8 @@ const ALIAS_RE: &str = r"\A(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+\z";
 /// The two `grep -q` pins on the frontend mirror, in the script's order.
 #[rustfmt::skip]
 const FE_PINS: &[(&str, &str)] = &[
-    ("derive_object_alias missing from asset_catalog.rs", "pub fn derive_object_alias"),
-    ("KNOWN comp:checkpoint_small reverse-hit missing from asset_catalog.rs", POC_ALIAS),
+    ("derive_object_alias missing from mission-core assets.rs", "pub fn derive_object_alias"),
+    ("KNOWN comp:checkpoint_small reverse-hit missing from mission-core assets.rs", POC_ALIAS),
 ];
 
 pub fn verify_t439(repo_root: &Path) -> Result<u8> {

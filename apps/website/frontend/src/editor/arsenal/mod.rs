@@ -37,7 +37,7 @@
 //!   made in this paragraph.) Line cites are otherwise omitted on purpose: five drifted during the
 //!   127–141 remediation run, and a file+symbol survives edits that a number does not.
 //!   The Arsenal's `set_loadout`
-//!   (`editor_ops.rs:122`) is one of them. Its own siblings in this very modal are the clearest
+//!   (`editor_ops.rs:67`) is one of them. Its own siblings in this very modal are the clearest
 //!   case: Transform X/Y/Z/rotation (`attributes.rs:265`) and Identity role/tag/stance
 //!   (`attributes.rs:335`) commit on blur/Enter with no Save of their own — `attributes.rs:7` states
 //!   the contract in as many words ("rebind + persist + one undo step per commit"). Same for the
@@ -280,7 +280,7 @@ pub fn ArsenalTab(
                     // The three `set`s are signal writes and commit nothing; the single `persist`
                     // that follows is the only document mutation, and `persist` is one
                     // `editor_ops::set_loadout` is **at most one** `mission_history::after_local_edit`
-                    // (`editor_ops.rs:138`) is at most one undo step. So Ctrl+Z after an import
+                    // (`editor_ops.rs:83`) is at most one undo step. So Ctrl+Z after an import
                     // restores the whole loadout the author had before it — not the last wear row
                     // of it. "At most" since T-779: the tail is gated on the document having taken
                     // the write, so an import applied over an entity that is no longer in the
@@ -1270,8 +1270,12 @@ mod tests {
                     include_str!("../state/operations/attrs.rs"),
                     include_str!("../state/operations/cargo.rs"),
                     include_str!("../state/operations/compositions.rs"),
-                    include_str!("../state/operations/context.rs"),
-                    include_str!("../state/operations/entity.rs"),
+                    include_str!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/../mission-core/src/doc/operations/compositions.rs"
+                    )),
+                    crate::v2::core::test_support::editor_operations::CONTEXT,
+                    crate::v2::core::test_support::editor_operations::ENTITY,
                     include_str!("../state/operations/transform.rs"),
                 ]
                 .concat(),
@@ -1297,11 +1301,18 @@ mod tests {
 
             let copy = fn_body(&ops, "pub fn copy_loadouts_from_selection(");
             assert!(
-                copy.contains("LOADOUT_BUFFER") && copy.contains("selected_slot_ids("),
-                "Copy must buffer every SELECTED slot"
+                copy.contains("LOADOUT_BUFFER")
+                    && copy.contains("cargo::copy_loadouts_from_selection("),
+                "Copy must buffer every SELECTED slot; body: {copy}"
             );
             assert!(
-                copy.contains("BufferedLoadout"),
+                fn_body(
+                    &crate::v2::core::test_support::class_r_scrub::live_code(include_str!(
+                        "../../../../mission-core/src/doc/operations/cargo.rs"
+                    )),
+                    "pub fn copy_loadouts_from_selection("
+                )
+                .contains("BufferedLoadout"),
                 "Copy must buffer bytes, not source ids — an id would be inheritance (T-687)"
             );
 
@@ -1324,8 +1335,13 @@ mod tests {
             // makes it honest: N transactions, ONE shared post-change tail (which is NOT an undo
             // boundary — see T-732).
             let commit = fn_body(&ops, "fn commit_loadout_writes(");
+            assert!(commit.contains("cargo::commit_loadout_writes(core, writes)"));
+            let domain = crate::v2::core::test_support::class_r_scrub::live_code(include_str!(
+                "../../../../mission-core/src/doc/operations/cargo.rs"
+            ));
+            let domain_commit = fn_body(&domain, "pub fn commit_loadout_writes(");
             assert_eq!(
-                commit.matches("update_slot_loadout(").count(),
+                domain_commit.matches("update_slot_loadout(").count(),
                 1,
                 "exactly one write call site: {commit}"
             );
@@ -1335,7 +1351,7 @@ mod tests {
                 "exactly one shared tail, fired after the writes — not per write"
             );
             assert!(
-                commit.contains("commit_writes("),
+                domain_commit.contains("commit_writes("),
                 "the write loop is `arsenal::commit_writes`, so the count is testable natively"
             );
 
@@ -1437,8 +1453,12 @@ mod tests {
                 include_str!("../state/operations/attrs.rs"),
                 include_str!("../state/operations/cargo.rs"),
                 include_str!("../state/operations/compositions.rs"),
-                include_str!("../state/operations/context.rs"),
-                include_str!("../state/operations/entity.rs"),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../mission-core/src/doc/operations/compositions.rs"
+                )),
+                crate::v2::core::test_support::editor_operations::CONTEXT,
+                crate::v2::core::test_support::editor_operations::ENTITY,
                 include_str!("../state/operations/transform.rs"),
             ]
             .concat()
@@ -1504,7 +1524,7 @@ mod tests {
             );
             // Positive: the shared opener still documents the inversion.
             assert!(
-                ops.contains("T-649 (ATTR-MULTI-001)")
+                ops.contains("sel.len() > 1 && sel.contains(&id)")
                     && ops.contains("A multi-selection now OPENS the modal"),
                 "T-739: open_attrs_modal must keep the T-649 inversion prose"
             );
@@ -1599,8 +1619,12 @@ mod tests {
                     include_str!("../state/operations/attrs.rs"),
                     include_str!("../state/operations/cargo.rs"),
                     include_str!("../state/operations/compositions.rs"),
-                    include_str!("../state/operations/context.rs"),
-                    include_str!("../state/operations/entity.rs"),
+                    include_str!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/../mission-core/src/doc/operations/compositions.rs"
+                    )),
+                    crate::v2::core::test_support::editor_operations::CONTEXT,
+                    crate::v2::core::test_support::editor_operations::ENTITY,
                     include_str!("../state/operations/transform.rs"),
                 ]
                 .concat(),

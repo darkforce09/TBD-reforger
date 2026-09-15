@@ -12,6 +12,7 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+pub use website_mission_core::doc::operations::environment::MissionEnv;
 
 /// One mission as the library lists it, including the review stamp an author needs to
 /// see why their submission came back.
@@ -160,34 +161,4 @@ pub struct ArmoryFaction {
     pub items: Vec<ArmoryItem>,
     #[serde(flatten)]
     pub extra: serde_json::Map<String, Value>,
-}
-
-/// The environment block of a mission row: time of day and weather as authored.
-///
-/// The document's own environment takes precedence downstream, so these are copied across
-/// rather than reconciled here.
-#[derive(Clone, Debug, PartialEq)]
-pub struct MissionEnv {
-    pub terrain: String,
-    pub time: String,
-    pub weather: String,
-    // Render preferences are per-mission and live in the environment block. The per-viewer
-    // basemap and world-layer toggles are separate and live in browser storage.
-    pub show_hillshade: bool,
-    pub hillshade_opacity: f64,
-    pub show_grid: bool,
-}
-
-/// The neutral environment a mission starts from when the row carries none.
-impl Default for MissionEnv {
-    fn default() -> Self {
-        Self {
-            terrain: String::new(),
-            time: String::new(),
-            weather: String::new(),
-            show_hillshade: true,
-            hillshade_opacity: 0.4,
-            show_grid: true,
-        }
-    }
 }

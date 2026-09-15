@@ -86,17 +86,82 @@ use tbd_gate::{NotRun, Pattern, Verdict, gate};
 // bash `cd "$ROOT"` first and passed these relative, so a "target file missing" line printed the
 // relative path. Reproduced by joining onto `repo_root` to read and stripping back for the message,
 // rather than mutating this process's cwd — tests run in parallel threads.
+#[cfg(test)]
 const EDITOR_OPS: &str = "apps/website/frontend/src/editor/state/operations.rs";
-// T-934.7 — `operations.rs` is a façade over six submodules; the ban must read the files the
-// place path actually lives in now, so every submodule joins the target list (and the scratch
-// copies below).
-const EDITOR_OPS_SPLIT: [&str; 6] = [
+// Scan the frontend adapters and mission-core implementations together. The scratch fixtures
+// exercise both sides so moving a mutation across this boundary cannot bypass the ban.
+const EDITOR_OPS_SPLIT: &[&str] = &[
+    "apps/website/frontend/src/editor/state/operations.rs",
     "apps/website/frontend/src/editor/state/operations/attrs.rs",
+    "apps/website/frontend/src/editor/state/operations/batch.rs",
     "apps/website/frontend/src/editor/state/operations/cargo.rs",
     "apps/website/frontend/src/editor/state/operations/compositions.rs",
-    "apps/website/frontend/src/editor/state/operations/context.rs",
-    "apps/website/frontend/src/editor/state/operations/entity.rs",
+    "apps/website/frontend/src/editor/state/operations/context/attributes.rs",
+    "apps/website/frontend/src/editor/state/operations/context/environment.rs",
+    "apps/website/frontend/src/editor/state/operations/context/mod.rs",
+    "apps/website/frontend/src/editor/state/operations/context/refresh.rs",
+    "apps/website/frontend/src/editor/state/operations/context/registration.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/arming.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/comments.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/connections.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/layer_drag.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/layers.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/markers.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/mod.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/placement.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/refile.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/roster.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/selection.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/selection_index.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/triggers.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/vehicles.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/zone_draw.rs",
+    "apps/website/frontend/src/editor/state/operations/entity/zones.rs",
+    "apps/website/frontend/src/editor/state/operations/reassign.rs",
+    "apps/website/frontend/src/editor/state/operations/slot_ids.rs",
+    "apps/website/frontend/src/editor/state/operations/tactical_graphics.rs",
     "apps/website/frontend/src/editor/state/operations/transform.rs",
+    "apps/website/mission-core/src/doc/operations/apply_faction/apply.rs",
+    "apps/website/mission-core/src/doc/operations/apply_faction/authorship.rs",
+    "apps/website/mission-core/src/doc/operations/apply_faction/library.rs",
+    "apps/website/mission-core/src/doc/operations/apply_faction/mod.rs",
+    "apps/website/mission-core/src/doc/operations/assets.rs",
+    "apps/website/mission-core/src/doc/operations/attrs.rs",
+    "apps/website/mission-core/src/doc/operations/cargo.rs",
+    "apps/website/mission-core/src/doc/operations/cargo_rules.rs",
+    "apps/website/mission-core/src/doc/operations/compositions.rs",
+    "apps/website/mission-core/src/doc/operations/document_index.rs",
+    "apps/website/mission-core/src/doc/operations/entity/clipboard.rs",
+    "apps/website/mission-core/src/doc/operations/entity/comments.rs",
+    "apps/website/mission-core/src/doc/operations/entity/connections.rs",
+    "apps/website/mission-core/src/doc/operations/entity/factions.rs",
+    "apps/website/mission-core/src/doc/operations/entity/identity.rs",
+    "apps/website/mission-core/src/doc/operations/entity/markers.rs",
+    "apps/website/mission-core/src/doc/operations/entity/mod.rs",
+    "apps/website/mission-core/src/doc/operations/entity/placement.rs",
+    "apps/website/mission-core/src/doc/operations/entity/roster.rs",
+    "apps/website/mission-core/src/doc/operations/entity/selection.rs",
+    "apps/website/mission-core/src/doc/operations/entity/vehicles.rs",
+    "apps/website/mission-core/src/doc/operations/entity/zones.rs",
+    "apps/website/mission-core/src/doc/operations/environment.rs",
+    "apps/website/mission-core/src/doc/operations/faction_library.rs",
+    "apps/website/mission-core/src/doc/operations/mod.rs",
+    "apps/website/mission-core/src/doc/operations/place_orbat/mod.rs",
+    "apps/website/mission-core/src/doc/operations/place_orbat/placement.rs",
+    "apps/website/mission-core/src/doc/operations/placement/alignment.rs",
+    "apps/website/mission-core/src/doc/operations/placement/garrison.rs",
+    "apps/website/mission-core/src/doc/operations/placement/geometry.rs",
+    "apps/website/mission-core/src/doc/operations/placement/mod.rs",
+    "apps/website/mission-core/src/doc/operations/placement/patterns.rs",
+    "apps/website/mission-core/src/doc/operations/projections.rs",
+    "apps/website/mission-core/src/doc/operations/reassign.rs",
+    "apps/website/mission-core/src/doc/operations/rotation.rs",
+    "apps/website/mission-core/src/doc/operations/rows.rs",
+    "apps/website/mission-core/src/doc/operations/slot_ids/duplicates.rs",
+    "apps/website/mission-core/src/doc/operations/slot_ids/mod.rs",
+    "apps/website/mission-core/src/doc/operations/tactical_graphics.rs",
+    "apps/website/mission-core/src/doc/operations/transform.rs",
+    "apps/website/mission-core/src/doc/operations/zones.rs",
 ];
 const ORBAT_RS: &str = "apps/website/mission-core/src/mission/ast/factions/orbat_slot_template.rs";
 const ORBAT_MGR: &str = "apps/website/frontend/src/pages/operations/orbat_manager.rs";
@@ -111,9 +176,7 @@ type BanRow = (&'static str, &'static str, bool, &'static [&'static str], &'stat
 const BANS: &[BanRow] = &[
     ("ensure_default_squad still present in editor_ops.rs",
      "ensure_default_squad", false,
-     &[EDITOR_OPS,
-       EDITOR_OPS_SPLIT[0], EDITOR_OPS_SPLIT[1], EDITOR_OPS_SPLIT[2],
-       EDITOR_OPS_SPLIT[3], EDITOR_OPS_SPLIT[4], EDITOR_OPS_SPLIT[5]],
+     EDITOR_OPS_SPLIT,
      "no ensure_default_squad on place path"),
     ("orbat.rs still hardcodes loadout: String::new()",
      r"loadout: String::new\(\)", false, &[ORBAT_RS],
@@ -138,7 +201,6 @@ const MER: &str = "map-engine-render";
 const FE: &str = "website-frontend";
 /// One argv element, not two — and bash's `$*` re-joins it with a space, so the failure text reads
 /// `--features doc mission`. Reproduced by [`shown`].
-const DOCM: Option<&str> = Some("doc mission");
 const MC: &str = "website-mission-core";
 const MSN: Option<&str> = Some("compiler doc");
 const NOF: Option<&str> = None;
@@ -151,13 +213,13 @@ type PinRow = (&'static str, Option<&'static str>, bool, &'static str, Option<&'
 #[rustfmt::skip]
 const CARGO_PINS: &[PinRow] = &[
     // A / B / H — doc feature. `doc mission`, not `doc` alone; module docs §2.
-    (MEC, DOCM, true, "place_", None),
-    (MEC, DOCM, true, "set_leader_exclusive", None),
-    (MEC, DOCM, true, "empty_squad_garbage_collected", None),
-    (MEC, DOCM, true, "move_slot_bidirectional", None),
-    (MEC, DOCM, true, "leader_invariant_holds", None),
-    (MEC, DOCM, true, "attach_vehicle_roundtrip", None),
-    (MEC, DOCM, true, "apply_faction_", Some("doc-feature place/mutator/apply gates")),
+    (MC, MSN, true, "place_", None),
+    (MC, MSN, true, "set_leader_exclusive", None),
+    (MC, MSN, true, "empty_squad_garbage_collected", None),
+    (MC, MSN, true, "move_slot_bidirectional", None),
+    (MC, MSN, true, "leader_invariant_holds", None),
+    (MC, MSN, true, "attach_vehicle_roundtrip", None),
+    (MC, MSN, true, "apply_faction_", Some("doc-feature place/mutator/apply gates")),
     // C / D / G / vehicle pack.
     (MEC, NOF, true, "side_tint_three_distinct", None),
     (MEC, NOF, true, "squad_link_", None),
@@ -439,9 +501,9 @@ mod tests {
     fn scratch(name: &str) -> PathBuf {
         let root = std::env::temp_dir().join(format!("tbd-t180-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
-        for rel in [EDITOR_OPS, ORBAT_RS, ORBAT_MGR, EDEN_CHROME, SLOTS_GPU]
+        for rel in [ORBAT_RS, ORBAT_MGR, EDEN_CHROME, SLOTS_GPU]
             .into_iter()
-            .chain(EDITOR_OPS_SPLIT)
+            .chain(EDITOR_OPS_SPLIT.iter().copied())
         {
             let dst = root.join(rel);
             std::fs::create_dir_all(dst.parent().unwrap()).unwrap();
@@ -492,6 +554,18 @@ mod tests {
     #[test]
     fn every_static_arm_can_go_red() {
         red_append("ban1", EDITOR_OPS, "\nensure_default_squad\n", BANS[0].0);
+        red_append(
+            "ban1-domain",
+            "apps/website/mission-core/src/doc/operations/entity/placement.rs",
+            "\nensure_default_squad\n",
+            BANS[0].0,
+        );
+        red_append(
+            "ban1-adapter",
+            "apps/website/frontend/src/editor/state/operations/entity/placement.rs",
+            "\nensure_default_squad\n",
+            BANS[0].0,
+        );
         red_append("ban2", ORBAT_RS, "\nloadout: String::new()\n", BANS[1].0);
         // `-i`, and in the SECOND target file: a ban over two files must read both of them.
         red_append("ban3", EDEN_CHROME, "\n// ifak pouch\n", BANS[2].0);

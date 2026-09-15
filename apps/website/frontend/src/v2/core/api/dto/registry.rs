@@ -10,7 +10,10 @@
 //! quantities existed still reads correctly.
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+
+pub use website_mission_core::doc::operations::faction_library::FactionDoc;
+pub use website_mission_core::doc::operations::faction_library::FactionRole;
+pub use website_mission_core::doc::operations::faction_library::FactionVehicle;
 
 /// One entry in the asset catalogue: what it is, where it lives, and how it is shown.
 #[allow(dead_code)]
@@ -128,42 +131,6 @@ pub struct RegistryCargoDefaultsResponse {
     pub modpack_version: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source_edge_count: Option<i64>,
-}
-
-/// One role a faction fields, with the loadout attached to it.
-#[allow(dead_code)]
-#[derive(Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct FactionRole {
-    pub role: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tag: Option<String>,
-    pub character: String,
-    /// The loadout document for this role, carried opaquely — the editor owns its shape.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub loadout: Option<Value>,
-}
-
-/// One vehicle a faction fields.
-#[allow(dead_code)]
-#[derive(Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct FactionVehicle {
-    pub vehicle: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub label: Option<String>,
-}
-
-/// A faction in full: its roles, its vehicles, and the doctrine attached to it.
-#[allow(dead_code)]
-#[derive(Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct FactionDoc {
-    pub side: String,
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub emblem: Option<String>,
-    #[serde(default)]
-    pub roles: Vec<FactionRole>,
-    #[serde(default)]
-    pub vehicles: Vec<FactionVehicle>,
 }
 
 /// A faction as it appears against one user.

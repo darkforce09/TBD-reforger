@@ -20,6 +20,8 @@
 use crate::editor::state::operations as editor_ops;
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
+pub use website_mission_core::doc::operations::document_index::DocEntity;
+pub use website_mission_core::doc::operations::document_index::DocKind;
 
 use crate::editor::layout::{DOCK_L, STUB_PX};
 
@@ -1466,61 +1468,6 @@ fn load_named_places() -> Vec<NamedPlace> {
 // matched (which text attribute, and on a vehicle/marker/zone/trigger the tree has never held any
 // row at all).
 
-/// T-697 — what a matched document row IS. Drives the row glyph, the badge noun, and the noun that
-/// [`unselectable_reason`] names. It does **not** decide clickability — [`hit_is_routable`] asks the
-/// router that, per row (wave 129 RV-1).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum DocKind {
-    /// A `slots` row (an ORBAT player/AI slot).
-    Slot,
-    /// A `vehiclesById` row.
-    Vehicle,
-    /// A `entitiesById` row — a placed world object (T-254).
-    Object,
-    /// A `factionsById[].briefing.markers[]` row (T-069).
-    Marker,
-    /// A `zones` row (T-582).
-    Zone,
-    /// A `triggers` row.
-    Trigger,
-    /// A `commentsById` row — the editor-only annotation (T-651).
-    Comment,
-    /// An `editorLayersById` folder.
-    Layer,
-}
-
-impl DocKind {
-    /// The badge noun, singular.
-    #[must_use]
-    pub fn noun(self) -> &'static str {
-        match self {
-            DocKind::Slot => "slot",
-            DocKind::Vehicle => "vehicle",
-            DocKind::Object => "object",
-            DocKind::Marker => "marker",
-            DocKind::Zone => "zone",
-            DocKind::Trigger => "trigger",
-            DocKind::Comment => "comment",
-            DocKind::Layer => "layer",
-        }
-    }
-
-    /// The row glyph (Material Symbols name), matching the icon each kind's own panel already uses.
-    #[must_use]
-    pub fn icon(self) -> &'static str {
-        match self {
-            DocKind::Slot => "person",
-            DocKind::Vehicle => "directions_car",
-            DocKind::Object => "category",
-            DocKind::Marker => "place",
-            DocKind::Zone => "crop_square",
-            DocKind::Trigger => "bolt",
-            DocKind::Comment => "sticky_note_2",
-            DocKind::Layer => "folder",
-        }
-    }
-}
-
 /// **WOULD A CLICK ON THIS HIT SELECT ANYTHING? — the T-754 rule, asked of the click's own router.**
 ///
 /// Wave 129 (RV-1), the peer of `validation_panel::finding_is_routable` and
@@ -1554,31 +1501,6 @@ pub fn unselectable_reason(kind: DocKind) -> String {
          selection for this {} right now, so a click would do nothing. Open it from its own panel.",
         kind.noun()
     )
-}
-
-/// T-697 — one placed thing in the document, projected for search. Built by
-/// `editor_ops::document_entities` (wasm, where the doc handles live) and consumed by the pure
-/// functions here, which is what makes the whole search natively testable.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DocEntity {
-    /// The doc id — what the click-to-select router is handed.
-    pub id: String,
-    pub kind: DocKind,
-    /// The row's display name (already fallen back: never empty).
-    pub label: String,
-    /// The Enfusion `resourceName` / object alias this row spawns as, empty when it has none. This
-    /// is the datum `class:` matches, and only this one.
-    pub class_name: String,
-    /// The side this row belongs to (`BLUFOR` / `OPFOR` / `INDFOR`, or a library faction's key),
-    /// empty when the kind carries none. The datum `mod:` matches, and the selection filter's
-    /// faction axis.
-    pub faction: String,
-    /// **THE TEXT ATTRIBUTES** — `(field name, value)`, in the order the author thinks of them. The
-    /// search runs over EACH of these separately rather than over a concatenation, so a glob stays
-    /// whole-string per attribute (`Alpha-?` matches a callsign, not a callsign glued to a rank) and
-    /// so a hit can report WHICH attribute it came from. Never empty: every row carries at least its
-    /// id, because searching for an id an error message quoted is a real thing authors do.
-    pub text: Vec<(&'static str, String)>,
 }
 
 /// T-697 — one search hit: the row, and the text attribute that matched it.
@@ -2559,7 +2481,7 @@ mod t697_document_search {
     }
     /// The document index's production text (`editor_ops.rs` carries no test module of its own).
     fn ops_code() -> String {
-        live_code(include_str!("../state/operations/entity.rs"))
+        live_code(crate::v2::core::test_support::editor_operations::ENTITY)
     }
 
     fn entity(id: &str, kind: DocKind, label: &str, faction: &str) -> DocEntity {
@@ -3061,7 +2983,10 @@ mod t697_document_search {
     #[test]
     fn the_index_covers_every_placeable_collection() {
         let ops = ops_code();
-        let body = only_body(&ops, "pub fn document_entities");
+        let domain = live_code(include_str!(
+            "../../../../mission-core/src/doc/operations/document_index.rs"
+        ));
+        let body = only_body(&domain, "pub fn document_entities");
         for kind in [
             "DocKind::Slot",
             "DocKind::Vehicle",

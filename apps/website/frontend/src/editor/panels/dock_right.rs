@@ -4238,7 +4238,11 @@ mod tests {
             "a Markers icon row must arm the marker place path"
         );
 
-        let ops = include_str!("../state/operations/entity.rs");
+        let ops = [
+            crate::v2::core::test_support::editor_operations::ENTITY,
+            crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY,
+        ]
+        .concat();
         assert!(
             ops.contains("pub fn begin_place_vehicle"),
             "editor_ops must expose the vehicle arm"
@@ -4505,7 +4509,12 @@ mod tests {
         let ops = live_source(
             &[
                 include_str!("../state/operations/compositions.rs"),
-                include_str!("../state/operations/entity.rs"),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../mission-core/src/doc/operations/compositions.rs"
+                )),
+                crate::v2::core::test_support::editor_operations::ENTITY,
+                crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY,
             ]
             .concat(),
         );
@@ -4543,7 +4552,11 @@ mod tests {
         // mint_ids in operations/entity.rs; the haystack is their concatenation.
         let ops_all = [
             include_str!("../state/operations/compositions.rs"),
-            include_str!("../state/operations/entity.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../mission-core/src/doc/operations/compositions.rs"
+            )),
+            crate::v2::core::test_support::editor_operations::ENTITY,
         ]
         .concat();
         let ops_all: &str = &ops_all;
@@ -4580,7 +4593,8 @@ mod tests {
         );
         // A composed comment is minted an id by `mint_ids`, so the comments root joins the
         // uniqueness union — otherwise a second placement can upsert an earlier note away.
-        let mint = only_body(&ops_text, &format!("fn {}(", "mint_ids"));
+        let domain = live_source(crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY);
+        let mint = only_body(&domain, &format!("fn {}(", "mint_ids"));
         assert!(
             mint.contains(&format!("{:?}", "commentsById")),
             "mint_ids must prove uniqueness against the comments root too; body was:\n{mint}"
@@ -4588,7 +4602,7 @@ mod tests {
 
         // ── The PLACE half (`map-engine-core`) — the same two keys, read back ────────────────────
         let store = live_source(include_str!(
-            "../../../../../../crates/map-engine-core/src/doc/store.rs"
+            "../../../../mission-core/src/doc/store/compositions.rs"
         ));
         let place = only_body(&store, &format!("fn {}(", "place_composition"));
         assert!(
@@ -4627,7 +4641,7 @@ mod tests {
     fn both_id_minters_prove_uniqueness_against_hidden_slots_too() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
-        let ops_code = live_code(include_str!("../state/operations/entity.rs"));
+        let ops_code = live_code(crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY);
         let helper_call = format!("{}(", "live_slot_ids");
         let helper_body = only_body(&ops_code, &format!("fn {helper_call}"));
 
@@ -4683,8 +4697,8 @@ mod tests {
         // place_at_impl in operations/entity.rs; the haystack is their concatenation.
         let ops = live_code(
             &[
-                include_str!("../state/operations/context.rs"),
-                include_str!("../state/operations/entity.rs"),
+                crate::v2::core::test_support::editor_operations::CONTEXT,
+                crate::v2::core::test_support::editor_operations::ENTITY,
             ]
             .concat(),
         );
@@ -4709,7 +4723,10 @@ mod tests {
         // per-member loop, the F-26 mistake) AND it writes `ctx.selection` (select the stamp: OBJ +N,
         // SEL == N). Extracted from `place_at_impl` so a match elsewhere can't stand in.
         let consume = only_body(&ops, &format!("fn {}(", "place_at_impl"));
-        let place_call = format!("place_{}(", "composition");
+        let place_call = format!("place_saved_{}(", "composition");
+        let domain = live_code(crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY);
+        assert!(only_body(&domain, "pub fn place_saved_composition(")
+            .contains("core.place_composition("));
         assert!(
             consume.contains(&place_call),
             "the composition consume must stamp via the single core place_composition (one undo \
@@ -4835,7 +4852,7 @@ mod tests {
 
         // The editor-ops seam actually exposes those functions AND the geometry reaches the core
         // trigger mutators (the claim the store round-trip rests on).
-        let ops = include_str!("../state/operations/entity.rs");
+        let ops = crate::v2::core::test_support::editor_operations::ENTITY;
         for f in [
             "pub fn set_trigger_owner",
             "pub fn trigger_rows",
@@ -4867,8 +4884,12 @@ mod tests {
             include_str!("../state/operations/attrs.rs"),
             include_str!("../state/operations/cargo.rs"),
             include_str!("../state/operations/compositions.rs"),
-            include_str!("../state/operations/context.rs"),
-            include_str!("../state/operations/entity.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../mission-core/src/doc/operations/compositions.rs"
+            )),
+            crate::v2::core::test_support::editor_operations::CONTEXT,
+            crate::v2::core::test_support::editor_operations::ENTITY,
             include_str!("../state/operations/transform.rs"),
         ]
         .concat();
@@ -5534,7 +5555,7 @@ mod tests {
         );
 
         // Both off-dock placement sites in editor_ops call the invoke, on the scrubbed fn bodies.
-        let ops = live_code(include_str!("../state/operations/entity.rs"));
+        let ops = live_code(crate::v2::core::test_support::editor_operations::ENTITY);
         let record_call = format!("record_{}(", "placed");
 
         // Composition STAMP: `place_at_impl` records ONE entry for the stamp (keyed on the composition
@@ -5972,8 +5993,13 @@ mod tests {
             include_str!("../state/operations/attrs.rs"),
             include_str!("../state/operations/cargo.rs"),
             include_str!("../state/operations/compositions.rs"),
-            include_str!("../state/operations/context.rs"),
-            include_str!("../state/operations/entity.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../mission-core/src/doc/operations/compositions.rs"
+            )),
+            crate::v2::core::test_support::editor_operations::CONTEXT,
+            crate::v2::core::test_support::editor_operations::ENTITY,
+            crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY,
             include_str!("../state/operations/transform.rs"),
         ]
         .concat();

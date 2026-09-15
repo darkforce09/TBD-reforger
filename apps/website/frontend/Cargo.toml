@@ -8,6 +8,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
+website-mission-core = { path = "../mission-core", features = ["doc"] }
 leptos = { version = "0.8", features = ["csr"] }
 leptos_router = "0.8"
 console_error_panic_hook = "0.1"

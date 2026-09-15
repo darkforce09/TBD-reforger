@@ -1,13 +1,14 @@
-//! T-937.2 — explicit undo batches. `with_batch(label, f)` brackets `begin_group` /
-//! `end_group` on the live [`MissionDocCore`] so paste, delete-selection and align
-//! undo as one group even when they open several LOCAL transactions.
+//! Role: batch.
+//! Position: `editor/state/operations` in the frontend editor adapter.
+//! Signals & state: host signals, input state, and explicit mission-core calls.
+//! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
+
 #![cfg(target_arch = "wasm32")]
 
 use super::context::OPS_CTX;
 use super::{entity, transform};
 
-/// Run `f` inside one undo group labelled `label` (the label is for call-site intent;
-/// yrs stack items carry no per-item meta here).
+/// Run `f` inside one undo group labelled `label` (the label is for call-site intent; yrs stack items carry no per-item meta here).
 pub fn with_batch<F, R>(label: &str, f: F) -> R
 where
     F: FnOnce() -> R,

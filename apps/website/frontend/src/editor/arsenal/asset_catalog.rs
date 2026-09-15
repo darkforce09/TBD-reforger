@@ -30,6 +30,10 @@
 
 use std::collections::HashSet;
 use std::sync::OnceLock;
+pub use website_mission_core::doc::operations::assets::classname_tail;
+pub use website_mission_core::doc::operations::assets::derive_object_alias;
+
+pub use website_mission_core::doc::operations::assets::PlacePayload;
 
 use crate::v2::core::api::dto::RegistryItem;
 
@@ -105,14 +109,6 @@ pub fn character_matches_eden_side(item: &RegistryItem, side: &str) -> bool {
         return true;
     }
     legacy_category_root_side(&item.category) == Some(side)
-}
-
-/// What a palette leaf hands the map when it is dropped: the doc fields a placed slot needs.
-/// `asset_id` is the full `resource_name` (T-068.3: "DnD `assetId` = full `resource_name`").
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PlacePayload {
-    pub asset_id: String,
-    pub role: String,
 }
 
 /// One palette node. A **leaf is `payload.is_some()`** (folders never carry one), which also makes
@@ -584,58 +580,6 @@ pub fn build_object_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
     roots
 }
 
-/// Derive a schema `#/$defs/alias` for a placed object from its ResourceName + display name.
-///
-/// Prefer a known mod-registry reverse hit (`comp:checkpoint_small`); otherwise synthesise
-/// `prop:<slug>` / `comp:<slug>` from the display name (Composition path → `comp:`).
-///
-/// T-439 — synthesis alone is not enough for spawn: [`build_object_catalog_tree`] only offers
-/// leaves whose alias is present in mod `Data/registry.json`, and `cargo xtask verify t439` pins
-/// every workbench Objects-eligible kind to a matching registry row (guid == resource_name).
-/// That gate also pins THIS function by name, so renaming it fails the gate rather than silently
-/// unmirroring the two sides (T-853 ported it from
-/// `scripts/mod/verify-t439-objects-registry-aliases.sh`).
-#[must_use]
-pub fn derive_object_alias(resource_name: &str, display_name: &str) -> String {
-    const KNOWN: &[(&str, &str)] = &[(
-        "{E1D01D77D7F47EF3}PrefabsEditable/Auto/Compositions/Misc/SubCompositions/E_Sandbag_Barricade_US_04.et",
-        "comp:checkpoint_small",
-    )];
-    for (guid, alias) in KNOWN {
-        if resource_name == *guid {
-            return (*alias).to_string();
-        }
-    }
-    let prefix = if resource_name.contains("Composition") || resource_name.contains("Compositions")
-    {
-        "comp"
-    } else {
-        "prop"
-    };
-    let slug = object_alias_slug(display_name);
-    format!("{prefix}:{slug}")
-}
-
-fn object_alias_slug(raw: &str) -> String {
-    let mut out = String::with_capacity(raw.len());
-    let mut prev_repl = false;
-    for c in raw.to_lowercase().chars() {
-        if c.is_ascii_lowercase() || c.is_ascii_digit() {
-            out.push(c);
-            prev_repl = false;
-        } else if !prev_repl {
-            out.push('_');
-            prev_repl = true;
-        }
-    }
-    let trimmed = out.trim_matches('_');
-    if trimmed.is_empty() {
-        "object".to_string()
-    } else {
-        trimmed.to_string()
-    }
-}
-
 // ── T-084 (RIGHT-SEARCH-002/003/004/005) — the asset-browser search GRAMMAR ──────────────────────
 //
 // One query string, two independent halves:
@@ -713,35 +657,6 @@ const OPERATORS: &[(&str, SearchField)] = &[
     ("mod:", SearchField::Mod),
     ("mod ", SearchField::Mod),
 ];
-
-/// The CLASSNAME TAIL of an Enfusion `resource_name`: the last path segment with its extension
-/// dropped — `{26A9756790131354}Prefabs/…/Character_US_Rifleman.et` → `Character_US_Rifleman`.
-///
-/// **THE WAVE-105 MINOR-2 DECISION.** T-646 matched `class:` against full `resource_name` PREFIXES
-/// only. Reforger resource names are GUID-headed, so a bare classname — the thing an author actually
-/// knows and types — could never prefix-match, and `class:Character_US_Rifleman` SILENTLY EMPTIED
-/// THE TREE. That is the defect: a query the author reasonably expects to work returning nothing,
-/// with no way to tell a miss from a broken operator.
-///
-/// The decision: **`class:` matches the full `resource_name` prefix OR the classname-tail prefix.**
-/// Both, not either/or, so
-/// * `class:{26A9756790131354}Prefabs` — T-646's GUID-path prefix — still works, and
-/// * `class:Character_US_Ri` — a bare classname — now works.
-///
-/// Tail matching stays a PREFIX, not a substring: `class:Rifleman` against
-/// `Character_US_Rifleman` is still a miss, because a substring `class:` would collapse into the
-/// label search it exists to be different from. A mid-classname token has its own spelling in this
-/// grammar now — `class:*Rifleman` (glob) or `class:/rifleman/` (regex) — which is exactly why the
-/// tail rule can afford to stay strict.
-#[must_use]
-pub fn classname_tail(id: &str) -> &str {
-    let seg = id.rsplit('/').next().unwrap_or(id);
-    match seg.rfind('.') {
-        // `i > 0` keeps a dotfile-shaped segment whole rather than yielding "".
-        Some(i) if i > 0 => &seg[..i],
-        _ => seg,
-    }
-}
 
 /// Parse a raw search box string into [`SearchQuery`].
 ///

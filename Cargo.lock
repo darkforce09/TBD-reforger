@@ -3780,7 +3780,6 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "website-mission-core",
- "yrs",
 ]
 
 [[package]]
@@ -8234,16 +8233,17 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
+ "website-mission-core",
 ]
 
 [[package]]
 name = "website-mission-core"
 version = "0.1.0"
 dependencies = [
- "map-engine-core",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
+ "yrs",
 ]
 
 [[package]]

@@ -419,15 +419,15 @@ pub mod armed_place {
 /// field write (T-648 "a GESTURE on an existing field"), which is what this module deliberately does
 /// NOT do — it only decides the numbers.
 pub mod transform {
+
+    pub use website_mission_core::doc::operations::rotation::snap_value;
+    pub use website_mission_core::doc::operations::rotation::ROTATE_LADDER_DEG;
+
     /// The TRANSLATION snap ladder in world metres. Index 0 is **OFF** (free move — the drag delta
     /// passes through unquantised); the rest are the increasing cell sizes the ticket names
     /// (`off / 1 / 5 / 10 m`). Held as a ladder rather than a free number so `[`/`]` step between
     /// named rungs and the readout can name the active one, matching Eden's discrete grid sizes.
     pub const TRANSLATE_LADDER_M: [f64; 4] = [0.0, 1.0, 5.0, 10.0];
-    /// The ROTATION snap ladder in degrees. Index 0 is **OFF** (free rotate); the rest are the
-    /// ticket's `off / 5 / 15 / 45°` rungs. A Shift-rotate (or a Shift+ring drag) quantises the
-    /// face-cursor bearing to the active rung; OFF commits the exact bearing.
-    pub const ROTATE_LADDER_DEG: [f64; 4] = [0.0, 5.0, 15.0, 45.0];
 
     /// Which snap ladder a step key ([`step`]) or a quantise ([`snap_translate`]/[`snap_rotate`])
     /// acts on. The two ladders are independent (translation and rotation each carry their own live
@@ -476,63 +476,12 @@ pub mod transform {
         }
     }
 
-    /// Quantise `value` to the nearest multiple of `step`. `step <= 0` (the OFF rung) is a
-    /// **passthrough** — the value is returned exactly, which is how "snap off" reads at the call
-    /// site with no branch. Round-half-away-from-zero so a delta exactly between two cells lands on
-    /// the farther one symmetrically for + and −. Non-finite `step` is treated as OFF.
-    #[must_use]
-    pub fn snap_value(value: f64, step: f64) -> f64 {
-        if !step.is_finite() || step <= 0.0 {
-            return value;
-        }
-        (value / step).round() * step
-    }
-
     /// Quantise a TRANSLATION delta component (metres) at ladder rung `rung`. Rung 0 = OFF =
     /// passthrough. Applied per-axis to `(dx, dy)` so a snapped drag lands the entity on the grid
     /// lattice while a free drag (rung 0) is byte-for-byte the old `drag_delta`.
     #[must_use]
     pub fn snap_translate(value: f64, rung: usize) -> f64 {
         snap_value(value, *TRANSLATE_LADDER_M.get(rung).unwrap_or(&0.0))
-    }
-
-    /// Quantise a ROTATION (degrees) at ladder rung `rung`, then normalise to `[0,360)` (the same
-    /// range `update_slot_position` stores). Rung 0 = OFF = the exact bearing, still normalised.
-    #[must_use]
-    pub fn snap_rotate(deg: f64, rung: usize) -> f64 {
-        let snapped = snap_value(deg, *ROTATE_LADDER_DEG.get(rung).unwrap_or(&0.0));
-        norm_deg(snapped)
-    }
-
-    /// Normalise degrees into `[0,360)` — the canonical rotation range (matches
-    /// `MissionDocCore::update_slot_position`, which does `((r % 360)+360)%360`). Non-finite → 0.
-    #[must_use]
-    pub fn norm_deg(deg: f64) -> f64 {
-        if !deg.is_finite() {
-            return 0.0;
-        }
-        ((deg % 360.0) + 360.0) % 360.0
-    }
-
-    /// The face-cursor BEARING (XFORM-SHIFT-001): the yaw a slot at `(from_x, from_y)` must take to
-    /// point at the cursor `(to_x, to_y)`, in the document's convention — **yaw clockwise from north
-    /// (+Y)**, the exact convention `world::glyph_math::deck_angle_for_rotation_deg` inverts for the
-    /// screen and the spawn export reads as `headingDeg`. Compass bearing = `atan2(east, north) =
-    /// atan2(dx, dy)`, normalised to `[0,360)`:
-    ///   * cursor due north (dx=0, dy>0) → 0°
-    ///   * due east  (dx>0, dy=0) → 90°
-    ///   * due south (dy<0)       → 180°
-    ///   * due west  (dx<0, dy=0) → 270°  (the wrap case)
-    /// A degenerate aim (cursor exactly on the pivot, or a non-finite input) returns `None` — the
-    /// caller leaves the rotation unchanged rather than committing a meaningless 0°.
-    #[must_use]
-    pub fn bearing_to_face(from_x: f64, from_y: f64, to_x: f64, to_y: f64) -> Option<f64> {
-        let dx = to_x - from_x;
-        let dy = to_y - from_y;
-        if !dx.is_finite() || !dy.is_finite() || (dx == 0.0 && dy == 0.0) {
-            return None;
-        }
-        Some(norm_deg(dx.atan2(dy).to_degrees()))
     }
 
     /// Format a ladder step for the readout without a trailing `.0` on a whole number (`5.0 → "5"`,
@@ -3608,7 +3557,7 @@ mod t930_vehicle_first_paint {
 
     #[test]
     fn place_path_invalidates_vehicle_lane() {
-        let raw = include_str!("state/operations/entity.rs");
+        let raw = crate::v2::core::test_support::editor_operations::ENTITY;
         let impl_body = only_body(raw, "fn place_at_impl(");
         let rebind = format!("{}{}", "rebind_vehicle_lane_", "after_place");
         assert!(
