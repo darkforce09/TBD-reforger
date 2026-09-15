@@ -23,13 +23,22 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use anyhow::{Context, Result, bail};
-use map_engine_core::building_compound::{
-    CoverTier, DoorRecord, INSTANCES_SCHEMA_VERSION, InstanceKind, InstanceRecord, InstancesFile,
-    LocalTransform, PlacementSource,
-};
-use map_engine_core::bvh::{Bvh, BvhSidecar, SurfaceKind, emit_bytes, lift_verts, quantize_verts};
-use map_engine_core::geometry::rigid::Rigid;
 use serde::Deserialize;
+use website_graphics_engine::architecture::compound::assembly::CoverTier;
+use website_graphics_engine::architecture::compound::assembly::INSTANCES_SCHEMA_VERSION;
+use website_graphics_engine::architecture::compound::assembly::PlacementSource;
+use website_graphics_engine::architecture::compound::doors::DoorRecord;
+use website_graphics_engine::architecture::compound::instances::InstanceKind;
+use website_graphics_engine::architecture::compound::instances::InstanceRecord;
+use website_graphics_engine::architecture::compound::instances::InstancesFile;
+use website_graphics_engine::architecture::compound::instances::LocalTransform;
+use website_graphics_engine::architecture::compound::transform::Rigid;
+use website_graphics_engine::spatial::bvh::sidecar::BvhSidecar;
+use website_graphics_engine::spatial::bvh::sidecar::emit_bytes;
+use website_graphics_engine::spatial::bvh::sidecar::lift_verts;
+use website_graphics_engine::spatial::bvh::sidecar::quantize_verts;
+use website_graphics_engine::spatial::bvh::surface::SurfaceKind;
+use website_graphics_engine::spatial::bvh::traversal::Bvh;
 
 use super::pak::{AssetSource, DirSource, LayeredSource, PakSet};
 use super::prefab::{PrefabResolver, ResolvedPrefab};

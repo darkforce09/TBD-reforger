@@ -254,7 +254,7 @@ pub struct ModOrbatGroup {
     /// Roles.
     pub roles: Vec<ModOrbatRole>,
 
-    /// It lives HERE and not on `ModSlot`, per W120 M-4: a leader is a PER-SQUAD fact, so one copy on the group cannot disagree with itself, whereas N denormalised copies on the seats could — and no schema could catch that. The editor already authors it once per squad, at `/editor/squads/*/leaderSlotId`.
+    /// Squad leader identity, authored once at `/editor/squads/*/leaderSlotId` and emitted on the group so per-seat copies cannot disagree.
     #[serde(rename = "leaderSlotId", skip_serializing_if = "Option::is_none")]
     pub leader_slot_id: Option<String>,
 }

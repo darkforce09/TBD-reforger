@@ -10,7 +10,7 @@
 //! separate outer rings, never a pinched bow-tie. All work happens on the integer lattice
 //! (float-exact determinism); coordinates scale by `cell` only at emission.
 
-use map_engine_core::building_blueprint::FloorPolygon;
+use website_graphics_engine::architecture::blueprint::structure::FloorPolygon;
 
 use super::march::r2;
 use super::types::PlanGrid;

@@ -26,7 +26,8 @@ const CLICK_SLOP_PX: f64 = 4.0; // same bar as the map's drag threshold
 const CALLOUT_DX: f64 = 52.0; // chip offset from the anchor (up-right)
 const CALLOUT_DY: f64 = -44.0;
 
-type EngineHandle = Rc<RefCell<Option<map_engine_render::DollEngine>>>;
+type EngineHandle =
+    Rc<RefCell<Option<website_graphics_engine::doll::renderer::lifecycle_1::DollEngine>>>;
 
 /// Region label for tooltips/callout — `LOADOUT_ROWS` carries the display labels.
 fn region_label(key: &str) -> &'static str {
@@ -95,7 +96,12 @@ pub fn ArsenalDoll(
             let engine = engine.clone();
             let disposed = disposed.clone();
             leptos::task::spawn_local(async move {
-                match map_engine_render::DollEngine::create(canvas.clone(), force_webgl).await {
+                match website_graphics_engine::doll::renderer::lifecycle_1::DollEngine::create(
+                    canvas.clone(),
+                    force_webgl,
+                )
+                .await
+                {
                     Ok(mut eng) => {
                         if disposed.load(std::sync::atomic::Ordering::Relaxed) {
                             return; // effect died while create was in flight — drop frees

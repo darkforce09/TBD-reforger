@@ -512,7 +512,7 @@ pub(crate) fn pick_tactical_vertex(
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub(crate) fn live_tactical_graphics(
-    core: &map_engine_core::doc::MissionDocCore,
+    core: &website_mission_core::doc::MissionDocCore,
 ) -> Vec<TacticalGraphic> {
     let Ok(root) = serde_json::from_str::<Value>(&core.small_maps_json()) else {
         return Vec::new();
@@ -802,7 +802,8 @@ mod tests {
     /// vocabulary so a kind added there without one here fails by name.
     #[test]
     fn the_canvas_floor_is_the_core_validator_floor() {
-        use map_engine_core::mission::tactical_graphics::{min_points, KINDS};
+        use website_mission_core::mission::tactical_graphics::min_points;
+        use website_mission_core::mission::tactical_graphics::KINDS;
         assert_eq!(KINDS.len(), 4);
         for kind in KINDS {
             let floor = min_points(kind).unwrap_or_else(|| panic!("{kind} has no floor"));

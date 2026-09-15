@@ -18,3 +18,6 @@ Wire keys, numeric conversions, authored order, diagnostics, and resource substi
 ## Verification
 
 Run `cargo test -p website-mission-core --all-features` with the workspace target directory configured. The feature tripwire rejects incomplete test selections. Production Rust files remain below 500 lines, and out-of-line test files below 1,000.
+
+The zone integration tests exercise save/reload, compiler projection, and deletion against the
+document directly. They share the same headless contract as the editor and API.

@@ -11,14 +11,23 @@
 //! `FOREST_OUTLINE`) and `MISSION_ZONES` for the ray are never touched again.
 #![allow(dead_code)] // native build: the wasm host wires the live path; tests pin the pure core.
 
-use map_engine_core::building_blueprint::{clip_t_to_band, BuildingBlueprint, LosHit, LosHitKind};
-use map_engine_core::building_compound::{CompoundBuilding, CoverTier, Instance, InstanceKind};
-use map_engine_core::building_section::{section_at_owned, BuildingDrawing, Seg2, CUT_MAX_NY};
-use map_engine_core::bvh::SurfaceKind;
-use map_engine_core::geometry::polyline_strip::expand_polyline_strip;
-use map_engine_core::geometry::rigid::Rigid;
+use website_graphics_engine::architecture::blueprint::attribution_1::clip_t_to_band;
+use website_graphics_engine::architecture::blueprint::attribution_1::LosHit;
+use website_graphics_engine::architecture::blueprint::attribution_1::LosHitKind;
+use website_graphics_engine::architecture::blueprint::structure::BuildingBlueprint;
+use website_graphics_engine::architecture::compound::assembly::CompoundBuilding;
+use website_graphics_engine::architecture::compound::assembly::CoverTier;
+use website_graphics_engine::architecture::compound::instances::Instance;
+use website_graphics_engine::architecture::compound::instances::InstanceKind;
+use website_graphics_engine::architecture::compound::transform::Rigid;
+use website_graphics_engine::architecture::section::cutter::section_at_owned;
+use website_graphics_engine::architecture::section::cutter::BuildingDrawing;
+use website_graphics_engine::architecture::section::cutter::Seg2;
+use website_graphics_engine::architecture::section::cutter::CUT_MAX_NY;
 #[cfg(target_arch = "wasm32")]
-use map_engine_render::draw_order::role_id;
+use website_graphics_engine::core::pipeline::draw_order::role_id;
+use website_graphics_engine::spatial::bvh::surface::SurfaceKind;
+use website_graphics_engine::terrain::roads::styling::expand_polyline_strip;
 
 /// Native mirror of `map_engine_render::draw_order::role_id` — the render crate is a wasm32-only
 /// dependency of the SPA, and this module's tests run natively. Not a hand-copy that can drift:

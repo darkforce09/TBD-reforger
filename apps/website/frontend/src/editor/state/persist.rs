@@ -148,9 +148,9 @@ use std::rc::Rc;
 
 use idb::DatabaseEvent; // brings `VersionChangeEvent::database()` into scope for the upgrade handler
 use leptos::task::spawn_local;
-use map_engine_core::doc::MissionDocCore;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
+use website_mission_core::doc::MissionDocCore;
 
 use crate::editor::state::doc_host::DocHandle;
 use crate::editor::state::save_status::{self, IDLE_DEBOUNCE_MS, UNREADABLE_RETRY_LIMIT};

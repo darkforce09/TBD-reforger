@@ -1142,7 +1142,7 @@ fn run_p2_gates(
                 ));
                 continue;
             }
-            let dec = match map_engine_core::geometry::tbdd::decode_tbdd(&buf) {
+            let dec = match website_graphics_engine::formats::density::tbdd::decode_tbdd(&buf) {
                 Ok(d) => d,
                 Err(e) => {
                     d1.push(format!("{key}.bin: {e}"));
@@ -1160,7 +1160,7 @@ fn run_p2_gates(
             }
             let mut it = key.split('_').map(|v| v.parse::<usize>().unwrap_or(0));
             let (cx, cy) = (it.next().unwrap_or(0), it.next().unwrap_or(0));
-            let rebuilt = map_engine_core::geometry::tbdd::encode_tbdd(
+            let rebuilt = website_graphics_engine::formats::density::tbdd::encode_tbdd(
                 density::DENSITY_CELL_M,
                 density::DENSITY_COLS,
                 density::DENSITY_ROWS,

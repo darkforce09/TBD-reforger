@@ -51,7 +51,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
     // schema: a second copy of the vocabulary drifts the moment a kind is added, and `min_points`
     // (which `begin_tactical_draw` refuses an unknown kind by) is the same core module's function.
     let tactical_kind = RwSignal::new(
-        map_engine_core::mission::tactical_graphics::KINDS
+        website_mission_core::mission::tactical_graphics::KINDS
             .first()
             .map_or_else(String::new, |k| (*k).to_string()),
     );
@@ -336,7 +336,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
                 class="mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
                 on:change=move |ev| tactical_kind.set(event_target_value(&ev))
             >
-                {map_engine_core::mission::tactical_graphics::KINDS
+                {website_mission_core::mission::tactical_graphics::KINDS
                     .iter()
                     .map(|k| {
                         let k = (*k).to_string();
@@ -1157,7 +1157,7 @@ fn terrain_rect_corners(bounds: [f64; 4]) -> [(f64, f64); 4] {
 /// the corners outside the play area while one circumscribing it runs far past the map edge.
 #[must_use]
 pub fn terrain_rect_ring(terrain: &str, bounds: [f64; 4]) -> Option<Vec<f64>> {
-    if bounds != map_engine_core::mission::compile::terrain_bounds(terrain) {
+    if bounds != website_mission_core::mission::compile::terrain_bounds(terrain) {
         return None;
     }
     if !terrain_rect_is_authorable(bounds) {
@@ -1669,8 +1669,9 @@ mod tests {
     fn compile_for(
         terrain: &str,
         payload: &[u8],
-    ) -> map_engine_core::mission::flatten::ModMissionDocument {
-        use map_engine_core::mission::flatten::{flatten_to_mod_document, MissionMeta};
+    ) -> website_mission_core::mission::flatten::ModMissionDocument {
+        use website_mission_core::mission::flatten::flatten_to_mod_document;
+        use website_mission_core::mission::flatten::MissionMeta;
         let meta = MissionMeta {
             terrain: terrain.to_string(),
             ..MissionMeta::default()
@@ -1692,10 +1693,10 @@ mod tests {
 
     /// The `boundary` zone the compile produced, as one flat `[x0,z0,…]` ring.
     fn compiled_boundary_ring(
-        doc: &map_engine_core::mission::flatten::ModMissionDocument,
+        doc: &website_mission_core::mission::flatten::ModMissionDocument,
         id: &str,
     ) -> Vec<f64> {
-        use map_engine_core::mission::flatten::ModZoneShape;
+        use website_mission_core::mission::flatten::ModZoneShape;
         let z = doc
             .zones
             .iter()
@@ -1724,7 +1725,7 @@ mod tests {
     /// because both sides are the same source.
     #[test]
     fn whole_terrain_ring_is_the_rect_the_compile_reads() {
-        use map_engine_core::mission::compile::terrain_bounds;
+        use website_mission_core::mission::compile::terrain_bounds;
         for terrain in SHIPPED_TERRAINS {
             let compiled =
                 compiled_boundary_ring(&compile_for(terrain, &terrain_payload("[]")), "z_bounds");
@@ -1763,7 +1764,7 @@ mod tests {
     /// and this is where that is checked end to end.
     #[test]
     fn the_authored_play_area_becomes_the_compiled_play_area() {
-        use map_engine_core::mission::compile::terrain_bounds;
+        use website_mission_core::mission::compile::terrain_bounds;
         for terrain in SHIPPED_TERRAINS {
             // The play area the compile would have synthesised for this map, taken FROM the compile.
             // Building the payload out of `terrain_rect_ring` and then reading it back would make
@@ -1826,7 +1827,7 @@ mod tests {
     /// a "whole-terrain" zone that is not the terrain — invisible in the editor, wrong in game.
     #[test]
     fn terrain_rect_ring_refuses_bounds_that_are_not_this_terrain() {
-        use map_engine_core::mission::compile::terrain_bounds;
+        use website_mission_core::mission::compile::terrain_bounds;
         let everon = terrain_bounds("everon");
         let arland = terrain_bounds("arland");
         assert!(terrain_rect_ring("everon", everon).is_some());
@@ -1859,7 +1860,7 @@ mod tests {
     /// what is under test.
     #[test]
     fn terrain_rect_rule_fires() {
-        use map_engine_core::mission::compile::terrain_bounds;
+        use website_mission_core::mission::compile::terrain_bounds;
         for terrain in SHIPPED_TERRAINS {
             assert!(
                 terrain_rect_is_authorable(terrain_bounds(terrain)),
@@ -2115,9 +2116,9 @@ mod t946_86_tactical_trigger {
             src.contains("tactical_graphics::KINDS"),
             "T-946.86 (.84): the kind select must read map-engine-core's KINDS, not a local list"
         );
-        for kind in map_engine_core::mission::tactical_graphics::KINDS {
+        for kind in website_mission_core::mission::tactical_graphics::KINDS {
             assert!(
-                map_engine_core::mission::tactical_graphics::min_points(kind).is_some(),
+                website_mission_core::mission::tactical_graphics::min_points(kind).is_some(),
                 "every offered kind must be one begin_tactical_draw accepts — `{kind}` is not"
             );
         }

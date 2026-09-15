@@ -250,10 +250,8 @@ pub fn orbat_remove_slot(core: &MissionDocCore, slot_id: String) -> bool {
     core.remove_slots(vec![slot_id]);
     if remaining.is_empty() {
         core.remove_squad(&squad_id);
-    } else if was_leader {
-        if let Some(next) = remaining.first() {
-            core.set_leader(&squad_id, next);
-        }
+    } else if was_leader && let Some(next) = remaining.first() {
+        core.set_leader(&squad_id, next);
     }
     true
 }

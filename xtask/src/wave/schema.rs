@@ -179,7 +179,8 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
     // defect 3). Content, not mtime — mtime is the thing that lied.
     let stamp_roots = [
         "xtask/src",
-        "crates/map-engine-core/src",
+        "apps/website/graphics-engine/src",
+        "apps/website/mission-core/src",
         "tools/tbd-tools/src",
     ];
     let mut srcs: Vec<PathBuf> = Vec::new();
@@ -210,7 +211,8 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
     }
     for m in [
         "xtask/Cargo.toml",
-        "crates/map-engine-core/Cargo.toml",
+        "apps/website/graphics-engine/Cargo.toml",
+        "apps/website/mission-core/Cargo.toml",
         "tools/tbd-tools/Cargo.toml",
         "Cargo.lock",
     ] {

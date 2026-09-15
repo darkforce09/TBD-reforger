@@ -12,12 +12,14 @@
 //! renders identically to the committed v1 file at every mip" into a property of the code.
 
 use anyhow::{Result, bail};
-use map_engine_core::world::binary::{
-    access_checked,
-    archives::{SatLevel, SatTile, TbdSatIndexV2},
-    chunk_container::{ContainerHeader, HEADER_BYTES, TbdsHeader},
-    to_bytes,
-};
+use website_graphics_engine::formats::archives::codec::access_checked;
+use website_graphics_engine::formats::archives::codec::to_bytes;
+use website_graphics_engine::formats::archives::satellite::SatLevel;
+use website_graphics_engine::formats::archives::satellite::SatTile;
+use website_graphics_engine::formats::archives::satellite::TbdSatIndexV2;
+use website_graphics_engine::formats::containers::header::ContainerHeader;
+use website_graphics_engine::formats::containers::header::HEADER_BYTES;
+use website_graphics_engine::formats::containers::tbds::TbdsHeader;
 
 use super::img;
 

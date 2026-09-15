@@ -166,7 +166,7 @@ const EDITOR_OPS_SPLIT: &[&str] = &[
 const ORBAT_RS: &str = "apps/website/mission-core/src/mission/ast/factions/orbat_slot_template.rs";
 const ORBAT_MGR: &str = "apps/website/frontend/src/pages/operations/orbat_manager.rs";
 const EDEN_CHROME: &str = "apps/website/frontend/src/editor/eden_chrome.rs";
-const SLOTS_GPU: &str = "crates/map-engine-core/src/slots_gpu.rs";
+const SLOTS_GPU: &str = "apps/website/graphics-engine/src/symbology/roles/classify.rs";
 
 /// One `ban`: message, ERE pattern, `-i`?, targets, and the `ok` line printed when it holds.
 #[rustfmt::skip]
@@ -196,8 +196,8 @@ const PINS: &[(&str, &str)] = &[
     ("SIDE_INDFOR_RGBA pin missing", r"SIDE_INDFOR_RGBA: \[u8; 4\] = \[34, 197, 94, 255\]"),
 ];
 
-const MEC: &str = "map-engine-core";
-const MER: &str = "map-engine-render";
+const MEC: &str = "website-graphics-engine";
+const MER: &str = "website-graphics-engine";
 const FE: &str = "website-frontend";
 /// One argv element, not two — and bash's `$*` re-joins it with a space, so the failure text reads
 /// `--features doc mission`. Reproduced by [`shown`].
@@ -631,8 +631,8 @@ mod tests {
     /// weakened gate: 25 rows and 5 section `ok` lines, exactly as the script had.
     #[test]
     fn the_argv_rendering_and_the_pin_table_match_the_script() {
-        let args = ["test", "-p", MEC, "--features", "doc mission", "--lib", "x"];
-        let want = "-p map-engine-core --features doc mission --lib x";
+        let args = ["test", "-p", MC, "--features", "compiler doc", "--lib", "x"];
+        let want = "-p website-mission-core --features compiler doc --lib x";
         assert_eq!(shown(&args), want);
         assert_eq!(CARGO_PINS.len(), 25);
         assert_eq!(CARGO_PINS.iter().filter(|p| p.4.is_some()).count(), 5);

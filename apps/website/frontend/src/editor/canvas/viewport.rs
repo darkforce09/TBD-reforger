@@ -33,7 +33,9 @@ pub(crate) fn device_size(css_w: f64, css_h: f64, dpr: f64) -> (u32, u32) {
 /// (and drops itself) once `disposed` is set.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn start_raf(
-    engine: std::rc::Rc<std::cell::RefCell<Option<map_engine_render::RenderEngine>>>,
+    engine: std::rc::Rc<
+        std::cell::RefCell<Option<website_graphics_engine::core::context::state::RenderEngine>>,
+    >,
     disposed: std::sync::Arc<std::sync::atomic::AtomicBool>,
     debug_hud: RwSignal<String>,
     scale_mpp: RwSignal<f64>,
@@ -126,7 +128,7 @@ pub(crate) fn start_raf(
                         "z {:.2} · c{chunks} · glyph {glyphs} · {fps:.0} FPS · rf {rf_ms:.2}ms ({rf_eq:.0} eq){}{}",
                         e.zoom(),
                         crate::editor::tools::los_world_wasm::hud_suffix(),
-                        crate::editor::world_assets::memory_hud_suffix()
+                        website_graphics_engine::streaming::memory::budget::hud_suffix()
                     ));
                     frames = 0;
                     last_sample = now;
@@ -152,7 +154,9 @@ pub(crate) fn start_raf(
 /// single-threaded). Each resolves to a JSON string with a `pass` field.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_self_checks(
-    engine: std::rc::Rc<std::cell::RefCell<Option<map_engine_render::RenderEngine>>>,
+    engine: std::rc::Rc<
+        std::cell::RefCell<Option<website_graphics_engine::core::context::state::RenderEngine>>,
+    >,
 ) {
     use wasm_bindgen::prelude::*;
 
@@ -222,8 +226,10 @@ pub(crate) fn register_self_checks(
 /// tree glyphs at zoom ≥ 0 without relying on CDP `mouseWheel` → DOM `wheel` delivery.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_editor_cam(
-    engine: std::rc::Rc<std::cell::RefCell<Option<map_engine_render::RenderEngine>>>,
-    map_host: crate::editor::world_assets::HostHandle,
+    engine: std::rc::Rc<
+        std::cell::RefCell<Option<website_graphics_engine::core::context::state::RenderEngine>>,
+    >,
+    map_host: website_graphics_engine::streaming::host::HostHandle,
 ) {
     use wasm_bindgen::prelude::*;
 
@@ -255,7 +261,10 @@ pub(crate) fn register_editor_cam(
                 e.on_camera_changed(); // T-172 H5
             }
             // Immediate flush so smoke_fullmap A_trees_on does not race the 120 ms debounce.
-            crate::editor::world_assets::flush_viewport(map_host.clone(), engine.clone());
+            website_graphics_engine::streaming::host::flush_viewport(
+                map_host.clone(),
+                engine.clone(),
+            );
         }
     }) as Box<dyn FnMut(f64, f64, f64)>);
 
@@ -271,7 +280,9 @@ pub(crate) fn register_editor_cam(
 /// `slot_stats_json` (atlas_ready / slot_len / cluster_mode / …) for the doc smoke.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_slot_stats(
-    engine: std::rc::Rc<std::cell::RefCell<Option<map_engine_render::RenderEngine>>>,
+    engine: std::rc::Rc<
+        std::cell::RefCell<Option<website_graphics_engine::core::context::state::RenderEngine>>,
+    >,
 ) {
     use wasm_bindgen::prelude::*;
 
@@ -371,21 +382,3 @@ pub(crate) mod registry_session {
         COMPAT.with(|c| *c.borrow_mut() = None);
     }
 }
-
-/// T-938.6 — the memory budget's arithmetic, mounted a SECOND time so the host runner can execute
-/// it.
-///
-/// `world_assets` is `#![cfg(target_arch = "wasm32")]`, so `world_assets::memory_budget` and every
-/// test inside it are invisible to `cargo test -p website-frontend`: a `#[cfg(test)] mod` that only
-/// lived there would compile for nobody and report nothing, which is the signature defect (a green
-/// check over an input it never examined) wearing a test's clothes. The module's budget arithmetic,
-/// its `Decision` ladder and the mip floor it walks are all pure — every `web_sys`/`js_sys` item in
-/// it is `#[cfg(target_arch = "wasm32")]` with a host twin — so mounting the same file here under
-/// `not(wasm32)` runs the real code rather than a copy of it. Same device as
-/// `mission_editor::tbd_sat_pure` (mission_editor.rs), for the same reason.
-///
-/// The two mounts are never both live, and this one sits below `registry_session`'s `#[cfg(test)]`
-/// so `class_r_scrub`'s whole-file cut (first `#[cfg(test)]` → EOF) never sees it.
-#[cfg(all(test, not(target_arch = "wasm32")))]
-#[path = "../world_assets/memory_budget.rs"]
-mod memory_budget_pure;

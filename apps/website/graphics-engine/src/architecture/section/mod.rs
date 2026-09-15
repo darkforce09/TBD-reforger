@@ -1,0 +1,12 @@
+//! Role: Module boundary for architecture/section.
+//! Position: `architecture/section` in the graphics engine.
+//! Signals & state: camera, spatial, asset, or GPU data owned by this module.
+//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
+
+/// Cutter.
+#[cfg(feature = "formats")]
+pub mod cutter;
+
+/// Index.
+#[cfg(feature = "formats")]
+pub mod index;

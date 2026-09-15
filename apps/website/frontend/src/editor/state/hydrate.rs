@@ -111,9 +111,9 @@ use std::rc::Rc;
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use map_engine_core::doc::MissionDocCore;
-use map_engine_core::mission::compile::compile_payload;
 use wasm_bindgen::prelude::*;
+use website_mission_core::doc::MissionDocCore;
+use website_mission_core::mission::compile::compile_payload;
 
 use crate::editor::state::doc_host::DocHandle;
 use crate::editor::state::tab_lock;
@@ -149,10 +149,12 @@ const DEFAULT_LAYER_ID: &str = "layer-1";
 async fn get_mission_measured(
     auth: AuthStore,
     path: &str,
-    report: &dyn Fn(crate::editor::mission_editor::boot_progress::BootEvent),
+    report: &dyn Fn(website_graphics_engine::streaming::bridge::progress::BootEvent),
 ) -> Result<MissionDetail, crate::v2::core::api::client::ApiErr> {
-    use crate::editor::mission_editor::boot_progress::{BootEvent, BootSeg, STREAM_REPORT_BYTES};
     use wasm_bindgen::JsCast;
+    use website_graphics_engine::streaming::bridge::progress::BootEvent;
+    use website_graphics_engine::streaming::bridge::progress::BootSeg;
+    use website_graphics_engine::streaming::bridge::progress::STREAM_REPORT_BYTES;
 
     let measured = async {
         let token = auth.access_token.get_untracked()?;
@@ -235,7 +237,7 @@ pub async fn hydrate_from_server(
     loaded_from_idb: bool,
     current_semver: RwSignal<Option<String>>,
     conflict: RwSignal<Option<crate::editor::mission_editor::ConflictInfo>>,
-    report: crate::editor::mission_editor::boot_progress::ProgressFn,
+    report: website_graphics_engine::streaming::bridge::progress::ProgressFn,
 ) {
     // T-191 — the recovery bridge is registered on every editor boot, not only when a conflict
     // fires: after a reload the in-memory snapshot is gone and the IDB record is the only copy, and

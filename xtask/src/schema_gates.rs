@@ -19,9 +19,11 @@ use serde_json::Value;
 
 use crate::root::find_repo_root as repo_root;
 use crate::sync::refuse_empty_write;
-use map_engine_core::world::binary::chunk_container::CONTAINER_VERSION;
-use map_engine_core::world::binary::pod::{POD_BYTES, POD_NAME};
-use map_engine_core::world::{chunk_bin_path, parse_manifest_binary};
+use website_graphics_engine::formats::containers::header::CONTAINER_VERSION;
+use website_graphics_engine::formats::pod::instance::POD_BYTES;
+use website_graphics_engine::formats::pod::instance::POD_NAME;
+use website_graphics_engine::streaming::loaders::chunk_bin::chunk_bin_path;
+use website_graphics_engine::streaming::loaders::manifest::parse_manifest_binary;
 
 fn read_json(p: &Path) -> Result<Value> {
     let raw = fs::read_to_string(p).with_context(|| format!("read {}", p.display()))?;
@@ -1634,7 +1636,7 @@ mod t935_binary_block_tests {
     fn t985_occluder_init_still_fetches_blas_manifest_for_hot() {
         let root = repo_root().expect("repo root");
         let src = fs::read_to_string(
-            root.join("apps/website/frontend/src/editor/world_assets/occluder_host.rs"),
+            root.join("apps/website/graphics-engine/src/streaming/loaders/occluder_loader.rs"),
         )
         .expect("occluder_host.rs");
         let init = src

@@ -11,9 +11,9 @@ use std::io::Read;
 use std::path::Path;
 
 use anyhow::{Context, Result, bail};
-use map_engine_core::building_compound::InstancesFile;
-use map_engine_core::geometry::rigid::Rigid;
 use serde_json::Value;
+use website_graphics_engine::architecture::compound::instances::InstancesFile;
+use website_graphics_engine::architecture::compound::transform::Rigid;
 
 use super::verify::{POS_TOL_M, ReconFile, Report};
 

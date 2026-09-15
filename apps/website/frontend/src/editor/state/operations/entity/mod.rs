@@ -34,9 +34,9 @@ use crate::editor::panels::zones_panel::DrawTarget;
 use crate::editor::state::history as mission_history;
 use crate::v2::core::api::dto::FactionDoc;
 use leptos::prelude::{GetUntracked, Set};
-use map_engine_core::doc::place_character_under_side;
-use map_engine_core::doc::MissionDocCore;
 use std::cell::{Cell, RefCell};
+use website_mission_core::doc::place_character_under_side;
+use website_mission_core::doc::MissionDocCore;
 
 /// Expose website mission core :: doc :: operations :: entity :: comment details at this domain boundary.
 pub use website_mission_core::doc::operations::entity::comment_details;

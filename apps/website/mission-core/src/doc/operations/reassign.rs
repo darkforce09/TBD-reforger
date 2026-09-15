@@ -29,7 +29,6 @@ pub fn faction_label(f: &super::rows::FactionRow) -> String {
 }
 
 /// Pure, and deliberately outside the `wasm32` block: the `axis_chip_class` / `nudge_step` precedent. The refusal strings are the user-visible half of requirement 4, and a message that only a source pin ever reads is a message nobody has proved the modal can produce — here `cargo test` calls the real function and reads the real sentence.
-#[must_use]
 pub fn plan_reassign(
     factions: &[super::rows::FactionRow],
     squads: &[super::rows::SquadRow],

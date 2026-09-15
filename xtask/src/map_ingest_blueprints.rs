@@ -86,9 +86,10 @@ pub fn run(args: &[String]) -> Result<u8> {
             }
             matched += 1;
             let text = fs::read_to_string(&path)?;
-            match serde_json::from_str::<map_engine_core::building_blueprint::BuildingBlueprint>(
-                &text,
-            ) {
+            match serde_json::from_str::<
+                website_graphics_engine::architecture::blueprint::structure::BuildingBlueprint,
+            >(&text)
+            {
                 Ok(bp) => {
                     let walls: usize = bp.levels.iter().map(|l| l.walls.len()).sum();
                     let windows: usize = bp.levels.iter().map(|l| l.windows.len()).sum();

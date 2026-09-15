@@ -39,11 +39,14 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use serde_json::Value;
 
-use map_engine_core::world::binary::chunk_container::{ContainerHeader, TbdcHeader};
-use map_engine_core::world::binary::pod::{ObjectInstancePod, instances_to_bytes};
-use map_engine_core::world::{
-    NO_CLASS, build_prefab_maps, narrow_instance_row_v2, narrow_prefab_rows,
-};
+use website_graphics_engine::environment::buildings::prefab::build_prefab_maps;
+use website_graphics_engine::environment::buildings::prefab::narrow_prefab_rows;
+use website_graphics_engine::environment::classify::NO_CLASS;
+use website_graphics_engine::environment::classify::narrow_instance_row_v2;
+use website_graphics_engine::formats::containers::header::ContainerHeader;
+use website_graphics_engine::formats::containers::tbdc::TbdcHeader;
+use website_graphics_engine::formats::pod::instance::ObjectInstancePod;
+use website_graphics_engine::formats::pod::instance::instances_to_bytes;
 
 /// Prefab id (`pid.to_bits()`, the loader's key) → render-class code, for the prefab catalogue
 /// document `build-objects` is about to write.
@@ -115,10 +118,11 @@ pub fn write_chunk_bin(path: &Path, cx: i64, cy: i64, rows: &[ObjectInstancePod]
 mod tests {
     use std::path::PathBuf;
 
-    use map_engine_core::world::binary::chunk_container::HEADER_BYTES;
-    use map_engine_core::world::binary::pod::POD_BYTES;
-    use map_engine_core::world::{bytes_to_json, parse_chunk};
     use serde_json::json;
+    use website_graphics_engine::formats::containers::header::HEADER_BYTES;
+    use website_graphics_engine::formats::pod::instance::POD_BYTES;
+    use website_graphics_engine::streaming::loaders::chunk::parse_chunk;
+    use website_graphics_engine::streaming::loaders::store::bytes_to_json;
 
     use super::*;
     use crate::serve::repo_root;

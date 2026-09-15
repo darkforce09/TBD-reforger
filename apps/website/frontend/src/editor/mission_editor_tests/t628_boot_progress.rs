@@ -1,9 +1,11 @@
 use super::boot_progress::{
-    fmt_bytes_pair, fmt_files_pair, percent, split_range, BootEvent, BootProgress, BootSeg,
-    Ordered, PLANNED_SATELLITE_BYTES, PLANNED_TERRAIN_BYTES, PLANNED_WORLD_BYTES, SAT_CHUNK_BYTES,
-    SAT_FETCH_CONCURRENCY, STREAM_REPORT_BYTES,
+    fmt_bytes_pair, fmt_files_pair, percent, BootEvent, BootProgress, BootSeg, BootSegView,
+    PLANNED_SATELLITE_BYTES, PLANNED_TERRAIN_BYTES, PLANNED_WORLD_BYTES,
 };
 use super::BOOT_HANDOVER_MS;
+use website_graphics_engine::streaming::bridge::progress::{
+    split_range, Ordered, SAT_CHUNK_BYTES, SAT_FETCH_CONCURRENCY, STREAM_REPORT_BYTES,
+};
 
 /// everon `everon-sat.tbd-sat`, read off the live index at `/map-assets/everon/satellite/`
 /// (2026-08-01): file 152,713,114 B; level 0 = 4 tiles of 28,326,346 / 21,632,714 / 27,555,806
@@ -488,7 +490,25 @@ fn the_caption_reports_bytes_for_bytes_and_files_for_files() {
 #[test]
 fn the_satellite_fetch_is_bounded_concurrent_ordered_and_fails_fast() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-    let src = live_code(include_str!("../world_assets/satellite.rs"));
+    let src = live_code(concat!(
+        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/mod.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/selection.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/preview.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/decode.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/retry.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/downloads.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/upload.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/bootstrap.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/basemap.rs")
+    ));
     let body = only_body(&src, "async fn fetch_tiles(");
 
     assert!(
@@ -577,7 +597,21 @@ fn the_overlay_draws_one_measured_bar_and_no_sweep_anywhere() {
 #[test]
 fn the_terrain_dem_is_streamed_against_its_content_length() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-    let src = live_code(include_str!("../world_assets/mod.rs"));
+    let src = live_code(concat!(
+        include_str!("../../../../graphics-engine/src/streaming/host/mod.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/queries.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/state.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/preferences.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/viewport.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/bootstrap.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/terrain.rs")
+    ));
     let body = only_body(&src, "async fn load_dem_and_hillshade(");
     assert!(
         body.contains("fetch_bytes_streamed(") && body.contains("BootSeg::Terrain"),
@@ -589,7 +623,9 @@ fn the_terrain_dem_is_streamed_against_its_content_length() {
         "the unmeasured whole-body GET must not come back"
     );
 
-    let fetch = live_code(include_str!("../world_assets/fetch.rs"));
+    let fetch = live_code(include_str!(
+        "../../../../graphics-engine/src/streaming/loaders/fetch.rs"
+    ));
     let streamed = only_body(&fetch, "pub async fn fetch_bytes_streamed(");
     // `live_code` blanks string literals, so the header NAME cannot be the needle — the shape
     // that survives is "a header off this response, parsed as a number, becomes the budget",
@@ -621,7 +657,25 @@ fn the_terrain_dem_is_streamed_against_its_content_length() {
 #[test]
 fn every_world_batch_declares_its_files_before_it_fetches_them() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-    let world = live_code(include_str!("../world_assets/world_host.rs"));
+    let world = live_code(concat!(
+        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/mod.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/viewport.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/atlas.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/state.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/metrics.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/bootstrap.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/upload.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/terrain.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/ingest.rs")
+    ));
     let queue = only_body(&world, "async fn fetch_and_queue(");
     let declare = queue
         .find("BootEvent::Files")
@@ -639,7 +693,21 @@ fn every_world_batch_declares_its_files_before_it_fetches_them() {
          about to request, not an estimate of it"
     );
 
-    let boot = live_code(include_str!("../world_assets/mod.rs"));
+    let boot = live_code(concat!(
+        include_str!("../../../../graphics-engine/src/streaming/host/mod.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/queries.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/state.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/preferences.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/viewport.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/bootstrap.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/terrain.rs")
+    ));
     let bootstrap = only_body(&boot, "pub async fn bootstrap(");
     let plan = bootstrap
         .find("planned_density_bins()")
@@ -656,7 +724,9 @@ fn every_world_batch_declares_its_files_before_it_fetches_them() {
 
     // The forest host may only count a bin it actually landed; counting attempts would let a
     // retried bin advance a unit that was already declared and spent.
-    let forest = live_code(include_str!("../world_assets/forest_mass.rs"));
+    let forest = live_code(include_str!(
+        "../../../../graphics-engine/src/environment/vegetation/loader.rs"
+    ));
     let upload = only_body(&forest, "async fn boot_upload(");
     let done_at = upload
         .find("BootEvent::Done")
@@ -677,7 +747,21 @@ fn every_world_batch_declares_its_files_before_it_fetches_them() {
 #[test]
 fn every_segment_is_closed_and_the_overlay_waits_for_a_full_bar() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-    let boot = live_code(include_str!("../world_assets/mod.rs"));
+    let boot = live_code(concat!(
+        include_str!("../../../../graphics-engine/src/streaming/host/mod.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/queries.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/state.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/preferences.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/viewport.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/bootstrap.rs"),
+        "\n",
+        include_str!("../../../../graphics-engine/src/streaming/host/terrain.rs")
+    ));
     let bootstrap = only_body(&boot, "pub async fn bootstrap(");
     for seg in ["BootSeg::Terrain", "BootSeg::Satellite", "BootSeg::World"] {
         assert!(

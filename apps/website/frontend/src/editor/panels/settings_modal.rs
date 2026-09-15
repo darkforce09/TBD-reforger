@@ -1164,7 +1164,7 @@ fn render_shape_section(ctrl: &'static str, shape: RwSignal<Option<RowShape>>) -
             Some(handle) => {
                 let doc = handle.borrow();
                 doc.as_ref()
-                    .map_or(0, map_engine_core::doc::MissionDocCore::slot_count)
+                    .map_or(0, website_mission_core::doc::MissionDocCore::slot_count)
             }
             None => 0,
         };
@@ -1416,7 +1416,7 @@ fn render_prefs_section(env: &crate::v2::core::api::dto::MissionEnv) -> AnyView 
                             let on = event_target_checked(&ev);
                             author_env("showHillshade", on.into());
                             let op = crate::editor::state::operations::read_env().hillshade_opacity;
-                            crate::editor::world_assets::apply_hillshade(on, op);
+                            website_graphics_engine::streaming::host::apply_hillshade(on, op);
                         }
                         class="accent-primary"
                     />
@@ -1434,7 +1434,7 @@ fn render_prefs_section(env: &crate::v2::core::api::dto::MissionEnv) -> AnyView 
                             let pct: f64 = event_target_value(&ev).parse().unwrap_or(40.0);
                             let op = (pct / 100.0).clamp(0.0, 1.0);
                             author_env("hillshadeOpacity", op.into());
-                            crate::editor::world_assets::apply_hillshade(true, op);
+                            website_graphics_engine::streaming::host::apply_hillshade(true, op);
                         }
                         class="accent-primary"
                     />
@@ -1448,7 +1448,7 @@ fn render_prefs_section(env: &crate::v2::core::api::dto::MissionEnv) -> AnyView 
                         on:change=move |ev| {
                             let on = event_target_checked(&ev);
                             author_env("showGrid", on.into());
-                            crate::editor::world_assets::apply_grid(on);
+                            website_graphics_engine::streaming::host::apply_grid(on);
                         }
                         class="accent-primary"
                     />
@@ -1555,7 +1555,7 @@ fn render_editor_prefs_body() -> AnyView {
     }
     #[cfg(target_arch = "wasm32")]
     {
-        use crate::editor::world_layer_prefs as wlp;
+        use crate::editor::world_layer_prefs::{self as wlp, WorldLayerPrefsView};
         let sect = "text-label-sm uppercase tracking-wider text-outline";
         // Basemap view kept in a local signal so the active highlight follows a click within the
         // session (the store is still the source of truth; this only drives the button styling).
@@ -1577,7 +1577,7 @@ fn render_editor_prefs_body() -> AnyView {
                                 let mut p = wlp::load_prefs();
                                 p.set(key, checked);
                                 wlp::save_prefs(&p);
-                                crate::editor::world_assets::refresh_world_layers();
+                                website_graphics_engine::streaming::host::refresh_world_layers();
                             }
                             class="accent-primary"
                         />
@@ -1604,7 +1604,7 @@ fn render_editor_prefs_body() -> AnyView {
                                     }
                                     on:click=move |_| {
                                         wlp::save_basemap_view(v);
-                                        crate::editor::world_assets::apply_basemap_view(v);
+                                        website_graphics_engine::streaming::host::apply_basemap_view(v);
                                         basemap.set(v.to_string());
                                     }
                                 >

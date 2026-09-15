@@ -160,34 +160,34 @@ pub fn document_entities(core: &MissionDocCore) -> Vec<DocEntity> {
         });
     }
 
-    if let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()) {
-        if let Some(map) = root.get("entitiesById").and_then(|v| v.as_object()) {
-            for (id, v) in map {
-                let s = |k: &str| {
-                    v.get(k)
-                        .and_then(serde_json::Value::as_str)
-                        .unwrap_or_default()
-                        .to_string()
-                };
-                let alias = s("alias");
-                let resource_name = s("resourceName");
-                let mut text = Vec::new();
-                push_text(&mut text, "alias", &alias);
-                push_text(
-                    &mut text,
-                    "class",
-                    super::assets::classname_tail(&resource_name),
-                );
-                push_text(&mut text, "id", id);
-                out.push(DocEntity {
-                    id: id.clone(),
-                    kind: DocKind::Object,
-                    label: or_fallback(&alias, &format!("Object {id}")),
-                    faction: side_label(&s("faction")),
-                    class_name: resource_name,
-                    text,
-                });
-            }
+    if let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.small_maps_json())
+        && let Some(map) = root.get("entitiesById").and_then(|v| v.as_object())
+    {
+        for (id, v) in map {
+            let s = |k: &str| {
+                v.get(k)
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or_default()
+                    .to_string()
+            };
+            let alias = s("alias");
+            let resource_name = s("resourceName");
+            let mut text = Vec::new();
+            push_text(&mut text, "alias", &alias);
+            push_text(
+                &mut text,
+                "class",
+                super::assets::classname_tail(&resource_name),
+            );
+            push_text(&mut text, "id", id);
+            out.push(DocEntity {
+                id: id.clone(),
+                kind: DocKind::Object,
+                label: or_fallback(&alias, &format!("Object {id}")),
+                faction: side_label(&s("faction")),
+                class_name: resource_name,
+                text,
+            });
         }
     }
 

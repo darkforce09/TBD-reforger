@@ -737,7 +737,7 @@ pub fn run(warn_only: bool) -> Result<u8> {
                 "--format=%ct",
                 "--",
                 "apps/website/api",
-                "crates/map-engine-core",
+                "apps/website/mission-core",
             ],
         )
         .and_then(|s| s.parse().ok())

@@ -34,15 +34,21 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use map_engine_core::world::binary::archives::{
-    ARCHIVE_SCHEMA_VERSION, ForestRegionsArchive, PrefabCatalogArchive, TypeInventory,
-};
-use map_engine_core::world::binary::{access_checked, to_bytes};
-use map_engine_core::world::{
-    bytes_to_json, catalog_from_bytes, inventory_from_bytes, inventory_to_archive,
-    narrow_prefab_rows, parse_regions_payload, region_to_archive, regions_from_bytes,
-    row_to_archive,
-};
+use website_graphics_engine::environment::buildings::prefab::catalog_from_bytes;
+use website_graphics_engine::environment::buildings::prefab::inventory_from_bytes;
+use website_graphics_engine::environment::buildings::prefab::inventory_to_archive;
+use website_graphics_engine::environment::buildings::prefab::narrow_prefab_rows;
+use website_graphics_engine::environment::buildings::prefab::row_to_archive;
+use website_graphics_engine::environment::vegetation::regions::parse_regions_payload;
+use website_graphics_engine::environment::vegetation::regions::region_to_archive;
+use website_graphics_engine::environment::vegetation::regions::regions_from_bytes;
+use website_graphics_engine::formats::archives::codec::access_checked;
+use website_graphics_engine::formats::archives::codec::to_bytes;
+use website_graphics_engine::formats::archives::forest::ForestRegionsArchive;
+use website_graphics_engine::formats::archives::prefabs::PrefabCatalogArchive;
+use website_graphics_engine::formats::archives::prefabs::TypeInventory;
+use website_graphics_engine::formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use website_graphics_engine::streaming::loaders::store::bytes_to_json;
 
 /// The gz-JSON prefab catalogue, relative to a terrain directory.
 pub const PREFABS_GZ: &str = "objects/prefabs.json.gz";
@@ -259,7 +265,7 @@ pub fn emit_catalog_archives(terrain_dir: &Path) -> Result<Vec<(PathBuf, usize)>
 
 #[cfg(test)]
 mod tests {
-    use map_engine_core::world::parse_manifest_binary;
+    use website_graphics_engine::streaming::loaders::manifest::parse_manifest_binary;
 
     use super::*;
     use crate::serve::repo_root;

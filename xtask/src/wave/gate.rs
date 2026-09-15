@@ -418,11 +418,10 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "cargo",
                 "clippy",
                 "-p",
-                "map-engine-core",
-                "--features",
-                "doc,mission,world",
+                "website-mission-core",
+                "--all-features",
                 "-p",
-                "map-engine-render",
+                "website-graphics-engine",
                 "--all-targets",
                 "--quiet",
                 "--",
@@ -470,7 +469,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
         migrate::gate_db_migrate_persist(ctx, &state, "advance") as i32
     });
     r.run("test api", || db::gate_test_api(ctx));
-    // --all-features is REQUIRED (T-747 / wave139 F2). Bare `cargo test -p map-engine-core` is a
+    // --all-features is REQUIRED (T-747 / wave139 F2). Bare `cargo test -p website-mission-core` is a
     // vacuous pass (~140 tests; tripwire REDs). `--features doc,mission` still skips the world/dem
     // suite (~133 tests). Makefile `ci-local` and this gate must match. Measured 2026-08-08: bare
     // 140, doc,mission 502, --all-features 635. Private target dir for the same reason as
@@ -489,10 +488,10 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "cargo",
                 "test",
                 "-p",
-                "map-engine-core",
+                "website-mission-core",
                 "--all-features",
                 "-p",
-                "map-engine-render",
+                "website-graphics-engine",
                 "--quiet",
             ],
         )
@@ -576,7 +575,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     // merge. NOTE: committed diff only, no working-tree union; that is what the bash asked.
     // T-946: the scope is the frontend crate AND every workspace crate it compiles in, derived
     // from the dependency graph — see `changed::wasm_scope_prefixes`. Wave 237 rewrote
-    // `map-engine-core`'s TBDD decode, which the SPA links, and this step skipped.
+    // `website-mission-core`'s TBDD decode, which the SPA links, and this step skipped.
     let wave_diff = git_stdout_lossy(&["diff", "--name-only", &range]);
     if changed::wasm_scope_touched(&ctx.root, wave_diff.lines()) {
         r.run("trunk build", || trunk::gate_trunk_build(ctx));

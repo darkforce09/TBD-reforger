@@ -60,11 +60,17 @@
 use std::sync::Arc;
 
 use leptos::prelude::*;
-use map_engine_core::building_blueprint::{BuildingBlueprint, LosHitKind, LosResult};
-use map_engine_core::building_compound::CompoundBuilding;
-use map_engine_core::building_section::{building_drawing, BuildingDrawing};
-use map_engine_core::building_viewshed::{level_wash, level_wash_compound, LevelWash, WashParams};
-use map_engine_core::bvh::BvhSidecar;
+use website_graphics_engine::architecture::blueprint::attribution_1::LosHitKind;
+use website_graphics_engine::architecture::blueprint::attribution_1::LosResult;
+use website_graphics_engine::architecture::blueprint::structure::BuildingBlueprint;
+use website_graphics_engine::architecture::compound::assembly::CompoundBuilding;
+use website_graphics_engine::architecture::los::wash::level_wash;
+use website_graphics_engine::architecture::los::wash::level_wash_compound;
+use website_graphics_engine::architecture::los::wash::LevelWash;
+use website_graphics_engine::architecture::los::wash::WashParams;
+use website_graphics_engine::architecture::section::cutter::building_drawing;
+use website_graphics_engine::architecture::section::cutter::BuildingDrawing;
+use website_graphics_engine::spatial::bvh::sidecar::BvhSidecar;
 
 use super::building_interior::LevelCuts;
 
@@ -133,14 +139,19 @@ impl ViewFloor {
 pub mod geom {
     use super::ViewFloor;
     use crate::editor::tools::los_tool::{pack_rgba_256, ViewshedTexture};
-    use map_engine_core::building_blueprint::{BuildingBlueprint, BuildingLevel};
-    use map_engine_core::building_section::{
-        through_voids, BuildingDrawing, HeightField, FLOOR_WINDOW_M, PIT_DEPTH_M, PLAN_CELL_M,
-    };
-    use map_engine_core::building_viewshed::LevelWash;
-    use map_engine_core::dem::sample::Visibility;
-    use map_engine_core::geometry::polyline_strip::{expand_polyline_strip, StripVertex};
-    use map_engine_core::geometry::triangulate::triangulate_simple;
+    use website_graphics_engine::architecture::blueprint::structure::BuildingBlueprint;
+    use website_graphics_engine::architecture::blueprint::structure::BuildingLevel;
+    use website_graphics_engine::architecture::los::wash::LevelWash;
+    use website_graphics_engine::architecture::section::cutter::through_voids;
+    use website_graphics_engine::architecture::section::cutter::BuildingDrawing;
+    use website_graphics_engine::architecture::section::cutter::HeightField;
+    use website_graphics_engine::architecture::section::cutter::FLOOR_WINDOW_M;
+    use website_graphics_engine::architecture::section::cutter::PIT_DEPTH_M;
+    use website_graphics_engine::architecture::section::cutter::PLAN_CELL_M;
+    use website_graphics_engine::renderers::primitives::triangulate::triangulate_simple;
+    use website_graphics_engine::spatial::terrain_los::viewshed::Visibility;
+    use website_graphics_engine::terrain::roads::styling::expand_polyline_strip;
+    use website_graphics_engine::terrain::roads::styling::StripVertex;
 
     /// The building is placed at the engine's world anchor so f32 lane coords stay tiny.
     pub const ANCHOR: [f64; 2] = [6400.0, 6400.0];
@@ -231,7 +242,7 @@ pub mod geom {
         let target = to_world([cx, cz]);
         let zoom = ((css.0 / (w * 1.25)).min(css.1 / (d * 1.25)))
             .log2()
-            .min(map_engine_core::camera::MAX_ZOOM);
+            .min(website_graphics_engine::camera::ortho::state::MAX_ZOOM);
         (target[0], target[1], zoom)
     }
 
@@ -880,10 +891,11 @@ pub mod geom {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use map_engine_core::building_section::building_drawing;
-        use map_engine_core::building_viewshed::{level_washes, WashParams};
-        use map_engine_core::bvh::Bvh;
-        use map_engine_core::bvh::BvhSidecar;
+        use website_graphics_engine::architecture::los::wash::level_washes;
+        use website_graphics_engine::architecture::los::wash::WashParams;
+        use website_graphics_engine::architecture::section::cutter::building_drawing;
+        use website_graphics_engine::spatial::bvh::sidecar::BvhSidecar;
+        use website_graphics_engine::spatial::bvh::traversal::Bvh;
 
         fn farmhouse() -> BuildingBlueprint {
             serde_json::from_str(include_str!(
@@ -985,7 +997,7 @@ pub mod geom {
         /// plates still land on the floor lane.
         #[test]
         fn level_view_paints_plate_grid_verbatim() {
-            use map_engine_core::building_blueprint::PlateGrid;
+            use website_graphics_engine::architecture::blueprint::footprint::PlateGrid;
             let mut bp = farmhouse();
             bp.levels[0].plate = Some(PlateGrid {
                 origin: [-2.0, -2.0],
@@ -1014,7 +1026,7 @@ pub mod geom {
         /// floorPolygons rings (outer + holes) draw as closed hairline loops over the plate.
         #[test]
         fn floor_rings_draw_closed_hairline_loops() {
-            use map_engine_core::building_blueprint::FloorPolygon;
+            use website_graphics_engine::architecture::blueprint::structure::FloorPolygon;
             let bp = farmhouse();
             let base = build_static_lanes(&bp, None, ViewFloor::Level(0));
             let mut bp = farmhouse();
@@ -1052,7 +1064,7 @@ pub mod geom {
         /// on the floor lane, ramping dark→light with height; nulls skip; ghosts unaffected.
         #[test]
         fn roof_view_paints_the_heightfield() {
-            use map_engine_core::building_blueprint::RoofGrid;
+            use website_graphics_engine::architecture::blueprint::footprint::RoofGrid;
             let mut bp = farmhouse();
             let base = build_static_lanes(&bp, None, ViewFloor::Roof);
             bp.roof = Some(RoofGrid {
@@ -1120,10 +1132,12 @@ pub mod geom {
         /// One-level 10 × 10 m box room (band [0, 3]) with a single window hole in the south
         /// wall (x ∈ [-1, 1], y ∈ [1, 2]): the blueprint names it, the 0.2 m slab mesh HAS it.
         fn box_room() -> (BuildingBlueprint, BvhSidecar) {
-            use map_engine_core::building_blueprint::{
-                BBox2D, BuildingWall, BuildingWindow, OverallFootprint, VerticalProfile,
-            };
-            use map_engine_core::bvh::Bvh;
+            use website_graphics_engine::architecture::blueprint::footprint::OverallFootprint;
+            use website_graphics_engine::architecture::blueprint::footprint::VerticalProfile;
+            use website_graphics_engine::architecture::blueprint::structure::BBox2D;
+            use website_graphics_engine::architecture::blueprint::structure::BuildingWall;
+            use website_graphics_engine::architecture::blueprint::structure::BuildingWindow;
+            use website_graphics_engine::spatial::bvh::traversal::Bvh;
             let wall = |id: &str, start: [f64; 2], end: [f64; 2]| BuildingWall {
                 id: id.into(),
                 start,
@@ -1980,19 +1994,21 @@ mod live {
     use super::super::building_interior::{self, InteriorLanes, LevelCuts};
     use super::{geom, Cam, Drag, RayEnd, ViewFloor, DEFAULT_PREFAB_PATH};
     use leptos::prelude::*;
-    use map_engine_core::building_blueprint::{BuildingBlueprint, LosResult};
-    use map_engine_core::building_compound::{CompoundBuilding, InstancesFile};
-    use map_engine_core::building_section::BuildingDrawing;
-    use map_engine_core::building_viewshed::LevelWash;
-    use map_engine_core::bvh::BvhSidecar;
-    use map_engine_render::draw_order::role_id;
-    use map_engine_render::RenderEngine;
     use std::cell::RefCell;
     use std::collections::HashMap;
     use std::rc::Rc;
     use std::sync::Arc;
     use wasm_bindgen::prelude::*;
     use wasm_bindgen::JsCast;
+    use website_graphics_engine::architecture::blueprint::attribution_1::LosResult;
+    use website_graphics_engine::architecture::blueprint::structure::BuildingBlueprint;
+    use website_graphics_engine::architecture::compound::assembly::CompoundBuilding;
+    use website_graphics_engine::architecture::compound::instances::InstancesFile;
+    use website_graphics_engine::architecture::los::wash::LevelWash;
+    use website_graphics_engine::architecture::section::cutter::BuildingDrawing;
+    use website_graphics_engine::core::context::state::RenderEngine;
+    use website_graphics_engine::core::pipeline::draw_order::role_id;
+    use website_graphics_engine::spatial::bvh::sidecar::BvhSidecar;
 
     type EngineHandle = Rc<RefCell<Option<RenderEngine>>>;
 
@@ -2359,7 +2375,7 @@ mod live {
                                 for id in ids {
                                     c.set_door(
                                         &id,
-                                        map_engine_core::building_compound::DoorState::OPEN,
+                                        website_graphics_engine::architecture::compound::doors::DoorState::OPEN,
                                     );
                                 }
                             }

@@ -208,7 +208,7 @@ pub(super) fn upload_panel(
             let body = up_doc.with_untracked(|slot| {
                 let doc = slot.as_ref()?;
                 let mut buf: Vec<u8> = Vec::with_capacity(cap);
-                map_engine_core::mission::compile::version_body_to_writer(
+                website_mission_core::mission::compile::version_body_to_writer(
                     &mut buf, &semver, &notes, doc,
                 )
                 .ok()?;

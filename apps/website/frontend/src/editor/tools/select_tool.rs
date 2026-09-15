@@ -20,13 +20,13 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use map_engine_core::camera::OrthoCamera;
-use map_engine_core::doc::SlotSoa;
-use map_engine_core::spatial::point_index::PointIndex;
-use map_engine_core::squad_links::pack_squad_link_drag_preview;
-use map_engine_render::draw_order::role_id;
-use map_engine_render::RenderEngine;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::camera::ortho::state::OrthoCamera;
+use website_graphics_engine::core::context::state::RenderEngine;
+use website_graphics_engine::core::pipeline::draw_order::role_id;
+use website_graphics_engine::spatial::indexing::point_index::PointIndex;
+use website_graphics_engine::symbology::links::squad_links::pack_squad_link_drag_preview;
+use website_mission_core::doc::SlotSoa;
 
 use crate::editor::state::doc_host::DocHandle;
 
@@ -45,7 +45,7 @@ pub fn may_promote_pending(buttons: u16) -> bool {
     buttons != 0
 }
 /// `PointIndex` grid cell (world m) — SoT on [`map_engine_core::doc::MissionDocCore::GRID_CELL_M`].
-const GRID_CELL_M: f64 = map_engine_core::doc::MissionDocCore::GRID_CELL_M;
+const GRID_CELL_M: f64 = website_mission_core::doc::MissionDocCore::GRID_CELL_M;
 /// Everon bounds (matches `mission_editor.rs`/`mission_doc.rs`), for the frozen-camera target clamp.
 const TERRAIN_W: f64 = 12_800.0;
 const TERRAIN_H: f64 = 12_800.0;
@@ -56,7 +56,7 @@ pub type SelectionHandle = Rc<RefCell<Vec<String>>>;
 
 /// A leaked `Option<RenderEngine>` handle, exactly the one `mission_editor.rs` owns. `pub` since
 /// T-159.21 so `mission_history` names the same alias instead of redeclaring a twin.
-pub type EngineHandle = Rc<RefCell<Option<RenderEngine>>>;
+pub use website_graphics_engine::core::context::handles::EngineHandle;
 
 /// The pending LMB gesture: the press point (CSS px, container-local) + a **frozen** ortho camera
 /// copied at pointer-down. A sub-threshold release unprojects against `cam` (never the live engine).
@@ -292,7 +292,12 @@ pub fn push_drag_preview(
     e.set_drag(ids.to_vec(), dx as f32, dy as f32);
     bind_vehicle_preview_lane(
         e,
-        &map_engine_core::slots_gpu::pack_vehicle_drag_preview(ids, vehicle_points, dx, dy),
+        &website_graphics_engine::symbology::instances::drag::pack_vehicle_drag_preview(
+            ids,
+            vehicle_points,
+            dx,
+            dy,
+        ),
     );
     // T-801 — tether/squad lines track the same world delta as the sprite preview. Commit still
     // rebuilds from the document on `after_doc_change`; this is preview-only.
@@ -311,7 +316,12 @@ pub fn clear_drag_preview(e: &mut RenderEngine, vehicle_points: &[(String, f64, 
     e.set_drag(Vec::new(), 0.0, 0.0);
     bind_vehicle_preview_lane(
         e,
-        &map_engine_core::slots_gpu::pack_vehicle_drag_preview(&[], vehicle_points, 0.0, 0.0),
+        &website_graphics_engine::symbology::instances::drag::pack_vehicle_drag_preview(
+            &[],
+            vehicle_points,
+            0.0,
+            0.0,
+        ),
     );
     // T-801 — identity re-pack puts tether endpoints back on authored xy (cancel / zero-delta).
     bind_squad_link_preview(e, &[], 0.0, 0.0);

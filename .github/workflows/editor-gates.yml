@@ -19,7 +19,8 @@ on:
     paths:
       - "apps/website/frontend/**"
       - "tools/tbd-tools/**"
-      - "crates/map-engine-**"
+      - "apps/website/graphics-engine/**"
+      - "apps/website/mission-core/**"
       - ".github/workflows/editor-gates.yml"
 
 concurrency:

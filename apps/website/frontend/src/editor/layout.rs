@@ -629,7 +629,7 @@ mod t638_collapse {
         strip_top_px, toolbelt_band_px, DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX, STUB_PX,
         TOOLBELT_BAND_PX,
     };
-    use map_engine_core::camera::OrthoCamera;
+    use website_graphics_engine::camera::ortho::state::OrthoCamera;
 
     /// Reset the three thread-local latches so tests don't leak state into one another (they run on
     /// the same thread). Every test that touches the accessors starts here.
@@ -998,7 +998,7 @@ mod t637_dock_geometry {
     };
     use crate::editor::panels::toolbelt::STATUSBAR_H_PX;
     use crate::v2::core::test_support::class_r_scrub::live_code;
-    use map_engine_core::camera::OrthoCamera;
+    use website_graphics_engine::camera::ortho::state::OrthoCamera;
 
     /// Both collapse latches off and the chrome shown, so the accessors report the EXPANDED consts.
     /// The latches are thread-locals shared with `t638_collapse`, which runs on the same thread.

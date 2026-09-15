@@ -25,13 +25,20 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
-use map_engine_core::building_compound::{
-    CompoundBuilding, DoorState, InstanceKind, InstanceRecord, InstancesFile,
-};
-use map_engine_core::building_compound_los::Owner;
-use map_engine_core::bvh::{
-    Bvh, BvhSidecar, SurfaceKind, dot, emit_bytes, lift_verts, quantize_verts, sub,
-};
+use website_graphics_engine::architecture::compound::assembly::CompoundBuilding;
+use website_graphics_engine::architecture::compound::doors::DoorState;
+use website_graphics_engine::architecture::compound::instances::InstanceKind;
+use website_graphics_engine::architecture::compound::instances::InstanceRecord;
+use website_graphics_engine::architecture::compound::instances::InstancesFile;
+use website_graphics_engine::architecture::los::walker::Owner;
+use website_graphics_engine::spatial::bvh::node::dot;
+use website_graphics_engine::spatial::bvh::node::sub;
+use website_graphics_engine::spatial::bvh::sidecar::BvhSidecar;
+use website_graphics_engine::spatial::bvh::sidecar::emit_bytes;
+use website_graphics_engine::spatial::bvh::sidecar::lift_verts;
+use website_graphics_engine::spatial::bvh::sidecar::quantize_verts;
+use website_graphics_engine::spatial::bvh::surface::SurfaceKind;
+use website_graphics_engine::spatial::bvh::traversal::Bvh;
 
 use super::xob;
 use crate::map_parity_report::ParityFile;
@@ -231,11 +238,11 @@ pub fn run_bvh_parity(args: &[String]) -> Result<u8> {
                     .into_iter()
                     .find(|e| e.kind == SurfaceKind::Opaque)
                     .map_or(
-                        map_engine_core::bvh::Hit {
+                        website_graphics_engine::spatial::bvh::traversal::Hit {
                             t: f64::NAN,
                             tri: u32::MAX,
                         },
-                        |e| map_engine_core::bvh::Hit {
+                        |e| website_graphics_engine::spatial::bvh::traversal::Hit {
                             t: e.t,
                             tri: match e.owner {
                                 Owner::Shell => e.tri,

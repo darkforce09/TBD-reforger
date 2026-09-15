@@ -1,0 +1,19 @@
+# renderers/primitives
+
+Draw pipelines, batching, polygon and line composition, glyph atlas layout, and text submission.
+
+## Contents
+
+- `compose.rs`
+- `hairlines.rs`
+- `mod.rs`
+- `selection.rs`
+- `tests`
+- `triangulate.rs`
+- `vector_lines.rs`
+
+## Boundaries
+
+This module owns graphics data and computation. It does not depend on mission-core or Leptos; browser I/O is gated to WebAssembly.
+
+Selection uses the existing overlay geometry; there is no silhouette selection pass.

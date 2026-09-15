@@ -3,10 +3,11 @@
 //! Signals & state: explicit frozen camera and document projections.
 //! Invariants: square slot hits, circular vehicle hits, slot-first ties and marquee order.
 
-use map_engine_core::camera::OrthoCamera;
-use map_engine_core::doc::{MissionDocCore, SlotSoa};
-use map_engine_core::spatial::picking as spatial;
-use map_engine_core::squad_links::SquadLinkInput;
+use website_graphics_engine::camera::ortho::state::OrthoCamera;
+use website_graphics_engine::spatial::indexing::picking as spatial;
+use website_graphics_engine::symbology::links::squad_links::SquadLinkInput;
+use website_mission_core::doc::MissionDocCore;
+use website_mission_core::doc::SlotSoa;
 
 fn world_query(cam: &OrthoCamera, px: f64, py: f64) -> ([f64; 2], f64) {
     let c = cam.unproject_xy(px, py);

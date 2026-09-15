@@ -1348,7 +1348,7 @@ pub fn save_bookmarks(bm: &Bookmarks) {
 pub fn live_camera() -> Option<(f64, f64, f64)> {
     #[cfg(target_arch = "wasm32")]
     {
-        crate::editor::world_assets::camera_snapshot()
+        website_graphics_engine::streaming::host::camera_snapshot()
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -1370,7 +1370,7 @@ pub fn fly_to(x: f64, y: f64, zoom: Option<f64>) {
         let Some(z) = zoom.or_else(|| live_camera().map(|(_, _, z)| z)) else {
             return; // no engine yet — nothing to fly.
         };
-        crate::editor::world_assets::fly_to(x, y, z);
+        website_graphics_engine::streaming::host::fly_to(x, y, z);
     }
 }
 
@@ -1380,7 +1380,7 @@ pub fn fly_to(x: f64, y: f64, zoom: Option<f64>) {
 fn load_named_places() -> Vec<NamedPlace> {
     #[cfg(target_arch = "wasm32")]
     {
-        let mut out: Vec<NamedPlace> = crate::editor::world_assets::named_locations()
+        let mut out: Vec<NamedPlace> = website_graphics_engine::streaming::host::named_locations()
             .into_iter()
             .filter(|l| !l.name.trim().is_empty())
             .map(|l| NamedPlace {
@@ -2036,7 +2036,7 @@ mod tests {
             "the index must read world_assets::named_locations, not re-fetch locations.json"
         );
         assert!(
-            code.contains("world_assets::fly_to"),
+            code.contains("website_graphics_engine::streaming::host::fly_to"),
             "fly-to must call the world_assets::fly_to RENDER_CTX seam"
         );
         // Delete-prod RED: production must not couple to the smoke-hook name.
@@ -2066,7 +2066,21 @@ mod tests {
     #[test]
     fn fly_to_and_named_locations_bodies_are_live() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-        let src = live_code(include_str!("../world_assets/mod.rs"));
+        let src = live_code(concat!(
+            include_str!("../../../../graphics-engine/src/streaming/host/mod.rs"),
+            "\n",
+            include_str!("../../../../graphics-engine/src/streaming/host/queries.rs"),
+            "\n",
+            include_str!("../../../../graphics-engine/src/streaming/host/state.rs"),
+            "\n",
+            include_str!("../../../../graphics-engine/src/streaming/host/preferences.rs"),
+            "\n",
+            include_str!("../../../../graphics-engine/src/streaming/host/viewport.rs"),
+            "\n",
+            include_str!("../../../../graphics-engine/src/streaming/host/bootstrap.rs"),
+            "\n",
+            include_str!("../../../../graphics-engine/src/streaming/host/terrain.rs")
+        ));
         let fly = only_body(&src, "pub fn fly_to");
         let render = format!("{}{}", "RENDER", "_CTX");
         let set_view = format!("{}{}", "set_view", "(");

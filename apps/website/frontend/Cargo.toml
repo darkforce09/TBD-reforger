@@ -24,7 +24,7 @@ serde_json = "1"
 # `blueprint` — building-blueprint structs + 2.5D LOS raycaster for the `/debug/building-viewer`
 # test bench. Standalone feature (serde only, already linked) so the wasm bundle does NOT pull the
 # `world` parser stack (flate2 + serde_json float_roundtrip).
-map-engine-core = { path = "../../../crates/map-engine-core", default-features = false, features = ["mission", "blueprint"] }
+website-graphics-engine = { path = "../graphics-engine", default-features = false, features = ["terrain", "formats"] }
 gloo-net = "0.6"
 js-sys = "0.3"
 # T-405 — the `<a href>` scheme guard (`url_guard.rs`). Costs the bundle NOTHING: `url` is already
@@ -105,15 +105,9 @@ web-sys = { version = "0.3", features = [
     "ImageData",
 ] }
 
-# T-159.15 Mission Creator engine — the wasm-boundary collapse. The Leptos app links the wgpu render
-# engine directly (one wasm module / one linear memory), so it owns `RenderEngine` as plain Rust
-# instead of reaching it through the map-engine-wasm shim. rlib; its wgpu stack is wasm32-gated.
+# Rendering and browser asset I/O share the frontend's WebAssembly module.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-map-engine-render = { path = "../../../crates/map-engine-render" }
-# T-159.16 MissionDoc host — the `yrs` document core in the SAME wasm module (spec D2: a workspace dep
-# on map-engine-core with the `doc` feature, NOT the map-engine-wasm JS shim). `doc` pulls yrs; its
-# serde_json is already shared with render's `world` feature, so no duplicate dep.
-map-engine-core = { path = "../../../crates/map-engine-core", features = ["doc", "mission", "png", "world"] }
+website-graphics-engine = { path = "../graphics-engine", features = ["render", "streaming"] }
 # T-159.17 yrs IDB persist — the React `yrsPersist.ts` parity (DB `tbd-mission-yrs` / store
 # `doc-state` / whole `encode_state()` blob). `idb` is a wasm-first IndexedDB wrapper; its default
 # features pull `tokio` with ONLY `features=["sync"]` (oneshot), which compiles on
@@ -126,16 +120,8 @@ wasm-bindgen-futures = "0.4"
 # [profile.*] lives in the workspace root Cargo.toml (member profiles are ignored). trunk applies
 # wasm-opt via the index.html data-wasm-opt attribute.
 
-# T-935.10 — the HOST TEST BUILD ONLY. `world_assets/tbd_sat.rs` is `#![cfg(target_arch = "wasm32")]`
-# in the bundle but is mounted a second time under `cfg(all(test, not(wasm32)))` as
-# `mission_editor::tbd_sat_pure` (mission_editor.rs:3115) so its arithmetic is executed by `cargo
-# test` rather than only grepped for. Its TBDS v2 branch reads the container through
-# `map_engine_core::world::binary`, and `pub mod world` is gated on the `world` feature — which the
-# wasm32 entry above already enables and the native entry does not. A dev-dependency adds it for
-# test targets alone: the wasm bundle is untouched (same feature it already had) and so is the
-# native lib build, so the rkyv round-trip runs on the host instead of only compiling for wasm32.
+# Native UI tests call the graphics crate's satellite selection and archive arithmetic.
 [dev-dependencies]
-map-engine-core = { path = "../../../crates/map-engine-core", default-features = false, features = [
-    "doc",
-    "world",
+website-graphics-engine = { path = "../graphics-engine", default-features = false, features = [
+    "streaming",
 ] }

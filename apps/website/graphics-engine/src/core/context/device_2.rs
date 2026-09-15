@@ -1,0 +1,426 @@
+//! Role: device 2.
+//! Position: `core/context` in the graphics engine.
+//! Signals & state: camera, spatial, asset, or GPU data owned by this module.
+//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
+
+use crate::camera::ortho::state::OrthoCamera;
+use crate::core::context::device_1::instance_descriptor;
+use crate::core::context::state::CLEAR_COLOR;
+use crate::core::context::state::EVERON_BOUNDS;
+use crate::core::context::state::INITIAL_TARGET;
+use crate::core::context::state::INITIAL_ZOOM;
+use crate::core::context::state::RenderEngine;
+use crate::core::pipeline::draw_order::LaneRole;
+use crate::diagnostics::timing::gpu::GpuTimer;
+use crate::renderers::batching::batch::Batch;
+use crate::renderers::batching::batch::BatchPayload;
+
+use crate::renderers::batching::scene::UNIT_QUAD;
+use crate::renderers::engine::lifecycle::TEXT_UNIFORM_BYTES;
+use crate::renderers::pipelines::building::create_building_pipeline;
+use crate::renderers::pipelines::icon::create_icon_pipeline;
+use crate::renderers::pipelines::icon::create_icon_pipeline_storage32;
+use crate::renderers::pipelines::quad::create_quad_pipeline;
+use crate::renderers::pipelines::text::create_text_pipeline;
+use crate::renderers::pipelines::textured::create_forest_density_pipeline;
+use crate::renderers::pipelines::textured::create_textured_pipeline;
+use crate::renderers::pipelines::vector::create_line_pipeline;
+use crate::renderers::pipelines::vector::create_polygon_pipeline;
+use crate::symbology::instances::bridge_1::SlotGpuBridge;
+use crate::symbology::instances::lanes::ICON_UNIFORM_BYTES;
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+impl RenderEngine {
+    /// Async constructor. `canvas.width/height` must already hold the device-pixel backing size (JS owns the canvas element; see `deviceSize` in `WgpuCanvas.tsx`).
+    pub async fn create(
+        canvas: web_sys::HtmlCanvasElement,
+        force_webgl: bool,
+    ) -> Result<RenderEngine, JsError> {
+        let device_w = canvas.width();
+        let device_h = canvas.height();
+        if device_w == 0 || device_h == 0 {
+            return Err(JsError::new(
+                "canvas-zero-size: set canvas.width/height before RenderEngine.create",
+            ));
+        }
+
+        let instance = if force_webgl {
+            wgpu::Instance::new(instance_descriptor(wgpu::Backends::GL))
+        } else {
+            wgpu::util::new_instance_with_webgpu_detection(instance_descriptor(
+                wgpu::Backends::BROWSER_WEBGPU | wgpu::Backends::GL,
+            ))
+            .await
+        };
+
+        let surface = instance
+            .create_surface(wgpu::SurfaceTarget::Canvas(canvas))
+            .map_err(|e| JsError::new(&format!("create-surface: {e}")))?;
+
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::HighPerformance,
+                compatible_surface: Some(&surface),
+                ..wgpu::RequestAdapterOptions::default()
+            })
+            .await
+            .map_err(|e| JsError::new(&format!("no-adapter: {e}")))?;
+
+        let info = adapter.get_info();
+        let is_gl = info.backend == wgpu::Backend::Gl;
+        let backend_kind = if is_gl { "webgl2" } else { "webgpu" }.to_owned();
+
+        let base_limits = if is_gl {
+            wgpu::Limits::downlevel_webgl2_defaults()
+        } else {
+            wgpu::Limits::default()
+        };
+        let want_timestamps = adapter.features().contains(wgpu::Features::TIMESTAMP_QUERY);
+
+        let adapter_max_texture_dimension_2d = adapter.limits().max_texture_dimension_2d;
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor {
+                label: Some("map-engine-render"),
+                required_features: if want_timestamps {
+                    wgpu::Features::TIMESTAMP_QUERY
+                } else {
+                    wgpu::Features::empty()
+                },
+                required_limits: base_limits.using_resolution(adapter.limits()),
+                ..wgpu::DeviceDescriptor::default()
+            })
+            .await
+            .map_err(|e| JsError::new(&format!("no-device: {e}")))?;
+
+        let caps = surface.get_capabilities(&adapter);
+        let format = caps
+            .formats
+            .iter()
+            .copied()
+            .find(|f| !f.is_srgb())
+            .ok_or_else(|| JsError::new("srgb-only-surface: no non-sRGB surface format"))?;
+        let mut config = surface
+            .get_default_config(&adapter, device_w, device_h)
+            .ok_or_else(|| JsError::new("surface-unsupported-by-adapter"))?;
+        config.format = format;
+        config.present_mode = wgpu::PresentMode::Fifo;
+        surface.configure(&device, &config);
+
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("quad-instanced"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../../shaders/shader.wgsl").into()),
+        });
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("camera-uniform"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: wgpu::BufferSize::new(64),
+                },
+                count: None,
+            }],
+        });
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("quad-instanced"),
+            bind_group_layouts: &[Some(&bind_group_layout)],
+            immediate_size: 0,
+        });
+        let surface_pipeline = create_quad_pipeline(&device, &pipeline_layout, &shader, format);
+
+        let tex_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("basemap-texture"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+            });
+        let textured_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("textured-quad"),
+                bind_group_layouts: &[Some(&bind_group_layout), Some(&tex_bind_group_layout)],
+                immediate_size: 0,
+            });
+        let textured_pipeline =
+            create_textured_pipeline(&device, &textured_pipeline_layout, &shader, format);
+        let forest_density_pipeline =
+            create_forest_density_pipeline(&device, &textured_pipeline_layout, &shader, format);
+        let line_pipeline = create_line_pipeline(&device, &pipeline_layout, &shader, format);
+
+        let building_pipeline =
+            create_building_pipeline(&device, &pipeline_layout, &shader, format);
+
+        let polygon_pipeline = create_polygon_pipeline(&device, &pipeline_layout, &shader, format);
+
+        let icon_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("glyph-atlas"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+
+                            min_binding_size: wgpu::BufferSize::new(ICON_UNIFORM_BYTES),
+                        },
+                        count: None,
+                    },
+                ],
+            });
+        let icon_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("icon-instanced"),
+            bind_group_layouts: &[
+                Some(&bind_group_layout),
+                None,
+                Some(&icon_bind_group_layout),
+            ],
+            immediate_size: 0,
+        });
+        let icon_pipeline = create_icon_pipeline(&device, &icon_pipeline_layout, &shader, format);
+        let text_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("text-atlas"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: wgpu::BufferSize::new(TEXT_UNIFORM_BYTES),
+                        },
+                        count: None,
+                    },
+                ],
+            });
+        let text_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("text-instanced"),
+            bind_group_layouts: &[
+                Some(&bind_group_layout),
+                None,
+                Some(&text_bind_group_layout),
+            ],
+            immediate_size: 0,
+        });
+        let text_pipeline = create_text_pipeline(&device, &text_pipeline_layout, &shader, format);
+        let (icon_pipeline_storage32, icon_cull) = if !is_gl {
+            let p32 =
+                create_icon_pipeline_storage32(&device, &icon_pipeline_layout, &shader, format);
+            let cull = crate::core::culling::compute::IconComputeCull::create(&device, &shader);
+            (Some(p32), Some(cull))
+        } else {
+            (None, None)
+        };
+
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("basemap-sampler"),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::MipmapFilterMode::Linear,
+            ..wgpu::SamplerDescriptor::default()
+        });
+        let icon_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("glyph-atlas-sampler"),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::MipmapFilterMode::Nearest,
+            ..wgpu::SamplerDescriptor::default()
+        });
+        let density_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("forest-density-linear"),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::MipmapFilterMode::Nearest,
+            ..wgpu::SamplerDescriptor::default()
+        });
+
+        use wgpu::util::DeviceExt;
+        let unit_quad_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("unit-quad"),
+            contents: bytemuck::cast_slice(&UNIT_QUAD),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        let calibration = crate::renderers::batching::scene::calibration_instances();
+        let calibration_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("calibration-instances"),
+            contents: bytemuck::cast_slice(&calibration),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        let uniform_buf = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("camera-mvp"),
+            size: 64,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("camera-mvp"),
+            layout: &bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform_buf.as_entire_binding(),
+            }],
+        });
+
+        let mut camera = OrthoCamera::new(
+            f64::from(device_w),
+            f64::from(device_h),
+            INITIAL_TARGET[0],
+            INITIAL_TARGET[1],
+            INITIAL_ZOOM,
+        );
+        camera.set_bounds(
+            EVERON_BOUNDS[0],
+            EVERON_BOUNDS[1],
+            EVERON_BOUNDS[2],
+            EVERON_BOUNDS[3],
+        );
+
+        let calibration_batch = Batch {
+            role: LaneRole::Calibration,
+            visible: true,
+            payload: BatchPayload::Instanced {
+                instances: calibration_buf.clone(),
+                count: 2,
+            },
+        };
+
+        let timer = want_timestamps.then(|| GpuTimer::new(&device, &queue));
+
+        Ok(Self {
+            device,
+            queue,
+            surface,
+            config,
+            backend_kind,
+            adapter_max_texture_dimension_2d,
+            shader,
+            pipeline_layout,
+            bind_group_layout,
+            surface_pipeline,
+            tex_bind_group_layout,
+            textured_pipeline,
+            forest_density_pipeline,
+            line_pipeline,
+            building_pipeline,
+            polygon_pipeline,
+            icon_pipeline,
+            text_pipeline,
+            icon_pipeline_storage32,
+            icon_bind_group_layout,
+            text_bind_group_layout,
+            icon_pipeline_layout,
+            text_pipeline_layout,
+            sampler,
+            icon_sampler,
+            density_sampler,
+            uniform_buf,
+            bind_group,
+            unit_quad_buf,
+            calibration_buf,
+            camera,
+            glyph_atlas: None,
+            text_atlas: None,
+            text_labels_drawn: 0,
+            town_labels_drawn: 0,
+            road_labels_drawn: 0,
+            slot_atlas: None,
+            slot_bridge: SlotGpuBridge::default(),
+            batches: vec![calibration_batch],
+            pending: [None, None],
+            clear_color: CLEAR_COLOR,
+            stress_instances: 0,
+            staging: Vec::new(),
+            staging_peak_bytes: 0,
+            gen_ms: 0.0,
+            upload_ms: 0.0,
+            uniform_bytes_last_frame: 0,
+            world_chunks_drawn: 0,
+            sea_polygons: 0,
+            landcover_polygons: 0,
+            forest_density_w: 0,
+            forest_density_h: 0,
+            forest_bins_ok: 0,
+            forest_outline_segments_stored: 0,
+            forest_mode: String::new(),
+            contour_segments: 0,
+            road_segments: 0,
+            forest_polygons: 0,
+            forest_outline_segments: 0,
+            icon_lane_uploads: 0,
+            polygon_lane_uploads: 0,
+            strip_lane_uploads: 0,
+            building_uploads: 0,
+            text_label_uploads: 0,
+            render_cpu_ms_last: 0.0,
+            render_cpu_ms_ema: 0.0,
+            timer,
+            damage: crate::core::pipeline::damage::RenderDamage::new(),
+            submitted_last_frame: false,
+            icon_cull,
+            tree_icons_20: Vec::new(),
+            compute_cull_trees: !is_gl,
+            lane_pool: crate::core::buffers::pool::LanePool::new(),
+        })
+    }
+}

@@ -650,7 +650,7 @@ pub fn RulerOverlay(
             }
             #[cfg(target_arch = "wasm32")]
             {
-                let Some((tx, ty, zoom)) = crate::editor::world_assets::camera_snapshot() else {
+                let Some((tx, ty, zoom)) = website_graphics_engine::streaming::host::camera_snapshot() else {
                     return (Vec::new(), Vec::new(), Vec::new());
                 };
                 let Some(win) = web_sys::window() else {

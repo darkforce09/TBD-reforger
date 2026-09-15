@@ -1,0 +1,459 @@
+//! Role: cutter.
+//! Position: `architecture/section` in the graphics engine.
+//! Signals & state: camera, spatial, asset, or GPU data owned by this module.
+//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
+
+use crate::architecture::blueprint::structure::BuildingBlueprint;
+use crate::architecture::section::index::SparseHeights;
+use crate::architecture::section::index::triangles_overlapping_y;
+use crate::spatial::bvh::node::cross;
+use crate::spatial::bvh::node::sub;
+use crate::spatial::bvh::sidecar::BvhSidecar;
+
+/// Heightfield cell pitch (m) — the stepped-gradient granularity.
+pub const PLAN_CELL_M: f64 = 0.2;
+
+/// Main section cut above a level's base (m): eye height, the architect's plan cut.
+pub const CUT_MAIN_M: f64 = 1.2;
+
+/// Low section cut above a level's base (m): the extractor's scan height; sills read here.
+pub const CUT_LOW_M: f64 = 0.45;
+
+/// `|n.y|` ceiling for a face to be CUT: walls and other near-vertical faces only.
+pub const CUT_MAX_NY: f64 = 0.35;
+
+/// `|n.y|` floor for a face to be a SURFACE of the heightfield (steep pitches still count).
+pub const SURFACE_MIN_NY: f64 = 0.2;
+
+/// Floor window around a level's base (m): what paints as "floor" (the plate ramp).
+pub const FLOOR_WINDOW_M: [f64; 2] = [-0.25, 0.35];
+
+/// How far below the floor window the "pit" ramp reaches (m).
+pub const PIT_DEPTH_M: f64 = 3.0;
+
+/// Raster padding around the drawing rect (m).
+pub const VOID_PAD_M: f64 = 1.0;
+
+/// Hard cap on heightfield cells per axis; a larger rect coarsens the cell to fit.
+pub const MAX_PLAN_DIM: usize = 2048;
+
+/// A plan segment `[[x, z], [x, z]]` in the building's local frame.
+pub type Seg2 = [[f64; 2]; 2];
+
+/// Height field.
+#[derive(Clone, Debug, PartialEq)]
+pub struct HeightField {
+    /// Min x.
+    pub min_x: f64,
+
+    /// Min z.
+    pub min_z: f64,
+
+    /// Cell m.
+    pub cell_m: f64,
+
+    /// Cols.
+    pub cols: usize,
+
+    /// Rows.
+    pub rows: usize,
+
+    /// H.
+    pub h: SparseHeights,
+}
+
+impl HeightField {
+    /// An all-`None` field over `[min, max]` at `cell_m` (coarsened to fit [`MAX_PLAN_DIM`]).
+    #[must_use]
+    pub fn empty(min: [f64; 2], max: [f64; 2], cell_m: f64) -> Self {
+        let mut cell = cell_m.max(1e-3);
+        let span_x = (max[0] - min[0]).max(cell);
+        let span_z = (max[1] - min[1]).max(cell);
+        let need = (span_x / cell).ceil().max((span_z / cell).ceil());
+        if need > MAX_PLAN_DIM as f64 {
+            cell *= need / MAX_PLAN_DIM as f64;
+        }
+        let cols = ((span_x / cell).ceil() as usize).clamp(1, MAX_PLAN_DIM);
+        let rows = ((span_z / cell).ceil() as usize).clamp(1, MAX_PLAN_DIM);
+        Self {
+            min_x: min[0],
+            min_z: min[1],
+            cell_m: cell,
+            cols,
+            rows,
+            h: SparseHeights::new(cols, rows),
+        }
+    }
+
+    /// Rasterise the mesh's highest surface per cell, keeping only surfaces at or below `clip_below_y` (a view's cut plane; `f64::INFINITY` for the full top surface). A face contributes where its `|n.y| ≥ min_abs_ny`; the height at a cell centre is the face plane's height there (barycentric over the plan triangle).
+    #[must_use]
+    pub fn build(
+        occl: &BvhSidecar,
+        min: [f64; 2],
+        max: [f64; 2],
+        cell_m: f64,
+        clip_below_y: f64,
+        min_abs_ny: f64,
+    ) -> Self {
+        let mut hf = Self::empty(min, max, cell_m);
+        for &[ia, ib, ic] in &occl.tris {
+            let (a, b, c) = (
+                occl.verts[ia as usize],
+                occl.verts[ib as usize],
+                occl.verts[ic as usize],
+            );
+            let n = cross(sub(b, a), sub(c, a));
+            let len = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt();
+            if len < 1e-12 || (n[1] / len).abs() < min_abs_ny {
+                continue;
+            }
+            if a[1].min(b[1]).min(c[1]) > clip_below_y {
+                continue;
+            }
+            let (p0, p1, p2) = ([a[0], a[2]], [b[0], b[2]], [c[0], c[2]]);
+            let area2 = edge(p0, p1, p2);
+            if area2.abs() < 1e-12 {
+                continue;
+            }
+            let lo = [p0[0].min(p1[0]).min(p2[0]), p0[1].min(p1[1]).min(p2[1])];
+            let hi = [p0[0].max(p1[0]).max(p2[0]), p0[1].max(p1[1]).max(p2[1])];
+            let c0 = (((lo[0] - hf.min_x) / hf.cell_m).floor().max(0.0)) as usize;
+            let r0 = (((lo[1] - hf.min_z) / hf.cell_m).floor().max(0.0)) as usize;
+            let c1 = ((((hi[0] - hf.min_x) / hf.cell_m).ceil()).max(0.0) as usize).min(hf.cols);
+            let r1 = ((((hi[1] - hf.min_z) / hf.cell_m).ceil()).max(0.0) as usize).min(hf.rows);
+            for row in r0..r1 {
+                for col in c0..c1 {
+                    let p = hf.cell_center(col, row);
+                    let w0 = edge(p1, p2, p) / area2;
+                    let w1 = edge(p2, p0, p) / area2;
+                    let w2 = edge(p0, p1, p) / area2;
+                    let eps = -1e-9;
+                    if w0 < eps || w1 < eps || w2 < eps {
+                        continue;
+                    }
+                    let y = w0 * a[1] + w1 * b[1] + w2 * c[1];
+                    if y > clip_below_y {
+                        continue;
+                    }
+                    let next = match hf.h.get(col, row) {
+                        Some(cur) => cur.max(y),
+                        None => y,
+                    };
+                    hf.h.set(col, row, Some(next));
+                }
+            }
+        }
+        hf
+    }
+
+    /// Surface height at `(col, row)`; `None` out of bounds or no surface.
+    #[must_use]
+    pub fn at(&self, col: usize, row: usize) -> Option<f64> {
+        if col >= self.cols || row >= self.rows {
+            return None;
+        }
+        self.h.get(col, row)
+    }
+
+    /// Local `[x, z]` centre of cell `(col, row)`.
+    #[must_use]
+    pub fn cell_center(&self, col: usize, row: usize) -> [f64; 2] {
+        [
+            self.min_x + (col as f64 + 0.5) * self.cell_m,
+            self.min_z + (row as f64 + 0.5) * self.cell_m,
+        ]
+    }
+
+    /// The cell containing local `[x, z]`, or `None` outside the rect.
+    #[must_use]
+    pub fn cell_at(&self, x: f64, z: f64) -> Option<(usize, usize)> {
+        if x < self.min_x || z < self.min_z {
+            return None;
+        }
+        let col = ((x - self.min_x) / self.cell_m) as usize;
+        let row = ((z - self.min_z) / self.cell_m) as usize;
+        (col < self.cols && row < self.rows).then_some((col, row))
+    }
+
+    /// Surface height of the cell containing local `[x, z]`.
+    #[must_use]
+    pub fn value_at(&self, x: f64, z: f64) -> Option<f64> {
+        self.cell_at(x, z).and_then(|(c, r)| self.at(c, r))
+    }
+
+    /// Is there a surface at or above `min_y` under local `[x, z]`? Outside the rect: no.
+    #[must_use]
+    pub fn covered(&self, x: f64, z: f64, min_y: f64) -> bool {
+        self.value_at(x, z).is_some_and(|y| y >= min_y)
+    }
+
+    /// `[min, max]` over the field's surfaces; `None` when the field is empty.
+    #[must_use]
+    pub fn range(&self) -> Option<[f64; 2]> {
+        self.h.iter_stored().fold(None, |acc: Option<[f64; 2]>, y| {
+            Some(acc.map_or([y, y], |r| [r[0].min(y), r[1].max(y)]))
+        })
+    }
+
+    /// Number of cells with a surface at or above `min_y`.
+    #[must_use]
+    pub fn covered_count(&self, min_y: f64) -> usize {
+        self.h.iter_stored().filter(|&y| y >= min_y).count()
+    }
+
+    /// Direct cell write (tests used `hf.h[i] = Some(y)` on the dense Vec).
+    pub fn set(&mut self, col: usize, row: usize, y: Option<f64>) {
+        self.h.set(col, row, y);
+    }
+
+    /// Bytes of allocated height tiles. Empty field: 0 (no plan cells).
+    #[must_use]
+    pub fn allocated_bytes(&self) -> usize {
+        self.h.allocated_bytes()
+    }
+
+    /// Stored (non-NaN) heights, tile order.
+    pub fn iter_stored(&self) -> impl Iterator<Item = f64> + '_ {
+        self.h.iter_stored()
+    }
+}
+
+fn edge(a: [f64; 2], b: [f64; 2], p: [f64; 2]) -> f64 {
+    (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
+}
+
+/// A level band for [`drawing_for`] — what a blueprint level reduces to.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct LevelSpec {
+    /// Index.
+    pub index: usize,
+
+    /// Lo.
+    pub lo: f64,
+
+    /// Hi.
+    pub hi: f64,
+}
+
+/// One level's mesh drawing.
+#[derive(Clone, Debug, PartialEq)]
+pub struct LevelDrawing {
+    /// Level index.
+    pub level_index: usize,
+
+    /// Lo.
+    pub lo: f64,
+
+    /// Hi.
+    pub hi: f64,
+
+    /// Cut main y.
+    pub cut_main_y: f64,
+
+    /// Cut low y.
+    pub cut_low_y: f64,
+
+    /// Eye-height section of the vertical faces: the wall drawing.
+    pub cut_main: Vec<Seg2>,
+
+    /// Low section: sills / low walls, dim.
+    pub cut_low: Vec<Seg2>,
+
+    /// The highest surface per cell below the main cut plane.
+    pub surface: HeightField,
+}
+
+impl LevelDrawing {
+    /// The bottom of this level's floor window — below it a cell is a void / pit.
+    #[must_use]
+    pub fn floor_min_y(&self) -> f64 {
+        self.lo + FLOOR_WINDOW_M[0]
+    }
+}
+
+/// The whole building's mesh drawing: one entry per level spec (in order) + the roof.
+#[derive(Clone, Debug, PartialEq)]
+pub struct BuildingDrawing {
+    /// Levels.
+    pub levels: Vec<LevelDrawing>,
+
+    /// The full, unclipped top surface: the roof plan.
+    pub roof: HeightField,
+
+    /// `[min, max]` over `roof` (`[0, 0]` when empty) — the roof ramp's fallback range.
+    pub roof_y: [f64; 2],
+}
+
+/// XZ bounds of the mesh (`None` for an empty vertex table).
+#[must_use]
+pub fn mesh_bounds(occl: &BvhSidecar) -> Option<([f64; 2], [f64; 2])> {
+    let mut it = occl.verts.iter();
+    let first = it.next()?;
+    let (mut lo, mut hi) = ([first[0], first[2]], [first[0], first[2]]);
+    for v in it {
+        lo = [lo[0].min(v[0]), lo[1].min(v[2])];
+        hi = [hi[0].max(v[0]), hi[1].max(v[2])];
+    }
+    Some((lo, hi))
+}
+
+/// Horizontal plane `y` ∩ every triangle with `|n.y| ≤ max_abs_ny` → plan segments. A triangle entirely above, below or ON the plane contributes nothing; each crossing edge contributes its interpolated point, a vertex exactly on the plane contributes itself; two distinct points make one segment.
+#[must_use]
+pub fn section_at(occl: &BvhSidecar, y: f64, max_abs_ny: f64) -> Vec<Seg2> {
+    section_at_owned(occl, &[], y, max_abs_ny)
+        .into_iter()
+        .map(|(s, _)| s)
+        .collect()
+}
+
+/// Section at owned.
+#[must_use]
+pub fn section_at_owned(
+    occl: &BvhSidecar,
+    owner: &[u32],
+    y: f64,
+    max_abs_ny: f64,
+) -> Vec<(Seg2, u32)> {
+    let mut out = Vec::new();
+    for ti in triangles_overlapping_y(occl, y, y) {
+        let ti = ti as usize;
+        let &[ia, ib, ic] = &occl.tris[ti];
+        let v = [
+            occl.verts[ia as usize],
+            occl.verts[ib as usize],
+            occl.verts[ic as usize],
+        ];
+        let d = [v[0][1] - y, v[1][1] - y, v[2][1] - y];
+        if d.iter().all(|&e| e > 0.0) || d.iter().all(|&e| e < 0.0) || d.iter().all(|&e| e == 0.0) {
+            continue;
+        }
+        let n = cross(sub(v[1], v[0]), sub(v[2], v[0]));
+        let len = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt();
+        if len < 1e-12 || (n[1] / len).abs() > max_abs_ny {
+            continue;
+        }
+        let mut pts: Vec<[f64; 2]> = Vec::with_capacity(3);
+        let mut push = |p: [f64; 2]| {
+            if pts.iter().all(|q| (q[0] - p[0]).hypot(q[1] - p[1]) > 1e-9) {
+                pts.push(p);
+            }
+        };
+        for i in 0..3 {
+            let j = (i + 1) % 3;
+            if d[i] == 0.0 {
+                push([v[i][0], v[i][2]]);
+            }
+            if d[i] * d[j] < 0.0 {
+                let t = d[i] / (d[i] - d[j]);
+                push([
+                    v[i][0] + t * (v[j][0] - v[i][0]),
+                    v[i][2] + t * (v[j][2] - v[i][2]),
+                ]);
+            }
+        }
+        if pts.len() >= 2 {
+            out.push(([pts[0], pts[1]], owner.get(ti).copied().unwrap_or(0)));
+        }
+    }
+    out
+}
+
+/// Split each segment into pieces of at most `step_m` and keep the pieces whose midpoint has NO surface at or above `floor_min_y` in `surface` — a lower level's cut, visible only through this level's voids.
+#[must_use]
+pub fn through_voids(
+    segs: &[Seg2],
+    surface: &HeightField,
+    floor_min_y: f64,
+    step_m: f64,
+) -> Vec<Seg2> {
+    let step = step_m.max(1e-3);
+    let mut out = Vec::new();
+    for s in segs {
+        let len = (s[1][0] - s[0][0]).hypot(s[1][1] - s[0][1]);
+        let n = ((len / step).ceil() as usize).max(1);
+        let at = |t: f64| {
+            [
+                s[0][0] + t * (s[1][0] - s[0][0]),
+                s[0][1] + t * (s[1][1] - s[0][1]),
+            ]
+        };
+        for k in 0..n {
+            let a = at(k as f64 / n as f64);
+            let b = at((k + 1) as f64 / n as f64);
+            let mid = [0.5 * (a[0] + b[0]), 0.5 * (a[1] + b[1])];
+            if !surface.covered(mid[0], mid[1], floor_min_y) {
+                out.push([a, b]);
+            }
+        }
+    }
+    out
+}
+
+/// The mesh drawing for a set of level bands over the plan rect `[min, max]` (already padded). Cut heights clamp into short bands (`main ≤ 60 %`, `low ≤ 25 %` of the band). Needs no blueprint: any mesh + any bands.
+#[must_use]
+pub fn drawing_for(
+    occl: &BvhSidecar,
+    specs: &[LevelSpec],
+    min: [f64; 2],
+    max: [f64; 2],
+) -> BuildingDrawing {
+    let levels = specs
+        .iter()
+        .map(|s| {
+            let span = (s.hi - s.lo).max(0.0);
+            let cut_main_y = s.lo + CUT_MAIN_M.min(0.6 * span);
+            let cut_low_y = s.lo + CUT_LOW_M.min(0.25 * span);
+            LevelDrawing {
+                level_index: s.index,
+                lo: s.lo,
+                hi: s.hi,
+                cut_main_y,
+                cut_low_y,
+                cut_main: section_at(occl, cut_main_y, CUT_MAX_NY),
+                cut_low: section_at(occl, cut_low_y, CUT_MAX_NY),
+                surface: HeightField::build(
+                    occl,
+                    min,
+                    max,
+                    PLAN_CELL_M,
+                    cut_main_y,
+                    SURFACE_MIN_NY,
+                ),
+            }
+        })
+        .collect();
+    let roof = HeightField::build(occl, min, max, PLAN_CELL_M, f64::INFINITY, SURFACE_MIN_NY);
+    let roof_y = roof.range().unwrap_or([0.0, 0.0]);
+    BuildingDrawing {
+        levels,
+        roof,
+        roof_y,
+    }
+}
+
+/// Blueprint adapter for [`drawing_for`]: one spec per blueprint level (positional, carrying `level_index`) over the union of the footprint bbox and the mesh bounds, padded.
+#[must_use]
+pub fn building_drawing(bp: &BuildingBlueprint, occl: &BvhSidecar) -> BuildingDrawing {
+    let bb = &bp.overall_footprint.bounding_box2_d;
+    let (mut min, mut max) = (bb.min, bb.max);
+    if let Some((lo, hi)) = mesh_bounds(occl) {
+        min = [min[0].min(lo[0]), min[1].min(lo[1])];
+        max = [max[0].max(hi[0]), max[1].max(hi[1])];
+    }
+    let min = [min[0] - VOID_PAD_M, min[1] - VOID_PAD_M];
+    let max = [max[0] + VOID_PAD_M, max[1] + VOID_PAD_M];
+    let specs: Vec<LevelSpec> = bp
+        .levels
+        .iter()
+        .map(|l| LevelSpec {
+            index: l.level_index,
+            lo: l.elevation_range[0],
+            hi: l.elevation_range[1],
+        })
+        .collect();
+    drawing_for(occl, &specs, min, max)
+}
+
+#[cfg(test)]
+#[path = "tests/cutter.rs"]
+mod tests;

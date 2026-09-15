@@ -1,8 +1,5 @@
-# Cargo workspace root. Members: the website app (Axum API + Leptos SPA nested under
-# apps/website/ since T-171), the shared map-engine compute/render crates, and the repo
-# tooling (xtask gates/codegen, tbd-tools gate harness + asset pipelines).
-# T-418: `map-engine-wasm` retired — zero reverse deps after the T-159.29.3 React deletion;
-# the Leptos SPA links `map-engine-core` / `map-engine-render` directly.
+# Website applications, headless mission domain, graphics engine, and repository tooling.
+# The frontend links the mission and graphics crates into the same WebAssembly module.
 [workspace]
 resolver = "3"
 members = [
@@ -10,8 +7,7 @@ members = [
     "apps/website/api",
     "apps/website/frontend",
     "apps/website/mission-core",
-    "crates/map-engine-core",
-    "crates/map-engine-render",
+    "apps/website/graphics-engine",
     # T-853: the four-outcome gate library — the Rust successor to scripts/mod/lib/gate-grep.sh.
     # Deliberately dependency-light; linked by both `xtask` and `tools/tbd-tools`.
     "crates/tbd-gate",

@@ -37,10 +37,12 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 
-use map_engine_core::mission::win_conditions::{
-    optional_param_keys_for_mode, param_key_for_mode, AUTHORED_MODES, END_ON_TRIGGERS,
-    TIMEOUT_MINUTES_MAX, TIMEOUT_MINUTES_MIN,
-};
+use website_mission_core::mission::win_conditions::optional_param_keys_for_mode;
+use website_mission_core::mission::win_conditions::param_key_for_mode;
+use website_mission_core::mission::win_conditions::AUTHORED_MODES;
+use website_mission_core::mission::win_conditions::END_ON_TRIGGERS;
+use website_mission_core::mission::win_conditions::TIMEOUT_MINUTES_MAX;
+use website_mission_core::mission::win_conditions::TIMEOUT_MINUTES_MIN;
 
 /// The reader chain for `meta.environment.winConditions`, end to end.
 ///
@@ -352,7 +354,7 @@ fn commit(block: Option<&serde_json::Value>) {
     // Nested rather than a `let` chain: this crate is edition 2021 (`map-engine-core` is 2024, and
     // the two are not interchangeable — see the workspace's per-crate edition rule).
     if let Some(clause) =
-        block.and_then(|b| map_engine_core::mission::win_conditions::validate(b).err())
+        block.and_then(|b| website_mission_core::mission::win_conditions::validate(b).err())
     {
         // NOT a refusal to write. A half-filled card is legitimate authoring in progress (a `vip`
         // rule whose slot id has not been typed yet), the save path carries it, and the compile
@@ -556,7 +558,7 @@ pub fn win_conditions_card(ctrl: &'static str) -> AnyView {
     // the compile calls, so the card cannot disagree with the document about what is acceptable.
     let incomplete = block
         .as_ref()
-        .and_then(|b| map_engine_core::mission::win_conditions::validate(b).err());
+        .and_then(|b| website_mission_core::mission::win_conditions::validate(b).err());
 
     view! {
         <div class="mt-2 flex flex-col gap-4 border-t border-outline-variant/30 pt-4">
@@ -693,7 +695,7 @@ mod tests {
         // ...and the result is a shape the compile's own validator will take once the param lands.
         let with_minutes =
             with_param(Some(&next), "timeout", "timeoutMinutes", "45").expect("45 is in range");
-        map_engine_core::mission::win_conditions::validate(&with_minutes)
+        website_mission_core::mission::win_conditions::validate(&with_minutes)
             .expect("a completed switch must validate");
     }
 
@@ -803,7 +805,7 @@ mod tests {
                 "mode": "vip", "endOn": ["faction_eliminated"], "vipSlotId": "slot_sl"
             })
         );
-        map_engine_core::mission::win_conditions::validate(&block)
+        website_mission_core::mission::win_conditions::validate(&block)
             .expect("the card must not author a block the compile refuses");
     }
 

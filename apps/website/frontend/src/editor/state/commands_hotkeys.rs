@@ -44,9 +44,9 @@ pub(crate) fn compiled_export_text(doc: &[u8]) -> Result<String, String> {
 /// Class-R / ungated so native `cargo test` can pin the wording without a browser (the
 /// [`compiled_export_text`] precedent).
 pub(crate) fn compile_diagnostics_summary(
-    findings: &[map_engine_core::mission::validate::Finding],
+    findings: &[website_mission_core::mission::validate::Finding],
 ) -> Option<String> {
-    use map_engine_core::mission::validate::Severity;
+    use website_mission_core::mission::validate::Severity;
     if findings.is_empty() {
         return None;
     }
@@ -558,11 +558,12 @@ mod imp {
     use wasm_bindgen::prelude::*;
     use wasm_bindgen::JsCast;
 
-    use map_engine_core::mission::compile::{compile_export, compile_payload, version_body};
-    use map_engine_core::mission::flatten::{
-        flatten_mod_document_json_with_diagnostics, MissionMeta,
-    };
-    use map_engine_core::mission::validate::Finding;
+    use website_mission_core::mission::compile::compile_export;
+    use website_mission_core::mission::compile::compile_payload;
+    use website_mission_core::mission::compile::version_body;
+    use website_mission_core::mission::flatten::flatten_mod_document_json_with_diagnostics;
+    use website_mission_core::mission::flatten::MissionMeta;
+    use website_mission_core::mission::validate::Finding;
 
     /// T-690 — what a compile hands the command layer: the download text and the structured
     /// findings, from one compile. Aliased so the entry point's signature stays on one line, which
@@ -2051,7 +2052,9 @@ mod tests {
 
     /* ══════════ T-690 — the compile's structured result ══════════ */
 
-    use map_engine_core::mission::validate::{Finding, Primitive, Severity};
+    use website_mission_core::mission::validate::Finding;
+    use website_mission_core::mission::validate::Primitive;
+    use website_mission_core::mission::validate::Severity;
 
     fn finding(rule_id: &'static str, severity: Severity, subject_id: Option<&str>) -> Finding {
         Finding {
@@ -2213,7 +2216,7 @@ mod tests {
     fn the_exporter_grid_ref_is_the_map_furnitures_own_label_text() {
         use crate::editor::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
         use crate::editor::panels::toolbelt::{edge_eastings, edge_northings, GRID_STEP_M};
-        use map_engine_core::camera::OrthoCamera;
+        use website_graphics_engine::camera::ortho::state::OrthoCamera;
 
         let (w, h) = (1600.0_f64, 900.0_f64);
         let mut cam = OrthoCamera::new(w, h, 6400.0, 6400.0, -2.0);

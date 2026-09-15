@@ -41,12 +41,15 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 use serde_json::Value;
 
-use map_engine_core::world::binary::archives::{
-    ARCHIVE_SCHEMA_VERSION, WaterBody, WaterLine, WaterVectorsArchive,
-};
-use map_engine_core::world::binary::chunk_container::{ContainerHeader, TbdbHeader};
-use map_engine_core::world::binary::{access_checked, to_bytes};
-use map_engine_core::world::downsample_index;
+use website_graphics_engine::formats::archives::codec::access_checked;
+use website_graphics_engine::formats::archives::codec::to_bytes;
+use website_graphics_engine::formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use website_graphics_engine::formats::archives::water::WaterBody;
+use website_graphics_engine::formats::archives::water::WaterLine;
+use website_graphics_engine::formats::archives::water::WaterVectorsArchive;
+use website_graphics_engine::formats::containers::header::ContainerHeader;
+use website_graphics_engine::formats::containers::tbdb::TbdbHeader;
+use website_graphics_engine::terrain::water::vectors::downsample_index;
 
 use crate::serve::repo_root;
 
@@ -611,7 +614,10 @@ pub fn emit_water(terrain: &str) -> Result<u8> {
 
 #[cfg(test)]
 mod tests {
-    use map_engine_core::world::{Bathymetry, WaterAt, WaterMask, WaterVectors};
+    use website_graphics_engine::terrain::water::vectors::Bathymetry;
+    use website_graphics_engine::terrain::water::vectors::WaterAt;
+    use website_graphics_engine::terrain::water::vectors::WaterMask;
+    use website_graphics_engine::terrain::water::vectors::WaterVectors;
 
     use super::*;
 

@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use map_engine_core::world::occluder::BlasEntry;
+use website_graphics_engine::spatial::world_los::descriptor::BlasEntry;
 
 use super::batch::open_sources;
 use super::library::{

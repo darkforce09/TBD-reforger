@@ -69,17 +69,20 @@ mod live {
     use super::super::building_viewer::geom::screen_to_world;
     use super::super::world_los_scene::{build_bench_lanes, ray_strip, Footprint};
     use super::{DEFAULT_CENTER, DEFAULT_EYE_M, DEFAULT_RADIUS_M, MAX_CUT_BUILDINGS};
-    use crate::editor::world_assets::{fetch_bytes, fetch_text, OccluderHost};
     use leptos::prelude::*;
-    use map_engine_core::building_section::section_at;
-    use map_engine_core::world::occluder::{WorldOccluder, WorldVerdict};
-    use map_engine_core::world::WorldResidency;
-    use map_engine_render::draw_order::role_id;
-    use map_engine_render::RenderEngine;
     use std::cell::RefCell;
     use std::rc::Rc;
     use wasm_bindgen::prelude::*;
     use wasm_bindgen::JsCast;
+    use website_graphics_engine::architecture::section::cutter::section_at;
+    use website_graphics_engine::core::context::state::RenderEngine;
+    use website_graphics_engine::core::pipeline::draw_order::role_id;
+    use website_graphics_engine::spatial::world_los::coverage_1::WorldVerdict;
+    use website_graphics_engine::spatial::world_los::state::WorldOccluder;
+    use website_graphics_engine::streaming::loaders::fetch::fetch_bytes;
+    use website_graphics_engine::streaming::loaders::fetch::fetch_text;
+    use website_graphics_engine::streaming::loaders::occluder_loader::OccluderHost;
+    use website_graphics_engine::streaming::scheduler::state::WorldResidency;
 
     type EngineHandle = Rc<RefCell<Option<RenderEngine>>>;
     type RafSlot = Rc<RefCell<Option<Closure<dyn FnMut()>>>>;
@@ -490,7 +493,7 @@ mod live {
                             );
                             let zoom = (cw.min(ch) / (2.4 * radius))
                                 .log2()
-                                .min(map_engine_core::camera::MAX_ZOOM);
+                                .min(website_graphics_engine::camera::ortho::state::MAX_ZOOM);
                             e.set_view(center[0], center[1], zoom);
                             e.hide_calibration();
                             e.disable_frame_timing();

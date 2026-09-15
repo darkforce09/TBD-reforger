@@ -3366,7 +3366,7 @@ fn TriggerOwnerLine(selected: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
         let _ = tick.get();
         let sel = selected.get();
         let (world_a, world_b) = ops::owner_line_world(sel.as_deref())?;
-        let (tx, ty, zoom) = crate::editor::world_assets::camera_snapshot()?;
+        let (tx, ty, zoom) = website_graphics_engine::streaming::host::camera_snapshot()?;
         let win = web_sys::window()?;
         let vw = win.inner_width().ok().and_then(|v| v.as_f64())?;
         let vh = win.inner_height().ok().and_then(|v| v.as_f64())?;
@@ -3581,7 +3581,8 @@ const CANONICAL_MARKER_GLYPH_COUNT: usize = 11;
 /// [`canonical_marker_rows`], since `marker_glyph_for_alias` is not a `const fn`.)
 #[cfg(target_arch = "wasm32")]
 const _: () = assert!(
-    CANONICAL_MARKER_GLYPH_COUNT == map_engine_render::scene::MARKER_GLYPH_COUNT,
+    CANONICAL_MARKER_GLYPH_COUNT
+        == website_graphics_engine::renderers::batching::scene::MARKER_GLYPH_COUNT,
     "picker row count must equal scene::MARKER_GLYPH_COUNT (T-790 source of truth)"
 );
 
@@ -3589,7 +3590,7 @@ const _: () = assert!(
 /// its human label, and every schema alias that folds into this family (the search-match set).
 #[cfg(target_arch = "wasm32")]
 struct CanonicalMarkerRow {
-    glyph: map_engine_render::scene::MarkerGlyph,
+    glyph: website_graphics_engine::renderers::batching::scene::MarkerGlyph,
     /// The canonical slug written to the document on pick — a closed-enum member.
     slug: &'static str,
     /// `humanize_token(slug)`, the label that takes the row width.
@@ -3608,7 +3609,9 @@ struct CanonicalMarkerRow {
 #[cfg(target_arch = "wasm32")]
 fn canonical_marker_rows(filter: &str) -> Vec<CanonicalMarkerRow> {
     use crate::editor::panels::zones_panel::humanize_token;
-    use map_engine_render::scene::{marker_glyph_for_alias, MarkerGlyph, MARKER_GLYPH_COUNT};
+    use website_graphics_engine::renderers::batching::scene::marker_glyph_for_alias;
+    use website_graphics_engine::renderers::batching::scene::MarkerGlyph;
+    use website_graphics_engine::renderers::batching::scene::MARKER_GLYPH_COUNT;
 
     // The mirrored count and the source-of-truth count must agree — a wasm build fails loudly here
     // if T-790 ever changes the glyph set without this picker following.
@@ -3672,8 +3675,10 @@ fn canonical_marker_rows(filter: &str) -> Vec<CanonicalMarkerRow> {
 /// the previous rows all rendered the same `place` Material pin; each shape below is drawn from
 /// different SVG primitives, so no two rows (and none vs. the old pin) share a DOM signature.
 #[cfg(target_arch = "wasm32")]
-fn marker_glyph_svg(glyph: map_engine_render::scene::MarkerGlyph) -> AnyView {
-    use map_engine_render::scene::MarkerGlyph;
+fn marker_glyph_svg(
+    glyph: website_graphics_engine::renderers::batching::scene::MarkerGlyph,
+) -> AnyView {
+    use website_graphics_engine::renderers::batching::scene::MarkerGlyph;
 
     // 16×16 viewBox; `currentColor` so the shape inherits the row's text colour on hover.
     let inner = match glyph {

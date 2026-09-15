@@ -28,10 +28,10 @@ webp = "0.3"
 # `binary` (T-935.2) is named even though `world` already implies it: `world/binary_emit.rs` links
 # `ObjectInstancePod`/`TbdcHeader` directly, so a future narrowing of `world` must not silently
 # take the emitter's types away. It activates nothing new — the lock is unchanged.
-map-engine-core = { path = "../../crates/map-engine-core", features = [
-    "png",
-    "world",
-    "binary",
+website-graphics-engine = { path = "../../apps/website/graphics-engine", default-features = false, features = [
+    "terrain",
+    "streaming",
+    "formats",
 ] }
 futures-util = "0.3"
 regex = "1"

@@ -84,7 +84,8 @@ fn compiled_meta_is_the_row_the_server_compiles_from() {
     // And the wire round trip the wasm caller actually performs: serialize → the camelCase
     // bytes `flatten_mod_document_json` parses → back. A rename on either side breaks this.
     let json = serde_json::to_string(&meta).unwrap();
-    let back: map_engine_core::mission::flatten::MissionMeta = serde_json::from_str(&json).unwrap();
+    let back: website_mission_core::mission::flatten::MissionMeta =
+        serde_json::from_str(&json).unwrap();
     assert_eq!(
         back.max_players, meta.max_players,
         "maxPlayers survives the round trip"

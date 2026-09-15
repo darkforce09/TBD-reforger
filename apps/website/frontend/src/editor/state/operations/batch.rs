@@ -71,5 +71,5 @@ pub fn align_selection(edge: crate::editor::tools::place_helpers::AlignEdge) -> 
 /// Wasm boot: feed `Date.now` into map-engine-core (no `wasm-bindgen` in that crate).
 #[wasm_bindgen::prelude::wasm_bindgen(start)]
 pub fn install_undo_gesture_clock() {
-    map_engine_core::doc::install_wasm_now(|| js_sys::Date::now() as u64);
+    website_mission_core::doc::install_wasm_now(|| js_sys::Date::now() as u64);
 }

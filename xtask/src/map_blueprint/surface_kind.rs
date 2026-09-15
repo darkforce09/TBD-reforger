@@ -3,7 +3,7 @@
 //! decides the class. Never derived from visual `.emat` names — the visual LODs and the
 //! collision mesh are different triangle sets.
 
-use map_engine_core::bvh::SurfaceKind;
+use website_graphics_engine::spatial::bvh::surface::SurfaceKind;
 
 /// Classify a game-material path (or bare stem). Case-insensitive on the stem.
 ///

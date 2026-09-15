@@ -4,9 +4,9 @@
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 use crate::editor::state::history as mission_history;
-use map_engine_core::doc::MissionDocCore;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use website_mission_core::doc::MissionDocCore;
 
 #[allow(unused_imports)]
 use super::{attrs::*, compositions::*, context::*, entity::*, transform::*};

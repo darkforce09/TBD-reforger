@@ -182,33 +182,106 @@ const AUTHORED_FLOW_KEYS: &[(&str, &str, &str)] = &[
 /// framework has no respawn pool for a ticket count to size.
 pub const SETTINGS_UNREAD_NOTE: &str = "Respawn, spectator policy, night vision and per-faction tickets are not authored here — the mission document declares them and no mod script reads them. TBD events are one life.";
 
-/// What a mission runs with when nothing is authored — **the compiler's own constants, not a copy**.
-///
-/// These are what `ModFlow` splices in when the payload authors nothing
-/// (`map_engine_core::mission::flatten::derive_flow`), so an unauthored mission's dialog shows the
-/// duration it will actually run with rather than a UI-invented zero. They are also the fallback the
-/// compiler keeps now that it reads the authored keys, which is why the dialog and the compiled
-/// document have to agree about them: if they disagree, the dialog is lying about an unauthored
-/// mission.
-///
-/// **T-753 — why this is a `pub use` and not four `pub const`s.** It used to be four `pub const`s
-/// here holding literals identical to `flatten.rs`'s, with nothing anywhere comparing the two sets.
-/// The only guard was `flow_defaults_mirror_the_compiled_constants` below, which restated
-/// the literals against THIS module's own copy — so it agreed with itself no matter what the
-/// compiler held. The wave-115 verifier proved the hole rather than arguing it: editing
-/// `FLOW_DEFAULT_BRIEFING_S` in `flatten.rs` from 600 to 900 left `cargo test -p website-frontend`
-/// at 800 passed / 0 failed while the compiler emitted 900-second briefings and every editor surface
-/// kept displaying 600. That is exactly the defect class T-688 exists to prevent — a view showing a
-/// value the authority does not hold — one layer beneath the surface T-688 audited.
-///
-/// A cross-crate `assert_eq!` would have closed it. Re-exporting closes it harder: there is now ONE
-/// definition in the workspace, so "the two disagree" is not a bug that can be written. The literal
-/// guard below is kept and is no longer circular — it now reads the compiler's constant, so the
-/// verifier's 600 → 900 edit turns it red. This crate already depended on `map-engine-core` with the
-/// `mission` feature (`Cargo.toml`), so this costs nothing but the deletion.
-pub use map_engine_core::mission::flatten::{
-    FLOW_DEFAULT_BRIEFING_S, FLOW_DEFAULT_JIP, FLOW_DEFAULT_SAFESTART_S, FLOW_DEFAULT_TIMELIMIT_S,
-};
+#[doc = " What a mission runs with when nothing is authored — **the compiler's own constants, not a copy**."]
+#[doc = ""]
+#[doc = " These are what `ModFlow` splices in when the payload authors nothing"]
+#[doc = " (`map_engine_core::mission::flatten::derive_flow`), so an unauthored mission's dialog shows the"]
+#[doc = " duration it will actually run with rather than a UI-invented zero. They are also the fallback the"]
+#[doc = " compiler keeps now that it reads the authored keys, which is why the dialog and the compiled"]
+#[doc = " document have to agree about them: if they disagree, the dialog is lying about an unauthored"]
+#[doc = " mission."]
+#[doc = ""]
+#[doc = " **T-753 — why this is a `pub use` and not four `pub const`s.** It used to be four `pub const`s"]
+#[doc = " here holding literals identical to `flatten.rs`'s, with nothing anywhere comparing the two sets."]
+#[doc = " The only guard was `flow_defaults_mirror_the_compiled_constants` below, which restated"]
+#[doc = " the literals against THIS module's own copy — so it agreed with itself no matter what the"]
+#[doc = " compiler held. The wave-115 verifier proved the hole rather than arguing it: editing"]
+#[doc = " `FLOW_DEFAULT_BRIEFING_S` in `flatten.rs` from 600 to 900 left `cargo test -p website-frontend`"]
+#[doc = " at 800 passed / 0 failed while the compiler emitted 900-second briefings and every editor surface"]
+#[doc = " kept displaying 600. That is exactly the defect class T-688 exists to prevent — a view showing a"]
+#[doc = " value the authority does not hold — one layer beneath the surface T-688 audited."]
+#[doc = ""]
+#[doc = " A cross-crate `assert_eq!` would have closed it. Re-exporting closes it harder: there is now ONE"]
+#[doc = " definition in the workspace, so \"the two disagree\" is not a bug that can be written. The literal"]
+#[doc = " guard below is kept and is no longer circular — it now reads the compiler's constant, so the"]
+#[doc = " verifier's 600 → 900 edit turns it red. This crate already depended on `map-engine-core` with the"]
+#[doc = " `mission` feature (`Cargo.toml`), so this costs nothing but the deletion."]
+pub use website_mission_core::mission::flatten::FLOW_DEFAULT_BRIEFING_S;
+#[doc = " What a mission runs with when nothing is authored — **the compiler's own constants, not a copy**."]
+#[doc = ""]
+#[doc = " These are what `ModFlow` splices in when the payload authors nothing"]
+#[doc = " (`map_engine_core::mission::flatten::derive_flow`), so an unauthored mission's dialog shows the"]
+#[doc = " duration it will actually run with rather than a UI-invented zero. They are also the fallback the"]
+#[doc = " compiler keeps now that it reads the authored keys, which is why the dialog and the compiled"]
+#[doc = " document have to agree about them: if they disagree, the dialog is lying about an unauthored"]
+#[doc = " mission."]
+#[doc = ""]
+#[doc = " **T-753 — why this is a `pub use` and not four `pub const`s.** It used to be four `pub const`s"]
+#[doc = " here holding literals identical to `flatten.rs`'s, with nothing anywhere comparing the two sets."]
+#[doc = " The only guard was `flow_defaults_mirror_the_compiled_constants` below, which restated"]
+#[doc = " the literals against THIS module's own copy — so it agreed with itself no matter what the"]
+#[doc = " compiler held. The wave-115 verifier proved the hole rather than arguing it: editing"]
+#[doc = " `FLOW_DEFAULT_BRIEFING_S` in `flatten.rs` from 600 to 900 left `cargo test -p website-frontend`"]
+#[doc = " at 800 passed / 0 failed while the compiler emitted 900-second briefings and every editor surface"]
+#[doc = " kept displaying 600. That is exactly the defect class T-688 exists to prevent — a view showing a"]
+#[doc = " value the authority does not hold — one layer beneath the surface T-688 audited."]
+#[doc = ""]
+#[doc = " A cross-crate `assert_eq!` would have closed it. Re-exporting closes it harder: there is now ONE"]
+#[doc = " definition in the workspace, so \"the two disagree\" is not a bug that can be written. The literal"]
+#[doc = " guard below is kept and is no longer circular — it now reads the compiler's constant, so the"]
+#[doc = " verifier's 600 → 900 edit turns it red. This crate already depended on `map-engine-core` with the"]
+#[doc = " `mission` feature (`Cargo.toml`), so this costs nothing but the deletion."]
+pub use website_mission_core::mission::flatten::FLOW_DEFAULT_JIP;
+#[doc = " What a mission runs with when nothing is authored — **the compiler's own constants, not a copy**."]
+#[doc = ""]
+#[doc = " These are what `ModFlow` splices in when the payload authors nothing"]
+#[doc = " (`map_engine_core::mission::flatten::derive_flow`), so an unauthored mission's dialog shows the"]
+#[doc = " duration it will actually run with rather than a UI-invented zero. They are also the fallback the"]
+#[doc = " compiler keeps now that it reads the authored keys, which is why the dialog and the compiled"]
+#[doc = " document have to agree about them: if they disagree, the dialog is lying about an unauthored"]
+#[doc = " mission."]
+#[doc = ""]
+#[doc = " **T-753 — why this is a `pub use` and not four `pub const`s.** It used to be four `pub const`s"]
+#[doc = " here holding literals identical to `flatten.rs`'s, with nothing anywhere comparing the two sets."]
+#[doc = " The only guard was `flow_defaults_mirror_the_compiled_constants` below, which restated"]
+#[doc = " the literals against THIS module's own copy — so it agreed with itself no matter what the"]
+#[doc = " compiler held. The wave-115 verifier proved the hole rather than arguing it: editing"]
+#[doc = " `FLOW_DEFAULT_BRIEFING_S` in `flatten.rs` from 600 to 900 left `cargo test -p website-frontend`"]
+#[doc = " at 800 passed / 0 failed while the compiler emitted 900-second briefings and every editor surface"]
+#[doc = " kept displaying 600. That is exactly the defect class T-688 exists to prevent — a view showing a"]
+#[doc = " value the authority does not hold — one layer beneath the surface T-688 audited."]
+#[doc = ""]
+#[doc = " A cross-crate `assert_eq!` would have closed it. Re-exporting closes it harder: there is now ONE"]
+#[doc = " definition in the workspace, so \"the two disagree\" is not a bug that can be written. The literal"]
+#[doc = " guard below is kept and is no longer circular — it now reads the compiler's constant, so the"]
+#[doc = " verifier's 600 → 900 edit turns it red. This crate already depended on `map-engine-core` with the"]
+#[doc = " `mission` feature (`Cargo.toml`), so this costs nothing but the deletion."]
+pub use website_mission_core::mission::flatten::FLOW_DEFAULT_SAFESTART_S;
+#[doc = " What a mission runs with when nothing is authored — **the compiler's own constants, not a copy**."]
+#[doc = ""]
+#[doc = " These are what `ModFlow` splices in when the payload authors nothing"]
+#[doc = " (`map_engine_core::mission::flatten::derive_flow`), so an unauthored mission's dialog shows the"]
+#[doc = " duration it will actually run with rather than a UI-invented zero. They are also the fallback the"]
+#[doc = " compiler keeps now that it reads the authored keys, which is why the dialog and the compiled"]
+#[doc = " document have to agree about them: if they disagree, the dialog is lying about an unauthored"]
+#[doc = " mission."]
+#[doc = ""]
+#[doc = " **T-753 — why this is a `pub use` and not four `pub const`s.** It used to be four `pub const`s"]
+#[doc = " here holding literals identical to `flatten.rs`'s, with nothing anywhere comparing the two sets."]
+#[doc = " The only guard was `flow_defaults_mirror_the_compiled_constants` below, which restated"]
+#[doc = " the literals against THIS module's own copy — so it agreed with itself no matter what the"]
+#[doc = " compiler held. The wave-115 verifier proved the hole rather than arguing it: editing"]
+#[doc = " `FLOW_DEFAULT_BRIEFING_S` in `flatten.rs` from 600 to 900 left `cargo test -p website-frontend`"]
+#[doc = " at 800 passed / 0 failed while the compiler emitted 900-second briefings and every editor surface"]
+#[doc = " kept displaying 600. That is exactly the defect class T-688 exists to prevent — a view showing a"]
+#[doc = " value the authority does not hold — one layer beneath the surface T-688 audited."]
+#[doc = ""]
+#[doc = " A cross-crate `assert_eq!` would have closed it. Re-exporting closes it harder: there is now ONE"]
+#[doc = " definition in the workspace, so \"the two disagree\" is not a bug that can be written. The literal"]
+#[doc = " guard below is kept and is no longer circular — it now reads the compiler's constant, so the"]
+#[doc = " verifier's 600 → 900 edit turns it red. This crate already depended on `map-engine-core` with the"]
+#[doc = " `mission` feature (`Cargo.toml`), so this costs nothing but the deletion."]
+pub use website_mission_core::mission::flatten::FLOW_DEFAULT_TIMELIMIT_S;
 
 /// The `jip` enum, in schema order, with the words an author reads.
 ///

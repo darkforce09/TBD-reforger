@@ -316,7 +316,9 @@ pub(crate) fn marker_lane_fields(
             .and_then(serde_json::Value::as_str)
             .unwrap_or("");
         let side = faction.strip_prefix("faction-").unwrap_or(faction);
-        tints.extend_from_slice(&map_engine_core::slots_gpu::side_rgba(side));
+        tints.extend_from_slice(
+            &website_graphics_engine::symbology::roles::classify::side_rgba(side),
+        );
         let str_field = |k: &str| {
             r.get(k)
                 .and_then(serde_json::Value::as_str)
@@ -873,8 +875,8 @@ pub(crate) fn map_render_keep_indices(
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub(crate) fn map_render_slot_soa(
-    core: &map_engine_core::doc::MissionDocCore,
-) -> map_engine_core::doc::SlotSoa {
+    core: &website_mission_core::doc::MissionDocCore,
+) -> website_mission_core::doc::SlotSoa {
     let soa = core.materialize();
     let crewed = crewed_slot_ids(&core.small_maps_json());
     filter_slot_soa_excluding(&soa, &crewed)
@@ -885,10 +887,10 @@ pub(crate) fn map_render_slot_soa(
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub(crate) fn filter_slot_soa_excluding(
-    soa: &map_engine_core::doc::SlotSoa,
+    soa: &website_mission_core::doc::SlotSoa,
     exclude: &std::collections::HashSet<String>,
-) -> map_engine_core::doc::SlotSoa {
-    use map_engine_core::doc::SlotSoa;
+) -> website_mission_core::doc::SlotSoa {
+    use website_mission_core::doc::SlotSoa;
     let keep = map_render_keep_indices(&soa.ids, exclude);
     if keep.len() == soa.ids.len() {
         return soa.clone();

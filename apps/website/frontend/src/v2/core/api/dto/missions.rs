@@ -127,8 +127,8 @@ impl MissionDetail {
     /// `author` field carries the account id, not the display name — the display name travels
     /// beside it — which is the one field a reasonable reading gets wrong, and getting it wrong
     /// would produce a document that looks right and is not the one the server builds.
-    pub fn compiled_meta(&self) -> map_engine_core::mission::flatten::MissionMeta {
-        map_engine_core::mission::flatten::MissionMeta {
+    pub fn compiled_meta(&self) -> website_mission_core::mission::flatten::MissionMeta {
+        website_mission_core::mission::flatten::MissionMeta {
             id: self.id.clone(),
             title: self.title.clone(),
             author: self.author_id.clone(),

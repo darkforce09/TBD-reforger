@@ -182,37 +182,6 @@
   reason: T-145 Axum port; split follow-up
   expires: 2026-11-13
 
-# --- T-151 map-engine. Split follow-up. ---
-- rule: SIZE-3
-  path: crates/map-engine-core/src/dem/sample.rs
-  reason: T-151 map-engine; split follow-up
-  expires: 2026-11-13
-
-- rule: SIZE-3
-  path: crates/map-engine-core/src/slots_gpu.rs
-  reason: T-151 map-engine; split follow-up
-  expires: 2026-11-13
-
-- rule: SIZE-3
-  path: crates/map-engine-core/src/world/residency.rs
-  reason: T-151 map-engine; split follow-up
-  expires: 2026-11-13
-
-- rule: SIZE-3
-  path: crates/map-engine-render/src/draw_order.rs
-  reason: T-151 map-engine; split follow-up
-  expires: 2026-11-13
-
-- rule: SIZE-3
-  path: crates/map-engine-render/src/engine.rs
-  reason: T-151 map-engine; split follow-up
-  expires: 2026-11-13
-
-- rule: SIZE-3
-  path: crates/map-engine-render/src/scene.rs
-  reason: T-151 map-engine; split follow-up
-  expires: 2026-11-13
-
 # --- T-853 xtask / tbd-tools ports. Split follow-up. Do not split these this wave (siblings own main.rs / cmds.rs). ---
 - rule: SIZE-3
   path: tools/tbd-tools/src/map/sap.rs

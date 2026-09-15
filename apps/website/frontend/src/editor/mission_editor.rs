@@ -22,6 +22,7 @@
 //! Toolbelt, doc host) lands across T-159.16–.22. Route is `chromeless` + `full_bleed` (AppLayout
 //! hides the platform nav). Verified by GPU readback (not DOM diff) as the map lane grows.
 #![allow(dead_code)]
+use crate::editor::canvas::boot::boot_progress::BootSegView;
 use leptos::prelude::*;
 
 // T-934.6 — editor_ops moved to `crate::editor::state::operations`; the alias keeps the dozens of
@@ -862,7 +863,7 @@ pub(crate) fn with_editor_toolbar_dispatch(f: impl FnOnce(&EditorToolbarDispatch
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub(crate) fn live_connection_segments(
-    core: &map_engine_core::doc::MissionDocCore,
+    core: &website_mission_core::doc::MissionDocCore,
 ) -> Vec<ConnSegment> {
     let soa = core.materialize();
     let mut positions: std::collections::HashMap<String, (f64, f64)> =
@@ -900,7 +901,7 @@ pub(crate) fn set_map_cursor(canvas: &web_sys::HtmlCanvasElement, pickable: bool
 #[cfg(target_arch = "wasm32")]
 pub(crate) struct HoverPoints {
     tick: u64,
-    soa: map_engine_core::doc::SlotSoa,
+    soa: website_mission_core::doc::SlotSoa,
     vehicles: Vec<(String, f64, f64)>,
     comments: Vec<CommentPoint>,
 }
@@ -919,7 +920,7 @@ pub(crate) fn hover_hit(
     cache: &mut Option<HoverPoints>,
     tick: u64,
     doc: &mission_doc::DocHandle,
-    cam: &map_engine_core::camera::OrthoCamera,
+    cam: &website_graphics_engine::camera::ortho::state::OrthoCamera,
     px: f64,
     py: f64,
 ) -> bool {
@@ -1456,12 +1457,12 @@ pub fn MissionEditorPage() -> impl IntoView {
             canvas.set_width(dw);
             canvas.set_height(dh);
 
-            let engine: Rc<RefCell<Option<map_engine_render::RenderEngine>>> =
+            let engine: Rc<RefCell<Option<website_graphics_engine::core::context::state::RenderEngine>>> =
                 Rc::new(RefCell::new(None));
             // T-166 — shared map-asset host (camera-settle refresh after wheel/pan).
-            let map_host = crate::editor::world_assets::new_host_handle();
+            let map_host = website_graphics_engine::streaming::host::new_host_handle();
             // T-172 B2 — DEM grid handle for the CUR Z sample (published by bootstrap).
-            let dem_grid = crate::editor::world_assets::new_dem_grid_handle();
+            let dem_grid = website_graphics_engine::streaming::host::new_dem_grid_handle();
             let disposed = Arc::new(AtomicBool::new(false));
 
             // T-159.16 — MissionDoc host. Built + seeded + bridged synchronously (before the async
@@ -1626,7 +1627,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 crate::editor::tools::los_tool::register_los_sampler(std::rc::Rc::new(
                     move |x: f64, y: f64| {
                         dem_grid.borrow().as_ref().and_then(|g| {
-                            map_engine_core::dem::downsample::sample_grid_meters(g, x, y)
+                            website_graphics_engine::terrain::dem::grid::sample_grid_meters(g, x, y)
                         })
                     },
                 ));
@@ -1751,7 +1752,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 validation_panel::register_payload_source(std::rc::Rc::new(move || {
                     let d = doc.borrow();
                     let core = d.as_ref()?;
-                    let payload = map_engine_core::mission::compile::compile_payload(
+                    let payload = website_mission_core::mission::compile::compile_payload(
                         &core.small_maps_json(),
                         &core.slots_json(),
                         false,
@@ -2185,7 +2186,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     //    `borrow_mut` is ever held across an `.await` (the engine task shares this `Rc`).
                     if let Some(blob) = yrs_persist::load_state(&id).await {
                         if !blob.is_empty() {
-                            let fresh = map_engine_core::doc::MissionDocCore::new();
+                            let fresh = website_mission_core::doc::MissionDocCore::new();
                             fresh.set_origin_init(true);
                             let ok = fresh.apply_update(&blob).is_ok();
                             fresh.set_origin_init(false);
@@ -2327,7 +2328,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let report = report.clone();
                 let (cw, ch) = (rect0.width(), rect0.height());
                 async move {
-                    match map_engine_render::RenderEngine::create(canvas, force_webgl).await {
+                    match website_graphics_engine::core::context::state::RenderEngine::create(canvas, force_webgl).await {
                         Ok(mut eng) => {
                             if disposed.load(Ordering::Relaxed) {
                                 return;
@@ -2352,7 +2353,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                                               // add the per-icon marker glyph shapes `markers_bind` selects.
                             {
                                 let (rgba, width, height, uv) =
-                                    map_engine_render::scene::build_marker_slot_atlas();
+                                    website_graphics_engine::renderers::batching::scene::build_marker_slot_atlas();
                                 if let Err(e) = eng.ensure_slot_atlas(&rgba, width, height, &uv) {
                                     leptos::logging::error!("ensure_slot_atlas: {e:?}");
                                 }
@@ -2388,7 +2389,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             if let (Some(soa), Some(e)) =
                                 (soa.as_ref(), engine.borrow_mut().as_mut())
                             {
-                                let tints = map_engine_core::slots_gpu::side_tints_rgba_bytes(
+                                let tints = website_graphics_engine::symbology::roles::classify::side_tints_rgba_bytes(
                                     &soa.side_keys,
                                 );
                                 e.slots_bind_symbology(
@@ -3159,15 +3160,9 @@ mod t628_boot_progress;
 #[path = "mission_editor_tests/t631_boot_failure_state.rs"]
 mod t631_boot_failure_state;
 
-/// T-629 — `world_assets` is `#![cfg(target_arch = "wasm32")]`, so its `mod tbd_sat;` never
-/// compiles for the host test runner. `tbd_sat.rs` itself is pure (serde + integer comparisons,
-/// no `web_sys`), and the mip level it chooses IS the displayed resolution of the basemap — the
-/// most consequential arithmetic in the map host. Mounting the same file a second time under a
-/// test-only name is what lets that arithmetic be executed here rather than only grepped for.
-/// The two mounts are never both live: this one is `not(target_arch = "wasm32")`.
+/// Exercise the graphics crate's satellite arithmetic directly from native UI regression tests.
 #[cfg(all(test, not(target_arch = "wasm32")))]
-#[path = "world_assets/tbd_sat.rs"]
-mod tbd_sat_pure;
+use website_graphics_engine::terrain::satellite::streamer as tbd_sat_pure;
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 #[path = "mission_editor_tests/t629_satellite_resolution.rs"]

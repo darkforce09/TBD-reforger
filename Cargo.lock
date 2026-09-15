@@ -3768,36 +3768,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "map-engine-core"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "earcutr",
- "flate2",
- "png 0.17.16",
- "rkyv 0.8.18",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "website-mission-core",
-]
-
-[[package]]
-name = "map-engine-render"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "console_error_panic_hook",
- "js-sys",
- "map-engine-core",
- "serde_json",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "wgpu 29.0.4",
-]
-
-[[package]]
 name = "maplit"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6972,7 +6942,6 @@ dependencies = [
  "image-webp",
  "jsonschema",
  "libc",
- "map-engine-core",
  "png 0.17.16",
  "regex",
  "reqwest",
@@ -6983,6 +6952,7 @@ dependencies = [
  "tokio",
  "tokio-tungstenite",
  "webp",
+ "website-graphics-engine",
 ]
 
 [[package]]
@@ -8225,15 +8195,36 @@ dependencies = [
  "js-sys",
  "leptos",
  "leptos_router",
- "map-engine-core",
- "map-engine-render",
  "serde",
  "serde_json",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
+ "website-graphics-engine",
  "website-mission-core",
+]
+
+[[package]]
+name = "website-graphics-engine"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "console_error_panic_hook",
+ "earcutr",
+ "flate2",
+ "futures",
+ "gloo-net",
+ "js-sys",
+ "png 0.17.16",
+ "rkyv 0.8.18",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "wgpu 29.0.4",
 ]
 
 [[package]]
@@ -9047,7 +9038,6 @@ dependencies = [
  "flate2",
  "jsonschema",
  "libc",
- "map-engine-core",
  "png 0.17.16",
  "prettyplease",
  "regex",
@@ -9063,6 +9053,7 @@ dependencies = [
  "toml 0.8.23",
  "typify",
  "walkdir",
+ "website-graphics-engine",
 ]
 
 [[package]]

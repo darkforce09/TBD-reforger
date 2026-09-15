@@ -19,9 +19,10 @@ use std::io::Read;
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use map_engine_core::bvh::BvhSidecar;
-use map_engine_core::world::occluder::{BlasManifest, PrefabDescriptor};
 use serde_json::Value;
+use website_graphics_engine::spatial::bvh::sidecar::BvhSidecar;
+use website_graphics_engine::spatial::world_los::descriptor::BlasManifest;
+use website_graphics_engine::spatial::world_los::descriptor::PrefabDescriptor;
 
 const TERRAIN: &str = "everon";
 const FARMHOUSE_SLUG: &str = "FarmHouse_E_1L01_Wood";

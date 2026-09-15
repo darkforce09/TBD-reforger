@@ -347,7 +347,7 @@ pub fn run_rotation_pin(args: &[String]) -> Result<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use map_engine_core::geometry::rigid::Rigid;
+    use website_graphics_engine::architecture::compound::transform::Rigid;
 
     #[test]
     fn rigid_from_enfusion_is_the_y_x_z_hypothesis() {

@@ -15,7 +15,10 @@
 use leptos::prelude::*;
 use serde_json::Value;
 
-use map_engine_core::mission::spawn_modules::{validate, FACTION_KEYS, KINDS, MAX_ALIVE};
+use website_mission_core::mission::spawn_modules::validate;
+use website_mission_core::mission::spawn_modules::FACTION_KEYS;
+use website_mission_core::mission::spawn_modules::KINDS;
+use website_mission_core::mission::spawn_modules::MAX_ALIVE;
 
 /// The reader chain for `meta.environment.spawnModules`, end to end.
 pub const SPAWN_MODULES_READERS: &[(&str, &str)] = &[
@@ -641,8 +644,8 @@ fn number_display(v: Option<&Value>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use map_engine_core::mission::spawn_modules::placement_is_exclusive;
     use serde_json::json;
+    use website_mission_core::mission::spawn_modules::placement_is_exclusive;
 
     fn wave() -> Value {
         json!({

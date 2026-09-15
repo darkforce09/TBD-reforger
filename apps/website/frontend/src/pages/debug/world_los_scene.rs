@@ -4,8 +4,9 @@
 //! trees and rocks on the vegetation lane, proxies as amber outlines on the portals-outline
 //! lane) and the A → B ray on the probe lane coloured by what it crossed.
 
-use map_engine_core::building_blueprint::{LosHit, LosHitKind};
-use map_engine_core::geometry::polyline_strip::expand_polyline_strip;
+use website_graphics_engine::architecture::blueprint::attribution_1::LosHit;
+use website_graphics_engine::architecture::blueprint::attribution_1::LosHitKind;
+use website_graphics_engine::terrain::roads::styling::expand_polyline_strip;
 
 use super::building_interior::{InteriorLanes, RAY_FOLIAGE};
 

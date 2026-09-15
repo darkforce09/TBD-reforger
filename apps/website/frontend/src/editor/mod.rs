@@ -24,8 +24,9 @@ pub mod mission_size;
 pub mod tools;
 // T-159.28 map-asset host (MVP: DEM hillshade) — fetch bytes + call the Rust dem core + engine
 // tex_layer. wasm32-only (fetch + engine), gated like the doc host.
-#[cfg(target_arch = "wasm32")]
-pub mod world_assets;
+
 // T-173 P6 — per-user world-layer visibility prefs + basemap view (localStorage). Pure/native-
 // tested; the wasm host applies them to the residency + engine each settle.
+#[cfg(target_arch = "wasm32")]
+pub mod world_assets;
 pub mod world_layer_prefs;

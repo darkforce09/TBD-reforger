@@ -148,7 +148,7 @@ pub(crate) struct ZDrag {
 #[cfg(any(target_arch = "wasm32", test))]
 impl ZDrag {
     pub(crate) fn begin(
-        core: &map_engine_core::doc::MissionDocCore,
+        core: &website_mission_core::doc::MissionDocCore,
         ids: &[String],
         pointer_id: i32,
         start_y: f64,
@@ -198,7 +198,7 @@ impl ZDrag {
     /// so a Z-only commit cannot overwrite another position attribute changed during the drag.
     pub(crate) fn commit(
         self,
-        core: &mut map_engine_core::doc::MissionDocCore,
+        core: &mut website_mission_core::doc::MissionDocCore,
         delta: f64,
     ) -> bool {
         if delta == 0.0 || !delta.is_finite() {
@@ -339,7 +339,7 @@ pub(crate) fn TransformWidgetOverlay(
         let (wx, wy) = read_widget_pivot()?;
         #[cfg(target_arch = "wasm32")]
         {
-            let (tx, ty, zoom) = crate::editor::world_assets::camera_snapshot()?;
+            let (tx, ty, zoom) = website_graphics_engine::streaming::host::camera_snapshot()?;
             let win = web_sys::window()?;
             let vw = win
                 .inner_width()
@@ -1340,8 +1340,8 @@ mod t946_86_z_arm {
         );
     }
 
-    fn mixed_doc() -> map_engine_core::doc::MissionDocCore {
-        let core = map_engine_core::doc::MissionDocCore::new();
+    fn mixed_doc() -> website_mission_core::doc::MissionDocCore {
+        let core = website_mission_core::doc::MissionDocCore::new();
         core.set_origin_init(true);
         core.add_slot(
             "roof",

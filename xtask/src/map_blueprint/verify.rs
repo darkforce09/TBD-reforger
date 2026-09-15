@@ -23,11 +23,12 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result, bail};
-use map_engine_core::building_compound::{
-    InstanceKind, InstanceRecord, InstancesFile, PlacementSource,
-};
-use map_engine_core::geometry::rigid::Rigid;
 use serde::Deserialize;
+use website_graphics_engine::architecture::compound::assembly::PlacementSource;
+use website_graphics_engine::architecture::compound::instances::InstanceKind;
+use website_graphics_engine::architecture::compound::instances::InstanceRecord;
+use website_graphics_engine::architecture::compound::instances::InstancesFile;
+use website_graphics_engine::architecture::compound::transform::Rigid;
 
 pub const POS_TOL_M: f64 = 0.02;
 pub const YAW_TOL_DEG: f64 = 1.0;
@@ -524,7 +525,8 @@ pub fn run_instances_verify(args: &[String]) -> Result<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use map_engine_core::building_compound::{CoverTier, LocalTransform};
+    use website_graphics_engine::architecture::compound::assembly::CoverTier;
+    use website_graphics_engine::architecture::compound::instances::LocalTransform;
 
     fn inst(
         id: &str,

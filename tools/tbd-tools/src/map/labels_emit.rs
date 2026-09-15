@@ -27,12 +27,18 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use map_engine_core::world::binary::archives::{ARCHIVE_SCHEMA_VERSION, MapLabelsArchive};
-use map_engine_core::world::binary::{access_checked, to_bytes};
-use map_engine_core::world::{
-    bytes_to_json, height_labels_to_archive, parse_height_labels_json, parse_locations_json,
-    parse_road_names_json, parse_roads_payload, road_names_to_archive, towns_to_archive,
-};
+use website_graphics_engine::environment::locations::route_labels::parse_road_names_json;
+use website_graphics_engine::environment::locations::route_labels::road_names_to_archive;
+use website_graphics_engine::environment::locations::towns::height_labels_to_archive;
+use website_graphics_engine::environment::locations::towns::parse_height_labels_json;
+use website_graphics_engine::environment::locations::towns::parse_locations_json;
+use website_graphics_engine::environment::locations::towns::towns_to_archive;
+use website_graphics_engine::formats::archives::codec::access_checked;
+use website_graphics_engine::formats::archives::codec::to_bytes;
+use website_graphics_engine::formats::archives::labels::MapLabelsArchive;
+use website_graphics_engine::formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use website_graphics_engine::streaming::loaders::store::bytes_to_json;
+use website_graphics_engine::terrain::roads::network::parse_roads_payload;
 
 use crate::serve::repo_root;
 
@@ -158,11 +164,14 @@ pub fn emit_map_labels(terrain: &str) -> Result<u8> {
 
 #[cfg(test)]
 mod tests {
-    use map_engine_core::world::{
-        RoadSegment, build_road_label_draw_set, build_road_label_draw_set_from_archive,
-        locations_to_label_specs, road_names_from_archive, towns_from_archive,
-    };
-    use map_engine_core::world::{height_labels_from_archive, parse_road_names_json};
+    use website_graphics_engine::environment::locations::route_labels::build_road_label_draw_set_from_archive;
+    use website_graphics_engine::environment::locations::route_labels::parse_road_names_json;
+    use website_graphics_engine::environment::locations::route_labels::road_names_from_archive;
+    use website_graphics_engine::environment::locations::route_placement::build_road_label_draw_set;
+    use website_graphics_engine::environment::locations::towns::height_labels_from_archive;
+    use website_graphics_engine::environment::locations::towns::locations_to_label_specs;
+    use website_graphics_engine::environment::locations::towns::towns_from_archive;
+    use website_graphics_engine::terrain::roads::network::RoadSegment;
 
     use super::*;
 

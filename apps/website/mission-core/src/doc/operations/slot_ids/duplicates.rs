@@ -35,12 +35,11 @@ pub fn duplicate_slot_ids(doc: &MissionDocCore) -> Vec<(String, String)> {
 
         let seen = callsign_seen.entry(callsign.to_string()).or_default();
         for id_val in slot_ids {
-            if let Some(id_str) = id_val.as_str() {
-                if doc.slot_exists(id_str) {
-                    if !seen.insert(id_str.to_string()) {
-                        duplicates.push((callsign.to_string(), id_str.to_string()));
-                    }
-                }
+            if let Some(id_str) = id_val.as_str()
+                && doc.slot_exists(id_str)
+                && !seen.insert(id_str.to_string())
+            {
+                duplicates.push((callsign.to_string(), id_str.to_string()));
             }
         }
     }

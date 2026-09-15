@@ -7,12 +7,15 @@
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use map_engine_core::dem::peaks::{
-    HeightLabel, HeightLabelKind, PEAK_MIN_VALUE_M, declutter_height_labels, find_peaks,
-};
-use map_engine_core::dem::png_decode::decode_png_to_meters;
-use map_engine_core::dem::sample::{DemManifest, sample_elevation_from_meters_cache};
 use serde_json::{Map, Value, json};
+use website_graphics_engine::environment::locations::peaks::HeightLabel;
+use website_graphics_engine::environment::locations::peaks::HeightLabelKind;
+use website_graphics_engine::environment::locations::peaks::PEAK_MIN_VALUE_M;
+use website_graphics_engine::environment::locations::peaks::declutter_height_labels;
+use website_graphics_engine::environment::locations::peaks::find_peaks;
+use website_graphics_engine::terrain::dem::manifest::DemManifest;
+use website_graphics_engine::terrain::dem::png::decode_png_to_meters;
+use website_graphics_engine::terrain::dem::sampling::sample_elevation_from_meters_cache;
 
 use crate::serve::repo_root;
 use crate::world::jsval::{js_math_round, js_num};

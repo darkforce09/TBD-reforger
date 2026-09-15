@@ -1,4 +1,4 @@
-use super::boot_progress::{BootEvent, BootProgress, BootSeg};
+use super::boot_progress::{BootEvent, BootProgress, BootSeg, BootSegView};
 use super::BootPhase;
 
 /// The verbatim first line of the observed wasm chain (`webgpu.rs:2331`). This is the string

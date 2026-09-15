@@ -19,7 +19,9 @@
 use leptos::prelude::*;
 use serde_json::Value;
 
-use map_engine_core::mission::tasks::{validate_schedule, STATES, TIERS};
+use website_mission_core::mission::tasks::validate_schedule;
+use website_mission_core::mission::tasks::STATES;
+use website_mission_core::mission::tasks::TIERS;
 
 #[cfg(target_arch = "wasm32")]
 use super::env::read_flow_seconds;
@@ -282,7 +284,7 @@ fn read_block() -> Option<Value> {
 fn commit(tasks: Option<&[Value]>) {
     if let Some(rows) = tasks {
         let value = Value::Array(rows.to_vec());
-        if let Err(clause) = map_engine_core::mission::tasks::validate(&value) {
+        if let Err(clause) = website_mission_core::mission::tasks::validate(&value) {
             leptos::logging::warn!("tasks is not yet complete: {clause}");
         }
     }
@@ -617,7 +619,7 @@ mod tests {
         assert_eq!(next[1]["id"], "task-2");
         assert_eq!(next[1]["tier"], "primary");
         assert_eq!(next[1]["state"], "assigned");
-        map_engine_core::mission::tasks::validate(&Value::Array(next))
+        website_mission_core::mission::tasks::validate(&Value::Array(next))
             .expect("the panel must not author a block the compile refuses");
     }
 
@@ -666,7 +668,7 @@ mod tests {
         assert_eq!(next[0]["markerId"], "attack");
         let next = with_field(&next, 0, "triggerId", "  ").expect("blank optional");
         assert!(next[0].get("triggerId").is_none());
-        map_engine_core::mission::tasks::validate(&Value::Array(next)).expect("valid");
+        website_mission_core::mission::tasks::validate(&Value::Array(next)).expect("valid");
     }
 
     #[test]
@@ -700,7 +702,7 @@ mod tests {
         rows = with_field(&rows, 2, "tier", "optional").expect("opt");
         rows = move_task(&rows, 2, -1);
         assert_eq!(rows[1]["tier"], "optional");
-        map_engine_core::mission::tasks::validate(&Value::Array(rows))
+        website_mission_core::mission::tasks::validate(&Value::Array(rows))
             .expect("the panel must not author a block the compile refuses");
     }
 
@@ -729,7 +731,7 @@ mod tests {
         assert_eq!(schedule_seconds(&next[0], "startAfterS"), "600");
         assert_eq!(schedule_seconds(&next[0], "windowS"), "300");
         assert_eq!(schedule_seconds(&pri(), "startAfterS"), "");
-        map_engine_core::mission::tasks::validate(&Value::Array(next))
+        website_mission_core::mission::tasks::validate(&Value::Array(next))
             .expect("the panel must not author a block the compile refuses");
         assert_eq!(FLOW_DEFAULT_TIMELIMIT_S, 5400);
     }

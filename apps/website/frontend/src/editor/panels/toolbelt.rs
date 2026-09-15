@@ -22,7 +22,7 @@
 //! `#[cfg(target_arch = "wasm32")]` inside the memo).
 #![allow(dead_code)]
 use leptos::prelude::*;
-use map_engine_core::camera::OrthoCamera;
+use website_graphics_engine::camera::ortho::state::OrthoCamera;
 
 use crate::editor::layout::{HOVER_FILL, TOGGLED_PLATE};
 use crate::v2::core::ui::{cn, MaterialIcon};
@@ -771,7 +771,7 @@ pub fn ScaleBar(
         let mut deck_zoom = -2.0_f64;
         #[cfg(target_arch = "wasm32")]
         {
-            if let Some((_, _, z)) = crate::editor::world_assets::camera_snapshot() {
+            if let Some((_, _, z)) = website_graphics_engine::streaming::host::camera_snapshot() {
                 deck_zoom = z;
             }
         }
@@ -824,7 +824,8 @@ pub fn MapGridRefs(
         #[cfg(target_arch = "wasm32")]
         {
             use crate::editor::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
-            let Some((tx, ty, zoom)) = crate::editor::world_assets::camera_snapshot() else {
+            let Some((tx, ty, zoom)) = website_graphics_engine::streaming::host::camera_snapshot()
+            else {
                 return (Vec::new(), Vec::new());
             };
             let Some(win) = web_sys::window() else {
@@ -1969,7 +1970,8 @@ mod t670_scale_readout {
     use crate::v2::core::test_support::class_r_scrub::{
         live_code, live_source, only_body, only_item,
     };
-    use map_engine_core::camera::{MAX_ZOOM, MIN_ZOOM};
+    use website_graphics_engine::camera::ortho::state::MAX_ZOOM;
+    use website_graphics_engine::camera::ortho::state::MIN_ZOOM;
 
     /// The readout across the whole zoom clamp, at the real rungs the operator sees. `MIN_ZOOM −6`
     /// is whole-Everon (64 m/px), `−2` the editor default (4 m/px), `0` unity, `MAX_ZOOM 6` the
@@ -2063,7 +2065,9 @@ mod t670_scale_readout {
         // (2) THE LADDER's feed — frontend dem_vectors.rs (not crates/). Contiguous bind→call so an
         // adjustment line between them goes RED; no `let zoom` / `zoom =` rebind before the bind so
         // an upstream re-based zoom goes RED.
-        let dem = live_code(include_str!("../world_assets/dem_vectors.rs"));
+        let dem = live_code(include_str!(
+            "../../../../graphics-engine/src/terrain/relief/host.rs"
+        ));
         let push = only_body(&dem, &format!("fn {}", "push_contours("));
         let bind = format!("let m_per_px = 2.0_f64.{}(-zoom);", "powf");
         let call = format!("{}(m_per_px)", "contour_interval_for_zoom");

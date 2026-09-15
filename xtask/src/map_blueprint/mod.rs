@@ -201,7 +201,7 @@ fn interpret_one(
     algo: Algo,
     base_params: &Params,
     debug_dir: Option<&std::path::Path>,
-) -> Result<map_engine_core::building_blueprint::BuildingBlueprint> {
+) -> Result<website_graphics_engine::architecture::blueprint::structure::BuildingBlueprint> {
     let dump = parse::parse_dump(path)?;
     let m = dump.meta().clone();
     println!(
@@ -462,12 +462,13 @@ pub(crate) mod tests {
         struct ParityFile {
             pairs: Vec<(f64, f64, f64, f64, f64, f64, bool)>,
         }
-        let bp: map_engine_core::building_blueprint::BuildingBlueprint = serde_json::from_str(
-            &std::fs::read_to_string(fixture("FarmHouse_E_1L01_Wood_blueprint.golden.json"))
-                .expect("read golden"),
-        )
-        .expect("parse golden");
-        let sidecar = map_engine_core::bvh::BvhSidecar::parse(
+        let bp: website_graphics_engine::architecture::blueprint::structure::BuildingBlueprint =
+            serde_json::from_str(
+                &std::fs::read_to_string(fixture("FarmHouse_E_1L01_Wood_blueprint.golden.json"))
+                    .expect("read golden"),
+            )
+            .expect("parse golden");
+        let sidecar = website_graphics_engine::spatial::bvh::sidecar::BvhSidecar::parse(
             &std::fs::read(fixture("FarmHouse_E_1L01_Wood.bvh.golden")).expect("read sidecar"),
         )
         .expect("parse golden sidecar");

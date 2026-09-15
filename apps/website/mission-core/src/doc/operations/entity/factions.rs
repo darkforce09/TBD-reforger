@@ -116,22 +116,22 @@ pub fn orbat_apply_faction(
     };
     apply_faction_library(core, &side, &layer_id, &input).map_err(|e| e.to_string())?;
 
-    if let Ok(map) = serde_json::from_str::<serde_json::Value>(&core.slots_json()) {
-        if let Some(obj) = map.as_object() {
-            for (sid, slot) in obj {
-                let Some(rn) = slot
-                    .get("assetId")
-                    .and_then(|v| v.as_str())
-                    .filter(|s| !s.is_empty())
-                else {
-                    continue;
-                };
-                let lo = slot
-                    .get("loadout")
-                    .filter(|l| !l.is_null())
-                    .map(|l| l.to_string());
-                seed_cargo_in_core(core, sid, rn, lo.as_deref());
-            }
+    if let Ok(map) = serde_json::from_str::<serde_json::Value>(&core.slots_json())
+        && let Some(obj) = map.as_object()
+    {
+        for (sid, slot) in obj {
+            let Some(rn) = slot
+                .get("assetId")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+            else {
+                continue;
+            };
+            let lo = slot
+                .get("loadout")
+                .filter(|l| !l.is_null())
+                .map(|l| l.to_string());
+            seed_cargo_in_core(core, sid, rn, lo.as_deref());
         }
     }
     Ok(())

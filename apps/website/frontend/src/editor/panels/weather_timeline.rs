@@ -19,7 +19,8 @@
 use leptos::prelude::*;
 use serde_json::{Map, Value};
 
-use map_engine_core::mission::weather::{validate, WEATHER_PRESETS};
+use website_mission_core::mission::weather::validate;
+use website_mission_core::mission::weather::WEATHER_PRESETS;
 
 /// The reader chain for `meta.environment.weatherTimeline`, end to end.
 pub const WEATHER_TIMELINE_READERS: &[(&str, &str)] = &[

@@ -48,15 +48,15 @@ pub(crate) struct EditorGestureContext {
     pub(crate) container: web_sys::HtmlDivElement,
     /// The map canvas — the hover cursor writes its CSS `cursor` claim here (T-802).
     pub(crate) canvas: web_sys::HtmlCanvasElement,
-    pub(crate) engine: crate::editor::tools::select_tool::EngineHandle,
+    pub(crate) engine: website_graphics_engine::core::context::handles::EngineHandle,
     pub(crate) doc: crate::editor::state::doc_host::DocHandle,
     pub(crate) selection: crate::editor::tools::select_tool::SelectionHandle,
     /// The in-flight LMB gesture (T-159.19 `LeftGesture`: Pending → Move | Marquee | Ruler | Rotate).
     pub(crate) left: Rc<RefCell<Option<crate::editor::tools::select_tool::LeftGesture>>>,
     /// `Some((last_client_x, last_client_y))` while an MMB drag-pan is in flight (T-159.15.2).
     pub(crate) pan_px: Rc<Cell<Option<(f64, f64)>>>,
-    pub(crate) map_host: crate::editor::world_assets::HostHandle,
-    pub(crate) dem_grid: crate::editor::world_assets::DemGridHandle,
+    pub(crate) map_host: website_graphics_engine::streaming::host::HostHandle,
+    pub(crate) dem_grid: website_graphics_engine::streaming::host::DemGridHandle,
     /// T-642 — the persistent ruler polyline (session-local overlay state, NOT the Y.Doc).
     pub(crate) ruler: Rc<RefCell<crate::editor::tools::ruler_tool::RulerChain>>,
     /// T-643 — the LoS two-click capture (peer of the ruler chain).
@@ -302,7 +302,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 // T-172 H5 — keep the slot ring px→m sizing + cluster gate in step with
                 // the camera (never called before; stale once the atlas exists).
                 e.on_camera_changed();
-                crate::editor::world_assets::schedule_camera_settle(
+                website_graphics_engine::streaming::host::schedule_camera_settle(
                     map_host.clone(),
                     engine.clone(),
                 );
@@ -348,7 +348,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 // T-176 B2 — mark the pan active so a settle fired mid-drag (incl. by a
                 // simultaneous wheel-zoom) defers the heavy zoom-band recompute (DEM
                 // contours + 8 m forest mass) until the gesture ends.
-                crate::editor::world_assets::set_camera_gesture(true);
+                website_graphics_engine::streaming::host::set_camera_gesture(true);
             } else if ev.button() == 0 {
                 // T-723 — while a place is armed, do NOT open LG::Pending / LG::Ruler.
                 // A canvas press under the arm used to latch left; the armed pointerup then
@@ -527,7 +527,9 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         // T-172 B2 — DEM-fed Z beside X/Y; None (em-dash) until the grid
                         // publishes or when the point is outside DEM coverage.
                         let z = dem_grid.borrow().as_ref().and_then(|g| {
-                            map_engine_core::dem::downsample::sample_grid_meters(g, c[0], c[1])
+                            website_graphics_engine::terrain::dem::grid::sample_grid_meters(
+                                g, c[0], c[1],
+                            )
                         });
                         (c[0], c[1], z)
                     }),
@@ -543,7 +545,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     e.on_camera_changed();
                 }
                 pan_px.set(Some((cx, cy)));
-                crate::editor::world_assets::schedule_camera_settle(
+                website_graphics_engine::streaming::host::schedule_camera_settle(
                     map_host.clone(),
                     engine.clone(),
                 );
@@ -1159,8 +1161,8 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 }
                 // T-176 B2 — pan ended: clear the gesture flag BEFORE scheduling so this
                 // settle runs the full zoom-band recompute (contours + forest) once.
-                crate::editor::world_assets::set_camera_gesture(false);
-                crate::editor::world_assets::schedule_camera_settle(
+                website_graphics_engine::streaming::host::set_camera_gesture(false);
+                website_graphics_engine::streaming::host::schedule_camera_settle(
                     map_host.clone(),
                     engine.clone(),
                 );
@@ -1656,7 +1658,9 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         let w = cam.unproject_xy(start_x, start_y);
                         if w[0].is_finite() && w[1].is_finite() {
                             let z = dem_grid.borrow().as_ref().and_then(|g| {
-                                map_engine_core::dem::downsample::sample_grid_meters(g, w[0], w[1])
+                                website_graphics_engine::terrain::dem::grid::sample_grid_meters(
+                                    g, w[0], w[1],
+                                )
                             });
                             if tool_mode.get_untracked().is_los() {
                                 if los_mode.get_untracked().is_viewshed() {

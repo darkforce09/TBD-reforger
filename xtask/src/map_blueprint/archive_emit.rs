@@ -23,14 +23,21 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
-use map_engine_core::building_blueprint::BuildingBlueprint as JsonBlueprint;
-use map_engine_core::world::binary::archives::{
-    ARCHIVE_SCHEMA_VERSION, BuildingBlueprintArchive, BuildingLevel as WireLevel,
-    DoorRec as WireDoor, FurnitureRec as WireFurniture, StairsRec as WireStairs,
-    VerticalProfile as WireProfile, WallRec as WireWall, WindowRec as WireWindow,
-};
-use map_engine_core::world::binary::{access_checked, to_bytes};
-use map_engine_core::world::occluder::{BlasEntry, BlasManifest, PrefabDescriptor};
+use website_graphics_engine::architecture::blueprint::structure::BuildingBlueprint as JsonBlueprint;
+use website_graphics_engine::formats::archives::blueprints::BuildingBlueprintArchive;
+use website_graphics_engine::formats::archives::blueprints::BuildingLevel as WireLevel;
+use website_graphics_engine::formats::archives::blueprints::DoorRec as WireDoor;
+use website_graphics_engine::formats::archives::blueprints::FurnitureRec as WireFurniture;
+use website_graphics_engine::formats::archives::blueprints::StairsRec as WireStairs;
+use website_graphics_engine::formats::archives::blueprints::VerticalProfile as WireProfile;
+use website_graphics_engine::formats::archives::blueprints::WallRec as WireWall;
+use website_graphics_engine::formats::archives::blueprints::WindowRec as WireWindow;
+use website_graphics_engine::formats::archives::codec::access_checked;
+use website_graphics_engine::formats::archives::codec::to_bytes;
+use website_graphics_engine::formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use website_graphics_engine::spatial::world_los::descriptor::BlasEntry;
+use website_graphics_engine::spatial::world_los::descriptor::BlasManifest;
+use website_graphics_engine::spatial::world_los::descriptor::PrefabDescriptor;
 
 use super::batch::write_if_changed;
 
@@ -145,7 +152,7 @@ pub fn build(prefabs: &Path) -> Result<Built> {
 fn wire_blueprint(
     b: &JsonBlueprint,
     prefab_id: u32,
-) -> Result<map_engine_core::world::binary::archives::BuildingBlueprint> {
+) -> Result<website_graphics_engine::formats::archives::blueprints::BuildingBlueprint> {
     let mut levels = Vec::with_capacity(b.levels.len());
     for l in &b.levels {
         levels.push(WireLevel {
@@ -229,7 +236,7 @@ fn wire_blueprint(
         });
     }
     Ok(
-        map_engine_core::world::binary::archives::BuildingBlueprint {
+        website_graphics_engine::formats::archives::blueprints::BuildingBlueprint {
             prefab_id,
             slug: b.prefab_id.clone(),
             vertical_profile: WireProfile {
@@ -383,7 +390,8 @@ pub fn run(args: &[String]) -> Result<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use map_engine_core::world::occluder::descriptor::{ArchiveBoot, BuildingArchiveBytes};
+    use website_graphics_engine::spatial::world_los::descriptor::ArchiveBoot;
+    use website_graphics_engine::spatial::world_los::descriptor::BuildingArchiveBytes;
 
     fn prefabs_dir() -> PathBuf {
         crate::root::test_repo_root().join("packages/map-assets/everon/prefabs")

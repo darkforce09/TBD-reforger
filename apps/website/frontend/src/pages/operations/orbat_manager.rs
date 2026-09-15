@@ -17,7 +17,7 @@
 use std::collections::{HashMap, HashSet};
 
 use leptos::prelude::*;
-use map_engine_core::slot_line::format_slot_line;
+use website_mission_core::slot_line::format_slot_line;
 
 use crate::editor::panels::outliner::{
     filter_orbat_squads_by_side_key, flatten_visible, FlatRow, NodeKind, OutlinerNode,

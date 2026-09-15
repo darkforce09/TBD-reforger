@@ -4,7 +4,7 @@
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 use crate::editor::state::history as mission_history;
-use map_engine_core::doc::MissionDocCore;
+use website_mission_core::doc::MissionDocCore;
 
 /// Expose website mission core :: doc :: operations :: compositions ::  composition row at this domain boundary.
 pub use website_mission_core::doc::operations::compositions::CompositionRow;

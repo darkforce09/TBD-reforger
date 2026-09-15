@@ -33,16 +33,27 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
-use map_engine_core::building_compound::{
-    CoverTier, InstanceKind, InstanceRecord, LocalTransform, PlacementSource,
-};
-use map_engine_core::bvh::{Bvh, BvhSidecar, SurfaceKind, emit_bytes, lift_verts, quantize_verts};
-use map_engine_core::geometry::rigid::Rigid;
-use map_engine_core::world::occluder::{
-    BlasEntry, BlasManifest, Bounds3, DESCRIPTOR_SCHEMA_VERSION, DescEntry,
-    MANIFEST_SCHEMA_VERSION, PrefabDescriptor, Totals,
-};
 use serde_json::Value;
+use website_graphics_engine::architecture::compound::assembly::CoverTier;
+use website_graphics_engine::architecture::compound::assembly::PlacementSource;
+use website_graphics_engine::architecture::compound::instances::InstanceKind;
+use website_graphics_engine::architecture::compound::instances::InstanceRecord;
+use website_graphics_engine::architecture::compound::instances::LocalTransform;
+use website_graphics_engine::architecture::compound::transform::Rigid;
+use website_graphics_engine::spatial::bvh::sidecar::BvhSidecar;
+use website_graphics_engine::spatial::bvh::sidecar::emit_bytes;
+use website_graphics_engine::spatial::bvh::sidecar::lift_verts;
+use website_graphics_engine::spatial::bvh::sidecar::quantize_verts;
+use website_graphics_engine::spatial::bvh::surface::SurfaceKind;
+use website_graphics_engine::spatial::bvh::traversal::Bvh;
+use website_graphics_engine::spatial::world_los::descriptor::BlasEntry;
+use website_graphics_engine::spatial::world_los::descriptor::BlasManifest;
+use website_graphics_engine::spatial::world_los::descriptor::Bounds3;
+use website_graphics_engine::spatial::world_los::descriptor::DESCRIPTOR_SCHEMA_VERSION;
+use website_graphics_engine::spatial::world_los::descriptor::DescEntry;
+use website_graphics_engine::spatial::world_los::descriptor::MANIFEST_SCHEMA_VERSION;
+use website_graphics_engine::spatial::world_los::descriptor::PrefabDescriptor;
+use website_graphics_engine::spatial::world_los::descriptor::Totals;
 
 use super::batch::{Asset, Walker, classify_prefab, cover_for_prefab, slug_of, write_if_changed};
 use super::hull::hull_triangles;

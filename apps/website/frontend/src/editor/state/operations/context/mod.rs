@@ -36,7 +36,8 @@ use crate::editor::panels::outliner::OutlinerNode;
 use crate::editor::panels::zones_panel::DrawTarget;
 use crate::editor::state::doc_host::DocHandle;
 use crate::editor::state::history as mission_history;
-use crate::editor::tools::select_tool::{EngineHandle, SelectionHandle};
+use crate::editor::tools::select_tool::SelectionHandle;
+use website_graphics_engine::core::context::handles::EngineHandle;
 
 /// Expose crate :: v2 :: core :: api :: dto ::  mission env at this domain boundary.
 pub use crate::v2::core::api::dto::MissionEnv;
