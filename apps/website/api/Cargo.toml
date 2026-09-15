@@ -59,4 +59,4 @@ url = "2.5.8"
 uuid = { version = "1.23.4", features = ["v4", "serde"] }
 # Shared map-engine compute core (T-145) — the mission compiler (ORBAT + kit aliases; the mod-doc
 # flatten follows). One implementation for the backend + the wasm client.
-map-engine-core = { path = "../../../crates/map-engine-core", features = ["mission"] }
+website-mission-core = { path = "../mission-core" }

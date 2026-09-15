@@ -1,0 +1,23 @@
+[package]
+name = "website-mission-core"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "UNLICENSED"
+publish = false
+description = "Headless mission compilation, validation, and document operations."
+
+[features]
+default = ["compiler"]
+compiler = ["dep:serde", "dep:serde_json", "dep:thiserror"]
+doc = ["compiler"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", features = ["preserve_order"], optional = true }
+thiserror = { version = "2", optional = true }
+
+[dev-dependencies]
+# Temporary test-only access while document ownership moves in the next phase.
+map-engine-core = { path = "../../../crates/map-engine-core", features = ["mission", "doc"] }
+serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }

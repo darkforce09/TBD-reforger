@@ -1242,7 +1242,7 @@ mod tests {
     #[test]
     fn zone_quantisation_mirrors_flatten() {
         let flatten =
-            include_str!("../../../../../../crates/map-engine-core/src/mission/flatten.rs");
+            include_str!("../../../../mission-core/src/mission/compiler/flatten/zones.rs");
         let body = flatten
             .split("fn round_coord(v: f64) -> f64 {")
             .nth(1)

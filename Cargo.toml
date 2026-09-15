@@ -9,6 +9,7 @@ members = [
     "apps/ticketboard",
     "apps/website/api",
     "apps/website/frontend",
+    "apps/website/mission-core",
     "crates/map-engine-core",
     "crates/map-engine-render",
     # T-853: the four-outcome gate library — the Rust successor to scripts/mod/lib/gate-grep.sh.

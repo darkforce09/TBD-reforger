@@ -33,10 +33,10 @@ pub use mission_compile::{
     compile_diagnostics_rules_header,
 };
 // Ported to the shared crate (T-145 Phase 2); re-exported so `crate::services::…` callers are unchanged.
-pub use map_engine_core::mission::orbat::{
+pub use mortar::{FireSolution, SolveError, solve_fire_mission};
+pub use website_mission_core::mission::orbat::{
     OrbatSlotTemplate, OrbatSquadTemplate, parse_orbat_template,
 };
-pub use mortar::{FireSolution, SolveError, solve_fire_mission};
 // T-578 — garbage collection for the durable rate limiter's bucket table.
 pub use ratelimit_gc::{RATE_LIMIT_BUCKET_TTL, RATE_LIMIT_PRUNE_INTERVAL, start_rate_limit_prune};
 pub use registry_import::{ImportCounts, ImportError, ensure_modpack, import_compat, import_items};

@@ -53,9 +53,9 @@ pub mod geometry;
 /// T-152.1 — map labels + importance-distance declutter.
 pub mod label;
 #[cfg(feature = "mission")]
-pub mod mission;
+pub use website_mission_core::mission;
 /// T-180.7 — ORBAT Manager `format_slot_line` (always available; bare `format_slot_line` tests).
-pub mod slot_line;
+pub use website_mission_core::slot_line;
 /// T-151.6 W6 — slot/cluster GPU pack + cluster gates (always available).
 pub mod slots_gpu;
 pub mod spatial;

@@ -98,7 +98,7 @@ const EDITOR_OPS_SPLIT: [&str; 6] = [
     "apps/website/frontend/src/editor/state/operations/entity.rs",
     "apps/website/frontend/src/editor/state/operations/transform.rs",
 ];
-const ORBAT_RS: &str = "crates/map-engine-core/src/mission/orbat.rs";
+const ORBAT_RS: &str = "apps/website/mission-core/src/mission/ast/factions/orbat_slot_template.rs";
 const ORBAT_MGR: &str = "apps/website/frontend/src/pages/operations/orbat_manager.rs";
 const EDEN_CHROME: &str = "apps/website/frontend/src/editor/eden_chrome.rs";
 const SLOTS_GPU: &str = "crates/map-engine-core/src/slots_gpu.rs";
@@ -139,7 +139,8 @@ const FE: &str = "website-frontend";
 /// One argv element, not two — and bash's `$*` re-joins it with a space, so the failure text reads
 /// `--features doc mission`. Reproduced by [`shown`].
 const DOCM: Option<&str> = Some("doc mission");
-const MSN: Option<&str> = Some("mission");
+const MC: &str = "website-mission-core";
+const MSN: Option<&str> = Some("compiler doc");
 const NOF: Option<&str> = None;
 
 /// One `cargo_test_pin`: package, `--features` value, `--lib`?, selector, and the `ok` line to
@@ -160,14 +161,14 @@ const CARGO_PINS: &[PinRow] = &[
     // C / D / G / vehicle pack.
     (MEC, NOF, true, "side_tint_three_distinct", None),
     (MEC, NOF, true, "squad_link_", None),
-    (MEC, NOF, true, "format_slot_line", None),
+    (MC, MSN, true, "format_slot_line", None),
     (MEC, NOF, true, "pack_vehicle_instances", None),
     (MER, NOF, true, "mission_vehicles", Some("tint / links / slot_line / vehicles lane")),
     // I — mission feature derive / compile.
-    (MEC, MSN, true, "derive_fills_loadout", None),
-    (MEC, MSN, true, "derive_empty_loadout", None),
-    (MEC, MSN, true, "derives_from_editor_sorted", None),
-    (MEC, MSN, true, "compile_export_orbat_loadout", Some("derive/compile loadout gates")),
+    (MC, MSN, true, "derive_fills_loadout", None),
+    (MC, MSN, true, "derive_empty_loadout", None),
+    (MC, MSN, true, "derives_from_editor_sorted", None),
+    (MC, MSN, true, "compile_export_orbat_loadout", Some("derive/compile loadout gates")),
     // ── T-216 — THE COMPILE BOUNDARY. Read this before trimming the list above. ──────────────
     // Every selector up to here proves the editor can AUTHOR a T-180 value (doc::place_orbat,
     // doc::store), that the map can DRAW it (slots_gpu, map-engine-render), or that the ORBAT
@@ -181,12 +182,12 @@ const CARGO_PINS: &[PinRow] = &[
     // the contract widens (T-242) the newly-legal key's row turns red and the dead feature becomes
     // visible work; the second pins the compiled slot's key set, so nothing is added to or removed
     // from the website<->mod interface in silence.
-    (MEC, MSN, true, "the_compile_boundary_ledger_is_checked_against_the_contract", None),
-    (MEC, MSN, true, "a_compiled_slot_carries_exactly_these_keys", None),
+    (MC, MSN, true, "the_compile_boundary_ledger_is_checked_against_the_contract", None),
+    (MC, MSN, true, "a_compiled_slot_carries_exactly_these_keys", None),
     // T-482: the vehicle-floor test lives behind #[cfg(feature = "doc")] (the MissionDocCore writer
     // round-trip in flatten.rs), so mission-only matches 0 tests and this pin FAILs. Aligned with
     // the place_/attach_vehicle pins above rather than weakened.
-    (MEC, DOCM, true, "the_vehicle_row_still_has_the_shape_this_module_reads",
+    (MC, MSN, true, "the_vehicle_row_still_has_the_shape_this_module_reads",
         Some("compile-boundary ledger + compiled-slot key set + vehicle contract floor")),
     // E / F / G / H / I — FE. A bin crate, so no `--lib`: its tests live in src/main.rs.
     (FE, NOF, false, "eden_side", None),
@@ -565,7 +566,7 @@ mod tests {
         let veh = CARGO_PINS
             .iter()
             .find(|p| p.3 == "the_vehicle_row_still_has_the_shape_this_module_reads");
-        assert_eq!(veh.expect("the vehicle-floor pin is still listed").1, DOCM);
+        assert_eq!(veh.expect("the vehicle-floor pin is still listed").1, MSN);
         // T-216 §2: no pin may ask for `doc` without `mission`.
         assert!(!CARGO_PINS.iter().any(|p| p.1 == Some("doc")));
     }
