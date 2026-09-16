@@ -19,6 +19,11 @@ pub mod draw;
 /// The frame vocabulary — see `frame/mod.rs` for the rule that governs it.
 pub mod frame;
 
+/// The frame pump — one rAF loop, shared by every canvas the app mounts.
+// `loop` is a keyword, so the module is a raw identifier; the directory is plain `loop/`,
+// which is the name the split program's target tree gives it.
+pub mod r#loop;
+
 /// Render pipeline constructors.
 pub mod pipeline;
 

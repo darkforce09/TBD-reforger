@@ -77,6 +77,7 @@ mod live {
     use website_map_engine::architecture::section::cutter::section_at;
     use website_map_engine::core::context::state::RenderEngine;
     use website_map_engine::core::pipeline::draw_order::role_id;
+    use website_map_engine::renderers::engine::RafPump;
     use website_map_engine::spatial::world_los::coverage_1::WorldVerdict;
     use website_map_engine::spatial::world_los::state::WorldOccluder;
     use website_map_engine::streaming::loaders::fetch::fetch_bytes;
@@ -85,7 +86,6 @@ mod live {
     use website_map_engine::streaming::scheduler::state::WorldResidency;
 
     type EngineHandle = Rc<RefCell<Option<RenderEngine>>>;
-    type RafSlot = Rc<RefCell<Option<Closure<dyn FnMut()>>>>;
 
     pub struct Signals {
         pub status: RwSignal<String>,
@@ -130,32 +130,6 @@ mod live {
         let mut it = v.split(',').map(|s| s.trim().parse::<f64>().ok());
         let (x, y, z) = (it.next()??, it.next()??, it.next()??);
         (x.is_finite() && y.is_finite() && z.is_finite()).then_some([x, y, z])
-    }
-
-    fn start_raf(engine: EngineHandle, disposed: std::sync::Arc<std::sync::atomic::AtomicBool>) {
-        use std::sync::atomic::Ordering;
-        let f: RafSlot = Rc::new(RefCell::new(None));
-        let g = f.clone();
-        *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-            if disposed.load(Ordering::Relaxed) {
-                f.borrow_mut().take();
-                return;
-            }
-            if let Ok(mut guard) = engine.try_borrow_mut() {
-                if let Some(e) = guard.as_mut() {
-                    let _ = e.render();
-                    e.poll();
-                }
-            }
-            let cb = f.borrow();
-            if let (Some(cb), Some(win)) = (cb.as_ref(), web_sys::window()) {
-                let _ = win.request_animation_frame(cb.as_ref().unchecked_ref());
-            }
-        }) as Box<dyn FnMut()>));
-        let cb = g.borrow();
-        if let (Some(cb), Some(win)) = (cb.as_ref(), web_sys::window()) {
-            let _ = win.request_animation_frame(cb.as_ref().unchecked_ref());
-        }
     }
 
     /// Footprints (map frame) of every placed row within the radius, and the buildings' section
@@ -501,7 +475,10 @@ mod live {
                             e.set_clear_color(0.043, 0.055, 0.075);
                             sync_cam(&e);
                             *engine.borrow_mut() = Some(e);
-                            start_raf(engine.clone(), disposed.clone());
+                            // The shared frame pump, with no per-frame hook: this page's stats
+                            // are written from the LOS solve, not from the frame, so render →
+                            // poll → repeat until dispose is the whole loop.
+                            RafPump::new(engine.clone(), disposed.clone()).start();
                             engine_ready.set(true);
                         }
                         Err(err) => s

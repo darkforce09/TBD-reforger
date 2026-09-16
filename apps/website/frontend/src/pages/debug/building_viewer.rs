@@ -2008,6 +2008,7 @@ mod live {
     use website_map_engine::architecture::section::cutter::BuildingDrawing;
     use website_map_engine::core::context::state::RenderEngine;
     use website_map_engine::core::pipeline::draw_order::role_id;
+    use website_map_engine::renderers::engine::RafPump;
     use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
 
     type EngineHandle = Rc<RefCell<Option<RenderEngine>>>;
@@ -2141,36 +2142,6 @@ mod live {
             None => e.viewshed_clear(),
         }
         e.mark_dirty();
-    }
-
-    /// Self-referential rAF closure slot (the editor's `start_raf` idiom).
-    type RafSlot = Rc<RefCell<Option<Closure<dyn FnMut()>>>>;
-
-    /// rAF loop — render + poll, drop on dispose (the editor's `start_raf` minus the HUD).
-    fn start_raf(engine: EngineHandle, disposed: std::sync::Arc<std::sync::atomic::AtomicBool>) {
-        use std::sync::atomic::Ordering;
-        let f: RafSlot = Rc::new(RefCell::new(None));
-        let g = f.clone();
-        *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-            if disposed.load(Ordering::Relaxed) {
-                f.borrow_mut().take();
-                return;
-            }
-            if let Ok(mut guard) = engine.try_borrow_mut() {
-                if let Some(e) = guard.as_mut() {
-                    let _ = e.render();
-                    e.poll();
-                }
-            }
-            let cb = f.borrow();
-            if let (Some(cb), Some(win)) = (cb.as_ref(), web_sys::window()) {
-                let _ = win.request_animation_frame(cb.as_ref().unchecked_ref());
-            }
-        }) as Box<dyn FnMut()>));
-        let cb = g.borrow();
-        if let (Some(cb), Some(win)) = (cb.as_ref(), web_sys::window()) {
-            let _ = win.request_animation_frame(cb.as_ref().unchecked_ref());
-        }
     }
 
     fn prefab_path() -> String {
@@ -2434,7 +2405,10 @@ mod live {
                             e.set_clear_color(r, g, b);
                             sync_cam(&e, cam);
                             *engine.borrow_mut() = Some(e);
-                            start_raf(engine.clone(), disposed.clone());
+                            // The shared frame pump, with no per-frame hook: this page has no
+                            // HUD and no signal to publish, so render → poll → repeat until
+                            // dispose is the whole loop.
+                            RafPump::new(engine.clone(), disposed.clone()).start();
                             engine_ready.set(true);
                         }
                         Err(err) => {

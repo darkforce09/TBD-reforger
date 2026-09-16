@@ -1,12 +1,14 @@
 //! T-934.12 — the Mission Creator VIEWPORT / frame-timing belt, split out of `mission_editor.rs`
 //! (Phase B; audit §4 Phase 1 item 4): [`device_size`] (CSS→device-pixel rounding), [`start_raf`]
-//! (the rAF render loop with the ~1 Hz debug-HUD sample and the T-670 guarded scale publish), the
-//! three window-gate registrars ([`register_self_checks`] — which also installs the T-173
-//! `__editorBench` — [`register_editor_cam`], [`register_slot_stats`]), the T-750
+//! (the ~1 Hz debug-HUD sample and the T-670 guarded scale publish, hung off the shared frame
+//! pump), the three window-gate registrars ([`register_self_checks`] — which also installs the
+//! T-173 `__editorBench` — [`register_editor_cam`], [`register_slot_stats`]), the T-750
 //! [`mark_registry_fetch_failed`] failure writer and the T-245 [`registry_session`] SPA-session
 //! cache.
 //!
-//! Bodies are byte-identical to their `mission_editor.rs` originals, and `mission_editor`
+//! Bodies are byte-identical to their `mission_editor.rs` originals except [`start_raf`], whose
+//! loop machinery moved to the renderer's one `RafPump` (`website-graphics-engine`, engine split
+//! 1E), leaving only the leptos half here. `mission_editor`
 //! re-exports every name here, so the page's bare call sites and the evacuated pins' `super::…`
 //! imports (`t245_registry_session`, `t750_registry_fetch_failure_signal`, `t670_scale_signal`)
 //! all keep their exact spelling. ITEM ORDER IS LOAD-BEARING for the Class-R scrubs:
@@ -27,10 +29,16 @@ pub(crate) fn device_size(css_w: f64, css_h: f64, dpr: f64) -> (u32, u32) {
     (r(css_w), r(css_h))
 }
 
-/// The rAF render loop. Each frame renders then polls the device (see `RenderEngine::poll`) so
-/// readback `map_async` callbacks drain on the WebGL2-fallback + cull-counter path. (The timer
-/// double-map that panicked the 15.0 loop is handled upstream by `disable_frame_timing`.) Stops
-/// (and drops itself) once `disposed` is set.
+/// The editor's half of the rAF render loop — the HUD sample and the T-670 scale publish.
+///
+/// The loop itself is the renderer's one [`RafPump`], reached — like every other renderer type
+/// this app touches — through the map engine, never by depending on `website-graphics-engine`
+/// directly: it owns the frame cadence, the T-631 contention-tolerant borrow, the render → poll
+/// order (so readback `map_async` callbacks drain on the WebGL2-fallback + cull-counter path),
+/// the frame count, and stopping and dropping itself once `disposed` is set. What is left here
+/// is what is genuinely the app's: two Leptos signals and when they may be written.
+///
+/// The name stays because the leptos half stays — `t670_scale_signal` scrubs this file for it.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn start_raf(
     engine: std::rc::Rc<
@@ -40,15 +48,12 @@ pub(crate) fn start_raf(
     debug_hud: RwSignal<String>,
     scale_mpp: RwSignal<f64>,
 ) {
-    use std::cell::RefCell;
-    use std::rc::Rc;
-    use std::sync::atomic::Ordering;
-    use wasm_bindgen::prelude::*;
-    use wasm_bindgen::JsCast;
+    use website_map_engine::renderers::engine::RafPump;
 
     // T-172 B9 — ~1 Hz debug readout sample (screen-05 bottom-right HUD): zoom, drawn world
-    // chunks, tree glyphs, FPS. Counting frames between samples measures real rAF cadence.
-    let mut frames = 0u32;
+    // chunks, tree glyphs, FPS. Counting frames between samples measures real rAF cadence —
+    // the pump's count is monotonic, so the window is the difference across one sample.
+    let mut frames_at_sample = 0u32;
     let mut last_sample = 0.0f64;
     // T-670 — last PUBLISHED scale readout. The camera zoom is only reachable from inside this
     // per-frame closure, so this is the guard that keeps a 60 fps read from becoming a 60 fps
@@ -59,36 +64,14 @@ pub(crate) fn start_raf(
     // first frame publishes, so the seeded default is replaced as soon as the engine is live.
     let mut last_scale_text = String::new();
 
-    let f: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
-    let g = f.clone();
-    *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-        if disposed.load(Ordering::Relaxed) {
-            f.borrow_mut().take(); // drop the loop closure — no further frames
-            return;
-        }
-        // T-631 — the double-panic fix. This was `engine.borrow_mut()`, which PANICS if the cell
-        // is already borrowed. When `e.render()` panicked (the observed `createBuffer size too
-        // large` → wasm `unreachable`), the abort re-entered the editor while the first panic was
-        // unwinding; the next frame's `borrow_mut` then found the cell still held and panicked a
-        // SECOND time with "RefCell already borrowed", and that second panic — not the render
-        // failure — is what surfaced, burying the real cause. `try_borrow_mut` makes a contended
-        // frame a no-op instead of a panic, so a re-entrant borrow can never overwrite the first,
-        // true panic. It is also the correct steady-state behaviour: a frame that cannot get the
-        // engine simply waits for the next rAF rather than taking the tab down.
-        let Ok(mut guard) = engine.try_borrow_mut() else {
-            // Contended: skip this frame, keep the loop alive.
-            let cb_ref = f.borrow();
-            if let (Some(cb), Some(win)) = (cb_ref.as_ref(), web_sys::window()) {
-                let _ = win.request_animation_frame(cb.as_ref().unchecked_ref());
-            }
-            return;
-        };
-        if let Some(e) = guard.as_mut() {
-            let _ = e.render();
-            e.poll(); // ★ T-159.15.1: drain readback map_async so the next submit can't double-map
-                      // T-090.12.5 — advance the viewshed's object wash under its per-frame budget.
+    // The hook runs at the end of every RENDERED frame, inside the pump's engine borrow, with
+    // `frames` the running count including this one. A skipped frame (contended, or the engine
+    // not booted yet) never reaches here — which is exactly the old loop's behaviour, where
+    // every line below sat inside `if let Some(e) = guard.as_mut()`.
+    RafPump::new(engine, disposed)
+        .after_frame(move |e, frames| {
+            // T-090.12.5 — advance the viewshed's object wash under its per-frame budget.
             crate::editor::tools::los_world_wasm::tick_object_wash(e);
-            frames += 1;
             // T-670 — publish the screen scale for the status-bar readout (and, through it, the
             // T-667 scale bar). Read every frame so a wheel-zoom shows on the very next frame
             // rather than waiting up to a second for the ~1 Hz HUD sample below; WRITTEN only when
@@ -110,7 +93,10 @@ pub(crate) fn start_raf(
                 if last_sample == 0.0 {
                     last_sample = now;
                 } else if now - last_sample >= 1000.0 {
-                    let fps = (f64::from(frames) * 1000.0 / (now - last_sample)).round();
+                    // `wrapping_sub` against the last sample: the pump's counter is monotonic
+                    // and wraps, and the difference stays right across the wrap.
+                    let window = frames.wrapping_sub(frames_at_sample);
+                    let fps = (f64::from(window) * 1000.0 / (now - last_sample)).round();
                     let stats: serde_json::Value =
                         serde_json::from_str(&e.stats()).unwrap_or_default();
                     let chunks = stats["chunks"].as_u64().unwrap_or(0);
@@ -130,20 +116,12 @@ pub(crate) fn start_raf(
                         crate::editor::tools::los_world_wasm::hud_suffix(),
                         website_map_engine::streaming::memory::budget::hud_suffix()
                     ));
-                    frames = 0;
+                    frames_at_sample = frames;
                     last_sample = now;
                 }
             }
-        }
-        let cb_ref = f.borrow();
-        if let (Some(cb), Some(win)) = (cb_ref.as_ref(), web_sys::window()) {
-            let _ = win.request_animation_frame(cb.as_ref().unchecked_ref());
-        }
-    }) as Box<dyn FnMut()>));
-    let cb_ref = g.borrow();
-    if let (Some(cb), Some(win)) = (cb_ref.as_ref(), web_sys::window()) {
-        let _ = win.request_animation_frame(cb.as_ref().unchecked_ref());
-    }
+        })
+        .start();
 }
 
 /// Expose the byte-exact GPU readback self-checks on `window.__selfChecks` — the map-lane gate the
