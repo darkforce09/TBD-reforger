@@ -91,3 +91,12 @@ pub use pump::{FrameTarget, RafPump};
 // five of them in the frontend — all wanted exactly this alias.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub type EngineHandle = std::rc::Rc<std::cell::RefCell<Option<RenderEngine>>>;
+
+// T-0xx Phase 2C: the rule-3 pin. `RenderDamage`'s own state machine is tested in
+// `website-graphics-engine`; this asserts that this crate still consults it — that `render()`
+// refuses an undamaged frame, that every lane mutation marks damage, and that the packet
+// borrows the persistent batch list instead of rebuilding one per frame. Not gated on
+// `render`: it reads source text, never a GPU.
+#[cfg(test)]
+#[path = "tests/damage_discipline.rs"]
+mod damage_discipline;
