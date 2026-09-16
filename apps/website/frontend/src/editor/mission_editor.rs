@@ -29,8 +29,6 @@ use website_map_engine::editing::tools::line_of_sight::capture::{
 };
 use website_map_engine::editing::tools::selection;
 
-// T-934.6 — editor_ops moved to `crate::editor::state::operations`; the alias keeps the dozens of
-// Class-S source-guard needles (`editor_ops::…`) and the page's own prose stable across the move.
 use crate::editor::panels::validation_panel;
 // T-939.4 — the Arrange chords resolve through the top strip's shared list; nothing about the
 // commands themselves is duplicated here.
@@ -39,11 +37,11 @@ use crate::editor::panels::top_strip;
 #[cfg(target_arch = "wasm32")]
 use crate::editor::state::doc_host as mission_doc;
 #[cfg(target_arch = "wasm32")]
+use crate::editor::state::editor_context;
+#[cfg(target_arch = "wasm32")]
 use crate::editor::state::history as mission_history;
 #[cfg(target_arch = "wasm32")]
 use crate::editor::state::hydrate as mission_hydrate;
-#[cfg(target_arch = "wasm32")]
-use crate::editor::state::operations as editor_ops;
 #[cfg(target_arch = "wasm32")]
 use crate::editor::state::persist as yrs_persist;
 #[cfg(target_arch = "wasm32")]
@@ -850,8 +848,8 @@ pub(crate) fn with_editor_toolbar_dispatch(f: impl FnOnce(&EditorToolbarDispatch
  * parse, the T-802 hover state machine, the T-754/wave-129 route resolution, the wave-145
  * selection universe, the T-819 crew-hide SoA filter and the T-743 paste anchor all live there
  * now (re-exported above under their old names). What remains below are the wasm-side wrappers
- * that bind those pure helpers to the live document and DOM — each one reads `editor_ops`'
- * OPS_CTX or `web_sys`, which is the line the split is drawn on.
+ * that bind those pure helpers to the live document and DOM — each one reads the installed
+ * EDITOR_CONTEXT or `web_sys`, which is the line the split is drawn on.
  */
 
 /// The live document's drawable edges: [`connection_segments`] fed from `MissionDocCore` itself.
@@ -900,7 +898,7 @@ pub(crate) fn set_map_cursor(canvas: &web_sys::HtmlCanvasElement, pickable: bool
 
 /// T-802 — the pick's point sets, materialised ONCE per document generation.
 ///
-/// `tick` is `doc_tick`, the counter `editor_ops::refresh_docks` bumps at the end of every commit
+/// `tick` is `doc_tick`, the counter `editor_context::refresh_docks` bumps at the end of every commit
 /// (and the render lanes re-bind on). Cache-per-generation rather than cache-per-move is what keeps
 /// a 25 Hz hover off the T-057 cliff: the expensive half of a pick is `materialize()` (a full Y.Doc
 /// read), not the radius query.
@@ -1098,7 +1096,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             let cb = Closure::once_into_js(move || {
                 timer2.set(None);
                 sz_bytes.set(
-                    editor_ops::slots_json()
+                    editor_context::slots_json()
                         .as_deref()
                         .and_then(crate::editor::mission_size::estimate_compiled_bytes),
                 );
@@ -1171,7 +1169,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     }
 
     // T-159.22 — dock state. `outliner_nodes` / `selected_ids` are the same kind of pull-mirror as
-    // OBJ/SEL above (pushed by `editor_ops::refresh_docks` from `mission_history::refresh_signals`,
+    // OBJ/SEL above (pushed by `editor_context::refresh_docks` from `mission_history::refresh_signals`,
     // i.e. at every mutation site). `active_layer` is the drop target (React's `activeLayerId`);
     // `catalog` holds the `/registry` fetch state and never leaves `Loading` on the native shell,
     // where `api_get` doesn't exist.
@@ -1244,7 +1242,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     let context_menu = RwSignal::new(None::<crate::editor::panels::context_menu::MenuState>);
     // T-647 PLACE-003 — the empty-ground asset picker's open state: `Some(AssetPickerState)` = open
     // at that world/screen point, `None` = closed. The wasm `dblclick` handler sets it via
-    // `editor_ops::open_asset_picker` (on a MISS); the picker overlay reads it. Mounted BESIDE the
+    // `editor_context::open_asset_picker` (on a MISS); the picker overlay reads it. Mounted BESIDE the
     // ungated dialogs below (like `context_menu`), so it survives Backspace hide-chrome — the
     // picker is self-contained and does NOT depend on the DockRight catalog, which is exactly why
     // this floating form was chosen over "focus the dock's search" (a hidden dock can't be focused).
@@ -1491,7 +1489,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             // Comment entities. FNF v3 had 28. **This is ONE community across TWO eras — WOG and
             // OFCRA ship no comment equivalent at all** — so the seed copies what survived a
             // rewrite, not what a single era once had, and it is not a four-way convergence.
-            editor_ops::seed_new_mission_template(&doc);
+            editor_context::seed_new_mission_template(&doc);
             let doc_ver = Rc::new(Cell::new(1u32));
             mission_doc::register_mission_doc(doc.clone(), doc_ver.clone());
 
@@ -1956,9 +1954,9 @@ pub fn MissionEditorPage() -> impl IntoView {
             );
             // T-159.22 — dock commands (outliner select / active layer / palette place). Registered
             // BEFORE `refresh_hud()` below, because that call funnels into
-            // `editor_ops::refresh_docks` — without the ctx the outliner would render empty until
+            // `editor_context::refresh_docks` — without the ctx the outliner would render empty until
             // the first edit.
-            editor_ops::set_ctx(
+            editor_context::install(
                 doc.clone(),
                 engine.clone(),
                 selection.clone(),
@@ -1976,21 +1974,21 @@ pub fn MissionEditorPage() -> impl IntoView {
             // `contextmenu` closure below (which has no reactive handle) can open the menu.
             crate::editor::panels::context_menu::set_menu_signal(context_menu);
             // T-647 PLACE-003 — same handoff for the empty-ground asset picker: the wasm `dblclick`
-            // closure opens it through `editor_ops::open_asset_picker`, which writes this signal.
-            editor_ops::set_asset_picker_signal(asset_picker);
+            // closure opens it through `editor_context::open_asset_picker`, which writes this signal.
+            editor_context::set_asset_picker_signal(asset_picker);
             // T-651 — same handoff for the comment editor: the Outliner's comment row (a native
-            // view with no reactive handle) opens it through `editor_ops::open_comment_editor`.
-            editor_ops::set_comment_editor_signal(comment_editor);
+            // view with no reactive handle) opens it through `editor_context::open_comment_editor`.
+            editor_context::set_comment_editor_signal(comment_editor);
             // T-672 — same idiom: the `Connections...` context-menu row calls
-            // `editor_ops::open_connections_panel`, which needs this handle.
-            editor_ops::set_connections_panel_signal(connections_panel);
+            // `editor_context::open_connections_panel`, which needs this handle.
+            editor_context::set_connections_panel_signal(connections_panel);
             // T-780 [wave 142 F-1] — the SAME idiom, for the opposite reason: `editor_ops` does not
             // read this one to render an overlay, it reconciles it. Every entity-selection write in
-            // the editor lands in `editor_ops::mirror_selection`, so handing the signal over is what
+            // the editor lands in `editor_context::mirror_selection`, so handing the signal over is what
             // makes "an edge selection and a slot selection cannot both be live" true of routes this
             // page never sees (the Outliner row, the click-to-select router, a place), and what lets
             // an undo that removed the edge clear the amber line with it.
-            editor_ops::set_connection_selection_signal(selected_connection);
+            editor_context::set_connection_selection_signal(selected_connection);
 
             mission_history::register_editor_history();
             mission_history::register_key_handler();
@@ -2009,7 +2007,7 @@ pub fn MissionEditorPage() -> impl IntoView {
 
             // ═══════════ T-780 — the CONNECTION lane feed, and it reads the DOCUMENT ═══════════
             //
-            // Registered HERE, above `refresh_hud()`, for the same reason `editor_ops::set_ctx` is:
+            // Registered HERE, above `refresh_hud()`, for the same reason `editor_context::install` is:
             // that call funnels into `refresh_docks`, which bumps `doc_tick` — so the seed bind
             // happens on the very first tick rather than one edit later.
             //
@@ -2024,7 +2022,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             //   * the IDB restore swap + the engine   → `mission_history::rebind_engine_from_doc`
             //     mount handshake
             //
-            // …and all three end in `refresh_signals` → `editor_ops::refresh_docks` → `doc_tick`.
+            // …and all three end in `refresh_signals` → `editor_context::refresh_docks` → `doc_tick`.
             // `rebind_engine_from_doc` being on that list is what makes the restore case work in the
             // order it actually happens: the restore can settle BEFORE the engine exists, and the
             // engine-mount handshake re-runs the rebind, which bumps the tick again, and this Effect

@@ -26,11 +26,15 @@ pub mod history;
 // prompt on a local-vs-server conflict. wasm32-only (auth GET + doc).
 #[cfg(target_arch = "wasm32")]
 pub mod hydrate;
-// T-159.22 dock commands — outliner select / active layer / palette drag-to-place. Drives the
-// hosted MissionDocCore, so wasm32-only. (editor_ops.rs before the T-934.6 rename; becomes a
-// façade over state/ops/ at T-934.7.)
+// The editor context installed at load: the document / engine / selection handles every panel
+// reaches the open mission through, and the signals that mirror it into the docks. Holds `!Send`
+// `Rc`s, so wasm32-only.
 #[cfg(target_arch = "wasm32")]
-pub mod operations;
+pub mod editor_context;
+// The gestures that must collapse into one undo step, and the confirmation a bulk gesture asks
+// before it commits. Drives the hosted document through the engine's grouping, so wasm32-only.
+#[cfg(target_arch = "wasm32")]
+pub mod undo_grouped_gestures;
 // T-159.17 yrs IDB persist — IndexedDB (`idb` crate) + debounced writer; wasm32-only.
 #[cfg(target_arch = "wasm32")]
 pub mod persist;

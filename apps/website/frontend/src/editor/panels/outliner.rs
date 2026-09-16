@@ -516,14 +516,14 @@ pub fn flatten_visible(
 #[cfg(target_arch = "wasm32")]
 mod active_folder {
     use super::{DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME};
-    use crate::editor::state::operations::context::{OpsCtx, OPS_CTX};
+    use crate::editor::state::editor_context::{EditorContext, EDITOR_CONTEXT};
     use leptos::prelude::{GetUntracked, Set};
     use website_map_engine::data::store::MissionDocCore;
     use website_map_engine::editing::hosted_commands as engine_ops;
 
     /// Focus a folder, or clear the focus. A focused folder is the drop target for the next place.
     pub fn set_active_layer(id: Option<String>) {
-        OPS_CTX.with(|c| {
+        EDITOR_CONTEXT.with(|c| {
             if let Some(ctx) = c.borrow().as_ref() {
                 ctx.active_layer.set(id);
             }
@@ -534,7 +534,7 @@ mod active_folder {
     /// one is set and still live, otherwise the default folder, minted under the LOCAL origin so
     /// the mint is part of the same undoable act as the place it serves. A focus pointing at a
     /// folder the document no longer holds is cleared as it is resolved.
-    fn ensure_layer(ctx: &OpsCtx, core: &MissionDocCore) -> String {
+    fn ensure_layer(ctx: &EditorContext, core: &MissionDocCore) -> String {
         let ensured = website_map_engine::data::store::operations::entity::ensure_layer(
             core,
             ctx.active_layer.get_untracked(),
@@ -551,7 +551,7 @@ mod active_folder {
     /// the engine's hosted commands take, which is why the folder id crosses the wall as an answer
     /// rather than the engine reaching for the tree's focus itself.
     pub fn ensure_active_layer(core: &MissionDocCore) -> String {
-        OPS_CTX
+        EDITOR_CONTEXT
             .with(|c| c.borrow().as_ref().map(|ctx| ensure_layer(ctx, core)))
             .unwrap_or_else(|| DEFAULT_LAYER_ID.to_string())
     }
@@ -559,7 +559,7 @@ mod active_folder {
     /// Create a folder as a child of the focused folder (a root when none is focused), auto-named,
     /// with its inline rename armed, and focus it. Returns the new folder's id.
     pub fn create_layer() -> Option<String> {
-        let active = OPS_CTX.with(|c| {
+        let active = EDITOR_CONTEXT.with(|c| {
             c.borrow()
                 .as_ref()
                 .and_then(|ctx| ctx.active_layer.get_untracked())
@@ -574,7 +574,7 @@ mod active_folder {
     pub fn delete_layer(id: &str) -> bool {
         let did = engine_ops::delete_layer(id);
         if did {
-            let focused = OPS_CTX.with(|c| {
+            let focused = EDITOR_CONTEXT.with(|c| {
                 c.borrow()
                     .as_ref()
                     .and_then(|ctx| ctx.active_layer.get_untracked())

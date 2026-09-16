@@ -8,15 +8,15 @@
 //! document state: nothing here mints an undo step, and a selection over ids the document no longer
 //! holds is pruned by the post-change tail rather than defended against here.
 
+use crate::editor::state::editor_context::EDITOR_CONTEXT;
 use crate::editor::state::history as mission_history;
-use crate::editor::state::operations::context::OPS_CTX;
 use website_map_engine::data::store::operations::projections::layer_rows;
 use website_map_engine::editing::hosted_commands::vehicle_points;
 use website_map_engine::editing::tools::selection;
 
 /// Replace the selected ids, rebind the renderer's tint, and refresh the mirrors.
 pub fn set_slot_selection(ids: Vec<String>) {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
             return;
@@ -47,7 +47,7 @@ pub fn set_selection_ids(ids: Vec<String>) -> usize {
 /// case the click is a grab on a set the operator already made, and collapsing it to one row would
 /// throw that set away before the drag they were starting could use it.
 pub fn select_slot(id: String) {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
             return;
@@ -72,7 +72,7 @@ pub fn select_slot(id: String) {
 
 /// Select a folder's DIRECT slot children, replacing the selection.
 pub fn select_layer_children(layer_id: &str) {
-    let ids = OPS_CTX.with(|c| {
+    let ids = EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
@@ -91,7 +91,7 @@ pub fn select_layer_children(layer_id: &str) {
 
 /// Select every slot in a folder's whole subtree, replacing the selection.
 pub fn select_layer_descendants(layer_id: &str) {
-    let ids = OPS_CTX.with(|c| {
+    let ids = EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
@@ -117,7 +117,7 @@ pub fn select_all_in_view(viewport_w: f64, viewport_h: f64) -> bool {
         return false;
     }
     let points = vehicle_points();
-    let acted = OPS_CTX.with(|c| {
+    let acted = EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
             return false;
@@ -158,7 +158,7 @@ pub fn select_all_in_view(viewport_w: f64, viewport_h: f64) -> bool {
 /// Move the camera to the selection's centroid, keeping the zoom. `false` when nothing is selected
 /// or the selection has no position to average.
 pub fn center_on_selection() -> bool {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
             return false;

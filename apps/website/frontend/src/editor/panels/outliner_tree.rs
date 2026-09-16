@@ -749,7 +749,7 @@ fn comment_row(
     // is never in, so it would open blank and write nothing.
     let on_dbl = move |_: web_sys::MouseEvent| {
         #[cfg(target_arch = "wasm32")]
-        crate::editor::state::operations::open_comment_editor(id_dbl.clone());
+        crate::editor::state::editor_context::open_comment_editor(id_dbl.clone());
         #[cfg(not(target_arch = "wasm32"))]
         let _ = &id_dbl;
     };
@@ -1247,7 +1247,7 @@ fn single_row(
                     // the SEL-ORBAT-DBL-001 contract.
                     on:dblclick=move |_| {
                         #[cfg(target_arch = "wasm32")]
-                        crate::editor::state::operations::open_attributes(id_dbl.clone());
+                        crate::editor::state::editor_context::open_attributes(id_dbl.clone());
                         #[cfg(not(target_arch = "wasm32"))]
                         let _ = &id_dbl;
                     }
@@ -1369,7 +1369,7 @@ fn placed_vehicle_rows(authoring: bool, selected: RwSignal<Vec<String>>) -> AnyV
                         }
                         on:dblclick=move |_| {
                             // SEL-ORBAT-DBL-001 — activate opens Attributes, exactly like a slot.
-                            crate::editor::state::operations::open_attributes(id_dbl.clone());
+                            crate::editor::state::editor_context::open_attributes(id_dbl.clone());
                         }
                     >
                         // A leading spacer keeps these rows aligned with the tree's guide column.

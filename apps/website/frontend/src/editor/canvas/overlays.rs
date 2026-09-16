@@ -253,9 +253,9 @@ use crate::editor::panels::outliner;
 #[cfg(target_arch = "wasm32")]
 use crate::editor::state::armed_placement;
 #[cfg(target_arch = "wasm32")]
-use crate::editor::state::hydrate as mission_hydrate;
+use crate::editor::state::editor_context;
 #[cfg(target_arch = "wasm32")]
-use crate::editor::state::operations as editor_ops;
+use crate::editor::state::hydrate as mission_hydrate;
 #[cfg(target_arch = "wasm32")]
 use website_map_engine::editing::hosted_commands as engine_ops;
 
@@ -564,7 +564,7 @@ pub(crate) fn AssetPickerOverlay(
                 && crate::v2::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 ev.prevent_default();
-                editor_ops::close_asset_picker();
+                editor_context::close_asset_picker();
             }
         });
         on_cleanup(move || {
@@ -617,7 +617,7 @@ pub(crate) fn AssetPickerOverlay(
                             #[cfg(target_arch = "wasm32")]
                             {
                                 armed_placement::begin_place(payload.clone());
-                                editor_ops::close_asset_picker();
+                                editor_context::close_asset_picker();
                             }
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &payload;
@@ -636,7 +636,7 @@ pub(crate) fn AssetPickerOverlay(
                 on:pointerdown=move |ev| {
                     ev.stop_propagation();
                     #[cfg(target_arch = "wasm32")]
-                    editor_ops::close_asset_picker();
+                    editor_context::close_asset_picker();
                 }
                 on:contextmenu=move |ev| ev.prevent_default()
             ></div>
@@ -699,7 +699,7 @@ pub(crate) fn CommentEditorOverlay(
                 && crate::v2::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 ev.prevent_default();
-                editor_ops::close_comment_editor();
+                editor_context::close_comment_editor();
             }
         });
         on_cleanup(move || {
@@ -741,7 +741,7 @@ pub(crate) fn CommentEditorOverlay(
                 on:pointerdown=move |ev| {
                     ev.stop_propagation();
                     #[cfg(target_arch = "wasm32")]
-                    editor_ops::close_comment_editor();
+                    editor_context::close_comment_editor();
                 }
             ></div>
             <div
@@ -849,7 +849,7 @@ pub(crate) fn CommentEditorOverlay(
                                     outliner::ensure_active_layer,
                                 )
                             {
-                                editor_ops::open_comment_editor(new_id);
+                                editor_context::open_comment_editor(new_id);
                             }
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &id_dup;
@@ -864,7 +864,7 @@ pub(crate) fn CommentEditorOverlay(
                             #[cfg(target_arch = "wasm32")]
                             {
                                 engine_ops::delete_comment(id_del.clone());
-                                editor_ops::close_comment_editor();
+                                editor_context::close_comment_editor();
                             }
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &id_del;
@@ -877,7 +877,7 @@ pub(crate) fn CommentEditorOverlay(
                         class="ml-auto rounded bg-primary px-3 py-1.5 text-label-md text-on-primary"
                         on:click=move |_| {
                             #[cfg(target_arch = "wasm32")]
-                            editor_ops::close_comment_editor();
+                            editor_context::close_comment_editor();
                         }
                     >
                         "Close"
@@ -951,7 +951,7 @@ pub(crate) fn ConnectionsPanelOverlay(
                 && crate::v2::core::ui::modal_stack::is_topmost_open(modal_id)
             {
                 ev.prevent_default();
-                editor_ops::close_connections_panel();
+                editor_context::close_connections_panel();
             }
         });
         on_cleanup(move || {
@@ -1070,7 +1070,7 @@ pub(crate) fn ConnectionsPanelOverlay(
                 on:pointerdown=move |ev| {
                     ev.stop_propagation();
                     #[cfg(target_arch = "wasm32")]
-                    editor_ops::close_connections_panel();
+                    editor_context::close_connections_panel();
                 }
             ></div>
             <div
@@ -1087,7 +1087,7 @@ pub(crate) fn ConnectionsPanelOverlay(
                         class="ml-auto cursor-pointer rounded px-2 py-1 font-label-sm text-[11px] text-on-surface-variant hover:bg-surface-dim"
                         on:click=move |_| {
                             #[cfg(target_arch = "wasm32")]
-                            editor_ops::close_connections_panel();
+                            editor_context::close_connections_panel();
                         }
                     >
                         "Close"
@@ -1109,7 +1109,7 @@ pub(crate) fn ConnectionsPanelOverlay(
                                         #[cfg(target_arch = "wasm32")]
                                         {
                                             engine_ops::cancel_connect();
-                                            editor_ops::open_connections_panel();
+                                            editor_context::open_connections_panel();
                                         }
                                     }
                                 >

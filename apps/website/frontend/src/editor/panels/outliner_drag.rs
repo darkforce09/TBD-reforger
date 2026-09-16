@@ -104,7 +104,7 @@ pub fn complete_multi_drop_onto_folder(
     dest_folder_id: &str,
     folder_descendants: impl Fn(&str) -> Vec<String>,
 ) -> bool {
-    use crate::editor::state::operations as ops;
+    use crate::editor::state::undo_grouped_gestures;
     use website_map_engine::editing::hosted_commands as engine_ops;
 
     let Some(drag) = PENDING_DRAG.with(|p| p.borrow_mut().take()) else {
@@ -123,7 +123,7 @@ pub fn complete_multi_drop_onto_folder(
     if ids.is_empty() {
         return true;
     }
-    ops::with_batch("outliner-multi-drop", || {
+    undo_grouped_gestures::with_batch("outliner-multi-drop", || {
         for id in &ids {
             match &drag {
                 // A folder REPARENTS under the destination (the core cycle-guards a self/subtree
@@ -163,7 +163,7 @@ pub fn complete_multi_drop_onto_folder(
 /// only self-drop case (a slot already in the destination squad) is the core's own no-op.
 #[cfg(target_arch = "wasm32")]
 pub fn complete_multi_refile_onto_squad(dest_squad_id: &str) -> bool {
-    use crate::editor::state::operations as ops;
+    use crate::editor::state::undo_grouped_gestures;
     use website_map_engine::editing::hosted_commands as engine_ops;
 
     let Some(drag) = PENDING_DRAG.with(|p| p.borrow_mut().take()) else {
@@ -182,7 +182,7 @@ pub fn complete_multi_refile_onto_squad(dest_squad_id: &str) -> bool {
         return true;
     }
     let ids = set.ids.clone();
-    ops::with_batch("orbat-multi-refile", || {
+    undo_grouped_gestures::with_batch("orbat-multi-refile", || {
         for id in &ids {
             engine_ops::refile_slot(id.clone(), dest_squad_id.to_string());
         }

@@ -1,13 +1,16 @@
-//! Role: attributes.
-//! Position: `editor/state/operations/context` in the frontend editor adapter.
-//! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
-//! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
+//! Role: opening and closing the Attributes modal, and the selection change opening it implies.
+//! Position: `editor/state/editor_context` in the frontend editor shell.
+//! Signals & state: the installed context's open-target and tab-index signals, and the selection
+//! whose renderer tint the open rebinds.
+//! Invariants: opening over a multi-selection that already contains the target PRESERVES that
+//! selection, so the modal edits every selected entity; opening over anything else collapses the
+//! selection to the one target. Opening the Arsenal is the same act with the tab forced.
 
 use super::*;
 
 /// Open attrs modal using the supplied domain data. A multi-selection now OPENS the modal while preserving its selected targets.
-pub(in crate::editor::state::operations) fn open_attrs_modal(id: String, arsenal_tab: bool) {
-    OPS_CTX.with(|c| {
+pub(in crate::editor::state::editor_context) fn open_attrs_modal(id: String, arsenal_tab: bool) {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
             return;
@@ -44,7 +47,7 @@ pub fn open_arsenal(id: String) {
 
 /// Close the modal (Esc / backdrop / close button).
 pub fn close_attributes() {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             ctx.attrs_open.set(None);
         }

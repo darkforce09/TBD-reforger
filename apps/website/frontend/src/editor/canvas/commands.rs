@@ -22,7 +22,7 @@ use website_map_engine::editing::tools::selection;
 
 use crate::editor::mission_editor::plain_paste_anchor;
 use crate::editor::state::history as mission_history;
-use crate::editor::state::operations as editor_ops;
+use crate::editor::state::undo_grouped_gestures;
 use website_map_engine::editing::hosted_commands as engine_ops;
 
 use super::gestures::{make_sync_los, make_sync_ruler, EditorGestureContext};
@@ -215,7 +215,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                     // keeps Ctrl+X meaning "cut the text" while the operator is typing in an
                     // Attributes field.
                     "KeyX" if modk && !ev.alt_key() && !ev.shift_key() => {
-                        engine_ops::copy_selection() && editor_ops::delete_selection()
+                        engine_ops::copy_selection() && undo_grouped_gestures::delete_selection()
                     }
                     // T-743 — THE PLAIN PASTE ALWAYS CARRIES AN ANCHOR. It used to hand
                     // `paste_at_cursor` the raw `cx`/`cy`, which are `None` whenever the
@@ -253,7 +253,9 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                             .filter(|c| c[0].is_finite() && c[1].is_finite())
                             .map(|c| (c[0], c[1]));
                         match plain_paste_anchor(cx.zip(cy), view_centre) {
-                            Some((ax, ay)) => editor_ops::paste_at_cursor(Some(ax), Some(ay)),
+                            Some((ax, ay)) => {
+                                undo_grouped_gestures::paste_at_cursor(Some(ax), Some(ay))
+                            }
                             None => false,
                         }
                     }
@@ -281,7 +283,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                     // is therefore irrelevant. Pinned by
                     // `the_two_paste_arms_are_mutually_exclusive`.
                     "KeyV" if modk && !ev.alt_key() && ev.shift_key() => {
-                        editor_ops::paste_at_cursor(None, None)
+                        undo_grouped_gestures::paste_at_cursor(None, None)
                     }
                     // T-649 SEL-ALL-001 — Ctrl/Cmd+A selects everything IN VIEW. Eden scopes
                     // Select All to the viewport, not to the whole mission, so this hands the
@@ -382,7 +384,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                             Some(id) => engine_ops::delete_connection(&id),
                             None => {
                                 tactical_graphics_authoring::delete_selected_tactical_graphic()
-                                    || editor_ops::delete_selection()
+                                    || undo_grouped_gestures::delete_selection()
                             }
                         }
                     }

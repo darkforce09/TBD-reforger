@@ -497,7 +497,7 @@ pub(crate) fn pick_tactical_vertex(
 /* ══════════ The DRAW state machine's pure half ═══════════════════════════════════════════════
  *
  * `state/operations/tactical_graphics.rs` owns the in-flight draw, but that whole module is
- * `#![cfg(target_arch = "wasm32")]` (it reaches the document through `OPS_CTX`'s `!Send` `Rc`s), so
+ * `#![cfg(target_arch = "wasm32")]` (it reaches the document through `EDITOR_CONTEXT`'s `!Send` `Rc`s), so
  * a `#[cfg(test)]` block there is compiled by NOTHING on the native test runner — it would report
  * a green that examined no code, which is the one defect this program exists to kill. So the parts
  * with real arithmetic live HERE, where `cargo test -p website-frontend` actually runs them, and
@@ -507,7 +507,7 @@ pub(crate) fn pick_tactical_vertex(
 /// The live graphics for `core` — the wasm-side document read.
 ///
 /// Reads `meta.environment.tacticalGraphics` out of `small_maps_json`, the SAME projection
-/// `editor_ops::read_env_value` reads and `compile_payload`'s `copy_authored_blocks` promotes from,
+/// `editor_context::read_env_value` reads and `compile_payload`'s `copy_authored_blocks` promotes from,
 /// so the canvas and the compiled document can never disagree about what was authored.
 #[cfg(target_arch = "wasm32")]
 #[must_use]

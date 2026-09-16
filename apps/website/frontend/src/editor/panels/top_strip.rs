@@ -112,7 +112,7 @@ enum MenuAction {
     Redo,
     Settings,
     // T-645 — the Placement Tools (the "Arrange" menu). Each acts LIVE on the current selection;
-    // ops moving > 10 entities confirm (`editor_ops::confirm_bulk`). The dispatch bodies are
+    // ops moving > 10 entities confirm (`undo_grouped_gestures::confirm_bulk`). The dispatch bodies are
     // wasm-gated in `run_action` (like Undo/Redo); the enum + descriptor compile natively.
     /// Apply a placement pattern (Circular / Line / Grid / Fill Area).
     Pattern(PatternKind),
@@ -425,23 +425,26 @@ pub fn run_arrange(kind: ArrangeKind) {
 fn run_arrange_action(action: MenuAction) {
     #[cfg(target_arch = "wasm32")]
     {
-        use crate::editor::state::operations as ops;
+        use crate::editor::state::undo_grouped_gestures;
         use website_map_engine::editing::hosted_commands::selection_transform;
         // Align is the one that must undo as a single step, so it goes through the host's undo
         // grouping; the other three commit as the engine already batches them. All four are
         // handed the host's bulk confirmation, which the engine calls before it commits.
         match action {
             MenuAction::Pattern(kind) => {
-                selection_transform::apply_pattern_to_selection(kind, ops::confirm_bulk);
+                selection_transform::apply_pattern_to_selection(
+                    kind,
+                    undo_grouped_gestures::confirm_bulk,
+                );
             }
             MenuAction::Align(edge) => {
-                ops::align_selection(edge);
+                undo_grouped_gestures::align_selection(edge);
             }
             MenuAction::Space(axis) => {
-                selection_transform::space_selection(axis, ops::confirm_bulk);
+                selection_transform::space_selection(axis, undo_grouped_gestures::confirm_bulk);
             }
             MenuAction::Orient(cmd) => {
-                selection_transform::orient_selection(cmd, ops::confirm_bulk);
+                selection_transform::orient_selection(cmd, undo_grouped_gestures::confirm_bulk);
             }
             // Not a placement action — `run_action` only routes the four here, and `ArrangeKind`
             // cannot name anything else, so this arm is unreachable in practice.
@@ -1357,7 +1360,7 @@ pub fn TopCommandStrip(
         }
         #[cfg(target_arch = "wasm32")]
         {
-            crate::editor::state::operations::read_env()
+            crate::editor::state::editor_context::read_env()
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -1392,7 +1395,7 @@ pub fn TopCommandStrip(
         let c = census.get();
         let terrain = env.get().terrain;
         #[cfg(target_arch = "wasm32")]
-        let mode = crate::editor::state::operations::read_env_value("mode")
+        let mode = crate::editor::state::editor_context::read_env_value("mode")
             .and_then(|v| v.as_str().map(str::to_string))
             .filter(|s| !s.trim().is_empty());
         #[cfg(not(target_arch = "wasm32"))]
@@ -1474,9 +1477,9 @@ pub fn TopCommandStrip(
                     s.set(true);
                 }
             }
-            // T-645 — the Placement Tools act on the live selection through `editor_ops`, which reads
-            // the selection/positions from its `OPS_CTX` (like Undo/Redo reach the undo stack). The
-            // confirm (> 10 entities) lives inside each `editor_ops` fn. Wasm-gated bodies; the native
+            // T-645 — the Placement Tools act on the live selection, read from the installed
+            // `EDITOR_CONTEXT` (like Undo/Redo reach the undo stack). The confirm (> 10 entities)
+            // lives inside each placement fn. Wasm-gated bodies; the native
             // build compiles the match arms but does nothing (no doc).
             //
             // T-939.4 — all four now hand off to [`run_arrange_action`], which is also what
@@ -1590,7 +1593,7 @@ pub fn TopCommandStrip(
                     }
                     #[cfg(target_arch = "wasm32")]
                     let doc_title = {
-                        let t = crate::editor::state::operations::read_title();
+                        let t = crate::editor::state::editor_context::read_title();
                         if t.is_empty() { title_fallback.get_value() } else { t }
                     };
                     #[cfg(not(target_arch = "wasm32"))]
@@ -1609,7 +1612,7 @@ pub fn TopCommandStrip(
                                 {
                                     let v = event_target_value(&ev);
                                     if !v.trim().is_empty() {
-                                        crate::editor::state::operations::set_title(v.trim());
+                                        crate::editor::state::editor_context::set_title(v.trim());
                                     }
                                 }
                                 #[cfg(not(target_arch = "wasm32"))]
@@ -2449,7 +2452,7 @@ pub fn TopCommandStrip(
                         let estimate = {
                             #[cfg(target_arch = "wasm32")]
                             {
-                                crate::editor::state::operations::slots_json()
+                                crate::editor::state::editor_context::slots_json()
                                     .as_deref()
                                     .and_then(crate::editor::mission_size::estimate_compiled_bytes)
                             }
@@ -2659,7 +2662,7 @@ pub fn TopCommandStrip(
 // The header near the OBJ/SEL census pattern (`eden_toolbelt` StatusBar) now also carries a PER-SIDE
 // live slot census (`WEST 78 · EAST 74 · IND 8 · TOTAL 160`) and, below it, a one-line mission
 // summary composed from the document. Both ride the SAME reactivity the inline scrubber does — the
-// `env` `Memo` above re-reads on every `doc_tick`, and `editor_ops::refresh_docks` bumps `doc_tick`
+// `env` `Memo` above re-reads on every `doc_tick`, and `editor_context::refresh_docks` bumps `doc_tick`
 // from `mission_history::refresh_signals` (`mission_history.rs:480`) at EVERY mutation site (place /
 // drag / undo / redo / refile / the IDB restore swap), so the badge is live: it updates on slot
 // add/remove/refile with no manual refresh (`editor_ops.rs:2660` is where the bump happens).
@@ -2769,7 +2772,7 @@ fn terrain_label(t: &str) -> String {
 /// ```
 ///
 /// - `MODE` is prefixed with a trailing space ONLY when the document carries a game mode
-///   (`editor_ops::read_env_value("mode")`); it is omitted entirely otherwise. Game mode is not a
+///   (`editor_context::read_env_value("mode")`); it is omitted entirely otherwise. Game mode is not a
 ///   first-class field of the editor document today, so "if present" is literal — most missions emit
 ///   no mode segment, and that absence is part of the pinned format, not a bug.
 /// - `TOTAL` is the whole slot count; `on Terrain` names the map.

@@ -44,7 +44,7 @@ use crate::editor::state::doc_host::DocHandle;
 ///   offset ([`map_engine_core::slots_gpu::pack_vehicle_drag_preview`]). No engine change, and no
 ///   vehicle ids inside `map-engine-render`.
 ///
-/// `vehicle_points` is [`crate::editor::state::operations::vehicle_points`] — the same list the press-time pick
+/// `vehicle_points` is [`website_map_engine::editing::hosted_commands::vehicle_points`] — the same list the press-time pick
 /// ran against, so every draggable vehicle is by construction a row in it.
 pub fn push_drag_preview(
     e: &mut RenderEngine,
@@ -111,7 +111,7 @@ pub fn clear_drag_preview(e: &mut RenderEngine, vehicle_points: &[(String, f64, 
 /// [`crate::editor::state::history::vehicle_lane_fields`] is the SINGLE column builder (one pass over the
 /// id-sorted `editor_ops::vehicle_rows`); this reuses it rather than growing a second one, so the
 /// preview is built by the same code as the committed render and cannot drift from it. The `xy`
-/// handed in comes from `editor_ops::vehicle_points`, which is that same `vehicle_rows` reader
+/// handed in comes from `engine_ops::vehicle_points`, which is that same `vehicle_rows` reader
 /// filtered to placed rows — the same rows in the same order. The yrs-iteration-order
 /// `vehicle_xy_flat` must never appear on this path: mixing the two orders is the trap.
 ///

@@ -87,21 +87,20 @@ use tbd_gate::{NotRun, Pattern, Verdict, gate};
 // relative path. Reproduced by joining onto `repo_root` to read and stripping back for the message,
 // rather than mutating this process's cwd — tests run in parallel threads.
 #[cfg(test)]
-const EDITOR_OPS: &str = "apps/website/frontend/src/editor/state/operations.rs";
+const EDITOR_OPS: &str = "apps/website/frontend/src/editor/state/editor_context/mod.rs";
 // Scan the frontend adapters and the map-engine `data/store/operations` implementations
 // together (T-0xx Phase 2A moved them out of `website-mission-core`). The scratch fixtures
 // exercise both sides so moving a mutation across this boundary cannot bypass the ban.
 const EDITOR_OPS_SPLIT: &[&str] = &[
-    "apps/website/frontend/src/editor/state/operations.rs",
     "apps/website/frontend/src/editor/state/operations/attrs.rs",
-    "apps/website/frontend/src/editor/state/operations/batch.rs",
+    "apps/website/frontend/src/editor/state/undo_grouped_gestures.rs",
     "apps/website/frontend/src/editor/state/operations/cargo.rs",
     "apps/website/frontend/src/editor/state/operations/compositions.rs",
-    "apps/website/frontend/src/editor/state/operations/context/attributes.rs",
-    "apps/website/frontend/src/editor/state/operations/context/environment.rs",
-    "apps/website/frontend/src/editor/state/operations/context/mod.rs",
-    "apps/website/frontend/src/editor/state/operations/context/refresh.rs",
-    "apps/website/frontend/src/editor/state/operations/context/registration.rs",
+    "apps/website/frontend/src/editor/state/editor_context/attributes_modal.rs",
+    "apps/website/frontend/src/editor/state/editor_context/dock_mirrors.rs",
+    "apps/website/frontend/src/editor/state/editor_context/document_fields.rs",
+    "apps/website/frontend/src/editor/state/editor_context/installation.rs",
+    "apps/website/frontend/src/editor/state/editor_context/mod.rs",
     "apps/website/frontend/src/editor/state/operations/entity/arming.rs",
     "apps/website/frontend/src/editor/state/operations/entity/comments.rs",
     "apps/website/frontend/src/editor/state/operations/entity/connections.rs",

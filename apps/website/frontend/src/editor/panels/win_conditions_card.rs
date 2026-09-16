@@ -341,7 +341,7 @@ pub fn env_patch(block: Option<&serde_json::Value>) -> String {
 /// The authored block as the document holds it, or `None` when the mission authors no win rule.
 #[cfg(target_arch = "wasm32")]
 fn read_block() -> Option<serde_json::Value> {
-    crate::editor::state::operations::read_env_value("winConditions").filter(|v| v.is_object())
+    crate::editor::state::editor_context::read_env_value("winConditions").filter(|v| v.is_object())
 }
 
 /// Commit one block (or a clear) — **one document write, one undo step**.
@@ -363,7 +363,7 @@ fn commit(block: Option<&serde_json::Value>) {
         // visible in the console.
         leptos::logging::warn!("winConditions is not yet complete: {clause}");
     }
-    crate::editor::state::operations::update_environment(env_patch(block));
+    crate::editor::state::editor_context::update_environment(env_patch(block));
 }
 
 /// The **Win conditions** card. `ctrl` is the dialog's shared control class, exactly as

@@ -6,7 +6,7 @@
 //! Not cfg-gated (the doc-driving `on:pointerdown` bodies are wasm-gated inside their closures).
 #![allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
-use crate::editor::state::operations as editor_ops;
+use crate::editor::state::editor_context;
 use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use website_map_engine::editing::hosted_commands as engine_ops;
@@ -26,7 +26,7 @@ use crate::v2::core::api::dto::RegistryItem;
 use crate::v2::core::ui::MaterialIcon;
 
 /// T-076 (RIGHT-CREW-001) — the "place vehicle with crew" toggle rendered beside the Vehicles
-/// search. A checkbox bound to `with_crew`: a change writes the [`crate::editor::state::operations`] placement
+/// search. A checkbox bound to `with_crew`: a change writes the [`crate::editor::state::editor_context`] placement
 /// preference so the NEXT vehicle drop stamps the manned/unmanned intent (`crewed: false` when off)
 /// onto its `vehiclesById` row. Eden's default is crewed, which is `with_crew`'s seed.
 #[cfg(target_arch = "wasm32")]
@@ -41,7 +41,7 @@ fn crew_place_toggle(with_crew: RwSignal<bool>) -> impl IntoView {
                 on:change=move |ev| {
                     let on = event_target_checked(&ev);
                     with_crew.set(on);
-                    editor_ops::set_place_with_crew(on);
+                    editor_context::set_place_with_crew(on);
                 }
             />
             <span>"Place with crew"</span>
@@ -593,7 +593,7 @@ impl EdenChip {
     }
 }
 
-/// Apply a chip click to the shared place signals (same `active_side` OpsCtx / `place_at` read).
+/// Apply a chip click to the shared place signals (same `active_side` EditorContext / `place_at` read).
 ///
 /// Side chips clear Objects mode and set the place side. Objects sets `objects_mode` only (leaves
 /// `active_side` unchanged so flipping back restores the last side).
@@ -1645,7 +1645,7 @@ pub fn DockRight(
     // preference back; the next vehicle placement stamps the manned/unmanned intent on the row.
     // wasm-only: the preference lives in `editor_ops`, a wasm32-only module.
     #[cfg(target_arch = "wasm32")]
-    let place_with_crew = RwSignal::new(editor_ops::place_with_crew());
+    let place_with_crew = RwSignal::new(editor_context::place_with_crew());
     // T-254 — Objects chip palette (entities[]): own collapse + search, built from registry_items.
     let object_collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
     let object_search = RwSignal::new(String::new());
@@ -2529,7 +2529,7 @@ fn composition_row_view(
     row: &'static str,
     row_active: &'static str,
 ) -> AnyView {
-    use crate::editor::state::operations as ops;
+    use crate::editor::state::editor_context;
 
     // `row_active` is part of the shared row vocabulary; a composition row does not carry a
     // persistent "selected" state (its selection IS the transient arm), so only `row` is used.
@@ -2670,7 +2670,7 @@ fn composition_row_view(
                                 class="shrink-0 rounded-md p-1 text-error opacity-0 transition-opacity hover:bg-error/15 group-hover:opacity-100"
                                 on:click=move |_| {
                                     if engine_ops::delete_composition(&del_id) {
-                                        ops::cancel_armed_composition(&del_id);
+                                        editor_context::cancel_armed_composition(&del_id);
                                     }
                                     bump();
                                 }
@@ -3489,7 +3489,7 @@ pub fn marker_icons() -> &'static [String] {
 
 /// Is `icon` one of the closed `$defs/marker.icon` aliases?
 ///
-/// Every marker write in [`crate::editor::state::operations`] passes through this. It is exact and
+/// Every marker write in [`website_map_engine::editing::hosted_commands::map_markers`] passes through this. It is exact and
 /// case-SENSITIVE: the enum is lower-case and `additionalProperties`-style validators do not
 /// case-fold, so accepting `"Objective"` here would author a value the schema rejects at save time,
 /// far from the control that produced it.
@@ -4327,7 +4327,7 @@ mod tests {
         }
     }
 
-    /// E2 — OPFOR chip writes the same side string `place_at` / OpsCtx read.
+    /// E2 — OPFOR chip writes the same side string `place_at` / EditorContext read.
     #[test]
     fn apply_eden_chip_opfor_sets_active_side() {
         let active_side = RwSignal::new(String::from("BLUFOR"));

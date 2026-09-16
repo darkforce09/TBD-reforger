@@ -51,7 +51,7 @@ fn dblclick_opens_attributes_for_vehicles_via_slot_or_vehicle_pick() {
          opens for a vehicle — not the slot-only pick"
     );
     assert!(
-        body.contains("editor_ops::open_attributes(id)"),
+        body.contains("editor_context::open_attributes(id)"),
         "a dblclick HIT must open Attributes on the picked id"
     );
     // The slot-only `pick(` must be GONE from this handler — a leftover would keep the bug for
@@ -72,7 +72,7 @@ fn dblclick_empty_ground_opens_the_asset_picker() {
     let body = only_body(&ed, "let ondblclick =");
     // The match on the pick result: Some(id) → Attributes; None → picker.
     assert!(
-        body.contains("editor_ops::open_asset_picker("),
+        body.contains("editor_context::open_asset_picker("),
         "PLACE-003: a dblclick miss must open the asset picker"
     );
     assert!(
@@ -91,7 +91,7 @@ fn asset_picker_is_an_ungated_overlay_that_arms_a_place() {
     // Signal declared on the page + the picker signal handed to editor_ops (the open path).
     assert!(
         ed.contains("let asset_picker = RwSignal::new(None")
-            && ed.contains("editor_ops::set_asset_picker_signal(asset_picker)"),
+            && ed.contains("editor_context::set_asset_picker_signal(asset_picker)"),
         "PLACE-003: the page must own the picker signal and register it with editor_ops"
     );
     // The overlay mount must exist and be OUTSIDE every chrome_hidden gate (ungated, like the
@@ -118,7 +118,7 @@ fn asset_picker_is_an_ungated_overlay_that_arms_a_place() {
     let comp = only_body(&region, "fn AssetPickerOverlay(");
     assert!(
         comp.contains("armed_placement::begin_place(payload")
-            && comp.contains("editor_ops::close_asset_picker()"),
+            && comp.contains("editor_context::close_asset_picker()"),
         "PLACE-001/PLACE-003: choosing a picker row must arm begin_place then close (the next \
          canvas click lands it)"
     );
@@ -160,7 +160,7 @@ fn the_contextmenu_handler_captures_the_world_point_and_arms_no_gesture() {
 fn the_new_mission_template_seeds_comments_before_restore_and_hydrate() {
     let ed = editor_live();
     let seed = ed
-        .find("editor_ops::seed_new_mission_template(&doc)")
+        .find("editor_context::seed_new_mission_template(&doc)")
         .expect("T-651: the new-mission template seed must run in the editor page");
     let mint = ed
         .find("mission_doc::new_seeded_doc()")
@@ -190,7 +190,7 @@ fn the_comment_editor_is_ungated_and_authors_every_comment_field() {
     let ed = editor_live();
     assert!(
         ed.contains("let comment_editor = RwSignal::new(None")
-            && ed.contains("editor_ops::set_comment_editor_signal(comment_editor)"),
+            && ed.contains("editor_context::set_comment_editor_signal(comment_editor)"),
         "T-651: the page must own the comment-editor signal and register it with editor_ops"
     );
     let mount = ed
@@ -222,7 +222,7 @@ fn the_comment_editor_is_ungated_and_authors_every_comment_field() {
     }
     // A comment must never be routed into the SLOT surfaces (the T-716 live-but-inert trap).
     assert!(
-        !comp.contains("editor_ops::open_attributes(")
+        !comp.contains("editor_context::open_attributes(")
             && !comp.contains("entity_selection::select_slot("),
         "T-651: a comment id must not enter the slot selection / Attributes lanes"
     );

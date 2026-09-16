@@ -857,7 +857,7 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
         }
         let _ = doc_tick.get(); // re-read env on undo/redo while open
         #[cfg(target_arch = "wasm32")]
-        let env = crate::editor::state::operations::read_env();
+        let env = crate::editor::state::editor_context::read_env();
         #[cfg(not(target_arch = "wasm32"))]
         let env = crate::v2::core::api::dto::MissionEnv::default();
         Some(view! {
@@ -1417,7 +1417,7 @@ fn render_prefs_section(env: &crate::v2::core::api::dto::MissionEnv) -> AnyView 
                         on:change=move |ev| {
                             let on = event_target_checked(&ev);
                             author_env("showHillshade", on.into());
-                            let op = crate::editor::state::operations::read_env().hillshade_opacity;
+                            let op = crate::editor::state::editor_context::read_env().hillshade_opacity;
                             website_map_engine::streaming::host::apply_hillshade(on, op);
                         }
                         class="accent-primary"

@@ -242,13 +242,13 @@ pub(super) fn kit_default_items(
 
 /// The slot's `assetId` (its character prefab) straight off the live document.
 ///
-/// Read through the existing public `editor_ops::slots_json` rather than a new accessor — this
+/// Read through the existing public `editor_context::slots_json` rather than a new accessor — this
 /// slice does not own `editor_ops`. Native has no hosted document, so there is no `assetId` and
 /// [`kit_default_items`] answers `None`.
 pub(super) fn slot_asset_id(slot_id: &str) -> Option<String> {
     #[cfg(target_arch = "wasm32")]
     {
-        let json = crate::editor::state::operations::slots_json()?;
+        let json = crate::editor::state::editor_context::slots_json()?;
         let map: serde_json::Value = serde_json::from_str(&json).ok()?;
         map.get(slot_id)?
             .get("assetId")?

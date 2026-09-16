@@ -42,8 +42,8 @@ use crate::editor::canvas::overlays as ov;
 use crate::editor::canvas::tactical_graphics::{TG_PICK_PX, TG_VERTEX_PICK_PX};
 use crate::editor::canvas::tactical_graphics_authoring;
 use crate::editor::state::armed_placement;
+use crate::editor::state::editor_context;
 use crate::editor::state::history as mission_history;
-use crate::editor::state::operations as editor_ops;
 use website_map_engine::data::store::operations::attrs;
 use website_map_engine::editing::hosted_commands as engine_ops;
 use website_map_engine::editing::hosted_commands::selection_transform;
@@ -89,7 +89,7 @@ pub(crate) struct EditorGestureContext {
     pub(crate) widget_variant: RwSignal<transform::WidgetVariant>,
     /// T-780 — the connection edge selected on the map, if any.
     pub(crate) selected_connection: RwSignal<Option<String>>,
-    /// The doc-change tick `editor_ops::refresh_docks` bumps (keys the hover point cache).
+    /// The doc-change tick `editor_context::refresh_docks` bumps (keys the hover point cache).
     pub(crate) doc_tick: RwSignal<u64>,
     /// T-642 — the ruler's status-bar readout (`sync_ruler` writes it).
     pub(crate) ruler_status: RwSignal<Option<String>>,
@@ -1274,7 +1274,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         // is what makes Ctrl+click COMPOSE a comment with entities (the
                         // T-781 capture reads one selection `Vec`) and what makes the map's
                         // edge selection drop: a non-empty entity selection is the condition
-                        // `editor_ops::reconcile_connection_selection` already tests inside
+                        // `editor_context::reconcile_connection_selection` already tests inside
                         // `mirror_selection`, so this arm adds no clear of its own.
                         //
                         // DELIBERATELY AFTER the connect arm above: `complete_connect` must
@@ -1934,7 +1934,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 )
             });
             match hit {
-                Some(id) => editor_ops::open_attributes(id),
+                Some(id) => editor_context::open_attributes(id),
                 // T-647 PLACE-003 — empty ground: open the asset picker at the world point
                 // the dblclick names (same frozen-cam unproject the place ghost/CUR use, so
                 // the picker's eventual drop lands where the dblclick was). A singular
@@ -1942,7 +1942,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 None => {
                     let world = cam.unproject_xy(px, py);
                     if world[0].is_finite() && world[1].is_finite() {
-                        editor_ops::open_asset_picker(
+                        editor_context::open_asset_picker(
                             world[0],
                             world[1],
                             ev.client_x() as f64,

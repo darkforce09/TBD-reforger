@@ -89,31 +89,32 @@ pub(crate) const ENTITY: &str = concat!(
     "\n",
 );
 
-/// Frontend operations adapter source.
+/// The installed editor context: the handles and signals the editor's panels reach the open
+/// mission through, and the document reads and writes that go through them.
 pub(crate) const CONTEXT: &str = concat!(
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/context/mod.rs"
+        "/src/editor/state/editor_context/mod.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/context/registration.rs"
+        "/src/editor/state/editor_context/installation.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/context/environment.rs"
+        "/src/editor/state/editor_context/document_fields.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/context/attributes.rs"
+        "/src/editor/state/editor_context/attributes_modal.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/context/refresh.rs"
+        "/src/editor/state/editor_context/dock_mirrors.rs"
     )),
     "\n",
 );

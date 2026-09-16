@@ -996,12 +996,12 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         // selection, so `target_ids[0]` is that entity).
         ContextItem::Attributes => {
             if let Some(id) = target_ids.first() {
-                crate::editor::state::operations::open_attributes(id.clone());
+                crate::editor::state::editor_context::open_attributes(id.clone());
             }
         }
         ContextItem::EditLoadout => {
             if let Some(id) = target_ids.first() {
-                crate::editor::state::operations::open_arsenal(id.clone());
+                crate::editor::state::editor_context::open_arsenal(id.clone());
             }
         }
         // T-651 (`PLACE-COMMENT-001`) — place an editor-only annotation at the world point the
@@ -1034,7 +1034,9 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         }
         ContextItem::ConnectCancel => engine_ops::cancel_connect(),
         // T-672 — open the SEE + CHECK panel. The one row on both takes.
-        ContextItem::ShowConnections => crate::editor::state::operations::open_connections_panel(),
+        ContextItem::ShowConnections => {
+            crate::editor::state::editor_context::open_connections_panel()
+        }
         // T-672 (`ACTION-FORM-001` / `CTX-FORMATION-001`) — re-form the target's squad. Inert (0
         // moved, no undo step) when the target does not LEAD a squad, which is the honest answer:
         // re-forming around a rifleman would be a leadership change nobody asked for.
@@ -1044,7 +1046,7 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
             }
         }
         // T-939.4 — run an Arrange command on the live selection. `target_ids` is not forwarded on
-        // purpose: every placement op reads the selection out of `editor_ops`' own `OPS_CTX`, the
+        // purpose: every placement op reads the selection out of the installed `EDITOR_CONTEXT`, the
         // same source the menu-bar row and the chord use, and the right-click has already made the
         // target BE the selection (`resolve_target` retargets an unselected hit before the menu
         // opens). Passing ids here would introduce a second notion of "what this acts on".

@@ -52,7 +52,7 @@ fn backspace_hides_chrome_and_does_not_delete() {
         "the Delete arm must still precede the Backspace arm"
     );
     assert!(
-        raw[del_at..bs_arm].contains("editor_ops::delete_selection()"),
+        raw[del_at..bs_arm].contains("undo_grouped_gestures::delete_selection()"),
         "Delete alone must still remove the selection"
     );
 

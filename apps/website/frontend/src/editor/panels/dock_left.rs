@@ -109,7 +109,7 @@ pub fn collapse_chevron(collapsed: RwSignal<bool>, expanded_is_left: bool) -> im
 /// tab-strip chevron both flip it (see [`collapse_chevron`]).
 #[component]
 pub fn DockLeft(
-    /// The Editor Layers tree, rebuilt from the doc at every mutation (`editor_ops::refresh_docks`).
+    /// The Editor Layers tree, rebuilt from the doc at every mutation (`editor_context::refresh_docks`).
     nodes: RwSignal<Vec<OutlinerNode>>,
     selected: RwSignal<Vec<String>>,
     active_layer: RwSignal<Option<String>>,
@@ -137,7 +137,7 @@ pub fn DockLeft(
     });
 
     // ── T-697 — the same box, now searching the DOCUMENT ─────────────────────────────────────────
-    // `nodes` is read for its DEPENDENCY, not its value: it is the mirror `editor_ops::refresh_docks`
+    // `nodes` is read for its DEPENDENCY, not its value: it is the mirror `editor_context::refresh_docks`
     // pushes at every mutation site (place, move, delete, undo, redo, restore), so tracking it is how
     // this search re-runs when the document changes without inventing a second change signal. The
     // query is the other input. Both reads happen before any early return, or a blank query would

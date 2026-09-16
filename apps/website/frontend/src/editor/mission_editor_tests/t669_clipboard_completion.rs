@@ -58,7 +58,7 @@ fn cut_copies_before_it_deletes_and_short_circuits() {
         .find("engine_ops::copy_selection()")
         .expect("ACTION-CUT-001: the cut arm must snapshot the selection to the clipboard");
     let del = body
-        .find("editor_ops::delete_selection()")
+        .find("undo_grouped_gestures::delete_selection()")
         .expect("ACTION-CUT-001: the cut arm must then remove the selection");
     assert!(
         copy < del,
@@ -104,16 +104,16 @@ fn paste_at_original_passes_no_anchor() {
          centre — instead of handing an `Option` straight to the paste"
     );
     assert!(
-        arms[plain..shifted].contains("editor_ops::paste_at_cursor(Some(ax), Some(ay))"),
+        arms[plain..shifted].contains("undo_grouped_gestures::paste_at_cursor(Some(ax), Some(ay))"),
         "T-743: the plain Ctrl/Cmd+V must paste with an anchor it has already resolved"
     );
     assert!(
-        arms[shifted..].contains("editor_ops::paste_at_cursor(None, None)"),
+        arms[shifted..].contains("undo_grouped_gestures::paste_at_cursor(None, None)"),
         "ACTION-PASTE-ORIG-001: the Shift arm must pass NO anchor — that is what makes the \
          paste land on the source position instead of the cursor"
     );
     assert_eq!(
-        arms.matches("editor_ops::paste_at_cursor(None, None)")
+        arms.matches("undo_grouped_gestures::paste_at_cursor(None, None)")
             .count(),
         1,
         "T-743: exactly one keydown arm may paste with no anchor. A second one means some \

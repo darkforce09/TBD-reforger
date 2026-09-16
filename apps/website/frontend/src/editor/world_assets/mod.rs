@@ -35,7 +35,7 @@ pub async fn bootstrap(
         world_layers: crate::editor::world_layer_prefs::load_prefs,
         basemap: crate::editor::world_layer_prefs::load_basemap_view,
         render: || {
-            let env = crate::editor::state::operations::read_env();
+            let env = crate::editor::state::editor_context::read_env();
             RenderPreferences {
                 hillshade_opacity: env.hillshade_opacity,
                 show_hillshade: env.show_hillshade,

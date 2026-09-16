@@ -10,7 +10,7 @@
 //! committer's back.
 
 use crate::editor::state::history as mission_history;
-use crate::editor::state::operations::confirm_bulk_n_step;
+use crate::editor::state::undo_grouped_gestures::confirm_bulk_n_step;
 use website_map_engine::editing::host::with_doc;
 use website_map_engine::editing::hosted_commands as engine_ops;
 

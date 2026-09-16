@@ -25,7 +25,7 @@
 #![cfg(target_arch = "wasm32")]
 
 #[cfg(target_arch = "wasm32")]
-use crate::editor::state::operations as editor_ops;
+use crate::editor::state::editor_context;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -404,7 +404,7 @@ pub fn refresh_selection() {
         };
         ctx.sel_count.set(ctx.selection.borrow().len());
     });
-    editor_ops::refresh_selection_mirrors();
+    editor_context::refresh_selection_mirrors();
 }
 
 /// The one post-document-change sequence: materialize → prune the selection → rebind the engine
@@ -696,7 +696,7 @@ fn refresh_signals(ctx: &HistoryCtx, obj: usize) {
     // footing as OBJ/SEL, so they refresh from the same single point: every mutation site funnels
     // here (place / drag-move / undo / redo / click / marquee / the IDB restore swap). `editor_ops`
     // holds its own ctx and borrows its own `Rc`s, so this can't reenter `HISTORY_CTX`.
-    editor_ops::refresh_docks();
+    editor_context::refresh_docks();
 }
 
 /// True when focus is in a text-entry field, where Ctrl+Z means "undo my typing", not "undo the

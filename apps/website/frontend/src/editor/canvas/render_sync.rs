@@ -6,7 +6,7 @@
 //!
 //! The wasm-side wrappers that bind these helpers to the live document and DOM stay in
 //! `mission_editor.rs` (`live_connection_segments`, `set_map_cursor`, `HoverPoints`/`hover_hit`,
-//! `SubjectResolver`): each one reads `editor_ops`' OPS_CTX or `web_sys`, which is exactly the
+//! `SubjectResolver`): each one reads the editor context or `web_sys`, which is exactly the
 //! line this split is drawn on. `mission_editor` re-exports every name below `pub(crate)`, so
 //! call sites, `mission_editor::…` paths and the evacuated test pins kept their exact spelling.
 // The same gate `mission_editor.rs` carries, for the same reason: half of this belt's callers are
@@ -36,7 +36,7 @@
  * established the same failure independently: a lane fed only from its own authoring call sites goes
  * STALE after undo / redo / an IDB restore, because those paths replace the document without ever
  * re-entering the code that drew. So nothing here caches; the Effect re-reads `MissionDocCore` on
- * every `doc_tick`, and `doc_tick` is bumped by `editor_ops::refresh_docks`, which
+ * every `doc_tick`, and `doc_tick` is bumped by `editor_context::refresh_docks`, which
  * `mission_history::refresh_signals` calls at the END of `after_doc_change` (every committed edit,
  * undo and redo) AND of `refresh_hud` / `rebind_engine_from_doc` (the mount seed, the server hydrate
  * and the IDB restore swap). One channel, every path.
@@ -438,7 +438,7 @@ pub(crate) fn comment_drag_lane_xy(
  *   3. ONE DOCUMENT READ PER GENERATION — [`HoverPoints`] materialises the slot SoA, the vehicle
  *      points and the comment points ONCE per `doc_tick` and reuses them across every hit-test in
  *      between. `doc_tick` is the exact channel `mission_history::after_doc_change` bumps in the
- *      same tail that re-binds the glyph lanes (`refresh_signals` → `editor_ops::refresh_docks`,
+ *      same tail that re-binds the glyph lanes (`refresh_signals` → `editor_context::refresh_docks`,
  *      pinned by `t780_connection_line`), so the hover cache is never staler than the picture the
  *      operator is looking at. A per-move `materialize()` would be a full Y.Doc read at 25 Hz —
  *      the T-057 cost in a new coat.
@@ -558,7 +558,7 @@ pub(crate) fn hover_cursor_css(pickable: bool) -> &'static str {
 ///   * `gesture_active` — an LMB drag / marquee / rotate / ruler capture is in flight. The pointer
 ///     is committed to a gesture; re-labelling it mid-drag would be noise, and the cursor must not
 ///     be left claiming "pickable" over whatever the drag happens to be passing over.
-///   * `place_armed` — a palette place (or a multi-click zone draw: both are `editor_ops::Pending`)
+///   * `place_armed` — a palette place (or a multi-click zone draw: both are `editor_context::Pending`)
 ///     owns the pointer, and the live affordance is the place ghost, not the cursor.
 ///   * `measuring` — Ruler / LoS capture points; the map's pickable entities are not the subject.
 ///
@@ -767,7 +767,7 @@ pub(crate) fn route_availability(
  * `position` before it will centre a click on a row, but "does this row exist?" and "can a click fly
  * to it?" are different questions and the prune asks the first — a vehicle row whose position was
  * never authored still EXISTS, and deleting it from the selection would be the same silent loss in
- * a smaller costume. `editor_ops::delete_selection` partitions on exactly this key-presence test.
+ * a smaller costume. `undo_grouped_gestures::delete_selection` partitions on exactly this key-presence test.
  *
  * THE SLOT HALF COMES OFF `slots_json`, NOT THE SoA. That is the wave-144 rule for id universes
  * (`editor_ops::live_slot_ids`, pinned by `eden_dock_right`'s

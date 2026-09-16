@@ -8,7 +8,7 @@
 //! the commit, and a placement must commit the entity the operator actually picked up. Nothing here
 //! is document state: an arm is never undoable, and a release that commits nothing leaves no trace.
 
-use crate::editor::state::operations::context::{bump_doc_tick, Pending, OPS_CTX};
+use crate::editor::state::editor_context::{bump_doc_tick, Pending, EDITOR_CONTEXT};
 use leptos::prelude::GetUntracked;
 use website_map_engine::data::store::operations::entity::ArmedPlacementKind;
 
@@ -49,7 +49,7 @@ fn armed_placement_kind(pending: &Pending) -> ArmedPlacementKind {
 /// Arm a place. Objects mode only accepts an object arm; the side modes reject one, so a leftover
 /// Objects arm cannot commit after the mode chip switches away.
 pub(crate) fn arm(pending: Pending) {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             let objects = ctx.objects_mode.get_untracked();
             let ok = website_map_engine::data::store::operations::entity::placement_is_armable(
@@ -71,7 +71,7 @@ pub(crate) fn arm(pending: Pending) {
 /// select machine.
 #[must_use]
 pub fn has_pending() -> bool {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         c.borrow()
             .as_ref()
             .is_some_and(|ctx| ctx.pending.borrow().is_some())
@@ -81,7 +81,7 @@ pub fn has_pending() -> bool {
 /// Drop the armed place — a release over chrome, or a pointercancel. A zone draw deliberately
 /// survives this: it has its own explicit abandon.
 pub fn cancel_pending() {
-    let cleared = OPS_CTX.with(|c| {
+    let cleared = EDITOR_CONTEXT.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             let mut p = ctx.pending.borrow_mut();
             if matches!(*p, Some(Pending::Zone(_))) {

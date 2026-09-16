@@ -73,7 +73,7 @@ fn env_key_is_carried(key: &str) -> bool {
 /// Write one `meta.environment` key into the document — one undo step, exactly as the controls did
 /// before — or refuse it and say so.
 ///
-/// The refusal is the whole point. A control wired straight at `editor_ops::update_environment`
+/// The refusal is the whole point. A control wired straight at `editor_context::update_environment`
 /// cannot tell whether its value will ever be read again, which is precisely how View Distance and
 /// Thermals shipped looking functional. The check belongs on the one path every control takes.
 #[cfg(target_arch = "wasm32")]
@@ -86,7 +86,7 @@ pub(crate) fn author_env(key: &str, value: serde_json::Value) {
     }
     let mut patch = serde_json::Map::new();
     patch.insert(key.to_string(), value);
-    crate::editor::state::operations::update_environment(
+    crate::editor::state::editor_context::update_environment(
         serde_json::Value::Object(patch).to_string(),
     );
 }
@@ -356,7 +356,7 @@ pub fn fmt_duration_secs(total: i64) -> String {
 /// mission has no briefing".
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn read_flow_seconds(key: &str, default: i64) -> i64 {
-    crate::editor::state::operations::read_env_value(key)
+    crate::editor::state::editor_context::read_env_value(key)
         .as_ref()
         .and_then(serde_json::Value::as_i64)
         .filter(|n| *n >= 0)
@@ -368,7 +368,7 @@ pub(crate) fn read_flow_seconds(key: &str, default: i64) -> i64 {
 /// selection at all, which reads as "unset" for a field that is very much set.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn read_flow_jip() -> String {
-    crate::editor::state::operations::read_env_value("jip")
+    crate::editor::state::editor_context::read_env_value("jip")
         .as_ref()
         .and_then(serde_json::Value::as_str)
         .filter(|v| JIP_OPTIONS.iter().any(|(k, _)| k == v))

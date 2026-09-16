@@ -1,11 +1,11 @@
 //! Role: the gestures that must collapse into ONE undo step, the prompt a bulk gesture asks before
-//! it commits, and the host clock the grouping needs.
-//! Position: `editor/state/operations` in the frontend editor adapter.
+//! it commits, and the host clock that grouping needs.
+//! Position: `editor/state` in the frontend editor shell.
 //! Signals & state: none of its own; the grouping is the engine's, over the hosted document.
 //! Invariants: a gesture the operator experienced as one act undoes as one act — a delete that
-//! spans comments, a connection cascade and slots, a paste that mints a layer first, an align
-//! that moves many rows. The confirmation is the HOST's: the engine takes it as a closure and
-//! calls it before committing, so a browser dialog never lives inside the engine.
+//! spans comments, a connection cascade and slots, a paste that mints a folder first, an align that
+//! moves many rows. The confirmation is the HOST's: the engine takes it as a closure and calls it
+//! before committing, so a browser dialog never lives inside the engine.
 
 #![cfg(target_arch = "wasm32")]
 
@@ -15,19 +15,19 @@ pub use website_map_engine::editing::batch::with_batch;
 use website_map_engine::editing::hosted_commands::{entity_clipboard, selection_transform};
 use website_map_engine::editing::tools::placement::{needs_confirm, AlignEdge};
 
-/// Facade wrapper — multi-txn delete (comments + connection cascade + slots) is one Ctrl+Z.
+/// One Ctrl+Z restores a delete that spans comments, a connection cascade and slots.
 pub fn delete_selection() -> bool {
     with_batch("delete-selection", entity_clipboard::delete_selection)
 }
 
-/// Facade wrapper — paste is one group even if layer mint + `paste_slots` split.
+/// One Ctrl+Z restores a paste, even when it mints the folder before filling it.
 pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
     with_batch("paste", || {
         entity_clipboard::paste_at_cursor(cx, cy, ensure_active_layer)
     })
 }
 
-/// Facade wrapper — align the selection as one group.
+/// One Ctrl+Z restores an align across the whole selection.
 pub fn align_selection(edge: AlignEdge) -> bool {
     with_batch("align", || {
         selection_transform::align_selection(edge, confirm_bulk)

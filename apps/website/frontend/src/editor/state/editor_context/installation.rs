@@ -1,12 +1,16 @@
-//! Role: registration.
-//! Position: `editor/state/operations/context` in the frontend editor adapter.
-//! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
-//! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
+//! Role: the installed context itself — the handles and signals the editor is wired to at load,
+//! the value an armed placement carries until it is dropped, and the registration of the side
+//! signals a panel opens and closes.
+//! Position: `editor/state/editor_context` in the frontend editor shell.
+//! Signals & state: the one thread-local context and the per-signal thread-locals above it.
+//! Invariants: the context is installed once, after the document is seeded, and never replaced
+//! piecemeal. A side signal that was never registered is silence — opening or closing it is a
+//! no-op rather than an error, because a panel that is not mounted has nothing to show.
 
 use super::*;
 
-/// Domain representation of ops ctx.
-pub(crate) struct OpsCtx {
+/// Every handle and signal the editor's panels reach the open mission through.
+pub(crate) struct EditorContext {
     /// Doc.
     pub(crate) doc: DocHandle,
 
@@ -145,7 +149,7 @@ pub fn close_comment_editor() {
 /// the library. Scoped to the one id so a different arm survives the delete, and silent when
 /// nothing is armed — the arm is host state, not document state, so nothing about it is undoable.
 pub fn cancel_armed_composition(id: &str) {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             let armed = matches!(&*ctx.pending.borrow(), Some(Pending::Composition(p)) if p == id);
             if armed {
@@ -155,9 +159,9 @@ pub fn cancel_armed_composition(id: &str) {
     });
 }
 
-/// Install the ops context (once, from `on_load`, after the doc is seeded).
+/// Install the editor context — once, at load, after the document is seeded.
 #[allow(clippy::too_many_arguments)]
-pub fn set_ctx(
+pub fn install(
     doc: DocHandle,
     engine: EngineHandle,
     selection: SelectionHandle,
@@ -171,8 +175,8 @@ pub fn set_ctx(
     attrs_tab: RwSignal<usize>,
     doc_tick: RwSignal<u64>,
 ) {
-    OPS_CTX.with(|c| {
-        *c.borrow_mut() = Some(OpsCtx {
+    EDITOR_CONTEXT.with(|c| {
+        *c.borrow_mut() = Some(EditorContext {
             doc,
             engine,
             selection,

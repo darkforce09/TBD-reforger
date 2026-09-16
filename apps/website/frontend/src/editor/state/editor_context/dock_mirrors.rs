@@ -1,13 +1,19 @@
-//! Role: refresh.
-//! Position: `editor/state/operations/context` in the frontend editor adapter.
-//! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
-//! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
+//! Role: pushing the open document into the signals the docks read — the folder tree, the ORBAT
+//! tree, the selected-id list and the reactive document tick — plus the Connections panel's own
+//! signals and the comment seed a brand-new mission starts with.
+//! Position: `editor/state/editor_context` in the frontend editor shell.
+//! Signals & state: the installed context's dock mirrors, and the Connections panel and connection
+//! selection signals registered above.
+//! Invariants: the document has no change subscription, so the mirrors are pushed from the shared
+//! post-edit refresh at every mutation site — place, drag, undo, redo, click-select, the restore
+//! swap — and a dock can therefore never show a slot set the document no longer holds. Reads of the
+//! document are scoped so the borrow drops before anything reactive runs.
 
 use super::*;
 
 /// Rebuild the dock mirrors from the live doc + selection. Called from `mission_history::refresh_signals`, i.e. from **every** mutation site (place, drag-move, undo, redo, click-select, the IDB restore swap) — so the tree can never show a stale slot set.
 pub fn refresh_docks() {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
             return;
@@ -42,14 +48,14 @@ pub fn refresh_docks() {
 }
 
 /// Mirror selection using the supplied domain data.
-pub(in crate::editor::state::operations) fn mirror_selection(ctx: &OpsCtx) {
+pub(in crate::editor::state::editor_context) fn mirror_selection(ctx: &EditorContext) {
     reconcile_connection_selection(ctx);
     ctx.selected_ids.set(ctx.selection.borrow().clone());
 }
 
 /// Refresh selection mirrors using the supplied domain data.
 pub fn refresh_selection_mirrors() {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             mirror_selection(ctx);
             if let Some(open_id) = ctx.attrs_open.get_untracked() {
@@ -104,7 +110,9 @@ pub fn set_connection_selection_signal(sig: RwSignal<Option<String>>) {
 }
 
 /// Reconcile connection selection using the supplied domain data.
-pub(in crate::editor::state::operations) fn reconcile_connection_selection(ctx: &OpsCtx) {
+pub(in crate::editor::state::editor_context) fn reconcile_connection_selection(
+    ctx: &EditorContext,
+) {
     CONNECTION_SELECTION.with(|s| {
         let Some(sig) = *s.borrow() else {
             return;
@@ -127,7 +135,7 @@ pub(in crate::editor::state::operations) fn reconcile_connection_selection(ctx: 
 
 /// Nudge the reactive doc tick so the Zones panel re-reads mid-draw. Cheaper and safer than `after_local_edit`, which schedules a persist for a document that has not changed yet.
 pub(crate) fn bump_doc_tick() {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             let n = ctx.doc_tick.get_untracked();
             ctx.doc_tick.set(n.wrapping_add(1));

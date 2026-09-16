@@ -16,9 +16,7 @@ use super::tactical_graphics::{
     pick_tactical_graphic, pick_tactical_vertex, tactical_graphics_from_env, TacticalDraft,
     TacticalGraphic,
 };
-use crate::editor::state::operations::context::{
-    bump_doc_tick, read_env_value, update_environment,
-};
+use crate::editor::state::editor_context::{bump_doc_tick, read_env_value, update_environment};
 use website_map_engine::data::store::operations::tactical_graphics as graphics_ops;
 
 /// How many points each kind of control measure needs before it can close.

@@ -12,8 +12,8 @@
 use super::zone_draw::{advance_zone_draw, zone_draw_armed};
 use super::Pending;
 use crate::editor::panels::outliner;
+use crate::editor::state::editor_context::{place_with_crew, EDITOR_CONTEXT};
 use crate::editor::state::history as mission_history;
-use crate::editor::state::operations::context::{place_with_crew, OPS_CTX};
 use leptos::prelude::GetUntracked;
 use outliner::ensure_active_layer;
 use website_map_engine::data::store::operations::entity::ArmedPlacement;
@@ -33,7 +33,7 @@ pub fn place_at_alt(x: f64, y: f64, alt_empty: bool) -> bool {
 /// Commit an armed place and RE-ARM the same value, so a palette leaf can be stamped repeatedly
 /// without going back to the palette between drops.
 pub fn place_at_keep(x: f64, y: f64, alt_empty: bool) -> bool {
-    let snapshot = OPS_CTX.with(|c| {
+    let snapshot = EDITOR_CONTEXT.with(|c| {
         c.borrow()
             .as_ref()
             .and_then(|ctx| ctx.pending.borrow().clone())
@@ -41,7 +41,7 @@ pub fn place_at_keep(x: f64, y: f64, alt_empty: bool) -> bool {
     let placed = place_at_impl(x, y, alt_empty, true);
     if placed {
         if let Some(p) = snapshot {
-            OPS_CTX.with(|c| {
+            EDITOR_CONTEXT.with(|c| {
                 if let Some(ctx) = c.borrow().as_ref() {
                     *ctx.pending.borrow_mut() = Some(p);
                 }
@@ -55,7 +55,7 @@ pub fn place_at_keep(x: f64, y: f64, alt_empty: bool) -> bool {
 /// same frame the document changed in.
 pub(crate) fn rebind_vehicle_lane_after_place() {
     let (vxy, valiases, vtints, vheadings) = mission_history::vehicle_lane_fields();
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
             return;
@@ -92,7 +92,7 @@ fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
         return advance_zone_draw(x, y);
     }
 
-    let placed = OPS_CTX.with(|c| {
+    let placed = EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let ctx = guard.as_ref()?;
         let pending = ctx.pending.borrow_mut().take()?;

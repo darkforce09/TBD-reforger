@@ -740,7 +740,7 @@ mod imp {
     ///
     /// **Why through the `window.__editorSelection` bridge rather than a Rust call.** The selection
     /// is app-side state held in `select_tool`'s leaked `SelectionHandle` and mirrored in
-    /// `editor_ops`'s `OPS_CTX`; neither exposes a Rust ids accessor (`website_map_engine::editing::host::selection_len`
+    /// the installed `EDITOR_CONTEXT`; neither exposes a Rust ids accessor (`website_map_engine::editing::host::selection_len`
     /// returns only the count, and `attrs_multi_ids` needs an anchor id and refuses below two). The
     /// one exported reader is `__editorSelection.ids()`, which `select_tool::register_editor_selection`
     /// installs over the same handle — so this reads the real selection, not a copy that can drift.

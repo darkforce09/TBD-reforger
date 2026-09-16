@@ -24,7 +24,7 @@ fn hover_block() -> String {
 }
 
 /// The live body of `hover_hit`, scrubbed. `hover_hit` STAYED in `mission_editor.rs` at the
-/// T-934.10 split (it reads OPS_CTX through `editor_ops::vehicle_points`, so it is not pure),
+/// T-934.10 split (it reads EDITOR_CONTEXT through `engine_ops::vehicle_points`, so it is not pure),
 /// so this slices from its cache struct's anchor there.
 fn hover_hit_body() -> String {
     let anchor = format!("pub(crate) struct Hover{}", "Points");

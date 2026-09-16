@@ -178,10 +178,10 @@ pub fn register_mission_doc(doc: DocHandle, ver: Rc<Cell<u32>>) {
 /// active is the tree's focus. That is why the seed is assembled here and the document is handed a
 /// folder id it does not have to go looking for.
 fn debug_seed_slots(n: u32) {
-    use crate::editor::state::operations::context::OPS_CTX;
+    use crate::editor::state::editor_context::EDITOR_CONTEXT;
     use outliner::ensure_active_layer;
 
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
             return;

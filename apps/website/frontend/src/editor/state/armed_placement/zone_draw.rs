@@ -14,14 +14,14 @@ use crate::editor::eden_chrome::{
     circle_from_clicks, polygon_flat, polygon_is_committable, zone_types, ZoneShape,
 };
 use crate::editor::panels::zones_panel::DrawTarget;
-use crate::editor::state::operations::context::{bump_doc_tick, ZoneDraft, OPS_CTX};
+use crate::editor::state::editor_context::{bump_doc_tick, ZoneDraft, EDITOR_CONTEXT};
 use website_map_engine::data::store::operations::entity::ZoneDrawStep;
 use website_map_engine::editing::hosted_commands as engine_ops;
 
 /// Is a zone draw in flight?
 #[must_use]
 pub fn zone_draw_armed() -> bool {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         c.borrow()
             .as_ref()
             .is_some_and(|ctx| matches!(*ctx.pending.borrow(), Some(Pending::Zone(_))))
@@ -31,7 +31,7 @@ pub fn zone_draw_armed() -> bool {
 /// The in-flight draw, for the dock's live hint ("click the rim", "2 vertices — one more to close").
 #[must_use]
 pub fn zone_draft() -> Option<ZoneDraft> {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let ctx = guard.as_ref()?;
         let p = ctx.pending.borrow();
@@ -50,7 +50,7 @@ pub fn begin_zone_draw(kind: &str, shape: ZoneShape, collection: DrawTarget) -> 
     if !valid {
         return false;
     }
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
             return false;
@@ -83,7 +83,7 @@ pub fn begin_zone_reshape(row_id: &str, shape: ZoneShape, collection: DrawTarget
     let Some(kind) = kind else {
         return false;
     };
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
             return false;
@@ -103,7 +103,7 @@ pub fn begin_zone_reshape(row_id: &str, shape: ZoneShape, collection: DrawTarget
 /// Abandon the in-flight draw without writing anything — the explicit counterpart a zone draw needs
 /// because it deliberately survives the ordinary disarm. `false` when nothing was in flight.
 pub fn cancel_zone_draw() -> bool {
-    let cleared = OPS_CTX.with(|c| {
+    let cleared = EDITOR_CONTEXT.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             let mut p = ctx.pending.borrow_mut();
             if matches!(*p, Some(Pending::Zone(_))) {
@@ -121,7 +121,7 @@ pub fn cancel_zone_draw() -> bool {
 
 /// Drop the last polygon vertex (the undo-vertex control). Returns the remaining count.
 pub fn zone_draw_pop_vertex() -> usize {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
             return 0;
@@ -136,7 +136,7 @@ pub fn zone_draw_pop_vertex() -> usize {
 
 /// One canvas release while a zone draw is armed: take a vertex, or close a circle and commit it.
 pub(crate) fn advance_zone_draw(x: f64, z: f64) -> bool {
-    let step = OPS_CTX.with(|c| {
+    let step = EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let ctx = guard.as_ref()?;
         let mut p = ctx.pending.borrow_mut();
@@ -192,7 +192,7 @@ pub(crate) fn advance_zone_draw(x: f64, z: f64) -> bool {
 /// Close the in-flight ring. Refuses below three vertices — `$defs/polygon` is `minItems: 3`, and a
 /// two-vertex ring is a document the schema rejects.
 pub fn close_zone_polygon() -> bool {
-    let taken = OPS_CTX.with(|c| {
+    let taken = EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let ctx = guard.as_ref()?;
         let mut p = ctx.pending.borrow_mut();

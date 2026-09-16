@@ -17,7 +17,7 @@
 //! Heading commits through [`number_field`] (T-785). Multi-edit stays slot-only.
 //!
 //! **T-649 (ATTR-MULTI-001 / ATTR-MULTI-CHK-001) — multi-edit.** A multi-selection used to
-//! SUPPRESS this modal (the old A1 rule, a hard `return` in `editor_ops::open_attributes`). It now
+//! SUPPRESS this modal (the old A1 rule, a hard `return` in `editor_context::open_attributes`). It now
 //! opens it over the whole selection, and every commit fans out to every selected slot. The Eden
 //! rule for which fields are live is per-field, not per-modal:
 //!   * a field whose value is **the same** on every selected slot shows that value and edits as it
@@ -263,7 +263,7 @@ pub(crate) fn attrs_multi_subtitle(slot_n: usize, selection_n: usize) -> String 
 #[component]
 pub fn AttributesModal(
     attrs_open: RwSignal<Option<String>>,
-    /// T-180.9 — tab index shared with OpsCtx (`open_arsenal` sets 3 = Arsenal).
+    /// T-180.9 — tab index shared with EditorContext (`open_arsenal` sets 3 = Arsenal).
     attrs_tab: RwSignal<usize>,
     doc_tick: RwSignal<u64>,
     /// T-159.27 — flat registry gear rows for the Arsenal tab.
@@ -284,7 +284,7 @@ pub fn AttributesModal(
                 && ev.key() == "Escape"
                 && crate::v2::core::ui::modal_stack::is_topmost_open(modal_id)
             {
-                crate::editor::state::operations::close_attributes();
+                crate::editor::state::editor_context::close_attributes();
             }
         });
         on_cleanup(move || {
@@ -334,7 +334,7 @@ pub fn AttributesModal(
         #[cfg(not(target_arch = "wasm32"))]
         let _ = open;
     });
-    // T-167 / T-180.9 — tab lives on OpsCtx (passed in) so `open_arsenal` can select Arsenal and
+    // T-167 / T-180.9 — tab lives on EditorContext (passed in) so `open_arsenal` can select Arsenal and
     // a doc change (loadout pick bumps `doc_tick`) no longer snaps back to Identity.
     move || {
         let id = attrs_open.get()?;
@@ -374,7 +374,7 @@ pub fn AttributesModal(
                         // T-744 — `None` means the slot is GONE from the raw rows (undone / deleted),
                         // not merely hidden. Hide keeps `read_attrs` at `Some` (raw existence), so this
                         // arm is no longer reachable from H / layer-hide (wave-113 F-2).
-                        crate::editor::state::operations::close_attributes();
+                        crate::editor::state::editor_context::close_attributes();
                         None
                     }
                 }
@@ -440,7 +440,7 @@ fn modal_view(
     view! {
         <div
             class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
-            on:click=move |_| crate::editor::state::operations::close_attributes()
+            on:click=move |_| crate::editor::state::editor_context::close_attributes()
         ></div>
         <div class=move || {
             // T-167 — the Smart Arsenal (tab 3) needs the wide 2-column doll layout; other tabs stay compact.
@@ -478,7 +478,7 @@ fn modal_view(
                     <button
                         type="button"
                         aria-label="Close"
-                        on:click=move |_| crate::editor::state::operations::close_attributes()
+                        on:click=move |_| crate::editor::state::editor_context::close_attributes()
                         class="rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
                     >
                         <crate::v2::core::ui::MaterialIcon name="close" />
@@ -628,7 +628,7 @@ fn vehicle_attrs_view(
 
     let Some(v) = engine_ops::vehicle_rows().into_iter().find(|r| r.id == id) else {
         // Race: id was a vehicle at the host gate, then vanished before this render.
-        crate::editor::state::operations::close_attributes();
+        crate::editor::state::editor_context::close_attributes();
         return ().into_any();
     };
 
@@ -778,7 +778,7 @@ fn vehicle_attrs_view(
     view! {
         <div
             class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
-            on:click=move |_| crate::editor::state::operations::close_attributes()
+            on:click=move |_| crate::editor::state::editor_context::close_attributes()
         ></div>
         <div class="glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200">
             <div class="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
@@ -792,7 +792,7 @@ fn vehicle_attrs_view(
                 <button
                     type="button"
                     aria-label="Close"
-                    on:click=move |_| crate::editor::state::operations::close_attributes()
+                    on:click=move |_| crate::editor::state::editor_context::close_attributes()
                     class="rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
                 >
                     <crate::v2::core::ui::MaterialIcon name="close" />

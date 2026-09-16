@@ -1603,7 +1603,7 @@ mod tests {
     /// T-770 gave `MissionDocCore::update_slot_loadout` a `bool` and taught the BATCH path
     /// ([`commit_writes`]) to count it. The frontend half never landed: `loadout_commands::set_loadout`
     /// called the mutator as a statement and hardcoded `true` for `did`, so the history tail fired
-    /// whenever `OPS_CTX` and the document merely existed. A pick against a slot id the mission no
+    /// whenever `EDITOR_CONTEXT` and the document merely existed. A pick against a slot id the mission no
     /// longer held dirtied the mission and minted an undo step over a document that had not
     /// changed, and no receipt on that path could tell a write from a no-op.
     ///

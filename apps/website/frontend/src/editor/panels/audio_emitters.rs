@@ -359,7 +359,7 @@ pub fn env_patch(block: Option<&Value>) -> String {
 
 #[cfg(target_arch = "wasm32")]
 fn read_block() -> Option<Value> {
-    crate::editor::state::operations::read_env_value("audio").filter(|v| v.is_object())
+    crate::editor::state::editor_context::read_env_value("audio").filter(|v| v.is_object())
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -369,7 +369,7 @@ fn commit(block: Option<&Value>) {
             leptos::logging::warn!("audio is not yet complete: {clause}");
         }
     }
-    crate::editor::state::operations::update_environment(env_patch(block));
+    crate::editor::state::editor_context::update_environment(env_patch(block));
 }
 
 /// Arms the existing marker placement gesture. No new code in gestures.rs.

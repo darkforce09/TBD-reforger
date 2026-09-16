@@ -162,7 +162,7 @@ fn lane_is_bound_from_the_document_on_every_doc_tick() {
 }
 
 /// **Delete on the map routes through the PANEL's verb.** The keydown must call
-/// `editor_ops::delete_connection` — the same function `ConnectionsPanelOverlay`'s per-row
+/// `engine_ops::delete_connection` — the same function `ConnectionsPanelOverlay`'s per-row
 /// button calls — off the map selection, and the slot `delete_selection` must survive as the
 /// other branch of the SAME arm, so one keypress can never delete both an edge and a slot.
 ///
@@ -177,7 +177,7 @@ fn map_delete_calls_the_panels_delete_connection() {
     let sel = ["selected_", "connection.try_get_untracked()"].concat();
     assert!(
         keys.contains(&verb),
-        "T-780: Delete must route through editor_ops::delete_connection (the panel's own verb)"
+        "T-780: Delete must route through engine_ops::delete_connection (the panel's own verb)"
     );
     let at_verb = keys.find(&verb).expect("asserted above");
     let at_sel = keys
@@ -197,7 +197,7 @@ fn map_delete_calls_the_panels_delete_connection() {
         at_sel < at_resolve && at_resolve < at_verb,
         "wave 142 F-1: read the selection, RESOLVE it, then delete — in that order"
     );
-    let fallthrough = ["editor_ops", "::", "delete_selection()"].concat();
+    let fallthrough = ["undo_grouped_gestures", "::", "delete_selection()"].concat();
     assert!(
         keys[at_verb..].contains(&fallthrough),
         "T-780: the slot Delete must survive as the other branch — this is an addition to the \
@@ -295,10 +295,10 @@ fn an_edge_selection_and_an_entity_selection_cannot_coexist() {
          an entity selection on screen without the reconcile, which is the finding itself"
     );
     // The reconcile can only reach the map's selection because the page hands the signal over.
-    let handoff = ["editor_ops", "::", "set_connection_selection_signal("].concat();
+    let handoff = ["editor_context", "::", "set_connection_selection_signal("].concat();
     assert!(
         only_body(&page(), "canvas_ref.on_load(").contains(&handoff),
-        "wave 142 F-1: on_load must register the connection selection with editor_ops"
+        "wave 142 F-1: on_load must register the connection selection with the editor context"
     );
     // And the reconcile drops the id for BOTH reasons it can stop naming what Delete removes:
     // a live entity selection, and an id the document no longer holds.
@@ -313,7 +313,7 @@ fn an_edge_selection_and_an_entity_selection_cannot_coexist() {
 
 /// **No second deletion path, and no kind list.** UNSCOPED over the whole live page (never
 /// scoped — a scoped negative is green by construction): this file must reach the core's
-/// `remove_connection` only through `editor_ops`, and the map path must not re-derive which
+/// `remove_connection` only through the engine's hosted commands, and the map path must not re-derive which
 /// connections are actionable from a hardcoded vocabulary (the wave-129 rule — a kind list is a
 /// second answer to a question that already has one).
 #[test]
@@ -341,18 +341,18 @@ fn no_second_delete_path_and_no_hardcoded_kind_list() {
 ///   the mount seed / server hydrate → refresh_hud           ─┼→ refresh_signals
 ///   the IDB restore swap + the      → rebind_engine_from_doc ┘        │
 ///   engine-mount handshake                                           ▼
-///                                          editor_ops::refresh_docks → doc_tick.set(n + 1)
+///                                      editor_context::refresh_docks → doc_tick.set(n + 1)
 /// ```
 ///
 /// This is the T-069 / T-672 defect stated as a test: break ANY link and the lane keeps drawing
-/// whatever the document held before the undo. `mission_history.rs` and `editor_ops.rs` are read
+/// whatever the document held before the undo. `state/history.rs` and the editor context are read
 /// here, never written — the chain already existed; what is new is that something checks it.
 #[test]
 fn every_history_path_reaches_the_doc_tick_the_lane_binds_on() {
     let hist = live_code(include_str!("../state/history.rs"));
     let ops = live_code(crate::v2::core::test_support::editor_operations::CONTEXT);
     let signals = ["refresh_", "signals("].concat();
-    let docks = ["editor_ops", "::", "refresh_docks()"].concat();
+    let docks = ["editor_context", "::", "refresh_docks()"].concat();
     let tail = ["after_doc", "_change(ctx)"].concat();
 
     // Undo and redo step the document's own stack in the engine, and the tail they run on the way
@@ -388,7 +388,7 @@ fn every_history_path_reaches_the_doc_tick_the_lane_binds_on() {
     }
     assert!(
         only_body(&hist, "fn refresh_signals").contains(&docks),
-        "T-780: refresh_signals must call editor_ops::refresh_docks"
+        "T-780: refresh_signals must call editor_context::refresh_docks"
     );
     let bump = only_body(&ops, "pub fn refresh_docks");
     assert!(

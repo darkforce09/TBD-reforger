@@ -1330,7 +1330,7 @@ fn stitch_row(
                         }
                         on:dblclick=move |_| {
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor::state::operations::open_attributes(id_dbl.clone());
+                            crate::editor::state::editor_context::open_attributes(id_dbl.clone());
                         }
                         on:pointerdown=move |_| {
                             #[cfg(target_arch = "wasm32")]
@@ -1521,7 +1521,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
                 class="flex w-full items-center justify-center gap-2 rounded border border-outline-variant bg-surface-container py-2 font-label-md text-on-surface hover:border-primary hover:bg-surface-variant"
                 on:click=move |_| {
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor::state::operations::open_arsenal(id_ars.clone());
+                    crate::editor::state::editor_context::open_arsenal(id_ars.clone());
                 }
             >
                 <MaterialIcon name="backpack" class="text-[18px]" />
@@ -2017,8 +2017,8 @@ mod tests {
         );
     }
 
-    /// `editor_ops` must keep pointing at the merge, and the button must keep calling it — the
-    /// wiring is what makes the rest of this file true.
+    /// The engine's hosted commands must keep naming the merge, and the button must keep calling
+    /// it — the wiring is what makes the rest of this file true.
     #[test]
     fn t373_save_button_merges_and_editor_ops_says_so() {
         let src = include_str!("orbat_manager.rs");
@@ -2027,17 +2027,16 @@ mod tests {
                 || src.contains("merge_faction_doc_from_side(&stored.doc"),
             "the Save button must PUT a merged body, never the raw derivation"
         );
-        // T-934.7 — the merge naming lives in operations/entity.rs; the wasm gate stayed on
-        // the operations.rs façade (its `#![cfg]` gates the whole split tree).
         let ops = crate::v2::core::test_support::editor_operations::ENTITY;
         assert!(
             ops.contains("merge_faction_doc_from_side"),
             "faction_doc_from_side must name the merge callers have to use"
         );
-        let facade = include_str!("../../editor/state/operations.rs");
+        let context = include_str!("../../editor/state/editor_context/mod.rs");
         assert!(
-            facade.contains("#![cfg(target_arch = \"wasm32\")]"),
-            "editor_ops stays wasm-only, which is why the merge lives here where it is testable"
+            context.contains("#![cfg(target_arch = \"wasm32\")]"),
+            "the editor context stays wasm-only, which is why the merge lives here where it is \
+             testable"
         );
     }
 

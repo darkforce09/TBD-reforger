@@ -1,13 +1,16 @@
-//! Role: environment.
-//! Position: `editor/state/operations/context` in the frontend editor adapter.
-//! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
-//! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
+//! Role: the document's own fields read and written through the installed context — the mission
+//! environment block, the title, and the slot roster as JSON.
+//! Position: `editor/state/editor_context` in the frontend editor shell.
+//! Signals & state: no signals of its own; every read and write goes to the hosted document.
+//! Invariants: a write runs the post-edit tail so the change persists and the docks re-read, and a
+//! read with no document installed answers the empty value rather than panicking — the editor can
+//! paint its chrome before a mission is loaded.
 
 use super::*;
 
 /// Read terrain + environment from the doc meta (`small_maps_json` → `meta`).
 pub fn read_env() -> MissionEnv {
-    OPS_CTX
+    EDITOR_CONTEXT
         .with(|c| {
             let guard = c.borrow();
             let ctx = guard.as_ref()?;
@@ -20,7 +23,7 @@ pub fn read_env() -> MissionEnv {
 
 /// One raw `meta.environment` key, exactly as the document holds it — `None` when it is unset.
 pub fn read_env_value(key: &str) -> Option<serde_json::Value> {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
@@ -32,7 +35,7 @@ pub fn read_env_value(key: &str) -> Option<serde_json::Value> {
 
 /// Read title using the supplied domain data.
 pub fn read_title() -> String {
-    OPS_CTX
+    EDITOR_CONTEXT
         .with(|c| {
             let guard = c.borrow();
             let ctx = guard.as_ref()?;
@@ -49,7 +52,7 @@ pub fn read_title() -> String {
 
 /// Set title using the supplied domain data.
 pub fn set_title(title: &str) {
-    let did = OPS_CTX.with(|c| {
+    let did = EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
             return false;
@@ -68,7 +71,7 @@ pub fn set_title(title: &str) {
 
 /// Slots json using the supplied domain data.
 pub fn slots_json() -> Option<String> {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
@@ -78,7 +81,7 @@ pub fn slots_json() -> Option<String> {
 
 /// Update environment using the supplied domain data.
 pub fn update_environment(patch_json: String) {
-    let did = OPS_CTX.with(|c| {
+    let did = EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
             return false;

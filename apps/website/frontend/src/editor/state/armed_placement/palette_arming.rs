@@ -8,7 +8,7 @@
 
 use super::{arm, Pending};
 use crate::editor::arsenal::asset_catalog::PlacePayload;
-use crate::editor::state::operations::context::OPS_CTX;
+use crate::editor::state::editor_context::EDITOR_CONTEXT;
 
 /// A palette leaf `pointerdown` arms a character place, consumed by the next canvas release.
 pub fn begin_place(payload: PlacePayload) {
@@ -33,7 +33,7 @@ pub fn begin_place_composition(composition_id: String) {
 /// The armed composition's library id, or `None` — the library row's armed highlight.
 #[must_use]
 pub fn armed_composition_id() -> Option<String> {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let ctx = guard.as_ref()?;
         let p = ctx.pending.borrow();
@@ -56,7 +56,7 @@ pub fn begin_place_marker(icon: String) {
 /// The armed marker icon, or `None`. Backs the panel's "click the map to drop it" hint.
 #[must_use]
 pub fn armed_marker_icon() -> Option<String> {
-    OPS_CTX.with(|c| {
+    EDITOR_CONTEXT.with(|c| {
         let guard = c.borrow();
         let ctx = guard.as_ref()?;
         let p = ctx.pending.borrow();
