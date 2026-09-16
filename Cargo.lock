@@ -8236,6 +8236,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
+ "website-graphics-engine",
  "wgpu 29.0.4",
 ]
 
