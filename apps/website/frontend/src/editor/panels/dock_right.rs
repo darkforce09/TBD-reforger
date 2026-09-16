@@ -3581,8 +3581,7 @@ const CANONICAL_MARKER_GLYPH_COUNT: usize = 11;
 /// [`canonical_marker_rows`], since `marker_glyph_for_alias` is not a `const fn`.)
 #[cfg(target_arch = "wasm32")]
 const _: () = assert!(
-    CANONICAL_MARKER_GLYPH_COUNT
-        == website_map_engine::symbology::markers::MARKER_GLYPH_COUNT,
+    CANONICAL_MARKER_GLYPH_COUNT == website_map_engine::symbology::markers::MARKER_GLYPH_COUNT,
     "picker row count must equal scene::MARKER_GLYPH_COUNT (T-790 source of truth)"
 );
 
@@ -3675,9 +3674,7 @@ fn canonical_marker_rows(filter: &str) -> Vec<CanonicalMarkerRow> {
 /// the previous rows all rendered the same `place` Material pin; each shape below is drawn from
 /// different SVG primitives, so no two rows (and none vs. the old pin) share a DOM signature.
 #[cfg(target_arch = "wasm32")]
-fn marker_glyph_svg(
-    glyph: website_map_engine::symbology::markers::MarkerGlyph,
-) -> AnyView {
+fn marker_glyph_svg(glyph: website_map_engine::symbology::markers::MarkerGlyph) -> AnyView {
     use website_map_engine::symbology::markers::MarkerGlyph;
 
     // 16×16 viewBox; `currentColor` so the shape inherits the row's text colour on hover.

@@ -446,9 +446,8 @@ fn after_doc_change(ctx: &HistoryCtx) {
     let ids = ctx.selection.borrow().clone();
     if let Some(e) = ctx.engine.borrow_mut().as_mut() {
         e.set_drag(Vec::new(), 0.0, 0.0); // clear any live drag overlay
-        let tints = website_map_engine::symbology::roles::classify::side_tints_rgba_bytes(
-            &soa.side_keys,
-        );
+        let tints =
+            website_map_engine::symbology::roles::classify::side_tints_rgba_bytes(&soa.side_keys);
         e.slots_bind_symbology(
             soa.ids.clone(),
             &soa.xy,
@@ -597,9 +596,9 @@ pub(crate) fn vehicle_lane_fields() -> (Vec<f32>, Vec<String>, Vec<u8>, Vec<f32>
             .faction_id
             .strip_prefix("faction-")
             .unwrap_or(&r.faction_id);
-        tints.extend_from_slice(
-            &website_map_engine::symbology::roles::classify::side_rgba(side),
-        );
+        tints.extend_from_slice(&website_map_engine::symbology::roles::classify::side_rgba(
+            side,
+        ));
         aliases.push(r.resource_name);
     }
     (xy, aliases, tints, headings)

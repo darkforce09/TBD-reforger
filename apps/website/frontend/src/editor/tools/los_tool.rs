@@ -1284,10 +1284,7 @@ mod tests {
         let mut vs = website_map_engine::spatial::terrain_los::viewshed::Viewshed {
             cols: 3,
             rows: 2,
-            cells: vec![
-                website_map_engine::spatial::terrain_los::viewshed::Visibility::Visible;
-                6
-            ],
+            cells: vec![website_map_engine::spatial::terrain_los::viewshed::Visibility::Visible; 6],
             min_x: 0.0,
             min_y: 0.0,
             max_x: 16.0,

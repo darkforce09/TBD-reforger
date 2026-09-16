@@ -316,9 +316,9 @@ pub(crate) fn marker_lane_fields(
             .and_then(serde_json::Value::as_str)
             .unwrap_or("");
         let side = faction.strip_prefix("faction-").unwrap_or(faction);
-        tints.extend_from_slice(
-            &website_map_engine::symbology::roles::classify::side_rgba(side),
-        );
+        tints.extend_from_slice(&website_map_engine::symbology::roles::classify::side_rgba(
+            side,
+        ));
         let str_field = |k: &str| {
             r.get(k)
                 .and_then(serde_json::Value::as_str)

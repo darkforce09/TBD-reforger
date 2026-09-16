@@ -239,10 +239,7 @@ pub(crate) fn register_editor_cam(
                 e.on_camera_changed(); // T-172 H5
             }
             // Immediate flush so smoke_fullmap A_trees_on does not race the 120 ms debounce.
-            website_map_engine::streaming::host::flush_viewport(
-                map_host.clone(),
-                engine.clone(),
-            );
+            website_map_engine::streaming::host::flush_viewport(map_host.clone(), engine.clone());
         }
     }) as Box<dyn FnMut(f64, f64, f64)>);
 
