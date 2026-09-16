@@ -70,7 +70,10 @@ fn the_crew_rule_lets_the_modifier_empty_a_vehicle_but_never_fill_one() {
 #[test]
 fn a_draw_in_flight_commits_nothing_on_a_release() {
     let core = MissionDocCore::new();
-    assert_eq!(commit(&core, ArmedPlacement::ZoneDraw, "BLUFOR", false), None);
+    assert_eq!(
+        commit(&core, ArmedPlacement::ZoneDraw, "BLUFOR", false),
+        None
+    );
 }
 
 #[test]
@@ -124,8 +127,13 @@ fn a_character_the_document_refuses_places_nothing() {
 #[test]
 fn a_placed_vehicle_flags_the_lane_rebind_and_leaves_the_slot_selection_alone() {
     let core = MissionDocCore::new();
-    let placed = commit(&core, ArmedPlacement::Vehicle(truck_payload()), "BLUFOR", false)
-        .expect("the side is a real one");
+    let placed = commit(
+        &core,
+        ArmedPlacement::Vehicle(truck_payload()),
+        "BLUFOR",
+        false,
+    )
+    .expect("the side is a real one");
 
     assert!(placed.placed_vehicle);
     assert_eq!(placed.selection, None);

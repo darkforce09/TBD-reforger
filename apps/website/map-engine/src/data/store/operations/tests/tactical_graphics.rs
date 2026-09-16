@@ -57,10 +57,8 @@ fn a_finished_draw_retires_the_draft_and_selects_what_it_minted() {
     assert!(begin_tactical_draw("phase_line"));
     push_tactical_draw_vertex(0.0, 0.0);
     push_tactical_draw_vertex(10.0, 0.0);
-    let (rows, id) = complete_tactical_draw(
-        Vec::new(),
-        &tactical_draft().expect("a draw is in flight"),
-    );
+    let (rows, id) =
+        complete_tactical_draw(Vec::new(), &tactical_draft().expect("a draw is in flight"));
     finish_tactical_draw(id.clone());
 
     assert_eq!(rows.len(), 1);

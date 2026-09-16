@@ -101,9 +101,10 @@ pub fn begin_tactical_draw(kind: &str) -> bool {
 
 /// One canvas release while a draw is armed: append a vertex and stay armed. Returns the vertex count, or 0 when no draw is in flight.
 pub fn tactical_draw_push_vertex(x: f64, z: f64) -> usize {
-    let n = website_map_engine::data::store::operations::tactical_graphics::push_tactical_draw_vertex(
-        x, z,
-    );
+    let n =
+        website_map_engine::data::store::operations::tactical_graphics::push_tactical_draw_vertex(
+            x, z,
+        );
     if n > 0 {
         bump_doc_tick();
     }
@@ -192,7 +193,9 @@ pub fn commit_tactical_vertex_drag() -> bool {
 
 /// Abandon the drag; the vertex snaps back to its committed position. Returns whether a drag was in flight.
 pub fn cancel_tactical_vertex_drag() -> bool {
-    let had = website_map_engine::data::store::operations::tactical_graphics::cancel_tactical_vertex_drag();
+    let had =
+        website_map_engine::data::store::operations::tactical_graphics::cancel_tactical_vertex_drag(
+        );
     if had {
         bump_doc_tick();
     }
