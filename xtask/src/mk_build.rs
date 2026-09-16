@@ -289,8 +289,6 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
             "fmt",
             "--check",
             "-p",
-            "website-mission-core",
-            "-p",
             "website-map-engine",
             "-p",
             "website-graphics-engine",
@@ -298,8 +296,6 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
         Step::new(&[
             "cargo",
             "clippy",
-            "-p",
-            "website-mission-core",
             "-p",
             "website-map-engine",
             "-p",
@@ -322,13 +318,6 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
             "--",
             "-D",
             "warnings",
-        ]),
-        Step::new(&[
-            "cargo",
-            "test",
-            "-p",
-            "website-mission-core",
-            "--all-features",
         ]),
         Step::new(&[
             "cargo",

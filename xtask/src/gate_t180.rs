@@ -88,7 +88,8 @@ use tbd_gate::{NotRun, Pattern, Verdict, gate};
 // rather than mutating this process's cwd — tests run in parallel threads.
 #[cfg(test)]
 const EDITOR_OPS: &str = "apps/website/frontend/src/editor/state/operations.rs";
-// Scan the frontend adapters and mission-core implementations together. The scratch fixtures
+// Scan the frontend adapters and the map-engine `data/store/operations` implementations
+// together (T-0xx Phase 2A moved them out of `website-mission-core`). The scratch fixtures
 // exercise both sides so moving a mutation across this boundary cannot bypass the ban.
 const EDITOR_OPS_SPLIT: &[&str] = &[
     "apps/website/frontend/src/editor/state/operations.rs",
@@ -121,49 +122,50 @@ const EDITOR_OPS_SPLIT: &[&str] = &[
     "apps/website/frontend/src/editor/state/operations/slot_ids.rs",
     "apps/website/frontend/src/editor/state/operations/tactical_graphics.rs",
     "apps/website/frontend/src/editor/state/operations/transform.rs",
-    "apps/website/mission-core/src/doc/operations/apply_faction/apply.rs",
-    "apps/website/mission-core/src/doc/operations/apply_faction/authorship.rs",
-    "apps/website/mission-core/src/doc/operations/apply_faction/library.rs",
-    "apps/website/mission-core/src/doc/operations/apply_faction/mod.rs",
-    "apps/website/mission-core/src/doc/operations/assets.rs",
-    "apps/website/mission-core/src/doc/operations/attrs.rs",
-    "apps/website/mission-core/src/doc/operations/cargo.rs",
-    "apps/website/mission-core/src/doc/operations/cargo_rules.rs",
-    "apps/website/mission-core/src/doc/operations/compositions.rs",
-    "apps/website/mission-core/src/doc/operations/document_index.rs",
-    "apps/website/mission-core/src/doc/operations/entity/clipboard.rs",
-    "apps/website/mission-core/src/doc/operations/entity/comments.rs",
-    "apps/website/mission-core/src/doc/operations/entity/connections.rs",
-    "apps/website/mission-core/src/doc/operations/entity/factions.rs",
-    "apps/website/mission-core/src/doc/operations/entity/identity.rs",
-    "apps/website/mission-core/src/doc/operations/entity/markers.rs",
-    "apps/website/mission-core/src/doc/operations/entity/mod.rs",
-    "apps/website/mission-core/src/doc/operations/entity/placement.rs",
-    "apps/website/mission-core/src/doc/operations/entity/roster.rs",
-    "apps/website/mission-core/src/doc/operations/entity/selection.rs",
-    "apps/website/mission-core/src/doc/operations/entity/vehicles.rs",
-    "apps/website/mission-core/src/doc/operations/entity/zones.rs",
-    "apps/website/mission-core/src/doc/operations/environment.rs",
-    "apps/website/mission-core/src/doc/operations/faction_library.rs",
-    "apps/website/mission-core/src/doc/operations/mod.rs",
-    "apps/website/mission-core/src/doc/operations/place_orbat/mod.rs",
-    "apps/website/mission-core/src/doc/operations/place_orbat/placement.rs",
-    "apps/website/mission-core/src/doc/operations/placement/alignment.rs",
-    "apps/website/mission-core/src/doc/operations/placement/garrison.rs",
-    "apps/website/mission-core/src/doc/operations/placement/geometry.rs",
-    "apps/website/mission-core/src/doc/operations/placement/mod.rs",
-    "apps/website/mission-core/src/doc/operations/placement/patterns.rs",
-    "apps/website/mission-core/src/doc/operations/projections.rs",
-    "apps/website/mission-core/src/doc/operations/reassign.rs",
-    "apps/website/mission-core/src/doc/operations/rotation.rs",
-    "apps/website/mission-core/src/doc/operations/rows.rs",
-    "apps/website/mission-core/src/doc/operations/slot_ids/duplicates.rs",
-    "apps/website/mission-core/src/doc/operations/slot_ids/mod.rs",
-    "apps/website/mission-core/src/doc/operations/tactical_graphics.rs",
-    "apps/website/mission-core/src/doc/operations/transform.rs",
-    "apps/website/mission-core/src/doc/operations/zones.rs",
+    "apps/website/map-engine/src/data/store/operations/apply_faction/apply.rs",
+    "apps/website/map-engine/src/data/store/operations/apply_faction/authorship.rs",
+    "apps/website/map-engine/src/data/store/operations/apply_faction/library.rs",
+    "apps/website/map-engine/src/data/store/operations/apply_faction/mod.rs",
+    "apps/website/map-engine/src/data/store/operations/assets.rs",
+    "apps/website/map-engine/src/data/store/operations/attrs.rs",
+    "apps/website/map-engine/src/data/store/operations/cargo.rs",
+    "apps/website/map-engine/src/data/store/operations/cargo_rules.rs",
+    "apps/website/map-engine/src/data/store/operations/compositions.rs",
+    "apps/website/map-engine/src/data/store/operations/document_index.rs",
+    "apps/website/map-engine/src/data/store/operations/entity/clipboard.rs",
+    "apps/website/map-engine/src/data/store/operations/entity/comments.rs",
+    "apps/website/map-engine/src/data/store/operations/entity/connections.rs",
+    "apps/website/map-engine/src/data/store/operations/entity/factions.rs",
+    "apps/website/map-engine/src/data/store/operations/entity/identity.rs",
+    "apps/website/map-engine/src/data/store/operations/entity/markers.rs",
+    "apps/website/map-engine/src/data/store/operations/entity/mod.rs",
+    "apps/website/map-engine/src/data/store/operations/entity/placement.rs",
+    "apps/website/map-engine/src/data/store/operations/entity/roster.rs",
+    "apps/website/map-engine/src/data/store/operations/entity/selection.rs",
+    "apps/website/map-engine/src/data/store/operations/entity/vehicles.rs",
+    "apps/website/map-engine/src/data/store/operations/entity/zones.rs",
+    "apps/website/map-engine/src/data/store/operations/environment.rs",
+    "apps/website/map-engine/src/data/store/operations/faction_library.rs",
+    "apps/website/map-engine/src/data/store/operations/mod.rs",
+    "apps/website/map-engine/src/data/store/operations/place_orbat/mod.rs",
+    "apps/website/map-engine/src/data/store/operations/place_orbat/placement.rs",
+    "apps/website/map-engine/src/data/store/operations/placement/alignment.rs",
+    "apps/website/map-engine/src/data/store/operations/placement/garrison.rs",
+    "apps/website/map-engine/src/data/store/operations/placement/geometry.rs",
+    "apps/website/map-engine/src/data/store/operations/placement/mod.rs",
+    "apps/website/map-engine/src/data/store/operations/placement/patterns.rs",
+    "apps/website/map-engine/src/data/store/operations/projections.rs",
+    "apps/website/map-engine/src/data/store/operations/reassign.rs",
+    "apps/website/map-engine/src/data/store/operations/rotation.rs",
+    "apps/website/map-engine/src/data/store/operations/rows.rs",
+    "apps/website/map-engine/src/data/store/operations/slot_ids/duplicates.rs",
+    "apps/website/map-engine/src/data/store/operations/slot_ids/mod.rs",
+    "apps/website/map-engine/src/data/store/operations/tactical_graphics.rs",
+    "apps/website/map-engine/src/data/store/operations/transform.rs",
+    "apps/website/map-engine/src/data/store/operations/zones.rs",
 ];
-const ORBAT_RS: &str = "apps/website/mission-core/src/mission/ast/factions/orbat_slot_template.rs";
+const ORBAT_RS: &str =
+    "apps/website/map-engine/src/data/scenario/ast/factions/orbat_slot_template.rs";
 const ORBAT_MGR: &str = "apps/website/frontend/src/pages/operations/orbat_manager.rs";
 const EDEN_CHROME: &str = "apps/website/frontend/src/editor/eden_chrome.rs";
 const SLOTS_GPU: &str = "apps/website/map-engine/src/symbology/roles/classify.rs";
@@ -199,10 +201,20 @@ const PINS: &[(&str, &str)] = &[
 const MEC: &str = "website-map-engine";
 const MER: &str = "website-map-engine";
 const FE: &str = "website-frontend";
+/// T-0xx Phase 2A folded `website-mission-core` into `website-map-engine`, so `MC` names the same
+/// package as `MEC` / `MER`. They stay apart because the FEATURE tier differs, and that is what
+/// these rows actually pin.
+///
 /// One argv element, not two — and bash's `$*` re-joins it with a space, so the failure text reads
-/// `--features doc mission`. Reproduced by [`shown`].
-const MC: &str = "website-mission-core";
-const MSN: Option<&str> = Some("compiler doc");
+/// `--features scenario store`. Reproduced by [`shown`].
+const MC: &str = "website-map-engine";
+/// Was `compiler doc`; the fold renamed both axes.
+const MSN: Option<&str> = Some("scenario store");
+/// The map-engine rows used to ride the crate default, which WAS
+/// `render terrain formats streaming`. The default is now `scenario` alone, so the old set has to
+/// be named: `render` reaches streaming -> io -> world -> bvh transitively, which is all of it.
+/// Without this the four graphics pins would select zero tests and pass vacuously.
+const MEF: Option<&str> = Some("render");
 const NOF: Option<&str> = None;
 
 /// One `cargo_test_pin`: package, `--features` value, `--lib`?, selector, and the `ok` line to
@@ -212,21 +224,21 @@ type PinRow = (&'static str, Option<&'static str>, bool, &'static str, Option<&'
 
 #[rustfmt::skip]
 const CARGO_PINS: &[PinRow] = &[
-    // A / B / H — doc feature. `doc mission`, not `doc` alone; module docs §2.
+    // A / B / H — store feature. `scenario store`, not `store` alone; module docs §2.
     (MC, MSN, true, "place_", None),
     (MC, MSN, true, "set_leader_exclusive", None),
     (MC, MSN, true, "empty_squad_garbage_collected", None),
     (MC, MSN, true, "move_slot_bidirectional", None),
     (MC, MSN, true, "leader_invariant_holds", None),
     (MC, MSN, true, "attach_vehicle_roundtrip", None),
-    (MC, MSN, true, "apply_faction_", Some("doc-feature place/mutator/apply gates")),
+    (MC, MSN, true, "apply_faction_", Some("store-feature place/mutator/apply gates")),
     // C / D / G / vehicle pack.
-    (MEC, NOF, true, "side_tint_three_distinct", None),
-    (MEC, NOF, true, "squad_link_", None),
+    (MEC, MEF, true, "side_tint_three_distinct", None),
+    (MEC, MEF, true, "squad_link_", None),
     (MC, MSN, true, "format_slot_line", None),
-    (MEC, NOF, true, "pack_vehicle_instances", None),
-    (MER, NOF, true, "mission_vehicles", Some("tint / links / slot_line / vehicles lane")),
-    // I — mission feature derive / compile.
+    (MEC, MEF, true, "pack_vehicle_instances", None),
+    (MER, MEF, true, "mission_vehicles", Some("tint / links / slot_line / vehicles lane")),
+    // I — scenario feature derive / compile.
     (MC, MSN, true, "derive_fills_loadout", None),
     (MC, MSN, true, "derive_empty_loadout", None),
     (MC, MSN, true, "derives_from_editor_sorted", None),
@@ -246,8 +258,8 @@ const CARGO_PINS: &[PinRow] = &[
     // from the website<->mod interface in silence.
     (MC, MSN, true, "the_compile_boundary_ledger_is_checked_against_the_contract", None),
     (MC, MSN, true, "a_compiled_slot_carries_exactly_these_keys", None),
-    // T-482: the vehicle-floor test lives behind #[cfg(feature = "doc")] (the MissionDocCore writer
-    // round-trip in flatten.rs), so mission-only matches 0 tests and this pin FAILs. Aligned with
+    // T-482: the vehicle-floor test lives behind #[cfg(feature = "store")] (the MissionDocCore
+    // writer round-trip in flatten.rs), so scenario-only matches 0 tests and this pin FAILs. Aligned with
     // the place_/attach_vehicle pins above rather than weakened.
     (MC, MSN, true, "the_vehicle_row_still_has_the_shape_this_module_reads",
         Some("compile-boundary ledger + compiled-slot key set + vehicle contract floor")),
@@ -556,7 +568,7 @@ mod tests {
         red_append("ban1", EDITOR_OPS, "\nensure_default_squad\n", BANS[0].0);
         red_append(
             "ban1-domain",
-            "apps/website/mission-core/src/doc/operations/entity/placement.rs",
+            "apps/website/map-engine/src/data/store/operations/entity/placement.rs",
             "\nensure_default_squad\n",
             BANS[0].0,
         );
@@ -626,23 +638,39 @@ mod tests {
         assert!(passed_counts("all 9 passed; nothing to see\n").is_empty());
     }
 
-    /// `$*` loses the quoting around `--features "doc mission"`, and the failure text must too.
+    /// `$*` loses the quoting around `--features "scenario store"`, and the failure text must too.
     /// The pin table is also the gate's whole scope, and a silently shortened one is a silently
     /// weakened gate: 25 rows and 5 section `ok` lines, exactly as the script had.
     #[test]
     fn the_argv_rendering_and_the_pin_table_match_the_script() {
-        let args = ["test", "-p", MC, "--features", "compiler doc", "--lib", "x"];
-        let want = "-p website-mission-core --features compiler doc --lib x";
+        let args = [
+            "test",
+            "-p",
+            MC,
+            "--features",
+            "scenario store",
+            "--lib",
+            "x",
+        ];
+        let want = "-p website-map-engine --features scenario store --lib x";
         assert_eq!(shown(&args), want);
         assert_eq!(CARGO_PINS.len(), 25);
         assert_eq!(CARGO_PINS.iter().filter(|p| p.4.is_some()).count(), 5);
-        // T-482: the vehicle-floor pin must keep `doc`, or it matches zero tests.
+        // T-482: the vehicle-floor pin must keep `store`, or it matches zero tests.
         let veh = CARGO_PINS
             .iter()
             .find(|p| p.3 == "the_vehicle_row_still_has_the_shape_this_module_reads");
         assert_eq!(veh.expect("the vehicle-floor pin is still listed").1, MSN);
-        // T-216 §2: no pin may ask for `doc` without `mission`.
-        assert!(!CARGO_PINS.iter().any(|p| p.1 == Some("doc")));
+        // T-216 §2: no pin may ask for `store` without `scenario`.
+        assert!(!CARGO_PINS.iter().any(|p| p.1 == Some("store")));
+        // T-0xx Phase 2A: the crate default is `scenario` alone now. A map-engine graphics row
+        // left on `NOF` would compile none of its modules and report "0 tests" as a pass.
+        assert!(
+            !CARGO_PINS
+                .iter()
+                .any(|p| p.0 == "website-map-engine" && p.1.is_none()),
+            "every website-map-engine pin must name its feature tier"
+        );
     }
 
     /// `2>&1` is one pipe, not two strings glued together — the interleaving is the contract. The

@@ -408,9 +408,11 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
             ],
         )
     });
-    // --features doc,mission,world (same floor as --all-features for this crate): without them
-    // clippy compiles none of those modules and passes on code it never read. Measured blind on
-    // flatten.rs. Gate test step uses --all-features (T-747 / wave139 F2).
+    // --all-features is the floor: without it clippy compiles none of the feature-gated modules
+    // and passes on code it never read. Measured blind on flatten.rs. Since T-0xx Phase 2A that
+    // cuts deeper — `lib.rs` gates every module and the default is `scenario` alone, so a bare
+    // clippy would read the mission compiler and nothing else. Gate test step matches
+    // (T-747 / wave139 F2).
     r.run("clippy map-engine", || {
         checkrun(
             ctx,
@@ -418,10 +420,8 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "cargo",
                 "clippy",
                 "-p",
-                "website-mission-core",
-                "--all-features",
-                "-p",
                 "website-map-engine",
+                "--all-features",
                 "--all-targets",
                 "--quiet",
                 "--",
@@ -469,10 +469,12 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
         migrate::gate_db_migrate_persist(ctx, &state, "advance") as i32
     });
     r.run("test api", || db::gate_test_api(ctx));
-    // --all-features is REQUIRED (T-747 / wave139 F2). Bare `cargo test -p website-mission-core` is a
-    // vacuous pass (~140 tests; tripwire REDs). `--features doc,mission` still skips the world/dem
-    // suite (~133 tests). Makefile `ci-local` and this gate must match. Measured 2026-08-08: bare
-    // 140, doc,mission 502, --all-features 635. Private target dir for the same reason as
+    // --all-features is REQUIRED (T-747 / wave139 F2). Bare `cargo test -p website-map-engine` is
+    // a vacuous pass and the merged tripwire REDs on it. Measured 2026-08-08 on the two crates that
+    // existed then: mission-core bare 140, `doc,mission` 502, --all-features 635. T-0xx Phase 2A
+    // folded them into one crate and flipped the default to `scenario` alone, which makes a bare
+    // run emptier still: re-measured after the fold, --all-features is 1174 lib + 19 integration +
+    // 3 doc. `ci-local` and this gate must match. Private target dir for the same reason as
     // `test api` and `test frontend`: this step RUNS test binaries.
     let mapengine_dir = format!(
         "CARGO_TARGET_DIR={}",
@@ -488,10 +490,8 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "cargo",
                 "test",
                 "-p",
-                "website-mission-core",
-                "--all-features",
-                "-p",
                 "website-map-engine",
+                "--all-features",
                 "--quiet",
             ],
         )
@@ -575,7 +575,8 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     // merge. NOTE: committed diff only, no working-tree union; that is what the bash asked.
     // T-946: the scope is the frontend crate AND every workspace crate it compiles in, derived
     // from the dependency graph — see `changed::wasm_scope_prefixes`. Wave 237 rewrote
-    // `website-mission-core`'s TBDD decode, which the SPA links, and this step skipped.
+    // the TBDD decode (then `website-mission-core`, now `map-engine/src/data`), which the SPA
+    // links, and this step skipped.
     let wave_diff = git_stdout_lossy(&["diff", "--name-only", &range]);
     if changed::wasm_scope_touched(&ctx.root, wave_diff.lines()) {
         r.run("trunk build", || trunk::gate_trunk_build(ctx));

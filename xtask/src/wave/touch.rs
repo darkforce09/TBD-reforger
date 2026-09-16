@@ -341,15 +341,17 @@ pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
             // somebody else's problem and blocks the whole group. They now fall through to the
             // default arm below, like every other crate.
             //
-            // --features doc,mission,world is REQUIRED (same floor as --all-features / the gate
-            // test step). lib.rs gates doc/mission/world behind features, so a featureless clippy
-            // COMPILES NONE OF THEM and reports success on code it never read. PROVED by
+            // --all-features is REQUIRED (same floor as the gate test step). lib.rs gates every
+            // module behind a feature and the default is `scenario` alone since T-0xx Phase 2A, so
+            // a featureless clippy COMPILES ALMOST NONE OF THEM and reports success on code it
+            // never read. PROVED by
             // perturbation 2026-07-26: a `format!("{}", "verify")` injected into flatten.rs:767 —
             // the file this script's own comment calls the most contended in the backlog — gave
             // `clippy (changed crates) PASS` / `SLICE GATE: PASS` without features, and
             // `error: useless use of format!` with them. The adversarial verifier found this; the
             // gate did not.
-            engine @ ("website-mission-core" | "website-map-engine") => host::v(&[
+            // T-0xx Phase 2A: `website-mission-core` was the other arm here and no longer exists.
+            engine @ ("website-map-engine" | "website-graphics-engine") => host::v(&[
                 "cargo",
                 "clippy",
                 "-p",

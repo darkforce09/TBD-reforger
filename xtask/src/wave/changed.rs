@@ -165,8 +165,9 @@ pub fn fmt_changed(ctx: &Ctx, base: &str) -> i32 {
 ///
 /// The scope is DERIVED, not listed, because a hand-kept list is the same bug with a slower fuse:
 /// walk `path = "…"` dependencies out of `apps/website/frontend/Cargo.toml` and keep walking. Today
-/// that reaches `apps/website/mission-core` and `apps/website/map-engine`; when it reaches more, this
-/// follows without an edit. A crate that cannot be read contributes nothing rather than silently
+/// that reaches `apps/website/map-engine` and, through it, `apps/website/graphics-engine`; when it
+/// reaches more, this follows without an edit. (T-0xx Phase 2A folded `apps/website/mission-core`
+/// into map-engine — the scope followed by itself, which is the point of deriving it.) A crate that cannot be read contributes nothing rather than silently
 /// narrowing the scope — the caller treats an empty walk as "check anyway", never as "skip".
 pub fn wasm_scope_prefixes(root: &Path) -> Vec<String> {
     let mut seen: Vec<String> = vec![FRONTEND_DIR.to_string()];
@@ -647,7 +648,7 @@ mod tests {
             scope.iter().any(|d| d == FRONTEND_DIR),
             "the frontend itself is always in scope: {scope:?}"
         );
-        for engine in ["apps/website/map-engine", "apps/website/mission-core"] {
+        for engine in ["apps/website/map-engine", "apps/website/graphics-engine"] {
             assert!(
                 scope.iter().any(|d| d == engine),
                 "{engine} is compiled into the SPA's wasm and must be in scope: {scope:?}"
@@ -738,7 +739,7 @@ mod tests {
             Some("apps/website/map-engine")
         );
         assert_eq!(
-            join_rel("apps/website/mission-core", "../graphics-engine").as_deref(),
+            join_rel("apps/website/map-engine", "../graphics-engine").as_deref(),
             Some("apps/website/graphics-engine")
         );
         assert_eq!(

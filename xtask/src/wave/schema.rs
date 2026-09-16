@@ -179,8 +179,12 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
     // defect 3). Content, not mtime — mtime is the thing that lied.
     let stamp_roots = [
         "xtask/src",
+        // T-0xx Phase 2A: `apps/website/mission-core/src` was a fourth root here and is gone —
+        // the crate folded into `apps/website/map-engine/src/data`, which this root already
+        // covers. Leaving the dead path in place would have been harmless; dropping it without
+        // checking that the content moved INTO a listed root is how the stamp silently loses an
+        // input, which is T-422 defect 3 all over again.
         "apps/website/map-engine/src",
-        "apps/website/mission-core/src",
         "tools/tbd-tools/src",
     ];
     let mut srcs: Vec<PathBuf> = Vec::new();
@@ -212,7 +216,6 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
     for m in [
         "xtask/Cargo.toml",
         "apps/website/map-engine/Cargo.toml",
-        "apps/website/mission-core/Cargo.toml",
         "tools/tbd-tools/Cargo.toml",
         "Cargo.lock",
     ] {
