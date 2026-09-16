@@ -4,7 +4,6 @@
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 use crate::editor::state::history as mission_history;
-use std::cell::RefCell;
 use std::collections::HashMap;
 use website_map_engine::data::store::MissionDocCore;
 
@@ -22,17 +21,11 @@ pub fn read_loadout(id: &str) -> Option<String> {
     })
 }
 
-thread_local! {
-
-    static CARGO_DEFAULTS: RefCell<HashMap<String, Vec<crate::editor::arsenal::arsenal_rules::CargoRow>>> =
-        RefCell::new(HashMap::new());
-}
-
 /// Install the character → default-cargo map (from the `/registry/compat` fetch).
 pub fn set_cargo_defaults(
     map: HashMap<String, Vec<crate::editor::arsenal::arsenal_rules::CargoRow>>,
 ) {
-    CARGO_DEFAULTS.with(|c| *c.borrow_mut() = map);
+    website_map_engine::data::store::operations::cargo::set_cargo_defaults(map);
 }
 
 /// Seed one slot's cargo inside an already-open doc borrow (shared by the place / apply-kit hooks — the caller owns the history tail). Seeds only when the character has defaults and the loadout carries no `cargo` key.
@@ -42,9 +35,8 @@ pub(super) fn seed_cargo_in_core(
     asset_id: &str,
     loadout: Option<&str>,
 ) -> bool {
-    let defaults = CARGO_DEFAULTS.with(|c| c.borrow().get(asset_id).cloned());
-    website_map_engine::data::store::operations::cargo::seed_cargo_in_core(
-        core, id, loadout, defaults,
+    website_map_engine::data::store::operations::cargo::seed_cargo_for_asset(
+        core, id, asset_id, loadout,
     )
 }
 
@@ -55,9 +47,7 @@ pub fn seed_slot_cargo(id: &str) -> Option<String> {
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        website_map_engine::data::store::operations::cargo::seed_slot_cargo(core, id, |asset_id| {
-            CARGO_DEFAULTS.with(|c| c.borrow().get(asset_id).cloned())
-        })
+        website_map_engine::data::store::operations::cargo::seed_slot_cargo_from_defaults(core, id)
     });
     if seeded.is_some() {
         mission_history::after_local_edit();
@@ -87,22 +77,6 @@ pub fn set_loadout(id: &str, loadout_json: Option<String>) -> bool {
     )
 }
 
-thread_local! {
-
-    static LOADOUT_BUFFER: RefCell<Vec<crate::editor::arsenal::BufferedLoadout>> =
-        const { RefCell::new(Vec::new()) };
-
-    static APPLY_SEED: std::cell::Cell<u64> = const { std::cell::Cell::new(0x2545_F491_4F6C_DD1D) };
-}
-
-fn next_apply_seed() -> u64 {
-    APPLY_SEED.with(|s| {
-        let now = s.get();
-        s.set(now.wrapping_add(0x9E37_79B9_7F4A_7C15));
-        now
-    })
-}
-
 fn selection_slot_targets() -> Vec<String> {
     OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -120,33 +94,28 @@ fn selection_slot_targets() -> Vec<String> {
 
 /// **Copy** (3DEN-LOAD-001) — buffer the loadout of EVERY selected entity, not just one. Returns how many were buffered.
 pub fn copy_loadouts_from_selection() -> usize {
-    let buffered = OPS_CTX.with(|c| {
+    OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
-            return Vec::new();
+            return 0;
         };
         let sel = ctx.selection.borrow().clone();
         let d = ctx.doc.borrow();
         let Some(core) = d.as_ref() else {
-            return Vec::new();
+            return 0;
         };
-        website_map_engine::data::store::operations::cargo::copy_loadouts_from_selection(core, sel)
-    });
-    let n = buffered.len();
-    if n > 0 {
-        LOADOUT_BUFFER.with(|b| *b.borrow_mut() = buffered);
-    }
-    n
+        website_map_engine::data::store::operations::cargo::buffer_loadouts_from_selection(core, sel)
+    })
 }
 
 /// What is in the buffer right now (for the panel's label and its receipt).
 pub fn loadout_buffer() -> Vec<crate::editor::arsenal::BufferedLoadout> {
-    LOADOUT_BUFFER.with(|b| b.borrow().clone())
+    website_map_engine::data::store::operations::cargo::loadout_buffer()
 }
 
 /// How many loadouts are buffered — the affordance the Apply button is enabled on.
 pub fn loadout_buffer_len() -> usize {
-    LOADOUT_BUFFER.with(|b| b.borrow().len())
+    website_map_engine::data::store::operations::cargo::loadout_buffer_len()
 }
 
 /// Apply loadout buffer to selection using the supplied domain data.
@@ -162,8 +131,8 @@ pub fn apply_loadout_buffer_to_selection(
     if !confirm_bulk_n_step(targets.len(), "overwrite the loadout of") {
         return Ok((0, 0));
     }
-    let writes =
-        crate::editor::arsenal::plan_apply(&targets, &buffer, next_apply_seed(), items, feed)?;
+    let seed = website_map_engine::data::store::operations::cargo::next_apply_seed();
+    let writes = crate::editor::arsenal::plan_apply(&targets, &buffer, seed, items, feed)?;
     Ok((writes.len(), commit_loadout_writes(&writes)))
 }
 

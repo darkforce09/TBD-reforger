@@ -4,6 +4,7 @@
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 use super::*;
+use website_map_engine::data::store::operations::entity::ArmedPlacement;
 
 /// Commit an armed place at a **world** position, then select it and run the shared post-change tail. Returns `false` when nothing was armed.
 #[allow(dead_code)]
@@ -53,6 +54,19 @@ pub(in crate::editor::state::operations) fn rebind_vehicle_lane_after_place() {
     });
 }
 
+/// The armed value as the engine's placement machine takes it. The host's arm carries the zone
+/// DRAFT, which the draw machine owns and the release path never commits.
+fn armed_placement(pending: Pending) -> ArmedPlacement {
+    match pending {
+        Pending::Character(payload) => ArmedPlacement::Character(payload),
+        Pending::Vehicle(payload) => ArmedPlacement::Vehicle(payload),
+        Pending::Object(payload) => ArmedPlacement::Object(payload),
+        Pending::Composition(comp_id) => ArmedPlacement::Composition(comp_id),
+        Pending::Marker(icon) => ArmedPlacement::Marker(icon),
+        Pending::Zone(_) => ArmedPlacement::ZoneDraw,
+    }
+}
+
 /// Place at impl using the supplied domain data.
 pub(in crate::editor::state::operations) fn place_at_impl(
     x: f64,
@@ -66,118 +80,44 @@ pub(in crate::editor::state::operations) fn place_at_impl(
         return advance_zone_draw(x, y);
     }
 
-    let mut recent_stamp: Option<(String, String)> = None;
-
-    let mut placed_vehicle = false;
     let placed = OPS_CTX.with(|c| {
         let guard = c.borrow();
-        let Some(ctx) = guard.as_ref() else {
-            return false;
-        };
-
-        let Some(pending) = ctx.pending.borrow_mut().take() else {
-            return false;
-        };
-
-        let select = {
-            let d = ctx.doc.borrow();
-            let Some(core) = d.as_ref() else {
-                return false;
-            };
-            let side = ctx.active_side.get_untracked();
-            let id = mint_id(ctx, core);
-            match pending {
-                Pending::Zone(_) => return false,
-                Pending::Vehicle(payload) => {
-                    let with_crew = place_with_crew() && !alt_empty;
-                    if !place_vehicle_in_core(core, &side, &id, &payload.asset_id, x, y, with_crew)
-                    {
-                        return false;
-                    }
-                    placed_vehicle = true;
-                    None
-                }
-                Pending::Object(payload) => {
-                    if !place_object_in_core(core, &side, &id, &payload, x, y) {
-                        return false;
-                    }
-                    None
-                }
-
-                Pending::Marker(icon) => {
-                    let _ = id;
-
-                    let faction_id = side_faction_id(&side);
-                    let marker_id = mint_marker_id(&marker_rows_of(core));
-
-                    let (mx, mz) = (x, y);
-
-                    core.set_faction_briefing_marker(&faction_id, &marker_id, mx, mz, &icon, "");
-
-                    None
-                }
-                Pending::Composition(comp_id) => {
-                    let _ = id;
-                    let Some((slot_ids, title)) =
-                        website_map_engine::data::store::operations::entity::place_saved_composition(
-                            core,
-                            &comp_id,
-                            &side,
-                            x,
-                            y,
-                            &ctx.next_id,
-                            |core| ensure_layer(ctx, core),
-                        )
-                    else {
-                        return false;
-                    };
-                    recent_stamp = Some((comp_id.clone(), title));
-                    *ctx.selection.borrow_mut() = slot_ids;
-                    None
-                }
-                Pending::Character(payload) => {
-                    let layer_id = ensure_layer(ctx, core);
-                    let asset_id = payload.asset_id.clone();
-                    if place_character_under_side(
-                        core,
-                        &side,
-                        &id,
-                        &layer_id,
-                        &payload.role,
-                        None,
-                        Some(payload.asset_id),
-                        x,
-                        y,
-                        0.0,
-                        0.0,
-                    )
-                    .is_err()
-                    {
-                        return false;
-                    }
-
-                    seed_cargo_in_core(core, &id, &asset_id, None);
-                    Some(id)
-                }
-            }
-        };
-        if let Some(id) = select {
-            *ctx.selection.borrow_mut() = vec![id];
+        let ctx = guard.as_ref()?;
+        let pending = ctx.pending.borrow_mut().take()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        let side = ctx.active_side.get_untracked();
+        let placed =
+            website_map_engine::data::store::operations::entity::commit_armed_placement(
+                core,
+                armed_placement(pending),
+                &side,
+                x,
+                y,
+                place_with_crew(),
+                alt_empty,
+                &ctx.next_id,
+                |core| ensure_layer(ctx, core),
+            )?;
+        if let Some(ids) = placed.selection.clone() {
+            *ctx.selection.borrow_mut() = ids;
         }
-        true
+        Some(placed)
     });
-    if placed {
-        mission_history::after_local_edit();
+    let Some(placed) = placed else {
+        return false;
+    };
 
-        if placed_vehicle {
-            rebind_vehicle_lane_after_place();
-        }
+    mission_history::after_local_edit();
 
-        if let Some((asset_id, label)) = recent_stamp {
-            crate::editor::panels::dock_right::record_placed(asset_id, label);
-        }
+    if placed.placed_vehicle {
+        rebind_vehicle_lane_after_place();
     }
-    placed
+
+    if let Some((asset_id, label)) = placed.stamped_composition {
+        crate::editor::panels::dock_right::record_placed(asset_id, label);
+    }
+    true
 }
 
 /// Returns `false` (no-op) when the target has no squad (an unfiled slot, or the target vanished), or already shares the dragged slot's squad — `move_slot_to_squad` is itself a no-op on same-squad, but declining here keeps the caller from firing the dirty tail for nothing.

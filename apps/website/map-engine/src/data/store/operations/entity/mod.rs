@@ -73,6 +73,11 @@ pub use clipboard::{copy_selection, delete_selection, paste_at_cursor, place_sav
 mod placement;
 /// Expose placement :: { orbat add slot , orbat add vehicle , place object in core } at this domain boundary.
 pub use placement::{orbat_add_slot, orbat_add_vehicle, place_object_in_core};
+mod armed_placement;
+/// Expose armed placement :: {  armed placement ,  placement commit , commit armed placement , vehicle places its crew , } at this domain boundary.
+pub use armed_placement::{
+    ArmedPlacement, PlacementCommit, commit_armed_placement, vehicle_places_its_crew,
+};
 mod factions;
 /// Expose factions :: { faction doc from side core , orbat apply faction } at this domain boundary.
 pub use factions::{faction_doc_from_side_core, orbat_apply_faction};

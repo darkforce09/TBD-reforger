@@ -37,7 +37,7 @@
 //!   made in this paragraph.) Line cites are otherwise omitted on purpose: five drifted during the
 //!   127–141 remediation run, and a file+symbol survives edits that a number does not.
 //!   The Arsenal's `set_loadout`
-//!   (`editor_ops.rs:69`) is one of them. Its own siblings in this very modal are the clearest
+//!   (`editor_ops.rs:59`) is one of them. Its own siblings in this very modal are the clearest
 //!   case: Transform X/Y/Z/rotation (`attributes.rs:265`) and Identity role/tag/stance
 //!   (`attributes.rs:335`) commit on blur/Enter with no Save of their own — `attributes.rs:7` states
 //!   the contract in as many words ("rebind + persist + one undo step per commit"). Same for the
@@ -280,7 +280,7 @@ pub fn ArsenalTab(
                     // The three `set`s are signal writes and commit nothing; the single `persist`
                     // that follows is the only document mutation, and `persist` is one
                     // `editor_ops::set_loadout` is **at most one** `mission_history::after_local_edit`
-                    // (`editor_ops.rs:85`) is at most one undo step. So Ctrl+Z after an import
+                    // (`editor_ops.rs:75`) is at most one undo step. So Ctrl+Z after an import
                     // restores the whole loadout the author had before it — not the last wear row
                     // of it. "At most" since T-779: the tail is gated on the document having taken
                     // the write, so an import applied over an entity that is no longer in the
@@ -1301,18 +1301,21 @@ mod tests {
 
             let copy = fn_body(&ops, "pub fn copy_loadouts_from_selection(");
             assert!(
-                copy.contains("LOADOUT_BUFFER")
-                    && copy.contains("cargo::copy_loadouts_from_selection("),
-                "Copy must buffer every SELECTED slot; body: {copy}"
+                copy.contains("cargo::buffer_loadouts_from_selection("),
+                "Copy must reach the buffer through the one buffering verb; body: {copy}"
+            );
+            let domain_cargo = crate::v2::core::test_support::class_r_scrub::live_code(
+                include_str!("../../../../map-engine/src/data/store/operations/cargo.rs"),
+            );
+            let domain_copy = fn_body(&domain_cargo, "pub fn buffer_loadouts_from_selection(");
+            assert!(
+                domain_copy.contains("LOADOUT_BUFFER")
+                    && domain_copy.contains("copy_loadouts_from_selection("),
+                "Copy must buffer every SELECTED slot; body: {domain_copy}"
             );
             assert!(
-                fn_body(
-                    &crate::v2::core::test_support::class_r_scrub::live_code(include_str!(
-                        "../../../../map-engine/src/data/store/operations/cargo.rs"
-                    )),
-                    "pub fn copy_loadouts_from_selection("
-                )
-                .contains("BufferedLoadout"),
+                fn_body(&domain_cargo, "pub fn copy_loadouts_from_selection(")
+                    .contains("BufferedLoadout"),
                 "Copy must buffer bytes, not source ids — an id would be inheritance (T-687)"
             );
 

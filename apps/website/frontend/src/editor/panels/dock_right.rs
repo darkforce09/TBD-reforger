@@ -4726,18 +4726,22 @@ mod tests {
         );
 
         // ── T-791 — the acceptance wiring, pinned on the scrubbed bodies of the fns that own it ────
-        // The consume body: ONE core mutator (`place_composition` = one txn, one undo step — never a
-        // per-member loop, the F-26 mistake) AND it writes `ctx.selection` (select the stamp: OBJ +N,
+        // The consume: ONE core mutator (`place_composition` = one txn, one undo step — never a
+        // per-member loop, the F-26 mistake), reached from the engine's release machine, AND the
+        // host writes `ctx.selection` with what the stamp minted (select the stamp: OBJ +N,
         // SEL == N). Extracted from `place_at_impl` so a match elsewhere can't stand in.
         let consume = only_body(&ops, &format!("fn {}(", "place_at_impl"));
         let place_call = format!("place_saved_{}(", "composition");
         let domain = live_code(crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY);
         assert!(only_body(&domain, "pub fn place_saved_composition(")
             .contains("core.place_composition("));
+        let release = live_code(include_str!(
+            "../../../../map-engine/src/data/store/operations/entity/armed_placement.rs"
+        ));
         assert!(
-            consume.contains(&place_call),
+            only_body(&release, "pub fn commit_armed_placement(").contains(&place_call),
             "the composition consume must stamp via the single core place_composition (one undo \
-             step); body was:\n{consume}"
+             step)"
         );
         assert!(
             consume.contains(&format!("ctx.{}.borrow_mut()", "selection")),

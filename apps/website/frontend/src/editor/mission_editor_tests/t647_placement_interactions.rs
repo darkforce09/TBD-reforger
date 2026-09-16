@@ -26,6 +26,14 @@ fn ops_live() -> String {
     live_code(crate::v2::core::test_support::editor_operations::ENTITY)
 }
 
+/// The engine's release machine, scrubbed to live code — the crew rule and the per-kind commits
+/// live there, so the pins that claim what a release does read it rather than the host adapter.
+fn release_machine_live() -> String {
+    live_code(include_str!(
+        "../../../../map-engine/src/data/store/operations/entity/armed_placement.rs"
+    ))
+}
+
 // ───────────────────────── ATTR-OPEN-001 — dblclick opens Attributes for vehicles too ────────
 
 /// The dblclick handler must pick with `pick_slot_or_vehicle` (slot OR vehicle), not the
@@ -292,7 +300,7 @@ fn place_at_keep_rearms_on_success_only() {
 // ───────────────────────── PLACE-CREW-001 — Alt = empty vehicle ──────────────────────────────
 
 /// Alt on release is threaded from the pointerup into the placement as `alt_empty`, and the
-/// vehicle commit stamps `crewed:false` when Alt is held (`with_crew = toggle && !alt_empty`) —
+/// vehicle commit stamps `crewed:false` when Alt is held (`crew_toggle && !alt_empty`) —
 /// the per-gesture override of the dock's crew default. Alt can force empty; it can never force
 /// crewed a switched-off toggle withheld.
 #[test]
@@ -309,11 +317,19 @@ fn alt_places_an_empty_vehicle() {
             && up.contains("place_at_alt(c[0], c[1], alt_empty)"),
         "PLACE-CREW-001: the Alt override must reach place_at_* on both the multi and single paths"
     );
-    // The vehicle commit computes with_crew from the toggle AND-NOT alt.
+    // The host carries the dock toggle and the Alt modifier into the release machine …
     let ops = ops_live();
     let impl_body = only_body(&ops, "fn place_at_impl(");
     assert!(
-        impl_body.contains("let with_crew = place_with_crew() && !alt_empty"),
+        impl_body.contains("place_with_crew()") && impl_body.contains("alt_empty"),
+        "PLACE-CREW-001: the release must carry both the crew toggle and the Alt modifier into \
+         the placement"
+    );
+    // … and the rule that combines them is the engine's: toggle AND-NOT alt.
+    let release = release_machine_live();
+    let rule = only_body(&release, "pub fn vehicle_places_its_crew(");
+    assert!(
+        rule.contains("crew_toggle && !alt_empty"),
         "PLACE-CREW-001: a Vehicle arm must stamp crewed:false under Alt (toggle && !alt_empty)"
     );
 }
@@ -383,23 +399,23 @@ fn alt_census_confirms_no_canvas_collision() {
 
 // ───────────────────────── The fired rule: perturb / fail / restore ──────────────────────────
 
-/// Fires the PLACE-CREW-001 pin (`with_crew = place_with_crew() && !alt_empty`). Proof it is
+/// Fires the PLACE-CREW-001 pin (`crew_toggle && !alt_empty`). Proof it is
 /// load-bearing: the pin passes on the real body, and a perturbation that drops the `!alt_empty`
 /// clause (the exact regression — Alt no longer forces empty) makes the same assertion FAIL.
 /// Restore is implicit: the real `include_str!` body is untouched; only an in-memory copy is
 /// perturbed here.
 #[test]
 fn fired_rule_alt_empty_clause_is_load_bearing() {
-    let ops = ops_live();
-    let real = only_body(&ops, "fn place_at_impl(");
-    let needle = "let with_crew = place_with_crew() && !alt_empty";
+    let release = release_machine_live();
+    let real = only_body(&release, "pub fn vehicle_places_its_crew(");
+    let needle = "crew_toggle && !alt_empty";
     // PASS on the real body.
     assert!(
         real.contains(needle),
         "canary: the real body must carry the clause"
     );
     // Perturb: strip the Alt clause (the regression). The pin must no longer find its needle.
-    let perturbed = real.replace(needle, "let with_crew = place_with_crew()");
+    let perturbed = real.replace(needle, "crew_toggle");
     assert!(
         !perturbed.contains(needle),
         "fired rule: dropping `!alt_empty` (Alt stops forcing empty) must break the PLACE-CREW-001 \
