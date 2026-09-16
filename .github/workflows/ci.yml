@@ -242,15 +242,15 @@ jobs:
         run: cargo xtask verify no-shell
       - name: "verify-ci-shell (T-901 — GitHub Actions run: blocks)"
         run: cargo xtask verify ci-shell
-      # ENGINE_SPLIT_PROGRAM §5 rules 1 and 2 (phase 1F), 3b (2B) and 3a (2C). The engine split gave
+      # ENGINE_SPLIT_PROGRAM §5 rules 1 and 2 (phase 1F), 3b (2B), 3a (2C), 4 and 7 (2D). The split gave
       # apps/website/graphics-engine a one-way dependency arrow (map-engine -> graphics-engine)
       # and NOTHING in the compiler enforces it: a dep line pointing back would still build, and
       # the 50k lines of map domain that phase 1 moved out would start seeping back a type at a
       # time. §5 is blunt about why this needs a gate rather than a convention — "one 99k crate
       # rots without enforcement". It runs here, not on the 25-minute API job, for the same reason
       # the language gates do: it reads the working tree, needs no DB/LFS/wasm target, and takes
-      # seconds. Rules 4-6 police trees phase 3 has not built yet.
-      - name: verify-engine-layers (ENGINE_SPLIT_PROGRAM §5 rules 1, 2, 3a, 3b)
+      # seconds. Rules 5 and 6 police a tree phase 3 has not built yet.
+      - name: verify-engine-layers (ENGINE_SPLIT_PROGRAM §5 rules 1, 2, 3a, 3b, 4, 7)
         run: cargo xtask verify engine-layers
       # T-853. The registry is the source of truth for the whole ticket pipeline and NOTHING
       # validated it on push — `grep -rn 'ticket check' .github/` returned empty, so a malformed

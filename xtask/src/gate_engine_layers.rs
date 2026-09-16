@@ -1,4 +1,4 @@
-//! Engine-layer walls — [`ENGINE_SPLIT_PROGRAM.md`] §5 rules **1, 2, 3a and 3b**.
+//! Engine-layer walls — [`ENGINE_SPLIT_PROGRAM.md`] §5 rules **1, 2, 3a, 3b, 4 and 7**.
 //!
 //! ── WHAT THIS DEFENDS ────────────────────────────────────────────────────────────────────────
 //!
@@ -22,9 +22,70 @@
 //! | 2 | no `terrain` / `symbology` / `mission` / `orbat` / `arma` in a declared name there | "pure renderer" becomes a claim in a README rather than a property of the code |
 //! | 3a | only one enumerated file of `apps/website/map-engine/src` names `website_graphics_engine::frame` | the packet boundary stops being a boundary and becomes 39 scattered imports again |
 //! | 3b | no module of `apps/website/map-engine/src` names `website_graphics_engine::{device, pipeline, shaders, text::gpu, r#loop}` | GPU resource creation drifts back to the caller one convenient import at a time |
+//! | 4 | `apps/website/map-engine/src/data/scenario/**` imports nothing outside itself | the `website-api` build stops being thin |
+//! | 7 | `data/**` names no world module and `world/**` names no document module | the static world and the authored document fuse back into one soup |
 //!
-//! Rules 4, 5 and 6 (`data/scenario` isolation, no DOM in map-engine, frontend may not import
-//! graphics) police trees that phase 3 has not built yet. They land with that phase.
+//! Rules 5 and 6 (no DOM in map-engine, frontend may not import graphics) police a tree that
+//! phase 3 has not built yet. Rule 5 in particular **cannot** hold while `map-engine` is a wasm
+//! crate with `editing/` still in the browser; it lands with phase 3, not before.
+//!
+//! ── RULE 4 AND WHY ITS PIN HAS TWO ROWS ──────────────────────────────────────────────────────
+//!
+//! §5 writes rule 4 as *"`map-engine/data/scenario/**` imports nothing outside itself"*, and what
+//! it guards is the `website-api` build: the server links `website-map-engine` at the `scenario`
+//! feature alone, which is why `cargo tree -p website-api | rg -i 'wgpu|png|rkyv|flate2'` comes
+//! back empty. One import of `crate::streaming` inside `data/scenario/` would drag the whole
+//! streaming tier — and with it `rkyv`, `flate2`, `png` and `wgpu` — into an HTTP server.
+//!
+//! "Outside itself" is enumerable because the crate has exactly ten top-level modules. Nine of
+//! them are outside `data`, `data::store` is the tenth's other half, and `website_graphics_engine`
+//! is outside the crate entirely. That list *is* the matcher; there is no wildcard in it.
+//!
+//! The production tree satisfies the rule at zero sites. Two test sites remain and they are
+//! pinned rather than moved, because both are `#[cfg(feature = "store")]` — `briefing_prose_
+//! round_trips_through_the_document_core` and `vehicles_from_writer_json_roundtrip` build a real
+//! `MissionDocCore` and push it through the scenario compiler, which is the only honest way to
+//! test that pairing. `website-api` compiles neither: the `scenario` tier does not turn `store`
+//! on, so the two sites are invisible to the build the rule exists to protect. Pinning records
+//! that, and ratchets it — a third one, or an ungated one, fails.
+//!
+//! ── RULE 7 — THE WALL §2D ASKED FOR, AND EXACTLY WHAT IT CAN SEE ─────────────────────────────
+//!
+//! §2D: *"`world/` is immutable, streamed from `packages/map-assets`, cacheable, never persisted.
+//! `data/` is mutable, undoable, CRDT-synced, persisted. They share the spatial index and nothing
+//! else. Do not let a `world/` type gain a `dirty` flag or a `data/` type gain a chunk id."*
+//!
+//! The literal sentence cannot be gated. A `dirty` flag is a struct **field** — a bare identifier
+//! inside a block with no keyword in front of it — and rule 2's module note already explains why
+//! a line matcher cannot see those. A matcher for the *word* `dirty` under `world/` would fire on
+//! prose and get suppressed, and a rule nobody is stopped by is not a rule.
+//!
+//! What can be gated exactly is the **import wall**, and it is not a weaker statement than it
+//! looks. A `world/` type cannot acquire undo, persistence or CRDT state without naming either
+//! `crate::data` or `yrs` — those are the only two places in this crate where a value becomes
+//! authored content that survives a reload. A `data/` type cannot acquire a chunk id, a tile
+//! coordinate, an LOD level or a residency handle without naming one of the nine sibling modules,
+//! because that is where every one of those types is declared. So:
+//!
+//! * `data/**` may name `crate::data` and nothing else in the crate, and may not name
+//!   `website_graphics_engine` at all;
+//! * `world/**` may not name `crate::data` and may not name `yrs::`.
+//!
+//! Both sides read **zero** today, and zero is what makes the anti-vacuity guard load-bearing
+//! here rather than decorative: "no file under `data/` names a world module" and "there is no
+//! `data/` any more" are the same sentence to a matcher. So both roots are counted, both counts
+//! are printed, and an empty `data/` or an empty `world/` is a hard FAIL, not a clean wall.
+//!
+//! Two things rule 7 deliberately does **not** claim:
+//!
+//! * It does not catch a hand-rolled `pub dirty: bool` on a world struct that imports nothing.
+//!   It catches that flag the moment anything tries to persist it, which is the only point at
+//!   which it stops being a local scratch bool and starts being authored content.
+//! * The compiler already enforces half of this under a narrow feature build —
+//!   `cargo build -p website-map-engine --no-default-features --features store` compiles `data/`
+//!   with `world`, `io`, `streaming`, `spatial`, `overlay` and `frame` all absent from the crate.
+//!   It does **not** enforce it under `--all-features`, which is the build everything else in CI
+//!   runs, and `world/ -> data/` it never enforces at all. That gap is the gate's actual subject.
 //!
 //! ── RULE 3a AND WHY IT IS A FILE, NOT A DIRECTORY ────────────────────────────────────────────
 //!
@@ -135,7 +196,7 @@
 //! is named `verify-engine-layers`, so `cargo xtask ci verify-engine-layers` resolves, the same
 //! way `verify-no-node` aliases `verify no-node`.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use tbd_gate::scan::{self, Hit};
@@ -207,6 +268,80 @@ const RULE3B_PIN: &[(&str, usize, &str)] = &[
 const DECL_RE: &str =
     r"\b(struct|enum|trait|type|fn|const|static|mod)\s+\w*(terrain|symbology|mission|orbat|arma)";
 
+/// The authored document's tree — rules 4 and 7's `data` side.
+const DATA_REL: &str = "apps/website/map-engine/src/data";
+/// The static world's tree — rule 7's `world` side.
+const WORLD_REL: &str = "apps/website/map-engine/src/world";
+/// The authored mission the server links on its own — rule 4's root.
+const SCENARIO_REL: &str = "apps/website/map-engine/src/data/scenario";
+
+// ── RULES 4 AND 7'S MATCHERS ─────────────────────────────────────────────────────────────────
+//
+// All three spell "outside this tree" as the nine top-level modules that are not the tree's own,
+// plus the renderer crate. That is the whole of it written out, because `website-map-engine` has
+// exactly ten top-level modules and an enumeration is cheaper to read — and impossible to widen
+// by accident — than a negation would be. `\b` after each group is what keeps a future
+// `crate::io_util` or `crate::worldgen` from being caught by its prefix rather than by its name.
+//
+// A raw string processes no escapes, so these stay one line each: a `\` continuation inside
+// `r"…"` would put a literal backslash and the next line's indentation into the pattern.
+//
+// ── THE `super::` ARM, AND THE ONE NAME IT CANNOT COVER ──────────────────────────────────────
+//
+// `crate::streaming::x` is not the only way to spell an escape. `use super::super::super::
+// streaming::x;` reaches the same module and a `crate::`-anchored matcher never sees it, which
+// would leave every rule below with a documented one-line bypass. How many `super`s it takes to
+// escape depends on the file's depth, and file depth is not module depth in this repo —
+// `#[path = "tests/cases_1.rs"] mod tests;` is used throughout — so a depth calculation would be
+// unsound, and an unsound gate rule is worse than none.
+//
+// What IS sound is the destination. A `super::` chain of any length that lands on a name which
+// does not exist inside the scanned tree has escaped it, whatever the depth. Every top-level
+// module name was checked against the two trees for collisions; exactly one exists —
+// `data/scenario/compiler/flatten/diagnostics.rs` — so `diagnostics` is the single name left out
+// of the `super::` arm, and `super::diagnostics` from inside `flatten/` stays legal because it
+// is. The `crate::` arm still covers `crate::diagnostics`.
+//
+// The three patterns are written out rather than composed from shared fragments: `concat!` takes
+// literals and not `const` idents, and a `format!` would make them runtime `String`s built in a
+// gate whose whole point is that its matchers are constants a reviewer can read.
+
+/// Rule 4's matcher — everything outside `data/scenario`: the nine sibling modules, the renderer,
+/// the document store, and the `super::` spelling of each. `\b` after `data::store` is what keeps
+/// a hypothetical `data::stored_rows` from matching on the prefix.
+const RULE4_RE: &str = r"crate::(camera|diagnostics|doll|frame|io|overlay|spatial|streaming|world|data::store)\b|website_graphics_engine|\bsuper::(super::)*(store|camera|doll|frame|io|overlay|spatial|streaming|world)\b";
+
+/// Rule 7's `data` side — the authored document may name `crate::data` and nothing else.
+const RULE7_DATA_RE: &str = r"crate::(camera|diagnostics|doll|frame|io|overlay|spatial|streaming|world)\b|website_graphics_engine|\bsuper::(super::)*(camera|doll|frame|io|overlay|spatial|streaming|world)\b";
+
+/// Rule 7's `world` side — the static world may name neither the document nor the CRDT crate.
+///
+/// `yrs::` and not `\byrs\b`: the bare word would match prose ("3 yrs"), and a matcher that fires
+/// on prose gets suppressed. Every real shape is a path — `use yrs::Doc`, `-> yrs::TransactionMut`,
+/// `yrs::Transact::transact` — so the `::` is free precision, not a loophole.
+const RULE7_WORLD_RE: &str = r"crate::data\b|\byrs::|\bsuper::(super::)*data\b";
+
+/// Rule 4's pinned residue — file, exact count, and why it does not reach the `website-api` build.
+///
+/// Read the module docs before adding a row. Both entries are `#[cfg(feature = "store")]` test
+/// code, and `website-api` links the `scenario` feature alone, so neither is compiled by the build
+/// this rule protects. An *ungated* import of the store from `data/scenario/` would satisfy this
+/// pin's count and still be wrong — which is why the pin carries the reason and not just a number.
+const RULE4_PIN: &[(&str, usize, &str)] = &[
+    (
+        "apps/website/map-engine/src/data/scenario/compiler/flatten/tests/mod.rs",
+        1,
+        "cfg(feature = \"store\") — vehicles_from_writer_json_roundtrip builds a real \
+         MissionDocCore and flattens it; website-api compiles neither the cfg nor the test",
+    ),
+    (
+        "apps/website/map-engine/src/data/scenario/compiler/payload/tests/cases_1.rs",
+        1,
+        "cfg(feature = \"store\") — briefing_prose_round_trips_through_the_document_core, \
+         the same pairing from the payload side",
+    ),
+];
+
 const RULE1_HEAD: &str =
     "==> engine-layers rule 1 — apps/website/graphics-engine must not import website_map_engine";
 const RULE2_HEAD: &str =
@@ -215,6 +350,10 @@ const RULE3A_HEAD: &str = "==> engine-layers rule 3a — only the enumerated pac
      name website_graphics_engine::frame under apps/website/map-engine/src";
 const RULE3B_HEAD: &str = "==> engine-layers rule 3b — no GPU-resource module of \
      website-graphics-engine named under apps/website/map-engine/src";
+const RULE4_HEAD: &str = "==> engine-layers rule 4 — apps/website/map-engine/src/data/scenario \
+     imports nothing outside itself";
+const RULE7_HEAD: &str = "==> engine-layers rule 7 — the static world and the authored document \
+     share nothing under apps/website/map-engine/src";
 
 const RULE1_TAIL: &[&str] = &[
     "      The arrow runs map-engine -> graphics-engine and only that way. Compute it in",
@@ -235,6 +374,16 @@ const RULE3B_TAIL: &[&str] = &[
     "      device / pipeline / shaders / text::gpu / r#loop create and own GPU resources, and",
     "      that is graphics-engine's job — map-engine receives already-built handles. Relocate",
     "      the construction; do not add a row to RULE3B_PIN (ENGINE_SPLIT_PROGRAM.md §5 rule 3b).",
+];
+const RULE4_TAIL: &[&str] = &[
+    "      website-api links this crate at the `scenario` feature alone — that is why its tree",
+    "      carries no wgpu, png, rkyv or flate2. One import here drags a whole tier into an HTTP",
+    "      server. Pass the value in as an argument (ENGINE_SPLIT_PROGRAM.md §5 rule 4).",
+];
+const RULE7_TAIL: &[&str] = &[
+    "      world/ is streamed, immutable and never persisted; data/ is authored, undoable and",
+    "      persisted. They share the spatial index and nothing else — a chunk id in data/ or a",
+    "      document handle in world/ fuses them back together (ENGINE_SPLIT_PROGRAM.md §2D).",
 ];
 const PROBE_FAIL: &[&str] = &[
     "FAIL: matcher self-probe returned no match over a subject it must match.",
@@ -345,6 +494,63 @@ fn against_pin(
     (findings, bad)
 }
 
+/// The subset of `files` sitting under one repo-relative directory.
+///
+/// [`Path::starts_with`] compares whole components, so `src/data` does not capture a sibling
+/// `src/database` — the same property the `\b` gives the matchers, applied to the walk.
+fn under(repo_root: &Path, files: &[PathBuf], rel: &str) -> Vec<PathBuf> {
+    let root = repo_root.join(rel);
+    files
+        .iter()
+        .filter(|p| p.starts_with(&root))
+        .cloned()
+        .collect()
+}
+
+/// Compile a matcher and prove it over subjects whose answers are known, before it judges
+/// anything.
+///
+/// Both lists are load-bearing and the second one more than the first. A matcher that fails to
+/// fire is a gate that passes vacuously; a matcher that fires on the spelling every call site is
+/// *supposed* to use is a rule nobody can satisfy, and an unsatisfiable rule gets deleted. Rules
+/// 1, 2, 3a and 3b spell their probes out inline because they predate this helper and their
+/// refusal strings differ; the three added with rules 4 and 7 share one shape, so they share one
+/// function rather than three more copies of the same nine-line match.
+fn probed(
+    o: &mut Vec<String>,
+    what: &str,
+    re: &str,
+    must: &[&str],
+    must_not: &[&str],
+) -> Result<Pattern, (u8, Vec<String>)> {
+    let p = match Pattern::regex(re) {
+        Ok(p) => p,
+        Err(e) => {
+            let cause = NotRun::ToolError {
+                tool: "regex".into(),
+                status: 2,
+                stderr: e.to_string(),
+            };
+            return Err(refuse(o, what, cause));
+        }
+    };
+    for (subject, want) in must
+        .iter()
+        .map(|s| (s, true))
+        .chain(must_not.iter().map(|s| (s, false)))
+    {
+        match gate::probe_str(&p, subject) {
+            Ok(got) if got == want => {}
+            Ok(_) => {
+                say(o, PROBE_FAIL);
+                return Err((1, std::mem::take(o)));
+            }
+            Err(cause) => return Err(refuse(o, what, cause)),
+        }
+    }
+    Ok(p)
+}
+
 fn refuse(o: &mut Vec<String>, what: &str, cause: NotRun) -> (u8, Vec<String>) {
     o.push(Verdict::did_not_run(what, Kind::Ban, cause).to_string());
     say(o, &["", "ENGINE-LAYERS: FAIL (did not run)"]);
@@ -451,6 +657,83 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
         Err(cause) => return refuse(&mut o, "engine-layers rule 3b self-probe", cause),
     }
 
+    // Rule 4. The negatives are the ones that matter: `crate::data::scenario` is the spelling
+    // every legitimate line in this tree uses, `data::store_of_record` proves the `\b` on the
+    // longest alternative, and `std::io` proves the matcher is anchored on `crate::` and not on
+    // the module name — a rule that banned the standard library's `io` would be deleted by
+    // whoever hit it first.
+    let scenario_iso = match probed(
+        &mut o,
+        "engine-layers rule 4 pattern",
+        RULE4_RE,
+        &[
+            "use crate::data::store::MissionDocCore;",
+            "use crate::streaming::loaders::chunk::WorldChunk;",
+            "    let b = crate::io::archives::codec::to_bytes(&v);",
+            "use website_graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;",
+            "use super::super::super::store::MissionDocCore;",
+        ],
+        &[
+            "use crate::data::scenario::compile::compile_payload;",
+            "use crate::data::store_of_record::Row;",
+            "use std::io::Write;",
+            "use serde_json::Value;",
+            "use super::super::diagnostics::render_authored;",
+        ],
+    ) {
+        Ok(p) => p,
+        Err(r) => return r,
+    };
+
+    // Rule 7, `data` side. `crate::worldgen` is the `\b` pair — a wall that can be walked through
+    // by appending three letters to a module name is not a wall.
+    let data_side = match probed(
+        &mut o,
+        "engine-layers rule 7 data pattern",
+        RULE7_DATA_RE,
+        &[
+            "use crate::world::terrain::dem::grid::DemVectorGrid;",
+            "use crate::streaming::scheduler::state::WorldResidency;",
+            "    let hit = crate::spatial::indexing::picking::pick(qx, qy);",
+            "use website_graphics_engine::draw::instances::QuadInstance;",
+            "use super::super::super::streaming::loaders::chunk::WorldChunk;",
+        ],
+        &[
+            "use crate::data::store::MissionDocCore;",
+            "use crate::data::scenario::compile::terrain_bounds;",
+            "use crate::worldgen::seed::X;",
+            "// the world is streamed; this module only records what was authored",
+            "use super::super::diagnostics::render_authored;",
+        ],
+    ) {
+        Ok(p) => p,
+        Err(r) => return r,
+    };
+
+    // Rule 7, `world` side. `crate::database` and the bare word "yrs" are the two false positives
+    // that would make this arm noise rather than a rule.
+    let world_side = match probed(
+        &mut o,
+        "engine-layers rule 7 world pattern",
+        RULE7_WORLD_RE,
+        &[
+            "use crate::data::store::MissionDocCore;",
+            "    let b = crate::data::scenario::compile::terrain_bounds(&t);",
+            "use yrs::{Doc, Transact};",
+            "fn tx(d: &yrs::Doc) -> yrs::TransactionMut<'_> { d.transact_mut() }",
+            "use super::super::super::data::store::MissionDocCore;",
+        ],
+        &[
+            "use crate::database::pool::Pool;",
+            "// resurveyed 3 yrs after the original DEM pass",
+            "use crate::io::archives::codec::to_bytes;",
+            "use crate::world::terrain::dem::grid::DemVectorGrid;",
+        ],
+    ) {
+        Ok(p) => p,
+        Err(r) => return r,
+    };
+
     let crate_dir = repo_root.join(CRATE_REL);
     let manifest = crate_dir.join("Cargo.toml");
     let src = crate_dir.join("src");
@@ -480,14 +763,29 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
         Err(cause) => return refuse(&mut o, "engine-layers could not walk the map engine", cause),
     };
 
+    // Rules 4 and 7 scan three subtrees of the walk rules 3a/3b already do, rather than walking
+    // the disk three more times. Each is its own anti-vacuity subject below: "no file under
+    // `data/` names a world module" and "there is no `data/` any more" are the same sentence to a
+    // matcher, and only the count tells them apart.
+    let data_files = under(repo_root, &map_sources, DATA_REL);
+    let world_files = under(repo_root, &map_sources, WORLD_REL);
+    let scenario_files = under(repo_root, &map_sources, SCENARIO_REL);
+
     let scanned = format!(
-        "  scanned {} .rs file(s) + {CRATE_REL}/Cargo.toml, {} .rs file(s) under {MAP_CRATE_REL}/src",
+        "  scanned {} .rs file(s) + {CRATE_REL}/Cargo.toml, {} .rs file(s) under \
+         {MAP_CRATE_REL}/src — of those {} under data/ ({} under data/scenario) and {} under world/",
         sources.len(),
-        map_sources.len()
+        map_sources.len(),
+        data_files.len(),
+        scenario_files.len(),
+        world_files.len()
     );
     for (n, root) in [
         (sources.len(), format!("{CRATE_REL}/src")),
         (map_sources.len(), format!("{MAP_CRATE_REL}/src")),
+        (data_files.len(), DATA_REL.to_string()),
+        (world_files.len(), WORLD_REL.to_string()),
+        (scenario_files.len(), SCENARIO_REL.to_string()),
     ] {
         if n == 0 {
             o.push(format!(
@@ -586,16 +884,80 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
         say(&mut o, RULE3B_TAIL);
     }
 
+    // ── rule 4 ───────────────────────────────────────────────────────────────────────────────
+    o.push(RULE4_HEAD.to_string());
+    let iso_hits = match scan::grep_lines(&scenario_iso, &scenario_files) {
+        Ok(hits) => hits,
+        Err(cause) => return refuse(&mut o, "engine-layers rule 4 scan", cause),
+    };
+    let (iso_findings, iso_bad) = against_pin(repo_root, &iso_hits, RULE4_PIN);
+    let iso_total: usize = RULE4_PIN.iter().map(|(_, n, _)| *n).sum();
+    if iso_bad.is_empty() {
+        o.push(format!(
+            "  OK — {iso_total} pinned site(s) in {} file(s), 0 unpinned. Production code reaches \
+             outside data/scenario nowhere; the pinned residue is cfg-gated test code:",
+            RULE4_PIN.len()
+        ));
+        for (file, n, why) in RULE4_PIN {
+            o.push(format!("    {file} ({n}) — {why}"));
+        }
+    } else {
+        o.push("FAIL: the authored mission reaches outside its own tree:".to_string());
+        o.extend(iso_bad.iter().cloned());
+        say(&mut o, RULE4_TAIL);
+    }
+
+    // ── rule 7 ───────────────────────────────────────────────────────────────────────────────
+    //
+    // One rule, two directions, one findings list — a breach in either direction is the same
+    // wall coming down, and reporting it as two rules would let half of it read green.
+    o.push(RULE7_HEAD.to_string());
+    let mut wall: Vec<String> = Vec::new();
+    match scan::grep_lines(&data_side, &data_files) {
+        Ok(hits) => wall.extend(
+            hits.iter()
+                .map(|h| format!("  data/ names the world — {}", rel(repo_root, h))),
+        ),
+        Err(cause) => return refuse(&mut o, "engine-layers rule 7 data scan", cause),
+    }
+    match scan::grep_lines(&world_side, &world_files) {
+        Ok(hits) => wall.extend(
+            hits.iter()
+                .map(|h| format!("  world/ names the document — {}", rel(repo_root, h))),
+        ),
+        Err(cause) => return refuse(&mut o, "engine-layers rule 7 world scan", cause),
+    }
+    if wall.is_empty() {
+        o.push(format!(
+            "  OK — 0 site(s) in both directions: {} .rs file(s) under data/ name no world \
+             module, {} under world/ name neither crate::data nor yrs.",
+            data_files.len(),
+            world_files.len()
+        ));
+    } else {
+        o.push("FAIL: the world/data wall is breached:".to_string());
+        o.extend(wall.iter().cloned());
+        say(&mut o, RULE7_TAIL);
+    }
+
     o.push(scanned);
-    if breaches.is_empty() && nouns.is_empty() && vocab_bad.is_empty() && gpu_bad.is_empty() {
+    if breaches.is_empty()
+        && nouns.is_empty()
+        && vocab_bad.is_empty()
+        && gpu_bad.is_empty()
+        && iso_bad.is_empty()
+        && wall.is_empty()
+    {
         o.push("ENGINE-LAYERS: PASS".to_string());
         return (0, o);
     }
     o.push(format!(
         "ENGINE-LAYERS: FAIL — {} wall breach(es), {} map-noun declaration(s), \
-         {vocab_findings} frame-vocab finding(s), {gpu_findings} GPU-module finding(s)",
+         {vocab_findings} frame-vocab finding(s), {gpu_findings} GPU-module finding(s), \
+         {iso_findings} scenario-isolation finding(s), {} world/data finding(s)",
         breaches.len(),
         nouns.len(),
+        wall.len(),
     ));
     (1, o)
 }
@@ -649,6 +1011,42 @@ pub use website_graphics_engine::r#loop::FrameTarget;
 pub use website_graphics_engine::r#loop::RafPump;
 ";
 
+    /// The authored document, clean: `data/` names `crate::data` and nothing else in the crate.
+    /// The `store -> scenario` line is deliberate — that direction is legal and rule 4 does not
+    /// scan `data/store/`, so a matcher that fired on it would be a false positive on the very
+    /// first file.
+    const MAP_DATA_STORE: &str = "\
+use crate::data::store::{MissionDocCore, SlotSoa};
+let b = crate::data::scenario::compile::terrain_bounds(&terrain);
+";
+    /// The authored mission, clean: `data/scenario/` names only itself.
+    const MAP_SCENARIO: &str = "\
+use crate::data::scenario::ast::entities;
+use crate::data::scenario::validate::{Finding, Severity};
+";
+    /// Rule 4's two pinned sites, one per file, both cfg-gated exactly as the real ones are.
+    const MAP_SCENARIO_FLATTEN_TEST: &str = "\
+#[cfg(feature = \"store\")]
+fn vehicles_from_writer_json_roundtrip() -> serde_json::Value {
+    use crate::data::store::MissionDocCore;
+}
+";
+    const MAP_SCENARIO_PAYLOAD_TEST: &str = "\
+#[cfg(feature = \"store\")]
+#[test]
+fn briefing_prose_round_trips_through_the_document_core() {
+    use crate::data::store::MissionDocCore;
+}
+";
+    /// The static world, clean: it names the world, the format layer and the streamer, and never
+    /// the document. Those three are what a `world/` file legitimately imports.
+    const MAP_WORLD: &str = "\
+use crate::world::terrain::dem::sampling::uint16_to_meters;
+use crate::io::archives::codec::to_bytes;
+use crate::streaming::scheduler::state::WorldResidency;
+use crate::spatial::bvh::traversal::Bvh;
+";
+
     struct Repo(PathBuf);
     impl Repo {
         fn new(name: &str) -> Repo {
@@ -661,6 +1059,19 @@ pub use website_graphics_engine::r#loop::RafPump;
             r.manifest(MANIFEST);
             r.map("frame/mod.rs", MAP_FRAME_MOD);
             r.map("frame/pump.rs", MAP_FRAME_PUMP);
+            // Rules 4 and 7's roots. They are seeded on every fixture, not only the tests that
+            // exercise them, because an absent root is a hard FAIL — which is the point.
+            r.map("data/store/rows/merge.rs", MAP_DATA_STORE);
+            r.map("data/scenario/compiler/flatten/mod.rs", MAP_SCENARIO);
+            r.map(
+                "data/scenario/compiler/flatten/tests/mod.rs",
+                MAP_SCENARIO_FLATTEN_TEST,
+            );
+            r.map(
+                "data/scenario/compiler/payload/tests/cases_1.rs",
+                MAP_SCENARIO_PAYLOAD_TEST,
+            );
+            r.map("world/terrain/dem/grid.rs", MAP_WORLD);
             r
         }
         /// Write a file under the map engine — rule 3b's root.
@@ -706,11 +1117,17 @@ pub use website_graphics_engine::r#loop::RafPump;
                 RULE2_HEAD,
                 RULE3A_HEAD,
                 RULE3B_HEAD,
+                RULE4_HEAD,
+                RULE7_HEAD,
                 "  OK (none)",
                 "  OK — 8 pinned site(s) in 1 file(s), 0 unpinned.",
                 "  OK — 5 pinned site(s), 0 unpinned.",
+                "  OK — 2 pinned site(s) in 2 file(s), 0 unpinned.",
+                "  OK — 0 site(s) in both directions: 4 .rs file(s) under data/ name no world \
+                 module, 1 under world/ name neither crate::data nor yrs.",
                 "  scanned 1 .rs file(s) + apps/website/graphics-engine/Cargo.toml, \
-                 2 .rs file(s) under apps/website/map-engine/src",
+                 7 .rs file(s) under apps/website/map-engine/src — of those 4 under data/ \
+                 (3 under data/scenario) and 1 under world/",
                 "ENGINE-LAYERS: PASS",
             ],
         );
@@ -729,7 +1146,8 @@ pub use website_graphics_engine::r#loop::RafPump;
                 "  apps/website/graphics-engine/src/draw/bad.rs:1:use website_map_engine::x;",
                 RULE1_TAIL[0],
                 "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), \
-                 0 frame-vocab finding(s), 0 GPU-module finding(s)",
+                 0 frame-vocab finding(s), 0 GPU-module finding(s), \
+                 0 scenario-isolation finding(s), 0 world/data finding(s)",
             ],
         );
     }
@@ -747,7 +1165,8 @@ pub use website_graphics_engine::r#loop::RafPump;
             &[
                 "  apps/website/graphics-engine/Cargo.toml:6:me = { package = \"website-map-engine\" }",
                 "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), \
-                 0 frame-vocab finding(s), 0 GPU-module finding(s)",
+                 0 frame-vocab finding(s), 0 GPU-module finding(s), \
+                 0 scenario-isolation finding(s), 0 world/data finding(s)",
             ],
         );
         r.manifest(&format!(
@@ -772,7 +1191,8 @@ pub use website_graphics_engine::r#loop::RafPump;
                 "  apps/website/graphics-engine/src/draw/bad.rs:2:pub fn pack_mission() {}",
                 RULE2_TAIL[0],
                 "ENGINE-LAYERS: FAIL — 0 wall breach(es), 2 map-noun declaration(s), \
-                 0 frame-vocab finding(s), 0 GPU-module finding(s)",
+                 0 frame-vocab finding(s), 0 GPU-module finding(s), \
+                 0 scenario-isolation finding(s), 0 world/data finding(s)",
             ],
         );
     }
@@ -835,7 +1255,7 @@ pub use website_graphics_engine::r#loop::RafPump;
 
         // Rule 3b's root has the same hole, and it is the one phase 2B reshaped on purpose.
         let r = Repo::new("empty-map");
-        std::fs::remove_dir_all(r.0.join("apps/website/map-engine/src/frame")).unwrap();
+        std::fs::remove_dir_all(r.0.join("apps/website/map-engine/src")).unwrap();
         std::fs::create_dir_all(r.0.join("apps/website/map-engine/src")).unwrap();
         r.expect(
             1,
@@ -844,6 +1264,235 @@ pub use website_graphics_engine::r#loop::RafPump;
                 "ENGINE-LAYERS: FAIL (no inputs)",
             ],
         );
+    }
+
+    /// RULE 7'S ANTI-VACUITY CASE, and the reason the rule prints two counts.
+    ///
+    /// Rule 7 is the one rule in this gate whose green state is **zero sites**, which makes it the
+    /// one most able to go vacuously green: a matcher that finds nothing over a tree that is not
+    /// there reports exactly what a clean wall reports. Phase 2 moved `data/` and `world/` into
+    /// existence and phase 3 moves more code into them, so "the directory is gone" is a live
+    /// outcome, not a hypothetical. Each half is removed separately — a combined check would pass
+    /// if either guard existed.
+    #[test]
+    fn an_absent_half_of_the_wall_is_not_a_clean_wall() {
+        for (name, dir) in [
+            ("no-data", "apps/website/map-engine/src/data"),
+            ("no-world", "apps/website/map-engine/src/world"),
+        ] {
+            let r = Repo::new(name);
+            std::fs::remove_dir_all(r.0.join(dir)).unwrap();
+            let want = format!("FAIL: engine-layers walked 0 .rs file(s) under {dir}");
+            let all = r.expect(1, &[want.as_str(), "ENGINE-LAYERS: FAIL (no inputs)"]);
+            assert!(
+                !all.contains("ENGINE-LAYERS: PASS"),
+                "a missing {dir} must never read as a clean wall:\n{all}"
+            );
+        }
+
+        // And the scenario root on its own: rule 4's pin catches a vanished *file*, but a
+        // vanished *tree* has to be caught by the count, because an empty walk finds no hits to
+        // group and the pin's own arm would then report two stale rows instead of "no inputs".
+        let r = Repo::new("no-scenario");
+        std::fs::remove_dir_all(r.0.join("apps/website/map-engine/src/data/scenario")).unwrap();
+        r.expect(
+            1,
+            &[
+                "FAIL: engine-layers walked 0 .rs file(s) under \
+                 apps/website/map-engine/src/data/scenario",
+                "ENGINE-LAYERS: FAIL (no inputs)",
+            ],
+        );
+    }
+
+    /// RULE 4, RED — the authored mission importing the document store outside a `cfg`, and
+    /// importing the streaming tier, which is the import that would actually cost the API build.
+    #[test]
+    fn the_scenario_tree_reaching_outside_itself_fails() {
+        let r = Repo::new("rule4-new");
+        r.map(
+            "data/scenario/compiler/flatten/terrain.rs",
+            "use crate::streaming::loaders::chunk::WorldChunk;\n",
+        );
+        r.expect(
+            1,
+            &[
+                "FAIL: the authored mission reaches outside its own tree:",
+                "  unpinned file — 1 site(s):",
+                "apps/website/map-engine/src/data/scenario/compiler/flatten/terrain.rs:1:\
+                 use crate::streaming::loaders::chunk::WorldChunk;",
+                RULE4_TAIL[0],
+                "1 scenario-isolation finding(s)",
+            ],
+        );
+    }
+
+    /// RULE 4, THE RATCHET — the cfg-gated residue may not grow, shrink, or move house unseen.
+    #[test]
+    fn the_rule_4_pin_is_a_ratchet_in_both_directions() {
+        let r = Repo::new("rule4-grow");
+        r.map(
+            "data/scenario/compiler/flatten/tests/mod.rs",
+            &format!("{MAP_SCENARIO_FLATTEN_TEST}use crate::data::store::SlotSoa;\n"),
+        );
+        r.expect(
+            1,
+            &[
+                "apps/website/map-engine/src/data/scenario/compiler/flatten/tests/mod.rs: \
+                 pinned at 1 site(s), found 2",
+                "1 scenario-isolation finding(s)",
+            ],
+        );
+
+        let r = Repo::new("rule4-shrink");
+        r.map(
+            "data/scenario/compiler/payload/tests/cases_1.rs",
+            "// the pairing is tested from the store side now\n",
+        );
+        r.expect(
+            1,
+            &[
+                "apps/website/map-engine/src/data/scenario/compiler/payload/tests/cases_1.rs: \
+                 pinned at 1 site(s), found 0 — the pin is stale, delete the row.",
+                "1 scenario-isolation finding(s)",
+            ],
+        );
+    }
+
+    /// RULE 4's matcher, one line at a time. The `ok` list is the whole point: `data/scenario`
+    /// names itself on nearly every line it has, and `std::io` is one keystroke from the banned
+    /// `crate::io`.
+    #[test]
+    fn rule_4_matches_only_what_is_outside_the_scenario_tree() {
+        let p = Pattern::regex(RULE4_RE).unwrap();
+        for bad in [
+            "use crate::data::store::MissionDocCore;",
+            "use crate::streaming::loaders::chunk::WorldChunk;",
+            "use crate::world::terrain::dem::grid::DemVectorGrid;",
+            "use crate::io::archives::codec::to_bytes;",
+            "use crate::spatial::bvh::traversal::Bvh;",
+            "use crate::overlay::lanes::LaneRole;",
+            "use crate::frame::EngineHandle;",
+            "use crate::camera::orbit::Orbit;",
+            "use crate::diagnostics::bench::Sample;",
+            "use crate::doll::pose::Pose;",
+            "use website_graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;",
+            // The `super::` chain, at three depths — the bypass a `crate::`-anchored matcher
+            // would leave open. Depth is irrelevant to the match; the destination is what tells.
+            "use super::store::MissionDocCore;",
+            "use super::super::super::store::MissionDocCore;",
+            "use super::super::super::super::streaming::loaders::chunk::WorldChunk;",
+            "    let m = super::super::io::archives::codec::to_bytes(&v);",
+        ] {
+            assert!(p.is_match(bad), "should fail the gate: {bad}");
+        }
+        for ok in [
+            "use crate::data::scenario::ast::entities;",
+            "use crate::data::scenario::compile::terrain_bounds;",
+            "use crate::data::store_of_record::Row;",
+            "use std::io::Write;",
+            "use serde_json::Value;",
+            "use super::*;",
+            "use super::ast::entities;",
+            // The one collision: `data/scenario/compiler/flatten/diagnostics.rs` exists, so a
+            // `super::` chain landing on that name is in-tree traffic and the arm leaves it out.
+            "use super::super::diagnostics::render_authored;",
+            "pub(super) fn merge_resident_index() {}",
+            "use super::super::io_helpers::read;",
+            "// the streaming tier lives above this one and must stay there",
+        ] {
+            assert!(!p.is_match(ok), "should pass the gate: {ok}");
+        }
+    }
+
+    /// RULE 7, RED, BOTH WAYS — a chunk id reaching `data/` and a document handle reaching
+    /// `world/`, in one fixture, because the rule is one wall and half of it standing is not a
+    /// pass.
+    #[test]
+    fn the_world_data_wall_fails_in_either_direction() {
+        let r = Repo::new("rule7");
+        r.map(
+            "data/store/rows/chunked.rs",
+            "use crate::streaming::scheduler::chunk_math::Bbox;\n",
+        );
+        r.map(
+            "world/terrain/dem/edited.rs",
+            "use yrs::Doc;\nlet t = crate::data::store::MissionDocCore::new();\n",
+        );
+        r.expect(
+            1,
+            &[
+                "FAIL: the world/data wall is breached:",
+                "  data/ names the world — apps/website/map-engine/src/data/store/rows/\
+                 chunked.rs:1:use crate::streaming::scheduler::chunk_math::Bbox;",
+                "  world/ names the document — apps/website/map-engine/src/world/terrain/dem/\
+                 edited.rs:1:use yrs::Doc;",
+                "  world/ names the document — apps/website/map-engine/src/world/terrain/dem/\
+                 edited.rs:2:let t = crate::data::store::MissionDocCore::new();",
+                RULE7_TAIL[0],
+                "3 world/data finding(s)",
+            ],
+        );
+    }
+
+    /// RULE 7's two matchers, one line at a time.
+    ///
+    /// The `ok` lists carry the three false positives that would each, on their own, make the
+    /// rule unusable: `crate::worldgen` and `crate::database` are one suffix away from a hit, and
+    /// "3 yrs" is the English word the CRDT crate is unfortunately spelled as.
+    #[test]
+    fn rule_7_matches_the_wall_and_not_the_legal_traffic() {
+        let data = Pattern::regex(RULE7_DATA_RE).unwrap();
+        for bad in [
+            "use crate::world::terrain::dem::grid::DemVectorGrid;",
+            "use crate::streaming::scheduler::state::WorldResidency;",
+            "use crate::spatial::indexing::picking::pick;",
+            "use crate::io::containers::header::ContainerHeader;",
+            "use crate::overlay::lod::class_visible;",
+            "use crate::frame::DrawPayload;",
+            "    let c = crate::camera::ortho::Ortho::default();",
+            "use website_graphics_engine::draw::instances::QuadInstance;",
+            "use super::super::super::streaming::loaders::chunk::WorldChunk;",
+            "use super::world::terrain::dem::grid::DemVectorGrid;",
+        ] {
+            assert!(data.is_match(bad), "should fail the gate: {bad}");
+        }
+        for ok in [
+            "use crate::data::store::MissionDocCore;",
+            "use crate::data::scenario::compile::terrain_bounds;",
+            "use crate::worldgen::seed::X;",
+            "use std::io::Write;",
+            "use super::super::store::MissionDocCore;",
+            "use super::super::diagnostics::render_authored;",
+            "pub struct SlotSoa { pub x: Vec<f64>, pub y: Vec<f64> }",
+            "// authored positions are world-space metres; that is not a chunk id",
+        ] {
+            assert!(!data.is_match(ok), "should pass the gate: {ok}");
+        }
+
+        let world = Pattern::regex(RULE7_WORLD_RE).unwrap();
+        for bad in [
+            "use crate::data::store::MissionDocCore;",
+            "use crate::data::scenario::flatten::MissionMeta;",
+            "    let b = crate::data::store::operations::attrs::slot_z(&d);",
+            "use yrs::{Doc, Transact};",
+            "fn tx(d: &yrs::Doc) -> yrs::TransactionMut<'_> { d.transact_mut() }",
+            "use super::super::super::super::data::store::MissionDocCore;",
+        ] {
+            assert!(world.is_match(bad), "should fail the gate: {bad}");
+        }
+        for ok in [
+            "use crate::database::pool::Pool;",
+            "// resurveyed 3 yrs after the original DEM pass",
+            "use crate::io::archives::codec::to_bytes;",
+            "use crate::world::terrain::dem::grid::DemVectorGrid;",
+            "use crate::streaming::loaders::fetch::fetch_bytes;",
+            "use super::super::dem::grid::DemVectorGrid;",
+            "use super::super::database_of_record::Row;",
+            "pub struct DemVectorGrid { pub cells: Vec<u16> }",
+        ] {
+            assert!(!world.is_match(ok), "should pass the gate: {ok}");
+        }
     }
 
     /// RULE 3a, RED — the frame vocabulary imported outside the packet boundary.
