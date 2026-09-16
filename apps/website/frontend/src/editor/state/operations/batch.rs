@@ -7,6 +7,7 @@
 
 use super::context::OPS_CTX;
 use super::{entity, transform};
+use website_map_engine::editing::tools::placement::AlignEdge;
 
 /// Run `f` inside one undo group labelled `label` (the label is for call-site intent; yrs stack items carry no per-item meta here).
 pub fn with_batch<F, R>(label: &str, f: F) -> R
@@ -64,7 +65,7 @@ pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
 }
 
 /// Facade wrapper — align the selection as one group.
-pub fn align_selection(edge: crate::editor::tools::place_helpers::AlignEdge) -> bool {
+pub fn align_selection(edge: AlignEdge) -> bool {
     with_batch("align", || transform::align_selection(edge))
 }
 

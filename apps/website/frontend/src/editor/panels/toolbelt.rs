@@ -23,6 +23,7 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 use website_map_engine::camera::ortho::state::OrthoCamera;
+use website_map_engine::editing::tools::line_of_sight::capture::LosMode;
 
 use crate::editor::layout::{HOVER_FILL, TOGGLED_PLATE};
 use crate::v2::core::ui::{cn, MaterialIcon};
@@ -428,7 +429,7 @@ pub fn ModeToolbar(
     /// T-644 — the LoS sub-mode (Ray ⇆ Viewshed). Read here to reflect the active sub-mode in the LoS
     /// button's title/label and toggled by a re-click of the LoS button while LoS is already active;
     /// the map pointer commit reads the SAME signal to route a click. Shared with `mission_editor`.
-    los_mode: RwSignal<crate::editor::tools::los_tool::LosMode>,
+    los_mode: RwSignal<LosMode>,
 ) -> impl IntoView {
     use crate::editor::tools::ruler_tool::EditorTool;
     // T-668 — the current mode wears TOGGLED_PLATE (plate + 1px dark top border); a live-but-not-
@@ -937,7 +938,7 @@ pub fn BottomToolbelt(
     let tool_mode = RwSignal::new(crate::editor::tools::ruler_tool::EditorTool::Select);
     // T-644 — the shim owns a local `los_mode` (default Ray) purely so `ModeToolbar` compiles on the
     // compat path; the live mount in `mission_editor` shares the real signal with the pointer commit.
-    let los_mode = RwSignal::new(crate::editor::tools::los_tool::LosMode::default());
+    let los_mode = RwSignal::new(LosMode::default());
     view! {
         <ModeToolbar tool_mode los_mode />
         <StatusBar cursor sel_count obj_count selected_ids sz_bytes />

@@ -1212,12 +1212,15 @@ mod tests {
 mod t778_seam_lifecycle {
     use super::{read_registered_chain, register_ruler_chain, RulerChain, RulerPoint};
     use crate::editor::tools::los_tool::{
-        read_registered_sampler, read_registered_state, read_registered_viewshed,
-        register_los_sampler, register_los_state, register_viewshed_state, LosState, ViewshedState,
+        register_los_sampler, register_los_state, register_viewshed_state,
     };
     use leptos::prelude::*;
     use std::cell::RefCell;
     use std::rc::Rc;
+    use website_map_engine::editing::tools::line_of_sight::capture::{LosState, ViewshedState};
+    use website_map_engine::editing::tools::line_of_sight::host_registry::{
+        read_registered_sampler, read_registered_state, read_registered_viewshed,
+    };
 
     thread_local! {
         /// Every tag that ANSWERED a seam's question, in call order. "Did anything actually happen"

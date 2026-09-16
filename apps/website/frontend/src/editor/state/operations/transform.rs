@@ -4,6 +4,9 @@
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 use crate::editor::state::history as mission_history;
+use website_map_engine::editing::tools::placement::{
+    needs_confirm, AlignEdge, Orient, PatternKind, SpaceAxis,
+};
 
 #[allow(unused_imports)]
 use super::{attrs::*, cargo::*, compositions::*, context::*, entity::*};
@@ -38,7 +41,7 @@ pub fn rotate_selection_to_face(cx: f64, cy: f64, rung: usize) -> bool {
 
 #[cfg(target_arch = "wasm32")]
 fn confirm_bulk(n: usize, verb: &str) -> bool {
-    if !crate::editor::tools::place_helpers::needs_confirm(n) {
+    if !needs_confirm(n) {
         return true;
     }
     let msg = format!("This will {verb} {n} entities. Continue? (Ctrl+Z undoes the whole op.)");
@@ -50,7 +53,7 @@ fn confirm_bulk(n: usize, verb: &str) -> bool {
 /// Confirm for bulk ops that are still N undo steps (loadout apply/remove — no atomic batch yet).
 #[cfg(target_arch = "wasm32")]
 pub(super) fn confirm_bulk_n_step(n: usize, verb: &str) -> bool {
-    if !crate::editor::tools::place_helpers::needs_confirm(n) {
+    if !needs_confirm(n) {
         return true;
     }
     let msg = format!("This will {verb} {n} entities. Continue?");
@@ -60,7 +63,7 @@ pub(super) fn confirm_bulk_n_step(n: usize, verb: &str) -> bool {
 }
 
 /// Apply pattern to selection using the supplied domain data.
-pub fn apply_pattern_to_selection(kind: crate::editor::tools::place_helpers::PatternKind) -> bool {
+pub fn apply_pattern_to_selection(kind: PatternKind) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
@@ -85,7 +88,7 @@ pub fn apply_pattern_to_selection(kind: crate::editor::tools::place_helpers::Pat
 }
 
 /// Align selection using the supplied domain data.
-pub fn align_selection(edge: crate::editor::tools::place_helpers::AlignEdge) -> bool {
+pub fn align_selection(edge: AlignEdge) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
@@ -110,7 +113,7 @@ pub fn align_selection(edge: crate::editor::tools::place_helpers::AlignEdge) -> 
 }
 
 /// Space selection using the supplied domain data.
-pub fn space_selection(axis: crate::editor::tools::place_helpers::SpaceAxis) -> bool {
+pub fn space_selection(axis: SpaceAxis) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
@@ -135,7 +138,7 @@ pub fn space_selection(axis: crate::editor::tools::place_helpers::SpaceAxis) -> 
 }
 
 /// Orient selection using the supplied domain data.
-pub fn orient_selection(cmd: crate::editor::tools::place_helpers::Orient) -> bool {
+pub fn orient_selection(cmd: Orient) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {

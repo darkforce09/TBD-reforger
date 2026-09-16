@@ -409,7 +409,9 @@ pub fn marquee_ids(
     end_px: f64,
     end_py: f64,
 ) -> Vec<String> {
-    website_map_engine::editing::picking::marquee_slot_ids(cam, soa, start_wx, start_wy, end_px, end_py)
+    website_map_engine::editing::picking::marquee_slot_ids(
+        cam, soa, start_wx, start_wy, end_px, end_py,
+    )
 }
 
 /// T-425 — vehicle ids inside the marquee world AABB (same corners as [`marquee_ids`]).

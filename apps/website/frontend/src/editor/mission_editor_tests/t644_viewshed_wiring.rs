@@ -25,9 +25,7 @@ fn editor_live() -> String {
 fn los_mode_signal_is_owned_and_handed_to_the_toolbar() {
     let ed = editor_live();
     assert!(
-        ed.contains(
-            "let los_mode = RwSignal::new(crate::editor::tools::los_tool::LosMode::default())"
-        ),
+        ed.contains("let los_mode = RwSignal::new(LosMode::default())"),
         "T-644: the page must own a real los_mode RwSignal (the LoS sub-mode)"
     );
     assert!(

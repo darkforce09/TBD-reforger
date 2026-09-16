@@ -116,13 +116,13 @@ enum MenuAction {
     // ops moving > 10 entities confirm (`editor_ops::confirm_bulk`). The dispatch bodies are
     // wasm-gated in `run_action` (like Undo/Redo); the enum + descriptor compile natively.
     /// Apply a placement pattern (Circular / Line / Grid / Fill Area).
-    Pattern(crate::editor::tools::place_helpers::PatternKind),
+    Pattern(PatternKind),
     /// Align the selection to a box edge / centre axis.
-    Align(crate::editor::tools::place_helpers::AlignEdge),
+    Align(AlignEdge),
     /// Space the selection equally along an axis.
-    Space(crate::editor::tools::place_helpers::SpaceAxis),
+    Space(SpaceAxis),
     /// Orient the selection (N/E/S/W / face-centre / face-away).
-    Orient(crate::editor::tools::place_helpers::Orient),
+    Orient(Orient),
     /// T-692 — toggle the Controls Hint overlay (the keyboard-shortcut reference). A CHECKED
     /// toggle, not a one-shot command: its state shows in the T-668 checkmark gutter. T-797 F-15 —
     /// it now has ONE home, Help > Keyboard Shortcuts; the earlier View-menu duplicate (a second
@@ -146,7 +146,7 @@ enum MenuAction {
     SnapStep(i32),
 }
 
-use crate::editor::tools::place_helpers::{AlignEdge, Orient, PatternKind, SpaceAxis};
+use website_map_engine::editing::tools::placement::{AlignEdge, Orient, PatternKind, SpaceAxis};
 
 /* ═══════════ T-939.4 — the Arrange rows, as ONE list three surfaces read ══════════════════════
  *

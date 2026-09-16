@@ -1,7 +1,11 @@
-//! T-090.12.5 — the wasm half of the LOS object layer: the closures that reach the live world
-//! occluder (`world_assets::with_occluder`) for the shot verdict and for the viewshed's object
-//! wash, and the rAF-stepped wash itself (started on placement, ticked by `canvas/viewport.rs`,
-//! cancelled with the viewshed). The pure logic lives in [`super::los_world`].
+//! Role: the browser seam between the LoS object layer and the live world occluder.
+//! Position: `editor/tools` in the frontend editor.
+//! Signals & state: one live wash, its generation, the last upload time, and the occluder
+//! residency signature the wash was finished against.
+//! Invariants: every occluder read goes through `with_occluder`, which answers `None` while the
+//! host is taken — and that maps to "not loaded" or a waiting pass, NEVER to clear. The wash's
+//! decisions belong to the engine's object pass; what lives here is the closure that reaches the
+//! occluder, the frame loop that steps the pass, and the texture upload.
 
 use std::cell::{Cell, RefCell};
 
@@ -15,14 +19,20 @@ use website_map_engine::spatial::los::terrain::viewshed::Viewshed;
 use website_map_engine::spatial::los::world::coverage_1::WorldLos;
 use website_map_engine::spatial::los::world::coverage_1::WorldVerdict;
 
-use super::los_tool::{
-    pack_rgba_256, read_registered_sampler, read_registered_viewshed, LosShot,
+use website_map_engine::editing::tools::line_of_sight::capture::LosShot;
+use website_map_engine::editing::tools::line_of_sight::host_registry::{
+    read_registered_sampler, read_registered_viewshed,
+};
+use website_map_engine::editing::tools::line_of_sight::object_verdict::ObjectVerdict;
+use website_map_engine::editing::tools::line_of_sight::object_wash::{
+    encode_viewshed_rgba_merged, ObjectCell, ObjectPass, OBJECT_PASS_BUDGET_MS,
+    OBJECT_UPLOAD_INTERVAL_MS,
+};
+use website_map_engine::editing::tools::line_of_sight::terrain_verdict::{
     EYE_HEIGHT_OBSERVER_M, EYE_HEIGHT_TARGET_M,
 };
-use super::los_world::{
-    encode_viewshed_rgba_merged, map_to_engine, ObjectCell, ObjectPass, ObjectVerdict,
-    OBJECT_PASS_BUDGET_MS, OBJECT_UPLOAD_INTERVAL_MS,
-};
+use website_map_engine::editing::tools::line_of_sight::viewshed_texture::pack_rgba_256;
+use website_map_engine::spatial::los::world::map_to_engine;
 use website_map_engine::streaming::host::with_occluder;
 use website_map_engine::streaming::host::with_occluder_host;
 

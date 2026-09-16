@@ -1,7 +1,7 @@
-//! Role: place helpers tests.
-//! Position: `editor/tools/tests` in the frontend editor adapter.
-//! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
-//! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
+//! Role: goldens for the placement algebra interactive tools speak.
+//! Position: `editing/tools/tests` in the map engine.
+//! Signals & state: explicit point sets built in the test body.
+//! Invariants: patterns, hulls, spacing and orientation answer over world metres, in authored order.
 
 use super::*;
 

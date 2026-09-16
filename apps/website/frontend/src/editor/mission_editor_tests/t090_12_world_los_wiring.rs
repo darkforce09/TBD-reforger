@@ -27,6 +27,13 @@ fn adapter_live() -> String {
     live_code(include_str!("../tools/los_world_wasm.rs"))
 }
 
+/// The engine-side projection the overlay draws from.
+fn projection_live() -> String {
+    live_code(include_str!(
+        "../../../../map-engine/src/editing/tools/line_of_sight/projection.rs"
+    ))
+}
+
 /// (viewshed click → object wash) The same `is_viewshed()` commit arm that places the observer
 /// and uploads the terrain wash starts the object wash right after `place_viewshed`.
 #[test]
@@ -80,24 +87,24 @@ fn leaving_the_viewshed_cancels_the_object_wash_with_the_lane() {
 fn overlay_applies_the_object_verdict_and_formats_the_combined_header() {
     let ov = overlay_live();
     assert!(
-        ov.contains("los_world::apply_objects("),
-        "T-090.12.5: apply_objects on the projected shot"
+        ov.contains("object_verdict::apply_objects("),
+        "apply_objects on the projected shot"
     );
     assert!(
         ov.contains("los_world_wasm::object_verdict(&shot)"),
-        "T-090.12.5: the verdict comes from the live occluder"
+        "the verdict comes from the live occluder"
     );
     assert!(
-        ov.contains("los_world::format_combined("),
-        "T-090.12.5: the header is the combined verdict"
+        ov.contains("object_verdict::format_combined("),
+        "the header is the combined verdict"
     );
     assert!(
-        ov.matches("los_world::styling_of(&shot)").count() >= 3,
-        "T-090.12.5: line, dot and header classes follow the pair"
+        ov.matches("object_verdict::styling_of(&shot)").count() >= 3,
+        "line, dot and header classes follow the pair"
     );
     assert!(
-        ov.contains("objects: super::los_world::ObjectVerdict::NotLoaded"),
-        "T-090.12.5: a shot starts NotLoaded (never fake clear)"
+        projection_live().contains("objects: ObjectVerdict::NotLoaded"),
+        "a shot starts NotLoaded (never fake clear)"
     );
 }
 

@@ -68,3 +68,8 @@ pub mod world;
 #[cfg(test)]
 #[path = "tests/feature_gate_tripwire.rs"]
 mod feature_gate_tripwire;
+
+/// Reduce Rust source to the text a build compiles, for the guards that read this crate's own source.
+#[cfg(test)]
+#[path = "tests/source_scrub.rs"]
+mod source_scrub;

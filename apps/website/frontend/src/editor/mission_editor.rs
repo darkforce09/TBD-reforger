@@ -24,6 +24,9 @@
 #![allow(dead_code)]
 use crate::editor::canvas::boot::boot_progress::BootSegView;
 use leptos::prelude::*;
+use website_map_engine::editing::tools::line_of_sight::capture::{
+    LosMode, LosState, ViewshedState,
+};
 
 // T-934.6 — editor_ops moved to `crate::editor::state::operations`; the alias keeps the dozens of
 // Class-S source-guard needles (`editor_ops::…`) and the page's own prose stable across the move.
@@ -1035,7 +1038,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     // active; the wasm pointer commit reads `get_untracked()` to route a captured LoS click to the
     // ray two-click capture or the one-shot viewshed placement. A plain reactive signal (like
     // `tool_mode`), shared between the toolbar and the pointer handlers — no thread_local. Default Ray.
-    let los_mode = RwSignal::new(crate::editor::tools::los_tool::LosMode::default());
+    let los_mode = RwSignal::new(LosMode::default());
     // T-642 — the ruler's status-bar readout (running total + last-leg) and a repaint tick. The
     // `RulerChain` itself is session-local overlay state held in a leaked `RefCell` in the wasm
     // block below (Decision 4 — NOT the Y.Doc); these two signals are the reactive surface the DOM
@@ -1556,8 +1559,8 @@ pub fn MissionEditorPage() -> impl IntoView {
             // Y.Doc, exactly like the selection set + the ruler chain above), a leaked
             // `Rc<RefCell<LosState>>` shared by the pointer handlers (which mutate it) and the
             // `LosOverlay` (which clones it to project + build the profile).
-            let los: Rc<RefCell<crate::editor::tools::los_tool::LosState>> =
-                Rc::new(RefCell::new(crate::editor::tools::los_tool::LosState::new()));
+            let los: Rc<RefCell<LosState>> =
+                Rc::new(RefCell::new(LosState::new()));
             // Bump the repaint tick on every LoS mutation (click / Esc / tool-switch clear) so the
             // overlay repaints even on a still-pointer click. (No status-bar readout — Decision 2's
             // verdict lives in the inline panel, so unlike the ruler there is no status signal here.)
@@ -1574,8 +1577,8 @@ pub fn MissionEditorPage() -> impl IntoView {
             // without recompute. Registered into `los_tool`'s thread_local (peer of the LoS state) so
             // the overlay/engine bridge reads it; the compute itself runs through the registered DEM
             // sampler set below (the same 8 m grid).
-            let viewshed: Rc<RefCell<crate::editor::tools::los_tool::ViewshedState>> = Rc::new(
-                RefCell::new(crate::editor::tools::los_tool::ViewshedState::new()),
+            let viewshed: Rc<RefCell<ViewshedState>> = Rc::new(
+                RefCell::new(ViewshedState::new()),
             );
             // T-643/T-644 — tool-switch dismissal (Decision 3): switching the tool away from LoS clears
             // BOTH the ray shot AND the viewshed wash (the "second-Esc-equivalent"). One Effect observes
@@ -1616,6 +1619,9 @@ pub fn MissionEditorPage() -> impl IntoView {
             // the overlay can rebuild the terrain profile after a pan. The sampler closes over the
             // SAME 8 m downsampled `dem_grid` the ruler's per-vertex Z read uses (the reachable DEM
             // in the editor) — `los_tool` takes no compile-time dependency on the grid-handle type.
+            // The scheduler's policy is the engine's; its clock, frame pump and log line are this
+            // host's. Installed before any placement can submit a job.
+            crate::editor::tools::viewshed_scheduler::install_scheduler_host();
             crate::editor::tools::los_tool::register_los_state(los.clone());
             // T-644 — hand the leaked viewshed state to `los_tool`'s thread_local (peer of
             // `register_los_state`) so `place_viewshed` can store the computed raster into it and a

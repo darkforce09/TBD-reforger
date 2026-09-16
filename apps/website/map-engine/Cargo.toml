@@ -35,7 +35,12 @@ world = ["bvh", "dep:png", "dep:website-graphics-engine"]
 io = ["world", "scenario", "serde_json/float_roundtrip", "dep:rkyv"]
 streaming = ["io", "dep:flate2"]
 render = ["streaming", "dep:website-graphics-engine"]
-editing = ["store", "world"]
+# The editing tier drives the STREAMED world, not just the static one: the line-of-sight tool's
+# object layer washes a viewshed by testing cells against the world occluder, whose frame convention
+# and traversal live under `spatial/los/world` — which is `streaming`'s. So the honest edge for
+# authored-document editing is "the document plus everything the operator can see", and `streaming`
+# is the tier that names the second half.
+editing = ["store", "world", "streaming"]
 
 [dependencies]
 # The pure renderer this crate was carved out of (T-0xx Phase 1). The arrow points ONE way:

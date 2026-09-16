@@ -18,6 +18,10 @@ use std::rc::Rc;
 use leptos::prelude::*;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
+use website_map_engine::editing::tools::line_of_sight::capture::{
+    LosMode, LosState, ViewshedState,
+};
+use website_map_engine::editing::tools::line_of_sight::viewshed_texture::place_viewshed;
 
 // Everything below comes through `mission_editor`'s re-export hub (the T-934.10/.11 surface), not
 // straight from `render_sync`/`overlays`: the closures moved but the page file stays the one
@@ -60,9 +64,9 @@ pub(crate) struct EditorGestureContext {
     /// T-642 — the persistent ruler polyline (session-local overlay state, NOT the Y.Doc).
     pub(crate) ruler: Rc<RefCell<crate::editor::tools::ruler_tool::RulerChain>>,
     /// T-643 — the LoS two-click capture (peer of the ruler chain).
-    pub(crate) los: Rc<RefCell<crate::editor::tools::los_tool::LosState>>,
+    pub(crate) los: Rc<RefCell<LosState>>,
     /// T-644 — the viewshed observer + raster (the GPU wash lane's session state).
-    pub(crate) viewshed: Rc<RefCell<crate::editor::tools::los_tool::ViewshedState>>,
+    pub(crate) viewshed: Rc<RefCell<ViewshedState>>,
     /// T-802 — hover throttle clock + pickable claim + hysteresis anchor (`Copy`, so a `Cell`).
     pub(crate) hover_state: Rc<Cell<HoverState>>,
     /// T-802 — the hover pick's point sets, cached per `doc_tick`.
@@ -72,7 +76,7 @@ pub(crate) struct EditorGestureContext {
     /// T-642/T-643 — the active editor tool (Select ⇆ Ruler ⇆ LoS).
     pub(crate) tool_mode: RwSignal<crate::editor::tools::ruler_tool::EditorTool>,
     /// T-644 — the LoS sub-mode (Ray ⇆ Viewshed).
-    pub(crate) los_mode: RwSignal<crate::editor::tools::los_tool::LosMode>,
+    pub(crate) los_mode: RwSignal<LosMode>,
     /// T-648 — the snap-grid state (the rotate commit reads the effective rotation rung).
     pub(crate) snap: RwSignal<transform::SnapState>,
     /// T-648/T-795 — the transform-widget variant (the ring hit-test gates on Rotate).
@@ -1679,9 +1683,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                     // when no DEM sampler is registered, and the upload only
                                     // runs when the engine is live — a dead map draws nothing.
                                     viewshed.borrow_mut().place(w[0], w[1], z);
-                                    if let Some(tex) =
-                                        crate::editor::tools::los_tool::place_viewshed(w[0], w[1])
-                                    {
+                                    if let Some(tex) = place_viewshed(w[0], w[1]) {
                                         if let Some(e) = engine.borrow_mut().as_mut() {
                                             let _ = e.viewshed_upload(
                                                 tex.min_x,

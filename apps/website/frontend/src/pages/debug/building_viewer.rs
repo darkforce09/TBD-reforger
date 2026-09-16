@@ -138,7 +138,9 @@ impl ViewFloor {
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 pub mod geom {
     use super::ViewFloor;
-    use crate::editor::tools::los_tool::{pack_rgba_256, ViewshedTexture};
+    use website_map_engine::editing::tools::line_of_sight::viewshed_texture::{
+        pack_rgba_256, ViewshedTexture,
+    };
     use website_map_engine::spatial::los::interior::wash::LevelWash;
     use website_map_engine::spatial::los::terrain::viewshed::Visibility;
     use website_map_engine::world::architecture::blueprint::structure::BuildingBlueprint;

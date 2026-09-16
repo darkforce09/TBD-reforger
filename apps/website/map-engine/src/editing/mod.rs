@@ -7,3 +7,6 @@
 
 /// Join spatial queries to document identifiers under a frozen camera.
 pub mod picking;
+
+/// Headless interactive map tools: their state machines, geometry, and verdicts.
+pub mod tools;

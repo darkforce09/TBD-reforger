@@ -124,9 +124,7 @@ fn marquee_ids_with_vehicles_appends_vehicles_after_slots() {
 
 /// Camera centred on Everon mid-map @ zoom 2 (scale = 4 px/m). Centre px (400,300) → (6400,6400).
 fn mix_test_cam() -> crate::camera::ortho::state::OrthoCamera {
-    let mut cam = crate::camera::ortho::state::OrthoCamera::new(
-        800.0, 600.0, 6400.0, 6400.0, 2.0,
-    );
+    let mut cam = crate::camera::ortho::state::OrthoCamera::new(800.0, 600.0, 6400.0, 6400.0, 2.0);
     cam.set_bounds(0.0, 0.0, 12_800.0, 12_800.0);
     cam
 }
@@ -150,9 +148,9 @@ fn mix_test_soa(rows: &[(&str, f32, f32)]) -> SlotSoa {
 /// exercises the mint-around-authoring branch and the original F4 render invariant at once.
 #[test]
 fn refile_merge_two_link_segments() {
-    use std::collections::HashMap;
     use crate::data::store::place_character_under_side;
     use crate::overlay::symbology::links::squad_links::build_squad_link_segments;
+    use std::collections::HashMap;
 
     let doc = MissionDocCore::new();
     doc.add_editor_layer("lyr", "Layer 1", None);
