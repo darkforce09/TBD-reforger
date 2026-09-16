@@ -253,7 +253,7 @@ fn zero_by_zero_grid_is_empty_not_an_error() {
     assert_eq!(dem.sample_u16(0, 0), None);
 }
 
-#[cfg(feature = "terrain")]
+#[cfg(feature = "world")]
 #[test]
 fn dem_and_png_decode_to_the_same_grid_and_metres() {
     use crate::terrain::dem::png::decode_png_gray16;
@@ -290,7 +290,7 @@ fn dem_and_png_decode_to_the_same_grid_and_metres() {
     }
 }
 
-#[cfg(feature = "terrain")]
+#[cfg(feature = "world")]
 #[test]
 fn everon_range_keeps_the_grid_exact_and_metres_within_f32_rounding() {
     use crate::terrain::dem::sampling::uint16_to_meters;

@@ -21,10 +21,12 @@ serde_json = "1"
 # wasm build is a projection `cargo test` cannot check; `compiled_meta_is_the_row_the_server_compiles_from`
 # runs it against the real captured `GET /missions/:id` golden. The feature is three optional deps
 # (serde / serde_json / thiserror) already in this crate's tree, so it costs the bundle nothing.
-# `blueprint` — building-blueprint structs + 2.5D LOS raycaster for the `/debug/building-viewer`
-# test bench. Standalone feature (serde only, already linked) so the wasm bundle does NOT pull the
-# `world` parser stack (flate2 + serde_json float_roundtrip).
-website-map-engine = { path = "../map-engine", default-features = false, features = ["terrain", "formats"] }
+# T-0xx Phase 2A renamed these: `terrain` -> `world`, `formats` -> `io`. There is no `blueprint`
+# feature and there never was — `architecture/blueprint` (building structs + the LOS raycaster
+# behind `/debug/building-viewer`) rides `io`, which is why this line takes it. `streaming` is
+# deliberately absent: the native build wants the world/io pair without the loader/scheduler stack
+# (flate2), which the wasm32 block below adds.
+website-map-engine = { path = "../map-engine", default-features = false, features = ["world", "io"] }
 gloo-net = "0.6"
 js-sys = "0.3"
 # T-405 — the `<a href>` scheme guard (`url_guard.rs`). Costs the bundle NOTHING: `url` is already
@@ -107,7 +109,10 @@ web-sys = { version = "0.3", features = [
 
 # Rendering and browser asset I/O share the frontend's WebAssembly module.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-website-map-engine = { path = "../map-engine", features = ["render", "streaming"] }
+# `default-features = false` is explicit since T-0xx Phase 2A flipped the crate default to
+# `scenario`. This line was the only one riding the old default; `render` reaches
+# streaming -> io -> world -> bvh transitively, so the resulting feature set is unchanged.
+website-map-engine = { path = "../map-engine", default-features = false, features = ["render", "streaming"] }
 # T-159.17 yrs IDB persist — the React `yrsPersist.ts` parity (DB `tbd-mission-yrs` / store
 # `doc-state` / whole `encode_state()` blob). `idb` is a wasm-first IndexedDB wrapper; its default
 # features pull `tokio` with ONLY `features=["sync"]` (oneshot), which compiles on

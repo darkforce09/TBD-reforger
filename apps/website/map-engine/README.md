@@ -26,10 +26,18 @@ The crate has no dependency on mission-core, Leptos, or mission document types. 
 platform boundary uses canvas, browser fetch, image decoding, timers, and console APIs. Native
 builds expose the geometry, codecs, and state machines without browser execution.
 
-Default features enable `render`, `terrain`, `formats`, and `streaming`. `render` enables
-`streaming`; `streaming` enables `formats`; `formats` enables `terrain`; `terrain` enables `bvh`
-and PNG decoding. This closure keeps archive, geometry, and loader contracts available to their
-consumers. `--no-default-features` retains the basic camera, geometry, and symbol APIs.
+The default feature is `scenario` alone — the headless mission compiler and validator, three
+optional serde crates and nothing else. It is the tier `website-api` links, and it is the only
+tier that pulls no graphics crate, no PNG, no rkyv and no flate2.
+
+Above it the chain is `world` → `io` → `streaming` → `render`: `world` enables `bvh` and PNG
+decoding and links `website-graphics-engine`; `io` adds the rkyv archive formats; `streaming` adds
+the loader/scheduler stack (flate2); `render` adds the GPU frame path. `store` (`scenario` + yrs)
+is the CRDT document layer and `editing` is `store` + `world`. `streaming` is deliberately its own
+axis rather than part of `world`: real consumers take the world/io pair without the scheduler.
+
+Every module in `lib.rs` is gated on the feature it belongs to, so a consumer that asks for one
+tier does not compile the shells of the others.
 
 Wire layouts, numeric precision, lane ordering, fetch concurrency, upload budgets, and cleanup
 ownership are preserved. Production files stay below 500 lines and test files below 1,000.

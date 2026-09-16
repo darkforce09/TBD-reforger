@@ -4,9 +4,9 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 /// Walker.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod walker;
 
 /// Wash.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod wash;

@@ -10,33 +10,33 @@ pub mod codec;
 pub mod models;
 
 /// Version.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod version;
 
 /// Roads.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod roads;
 
 /// Labels.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod labels;
 
 /// Water.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod water;
 
 /// Prefabs.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod prefabs;
 
 /// Forest.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod forest;
 
 /// Blueprints.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod blueprints;
 
 /// Satellite.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod satellite;

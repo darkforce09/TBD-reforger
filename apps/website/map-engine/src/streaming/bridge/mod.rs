@@ -4,7 +4,7 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 /// Preferences.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod preferences;
 
 /// Progress.
@@ -19,5 +19,5 @@ pub mod toggles;
 pub mod statistics;
 
 /// Host preferences.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod host_preferences;

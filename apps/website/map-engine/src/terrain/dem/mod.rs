@@ -10,11 +10,11 @@ pub mod grid;
 pub mod manifest;
 
 /// Png.
-#[cfg(feature = "terrain")]
+#[cfg(feature = "world")]
 pub mod png;
 
 /// Raw.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod raw;
 
 /// Sample.

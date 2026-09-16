@@ -4,16 +4,16 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 /// Archives.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod archives;
 
 /// Containers.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod containers;
 
 /// Density.
 pub mod density;
 
 /// Pod.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod pod;

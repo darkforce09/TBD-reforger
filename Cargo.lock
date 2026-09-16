@@ -8238,6 +8238,7 @@ dependencies = [
  "web-sys",
  "website-graphics-engine",
  "wgpu 29.0.4",
+ "yrs",
 ]
 
 [[package]]

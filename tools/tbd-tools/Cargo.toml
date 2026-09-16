@@ -25,13 +25,13 @@ image-webp = "0.2"
 png = "0.17"
 resvg = { version = "0.45", default-features = false }
 webp = "0.3"
-# `binary` (T-935.2) is named even though `world` already implies it: `world/binary_emit.rs` links
-# `ObjectInstancePod`/`TbdcHeader` directly, so a future narrowing of `world` must not silently
-# take the emitter's types away. It activates nothing new — the lock is unchanged.
+# T-0xx Phase 2A renamed these: `terrain` -> `world`, `formats` -> `io`. There is no `binary`
+# feature and there never was — `ObjectInstancePod` / `TbdcHeader`, which `world/binary_emit.rs`
+# links directly, live behind `io`, so `io` is named here in its own right and not merely implied.
 website-map-engine = { path = "../../apps/website/map-engine", default-features = false, features = [
-    "terrain",
+    "world",
     "streaming",
-    "formats",
+    "io",
 ] }
 futures-util = "0.3"
 regex = "1"

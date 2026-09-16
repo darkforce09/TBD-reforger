@@ -14,7 +14,7 @@ use crate::architecture::blueprint::structure::BuildingStairs;
 use crate::architecture::blueprint::structure::BuildingWall;
 use crate::architecture::blueprint::structure::BuildingWindow;
 
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 impl BuildingBlueprint {
     /// Rebuild the tactical subset from an archived blueprint.
     #[must_use]
@@ -60,13 +60,13 @@ impl BuildingBlueprint {
 }
 
 /// Pair.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub(crate) fn pair(p: &[rkyv::rend::f32_le; 2]) -> [f64; 2] {
     [f64::from(p[0].to_native()), f64::from(p[1].to_native())]
 }
 
 /// Level from archived.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub(crate) fn level_from_archived(
     a: &crate::formats::archives::blueprints::ArchivedBuildingLevel,
 ) -> BuildingLevel {

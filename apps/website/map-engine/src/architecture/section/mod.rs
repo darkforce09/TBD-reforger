@@ -4,9 +4,9 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 /// Cutter.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod cutter;
 
 /// Index.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod index;

@@ -4,29 +4,29 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 /// Model.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod model;
 
 /// Structure.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod structure;
 
 /// Footprint.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod footprint;
 
 /// Archive.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod archive;
 
 /// Attribution 1.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod attribution_1;
 
 /// Attribution 2.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod attribution_2;
 
 /// Geometry.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod geometry;

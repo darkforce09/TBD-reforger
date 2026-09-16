@@ -7,21 +7,21 @@
 pub mod headers;
 
 /// Header.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod header;
 
 /// Tbdc.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod tbdc;
 
 /// Tbde.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod tbde;
 
 /// Tbdb.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod tbdb;
 
 /// Tbds.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod tbds;

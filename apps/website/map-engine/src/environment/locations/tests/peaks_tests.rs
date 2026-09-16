@@ -262,7 +262,7 @@ fn named_label_packs_name_and_value() {
     assert_eq!(specs[1].text, "210");
 }
 
-#[cfg(feature = "terrain")]
+#[cfg(feature = "world")]
 #[test]
 fn everon_peaks_max_above_350() {
     use crate::terrain::dem::png::decode_png_to_meters;

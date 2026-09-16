@@ -10,24 +10,45 @@ description = "Map graphics, spatial computation, terrain formats, and asset str
 [lib]
 crate-type = ["rlib"]
 
+# T-0xx Phase 2A. `terrain` -> `world`, `formats` -> `io`; `scenario` / `store` / `editing` are new
+# and carry the folded `website-mission-core`. The chain direction is unchanged: the on-disk format
+# code depends on the terrain types, not the reverse. `streaming` stays its OWN axis on top of `io`
+# because real consumers (frontend:27, tools/tbd-tools) want the world/io pair without the
+# scheduler. `default` is now `scenario` alone so `website-api` links the compiler and nothing else.
 [features]
-default = ["render", "terrain", "formats", "streaming"]
-render = ["streaming"]
-terrain = ["bvh", "dep:png"]
-formats = ["terrain", "dep:rkyv", "dep:serde", "serde_json/float_roundtrip", "dep:thiserror"]
-streaming = ["formats", "dep:flate2"]
+default = ["scenario"]
+scenario = ["dep:serde", "dep:serde_json", "dep:thiserror"]
+store = ["scenario", "dep:yrs"]
 bvh = []
+# `dep:website-graphics-engine` sits HERE and not on `render` alone. Measured, not guessed: the
+# frontend's NATIVE build (`frontend/Cargo.toml:27`, world+io, no render) calls
+# `renderers::primitives::triangulate::triangulate_simple` from `pages/debug/building_viewer.rs`,
+# and that path IS `website_graphics_engine::draw::triangulate`. The streaming layer needs it too
+# (`core::culling::lod` re-exports `text::scale::REF_ZOOM`, which every `streaming/buffers/*` belt
+# reaches through `symbology/labels/glyph_math`). This is §2C.1 Kind B — POD layout and
+# bit-packing imported directly by the belts that sit next to their data — so the honest edge is
+# "everything above `scenario`". `scenario` is the one tier without it, and `website-api` takes
+# exactly that tier: `cargo tree -p website-api` carries no graphics crate, no png, no rkyv, no
+# flate2. Moving the edge up to `render` instead would have meant rewriting those belts, and a
+# feature rename must not become a code change.
+world = ["bvh", "dep:png", "dep:website-graphics-engine"]
+io = ["world", "scenario", "serde_json/float_roundtrip", "dep:rkyv"]
+streaming = ["io", "dep:flate2"]
+render = ["streaming", "dep:website-graphics-engine"]
+editing = ["store", "world"]
 
 [dependencies]
 # The pure renderer this crate was carved out of (T-0xx Phase 1). The arrow points ONE way:
 # map-engine speaks graphics' frame vocabulary; graphics never learns a map noun.
-website-graphics-engine = { path = "../graphics-engine" }
+website-graphics-engine = { path = "../graphics-engine", optional = true }
 bytemuck = { version = "1", features = ["derive", "min_const_generics"] }
 earcutr = "0.5.0"
 png = { version = "0.17", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true, features = ["preserve_order"] }
 thiserror = { version = "2", optional = true }
+# The CRDT layer behind `store` (folded in from `website-mission-core` at T-0xx Phase 2A).
+yrs = { version = "0.27", optional = true }
 flate2 = { version = "1", optional = true }
 # Validation and endian settings are part of the shared on-disk format.
 rkyv = { version = "0.8.18", optional = true, default-features = false, features = ["std", "bytecheck", "little_endian"] }

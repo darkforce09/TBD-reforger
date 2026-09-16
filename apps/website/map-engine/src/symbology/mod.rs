@@ -7,6 +7,9 @@
 pub mod atlas;
 
 /// Instances.
+// T-0xx Phase 2A: `website-graphics-engine` is optional from `streaming` up, so the belts that
+// name a graphics layout type are gated with it.
+#[cfg(feature = "streaming")]
 pub mod instances;
 
 /// Labels.

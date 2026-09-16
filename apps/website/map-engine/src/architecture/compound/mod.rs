@@ -4,20 +4,20 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 /// Scene.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod scene;
 
 /// Transform.
 pub mod transform;
 
 /// Assembly.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod assembly;
 
 /// Instances.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod instances;
 
 /// Doors.
-#[cfg(feature = "formats")]
+#[cfg(feature = "io")]
 pub mod doors;
