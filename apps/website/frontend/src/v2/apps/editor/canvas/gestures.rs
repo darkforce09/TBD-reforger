@@ -24,10 +24,10 @@ use website_map_engine::editing::tools::line_of_sight::capture::{
 };
 use website_map_engine::editing::tools::line_of_sight::viewshed_texture::place_viewshed;
 
-// Everything below comes through `mission_editor`'s re-export hub (the T-934.10/.11 surface), not
-// straight from `render_sync`/`overlays`: the closures moved but the page file stays the one
-// place those `pub(crate) use` lists are declared, and importing through them keeps the wasm half
-// of that surface load-bearing (an unused re-export there would otherwise start to warn).
+// Everything below comes through `mission_editor`'s re-export hub, not straight from the engine
+// lanes, the hover policy or `overlays`: the page file is the one place those `pub(crate) use`
+// lists are declared, and importing through them keeps the wasm half of that surface load-bearing
+// (an unused re-export there would otherwise start to warn).
 use crate::v2::apps::editor::mission_editor::{
     armed_place, comment_drag_lane_xy, comment_lane_ids, comment_lane_xy, comment_points,
     dragged_comment_points, hover_due, hover_hit, hover_next, hover_suppressed,

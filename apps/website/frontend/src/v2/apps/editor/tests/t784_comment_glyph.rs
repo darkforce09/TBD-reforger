@@ -31,14 +31,14 @@ fn page() -> String {
     src
 }
 
-/// The T-784 glyph block, scrubbed — sliced from the RAW source at the struct anchor, exactly as
-/// [`page`] is. T-934.10 moved the pure belt to `canvas/render_sync.rs`, so the definitions are
-/// read from there; the CALL-form pins below still read `mission_editor.rs`, where the wiring is.
+/// The comment glyph block, scrubbed — sliced from the RAW source at the struct anchor, exactly as
+/// [`page`] is. The lane, its id column and its pick are the map engine's, so the definitions are
+/// read there; the CALL-form pins below still read `mission_editor.rs`, where the wiring is.
 fn glyph_block() -> String {
-    let anchor = format!("pub(crate) struct Comment{}", "Point");
+    let anchor = format!("pub struct Comment{}", "Point");
     let raw = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/render_sync.rs"
+        "/../map-engine/src/editing/lanes/comments.rs"
     ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
@@ -205,7 +205,7 @@ fn mission_history_packs_the_lane_through_this_module() {
     );
     // And the packing really is a projection of the picked list, not a parallel parse.
     let me = glyph_block();
-    let pack = only_body(&me, &format!("pub(crate) fn comment_lane{}", "_xy("));
+    let pack = only_body(&me, &format!("pub fn comment_lane{}", "_xy("));
     assert!(
         pack.contains(&format!("comment{}", "_points(")),
         "T-784: comment_lane_xy must be comment_points packed; got:\n{pack}"

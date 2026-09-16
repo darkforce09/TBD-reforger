@@ -1,7 +1,6 @@
-//! T-934.10 — the Mission Creator canvas nest. `render_sync` (the pure helper belt split out of
-//! `mission_editor.rs`) landed first; `overlays` (the floating overlay/dialog components, T-934.11)
-//! followed; `boot` + `viewport` (the boot machine and the rAF/frame-timing belt, T-934.12) are
-//! Phase B's third child; gestures land in T-934.13.
+//! The Mission Creator canvas nest: everything that binds the map surface to the page — the boot
+//! machine, the viewport and frame-timing belt, the floating overlays, the pointer gestures and
+//! the keydown dispatch, plus the tab-local hover-cursor policy.
 
 pub mod boot;
 // T-934.14 — the window-level keydown dispatch (`attach_editor_hotkeys`), riding the T-934.13
@@ -14,11 +13,13 @@ pub mod commands;
 #[cfg(target_arch = "wasm32")]
 pub mod gestures;
 pub mod overlays;
-pub mod render_sync;
-// T-936.7 — the tactical-graphics belt: ONE document read, drawn AND picked (`render_sync`'s
-// T-780/T-784 shape). Not wasm-gated: everything but the `MissionDocCore` read is pure geometry,
-// and keeping it native-testable is why the parse/pack/pick trio lives in its own file rather than
-// inside the wasm-only gesture and history modules that call it.
+// The hover-cursor policy: tab-local state that dies with the tab, so it stays here while the
+// picks it consults live in the map engine.
+pub mod pointer_hover;
+// T-936.7 — the tactical-graphics belt: ONE document read, drawn AND picked, the shape the engine's
+// connection and comment lanes use. Not wasm-gated: everything but the `MissionDocCore` read is
+// pure geometry, and keeping it native-testable is why the parse/pack/pick trio lives in its own
+// file rather than inside the wasm-only gesture and history modules that call it.
 pub mod gizmo_z;
 pub mod tactical_graphics;
 // The authoring half of the same lane: arm a draw, take and drop vertices, drag an authored vertex,

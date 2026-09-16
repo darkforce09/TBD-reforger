@@ -3,7 +3,10 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-const HIST: &str = include_str!("../../../../../frontend/src/editor/state/history.rs");
+const HIST: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../frontend/src/v2/apps/editor/state/history.rs"
+));
 
 fn only_body(src: &str, sig: &str) -> String {
     let start = src

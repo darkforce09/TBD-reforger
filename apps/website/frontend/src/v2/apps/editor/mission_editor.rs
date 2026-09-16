@@ -47,28 +47,46 @@ use crate::v2::apps::editor::state::persist as yrs_persist;
 #[cfg(target_arch = "wasm32")]
 use website_map_engine::editing::hosted_commands as engine_ops;
 
-// T-934.10 — the pure canvas helper belt (connection/comment/marker lane feeds, the hover state
-// machine, route resolution, the selection universe, the crew-hide SoA filter, the paste anchor)
-// moved to `editor::canvas::render_sync`. Re-exported `pub(crate)` under the SAME names so the
-// page's bare call sites, the `mission_editor::…` paths (`state/history.rs`, the panel test
-// modules) and the evacuated pins' `use super::…` imports all keep their exact spelling. The cfg
-// split mirrors the consumers: nothing in the native non-test build reads these through here.
+// The pure helper belt this page is written against: the connection, comment and marker lane
+// feeds, route resolution, the selection universe and the crew-hide SoA filter all live in the map
+// engine, and the tab-local hover state machine lives in `editor::canvas::pointer_hover`.
+// Re-exported `pub(crate)` under the SAME names so the page's bare call sites, the
+// `mission_editor::…` paths (`state/history.rs`, the panel test modules) and the evacuated pins'
+// `use super::…` imports all keep their exact spelling. The cfg split mirrors the consumers:
+// nothing in the native non-test build reads these through here.
 // (T-934.13: the gesture closures moved to `canvas/gestures.rs` but still consume these through
 // THIS re-export surface — one hub, so the wasm half of this list stays load-bearing.)
 #[cfg(any(test, target_arch = "wasm32"))]
-pub(crate) use crate::v2::apps::editor::canvas::render_sync::{
-    comment_drag_lane_xy, comment_lane_xy, comment_points, connection_lane_verts,
-    connection_segments, dragged_comment_points, hover_cursor_css, hover_due, hover_next,
-    hover_suppressed, marker_lane_fields, pick_comment, pick_connection, plain_paste_anchor,
-    route_availability, route_target, selectable_ids, ConnSegment, HoverState, RouteTarget,
+pub(crate) use crate::v2::apps::editor::canvas::pointer_hover::{
+    hover_cursor_css, hover_due, hover_next, hover_suppressed, HoverState,
+};
+#[cfg(any(test, target_arch = "wasm32"))]
+pub(crate) use website_map_engine::editing::lanes::comments::{
+    comment_drag_lane_xy, comment_lane_xy, comment_points, dragged_comment_points, pick_comment,
     COMMENT_PICK_PX,
+};
+#[cfg(any(test, target_arch = "wasm32"))]
+pub(crate) use website_map_engine::editing::lanes::connections::{
+    connection_lane_verts, connection_segments, pick_connection, ConnSegment,
+};
+#[cfg(any(test, target_arch = "wasm32"))]
+pub(crate) use website_map_engine::editing::lanes::markers::marker_lane_fields;
+#[cfg(any(test, target_arch = "wasm32"))]
+pub(crate) use website_map_engine::editing::routing::{
+    route_availability, route_target, RouteTarget,
+};
+#[cfg(any(test, target_arch = "wasm32"))]
+pub(crate) use website_map_engine::editing::selection_universe::{
+    plain_paste_anchor, selectable_ids,
 };
 // Names only the wasm side consumes (the doc-bound wrappers below + `state/history.rs` + the
 // T-934.13 gesture closures).
 #[cfg(target_arch = "wasm32")]
-pub(crate) use crate::v2::apps::editor::canvas::render_sync::{
-    comment_lane_ids, map_render_slot_soa, CommentPoint, CONN_PICK_PX,
-};
+pub(crate) use website_map_engine::editing::lanes::comments::{comment_lane_ids, CommentPoint};
+#[cfg(target_arch = "wasm32")]
+pub(crate) use website_map_engine::editing::lanes::connections::CONN_PICK_PX;
+#[cfg(target_arch = "wasm32")]
+pub(crate) use website_map_engine::editing::selection_universe::map_render_slot_soa;
 
 // T-934.11 — the floating overlay/dialog components (transform widget + mode hint + snap readout,
 // asset picker, comment editor, Connections panel, conflict dialog) moved to
@@ -80,7 +98,7 @@ pub(crate) use crate::v2::apps::editor::canvas::render_sync::{
 // toolbar-dispatch registry did NOT move: `eden_top_strip` drives it through
 // `crate::v2::apps::editor::mission_editor::…` and it bridges the page to the strip, not to the overlays.
 // (The `read_widget_pivot()` reader moved with the pointer closures — T-934.13 — and reads it
-// through this re-export, like the render_sync belt above.)
+// through this re-export, like the helper belt above.)
 #[cfg(target_arch = "wasm32")]
 pub(crate) use crate::v2::apps::editor::canvas::overlays::{
     read_widget_pivot, register_widget_pivot,
@@ -858,14 +876,14 @@ pub(crate) fn with_editor_toolbar_dispatch(f: impl FnOnce(&EditorToolbarDispatch
     });
 }
 
-/* ═══════ T-934.10 — the pure render-sync helper belt moved to `editor/canvas/render_sync.rs` ════
+/* ═══════ The wasm-side wrappers over the pure helper belt ═══════════════════════════════════════
  *
- * The T-780 connection lane, the T-784/T-796 comment lane + picks, the T-760/T-790 marker lane
- * parse, the T-802 hover state machine, the T-754/wave-129 route resolution, the wave-145
- * selection universe, the T-819 crew-hide SoA filter and the T-743 paste anchor all live there
- * now (re-exported above under their old names). What remains below are the wasm-side wrappers
- * that bind those pure helpers to the live document and DOM — each one reads the installed
- * EDITOR_CONTEXT or `web_sys`, which is the line the split is drawn on.
+ * The connection lane, the comment lane and its picks, the marker lane parse, the route
+ * resolution, the selection universe and the crew-hide SoA filter are all pure functions in the
+ * map engine, and the hover state machine is a pure function in `canvas::pointer_hover`; both are
+ * re-exported above under the names this page calls them by. What remains below are the wrappers
+ * that bind those helpers to the live document and DOM — each one reads the installed
+ * EDITOR_CONTEXT or the browser, which is the line the split is drawn on.
  */
 
 /// The live document's drawable edges: [`connection_segments`] fed from `MissionDocCore` itself.
@@ -3124,15 +3142,22 @@ pub fn MissionEditorPage() -> impl IntoView {
     }
 }
 
-// T-934.10 — names only the evacuated `#[cfg(test)]` pins still reach through `super::…` (their
-// shipping callers moved into `render_sync` with the belt). This `use` lives HERE, at the file's
-// test boundary, because the Class-R scrubber and the keymap census both treat the FIRST literal
-// `#[cfg(test)]` as "everything after this is test fixture" — a test-gated import up top would
-// truncate every scrub of this file to nothing.
+// Names only the evacuated `#[cfg(test)]` pins still reach through `super::…` (their shipping
+// callers sit beside the definitions, in the engine's lanes and in the hover policy). This `use`
+// lives HERE, at the file's test boundary, because the Class-R scrubber and the keymap census both
+// treat the FIRST literal `#[cfg(test)]` as "everything after this is test fixture" — a test-gated
+// import up top would truncate every scrub of this file to nothing.
 #[cfg(test)]
-pub(crate) use crate::v2::apps::editor::canvas::render_sync::{
-    crewed_slot_ids, map_render_keep_indices, CONN_LINE_RGBA, CONN_LINE_SELECTED_RGBA,
+pub(crate) use crate::v2::apps::editor::canvas::pointer_hover::{
     HOVER_CURSOR_PICKABLE, HOVER_CURSOR_PLAIN, HOVER_RELEASE_PX, HOVER_THROTTLE_MS,
+};
+#[cfg(test)]
+pub(crate) use website_map_engine::editing::lanes::connections::{
+    CONN_LINE_RGBA, CONN_LINE_SELECTED_RGBA,
+};
+#[cfg(test)]
+pub(crate) use website_map_engine::editing::selection_universe::{
+    crewed_slot_ids, map_render_keep_indices,
 };
 
 // T-934.12 — same discipline: only `t628_boot_progress` still reaches this constant through

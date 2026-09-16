@@ -21,8 +21,18 @@ pub mod commands;
 /// commit, and run the post-change tail.
 pub mod hosted_commands;
 
+/// The editor-authored overlay lanes: what the map draws from the document, and what a click on
+/// one of them resolves to.
+pub mod lanes;
+
 /// Join spatial queries to document identifiers under a frozen camera.
 pub mod picking;
+
+/// Where a subject id would go if it were clicked, and whether that click would reach anything.
+pub mod routing;
+
+/// The ids a live document holds that a selection may name, and the render-only views of them.
+pub mod selection_universe;
 
 /// The decidable half of local draft persistence: record keys, blob verdicts, merge policy.
 pub mod persist;

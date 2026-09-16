@@ -23,13 +23,13 @@ fn page() -> String {
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
 
-/// The comment glyph block, scrubbed — read from `canvas/render_sync.rs` since T-934.10 moved
-/// the pure belt there (see the T-784 pin's note on why the slice starts from a raw anchor).
+/// The comment glyph block, scrubbed — read from the map engine's comment lane, which owns the
+/// parse (see the T-784 pin's note on why the slice starts from a raw anchor).
 fn glyph_block() -> String {
-    let anchor = format!("pub(crate) struct Comment{}", "Point");
+    let anchor = format!("pub struct Comment{}", "Point");
     let raw = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/render_sync.rs"
+        "/../map-engine/src/editing/lanes/comments.rs"
     ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
@@ -283,8 +283,8 @@ fn every_comment_feed_names_its_rows() {
     // Both columns are projections of `comment_points`, which is also what `pick_comment`
     // hit-tests: drawn, picked and named are one list (the T-784/T-748 rule).
     let me = glyph_block();
-    let ids = only_body(&me, &format!("pub(crate) fn comment_lane{}", "_ids("));
-    let xy = only_body(&me, &format!("pub(crate) fn comment_lane{}", "_xy("));
+    let ids = only_body(&me, &format!("pub fn comment_lane{}", "_ids("));
+    let xy = only_body(&me, &format!("pub fn comment_lane{}", "_xy("));
     let points = format!("comment{}", "_points(");
     assert!(
         ids.contains(&points) && xy.contains(&points),
