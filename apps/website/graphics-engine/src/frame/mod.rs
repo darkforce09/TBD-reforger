@@ -26,6 +26,10 @@ pub mod ids;
 #[cfg(target_arch = "wasm32")]
 pub mod packet;
 
+/// Swapchain acquire, submit and present.
+#[cfg(target_arch = "wasm32")]
+pub mod present;
+
 /// Frame text.
 #[cfg(target_arch = "wasm32")]
 pub mod text;

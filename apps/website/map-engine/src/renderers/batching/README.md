@@ -4,7 +4,6 @@ Draw pipelines, batching, polygon and line composition, glyph atlas layout, and 
 
 ## Contents
 
-- `batch.rs`
 - `encoder.rs`
 - `lanes.rs`
 - `mod.rs`

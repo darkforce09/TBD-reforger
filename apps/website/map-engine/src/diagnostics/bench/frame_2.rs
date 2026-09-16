@@ -3,53 +3,42 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::context::state::PipelineKind;
 use crate::core::context::state::RenderEngine;
 use crate::core::pipeline::draw_order::LaneRole;
-use crate::renderers::batching::batch::BatchPayload;
+use crate::core::pipeline::draw_order::lane_id;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::frame::DrawPayload;
 
 #[wasm_bindgen]
 impl RenderEngine {
     /// Machine-readable engine stats (every performance claim in the verify log is one of these numbers). `upload_ms` is CPU-side enqueue time for the staging→GPU copies; `gpu_frame_ms` is present only when `TIMESTAMP_QUERY` is available and sampled.
     #[must_use]
     pub fn stats(&self) -> String {
+        let stress_lane = lane_id(LaneRole::Stress);
         let stress_count = self
             .batches
             .iter()
-            .filter(|b| {
-                matches!(b.payload.kind(), PipelineKind::QuadInstanced)
-                    && b.role == LaneRole::Stress
-            })
+            .filter(|b| matches!(b.payload, DrawPayload::Quads(_)) && b.lane == stress_lane)
             .count();
         let stress_bytes: u64 = self
             .batches
             .iter()
-            .filter(|b| b.role == LaneRole::Stress)
+            .filter(|b| b.lane == stress_lane)
             .map(|b| match &b.payload {
-                BatchPayload::Instanced { count, .. } => u64::from(*count) * 32,
+                DrawPayload::Quads(i) => u64::from(i.count) * 32,
                 _ => 0,
             })
             .sum();
         let gpu_bytes = stress_bytes + 64 + 32 + 64;
 
-        let satellite = self.batches.iter().find_map(|b| match &b.payload {
-            BatchPayload::Textured(l) if b.role == LaneRole::Satellite => Some(l),
-            _ => None,
-        });
+        // T-0xx Phase 1D: the mode / tile / byte counters left the batch with the texture;
+        // they are `RenderEngine::tex_lanes`, keyed by the same lane the batch carries.
+        let satellite = self.tex_lane(LaneRole::Satellite);
         let basemap_mode = satellite.map_or("none", |l| l.mode.as_str());
         let basemap_tiles = satellite.map_or(0, |l| l.tiles);
-        let basemap_bytes: u64 = self
-            .batches
-            .iter()
-            .filter_map(|b| match &b.payload {
-                BatchPayload::Textured(l)
-                    if matches!(b.role, LaneRole::Satellite | LaneRole::Hillshade) =>
-                {
-                    Some(l.bytes)
-                }
-                _ => None,
-            })
+        let basemap_bytes: u64 = [LaneRole::Satellite, LaneRole::Hillshade]
+            .into_iter()
+            .filter_map(|r| self.tex_lane(r).map(|l| l.bytes))
             .sum();
         let gpu_frame_ms = match &self.timer {
             Some(t) if t.lane.has_sample() => format!("{:.3}", t.last_ms.get()),
@@ -59,18 +48,18 @@ impl RenderEngine {
         let world_building_instances: u32 = self
             .batches
             .iter()
-            .filter(|b| b.role == LaneRole::WorldBuildings)
+            .filter(|b| b.lane == lane_id(LaneRole::WorldBuildings))
             .map(|b| match &b.payload {
-                BatchPayload::BuildingInstanced { count, .. } => *count,
+                DrawPayload::OrientedQuads(i) => i.count,
                 _ => 0,
             })
             .sum();
         let world_building_outline_vertices: u32 = self
             .batches
             .iter()
-            .filter(|b| b.role == LaneRole::WorldBuildingsOutline)
+            .filter(|b| b.lane == lane_id(LaneRole::WorldBuildingsOutline))
             .map(|b| match &b.payload {
-                BatchPayload::Lines(l) => l.count,
+                DrawPayload::Lines(v) => v.vertex_count,
                 _ => 0,
             })
             .sum();
@@ -79,9 +68,9 @@ impl RenderEngine {
             LaneRole::WorldTrees,
             self.batches
                 .iter()
-                .filter(|b| b.role == LaneRole::WorldTrees)
+                .filter(|b| b.lane == lane_id(LaneRole::WorldTrees))
                 .map(|b| match &b.payload {
-                    BatchPayload::IconInstanced { count, .. } => *count,
+                    DrawPayload::Sprites { instances, .. } => instances.count,
                     _ => 0,
                 })
                 .sum(),
@@ -90,9 +79,9 @@ impl RenderEngine {
             LaneRole::WorldProps,
             self.batches
                 .iter()
-                .filter(|b| b.role == LaneRole::WorldProps)
+                .filter(|b| b.lane == lane_id(LaneRole::WorldProps))
                 .map(|b| match &b.payload {
-                    BatchPayload::IconInstanced { count, .. } => *count,
+                    DrawPayload::Sprites { instances, .. } => instances.count,
                     _ => 0,
                 })
                 .sum(),
@@ -101,9 +90,9 @@ impl RenderEngine {
             LaneRole::WorldBadges,
             self.batches
                 .iter()
-                .filter(|b| b.role == LaneRole::WorldBadges)
+                .filter(|b| b.lane == lane_id(LaneRole::WorldBadges))
                 .map(|b| match &b.payload {
-                    BatchPayload::IconInstanced { count, .. } => *count,
+                    DrawPayload::Sprites { instances, .. } => instances.count,
                     _ => 0,
                 })
                 .sum(),
@@ -116,9 +105,9 @@ impl RenderEngine {
             LaneRole::Slots,
             self.batches
                 .iter()
-                .filter(|b| b.role == LaneRole::Slots)
+                .filter(|b| b.lane == lane_id(LaneRole::Slots))
                 .map(|b| match &b.payload {
-                    BatchPayload::IconInstanced { count, .. } => *count,
+                    DrawPayload::Sprites { instances, .. } => instances.count,
                     _ => 0,
                 })
                 .sum(),
@@ -127,9 +116,9 @@ impl RenderEngine {
             LaneRole::SlotDrag,
             self.batches
                 .iter()
-                .filter(|b| b.role == LaneRole::SlotDrag)
+                .filter(|b| b.lane == lane_id(LaneRole::SlotDrag))
                 .map(|b| match &b.payload {
-                    BatchPayload::IconInstanced { count, .. } => *count,
+                    DrawPayload::Sprites { instances, .. } => instances.count,
                     _ => 0,
                 })
                 .sum(),
@@ -138,9 +127,9 @@ impl RenderEngine {
             LaneRole::Clusters,
             self.batches
                 .iter()
-                .filter(|b| b.role == LaneRole::Clusters)
+                .filter(|b| b.lane == lane_id(LaneRole::Clusters))
                 .map(|b| match &b.payload {
-                    BatchPayload::IconInstanced { count, .. } => *count,
+                    DrawPayload::Sprites { instances, .. } => instances.count,
                     _ => 0,
                 })
                 .sum(),
@@ -149,9 +138,9 @@ impl RenderEngine {
             LaneRole::MissionVehicles,
             self.batches
                 .iter()
-                .filter(|b| b.role == LaneRole::MissionVehicles)
+                .filter(|b| b.lane == lane_id(LaneRole::MissionVehicles))
                 .map(|b| match &b.payload {
-                    BatchPayload::IconInstanced { count, .. } => *count,
+                    DrawPayload::Sprites { instances, .. } => instances.count,
                     _ => 0,
                 })
                 .sum(),

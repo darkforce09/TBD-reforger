@@ -33,14 +33,42 @@ pub struct FramePacket<'a> {
     /// Pipelines addressed by [`crate::frame::ids::PipelineId`].
     pub pipelines: &'a [wgpu::RenderPipeline],
 
-    /// Bind groups addressed by [`crate::frame::ids::BindGroupId`].
-    pub bind_groups: &'a [wgpu::BindGroup],
+    /// Bind groups addressed by [`crate::frame::ids::BindGroupId`], as a sparse table.
+    ///
+    /// `None` means the caller has not built that group yet — an atlas whose upload has not
+    /// landed. A batch that names an absent group is skipped, which is the same picture the
+    /// caller's own `continue`-on-missing-bind-group produced before the packet existed.
+    /// This is a RESOURCE test, not a lane test: the encoder learns that a group is missing,
+    /// never which lane wanted it.
+    pub bind_groups: &'a [Option<wgpu::BindGroup>],
 
     /// The camera bind group, bound at group 0 for every draw.
     pub camera_bind: BindGroupId,
 
     /// Vertex stream 0 for every instanced draw.
     pub unit_quad: &'a wgpu::Buffer,
+}
+
+/// Insert or replace the batch holding `batch.lane`, keeping the list ascending by lane.
+///
+/// The caller's lane ids carry its own paint order, so "insert before the first strictly
+/// greater lane" reproduces that order exactly without this crate ever ranking anything.
+pub fn upsert(batches: &mut Vec<DrawBatch>, batch: DrawBatch) {
+    let lane = batch.lane;
+    remove(batches, lane);
+    let pos = batches
+        .iter()
+        .position(|b| b.lane > lane)
+        .unwrap_or(batches.len());
+    batches.insert(pos, batch);
+}
+
+/// Drop every batch on `lane`. Returns whether anything was actually dropped — the caller
+/// uses that to decide whether the frame needs redrawing.
+pub fn remove(batches: &mut Vec<DrawBatch>, lane: crate::frame::ids::LaneId) -> bool {
+    let had = batches.iter().any(|b| b.lane == lane);
+    batches.retain(|b| b.lane != lane);
+    had
 }
 
 impl<'a> FramePacket<'a> {

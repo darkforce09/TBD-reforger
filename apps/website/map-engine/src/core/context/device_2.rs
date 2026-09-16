@@ -10,10 +10,10 @@ use crate::core::context::state::EVERON_BOUNDS;
 use crate::core::context::state::INITIAL_TARGET;
 use crate::core::context::state::INITIAL_ZOOM;
 use crate::core::context::state::RenderEngine;
+use crate::core::pipeline::bindings;
 use crate::core::pipeline::draw_order::LaneRole;
+use crate::core::pipeline::draw_order::lane_id;
 use crate::diagnostics::timing::gpu::GpuTimer;
-use crate::renderers::batching::batch::Batch;
-use crate::renderers::batching::batch::BatchPayload;
 
 use crate::renderers::batching::scene::UNIT_QUAD;
 use crate::renderers::engine::lifecycle::TEXT_UNIFORM_BYTES;
@@ -29,6 +29,7 @@ use crate::renderers::pipelines::vector::create_polygon_pipeline;
 use crate::symbology::instances::bridge_1::SlotGpuBridge;
 use crate::symbology::instances::lanes::ICON_UNIFORM_BYTES;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 
 #[wasm_bindgen]
 impl RenderEngine {
@@ -336,13 +337,11 @@ impl RenderEngine {
             EVERON_BOUNDS[3],
         );
 
-        let calibration_batch = Batch {
-            role: LaneRole::Calibration,
+        let calibration_batch = DrawBatch {
+            lane: lane_id(LaneRole::Calibration),
             visible: true,
-            payload: BatchPayload::Instanced {
-                instances: calibration_buf.clone(),
-                count: 2,
-            },
+            pipeline: bindings::PIPE_QUAD,
+            payload: DrawPayload::Quads(InstanceBuffer::whole(calibration_buf.clone(), 32, 2)),
         };
 
         let timer = want_timestamps.then(|| GpuTimer::new(&device, &queue));
@@ -387,6 +386,7 @@ impl RenderEngine {
             slot_atlas: None,
             slot_bridge: SlotGpuBridge::default(),
             batches: vec![calibration_batch],
+            tex_lanes: Vec::new(),
             pending: [None, None],
             clear_color: CLEAR_COLOR,
             stress_instances: 0,

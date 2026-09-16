@@ -5,14 +5,16 @@
 
 use crate::camera::ortho::state::OrthoCamera;
 use crate::diagnostics::timing::gpu::GpuTimer;
-use crate::renderers::batching::batch::Batch;
 use crate::renderers::batching::scene::QuadInstance;
 use crate::renderers::text::lanes::TextAtlasGpu;
 use crate::symbology::atlas::gpu::GlyphAtlasGpu;
 use crate::symbology::instances::bridge_1::SlotAtlasGpu;
 use crate::symbology::instances::bridge_1::SlotGpuBridge;
 use crate::terrain::satellite::textures::PendingTex;
+use crate::terrain::satellite::textures::TexLane;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::frame::DrawBatch;
+use website_graphics_engine::frame::LaneId;
 
 /// Background clear — (51, 68, 85, 255)/255. The f64→f32→unorm8 chain error (< 1.2e-7) is four orders of magnitude under the unorm8 rounding margin (1/510 ≈ 2e-3), so readback bytes are forced exactly (plan §S4 margin argument).
 pub(crate) const CLEAR_COLOR: wgpu::Color = wgpu::Color {
@@ -31,27 +33,11 @@ pub(crate) const INITIAL_ZOOM: f64 = -2.0;
 /// Canonical everon bounds value.
 pub(crate) const EVERON_BOUNDS: [f64; 4] = [0.0, 0.0, 12_800.0, 12_800.0];
 
-/// Pipeline kind.
-#[derive(Clone, Copy, PartialEq)]
-pub(crate) enum PipelineKind {
-    /// Quad instanced.
-    QuadInstanced,
-
-    /// Textured quad.
-    TexturedQuad,
-
-    /// Polyline.
-    Polyline,
-
-    /// world-building fill — rotated OBB quads (`scene::BuildingInstance`, `vs_building`).
-    BuildingQuad,
-
-    /// triangulated polygon fills (sea, landcover, forest, marquee, road strips).
-    PolygonFill,
-
-    /// atlas-sampled icon instances (`scene::IconInstance`, 20 B).
-    IconInstanced,
-}
+// T-0xx Phase 1D: `PipelineKind` lived here and was derived from `BatchPayload::kind()`. Its
+// only reader was `stats()`, counting stress batches; a `DrawBatch` now carries a real
+// `PipelineId` chosen by `core/pipeline/bindings.rs`, and `stats()` matches the payload
+// variant directly. A second, parallel notion of "which pipeline" is exactly the kind of
+// drift the packet boundary exists to prevent, so it is gone rather than moved.
 
 /// Basemap mode.
 #[derive(Clone, Copy)]
@@ -211,7 +197,14 @@ pub struct RenderEngine {
     pub(crate) slot_bridge: SlotGpuBridge,
 
     /// Batches.
-    pub(crate) batches: Vec<Batch>,
+    pub(crate) batches: Vec<DrawBatch>,
+
+    /// The texture bookkeeping for every live `DrawPayload::TexturedRect` lane.
+    ///
+    /// T-0xx Phase 1D: a batch carries a `BindGroupId`, not a texture. The handle to destroy,
+    /// the basemap mode, the tile count and the byte total are this crate's facts about a
+    /// layer, so they stay here, keyed by the lane whose batch points at them.
+    pub(crate) tex_lanes: Vec<(LaneId, TexLane)>,
 
     /// Pending.
     pub(crate) pending: [Option<PendingTex>; 2],

@@ -4,10 +4,11 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::core::context::state::RenderEngine;
+use crate::core::pipeline::bindings;
 use crate::core::pipeline::draw_order::LaneRole;
-use crate::renderers::batching::batch::Batch;
-use crate::renderers::batching::batch::BatchPayload;
+use crate::core::pipeline::draw_order::lane_id;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer, TextRun};
 
 /// Re-export `website_graphics_engine::text::gpu::text_uniform_bytes`.
 // T-0xx Phase 1D: the atlas texture/uniform/bind-group build moved to
@@ -65,6 +66,7 @@ impl RenderEngine {
         self.text_label_uploads += 1;
         use wgpu::util::DeviceExt;
         const STRIDE: usize = 20;
+        const STRIDE_U32: u32 = 20;
         if bytes.is_empty() || !visible {
             self.text_labels_drawn = 0;
             if !visible {
@@ -88,15 +90,19 @@ impl RenderEngine {
                 usage: wgpu::BufferUsages::VERTEX,
             });
         self.text_labels_drawn = count;
+        let lane = lane_id(LaneRole::WorldLabels);
         self.upsert_lane(
             LaneRole::WorldLabels,
-            Batch {
-                role: LaneRole::WorldLabels,
+            DrawBatch {
+                lane,
                 visible: true,
-                payload: BatchPayload::IconInstanced {
-                    instances: buf,
-                    count,
-                },
+                pipeline: bindings::PIPE_TEXT,
+                payload: DrawPayload::Text(TextRun {
+                    lane,
+                    glyphs: InstanceBuffer::whole(buf, STRIDE_U32, count),
+                    atlas: bindings::BIND_TEXT_ATLAS,
+                    pipeline: bindings::PIPE_TEXT,
+                }),
             },
         );
     }
@@ -109,6 +115,7 @@ impl RenderEngine {
         self.text_label_uploads += 1;
         use wgpu::util::DeviceExt;
         const STRIDE: usize = 20;
+        const STRIDE_U32: u32 = 20;
         if bytes.is_empty() || !visible {
             self.town_labels_drawn = 0;
             self.remove_lane(LaneRole::WorldTownLabels);
@@ -130,15 +137,19 @@ impl RenderEngine {
                 usage: wgpu::BufferUsages::VERTEX,
             });
         self.town_labels_drawn = count;
+        let lane = lane_id(LaneRole::WorldTownLabels);
         self.upsert_lane(
             LaneRole::WorldTownLabels,
-            Batch {
-                role: LaneRole::WorldTownLabels,
+            DrawBatch {
+                lane,
                 visible: true,
-                payload: BatchPayload::IconInstanced {
-                    instances: buf,
-                    count,
-                },
+                pipeline: bindings::PIPE_TEXT,
+                payload: DrawPayload::Text(TextRun {
+                    lane,
+                    glyphs: InstanceBuffer::whole(buf, STRIDE_U32, count),
+                    atlas: bindings::BIND_TEXT_ATLAS,
+                    pipeline: bindings::PIPE_TEXT,
+                }),
             },
         );
     }
@@ -151,6 +162,7 @@ impl RenderEngine {
         self.text_label_uploads += 1;
         use wgpu::util::DeviceExt;
         const STRIDE: usize = 20;
+        const STRIDE_U32: u32 = 20;
         if bytes.is_empty() || !visible {
             self.road_labels_drawn = 0;
             if !visible {
@@ -174,15 +186,19 @@ impl RenderEngine {
                 usage: wgpu::BufferUsages::VERTEX,
             });
         self.road_labels_drawn = count;
+        let lane = lane_id(LaneRole::WorldRoadLabels);
         self.upsert_lane(
             LaneRole::WorldRoadLabels,
-            Batch {
-                role: LaneRole::WorldRoadLabels,
+            DrawBatch {
+                lane,
                 visible: true,
-                payload: BatchPayload::IconInstanced {
-                    instances: buf,
-                    count,
-                },
+                pipeline: bindings::PIPE_TEXT,
+                payload: DrawPayload::Text(TextRun {
+                    lane,
+                    glyphs: InstanceBuffer::whole(buf, STRIDE_U32, count),
+                    atlas: bindings::BIND_TEXT_ATLAS,
+                    pipeline: bindings::PIPE_TEXT,
+                }),
             },
         );
     }

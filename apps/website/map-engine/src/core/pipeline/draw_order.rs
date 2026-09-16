@@ -206,6 +206,24 @@ pub fn lane_order(role: LaneRole) -> u8 {
     }
 }
 
+/// The renderer's opaque key for a lane.
+///
+/// T-0xx Phase 1D. `website-graphics-engine` sorts ascending on this and never interprets it;
+/// the 48 named identities, their order and their wire ids all stay here, where cartography
+/// belongs. Reusing [`lane_order`] is what makes the draw order provably unchanged by the
+/// split — it is the same total order the batch list was already kept in.
+///
+/// The doubling is the one wrinkle: [`lane_order`] is a total order but is NOT injective —
+/// `Stress` and `Calibration` share rank 0, and the two are distinct lanes the diagnostics
+/// tell apart. `2·order` leaves an odd slot beside every rank, and `Calibration` takes its
+/// own, which also preserves the order those two have always drawn in (the calibration quads
+/// are pushed after the stress chunks and paint over them).
+#[must_use]
+pub fn lane_id(role: LaneRole) -> website_graphics_engine::frame::LaneId {
+    let bump = u16::from(matches!(role, LaneRole::Calibration));
+    website_graphics_engine::frame::LaneId(u16::from(lane_order(role)) * 2 + bump)
+}
+
 /// Canonical all lanes value.
 pub const ALL_LANES: [LaneRole; 48] = [
     LaneRole::Stress,

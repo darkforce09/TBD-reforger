@@ -4,12 +4,13 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::core::context::state::RenderEngine;
+use crate::core::pipeline::bindings;
 use crate::core::pipeline::draw_order::LaneRole;
-use crate::renderers::batching::batch::Batch;
-use crate::renderers::batching::batch::BatchPayload;
+use crate::core::pipeline::draw_order::lane_id;
 
 use crate::renderers::batching::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 
 /// Canonical icon uv bytes value.
 pub(crate) const ICON_UV_BYTES: usize = crate::renderers::batching::scene::ATLAS_GLYPH_COUNT * 16;
@@ -84,12 +85,14 @@ impl RenderEngine {
         let count = (converted.len() / STRIDE) as u32;
         self.upsert_lane(
             role,
-            Batch {
-                role,
+            DrawBatch {
+                lane: lane_id(role),
                 visible,
-                payload: BatchPayload::IconInstanced {
-                    instances: buf,
-                    count,
+                pipeline: bindings::PIPE_ICON,
+                #[allow(clippy::cast_possible_truncation)]
+                payload: DrawPayload::Sprites {
+                    instances: InstanceBuffer::whole(buf, STRIDE as u32, count),
+                    atlas: bindings::sprite_atlas_for(role),
                 },
             },
         );

@@ -4,14 +4,15 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::core::context::state::RenderEngine;
+use crate::core::pipeline::bindings;
 use crate::core::pipeline::draw_order::LaneRole;
-use crate::renderers::batching::batch::Batch;
-use crate::renderers::batching::batch::BatchPayload;
+use crate::core::pipeline::draw_order::lane_id;
 
 use crate::renderers::batching::scene::ANCHOR;
-use crate::renderers::primitives::hairlines::LineLane;
-use crate::renderers::primitives::vector_lines::PolyLane;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::draw::geometry::LineVertex;
+use website_graphics_engine::draw::{lines as line_buffers, polygons};
+use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 
 #[wasm_bindgen]
 impl RenderEngine {
@@ -57,13 +58,11 @@ impl RenderEngine {
         self.world_chunks_drawn = chunk_count;
         self.upsert_lane(
             LaneRole::WorldBuildings,
-            Batch {
-                role: LaneRole::WorldBuildings,
+            DrawBatch {
+                lane: lane_id(LaneRole::WorldBuildings),
                 visible,
-                payload: BatchPayload::BuildingInstanced {
-                    instances: buf,
-                    count,
-                },
+                pipeline: bindings::PIPE_BUILDING,
+                payload: DrawPayload::OrientedQuads(InstanceBuffer::whole(buf, 40, count)),
             },
         );
     }
@@ -79,32 +78,15 @@ impl RenderEngine {
             self.remove_lane(LaneRole::WorldBuildingsOutline);
             return;
         }
-        let mut verts = Vec::with_capacity(lines.len() / STRIDE);
-        for c in lines.chunks_exact(STRIDE) {
-            verts.push(crate::renderers::batching::lanes::LineVertex {
-                pos: [
-                    (f64::from(c[0]) - ANCHOR[0]) as f32,
-                    (f64::from(c[1]) - ANCHOR[1]) as f32,
-                ],
-                color: [c[2], c[3], c[4], c[5]],
-            });
-        }
-        use wgpu::util::DeviceExt;
-        let buf = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("world-buildings-outline"),
-                contents: bytemuck::cast_slice(&verts),
-                usage: wgpu::BufferUsages::VERTEX,
-            });
-        #[allow(clippy::cast_possible_truncation)]
-        let count = verts.len() as u32;
+        let stream =
+            line_buffers::upload_hairlines(&self.device, "world-buildings-outline", ANCHOR, lines);
         self.upsert_lane(
             LaneRole::WorldBuildingsOutline,
-            Batch {
-                role: LaneRole::WorldBuildingsOutline,
+            DrawBatch {
+                lane: lane_id(LaneRole::WorldBuildingsOutline),
                 visible,
-                payload: BatchPayload::Lines(LineLane { verts: buf, count }),
+                pipeline: bindings::PIPE_LINE,
+                payload: DrawPayload::Lines(stream),
             },
         );
     }
@@ -129,7 +111,7 @@ impl RenderEngine {
         let n_verts = packed.len() / STRIDE;
         let mut verts = Vec::with_capacity(n_verts);
         for c in packed.chunks_exact(STRIDE) {
-            verts.push(crate::renderers::batching::lanes::LineVertex {
+            verts.push(LineVertex {
                 pos: [
                     (f64::from(c[0]) - ANCHOR[0]) as f32,
                     (f64::from(c[1]) - ANCHOR[1]) as f32,
@@ -137,35 +119,23 @@ impl RenderEngine {
                 color: [c[2], c[3], c[4], c[5]],
             });
         }
-        let indices: Vec<u32> = (0..n_verts as u32).collect();
-        use wgpu::util::DeviceExt;
-        let vbuf = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("world-fences"),
-                contents: bytemuck::cast_slice(&verts),
-                usage: wgpu::BufferUsages::VERTEX,
-            });
-        let ibuf = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("world-fences-indices"),
-                contents: bytemuck::cast_slice(&indices),
-                usage: wgpu::BufferUsages::INDEX,
-            });
         #[allow(clippy::cast_possible_truncation)]
-        let index_count = indices.len() as u32;
+        let indices: Vec<u32> = (0..n_verts as u32).collect();
+        let mesh = polygons::upload_indexed_mesh(
+            &self.device,
+            "world-fences",
+            "world-fences-indices",
+            &verts,
+            &indices,
+            item_count,
+        );
         self.upsert_lane(
             LaneRole::WorldFences,
-            Batch {
-                role: LaneRole::WorldFences,
+            DrawBatch {
+                lane: lane_id(LaneRole::WorldFences),
                 visible,
-                payload: BatchPayload::Polygon(PolyLane {
-                    verts: vbuf,
-                    indices: ibuf,
-                    index_count,
-                    item_count,
-                }),
+                pipeline: bindings::PIPE_POLYGON,
+                payload: DrawPayload::Indexed(mesh),
             },
         );
     }

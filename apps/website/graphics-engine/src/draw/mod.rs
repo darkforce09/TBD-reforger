@@ -9,6 +9,10 @@ pub mod compose;
 /// Frustum compaction of packed sprite instances — CPU oracle plus its GPU compute twin.
 pub mod cull;
 
+/// Encoding a frame packet into a render pass.
+#[cfg(target_arch = "wasm32")]
+pub mod encode;
+
 /// One line vertex, and placing a rect against the caller's anchor.
 pub mod geometry;
 
@@ -17,6 +21,14 @@ pub mod grid;
 
 /// Per-instance vertex layouts.
 pub mod instances;
+
+/// `LineList` vertex streams.
+#[cfg(target_arch = "wasm32")]
+pub mod lines;
+
+/// Indexed triangle meshes.
+#[cfg(target_arch = "wasm32")]
+pub mod polygons;
 
 /// Ear-clipping triangulation.
 pub mod triangulate;

@@ -4,167 +4,71 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::core::context::state::RenderEngine;
-use crate::core::pipeline::draw_order::LaneRole;
-use crate::core::pipeline::draw_order::lane_order;
-use crate::renderers::batching::batch::Batch;
-use crate::renderers::batching::batch::BatchPayload;
-use crate::renderers::batching::batch::IndirectIcon;
+use crate::core::pipeline::bindings;
 use crate::renderers::batching::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::frame::FramePacket;
 
-/// Draw batches.
+/// The pipelines a frame packet addresses by [`website_graphics_engine::frame::PipelineId`].
+///
+/// T-0xx Phase 1D: `draw_batches` used to take nine `&RenderPipeline` arguments and choose
+/// between them by matching on the lane. The choice is now made where a lane means something
+/// — `core/pipeline/bindings.rs` — and travels on the batch; this is only the lookup table
+/// those ids index. Cloning is an `Arc` bump per pipeline per frame.
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn draw_batches<'a>(
-    batches: &'a [Batch],
-    pass: &mut wgpu::RenderPass<'a>,
-    bind_group: &'a wgpu::BindGroup,
-    unit_quad_buf: &'a wgpu::Buffer,
-    quad_pipeline: &'a wgpu::RenderPipeline,
-    textured_pipeline: &'a wgpu::RenderPipeline,
-    forest_density_pipeline: &'a wgpu::RenderPipeline,
-    line_pipeline: &'a wgpu::RenderPipeline,
-    building_pipeline: &'a wgpu::RenderPipeline,
-    polygon_pipeline: &'a wgpu::RenderPipeline,
-    icon_pipeline: &'a wgpu::RenderPipeline,
-    text_pipeline: &'a wgpu::RenderPipeline,
-    glyph_atlas_bind: Option<&'a wgpu::BindGroup>,
-    text_atlas_bind: Option<&'a wgpu::BindGroup>,
-    slot_base_bind: Option<&'a wgpu::BindGroup>,
-    slot_drag_bind: Option<&'a wgpu::BindGroup>,
-    indirect_icons: &[IndirectIcon<'a>],
-) {
-    let mut icons_emitted = vec![false; indirect_icons.len()];
-    let emit_due =
-        |pass: &mut wgpu::RenderPass<'a>, emitted: &mut [bool], before: Option<LaneRole>| {
-            for (i, d) in indirect_icons.iter().enumerate() {
-                if emitted[i] {
-                    continue;
-                }
-                if let Some(role) = before
-                    && lane_order(role) <= lane_order(d.role)
-                {
-                    continue;
-                }
-                emitted[i] = true;
-                pass.set_pipeline(d.pipeline);
-                pass.set_bind_group(0, bind_group, &[]);
-                pass.set_bind_group(2, d.atlas_bind, &[]);
-                pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
-                pass.set_vertex_buffer(1, d.instances.slice(..));
-                pass.draw_indirect(d.indirect, 0);
-            }
-        };
+pub(crate) fn pipeline_table(
+    quad: &wgpu::RenderPipeline,
+    textured: &wgpu::RenderPipeline,
+    density: &wgpu::RenderPipeline,
+    line: &wgpu::RenderPipeline,
+    building: &wgpu::RenderPipeline,
+    polygon: &wgpu::RenderPipeline,
+    icon: &wgpu::RenderPipeline,
+    text: &wgpu::RenderPipeline,
+    icon_storage32: Option<&wgpu::RenderPipeline>,
+) -> Vec<wgpu::RenderPipeline> {
+    let mut out = Vec::with_capacity(bindings::PIPELINE_SLOTS);
+    out.push(quad.clone());
+    out.push(textured.clone());
+    out.push(density.clone());
+    out.push(line.clone());
+    out.push(building.clone());
+    out.push(polygon.clone());
+    out.push(icon.clone());
+    out.push(text.clone());
 
-    for batch in batches {
-        emit_due(pass, &mut icons_emitted, Some(batch.role));
-        if !batch.visible {
-            continue;
+    // Slot 8 is only ever named by an indirect draw, and `collect_indirect_icons` emits none
+    // unless this pipeline exists — so the fallback is unreachable, not a silent substitute.
+    out.push(icon_storage32.unwrap_or(icon).clone());
+    out
+}
+
+impl RenderEngine {
+    /// The sparse bind-group table a frame packet indexes.
+    ///
+    /// Five fixed slots for the camera and the three atlases, then one slot per lane id for a
+    /// textured lane's own texture. `None` is how "this atlas has not been uploaded yet"
+    /// reaches the renderer: it skips the batch, which is what the old encoder's
+    /// `continue`-on-missing-bind-group did.
+    pub(crate) fn bind_group_table(
+        &self,
+        camera: &wgpu::BindGroup,
+    ) -> Vec<Option<wgpu::BindGroup>> {
+        let mut out = vec![None; bindings::BIND_SLOTS];
+        out[bindings::BIND_CAMERA.0 as usize] = Some(camera.clone());
+        out[bindings::BIND_GLYPH_ATLAS.0 as usize] =
+            self.glyph_atlas.as_ref().map(|a| a.bind_group.clone());
+        out[bindings::BIND_TEXT_ATLAS.0 as usize] =
+            self.text_atlas.as_ref().map(|a| a.bind_group.clone());
+        out[bindings::BIND_SLOT_BASE.0 as usize] =
+            self.slot_atlas.as_ref().map(|a| a.base_bind_group.clone());
+        out[bindings::BIND_SLOT_DRAG.0 as usize] =
+            self.slot_atlas.as_ref().map(|a| a.drag_bind_group.clone());
+        for (lane, tex) in &self.tex_lanes {
+            out[bindings::tex_bind_id(*lane).0 as usize] = Some(tex.bind_group.clone());
         }
-        match &batch.payload {
-            BatchPayload::Instanced { instances, count } => {
-                pass.set_pipeline(quad_pipeline);
-                pass.set_bind_group(0, bind_group, &[]);
-                pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
-                pass.set_vertex_buffer(1, instances.slice(..));
-                pass.draw(0..4, 0..*count);
-            }
-            BatchPayload::Textured(l) => {
-                let pipe = if batch.role == LaneRole::ForestFill {
-                    forest_density_pipeline
-                } else {
-                    textured_pipeline
-                };
-                pass.set_pipeline(pipe);
-                pass.set_bind_group(0, bind_group, &[]);
-                pass.set_bind_group(1, &l.bind_group, &[]);
-                pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
-                pass.set_vertex_buffer(1, l.instances.slice(..));
-                pass.draw(0..4, 0..1);
-            }
-            BatchPayload::Lines(l) => {
-                pass.set_pipeline(line_pipeline);
-                pass.set_bind_group(0, bind_group, &[]);
-                pass.set_vertex_buffer(0, l.verts.slice(..));
-                pass.draw(0..l.count, 0..1);
-            }
-            BatchPayload::BuildingInstanced { instances, count } => {
-                pass.set_pipeline(building_pipeline);
-                pass.set_bind_group(0, bind_group, &[]);
-                pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
-                pass.set_vertex_buffer(1, instances.slice(..));
-                pass.draw(0..4, 0..*count);
-            }
-            BatchPayload::Polygon(l) => {
-                pass.set_pipeline(polygon_pipeline);
-                pass.set_bind_group(0, bind_group, &[]);
-                pass.set_vertex_buffer(0, l.verts.slice(..));
-                pass.set_index_buffer(l.indices.slice(..), wgpu::IndexFormat::Uint32);
-                pass.draw_indexed(0..l.index_count, 0, 0..1);
-            }
-            BatchPayload::IconInstanced { instances, count } => {
-                if batch.role == LaneRole::WorldLabels
-                    || batch.role == LaneRole::WorldRoadLabels
-                    || batch.role == LaneRole::WorldTownLabels
-                {
-                    let Some(text_bg) = text_atlas_bind else {
-                        continue;
-                    };
-                    pass.set_pipeline(text_pipeline);
-                    pass.set_bind_group(0, bind_group, &[]);
-                    pass.set_bind_group(2, text_bg, &[]);
-                    pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
-                    pass.set_vertex_buffer(1, instances.slice(..));
-                    pass.draw(0..4, 0..*count);
-                    continue;
-                }
-                let atlas_bg = match batch.role {
-                    LaneRole::SlotDrag => slot_drag_bind,
-
-                    LaneRole::Slots
-                    | LaneRole::Clusters
-                    | LaneRole::SlotPlacePreview
-                    | LaneRole::MissionVehicles
-                    | LaneRole::MissionMarkers
-                    | LaneRole::MissionComments => slot_base_bind,
-                    _ => glyph_atlas_bind,
-                };
-                let Some(atlas_bg) = atlas_bg else {
-                    continue;
-                };
-                pass.set_pipeline(icon_pipeline);
-                pass.set_bind_group(0, bind_group, &[]);
-                pass.set_bind_group(2, atlas_bg, &[]);
-                pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
-                pass.set_vertex_buffer(1, instances.slice(..));
-                pass.draw(0..4, 0..*count);
-            }
-            BatchPayload::MarkerComposite {
-                icons,
-                icon_count,
-                captions,
-            } => {
-                if let Some(slot_bg) = slot_base_bind {
-                    pass.set_pipeline(icon_pipeline);
-                    pass.set_bind_group(0, bind_group, &[]);
-                    pass.set_bind_group(2, slot_bg, &[]);
-                    pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
-                    pass.set_vertex_buffer(1, icons.slice(..));
-                    pass.draw(0..4, 0..*icon_count);
-                }
-
-                if let (Some((cap_buf, cap_count)), Some(text_bg)) = (captions, text_atlas_bind) {
-                    pass.set_pipeline(text_pipeline);
-                    pass.set_bind_group(0, bind_group, &[]);
-                    pass.set_bind_group(2, text_bg, &[]);
-                    pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
-                    pass.set_vertex_buffer(1, cap_buf.slice(..));
-                    pass.draw(0..4, 0..*cap_count);
-                }
-            }
-        }
+        out
     }
-
-    emit_due(pass, &mut icons_emitted, None);
 }
 
 #[wasm_bindgen]
@@ -192,6 +96,41 @@ impl RenderEngine {
             }
         }
 
+        let pipelines = pipeline_table(
+            &self.surface_pipeline,
+            &self.textured_pipeline,
+            &self.forest_density_pipeline,
+            &self.line_pipeline,
+            &self.building_pipeline,
+            &self.polygon_pipeline,
+            &self.icon_pipeline,
+            &self.text_pipeline,
+            self.icon_pipeline_storage32.as_ref(),
+        );
+        let bind_groups = self.bind_group_table(&self.bind_group);
+        let indirect = if do_compute {
+            self.collect_indirect_icons()
+        } else {
+            Vec::new()
+        };
+
+        // The matrix is re-composed rather than threaded down from `render()`: the packet's
+        // job is to state what the frame draws with, and `encode_main_pass` keeps the argument
+        // list it had before the split. Composing a 4x4 ortho twice a frame is not measurable;
+        // a packet carrying a default camera would be a lie.
+        let mvp = self.camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
+        let packet = FramePacket {
+            camera: website_graphics_engine::frame::CameraUniform::new(mvp),
+            clear: self.clear_color,
+            batches: &self.batches,
+            text: &[],
+            indirect: &indirect,
+            pipelines: &pipelines,
+            bind_groups: &bind_groups,
+            camera_bind: bindings::BIND_CAMERA,
+            unit_quad: &self.unit_quad_buf,
+        };
+
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("main"),
@@ -215,36 +154,7 @@ impl RenderEngine {
                 occlusion_query_set: None,
                 multiview_mask: None,
             });
-
-            let glyph_bg = self.glyph_atlas.as_ref().map(|a| &a.bind_group);
-            let text_bg = self.text_atlas.as_ref().map(|a| &a.bind_group);
-            let slot_base = self.slot_atlas.as_ref().map(|a| &a.base_bind_group);
-            let slot_drag = self.slot_atlas.as_ref().map(|a| &a.drag_bind_group);
-
-            let indirect_icons = if do_compute {
-                self.collect_indirect_icons()
-            } else {
-                Vec::new()
-            };
-            draw_batches(
-                &self.batches,
-                &mut pass,
-                &self.bind_group,
-                &self.unit_quad_buf,
-                &self.surface_pipeline,
-                &self.textured_pipeline,
-                &self.forest_density_pipeline,
-                &self.line_pipeline,
-                &self.building_pipeline,
-                &self.polygon_pipeline,
-                &self.icon_pipeline,
-                &self.text_pipeline,
-                glyph_bg,
-                text_bg,
-                slot_base,
-                slot_drag,
-                &indirect_icons,
-            );
+            website_graphics_engine::draw::encode::encode(&mut pass, &packet);
         }
         do_compute
     }

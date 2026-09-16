@@ -4,14 +4,15 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::core::context::state::RenderEngine;
+use crate::core::pipeline::bindings;
 use crate::core::pipeline::draw_order::LaneRole;
-use crate::renderers::batching::batch::Batch;
-use crate::renderers::batching::batch::BatchPayload;
+use crate::core::pipeline::draw_order::lane_id;
 
 use crate::renderers::batching::scene::ANCHOR;
-use crate::renderers::primitives::hairlines::LineLane;
-use crate::renderers::primitives::vector_lines::PolyLane;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::draw::geometry::LineVertex;
+use website_graphics_engine::draw::{lines, polygons};
+use website_graphics_engine::frame::{DrawBatch, DrawPayload};
 
 #[wasm_bindgen]
 impl RenderEngine {
@@ -39,38 +40,27 @@ impl RenderEngine {
         ];
         let mut verts = Vec::with_capacity(4);
         for p in corners {
-            verts.push(crate::renderers::batching::lanes::LineVertex {
+            verts.push(LineVertex {
                 pos: [(p[0] - ANCHOR[0]) as f32, (p[1] - ANCHOR[1]) as f32],
                 color: c,
             });
         }
         let indices: [u32; 6] = [0, 1, 2, 0, 2, 3];
-        use wgpu::util::DeviceExt;
-        let vbuf = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("marquee-verts"),
-                contents: bytemuck::cast_slice(&verts),
-                usage: wgpu::BufferUsages::VERTEX,
-            });
-        let ibuf = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("marquee-indices"),
-                contents: bytemuck::cast_slice(&indices),
-                usage: wgpu::BufferUsages::INDEX,
-            });
+        let mesh = polygons::upload_indexed_mesh(
+            &self.device,
+            "marquee-verts",
+            "marquee-indices",
+            &verts,
+            &indices,
+            1,
+        );
         self.upsert_lane(
             LaneRole::Marquee,
-            Batch {
-                role: LaneRole::Marquee,
+            DrawBatch {
+                lane: lane_id(LaneRole::Marquee),
                 visible: true,
-                payload: BatchPayload::Polygon(PolyLane {
-                    verts: vbuf,
-                    indices: ibuf,
-                    index_count: 6,
-                    item_count: 1,
-                }),
+                pipeline: bindings::PIPE_POLYGON,
+                payload: DrawPayload::Indexed(mesh),
             },
         );
 
@@ -85,31 +75,23 @@ impl RenderEngine {
         for e in 0..4 {
             let a = ring[e];
             let b = ring[(e + 1) % 4];
-            outline.push(crate::renderers::batching::lanes::LineVertex {
+            outline.push(LineVertex {
                 pos: [(a[0] - ANCHOR[0]) as f32, (a[1] - ANCHOR[1]) as f32],
                 color: oc,
             });
-            outline.push(crate::renderers::batching::lanes::LineVertex {
+            outline.push(LineVertex {
                 pos: [(b[0] - ANCHOR[0]) as f32, (b[1] - ANCHOR[1]) as f32],
                 color: oc,
             });
         }
-        let obuf = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("marquee-outline"),
-                contents: bytemuck::cast_slice(&outline),
-                usage: wgpu::BufferUsages::VERTEX,
-            });
+        let stream = lines::upload_line_stream(&self.device, "marquee-outline", &outline);
         self.upsert_lane(
             LaneRole::MarqueeOutline,
-            Batch {
-                role: LaneRole::MarqueeOutline,
+            DrawBatch {
+                lane: lane_id(LaneRole::MarqueeOutline),
                 visible: true,
-                payload: BatchPayload::Lines(LineLane {
-                    verts: obuf,
-                    count: 8,
-                }),
+                pipeline: bindings::PIPE_LINE,
+                payload: DrawPayload::Lines(stream),
             },
         );
     }

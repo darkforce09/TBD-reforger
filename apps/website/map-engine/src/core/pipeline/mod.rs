@@ -8,6 +8,10 @@
 // every call site in this crate keeps its spelling — the move is a relocation, not a rename.
 pub use website_graphics_engine::frame::damage;
 
+/// Frame packet pipeline / bind-group tables and the lane → binding policy.
+#[cfg(all(target_arch = "wasm32", feature = "render"))]
+pub mod bindings;
+
 /// Draw order.
 pub mod draw_order;
 

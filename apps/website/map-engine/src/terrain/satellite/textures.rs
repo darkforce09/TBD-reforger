@@ -6,22 +6,22 @@
 use crate::core::context::state::BasemapMode;
 use crate::core::context::state::RenderEngine;
 use crate::core::pipeline::draw_order::LaneRole;
-use crate::renderers::batching::batch::Batch;
-use crate::renderers::batching::batch::BatchPayload;
 
 use crate::renderers::batching::scene::QuadInstance;
 use wasm_bindgen::prelude::*;
 
 /// Tex lane.
+///
+/// T-0xx Phase 1D: the instance buffer left for the batch's
+/// `DrawPayload::TexturedRect { instances, .. }`. What stays is the bookkeeping a renderer has
+/// no use for: the texture handle to destroy, and the mode / tile / byte counters the
+/// diagnostics report.
 pub(crate) struct TexLane {
     /// Texture.
     pub(crate) texture: wgpu::Texture,
 
     /// Bind group.
     pub(crate) bind_group: wgpu::BindGroup,
-
-    /// Instances.
-    pub(crate) instances: wgpu::Buffer,
 
     /// Mode.
     pub(crate) mode: BasemapMode,
@@ -260,7 +260,6 @@ impl RenderEngine {
         let lane = TexLane {
             texture: pending.texture,
             bind_group,
-            instances,
             mode: pending.mode,
             tiles: pending.tiles,
             bytes: pending.bytes,
@@ -270,14 +269,7 @@ impl RenderEngine {
         } else {
             LaneRole::Hillshade
         };
-        self.upsert_lane(
-            role_enum,
-            Batch {
-                role: role_enum,
-                visible,
-                payload: BatchPayload::Textured(lane),
-            },
-        );
+        self.upsert_textured_lane(role_enum, visible, instances, lane);
         Ok(())
     }
 }

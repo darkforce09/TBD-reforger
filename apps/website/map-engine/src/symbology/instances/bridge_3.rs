@@ -4,14 +4,15 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::core::context::state::RenderEngine;
+use crate::core::pipeline::bindings;
 use crate::core::pipeline::draw_order::LaneRole;
-use crate::renderers::batching::batch::Batch;
-use crate::renderers::batching::batch::BatchPayload;
+use crate::core::pipeline::draw_order::lane_id;
 
 use crate::symbology::instances::lanes::ICON_DRAG_OFF;
 use crate::symbology::instances::symbols::SLOT_ICON_STRIDE;
 use crate::symbology::roles::classify::SIDE_BLUFOR_RGBA;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer, LaneId};
 
 #[wasm_bindgen]
 impl RenderEngine {
@@ -25,18 +26,19 @@ impl RenderEngine {
             "patch_slot_lane is sub-row only (offset {byte_offset} is a stride boundary); \
              use upload_slot_lane for full rows"
         );
-        let Some(batch) = self.batches.iter().find(|b| b.role == LaneRole::Slots) else {
+        let slots = lane_id(LaneRole::Slots);
+        let Some(batch) = self.batches.iter().find(|b| b.lane == slots) else {
             return;
         };
-        let BatchPayload::IconInstanced { instances, count } = &batch.payload else {
+        let DrawPayload::Sprites { instances, .. } = &batch.payload else {
             return;
         };
         let end = byte_offset as u64 + bytes.len() as u64;
-        if end > u64::from(*count) * 20 {
+        if end > u64::from(instances.count) * 20 {
             return;
         }
         self.queue
-            .write_buffer(instances, u64::from(byte_offset), bytes);
+            .write_buffer(&instances.buffer, u64::from(byte_offset), bytes);
     }
 }
 
@@ -270,17 +272,22 @@ impl RenderEngine {
 
 #[wasm_bindgen]
 impl RenderEngine {
-    /// Is pooled icon role.
-    pub(crate) fn is_pooled_icon_role(role: LaneRole) -> bool {
-        matches!(
-            role,
-            LaneRole::Slots
-                | LaneRole::SlotDrag
-                | LaneRole::Clusters
-                | LaneRole::SlotPlacePreview
-                | LaneRole::MissionVehicles
-                | LaneRole::MissionComments
-        )
+    /// Whether `lane` draws out of the shared lane pool, and so must NOT have its buffer
+    /// destroyed when a batch is dropped.
+    ///
+    /// T-0xx Phase 1D: was `is_pooled_icon_role(LaneRole)`; a dropped `DrawBatch` carries a
+    /// `LaneId`, not a role, so the question is asked in the batch's own terms now.
+    pub(crate) fn is_pooled_icon_lane(lane: LaneId) -> bool {
+        [
+            LaneRole::Slots,
+            LaneRole::SlotDrag,
+            LaneRole::Clusters,
+            LaneRole::SlotPlacePreview,
+            LaneRole::MissionVehicles,
+            LaneRole::MissionComments,
+        ]
+        .into_iter()
+        .any(|r| lane_id(r) == lane)
     }
 }
 
@@ -295,27 +302,26 @@ impl RenderEngine {
         visible: bool,
         buffer_changed: bool,
     ) {
+        let lane = lane_id(role);
         if !buffer_changed
-            && let Some(batch) = self.batches.iter_mut().find(|b| b.role == role)
-            && let BatchPayload::IconInstanced {
-                instances,
-                count: stored,
-            } = &mut batch.payload
+            && let Some(batch) = self.batches.iter_mut().find(|b| b.lane == lane)
+            && let DrawPayload::Sprites { instances, .. } = &mut batch.payload
         {
-            *instances = buf;
-            *stored = count;
+            instances.buffer = buf;
+            instances.count = count;
             batch.visible = visible;
             self.damage.mark();
             return;
         }
         self.upsert_lane(
             role,
-            Batch {
-                role,
+            DrawBatch {
+                lane,
                 visible,
-                payload: BatchPayload::IconInstanced {
-                    instances: buf,
-                    count,
+                pipeline: bindings::PIPE_ICON,
+                payload: DrawPayload::Sprites {
+                    instances: InstanceBuffer::whole(buf, 20, count),
+                    atlas: bindings::sprite_atlas_for(role),
                 },
             },
         );

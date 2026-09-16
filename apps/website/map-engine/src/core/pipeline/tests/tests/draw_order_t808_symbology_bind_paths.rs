@@ -36,8 +36,11 @@ const ENGINE: &str = concat!(
     "\n",
     include_str!("../../../../symbology/atlas/gpu.rs"),
     "\n",
-    include_str!("../../../../renderers/batching/batch.rs"),
-    "\n",
+    // T-0xx Phase 1D: `renderers/batching/batch.rs` left this list because the file is
+    // gone — `Batch`/`BatchPayload`/`IndirectIcon` are now `website-graphics-engine`'s
+    // `frame::{DrawBatch, DrawPayload, IndirectDraw}`. It held type definitions, never an
+    // `impl RenderEngine` body, so no `body(sig)` lookup below resolved into it; the suite
+    // was run with it removed to prove that rather than assume it.
     // T-0xx Phase 1C: the six `renderers/pipelines/*.rs` members left for
     // `website-graphics-engine`. They held free `create_*_pipeline` fns, never an
     // `impl RenderEngine` body, so no `body(sig)` lookup below resolved into them —

@@ -4,11 +4,12 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::core::context::state::RenderEngine;
+use crate::core::pipeline::bindings;
 use crate::core::pipeline::draw_order::LaneRole;
-use crate::core::pipeline::draw_order::lane_order;
-use crate::renderers::batching::batch::IndirectIcon;
+use crate::core::pipeline::draw_order::lane_id;
 use crate::renderers::batching::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::frame::IndirectDraw;
 
 #[wasm_bindgen]
 impl RenderEngine {
@@ -110,13 +111,13 @@ impl RenderEngine {
 #[wasm_bindgen]
 impl RenderEngine {
     /// Collect indirect icons.
-    pub(crate) fn collect_indirect_icons(&self) -> Vec<IndirectIcon<'_>> {
+    pub(crate) fn collect_indirect_icons(&self) -> Vec<IndirectDraw<'_>> {
         let Some(cull) = self.icon_cull.as_ref() else {
             return Vec::new();
         };
-        let Some(pipe32) = self.icon_pipeline_storage32.as_ref() else {
+        if self.icon_pipeline_storage32.is_none() {
             return Vec::new();
-        };
+        }
         if !self.compute_cull_trees {
             return Vec::new();
         }
@@ -136,27 +137,27 @@ impl RenderEngine {
             let Some((dst, indirect)) = cull.lane_draw(role as u32) else {
                 continue;
             };
-            let atlas = match role {
-                LaneRole::SlotDrag => self.slot_atlas.as_ref().map(|a| &a.drag_bind_group),
-                LaneRole::Slots
-                | LaneRole::Clusters
-                | LaneRole::SlotPlacePreview
-                | LaneRole::MissionVehicles
-                | LaneRole::MissionComments => self.slot_atlas.as_ref().map(|a| &a.base_bind_group),
-                _ => self.glyph_atlas.as_ref().map(|a| &a.bind_group),
+
+            // T-0xx Phase 1D: the atlas switch is `bindings::sprite_atlas_for` — the same
+            // table `encoder.rs` used to hold a second copy of. A lane whose atlas has not
+            // been uploaded is still skipped here, so it never reaches the packet at all.
+            let atlas = bindings::sprite_atlas_for(role);
+            let present = match atlas {
+                bindings::BIND_SLOT_BASE | bindings::BIND_SLOT_DRAG => self.slot_atlas.is_some(),
+                _ => self.glyph_atlas.is_some(),
             };
-            let Some(atlas_bind) = atlas else {
+            if !present {
                 continue;
-            };
-            out.push(IndirectIcon {
-                role,
-                pipeline: pipe32,
-                atlas_bind,
+            }
+            out.push(IndirectDraw {
+                lane: lane_id(role),
+                pipeline: bindings::PIPE_ICON_STORAGE32,
+                atlas,
                 instances: dst,
                 indirect,
             });
         }
-        out.sort_by_key(|d| lane_order(d.role));
+        out.sort_by_key(|d| d.lane);
         out
     }
 }

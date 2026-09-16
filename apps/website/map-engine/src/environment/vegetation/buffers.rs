@@ -6,11 +6,11 @@
 use crate::core::context::state::BasemapMode;
 use crate::core::context::state::RenderEngine;
 use crate::core::pipeline::draw_order::LaneRole;
-use crate::renderers::batching::batch::Batch;
-use crate::renderers::batching::batch::BatchPayload;
+use crate::core::pipeline::draw_order::lane_id;
 
 use crate::terrain::satellite::textures::TexLane;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::frame::DrawPayload;
 
 #[wasm_bindgen]
 impl RenderEngine {
@@ -106,19 +106,11 @@ impl RenderEngine {
         let lane = TexLane {
             texture,
             bind_group,
-            instances,
             mode: BasemapMode::Single,
             tiles: 1,
             bytes: u64::from(bytes_per_row) * u64::from(tex_h),
         };
-        self.upsert_lane(
-            LaneRole::ForestFill,
-            Batch {
-                role: LaneRole::ForestFill,
-                visible: true,
-                payload: BatchPayload::Textured(lane),
-            },
-        );
+        self.upsert_textured_lane(LaneRole::ForestFill, true, instances, lane);
         self.forest_density_w = tex_w;
         self.forest_density_h = tex_h;
         self.forest_bins_ok = bins_ok;
@@ -142,11 +134,12 @@ impl RenderEngine {
             return;
         }
         let color = [0.0, 0.0, 0.0, fill_alpha.clamp(0.0, 1.0)];
+        let fill_lane = lane_id(LaneRole::ForestFill);
         let target = self.batches.iter_mut().find_map(|b| {
-            if b.role == LaneRole::ForestFill {
+            if b.lane == fill_lane {
                 b.visible = fill_visible;
-                if let BatchPayload::Textured(l) = &b.payload {
-                    return Some(l.instances.clone());
+                if let DrawPayload::TexturedRect { instances, .. } = &b.payload {
+                    return Some(instances.buffer.clone());
                 }
             }
             None
@@ -156,8 +149,9 @@ impl RenderEngine {
                 .write_buffer(&buf, 16, bytemuck::cast_slice(&color));
             self.damage.mark();
         }
+        let outline_lane = lane_id(LaneRole::ForestOutline);
         for b in &mut self.batches {
-            if b.role == LaneRole::ForestOutline {
+            if b.lane == outline_lane {
                 b.visible = outline_visible && self.forest_outline_segments_stored > 0;
             }
         }

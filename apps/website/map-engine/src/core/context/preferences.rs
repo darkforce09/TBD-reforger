@@ -4,13 +4,14 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::core::context::state::RenderEngine;
+use crate::core::pipeline::bindings;
 use crate::core::pipeline::draw_order::LaneRole;
+use crate::core::pipeline::draw_order::lane_id;
 use crate::core::pipeline::draw_order::tex_lane_role_from_u32;
-use crate::renderers::batching::batch::Batch;
-use crate::renderers::batching::batch::BatchPayload;
 
-use crate::renderers::primitives::hairlines::LineLane;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::draw::lines;
+use website_graphics_engine::frame::{DrawBatch, DrawPayload};
 
 #[wasm_bindgen]
 impl RenderEngine {
@@ -21,25 +22,14 @@ impl RenderEngine {
             self.remove_lane(LaneRole::Grid);
             return;
         }
-        use wgpu::util::DeviceExt;
-        let buf = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("grid-lines"),
-                contents: bytemuck::cast_slice(&verts),
-                usage: wgpu::BufferUsages::VERTEX,
-            });
-        #[allow(clippy::cast_possible_truncation)]
-        let lane = LineLane {
-            verts: buf,
-            count: verts.len() as u32,
-        };
+        let stream = lines::upload_line_stream(&self.device, "grid-lines", &verts);
         self.upsert_lane(
             LaneRole::Grid,
-            Batch {
-                role: LaneRole::Grid,
+            DrawBatch {
+                lane: lane_id(LaneRole::Grid),
                 visible,
-                payload: BatchPayload::Lines(lane),
+                pipeline: bindings::PIPE_LINE,
+                payload: DrawPayload::Lines(stream),
             },
         );
     }
@@ -60,9 +50,13 @@ impl RenderEngine {
             "roadNames" => &[LaneRole::WorldRoadLabels],
             _ => return,
         };
+        // T-0xx Phase 1D: the world-layer table is cartography — `"roads"` means two lanes,
+        // one casing and one surface — so it stays here and is resolved to lane ids before it
+        // ever reaches a batch.
+        let lanes: Vec<_> = roles.iter().copied().map(lane_id).collect();
         let mut changed = false;
         for b in &mut self.batches {
-            if roles.contains(&b.role) && b.visible != visible {
+            if lanes.contains(&b.lane) && b.visible != visible {
                 b.visible = visible;
                 changed = true;
             }
@@ -86,11 +80,12 @@ impl RenderEngine {
             return;
         };
         let color = [1.0f32, 1.0, 1.0, opacity.clamp(0.0, 1.0)];
+        let want_lane = lane_id(want);
         let target = self.batches.iter_mut().find_map(|b| {
-            if b.role == want {
+            if b.lane == want_lane {
                 b.visible = visible;
-                if let BatchPayload::Textured(l) = &b.payload {
-                    return Some(l.instances.clone());
+                if let DrawPayload::TexturedRect { instances, .. } = &b.payload {
+                    return Some(instances.buffer.clone());
                 }
             }
             None

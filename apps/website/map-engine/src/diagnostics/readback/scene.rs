@@ -4,7 +4,8 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::core::context::state::RenderEngine;
-use crate::renderers::batching::encoder::draw_batches;
+use crate::core::pipeline::bindings;
+use crate::renderers::batching::encoder::pipeline_table;
 use crate::renderers::batching::scene::ANCHOR;
 use crate::renderers::pipelines::building::create_building_pipeline;
 use crate::renderers::pipelines::icon::create_icon_pipeline;
@@ -194,6 +195,34 @@ impl RenderEngine {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("readback"),
             });
+        // T-0xx Phase 1D: the readback path draws the SAME batch list through the same
+        // renderer entry point, with its own offscreen pipelines and its own camera bind
+        // group. That it can do so by swapping two tables is the point of the packet.
+        let pipelines = pipeline_table(
+            quad,
+            textured,
+            forest_density,
+            line,
+            building,
+            polygon,
+            icon,
+            text,
+            None,
+        );
+        let bind_groups = self.bind_group_table(bind_group);
+        let mvp = self.camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
+        let packet = website_graphics_engine::frame::FramePacket {
+            camera: website_graphics_engine::frame::CameraUniform::new(mvp),
+            clear: self.clear_color,
+            batches: &self.batches,
+            text: &[],
+            indirect: &[],
+            pipelines: &pipelines,
+            bind_groups: &bind_groups,
+            camera_bind: bindings::BIND_CAMERA,
+            unit_quad: &self.unit_quad_buf,
+        };
+
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("readback"),
@@ -211,30 +240,7 @@ impl RenderEngine {
                 occlusion_query_set: None,
                 multiview_mask: None,
             });
-            let glyph_bg = self.glyph_atlas.as_ref().map(|a| &a.bind_group);
-            let text_bg = self.text_atlas.as_ref().map(|a| &a.bind_group);
-            let slot_base = self.slot_atlas.as_ref().map(|a| &a.base_bind_group);
-            let slot_drag = self.slot_atlas.as_ref().map(|a| &a.drag_bind_group);
-
-            draw_batches(
-                &self.batches,
-                &mut pass,
-                bind_group,
-                &self.unit_quad_buf,
-                quad,
-                textured,
-                forest_density,
-                line,
-                building,
-                polygon,
-                icon,
-                text,
-                glyph_bg,
-                text_bg,
-                slot_base,
-                slot_drag,
-                &[],
-            );
+            website_graphics_engine::draw::encode::encode(&mut pass, &packet);
         }
         encoder.copy_texture_to_buffer(
             texture.as_image_copy(),

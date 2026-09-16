@@ -6,8 +6,6 @@
 use crate::core::context::state::BasemapMode;
 use crate::core::context::state::RenderEngine;
 use crate::core::pipeline::draw_order::LaneRole;
-use crate::renderers::batching::batch::Batch;
-use crate::renderers::batching::batch::BatchPayload;
 
 use crate::terrain::satellite::textures::TexLane;
 use wasm_bindgen::prelude::*;
@@ -104,19 +102,11 @@ impl RenderEngine {
         let lane = TexLane {
             texture,
             bind_group,
-            instances,
             mode: BasemapMode::Single,
             tiles: 1,
             bytes: u64::from(bytes_per_row) * u64::from(tex_h),
         };
-        self.upsert_lane(
-            LaneRole::Viewshed,
-            Batch {
-                role: LaneRole::Viewshed,
-                visible: true,
-                payload: BatchPayload::Textured(lane),
-            },
-        );
+        self.upsert_textured_lane(LaneRole::Viewshed, true, instances, lane);
         Ok(())
     }
 }

@@ -4,16 +4,17 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::core::context::state::RenderEngine;
+use crate::core::pipeline::bindings;
 use crate::core::pipeline::draw_order::LaneRole;
+use crate::core::pipeline::draw_order::lane_id;
 use crate::diagnostics::readback::scene::readback_sleep_ms;
 use crate::diagnostics::timing::gpu::now_ms;
 use crate::diagnostics::timing::gpu::perf_now_ms;
-use crate::renderers::batching::batch::Batch;
-use crate::renderers::batching::batch::BatchPayload;
 
 use crate::renderers::batching::scene::ANCHOR;
 use crate::renderers::batching::scene::CHUNK_CAPACITY;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 
 #[wasm_bindgen]
 impl RenderEngine {
@@ -127,13 +128,11 @@ impl RenderEngine {
             upload_ms += now_ms() - u0;
 
             #[allow(clippy::cast_possible_truncation)]
-            self.batches.push(Batch {
-                role: LaneRole::Stress,
+            self.batches.push(DrawBatch {
+                lane: lane_id(LaneRole::Stress),
                 visible: true,
-                payload: BatchPayload::Instanced {
-                    instances: buffer,
-                    count: count as u32,
-                },
+                pipeline: bindings::PIPE_QUAD,
+                payload: DrawPayload::Quads(InstanceBuffer::whole(buffer, 32, count as u32)),
             });
             self.stress_instances += count as u64;
             self.staging_peak_bytes = self
@@ -157,30 +156,34 @@ impl RenderEngine {
             .pop()
             .expect("calibration batch always present");
         for batch in self.batches.drain(..) {
-            let role = batch.role;
+            let lane = batch.lane;
             match batch.payload {
-                BatchPayload::Instanced { instances, .. }
-                | BatchPayload::BuildingInstanced { instances, .. } => instances.destroy(),
-                BatchPayload::IconInstanced { instances, .. } => {
-                    if !Self::is_pooled_icon_role(role) {
-                        instances.destroy();
+                DrawPayload::Quads(i) | DrawPayload::OrientedQuads(i) => i.buffer.destroy(),
+                DrawPayload::Sprites { instances, .. } => {
+                    if !Self::is_pooled_icon_lane(lane) {
+                        instances.buffer.destroy();
                     }
                 }
-                BatchPayload::MarkerComposite {
-                    icons, captions, ..
-                } => {
-                    icons.destroy();
-                    if let Some((cap, _)) = captions {
-                        cap.destroy();
+                DrawPayload::SpritesWithText { sprites, text, .. } => {
+                    sprites.buffer.destroy();
+                    if let Some(run) = text {
+                        run.glyphs.buffer.destroy();
                     }
                 }
-                BatchPayload::Textured(l) => l.texture.destroy(),
-                BatchPayload::Lines(l) => l.verts.destroy(),
-                BatchPayload::Polygon(l) => {
-                    l.verts.destroy();
-                    l.indices.destroy();
+
+                // T-0xx Phase 1D: a textured batch no longer carries its texture — the handle
+                // is in `tex_lanes`, drained below, so the same textures are destroyed.
+                DrawPayload::TexturedRect { .. } => {}
+                DrawPayload::Lines(v) => v.vertices.destroy(),
+                DrawPayload::Text(run) => run.glyphs.buffer.destroy(),
+                DrawPayload::Indexed(m) => {
+                    m.vertices.destroy();
+                    m.indices.destroy();
                 }
             }
+        }
+        for (_, tex) in self.tex_lanes.drain(..) {
+            tex.texture.destroy();
         }
         self.batches.push(calibration);
         self.lane_pool.clear();
