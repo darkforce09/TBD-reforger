@@ -77,3 +77,35 @@ fn a_key_that_carries_no_owner_parses_to_nothing() {
 fn a_zero_length_owner_is_a_parsed_owner_and_not_an_orphan() {
     assert_eq!(split_scoped_key("u0:|mission-9"), Some(("", "mission-9")));
 }
+
+/// A snapshot is a logical key like any other: the account scoping is applied on top of it, and it
+/// round-trips through the same parse.
+#[test]
+fn a_snapshot_key_is_a_logical_key_the_owner_scoping_wraps() {
+    let id = "3f2504e0-4f89-11d3-9a0c-0305e82c3301";
+    let logical = snapshot_key(id, "::pre-adopt");
+    assert_eq!(logical, "3f2504e0-4f89-11d3-9a0c-0305e82c3301::pre-adopt");
+    let physical = scoped_key("1234", &logical);
+    assert_eq!(
+        split_scoped_key(&physical),
+        Some(("1234", logical.as_str()))
+    );
+    assert!(physical.starts_with(&owner_prefix("1234")));
+}
+
+/// Distinct suffixes give distinct records, and neither is the live draft's own key — which is what
+/// keeps the debounced draft write, which writes the bare id, off both of them.
+#[test]
+fn distinct_suffixes_never_collide_with_each_other_or_with_the_live_draft() {
+    let id = "3f2504e0-4f89-11d3-9a0c-0305e82c3301";
+    let pre_adopt = snapshot_key(id, "::pre-adopt");
+    let pre_restore = snapshot_key(id, "::pre-restore");
+    assert_ne!(pre_adopt, pre_restore);
+    assert_ne!(pre_adopt, id);
+    assert_ne!(pre_restore, id);
+    assert_eq!(
+        snapshot_key(id, ""),
+        id,
+        "no suffix is the live draft itself"
+    );
+}

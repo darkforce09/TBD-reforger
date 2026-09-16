@@ -1,73 +1,52 @@
-//! T-522 / T-505 — prefer non-blank payload title over a stale missions-row title.
-//! T-554 … T-570 — native Class-R ratchet for the FE hydrate→`apply_row_meta` row-meta wire
-//! (`opt(&row.briefing)` in `adopt_payload` / `apply_row`).
+//! Role: the pins that hold the mission row's metadata wire together across the engine wall.
+//! Position: `editor/state` in the frontend.
+//! Signals & state: none; every item here is a test.
+//! Invariants: the wire runs `GET /missions/:id` row -> `row_meta_from_detail` -> `RowMeta` ->
+//! the adopt -> `apply_row_meta`, and it crosses a crate boundary in the middle. The
+//! frontend half is compiled for the browser only, so no native test can link and call it; the
+//! engine half can be called directly but proving the two halves still MEET takes evidence from
+//! both files at once. That is what this module is for, and it is why it lives on the frontend side
+//! of the wall rather than beside either half.
 //!
-//! Pure helper extracted from `mission_hydrate` so Class-R runs on native
-//! `cargo test -p website-frontend` (cold gate). The live hydrate glue stays
-//! `#[cfg(target_arch = "wasm32")]`; without this module a prefer→`&row.title`
-//! regression stayed green on CI. The briefing pin lives here for the same reason
-//! (W62: both sites → `None` left website-frontend green while only core Class-R
-//! covered `apply_row_meta` itself).
+//! # The invariant being held
 //!
-//! # The invariant
+//! An adopt must carry the mission ROW's library blurb into the document — the blurb is a row
+//! field, and if the wire is cut the editor silently shows an empty briefing and the next save
+//! writes that emptiness back. It must also prefer the payload's own title over the row's, or a
+//! stale row stomps the authored name on every boot.
 //!
-//! Boot hydrate must carry the mission **row**'s briefing into the document: both
-//! `adopt_payload` and `apply_row` must reach `apply_row_meta` on their live path with the row's
-//! briefing (`opt(&row.briefing)`) in the briefing position — not `None`, not a stale value. The
-//! library blurb is a row field; if the wire is cut the editor silently shows an empty briefing
-//! and a save writes that emptiness back.
+//! # Why the pin runs the code instead of reading it
 //!
-//! # Why this pin is no longer a grep (T-570)
+//! Five generations of source-scanning pins shipped hollow, each beaten by the next verifier:
 //!
-//! Five waves of source-scanning all shipped hollow, each beaten by the next verifier:
+//! | scanned for | walked around by |
+//! |-------------|------------------|
+//! | `body.contains("…(&row.briefing)")` | a `//` comment decoy |
+//! | the same, `//` stripped | `/* … */` and `let _ = "…(&row.briefing)";` |
+//! | the same, block comments and strings stripped | a dead `let _ = …(&row.briefing);` |
+//! | the needle inside an `apply_row_meta(…)` arg list | `if false { apply_row_meta(…) }` |
+//! | the same, exact `if false { … }` blocks dropped | `if true == false` / `loop { break; … }` /
+//!   `#[cfg(any())]` / `while false` / `if !true` |
 //!
-//! | pin | scanned for | walked around by |
-//! |-----|-------------|------------------|
-//! | T-554 | `body.contains("opt(&row.briefing)")` | `// … opt(&row.briefing)` comment decoy |
-//! | T-559 | same, `//` stripped | `/* … */` and `let _ = "opt(&row.briefing)";` |
-//! | T-561 | same, block comments + strings stripped | dead `let _ = opt(&row.briefing);` |
-//! | T-564 | needle inside an `apply_row_meta(…)` arg list | `if false { apply_row_meta(…) }` |
-//! | T-567 | same, exact `if false { … }` blocks dropped | `if true == false` / `loop { break; … }` / `#[cfg(any())]` / `while false` / `if !true` |
-//!
-//! The T-567 fix was a wrapper blocklist, and a blocklist can always be walked around: deciding
+//! The last fix was a wrapper blocklist, and a blocklist can always be walked around: deciding
 //! whether a call site is *reachable* from its source text is the halting problem in a costume
 //! (`if 1 > 2`, `const C: bool = false; if C`, `if std::hint::black_box(false)`, a `return` above
-//! it, a feature flag nobody enables …). A sixth grep generation would have been the same bug.
+//! it, a feature flag nobody enables …). A sixth grep generation would be the same bug.
 //!
-//! So T-570 changes the **instrument**, not the pattern: [`t570_tests`] extracts the real
-//! `adopt_payload` / `apply_row` / `opt` items out of `mission_hydrate.rs`, compiles them against
-//! a recording mock of the doc core, **runs** them, and asserts on the arguments
-//! `apply_row_meta` actually received. Dead code produces no behaviour, so every wrapper — the
-//! five above and every one nobody has invented yet — fails by construction rather than by
-//! enumeration. It also closes a hole every grep generation had: neutering `fn opt` to return
-//! `None` kept all five pins green while the wire was dead; the harness runs the real `opt`.
-
-/// Non-blank trimmed top-level `title` from a compiled payload (T-375 wire emit).
-///
-/// Prefer this over the mission-row title when adopting: hydrate loads it into meta, but
-/// a subsequent `apply_row_meta` with a stale row would otherwise stomp it. Whitespace-only is not a
-/// title (same spirit as `eden_chrome` / `compile_payload`).
-pub(crate) fn payload_title_nonblank(payload_json: &str) -> Option<String> {
-    let v: serde_json::Value = serde_json::from_str(payload_json).ok()?;
-    v.get("title")
-        .and_then(|t| t.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string)
-}
-
-/// Prefer-payload rule `adopt_payload` must use: non-blank payload title, else row title.
-pub(crate) fn prefer_payload_title(payload_json: &str, row_title: &str) -> String {
-    payload_title_nonblank(payload_json).unwrap_or_else(|| row_title.trim().to_string())
-}
+//! So [`t570_tests`] changes the **instrument**: it lifts the real items out of both files, compiles
+//! them against a recording stand-in for the document, **runs** them, and asserts on the arguments
+//! `apply_row_meta` actually received. Dead code produces no behaviour, so every wrapper — the five
+//! above and every one nobody has invented yet — fails by construction rather than by enumeration.
 
 #[cfg(test)]
 mod t505_tests {
-    use super::{payload_title_nonblank, prefer_payload_title};
+    use website_map_engine::editing::persist::server_adoption::{
+        payload_title_nonblank, prefer_payload_title,
+    };
 
-    /// T-505 Class-R: prefer helper must keep authored title when the row is stale.
+    /// The prefer helper must keep the authored title when the row is stale.
     ///
-    /// RED: change `prefer_payload_title` to always return `row_title.trim()` (or drop prefer).
+    /// RED: make `prefer_payload_title` always return `row_title.trim()`, or drop the prefer.
     #[test]
     fn prefer_payload_keeps_authored_over_stale_row() {
         let payload = r#"{"title":"  Authored Bridgehead  ","editor":{}}"#;
@@ -95,21 +74,22 @@ mod t505_tests {
         assert_eq!(payload_title_nonblank(r#"{"editor":{}}"#), None);
     }
 
-    /// T-505 Class-R: `adopt_payload` in mission_hydrate.rs must call the prefer helper.
+    /// The adopt must route the title through the prefer helper rather than writing the row's.
     ///
-    /// RED: pass `&row.title` straight into `apply_row_meta` (or drop `prefer_payload_title` /
-    /// `payload_title_nonblank` from the adopt body).
+    /// RED: pass `&row.title` straight into `apply_row_meta`, or drop `prefer_payload_title` /
+    /// `payload_title_nonblank` from the adopt body.
     ///
     /// Superseded in strength by `t570_tests`, which observes the title `apply_row_meta` actually
     /// received: this one still greps, so it is kept only as a fast, readable first failure.
     #[test]
     fn adopt_payload_wires_prefer_helper() {
-        const SRC: &str = include_str!("hydrate.rs");
+        const SRC: &str =
+            include_str!("../../../../map-engine/src/editing/persist/server_adoption.rs");
         let production = SRC.split("#[cfg(test)]").next().unwrap_or(SRC);
         let adopt = production
             .split("fn adopt_payload(")
             .nth(1)
-            .and_then(|s| s.split("\nfn ").next())
+            .and_then(|s| s.split("\n}\n").next())
             .expect("adopt_payload body");
         assert!(
             adopt.contains("prefer_payload_title(")
@@ -123,61 +103,61 @@ mod t505_tests {
     }
 }
 
-/// T-554 … T-570 Class-R — the hydrate row-meta wire, pinned **behaviourally**.
+/// The row-meta wire, pinned **behaviourally**, across both sides of the engine wall.
 ///
-/// `mission_hydrate.rs` is `#![cfg(target_arch = "wasm32")]`, so the cold native gate cannot link
-/// `adopt_payload` / `apply_row` and call them directly. Instead this module lifts the five items
-/// the wire is made of — `struct RowMeta`, `impl RowMeta`, `fn opt`, `adopt_payload`, `apply_row` —
-/// out of that file **verbatim**, compiles them against a recording stand-in for `MissionDocCore`,
-/// runs the result, and asserts on the arguments `apply_row_meta` was handed on the path that
-/// actually executed.
+/// The wire is made of six items in two crates: the engine's `struct RowMeta`, `impl RowMeta`,
+/// `fn non_empty`, `adopt_payload` and `apply_row_meta_only`, plus the frontend's
+/// `row_meta_from_detail`, which is the one place the API's row shape is read. This module lifts all
+/// six **verbatim**, compiles them against a recording stand-in for the document, runs the result,
+/// and asserts on the arguments `apply_row_meta` was handed on the path that actually executed.
 ///
-/// That is the whole T-570 fix: the question "is this call site reachable?" is undecidable from
-/// source text, so the pin stops asking it and *executes the text* instead. An unreachable call
-/// contributes nothing to the recording no matter how it was made unreachable.
+/// The question "is this call site reachable?" is undecidable from source text, so the pin stops
+/// asking it and *executes the text* instead. An unreachable call contributes nothing to the
+/// recording no matter how it was made unreachable.
 ///
 /// ## What a GREEN here does and does not claim
 ///
-/// * **Does:** starting from a `MissionDetail` row, the source as committed runs
-///   `RowMeta::from` → `adopt_payload` / `apply_row` → exactly one `apply_row_meta` call each, and
-///   that call carries the row's briefing / time / weather through the real `opt`, plus (adopt) a
-///   title routed through `prefer_payload_title`.
-/// * **Does not:** say anything about `MissionDocCore::apply_row_meta`'s own behaviour — argument
-///   *positions* are fixed by the mock's signature, so a parameter reorder inside `map-engine-core`
-///   is that crate's Class-R to catch, not this one. Nor does it cover the *caller* that builds the
-///   `MissionDetail` (the fetch in `hydrate_from_server`), which stays unpinned.
+/// * **Does:** starting from a row, the source as committed runs `row_meta_from_detail` →
+///   `adopt_payload` / `apply_row_meta_only` → exactly one `apply_row_meta` call each, and that call
+///   carries the row's briefing / time / weather through the real `non_empty`, plus (adopt) a title
+///   routed through `prefer_payload_title`.
+/// * **Does not:** say anything about the document's own `apply_row_meta` — argument *positions* are
+///   fixed by the mock's signature, so a parameter reorder inside the store is that module's own
+///   pin to catch. Nor does it cover the fetch that builds the row, which stays unpinned.
 /// * **Known residual:** the harness reads its evidence from the generated program's stdout, so
 ///   production source that printed this module's sentinels could forge a record. That is the
-///   irreducible limit of running code you are also judging — it is sabotage, not a wrapper, and
-///   the sentinels are unique strings that do not otherwise occur in the tree.
+///   irreducible limit of running code you are also judging — it is sabotage, not a wrapper, and the
+///   sentinels are unique strings that do not otherwise occur in the tree.
 ///
 /// ## Deliberate fail-closed edges
 ///
 /// * No compiler → RED. The pin never skips; a tool that cannot examine its input must not pass.
-/// * A pinned item that grows a new `crate::…` dependency stops compiling here → RED until
-///   [`HARNESS_PREAMBLE`] is extended. Loud and cheap; the alternative is a pin that quietly
-///   stops covering the thing it names.
-/// * The harness runs **natively** while the wire ships on **wasm32**, so conditional compilation
-///   inside a pinned item is the one construct that could make the two disagree. Rather than
-///   mis-decide it, [`item`] rejects any `cfg` inside the pinned items outright — which is also
-///   why the W67 `#[cfg(any())]` decoy fails here twice over.
+/// * A pinned item that grows a new dependency stops compiling here → RED until
+///   [`HARNESS_PREAMBLE`] is extended. Loud and cheap; the alternative is a pin that quietly stops
+///   covering the thing it names.
+/// * The harness runs **natively** while half the wire ships on **wasm32**, so conditional
+///   compilation inside a pinned item is the one construct that could make the two disagree. Rather
+///   than mis-decide it, [`item_in`] rejects any `cfg` on or inside a pinned item outright.
 #[cfg(test)]
 mod t570_tests {
     use std::path::{Path, PathBuf};
     use std::process::Command;
 
-    /// The live hydrate glue, verbatim, at compile time.
+    /// The engine's half of the wire — the adoption policy — verbatim, at compile time.
+    const ADOPTION_SRC: &str =
+        include_str!("../../../../map-engine/src/editing/persist/server_adoption.rs");
+    /// The frontend's half — the one place the API's row shape is read.
     const HYDRATE_SRC: &str = include_str!("hydrate.rs");
 
     const ADOPT_SIG: &str = "fn adopt_payload(";
-    const APPLY_SIG: &str = "fn apply_row(";
-    const OPT_SIG: &str = "fn opt(";
-    /// Pinned as well, so the harness drives the whole FE half of the wire —
-    /// `GET /missions/:id` row → `RowMeta::from` → `opt` → `apply_row_meta`. Cutting the briefing
-    /// one hop earlier (`briefing: String::new()` in `from`) is the same user-visible bug, and no
-    /// grep generation ever looked there.
+    const APPLY_SIG: &str = "fn apply_row_meta_only(";
+    const OPT_SIG: &str = "fn non_empty(";
     const ROW_STRUCT_SIG: &str = "struct RowMeta {";
     const ROW_IMPL_SIG: &str = "impl RowMeta {";
+    /// Pinned as well, so the harness drives the whole wire rather than only the engine's end of it.
+    /// Cutting the briefing one hop earlier — `briefing: String::new()` where the row is read — is
+    /// the same user-visible bug, and no grep generation ever looked there.
+    const ROW_FROM_SIG: &str = "fn row_meta_from_detail(";
 
     /// Field separator in the harness's stdout (cannot occur in Rust source or in our sentinels).
     const US: char = '\u{1f}';
@@ -196,8 +176,8 @@ mod t570_tests {
 
     /// Mock doc core + the crate items the pinned bodies reach for. Everything here is scaffolding;
     /// the only code under test is the verbatim text spliced in after it.
-    const HARNESS_PREAMBLE: &str = r#"// GENERATED by website-frontend `mission_title_prefer::t570_tests`.
-// The items below the preamble are copied VERBATIM out of `mission_hydrate.rs` — do not edit.
+    const HARNESS_PREAMBLE: &str = r#"// GENERATED by website-frontend `title_prefer::t570_tests`.
+// The items below the preamble are copied VERBATIM out of the sources they pin — do not edit.
 #![allow(dead_code, unused_variables, unused_mut, unreachable_code, clippy::all)]
 
 use std::cell::RefCell;
@@ -205,8 +185,8 @@ use std::cell::RefCell;
 const DEFAULT_LAYER_ID: &str = "T570-LAYER";
 const PREFER_SENTINEL: &str = "@PREFERRED@";
 
-/// The `GET /missions/:id` row, cut down to the five fields `RowMeta::from` reads. The rest of
-/// `dto::MissionDetail` is irrelevant to this wire; if `from` starts reading a sixth field the
+/// The `GET /missions/:id` row, cut down to the five fields `row_meta_from_detail` reads. The rest
+/// of the real row type is irrelevant to this wire; if the reader starts reading a sixth field the
 /// harness stops compiling, which is the correct answer to "the row wire changed".
 struct MissionDetail {
     title: String,
@@ -251,19 +231,10 @@ impl Core {
 
 type DocHandle = RefCell<Option<Core>>;
 
-// T-934.6 moved title_prefer/history under `crate::editor::state::*`; the mocks mirror that path.
-mod editor {
-    pub mod state {
-        pub mod title_prefer {
-            pub fn prefer_payload_title(_payload_json: &str, _row_title: &str) -> String {
-                crate::PREFER_SENTINEL.to_string()
-            }
-        }
-
-        pub mod history {
-            pub fn after_local_edit() {}
-        }
-    }
+/// Stand-in for the adoption module's own prefer helper. Seeing its sentinel in the title position
+/// is proof the executed adopt routed the title through it.
+fn prefer_payload_title(_payload_json: &str, _row_title: &str) -> String {
+    PREFER_SENTINEL.to_string()
 }
 
 fn report(label: &str, doc: &DocHandle) {
@@ -274,9 +245,9 @@ fn report(label: &str, doc: &DocHandle) {
     }
 }
 
-/// The row exactly as the SPA gets it, through the real `RowMeta::from`.
+/// The row exactly as the app gets it, through the real `row_meta_from_detail`.
 fn row(briefing: &str) -> RowMeta {
-    RowMeta::from(&MissionDetail {
+    row_meta_from_detail(&MissionDetail {
         title: "@ROW_TITLE@".to_string(),
         terrain: "@TERRAIN@".to_string(),
         time_of_day: "@TOD@".to_string(),
@@ -287,7 +258,7 @@ fn row(briefing: &str) -> RowMeta {
 
 fn drive(
     label: &str,
-    adopt: fn(&DocHandle, &str, &RowMeta, Adopt),
+    adopt: fn(&DocHandle, &str, &RowMeta, Adopt, &dyn Fn()),
     apply: fn(&DocHandle, &RowMeta),
 ) {
     let doc: DocHandle = RefCell::new(Some(Core::default()));
@@ -296,6 +267,7 @@ fn drive(
         "{\"title\":\"T570-PAYLOAD-TITLE\",\"editor\":{}}",
         &row("@ADOPT_BRIEFING@"),
         Adopt::Init,
+        &|| {},
     );
     report(&format!("{}-adopt", label), &doc);
 
@@ -563,9 +535,9 @@ fn drive(
         }
     }
 
-    /// Verbatim source of the one `sig` item in `mission_hydrate.rs`, signature and body.
+    /// Verbatim source of the one `sig` item in the engine's adoption module.
     fn item(sig: &str) -> String {
-        item_in(HYDRATE_SRC, sig)
+        item_in(ADOPTION_SRC, sig)
     }
 
     /// [`item`], with the source as a parameter so the extractor itself can be pinned against
@@ -597,7 +569,7 @@ fn drive(
         assert_eq!(
             heads.len(),
             1,
-            "T-570: expected exactly one `{sig}` in mission_hydrate.rs, found {}. \
+            "T-570: expected exactly one `{sig}` in the pinned source, found {}. \
              0 means it was renamed or deleted; 2+ means a shadow definition — and a nested `mod` \
              copy compiles perfectly well beside the real one, so 'it would not build' is not a \
              defence. The pin cannot examine code it cannot unambiguously find, so this is RED, \
@@ -666,6 +638,8 @@ fn drive(
             src.push_str(&item(sig));
             src.push_str("\n\n");
         }
+        src.push_str(&item_in(HYDRATE_SRC, ROW_FROM_SIG));
+        src.push_str("\n\n");
         let mut main = String::from("fn main() {\n");
         for (label, adopt, apply) in variants {
             src.push_str(&renamed(adopt, ADOPT_SIG, &format!("adopt_{label}")));
@@ -775,7 +749,7 @@ fn drive(
     /// T-554 … T-570 Class-R: hydrate must hand the row's briefing to `apply_row_meta` on the path
     /// that actually runs.
     ///
-    /// RED (W62): replace either `opt(&row.briefing)` with `None`.
+    /// RED: replace either `non_empty(&row.briefing)` with `None`.
     /// RED (W63–W67 decoys): comment / block-comment / string / dead `let _` / `if false` /
     /// `if true == false` / `loop { break; … }` / `#[cfg(any())]` / `while false` / `if !true` —
     /// and every wrapper nobody has invented yet. An unreachable call is not executed, so it
@@ -795,7 +769,7 @@ fn drive(
 
         for (channel, want, fname) in [
             ("live-adopt", &want_adopt, "adopt_payload"),
-            ("live-apply", &want_apply, "apply_row"),
+            ("live-apply", &want_apply, "apply_row_meta_only"),
         ] {
             let got = observed(&lines, channel);
             assert_eq!(
@@ -813,8 +787,8 @@ fn drive(
                 want,
                 "T-570: `{fname}` passed the wrong row meta to apply_row_meta.\n\
                  fields are title | terrain | time_of_day | weather | briefing.\n\
-                 A `None` briefing means the wire is cut ({fname} must pass opt(&row.briefing)); \
-                 a briefing of Some(\"\") means `fn opt` no longer maps the row string; a title of \
+                 A `None` briefing means the wire is cut ({fname} must pass non_empty(&row.briefing)); \
+                 a briefing of Some(\"\") means `fn non_empty` no longer maps the row string; a title of \
                  {ROW_TITLE:?} in the adopt channel means the stale row title stomped the payload \
                  title (T-505).\nrecorded:\n{}",
                 evidence(&lines)
@@ -861,11 +835,11 @@ fn drive(
             "\
 #[cfg(any())]
 fn adopt_payload(doc: &D, p: &str, row: &R, mode: A) {
-    core.apply_row_meta(&t, &row.terrain, opt(&row.time_of_day), opt(&row.weather), opt(&row.briefing));
+    core.apply_row_meta(&t, &row.terrain, non_empty(&row.time_of_day), non_empty(&row.weather), non_empty(&row.briefing));
 }
 mod real {
     pub fn adopt_payload(doc: &D, p: &str, row: &R, mode: A) {
-        core.apply_row_meta(&t, &row.terrain, opt(&row.time_of_day), opt(&row.weather), None);
+        core.apply_row_meta(&t, &row.terrain, non_empty(&row.time_of_day), non_empty(&row.weather), None);
     }
 }
 pub use real::adopt_payload;
@@ -951,7 +925,7 @@ mod shadow {
                 &src[open + 1..src.len() - 1]
             )
         };
-        let cut = |src: &str| src.replace("opt(&row.briefing)", "None");
+        let cut = |src: &str| src.replace("non_empty(&row.briefing)", "None");
         let lines = run(
             "calibration",
             &[

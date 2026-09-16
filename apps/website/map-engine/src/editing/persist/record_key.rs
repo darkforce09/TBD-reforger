@@ -66,6 +66,18 @@ pub fn split_scoped_key(key: &str) -> Option<(&str, &str)> {
     Some((owner, logical))
 }
 
+/// The logical key one snapshot slot of one mission's draft lives under.
+///
+/// A snapshot shares the live draft's store and its account scoping — [`scoped_key`] is applied to
+/// what this returns, exactly as it is to the plain mission id — and is kept apart from the draft
+/// by the suffix alone. That suffix is what the debounced draft write cannot reach: it writes the
+/// bare mission id, which a canonical UUID never spells with a suffix on it, so no draft write can
+/// land on a snapshot however many times it re-arms.
+#[must_use]
+pub fn snapshot_key(mission_id: &str, slot_suffix: &str) -> String {
+    format!("{mission_id}{slot_suffix}")
+}
+
 #[cfg(test)]
 #[path = "tests/record_key.rs"]
 mod tests;
