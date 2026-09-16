@@ -1,4 +1,4 @@
-//! Engine-layer walls — [`ENGINE_SPLIT_PROGRAM.md`] §5 rules **1, 2 and 3b**.
+//! Engine-layer walls — [`ENGINE_SPLIT_PROGRAM.md`] §5 rules **1, 2, 3a and 3b**.
 //!
 //! ── WHAT THIS DEFENDS ────────────────────────────────────────────────────────────────────────
 //!
@@ -20,11 +20,46 @@
 //! |---|------|----------------------|
 //! | 1 | `apps/website/graphics-engine/**` may not import `website_map_engine` | the arrow turns into a cycle and the split is undone by accident |
 //! | 2 | no `terrain` / `symbology` / `mission` / `orbat` / `arma` in a declared name there | "pure renderer" becomes a claim in a README rather than a property of the code |
+//! | 3a | only one enumerated file of `apps/website/map-engine/src` names `website_graphics_engine::frame` | the packet boundary stops being a boundary and becomes 39 scattered imports again |
 //! | 3b | no module of `apps/website/map-engine/src` names `website_graphics_engine::{device, pipeline, shaders, text::gpu, r#loop}` | GPU resource creation drifts back to the caller one convenient import at a time |
 //!
-//! Rules 3a, 4, 5 and 6 (`crate::frame` chokepoint, `data/scenario` isolation, no DOM in
-//! map-engine, frontend may not import graphics) police trees that phases 2C and 3 have not built
-//! yet. They land with those phases.
+//! Rules 4, 5 and 6 (`data/scenario` isolation, no DOM in map-engine, frontend may not import
+//! graphics) police trees that phase 3 has not built yet. They land with that phase.
+//!
+//! ── RULE 3a AND WHY IT IS A FILE, NOT A DIRECTORY ────────────────────────────────────────────
+//!
+//! §5 writes rule 3a as *"only `map-engine/src/frame/**` may name `website_graphics_engine::
+//! frame`"*. That directory is the ceiling; phase 2C put the tree well under it, and the gate
+//! pins where the tree actually is. Before 2C the vocabulary was spelled at **39 sites across 22
+//! files** — 16 of those sites, in 11 files, nowhere near `frame/`: `overlay/lanes.rs`,
+//! `world/environment/{buildings,vegetation}/buffers.rs`, `diagnostics/readback/scene.rs` and the
+//! rest. After 2C it is spelled on **eight `pub use` lines in `frame/mod.rs` and nowhere else** —
+//! `frame/`'s own submodules read `use crate::frame::DrawBatch;` like every other module.
+//!
+//! That is the whole point of the rule and it is worth being exact about, because the cheap
+//! version of this gate — "allow anything under `frame/`" — would pass a tree in which thirteen
+//! files under `frame/` each imported whatever they felt like. The value of a chokepoint is not
+//! the indirection; re-exports compile away. The value is that the crate's entire graphics
+//! interface is a list a reviewer can read in one screen, and that widening it is a diff to that
+//! screen. A directory rule cannot express that. A per-file pin can.
+//!
+//! So 3a shares 3b's shape exactly — an enumerated pin with a count per file, ratcheting in both
+//! directions. An unpinned file naming the vocabulary fails. A pinned file that gains a site
+//! fails, because the list grew without the list being reviewed. A pinned file that loses one
+//! fails too, because a pin that no longer describes the tree has quietly stopped meaning what it
+//! says. And a pinned file that has vanished entirely fails — which is also 3a's anti-vacuity
+//! guard, the one that matters most here: "nothing names the frame vocabulary anywhere" is what a
+//! deleted or renamed `frame/` looks like, and it must never read as a clean boundary.
+//!
+//! The matcher is a line matcher and sees prose as well as code — deliberately, and it cuts both
+//! ways. Outside the pinned file that is exactly right: a comment naming
+//! `website_graphics_engine::frame` is a comment telling the next reader to import the wrong
+//! thing, and phase 2C rewrote the two that existed (`overlay/mod.rs`, `overlay/lanes.rs`) to say
+//! `crate::frame::LaneId`, which is what those files actually use. Inside the pinned file it
+//! would mean a typo fix in a doc comment could turn the build red, which is how a gate gets
+//! suppressed — so `frame/mod.rs`'s own prose is written not to spell the path, and the pinned
+//! count is therefore exactly the size of the interface list. If that count changes, the
+//! interface changed. That is the property worth ratcheting.
 //!
 //! ── RULE 3b AND WHY IT IS A PIN, NOT A ZERO ──────────────────────────────────────────────────
 //!
@@ -117,6 +152,28 @@ const MAP_ENGINE_PKG: &str = "website-map-engine";
 /// The map engine. Rule 3b is scoped to it and nothing else.
 const MAP_CRATE_REL: &str = "apps/website/map-engine";
 
+/// Rule 3a's matcher — the packet vocabulary's path, however it is reached.
+///
+/// `\b` is what keeps a hypothetical `::frames` or `::frame_stats` module from counting as the
+/// frame vocabulary; `::frame::X`, `::frame;` and a bare `::frame` in prose all end on a
+/// boundary and all match. No `use` anchor: `website_graphics_engine::frame::CameraUniform::new`
+/// written inline is the same breach as importing it, and phase 2C found three of exactly that
+/// shape (`diagnostics/readback/scene.rs`, `overlay/lanes.rs`).
+const FRAME_VOCAB_RE: &str = r"website_graphics_engine::frame\b";
+
+/// The enumerated packet boundary — file, exact count, and what the count IS.
+///
+/// One row, and it should stay one row. Read the module docs before adding a second: a new file
+/// naming the frame vocabulary is almost never the right fix, because the thing it wants is
+/// already re-exported from `frame/mod.rs` under `crate::frame::…`. The count is the size of that
+/// re-export list, so a diff here is a deliberate widening of the crate's graphics interface.
+const RULE3A_PIN: &[(&str, usize, &str)] = &[(
+    "apps/website/map-engine/src/frame/mod.rs",
+    8,
+    "the enumerated packet vocabulary (§2C.1 Kind C): damage, packet, present, CameraUniform, \
+     the three ids, the batch/payload/packet/indirect group, the buffer group, the text group",
+)];
+
 /// Rule 3b's matcher — the five graphics modules that own GPU resources.
 ///
 /// `\b` after the group is what keeps `::pipeline as pipelines` a hit and a hypothetical
@@ -154,6 +211,8 @@ const RULE1_HEAD: &str =
     "==> engine-layers rule 1 — apps/website/graphics-engine must not import website_map_engine";
 const RULE2_HEAD: &str =
     "==> engine-layers rule 2 — no map noun in a declared name under apps/website/graphics-engine";
+const RULE3A_HEAD: &str = "==> engine-layers rule 3a — only the enumerated packet boundary may \
+     name website_graphics_engine::frame under apps/website/map-engine/src";
 const RULE3B_HEAD: &str = "==> engine-layers rule 3b — no GPU-resource module of \
      website-graphics-engine named under apps/website/map-engine/src";
 
@@ -166,6 +225,11 @@ const RULE2_TAIL: &[&str] = &[
     "      graphics-engine is a renderer and may name geometry and GPU handles only. A map",
     "      noun in a declared name means domain logic came back across the wall — move the",
     "      decision to map-engine and leave the packing here (ENGINE_SPLIT_PROGRAM.md §5 rule 2).",
+];
+const RULE3A_TAIL: &[&str] = &[
+    "      The frame vocabulary is re-exported from map-engine/src/frame/mod.rs, enumerated.",
+    "      Write `use crate::frame::DrawBatch;` — the point of the boundary is that the whole",
+    "      graphics interface reads as one list (ENGINE_SPLIT_PROGRAM.md §5 rule 3a, §2C.1 Kind C).",
 ];
 const RULE3B_TAIL: &[&str] = &[
     "      device / pipeline / shaders / text::gpu / r#loop create and own GPU resources, and",
@@ -221,6 +285,66 @@ fn is_source(repo_root: &Path, path: &Path) -> bool {
     })
 }
 
+/// Group `hits` by repo-relative file and judge them against an enumerated pin.
+///
+/// Returns `(findings, lines)` — findings is what a reader has to go and fix, lines is how tall
+/// the report of it is, and those are different numbers because one finding prints many lines.
+///
+/// Rules 3a and 3b are the same judgement over two different matchers, so they are the same
+/// code. Three ways to fail and all three are load-bearing:
+///
+/// * an **unpinned** file matched at all — the rule's actual subject;
+/// * a **pinned** file whose count moved in either direction — a pin that no longer describes
+///   the tree has quietly stopped meaning what it says, whether it grew or shrank;
+/// * a pinned file that **no longer matches at all**, which never reaches the first loop because
+///   it is not in `per_file` — so the pin is also checked from its own side. This is the arm that
+///   catches a renamed or deleted directory, i.e. the case where "no violations" and "nothing
+///   left to look at" would otherwise be indistinguishable.
+fn against_pin(
+    repo_root: &Path,
+    hits: &[Hit],
+    pin: &[(&str, usize, &str)],
+) -> (usize, Vec<String>) {
+    let mut per_file: std::collections::BTreeMap<String, Vec<String>> =
+        std::collections::BTreeMap::new();
+    for h in hits {
+        let p = h.path.strip_prefix(repo_root).unwrap_or(&h.path);
+        per_file
+            .entry(p.display().to_string())
+            .or_default()
+            .push(rel(repo_root, h));
+    }
+    let mut bad: Vec<String> = Vec::new();
+    let mut findings = 0usize;
+    for (file, lines) in &per_file {
+        match pin.iter().find(|(f, _, _)| f == file) {
+            None => {
+                findings += 1;
+                bad.push(format!("  unpinned file — {} site(s):", lines.len()));
+                bad.extend(lines.iter().map(|l| format!("    {l}")));
+            }
+            Some((_, want, _)) if *want != lines.len() => {
+                findings += 1;
+                bad.push(format!(
+                    "  {file}: pinned at {want} site(s), found {} — update the pin.",
+                    lines.len()
+                ));
+                bad.extend(lines.iter().map(|l| format!("    {l}")));
+            }
+            Some(_) => {}
+        }
+    }
+    for (file, want, _) in pin {
+        if !per_file.contains_key(*file) {
+            findings += 1;
+            bad.push(format!(
+                "  {file}: pinned at {want} site(s), found 0 — the pin is stale, delete the row."
+            ));
+        }
+    }
+    (findings, bad)
+}
+
 fn refuse(o: &mut Vec<String>, what: &str, cause: NotRun) -> (u8, Vec<String>) {
     o.push(Verdict::did_not_run(what, Kind::Ban, cause).to_string());
     say(o, &["", "ENGINE-LAYERS: FAIL (did not run)"]);
@@ -255,6 +379,43 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
             return (1, o);
         }
         Err(cause) => return refuse(&mut o, "engine-layers self-probe", cause),
+    }
+
+    let vocab = match Pattern::regex(FRAME_VOCAB_RE) {
+        Ok(p) => p,
+        Err(e) => {
+            let cause = NotRun::ToolError {
+                tool: "regex".into(),
+                status: 2,
+                stderr: e.to_string(),
+            };
+            return refuse(&mut o, "engine-layers rule 3a pattern", cause);
+        }
+    };
+    // Three subjects. The positive proves it fires on the import shape; `crate::frame` proves it
+    // does NOT fire on the spelling every call site is supposed to use, which is the one false
+    // positive that would make the rule unachievable; `::frames` proves the `\b`, because a pin
+    // that can be widened by appending a letter is not a pin.
+    match gate::probe_str(&vocab, "use website_graphics_engine::frame::DrawBatch;") {
+        Ok(true) => {}
+        Ok(false) => {
+            say(&mut o, PROBE_FAIL);
+            return (1, o);
+        }
+        Err(cause) => return refuse(&mut o, "engine-layers rule 3a self-probe", cause),
+    }
+    for subject in [
+        "use crate::frame::DrawBatch;",
+        "use website_graphics_engine::frames::x;",
+    ] {
+        match gate::probe_str(&vocab, subject) {
+            Ok(false) => {}
+            Ok(true) => {
+                say(&mut o, PROBE_FAIL);
+                return (1, o);
+            }
+            Err(cause) => return refuse(&mut o, "engine-layers rule 3a self-probe", cause),
+        }
     }
 
     let gpu = match Pattern::regex(GPU_MODULE_RE) {
@@ -380,56 +541,36 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
         say(&mut o, RULE2_TAIL);
     }
 
+    // ── rule 3a ──────────────────────────────────────────────────────────────────────────────
+    o.push(RULE3A_HEAD.to_string());
+    let vocab_hits = match scan::grep_lines(&vocab, &map_sources) {
+        Ok(hits) => hits,
+        Err(cause) => return refuse(&mut o, "engine-layers rule 3a scan", cause),
+    };
+    let (vocab_findings, vocab_bad) = against_pin(repo_root, &vocab_hits, RULE3A_PIN);
+    let vocab_total: usize = RULE3A_PIN.iter().map(|(_, n, _)| *n).sum();
+    if vocab_bad.is_empty() {
+        o.push(format!(
+            "  OK — {vocab_total} pinned site(s) in {} file(s), 0 unpinned. The crate's whole \
+             graphics interface, enumerated:",
+            RULE3A_PIN.len()
+        ));
+        for (file, n, why) in RULE3A_PIN {
+            o.push(format!("    {file} ({n}) — {why}"));
+        }
+    } else {
+        o.push("FAIL: the frame vocabulary is named outside the packet boundary:".to_string());
+        o.extend(vocab_bad.iter().cloned());
+        say(&mut o, RULE3A_TAIL);
+    }
+
     // ── rule 3b ──────────────────────────────────────────────────────────────────────────────
     o.push(RULE3B_HEAD.to_string());
     let gpu_hits = match scan::grep_lines(&gpu, &map_sources) {
         Ok(hits) => hits,
         Err(cause) => return refuse(&mut o, "engine-layers rule 3b scan", cause),
     };
-
-    // Count per file, then compare against the pin. Unpinned files are the real violation; a
-    // pinned file whose count moved in EITHER direction is a stale pin, which is its own failure.
-    let mut per_file: std::collections::BTreeMap<String, Vec<String>> =
-        std::collections::BTreeMap::new();
-    for h in &gpu_hits {
-        let p = h.path.strip_prefix(repo_root).unwrap_or(&h.path);
-        per_file
-            .entry(p.display().to_string())
-            .or_default()
-            .push(rel(repo_root, h));
-    }
-    // `gpu_bad` is output lines; `gpu_findings` is problems. One finding can print six lines,
-    // and the summary counter has to say what a reader has to go and fix, not how tall it was.
-    let mut gpu_bad: Vec<String> = Vec::new();
-    let mut gpu_findings = 0usize;
-    for (file, lines) in &per_file {
-        match RULE3B_PIN.iter().find(|(f, _, _)| f == file) {
-            None => {
-                gpu_findings += 1;
-                gpu_bad.push(format!("  unpinned file — {} site(s):", lines.len()));
-                gpu_bad.extend(lines.iter().map(|l| format!("    {l}")));
-            }
-            Some((_, want, _)) if *want != lines.len() => {
-                gpu_findings += 1;
-                gpu_bad.push(format!(
-                    "  {file}: pinned at {want} site(s), found {} — update RULE3B_PIN.",
-                    lines.len()
-                ));
-                gpu_bad.extend(lines.iter().map(|l| format!("    {l}")));
-            }
-            Some(_) => {}
-        }
-    }
-    // A pinned file that no longer exists (or no longer matches at all) never reaches the loop
-    // above, so check the pin from its own side too.
-    for (file, want, _) in RULE3B_PIN {
-        if !per_file.contains_key(*file) {
-            gpu_findings += 1;
-            gpu_bad.push(format!(
-                "  {file}: pinned at {want} site(s), found 0 — the pin is stale, delete the row."
-            ));
-        }
-    }
+    let (gpu_findings, gpu_bad) = against_pin(repo_root, &gpu_hits, RULE3B_PIN);
     let pinned_total: usize = RULE3B_PIN.iter().map(|(_, n, _)| *n).sum();
     if gpu_bad.is_empty() {
         o.push(format!(
@@ -446,15 +587,15 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
     }
 
     o.push(scanned);
-    if breaches.is_empty() && nouns.is_empty() && gpu_bad.is_empty() {
+    if breaches.is_empty() && nouns.is_empty() && vocab_bad.is_empty() && gpu_bad.is_empty() {
         o.push("ENGINE-LAYERS: PASS".to_string());
         return (0, o);
     }
     o.push(format!(
-        "ENGINE-LAYERS: FAIL — {} wall breach(es), {} map-noun declaration(s), {} GPU-module finding(s)",
+        "ENGINE-LAYERS: FAIL — {} wall breach(es), {} map-noun declaration(s), \
+         {vocab_findings} frame-vocab finding(s), {gpu_findings} GPU-module finding(s)",
         breaches.len(),
         nouns.len(),
-        gpu_findings
     ));
     (1, o)
 }
@@ -481,14 +622,27 @@ pub fn pack_batch(b: &DrawBatch) -> u32 {
     const MANIFEST: &str =
         "[package]\nname = \"website-graphics-engine\"\n\n[dependencies]\nbytemuck = \"1\"\n";
 
-    /// The map engine's pinned residue, at exactly the counts [`RULE3B_PIN`] claims — 3 and 2.
-    /// The fixture mirrors the real shape rather than stubbing the pin out, so the pin itself is
-    /// under test: change a count in the table and these fixtures stop matching it.
+    /// The map engine's pinned residue, at exactly the counts [`RULE3B_PIN`] and [`RULE3A_PIN`]
+    /// claim — 3 GPU-module sites and 2 more in `pump.rs`, and 8 frame-vocabulary re-exports.
+    /// The fixture mirrors the real shape rather than stubbing the pins out, so the pins
+    /// themselves are under test: change a count in either table and these fixtures stop
+    /// matching it. The prose line below is the one that names `r#loop` and no `frame` path —
+    /// that asymmetry is real, and deliberate, in the file this mirrors.
     const MAP_FRAME_MOD: &str = "\
 pub use website_graphics_engine::device::buffers;
 pub use website_graphics_engine::pipeline as pipelines;
 /// Re-export `website_graphics_engine::r#loop::{FrameTarget, RafPump}`.
 pub use pump::{FrameTarget, RafPump};
+pub use website_graphics_engine::frame::damage;
+pub use website_graphics_engine::frame::packet;
+pub use website_graphics_engine::frame::present;
+pub use website_graphics_engine::frame::CameraUniform;
+pub use website_graphics_engine::frame::{BindGroupId, LaneId, PipelineId};
+pub use website_graphics_engine::frame::{DrawBatch, DrawPayload, FramePacket, IndirectDraw};
+pub use website_graphics_engine::frame::{IndexedMesh, InstanceBuffer, VertexStream};
+pub use website_graphics_engine::frame::{
+    GlyphAtlasGpu, TextAtlasGpu, TextRun, create_glyph_atlas, create_text_atlas,
+};
 ";
     const MAP_FRAME_PUMP: &str = "\
 pub use website_graphics_engine::r#loop::FrameTarget;
@@ -550,8 +704,10 @@ pub use website_graphics_engine::r#loop::RafPump;
             &[
                 RULE1_HEAD,
                 RULE2_HEAD,
+                RULE3A_HEAD,
                 RULE3B_HEAD,
                 "  OK (none)",
+                "  OK — 8 pinned site(s) in 1 file(s), 0 unpinned.",
                 "  OK — 5 pinned site(s), 0 unpinned.",
                 "  scanned 1 .rs file(s) + apps/website/graphics-engine/Cargo.toml, \
                  2 .rs file(s) under apps/website/map-engine/src",
@@ -572,7 +728,8 @@ pub use website_graphics_engine::r#loop::RafPump;
                 "FAIL: graphics-engine reaches back into the map engine:",
                 "  apps/website/graphics-engine/src/draw/bad.rs:1:use website_map_engine::x;",
                 RULE1_TAIL[0],
-                "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), 0 GPU-module finding(s)",
+                "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), \
+                 0 frame-vocab finding(s), 0 GPU-module finding(s)",
             ],
         );
     }
@@ -589,7 +746,8 @@ pub use website_graphics_engine::r#loop::RafPump;
             1,
             &[
                 "  apps/website/graphics-engine/Cargo.toml:6:me = { package = \"website-map-engine\" }",
-                "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), 0 GPU-module finding(s)",
+                "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), \
+                 0 frame-vocab finding(s), 0 GPU-module finding(s)",
             ],
         );
         r.manifest(&format!(
@@ -613,7 +771,8 @@ pub use website_graphics_engine::r#loop::RafPump;
                 "  apps/website/graphics-engine/src/draw/bad.rs:1:pub struct TerrainBlob;",
                 "  apps/website/graphics-engine/src/draw/bad.rs:2:pub fn pack_mission() {}",
                 RULE2_TAIL[0],
-                "ENGINE-LAYERS: FAIL — 0 wall breach(es), 2 map-noun declaration(s), 0 GPU-module finding(s)",
+                "ENGINE-LAYERS: FAIL — 0 wall breach(es), 2 map-noun declaration(s), \
+                 0 frame-vocab finding(s), 0 GPU-module finding(s)",
             ],
         );
     }
@@ -685,6 +844,121 @@ pub use website_graphics_engine::r#loop::RafPump;
                 "ENGINE-LAYERS: FAIL (no inputs)",
             ],
         );
+    }
+
+    /// RULE 3a, RED — the frame vocabulary imported outside the packet boundary.
+    ///
+    /// Two subjects in one fixture because they are the two shapes phase 2C actually found: an
+    /// import at the top of an upload belt, and the path written inline mid-expression. A rule
+    /// that only saw `use` lines would have missed three of the sixteen sites it closed.
+    #[test]
+    fn naming_the_frame_vocabulary_outside_the_boundary_fails() {
+        let r = Repo::new("rule3a-new");
+        r.map(
+            "world/environment/vegetation/buffers.rs",
+            "use website_graphics_engine::frame::DrawPayload;\n",
+        );
+        r.map(
+            "diagnostics/readback/scene.rs",
+            "let p = website_graphics_engine::frame::FramePacket { camera };\n",
+        );
+        r.expect(
+            1,
+            &[
+                "FAIL: the frame vocabulary is named outside the packet boundary:",
+                "  unpinned file — 1 site(s):",
+                "apps/website/map-engine/src/world/environment/vegetation/buffers.rs:1:\
+                 use website_graphics_engine::frame::DrawPayload;",
+                "apps/website/map-engine/src/diagnostics/readback/scene.rs:1:\
+                 let p = website_graphics_engine::frame::FramePacket { camera };",
+                RULE3A_TAIL[0],
+                "2 frame-vocab finding(s)",
+            ],
+        );
+    }
+
+    /// RULE 3a, THE RATCHET — the interface list may not grow or shrink unreviewed, and the
+    /// file holding it may not vanish.
+    ///
+    /// The third arm is 3a's real anti-vacuity guard. "Nothing in the crate names the frame
+    /// vocabulary" is what a deleted or renamed `frame/` looks like from the matcher's side, and
+    /// it is indistinguishable from a perfectly clean boundary unless the pin is also checked
+    /// from its own direction. Phase 2 moves directories on purpose; this is the arm that means
+    /// the gate says so instead of going green over a husk.
+    #[test]
+    fn the_rule_3a_pin_is_a_ratchet_in_both_directions() {
+        let r = Repo::new("rule3a-grow");
+        r.map(
+            "frame/mod.rs",
+            &format!("{MAP_FRAME_MOD}pub use website_graphics_engine::frame::Extra;\n"),
+        );
+        r.expect(
+            1,
+            &[
+                "apps/website/map-engine/src/frame/mod.rs: pinned at 8 site(s), found 9",
+                "1 frame-vocab finding(s)",
+            ],
+        );
+
+        let r = Repo::new("rule3a-shrink");
+        // Drop one re-export. Everything else about the file — including its three rule-3b
+        // sites — stays, so this isolates the 3a count and nothing else moves.
+        r.map(
+            "frame/mod.rs",
+            &MAP_FRAME_MOD.replace("pub use website_graphics_engine::frame::present;\n", ""),
+        );
+        r.expect(
+            1,
+            &[
+                "apps/website/map-engine/src/frame/mod.rs: pinned at 8 site(s), found 7",
+                "1 frame-vocab finding(s)",
+            ],
+        );
+
+        let r = Repo::new("rule3a-vanished");
+        r.map("frame/mod.rs", "// the boundary moved somewhere else\n");
+        let all = r.expect(
+            1,
+            &[
+                "apps/website/map-engine/src/frame/mod.rs: pinned at 8 site(s), found 0 — \
+                 the pin is stale, delete the row.",
+                "1 frame-vocab finding(s)",
+            ],
+        );
+        assert!(
+            !all.contains("ENGINE-LAYERS: PASS"),
+            "a crate with no packet boundary at all must never read as a clean one:\n{all}"
+        );
+    }
+
+    /// RULE 3a's matcher, one line at a time. `crate::frame` is the pair that matters most —
+    /// it is the spelling every one of the 38 converted call sites now uses, and a matcher that
+    /// fired on it would make the rule impossible to satisfy rather than merely noisy.
+    #[test]
+    fn rule_3a_matches_the_frame_path_and_not_the_crate_local_one() {
+        let p = Pattern::regex(FRAME_VOCAB_RE).unwrap();
+        for bad in [
+            "use website_graphics_engine::frame::DrawBatch;",
+            "pub use website_graphics_engine::frame::{BindGroupId, LaneId, PipelineId};",
+            "pub use website_graphics_engine::frame::damage;",
+            "    camera: website_graphics_engine::frame::CameraUniform::new(mvp),",
+            "pub fn lane_id(r: R) -> website_graphics_engine::frame::LaneId {",
+            "//! the opaque `website_graphics_engine::frame::LaneId`",
+        ] {
+            assert!(p.is_match(bad), "should fail the gate: {bad}");
+        }
+        for ok in [
+            "use crate::frame::DrawBatch;",
+            "use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer};",
+            "pub(crate) use crate::frame::TextAtlasGpu;",
+            "use website_graphics_engine::frames::x;",
+            "use website_graphics_engine::frame_stats::x;",
+            "use website_graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;",
+            "use website_graphics_engine::draw::instances::QuadInstance;",
+            "// the frame vocabulary lives one crate over",
+        ] {
+            assert!(!p.is_match(ok), "should pass the gate: {ok}");
+        }
     }
 
     /// RULE 3b, RED — a GPU-resource import in a file the pin has never heard of.
