@@ -77,3 +77,26 @@ CARGO_TARGET_DIR=target-container cargo xtask mk ci-local-leptos
 
 That last command is Phase 3A's closing gate: fmt, wasm32 clippy, native test, and a trunk
 release build.
+
+---
+
+## Two things `3A-C1` uncovered that `3A-D` owns
+
+**1. `editing/host.rs` carries a second, dormant definition of `Pending` and `ZoneDraft`.**
+
+`editing/host.rs:34` defines `pub enum Pending` and `:58` defines `pub struct ZoneDraft`. Neither
+is referenced anywhere in the map engine outside that file — verified by grep — and the frontend
+reaches `editing::host` only for `install()` (`mission_editor.rs:1941`). They are dormant state
+waiting to be wired.
+
+`3A-C1` landed the live `ZoneDraft` at `data/store/operations/entity/zone_draw.rs:17`, so the
+crate now carries **two definitions of that type**. `editing/` may depend on `data/`; `data/` may
+never name `editing/`. So the fix has one direction: delete `host.rs`'s copies and use the `data/`
+ones. Do it as part of wiring the adapters' call sites, not as a separate afterthought.
+
+**2. `DEFAULT_LAYER_ID` / `DEFAULT_LAYER_NAME` are still frontend constants.**
+
+They live in frontend `entity/selection.rs` and are passed into the engine's `ensure_layer` as
+parameters — deliberate, because the default folder's name is host vocabulary rather than document
+law. But `state/operations/` is deleted by `3A-D3`, so decide where they land: the arsenal/UI
+vocabulary they belong to, not a deleted directory.
