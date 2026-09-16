@@ -88,39 +88,25 @@ use tbd_gate::{NotRun, Pattern, Verdict, gate};
 // rather than mutating this process's cwd — tests run in parallel threads.
 #[cfg(test)]
 const EDITOR_OPS: &str = "apps/website/frontend/src/editor/state/editor_context/mod.rs";
-// Scan the frontend adapters and the map-engine `data/store/operations` implementations
-// together (T-0xx Phase 2A moved them out of `website-mission-core`). The scratch fixtures
-// exercise both sides so moving a mutation across this boundary cannot bypass the ban.
+// The place path spans two crates: the document mutations in the map engine
+// (`data/store/operations` and the hosted commands that drive them) and the host half in the
+// frontend that arms a placement and commits it. Both sides are scanned together, and the scratch
+// fixtures perturb one of each, so moving a mutation across the crate boundary cannot bypass the
+// ban.
 const EDITOR_OPS_SPLIT: &[&str] = &[
-    "apps/website/frontend/src/editor/state/operations/attrs.rs",
-    "apps/website/frontend/src/editor/state/undo_grouped_gestures.rs",
-    "apps/website/frontend/src/editor/state/operations/cargo.rs",
-    "apps/website/frontend/src/editor/state/operations/compositions.rs",
+    "apps/website/frontend/src/editor/arsenal/loadout_commands.rs",
+    "apps/website/frontend/src/editor/canvas/tactical_graphics_authoring.rs",
+    "apps/website/frontend/src/editor/state/armed_placement/map_release.rs",
+    "apps/website/frontend/src/editor/state/armed_placement/mod.rs",
+    "apps/website/frontend/src/editor/state/armed_placement/palette_arming.rs",
+    "apps/website/frontend/src/editor/state/armed_placement/zone_draw.rs",
     "apps/website/frontend/src/editor/state/editor_context/attributes_modal.rs",
     "apps/website/frontend/src/editor/state/editor_context/dock_mirrors.rs",
     "apps/website/frontend/src/editor/state/editor_context/document_fields.rs",
     "apps/website/frontend/src/editor/state/editor_context/installation.rs",
     "apps/website/frontend/src/editor/state/editor_context/mod.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/arming.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/comments.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/connections.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/layer_drag.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/layers.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/markers.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/mod.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/placement.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/refile.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/roster.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/selection.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/selection_index.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/triggers.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/vehicles.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/zone_draw.rs",
-    "apps/website/frontend/src/editor/state/operations/entity/zones.rs",
-    "apps/website/frontend/src/editor/state/operations/reassign.rs",
-    "apps/website/frontend/src/editor/state/operations/slot_ids.rs",
-    "apps/website/frontend/src/editor/state/operations/tactical_graphics.rs",
-    "apps/website/frontend/src/editor/state/operations/transform.rs",
+    "apps/website/frontend/src/editor/state/entity_selection.rs",
+    "apps/website/frontend/src/editor/state/undo_grouped_gestures.rs",
     "apps/website/map-engine/src/data/store/operations/apply_faction/apply.rs",
     "apps/website/map-engine/src/data/store/operations/apply_faction/authorship.rs",
     "apps/website/map-engine/src/data/store/operations/apply_faction/library.rs",
@@ -162,6 +148,23 @@ const EDITOR_OPS_SPLIT: &[&str] = &[
     "apps/website/map-engine/src/data/store/operations/tactical_graphics.rs",
     "apps/website/map-engine/src/data/store/operations/transform.rs",
     "apps/website/map-engine/src/data/store/operations/zones.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/composition_library.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/document_edit.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/document_search.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/editor_layers.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/entity_clipboard.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/entity_connections.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/map_comments.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/map_markers.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/map_triggers.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/mod.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/orbat_roster.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/placed_vehicles.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/selection_transform.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/slot_attributes.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/slot_loadouts.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/squad_reassignment.rs",
+    "apps/website/map-engine/src/editing/hosted_commands/zone_authoring.rs",
 ];
 const ORBAT_RS: &str =
     "apps/website/map-engine/src/data/scenario/ast/factions/orbat_slot_template.rs";
@@ -572,8 +575,8 @@ mod tests {
             BANS[0].0,
         );
         red_append(
-            "ban1-adapter",
-            "apps/website/frontend/src/editor/state/operations/entity/placement.rs",
+            "ban1-host",
+            "apps/website/frontend/src/editor/state/armed_placement/map_release.rs",
             "\nensure_default_squad\n",
             BANS[0].0,
         );
