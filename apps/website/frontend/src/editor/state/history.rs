@@ -29,6 +29,7 @@ use crate::editor::state::operations as editor_ops;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
+use website_map_engine::editing::tools::selection;
 
 use leptos::prelude::{GetUntracked, RwSignal, Set};
 use website_map_engine::data::store::MissionDocCore;
@@ -43,7 +44,7 @@ use website_map_engine::frame::engine::RenderEngine;
 use website_map_engine::overlay::lanes::role_id;
 
 use crate::editor::state::doc_host::DocHandle;
-use crate::editor::tools::select_tool::SelectionHandle;
+use selection::SelectionHandle;
 use website_map_engine::frame::EngineHandle;
 
 /// Everything a history command needs, shared from `mission_editor::on_load`. `doc` is the same

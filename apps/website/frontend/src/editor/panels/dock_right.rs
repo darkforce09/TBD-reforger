@@ -8,6 +8,8 @@
 #[cfg(target_arch = "wasm32")]
 use crate::editor::state::operations as editor_ops;
 use leptos::prelude::*;
+#[cfg(target_arch = "wasm32")]
+use website_map_engine::editing::tools::selection;
 
 use serde::{Deserialize, Serialize};
 
@@ -3375,7 +3377,7 @@ fn TriggerOwnerLine(selected: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
         }
         // Full-bleed canvas → the camera viewport IS the whole window, built exactly as the ruler
         // overlay does (`select_tool::frozen_camera`).
-        let cam = crate::editor::tools::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
+        let cam = selection::frozen_camera(vw, vh, tx, ty, zoom);
         let project = move |x: f64, y: f64| {
             let p = cam.project([x, y, 0.0]);
             (p[0], p[1])

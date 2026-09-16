@@ -27,6 +27,7 @@ use leptos::prelude::*;
 use website_map_engine::editing::tools::line_of_sight::capture::{
     LosMode, LosState, ViewshedState,
 };
+use website_map_engine::editing::tools::selection;
 
 // T-934.6 — editor_ops moved to `crate::editor::state::operations`; the alias keeps the dozens of
 // Class-S source-guard needles (`editor_ops::…`) and the page's own prose stable across the move.
@@ -943,9 +944,7 @@ pub(crate) fn hover_hit(
     let Some(pts) = cache.as_ref() else {
         return false;
     };
-    if crate::editor::tools::select_tool::pick_slot_or_vehicle(cam, &pts.soa, &pts.vehicles, px, py)
-        .is_some()
-    {
+    if selection::pick_slot_or_vehicle(cam, &pts.soa, &pts.vehicles, px, py).is_some() {
         return true;
     }
     let w = cam.unproject_xy(px, py);
@@ -1513,9 +1512,9 @@ pub fn MissionEditorPage() -> impl IntoView {
             // at the press drives every unproject) between pointerdown/move/up. Registered
             // synchronously (engine still `None` here — `probe()` reads it lazily; `pick_selfcheck()`
             // needs only the synchronously-seeded doc).
-            let selection: crate::editor::tools::select_tool::SelectionHandle =
+            let selection: selection::SelectionHandle =
                 Rc::new(RefCell::new(Vec::new()));
-            let left: Rc<RefCell<Option<crate::editor::tools::select_tool::LeftGesture>>> =
+            let left: Rc<RefCell<Option<selection::LeftGesture>>> =
                 Rc::new(RefCell::new(None));
             // T-642 — the persistent ruler polyline. Session-local OVERLAY state (Decision 4 — NOT
             // the Y.Doc, exactly like the selection set above), held in a leaked `Rc<RefCell<…>>` so
@@ -2616,7 +2615,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             let _ = container.release_pointer_capture(ev.pointer_id());
                         }
                     }
-                    use crate::editor::tools::select_tool::{self as st, LeftGesture as LG};
+                    use selection::LeftGesture as LG;
                     let taken = left.borrow_mut().take();
                     match taken {
                         Some(LG::Move { .. }) => {
@@ -2627,7 +2626,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // T-573 — a cancel is never a commit, so nothing downstream
                                 // re-binds: the previewed vehicle rows would otherwise stay parked
                                 // at the last offset while the document says they never moved.
-                                st::clear_drag_preview(e, &editor_ops::vehicle_points());
+                                crate::editor::tools::select_tool::clear_drag_preview(e, &editor_ops::vehicle_points());
                                 // T-796 — the comment lane, same reasoning: a cancelled drag that
                                 // held a note left its glyph at the previewed offset. Re-bind the
                                 // authored positions (identity when no note was dragged).

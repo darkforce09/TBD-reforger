@@ -93,7 +93,7 @@ fn the_northing_translates_with_the_drag() {
 fn the_drag_start_folds_the_comment_into_the_move_hit() {
     let code = page();
     let start = code
-        .find("st::pick_slot_or_vehicle(")
+        .find("selection::pick_slot_or_vehicle(")
         .expect("T-796: the drag-start slot/vehicle pick must survive");
     // The FIRST fold after the drag-start pick is the drag one (the click-path fold is later in
     // the file, inside the pointerup selection block).

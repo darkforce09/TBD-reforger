@@ -36,7 +36,7 @@ fn dblclick_opens_attributes_for_vehicles_via_slot_or_vehicle_pick() {
     let ed = editor_live();
     let body = only_body(&ed, "let ondblclick =");
     assert!(
-        body.contains("select_tool::pick_slot_or_vehicle(")
+        body.contains("selection::pick_slot_or_vehicle(")
             && body.contains("editor_ops::vehicle_points()"),
         "ATTR-OPEN-001: dblclick must pick slot OR vehicle (with vehicle_points), so Attributes \
          opens for a vehicle — not the slot-only pick"
@@ -48,7 +48,7 @@ fn dblclick_opens_attributes_for_vehicles_via_slot_or_vehicle_pick() {
     // The slot-only `pick(` must be GONE from this handler — a leftover would keep the bug for
     // vehicles. (`pick_slot_or_vehicle` contains the token `pick`, so match the bare call form.)
     assert!(
-        !body.contains("select_tool::pick(&cam"),
+        !body.contains("selection::pick(&cam"),
         "ATTR-OPEN-001: the slot-only pick(&cam, …) must be gone from the dblclick handler"
     );
 }

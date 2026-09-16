@@ -17,6 +17,7 @@
 #![allow(dead_code)]
 
 use leptos::prelude::*;
+use website_map_engine::editing::tools::selection;
 
 use website_map_engine::editing::tools::line_of_sight::capture::{LosState, ViewshedState};
 use website_map_engine::editing::tools::line_of_sight::host_registry::{
@@ -128,7 +129,7 @@ pub fn LosOverlay(
             if vw <= 0.0 || vh <= 0.0 {
                 return (Vec::new(), Vec::new(), Vec::new());
             }
-            let cam = crate::editor::tools::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
+            let cam = selection::frozen_camera(vw, vh, tx, ty, zoom);
             let project = move |x: f64, y: f64| {
                 let p = cam.project([x, y, 0.0]);
                 (p[0], p[1])

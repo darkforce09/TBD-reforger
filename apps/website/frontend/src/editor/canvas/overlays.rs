@@ -23,6 +23,7 @@
 #![allow(dead_code)]
 
 use leptos::prelude::*;
+use website_map_engine::editing::tools::selection;
 
 use crate::editor::mission_editor::transform;
 
@@ -354,7 +355,7 @@ pub(crate) fn TransformWidgetOverlay(
             if vw <= 0.0 || vh <= 0.0 {
                 return None;
             }
-            let cam = crate::editor::tools::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
+            let cam = selection::frozen_camera(vw, vh, tx, ty, zoom);
             let p = cam.project([wx, wy, 0.0]);
             if !p[0].is_finite() || !p[1].is_finite() {
                 return None;

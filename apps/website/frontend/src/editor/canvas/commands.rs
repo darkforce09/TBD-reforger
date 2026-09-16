@@ -18,6 +18,7 @@
 use leptos::prelude::*;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
+use website_map_engine::editing::tools::selection;
 
 use crate::editor::mission_editor::plain_paste_anchor;
 use crate::editor::state::history as mission_history;
@@ -234,7 +235,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                             .ok()
                             .and_then(|g| {
                                 g.as_ref().map(|e| {
-                                    crate::editor::tools::select_tool::frozen_camera(
+                                    selection::frozen_camera(
                                         rect.width(),
                                         rect.height(),
                                         e.target_x(),

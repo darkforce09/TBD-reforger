@@ -49,6 +49,7 @@
 #![allow(dead_code)] // the wasm host wires the live path; native `cargo test` proves the pure core.
 
 use leptos::prelude::*;
+use website_map_engine::editing::tools::selection;
 
 // ── Pure geometry + formatting (native-tested) ──────────────────────────────────────────────────
 
@@ -663,7 +664,7 @@ pub fn RulerOverlay(
                 }
                 // The canvas is full-bleed (like MapGridRefs), so the camera viewport IS the whole
                 // window; build it exactly as `select_tool::frozen_camera` does.
-                let cam = crate::editor::tools::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
+                let cam = selection::frozen_camera(vw, vh, tx, ty, zoom);
                 let project = move |x: f64, y: f64| {
                     let p = cam.project([x, y, 0.0]);
                     (p[0], p[1])

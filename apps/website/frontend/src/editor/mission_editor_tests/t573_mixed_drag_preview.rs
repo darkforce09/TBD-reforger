@@ -60,7 +60,7 @@ fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
          and this pin is examining almost nothing"
     );
     assert!(
-        editor.contains("st::push_drag_preview("),
+        editor.contains("select_tool::push_drag_preview("),
         "the pointermove drag branch must push the preview through the shared helper"
     );
     assert!(
@@ -68,7 +68,7 @@ fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
         "the drag branch must no longer feed set_drag a vehicle-filtered id list"
     );
     assert!(
-        editor.contains("st::clear_drag_preview("),
+        editor.contains("select_tool::clear_drag_preview("),
         "the no-move release and the pointercancel must restore the vehicle lane"
     );
 }

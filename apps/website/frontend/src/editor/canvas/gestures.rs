@@ -14,6 +14,7 @@
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
+use website_map_engine::editing::tools::selection;
 
 use leptos::prelude::*;
 use wasm_bindgen::prelude::*;
@@ -54,9 +55,9 @@ pub(crate) struct EditorGestureContext {
     pub(crate) canvas: web_sys::HtmlCanvasElement,
     pub(crate) engine: website_map_engine::frame::EngineHandle,
     pub(crate) doc: crate::editor::state::doc_host::DocHandle,
-    pub(crate) selection: crate::editor::tools::select_tool::SelectionHandle,
+    pub(crate) selection: selection::SelectionHandle,
     /// The in-flight LMB gesture (T-159.19 `LeftGesture`: Pending → Move | Marquee | Ruler | Rotate).
-    pub(crate) left: Rc<RefCell<Option<crate::editor::tools::select_tool::LeftGesture>>>,
+    pub(crate) left: Rc<RefCell<Option<selection::LeftGesture>>>,
     /// `Some((last_client_x, last_client_y))` while an MMB drag-pan is in flight (T-159.15.2).
     pub(crate) pan_px: Rc<Cell<Option<(f64, f64)>>>,
     pub(crate) map_host: website_map_engine::streaming::host::HostHandle,
@@ -385,7 +386,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 if editor_ops::tactical_draw_armed() {
                     if let Some(e) = engine.borrow().as_ref() {
                         let rect = container.get_bounding_client_rect();
-                        let cam = crate::editor::tools::select_tool::frozen_camera(
+                        let cam = selection::frozen_camera(
                             rect.width(),
                             rect.height(),
                             e.target_x(),
@@ -402,7 +403,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 }
                 if let Some(e) = engine.borrow().as_ref() {
                     let rect = container.get_bounding_client_rect();
-                    let cam = crate::editor::tools::select_tool::frozen_camera(
+                    let cam = selection::frozen_camera(
                         rect.width(),
                         rect.height(),
                         e.target_x(),
@@ -428,7 +429,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 // reenters the rAF loop's `borrow_mut`.
                 if let Some(e) = engine.borrow().as_ref() {
                     let rect = container.get_bounding_client_rect();
-                    let cam = crate::editor::tools::select_tool::frozen_camera(
+                    let cam = selection::frozen_camera(
                         rect.width(),
                         rect.height(),
                         e.target_x(),
@@ -451,19 +452,17 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             tool_mode.get_untracked(),
                             ev.button(),
                         ) {
-                            crate::editor::tools::select_tool::LeftGesture::Ruler {
+                            selection::LeftGesture::Ruler {
                                 start_x: sx,
                                 start_y: sy,
                                 cam,
                             }
                         } else {
-                            crate::editor::tools::select_tool::LeftGesture::Pending(
-                                crate::editor::tools::select_tool::PendingLeft {
-                                    start_x: sx,
-                                    start_y: sy,
-                                    cam,
-                                },
-                            )
+                            selection::LeftGesture::Pending(selection::PendingLeft {
+                                start_x: sx,
+                                start_y: sy,
+                                cam,
+                            })
                         },
                     );
                 }
@@ -491,7 +490,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
         let hover_points = hover_points.clone();
         let canvas = canvas.clone();
         move |ev: web_sys::PointerEvent| {
-            use crate::editor::tools::select_tool::{self as st, LeftGesture as LG};
+            use selection::LeftGesture as LG;
             let rect = container.get_bounding_client_rect();
             let (px, py) = (
                 ev.client_x() as f64 - rect.left(),
@@ -514,7 +513,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             let hover_cam = {
                 let g = engine.borrow();
                 g.as_ref().map(|e| {
-                    st::frozen_camera(
+                    selection::frozen_camera(
                         rect.width(),
                         rect.height(),
                         e.target_x(),
@@ -699,13 +698,13 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             let active = match g0 {
                 LG::Pending(p) => {
                     let moved = ((px - p.start_x).powi(2) + (py - p.start_y).powi(2)).sqrt();
-                    if moved < st::DRAG_THRESHOLD_PX {
+                    if moved < selection::DRAG_THRESHOLD_PX {
                         *left.borrow_mut() = Some(LG::Pending(p));
                         return;
                     }
                     // T-723 — button-less pointermove must NOT promote a stranded Pending
                     // into Move (wave-106 MAJOR-2). `buttons == 0` drops the gesture.
-                    if !st::may_promote_pending(ev.buttons()) {
+                    if !selection::may_promote_pending(ev.buttons()) {
                         return;
                     }
                     // Real drag now: capture so it survives leaving the canvas (React :200).
@@ -769,7 +768,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         }
 
                         let hit = doc.borrow().as_ref().and_then(|c| {
-                            st::pick_slot_or_vehicle(
+                            selection::pick_slot_or_vehicle(
                                 &p.cam,
                                 &map_render_slot_soa(c),
                                 &editor_ops::vehicle_points(),
@@ -822,7 +821,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                 // Drag an already-selected slot → move the whole selection; else
                                 // replace the selection with the dragged slot (React :204).
                                 let cur = selection.borrow().clone();
-                                let ids = st::compute_move_ids(&id, &cur);
+                                let ids = selection::compute_move_ids(&id, &cur);
                                 if !cur.iter().any(|s| *s == id) {
                                     *selection.borrow_mut() = ids.clone();
                                     if let Some(e) = engine.borrow_mut().as_mut() {
@@ -866,13 +865,19 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     cam,
                     ..
                 } => {
-                    let (dx, dy) = st::drag_delta(&cam, start_wx, start_wy, px, py);
+                    let (dx, dy) = selection::drag_delta(&cam, start_wx, start_wy, px, py);
                     if let Some(e) = engine.borrow_mut().as_mut() {
                         // T-573 — preview the WHOLE selection. The T-425 pre-filter fed
                         // `set_drag` slot ids only and nothing previewed the vehicles, so a
                         // mixed drag drew the slots moving and the vehicles standing while
                         // the pointerup commit moved both: an overlay lying about its drop.
-                        st::push_drag_preview(e, &ids, &editor_ops::vehicle_points(), dx, dy);
+                        crate::editor::tools::select_tool::push_drag_preview(
+                            e,
+                            &ids,
+                            &editor_ops::vehicle_points(),
+                            dx,
+                            dy,
+                        );
                         // T-796 — the COMMENT half of the preview. A comment is not in the
                         // slot overlay lane (`set_drag`) nor the vehicle re-pack, so
                         // `push_drag_preview` cannot move it; its lane is re-bound here so a
@@ -1097,7 +1102,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     let world = if on_canvas {
                         let g = engine.borrow();
                         g.as_ref().map(|e| {
-                            crate::editor::tools::select_tool::frozen_camera(
+                            selection::frozen_camera(
                                 rect.width(),
                                 rect.height(),
                                 e.target_x(),
@@ -1176,7 +1181,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // just ended, `left` is None ⇒ this returns.
             let taken = left.borrow_mut().take();
             let Some(g) = taken else { return };
-            use crate::editor::tools::select_tool::{self as st, LeftGesture as LG};
+            use selection::LeftGesture as LG;
             // T-723 — only button 0 commits a left gesture. A phantom Move (stranded
             // Pending promoted after disarm) used to commit on RMB/MMB pointerup and
             // teleport the just-placed entity. Wrong-button releases abandon the gesture.
@@ -1187,7 +1192,10 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             let _ = container.release_pointer_capture(ev.pointer_id());
                         }
                         if let Some(e) = engine.borrow_mut().as_mut() {
-                            st::clear_drag_preview(e, &editor_ops::vehicle_points());
+                            crate::editor::tools::select_tool::clear_drag_preview(
+                                e,
+                                &editor_ops::vehicle_points(),
+                            );
                             // T-796 — a wrong-button release is never a commit; put a dragged
                             // note's lane back at its authored position too (identity when the
                             // drag held no comment). T-808 — with its ids, or the restore
@@ -1227,10 +1235,10 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 // camera (X-05) and toggle/replace/clear the selection.
                 LG::Pending(p) => {
                     let moved = ((up_x - p.start_x).powi(2) + (up_y - p.start_y).powi(2)).sqrt();
-                    if moved < st::DRAG_THRESHOLD_PX {
+                    if moved < selection::DRAG_THRESHOLD_PX {
                         let additive = ev.ctrl_key() || ev.meta_key();
                         let hit = doc.borrow().as_ref().and_then(|c| {
-                            st::pick_slot_or_vehicle(
+                            selection::pick_slot_or_vehicle(
                                 &p.cam,
                                 &map_render_slot_soa(c),
                                 &editor_ops::vehicle_points(),
@@ -1374,7 +1382,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                 && sel.len() > 1
                                 && hit.as_ref().is_some_and(|h| sel.iter().any(|s| s == h));
                             if !keep_multi {
-                                st::apply_click(&mut sel, hit, additive);
+                                selection::apply_click(&mut sel, hit, additive);
                             }
                         }
                         let ids = selection.borrow().clone();
@@ -1431,10 +1439,9 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         && !editor_ops::is_vehicle_id(&ids[0])
                         && !single_comment_drag
                     {
-                        let target = doc
-                            .borrow()
-                            .as_ref()
-                            .and_then(|c| st::pick(&cam, &map_render_slot_soa(c), up_x, up_y));
+                        let target = doc.borrow().as_ref().and_then(|c| {
+                            selection::pick(&cam, &map_render_slot_soa(c), up_x, up_y)
+                        });
                         match target {
                             Some(tid) if tid != ids[0] => {
                                 // `regroup_slot_onto` runs the shared dirty tail itself
@@ -1443,7 +1450,10 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                 let ok = editor_ops::regroup_slot_onto(&ids[0], &tid);
                                 if ok {
                                     if let Some(e) = engine.borrow_mut().as_mut() {
-                                        st::clear_drag_preview(e, &editor_ops::vehicle_points());
+                                        crate::editor::tools::select_tool::clear_drag_preview(
+                                            e,
+                                            &editor_ops::vehicle_points(),
+                                        );
                                     }
                                 }
                                 ok
@@ -1575,7 +1585,10 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         // No move ⇒ no commit, so nothing else re-binds: drop BOTH preview
                         // lanes back to the authored positions (T-573 — the vehicle lane is
                         // a live re-pack now, not a passive bind).
-                        st::clear_drag_preview(e, &editor_ops::vehicle_points());
+                        crate::editor::tools::select_tool::clear_drag_preview(
+                            e,
+                            &editor_ops::vehicle_points(),
+                        );
                         // T-796 — and the comment lane: a zero-delta release still ran the
                         // preview re-pack above, so re-bind the notes to their authored
                         // positions (no committed move re-binds them here). Identity when the
@@ -1608,7 +1621,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             .borrow()
                             .as_ref()
                             .map(|c| {
-                                st::marquee_ids_with_vehicles(
+                                selection::marquee_ids_with_vehicles(
                                     &cam,
                                     &map_render_slot_soa(c),
                                     &editor_ops::vehicle_points(),
@@ -1658,7 +1671,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     cam,
                 } => {
                     let moved = ((up_x - start_x).powi(2) + (up_y - start_y).powi(2)).sqrt();
-                    if moved < st::DRAG_THRESHOLD_PX {
+                    if moved < selection::DRAG_THRESHOLD_PX {
                         let w = cam.unproject_xy(start_x, start_y);
                         if w[0].is_finite() && w[1].is_finite() {
                             let z = dem_grid.borrow().as_ref().and_then(|g| {
@@ -1792,7 +1805,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             let cam = {
                 let g = engine.borrow();
                 let Some(e) = g.as_ref() else { return };
-                crate::editor::tools::select_tool::frozen_camera(
+                selection::frozen_camera(
                     rect.width(),
                     rect.height(),
                     e.target_x(),
@@ -1803,7 +1816,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // Slot OR vehicle under the cursor — the same pick the left-click uses, so the
             // menu's notion of "the entity here" matches selection's.
             let hit = doc.borrow().as_ref().and_then(|c| {
-                crate::editor::tools::select_tool::pick_slot_or_vehicle(
+                selection::pick_slot_or_vehicle(
                     &cam,
                     &map_render_slot_soa(c),
                     &editor_ops::vehicle_points(),
@@ -1893,7 +1906,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             let cam = {
                 let g = engine.borrow();
                 let Some(e) = g.as_ref() else { return };
-                crate::editor::tools::select_tool::frozen_camera(
+                selection::frozen_camera(
                     rect.width(),
                     rect.height(),
                     e.target_x(),
@@ -1904,7 +1917,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // T-647 ATTR-OPEN-001 — slot OR vehicle under the cursor, matching the click and
             // context-menu picks so "the entity here" means one thing editor-wide.
             let hit = doc.borrow().as_ref().and_then(|c| {
-                crate::editor::tools::select_tool::pick_slot_or_vehicle(
+                selection::pick_slot_or_vehicle(
                     &cam,
                     &map_render_slot_soa(c),
                     &editor_ops::vehicle_points(),

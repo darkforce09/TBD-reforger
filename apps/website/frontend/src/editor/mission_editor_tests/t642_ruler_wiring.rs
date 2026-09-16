@@ -29,7 +29,7 @@ fn pointerdown_arbitrates_ruler_via_should_begin_ruler() {
         "T-642: pointerdown must arbitrate the ruler via ruler_tool::should_begin_ruler(...)"
     );
     assert!(
-        ed.contains("LeftGesture::Ruler {") || ed.contains("select_tool::LeftGesture::Ruler"),
+        ed.contains("LeftGesture::Ruler {") || ed.contains("selection::LeftGesture::Ruler"),
         "T-642: the ruler press must open the LG::Ruler gesture (the third LeftGesture mode)"
     );
 }

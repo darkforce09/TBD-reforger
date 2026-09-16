@@ -24,6 +24,7 @@
 use leptos::prelude::*;
 use website_map_engine::camera::ortho::state::OrthoCamera;
 use website_map_engine::editing::tools::line_of_sight::capture::LosMode;
+use website_map_engine::editing::tools::selection;
 
 use crate::editor::layout::{HOVER_FILL, TOGGLED_PLATE};
 use crate::v2::core::ui::{cn, MaterialIcon};
@@ -847,7 +848,7 @@ pub fn MapGridRefs(
             }
             // The canvas is full-bleed (NOT inset by the chrome — `eden_layout` note), so the camera
             // viewport IS the whole window; build it exactly as `select_tool::frozen_camera` does.
-            let cam = crate::editor::tools::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
+            let cam = selection::frozen_camera(vw, vh, tx, ty, zoom);
             let pane_left = DOCK_LEFT_PX;
             let pane_right = vw - DOCK_RIGHT_PX;
             (

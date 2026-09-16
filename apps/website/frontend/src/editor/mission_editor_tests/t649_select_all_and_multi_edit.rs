@@ -103,7 +103,9 @@ fn ctrl_a_hands_the_container_rect_to_select_all_in_view() {
 /// document" shortcut, which is the obvious wrong implementation of this ticket.
 #[test]
 fn select_all_is_viewport_scoped_through_the_marquee_primitive() {
-    let tool = live_code(include_str!("../tools/select_tool.rs"));
+    let tool = live_code(include_str!(
+        "../../../../map-engine/src/editing/tools/selection/marquee.rs"
+    ));
     let view_fn = fn_source(&tool, "pub fn view_ids_with_vehicles(");
     // The near corner is the top-left CSS pixel unprojected; the far corner is the viewport
     // size in PIXELS — the exact (world start, px end) shape `marquee_ids_with_vehicles` takes.
@@ -125,8 +127,8 @@ fn select_all_is_viewport_scoped_through_the_marquee_primitive() {
     let ops = live_code(crate::v2::core::test_support::editor_operations::ENTITY);
     let sel_fn = fn_source(&ops, "pub fn select_all_in_view(");
     assert!(
-        sel_fn.contains("select_tool::view_ids_with_vehicles(")
-            && sel_fn.contains("select_tool::frozen_camera("),
+        sel_fn.contains("selection::view_ids_with_vehicles(")
+            && sel_fn.contains("selection::frozen_camera("),
         "select_all_in_view must snapshot a frozen camera and run the viewport-rect query"
     );
     assert!(
@@ -431,7 +433,7 @@ fn assert_after_local_edit_outside_ids_loop(fn_name: &str, src: &str, host: &str
 /// a MEMBER of it — and to still call `apply_click` otherwise, so a click OUTSIDE the selection
 /// (or a Ctrl-click) keeps the exact Eden replace/toggle semantics.
 ///
-/// RED (drop the guard): restore a bare `st::apply_click(&mut sel, hit, additive);` with no
+/// RED (drop the guard): restore a bare `selection::apply_click(&mut sel, hit, additive);` with no
 /// `keep_multi` → "the plain-inside-selection click must be guarded so it does not collapse".
 #[test]
 fn t788_plain_click_inside_a_multi_selection_does_not_collapse_it() {
@@ -452,15 +454,15 @@ fn t788_plain_click_inside_a_multi_selection_does_not_collapse_it() {
     // an outside click / Ctrl-click still flows through Eden's `apply_click` untouched.
     assert!(
         squash(&ed).contains(&squash(
-            "if !keep_multi {\n st::apply_click(&mut sel, hit, additive);"
+            "if !keep_multi {\n selection::apply_click(&mut sel, hit, additive);"
         )),
-        "F-27: `st::apply_click` must run only under `if !keep_multi` — outside/additive clicks \
+        "F-27: `selection::apply_click` must run only under `if !keep_multi` — outside/additive clicks \
          keep Eden replace/toggle; an inside plain click preserves the selection"
     );
     // HOLLOW-PIN: a bare unconditional apply_click (the pre-fix shape) would collapse SEL9→SEL1
     // and must not return. The only apply_click in this arm is the guarded one.
     assert_eq!(
-        ed.matches("st::apply_click(&mut sel, hit, additive)")
+        ed.matches("selection::apply_click(&mut sel, hit, additive)")
             .count(),
         1,
         "F-27: exactly one apply_click call in the click arm, and it is the guarded one"

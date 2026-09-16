@@ -4,6 +4,7 @@
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 use super::*;
+use website_map_engine::editing::tools::selection;
 
 /// Read searchable entities from the current document.
 pub fn document_entities() -> Vec<crate::editor::panels::dock_left::DocEntity> {
@@ -182,24 +183,14 @@ pub fn select_all_in_view(viewport_w: f64, viewport_h: f64) -> bool {
             let Some(e) = eng.as_ref() else {
                 return false;
             };
-            crate::editor::tools::select_tool::frozen_camera(
-                viewport_w,
-                viewport_h,
-                e.target_x(),
-                e.target_y(),
-                e.zoom(),
-            )
+            selection::frozen_camera(viewport_w, viewport_h, e.target_x(), e.target_y(), e.zoom())
         };
         let ids = {
             let d = ctx.doc.borrow();
             let Some(core) = d.as_ref() else {
                 return false;
             };
-            crate::editor::tools::select_tool::view_ids_with_vehicles(
-                &cam,
-                &core.materialize(),
-                &points,
-            )
+            selection::view_ids_with_vehicles(&cam, &core.materialize(), &points)
         };
 
         let slot_ids: Vec<String> = ids
