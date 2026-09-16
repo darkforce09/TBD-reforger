@@ -759,8 +759,7 @@ pub fn validate_export_artifacts() -> Result<u8> {
                         continue;
                     }
                     let buf = std::fs::read(&p)?;
-                    let Ok(dec) = website_map_engine::io::density::tbdd::decode_tbdd(&buf)
-                    else {
+                    let Ok(dec) = website_map_engine::io::density::tbdd::decode_tbdd(&buf) else {
                         d_errs += 1;
                         continue;
                     };

@@ -74,9 +74,9 @@ mod live {
     use std::rc::Rc;
     use wasm_bindgen::prelude::*;
     use wasm_bindgen::JsCast;
-    use website_map_engine::core::context::state::RenderEngine;
+    use website_map_engine::frame::engine::RenderEngine;
+    use website_map_engine::frame::RafPump;
     use website_map_engine::overlay::lanes::role_id;
-    use website_map_engine::renderers::engine::RafPump;
     use website_map_engine::spatial::los::world::coverage_1::WorldVerdict;
     use website_map_engine::spatial::los::world::state::WorldOccluder;
     use website_map_engine::streaming::loaders::fetch::fetch_bytes;

@@ -3,9 +3,9 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::culling::lod::class_visible;
-use crate::core::culling::lod::contour_interval_for_zoom;
-use crate::renderers::primitives::compose::compose_two_tone_contours;
+use crate::overlay::lod::class_visible;
+use crate::overlay::lod::contour_interval_for_zoom;
+use crate::world::mesh::compose_two_tone_contours;
 use crate::world::terrain::dem::grid::DEM_VECTOR_GRID_FACTOR;
 use crate::world::terrain::dem::grid::DemVectorGrid;
 use crate::world::terrain::dem::grid::downsample_dem_grid;
@@ -20,7 +20,7 @@ use crate::world::terrain::water::mesh::compose_sea_mesh;
 
 use std::rc::Rc;
 
-use crate::core::context::handles::EngineHandle;
+use crate::frame::EngineHandle;
 
 const CONTOUR_RGBA: [u8; 4] = [188, 150, 100, 235];
 

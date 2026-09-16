@@ -3,18 +3,18 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::context::state::RenderEngine;
-use crate::core::pipeline::bindings;
-use crate::renderers::batching::encoder::pipeline_table;
-use crate::renderers::batching::scene::ANCHOR;
-use crate::renderers::pipelines::building::create_building_pipeline;
-use crate::renderers::pipelines::icon::create_icon_pipeline;
-use crate::renderers::pipelines::quad::create_quad_pipeline;
-use crate::renderers::pipelines::text::create_text_pipeline;
-use crate::renderers::pipelines::textured::create_forest_density_pipeline;
-use crate::renderers::pipelines::textured::create_textured_pipeline;
-use crate::renderers::pipelines::vector::create_line_pipeline;
-use crate::renderers::pipelines::vector::create_polygon_pipeline;
+use crate::frame::bindings;
+use crate::frame::encode::pipeline_table;
+use crate::frame::engine::RenderEngine;
+use crate::frame::pipelines::building::create_building_pipeline;
+use crate::frame::pipelines::icon::create_icon_pipeline;
+use crate::frame::pipelines::quad::create_quad_pipeline;
+use crate::frame::pipelines::text::create_text_pipeline;
+use crate::frame::pipelines::textured::create_forest_density_pipeline;
+use crate::frame::pipelines::textured::create_textured_pipeline;
+use crate::frame::pipelines::vector::create_line_pipeline;
+use crate::frame::pipelines::vector::create_polygon_pipeline;
+use crate::world::scene::ANCHOR;
 use std::cell::Cell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;

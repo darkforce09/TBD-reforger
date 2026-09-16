@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::buffers::readback::ReadbackLane;
+use crate::frame::buffers::readback::ReadbackLane;
 use std::cell::Cell;
 use std::rc::Rc;
 

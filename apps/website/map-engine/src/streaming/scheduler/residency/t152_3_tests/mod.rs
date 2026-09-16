@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::culling::lod::class_visible;
+use crate::overlay::lod::class_visible;
 
 use crate::world::environment::classify::class_code;
 

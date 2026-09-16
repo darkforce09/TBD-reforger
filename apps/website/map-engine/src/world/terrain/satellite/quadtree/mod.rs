@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::context::handles::EngineHandle;
+use crate::frame::EngineHandle;
 use crate::streaming::bridge::progress::BootEvent;
 use crate::streaming::bridge::progress::BootSeg;
 use crate::streaming::bridge::progress::Ordered;

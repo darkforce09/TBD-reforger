@@ -310,7 +310,7 @@ pub fn publish(bridge: &BridgeHandle) {
 }
 
 /// Publish engine.
-pub fn publish_engine(bridge: &BridgeHandle, engine: &crate::core::context::state::RenderEngine) {
+pub fn publish_engine(bridge: &BridgeHandle, engine: &crate::frame::engine::RenderEngine) {
     {
         let mut b = bridge.borrow_mut();
         b.merge_engine_stats(&engine.stats());

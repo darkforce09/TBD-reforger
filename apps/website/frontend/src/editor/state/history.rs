@@ -39,12 +39,12 @@ use website_map_engine::overlay::symbology::links::squad_links::build_squad_link
 // squad-leader hairlines into whatever lane 9 became rather than failing the build.
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use website_map_engine::core::context::state::RenderEngine;
+use website_map_engine::frame::engine::RenderEngine;
 use website_map_engine::overlay::lanes::role_id;
 
 use crate::editor::state::doc_host::DocHandle;
 use crate::editor::tools::select_tool::SelectionHandle;
-use website_map_engine::core::context::handles::EngineHandle;
+use website_map_engine::frame::EngineHandle;
 
 /// Everything a history command needs, shared from `mission_editor::on_load`. `doc` is the same
 /// `Rc` the IDB restore swaps into, so undo/redo always see the live document. The four signals are

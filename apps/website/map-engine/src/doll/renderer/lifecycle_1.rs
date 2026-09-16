@@ -3,10 +3,10 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::context::device_1::instance_descriptor;
 use crate::doll::renderer::pack::pack_instances;
 use crate::doll::renderer::pipeline::create_depth;
 use crate::doll::renderer::pipeline::create_doll_pipeline;
+use crate::frame::boot::instance_descriptor;
 
 use wasm_bindgen::prelude::*;
 

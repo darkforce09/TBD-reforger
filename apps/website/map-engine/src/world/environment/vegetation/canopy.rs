@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::culling::lod::INSTANCE_BUDGET;
+use crate::overlay::lod::INSTANCE_BUDGET;
 use crate::streaming::loaders::chunk::WorldChunk;
 use crate::streaming::scheduler::chunk_math::Bbox;
 use crate::world::environment::classify::class_code;
@@ -24,7 +24,7 @@ pub fn exact_tree_count(
 ) -> usize {
     let tree_code = class_code("tree");
     let veg_code = class_code("vegetation");
-    let count_veg = crate::core::culling::lod::class_visible("vegetation", z);
+    let count_veg = crate::overlay::lod::class_visible("vegetation", z);
     let mut n = 0usize;
     for id in draw_ids {
         let Some(chunk) = chunks.get(id) else {

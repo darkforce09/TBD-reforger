@@ -3,17 +3,17 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::context::state::RenderEngine;
-use crate::core::pipeline::bindings;
+use crate::frame::bindings;
+use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 
-use crate::renderers::batching::scene::ANCHOR;
+use crate::world::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
 use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 
 /// Canonical icon uv bytes value.
-pub(crate) const ICON_UV_BYTES: usize = crate::renderers::batching::scene::ATLAS_GLYPH_COUNT * 16;
+pub(crate) const ICON_UV_BYTES: usize = website_graphics_engine::layout::ATLAS_GLYPH_COUNT * 16;
 
 /// Canonical icon uniform bytes value.
 pub(crate) const ICON_UNIFORM_BYTES: u64 = (ICON_UV_BYTES + 16) as u64;

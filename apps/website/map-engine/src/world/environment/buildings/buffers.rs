@@ -3,12 +3,12 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::context::state::RenderEngine;
-use crate::core::pipeline::bindings;
+use crate::frame::bindings;
+use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 
-use crate::renderers::batching::scene::ANCHOR;
+use crate::world::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
 use website_graphics_engine::draw::geometry::LineVertex;
 use website_graphics_engine::draw::{lines as line_buffers, polygons};
@@ -35,7 +35,7 @@ impl RenderEngine {
         }
         let mut instances = Vec::with_capacity(fill.len() / STRIDE);
         for c in fill.chunks_exact(STRIDE) {
-            instances.push(crate::renderers::batching::scene::BuildingInstance {
+            instances.push(website_graphics_engine::layout::BuildingInstance {
                 center: [
                     (f64::from(c[0]) - ANCHOR[0]) as f32,
                     (f64::from(c[1]) - ANCHOR[1]) as f32,

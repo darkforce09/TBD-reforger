@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::context::state::RenderEngine;
+use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::symbology::instances::bridge_1::SlotAtlasGpu;
 use crate::overlay::symbology::instances::bridge_1::SlotGpuBridge;

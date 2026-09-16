@@ -1,10 +1,10 @@
 //! Role: draw order t780 connections bind pick bridge.
-//! Position: `overlay/tests/tests` in the graphics engine.
+//! Position: `overlay/tests/tests` in the map engine.
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 const ENGINE: &str = concat!(
-    include_str!("../../../renderers/engine/mod.rs"),
+    include_str!("../../../frame/mod.rs"),
     "\n",
     include_str!("../../symbology/instances/bridge_1.rs"),
     "\n",
@@ -12,27 +12,28 @@ const ENGINE: &str = concat!(
     "\n",
     include_str!("../../symbology/instances/bridge_3.rs"),
     "\n",
-    include_str!("../../../core/context/state.rs"),
+    include_str!("../../../frame/engine.rs"),
     "\n",
-    include_str!("../../../core/context/device_1.rs"),
-    "\n",
-    include_str!("../../../core/context/device_2.rs"),
+    // T-0xx Phase 2B.1: `core/context/device_1.rs` and `device_2.rs` both became
+    // `frame/boot.rs` — the 29-line file folded into the 426-line one — so this list pins it
+    // once where it used to pin two members.
+    include_str!("../../../frame/boot.rs"),
     "\n",
     include_str!("../../../diagnostics/timing/gpu.rs"),
     "\n",
-    include_str!("../../../core/context/viewport.rs"),
+    include_str!("../../../camera/viewport.rs"),
     "\n",
     include_str!("../../../world/terrain/satellite/textures.rs"),
     "\n",
-    include_str!("../../../renderers/primitives/hairlines.rs"),
+    include_str!("../../../frame/upload/hairlines.rs"),
     "\n",
-    include_str!("../../../renderers/primitives/vector_lines.rs"),
+    include_str!("../../../frame/upload/polygons.rs"),
     "\n",
     include_str!("../../symbology/instances/lanes.rs"),
     "\n",
-    include_str!("../../../renderers/engine/lifecycle.rs"),
+    include_str!("../../../frame/lifecycle.rs"),
     "\n",
-    include_str!("../../../renderers/text/lanes.rs"),
+    include_str!("../../../frame/upload/text.rs"),
     "\n",
     include_str!("../../symbology/atlas/gpu.rs"),
     "\n",
@@ -47,9 +48,9 @@ const ENGINE: &str = concat!(
     // proven by running this suite with them removed. A cross-crate `include_str!`
     // would have kept the bytes at the cost of making this crate's tests break on the
     // renderer's internal layout, which is the coupling the split exists to remove.
-    include_str!("../../../renderers/batching/encoder.rs"),
+    include_str!("../../../frame/encode.rs"),
     "\n",
-    include_str!("../../../core/culling/engine.rs"),
+    include_str!("../../../frame/cull.rs"),
     "\n",
     include_str!("../../../diagnostics/bench/frame_1.rs"),
     "\n",
@@ -61,11 +62,11 @@ const ENGINE: &str = concat!(
     "\n",
     include_str!("../../../spatial/los/terrain/overlay.rs"),
     "\n",
-    include_str!("../../../core/context/preferences.rs"),
+    include_str!("../../lanes_prefs.rs"),
     "\n",
     include_str!("../../../world/environment/buildings/buffers.rs"),
     "\n",
-    include_str!("../../../renderers/primitives/selection.rs"),
+    include_str!("../../../frame/upload/selection.rs"),
     "\n",
     include_str!("../../../diagnostics/readback/texture.rs"),
     "\n",

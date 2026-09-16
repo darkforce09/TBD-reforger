@@ -6,11 +6,11 @@
 //! wall: the renderer draws cell 6, and never learns that cell 6 means a medical cross.
 
 use crate::overlay::symbology::instances::symbols::px_to_m_at_zoom;
-use crate::renderers::text::metrics::TEXT_GLYPH_ADVANCE_RATIO;
-use crate::renderers::text::metrics::TextGlyphInstance;
-use crate::renderers::text::metrics::glyph_index_for_char;
-use crate::renderers::text::metrics::text_char_meters;
-use crate::renderers::text::packing::pack_text_icon_bytes;
+use crate::overlay::symbology::text_metrics::TEXT_GLYPH_ADVANCE_RATIO;
+use crate::overlay::symbology::text_metrics::TextGlyphInstance;
+use crate::overlay::symbology::text_metrics::glyph_index_for_char;
+use crate::overlay::symbology::text_metrics::text_char_meters;
+use crate::overlay::symbology::text_packing::pack_text_icon_bytes;
 
 /// Canonical map-glyph id for a briefing marker — the drawable shape the web map renders, and the index into the widened slot atlas ([`build_marker_slot_atlas`]).
 #[repr(u16)]
@@ -216,7 +216,7 @@ fn marker_glyph_coverage(g: u16, px: f64, py: f64) -> f64 {
     }
 }
 
-/// Widened slot atlas: [`MARKER_GLYPH_COUNT`] cells of 64 px laid out horizontally, white-on-alpha. Returned as `(rgba, width, height, uv)` for [`crate::core::context::state::RenderEngine::ensure_slot_atlas`]; `uv` is the flat `[minU,minV,maxU,maxV]·N` table, cell `i` at `[i/N, 0, (i+1)/N, 1]`.
+/// Widened slot atlas: [`MARKER_GLYPH_COUNT`] cells of 64 px laid out horizontally, white-on-alpha. Returned as `(rgba, width, height, uv)` for [`crate::frame::engine::RenderEngine::ensure_slot_atlas`]; `uv` is the flat `[minU,minV,maxU,maxV]·N` table, cell `i` at `[i/N, 0, (i+1)/N, 1]`.
 #[must_use]
 pub fn build_marker_slot_atlas() -> (Vec<u8>, u32, u32, Vec<f32>) {
     const CELL: usize = 64;

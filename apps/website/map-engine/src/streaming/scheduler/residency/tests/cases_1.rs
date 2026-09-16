@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::culling::lod::INSTANCE_BUDGET;
+use crate::overlay::lod::INSTANCE_BUDGET;
 
 use crate::world::environment::vegetation::canopy::exact_tree_count;
 

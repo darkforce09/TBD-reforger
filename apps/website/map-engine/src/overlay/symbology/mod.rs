@@ -24,3 +24,14 @@ pub mod markers;
 
 /// Roles.
 pub mod roles;
+
+/// Glyph metrics, the baked ASCII atlas, and the bitmap font.
+// T-0xx Phase 2B.1: `renderers/text/{metrics,packing}.rs`. They pack cartographic label
+// strings into glyph instances — which labels, at what size, in what colour — so they belong
+// with the labels, not in a renderer.
+#[cfg(feature = "streaming")]
+pub mod text_metrics;
+
+/// Packing label strings into glyph instance bytes.
+#[cfg(feature = "streaming")]
+pub mod text_packing;

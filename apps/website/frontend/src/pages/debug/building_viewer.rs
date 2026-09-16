@@ -139,7 +139,6 @@ impl ViewFloor {
 pub mod geom {
     use super::ViewFloor;
     use crate::editor::tools::los_tool::{pack_rgba_256, ViewshedTexture};
-    use website_map_engine::renderers::primitives::triangulate::triangulate_simple;
     use website_map_engine::spatial::los::interior::wash::LevelWash;
     use website_map_engine::spatial::los::terrain::viewshed::Visibility;
     use website_map_engine::world::architecture::blueprint::structure::BuildingBlueprint;
@@ -150,6 +149,7 @@ pub mod geom {
     use website_map_engine::world::architecture::section::cutter::FLOOR_WINDOW_M;
     use website_map_engine::world::architecture::section::cutter::PIT_DEPTH_M;
     use website_map_engine::world::architecture::section::cutter::PLAN_CELL_M;
+    use website_map_engine::world::mesh::triangulate::triangulate_simple;
     use website_map_engine::world::terrain::roads::styling::expand_polyline_strip;
     use website_map_engine::world::terrain::roads::styling::StripVertex;
 
@@ -2000,9 +2000,9 @@ mod live {
     use std::sync::Arc;
     use wasm_bindgen::prelude::*;
     use wasm_bindgen::JsCast;
-    use website_map_engine::core::context::state::RenderEngine;
+    use website_map_engine::frame::engine::RenderEngine;
+    use website_map_engine::frame::RafPump;
     use website_map_engine::overlay::lanes::role_id;
-    use website_map_engine::renderers::engine::RafPump;
     use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
     use website_map_engine::spatial::los::interior::wash::LevelWash;
     use website_map_engine::world::architecture::blueprint::attribution_1::LosResult;

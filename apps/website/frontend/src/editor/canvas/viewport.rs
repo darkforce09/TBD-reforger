@@ -42,13 +42,13 @@ pub(crate) fn device_size(css_w: f64, css_h: f64, dpr: f64) -> (u32, u32) {
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn start_raf(
     engine: std::rc::Rc<
-        std::cell::RefCell<Option<website_map_engine::core::context::state::RenderEngine>>,
+        std::cell::RefCell<Option<website_map_engine::frame::engine::RenderEngine>>,
     >,
     disposed: std::sync::Arc<std::sync::atomic::AtomicBool>,
     debug_hud: RwSignal<String>,
     scale_mpp: RwSignal<f64>,
 ) {
-    use website_map_engine::renderers::engine::RafPump;
+    use website_map_engine::frame::RafPump;
 
     // T-172 B9 — ~1 Hz debug readout sample (screen-05 bottom-right HUD): zoom, drawn world
     // chunks, tree glyphs, FPS. Counting frames between samples measures real rAF cadence —
@@ -133,7 +133,7 @@ pub(crate) fn start_raf(
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_self_checks(
     engine: std::rc::Rc<
-        std::cell::RefCell<Option<website_map_engine::core::context::state::RenderEngine>>,
+        std::cell::RefCell<Option<website_map_engine::frame::engine::RenderEngine>>,
     >,
 ) {
     use wasm_bindgen::prelude::*;
@@ -205,7 +205,7 @@ pub(crate) fn register_self_checks(
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_editor_cam(
     engine: std::rc::Rc<
-        std::cell::RefCell<Option<website_map_engine::core::context::state::RenderEngine>>,
+        std::cell::RefCell<Option<website_map_engine::frame::engine::RenderEngine>>,
     >,
     map_host: website_map_engine::streaming::host::HostHandle,
 ) {
@@ -256,7 +256,7 @@ pub(crate) fn register_editor_cam(
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_slot_stats(
     engine: std::rc::Rc<
-        std::cell::RefCell<Option<website_map_engine::core::context::state::RenderEngine>>,
+        std::cell::RefCell<Option<website_map_engine::frame::engine::RenderEngine>>,
     >,
 ) {
     use wasm_bindgen::prelude::*;

@@ -4,14 +4,14 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::camera::ortho::state::OrthoCamera;
-use crate::core::context::state::CLEAR_COLOR;
-use crate::core::context::state::RenderEngine;
 use crate::diagnostics::readback::scene::map_read_4;
 use crate::diagnostics::readback::scene::padded_bytes_per_row;
+use crate::frame::engine::CLEAR_COLOR;
+use crate::frame::engine::RenderEngine;
 
-use crate::renderers::batching::scene::ANCHOR;
-use crate::renderers::pipelines::text::create_text_pipeline;
-use crate::renderers::text::lanes::text_uniform_bytes;
+use crate::frame::pipelines::text::create_text_pipeline;
+use crate::frame::upload::text::text_uniform_bytes;
+use crate::world::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -49,7 +49,8 @@ impl RenderEngine {
                 }],
             });
 
-            let (rgba, aw, ah) = crate::renderers::text::atlas::bake_ascii_atlas_rgba();
+            let (rgba, aw, ah) =
+                crate::overlay::symbology::text_metrics::atlas::bake_ascii_atlas_rgba();
             let tex = device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("text-self-check-atlas"),
                 size: wgpu::Extent3d {
@@ -110,7 +111,7 @@ impl RenderEngine {
                 ],
             });
 
-            let inst = crate::renderers::batching::scene::IconInstance {
+            let inst = website_graphics_engine::layout::IconInstance {
                 pos: [0.0, 0.0],
                 size: 160.0,
                 yaw: 0,

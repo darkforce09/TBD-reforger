@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::culling::lod::REF_ZOOM;
+use crate::overlay::lod::REF_ZOOM;
 
 /// Readability floor (px): never shrink a glyph below this on screen.
 pub const GLYPH_SIZE_MIN_PX: f64 = 4.0;

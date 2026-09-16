@@ -3,8 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::context::state::EVERON_BOUNDS;
-use crate::core::context::state::RenderEngine;
+use crate::frame::engine::RenderEngine;
 use crate::overlay::symbology::instances::drag::DragGpuPhase;
 use crate::overlay::symbology::instances::drag::classify_drag_transition;
 use crate::overlay::symbology::instances::patches::selected_row_patch;
@@ -12,6 +11,7 @@ use crate::overlay::symbology::instances::patches::unselected_row_patch_for;
 use crate::overlay::symbology::instances::symbols::SLOT_ICON_STRIDE;
 use crate::overlay::symbology::instances::symbols::pack_cluster_instances;
 use crate::overlay::symbology::roles::classify::SIDE_BLUFOR_RGBA;
+use crate::world::scene::EVERON_BOUNDS;
 use std::collections::HashSet;
 use wasm_bindgen::prelude::*;
 

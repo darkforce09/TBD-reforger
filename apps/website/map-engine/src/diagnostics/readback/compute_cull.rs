@@ -3,8 +3,8 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::context::state::RenderEngine;
 use crate::diagnostics::readback::scene::readback_sleep_ms;
+use crate::frame::engine::RenderEngine;
 use std::cell::Cell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -43,8 +43,8 @@ impl RenderEngine {
             }
             let frustum = [-1_234.5_f64, -987.25, 2_345.75, 1_876.5];
 
-            let mut cull = crate::core::culling::compute::IconComputeCull::create(&device, &shader);
-            let cpu = crate::core::culling::oracle::count_icons_in_frustum(&src20, frustum);
+            let mut cull = crate::frame::compute::IconComputeCull::create(&device, &shader);
+            let cpu = crate::frame::oracle::count_icons_in_frustum(&src20, frustum);
             cull.upload_icons(&device, &queue, &src20);
             let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("cull-self-check"),

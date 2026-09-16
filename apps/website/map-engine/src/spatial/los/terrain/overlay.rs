@@ -3,8 +3,8 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::context::state::BasemapMode;
-use crate::core::context::state::RenderEngine;
+use crate::frame::engine::BasemapMode;
+use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 
 use crate::world::terrain::satellite::textures::TexLane;
@@ -67,10 +67,9 @@ impl RenderEngine {
                 depth_or_array_layers: 1,
             },
         );
-        let rect =
-            crate::renderers::batching::lanes::world_rect_rel([min_x, min_y], [max_x, max_y]);
+        let rect = crate::world::scene::world_rect_rel([min_x, min_y], [max_x, max_y]);
 
-        let inst = crate::renderers::batching::scene::QuadInstance {
+        let inst = website_graphics_engine::layout::QuadInstance {
             min: [rect[0], rect[1]],
             max: [rect[2], rect[3]],
             color: [1.0, 1.0, 1.0, 1.0],

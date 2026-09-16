@@ -4,14 +4,14 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::camera::ortho::state::OrthoCamera;
-use crate::core::context::state::CLEAR_COLOR;
-use crate::core::context::state::RenderEngine;
 use crate::diagnostics::readback::scene::map_read_4;
 use crate::diagnostics::readback::scene::padded_bytes_per_row;
+use crate::frame::engine::CLEAR_COLOR;
+use crate::frame::engine::RenderEngine;
 
-use crate::renderers::batching::scene::ANCHOR;
-use crate::renderers::pipelines::vector::create_line_pipeline;
-use crate::renderers::pipelines::vector::create_polygon_pipeline;
+use crate::frame::pipelines::vector::create_line_pipeline;
+use crate::frame::pipelines::vector::create_polygon_pipeline;
+use crate::world::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -52,19 +52,19 @@ impl RenderEngine {
             let line_c = [173.0_f32 / 255.0, 198.0 / 255.0, 1.0, 200.0 / 255.0];
             let (x0, y0, x1, y1) = (-100.0_f32, -100.0, 100.0, 100.0);
             let fill_verts = [
-                crate::renderers::batching::lanes::LineVertex {
+                website_graphics_engine::layout::LineVertex {
                     pos: [x0, y0],
                     color: fill_c,
                 },
-                crate::renderers::batching::lanes::LineVertex {
+                website_graphics_engine::layout::LineVertex {
                     pos: [x1, y0],
                     color: fill_c,
                 },
-                crate::renderers::batching::lanes::LineVertex {
+                website_graphics_engine::layout::LineVertex {
                     pos: [x1, y1],
                     color: fill_c,
                 },
-                crate::renderers::batching::lanes::LineVertex {
+                website_graphics_engine::layout::LineVertex {
                     pos: [x0, y1],
                     color: fill_c,
                 },
@@ -75,11 +75,11 @@ impl RenderEngine {
             for e in 0..4 {
                 let a = ring[e];
                 let b = ring[(e + 1) % 4];
-                line_verts.push(crate::renderers::batching::lanes::LineVertex {
+                line_verts.push(website_graphics_engine::layout::LineVertex {
                     pos: a,
                     color: line_c,
                 });
-                line_verts.push(crate::renderers::batching::lanes::LineVertex {
+                line_verts.push(website_graphics_engine::layout::LineVertex {
                     pos: b,
                     color: line_c,
                 });

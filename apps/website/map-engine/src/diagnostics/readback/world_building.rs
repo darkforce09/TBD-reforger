@@ -4,13 +4,13 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::camera::ortho::state::OrthoCamera;
-use crate::core::context::state::CLEAR_COLOR;
-use crate::core::context::state::RenderEngine;
 use crate::diagnostics::readback::scene::map_read_4;
 use crate::diagnostics::readback::scene::padded_bytes_per_row;
+use crate::frame::engine::CLEAR_COLOR;
+use crate::frame::engine::RenderEngine;
 
-use crate::renderers::batching::scene::ANCHOR;
-use crate::renderers::pipelines::building::create_building_pipeline;
+use crate::frame::pipelines::building::create_building_pipeline;
+use crate::world::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -50,7 +50,7 @@ impl RenderEngine {
             });
 
             let rad = (37.0_f64 * std::f64::consts::PI) / 180.0;
-            let inst = crate::renderers::batching::scene::BuildingInstance {
+            let inst = website_graphics_engine::layout::BuildingInstance {
                 center: [0.0, 0.0],
                 half: [40.0, 20.0],
                 basis: [rad.cos() as f32, rad.sin() as f32],

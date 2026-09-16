@@ -13,5 +13,13 @@
 #[cfg(feature = "streaming")]
 pub mod lanes;
 
+/// Lane visibility and tint preferences, plus the 1 km grid overlay.
+#[cfg(all(target_arch = "wasm32", feature = "render"))]
+pub mod lanes_prefs;
+
+/// Zoom gates: which classes are legible at this scale, and the contour interval.
+#[cfg(feature = "streaming")]
+pub mod lod;
+
 /// Labels, roles, links and the instance belts that place them.
 pub mod symbology;

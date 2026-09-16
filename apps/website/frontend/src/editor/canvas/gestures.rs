@@ -48,7 +48,7 @@ pub(crate) struct EditorGestureContext {
     pub(crate) container: web_sys::HtmlDivElement,
     /// The map canvas — the hover cursor writes its CSS `cursor` claim here (T-802).
     pub(crate) canvas: web_sys::HtmlCanvasElement,
-    pub(crate) engine: website_map_engine::core::context::handles::EngineHandle,
+    pub(crate) engine: website_map_engine::frame::EngineHandle,
     pub(crate) doc: crate::editor::state::doc_host::DocHandle,
     pub(crate) selection: crate::editor::tools::select_tool::SelectionHandle,
     /// The in-flight LMB gesture (T-159.19 `LeftGesture`: Pending → Move | Marquee | Ruler | Rotate).

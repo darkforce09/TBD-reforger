@@ -3,18 +3,18 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::context::state::RenderEngine;
-use crate::core::pipeline::bindings;
 use crate::diagnostics::readback::scene::readback_sleep_ms;
 use crate::diagnostics::timing::gpu::now_ms;
 use crate::diagnostics::timing::gpu::perf_now_ms;
+use crate::frame::bindings;
+use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 
-use crate::renderers::batching::scene::ANCHOR;
-use crate::renderers::batching::scene::CHUNK_CAPACITY;
+use crate::world::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
 use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer};
+use website_graphics_engine::layout::CHUNK_CAPACITY;
 
 #[wasm_bindgen]
 impl RenderEngine {
@@ -108,12 +108,7 @@ impl RenderEngine {
         while remaining > 0 {
             let count = remaining.min(CHUNK_CAPACITY);
             let g0 = now_ms();
-            crate::renderers::batching::scene::stress_chunk_into(
-                chunk_idx,
-                count,
-                seed,
-                &mut self.staging,
-            );
+            crate::world::scene::stress_chunk_into(chunk_idx, count, seed, &mut self.staging);
             gen_ms += now_ms() - g0;
 
             let u0 = now_ms();

@@ -3,9 +3,9 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::renderers::primitives::compose::PolyMeshGpu;
-use crate::renderers::primitives::compose::mesh_from_tri;
-use crate::renderers::primitives::triangulate::triangulate_ring_buffer;
+use crate::world::mesh::PolyMeshGpu;
+use crate::world::mesh::mesh_from_tri;
+use crate::world::mesh::triangulate::triangulate_ring_buffer;
 use crate::world::terrain::dem::grid::DemVectorGrid;
 
 use crate::streaming::scheduler::chunk_math::Bbox;

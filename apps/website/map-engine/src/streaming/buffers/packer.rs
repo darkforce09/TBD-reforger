@@ -3,8 +3,8 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::culling::lod::INSTANCE_BUDGET;
-use crate::core::culling::lod::class_visible;
+use crate::overlay::lod::INSTANCE_BUDGET;
+use crate::overlay::lod::class_visible;
 use crate::overlay::symbology::labels::glyph_math::landmark_glyph_icon_key;
 use crate::streaming::scheduler::chunk_math::Bbox;
 use crate::streaming::scheduler::chunk_math::chunk_ids_for_rect;

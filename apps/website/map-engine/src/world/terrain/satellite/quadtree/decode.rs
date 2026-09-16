@@ -54,7 +54,7 @@ pub(super) async fn decode_webp(bytes: &[u8], webgl2: bool) -> Option<Decoded> {
 
 /// Upload decoded.
 pub(super) fn upload_decoded(
-    engine: &mut crate::core::context::state::RenderEngine,
+    engine: &mut crate::frame::engine::RenderEngine,
     role: u32,
     mip: u32,
     x: u32,

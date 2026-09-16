@@ -13,14 +13,14 @@
 /// Camera.
 pub mod camera;
 
-/// Core.
-#[cfg(feature = "streaming")]
-pub mod core;
-
 /// Mission data: the authored scenario and the CRDT store that edits it.
 // T-0xx Phase 2A: the folded `website-mission-core`. `data/mod.rs` gates its two halves on
 // `scenario` and `store`, and `scenario` is this crate's default — the tier `website-api` links.
 pub mod data;
+
+/// Frame: the engine, its GPU resources, and the belts that build a frame packet.
+#[cfg(feature = "render")]
+pub mod frame;
 
 /// Diagnostics.
 #[cfg(feature = "render")]
@@ -37,10 +37,6 @@ pub mod io;
 /// Cartographic overlay: the named lanes and the symbology drawn in them.
 #[cfg(feature = "world")]
 pub mod overlay;
-
-/// Renderers.
-#[cfg(feature = "io")]
-pub mod renderers;
 
 /// Spatial.
 // `bvh` alone is not enough: `spatial/terrain_los` reads `crate::world::terrain::dem`. `world` implies `bvh`.

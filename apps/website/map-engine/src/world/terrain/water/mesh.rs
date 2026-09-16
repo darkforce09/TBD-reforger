@@ -3,10 +3,8 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::renderers::primitives::{
-    compose::{PolyMeshGpu, mesh_from_tri},
-    triangulate::triangulate_ring_buffer,
-};
+use crate::world::mesh::triangulate::triangulate_ring_buffer;
+use crate::world::mesh::{PolyMeshGpu, mesh_from_tri};
 use crate::world::terrain::relief::sea_band::SeaBandGeometry;
 
 /// Sea-band geometry → triangulated fill mesh with `layer_alpha` (seaFillAlpha).

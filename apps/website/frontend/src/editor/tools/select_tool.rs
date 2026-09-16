@@ -22,8 +22,8 @@ use std::rc::Rc;
 
 use wasm_bindgen::prelude::*;
 use website_map_engine::camera::ortho::state::OrthoCamera;
-use website_map_engine::core::context::state::RenderEngine;
 use website_map_engine::data::store::SlotSoa;
+use website_map_engine::frame::engine::RenderEngine;
 use website_map_engine::overlay::lanes::role_id;
 use website_map_engine::overlay::symbology::links::squad_links::pack_squad_link_drag_preview;
 use website_map_engine::spatial::indexing::point_index::PointIndex;
@@ -56,7 +56,7 @@ pub type SelectionHandle = Rc<RefCell<Vec<String>>>;
 
 /// A leaked `Option<RenderEngine>` handle, exactly the one `mission_editor.rs` owns. `pub` since
 /// T-159.21 so `mission_history` names the same alias instead of redeclaring a twin.
-pub use website_map_engine::core::context::handles::EngineHandle;
+pub use website_map_engine::frame::EngineHandle;
 
 /// The pending LMB gesture: the press point (CSS px, container-local) + a **frozen** ortho camera
 /// copied at pointer-down. A sub-threshold release unprojects against `cam` (never the live engine).

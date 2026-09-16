@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::context::state::RenderEngine;
+use crate::frame::engine::RenderEngine;
 
 use wasm_bindgen::prelude::*;
 
@@ -26,7 +26,7 @@ impl RenderEngine {
         height: u32,
         uv: &[f32],
     ) -> Result<(), JsError> {
-        use crate::renderers::batching::scene::ATLAS_GLYPH_COUNT;
+        use website_graphics_engine::layout::ATLAS_GLYPH_COUNT;
 
         if uv.len() > ATLAS_GLYPH_COUNT * 4 {
             return Err(JsError::new(&format!(

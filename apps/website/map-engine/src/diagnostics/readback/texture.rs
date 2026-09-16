@@ -4,14 +4,14 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::camera::ortho::state::OrthoCamera;
-use crate::core::context::state::CLEAR_COLOR;
-use crate::core::context::state::RenderEngine;
 use crate::diagnostics::readback::scene::map_read_4;
 use crate::diagnostics::readback::scene::padded_bytes_per_row;
-use crate::renderers::batching::scene::ANCHOR;
-use crate::renderers::batching::scene::QuadInstance;
-use crate::renderers::pipelines::textured::create_textured_pipeline;
+use crate::frame::engine::CLEAR_COLOR;
+use crate::frame::engine::RenderEngine;
+use crate::frame::pipelines::textured::create_textured_pipeline;
+use crate::world::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
+use website_graphics_engine::layout::QuadInstance;
 
 #[wasm_bindgen]
 impl RenderEngine {

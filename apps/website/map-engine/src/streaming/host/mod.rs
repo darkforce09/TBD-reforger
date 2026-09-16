@@ -13,7 +13,7 @@ thread_local! {
 
     static CAMERA_GESTURE: Cell<bool> = const { Cell::new(false) };
 }
-use crate::core::context::handles::EngineHandle;
+use crate::frame::EngineHandle;
 use crate::streaming::bridge::progress::ProgressFn;
 use crate::streaming::bridge::statistics::BridgeHandle;
 use crate::streaming::bridge::statistics::new_bridge;

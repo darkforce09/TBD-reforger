@@ -8,10 +8,10 @@ use std::cell::Cell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 
-use crate::core::context::state::CLEAR_COLOR;
-use crate::core::context::state::RenderEngine;
-use crate::renderers::batching::scene::ANCHOR;
-use crate::renderers::pipelines::quad::create_quad_pipeline;
+use crate::frame::engine::CLEAR_COLOR;
+use crate::frame::engine::RenderEngine;
+use crate::frame::pipelines::quad::create_quad_pipeline;
+use crate::world::scene::ANCHOR;
 
 const PROBE_W: u32 = 800;
 const PROBE_H: u32 = 600;

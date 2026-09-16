@@ -1457,7 +1457,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             canvas.set_width(dw);
             canvas.set_height(dh);
 
-            let engine: Rc<RefCell<Option<website_map_engine::core::context::state::RenderEngine>>> =
+            let engine: Rc<RefCell<Option<website_map_engine::frame::engine::RenderEngine>>> =
                 Rc::new(RefCell::new(None));
             // T-166 — shared map-asset host (camera-settle refresh after wheel/pan).
             let map_host = website_map_engine::streaming::host::new_host_handle();
@@ -2328,7 +2328,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let report = report.clone();
                 let (cw, ch) = (rect0.width(), rect0.height());
                 async move {
-                    match website_map_engine::core::context::state::RenderEngine::create(canvas, force_webgl).await {
+                    match website_map_engine::frame::engine::RenderEngine::create(canvas, force_webgl).await {
                         Ok(mut eng) => {
                             if disposed.load(Ordering::Relaxed) {
                                 return;

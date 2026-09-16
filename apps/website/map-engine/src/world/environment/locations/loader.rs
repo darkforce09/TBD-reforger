@@ -3,11 +3,11 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::renderers::text::metrics::text_char_meters;
-use crate::renderers::text::packing::pack_height_label_glyphs;
-use crate::renderers::text::packing::pack_road_label_bytes;
-use crate::renderers::text::packing::pack_text_icon_bytes;
-use crate::renderers::text::packing::pack_town_label_bytes;
+use crate::overlay::symbology::text_metrics::text_char_meters;
+use crate::overlay::symbology::text_packing::pack_height_label_glyphs;
+use crate::overlay::symbology::text_packing::pack_road_label_bytes;
+use crate::overlay::symbology::text_packing::pack_text_icon_bytes;
+use crate::overlay::symbology::text_packing::pack_town_label_bytes;
 use crate::streaming::loaders::manifest::LabelsBlock;
 use crate::streaming::loaders::manifest::parse_manifest_binary;
 use crate::world::environment::locations::peaks::HeightLabel;
@@ -22,7 +22,7 @@ use crate::world::environment::locations::towns::parse_locations_json;
 use crate::world::terrain::dem::manifest::DemManifest;
 use crate::world::terrain::roads::network::RoadSegment;
 
-use crate::core::context::handles::EngineHandle;
+use crate::frame::EngineHandle;
 use crate::streaming::bridge::preferences::WorldLayerPrefs;
 use crate::streaming::bridge::progress::BootEvent;
 use crate::streaming::bridge::progress::BootSeg;

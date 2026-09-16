@@ -39,14 +39,14 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use serde_json::Value;
 
-use website_map_engine::world::environment::buildings::prefab::build_prefab_maps;
-use website_map_engine::world::environment::buildings::prefab::narrow_prefab_rows;
-use website_map_engine::world::environment::classify::NO_CLASS;
-use website_map_engine::world::environment::classify::narrow_instance_row_v2;
 use website_map_engine::io::containers::header::ContainerHeader;
 use website_map_engine::io::containers::tbdc::TbdcHeader;
 use website_map_engine::io::pod::instance::ObjectInstancePod;
 use website_map_engine::io::pod::instance::instances_to_bytes;
+use website_map_engine::world::environment::buildings::prefab::build_prefab_maps;
+use website_map_engine::world::environment::buildings::prefab::narrow_prefab_rows;
+use website_map_engine::world::environment::classify::NO_CLASS;
+use website_map_engine::world::environment::classify::narrow_instance_row_v2;
 
 /// Prefab id (`pid.to_bits()`, the loader's key) → render-class code, for the prefab catalogue
 /// document `build-objects` is about to write.

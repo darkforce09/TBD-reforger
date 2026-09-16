@@ -5,7 +5,7 @@
 
 #![cfg(target_arch = "wasm32")]
 use std::rc::Rc;
-use website_map_engine::core::context::handles::EngineHandle;
+use website_map_engine::frame::EngineHandle;
 /// Re-export `website_map_engine::streaming::host::*`.
 pub use website_map_engine::streaming::host::*;
 

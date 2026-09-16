@@ -4,13 +4,13 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::camera::ortho::state::OrthoCamera;
-use crate::core::context::state::CLEAR_COLOR;
-use crate::core::context::state::RenderEngine;
 use crate::diagnostics::readback::scene::map_read_4;
 use crate::diagnostics::readback::scene::padded_bytes_per_row;
+use crate::frame::engine::CLEAR_COLOR;
+use crate::frame::engine::RenderEngine;
 
-use crate::renderers::batching::scene::ANCHOR;
-use crate::renderers::pipelines::vector::create_polygon_pipeline;
+use crate::frame::pipelines::vector::create_polygon_pipeline;
+use crate::world::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -58,7 +58,7 @@ impl RenderEngine {
             ];
             let mut verts = Vec::with_capacity(4);
             for p in corners {
-                verts.push(crate::renderers::batching::lanes::LineVertex { pos: p, color: sea });
+                verts.push(website_graphics_engine::layout::LineVertex { pos: p, color: sea });
             }
             let indices: [u32; 6] = [0, 1, 2, 0, 2, 3];
             let vbuf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

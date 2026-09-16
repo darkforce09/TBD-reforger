@@ -3,10 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::context::handles::EngineHandle;
-use crate::renderers::primitives::compose::LandcoverInput;
-use crate::renderers::primitives::compose::PolyMeshGpu;
-use crate::renderers::primitives::compose::compose_landcover_mesh;
+use crate::frame::EngineHandle;
 use crate::streaming::bridge::progress::BootEvent;
 use crate::streaming::bridge::progress::BootSeg;
 use crate::streaming::bridge::statistics::BridgeHandle;
@@ -19,6 +16,9 @@ use crate::streaming::loaders::occluder_loader::OccluderHost;
 use crate::streaming::loaders::store::WorldStore;
 use crate::streaming::scheduler::state::WorldResidency;
 use crate::world::environment::vegetation::regions::regions_from_bytes;
+use crate::world::mesh::LandcoverInput;
+use crate::world::mesh::PolyMeshGpu;
+use crate::world::mesh::compose_landcover_mesh;
 use crate::world::terrain::roads::mesh::RoadInput;
 use crate::world::terrain::roads::mesh::RoadMeshGpu;
 use crate::world::terrain::roads::mesh::compose_roads_mesh;

@@ -5,7 +5,22 @@
 //! specific 12.8 km world. Everything here is measured in Everon metres; the GPU instance
 //! layouts it fills went to `website-graphics-engine`, which must not learn this number.
 
+use website_graphics_engine::draw::geometry;
 use website_graphics_engine::draw::instances::QuadInstance;
+
+// T-0xx Phase 2B.1: the three camera-seeding world facts below came from
+// `core/context/state.rs`, where they sat beside the GPU device because that is where
+// `RenderEngine::create` read them. They are Everon measurements, not engine state, and
+// `ANCHOR` — the same 6400 m centre — was already here (Phase 1D).
+
+/// The camera target `RenderEngine::create` opens on — the Everon terrain centre.
+pub(crate) const INITIAL_TARGET: [f64; 2] = [6400.0, 6400.0];
+
+/// The zoom `RenderEngine::create` opens on.
+pub(crate) const INITIAL_ZOOM: f64 = -2.0;
+
+/// Everon's world bounds in meters, `[minX, minY, maxX, maxY]` — the camera's pan clamp.
+pub(crate) const EVERON_BOUNDS: [f64; 4] = [0.0, 0.0, 12_800.0, 12_800.0];
 
 /// Scene anchor in world meters — the Everon terrain center. Uploaded geometry is stored relative to this point so f32 coordinates stay small (≤ 6400 m ⇒ error ≪ 1 px at all zoom levels; bound derived in `OrthoCamera::wgpu_clip_matrix` docs).
 pub const ANCHOR: [f64; 2] = [6400.0, 6400.0];
@@ -76,3 +91,12 @@ pub fn stress_chunk_into(chunk_idx: u32, count: usize, seed: u64, out: &mut Vec<
 #[cfg(test)]
 #[path = "tests/scene_tests.rs"]
 mod tests;
+
+/// Anchor-relative-meters `[minX, minY, maxX, maxY]` (f32) for a world rect — the textured-quad instance geometry, matching the `QuadInstance` anchor contract.
+// T-0xx Phase 2B.1: from `renderers/batching/lanes.rs`. The arithmetic is graphics-engine's
+// `draw::geometry::world_rect_rel`; what it could not take with it is [`ANCHOR`], which is a
+// fact about a specific 12.8 km world. This wrapper is that binding and nothing else.
+#[must_use]
+pub fn world_rect_rel(min: [f64; 2], max: [f64; 2]) -> [f32; 4] {
+    geometry::world_rect_rel(ANCHOR, min, max)
+}

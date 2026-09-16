@@ -17,6 +17,10 @@ pub mod architecture;
 /// Environment: buildings, vegetation, locations and the land-cover classifier.
 pub mod environment;
 
+/// Composed CPU meshes for the static world — contours, forest, land cover. Zero GPU.
+#[cfg(feature = "streaming")]
+pub mod mesh;
+
 /// The scene anchor and the synthetic instance scenes measured against it.
 #[cfg(feature = "streaming")]
 pub mod scene;

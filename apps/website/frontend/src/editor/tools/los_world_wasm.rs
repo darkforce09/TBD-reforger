@@ -8,7 +8,7 @@ use std::cell::{Cell, RefCell};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
-use website_map_engine::core::context::state::RenderEngine;
+use website_map_engine::frame::engine::RenderEngine;
 use website_map_engine::spatial::bvh::surface::SurfaceKind;
 use website_map_engine::spatial::los::interior::walker::Owner;
 use website_map_engine::spatial::los::terrain::viewshed::Viewshed;
