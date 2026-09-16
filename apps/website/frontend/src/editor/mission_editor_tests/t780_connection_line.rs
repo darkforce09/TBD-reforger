@@ -173,7 +173,7 @@ fn lane_is_bound_from_the_document_on_every_doc_tick() {
 #[test]
 fn map_delete_calls_the_panels_delete_connection() {
     let keys = only_body(&keydown(), "let onkeydown =").to_string();
-    let verb = ["editor_ops", "::", "delete_connection("].concat();
+    let verb = ["engine_ops", "::", "delete_connection("].concat();
     let sel = ["selected_", "connection.try_get_untracked()"].concat();
     assert!(
         keys.contains(&verb),
@@ -187,7 +187,7 @@ fn map_delete_calls_the_panels_delete_connection() {
         at_sel < at_verb,
         "T-780: the map selection must be read before the delete, not after it"
     );
-    let resolve = ["editor_ops", "::", "connection_exists("].concat();
+    let resolve = ["engine_ops", "::", "connection_exists("].concat();
     let at_resolve = keys.find(&resolve).expect(
         "wave 142 F-1: the Delete branch must resolve the armed id against the live document \
          before firing — a stale id must fall through to the entity delete, not be handed to a \
@@ -411,7 +411,7 @@ fn connection_pins_are_load_bearing() {
         "fired rule: deleting connections_bind must break the T-780 feed pin"
     );
     let keys = only_body(&keydown(), "let onkeydown =").to_string();
-    let verb = ["editor_ops", "::", "delete_connection("].concat();
+    let verb = ["engine_ops", "::", "delete_connection("].concat();
     assert!(
         keys.contains(&verb),
         "canary: the real keydown deletes edges"
@@ -422,7 +422,7 @@ fn connection_pins_are_load_bearing() {
     );
     // [wave 142] The three new needles, same treatment: strip each from an in-memory copy of the
     // real source and the assertion that found it has nothing left to find.
-    let resolve = ["editor_ops", "::", "connection_exists("].concat();
+    let resolve = ["engine_ops", "::", "connection_exists("].concat();
     assert!(keys.contains(&resolve), "canary: the real arm resolves");
     assert!(
         !keys

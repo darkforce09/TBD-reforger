@@ -522,7 +522,7 @@ fn emitter_row(
                 <button type="button" class="text-label-sm"
                     on:click=move |_| {
                         refusal.set(String::new());
-                        let markers: Vec<(f64, f64)> = crate::editor::state::operations::marker_rows()
+                        let markers: Vec<(f64, f64)> = website_map_engine::editing::hosted_commands::marker_rows()
                             .into_iter()
                             .map(|m| (m.x, m.z))
                             .collect();

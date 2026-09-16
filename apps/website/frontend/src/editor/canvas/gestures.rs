@@ -43,6 +43,7 @@ use crate::editor::canvas::tactical_graphics::{TG_PICK_PX, TG_VERTEX_PICK_PX};
 use crate::editor::state::history as mission_history;
 use crate::editor::state::operations as editor_ops;
 use website_map_engine::data::store::operations::attrs;
+use website_map_engine::editing::hosted_commands as engine_ops;
 use website_map_engine::editing::hosted_commands::selection_transform;
 
 /// Every handle the six gesture closures capture, bundled so the page hands them over in one
@@ -773,7 +774,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             selection::pick_slot_or_vehicle(
                                 &p.cam,
                                 &map_render_slot_soa(c),
-                                &editor_ops::vehicle_points(),
+                                &engine_ops::vehicle_points(),
                                 p.start_x,
                                 p.start_y,
                             )
@@ -830,7 +831,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                         // Slot tint only — vehicle glyphs have no selection lane.
                                         let slot_ids: Vec<String> = ids
                                             .iter()
-                                            .filter(|i| !editor_ops::is_vehicle_id(i))
+                                            .filter(|i| !engine_ops::is_vehicle_id(i))
                                             .cloned()
                                             .collect();
                                         e.set_selection(slot_ids);
@@ -876,7 +877,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         crate::editor::tools::select_tool::push_drag_preview(
                             e,
                             &ids,
-                            &editor_ops::vehicle_points(),
+                            &engine_ops::vehicle_points(),
                             dx,
                             dy,
                         );
@@ -1196,7 +1197,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         if let Some(e) = engine.borrow_mut().as_mut() {
                             crate::editor::tools::select_tool::clear_drag_preview(
                                 e,
-                                &editor_ops::vehicle_points(),
+                                &engine_ops::vehicle_points(),
                             );
                             // T-796 — a wrong-button release is never a commit; put a dragged
                             // note's lane back at its authored position too (identity when the
@@ -1243,7 +1244,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             selection::pick_slot_or_vehicle(
                                 &p.cam,
                                 &map_render_slot_soa(c),
-                                &editor_ops::vehicle_points(),
+                                &engine_ops::vehicle_points(),
                                 p.start_x,
                                 p.start_y,
                             )
@@ -1253,9 +1254,9 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         // `complete_connect` the RMB "Complete Connection" row uses. A miss
                         // keeps the arm (Esc / RMB Cancel / panel Cancel disarm). The arm is
                         // consumed on attempt inside complete_connect — no stranded mode.
-                        if editor_ops::pending_connect().is_some() {
+                        if engine_ops::pending_connect().is_some() {
                             if let Some(ref id) = hit {
-                                let _ = editor_ops::complete_connect(id);
+                                let _ = engine_ops::complete_connect(id);
                             }
                         }
                         // ══════════ T-784 — pick the COMMENT GLYPH ══════════════════════
@@ -1391,7 +1392,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         if let Some(e) = engine.borrow_mut().as_mut() {
                             let slot_ids: Vec<String> = ids
                                 .iter()
-                                .filter(|i| !editor_ops::is_vehicle_id(i))
+                                .filter(|i| !engine_ops::is_vehicle_id(i))
                                 .cloned()
                                 .collect();
                             e.set_selection(slot_ids); // tint lane (slots only)
@@ -1438,7 +1439,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         });
                     let regrouped = if (ev.ctrl_key() || ev.meta_key())
                         && ids.len() == 1
-                        && !editor_ops::is_vehicle_id(&ids[0])
+                        && !engine_ops::is_vehicle_id(&ids[0])
                         && !single_comment_drag
                     {
                         let target = doc.borrow().as_ref().and_then(|c| {
@@ -1454,7 +1455,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                     if let Some(e) = engine.borrow_mut().as_mut() {
                                         crate::editor::tools::select_tool::clear_drag_preview(
                                             e,
-                                            &editor_ops::vehicle_points(),
+                                            &engine_ops::vehicle_points(),
                                         );
                                     }
                                 }
@@ -1520,7 +1521,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                 })
                                 .unwrap_or_default();
                             for (id, x, z) in moves {
-                                editor_ops::move_comment(id, x, z);
+                                engine_ops::move_comment(id, x, z);
                             }
                         }
                         // T-491 — one LOCAL yrs txn for mixed slot+vehicle drag (T-425 split
@@ -1530,7 +1531,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             .iter()
                             .filter(|id| !comment_ids.iter().any(|c| c == *id))
                             .cloned()
-                            .partition(|id| editor_ops::is_vehicle_id(id));
+                            .partition(|id| engine_ops::is_vehicle_id(id));
                         if !slot_ids.is_empty() || !veh_ids.is_empty() {
                             let mut guard = doc.borrow_mut();
                             let Some(core) = guard.as_mut() else {
@@ -1589,7 +1590,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         // a live re-pack now, not a passive bind).
                         crate::editor::tools::select_tool::clear_drag_preview(
                             e,
-                            &editor_ops::vehicle_points(),
+                            &engine_ops::vehicle_points(),
                         );
                         // T-796 — and the comment lane: a zero-delta release still ran the
                         // preview re-pack above, so re-bind the notes to their authored
@@ -1626,7 +1627,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                 selection::marquee_ids_with_vehicles(
                                     &cam,
                                     &map_render_slot_soa(c),
-                                    &editor_ops::vehicle_points(),
+                                    &engine_ops::vehicle_points(),
                                     start_wx,
                                     start_wy,
                                     up_x,
@@ -1638,7 +1639,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         if let Some(e) = engine.borrow_mut().as_mut() {
                             let slot_ids: Vec<String> = ids
                                 .iter()
-                                .filter(|i| !editor_ops::is_vehicle_id(i))
+                                .filter(|i| !engine_ops::is_vehicle_id(i))
                                 .cloned()
                                 .collect();
                             e.set_selection(slot_ids);
@@ -1822,7 +1823,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 selection::pick_slot_or_vehicle(
                     &cam,
                     &map_render_slot_soa(c),
-                    &editor_ops::vehicle_points(),
+                    &engine_ops::vehicle_points(),
                     px,
                     py,
                 )
@@ -1923,7 +1924,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 selection::pick_slot_or_vehicle(
                     &cam,
                     &map_render_slot_soa(c),
-                    &editor_ops::vehicle_points(),
+                    &engine_ops::vehicle_points(),
                     px,
                     py,
                 )

@@ -252,6 +252,8 @@ pub(crate) fn take_z_drag(drag: &mut Option<ZDrag>, pointer_id: i32) -> Option<Z
 use crate::editor::state::hydrate as mission_hydrate;
 #[cfg(target_arch = "wasm32")]
 use crate::editor::state::operations as editor_ops;
+#[cfg(target_arch = "wasm32")]
+use website_map_engine::editing::hosted_commands as engine_ops;
 
 /// T-647 PLACE-003 — where a double-click on empty ground opened the asset picker: the WORLD point
 /// the eventual place will land at, plus the SCREEN pixel to anchor the floating panel at.
@@ -708,7 +710,7 @@ pub(crate) fn CommentEditorOverlay(
         // duplicate or an outliner refile bumps it and this panel re-reads the row.
         let _ = doc_tick.get();
         #[cfg(target_arch = "wasm32")]
-        let row = editor_ops::read_comment(&id);
+        let row = engine_ops::read_comment(&id);
         #[cfg(not(target_arch = "wasm32"))]
         let row: Option<()> = None;
         // The row vanished (deleted, or undone away while the panel was open) — close rather than
@@ -758,7 +760,7 @@ pub(crate) fn CommentEditorOverlay(
                         on:change=move |ev| {
                             #[cfg(target_arch = "wasm32")]
                             {
-                                editor_ops::rename_comment(
+                                engine_ops::rename_comment(
                                     id_title.clone(),
                                     event_target_value(&ev),
                                 );
@@ -780,7 +782,7 @@ pub(crate) fn CommentEditorOverlay(
                         on:change=move |ev| {
                             #[cfg(target_arch = "wasm32")]
                             {
-                                editor_ops::set_comment_tooltip(
+                                engine_ops::set_comment_tooltip(
                                     id_tip.clone(),
                                     event_target_value(&ev),
                                 );
@@ -803,7 +805,7 @@ pub(crate) fn CommentEditorOverlay(
                             on:change=move |ev| {
                                 #[cfg(target_arch = "wasm32")]
                                 if let Ok(v) = event_target_value(&ev).trim().parse::<f64>() {
-                                    editor_ops::move_comment(id_x.clone(), v, z_for_x);
+                                    engine_ops::move_comment(id_x.clone(), v, z_for_x);
                                 }
                                 #[cfg(not(target_arch = "wasm32"))]
                                 let _ = (&id_x, &ev, z_for_x);
@@ -819,7 +821,7 @@ pub(crate) fn CommentEditorOverlay(
                             on:change=move |ev| {
                                 #[cfg(target_arch = "wasm32")]
                                 if let Ok(v) = event_target_value(&ev).trim().parse::<f64>() {
-                                    editor_ops::move_comment(id_z.clone(), x_for_z, v);
+                                    engine_ops::move_comment(id_z.clone(), x_for_z, v);
                                 }
                                 #[cfg(not(target_arch = "wasm32"))]
                                 let _ = (&id_z, &ev, x_for_z);
@@ -837,7 +839,11 @@ pub(crate) fn CommentEditorOverlay(
                         on:click=move |_| {
                             #[cfg(target_arch = "wasm32")]
                             if let Some(new_id) =
-                                editor_ops::duplicate_comment(&id_dup, COMMENT_COPY_OFFSET_M)
+                                engine_ops::duplicate_comment(
+                                    &id_dup,
+                                    COMMENT_COPY_OFFSET_M,
+                                    editor_ops::ensure_active_layer,
+                                )
                             {
                                 editor_ops::open_comment_editor(new_id);
                             }
@@ -853,7 +859,7 @@ pub(crate) fn CommentEditorOverlay(
                         on:click=move |_| {
                             #[cfg(target_arch = "wasm32")]
                             {
-                                editor_ops::delete_comment(id_del.clone());
+                                engine_ops::delete_comment(id_del.clone());
                                 editor_ops::close_comment_editor();
                             }
                             #[cfg(not(target_arch = "wasm32"))]
@@ -962,8 +968,8 @@ pub(crate) fn ConnectionsPanelOverlay(
         // untested branch (the shape `CommentEditorOverlay` uses, for the same reason).
         #[cfg(target_arch = "wasm32")]
         let (rows, finding_count, armed_line) = {
-            let list = editor_ops::connection_list();
-            let findings = editor_ops::connection_findings();
+            let list = engine_ops::connection_list();
+            let findings = engine_ops::connection_findings();
             // Findings keyed by the row they belong to. Built once here rather than re-scanned per
             // row: a graph with N edges and N findings would otherwise be quadratic, and the panel
             // re-renders on every document mutation.
@@ -984,7 +990,7 @@ pub(crate) fn ConnectionsPanelOverlay(
                     id: r.id,
                 })
                 .collect();
-            let armed_line = editor_ops::pending_connect()
+            let armed_line = engine_ops::pending_connect()
                 .map(|(kind, from)| format!("Connecting: {kind} from {from}"));
             (rows, findings.len(), armed_line)
         };
@@ -1027,7 +1033,7 @@ pub(crate) fn ConnectionsPanelOverlay(
                                 on:click=move |_| {
                                     #[cfg(target_arch = "wasm32")]
                                     {
-                                        editor_ops::delete_connection(&del_id);
+                                        engine_ops::delete_connection(&del_id);
                                     }
                                     #[cfg(not(target_arch = "wasm32"))]
                                     let _ = &del_id;
@@ -1098,7 +1104,7 @@ pub(crate) fn ConnectionsPanelOverlay(
                                     on:click=move |_| {
                                         #[cfg(target_arch = "wasm32")]
                                         {
-                                            editor_ops::cancel_connect();
+                                            engine_ops::cancel_connect();
                                             editor_ops::open_connections_panel();
                                         }
                                     }

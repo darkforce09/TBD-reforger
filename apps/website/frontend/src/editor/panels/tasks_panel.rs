@@ -306,7 +306,7 @@ fn trigger_options() -> Vec<(String, String)> {
 
 #[cfg(target_arch = "wasm32")]
 fn marker_options() -> Vec<(String, String)> {
-    crate::editor::state::operations::marker_rows()
+    website_map_engine::editing::hosted_commands::marker_rows()
         .into_iter()
         .map(|r| {
             let label = if r.label.is_empty() {

@@ -218,7 +218,7 @@ fn the_map_click_folds_the_comment_into_the_entity_hit() {
     let code = &whole[up..];
     let pick = ["pick", "_comment("].concat();
     let read = ["comment", "_points("].concat();
-    let connect = ["editor_ops", "::", "complete_connect("].concat();
+    let connect = ["engine_ops", "::", "complete_connect("].concat();
     let edge = ["pick", "_connection("].concat();
     let apply = ["apply", "_click("].concat();
     let at_connect = code.find(&connect).expect("the connect arm must survive");

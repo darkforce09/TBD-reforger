@@ -25,6 +25,7 @@ use crate::v2::core::ui::MaterialIcon;
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<String>>) -> AnyView {
     use crate::editor::state::operations as ops;
+    use website_map_engine::editing::hosted_commands as engine_ops;
 
     // The type the next draw will carry. Seeded from the schema, not typed here; `boundary` is the
     // play area, which is the zone a mission is most likely to want first.
@@ -75,7 +76,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
             <span class="font-mono text-code-md text-outline">
                 {move || {
                     let _ = doc_tick.get();
-                    ops::zone_count()
+                    engine_ops::zone_count()
                 }}
             </span>
         </div>
@@ -226,7 +227,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
         // ── Authored zones ─────────────────────────────────────────────────────────────────
         {move || {
             let _ = doc_tick.get();
-            let rows = ops::zone_rows();
+            let rows = engine_ops::zone_rows();
             if rows.is_empty() {
                 return view! {
                     <p class="mt-3 text-label-sm normal-case text-outline">
@@ -291,7 +292,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
             let Some(id) = selected.get() else {
                 return ().into_any();
             };
-            let Some(z) = ops::zone_rows().into_iter().find(|r| r.id == id) else {
+            let Some(z) = engine_ops::zone_rows().into_iter().find(|r| r.id == id) else {
                 // Deleted underneath us (undo, or a reload that dropped it).
                 return ().into_any();
             };
@@ -430,11 +431,12 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
 /// the rules half is GENERATED from `$defs/zoneRules` by [`zone_rule_fields`].
 #[cfg(target_arch = "wasm32")]
 fn zone_attributes(
-    z: crate::editor::state::operations::ZoneRow,
+    z: website_map_engine::editing::hosted_commands::ZoneRow,
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<String>>,
 ) -> AnyView {
     use crate::editor::state::operations as ops;
+    use website_map_engine::editing::hosted_commands as engine_ops;
 
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
     let zid = z.id.clone();
@@ -457,7 +459,9 @@ fn zone_attributes(
                 aria-label="Zone type"
                 class=input_class
                 on:change=move |ev| {
-                    ops::set_zone_kind(&id_type, &event_target_value(&ev));
+                    engine_ops::set_zone_kind(&id_type, &event_target_value(&ev), |k| {
+                        zone_types().iter().any(|t| t == k)
+                    });
                     bump();
                 }
             >
@@ -485,7 +489,7 @@ fn zone_attributes(
                     class=input_class
                     prop:value=z.label.clone().unwrap_or_default()
                     on:change=move |ev| {
-                        ops::set_zone_label(&id_label, Some(event_target_value(&ev)));
+                        engine_ops::set_zone_label(&id_label, Some(event_target_value(&ev)));
                         bump();
                     }
                 />
@@ -497,7 +501,7 @@ fn zone_attributes(
                             title="Remove the label key (not the same as an empty label)"
                             class="mt-1 shrink-0 rounded-md px-1.5 py-1.5 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10"
                             on:click=move |_| {
-                                ops::set_zone_label(&id_clear, None);
+                                engine_ops::set_zone_label(&id_clear, None);
                                 bump();
                             }
                         >
@@ -517,7 +521,7 @@ fn zone_attributes(
                 on:change=move |ev| {
                     let v = event_target_value(&ev);
                     let next = (!v.trim().is_empty()).then_some(v);
-                    ops::set_zone_faction(&id_faction, next);
+                    engine_ops::set_zone_faction(&id_faction, next);
                     bump();
                 }
             />
@@ -568,7 +572,7 @@ fn zone_attributes(
                 type="button"
                 class="mt-3 w-full rounded-md border border-error/40 px-2 py-1.5 text-label-sm text-error transition-colors hover:bg-error/15"
                 on:click=move |_| {
-                    ops::delete_zone(&id_delete);
+                    engine_ops::delete_zone(&id_delete);
                     selected.set(None);
                     bump();
                 }
@@ -592,6 +596,7 @@ fn zone_rule_control(
     doc_tick: RwSignal<u64>,
 ) -> AnyView {
     use crate::editor::state::operations as ops;
+    use website_map_engine::editing::hosted_commands as engine_ops;
 
     let current = rules.get(&f.key).cloned();
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
@@ -614,7 +619,7 @@ fn zone_rule_control(
                         prop:indeterminate=checked.is_none()
                         on:change=move |ev| {
                             let on = event_target_checked(&ev);
-                            ops::set_zone_rule(&zone_id, &k, Some(serde_json::Value::Bool(on)));
+                            engine_ops::set_zone_rule(&zone_id, &k, Some(serde_json::Value::Bool(on)));
                             bump();
                         }
                     />
@@ -641,7 +646,7 @@ fn zone_rule_control(
                         on:change=move |ev| {
                             let v = event_target_value(&ev);
                             let next = (!v.is_empty()).then(|| serde_json::Value::String(v));
-                            ops::set_zone_rule(&zone_id, &k, next);
+                            engine_ops::set_zone_rule(&zone_id, &k, next);
                             bump();
                         }
                     >
@@ -709,7 +714,7 @@ fn zone_rule_control(
                             };
                             // A blank box removes the key; an unparseable one changes nothing.
                             if next.is_some() || raw.trim().is_empty() {
-                                ops::set_zone_rule(&zone_id, &k, next);
+                                engine_ops::set_zone_rule(&zone_id, &k, next);
                                 bump();
                             }
                         }
@@ -739,7 +744,7 @@ fn zone_rule_control(
                             let v = event_target_value(&ev);
                             let next = (!v.trim().is_empty())
                                 .then(|| serde_json::Value::String(v.trim().to_string()));
-                            ops::set_zone_rule(&zone_id, &k, next);
+                            engine_ops::set_zone_rule(&zone_id, &k, next);
                             bump();
                         }
                     />
@@ -2015,7 +2020,7 @@ mod tests {
             squash(&gate[from..opens_at]),
             squash(
                 "let Some(id) = selected.get() else { return ().into_any(); };
-                 let Some(z) = ops::zone_rows().into_iter().find(|r| r.id == id) else {
+                 let Some(z) = engine_ops::zone_rows().into_iter().find(|r| r.id == id) else {
                      return ().into_any();
                  };"
             ),

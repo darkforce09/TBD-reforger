@@ -104,6 +104,7 @@ pub fn complete_multi_drop_onto_folder(
     folder_descendants: impl Fn(&str) -> Vec<String>,
 ) -> bool {
     use crate::editor::state::operations as ops;
+    use website_map_engine::editing::hosted_commands as engine_ops;
 
     let Some(drag) = PENDING_DRAG.with(|p| p.borrow_mut().take()) else {
         return false;
@@ -136,7 +137,7 @@ pub fn complete_multi_drop_onto_folder(
                     ops::refile_slot_to_layer(id, dest_folder_id);
                 }
                 LayerDrag::Comment(_) => {
-                    ops::refile_comment_to_layer(id, dest_folder_id);
+                    engine_ops::refile_comment_to_layer(id, dest_folder_id);
                 }
             };
         }

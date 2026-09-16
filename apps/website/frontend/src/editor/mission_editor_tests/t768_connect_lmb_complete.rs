@@ -22,8 +22,8 @@ fn pointerup_body() -> String {
 #[test]
 fn pending_click_calls_complete_connect_when_armed() {
     let up = pointerup_body();
-    let pending_gate = ["editor_ops", "::", "pending_connect()"].concat();
-    let complete = ["editor_ops", "::", "complete_connect("].concat();
+    let pending_gate = ["engine_ops", "::", "pending_connect()"].concat();
+    let complete = ["engine_ops", "::", "complete_connect("].concat();
     assert!(
         up.contains(&pending_gate),
         "T-768: pointerup must consult pending_connect() before an LMB complete"
@@ -56,7 +56,7 @@ fn pending_click_calls_complete_connect_when_armed() {
 #[test]
 fn escape_arm_cancels_pending_connect() {
     let code = page();
-    let cancel = ["editor_ops", "::", "cancel_connect()"].concat();
+    let cancel = ["engine_ops", "::", "cancel_connect()"].concat();
     assert!(
         code.contains(&cancel),
         "T-768: Esc arm must call cancel_connect() — Hollow: delete it → RED."
@@ -78,7 +78,7 @@ fn escape_arm_cancels_pending_connect() {
 fn pointercancel_cancels_pending_connect() {
     let code = page();
     let body = only_body(&code, "let onpointercancel =");
-    let cancel = ["editor_ops", "::", "cancel_connect()"].concat();
+    let cancel = ["engine_ops", "::", "cancel_connect()"].concat();
     assert!(
         body.contains(&cancel),
         "T-768: pointercancel must cancel_connect (never a commit). Hollow: delete → RED."
@@ -89,7 +89,7 @@ fn pointercancel_cancels_pending_connect() {
 #[test]
 fn complete_connect_caller_is_load_bearing() {
     let up = pointerup_body();
-    let complete = ["editor_ops", "::", "complete_connect("].concat();
+    let complete = ["engine_ops", "::", "complete_connect("].concat();
     assert!(
         up.contains(&complete),
         "canary: real pointerup carries complete_connect"

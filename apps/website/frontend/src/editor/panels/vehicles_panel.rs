@@ -100,12 +100,13 @@ pub(crate) fn placed_vehicles_panel(
     registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
     expanded: RwSignal<std::collections::HashSet<String>>,
 ) -> AnyView {
-    use crate::editor::state::operations::{VehicleCargoRow, VehicleRow};
+    use website_map_engine::editing::hosted_commands as engine_ops;
+    use website_map_engine::editing::hosted_commands::{VehicleCargoRow, VehicleRow};
 
     // Re-read the doc on every mutation — `MissionDocCore` has no change subscription, so this is
     // the same pull-mirror tick the Attributes modal uses.
     doc_tick.track();
-    let rows: Vec<VehicleRow> = crate::editor::state::operations::vehicle_rows();
+    let rows: Vec<VehicleRow> = engine_ops::vehicle_rows();
     if rows.is_empty() {
         return ().into_any();
     }
@@ -183,7 +184,7 @@ pub(crate) fn placed_vehicles_panel(
                         aria-label="Remove vehicle"
                         class="shrink-0 rounded p-0.5 text-on-surface-variant hover:text-error-alert"
                         on:click=move |_| {
-                            crate::editor::state::operations::remove_vehicle(id_del.clone());
+                            engine_ops::remove_vehicle(id_del.clone());
                         }
                     >
                         <MaterialIcon name="delete" class="block text-sm" />
@@ -215,7 +216,7 @@ pub(crate) fn placed_vehicles_panel(
                                     return;
                                 };
                                 let deg = ((raw % 360.0) + 360.0) % 360.0;
-                                crate::editor::state::operations::set_vehicle_heading(id_h.clone(), deg);
+                                engine_ops::set_vehicle_heading(id_h.clone(), deg);
                             }
                         />
                     </div>
@@ -253,7 +254,7 @@ pub(crate) fn placed_vehicles_panel(
                                     if let Some(r) = next.get_mut(i) {
                                         r.qty = q;
                                     }
-                                    crate::editor::state::operations::set_vehicle_cargo(id_q.clone(), next);
+                                    engine_ops::set_vehicle_cargo(id_q.clone(), next);
                                 }
                             />
                             <button
@@ -265,7 +266,7 @@ pub(crate) fn placed_vehicles_panel(
                                     if i < next.len() {
                                         next.remove(i);
                                     }
-                                    crate::editor::state::operations::set_vehicle_cargo(id_r.clone(), next);
+                                    engine_ops::set_vehicle_cargo(id_r.clone(), next);
                                 }
                             >
                                 <MaterialIcon name="close" class="block text-sm" />
@@ -284,7 +285,7 @@ pub(crate) fn placed_vehicles_panel(
             // value is the slot the crew map assigns to it — choosing a slot boards (assign), the
             // empty option unboards (clear). The one-seat-per-slot rule lives in the op, so a slot
             // already crewing another seat is simply MOVED here; no client-side guard is needed.
-            let seat_choices = StoredValue::new(crate::editor::state::operations::placed_slot_choices());
+            let seat_choices = StoredValue::new(engine_ops::placed_slot_choices());
             // Cargo-seat count: from the vehicle's declared capacity when one exists, else the
             // generic default. The registry exposes no per-vehicle seat count today (T-205), so this
             // is `DEFAULT_CARGO_SEATS` for every vehicle — the branch is here for when it does.
@@ -307,12 +308,12 @@ pub(crate) fn placed_vehicles_panel(
                                 on:change=move |ev| {
                                     let slot = event_target_value(&ev);
                                     if slot.is_empty() {
-                                        crate::editor::state::operations::clear_crew_seat(
+                                        engine_ops::clear_crew_seat(
                                             id_seat.clone(),
                                             sid.clone(),
                                         );
                                     } else {
-                                        crate::editor::state::operations::assign_crew_seat(
+                                        engine_ops::assign_crew_seat(
                                             id_seat.clone(),
                                             sid.clone(),
                                             slot,
@@ -365,7 +366,7 @@ pub(crate) fn placed_vehicles_panel(
                             } else {
                                 next.push(VehicleCargoRow { item, qty: 1 });
                             }
-                            crate::editor::state::operations::set_vehicle_cargo(id_add.clone(), next);
+                            engine_ops::set_vehicle_cargo(id_add.clone(), next);
                         }
                     >
                         <option value="">"Add cargo…"</option>

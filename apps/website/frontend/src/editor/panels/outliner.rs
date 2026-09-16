@@ -39,6 +39,13 @@ pub use website_map_engine::data::store::operations::rows::SquadRow;
 
 /// The virtual root's id. Not a doc id — see the module docs.
 pub const UNFILED_ID: &str = "__unfiled";
+/// The id of the folder a place mints when no folder is active. A doc id, unlike [`UNFILED_ID`],
+/// and the same id a server hydrate files an unlayered slot under, so a freshly authored mission
+/// and a re-hydrated one agree on where an entity with no folder of its own lives.
+pub const DEFAULT_LAYER_ID: &str = "layer-1";
+/// That folder's name in the tree. Naming is the dock's vocabulary rather than the document's law,
+/// which is why it is handed to the document at mint time instead of being assumed there.
+pub const DEFAULT_LAYER_NAME: &str = "Layer 1";
 /// T-169 — above this many flattened rows a tree renders windowed (React `VIRTUAL_SLOT_THRESHOLD`,
 /// proven @ ~367k). Below it, the eager recursive render is cheaper and keeps native scroll simple.
 pub const VIRTUAL_SLOT_THRESHOLD: usize = 50;

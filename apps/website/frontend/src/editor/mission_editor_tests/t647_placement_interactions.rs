@@ -45,7 +45,7 @@ fn dblclick_opens_attributes_for_vehicles_via_slot_or_vehicle_pick() {
     let body = only_body(&ed, "let ondblclick =");
     assert!(
         body.contains("selection::pick_slot_or_vehicle(")
-            && body.contains("editor_ops::vehicle_points()"),
+            && body.contains("engine_ops::vehicle_points()"),
         "ATTR-OPEN-001: dblclick must pick slot OR vehicle (with vehicle_points), so Attributes \
          opens for a vehicle — not the slot-only pick"
     );
@@ -207,11 +207,11 @@ fn the_comment_editor_is_ungated_and_authors_every_comment_field() {
     let region = live_code(include_str!("../canvas/overlays.rs"));
     let comp = only_body(&region, "fn CommentEditorOverlay(");
     for op in [
-        "editor_ops::rename_comment(",      // ATTR-FIELD-CMT-TITLE
-        "editor_ops::set_comment_tooltip(", // ATTR-FIELD-CMT-TOOLTIP
-        "editor_ops::move_comment(",        // ATTR-FIELD-CMT-POSITION (the drag commit)
-        "editor_ops::duplicate_comment(",   // COPY
-        "editor_ops::delete_comment(",
+        "engine_ops::rename_comment(",      // ATTR-FIELD-CMT-TITLE
+        "engine_ops::set_comment_tooltip(", // ATTR-FIELD-CMT-TOOLTIP
+        "engine_ops::move_comment(",        // ATTR-FIELD-CMT-POSITION (the drag commit)
+        "engine_ops::duplicate_comment(",   // COPY
+        "engine_ops::delete_comment(",
     ] {
         assert!(
             comp.contains(op),
@@ -261,7 +261,7 @@ fn ctrl_state_machine_multi_place_when_armed_regroup_when_not() {
     assert!(
         up.contains("editor_ops::regroup_slot_onto(")
             && up.contains("ids.len() == 1")
-            && up.contains("!editor_ops::is_vehicle_id(&ids[0])"),
+            && up.contains("!engine_ops::is_vehicle_id(&ids[0])"),
         "CONN-GROUP-001: an unarmed Ctrl-drag of a SINGLE character onto another must regroup"
     );
 

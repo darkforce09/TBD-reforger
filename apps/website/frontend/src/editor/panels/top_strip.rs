@@ -1377,7 +1377,7 @@ pub fn TopCommandStrip(
         #[cfg(target_arch = "wasm32")]
         {
             let (factions, squads, slot_squad_ids) =
-                crate::editor::state::operations::census_input();
+                website_map_engine::editing::hosted_commands::census_input();
             census_from_rows(&factions, &squads, &slot_squad_ids)
         }
         #[cfg(not(target_arch = "wasm32"))]
@@ -2672,7 +2672,7 @@ pub fn TopCommandStrip(
 //
 // The derivation is a PURE function over plain rows (`census_from_rows`) so it is testable on the
 // native `cargo test` shell; the wasm reader that feeds it the live snapshot is
-// `editor_ops::census_input` (which reuses `orbat_manager_snapshot`, not a second doc read).
+// the engine's `census_input` (which reuses `orbat_manager_snapshot`, not a second doc read).
 
 /// The three Eden sides, in header order, paired with the schema faction `key` each derives from.
 ///
@@ -2714,7 +2714,7 @@ impl SlotCensus {
 
 /// Derive the per-side census PURELY from the ORBAT rows — the header's single source of truth.
 ///
-/// Reuses the snapshot's own rows (fed by `editor_ops::census_input`, which reads them once via
+/// Reuses the snapshot's own rows (fed by the engine's `census_input`, which reads them once via
 /// `orbat_manager_snapshot`); it never re-parses the document. Each `(slot, squadId)` walks
 /// squad → faction → `key`; an id that dangles at any hop (deleted squad, faction with no side key)
 /// falls through to `unassigned`. `slot_squad_ids` is one entry per slot — its length IS `total`, so

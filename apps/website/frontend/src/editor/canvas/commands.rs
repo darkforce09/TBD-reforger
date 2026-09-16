@@ -23,6 +23,7 @@ use website_map_engine::editing::tools::selection;
 use crate::editor::mission_editor::plain_paste_anchor;
 use crate::editor::state::history as mission_history;
 use crate::editor::state::operations as editor_ops;
+use website_map_engine::editing::hosted_commands as engine_ops;
 
 use super::gestures::{make_sync_los, make_sync_ruler, EditorGestureContext};
 
@@ -155,8 +156,8 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                             }
                             // T-768 — Esc disarms an armed connect the same way it disarms an
                             // armed place (T-723). Completing stays LMB pick / RMB Complete.
-                            let connect_acted = if editor_ops::pending_connect().is_some() {
-                                editor_ops::cancel_connect();
+                            let connect_acted = if engine_ops::pending_connect().is_some() {
+                                engine_ops::cancel_connect();
                                 true
                             } else {
                                 false
@@ -191,7 +192,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                         }
                     }
                     "KeyC" if modk && !ev.alt_key() && !ev.shift_key() => {
-                        editor_ops::copy_selection()
+                        engine_ops::copy_selection()
                     }
                     // T-669 ACTION-CUT-001 — Ctrl/Cmd+X is COPY, then DELETE, in that order
                     // and SHORT-CIRCUITED. `copy_selection` returns false when there was
@@ -210,7 +211,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                     // keeps Ctrl+X meaning "cut the text" while the operator is typing in an
                     // Attributes field.
                     "KeyX" if modk && !ev.alt_key() && !ev.shift_key() => {
-                        editor_ops::copy_selection() && editor_ops::delete_selection()
+                        engine_ops::copy_selection() && editor_ops::delete_selection()
                     }
                     // T-743 — THE PLAIN PASTE ALWAYS CARRIES AN ANCHOR. It used to hand
                     // `paste_at_cursor` the raw `cx`/`cy`, which are `None` whenever the
@@ -318,7 +319,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                     // panel's per-row button because there was no line. There is now, so
                     // Del over a selected edge removes it.
                     //
-                    // It calls `editor_ops::delete_connection` — the EXACT function the
+                    // It calls `engine_ops::delete_connection` — the EXACT function the
                     // panel's Delete button calls, which is the whole reason this arm is
                     // three lines. A map-side `core.remove_connection` here would be a
                     // second deletion path: a second place to keep the `after_local_edit`
@@ -373,8 +374,8 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                         if armed.is_some() {
                             selected_connection.set(None);
                         }
-                        match armed.filter(|id| editor_ops::connection_exists(id)) {
-                            Some(id) => editor_ops::delete_connection(&id),
+                        match armed.filter(|id| engine_ops::connection_exists(id)) {
+                            Some(id) => engine_ops::delete_connection(&id),
                             None => {
                                 editor_ops::delete_selected_tactical_graphic()
                                     || editor_ops::delete_selection()

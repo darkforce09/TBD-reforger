@@ -1319,8 +1319,8 @@ fn placed_vehicle_rows(authoring: bool, selected: RwSignal<Vec<String>>) -> AnyV
     if !authoring {
         return ().into_any();
     }
-    let rows: Vec<crate::editor::state::operations::VehicleRow> =
-        crate::editor::state::operations::vehicle_rows()
+    let rows: Vec<website_map_engine::editing::hosted_commands::VehicleRow> =
+        website_map_engine::editing::hosted_commands::vehicle_rows()
             .into_iter()
             .filter(|v| v.xy.is_some()) // on-the-map vehicles only
             .collect();
@@ -1948,7 +1948,7 @@ mod tests {
             let body = only_body(&code, "fn placed_vehicle_rows(authoring:");
             assert!(
                 body.contains("vehicle_rows()"),
-                "T-809: the outliner footer reads the placed vehicles off editor_ops::vehicle_rows"
+                "T-809: the outliner footer reads the placed vehicles off the engine's vehicle_rows"
             );
             assert!(
                 body.contains("xy.is_some()"),

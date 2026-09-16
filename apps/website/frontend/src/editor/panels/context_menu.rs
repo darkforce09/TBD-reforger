@@ -80,18 +80,10 @@ impl ConnKind {
 
     /// T-672 — the inverse of [`Self::token`]. `None` for anything else.
     ///
-    /// **This is the EDITOR-side half of a deliberate two-layer vocabulary check**, and the layering
-    /// is the point. `map-engine-core`'s `ConnectionKind::parse` is the AUTHORITY — it lives at the
-    /// one write door (`add_connection`) and refuses an unknown kind into the document, so a bad
-    /// token can never become a stored row no matter what the editor does. This copy exists only so
-    /// `editor_ops::arm_connect` can refuse to ARM on a bad token, which is a UI state and not a
-    /// document one: without it a mis-typed arm would sit live until the operator's next
-    /// right-click completed it into a refusal, and they would have no idea why nothing happened.
-    ///
-    /// The two lists cannot silently diverge in the direction that matters: any token this one
-    /// accepts and the core does not simply fails at write, visibly, with no edge drawn. Re-exporting
-    /// the core enum instead would need a `map-engine-core/src/doc/mod.rs` change, which is outside
-    /// this slice's owns — recorded here rather than done quietly.
+    /// Menu-side only. The AUTHORITY on this vocabulary is the document's own
+    /// `ConnectionKind::parse`, which sits at the one write door (`add_connection`) and is what the
+    /// arm gate consults; this inverse exists so a menu row can be built from a stored token
+    /// without the menu having to carry the document's enum into its own view types.
     #[must_use]
     pub fn parse(token: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|k| k.token() == token)
@@ -204,7 +196,7 @@ pub enum ContextItem {
     ///
     /// **T-651 — ENABLED.** T-664 shipped this row disabled-with-ticket because the entry point
     /// existed before the feature did; T-651 authored the feature, so the row is live and
-    /// [`dispatch`] calls `editor_ops::place_comment` at [`MenuTarget::world`]. The T-664 note said
+    /// [`dispatch`] calls the engine's `place_comment` at [`MenuTarget::world`]. The T-664 note said
     /// the marker would be authored by T-069 (`entitiesById`); that turned out to be the wrong home
     /// and is recorded here rather than quietly dropped. `entitiesById` COMPILES — it is
     /// `mission.schema.json`'s `entities[]` — and a comment must never reach a game server, so
@@ -637,7 +629,7 @@ pub struct MenuTarget {
     /// T-672 — the connect ARMED at the moment this menu opened: `Some((kind, from_id))`.
     ///
     /// Captured at OPEN for exactly the reason [`Self::world`] is: the Connect submenu shows one of
-    /// two faces depending on this value, and re-reading `editor_ops::pending_connect()` at click
+    /// two faces depending on this value, and re-reading the engine's `pending_connect()` at click
     /// time would let a row the operator can SEE mean something else by the time they click it.
     /// `None` here is also what makes [`ContextItem::submenu_entries`] pure and native-testable.
     pub armed_connect: Option<(String, String)>,
@@ -917,6 +909,8 @@ pub fn set_menu_signal(sig: RwSignal<Option<MenuState>>) {
 /// [`resolve_target`]; this is the one place the retarget is *committed* to the live selection.
 #[cfg(target_arch = "wasm32")]
 pub fn open(x: f64, y: f64, target: MenuTarget) {
+    use website_map_engine::editing::hosted_commands as engine_ops;
+
     if let Some(id) = target.retarget_to.clone() {
         // Replace the selection with the hit entity — identical to a left-click on an unselected
         // object, so the map tint and SEL readout follow the menu's target.
@@ -925,7 +919,7 @@ pub fn open(x: f64, y: f64, target: MenuTarget) {
     // T-672 — snapshot the armed connect HERE, at open, the same rule `world` follows. The Connect
     // submenu shows one of two faces off this value; reading it at click time instead would let a
     // row the operator can see turn into a different action under their cursor.
-    let target = target.with_armed_connect(crate::editor::state::operations::pending_connect());
+    let target = target.with_armed_connect(engine_ops::pending_connect());
     MENU.with(|m| {
         if let Some(sig) = *m.borrow() {
             sig.set(Some(MenuState {
@@ -984,6 +978,8 @@ pub fn close() {
 /// operator panned while the menu was up.
 #[cfg(target_arch = "wasm32")]
 pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f64)>) {
+    use website_map_engine::editing::hosted_commands as engine_ops;
+
     match item {
         // Camera → the clicked entity's centroid (reusing the selection-center path). For the
         // empty-ground `Go Here` the caller passes no ids; center-on-selection then no-ops, which is
@@ -1011,7 +1007,11 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         // supply one) this is a no-op rather than a guess at the map centre.
         ContextItem::PlaceComment => {
             if let Some((x, z)) = world {
-                let _ = crate::editor::state::operations::place_comment(x, z);
+                let _ = engine_ops::place_comment(
+                    x,
+                    z,
+                    crate::editor::state::operations::ensure_active_layer,
+                );
             }
         }
         // T-672 (`CONN-START-001`, act 1) — arm a connect FROM this entity. `target_ids[0]` is the
@@ -1019,7 +1019,7 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         // document edit, so there is no undo step and nothing to persist until act 2 lands the edge.
         ContextItem::ConnectStart(kind) => {
             if let Some(id) = target_ids.first() {
-                let _ = crate::editor::state::operations::arm_connect(kind.token(), id);
+                let _ = engine_ops::arm_connect(kind.token(), id);
             }
         }
         // T-672 (`CONN-START-001`, act 2) — complete onto this entity. The core refuses a self-link
@@ -1029,10 +1029,10 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         // must keep working unchanged.
         ContextItem::ConnectComplete => {
             if let Some(id) = target_ids.first() {
-                let _ = crate::editor::state::operations::complete_connect(id);
+                let _ = engine_ops::complete_connect(id);
             }
         }
-        ContextItem::ConnectCancel => crate::editor::state::operations::cancel_connect(),
+        ContextItem::ConnectCancel => engine_ops::cancel_connect(),
         // T-672 — open the SEE + CHECK panel. The one row on both takes.
         ContextItem::ShowConnections => crate::editor::state::operations::open_connections_panel(),
         // T-672 (`ACTION-FORM-001` / `CTX-FORMATION-001`) — re-form the target's squad. Inert (0
@@ -1040,7 +1040,7 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         // re-forming around a rifleman would be a leadership change nobody asked for.
         ContextItem::MoveToFormation(f) => {
             if let Some(id) = target_ids.first() {
-                let _ = crate::editor::state::operations::force_to_formation(id, f.token());
+                let _ = engine_ops::force_to_formation(id, f.token());
             }
         }
         // T-939.4 — run an Arrange command on the live selection. `target_ids` is not forwarded on
@@ -1862,7 +1862,7 @@ mod tests {
     }
 
     /// The connect vocabulary agrees with itself in both directions, and rejects everything else —
-    /// the editor-side guard `editor_ops::arm_connect` leans on.
+    /// the menu's own rows are built from.
     #[test]
     fn conn_kind_tokens_round_trip_and_reject_strangers() {
         for k in ConnKind::ALL {

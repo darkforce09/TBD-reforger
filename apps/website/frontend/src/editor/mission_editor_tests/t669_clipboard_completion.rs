@@ -54,7 +54,7 @@ fn cut_copies_before_it_deletes_and_short_circuits() {
         .expect("the cut arm exists — censused above");
     let body = &arms[at..];
     let copy = body
-        .find("editor_ops::copy_selection()")
+        .find("engine_ops::copy_selection()")
         .expect("ACTION-CUT-001: the cut arm must snapshot the selection to the clipboard");
     let del = body
         .find("editor_ops::delete_selection()")

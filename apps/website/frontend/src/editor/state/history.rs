@@ -546,7 +546,7 @@ pub(crate) fn soa_roles(soa: &SlotSoa) -> Vec<String> {
 
 /// **T-808 — the four parallel vehicle-lane columns for [`RenderEngine::vehicles_bind_symbology`]**
 /// (`xy`, registry alias / prefab path, packed RGBA8 side tint, compass heading), built in ONE pass
-/// over [`editor_ops::vehicle_rows`].
+/// over [`website_map_engine::editing::hosted_commands::vehicle_rows`].
 ///
 /// **Why one reader and not four.** `vehicle_rows` sorts by id; `MissionDocCore::vehicle_xy_flat`
 /// (what this lane used to be fed) walks the `yrs` map in ITERATION order. Keeping the old call for
@@ -567,7 +567,7 @@ pub(crate) fn soa_roles(soa: &SlotSoa) -> Vec<String> {
 /// and reuses these three non-positional columns rather than growing a second builder in a second
 /// row order. Do not re-privatise it; write the second caller's columns here.
 pub(crate) fn vehicle_lane_fields() -> (Vec<f32>, Vec<String>, Vec<u8>, Vec<f32>) {
-    let rows = editor_ops::vehicle_rows();
+    let rows = website_map_engine::editing::hosted_commands::vehicle_rows();
     let mut xy = Vec::with_capacity(rows.len() * 2);
     let mut aliases = Vec::with_capacity(rows.len());
     let mut tints = Vec::with_capacity(rows.len() * 4);

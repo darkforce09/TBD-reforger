@@ -4,6 +4,7 @@
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 use super::*;
+use crate::editor::panels::outliner::{DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME};
 use website_map_engine::data::store::operations::entity::ArmedPlacementKind;
 
 /// Palette leaf `pointerdown` → arm a place. Consumed by [`place_at`] on a canvas release, or dropped by [`cancel_pending`] on a release over chrome.
@@ -132,6 +133,41 @@ pub(in crate::editor::state::operations) fn ensure_layer(
         ctx.active_layer.set(None);
     }
     ensured.layer_id
+}
+
+/// Resolve the folder a new entity is filed under without a context in hand: the active folder
+/// when one is set and still live, otherwise the default folder, minted under the LOCAL origin so
+/// the mint is part of the same undoable act as the place it serves. This is the form the engine's
+/// hosted commands take, which is why the folder id crosses the wall as an answer rather than the
+/// engine reaching for the dock's active-folder signal itself.
+pub fn ensure_active_layer(core: &MissionDocCore) -> String {
+    OPS_CTX
+        .with(|c| c.borrow().as_ref().map(|ctx| ensure_layer(ctx, core)))
+        .unwrap_or_else(|| DEFAULT_LAYER_ID.to_string())
+}
+
+/// Palette icon press → arm a marker place, consumed by the next canvas release. Refuses an alias
+/// outside the closed `$defs/marker.icon` enum, so a bad vocabulary cannot even be armed, let alone
+/// stored.
+pub fn begin_place_marker(icon: String) {
+    if !crate::editor::panels::dock_right::marker_icon_is_authorable(&icon) {
+        return;
+    }
+    arm(Pending::Marker(icon));
+}
+
+/// The armed marker icon, or `None`. Backs the panel's "click the map to drop it" hint.
+#[must_use]
+pub fn armed_marker_icon() -> Option<String> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let p = ctx.pending.borrow();
+        match &*p {
+            Some(Pending::Marker(icon)) => Some(icon.clone()),
+            _ => None,
+        }
+    })
 }
 
 /// Debug seed slots using the supplied domain data.

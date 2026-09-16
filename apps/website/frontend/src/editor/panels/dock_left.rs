@@ -1696,7 +1696,7 @@ pub fn apply_selection(ids: Vec<String>) -> bool {
 pub fn document_rows() -> Vec<DocEntity> {
     #[cfg(target_arch = "wasm32")]
     {
-        editor_ops::document_entities()
+        website_map_engine::editing::hosted_commands::document_entities()
     }
     #[cfg(not(target_arch = "wasm32"))]
     {

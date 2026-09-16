@@ -25,6 +25,8 @@ use crate::editor::panels::outliner::{
 };
 use crate::v2::core::api::dto::{FactionDoc, RegistryItem, UserFaction};
 use crate::v2::core::ui::MaterialIcon;
+#[cfg(target_arch = "wasm32")]
+use website_map_engine::editing::hosted_commands as engine_ops;
 
 /// Near-fullscreen class pin (G1 / G9).
 pub const DIALOG_CLASS: &str = ORBAT_MANAGER_DIALOG_CLASS;
@@ -472,7 +474,11 @@ pub fn OrbatManagerDialog(
                                 // the decision nor says what to do next. `orbat_apply_faction`
                                 // hands back `ApplyFactionError`'s own sentence, which names the
                                 // squads that block and how to clear them.
-                                match crate::editor::state::operations::orbat_apply_faction(side, uf.doc) {
+                                match engine_ops::orbat_apply_faction(
+                                    side,
+                                    uf.doc,
+                                    crate::editor::state::operations::ensure_active_layer,
+                                ) {
                                     Ok(()) => status.set("Template applied.".into()),
                                     Err(msg) => {
                                         leptos::logging::warn!("Apply Template refused: {msg}");
@@ -755,7 +761,7 @@ pub fn OrbatManagerDialog(
                                     let side = side_tab.get_untracked();
                                     #[cfg(target_arch = "wasm32")]
                                     {
-                                        crate::editor::state::operations::orbat_add_squad(side);
+                                        engine_ops::orbat_add_squad(side);
                                     }
                                     #[cfg(not(target_arch = "wasm32"))]
                                     let _ = side;
@@ -808,7 +814,7 @@ struct Snap {
 fn read_snapshot() -> Snap {
     #[cfg(target_arch = "wasm32")]
     {
-        let s = crate::editor::state::operations::orbat_manager_snapshot();
+        let s = engine_ops::orbat_manager_snapshot();
         Snap {
             factions: s.factions,
             squads: s.squads,
@@ -1095,7 +1101,7 @@ fn stitch_row(
                                                 #[cfg(target_arch = "wasm32")]
                                                 {
                                                     let name = rename_draft.get_untracked();
-                                                    crate::editor::state::operations::orbat_rename_squad(id_commit.clone(), name);
+                                                    engine_ops::orbat_rename_squad(id_commit.clone(), name);
                                                 }
                                                 rename_squad.set(None);
                                             }
@@ -1131,7 +1137,11 @@ fn stitch_row(
                                 on:click=move |ev| {
                                     ev.stop_propagation();
                                     #[cfg(target_arch = "wasm32")]
-                                    crate::editor::state::operations::orbat_add_slot(id_add.clone(), "Rifleman".into());
+                                    engine_ops::orbat_add_slot(
+                                        id_add.clone(),
+                                        "Rifleman".into(),
+                                        crate::editor::state::operations::ensure_active_layer,
+                                    );
                                 }
                             >
                                 <MaterialIcon name="person_add" class="text-[16px]" />
@@ -1166,7 +1176,7 @@ fn stitch_row(
                                 on:click=move |ev| {
                                     ev.stop_propagation();
                                     #[cfg(target_arch = "wasm32")]
-                                    crate::editor::state::operations::orbat_remove_squad(id_rm.clone());
+                                    engine_ops::orbat_remove_squad(id_rm.clone());
                                 }
                             >
                                 <MaterialIcon name="delete" class="text-[16px]" />
@@ -1216,10 +1226,20 @@ fn stitch_row(
                                         }
                                         #[cfg(target_arch = "wasm32")]
                                         {
-                                            let _ = crate::editor::state::operations::orbat_add_vehicle(
+                                            // The recent/favourites memory is the palette dock's
+                                            // own, so the row is recorded here rather than inside
+                                            // the document command that placed the vehicle.
+                                            if engine_ops::orbat_add_vehicle(
                                                 id_veh_pick.clone(),
-                                                resource,
-                                            );
+                                                &resource,
+                                            )
+                                            .is_some()
+                                            {
+                                                crate::editor::panels::dock_right::record_placed(
+                                                    resource.clone(),
+                                                    resource,
+                                                );
+                                            }
                                         }
                                         add_vehicle_squad.set(None);
                                     }
@@ -1341,7 +1361,7 @@ fn stitch_row(
                                 on:click=move |ev| {
                                     ev.stop_propagation();
                                     #[cfg(target_arch = "wasm32")]
-                                    crate::editor::state::operations::orbat_set_leader(squad_id.clone(), id_sl.clone());
+                                    engine_ops::orbat_set_leader(squad_id.clone(), id_sl.clone());
                                 }
                             >
                                 <MaterialIcon name="military_tech" class="text-[14px]" />
@@ -1353,7 +1373,7 @@ fn stitch_row(
                                 on:click=move |ev| {
                                     ev.stop_propagation();
                                     #[cfg(target_arch = "wasm32")]
-                                    crate::editor::state::operations::orbat_remove_slot(id_rm.clone());
+                                    engine_ops::orbat_remove_slot(id_rm.clone());
                                 }
                             >
                                 <MaterialIcon name="close" class="text-[14px]" />
@@ -1396,7 +1416,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
         let _ = selected.get();
         #[cfg(target_arch = "wasm32")]
         {
-            let snap = crate::editor::state::operations::orbat_manager_snapshot();
+            let snap = engine_ops::orbat_manager_snapshot();
             if let Some(id) = selected.get_untracked().first() {
                 if let Some(d) = snap.slots.into_iter().find(|s| &s.id == id) {
                     role.set(d.role);
@@ -1514,7 +1534,11 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
                         return;
                     }
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor::state::operations::orbat_add_slot(squad_for_add.clone(), "Rifleman".into());
+                    engine_ops::orbat_add_slot(
+                        squad_for_add.clone(),
+                        "Rifleman".into(),
+                        crate::editor::state::operations::ensure_active_layer,
+                    );
                 }
             >
                 <MaterialIcon name="add" class="text-[14px]" />

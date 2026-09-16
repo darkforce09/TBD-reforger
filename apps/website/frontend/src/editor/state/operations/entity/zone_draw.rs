@@ -5,6 +5,7 @@
 
 use super::*;
 use website_map_engine::data::store::operations::entity::ZoneDrawStep;
+use website_map_engine::editing::hosted_commands::{commit_document_edit, zone_rows};
 
 /// Is a zone draw in flight?.
 #[must_use]
@@ -149,12 +150,14 @@ pub(in crate::editor::state::operations) fn advance_zone_draw(x: f64, z: f64) ->
             target,
             collection,
         }) => match (collection, target) {
-            (DrawTarget::Zone, Some(id)) => edit_zone(|core| core.set_zone_circle(&id, cx, cz, r)),
+            (DrawTarget::Zone, Some(id)) => {
+                commit_document_edit(|core| core.set_zone_circle(&id, cx, cz, r))
+            }
             (DrawTarget::Zone, None) => write_row(DrawTarget::Zone, |core, id| {
                 core.add_circle_zone(id, &kind, cx, cz, r);
             }),
             (DrawTarget::Trigger, Some(id)) => {
-                edit_zone(|core| core.set_trigger_circle(&id, cx, cz, r))
+                commit_document_edit(|core| core.set_trigger_circle(&id, cx, cz, r))
             }
             (DrawTarget::Trigger, None) => write_row(DrawTarget::Trigger, |core, id| {
                 core.add_circle_trigger(id, &kind, cx, cz, r);
@@ -190,11 +193,15 @@ pub fn close_zone_polygon() -> bool {
     let kind = commit.kind;
     let flat = polygon_flat(&commit.ring);
     match (commit.collection, commit.target) {
-        (DrawTarget::Zone, Some(id)) => edit_zone(|core| core.set_zone_polygon(&id, &flat)),
+        (DrawTarget::Zone, Some(id)) => {
+            commit_document_edit(|core| core.set_zone_polygon(&id, &flat))
+        }
         (DrawTarget::Zone, None) => write_row(DrawTarget::Zone, |core, id| {
             core.add_polygon_zone(id, &kind, &flat)
         }),
-        (DrawTarget::Trigger, Some(id)) => edit_zone(|core| core.set_trigger_polygon(&id, &flat)),
+        (DrawTarget::Trigger, Some(id)) => {
+            commit_document_edit(|core| core.set_trigger_polygon(&id, &flat))
+        }
         (DrawTarget::Trigger, None) => write_row(DrawTarget::Trigger, |core, id| {
             core.add_polygon_trigger(id, &kind, &flat)
         }),
@@ -227,4 +234,33 @@ pub(in crate::editor::state::operations) fn write_row_returning_id(
         mission_history::after_local_edit();
     }
     id
+}
+
+/// Author one boundary zone covering the whole terrain, sized from the mission's own map.
+///
+/// Every mission wants a play area, and the only other way to get one is to walk a 12.8 km ring
+/// vertex by vertex through [`begin_zone_draw`], on a map where a pixel is metres. The ring, the
+/// zone type and the label are the dock's vocabulary — the schema enum and the panel's own
+/// terrain rectangle — so they are resolved here and handed to the document already decided.
+pub fn add_whole_terrain_zone() -> Option<String> {
+    use crate::editor::panels::zones_panel;
+
+    let (terrain, bounds) = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        Some((terrain_key_of(core), terrain_bounds_of(core)))
+    })?;
+    let ring = zones_panel::terrain_rect_ring(&terrain, bounds)?;
+
+    let kind = zones_panel::whole_terrain_zone_type()?;
+    write_row_returning_id(DrawTarget::Zone, |core, id| {
+        core.add_polygon_zone_labelled(
+            id,
+            &kind,
+            &ring,
+            Some(zones_panel::WHOLE_TERRAIN_ZONE_LABEL),
+        );
+    })
 }

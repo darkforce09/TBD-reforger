@@ -9,19 +9,21 @@
 
 #![cfg(target_arch = "wasm32")]
 
-use super::entity;
+use super::entity::ensure_active_layer;
 pub use website_map_engine::editing::batch::with_batch;
-use website_map_engine::editing::hosted_commands::selection_transform;
+use website_map_engine::editing::hosted_commands::{entity_clipboard, selection_transform};
 use website_map_engine::editing::tools::placement::{needs_confirm, AlignEdge};
 
 /// Facade wrapper — multi-txn delete (comments + connection cascade + slots) is one Ctrl+Z.
 pub fn delete_selection() -> bool {
-    with_batch("delete-selection", entity::delete_selection)
+    with_batch("delete-selection", entity_clipboard::delete_selection)
 }
 
 /// Facade wrapper — paste is one group even if layer mint + `paste_slots` split.
 pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
-    with_batch("paste", || entity::paste_at_cursor(cx, cy))
+    with_batch("paste", || {
+        entity_clipboard::paste_at_cursor(cx, cy, ensure_active_layer)
+    })
 }
 
 /// Facade wrapper — align the selection as one group.

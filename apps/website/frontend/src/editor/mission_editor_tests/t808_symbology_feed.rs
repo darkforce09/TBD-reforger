@@ -87,7 +87,7 @@ fn every_slot_feed_binds_role_and_heading() {
 /// **Feeder 2 — the vehicle lane's four columns come from ONE id-sorted reader.**
 ///
 /// This is the alignment pin, and it is the whole reason the ticket named a trap.
-/// `editor_ops::vehicle_rows` sorts by id; `MissionDocCore::vehicle_xy_flat` (what this lane was
+/// `engine_ops::vehicle_rows` sorts by id; `MissionDocCore::vehicle_xy_flat` (what this lane was
 /// fed before) walks the `yrs` map in ITERATION order. Feeding `xy` from one and kind / tint /
 /// heading from the other would put every vehicle in another vehicle's clothes — the wave-127
 /// zip lesson, and strictly worse than the amber disc it replaces, because a silhouette pointing

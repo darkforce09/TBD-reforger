@@ -5,7 +5,6 @@
 
 use crate::editor::state::history as mission_history;
 use std::collections::HashMap;
-use website_map_engine::data::store::MissionDocCore;
 
 #[allow(unused_imports)]
 use super::{batch::confirm_bulk_n_step, context::*, entity::*};
@@ -26,18 +25,6 @@ pub fn set_cargo_defaults(
     map: HashMap<String, Vec<crate::editor::arsenal::arsenal_rules::CargoRow>>,
 ) {
     website_map_engine::data::store::operations::cargo::set_cargo_defaults(map);
-}
-
-/// Seed one slot's cargo inside an already-open doc borrow (shared by the place / apply-kit hooks — the caller owns the history tail). Seeds only when the character has defaults and the loadout carries no `cargo` key.
-pub(super) fn seed_cargo_in_core(
-    core: &MissionDocCore,
-    id: &str,
-    asset_id: &str,
-    loadout: Option<&str>,
-) -> bool {
-    website_map_engine::data::store::operations::cargo::seed_cargo_for_asset(
-        core, id, asset_id, loadout,
-    )
 }
 
 /// Arsenal-open seed (pre-.15.2 slots): own ctx scope + history tail. Returns the seeded loadout JSON so the caller can render it without a re-read.

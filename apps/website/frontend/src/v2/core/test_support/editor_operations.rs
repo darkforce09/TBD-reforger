@@ -3,7 +3,8 @@
 //! Signals & state: compile-time source text only.
 //! Invariants: include each production shard once and keep domain and adapter sources distinct.
 
-/// Frontend operations adapter source.
+/// The live entity operation surface: the frontend adapter shards that still carry host state, and
+/// the map-engine hosted commands the rest of them became.
 pub(crate) const ENTITY: &str = concat!(
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -12,22 +13,7 @@ pub(crate) const ENTITY: &str = concat!(
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/selection.rs"
-    )),
-    "\n",
-    include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
         "/src/editor/state/operations/entity/layers.rs"
-    )),
-    "\n",
-    include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/comments.rs"
-    )),
-    "\n",
-    include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/connections.rs"
     )),
     "\n",
     include_str!(concat!(
@@ -38,16 +24,6 @@ pub(crate) const ENTITY: &str = concat!(
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/src/editor/state/operations/entity/arming.rs"
-    )),
-    "\n",
-    include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/roster.rs"
-    )),
-    "\n",
-    include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/vehicles.rs"
     )),
     "\n",
     include_str!(concat!(
@@ -67,22 +43,57 @@ pub(crate) const ENTITY: &str = concat!(
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/zones.rs"
-    )),
-    "\n",
-    include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
         "/src/editor/state/operations/entity/triggers.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/markers.rs"
+        "/src/editor/state/operations/entity/selection_index.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/selection_index.rs"
+        "/../map-engine/src/editing/hosted_commands/document_edit.rs"
+    )),
+    "\n",
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/editing/hosted_commands/document_search.rs"
+    )),
+    "\n",
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/editing/hosted_commands/entity_clipboard.rs"
+    )),
+    "\n",
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/editing/hosted_commands/orbat_roster.rs"
+    )),
+    "\n",
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/editing/hosted_commands/placed_vehicles.rs"
+    )),
+    "\n",
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/editing/hosted_commands/entity_connections.rs"
+    )),
+    "\n",
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/editing/hosted_commands/map_markers.rs"
+    )),
+    "\n",
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/editing/hosted_commands/zone_authoring.rs"
+    )),
+    "\n",
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/editing/hosted_commands/map_comments.rs"
     )),
     "\n",
 );

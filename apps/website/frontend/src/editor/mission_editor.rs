@@ -46,6 +46,8 @@ use crate::editor::state::hydrate as mission_hydrate;
 use crate::editor::state::operations as editor_ops;
 #[cfg(target_arch = "wasm32")]
 use crate::editor::state::persist as yrs_persist;
+#[cfg(target_arch = "wasm32")]
+use website_map_engine::editing::hosted_commands as engine_ops;
 
 // T-934.10 — the pure canvas helper belt (connection/comment/marker lane feeds, the hover state
 // machine, route resolution, the selection universe, the crew-hide SoA filter, the paste anchor)
@@ -857,7 +859,7 @@ pub(crate) fn with_editor_toolbar_dispatch(f: impl FnOnce(&EditorToolbarDispatch
 /// **This is the document read the lane and the pick share** — one function, called by the `doc_tick`
 /// Effect that binds the lane AND by the pointer arm that hit-tests it, so what is on screen and what
 /// a click can find are the same set by construction. Positions come from the materialized SoA
-/// (slots) and `editor_ops::vehicle_points` (vehicles) — the same two sources the slot/vehicle pick
+/// (slots) and `engine_ops::vehicle_points` (vehicles) — the same two sources the slot/vehicle pick
 /// uses, and the same set the engine actually draws, so an edge to a slot hidden by the T-665 layer
 /// filter has no line and no hit box, matching the entity it points at.
 ///
@@ -878,7 +880,7 @@ pub(crate) fn live_connection_segments(
             (f64::from(soa.xy[i * 2]), f64::from(soa.xy[i * 2 + 1])),
         );
     }
-    for (id, x, y) in editor_ops::vehicle_points() {
+    for (id, x, y) in engine_ops::vehicle_points() {
         positions.insert(id, (x, y));
     }
     connection_segments(&core.connection_rows_json(), &positions)
@@ -929,13 +931,13 @@ pub(crate) fn hover_hit(
     py: f64,
 ) -> bool {
     if cache.as_ref().is_none_or(|c| c.tick != tick) {
-        // Both reads are shared borrows of the same `RefCell` (`vehicle_points` goes through
-        // `OPS_CTX` to this very doc) — exactly how the click path already nests them.
+        // Both reads are shared borrows of the same `RefCell` (`vehicle_points` reaches this very
+        // doc through the installed editing host) — exactly how the click path already nests them.
         let fresh = doc.borrow().as_ref().map(|c| HoverPoints {
             tick,
             // T-819 — map pick cannot hit a crewed figure (nothing rendered).
             soa: map_render_slot_soa(c),
-            vehicles: editor_ops::vehicle_points(),
+            vehicles: engine_ops::vehicle_points(),
             comments: comment_points(&c.comments_json()),
         });
         let Some(fresh) = fresh else { return false };
@@ -2612,7 +2614,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // in-flight gesture below (pointercancel is never a commit).
                     // T-768 — same for an armed connect (never a commit on cancel).
                     editor_ops::cancel_pending();
-                    editor_ops::cancel_connect();
+                    engine_ops::cancel_connect();
                     if pan_px.get().is_some() {
                         pan_px.set(None);
                         if container.has_pointer_capture(ev.pointer_id()) {
@@ -2630,7 +2632,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // T-573 — a cancel is never a commit, so nothing downstream
                                 // re-binds: the previewed vehicle rows would otherwise stay parked
                                 // at the last offset while the document says they never moved.
-                                crate::editor::tools::select_tool::clear_drag_preview(e, &editor_ops::vehicle_points());
+                                crate::editor::tools::select_tool::clear_drag_preview(e, &engine_ops::vehicle_points());
                                 // T-796 — the comment lane, same reasoning: a cancelled drag that
                                 // held a note left its glyph at the previewed offset. Re-bind the
                                 // authored positions (identity when no note was dragged).

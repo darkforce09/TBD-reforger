@@ -368,7 +368,7 @@ pub fn AttributesModal(
                     // T-818 — vehicles open Attributes (T-647 ATTR-OPEN) but live off the slot SoA,
                     // so `read_attrs` is None. Route them to the vehicle editor rather than treating
                     // the id as undone-away. True absence (undone / deleted) still closes.
-                    if crate::editor::state::operations::is_vehicle_id(&id) {
+                    if engine_ops::is_vehicle_id(&id) {
                         Some(vehicle_attrs_view(id, registry_items))
                     } else {
                         // T-744 — `None` means the slot is GONE from the raw rows (undone / deleted),
@@ -623,13 +623,10 @@ fn vehicle_attrs_view(
     id: String,
     registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
 ) -> AnyView {
-    use crate::editor::state::operations::VehicleCargoRow;
     use std::collections::HashMap;
+    use website_map_engine::editing::hosted_commands::VehicleCargoRow;
 
-    let Some(v) = crate::editor::state::operations::vehicle_rows()
-        .into_iter()
-        .find(|r| r.id == id)
-    else {
+    let Some(v) = engine_ops::vehicle_rows().into_iter().find(|r| r.id == id) else {
         // Race: id was a vehicle at the host gate, then vanished before this render.
         crate::editor::state::operations::close_attributes();
         return ().into_any();
@@ -669,7 +666,7 @@ fn vehicle_attrs_view(
         let id_h = StoredValue::new(vid.clone());
         number_field("Heading", h, Some("°"), Gate::open(), move |raw| {
             let deg = ((raw % 360.0) + 360.0) % 360.0;
-            crate::editor::state::operations::set_vehicle_heading(id_h.get_value(), deg);
+            engine_ops::set_vehicle_heading(id_h.get_value(), deg);
         })
         .into_any()
     } else {
@@ -704,7 +701,7 @@ fn vehicle_attrs_view(
                             if let Some(r) = next.get_mut(i) {
                                 r.qty = q;
                             }
-                            crate::editor::state::operations::set_vehicle_cargo(id_q.clone(), next);
+                            engine_ops::set_vehicle_cargo(id_q.clone(), next);
                         }
                     />
                     <button
@@ -716,7 +713,7 @@ fn vehicle_attrs_view(
                             if i < next.len() {
                                 next.remove(i);
                             }
-                            crate::editor::state::operations::set_vehicle_cargo(id_r.clone(), next);
+                            engine_ops::set_vehicle_cargo(id_r.clone(), next);
                         }
                     >
                         <crate::v2::core::ui::MaterialIcon name="close" class="block text-sm" />
@@ -726,7 +723,7 @@ fn vehicle_attrs_view(
         })
         .collect_view();
 
-    let seat_choices = StoredValue::new(crate::editor::state::operations::placed_slot_choices());
+    let seat_choices = StoredValue::new(engine_ops::placed_slot_choices());
     let n_cargo_seats = DEFAULT_CARGO_SEATS;
     let seat_list = seat_model(n_cargo_seats)
         .into_iter()
@@ -746,9 +743,9 @@ fn vehicle_attrs_view(
                         on:change=move |ev| {
                             let slot = event_target_value(&ev);
                             if slot.is_empty() {
-                                crate::editor::state::operations::clear_crew_seat(id_seat.clone(), sid.clone());
+                                engine_ops::clear_crew_seat(id_seat.clone(), sid.clone());
                             } else {
-                                crate::editor::state::operations::assign_crew_seat(
+                                engine_ops::assign_crew_seat(
                                     id_seat.clone(),
                                     sid.clone(),
                                     slot,
@@ -829,7 +826,7 @@ fn vehicle_attrs_view(
                                 } else {
                                     next.push(VehicleCargoRow { item, qty: 1 });
                                 }
-                                crate::editor::state::operations::set_vehicle_cargo(id_add.clone(), next);
+                                engine_ops::set_vehicle_cargo(id_add.clone(), next);
                             }
                         >
                             <option value="">"Add cargo…"</option>
@@ -3136,7 +3133,7 @@ mod tests {
 
     /// **T-777** — and neither may PASTE. A copy lands at the elevation it was copied from.
     ///
-    /// Third path in the same family as F-2 and F-5 above. `editor_ops::paste_at_cursor` pushed a
+    /// Third path in the same family as F-2 and F-5 above. `paste_at_cursor` pushed a
     /// hard-coded ground value into `paste_slots`' `zs` column for every clipboard row, justified
     /// in a comment as byte-parity with the flat-map JS oracle. The **operator set that parity
     /// aside on 2026-08-08** — it was a migration safety net, never a contract — and the zero was

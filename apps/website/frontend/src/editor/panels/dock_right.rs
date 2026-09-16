@@ -306,7 +306,7 @@ fn record_recent(recent: RwSignal<Vec<RecentPlaced>>, asset_id: String, label: S
 // The boundary the block above draws is honest but incomplete: the ticket's acceptance says placing
 // ANY asset heads the recent list, and two placements commit in files this dock does not own — the
 // composition STAMP (`editor_ops::place_at_impl`, the `Pending::Composition` arm) and the ORBAT
-// manager's Add-Vehicle (`editor_ops::orbat_add_vehicle`). They cannot reach `recent` (a `!Send`
+// manager's Add-Vehicle (the engine's `orbat_add_vehicle`). They cannot reach `recent` (a `!Send`
 // signal declared inside `DockRight`'s body), so — exactly as the Zones panel exposes its selection
 // (`SELECT_ZONE` / `install_select_zone` / `route_select_zone`, above) and the transform toolbar
 // exposes its verbs (`register_editor_toolbar_dispatch`) — the dock REGISTERS a recorder closure at
@@ -2982,7 +2982,7 @@ fn trigger_attributes(
     let rules = t.rules.clone();
     // The owner picker's options are read ONCE per render of this panel (doc_tick above re-renders
     // it). Includes the current owner even if it is now dangling, so the select can show it.
-    let owner_opts = ops::placed_owner_options();
+    let owner_opts = engine_ops::placed_owner_options();
     let current_owner = t.owner_id.clone();
     let current_owner_dangling = current_owner
         .as_ref()
@@ -3803,7 +3803,7 @@ pub(crate) fn markers_panel(
             <span class="font-mono text-code-md text-outline">
                 {move || {
                     let _ = doc_tick.get();
-                    ops::marker_count()
+                    engine_ops::marker_count()
                 }}
             </span>
         </div>
@@ -3910,7 +3910,7 @@ pub(crate) fn markers_panel(
         // ── Authored markers ─────────────────────────────────────────────────────────────────
         {move || {
             let _ = doc_tick.get();
-            let rows = ops::marker_rows();
+            let rows = engine_ops::marker_rows();
             if rows.is_empty() {
                 return view! {
                     <p class="mt-3 text-label-sm normal-case text-outline">"No markers yet."</p>
@@ -3970,7 +3970,7 @@ pub(crate) fn markers_panel(
             };
             // T-763 — match on the full `(factionId, id)` address. Id-alone would edit the first
             // faction's row when a hydrated foreign payload reused the same marker id on two sides.
-            let Some(m) = ops::marker_rows()
+            let Some(m) = engine_ops::marker_rows()
                 .into_iter()
                 .find(|r| r.faction_id == faction_id && r.id == id)
             else {
@@ -4026,7 +4026,7 @@ fn marker_attributes(
                 class="mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
                 on:change=move |ev| {
                     let next = event_target_value(&ev);
-                    if ops::set_marker_icon(&f_icon, &i_icon, &next) {
+                    if engine_ops::set_marker_icon(&f_icon, &i_icon, &next, marker_icon_is_authorable) {
                         bump();
                     }
                 }
@@ -4054,7 +4054,7 @@ fn marker_attributes(
                 prop:value=label_value
                 on:change=move |ev| {
                     let next = event_target_value(&ev);
-                    if ops::set_marker_label(&f_label, &i_label, &next) {
+                    if engine_ops::set_marker_label(&f_label, &i_label, &next) {
                         bump();
                     }
                 }
@@ -4076,7 +4076,7 @@ fn marker_attributes(
                         let Ok(next) = event_target_value(&ev).trim().parse::<f64>() else {
                             return;
                         };
-                        if ops::set_marker_position(&f_x, &i_x, next, z_value) {
+                        if engine_ops::set_marker_position(&f_x, &i_x, next, z_value) {
                             bump();
                         }
                     }
@@ -4091,7 +4091,7 @@ fn marker_attributes(
                         let Ok(next) = event_target_value(&ev).trim().parse::<f64>() else {
                             return;
                         };
-                        if ops::set_marker_position(&f_z, &i_z, x_value, next) {
+                        if engine_ops::set_marker_position(&f_z, &i_z, x_value, next) {
                             bump();
                         }
                     }
@@ -4102,7 +4102,7 @@ fn marker_attributes(
                 type="button"
                 class="mt-2 rounded-md px-2 py-1 text-label-sm text-error transition-colors hover:bg-error/10"
                 on:click=move |_| {
-                    if ops::remove_marker(&f_del, &i_del) {
+                    if engine_ops::remove_marker(&f_del, &i_del) {
                         selected.set(None);
                         bump();
                     }
@@ -5592,11 +5592,18 @@ mod tests {
              was:\n{stamp}"
         );
 
-        // ORBAT Add-Vehicle: `orbat_add_vehicle` records the added vehicle (keyed on its resourceName).
-        let addv = only_body(&ops, &format!("fn orbat_{}(", "add_vehicle"));
+        // ORBAT Add-Vehicle: the manager's vehicle picker records the added vehicle (keyed on its
+        // resourceName) once the command reports one placed. The recently-placed list is the DOCK's
+        // own memory, so the recording sits at the call site, not inside the document command.
+        let manager = live_code(include_str!("../../pages/operations/orbat_manager.rs"));
+        let addv = only_body(&manager, &format!("fn stitch_{}(", "row"));
+        let at_add = addv
+            .find(&format!("orbat_{}(", "add_vehicle"))
+            .expect("T-809: the ORBAT manager row must call the add-vehicle command");
         assert!(
-            addv.contains(&record_call),
-            "T-809: orbat_add_vehicle must record the added vehicle as recently-placed; body was:\n{addv}"
+            addv[at_add..].contains(&record_call),
+            "T-809: the add-vehicle caller must record the added vehicle as recently-placed; body \
+             was:\n{addv}"
         );
     }
 
