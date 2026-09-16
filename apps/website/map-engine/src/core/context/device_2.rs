@@ -18,6 +18,7 @@ use crate::diagnostics::timing::gpu::GpuTimer;
 use crate::renderers::batching::scene::UNIT_QUAD;
 use crate::renderers::engine::lifecycle::TEXT_UNIFORM_BYTES;
 use crate::renderers::pipelines::building::create_building_pipeline;
+use crate::renderers::pipelines::create_map_shader;
 use crate::renderers::pipelines::icon::create_icon_pipeline;
 use crate::renderers::pipelines::icon::create_icon_pipeline_storage32;
 use crate::renderers::pipelines::quad::create_quad_pipeline;
@@ -108,10 +109,10 @@ impl RenderEngine {
         config.present_mode = wgpu::PresentMode::Fifo;
         surface.configure(&device, &config);
 
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("quad-instanced"),
-            source: wgpu::ShaderSource::Wgsl(website_graphics_engine::shaders::SHADER_WGSL.into()),
-        });
+        // T-0xx Phase 2B (Kind A): compiling the shader module is GPU resource creation, so
+        // it moved to `website-graphics-engine` beside the pipeline constructors that consume
+        // it. The WGSL source never leaves the crate that owns it.
+        let shader = create_map_shader(&device);
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("camera-uniform"),
             entries: &[wgpu::BindGroupLayoutEntry {

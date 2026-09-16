@@ -17,11 +17,12 @@ use website_graphics_engine::frame::packet;
 use website_graphics_engine::frame::present;
 use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 
-/// Re-export `website_graphics_engine::text::gpu::TEXT_UNIFORM_BYTES`.
-// T-0xx Phase 1D: the size of the text atlas's uniform block is the renderer's, and it moved
-// with the block. Re-exported here so the bind-group layout in `core/context/device_2.rs`
-// keeps its spelling.
-pub(crate) use website_graphics_engine::text::gpu::TEXT_UNIFORM_BYTES;
+/// Re-export `website_graphics_engine::layout::pack::TEXT_UNIFORM_BYTES`.
+// T-0xx Phase 2B (Kind A): the size of the text atlas's uniform block is byte layout, not a
+// GPU resource — it names no `wgpu` type. It moved out of graphics-engine's `text::gpu` into
+// `text::pack` and reaches us through `layout`, the enumerated ABI surface. Re-exported here
+// so the bind-group layout in `core/context/device_2.rs` keeps its spelling.
+pub(crate) use website_graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;
 
 #[wasm_bindgen]
 impl RenderEngine {

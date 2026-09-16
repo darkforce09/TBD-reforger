@@ -7,3 +7,7 @@
 
 /// The map shader: every vertex/fragment entry point plus the icon-cull compute kernel.
 pub const SHADER_WGSL: &str = include_str!("shader.wgsl");
+
+#[cfg(test)]
+#[path = "tests/contract_tests.rs"]
+mod tests;

@@ -19,6 +19,9 @@ pub mod draw;
 /// The frame vocabulary — see `frame/mod.rs` for the rule that governs it.
 pub mod frame;
 
+/// The shared binary contract — POD layouts and bit-packing, enumerated in one file.
+pub mod layout;
+
 /// The frame pump — one rAF loop, shared by every canvas the app mounts.
 // `loop` is a keyword, so the module is a raw identifier; the directory is plain `loop/`,
 // which is the name the split program's target tree gives it.

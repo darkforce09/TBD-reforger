@@ -10,14 +10,17 @@ use crate::core::pipeline::draw_order::lane_id;
 use wasm_bindgen::prelude::*;
 use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer, TextRun};
 
-/// Re-export `website_graphics_engine::text::gpu::text_uniform_bytes`.
-// T-0xx Phase 1D: the atlas texture/uniform/bind-group build moved to
-// `website-graphics-engine` (`text::gpu`). The `impl RenderEngine` blocks below stay — they
-// are `#[wasm_bindgen]` exports on a type this crate defines, and E0116 is symmetric.
-pub(crate) use website_graphics_engine::text::gpu::text_uniform_bytes;
+/// Re-export `website_graphics_engine::layout::pack::text_uniform_bytes`.
+// T-0xx Phase 2B (Kind A): the `TextUniforms` block is bytes, so it sits in graphics-engine's
+// `text::pack` and arrives through `layout`, the enumerated ABI surface. The live atlas —
+// texture, uniform buffer, bind group — is `frame::TextAtlasGpu`: a GPU handle, which is what
+// a `TextRun`'s `atlas: BindGroupId` resolves to. The `impl RenderEngine` blocks below stay
+// where they are — they are `#[wasm_bindgen]` exports on a type this crate defines, and
+// E0116 is symmetric.
+pub(crate) use website_graphics_engine::layout::pack::text_uniform_bytes;
 
-/// Re-export `website_graphics_engine::text::gpu::TextAtlasGpu`.
-pub(crate) use website_graphics_engine::text::gpu::TextAtlasGpu;
+/// Re-export `website_graphics_engine::frame::TextAtlasGpu`.
+pub(crate) use website_graphics_engine::frame::TextAtlasGpu;
 
 #[wasm_bindgen]
 impl RenderEngine {
@@ -40,7 +43,7 @@ impl RenderEngine {
         width: u32,
         height: u32,
     ) -> Result<(), JsError> {
-        let atlas = website_graphics_engine::text::gpu::create_text_atlas(
+        let atlas = website_graphics_engine::frame::create_text_atlas(
             &self.device,
             &self.queue,
             &self.text_bind_group_layout,

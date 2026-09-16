@@ -75,3 +75,24 @@ pub fn screen_yaw_for_heading_deg(heading_deg: f64) -> f64 {
     }
     -heading_deg
 }
+
+/// Canonical text uniform bytes value.
+// T-0xx Phase 2B: moved here from `text/gpu.rs`. Neither this nor `text_uniform_bytes` names
+// a `wgpu` type — they are the CPU side of the `TextUniforms` block, which is byte layout,
+// which is this module. `text/gpu.rs` itself became `frame/atlas.rs`.
+pub const TEXT_UNIFORM_BYTES: u64 = 16;
+
+/// `TextUniforms` block: `px_to_m = 1`, then the atlas grid dims the sampler needs.
+#[must_use]
+pub fn text_uniform_bytes() -> [u8; TEXT_UNIFORM_BYTES as usize] {
+    let mut u_bytes = [0u8; TEXT_UNIFORM_BYTES as usize];
+    u_bytes[0..4].copy_from_slice(&1.0_f32.to_le_bytes());
+    #[allow(clippy::cast_precision_loss)]
+    let (cols, rows) = (
+        crate::text::atlas::TEXT_ATLAS_COLS as f32,
+        crate::text::atlas::TEXT_ATLAS_ROWS as f32,
+    );
+    u_bytes[4..8].copy_from_slice(&cols.to_le_bytes());
+    u_bytes[8..12].copy_from_slice(&rows.to_le_bytes());
+    u_bytes
+}

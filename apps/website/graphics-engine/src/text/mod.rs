@@ -10,10 +10,6 @@ pub mod atlas;
 /// Bitmap font tables.
 pub mod font;
 
-/// Cell-atlas textures, uniforms and bind groups.
-#[cfg(target_arch = "wasm32")]
-pub mod gpu;
-
 /// Laying a placed string out into glyph instances.
 pub mod layout;
 

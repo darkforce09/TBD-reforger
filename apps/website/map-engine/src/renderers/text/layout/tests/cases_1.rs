@@ -46,44 +46,6 @@ fn atlas_size() {
 }
 
 #[test]
-fn g1_text_uniforms_is_16_bytes_no_vec3() {
-    let block = text_uniforms_block();
-    assert!(
-        !block.contains("vec3"),
-        "TextUniforms must not use vec3 padding (align-16 makes the struct 32 B \
-             against the 16 B min_binding_size — dead text pipeline)"
-    );
-
-    assert_eq!(
-        block.matches(": f32").count(),
-        4,
-        "TextUniforms must stay exactly 4×f32 (16 B contract)"
-    );
-}
-
-#[test]
-fn g1_vs_text_has_v_flip() {
-    let body = vs_text_body();
-    assert!(
-        body.contains("1.0 - in.unit.y"),
-        "vs_text must flip V (world-top → atlas cell top) like vs_textured"
-    );
-}
-
-#[test]
-fn l2_vs_text_grid_from_uniform() {
-    let body = vs_text_body();
-    assert!(
-        body.contains("text_u.grid_cols") && body.contains("text_u.grid_rows"),
-        "vs_text must read atlas grid dims from TextUniforms"
-    );
-    assert!(
-        !body.contains("/ 16.0") && !body.contains("/ 6.0") && !body.contains("% 16u"),
-        "vs_text must not hardcode the atlas grid (16/6 remnants)"
-    );
-}
-
-#[test]
 fn g2_glyph_cell_uv_corners_upright() {
     let cols = TEXT_ATLAS_COLS as f32;
     let rows = TEXT_ATLAS_ROWS as f32;

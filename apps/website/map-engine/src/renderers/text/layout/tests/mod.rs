@@ -7,24 +7,13 @@ use super::*;
 
 use crate::symbology::labels::declutter::LabelSpec;
 
-const SHADER_SRC: &str = website_graphics_engine::shaders::SHADER_WGSL;
-
-fn text_uniforms_block() -> &'static str {
-    let start = SHADER_SRC
-        .find("struct TextUniforms")
-        .expect("TextUniforms struct present");
-    let end = SHADER_SRC[start..].find('}').expect("struct closes") + start;
-    &SHADER_SRC[start..end]
-}
-
-fn vs_text_body() -> &'static str {
-    let start = SHADER_SRC.find("fn vs_text(").expect("vs_text present");
-    let end = SHADER_SRC[start..]
-        .find("fn fs_text(")
-        .expect("fs_text follows vs_text")
-        + start;
-    &SHADER_SRC[start..end]
-}
+// T-0xx Phase 2B (Kind A): the three shader-scrub cases that used to sit below
+// (`g1_text_uniforms_is_16_bytes_no_vec3`, `g1_vs_text_has_v_flip`,
+// `l2_vs_text_grid_from_uniform`) moved to `website-graphics-engine`'s
+// `shaders/tests/contract_tests.rs`, taking `SHADER_SRC` and its two block-scrubbing helpers
+// with them. They asserted graphics-engine's own shader against graphics-engine's own
+// constants and named nothing from this crate, and reading `shaders::SHADER_WGSL` from here
+// was the last reach into a GPU-resource module outside a `frame/` seam (gate rule 3b).
 
 fn cell_px(px: &[u8], w: u32, gi: u32, dx: u32, dy: u32) -> [u8; 4] {
     let cell = TEXT_CELL_PX;
