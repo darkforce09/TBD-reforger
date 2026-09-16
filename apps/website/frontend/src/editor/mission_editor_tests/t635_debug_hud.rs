@@ -4,7 +4,10 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, live_source};
 /// strings survive as structural landmarks). Same slice boundary as `editor_live`.
 fn editor_src() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     live_source(&raw[raw.find(anchor.as_str()).expect("anchor present")..])
 }
 
@@ -14,14 +17,20 @@ fn editor_src() -> String {
 /// Each half scrubbed separately.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert_eq!(
         raw.matches(anchor.as_str()).count(),
         1,
         "scrub anchor must be unambiguous"
     );
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
-    src.push_str(&live_code(include_str!("../canvas/commands.rs")));
+    src.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    ))));
     src
 }
 
@@ -45,7 +54,10 @@ fn ctrl_alt_d_toggles_the_hud_behind_the_editable_guard() {
     );
     // The literal binding is present on the raw keydown file too (live_code blanks it above;
     // the arm lives in `canvas/commands.rs` since T-934.14).
-    let raw = include_str!("../canvas/commands.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    ));
     assert!(
         raw.contains("\"KeyD\" if modk && ev.alt_key()"),
         "T-635: the toggle must be bound to the D key"
@@ -112,7 +124,10 @@ fn the_hud_moved_into_the_gated_status_bar() {
 /// docstring — cannot satisfy the pin. The comment must really ship in the page's source.
 #[test]
 fn the_telemetry_vs_diagnostics_distinction_is_documented() {
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     // Window: `MissionEditorPage`'s definition … first test module after it. The file's FIRST
     // `#[cfg(test)]` is a `clear_for_test` helper near the top (well above the page), so slice
     // from the page anchor forward, then cut at the next test module. (Both needles split so

@@ -4,7 +4,10 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, only_item};
 /// slice `t635_debug_hud` uses.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     live_code(&raw[raw.find(anchor.as_str()).expect("anchor present")..])
 }
 
@@ -12,7 +15,10 @@ fn editor_live() -> String {
 /// Whole-file `live_code` is safe there: the file's only `#[cfg(test)]` (registry_session's
 /// `clear_for_test`) sits below `start_raf`, so the cut keeps the sampler.
 fn viewport_live() -> String {
-    live_code(include_str!("../canvas/viewport.rs"))
+    live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/viewport.rs"
+    )))
 }
 
 /// The signal is a real signal seeded from the shared `m_per_px` conversion (not a bare float

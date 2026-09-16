@@ -2070,19 +2070,40 @@ mod tests {
     fn fly_to_and_named_locations_bodies_are_live() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let src = live_code(concat!(
-            include_str!("../../../../map-engine/src/streaming/host/mod.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/streaming/host/mod.rs"
+            )),
             "\n",
-            include_str!("../../../../map-engine/src/streaming/host/queries.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/streaming/host/queries.rs"
+            )),
             "\n",
-            include_str!("../../../../map-engine/src/streaming/host/state.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/streaming/host/state.rs"
+            )),
             "\n",
-            include_str!("../../../../map-engine/src/streaming/host/preferences.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/streaming/host/preferences.rs"
+            )),
             "\n",
-            include_str!("../../../../map-engine/src/streaming/host/viewport.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/streaming/host/viewport.rs"
+            )),
             "\n",
-            include_str!("../../../../map-engine/src/streaming/host/bootstrap.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/streaming/host/bootstrap.rs"
+            )),
             "\n",
-            include_str!("../../../../map-engine/src/streaming/host/terrain.rs")
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/streaming/host/terrain.rs"
+            ))
         ));
         let fly = only_body(&src, "pub fn fly_to");
         let render = format!("{}{}", "RENDER", "_CTX");
@@ -3000,9 +3021,10 @@ mod t697_document_search {
     #[test]
     fn the_index_covers_every_placeable_collection() {
         let ops = ops_code();
-        let domain = live_code(include_str!(
-            "../../../../map-engine/src/data/store/operations/document_index.rs"
-        ));
+        let domain = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/data/store/operations/document_index.rs"
+        )));
         let body = only_body(&domain, "pub fn document_entities");
         for kind in [
             "DocKind::Slot",
@@ -3033,9 +3055,10 @@ mod t697_document_search {
             only_body(&ops, "pub fn selection_entities").contains("selection_entities(core, &sel)"),
             "T-697: the selection filter must go through the one projection"
         );
-        let projection = live_code(include_str!(
-            "../../../../map-engine/src/data/store/operations/entity/selection_index.rs"
-        ));
+        let projection = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/data/store/operations/entity/selection_index.rs"
+        )));
         assert!(
             only_body(&projection, "pub fn selection_entities").contains("document_entities(core)"),
             "T-697: the selection filter must read the same rows the search does"

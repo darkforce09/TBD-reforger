@@ -536,9 +536,15 @@ mod t636_band_readers_agree {
         // helper near the TOP (above the band reader), so scrubbing the whole file would drop the
         // reader — slice from the page fn anchor first (the t662/t635 idiom), then scrub that.
         let band_read = "editor::layout::toolbelt_band_px()";
-        let sel = live_code(include_str!("tools/select_tool.rs"));
+        let sel = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/tools/select_tool.rs"
+        )));
 
-        let raw_editor = include_str!("mission_editor.rs");
+        let raw_editor = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/mission_editor.rs"
+        ));
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
         assert_eq!(
             raw_editor.matches(anchor.as_str()).count(),
@@ -550,7 +556,10 @@ mod t636_band_readers_agree {
         // is still examined wherever it lives.
         let mut editor =
             live_code(&raw_editor[raw_editor.find(anchor.as_str()).expect("anchor present")..]);
-        editor.push_str(&live_code(include_str!("canvas/gestures.rs")));
+        editor.push_str(&live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/canvas/gestures.rs"
+        ))));
 
         assert!(
             sel.contains(band_read),
@@ -742,7 +751,10 @@ mod t638_collapse {
     /// so this test's own source cannot satisfy them.
     #[test]
     fn keydown_binds_e_and_r_to_the_collapse_latches() {
-        let src = include_str!("canvas/commands.rs");
+        let src = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/canvas/commands.rs"
+        ));
         let arm = |code: &str| format!("\"{code}\" if !modk");
         // E → left latch, R → right latch.
         assert!(
@@ -1207,7 +1219,10 @@ mod t637_dock_geometry {
     /// Exactly one use each: a second mount would be a second place the width could drift.
     #[test]
     fn mission_editor_mounts_the_docks_from_these_consts() {
-        let raw = include_str!("mission_editor.rs");
+        let raw = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/mission_editor.rs"
+        ));
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
         let editor = live_code(&raw[raw.find(anchor.as_str()).expect("anchor present")..]);
         for name in [
@@ -1312,7 +1327,10 @@ mod t637_dock_geometry {
              DISABLED_GLYPH), not from an ad-hoc pair baked into the geometry recipe"
         );
         // The local copy is gone from the strip. Needle assembled so this source cannot satisfy it.
-        let strip = include_str!("panels/top_strip.rs");
+        let strip = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/panels/top_strip.rs"
+        ));
         let copy = format!("{} TOOL_ICON", "const");
         assert!(
             !strip.contains(&copy),

@@ -119,7 +119,10 @@ fn pick_is_nearest_segment_within_tolerance() {
 
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
@@ -127,7 +130,10 @@ fn page() -> String {
 /// The editor keydown dispatch — `canvas/commands.rs` since T-934.14 (the Delete arm moved out of
 /// the page verbatim). Scrubbed like `page()`.
 fn keydown() -> String {
-    live_code(include_str!("../canvas/commands.rs"))
+    live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    )))
 }
 
 /// **The lane is fed from the DOCUMENT.** The mount body must bind `connections_bind` from
@@ -257,21 +263,32 @@ fn an_edge_selection_and_an_entity_selection_cannot_coexist() {
     // absence / uniqueness assertions keep their whole-module meaning.
     let ops = live_code(
         &[
-            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
-            include_str!("../arsenal/loadout_commands.rs"),
-            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/editor/arsenal/loadout_commands.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/slot_loadouts.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/composition_library.rs"
+            )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/../map-engine/src/data/store/operations/compositions.rs"
             )),
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/selection_transform.rs"
+            )),
         ]
         .concat(),
     );
@@ -349,7 +366,10 @@ fn no_second_delete_path_and_no_hardcoded_kind_list() {
 /// here, never written — the chain already existed; what is new is that something checks it.
 #[test]
 fn every_history_path_reaches_the_doc_tick_the_lane_binds_on() {
-    let hist = live_code(include_str!("../state/history.rs"));
+    let hist = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/state/history.rs"
+    )));
     let ops = live_code(crate::v2::core::test_support::editor_operations::CONTEXT);
     let signals = ["refresh_", "signals("].concat();
     let docks = ["editor_context", "::", "refresh_docks()"].concat();
@@ -435,21 +455,32 @@ fn connection_pins_are_load_bearing() {
     // absence / uniqueness assertions keep their whole-module meaning.
     let ops = live_code(
         &[
-            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
-            include_str!("../arsenal/loadout_commands.rs"),
-            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/editor/arsenal/loadout_commands.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/slot_loadouts.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/composition_library.rs"
+            )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/../map-engine/src/data/store/operations/compositions.rs"
             )),
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/selection_transform.rs"
+            )),
         ]
         .concat(),
     );

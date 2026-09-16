@@ -17,10 +17,16 @@ fn comments() -> String {
 /// separately.
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
-    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    src.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/gestures.rs"
+    ))));
     src
 }
 
@@ -180,7 +186,10 @@ fn move_comment_is_one_transaction() {
         body.contains("set_comment_position("),
         "T-796: move_comment must write through the core's set_comment_position"
     );
-    let store = include_str!("../../../../map-engine/src/data/store/rows/comments.rs");
+    let store = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/data/store/rows/comments.rs"
+    ));
     // set_comment_position delegates the write to set_comment_field (the shared read-modify-write
     // for all three comment field edits), which is where the SINGLE transaction is opened.
     let sp = only_body(store, "pub fn set_comment_position(");

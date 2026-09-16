@@ -83,8 +83,10 @@ mod t505_tests {
     /// received: this one still greps, so it is kept only as a fast, readable first failure.
     #[test]
     fn adopt_payload_wires_prefer_helper() {
-        const SRC: &str =
-            include_str!("../../../../map-engine/src/editing/persist/server_adoption.rs");
+        const SRC: &str = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/editing/persist/server_adoption.rs"
+        ));
         let production = SRC.split("#[cfg(test)]").next().unwrap_or(SRC);
         let adopt = production
             .split("fn adopt_payload(")
@@ -144,10 +146,15 @@ mod t570_tests {
     use std::process::Command;
 
     /// The engine's half of the wire — the adoption policy — verbatim, at compile time.
-    const ADOPTION_SRC: &str =
-        include_str!("../../../../map-engine/src/editing/persist/server_adoption.rs");
+    const ADOPTION_SRC: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/editing/persist/server_adoption.rs"
+    ));
     /// The frontend's half — the one place the API's row shape is read.
-    const HYDRATE_SRC: &str = include_str!("hydrate.rs");
+    const HYDRATE_SRC: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/state/hydrate.rs"
+    ));
 
     const ADOPT_SIG: &str = "fn adopt_payload(";
     const APPLY_SIG: &str = "fn apply_row_meta_only(";

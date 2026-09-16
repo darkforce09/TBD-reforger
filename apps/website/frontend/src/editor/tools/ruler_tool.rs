@@ -523,7 +523,10 @@ mod t778_seam_lifecycle {
     #[test]
     fn the_render_ctx_seam_is_installed() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, only_body, only_item};
-        let src = live_code(include_str!("../world_assets/mod.rs"));
+        let src = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/world_assets/mod.rs"
+        )));
 
         let body = only_body(&src, "pub fn register_render_ctx(");
         // The call AND the cell it installs on — `install_seam_later = ()` does not contain this.

@@ -1,7 +1,10 @@
 use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 use website_map_engine::editing::hosted_commands as engine_ops;
 
-const HIST: &str = include_str!("../state/history.rs");
+const HIST: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/src/editor/state/history.rs"
+));
 
 fn hist_live() -> String {
     live_code(HIST)
@@ -12,7 +15,10 @@ fn hist_live() -> String {
 /// file (the T-784 `glyph_block` idiom).
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
@@ -21,7 +27,10 @@ fn page() -> String {
 /// the pure belt there (see the T-784 pin's note on why the slice starts from a raw anchor).
 fn glyph_block() -> String {
     let anchor = format!("pub(crate) struct Comment{}", "Point");
-    let raw = include_str!("../canvas/render_sync.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/render_sync.rs"
+    ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
@@ -173,7 +182,10 @@ fn the_vehicle_lane_columns_come_from_one_sorted_reader() {
 /// appear on this path at all.
 #[test]
 fn the_drag_preview_binds_through_the_symbology_signature() {
-    let tool = live_code(include_str!("../tools/select_tool.rs"));
+    let tool = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/tools/select_tool.rs"
+    )));
     let bind = format!("{}{}", "vehicles_bind_", "symbology(");
     let binder = only_body(&tool, "fn bind_vehicle_preview_lane(");
 

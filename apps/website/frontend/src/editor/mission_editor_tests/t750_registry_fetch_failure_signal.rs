@@ -6,7 +6,10 @@ fn mark_registry_fetch_failed_writes_all_three_signals() {
     // T-934.12 — the helper moved to `canvas/viewport.rs`, where it still sits above the file's
     // first `#[cfg(test)]` (inside registry_session), so whole-file `live_code` keeps it.
     // Body pin + behavioural flip.
-    let src = live_code(include_str!("../canvas/viewport.rs"));
+    let src = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/viewport.rs"
+    )));
     let body = only_body(&src, "fn mark_registry_fetch_failed(");
     let failed_set = format!("{}{}", "registry_failed.", "set(true)");
     assert!(
@@ -34,7 +37,10 @@ fn mark_registry_fetch_failed_writes_all_three_signals() {
 
 #[test]
 fn err_arm_and_retry_gen_are_wired_on_the_page() {
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     let call = format!("{}{}", "mark_registry_fetch_", "failed(");
     assert!(
         raw.contains(&call),

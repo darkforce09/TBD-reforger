@@ -2035,9 +2035,10 @@ mod t670_scale_readout {
         // (2) THE LADDER's feed — frontend dem_vectors.rs (not crates/). Contiguous bind→call so an
         // adjustment line between them goes RED; no `let zoom` / `zoom =` rebind before the bind so
         // an upstream re-based zoom goes RED.
-        let dem = live_code(include_str!(
-            "../../../../map-engine/src/world/terrain/relief/host.rs"
-        ));
+        let dem = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/world/terrain/relief/host.rs"
+        )));
         let push = only_body(&dem, &format!("fn {}", "push_contours("));
         let bind = format!("let m_per_px = 2.0_f64.{}(-zoom);", "powf");
         let call = format!("{}(m_per_px)", "contour_interval_for_zoom");

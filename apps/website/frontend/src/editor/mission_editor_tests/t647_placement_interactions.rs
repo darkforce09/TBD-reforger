@@ -9,15 +9,24 @@ use website_map_engine::editing::hosted_commands as engine_ops;
 /// anchors (`let onpointerup =`, `let ondblclick =`, `let oncontextmenu =`) resolve there.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert_eq!(
         raw.matches(anchor.as_str()).count(),
         1,
         "scrub anchor must be unambiguous"
     );
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
-    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
-    src.push_str(&live_code(include_str!("../canvas/commands.rs")));
+    src.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/gestures.rs"
+    ))));
+    src.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    ))));
     src
 }
 
@@ -30,9 +39,10 @@ fn ops_live() -> String {
 /// The engine's release machine, scrubbed to live code — the crew rule and the per-kind commits
 /// live there, so the pins that claim what a release does read it rather than the host adapter.
 fn release_machine_live() -> String {
-    live_code(include_str!(
-        "../../../../map-engine/src/data/store/operations/entity/armed_placement.rs"
-    ))
+    live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/data/store/operations/entity/armed_placement.rs"
+    )))
 }
 
 // ───────────────────────── ATTR-OPEN-001 — dblclick opens Attributes for vehicles too ────────
@@ -114,7 +124,10 @@ fn asset_picker_is_an_ungated_overlay_that_arms_a_place() {
     // definition to `editor/canvas/overlays.rs` (the page still mounts it bare through the
     // `mission_editor` re-export, which is what the mount pins above ride). That file carries no
     // `#[cfg(test)]`, so `live_code` scrubs it whole — no anchor gymnastics needed.
-    let region = live_code(include_str!("../canvas/overlays.rs"));
+    let region = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/overlays.rs"
+    )));
     let comp = only_body(&region, "fn AssetPickerOverlay(");
     assert!(
         comp.contains("armed_placement::begin_place(payload")
@@ -205,7 +218,10 @@ fn the_comment_editor_is_ungated_and_authors_every_comment_field() {
     );
     // The component definition lives in `editor/canvas/overlays.rs` (T-934.11); scrub that file
     // whole, exactly as the picker pin above does.
-    let region = live_code(include_str!("../canvas/overlays.rs"));
+    let region = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/overlays.rs"
+    )));
     let comp = only_body(&region, "fn CommentEditorOverlay(");
     for op in [
         "engine_ops::rename_comment(",      // ATTR-FIELD-CMT-TITLE
@@ -272,7 +288,10 @@ fn ctrl_state_machine_multi_place_when_armed_regroup_when_not() {
     // `canvas/gestures.rs`, where the pointerup closure (and its comment block) moved verbatim.
     // The file carries no `#[cfg(test)]` module, so the whole of it is production text and no
     // slice is needed. The needle is reassembled so this line is not itself the decoy.
-    let raw = include_str!("../canvas/gestures.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/gestures.rs"
+    ));
     let phrase = format!("Ctrl is {}", "OVERLOADED");
     assert!(
         raw.contains(phrase.as_str()),
@@ -370,7 +389,10 @@ fn regroup_reuses_the_refile_seam_and_noops_off_squad() {
 #[test]
 fn alt_census_confirms_no_canvas_collision() {
     // mission_history: Alt is a NEGATIVE guard on the Ctrl/Cmd copy shortcut, never a place.
-    let hist = live_code(include_str!("../state/history.rs"));
+    let hist = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/state/history.rs"
+    )));
     assert!(
         hist.contains("|| ev.alt_key()"),
         "census: mission_history uses alt_key only as a guard (|| ev.alt_key())"
@@ -383,7 +405,10 @@ fn alt_census_confirms_no_canvas_collision() {
         "census: mission_editor's only positive alt_key keydown is the Ctrl+Alt+D HUD toggle"
     );
     // eden_tree: Alt-click is a DOCK-tree gesture (descendants selection), NOT the canvas.
-    let tree = live_code(include_str!("../panels/outliner_tree.rs"));
+    let tree = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/panels/outliner_tree.rs"
+    )));
     assert!(
         tree.contains("ev.alt_key() || ev.shift_key()"),
         "census: eden_tree's Alt-click is a dock-tree gesture (no canvas collision)"

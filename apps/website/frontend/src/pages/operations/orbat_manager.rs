@@ -1712,7 +1712,10 @@ mod tests {
             ops.contains("add_vehicle") && ops.contains("attach_vehicle"),
             "ops must call core add+attach"
         );
-        let hist = include_str!("../../editor/state/history.rs");
+        let hist = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/state/history.rs"
+        ));
         assert!(
             hist.contains("vehicles_bind"),
             "map presence: vehicles_bind on doc change"
@@ -1784,7 +1787,10 @@ mod tests {
             !window.contains("open_attributes"),
             "OPEN ARSENAL must not call open_attributes (Identity default)"
         );
-        let attrs = include_str!("../../editor/panels/attributes_modal.rs");
+        let attrs = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/panels/attributes_modal.rs"
+        ));
         assert!(
             attrs.contains(r#"["Transform", "Identity", "States", "Arsenal"]"#),
             "TABS[3] must be Arsenal"
@@ -2032,7 +2038,10 @@ mod tests {
             ops.contains("merge_faction_doc_from_side"),
             "faction_doc_from_side must name the merge callers have to use"
         );
-        let context = include_str!("../../editor/state/editor_context/mod.rs");
+        let context = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/state/editor_context/mod.rs"
+        ));
         assert!(
             context.contains("#![cfg(target_arch = \"wasm32\")]"),
             "the editor context stays wasm-only, which is why the merge lives here where it is \

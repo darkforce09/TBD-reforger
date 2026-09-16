@@ -9,15 +9,24 @@ use crate::v2::core::test_support::class_r_scrub::live_code;
 /// them) moved verbatim. Each half scrubbed separately.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert_eq!(
         raw.matches(anchor.as_str()).count(),
         1,
         "scrub anchor must be unambiguous"
     );
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
-    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
-    src.push_str(&live_code(include_str!("../canvas/commands.rs")));
+    src.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/gestures.rs"
+    ))));
+    src.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    ))));
     src
 }
 
@@ -45,8 +54,14 @@ fn fn_source(src: &str, sig: &str) -> String {
 /// one must not also bind it, or the two listeners would both fire on one keypress.
 #[test]
 fn t649_ctrl_a_census() {
-    let this_arms = keydown_arms(include_str!("../canvas/commands.rs"));
-    let history_arms = keydown_arms(include_str!("../state/history.rs"));
+    let this_arms = keydown_arms(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    )));
+    let history_arms = keydown_arms(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/state/history.rs"
+    )));
     // Assembled so the literal never appears verbatim in this test's own source.
     let key_a = format!("\"{}\"", "KeyA");
     assert!(
@@ -79,7 +94,10 @@ fn t649_ctrl_a_census() {
 #[test]
 fn ctrl_a_hands_the_container_rect_to_select_all_in_view() {
     let ed = editor_live();
-    let arms = keydown_arms(include_str!("../canvas/commands.rs"));
+    let arms = keydown_arms(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    )));
     assert!(
         arms.contains("container.get_bounding_client_rect()")
             && arms.contains("entity_selection::select_all_in_view(rect.width(), rect.height())"),
@@ -103,9 +121,10 @@ fn ctrl_a_hands_the_container_rect_to_select_all_in_view() {
 /// document" shortcut, which is the obvious wrong implementation of this ticket.
 #[test]
 fn select_all_is_viewport_scoped_through_the_marquee_primitive() {
-    let tool = live_code(include_str!(
-        "../../../../map-engine/src/editing/tools/selection/marquee.rs"
-    ));
+    let tool = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/editing/tools/selection/marquee.rs"
+    )));
     let view_fn = fn_source(&tool, "pub fn view_ids_with_vehicles(");
     // The near corner is the top-left CSS pixel unprojected; the far corner is the viewport
     // size in PIXELS — the exact (world start, px end) shape `marquee_ids_with_vehicles` takes.
@@ -157,21 +176,32 @@ fn multi_selection_no_longer_suppresses_the_attributes_modal() {
     // absence / uniqueness assertions keep their whole-module meaning.
     let ops = live_code(
         &[
-            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
-            include_str!("../arsenal/loadout_commands.rs"),
-            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/editor/arsenal/loadout_commands.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/slot_loadouts.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/composition_library.rs"
+            )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/../map-engine/src/data/store/operations/compositions.rs"
             )),
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/selection_transform.rs"
+            )),
         ]
         .concat(),
     );
@@ -205,7 +235,10 @@ fn multi_selection_no_longer_suppresses_the_attributes_modal() {
 /// whose values DIFFER across the selection must now be blank, disabled, and behind one.
 #[test]
 fn differing_fields_are_locked_behind_a_per_field_checkbox() {
-    let raw_attrs = include_str!("../panels/attributes_modal.rs");
+    let raw_attrs = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/panels/attributes_modal.rs"
+    ));
     let attrs = live_code(raw_attrs);
     // The checkbox itself (string literal ⇒ pinned on the RAW source), assembled so this test's
     // own text is not the match.
@@ -279,7 +312,10 @@ fn differing_fields_are_locked_behind_a_per_field_checkbox() {
 /// "must fire the history/persist tail OUTSIDE the fan-out loop".
 #[test]
 fn multi_edit_commits_fan_out_to_every_selected_id() {
-    let attrs = live_code(include_str!("../panels/attributes_modal.rs"));
+    let attrs = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/panels/attributes_modal.rs"
+    )));
     for (seam, single, multi) in [
         (
             "fn commit_position(",
@@ -299,12 +335,14 @@ fn multi_edit_commits_fan_out_to_every_selected_id() {
              otherwise"
         );
     }
-    let ops = live_code(include_str!(
-        "../../../../map-engine/src/data/store/operations/attrs.rs"
-    ));
-    let host = live_code(include_str!(
-        "../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"
-    ));
+    let ops = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/data/store/operations/attrs.rs"
+    )));
+    let host = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+    )));
     // T-732 — position multi is ONE LOCAL txn via update_entity_transforms (not N×
     // update_slot_position). F-26 (T-788) — identity multi is now ATOMIC too, via
     // `update_slots_attr_batch` (one txn, one undo step); the per-id fan-out moved INTO the core.
@@ -550,7 +588,10 @@ fn t788_open_attributes_modal_follows_a_selection_change() {
 /// is false for those three verbs and must not return.
 #[test]
 fn the_arsenal_tab_discloses_one_entity_picks_and_whole_selection_buffer_verbs() {
-    let raw = include_str!("../panels/attributes_modal.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/panels/attributes_modal.rs"
+    ));
     let modal_raw = fn_source(raw, "fn modal_view(");
     let one = "Pick and cargo edits apply to this one entity";
     let whole = "Copy, Apply, and Remove Everything act on the whole selection";

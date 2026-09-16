@@ -798,8 +798,10 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
 ///
 /// Embedded once for the crate via this `pub(crate)` const (T-757); other modules read it
 /// rather than a second `include_str!`. Bundle size follows the schema file — do not restate it.
-pub(crate) const MISSION_SCHEMA: &str =
-    include_str!("../../../../../../packages/tbd-schema/schema/mission.schema.json");
+pub(crate) const MISSION_SCHEMA: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../../packages/tbd-schema/schema/mission.schema.json"
+));
 
 /// One authored `rules` control, derived from one `$defs/zoneRules` property.
 #[derive(Clone, Debug, PartialEq)]
@@ -1238,8 +1240,10 @@ mod tests {
     /// copy of the same line.
     #[test]
     fn zone_quantisation_mirrors_flatten() {
-        let flatten =
-            include_str!("../../../../map-engine/src/data/scenario/compiler/flatten/zones.rs");
+        let flatten = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/data/scenario/compiler/flatten/zones.rs"
+        ));
         let body = flatten
             .split("fn round_coord(v: f64) -> f64 {")
             .nth(1)
@@ -1587,14 +1591,20 @@ mod tests {
     fn editor_live_from_page() -> String {
         use crate::v2::core::test_support::class_r_scrub::live_code;
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-        let raw = include_str!("../mission_editor.rs");
+        let raw = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/mission_editor.rs"
+        ));
         assert_eq!(
             raw.matches(anchor.as_str()).count(),
             1,
             "scrub anchor must be unambiguous"
         );
         let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
-        src.push_str(&live_code(include_str!("../canvas/commands.rs")));
+        src.push_str(&live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/canvas/commands.rs"
+        ))));
         src
     }
 

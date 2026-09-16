@@ -5,11 +5,20 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 /// scrubbed separately.
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
-    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
-    src.push_str(&live_code(include_str!("../canvas/commands.rs")));
+    src.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/gestures.rs"
+    ))));
+    src.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    ))));
     src
 }
 

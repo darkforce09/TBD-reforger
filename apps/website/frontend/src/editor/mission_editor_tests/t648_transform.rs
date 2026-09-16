@@ -12,15 +12,24 @@ use website_map_engine::data::store::operations::rotation::{
 /// promotion, the Shift-rotate arm, the Move commit). Each half scrubbed separately.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert_eq!(
         raw.matches(anchor.as_str()).count(),
         1,
         "scrub anchor must be unambiguous"
     );
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
-    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
-    src.push_str(&live_code(include_str!("../canvas/commands.rs")));
+    src.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/gestures.rs"
+    ))));
+    src.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    ))));
     src
 }
 
@@ -375,8 +384,14 @@ fn t648_keydown_census() {
     // once, in `eden_help::keymap_census`, beside the structured (code, modifiers) census that
     // detects collisions; `there_is_exactly_one_extractor` keeps it from being copied again.
     use crate::editor::panels::help_modal::keymap_census::keydown_arms;
-    let this_arms = keydown_arms(include_str!("../canvas/commands.rs"));
-    let history_arms = keydown_arms(include_str!("../state/history.rs"));
+    let this_arms = keydown_arms(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    )));
+    let history_arms = keydown_arms(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/state/history.rs"
+    )));
     // Needles assembled so the LITERAL never appears verbatim in this test's own source.
     let key = |k: &str| format!("\"{k}\"");
     let g = key("KeyG");
@@ -628,8 +643,14 @@ fn false_t159_22_comment_is_corrected() {
     // T-934.13 moved the pointerup closure (whose comment this pins) to canvas/gestures.rs; the
     // negative check keeps sweeping BOTH files so the false claim cannot re-enter either.
     let raw = concat!(
-        include_str!("../mission_editor.rs"),
-        include_str!("../canvas/gestures.rs")
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/mission_editor.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/canvas/gestures.rs"
+        ))
     );
     // The false-claim needle is assembled from fragments so this test's OWN source (in this same
     // file, read via include_str!) is not a decoy match for it.
@@ -688,7 +709,10 @@ fn fired_rule_quantiser_is_load_bearing() {
 /// `cargo test` would silently skip them) is caught.
 #[test]
 fn transform_module_is_native_testable() {
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     // The module declaration must NOT sit under a wasm cfg.
     let decl = "pub mod transform {";
     let at = raw.find(decl).expect("transform module present");

@@ -86,7 +86,7 @@ pub(crate) fn read_z_drag_readout() -> Option<String> {
  * only because the suite's test COUNT did not move when seven pins were added.
  *
  * `overlays` is ungated (see the module note above), so the pins at the bottom of this file both
- * run and can `include_str!("gestures.rs")` — same directory — to scrub the live gesture source.
+ * run and can `include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/editor/canvas/gestures.rs"))` — same directory — to scrub the live gesture source.
  */
 
 /// T-946.86 (.82) — the Z-arm gesture's ONE piece of arithmetic: cursor travel in CSS pixels →
@@ -1272,7 +1272,10 @@ mod t946_86_z_arm {
     /// a reassuring note about one, which is the whole failure mode T-946.86 exists to repair:
     /// wave 255 shipped `z_drag` written-and-never-read with a doc block describing the wiring.
     fn live() -> String {
-        live_code(include_str!("gestures.rs"))
+        live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/canvas/gestures.rs"
+        )))
     }
 
     /// **The arm is READ, not merely written.** The wave-255 defect verbatim: `z_drag` had exactly

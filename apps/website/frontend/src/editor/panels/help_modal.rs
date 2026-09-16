@@ -656,32 +656,101 @@ pub(crate) mod keymap_census {
             // T-934.14 — the editor's own keydown dispatch moved out of `mission_editor.rs` into
             // `canvas/commands.rs` (the page keeps ZERO window-level keydown listeners now, so it
             // left the surface with its listener).
-            ("commands.rs", include_str!("../canvas/commands.rs"), 1),
+            (
+                "commands.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/editor/canvas/commands.rs"
+                )),
+                1,
+            ),
             // T-946.86 — the gesture owner cancels its private Z/vertex arm on Escape.
-            ("gestures.rs", include_str!("../canvas/gestures.rs"), 1),
+            (
+                "gestures.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/editor/canvas/gestures.rs"
+                )),
+                1,
+            ),
             // T-939.4 — and the page is BACK on the surface with one listener: the six Arrange
             // chords. It is not in `commands.rs` because that file is another slice's `owns`, and it
             // is not in `top_strip.rs` (where the Arrange list lives) because the strip unmounts
             // behind the `chrome_hidden` gate and would take the chords with it. Being censused is
             // what matters — these six are adjudicated against every other binding in the editor by
             // `no_two_listeners_claim_the_same_chord` below, wherever the closure sits.
-            ("mission_editor.rs", include_str!("../mission_editor.rs"), 1),
+            (
+                "mission_editor.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/editor/mission_editor.rs"
+                )),
+                1,
+            ),
             // T-934.11 — the asset picker / comment editor / connections panel (each installing
             // one Escape listener) moved out of `mission_editor.rs` into the canvas overlays file.
-            ("overlays.rs", include_str!("../canvas/overlays.rs"), 3),
-            ("mission_history.rs", include_str!("../state/history.rs"), 1),
-            ("attributes.rs", include_str!("attributes_modal.rs"), 1),
-            ("top_strip.rs", include_str!("top_strip.rs"), 1),
-            ("context_menu.rs", include_str!("context_menu.rs"), 1),
-            ("settings_modal.rs", include_str!("settings_modal.rs"), 3),
+            (
+                "overlays.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/editor/canvas/overlays.rs"
+                )),
+                3,
+            ),
+            (
+                "mission_history.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/editor/state/history.rs"
+                )),
+                1,
+            ),
+            (
+                "attributes.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/editor/panels/attributes_modal.rs"
+                )),
+                1,
+            ),
+            (
+                "top_strip.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/editor/panels/top_strip.rs"
+                )),
+                1,
+            ),
+            (
+                "context_menu.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/editor/panels/context_menu.rs"
+                )),
+                1,
+            ),
+            (
+                "settings_modal.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/editor/panels/settings_modal.rs"
+                )),
+                3,
+            ),
             (
                 "faction_manager.rs",
-                include_str!("../../pages/operations/faction_manager.rs"),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/pages/operations/faction_manager.rs"
+                )),
                 1,
             ),
             (
                 "orbat_manager.rs",
-                include_str!("../../pages/operations/orbat_manager.rs"),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/pages/operations/orbat_manager.rs"
+                )),
                 1,
             ),
         ]
@@ -1207,7 +1276,10 @@ pub(crate) mod keymap_census {
         // gated on the measure tools having something to dismiss. `.escape()` returns false when a
         // tool is empty and the arm returns the OR, so an Escape with nothing placed falls through
         // untouched instead of swallowing the key from the dialogs above.
-        let arms = keydown_arms(include_str!("../canvas/commands.rs"));
+        let arms = keydown_arms(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/canvas/commands.rs"
+        )));
         let esc = arms
             .find(&format!("\"{}\" if !modk", "Escape"))
             .expect("the editor keydown's Escape arm");
@@ -1692,7 +1764,10 @@ mod t692_help_covers_every_binding {
     /// the rest of the chrome, and no second gate can drift away from the first.
     #[test]
     fn overlay_hides_with_the_rest_of_the_chrome() {
-        let strip = live_code(include_str!("top_strip.rs"));
+        let strip = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/panels/top_strip.rs"
+        )));
         assert!(
             strip.contains("ControlsHint"),
             "the Controls Hint must be mounted from the top strip (that is what puts it behind the \
@@ -1702,7 +1777,10 @@ mod t692_help_covers_every_binding {
         // `#[cfg(target_arch = "wasm32")]` item, which the scrubber (correctly) treats as dead on
         // the native shell. Hand it the region from the page fn onward, at a brace-0 boundary —
         // the same `editor_live()` manoeuvre the T-662 pins use for the same reason.
-        let raw = include_str!("../mission_editor.rs");
+        let raw = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/mission_editor.rs"
+        ));
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
         assert_eq!(
             raw.matches(anchor.as_str()).count(),

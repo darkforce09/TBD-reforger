@@ -40,8 +40,10 @@ use crate::v2::core::api::dto::RegistryItem;
 /// Mod spawn registry (`apps/mod/tbd-framework/Data/registry.json`) — T-439 pins Objects
 /// palette leaves to aliases this file actually resolves. Included at compile time so the
 /// wasm palette cannot offer a synthesised `prop:`/`comp:` the mod would warn-skip.
-const MOD_SPAWN_REGISTRY_JSON: &str =
-    include_str!("../../../../../../apps/mod/tbd-framework/Data/registry.json");
+const MOD_SPAWN_REGISTRY_JSON: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../../apps/mod/tbd-framework/Data/registry.json"
+));
 
 /// `prop:` / `comp:` aliases present in the mod spawn registry (T-439).
 #[must_use]
@@ -1460,7 +1462,10 @@ mod tests {
 
     /// The same committed golden the R-api gate pins (`dto::r_api`), so this test and the live
     /// palette read byte-identical data.
-    const GOLDEN: &str = include_str!("../../../tests/fixtures/api/GET__registry.json");
+    const GOLDEN: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/fixtures/api/GET__registry.json"
+    ));
 
     fn golden_items() -> Vec<RegistryItem> {
         serde_json::from_str::<RegistryResponse>(GOLDEN)

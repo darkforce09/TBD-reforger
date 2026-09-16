@@ -152,7 +152,10 @@ fn assign_crew_seat_does_not_write_editor_hidden() {
 /// Wiring — every map glyph bind feeds `map_render_slot_soa`, not bare `materialize()`.
 #[test]
 fn map_binds_feed_map_render_slot_soa() {
-    let hist = include_str!("../state/history.rs");
+    let hist = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/state/history.rs"
+    ));
     let rebind = only_body(hist, "pub fn rebind_engine_from_doc");
     let after = only_body(hist, "fn after_doc_change");
     for (name, body) in [
@@ -175,12 +178,18 @@ fn map_binds_feed_map_render_slot_soa() {
     }
     // Anchor past the early registry_session `#[cfg(test)]` that would otherwise cut the page
     // (T-750 idiom): the first bind + pick sites live inside `MissionEditorPage`.
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     // T-934.13 — the pick sites ride the gesture closures, now in canvas/gestures.rs; the first
     // bind stays in the page's engine-boot task. Examine both halves.
     let mut page = live_code(&raw[raw.find(anchor.as_str()).expect("MissionEditorPage")..]);
-    page.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    page.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/gestures.rs"
+    ))));
     assert!(
         page.contains("map_render_slot_soa") && page.matches("map_render_slot_soa").count() >= 2,
         "T-819: MissionEditorPage must call map_render_slot_soa at the first bind and picks"

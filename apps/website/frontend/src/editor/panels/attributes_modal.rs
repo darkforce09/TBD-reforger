@@ -2284,9 +2284,10 @@ mod tests {
     /// column — not because the mutator was missing.
     #[test]
     fn read_attrs_reads_asset_id_and_description_from_the_raw_slot_rows() {
-        let ops = live_code(include_str!(
-            "../../../../map-engine/src/data/store/operations/attrs.rs"
-        ));
+        let ops = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/data/store/operations/attrs.rs"
+        )));
         let body = only_body(
             &ops,
             "pub fn read_attrs(core: &MissionDocCore, id: &str) -> Option<SlotAttrs>",
@@ -2313,9 +2314,10 @@ mod tests {
     /// drop the existence needle (proves the pin is about production, not this test module).
     #[test]
     fn read_attrs_gates_existence_on_raw_rows_not_soa_membership() {
-        let ops = live_code(include_str!(
-            "../../../../map-engine/src/data/store/operations/attrs.rs"
-        ));
+        let ops = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/data/store/operations/attrs.rs"
+        )));
         let body = only_body(
             &ops,
             "pub fn read_attrs(core: &MissionDocCore, id: &str) -> Option<SlotAttrs>",
@@ -2393,9 +2395,10 @@ mod tests {
     /// original columns are not dragged along by a commit that only touches a new one.
     #[test]
     fn attrs_update_slot_routes_the_new_fields_through_update_slot_object() {
-        let ops = live_code(include_str!(
-            "../../../../map-engine/src/data/store/operations/attrs.rs"
-        ));
+        let ops = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/data/store/operations/attrs.rs"
+        )));
         let body = only_body(&ops, "pub fn attrs_update_slot(");
         assert!(
             body.contains("core.update_slot_object(id, asset_id, description)"),
@@ -2417,9 +2420,10 @@ mod tests {
     /// RED: strip `!raw_slot_rows(core).contains_key(id) → false`.
     #[test]
     fn attrs_update_slot_noops_when_all_none_or_id_missing() {
-        let ops = live_code(include_str!(
-            "../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"
-        ));
+        let ops = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+        )));
         let body = only_body(&ops, "pub fn attrs_update_slot(");
 
         // (1) five-field all-None early `return` before `let did`
@@ -2445,9 +2449,10 @@ mod tests {
         );
 
         // (2) `!raw_slot_rows(core).contains_key(id)` → false arm
-        let domain = live_code(include_str!(
-            "../../../../map-engine/src/data/store/operations/attrs.rs"
-        ));
+        let domain = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/data/store/operations/attrs.rs"
+        )));
         let body = only_body(&domain, "pub fn attrs_update_slot(");
         let raw_gate = "!raw_slot_rows(core).contains_key(id)";
         assert!(
@@ -2951,7 +2956,10 @@ mod tests {
     /// same shape as the `editor_ops.rs` pins in this module.
     #[test]
     fn the_chord_guard_reads_active_element_tag_and_content_editable_directly() {
-        let mh = live_code(include_str!("../state/history.rs"));
+        let mh = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/state/history.rs"
+        )));
         let body = only_body(&mh, "pub fn in_editable_field() -> bool");
         // The source of truth is the LIVE focused node, fetched every call.
         assert!(
@@ -2987,9 +2995,10 @@ mod tests {
     /// A source pin because `editor_ops` is wasm32-only and `cargo test` cannot build it.
     #[test]
     fn an_attributes_x_or_y_commit_carries_the_slots_current_z_back_in() {
-        let ops = live_code(include_str!(
-            "../../../../map-engine/src/data/store/operations/attrs.rs"
-        ));
+        let ops = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/data/store/operations/attrs.rs"
+        )));
         // Single-slot still goes through update_slot_position.
         {
             let f = "pub fn attrs_update_position(";
@@ -3048,9 +3057,10 @@ mod tests {
         // And the read is off the EXACT raw row, not the materialized SoA: the SoA's `zs` is f32 (a
         // round-trip would rewrite the authored value) and it OMITS slots on hidden layers (T-665),
         // where a failed read is a zeroed z.
-        let live_ops = live_source(include_str!(
-            "../../../../map-engine/src/data/store/operations/attrs.rs"
-        ));
+        let live_ops = live_source(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/data/store/operations/attrs.rs"
+        )));
         let read = only_body(&live_ops, "fn slot_z(");
         assert!(
             read.contains("\"position\"") && read.contains("\"z\""),
@@ -3153,12 +3163,22 @@ mod tests {
         // T-934.7 — the ops module was split; both the scrubbed and the RAW haystacks concatenate
         // every submodule so these file-wide absence pins keep their whole-module meaning.
         let ops_raw = [
-            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
-            include_str!("../arsenal/loadout_commands.rs"),
-            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/editor/arsenal/loadout_commands.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/slot_loadouts.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/composition_library.rs"
+            )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/../map-engine/src/data/store/operations/compositions.rs"
@@ -3166,9 +3186,10 @@ mod tests {
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
             crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY,
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/selection_transform.rs"
+            )),
         ]
         .concat();
         let ops = live_code(&ops_raw);
@@ -3356,15 +3377,19 @@ mod tests {
     /// `attrs_multi_ids` still filters to SoA slot ids — the subset the header is honest about.
     #[test]
     fn attrs_multi_ids_still_filters_selection_to_slot_soa() {
-        let ops = live_code(include_str!(
-            "../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"
-        ));
+        let ops = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+        )));
         let body = only_body(&ops, "pub fn attrs_multi_ids(open_id: &str) -> Vec<String>");
         assert!(
             body.contains("soa.ids.iter().any(|r| r == s)"),
             "attrs_multi_ids must keep filtering to slot SoA ids; body was:\n{body}"
         );
-        let host = live_code(include_str!("../../../../map-engine/src/editing/host.rs"));
+        let host = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/editing/host.rs"
+        )));
         let sel = only_body(&host, "pub fn selection_len() -> usize");
         assert!(
             sel.contains("selection.borrow().len()"),
@@ -3752,8 +3777,10 @@ mod t939_2_batch_reassign {
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
     use website_map_engine::data::store::operations::reassign::plan_reassign;
 
-    const REASSIGN_RS: &str =
-        include_str!("../../../../map-engine/src/editing/hosted_commands/squad_reassignment.rs");
+    const REASSIGN_RS: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/editing/hosted_commands/squad_reassignment.rs"
+    ));
 
     /// Two factions, three squads: Alpha and Charlie under BLUFOR, Bravo under OPFOR. Bravo is the
     /// cross-faction pick; `faction-EMPTY` is the faction with nowhere to put anyone.
@@ -3957,10 +3984,14 @@ mod t939_2_batch_reassign {
     #[test]
     fn the_batch_uses_the_keep_source_core_path_not_the_garbage_collecting_one() {
         let ops = live_code(concat!(
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/squad_reassignment.rs"
-            ),
-            include_str!("../../../../map-engine/src/data/store/operations/reassign.rs")
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/squad_reassignment.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/data/store/operations/reassign.rs"
+            ))
         ));
         assert!(
             ops.contains("move_slot_to_squad_keep_source("),
@@ -4030,9 +4061,10 @@ mod t939_2_batch_reassign {
             "T-939.2: Revert must restore each slot's original squad from the OPEN snapshot"
         );
         let ops = live_code(REASSIGN_RS);
-        let domain = live_code(include_str!(
-            "../../../../map-engine/src/data/store/operations/reassign.rs"
-        ));
+        let domain = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/data/store/operations/reassign.rs"
+        )));
         let restore = [
             only_body(&ops, "pub fn restore_slot_squads("),
             only_body(&domain, "pub fn restore_moves("),
@@ -4058,9 +4090,10 @@ mod t939_2_batch_reassign {
 
     #[test]
     fn reassign_and_revert_read_raw_membership_for_hidden_single_slot_attributes() {
-        let ops = live_code(include_str!(
-            "../../../../map-engine/src/data/store/operations/reassign.rs"
-        ));
+        let ops = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/data/store/operations/reassign.rs"
+        )));
         for entry in ["pub fn reassign_slots(", "pub fn restore_moves("] {
             let body = only_body(&ops, entry);
             assert!(

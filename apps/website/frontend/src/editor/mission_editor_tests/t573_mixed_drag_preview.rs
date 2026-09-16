@@ -4,7 +4,10 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 /// must be gone from the drag branch — that filter WAS the bug (vehicles never previewed).
 #[test]
 fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
-    let tool = live_code(include_str!("../tools/select_tool.rs"));
+    let tool = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/tools/select_tool.rs"
+    )));
     let push = only_body(&tool, "pub fn push_drag_preview(");
     assert!(
         push.contains("e.set_drag(ids.to_vec()"),
@@ -43,7 +46,10 @@ fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
     // Split so the anchor literal is not itself a second occurrence in this file (the t427
     // pin below uses the same trick for the same reason).
     let anchor = format!("{}{}", "const REGISTRY_", "COLD_PAGE");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert_eq!(
         raw.matches(anchor.as_str()).count(),
         1,
@@ -53,7 +59,10 @@ fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
     // T-934.13 — the pointermove/up/cancel closures the needles below sit in are split between
     // the page (pointercancel) and `canvas/gestures.rs` (the moved drag closures); examine both.
     let mut editor = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
-    editor.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    editor.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/gestures.rs"
+    ))));
     assert!(
         editor.contains("pub fn MissionEditorPage"),
         "canary: the scrubbed region must still contain the editor page, or the anchor moved \

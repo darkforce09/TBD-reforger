@@ -15,9 +15,10 @@ use website_map_engine::world::architecture::compound::instances::InstanceRecord
 use website_map_engine::world::architecture::compound::instances::LocalTransform;
 
 fn farmhouse() -> BuildingBlueprint {
-    serde_json::from_str(include_str!(
-        "../../../../../../packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01.json"
-    ))
+    serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../../packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01.json"
+    )))
     .expect("farmhouse blueprint parses")
 }
 
@@ -176,7 +177,10 @@ fn strip_centroid(packed: &[f32]) -> [f32; 2] {
 /// The native `role_id` mirror above must equal the render crate's table, value for value.
 #[test]
 fn lane_ids_match_the_render_crate() {
-    const SRC: &str = include_str!("../../../../map-engine/src/overlay/lanes.rs");
+    const SRC: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/overlay/lanes.rs"
+    ));
     for (name, value) in [
         ("LANDCOVER", role_id::LANDCOVER),
         ("CONTOURS", role_id::CONTOURS),

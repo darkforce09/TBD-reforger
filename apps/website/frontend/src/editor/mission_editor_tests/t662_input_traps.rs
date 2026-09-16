@@ -10,14 +10,20 @@ fn editor_live() -> String {
     // Full signature (with `()`), so the other test's bare `"pub fn MissionEditorPage"` literal
     // is not a second match. Split so this anchor is not itself a duplicate occurrence.
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert_eq!(
         raw.matches(anchor.as_str()).count(),
         1,
         "scrub anchor must be unambiguous"
     );
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
-    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    src.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/gestures.rs"
+    ))));
     src
 }
 
@@ -28,7 +34,10 @@ fn editor_live() -> String {
 fn backspace_hides_chrome_and_does_not_delete() {
     // String-literal arms: pinned on the RAW file (live_code blanks string literals). The arms
     // moved with the keydown dispatch to `canvas/commands.rs` at T-934.14 — pin that file.
-    let raw = include_str!("../canvas/commands.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    ));
     // Split the needle so the literal below is not itself a second occurrence in this file.
     let combined = format!("{}{}", "\"Delete\" | ", "\"Backspace\"");
     assert!(

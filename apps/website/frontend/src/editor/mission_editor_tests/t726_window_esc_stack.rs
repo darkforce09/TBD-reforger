@@ -11,17 +11,26 @@ fn gate_needles() -> (String, String, String) {
 /// The overlay components live in `editor/canvas/overlays.rs` (T-934.11). That file carries no
 /// `#[cfg(test)]`, so `live_code` scrubs it whole.
 fn overlays_region() -> String {
-    live_code(include_str!("../canvas/overlays.rs"))
+    live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/overlays.rs"
+    )))
 }
 
 /// Page body + the T-934.14 keydown dispatch (`canvas/commands.rs`), which hosts the shared
 /// measure-tool Escape arm since the move. Each half scrubbed separately.
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
-    src.push_str(&live_code(include_str!("../canvas/commands.rs")));
+    src.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    ))));
     src
 }
 

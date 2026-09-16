@@ -18,10 +18,16 @@ fn comments() -> String {
 /// click path this module pins moved verbatim. Each half scrubbed separately.
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
-    src.push_str(&live_code(include_str!("../canvas/gestures.rs")));
+    src.push_str(&live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/gestures.rs"
+    ))));
     src
 }
 
@@ -30,7 +36,10 @@ fn page() -> String {
 /// read from there; the CALL-form pins below still read `mission_editor.rs`, where the wiring is.
 fn glyph_block() -> String {
     let anchor = format!("pub(crate) struct Comment{}", "Point");
-    let raw = include_str!("../canvas/render_sync.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/render_sync.rs"
+    ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
@@ -114,7 +123,10 @@ fn pick_takes_the_nearest_and_refuses_beyond_the_tolerance() {
 /// natively (the `doc` feature is wasm32-only here), which is why this is a source read.
 #[test]
 fn comment_pick_px_is_the_slot_pick_radius() {
-    let store = include_str!("../../../../map-engine/src/data/store/selection.rs");
+    let store = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/data/store/selection.rs"
+    ));
     let needle = ["PICK_RADIUS", "_PX: f64 = "].concat();
     assert_eq!(
         store.matches(needle.as_str()).count(),
@@ -175,7 +187,10 @@ fn route_target_resolves_a_comment_without_disturbing_the_other_arms() {
 /// be an `include_str!` pin — the same reason the T-748 feed pin in `map-engine-render` is one.
 #[test]
 fn mission_history_packs_the_lane_through_this_module() {
-    let hist = live_code(include_str!("../state/history.rs"));
+    let hist = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/state/history.rs"
+    )));
     let feed = only_body(&hist, &format!("fn comment_lane{}", "_xy(doc:"));
     let shared = ["mission_editor", "::", "comment_lane_xy("].concat();
     assert!(
@@ -263,21 +278,32 @@ fn a_comment_composes_and_the_reconcile_is_still_the_one_writers_job() {
     // absence / uniqueness assertions keep their whole-module meaning.
     let ops = live_code(
         &[
-            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
-            include_str!("../arsenal/loadout_commands.rs"),
-            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/editor/arsenal/loadout_commands.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/slot_loadouts.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/composition_library.rs"
+            )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/../map-engine/src/data/store/operations/compositions.rs"
             )),
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/selection_transform.rs"
+            )),
         ]
         .concat(),
     );

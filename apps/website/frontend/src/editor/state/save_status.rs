@@ -280,11 +280,17 @@ mod tests {
     }
 
     fn persist_live() -> String {
-        live_code(include_str!("persist.rs"))
+        live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/state/persist.rs"
+        )))
     }
 
     fn persist_source() -> String {
-        live_source(include_str!("persist.rs"))
+        live_source(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/state/persist.rs"
+        )))
     }
 
     fn run_save_err_arm() -> String {

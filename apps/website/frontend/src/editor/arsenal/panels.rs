@@ -551,10 +551,16 @@ mod tests {
     /// cfg-test attribute, so a scrubbed concatenation would end at the first test tail) and
     /// the live halves concatenate into one haystack.
     fn live_production_src() -> String {
-        [include_str!("mod.rs"), include_str!("panels.rs")]
-            .into_iter()
-            .map(live_code)
-            .collect()
+        [
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/editor/arsenal/mod.rs"
+            )),
+            include_str!("panels.rs"),
+        ]
+        .into_iter()
+        .map(live_code)
+        .collect()
     }
 
     /// T-503 Class-R: every cargo mutation in the panel must commit through `on_change`, and the

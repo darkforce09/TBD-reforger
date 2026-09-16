@@ -1,7 +1,10 @@
 /// Source guard: cold open pages registry with limit+offset and never calls the bare dump.
 #[test]
 fn cold_registry_uses_paginated_path_not_unbounded_dump() {
-    let src = include_str!("../mission_editor.rs");
+    let src = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert!(
         src.contains("fetch_registry_pages"),
         "cold registry must go through the paginated helper"
@@ -21,7 +24,10 @@ fn cold_registry_uses_paginated_path_not_unbounded_dump() {
 /// Source guard: cold compat uses filtered Arsenal edges + cargo_defaults view.
 #[test]
 fn cold_compat_uses_filtered_edges_and_cargo_defaults_view() {
-    let src = include_str!("../mission_editor.rs");
+    let src = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert!(
         src.contains("fetch_compat_cold"),
         "cold compat must go through the narrow helper"

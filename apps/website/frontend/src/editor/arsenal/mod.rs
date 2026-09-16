@@ -1109,8 +1109,14 @@ mod tests {
         // examining everything after the first file's test tail.
         [
             include_str!("mod.rs"),
-            include_str!("loadout.rs"),
-            include_str!("panels.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/editor/arsenal/loadout.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/editor/arsenal/panels.rs"
+            )),
         ]
         .into_iter()
         .map(crate::v2::core::test_support::class_r_scrub::live_code)
@@ -1271,25 +1277,32 @@ mod tests {
             // claims, so the haystack concatenates every submodule.
             crate::v2::core::test_support::class_r_scrub::live_code(
                 &[
-                    include_str!(
-                        "../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"
-                    ),
-                    include_str!("loadout_commands.rs"),
-                    include_str!(
-                        "../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"
-                    ),
-                    include_str!(
-                        "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
-                    ),
+                    include_str!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+                    )),
+                    include_str!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/src/editor/arsenal/loadout_commands.rs"
+                    )),
+                    include_str!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/../map-engine/src/editing/hosted_commands/slot_loadouts.rs"
+                    )),
+                    include_str!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/../map-engine/src/editing/hosted_commands/composition_library.rs"
+                    )),
                     include_str!(concat!(
                         env!("CARGO_MANIFEST_DIR"),
                         "/../map-engine/src/data/store/operations/compositions.rs"
                     )),
                     crate::v2::core::test_support::editor_operations::CONTEXT,
                     crate::v2::core::test_support::editor_operations::ENTITY,
-                    include_str!(
-                        "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
-                    ),
+                    include_str!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/../map-engine/src/editing/hosted_commands/selection_transform.rs"
+                    )),
                 ]
                 .concat(),
             )
@@ -1317,9 +1330,11 @@ mod tests {
                 copy.contains("cargo::buffer_loadouts_from_selection("),
                 "Copy must reach the buffer through the one buffering verb; body: {copy}"
             );
-            let domain_cargo = crate::v2::core::test_support::class_r_scrub::live_code(
-                include_str!("../../../../map-engine/src/data/store/operations/cargo.rs"),
-            );
+            let domain_cargo =
+                crate::v2::core::test_support::class_r_scrub::live_code(include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../map-engine/src/data/store/operations/cargo.rs"
+                )));
             let domain_copy = fn_body(&domain_cargo, "pub fn buffer_loadouts_from_selection(");
             assert!(
                 domain_copy.contains("LOADOUT_BUFFER")
@@ -1352,9 +1367,11 @@ mod tests {
             // boundary — see T-732).
             let commit = fn_body(&ops, "fn commit_loadout_writes(");
             assert!(commit.contains("cargo::commit_loadout_writes(core, writes)"));
-            let domain = crate::v2::core::test_support::class_r_scrub::live_code(include_str!(
-                "../../../../map-engine/src/data/store/operations/cargo.rs"
-            ));
+            let domain =
+                crate::v2::core::test_support::class_r_scrub::live_code(include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../map-engine/src/data/store/operations/cargo.rs"
+                )));
             let domain_commit = fn_body(&domain, "pub fn commit_loadout_writes(");
             assert_eq!(
                 domain_commit.matches("update_slot_loadout(").count(),
@@ -1466,23 +1483,32 @@ mod tests {
         /// whole-module claims, so this concatenates every submodule.
         fn ops_src() -> String {
             [
-                include_str!(
-                    "../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"
-                ),
-                include_str!("loadout_commands.rs"),
-                include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
-                include_str!(
-                    "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
-                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+                )),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/editor/arsenal/loadout_commands.rs"
+                )),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../map-engine/src/editing/hosted_commands/slot_loadouts.rs"
+                )),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../map-engine/src/editing/hosted_commands/composition_library.rs"
+                )),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
                     "/../map-engine/src/data/store/operations/compositions.rs"
                 )),
                 crate::v2::core::test_support::editor_operations::CONTEXT,
                 crate::v2::core::test_support::editor_operations::ENTITY,
-                include_str!(
-                    "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
-                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../map-engine/src/editing/hosted_commands/selection_transform.rs"
+                )),
             ]
             .concat()
         }
@@ -1490,7 +1516,10 @@ mod tests {
         /// `loadout_commands.rs` alone — the file `set_loadout` lives in, so the computed line
         /// numbers below are REAL lines of that file.
         fn cargo_src() -> &'static str {
-            include_str!("loadout_commands.rs")
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/editor/arsenal/loadout_commands.rs"
+            ))
         }
 
         fn arsenal_production_src() -> String {
@@ -1500,8 +1529,14 @@ mod tests {
             // claims, so every arsenal production half concatenates.
             [
                 include_str!("mod.rs"),
-                include_str!("loadout.rs"),
-                include_str!("panels.rs"),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/editor/arsenal/loadout.rs"
+                )),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/editor/arsenal/panels.rs"
+                )),
             ]
             .into_iter()
             .map(|full| full.split("#[cfg(test)]").next().unwrap_or(full))
@@ -1509,9 +1544,10 @@ mod tests {
         }
 
         fn gap_src() -> &'static str {
-            include_str!(
-                "../../../../../../docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md"
-            )
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../../../docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md"
+            ))
         }
 
         fn live_set_loadout_lines(ops: &str) -> (usize, usize) {
@@ -1638,25 +1674,32 @@ mod tests {
             // in the ops surface), so the haystack concatenates every submodule.
             crate::v2::core::test_support::class_r_scrub::live_code(
                 &[
-                    include_str!(
-                        "../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"
-                    ),
-                    include_str!("loadout_commands.rs"),
-                    include_str!(
-                        "../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"
-                    ),
-                    include_str!(
-                        "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
-                    ),
+                    include_str!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+                    )),
+                    include_str!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/src/editor/arsenal/loadout_commands.rs"
+                    )),
+                    include_str!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/../map-engine/src/editing/hosted_commands/slot_loadouts.rs"
+                    )),
+                    include_str!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/../map-engine/src/editing/hosted_commands/composition_library.rs"
+                    )),
                     include_str!(concat!(
                         env!("CARGO_MANIFEST_DIR"),
                         "/../map-engine/src/data/store/operations/compositions.rs"
                     )),
                     crate::v2::core::test_support::editor_operations::CONTEXT,
                     crate::v2::core::test_support::editor_operations::ENTITY,
-                    include_str!(
-                        "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
-                    ),
+                    include_str!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/../map-engine/src/editing/hosted_commands/selection_transform.rs"
+                    )),
                 ]
                 .concat(),
             )

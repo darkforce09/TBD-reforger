@@ -3058,13 +3058,16 @@ mod t688_aggregated_settings {
     #[test]
     fn zones_and_settings_share_one_mission_schema_embed() {
         // live_source keeps string literals (needed to see the include_str path); live_code would blank them.
-        let zones = live_source(include_str!("zones_panel.rs"));
+        let zones = live_source(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/panels/zones_panel.rs"
+        )));
         let settings = live_source(include_str!("settings_modal.rs"));
         let path = format!(
             "{}{}{}",
-            "../../../../../../packages/tbd-schema/schema/", "mission", ".schema.json"
+            "/../../../packages/tbd-schema/schema/", "mission", ".schema.json"
         );
-        let embed = format!("include_str!(\"{path}\")");
+        let embed = format!("\"{path}\"");
         assert_eq!(
             zones.matches(embed.as_str()).count(),
             1,
@@ -3090,7 +3093,10 @@ mod t688_aggregated_settings {
         // Stale size lore (~40 KB vs ~91 KB) — drop rather than restate a drifting number.
         // live_source blanks comments; the ticket defect was comment lore, so read the zones file
         // raw (wave-135 F2). Restoring `~40 KB` in a doc-comment must RED.
-        let zones_raw = include_str!("zones_panel.rs");
+        let zones_raw = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/panels/zones_panel.rs"
+        ));
         let stale = format!("{}{}", "~40 ", "KB");
         assert!(
             !zones_raw.contains(&stale),

@@ -6,7 +6,10 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_
 /// so the button never lies about which tool it selects.
 #[test]
 fn los_button_reclick_toggles_the_submode() {
-    let code = live_code(include_str!("../panels/toolbelt.rs"));
+    let code = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/panels/toolbelt.rs"
+    )));
     let body = only_body(&code, &format!("pub fn {}", "ModeToolbar("));
     assert!(
         body.contains("los_mode.update(|m| *m = m.toggled())"),
@@ -30,7 +33,10 @@ fn los_button_reclick_toggles_the_submode() {
 /// the string-KEPT source (the title/label literals survive) so the needle is the real view text.
 #[test]
 fn los_button_reflects_the_active_submode() {
-    let src = live_source(include_str!("../panels/toolbelt.rs"));
+    let src = live_source(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/panels/toolbelt.rs"
+    )));
     let body = only_body(&src, &format!("pub fn {}", "ModeToolbar("));
     // The button reads the sub-mode to pick its title/label.
     assert!(

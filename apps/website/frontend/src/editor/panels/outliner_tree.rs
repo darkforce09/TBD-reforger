@@ -1875,10 +1875,15 @@ mod tests {
         const OPS: &str = crate::v2::core::test_support::editor_operations::ENTITY;
         /// The engine-side layer authoring every wrapper in `OPS` rides. The wrappers resolve the
         /// host and take the refresh tail; the document mutators live here.
-        const ENGINE_LAYERS: &str =
-            include_str!("../../../../map-engine/src/data/store/operations/entity/layers.rs");
+        const ENGINE_LAYERS: &str = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/data/store/operations/entity/layers.rs"
+        ));
         const TREE: &str = include_str!("outliner_tree.rs");
-        const DOCK: &str = include_str!("dock_left.rs");
+        const DOCK: &str = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/panels/dock_left.rs"
+        ));
 
         /// Every layer-authoring wrapper rides `after_local_edit()` — the tail that calls
         /// `refresh_docks()` (via `refresh_signals`). Pin the pairing so a wrapper can't ship

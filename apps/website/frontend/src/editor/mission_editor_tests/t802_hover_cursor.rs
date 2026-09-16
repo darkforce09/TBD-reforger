@@ -9,7 +9,10 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 /// this file has one before the component.
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
@@ -18,7 +21,10 @@ fn page() -> String {
 /// moved the pure state machine to `canvas/render_sync.rs`, so the declarations are read there.
 fn hover_block() -> String {
     let anchor = format!("pub(crate) const HOVER_CURSOR_{}", "PICKABLE");
-    let raw = include_str!("../canvas/render_sync.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/render_sync.rs"
+    ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
@@ -28,7 +34,10 @@ fn hover_block() -> String {
 /// so this slices from its cache struct's anchor there.
 fn hover_hit_body() -> String {
     let anchor = format!("pub(crate) struct Hover{}", "Points");
-    let raw = include_str!("../mission_editor.rs");
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/mission_editor.rs"
+    ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     let block = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
     only_body(&block, &["pub(crate) fn hover_", "hit("].concat()).to_string()
@@ -38,7 +47,10 @@ fn hover_hit_body() -> String {
 /// `canvas/gestures.rs`, so the anchor resolves there now (the page keeps `onpointerleave` and
 /// the mount seed, which the mount/leave pin below still reads via `page()`).
 fn pointermove() -> String {
-    let src = live_code(include_str!("../canvas/gestures.rs"));
+    let src = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/gestures.rs"
+    )));
     let anchor = ["let onpointermove = ", "Closure::"].concat();
     assert_eq!(src.matches(anchor.as_str()).count(), 1);
     only_body(&src, &anchor).to_string()

@@ -57,7 +57,10 @@ fn bad_input_is_inert() {
 /// at `mission_history`, so this is the only guard that the write-half stays wired.
 #[test]
 fn both_feeds_pass_glyphs_and_captions() {
-    let hist = live_code(include_str!("../state/history.rs"));
+    let hist = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/state/history.rs"
+    )));
     let bind = format!("{}{}", "markers", "_bind");
     let fields = format!("{}{}", "marker_lane_", "fields");
     for site in ["pub fn rebind_engine_from_doc", "fn after_doc_change"] {

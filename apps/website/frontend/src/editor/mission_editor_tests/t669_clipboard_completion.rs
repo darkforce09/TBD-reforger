@@ -17,8 +17,14 @@ fn key(k: &str) -> String {
 /// would be cut twice.
 #[test]
 fn t669_cut_key_census() {
-    let this_arms = keydown_arms(include_str!("../canvas/commands.rs"));
-    let history_arms = keydown_arms(include_str!("../state/history.rs"));
+    let this_arms = keydown_arms(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    )));
+    let history_arms = keydown_arms(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/state/history.rs"
+    )));
     let key_x = key("KeyX");
     assert!(
         !history_arms.contains(&key_x),
@@ -49,7 +55,10 @@ fn t669_cut_key_census() {
 /// never degrade into a silent destructive Delete. Order is the contract: copy first.
 #[test]
 fn cut_copies_before_it_deletes_and_short_circuits() {
-    let arms = keydown_arms(include_str!("../canvas/commands.rs"));
+    let arms = keydown_arms(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    )));
     let at = arms
         .find(&format!("{} if modk", key("KeyX")))
         .expect("the cut arm exists — censused above");
@@ -86,7 +95,10 @@ fn cut_copies_before_it_deletes_and_short_circuits() {
 /// pass by moving the offender out of a window.
 #[test]
 fn paste_at_original_passes_no_anchor() {
-    let arms = keydown_arms(include_str!("../canvas/commands.rs"));
+    let arms = keydown_arms(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    )));
     let key_v = key("KeyV");
     let plain = arms
         .find(&format!(
@@ -160,7 +172,10 @@ fn t743_plain_paste_falls_back_to_the_view_centre() {
 /// one `shiftKey`, so no event can satisfy both, and match ORDER between them is irrelevant.
 #[test]
 fn the_two_paste_arms_are_mutually_exclusive() {
-    let arms = keydown_arms(include_str!("../canvas/commands.rs"));
+    let arms = keydown_arms(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/canvas/commands.rs"
+    )));
     let key_v = key("KeyV");
     assert_eq!(
         arms.matches(key_v.as_str()).count(),
@@ -206,7 +221,10 @@ fn the_two_paste_arms_are_mutually_exclusive() {
 fn both_new_chords_are_documented_in_the_help_table() {
     // Raw source: the chords ARE string literals, so a scrub that blanks literals would blank
     // the thing under test.
-    let help = include_str!("../panels/help_modal.rs");
+    let help = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/editor/panels/help_modal.rs"
+    ));
     for chord in ["Ctrl/Cmd + X", "Ctrl/Cmd + Shift + V"] {
         assert!(
             help.contains(chord),
@@ -244,7 +262,11 @@ fn the_help_blurb_counts_the_bindings_correctly() {
     let word = english(bound.len());
     let sentence = format!("binds {word} distinct `KeyboardEvent` codes");
     assert!(
-        include_str!("../panels/help_modal.rs").contains(&sentence),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/panels/help_modal.rs"
+        ))
+        .contains(&sentence),
         "T-669/T-740: the editor now binds {} distinct key codes ({bound:?}), so \
          `eden_help`'s opening paragraph must read \"{sentence}\"",
         bound.len()

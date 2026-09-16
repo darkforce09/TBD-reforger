@@ -4385,9 +4385,10 @@ mod tests {
         use crate::editor::arsenal::asset_catalog::build_catalog_tree;
         use crate::v2::core::api::dto::RegistryResponse;
 
-        let golden: RegistryResponse = serde_json::from_str(include_str!(
-            "../../../tests/fixtures/api/GET__registry.json"
-        ))
+        let golden: RegistryResponse = serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/api/GET__registry.json"
+        )))
         .expect("golden");
         let mut items = golden.data;
         items.push(
@@ -4515,9 +4516,10 @@ mod tests {
         // composition library, the arm + place in the entity operations.
         let ops = live_source(
             &[
-                include_str!(
-                    "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
-                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../map-engine/src/editing/hosted_commands/composition_library.rs"
+                )),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
                     "/../map-engine/src/data/store/operations/compositions.rs"
@@ -4560,9 +4562,10 @@ mod tests {
         // `capture_selection_entities` lives in the engine's composition operations and `mint_ids`
         // in its entity operations; the haystack is their concatenation with the hosted library.
         let ops_all = [
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/composition_library.rs"
+            )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/../map-engine/src/data/store/operations/compositions.rs"
@@ -4612,9 +4615,10 @@ mod tests {
         );
 
         // ── The PLACE half (`map-engine-core`) — the same two keys, read back ────────────────────
-        let store = live_source(include_str!(
-            "../../../../map-engine/src/data/store/rows/compositions.rs"
-        ));
+        let store = live_source(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/data/store/rows/compositions.rs"
+        )));
         let place = only_body(&store, &format!("fn {}(", "place_composition"));
         assert!(
             place.contains(&elevation_key),
@@ -4739,9 +4743,10 @@ mod tests {
         let domain = live_code(crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY);
         assert!(only_body(&domain, "pub fn place_saved_composition(")
             .contains("core.place_composition("));
-        let release = live_code(include_str!(
-            "../../../../map-engine/src/data/store/operations/entity/armed_placement.rs"
-        ));
+        let release = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../map-engine/src/data/store/operations/entity/armed_placement.rs"
+        )));
         assert!(
             only_body(&release, "pub fn commit_armed_placement(").contains(&place_call),
             "the composition consume must stamp via the single core place_composition (one undo \
@@ -4893,24 +4898,38 @@ mod tests {
     #[test]
     fn trigger_draw_is_second_consumer_of_the_zone_tool() {
         const SRC: &str = include_str!("dock_right.rs");
-        let zones_src = include_str!("zones_panel.rs");
+        let zones_src = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/panels/zones_panel.rs"
+        ));
         // T-934.7 — the ops module was split; the no-forked-draw absence pins scan every submodule.
         let ops = [
-            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
-            include_str!("../arsenal/loadout_commands.rs"),
-            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/editor/arsenal/loadout_commands.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/slot_loadouts.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/composition_library.rs"
+            )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/../map-engine/src/data/store/operations/compositions.rs"
             )),
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/selection_transform.rs"
+            )),
         ]
         .concat();
 
@@ -5161,9 +5180,10 @@ mod tests {
         use crate::editor::arsenal::asset_catalog::CatalogPalette;
         use crate::v2::core::api::dto::RegistryResponse;
 
-        let golden: RegistryResponse = serde_json::from_str(include_str!(
-            "../../../tests/fixtures/api/GET__registry.json"
-        ))
+        let golden: RegistryResponse = serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/api/GET__registry.json"
+        )))
         .expect("golden");
         let mut items = golden.data;
         let live = items
@@ -5591,7 +5611,10 @@ mod tests {
         // ORBAT Add-Vehicle: the manager's vehicle picker records the added vehicle (keyed on its
         // resourceName) once the command reports one placed. The recently-placed list is the DOCK's
         // own memory, so the recording sits at the call site, not inside the document command.
-        let manager = live_code(include_str!("../../pages/operations/orbat_manager.rs"));
+        let manager = live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/pages/operations/orbat_manager.rs"
+        )));
         let addv = only_body(&manager, &format!("fn stitch_{}(", "row"));
         let at_add = addv
             .find(&format!("orbat_{}(", "add_vehicle"))
@@ -6017,12 +6040,22 @@ mod tests {
         // T-934.7 — the ops module was split; the marker pins and the root-map absence scan
         // every submodule so the file-wide claims keep their whole-module meaning.
         let ops_all = [
-            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
-            include_str!("../arsenal/loadout_commands.rs"),
-            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/editor/arsenal/loadout_commands.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/slot_loadouts.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/composition_library.rs"
+            )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/../map-engine/src/data/store/operations/compositions.rs"
@@ -6030,9 +6063,10 @@ mod tests {
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
             crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY,
-            include_str!(
-                "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
-            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../map-engine/src/editing/hosted_commands/selection_transform.rs"
+            )),
         ]
         .concat();
         #[allow(non_snake_case)]

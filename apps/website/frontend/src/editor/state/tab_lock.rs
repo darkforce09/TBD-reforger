@@ -685,15 +685,24 @@ mod tests {
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_item};
 
     fn persist_live() -> String {
-        live_code(include_str!("persist.rs"))
+        live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/state/persist.rs"
+        )))
     }
 
     fn persist_src() -> String {
-        live_source(include_str!("persist.rs"))
+        live_source(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/state/persist.rs"
+        )))
     }
 
     fn overlays_src() -> String {
-        live_source(include_str!("../canvas/overlays.rs"))
+        live_source(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editor/canvas/overlays.rs"
+        )))
     }
 
     fn p(tab: &str, since: f64) -> Presence {
