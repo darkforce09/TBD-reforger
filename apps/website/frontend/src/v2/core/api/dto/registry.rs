@@ -11,9 +11,9 @@
 
 use serde::{Deserialize, Serialize};
 
-pub use website_mission_core::doc::operations::faction_library::FactionDoc;
-pub use website_mission_core::doc::operations::faction_library::FactionRole;
-pub use website_mission_core::doc::operations::faction_library::FactionVehicle;
+pub use website_map_engine::data::store::operations::faction_library::FactionDoc;
+pub use website_map_engine::data::store::operations::faction_library::FactionRole;
+pub use website_map_engine::data::store::operations::faction_library::FactionVehicle;
 
 /// One entry in the asset catalogue: what it is, where it lives, and how it is shown.
 #[allow(dead_code)]

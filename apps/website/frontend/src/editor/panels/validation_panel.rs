@@ -64,9 +64,9 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 
-use website_mission_core::mission::validate::Finding;
-use website_mission_core::mission::validate::Primitive;
-use website_mission_core::mission::validate::Severity;
+use website_map_engine::data::scenario::validate::Finding;
+use website_map_engine::data::scenario::validate::Primitive;
+use website_map_engine::data::scenario::validate::Severity;
 
 /// The trailing debounce window for a doc-change-driven re-evaluation, in milliseconds.
 ///
@@ -673,8 +673,8 @@ pub fn known_asset_ids_from_registry(
 /// the panel to blank for that tick, never takes the editor down.
 #[must_use]
 pub fn evaluate_source(source: &PayloadSource) -> Vec<PanelFinding> {
-    use website_mission_core::mission::validate::default_registry;
-    use website_mission_core::mission::validate::EvalContext;
+    use website_map_engine::data::scenario::validate::default_registry;
+    use website_map_engine::data::scenario::validate::EvalContext;
 
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let mut ctx = EvalContext::default();
@@ -1261,8 +1261,8 @@ fn now_ms() -> f64 {
 mod tests {
     use super::*;
     use serde_json::json;
-    use website_mission_core::mission::validate::default_registry;
-    use website_mission_core::mission::validate::EvalContext;
+    use website_map_engine::data::scenario::validate::default_registry;
+    use website_map_engine::data::scenario::validate::EvalContext;
 
     /// A payload that fires `ORBAT-CALLSIGN-UNIQUE`: BLUFOR with two squads both called "Alpha" (the
     /// same shape as the rule's own trip fixture, inlined here since the rule constructor is private
@@ -1647,8 +1647,8 @@ mod w129_the_panel_asks_the_router {
     use crate::editor::mission_editor::route_target;
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
     use serde_json::json;
-    use website_mission_core::mission::validate::Primitive;
-    use website_mission_core::mission::validate::Severity;
+    use website_map_engine::data::scenario::validate::Primitive;
+    use website_map_engine::data::scenario::validate::Severity;
 
     /// A document root in `small_maps_json` shape carrying one row of every kind the router can meet
     /// — plus the two shapes it must refuse: an object row with no position, and (by omission) an id
@@ -1834,8 +1834,8 @@ mod w132_inert_finding_row_a11y {
         PanelFinding,
     };
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
-    use website_mission_core::mission::validate::Primitive;
-    use website_mission_core::mission::validate::Severity;
+    use website_map_engine::data::scenario::validate::Primitive;
+    use website_map_engine::data::scenario::validate::Severity;
 
     fn pf(rule_id: &str, subject_id: Option<&str>) -> PanelFinding {
         PanelFinding {
@@ -1968,8 +1968,8 @@ mod f5_seam_lifecycle {
     use leptos::prelude::*;
     use std::cell::RefCell;
     use std::rc::Rc;
-    use website_mission_core::mission::validate::Primitive;
-    use website_mission_core::mission::validate::Severity;
+    use website_map_engine::data::scenario::validate::Primitive;
+    use website_map_engine::data::scenario::validate::Severity;
 
     thread_local! {
         /// Every tag that ANSWERED a seam's question, in call order. "Did anything actually happen"
@@ -2329,8 +2329,8 @@ mod t761_compile_findings_do_not_survive_mission_switch {
         clear_compile_findings, compile_findings, evaluate_now, publish_compile_findings,
         PanelFinding,
     };
-    use website_mission_core::mission::validate::Primitive;
-    use website_mission_core::mission::validate::Severity;
+    use website_map_engine::data::scenario::validate::Primitive;
+    use website_map_engine::data::scenario::validate::Severity;
 
     fn mission_a_compile_row() -> PanelFinding {
         PanelFinding {
@@ -2405,8 +2405,8 @@ mod t798_top_bar_chip {
     };
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
     use leptos::prelude::*;
-    use website_mission_core::mission::validate::Primitive;
-    use website_mission_core::mission::validate::Severity;
+    use website_map_engine::data::scenario::validate::Primitive;
+    use website_map_engine::data::scenario::validate::Severity;
 
     /// THE CHIP SEAM. `chip_findings()` must hand back the SAME signal `register_panel_sink` stored —
     /// that is the whole coupling between the headless eval loop (which writes it) and the top-strip

@@ -18,10 +18,10 @@
 #![allow(dead_code)]
 
 use std::collections::{BTreeMap, HashMap, HashSet};
-pub use website_mission_core::doc::operations::cargo_rules::cargo_from_loadout;
-pub use website_mission_core::doc::operations::cargo_rules::cargo_rows_json;
+pub use website_map_engine::data::store::operations::cargo_rules::cargo_from_loadout;
+pub use website_map_engine::data::store::operations::cargo_rules::cargo_rows_json;
 
-pub use website_mission_core::doc::operations::cargo_rules::CargoRow;
+pub use website_map_engine::data::store::operations::cargo_rules::CargoRow;
 
 use crate::v2::core::api::dto::{RegistryCompatEdge, RegistryItem};
 
@@ -1782,7 +1782,7 @@ fn match_pattern_terms(terms: &[PatTerm], text: &[char]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use website_mission_core::doc::operations::cargo_rules::{seed_cargo, WEAR_PICK_KEYS};
+    use website_map_engine::data::store::operations::cargo_rules::{seed_cargo, WEAR_PICK_KEYS};
 
     fn edge(from: &str, to: &str, ty: &str) -> RegistryCompatEdge {
         RegistryCompatEdge {

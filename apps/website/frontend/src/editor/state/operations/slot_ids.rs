@@ -4,4 +4,4 @@
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 /// Expose website mission core :: doc :: operations :: slot ids :: duplicate slot ids at this domain boundary.
-pub use website_mission_core::doc::operations::slot_ids::duplicate_slot_ids;
+pub use website_map_engine::data::store::operations::slot_ids::duplicate_slot_ids;

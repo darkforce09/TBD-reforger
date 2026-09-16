@@ -13,7 +13,7 @@ pub fn read_env() -> MissionEnv {
             let ctx = guard.as_ref()?;
             let d = ctx.doc.borrow();
             let core = d.as_ref()?;
-            website_mission_core::doc::operations::environment::read_env(core)
+            website_map_engine::data::store::operations::environment::read_env(core)
         })
         .unwrap_or_default()
 }

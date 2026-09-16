@@ -22,8 +22,8 @@
 use leptos::prelude::*;
 use serde_json::{Map, Value};
 
-use website_mission_core::mission::audio::validate;
-use website_mission_core::mission::audio::MUSIC_EVENTS;
+use website_map_engine::data::scenario::audio::validate;
+use website_map_engine::data::scenario::audio::MUSIC_EVENTS;
 
 /// The reader chain for `meta.environment.audio`, end to end.
 pub const AUDIO_READERS: &[(&str, &str)] = &[

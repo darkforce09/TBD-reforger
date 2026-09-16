@@ -112,8 +112,8 @@ use std::rc::Rc;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use wasm_bindgen::prelude::*;
-use website_mission_core::doc::MissionDocCore;
-use website_mission_core::mission::compile::compile_payload;
+use website_map_engine::data::scenario::compile::compile_payload;
+use website_map_engine::data::store::MissionDocCore;
 
 use crate::editor::state::doc_host::DocHandle;
 use crate::editor::state::tab_lock;

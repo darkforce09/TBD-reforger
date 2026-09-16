@@ -30,10 +30,10 @@
 
 use std::collections::HashSet;
 use std::sync::OnceLock;
-pub use website_mission_core::doc::operations::assets::classname_tail;
-pub use website_mission_core::doc::operations::assets::derive_object_alias;
+pub use website_map_engine::data::store::operations::assets::classname_tail;
+pub use website_map_engine::data::store::operations::assets::derive_object_alias;
 
-pub use website_mission_core::doc::operations::assets::PlacePayload;
+pub use website_map_engine::data::store::operations::assets::PlacePayload;
 
 use crate::v2::core::api::dto::RegistryItem;
 

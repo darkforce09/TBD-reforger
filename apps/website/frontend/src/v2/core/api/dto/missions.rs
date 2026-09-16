@@ -12,7 +12,7 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-pub use website_mission_core::doc::operations::environment::MissionEnv;
+pub use website_map_engine::data::store::operations::environment::MissionEnv;
 
 /// One mission as the library lists it, including the review stamp an author needs to
 /// see why their submission came back.
@@ -127,8 +127,8 @@ impl MissionDetail {
     /// `author` field carries the account id, not the display name — the display name travels
     /// beside it — which is the one field a reasonable reading gets wrong, and getting it wrong
     /// would produce a document that looks right and is not the one the server builds.
-    pub fn compiled_meta(&self) -> website_mission_core::mission::flatten::MissionMeta {
-        website_mission_core::mission::flatten::MissionMeta {
+    pub fn compiled_meta(&self) -> website_map_engine::data::scenario::flatten::MissionMeta {
+        website_map_engine::data::scenario::flatten::MissionMeta {
             id: self.id.clone(),
             title: self.title.clone(),
             author: self.author_id.clone(),

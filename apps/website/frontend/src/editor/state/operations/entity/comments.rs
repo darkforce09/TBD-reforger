@@ -36,7 +36,7 @@ pub fn place_comment(x: f64, z: f64) -> Option<String> {
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        website_mission_core::doc::operations::entity::place_comment(core, x, z, |core| {
+        website_map_engine::data::store::operations::entity::place_comment(core, x, z, |core| {
             ensure_layer(ctx, core)
         })
     })?;
@@ -66,9 +66,12 @@ pub fn duplicate_comment(id: &str, offset: f64) -> Option<String> {
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        website_mission_core::doc::operations::entity::duplicate_comment(core, id, offset, |core| {
-            ensure_layer(ctx, core)
-        })
+        website_map_engine::data::store::operations::entity::duplicate_comment(
+            core,
+            id,
+            offset,
+            |core| ensure_layer(ctx, core),
+        )
     })?;
     mission_history::after_local_edit();
     Some(new_id)

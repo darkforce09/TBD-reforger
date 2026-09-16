@@ -206,7 +206,7 @@ pub const SETTINGS_UNREAD_NOTE: &str = "Respawn, spectator policy, night vision 
 #[doc = " guard below is kept and is no longer circular — it now reads the compiler's constant, so the"]
 #[doc = " verifier's 600 → 900 edit turns it red. This crate already depended on `map-engine-core` with the"]
 #[doc = " `mission` feature (`Cargo.toml`), so this costs nothing but the deletion."]
-pub use website_mission_core::mission::flatten::FLOW_DEFAULT_BRIEFING_S;
+pub use website_map_engine::data::scenario::flatten::FLOW_DEFAULT_BRIEFING_S;
 #[doc = " What a mission runs with when nothing is authored — **the compiler's own constants, not a copy**."]
 #[doc = ""]
 #[doc = " These are what `ModFlow` splices in when the payload authors nothing"]
@@ -231,7 +231,7 @@ pub use website_mission_core::mission::flatten::FLOW_DEFAULT_BRIEFING_S;
 #[doc = " guard below is kept and is no longer circular — it now reads the compiler's constant, so the"]
 #[doc = " verifier's 600 → 900 edit turns it red. This crate already depended on `map-engine-core` with the"]
 #[doc = " `mission` feature (`Cargo.toml`), so this costs nothing but the deletion."]
-pub use website_mission_core::mission::flatten::FLOW_DEFAULT_JIP;
+pub use website_map_engine::data::scenario::flatten::FLOW_DEFAULT_JIP;
 #[doc = " What a mission runs with when nothing is authored — **the compiler's own constants, not a copy**."]
 #[doc = ""]
 #[doc = " These are what `ModFlow` splices in when the payload authors nothing"]
@@ -256,7 +256,7 @@ pub use website_mission_core::mission::flatten::FLOW_DEFAULT_JIP;
 #[doc = " guard below is kept and is no longer circular — it now reads the compiler's constant, so the"]
 #[doc = " verifier's 600 → 900 edit turns it red. This crate already depended on `map-engine-core` with the"]
 #[doc = " `mission` feature (`Cargo.toml`), so this costs nothing but the deletion."]
-pub use website_mission_core::mission::flatten::FLOW_DEFAULT_SAFESTART_S;
+pub use website_map_engine::data::scenario::flatten::FLOW_DEFAULT_SAFESTART_S;
 #[doc = " What a mission runs with when nothing is authored — **the compiler's own constants, not a copy**."]
 #[doc = ""]
 #[doc = " These are what `ModFlow` splices in when the payload authors nothing"]
@@ -281,7 +281,7 @@ pub use website_mission_core::mission::flatten::FLOW_DEFAULT_SAFESTART_S;
 #[doc = " guard below is kept and is no longer circular — it now reads the compiler's constant, so the"]
 #[doc = " verifier's 600 → 900 edit turns it red. This crate already depended on `map-engine-core` with the"]
 #[doc = " `mission` feature (`Cargo.toml`), so this costs nothing but the deletion."]
-pub use website_mission_core::mission::flatten::FLOW_DEFAULT_TIMELIMIT_S;
+pub use website_map_engine::data::scenario::flatten::FLOW_DEFAULT_TIMELIMIT_S;
 
 /// The `jip` enum, in schema order, with the words an author reads.
 ///

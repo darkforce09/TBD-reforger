@@ -13,7 +13,11 @@ pub fn document_entities() -> Vec<crate::editor::panels::dock_left::DocEntity> {
             let ctx = guard.as_ref()?;
             let d = ctx.doc.borrow();
             let core = d.as_ref()?;
-            Some(website_mission_core::doc::operations::document_index::document_entities(core))
+            Some(
+                website_map_engine::data::store::operations::document_index::document_entities(
+                    core,
+                ),
+            )
         })
         .unwrap_or_default()
 }
@@ -26,7 +30,7 @@ pub fn placed_owner_options() -> Vec<OwnerOption> {
             let ctx = guard.as_ref()?;
             let d = ctx.doc.borrow();
             let core = d.as_ref()?;
-            Some(website_mission_core::doc::operations::entity::placed_owner_options(core))
+            Some(website_map_engine::data::store::operations::entity::placed_owner_options(core))
         })
         .unwrap_or_default()
 }
@@ -59,7 +63,7 @@ pub fn delete_selection() -> bool {
             let Some(core) = d.as_ref() else {
                 return false;
             };
-            website_mission_core::doc::operations::entity::delete_selection(core, ids)
+            website_map_engine::data::store::operations::entity::delete_selection(core, ids)
         }
         ctx.selection.borrow_mut().clear();
         true
@@ -86,7 +90,7 @@ pub fn center_on_selection() -> bool {
             return false;
         };
         let Some((sx, sy)) =
-            website_mission_core::doc::operations::entity::selection_centroid(core, &sel)
+            website_map_engine::data::store::operations::entity::selection_centroid(core, &sel)
         else {
             return false;
         };
@@ -117,7 +121,8 @@ pub fn copy_selection() -> bool {
         let Some(core) = d.as_ref() else {
             return false;
         };
-        let Some(clip) = website_mission_core::doc::operations::entity::copy_selection(core, &sel)
+        let Some(clip) =
+            website_map_engine::data::store::operations::entity::copy_selection(core, &sel)
         else {
             return false;
         };
@@ -142,7 +147,7 @@ pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
             return Vec::new();
         };
         let layer_id = ensure_layer(ctx, core);
-        let ids = website_mission_core::doc::operations::entity::paste_at_cursor(
+        let ids = website_map_engine::data::store::operations::entity::paste_at_cursor(
             core,
             clip,
             layer_id,

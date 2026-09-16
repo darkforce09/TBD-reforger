@@ -21,6 +21,11 @@ pub mod camera;
 #[cfg(feature = "streaming")]
 pub mod core;
 
+/// Mission data: the authored scenario and the CRDT store that edits it.
+// T-0xx Phase 2A: the folded `website-mission-core`. `data/mod.rs` gates its two halves on
+// `scenario` and `store`, and `scenario` is this crate's default — the tier `website-api` links.
+pub mod data;
+
 /// Diagnostics.
 #[cfg(feature = "render")]
 pub mod diagnostics;

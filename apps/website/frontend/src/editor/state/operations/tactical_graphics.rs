@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use std::cell::RefCell;
 
 /// Expose website mission core :: doc :: operations :: tactical graphics :: tactical min points at this domain boundary.
-pub use website_mission_core::doc::operations::tactical_graphics::tactical_min_points;
+pub use website_map_engine::data::store::operations::tactical_graphics::tactical_min_points;
 
 use super::context::{bump_doc_tick, read_env_value, update_environment};
 use crate::editor::canvas::tactical_graphics::pick_tactical_graphic;
@@ -139,7 +139,7 @@ pub fn tactical_draw_push_vertex(x: f64, z: f64) -> usize {
             return 0;
         };
 
-        if d.verts.len() >= website_mission_core::mission::tactical_graphics::MAX_POINTS {
+        if d.verts.len() >= website_map_engine::data::scenario::tactical_graphics::MAX_POINTS {
             return d.verts.len();
         }
         d.verts.push((x, z));
@@ -185,7 +185,7 @@ pub fn complete_tactical_draw() -> bool {
         .and_then(|v| v.as_array().cloned())
         .unwrap_or_default();
     let (next, id) =
-        website_mission_core::doc::operations::tactical_graphics::complete_tactical_draw(
+        website_map_engine::data::store::operations::tactical_graphics::complete_tactical_draw(
             rows, &draft,
         );
 
@@ -243,7 +243,7 @@ pub fn commit_tactical_vertex_drag() -> bool {
     else {
         return false;
     };
-    if !website_mission_core::doc::operations::tactical_graphics::commit_tactical_vertex_drag(
+    if !website_map_engine::data::store::operations::tactical_graphics::commit_tactical_vertex_drag(
         &mut rows, &id, index, x, z,
     ) {
         return false;
@@ -268,7 +268,9 @@ pub fn delete_tactical_graphic(id: &str) -> bool {
         return false;
     };
     let Some(next) =
-        website_mission_core::doc::operations::tactical_graphics::delete_tactical_graphic(rows, id)
+        website_map_engine::data::store::operations::tactical_graphics::delete_tactical_graphic(
+            rows, id,
+        )
     else {
         return false;
     };
@@ -292,6 +294,6 @@ pub fn delete_selected_tactical_graphic() -> bool {
 
 fn write_rows(rows: Vec<Value>) {
     update_environment(
-        website_mission_core::doc::operations::tactical_graphics::environment_patch(rows),
+        website_map_engine::data::store::operations::tactical_graphics::environment_patch(rows),
     );
 }

@@ -14,7 +14,7 @@ pub fn zone_rows() -> Vec<ZoneRow> {
             let ctx = guard.as_ref()?;
             let d = ctx.doc.borrow();
             let core = d.as_ref()?;
-            website_mission_core::doc::operations::entity::zone_rows(core)
+            website_map_engine::data::store::operations::entity::zone_rows(core)
         })
         .unwrap_or_default()
 }
@@ -64,7 +64,7 @@ pub fn set_zone_rule(id: &str, key: &str, value: Option<serde_json::Value>) -> b
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        website_mission_core::doc::operations::entity::set_zone_rule(core, id, key, value)
+        website_map_engine::data::store::operations::entity::set_zone_rule(core, id, key, value)
     });
     let Some(next) = next else {
         return false;

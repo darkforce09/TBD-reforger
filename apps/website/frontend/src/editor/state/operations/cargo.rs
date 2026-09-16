@@ -6,7 +6,7 @@
 use crate::editor::state::history as mission_history;
 use std::cell::RefCell;
 use std::collections::HashMap;
-use website_mission_core::doc::MissionDocCore;
+use website_map_engine::data::store::MissionDocCore;
 
 #[allow(unused_imports)]
 use super::{attrs::*, compositions::*, context::*, entity::*, transform::*};
@@ -18,7 +18,7 @@ pub fn read_loadout(id: &str) -> Option<String> {
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        website_mission_core::doc::operations::cargo::read_loadout(core, id)
+        website_map_engine::data::store::operations::cargo::read_loadout(core, id)
     })
 }
 
@@ -43,7 +43,9 @@ pub(super) fn seed_cargo_in_core(
     loadout: Option<&str>,
 ) -> bool {
     let defaults = CARGO_DEFAULTS.with(|c| c.borrow().get(asset_id).cloned());
-    website_mission_core::doc::operations::cargo::seed_cargo_in_core(core, id, loadout, defaults)
+    website_map_engine::data::store::operations::cargo::seed_cargo_in_core(
+        core, id, loadout, defaults,
+    )
 }
 
 /// Arsenal-open seed (pre-.15.2 slots): own ctx scope + history tail. Returns the seeded loadout JSON so the caller can render it without a re-read.
@@ -53,7 +55,7 @@ pub fn seed_slot_cargo(id: &str) -> Option<String> {
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        website_mission_core::doc::operations::cargo::seed_slot_cargo(core, id, |asset_id| {
+        website_map_engine::data::store::operations::cargo::seed_slot_cargo(core, id, |asset_id| {
             CARGO_DEFAULTS.with(|c| c.borrow().get(asset_id).cloned())
         })
     });
@@ -128,7 +130,7 @@ pub fn copy_loadouts_from_selection() -> usize {
         let Some(core) = d.as_ref() else {
             return Vec::new();
         };
-        website_mission_core::doc::operations::cargo::copy_loadouts_from_selection(core, sel)
+        website_map_engine::data::store::operations::cargo::copy_loadouts_from_selection(core, sel)
     });
     let n = buffered.len();
     if n > 0 {
@@ -191,7 +193,7 @@ fn commit_loadout_writes(writes: &[crate::editor::arsenal::LoadoutWrite]) -> usi
         let Some(core) = d.as_ref() else {
             return 0;
         };
-        website_mission_core::doc::operations::cargo::commit_loadout_writes(core, writes)
+        website_map_engine::data::store::operations::cargo::commit_loadout_writes(core, writes)
     });
     if commits > 0 {
         mission_history::after_local_edit();

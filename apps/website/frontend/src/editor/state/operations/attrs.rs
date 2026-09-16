@@ -6,16 +6,16 @@
 use crate::editor::state::history as mission_history;
 
 /// Expose website mission core :: doc :: operations :: attrs :: keep z rows at this domain boundary.
-pub(crate) use website_mission_core::doc::operations::attrs::keep_z_rows;
+pub(crate) use website_map_engine::data::store::operations::attrs::keep_z_rows;
 
 /// Expose website mission core :: doc :: operations :: attrs :: slot z at this domain boundary.
-pub(crate) use website_mission_core::doc::operations::attrs::slot_z;
+pub(crate) use website_map_engine::data::store::operations::attrs::slot_z;
 
 /// Expose website mission core :: doc :: operations :: attrs ::  attr diff at this domain boundary.
-pub use website_mission_core::doc::operations::attrs::AttrDiff;
+pub use website_map_engine::data::store::operations::attrs::AttrDiff;
 
 /// Expose website mission core :: doc :: operations :: attrs ::  slot attrs at this domain boundary.
-pub use website_mission_core::doc::operations::attrs::SlotAttrs;
+pub use website_map_engine::data::store::operations::attrs::SlotAttrs;
 
 #[allow(unused_imports)]
 use super::{cargo::*, compositions::*, context::*, entity::*, transform::*};
@@ -27,7 +27,7 @@ pub fn read_attrs(id: &str) -> Option<SlotAttrs> {
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        website_mission_core::doc::operations::attrs::read_attrs(core, id)
+        website_map_engine::data::store::operations::attrs::read_attrs(core, id)
     })
 }
 
@@ -43,7 +43,7 @@ pub fn attrs_locked_count(ids: &[String]) -> usize {
         let Some(core) = d.as_ref() else {
             return 0;
         };
-        website_mission_core::doc::operations::attrs::attrs_locked_count(core, ids)
+        website_map_engine::data::store::operations::attrs::attrs_locked_count(core, ids)
     })
 }
 
@@ -64,7 +64,7 @@ pub fn attrs_update_position(
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::attrs::attrs_update_position(
+        website_map_engine::data::store::operations::attrs::attrs_update_position(
             core, id, x, y, z, rotation,
         )
     });
@@ -93,7 +93,7 @@ pub fn attrs_update_position_multi(
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::attrs::attrs_update_position_multi(
+        website_map_engine::data::store::operations::attrs::attrs_update_position_multi(
             core, ids, x, y, z, rotation,
         )
     });
@@ -128,7 +128,7 @@ pub fn attrs_update_slot(
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::attrs::attrs_update_slot(
+        website_map_engine::data::store::operations::attrs::attrs_update_slot(
             core,
             id,
             role,
@@ -171,7 +171,7 @@ pub fn attrs_update_slot_multi(
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::attrs::attrs_update_slot_multi(
+        website_map_engine::data::store::operations::attrs::attrs_update_slot_multi(
             core,
             ids,
             role,
@@ -242,6 +242,6 @@ pub fn read_attrs_diff(ids: &[String]) -> AttrDiff {
         let Some(core) = d.as_ref() else {
             return AttrDiff::default();
         };
-        website_mission_core::doc::operations::attrs::read_attrs_diff(core, ids)
+        website_map_engine::data::store::operations::attrs::read_attrs_diff(core, ids)
     })
 }

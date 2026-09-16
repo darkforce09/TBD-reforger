@@ -11,4 +11,4 @@ pub use validate::{
     validate_mission_editor_payload, validate_registry_compat_envelope,
     validate_registry_items_envelope,
 };
-pub use website_mission_core::mission::kit::{KitAliases, load_kit_aliases};
+pub use website_map_engine::data::scenario::kit::{KitAliases, load_kit_aliases};

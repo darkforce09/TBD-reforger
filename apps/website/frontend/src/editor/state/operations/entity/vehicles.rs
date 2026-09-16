@@ -17,7 +17,7 @@ pub fn vehicle_rows() -> Vec<VehicleRow> {
         let Some(core) = d.as_ref() else {
             return Vec::new();
         };
-        website_mission_core::doc::operations::entity::vehicle_rows(core)
+        website_map_engine::data::store::operations::entity::vehicle_rows(core)
     })
 }
 
@@ -42,7 +42,9 @@ pub fn set_vehicle_cargo(vehicle_id: String, rows: Vec<VehicleCargoRow>) -> bool
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::entity::set_vehicle_cargo(core, vehicle_id, rows)
+        website_map_engine::data::store::operations::entity::set_vehicle_cargo(
+            core, vehicle_id, rows,
+        )
     });
     if did {
         mission_history::after_local_edit();
@@ -70,7 +72,7 @@ pub fn set_vehicle_heading(vehicle_id: String, heading_deg: f64) -> bool {
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::entity::set_vehicle_heading(
+        website_map_engine::data::store::operations::entity::set_vehicle_heading(
             core,
             vehicle_id,
             heading_deg,
@@ -143,7 +145,7 @@ pub fn placed_slot_choices() -> Vec<PlacedSlotChoice> {
         let Some(core) = d.as_ref() else {
             return Vec::new();
         };
-        website_mission_core::doc::operations::entity::placed_slot_choices(core)
+        website_map_engine::data::store::operations::entity::placed_slot_choices(core)
     })
 }
 

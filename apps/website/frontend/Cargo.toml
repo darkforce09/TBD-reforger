@@ -8,25 +8,28 @@ edition = "2021"
 publish = false
 
 [dependencies]
-website-mission-core = { path = "../mission-core", features = ["doc"] }
 leptos = { version = "0.8", features = ["csr"] }
 leptos_router = "0.8"
 console_error_panic_hook = "0.1"
 futures = "0.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# T-180.7 — `format_slot_line` on native + wasm (wasm32 block below adds doc/png/world).
-# T-243 — `mission` is now on the NATIVE build too, not just wasm32. `MissionDetail::compiled_meta`
-# is the row half of the editor's server-truth Export, and a projection that only exists in the
-# wasm build is a projection `cargo test` cannot check; `compiled_meta_is_the_row_the_server_compiles_from`
-# runs it against the real captured `GET /missions/:id` golden. The feature is three optional deps
-# (serde / serde_json / thiserror) already in this crate's tree, so it costs the bundle nothing.
-# T-0xx Phase 2A renamed these: `terrain` -> `world`, `formats` -> `io`. There is no `blueprint`
-# feature and there never was — `architecture/blueprint` (building structs + the LOS raycaster
-# behind `/debug/building-viewer`) rides `io`, which is why this line takes it. `streaming` is
-# deliberately absent: the native build wants the world/io pair without the loader/scheduler stack
-# (flate2), which the wasm32 block below adds.
-website-map-engine = { path = "../map-engine", default-features = false, features = ["world", "io"] }
+# T-180.7 — `format_slot_line` on native + wasm. T-243 — the mission compiler is on the NATIVE
+# build too, not just wasm32: `MissionDetail::compiled_meta` is the row half of the editor's
+# server-truth Export, and a projection that only exists in the wasm build is a projection
+# `cargo test` cannot check; `compiled_meta_is_the_row_the_server_compiles_from` runs it against
+# the real captured `GET /missions/:id` golden.
+# T-0xx Phase 2A: this line absorbed `website-mission-core`, which was a separate unconditional
+# dependency with `features = ["doc"]`. `doc` was `compiler` + yrs, and it is now `store`
+# (= `scenario` + yrs). It is named HERE, in the shared block, and not in the wasm32 block below,
+# because the map-engine edges are target-split while the old mission-core edge was not — putting
+# `store` on wasm32 alone would take `compiled_meta` off the native build and kill that test
+# silently. `terrain` -> `world` and `formats` -> `io` are the same phase's renames. There is no
+# `blueprint` feature and there never was — `architecture/blueprint` (building structs + the LOS
+# raycaster behind `/debug/building-viewer`) rides `io`, which is why this line takes it.
+# `streaming` is deliberately absent: the native build wants the world/io pair without the
+# loader/scheduler stack (flate2), which the wasm32 block below adds.
+website-map-engine = { path = "../map-engine", default-features = false, features = ["world", "io", "store"] }
 gloo-net = "0.6"
 js-sys = "0.3"
 # T-405 — the `<a href>` scheme guard (`url_guard.rs`). Costs the bundle NOTHING: `url` is already

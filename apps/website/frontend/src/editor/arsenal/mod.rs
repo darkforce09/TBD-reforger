@@ -37,7 +37,7 @@
 //!   made in this paragraph.) Line cites are otherwise omitted on purpose: five drifted during the
 //!   127–141 remediation run, and a file+symbol survives edits that a number does not.
 //!   The Arsenal's `set_loadout`
-//!   (`editor_ops.rs:67`) is one of them. Its own siblings in this very modal are the clearest
+//!   (`editor_ops.rs:69`) is one of them. Its own siblings in this very modal are the clearest
 //!   case: Transform X/Y/Z/rotation (`attributes.rs:265`) and Identity role/tag/stance
 //!   (`attributes.rs:335`) commit on blur/Enter with no Save of their own — `attributes.rs:7` states
 //!   the contract in as many words ("rebind + persist + one undo step per commit"). Same for the
@@ -280,7 +280,7 @@ pub fn ArsenalTab(
                     // The three `set`s are signal writes and commit nothing; the single `persist`
                     // that follows is the only document mutation, and `persist` is one
                     // `editor_ops::set_loadout` is **at most one** `mission_history::after_local_edit`
-                    // (`editor_ops.rs:83`) is at most one undo step. So Ctrl+Z after an import
+                    // (`editor_ops.rs:85`) is at most one undo step. So Ctrl+Z after an import
                     // restores the whole loadout the author had before it — not the last wear row
                     // of it. "At most" since T-779: the tail is gated on the document having taken
                     // the write, so an import applied over an entity that is no longer in the
@@ -1272,7 +1272,7 @@ mod tests {
                     include_str!("../state/operations/compositions.rs"),
                     include_str!(concat!(
                         env!("CARGO_MANIFEST_DIR"),
-                        "/../mission-core/src/doc/operations/compositions.rs"
+                        "/../map-engine/src/data/store/operations/compositions.rs"
                     )),
                     crate::v2::core::test_support::editor_operations::CONTEXT,
                     crate::v2::core::test_support::editor_operations::ENTITY,
@@ -1308,7 +1308,7 @@ mod tests {
             assert!(
                 fn_body(
                     &crate::v2::core::test_support::class_r_scrub::live_code(include_str!(
-                        "../../../../mission-core/src/doc/operations/cargo.rs"
+                        "../../../../map-engine/src/data/store/operations/cargo.rs"
                     )),
                     "pub fn copy_loadouts_from_selection("
                 )
@@ -1337,7 +1337,7 @@ mod tests {
             let commit = fn_body(&ops, "fn commit_loadout_writes(");
             assert!(commit.contains("cargo::commit_loadout_writes(core, writes)"));
             let domain = crate::v2::core::test_support::class_r_scrub::live_code(include_str!(
-                "../../../../mission-core/src/doc/operations/cargo.rs"
+                "../../../../map-engine/src/data/store/operations/cargo.rs"
             ));
             let domain_commit = fn_body(&domain, "pub fn commit_loadout_writes(");
             assert_eq!(
@@ -1455,7 +1455,7 @@ mod tests {
                 include_str!("../state/operations/compositions.rs"),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/../mission-core/src/doc/operations/compositions.rs"
+                    "/../map-engine/src/data/store/operations/compositions.rs"
                 )),
                 crate::v2::core::test_support::editor_operations::CONTEXT,
                 crate::v2::core::test_support::editor_operations::ENTITY,
@@ -1621,7 +1621,7 @@ mod tests {
                     include_str!("../state/operations/compositions.rs"),
                     include_str!(concat!(
                         env!("CARGO_MANIFEST_DIR"),
-                        "/../mission-core/src/doc/operations/compositions.rs"
+                        "/../map-engine/src/data/store/operations/compositions.rs"
                     )),
                     crate::v2::core::test_support::editor_operations::CONTEXT,
                     crate::v2::core::test_support::editor_operations::ENTITY,

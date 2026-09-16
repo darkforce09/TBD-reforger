@@ -58,7 +58,9 @@ pub fn complete_connect(to_id: &str) -> bool {
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::entity::complete_connect(core, to_id, kind, from_id)
+        website_map_engine::data::store::operations::entity::complete_connect(
+            core, to_id, kind, from_id,
+        )
     });
     if drawn {
         mission_history::after_local_edit();
@@ -77,7 +79,7 @@ pub fn delete_connection(id: &str) -> bool {
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::entity::delete_connection(core, id)
+        website_map_engine::data::store::operations::entity::delete_connection(core, id)
     });
     if removed {
         mission_history::after_local_edit();
@@ -97,7 +99,7 @@ pub fn connection_list() -> Vec<ConnectionListRow> {
         let Some(core) = d.as_ref() else {
             return Vec::new();
         };
-        website_mission_core::doc::operations::entity::connection_list(core)
+        website_map_engine::data::store::operations::entity::connection_list(core)
     })
 }
 
@@ -113,7 +115,7 @@ pub fn connection_findings() -> Vec<ConnectionFindingRow> {
         let Some(core) = d.as_ref() else {
             return Vec::new();
         };
-        website_mission_core::doc::operations::entity::connection_findings(core)
+        website_map_engine::data::store::operations::entity::connection_findings(core)
     })
 }
 

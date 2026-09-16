@@ -13,7 +13,7 @@ use std::sync::OnceLock;
 
 use jsonschema::Validator;
 use serde_json::{Value, json};
-use website_mission_core::mission::wire_safety::{self, CargoPhysCatalog, MAX_REPORTED};
+use website_map_engine::data::scenario::wire_safety::{self, CargoPhysCatalog, MAX_REPORTED};
 
 const EDITOR_SCHEMA: &str =
     include_str!("../../../../../packages/tbd-schema/schema/mission-editor-payload.schema.json");
@@ -414,7 +414,7 @@ pub fn validate_registry_compat_envelope(raw: &[u8]) -> Result<Vec<String>, Cont
 #[cfg(test)]
 mod tests {
     use super::*;
-    use website_mission_core::mission::wire_safety::CargoPhys;
+    use website_map_engine::data::scenario::wire_safety::CargoPhys;
 
     #[test]
     fn editor_schema_compiles_and_accepts_minimal_payload() {
@@ -700,7 +700,8 @@ mod tests {
     /// the real bug class. RED if `flatten.rs` changes its grid without this file following.
     #[test]
     fn zone_quantisation_mirrors_flatten() {
-        let flatten = include_str!("../../../mission-core/src/mission/compiler/flatten/zones.rs");
+        let flatten =
+            include_str!("../../../map-engine/src/data/scenario/compiler/flatten/zones.rs");
         let body = flatten
             .split("fn round_coord(v: f64) -> f64 {")
             .nth(1)

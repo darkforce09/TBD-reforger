@@ -64,7 +64,7 @@ pub(in crate::editor::state::operations) fn set_selection_hidden(hidden: bool) -
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::entity::set_selection_hidden(core, hidden, sel)
+        website_map_engine::data::store::operations::entity::set_selection_hidden(core, hidden, sel)
     });
     if did {
         mission_history::after_local_edit();
@@ -93,7 +93,7 @@ pub fn toggle_hidden() -> bool {
         let sel = ctx.selection.borrow().clone();
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        website_mission_core::doc::operations::entity::toggle_hidden(core, sel)
+        website_map_engine::data::store::operations::entity::toggle_hidden(core, sel)
     });
     match dir {
         Some(hidden) => set_selection_hidden(hidden),

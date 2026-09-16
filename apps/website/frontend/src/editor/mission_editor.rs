@@ -421,8 +421,8 @@ pub mod armed_place {
 /// NOT do — it only decides the numbers.
 pub mod transform {
 
-    pub use website_mission_core::doc::operations::rotation::snap_value;
-    pub use website_mission_core::doc::operations::rotation::ROTATE_LADDER_DEG;
+    pub use website_map_engine::data::store::operations::rotation::snap_value;
+    pub use website_map_engine::data::store::operations::rotation::ROTATE_LADDER_DEG;
 
     /// The TRANSLATION snap ladder in world metres. Index 0 is **OFF** (free move — the drag delta
     /// passes through unquantised); the rest are the increasing cell sizes the ticket names
@@ -863,7 +863,7 @@ pub(crate) fn with_editor_toolbar_dispatch(f: impl FnOnce(&EditorToolbarDispatch
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub(crate) fn live_connection_segments(
-    core: &website_mission_core::doc::MissionDocCore,
+    core: &website_map_engine::data::store::MissionDocCore,
 ) -> Vec<ConnSegment> {
     let soa = core.materialize();
     let mut positions: std::collections::HashMap<String, (f64, f64)> =
@@ -901,7 +901,7 @@ pub(crate) fn set_map_cursor(canvas: &web_sys::HtmlCanvasElement, pickable: bool
 #[cfg(target_arch = "wasm32")]
 pub(crate) struct HoverPoints {
     tick: u64,
-    soa: website_mission_core::doc::SlotSoa,
+    soa: website_map_engine::data::store::SlotSoa,
     vehicles: Vec<(String, f64, f64)>,
     comments: Vec<CommentPoint>,
 }
@@ -1752,7 +1752,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 validation_panel::register_payload_source(std::rc::Rc::new(move || {
                     let d = doc.borrow();
                     let core = d.as_ref()?;
-                    let payload = website_mission_core::mission::compile::compile_payload(
+                    let payload = website_map_engine::data::scenario::compile::compile_payload(
                         &core.small_maps_json(),
                         &core.slots_json(),
                         false,
@@ -2186,7 +2186,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     //    `borrow_mut` is ever held across an `.await` (the engine task shares this `Rc`).
                     if let Some(blob) = yrs_persist::load_state(&id).await {
                         if !blob.is_empty() {
-                            let fresh = website_mission_core::doc::MissionDocCore::new();
+                            let fresh = website_map_engine::data::store::MissionDocCore::new();
                             fresh.set_origin_init(true);
                             let ok = fresh.apply_update(&blob).is_ok();
                             fresh.set_origin_init(false);

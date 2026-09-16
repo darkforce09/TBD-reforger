@@ -57,7 +57,7 @@
 use serde_json::Value;
 
 #[cfg(any(test, target_arch = "wasm32"))]
-pub use website_mission_core::doc::operations::tactical_graphics::TacticalDraft;
+pub use website_map_engine::data::store::operations::tactical_graphics::TacticalDraft;
 
 /// Click tolerance for [`pick_tactical_graphic`], in SCREEN pixels. Matches `CONN_PICK_PX`: a
 /// hairline is 1 px and nobody can click a 1 px target.
@@ -512,7 +512,7 @@ pub(crate) fn pick_tactical_vertex(
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub(crate) fn live_tactical_graphics(
-    core: &website_mission_core::doc::MissionDocCore,
+    core: &website_map_engine::data::store::MissionDocCore,
 ) -> Vec<TacticalGraphic> {
     let Ok(root) = serde_json::from_str::<Value>(&core.small_maps_json()) else {
         return Vec::new();
@@ -526,7 +526,7 @@ pub(crate) fn live_tactical_graphics(
 mod tests {
     use super::*;
     use serde_json::json;
-    use website_mission_core::doc::operations::tactical_graphics::mint_graphic_id;
+    use website_map_engine::data::store::operations::tactical_graphics::mint_graphic_id;
 
     fn env(rows: Value) -> Value {
         json!({"weather": "clear", "tacticalGraphics": rows})
@@ -802,8 +802,8 @@ mod tests {
     /// vocabulary so a kind added there without one here fails by name.
     #[test]
     fn the_canvas_floor_is_the_core_validator_floor() {
-        use website_mission_core::mission::tactical_graphics::min_points;
-        use website_mission_core::mission::tactical_graphics::KINDS;
+        use website_map_engine::data::scenario::tactical_graphics::min_points;
+        use website_map_engine::data::scenario::tactical_graphics::KINDS;
         assert_eq!(KINDS.len(), 4);
         for kind in KINDS {
             let floor = min_points(kind).unwrap_or_else(|| panic!("{kind} has no floor"));

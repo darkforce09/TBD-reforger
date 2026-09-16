@@ -1163,8 +1163,10 @@ fn render_shape_section(ctrl: &'static str, shape: RwSignal<Option<RowShape>>) -
         let placed = match crate::editor::state::history::doc_handle() {
             Some(handle) => {
                 let doc = handle.borrow();
-                doc.as_ref()
-                    .map_or(0, website_mission_core::doc::MissionDocCore::slot_count)
+                doc.as_ref().map_or(
+                    0,
+                    website_map_engine::data::store::MissionDocCore::slot_count,
+                )
             }
             None => 0,
         };

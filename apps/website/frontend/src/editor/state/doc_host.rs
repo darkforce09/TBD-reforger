@@ -16,7 +16,7 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use wasm_bindgen::prelude::*;
-use website_mission_core::doc::MissionDocCore;
+use website_map_engine::data::store::MissionDocCore;
 
 /// The hosted document. `Rc` is `!Send`, so — like the engine handle in `mission_editor.rs` — the
 /// `Send`-bound `on_cleanup` cannot drop it; it leaks on route-leave (documented, consistent). There

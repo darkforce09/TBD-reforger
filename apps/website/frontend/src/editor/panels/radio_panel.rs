@@ -17,12 +17,12 @@
 use leptos::prelude::*;
 use serde_json::Value;
 
-use website_mission_core::mission::radio_plan::freq_key;
-use website_mission_core::mission::radio_plan::validate;
-use website_mission_core::mission::radio_plan::FREQ_MAX_MHZ;
-use website_mission_core::mission::radio_plan::FREQ_MIN_MHZ;
-use website_mission_core::mission::radio_plan::MAX_NETS;
-use website_mission_core::mission::radio_plan::RANGES;
+use website_map_engine::data::scenario::radio_plan::freq_key;
+use website_map_engine::data::scenario::radio_plan::validate;
+use website_map_engine::data::scenario::radio_plan::FREQ_MAX_MHZ;
+use website_map_engine::data::scenario::radio_plan::FREQ_MIN_MHZ;
+use website_map_engine::data::scenario::radio_plan::MAX_NETS;
+use website_map_engine::data::scenario::radio_plan::RANGES;
 
 /// The reader chain for `meta.environment.radioPlan`, end to end.
 pub const RADIO_READERS: &[(&str, &str)] = &[
@@ -212,11 +212,12 @@ pub fn with_field(
             if trimmed.is_empty() {
                 return Err("label cannot be blank".into());
             }
-            if trimmed.chars().count() > website_mission_core::mission::radio_plan::MAX_LABEL_CHARS
+            if trimmed.chars().count()
+                > website_map_engine::data::scenario::radio_plan::MAX_LABEL_CHARS
             {
                 return Err(format!(
                     "label is longer than {} characters — the mod would truncate it",
-                    website_mission_core::mission::radio_plan::MAX_LABEL_CHARS
+                    website_map_engine::data::scenario::radio_plan::MAX_LABEL_CHARS
                 ));
             }
             obj.insert(key.to_string(), Value::String(trimmed.to_string()));

@@ -253,7 +253,9 @@ pub(in crate::editor::state::operations) fn write_row_returning_id(
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        website_mission_core::doc::operations::entity::write_row_returning_id(core, collection, f)
+        website_map_engine::data::store::operations::entity::write_row_returning_id(
+            core, collection, f,
+        )
     });
     if id.is_some() {
         mission_history::after_local_edit();

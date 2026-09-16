@@ -31,9 +31,9 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use leptos::prelude::{GetUntracked, RwSignal, Set};
+use website_map_engine::data::store::MissionDocCore;
+use website_map_engine::data::store::SlotSoa;
 use website_map_engine::symbology::links::squad_links::build_squad_link_segments;
-use website_mission_core::doc::MissionDocCore;
-use website_mission_core::doc::SlotSoa;
 // T-596 — `role_id::SQUAD_LINKS` is imported, not a hand-copied `const ROLE_SQUAD_LINKS: u32 = 9`:
 // the copy had no compile-time link to `lane_role_from_u32`, so a renumber would have drawn the
 // squad-leader hairlines into whatever lane 9 became rather than failing the build.

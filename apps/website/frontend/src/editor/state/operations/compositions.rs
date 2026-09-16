@@ -4,10 +4,10 @@
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 use crate::editor::state::history as mission_history;
-use website_mission_core::doc::MissionDocCore;
+use website_map_engine::data::store::MissionDocCore;
 
 /// Expose website mission core :: doc :: operations :: compositions ::  composition row at this domain boundary.
-pub use website_mission_core::doc::operations::compositions::CompositionRow;
+pub use website_map_engine::data::store::operations::compositions::CompositionRow;
 
 #[allow(unused_imports)]
 use super::{attrs::*, cargo::*, context::*, entity::*, transform::*};
@@ -24,7 +24,7 @@ pub fn save_composition(title: String, category: String, author: String) -> Opti
         }
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        website_mission_core::doc::operations::compositions::save_composition(
+        website_map_engine::data::store::operations::compositions::save_composition(
             core,
             title,
             category,
@@ -51,7 +51,7 @@ pub fn composition_rows() -> Vec<CompositionRow> {
         let Some(core) = d.as_ref() else {
             return Vec::new();
         };
-        website_mission_core::doc::operations::compositions::composition_rows(core)
+        website_map_engine::data::store::operations::compositions::composition_rows(core)
     })
 }
 

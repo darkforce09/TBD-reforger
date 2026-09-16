@@ -114,7 +114,7 @@ fn pick_takes_the_nearest_and_refuses_beyond_the_tolerance() {
 /// natively (the `doc` feature is wasm32-only here), which is why this is a source read.
 #[test]
 fn comment_pick_px_is_the_slot_pick_radius() {
-    let store = include_str!("../../../../mission-core/src/doc/picking/selection.rs");
+    let store = include_str!("../../../../map-engine/src/data/store/selection.rs");
     let needle = ["PICK_RADIUS", "_PX: f64 = "].concat();
     assert_eq!(
         store.matches(needle.as_str()).count(),
@@ -268,7 +268,7 @@ fn a_comment_composes_and_the_reconcile_is_still_the_one_writers_job() {
             include_str!("../state/operations/compositions.rs"),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../mission-core/src/doc/operations/compositions.rs"
+                "/../map-engine/src/data/store/operations/compositions.rs"
             )),
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,

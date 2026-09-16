@@ -14,7 +14,7 @@ pub fn trigger_rows() -> Vec<TriggerRow> {
             let ctx = guard.as_ref()?;
             let d = ctx.doc.borrow();
             let core = d.as_ref()?;
-            website_mission_core::doc::operations::entity::trigger_rows(core)
+            website_map_engine::data::store::operations::entity::trigger_rows(core)
         })
         .unwrap_or_default()
 }
@@ -64,7 +64,7 @@ pub fn set_trigger_rule(id: &str, key: &str, value: Option<serde_json::Value>) -
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        website_mission_core::doc::operations::entity::set_trigger_rule(core, id, key, value)
+        website_map_engine::data::store::operations::entity::set_trigger_rule(core, id, key, value)
     });
     let Some(next) = next else {
         return false;
@@ -96,7 +96,7 @@ pub(in crate::editor::state::operations) fn placed_entity_pos(id: &str) -> Optio
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        website_mission_core::doc::operations::entity::placed_entity_pos(core, id)
+        website_map_engine::data::store::operations::entity::placed_entity_pos(core, id)
     });
     if slot.is_some() {
         return slot;

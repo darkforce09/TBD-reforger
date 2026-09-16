@@ -41,9 +41,9 @@
 
 use leptos::prelude::*;
 #[cfg(any(test, target_arch = "wasm32"))]
-pub use website_mission_core::doc::operations::reassign::faction_label;
+pub use website_map_engine::data::store::operations::reassign::faction_label;
 #[cfg(any(test, target_arch = "wasm32"))]
-pub use website_mission_core::doc::operations::reassign::plan_reassign;
+pub use website_map_engine::data::store::operations::reassign::plan_reassign;
 
 const CONTROL: &str = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60";
 /// T-649 — added to a field that is disabled because its values differ and its checkbox is
@@ -2304,7 +2304,7 @@ mod tests {
     #[test]
     fn read_attrs_reads_asset_id_and_description_from_the_raw_slot_rows() {
         let ops = live_code(include_str!(
-            "../../../../mission-core/src/doc/operations/attrs.rs"
+            "../../../../map-engine/src/data/store/operations/attrs.rs"
         ));
         let body = only_body(
             &ops,
@@ -2333,7 +2333,7 @@ mod tests {
     #[test]
     fn read_attrs_gates_existence_on_raw_rows_not_soa_membership() {
         let ops = live_code(include_str!(
-            "../../../../mission-core/src/doc/operations/attrs.rs"
+            "../../../../map-engine/src/data/store/operations/attrs.rs"
         ));
         let body = only_body(
             &ops,
@@ -2413,7 +2413,7 @@ mod tests {
     #[test]
     fn attrs_update_slot_routes_the_new_fields_through_update_slot_object() {
         let ops = live_code(include_str!(
-            "../../../../mission-core/src/doc/operations/attrs.rs"
+            "../../../../map-engine/src/data/store/operations/attrs.rs"
         ));
         let body = only_body(&ops, "pub fn attrs_update_slot(");
         assert!(
@@ -2463,7 +2463,7 @@ mod tests {
 
         // (2) `!raw_slot_rows(core).contains_key(id)` → false arm
         let domain = live_code(include_str!(
-            "../../../../mission-core/src/doc/operations/attrs.rs"
+            "../../../../map-engine/src/data/store/operations/attrs.rs"
         ));
         let body = only_body(&domain, "pub fn attrs_update_slot(");
         let raw_gate = "!raw_slot_rows(core).contains_key(id)";
@@ -3005,7 +3005,7 @@ mod tests {
     #[test]
     fn an_attributes_x_or_y_commit_carries_the_slots_current_z_back_in() {
         let ops = live_code(include_str!(
-            "../../../../mission-core/src/doc/operations/attrs.rs"
+            "../../../../map-engine/src/data/store/operations/attrs.rs"
         ));
         // Single-slot still goes through update_slot_position.
         {
@@ -3066,7 +3066,7 @@ mod tests {
         // round-trip would rewrite the authored value) and it OMITS slots on hidden layers (T-665),
         // where a failed read is a zeroed z.
         let live_ops = live_source(include_str!(
-            "../../../../mission-core/src/doc/operations/attrs.rs"
+            "../../../../map-engine/src/data/store/operations/attrs.rs"
         ));
         let read = only_body(&live_ops, "fn slot_z(");
         assert!(
@@ -3095,7 +3095,7 @@ mod tests {
     fn a_placement_commit_carries_each_slots_current_z_back_in() {
         let ops = live_code(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../mission-core/src/doc/operations/transform.rs"
+            "/../map-engine/src/data/store/operations/transform.rs"
         )));
         let body = only_body(&ops, "fn commit_positions(");
         // The old zeroing write, verbatim: x and y set, z hard-coded absent.
@@ -3175,7 +3175,7 @@ mod tests {
             include_str!("../state/operations/compositions.rs"),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../mission-core/src/doc/operations/compositions.rs"
+                "/../map-engine/src/data/store/operations/compositions.rs"
             )),
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
@@ -3966,7 +3966,7 @@ mod t939_2_batch_reassign {
     fn the_batch_uses_the_keep_source_core_path_not_the_garbage_collecting_one() {
         let ops = live_code(concat!(
             include_str!("../state/operations/reassign.rs"),
-            include_str!("../../../../mission-core/src/doc/operations/reassign.rs")
+            include_str!("../../../../map-engine/src/data/store/operations/reassign.rs")
         ));
         assert!(
             ops.contains("move_slot_to_squad_keep_source("),
@@ -4037,7 +4037,7 @@ mod t939_2_batch_reassign {
         );
         let ops = live_code(REASSIGN_RS);
         let domain = live_code(include_str!(
-            "../../../../mission-core/src/doc/operations/reassign.rs"
+            "../../../../map-engine/src/data/store/operations/reassign.rs"
         ));
         let restore = [
             only_body(&ops, "pub fn restore_slot_squads("),
@@ -4065,7 +4065,7 @@ mod t939_2_batch_reassign {
     #[test]
     fn reassign_and_revert_read_raw_membership_for_hidden_single_slot_attributes() {
         let ops = live_code(include_str!(
-            "../../../../mission-core/src/doc/operations/reassign.rs"
+            "../../../../map-engine/src/data/store/operations/reassign.rs"
         ));
         for entry in ["pub fn reassign_slots(", "pub fn restore_moves("] {
             let body = only_body(&ops, entry);

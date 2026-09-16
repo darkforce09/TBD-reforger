@@ -34,7 +34,7 @@ pub fn orbat_update_slot_fields(
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::entity::orbat_update_slot_fields(
+        website_map_engine::data::store::operations::entity::orbat_update_slot_fields(
             core, slot_id, role, tag, callsign, rank,
         )
     });

@@ -160,7 +160,7 @@ fn multi_selection_no_longer_suppresses_the_attributes_modal() {
             include_str!("../state/operations/compositions.rs"),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../mission-core/src/doc/operations/compositions.rs"
+                "/../map-engine/src/data/store/operations/compositions.rs"
             )),
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
@@ -293,7 +293,7 @@ fn multi_edit_commits_fan_out_to_every_selected_id() {
         );
     }
     let ops = live_code(include_str!(
-        "../../../../mission-core/src/doc/operations/attrs.rs"
+        "../../../../map-engine/src/data/store/operations/attrs.rs"
     ));
     let host = live_code(include_str!("../state/operations/attrs.rs"));
     // T-732 — position multi is ONE LOCAL txn via update_entity_transforms (not N×
@@ -407,8 +407,10 @@ fn assert_after_local_edit_outside_ids_loop(fn_name: &str, src: &str, host: &str
          after_local_edit() inside `for id in ids`"
     );
     assert!(
-        host.find("website_mission_core::doc::operations::attrs::attrs_update_position_multi(")
-            .expect("adapter calls the domain operation")
+        host.find(
+            "website_map_engine::data::store::operations::attrs::attrs_update_position_multi("
+        )
+        .expect("adapter calls the domain operation")
             < host
                 .find("after_local_edit()")
                 .expect("adapter refreshes after the call"),

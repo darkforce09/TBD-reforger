@@ -16,7 +16,7 @@ pub fn orbat_manager_snapshot() -> OrbatManagerSnapshot {
         let Some(core) = d.as_ref() else {
             return OrbatManagerSnapshot::default();
         };
-        website_mission_core::doc::operations::entity::orbat_manager_snapshot(core)
+        website_map_engine::data::store::operations::entity::orbat_manager_snapshot(core)
     })
 }
 
@@ -43,7 +43,7 @@ pub fn orbat_add_squad(side: String) -> Option<String> {
         let Some(core) = d.as_ref() else {
             return None;
         };
-        website_mission_core::doc::operations::entity::orbat_add_squad(core, side)
+        website_map_engine::data::store::operations::entity::orbat_add_squad(core, side)
     });
     if id.is_some() {
         mission_history::after_local_edit();
@@ -62,7 +62,7 @@ pub fn orbat_add_slot(squad_id: String, role: String) -> Option<String> {
         let Some(core) = d.as_ref() else {
             return None;
         };
-        website_mission_core::doc::operations::entity::orbat_add_slot(
+        website_map_engine::data::store::operations::entity::orbat_add_slot(
             core,
             squad_id,
             role,
@@ -108,7 +108,7 @@ pub fn orbat_remove_slot(slot_id: String) -> bool {
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::entity::orbat_remove_slot(core, slot_id)
+        website_map_engine::data::store::operations::entity::orbat_remove_slot(core, slot_id)
     });
     if did {
         mission_history::after_local_edit();
@@ -167,7 +167,7 @@ pub fn orbat_apply_faction(side: String, doc: FactionDoc) -> Result<(), String> 
         let Some(core) = d.as_ref() else {
             return Err("No mission document is loaded.".to_string());
         };
-        website_mission_core::doc::operations::entity::orbat_apply_faction(
+        website_map_engine::data::store::operations::entity::orbat_apply_faction(
             core,
             side,
             doc,
@@ -195,7 +195,7 @@ pub fn orbat_add_vehicle(squad_id: String, resource_name: String) -> Option<Stri
         let Some(core) = d.as_ref() else {
             return None;
         };
-        website_mission_core::doc::operations::entity::orbat_add_vehicle(
+        website_map_engine::data::store::operations::entity::orbat_add_vehicle(
             core,
             squad_id,
             &resource_name,

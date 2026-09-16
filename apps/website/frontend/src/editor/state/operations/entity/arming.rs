@@ -106,7 +106,7 @@ pub fn cancel_pending() {
 
 /// Mint an unused slot id. The counter keeps this O(1) amortized, but uniqueness is **proven** against the live doc rather than assumed: undo frees ids, and an IDB restore can bring back a document that already used `n0`.
 pub(in crate::editor::state::operations) fn mint_id(ctx: &OpsCtx, core: &MissionDocCore) -> String {
-    website_mission_core::doc::operations::entity::mint_id(core, &ctx.next_id)
+    website_map_engine::data::store::operations::entity::mint_id(core, &ctx.next_id)
 }
 
 /// Ensure layer using the supplied domain data.

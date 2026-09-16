@@ -1,12 +1,12 @@
-# Website applications, headless mission domain, graphics engine, and repository tooling.
-# The frontend links the mission and graphics crates into the same WebAssembly module.
+# Website applications, the map/mission engine, the pure renderer, and repository tooling.
+# T-0xx Phase 2A folded `website-mission-core` into `website-map-engine`; the headless mission
+# domain is now that crate's `data/` module, gated on `scenario` (the api tier) and `store`.
 [workspace]
 resolver = "3"
 members = [
     "apps/ticketboard",
     "apps/website/api",
     "apps/website/frontend",
-    "apps/website/mission-core",
     "apps/website/map-engine",
     "apps/website/graphics-engine",
     # T-853: the four-outcome gate library — the Rust successor to scripts/mod/lib/gate-grep.sh.

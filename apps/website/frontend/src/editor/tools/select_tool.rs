@@ -24,9 +24,9 @@ use wasm_bindgen::prelude::*;
 use website_map_engine::camera::ortho::state::OrthoCamera;
 use website_map_engine::core::context::state::RenderEngine;
 use website_map_engine::core::pipeline::draw_order::role_id;
+use website_map_engine::data::store::SlotSoa;
 use website_map_engine::spatial::indexing::point_index::PointIndex;
 use website_map_engine::symbology::links::squad_links::pack_squad_link_drag_preview;
-use website_mission_core::doc::SlotSoa;
 
 use crate::editor::state::doc_host::DocHandle;
 
@@ -45,7 +45,7 @@ pub fn may_promote_pending(buttons: u16) -> bool {
     buttons != 0
 }
 /// `PointIndex` grid cell (world m) — SoT on [`map_engine_core::doc::MissionDocCore::GRID_CELL_M`].
-const GRID_CELL_M: f64 = website_mission_core::doc::MissionDocCore::GRID_CELL_M;
+const GRID_CELL_M: f64 = website_map_engine::data::store::MissionDocCore::GRID_CELL_M;
 /// Everon bounds (matches `mission_editor.rs`/`mission_doc.rs`), for the frozen-camera target clamp.
 const TERRAIN_W: f64 = 12_800.0;
 const TERRAIN_H: f64 = 12_800.0;

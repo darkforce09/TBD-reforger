@@ -34,7 +34,7 @@ pub use mission_compile::{
 };
 // Ported to the shared crate (T-145 Phase 2); re-exported so `crate::services::…` callers are unchanged.
 pub use mortar::{FireSolution, SolveError, solve_fire_mission};
-pub use website_mission_core::mission::orbat::{
+pub use website_map_engine::data::scenario::orbat::{
     OrbatSlotTemplate, OrbatSquadTemplate, parse_orbat_template,
 };
 // T-578 — garbage collection for the durable rate limiter's bucket table.

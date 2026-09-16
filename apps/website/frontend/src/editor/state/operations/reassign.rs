@@ -11,7 +11,7 @@ use crate::editor::panels::attributes_modal::plan_reassign;
 use crate::editor::state::history as mission_history;
 
 /// Expose website mission core :: doc :: operations :: reassign ::  reassign target at this domain boundary.
-pub use website_mission_core::doc::operations::reassign::ReassignTarget;
+pub use website_map_engine::data::store::operations::reassign::ReassignTarget;
 
 /// Move every id in `ids` into the squad `target` resolves to, as ONE undo group.
 pub fn reassign_slots(ids: &[String], target: &ReassignTarget) -> Result<usize, String> {
@@ -31,7 +31,7 @@ pub fn reassign_slots(ids: &[String], target: &ReassignTarget) -> Result<usize, 
             let Some(core) = d.as_ref() else {
                 return 0usize;
             };
-            website_mission_core::doc::operations::reassign::reassign_slots(core, ids, dest)
+            website_map_engine::data::store::operations::reassign::reassign_slots(core, ids, dest)
         })
     });
     if moved > 0 {
@@ -47,7 +47,7 @@ pub fn restore_slot_squads(snapshot: &[super::attrs::SlotAttrs]) -> usize {
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        website_mission_core::doc::operations::reassign::restore_moves(core, snapshot)
+        website_map_engine::data::store::operations::reassign::restore_moves(core, snapshot)
     });
     let moves = moves.unwrap_or_default();
     if moves.is_empty() {
@@ -63,7 +63,7 @@ pub fn restore_slot_squads(snapshot: &[super::attrs::SlotAttrs]) -> usize {
             let Some(core) = d.as_ref() else {
                 return 0;
             };
-            website_mission_core::doc::operations::reassign::restore_slot_squads(core, moves)
+            website_map_engine::data::store::operations::reassign::restore_slot_squads(core, moves)
         })
     });
     if moved > 0 {

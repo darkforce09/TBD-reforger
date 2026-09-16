@@ -4513,7 +4513,7 @@ mod tests {
                 include_str!("../state/operations/compositions.rs"),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/../mission-core/src/doc/operations/compositions.rs"
+                    "/../map-engine/src/data/store/operations/compositions.rs"
                 )),
                 crate::v2::core::test_support::editor_operations::ENTITY,
                 crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY,
@@ -4556,7 +4556,7 @@ mod tests {
             include_str!("../state/operations/compositions.rs"),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../mission-core/src/doc/operations/compositions.rs"
+                "/../map-engine/src/data/store/operations/compositions.rs"
             )),
             crate::v2::core::test_support::editor_operations::ENTITY,
         ]
@@ -4604,7 +4604,7 @@ mod tests {
 
         // ── The PLACE half (`map-engine-core`) — the same two keys, read back ────────────────────
         let store = live_source(include_str!(
-            "../../../../mission-core/src/doc/store/compositions.rs"
+            "../../../../map-engine/src/data/store/rows/compositions.rs"
         ));
         let place = only_body(&store, &format!("fn {}(", "place_composition"));
         assert!(
@@ -4888,7 +4888,7 @@ mod tests {
             include_str!("../state/operations/compositions.rs"),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../mission-core/src/doc/operations/compositions.rs"
+                "/../map-engine/src/data/store/operations/compositions.rs"
             )),
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
@@ -5997,7 +5997,7 @@ mod tests {
             include_str!("../state/operations/compositions.rs"),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../mission-core/src/doc/operations/compositions.rs"
+                "/../map-engine/src/data/store/operations/compositions.rs"
             )),
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,

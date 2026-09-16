@@ -35,81 +35,81 @@ use crate::editor::state::history as mission_history;
 use crate::v2::core::api::dto::FactionDoc;
 use leptos::prelude::{GetUntracked, Set};
 use std::cell::{Cell, RefCell};
-use website_mission_core::doc::place_character_under_side;
-use website_mission_core::doc::MissionDocCore;
+use website_map_engine::data::store::place_character_under_side;
+use website_map_engine::data::store::MissionDocCore;
 
 /// Expose website mission core :: doc :: operations :: entity :: comment details at this domain boundary.
-pub use website_mission_core::doc::operations::entity::comment_details;
+pub use website_map_engine::data::store::operations::entity::comment_details;
 
 /// Expose website mission core :: doc :: operations :: entity :: comment rows at this domain boundary.
-pub(super) use website_mission_core::doc::operations::entity::comment_rows;
+pub(super) use website_map_engine::data::store::operations::entity::comment_rows;
 
 /// Expose website mission core :: doc :: operations :: entity :: connection id in doc at this domain boundary.
-pub(super) use website_mission_core::doc::operations::entity::connection_id_in_doc;
+pub(super) use website_map_engine::data::store::operations::entity::connection_id_in_doc;
 
-use website_mission_core::doc::operations::entity::faction_doc_from_side_core;
+use website_map_engine::data::store::operations::entity::faction_doc_from_side_core;
 
-use website_mission_core::doc::operations::entity::marker_rows_of;
+use website_map_engine::data::store::operations::entity::marker_rows_of;
 
-use website_mission_core::doc::operations::entity::mint_layer_id;
-use website_mission_core::doc::operations::entity::mint_layer_name;
-use website_mission_core::doc::operations::entity::mint_marker_id;
+use website_map_engine::data::store::operations::entity::mint_layer_id;
+use website_map_engine::data::store::operations::entity::mint_layer_name;
+use website_map_engine::data::store::operations::entity::mint_marker_id;
 
-use website_mission_core::doc::operations::entity::place_object_in_core;
-use website_mission_core::doc::operations::entity::place_vehicle_in_core;
+use website_map_engine::data::store::operations::entity::place_object_in_core;
+use website_map_engine::data::store::operations::entity::place_vehicle_in_core;
 
 /// Expose website mission core :: doc :: operations :: entity :: selected slot ids at this domain boundary.
-pub(super) use website_mission_core::doc::operations::entity::selected_slot_ids;
+pub(super) use website_map_engine::data::store::operations::entity::selected_slot_ids;
 
-use website_mission_core::doc::operations::entity::side_faction_id;
+use website_map_engine::data::store::operations::entity::side_faction_id;
 
 /// Expose website mission core :: doc :: operations :: entity :: slot hidden rows at this domain boundary.
-pub use website_mission_core::doc::operations::entity::slot_hidden_rows;
+pub use website_map_engine::data::store::operations::entity::slot_hidden_rows;
 
 /// Expose website mission core :: doc :: operations :: entity :: terrain bounds of at this domain boundary.
-pub(super) use website_mission_core::doc::operations::entity::terrain_bounds_of;
+pub(super) use website_map_engine::data::store::operations::entity::terrain_bounds_of;
 
 /// Expose website mission core :: doc :: operations :: entity :: terrain key of at this domain boundary.
-pub(super) use website_mission_core::doc::operations::entity::terrain_key_of;
+pub(super) use website_map_engine::data::store::operations::entity::terrain_key_of;
 
 /// Expose website mission core :: doc :: operations :: entity ::  comment detail at this domain boundary.
-pub use website_mission_core::doc::operations::entity::CommentDetail;
+pub use website_map_engine::data::store::operations::entity::CommentDetail;
 
 /// Expose website mission core :: doc :: operations :: entity ::  connection finding row at this domain boundary.
-pub use website_mission_core::doc::operations::entity::ConnectionFindingRow;
+pub use website_map_engine::data::store::operations::entity::ConnectionFindingRow;
 
 /// Expose website mission core :: doc :: operations :: entity ::  connection list row at this domain boundary.
-pub use website_mission_core::doc::operations::entity::ConnectionListRow;
+pub use website_map_engine::data::store::operations::entity::ConnectionListRow;
 
 /// Expose website mission core :: doc :: operations :: entity ::  marker row at this domain boundary.
-pub use website_mission_core::doc::operations::entity::MarkerRow;
+pub use website_map_engine::data::store::operations::entity::MarkerRow;
 
 /// Expose website mission core :: doc :: operations :: entity ::  orbat manager snapshot at this domain boundary.
-pub use website_mission_core::doc::operations::entity::OrbatManagerSnapshot;
+pub use website_map_engine::data::store::operations::entity::OrbatManagerSnapshot;
 
 /// Expose website mission core :: doc :: operations :: entity ::  orbat slot detail at this domain boundary.
-pub use website_mission_core::doc::operations::entity::OrbatSlotDetail;
+pub use website_map_engine::data::store::operations::entity::OrbatSlotDetail;
 
 /// Expose website mission core :: doc :: operations :: entity ::  owner option at this domain boundary.
-pub use website_mission_core::doc::operations::entity::OwnerOption;
+pub use website_map_engine::data::store::operations::entity::OwnerOption;
 
 /// Expose website mission core :: doc :: operations :: entity ::  placed slot choice at this domain boundary.
-pub use website_mission_core::doc::operations::entity::PlacedSlotChoice;
+pub use website_map_engine::data::store::operations::entity::PlacedSlotChoice;
 
 /// Expose website mission core :: doc :: operations :: entity ::  trigger row at this domain boundary.
-pub use website_mission_core::doc::operations::entity::TriggerRow;
+pub use website_map_engine::data::store::operations::entity::TriggerRow;
 
 /// Expose website mission core :: doc :: operations :: entity ::  vehicle cargo row at this domain boundary.
-pub use website_mission_core::doc::operations::entity::VehicleCargoRow;
+pub use website_map_engine::data::store::operations::entity::VehicleCargoRow;
 
 /// Expose website mission core :: doc :: operations :: entity ::  vehicle row at this domain boundary.
-pub use website_mission_core::doc::operations::entity::VehicleRow;
+pub use website_map_engine::data::store::operations::entity::VehicleRow;
 
 /// Expose website mission core :: doc :: operations :: entity ::  zone row at this domain boundary.
-pub use website_mission_core::doc::operations::entity::ZoneRow;
+pub use website_map_engine::data::store::operations::entity::ZoneRow;
 
 /// Expose website mission core :: doc :: operations :: entity :: trigger activations at this domain boundary.
-pub use website_mission_core::doc::operations::entity::TRIGGER_ACTIVATIONS;
+pub use website_map_engine::data::store::operations::entity::TRIGGER_ACTIVATIONS;
 mod selection;
 
 /// Expose selection :: { center on selection , copy selection , delete selection , document entities , paste at cursor , placed owner options , read comment , select all in view , select slot , } at this domain boundary.

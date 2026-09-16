@@ -1,5 +1,5 @@
 //! Backend adapter for the shared mod-document flatten (T-145 Phase 2b). The compile logic lives
-//! in `website_mission_core::mission::flatten`; this builds the core `MissionMeta` from the backend
+//! in `website_map_engine::data::scenario::flatten`; this builds the core `MissionMeta` from the backend
 //! `Mission` model **plus the environment authored into the saved version payload** (T-192), and
 //! re-exports the output types so `crate::services::…` callers are unchanged.
 //!
@@ -9,16 +9,16 @@
 //! @contract mission.schema.json#/
 
 use crate::models::Mission;
-use website_mission_core::mission::flatten::{self, MissionMeta};
-use website_mission_core::mission::wire_safety::{self, CargoPhysCatalog};
+use website_map_engine::data::scenario::flatten::{self, MissionMeta};
+use website_map_engine::data::scenario::wire_safety::{self, CargoPhysCatalog};
 
-pub use website_mission_core::mission::flatten::{
+pub use website_map_engine::data::scenario::flatten::{
     CompileError, ModMissionDocument, ModSlot, mission_terrain_key,
 };
 /// T-690 — the compile's structured diagnostics ride out of core on
 /// [`ModMissionDocument::diagnostics`]. Re-exported here for the same reason every other output type
 /// is: `crate::services::…` callers name one path, not two.
-pub use website_mission_core::mission::validate::{
+pub use website_map_engine::data::scenario::validate::{
     Finding as CompileFinding, Severity as FindingSeverity,
 };
 
@@ -34,7 +34,7 @@ pub const COMPILE_DIAGNOSTICS_COUNT_HEADER: &str = "x-compile-diagnostics-count"
 /// Header naming WHICH rules fired, comma-separated and de-duplicated. Omitted when nothing fired.
 ///
 /// Rule ids only — never messages. Ids are `&'static str` ASCII constants
-/// (`website_mission_core::mission::flatten::COMPILE_DIAGNOSTIC_RULE_IDS`), so this value is always a
+/// (`website_map_engine::data::scenario::flatten::COMPILE_DIAGNOSTIC_RULE_IDS`), so this value is always a
 /// legal header value; a message carries author text of arbitrary length and encoding and would make
 /// the header a second, worse copy of the log line below it.
 pub const COMPILE_DIAGNOSTICS_RULES_HEADER: &str = "x-compile-diagnostics-rules";
@@ -58,7 +58,7 @@ pub fn compile_diagnostics_rules_header(findings: &[CompileFinding]) -> Option<S
 }
 
 /// Build the compiled mod mission document from a mission row + its version payload. Thin wrapper
-/// over the shared [`website_mission_core::mission::flatten::flatten_to_mod_document`].
+/// over the shared [`website_map_engine::data::scenario::flatten::flatten_to_mod_document`].
 ///
 /// **T-192 — time/weather come from the payload first, the row second.** The Mission Settings
 /// dialog and the top-strip scrubber author `meta.environment.{time,weather}` into the editor
@@ -140,7 +140,7 @@ mod tests {
     use chrono::Utc;
     use serde_json::json;
     use uuid::Uuid;
-    use website_mission_core::mission::wire_safety::CargoPhys;
+    use website_map_engine::data::scenario::wire_safety::CargoPhys;
 
     // The exact fixture from missions_compiled_integration_test.go: two factions,
     // callsigned squads, a duplicate role (TL x2), one slot carrying real elevation.
@@ -493,7 +493,8 @@ mod tests {
         for (name, payload) in cases {
             let parsed: serde_json::Value =
                 serde_json::from_str(&payload).unwrap_or_else(|e| panic!("{name}: {e}"));
-            let scan = website_mission_core::mission::wire_safety::scan_editor_payload(&parsed);
+            let scan =
+                website_map_engine::data::scenario::wire_safety::scan_editor_payload(&parsed);
 
             // Only the wireSafeString findings — the schema rejects other things (a blank uid, a
             // bad kit alias) for reasons this scan is not responsible for.
@@ -546,7 +547,7 @@ mod tests {
     /// `POST /missions/:id/versions` stores, so the payload under test is not a hand-written
     /// restatement of what the editor emits.
     fn saved_payload_with_env(environment: serde_json::Value) -> String {
-        use website_mission_core::mission::compile::compile_payload;
+        use website_map_engine::data::scenario::compile::compile_payload;
 
         let fixture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
         let editor = &fixture["editor"];
@@ -991,7 +992,7 @@ mod tests {
         let f = |rule_id: &'static str| CompileFinding {
             rule_id,
             severity: FindingSeverity::Info,
-            primitive: website_mission_core::mission::validate::Primitive::PerObjectInvariant,
+            primitive: website_map_engine::data::scenario::validate::Primitive::PerObjectInvariant,
             message: String::new(),
             subject: "/editor/slots/0".into(),
             subject_id: None,

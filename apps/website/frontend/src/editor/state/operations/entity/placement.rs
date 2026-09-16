@@ -119,7 +119,7 @@ pub(in crate::editor::state::operations) fn place_at_impl(
                 Pending::Composition(comp_id) => {
                     let _ = id;
                     let Some((slot_ids, title)) =
-                        website_mission_core::doc::operations::entity::place_saved_composition(
+                        website_map_engine::data::store::operations::entity::place_saved_composition(
                             core,
                             &comp_id,
                             &side,

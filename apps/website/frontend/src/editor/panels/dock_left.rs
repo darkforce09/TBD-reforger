@@ -20,8 +20,8 @@
 use crate::editor::state::operations as editor_ops;
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
-pub use website_mission_core::doc::operations::document_index::DocEntity;
-pub use website_mission_core::doc::operations::document_index::DocKind;
+pub use website_map_engine::data::store::operations::document_index::DocEntity;
+pub use website_map_engine::data::store::operations::document_index::DocKind;
 
 use crate::editor::layout::{DOCK_L, STUB_PX};
 
@@ -2998,7 +2998,7 @@ mod t697_document_search {
     fn the_index_covers_every_placeable_collection() {
         let ops = ops_code();
         let domain = live_code(include_str!(
-            "../../../../mission-core/src/doc/operations/document_index.rs"
+            "../../../../map-engine/src/data/store/operations/document_index.rs"
         ));
         let body = only_body(&domain, "pub fn document_entities");
         for kind in [

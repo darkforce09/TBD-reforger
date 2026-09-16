@@ -8,7 +8,7 @@ use crate::editor::state::history as mission_history;
 #[allow(unused_imports)]
 use super::{attrs::*, cargo::*, compositions::*, context::*, entity::*};
 
-/// Returns whether anything rotated (nothing selected, or every entity sitting exactly under the cursor, is a no-op — [`website_mission_core::doc::operations::rotation::bearing_to_face`] returns `None` for a degenerate aim and that entity is left untouched).
+/// Returns whether anything rotated (nothing selected, or every entity sitting exactly under the cursor, is a no-op — [`website_map_engine::data::store::operations::rotation::bearing_to_face`] returns `None` for a degenerate aim and that entity is left untouched).
 pub fn rotate_selection_to_face(cx: f64, cy: f64, rung: usize) -> bool {
     if !cx.is_finite() || !cy.is_finite() {
         return false;
@@ -26,7 +26,7 @@ pub fn rotate_selection_to_face(cx: f64, cy: f64, rung: usize) -> bool {
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::transform::rotate_selection_to_face(
+        website_map_engine::data::store::operations::transform::rotate_selection_to_face(
             core, cx, cy, rung, sel,
         )
     });
@@ -71,7 +71,7 @@ pub fn apply_pattern_to_selection(kind: crate::editor::tools::place_helpers::Pat
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::transform::apply_pattern_to_selection(
+        website_map_engine::data::store::operations::transform::apply_pattern_to_selection(
             core,
             kind,
             sel,
@@ -96,7 +96,7 @@ pub fn align_selection(edge: crate::editor::tools::place_helpers::AlignEdge) -> 
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::transform::align_selection(
+        website_map_engine::data::store::operations::transform::align_selection(
             core,
             edge,
             sel,
@@ -121,7 +121,7 @@ pub fn space_selection(axis: crate::editor::tools::place_helpers::SpaceAxis) -> 
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::transform::space_selection(
+        website_map_engine::data::store::operations::transform::space_selection(
             core,
             axis,
             sel,
@@ -146,7 +146,7 @@ pub fn orient_selection(cmd: crate::editor::tools::place_helpers::Orient) -> boo
         let Some(core) = d.as_ref() else {
             return false;
         };
-        website_mission_core::doc::operations::transform::orient_selection(
+        website_map_engine::data::store::operations::transform::orient_selection(
             core,
             cmd,
             sel,

@@ -15,9 +15,9 @@ use serde_json::{Value, json};
 use sqlx::{PgPool, Postgres, QueryBuilder};
 use uuid::Uuid;
 
-use website_mission_core::mission::flatten::scan_editor_payload_types;
+use website_map_engine::data::scenario::flatten::scan_editor_payload_types;
 
-use website_mission_core::mission::wire_safety::{CargoPhys, CargoPhysCatalog};
+use website_map_engine::data::scenario::wire_safety::{CargoPhys, CargoPhysCatalog};
 
 use crate::contract::validate::validate_mission_editor_payload_with_catalog;
 use crate::contract::validate_mission_document;
@@ -1527,7 +1527,7 @@ pub struct IngestMissionListEntry {
     id: String,
     name: String,
     /// The compiled document's `meta.terrain`, from the one shared derivation — see
-    /// [`website_mission_core::mission::flatten::mission_terrain_key`].
+    /// [`website_map_engine::data::scenario::flatten::mission_terrain_key`].
     terrain: String,
     #[serde(rename = "slotCount")]
     slot_count: i64,

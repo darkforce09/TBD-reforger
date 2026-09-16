@@ -8181,7 +8181,7 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "uuid",
- "website-mission-core",
+ "website-map-engine",
 ]
 
 [[package]]
@@ -8202,7 +8202,6 @@ dependencies = [
  "wasm-bindgen-futures",
  "web-sys",
  "website-map-engine",
- "website-mission-core",
 ]
 
 [[package]]
@@ -8238,16 +8237,6 @@ dependencies = [
  "web-sys",
  "website-graphics-engine",
  "wgpu 29.0.4",
- "yrs",
-]
-
-[[package]]
-name = "website-mission-core"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "thiserror 2.0.18",
  "yrs",
 ]
 

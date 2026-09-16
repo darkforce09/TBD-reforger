@@ -875,8 +875,8 @@ pub(crate) fn map_render_keep_indices(
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub(crate) fn map_render_slot_soa(
-    core: &website_mission_core::doc::MissionDocCore,
-) -> website_mission_core::doc::SlotSoa {
+    core: &website_map_engine::data::store::MissionDocCore,
+) -> website_map_engine::data::store::SlotSoa {
     let soa = core.materialize();
     let crewed = crewed_slot_ids(&core.small_maps_json());
     filter_slot_soa_excluding(&soa, &crewed)
@@ -887,10 +887,10 @@ pub(crate) fn map_render_slot_soa(
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub(crate) fn filter_slot_soa_excluding(
-    soa: &website_mission_core::doc::SlotSoa,
+    soa: &website_map_engine::data::store::SlotSoa,
     exclude: &std::collections::HashSet<String>,
-) -> website_mission_core::doc::SlotSoa {
-    use website_mission_core::doc::SlotSoa;
+) -> website_map_engine::data::store::SlotSoa {
+    use website_map_engine::data::store::SlotSoa;
     let keep = map_render_keep_indices(&soa.ids, exclude);
     if keep.len() == soa.ids.len() {
         return soa.clone();

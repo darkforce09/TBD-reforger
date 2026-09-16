@@ -46,16 +46,16 @@ use leptos::prelude::{GetUntracked, RwSignal, Set};
 use std::cell::{Cell, RefCell};
 
 /// Expose website mission core :: doc :: operations :: projections :: faction rows at this domain boundary.
-pub(super) use website_mission_core::doc::operations::projections::faction_rows;
+pub(super) use website_map_engine::data::store::operations::projections::faction_rows;
 
 /// Expose website mission core :: doc :: operations :: projections :: layer rows at this domain boundary.
-pub(super) use website_mission_core::doc::operations::projections::layer_rows;
+pub(super) use website_map_engine::data::store::operations::projections::layer_rows;
 
 /// Expose website mission core :: doc :: operations :: projections :: slot rows at this domain boundary.
-pub(super) use website_mission_core::doc::operations::projections::slot_rows;
+pub(super) use website_map_engine::data::store::operations::projections::slot_rows;
 
 /// Expose website mission core :: doc :: operations :: projections :: squad rows at this domain boundary.
-pub(super) use website_mission_core::doc::operations::projections::squad_rows;
+pub(super) use website_map_engine::data::store::operations::projections::squad_rows;
 
 mod registration;
 

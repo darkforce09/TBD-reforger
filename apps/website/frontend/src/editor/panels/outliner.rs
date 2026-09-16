@@ -31,11 +31,11 @@
 #![allow(dead_code)]
 
 use std::collections::HashSet;
-pub use website_mission_core::doc::operations::rows::CommentRow;
-pub use website_mission_core::doc::operations::rows::FactionRow;
-pub use website_mission_core::doc::operations::rows::LayerRow;
-pub use website_mission_core::doc::operations::rows::SlotRow;
-pub use website_mission_core::doc::operations::rows::SquadRow;
+pub use website_map_engine::data::store::operations::rows::CommentRow;
+pub use website_map_engine::data::store::operations::rows::FactionRow;
+pub use website_map_engine::data::store::operations::rows::LayerRow;
+pub use website_map_engine::data::store::operations::rows::SlotRow;
+pub use website_map_engine::data::store::operations::rows::SquadRow;
 
 /// The virtual root's id. Not a doc id — see the module docs.
 pub const UNFILED_ID: &str = "__unfiled";

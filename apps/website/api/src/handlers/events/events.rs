@@ -28,8 +28,8 @@ use crate::services::{
     OrbatSquadTemplate, flatten_to_mod_document_with_catalog, parse_orbat_template, write_audit,
 };
 use crate::state::AppState;
-use website_mission_core::mission::orbat::validate_faction_join_key;
-use website_mission_core::mission::wire_safety::{CargoPhys, CargoPhysCatalog};
+use website_map_engine::data::scenario::orbat::validate_faction_join_key;
+use website_map_engine::data::scenario::wire_safety::{CargoPhys, CargoPhysCatalog};
 
 /// `events.banner_image_url`, validated at the write boundary. **T-413**, adopting T-405 /
 /// T-391's `is_http_url` on the remaining writer that still lacked it.
@@ -2808,7 +2808,7 @@ mod t412_members_pagination {
 
 #[cfg(test)]
 mod t356_orbat_faction_join_key {
-    use website_mission_core::mission::orbat::validate_faction_join_key;
+    use website_map_engine::data::scenario::orbat::validate_faction_join_key;
 
     /// Class-R: `add_event_mission` must call the join-key guard, and `materialize_slots`
     /// must bind `&sq.faction` verbatim (never `.trim()`).

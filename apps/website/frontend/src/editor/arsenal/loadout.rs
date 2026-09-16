@@ -6,9 +6,9 @@
 //! public item, so the `crate::editor::arsenal::X` paths external callers use are stable.
 
 use std::collections::{HashMap, HashSet};
-pub use website_mission_core::doc::operations::cargo::commit_writes;
-pub use website_mission_core::doc::operations::cargo::BufferedLoadout;
-pub use website_mission_core::doc::operations::cargo::LoadoutWrite;
+pub use website_map_engine::data::store::operations::cargo::commit_writes;
+pub use website_map_engine::data::store::operations::cargo::BufferedLoadout;
+pub use website_map_engine::data::store::operations::cargo::LoadoutWrite;
 
 use crate::editor::arsenal::arsenal_rules::{
     self as rules, index_by_name, validate_loadout, CompatFeed,
@@ -1152,7 +1152,7 @@ mod tests {
         let (rows, present) = rules::cargo_from_loadout(Some(&lo));
         assert!(present && rows.is_empty());
         // Seeded rows survive a pick-edit persist verbatim.
-        let seeded = website_mission_core::doc::operations::cargo_rules::seed_cargo(
+        let seeded = website_map_engine::data::store::operations::cargo_rules::seed_cargo(
             Some(&picks_to_loadout(&p, &names(), None).unwrap()),
             &[rules::CargoRow {
                 container: "pants".into(),
@@ -2523,12 +2523,14 @@ mod tests {
             // a cleared field, and really does not fire on this document.
             let defaults = vec![row("vest", "res://mag_stanag", 3)];
             assert!(
-                website_mission_core::doc::operations::cargo_rules::seed_cargo(None, &defaults)
-                    .is_some(),
+                website_map_engine::data::store::operations::cargo_rules::seed_cargo(
+                    None, &defaults
+                )
+                .is_some(),
                 "a cleared loadout field re-seeds — this is what the strip must not leave behind"
             );
             assert!(
-                website_mission_core::doc::operations::cargo_rules::seed_cargo(
+                website_map_engine::data::store::operations::cargo_rules::seed_cargo(
                     Some(&stripped),
                     &defaults
                 )

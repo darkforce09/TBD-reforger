@@ -120,62 +120,62 @@ pub(crate) const CONTEXT: &str = concat!(
 pub(crate) const DOMAIN_ENTITY: &str = concat!(
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../mission-core/src/doc/operations/entity/mod.rs"
+        "/../map-engine/src/data/store/operations/entity/mod.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../mission-core/src/doc/operations/entity/selection.rs"
+        "/../map-engine/src/data/store/operations/entity/selection.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../mission-core/src/doc/operations/entity/identity.rs"
+        "/../map-engine/src/data/store/operations/entity/identity.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../mission-core/src/doc/operations/entity/comments.rs"
+        "/../map-engine/src/data/store/operations/entity/comments.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../mission-core/src/doc/operations/entity/connections.rs"
+        "/../map-engine/src/data/store/operations/entity/connections.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../mission-core/src/doc/operations/entity/roster.rs"
+        "/../map-engine/src/data/store/operations/entity/roster.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../mission-core/src/doc/operations/entity/vehicles.rs"
+        "/../map-engine/src/data/store/operations/entity/vehicles.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../mission-core/src/doc/operations/entity/markers.rs"
+        "/../map-engine/src/data/store/operations/entity/markers.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../mission-core/src/doc/operations/entity/zones.rs"
+        "/../map-engine/src/data/store/operations/entity/zones.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../mission-core/src/doc/operations/entity/clipboard.rs"
+        "/../map-engine/src/data/store/operations/entity/clipboard.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../mission-core/src/doc/operations/entity/placement.rs"
+        "/../map-engine/src/data/store/operations/entity/placement.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../mission-core/src/doc/operations/entity/factions.rs"
+        "/../map-engine/src/data/store/operations/entity/factions.rs"
     )),
     "\n",
 );
