@@ -3024,9 +3024,17 @@ mod t697_document_search {
             );
         }
         // The selection projection is DERIVED from the index, so the two cannot disagree about an
-        // entity's kind or faction.
+        // entity's kind or faction. The adapter routes to the one projection; the projection reads
+        // the index.
         assert!(
-            only_body(&ops, "pub fn selection_entities").contains("document_entities()"),
+            only_body(&ops, "pub fn selection_entities").contains("selection_entities(core, &sel)"),
+            "T-697: the selection filter must go through the one projection"
+        );
+        let projection = live_code(include_str!(
+            "../../../../map-engine/src/data/store/operations/entity/selection_index.rs"
+        ));
+        assert!(
+            only_body(&projection, "pub fn selection_entities").contains("document_entities(core)"),
             "T-697: the selection filter must read the same rows the search does"
         );
     }

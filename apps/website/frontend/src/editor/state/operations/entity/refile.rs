@@ -46,20 +46,34 @@ pub fn orbat_update_slot_fields(
 
 /// Arm a slot for refile into another squad (OrbatManager pointer-drag).
 pub fn begin_refile(slot_id: String) {
-    PENDING_REFILE.with(|p| *p.borrow_mut() = Some(slot_id));
+    website_map_engine::data::store::operations::entity::begin_refile(slot_id);
 }
 
 /// Clear an armed refile without mutating the doc (drop outside a squad row).
 pub fn cancel_refile() {
-    PENDING_REFILE.with(|p| *p.borrow_mut() = None);
+    website_map_engine::data::store::operations::entity::cancel_refile();
 }
 
 /// Complete an armed refile onto `dest_squad_id` via [`refile_slot`].
 pub fn complete_refile_onto_squad(dest_squad_id: String) -> bool {
-    let Some(slot_id) = PENDING_REFILE.with(|p| p.borrow_mut().take()) else {
-        return false;
-    };
-    refile_slot(slot_id, dest_squad_id)
+    let did = OPS_CTX
+        .with(|c| {
+            let guard = c.borrow();
+            let ctx = guard.as_ref()?;
+            let d = ctx.doc.borrow();
+            let core = d.as_ref()?;
+            Some(
+                website_map_engine::data::store::operations::entity::complete_refile_onto_squad(
+                    core,
+                    &dest_squad_id,
+                ),
+            )
+        })
+        .unwrap_or(false);
+    if did {
+        mission_history::after_local_edit();
+    }
+    did
 }
 
 /// Move `slot_id` into `dest_squad_id` through core [`MissionDocCore::move_slot_to_squad`] only (F-L2 — no FE `slotIds` splice), then the shared dirty tail (orbat_nodes + squad links).
@@ -74,7 +88,11 @@ pub fn refile_slot(slot_id: String, dest_squad_id: String) -> bool {
             let Some(core) = d.as_ref() else {
                 return false;
             };
-            core.move_slot_to_squad(&slot_id, &dest_squad_id);
+            website_map_engine::data::store::operations::entity::refile_slot(
+                core,
+                &slot_id,
+                &dest_squad_id,
+            );
         }
         true
     });

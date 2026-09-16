@@ -4,6 +4,7 @@
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 use super::*;
+use website_map_engine::data::store::operations::entity::ZoneDrawStep;
 
 /// Is a zone draw in flight?.
 #[must_use]
@@ -31,10 +32,9 @@ pub fn zone_draft() -> Option<ZoneDraft> {
 
 /// Begin zone draw using the supplied domain data.
 pub fn begin_zone_draw(kind: &str, shape: ZoneShape, collection: DrawTarget) -> bool {
-    let valid = match collection {
-        DrawTarget::Zone => zone_types().iter().any(|t| t == kind),
-        DrawTarget::Trigger => TRIGGER_ACTIVATIONS.contains(&kind),
-    };
+    let valid = website_map_engine::data::store::operations::entity::zone_draft_kind_is_valid(
+        kind, collection, zone_types,
+    );
     if !valid {
         return false;
     }
@@ -43,14 +43,14 @@ pub fn begin_zone_draw(kind: &str, shape: ZoneShape, collection: DrawTarget) -> 
         let Some(ctx) = guard.as_ref() else {
             return false;
         };
-        *ctx.pending.borrow_mut() = Some(Pending::Zone(ZoneDraft {
-            kind: kind.to_string(),
-            shape,
-            centre: None,
-            verts: Vec::new(),
-            target: None,
-            collection,
-        }));
+        *ctx.pending.borrow_mut() = Some(Pending::Zone(
+            website_map_engine::data::store::operations::entity::begin_zone_draft(
+                kind.to_string(),
+                shape,
+                collection,
+                None,
+            ),
+        ));
         true
     })
 }
@@ -76,14 +76,14 @@ pub fn begin_zone_reshape(row_id: &str, shape: ZoneShape, collection: DrawTarget
         let Some(ctx) = guard.as_ref() else {
             return false;
         };
-        *ctx.pending.borrow_mut() = Some(Pending::Zone(ZoneDraft {
-            kind,
-            shape,
-            centre: None,
-            verts: Vec::new(),
-            target: Some(row_id.to_string()),
-            collection,
-        }));
+        *ctx.pending.borrow_mut() = Some(Pending::Zone(
+            website_map_engine::data::store::operations::entity::begin_zone_draft(
+                kind,
+                shape,
+                collection,
+                Some(row_id.to_string()),
+            ),
+        ));
         true
     })
 }
@@ -115,8 +115,7 @@ pub fn zone_draw_pop_vertex() -> usize {
         };
         let mut p = ctx.pending.borrow_mut();
         if let Some(Pending::Zone(d)) = p.as_mut() {
-            d.verts.pop();
-            return d.verts.len();
+            return website_map_engine::data::store::operations::entity::pop_zone_draft_vertex(d);
         }
         0
     })
@@ -124,61 +123,32 @@ pub fn zone_draw_pop_vertex() -> usize {
 
 /// One canvas release while a zone draw is armed.
 pub(in crate::editor::state::operations) fn advance_zone_draw(x: f64, z: f64) -> bool {
-    enum Commit {
-        /// Domain representation of circle.
-        Circle {
-            kind: String,
-            geom: (f64, f64, f64),
-            target: Option<String>,
-            collection: DrawTarget,
-        },
-
-        /// Domain representation of none.
-        None,
-    }
-    let commit = OPS_CTX.with(|c| {
+    let step = OPS_CTX.with(|c| {
         let guard = c.borrow();
-        let Some(ctx) = guard.as_ref() else {
-            return Commit::None;
-        };
+        let ctx = guard.as_ref()?;
         let mut p = ctx.pending.borrow_mut();
         let Some(Pending::Zone(d)) = p.as_mut() else {
-            return Commit::None;
+            return None;
         };
-        match d.shape {
-            ZoneShape::Polygon => {
-                d.verts.push((x, z));
-                Commit::None
-            }
-            ZoneShape::Circle => match d.centre {
-                None => {
-                    d.centre = Some((x, z));
-                    Commit::None
-                }
-                Some((cx, cz)) => match circle_from_clicks(cx, cz, x, z) {
-                    None => Commit::None,
-                    Some(geom) => {
-                        let (kind, target, collection) =
-                            (d.kind.clone(), d.target.clone(), d.collection);
-                        *p = None;
-                        Commit::Circle {
-                            kind,
-                            geom,
-                            target,
-                            collection,
-                        }
-                    }
-                },
-            },
+        let step = website_map_engine::data::store::operations::entity::advance_zone_draft(
+            d,
+            x,
+            z,
+            circle_from_clicks,
+        );
+        if matches!(step, ZoneDrawStep::CircleClosed { .. }) {
+            *p = None;
         }
+        Some(step)
     });
-    match commit {
-        Commit::Circle {
+    match step {
+        Some(ZoneDrawStep::CircleClosed {
             kind,
-            geom: (cx, cz, r),
+            centre: (cx, cz),
+            radius: r,
             target,
             collection,
-        } => match (collection, target) {
+        }) => match (collection, target) {
             (DrawTarget::Zone, Some(id)) => edit_zone(|core| core.set_zone_circle(&id, cx, cz, r)),
             (DrawTarget::Zone, None) => write_row(DrawTarget::Zone, |core, id| {
                 core.add_circle_zone(id, &kind, cx, cz, r);
@@ -191,7 +161,7 @@ pub(in crate::editor::state::operations) fn advance_zone_draw(x: f64, z: f64) ->
             }),
         },
 
-        Commit::None => {
+        Some(ZoneDrawStep::Drawing) | None => {
             bump_doc_tick();
             zone_draw_armed()
         }
@@ -207,23 +177,19 @@ pub fn close_zone_polygon() -> bool {
         let Some(Pending::Zone(d)) = p.as_ref() else {
             return None;
         };
-        if d.shape != ZoneShape::Polygon || !polygon_is_committable(&d.verts) {
-            return None;
-        }
-        let out = (
-            d.kind.clone(),
-            d.verts.clone(),
-            d.target.clone(),
-            d.collection,
-        );
+        let commit = website_map_engine::data::store::operations::entity::close_zone_polygon_draft(
+            d,
+            polygon_is_committable,
+        )?;
         *p = None;
-        Some(out)
+        Some(commit)
     });
-    let Some((kind, verts, target, collection)) = taken else {
+    let Some(commit) = taken else {
         return false;
     };
-    let flat = polygon_flat(&verts);
-    match (collection, target) {
+    let kind = commit.kind;
+    let flat = polygon_flat(&commit.ring);
+    match (commit.collection, commit.target) {
         (DrawTarget::Zone, Some(id)) => edit_zone(|core| core.set_zone_polygon(&id, &flat)),
         (DrawTarget::Zone, None) => write_row(DrawTarget::Zone, |core, id| {
             core.add_polygon_zone(id, &kind, &flat)

@@ -50,6 +50,9 @@ pub(in crate::editor::state::operations) struct OpsCtx {
     pub(in crate::editor::state::operations) next_id: Cell<u32>,
 }
 
+/// Expose website mission core :: doc :: operations :: entity ::  zone draft at this domain boundary.
+pub use website_map_engine::data::store::operations::entity::ZoneDraft;
+
 /// The discriminant lives here, on the armed value, rather than on a separate "current tab" signal: the tab can change (or the dock can unmount) between the leaf's `pointerdown` and the canvas's `pointerup`, and a place must commit the entity the operator actually picked up.
 #[derive(Clone, Debug, PartialEq)]
 pub(in crate::editor::state::operations) enum Pending {
@@ -68,30 +71,12 @@ pub(in crate::editor::state::operations) enum Pending {
     /// Domain representation of marker.
     Marker(String),
 
-    /// Domain representation of zone.
+    /// A zone or trigger being drawn. The draft lives HERE, on the armed value, rather than in a
+    /// signal of its own, for the same reason the palette arms do: `has_pending()` is what makes
+    /// `mission_editor`'s pointer handlers route a canvas release to the draw instead of the
+    /// select/marquee machine, and re-deriving "is a draw in flight" from a second source is how
+    /// the two get out of step.
     Zone(ZoneDraft),
-}
-
-/// Lives on `ctx.pending` (rather than in a signal of its own) for the same reason the palette arms do: `has_pending()` is what makes `mission_editor`'s pointer handlers route a canvas release to [`place_at`] instead of the select/marquee machine, and re-deriving "is a draw in flight" from a second source is how the two get out of step.
-#[derive(Clone, Debug, PartialEq)]
-pub struct ZoneDraft {
-    /// Schema `zone.type`, taken from `$defs/zone/properties/type/enum` by the dock — never typed.
-    pub kind: String,
-
-    /// Shape.
-    pub shape: ZoneShape,
-
-    /// Circle: the centre, set by the first click. `None` until then.
-    pub centre: Option<(f64, f64)>,
-
-    /// Polygon: the ring so far, one vertex per click.
-    pub verts: Vec<(f64, f64)>,
-
-    /// Target.
-    pub target: Option<String>,
-
-    /// Collection.
-    pub collection: DrawTarget,
 }
 
 /// Set place with crew using the supplied domain data.

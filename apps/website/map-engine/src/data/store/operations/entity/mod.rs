@@ -10,11 +10,14 @@ use crate::data::store::operations::attrs::slot_z;
 use crate::data::store::operations::compositions::{
     composition_entities_json, composition_entity_count, composition_title,
 };
+use crate::data::store::operations::document_index::{DocEntity, document_entities};
 use crate::data::store::operations::faction_library::{FactionDoc, FactionRole, FactionVehicle};
 use crate::data::store::operations::projections::slot_rows;
 use crate::data::store::operations::projections::{faction_rows, layer_rows, squad_rows};
 use crate::data::store::operations::rows::CommentRow;
 use crate::data::store::operations::zones::DrawTarget;
+use crate::data::store::operations::zones::ZoneShape;
+use crate::data::store::place_character_under_side;
 use crate::data::store::{APPLY_ANCHOR_X, APPLY_ANCHOR_Y};
 use crate::data::store::{
     FactionLibraryInput, FactionLibraryRole, FactionLibraryVehicle, apply_faction_library,
@@ -73,3 +76,36 @@ pub use placement::{orbat_add_slot, orbat_add_vehicle, place_object_in_core};
 mod factions;
 /// Expose factions :: { faction doc from side core , orbat apply faction } at this domain boundary.
 pub use factions::{faction_doc_from_side_core, orbat_apply_faction};
+mod layers;
+/// Expose layers :: {  ensured layer , create layer , delete layer , ensure layer , refile slot to layer , rename layer , reparent layer , set layer hidden , set layer locked , show all hidden , take rename armed , } at this domain boundary.
+pub use layers::{
+    EnsuredLayer, create_layer, delete_layer, ensure_layer, refile_slot_to_layer, rename_layer,
+    reparent_layer, set_layer_hidden, set_layer_locked, show_all_hidden, take_rename_armed,
+};
+mod layer_drag;
+/// Expose layer drag :: {  layer drag , begin layer comment drag , begin layer drag , begin layer slot drag , cancel layer drag , complete layer drop onto folder , complete layer drop onto root , } at this domain boundary.
+pub use layer_drag::{
+    LayerDrag, begin_layer_comment_drag, begin_layer_drag, begin_layer_slot_drag,
+    cancel_layer_drag, complete_layer_drop_onto_folder, complete_layer_drop_onto_root,
+};
+mod refile;
+/// Expose refile :: { begin refile , cancel refile , complete refile onto squad , refile slot } at this domain boundary.
+pub use refile::{begin_refile, cancel_refile, complete_refile_onto_squad, refile_slot};
+mod triggers;
+/// Expose triggers :: { apply trigger rule , delete trigger , owner line world , placed or vehicle position , set trigger activation , set trigger name , set trigger owner , trigger count , } at this domain boundary.
+pub use triggers::{
+    apply_trigger_rule, delete_trigger, owner_line_world, placed_or_vehicle_position,
+    set_trigger_activation, set_trigger_name, set_trigger_owner, trigger_count,
+};
+mod arming;
+/// Expose arming :: {  armed placement kind , placement is armable , seed debug slots } at this domain boundary.
+pub use arming::{ArmedPlacementKind, placement_is_armable, seed_debug_slots};
+mod zone_draw;
+/// Expose zone draw :: {  zone draft ,  zone draw step ,  zone polygon commit , advance zone draft , begin zone draft , close zone polygon draft , pop zone draft vertex , zone draft kind is valid , } at this domain boundary.
+pub use zone_draw::{
+    ZoneDraft, ZoneDrawStep, ZonePolygonCommit, advance_zone_draft, begin_zone_draft,
+    close_zone_polygon_draft, pop_zone_draft_vertex, zone_draft_kind_is_valid,
+};
+mod selection_index;
+/// Expose selection index :: selection entities at this domain boundary.
+pub use selection_index::selection_entities;

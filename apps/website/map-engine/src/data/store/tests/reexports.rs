@@ -33,3 +33,34 @@ fn connection_and_formation_api_is_crate_public_via_doc() {
         detail: String::new(),
     };
 }
+
+/// The authoring operations the entity boundary re-exports are reachable through `data::store`
+/// and nothing else: a host resolves its own document handle and then calls straight into these.
+#[test]
+fn entity_authoring_api_is_crate_public_via_doc() {
+    use super::operations::entity::{
+        ArmedPlacementKind, LayerDrag, ZoneDrawStep, begin_zone_draft, cancel_refile,
+        close_zone_polygon_draft, ensure_layer, placement_is_armable, take_rename_armed,
+    };
+    use super::operations::zones::{DrawTarget, ZoneShape};
+
+    assert!(placement_is_armable(ArmedPlacementKind::Character, false));
+    assert!(take_rename_armed().is_none());
+    cancel_refile();
+
+    let core = super::MissionDocCore::new();
+    assert_eq!(
+        ensure_layer(&core, None, "layer-1", "Layer 1").layer_id,
+        "layer-1"
+    );
+
+    let draft = begin_zone_draft(
+        "boundary".to_string(),
+        ZoneShape::Polygon,
+        DrawTarget::Zone,
+        None,
+    );
+    assert!(close_zone_polygon_draft(&draft, |ring| ring.len() >= 3).is_none());
+    let _ = LayerDrag::Folder(String::new());
+    let _ = ZoneDrawStep::Drawing;
+}

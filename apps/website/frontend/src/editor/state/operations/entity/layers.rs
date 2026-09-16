@@ -14,8 +14,9 @@ pub fn set_active_layer(id: Option<String>) {
     });
 }
 
-/// Set layer hidden using the supplied domain data.
-pub fn set_layer_hidden(id: &str, hidden: bool) {
+/// Run one layer edit against the live doc, then the shared dirty tail. `false` when the ops
+/// context is not up or the handle holds no document.
+pub(in crate::editor::state::operations) fn edit_layer(f: impl FnOnce(&MissionDocCore)) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
@@ -25,31 +26,27 @@ pub fn set_layer_hidden(id: &str, hidden: bool) {
         let Some(core) = d.as_ref() else {
             return false;
         };
-        core.set_editor_layer_hidden(id, hidden);
+        f(core);
         true
     });
     if did {
         mission_history::after_local_edit();
     }
+    did
+}
+
+/// Set layer hidden using the supplied domain data.
+pub fn set_layer_hidden(id: &str, hidden: bool) {
+    edit_layer(|core| {
+        website_map_engine::data::store::operations::entity::set_layer_hidden(core, id, hidden);
+    });
 }
 
 /// Set layer locked using the supplied domain data.
 pub fn set_layer_locked(id: &str, locked: bool) {
-    let did = OPS_CTX.with(|c| {
-        let guard = c.borrow();
-        let Some(ctx) = guard.as_ref() else {
-            return false;
-        };
-        let d = ctx.doc.borrow();
-        let Some(core) = d.as_ref() else {
-            return false;
-        };
-        core.set_editor_layer_locked(id, locked);
-        true
+    edit_layer(|core| {
+        website_map_engine::data::store::operations::entity::set_layer_locked(core, id, locked);
     });
-    if did {
-        mission_history::after_local_edit();
-    }
 }
 
 /// Set selection hidden using the supplied domain data.
@@ -113,25 +110,12 @@ pub fn show_all_hidden() -> usize {
         let Some(core) = d.as_ref() else {
             return 0;
         };
-        core.clear_all_editor_hidden()
+        website_map_engine::data::store::operations::entity::show_all_hidden(core)
     });
     if cleared > 0 {
         mission_history::after_local_edit();
     }
     cleared
-}
-
-/// Domain representation of layer drag.
-#[derive(Clone)]
-pub(in crate::editor::state::operations) enum LayerDrag {
-    /// A folder being reparented.
-    Folder(String),
-
-    /// A slot being refiled into a folder.
-    Slot(String),
-
-    /// Domain representation of comment.
-    Comment(String),
 }
 
 /// LAYER-CREATE-001 — create a folder as a **child of the selected/active folder** (or a root when none is active), auto-named "New Layer N", and arm its inline rename. Returns the new id.
@@ -142,20 +126,13 @@ pub fn create_layer() -> Option<String> {
         let id = {
             let d = ctx.doc.borrow();
             let core = d.as_ref()?;
-            let rows = layer_rows(core);
-
-            let parent = ctx
-                .active_layer
-                .get_untracked()
-                .filter(|a| rows.iter().any(|l| &l.id == a));
-            let id = NEXT_LAYER_ID.with(|next_id| mint_layer_id(core, next_id));
-            let name = mint_layer_name(core);
-            core.add_editor_layer(&id, &name, parent);
-            id
+            website_map_engine::data::store::operations::entity::create_layer(
+                core,
+                ctx.active_layer.get_untracked(),
+            )
         };
 
         ctx.active_layer.set(Some(id.clone()));
-        RENAME_ARMED.with(|r| *r.borrow_mut() = Some(id.clone()));
         Some(id)
     });
     if created.is_some() {
@@ -167,31 +144,24 @@ pub fn create_layer() -> Option<String> {
 /// LAYER-CREATE-001 — take the id of the just-created layer whose inline rename should open, if any. Consumed once (cleared on read) so the dock arms the input exactly once per creation.
 #[must_use]
 pub fn take_rename_armed() -> Option<String> {
-    RENAME_ARMED.with(|r| r.borrow_mut().take())
+    website_map_engine::data::store::operations::entity::take_rename_armed()
 }
 
 /// Rename an Outliner folder (inline-rename commit). Rides the shipped `rename_editor_layer`; one transaction ⇒ one undo step. A blank name after trim is rejected (a folder must keep a label).
 pub fn rename_layer(id: &str, name: &str) -> bool {
-    let name = name.trim();
-    if name.is_empty() {
-        return false;
-    }
-    let did = OPS_CTX.with(|c| {
-        let guard = c.borrow();
-        let Some(ctx) = guard.as_ref() else {
-            return false;
-        };
-        let d = ctx.doc.borrow();
-        let Some(core) = d.as_ref() else {
-            return false;
-        };
-        core.rename_editor_layer(id, name);
-        true
-    });
-    if did {
+    let renamed = OPS_CTX
+        .with(|c| {
+            let guard = c.borrow();
+            let ctx = guard.as_ref()?;
+            let d = ctx.doc.borrow();
+            let core = d.as_ref()?;
+            Some(website_map_engine::data::store::operations::entity::rename_layer(core, id, name))
+        })
+        .unwrap_or(false);
+    if renamed {
         mission_history::after_local_edit();
     }
-    did
+    renamed
 }
 
 /// LAYER-DEL-001 — delete a folder with the SHIPPED subtree semantics: `remove_editor_layer` deletes the folder AND its whole subtree (child folders + every slot filed in any of them), keeps ≥1 layer (reseeding a default if the subtree was every layer). One transaction ⇒ one undo step.
@@ -206,8 +176,7 @@ pub fn delete_layer(id: &str) -> bool {
             let Some(core) = d.as_ref() else {
                 return false;
             };
-            let reseed = NEXT_LAYER_ID.with(|next_id| mint_layer_id(core, next_id));
-            core.remove_editor_layer(id, &reseed);
+            website_map_engine::data::store::operations::entity::delete_layer(core, id);
         }
 
         if ctx.active_layer.get_untracked().as_deref() == Some(id) {
@@ -223,42 +192,16 @@ pub fn delete_layer(id: &str) -> bool {
 
 /// Reparent a folder (drag-in-tree / root-dropzone). Rides the cycle-guarded `reparent_editor_layer` (a drop into the folder's own subtree is a no-op at the core), so this wrapper does not re-check cycles. `new_parent = None` moves it to the root. One transaction ⇒ one undo step.
 pub fn reparent_layer(id: &str, new_parent: Option<String>) -> bool {
-    let did = OPS_CTX.with(|c| {
-        let guard = c.borrow();
-        let Some(ctx) = guard.as_ref() else {
-            return false;
-        };
-        let d = ctx.doc.borrow();
-        let Some(core) = d.as_ref() else {
-            return false;
-        };
-        core.reparent_editor_layer(id, new_parent);
-        true
-    });
-    if did {
-        mission_history::after_local_edit();
-    }
-    did
+    edit_layer(|core| {
+        website_map_engine::data::store::operations::entity::reparent_layer(core, id, new_parent);
+    })
 }
 
 /// Refile a slot into a different folder (drag a slot row onto a folder). Rides the shipped `move_slot_to_layer` (detach from every folder holding it, append to the target); squad is unchanged (workflow-only). One transaction ⇒ one undo step.
 pub fn refile_slot_to_layer(slot_id: &str, layer_id: &str) -> bool {
-    let did = OPS_CTX.with(|c| {
-        let guard = c.borrow();
-        let Some(ctx) = guard.as_ref() else {
-            return false;
-        };
-        {
-            let d = ctx.doc.borrow();
-            let Some(core) = d.as_ref() else {
-                return false;
-            };
-            core.move_slot_to_layer(slot_id, layer_id);
-        }
-        true
-    });
-    if did {
-        mission_history::after_local_edit();
-    }
-    did
+    edit_layer(|core| {
+        website_map_engine::data::store::operations::entity::refile_slot_to_layer(
+            core, slot_id, layer_id,
+        );
+    })
 }

@@ -4,6 +4,7 @@
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 use super::*;
+use website_map_engine::data::store::operations::entity::ArmedPlacementKind;
 
 /// Palette leaf `pointerdown` → arm a place. Consumed by [`place_at`] on a canvas release, or dropped by [`cancel_pending`] on a release over chrome.
 pub fn begin_place(payload: PlacePayload) {
@@ -39,21 +40,28 @@ pub fn armed_composition_id() -> Option<String> {
     })
 }
 
+/// Which collection the armed value commits into — the discriminant the arm gate reads, with the
+/// payload left behind because the gate never looks at it.
+fn armed_placement_kind(pending: &Pending) -> ArmedPlacementKind {
+    match pending {
+        Pending::Character(_) => ArmedPlacementKind::Character,
+        Pending::Vehicle(_) => ArmedPlacementKind::Vehicle,
+        Pending::Object(_) => ArmedPlacementKind::Object,
+        Pending::Composition(_) => ArmedPlacementKind::Composition,
+        Pending::Marker(_) => ArmedPlacementKind::Marker,
+        Pending::Zone(_) => ArmedPlacementKind::Zone,
+    }
+}
+
 /// Arm a place. Objects mode only accepts [`Pending::Object`]; side modes reject Object so a leftover Objects arm cannot commit after the chip switches away.
 pub(in crate::editor::state::operations) fn arm(pending: Pending) {
     OPS_CTX.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             let objects = ctx.objects_mode.get_untracked();
-            let ok = match &pending {
-                Pending::Object(_) => objects,
-                Pending::Character(_) | Pending::Vehicle(_) => !objects,
-
-                Pending::Composition(_) => true,
-
-                Pending::Marker(_) => true,
-
-                Pending::Zone(_) => false,
-            };
+            let ok = website_map_engine::data::store::operations::entity::placement_is_armable(
+                armed_placement_kind(&pending),
+                objects,
+            );
             if !ok {
                 *ctx.pending.borrow_mut() = None;
                 return;
@@ -114,18 +122,16 @@ pub(in crate::editor::state::operations) fn ensure_layer(
     ctx: &OpsCtx,
     core: &MissionDocCore,
 ) -> String {
-    let rows = layer_rows(core);
-    if let Some(active) = ctx.active_layer.get_untracked() {
-        if rows.iter().any(|l| l.id == active) {
-            return active;
-        }
+    let ensured = website_map_engine::data::store::operations::entity::ensure_layer(
+        core,
+        ctx.active_layer.get_untracked(),
+        DEFAULT_LAYER_ID,
+        DEFAULT_LAYER_NAME,
+    );
+    if ensured.active_layer_was_stale {
         ctx.active_layer.set(None);
     }
-    if let Some(first) = rows.first() {
-        return first.id.clone();
-    }
-    core.add_editor_layer(DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME, None);
-    DEFAULT_LAYER_ID.to_string()
+    ensured.layer_id
 }
 
 /// Debug seed slots using the supplied domain data.
@@ -140,12 +146,12 @@ pub fn debug_seed_slots(n: u32) {
             return;
         };
         let layer_id = ensure_layer(ctx, core);
-        for _ in 0..n {
-            let id = mint_id(ctx, core);
-            let _ = place_character_under_side(
-                core, "BLUFOR", &id, &layer_id, "Rifleman", None, None, 0.0, 0.0, 0.0, 0.0,
-            );
-        }
+        website_map_engine::data::store::operations::entity::seed_debug_slots(
+            core,
+            &ctx.next_id,
+            &layer_id,
+            n,
+        );
     });
     mission_history::after_local_edit();
 }

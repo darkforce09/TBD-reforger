@@ -1868,6 +1868,10 @@ mod tests {
         //! A pin fails loudly if a rename drops a call the ticket requires.
 
         const OPS: &str = crate::v2::core::test_support::editor_operations::ENTITY;
+        /// The engine-side layer authoring every wrapper in `OPS` rides. The wrappers resolve the
+        /// host and take the refresh tail; the document mutators live here.
+        const ENGINE_LAYERS: &str =
+            include_str!("../../../../map-engine/src/data/store/operations/entity/layers.rs");
         const TREE: &str = include_str!("outliner_tree.rs");
         const DOCK: &str = include_str!("dock_left.rs");
 
@@ -1885,7 +1889,7 @@ mod tests {
             ] {
                 assert!(OPS.contains(wrapper), "missing wrapper {wrapper}");
                 assert!(
-                    OPS.contains(core_call),
+                    ENGINE_LAYERS.contains(core_call),
                     "{wrapper} must ride the shipped core mutator {core_call}"
                 );
             }

@@ -9,19 +9,7 @@ thread_local! {
 }
 thread_local! {
 
-    static NEXT_LAYER_ID: Cell<u32> = const { Cell::new(0) };
-
-    static RENAME_ARMED: RefCell<Option<String>> = const { RefCell::new(None) };
-
-    static PENDING_LAYER_DRAG: RefCell<Option<LayerDrag>> = const { RefCell::new(None) };
-}
-thread_local! {
-
     static PENDING_CONNECT: RefCell<Option<(String, String)>> = const { RefCell::new(None) };
-}
-thread_local! {
-
-    static PENDING_REFILE: RefCell<Option<String>> = const { RefCell::new(None) };
 }
 #[allow(unused_imports)]
 use super::{attrs::*, cargo::*, compositions::*, context::*, transform::*};
@@ -34,7 +22,7 @@ use crate::editor::panels::zones_panel::DrawTarget;
 use crate::editor::state::history as mission_history;
 use crate::v2::core::api::dto::FactionDoc;
 use leptos::prelude::{GetUntracked, Set};
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use website_map_engine::data::store::place_character_under_side;
 use website_map_engine::data::store::MissionDocCore;
 
@@ -51,8 +39,6 @@ use website_map_engine::data::store::operations::entity::faction_doc_from_side_c
 
 use website_map_engine::data::store::operations::entity::marker_rows_of;
 
-use website_map_engine::data::store::operations::entity::mint_layer_id;
-use website_map_engine::data::store::operations::entity::mint_layer_name;
 use website_map_engine::data::store::operations::entity::mint_marker_id;
 
 use website_map_engine::data::store::operations::entity::place_object_in_core;
@@ -119,7 +105,6 @@ pub use selection::{
 };
 use selection::{DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME};
 mod layers;
-use layers::LayerDrag;
 
 /// Expose layers :: { create layer , delete layer , hide selection , refile slot to layer , rename layer , reparent layer , set active layer , set layer hidden , set layer locked , show all hidden , show selection , take rename armed , toggle hidden , } at this domain boundary.
 pub use layers::{

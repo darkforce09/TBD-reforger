@@ -29,11 +29,9 @@ thread_local! {
 #[allow(unused_imports)]
 use super::{attrs::*, cargo::*, compositions::*, entity::*, transform::*};
 use crate::editor::arsenal::asset_catalog::PlacePayload;
-use crate::editor::eden_chrome::ZoneShape;
 use crate::editor::mission_editor::AssetPickerState;
 use crate::editor::panels::outliner::build_outliner_with_comments;
 use crate::editor::panels::outliner::OutlinerNode;
-use crate::editor::panels::zones_panel::DrawTarget;
 use crate::editor::state::doc_host::DocHandle;
 use crate::editor::state::history as mission_history;
 use selection::SelectionHandle;
