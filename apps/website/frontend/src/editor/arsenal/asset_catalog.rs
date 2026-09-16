@@ -502,7 +502,7 @@ pub fn build_vehicle_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
             default_expanded: false,
             children: Vec::new(),
             // `role` carries the display label so the leaf is self-describing in a log or a test;
-            // the vehicle place path reads `asset_id` only (`editor_ops::place_at`).
+            // the vehicle place path reads `asset_id` only (`armed_placement::place_at`).
             payload: Some(PlacePayload {
                 asset_id: item.resource_name.clone(),
                 role: item.display_name.clone(),

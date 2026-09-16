@@ -1,7 +1,7 @@
 //! Role: the live authored document, and the one borrow chain every editing command reaches it by.
 //! Position: `editing` in the map engine.
-//! Signals & state: one installed host per thread — the document handle, the selected-id set, the
-//! in-flight placement, and the id minter.
+//! Signals & state: one installed host per thread — the document handle, the selected-id set, and
+//! the id minter.
 //! Invariants: the handle is the SAME shared cell a restore or a hydrate swaps into, so a command
 //! always sees the live document rather than a snapshot taken at mount. Every entry point below
 //! opens exactly one borrow and drops it before returning, so a caller can never hold a read
@@ -12,8 +12,6 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use crate::data::store::MissionDocCore;
-use crate::data::store::operations::assets::PlacePayload;
-use crate::data::store::operations::zones::{DrawTarget, ZoneShape};
 
 /// The hosted document. A shared cell rather than an owned value: a restore or a server hydrate
 /// replaces the document wholesale, and every command must see the replacement without being
@@ -24,57 +22,6 @@ pub type DocHandle = Rc<RefCell<Option<MissionDocCore>>>;
 /// whatever is highlighted.
 pub type SelectionHandle = Rc<RefCell<Vec<String>>>;
 
-/// The in-flight placement: `Some` between the moment an operator picks something up and the
-/// moment the map commits it.
-///
-/// The discriminant lives on the ARMED VALUE rather than on a separate "current tab" reading: the
-/// tab can change, or the surface holding it can go away, between the pick-up and the commit, and
-/// a placement must commit the entity the operator actually picked up.
-#[derive(Clone, Debug, PartialEq)]
-pub enum Pending {
-    /// A character.
-    Character(PlacePayload),
-
-    /// A vehicle.
-    Vehicle(PlacePayload),
-
-    /// A world object.
-    Object(PlacePayload),
-
-    /// A saved composition, by id.
-    Composition(String),
-
-    /// A map marker, by icon key.
-    Marker(String),
-
-    /// A zone or trigger being drawn.
-    Zone(ZoneDraft),
-}
-
-/// A zone draw in progress. Lives on the armed placement rather than in a reading of its own,
-/// because "is a draw in flight" is what routes a map release to the draw instead of the select
-/// machine — and re-deriving that from a second source is how the two get out of step.
-#[derive(Clone, Debug, PartialEq)]
-pub struct ZoneDraft {
-    /// The authored `zone.type`, taken from the schema by whoever armed the draw — never typed.
-    pub kind: String,
-
-    /// Circle or polygon.
-    pub shape: ZoneShape,
-
-    /// Circle: the centre, set by the first click. `None` until then.
-    pub centre: Option<(f64, f64)>,
-
-    /// Polygon: the ring so far, one vertex per click.
-    pub verts: Vec<(f64, f64)>,
-
-    /// The id being reshaped, when this draw is editing an existing row rather than minting one.
-    pub target: Option<String>,
-
-    /// Which authored collection the draw commits into.
-    pub collection: DrawTarget,
-}
-
 /// Everything a document command reaches that is not presentation.
 pub struct EditingHost {
     /// The live document.
@@ -82,9 +29,6 @@ pub struct EditingHost {
 
     /// The selected ids.
     pub selection: SelectionHandle,
-
-    /// The in-flight placement, if any.
-    pub pending: RefCell<Option<Pending>>,
 
     /// Monotonic minter for placed ids; every mint still proves uniqueness against the document.
     pub next_id: Cell<u32>,
@@ -101,7 +45,6 @@ pub fn install(doc: DocHandle, selection: SelectionHandle) {
         *h.borrow_mut() = Some(EditingHost {
             doc,
             selection,
-            pending: RefCell::new(None),
             next_id: Cell::new(0),
         });
     });

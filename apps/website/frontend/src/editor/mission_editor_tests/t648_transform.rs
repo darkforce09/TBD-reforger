@@ -435,7 +435,7 @@ fn t648_keydown_census() {
     let space = key("Space");
     assert!(
         this_arms.contains(&format!(
-            "{space} if !modk => editor_ops::center_on_selection()"
+            "{space} if !modk => entity_selection::center_on_selection()"
         )),
         "collision decision: Space must remain flyTo (center_on_selection), not a widget cycle"
     );

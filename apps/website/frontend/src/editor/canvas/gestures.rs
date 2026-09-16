@@ -40,6 +40,8 @@ use crate::editor::mission_editor::{
 // this wave, and a new `pub(crate) use` line there would be a cross-slice edit for two constants.
 use crate::editor::canvas::overlays as ov;
 use crate::editor::canvas::tactical_graphics::{TG_PICK_PX, TG_VERTEX_PICK_PX};
+use crate::editor::canvas::tactical_graphics_authoring;
+use crate::editor::state::armed_placement;
 use crate::editor::state::history as mission_history;
 use crate::editor::state::operations as editor_ops;
 use website_map_engine::data::store::operations::attrs;
@@ -199,7 +201,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         let _ = container.release_pointer_capture(id);
                     }
                 }
-                if editor_ops::cancel_tactical_vertex_drag() {
+                if tactical_graphics_authoring::cancel_tactical_vertex_drag() {
                     mission_history::refresh_tactical_lane();
                 }
             }
@@ -363,7 +365,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 // returned without take(), stranding Pending (phantom Move) or Ruler/LoS
                 // (phantom vertex / observer). `armed_place::open_left_gesture_while_armed`
                 // is the one decision; the armed pointerup still take()s as belt-and-braces.
-                if editor_ops::has_pending() {
+                if armed_placement::has_pending() {
                     return;
                 }
                 // ══════ T-936.7 — the tactical-graphics press, BEFORE the Select machine ══════
@@ -386,7 +388,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 // because there is no sub-threshold interpretation to keep open: a press ON a
                 // vertex is unambiguously an edit gesture, and `commit_tactical_vertex_drag`
                 // already declines to write when the pointer never moved.
-                if editor_ops::tactical_draw_armed() {
+                if tactical_graphics_authoring::tactical_draw_armed() {
                     if let Some(e) = engine.borrow().as_ref() {
                         let rect = container.get_bounding_client_rect();
                         let cam = selection::frozen_camera(
@@ -400,7 +402,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             ev.client_x() as f64 - rect.left(),
                             ev.client_y() as f64 - rect.top(),
                         );
-                        editor_ops::tactical_draw_push_vertex(w[0], w[1]);
+                        tactical_graphics_authoring::tactical_draw_push_vertex(w[0], w[1]);
                     }
                     return;
                 }
@@ -418,7 +420,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     let w = cam.unproject_xy(sx, sy);
                     let w2 = cam.unproject_xy(sx + TG_VERTEX_PICK_PX, sy);
                     let tol = (w2[0] - w[0]).hypot(w2[1] - w[1]);
-                    if editor_ops::begin_tactical_vertex_drag(w[0], w[1], tol) {
+                    if tactical_graphics_authoring::begin_tactical_vertex_drag(w[0], w[1], tol) {
                         vertex_pointer.set(Some(ev.pointer_id()));
                         let _ = container.set_pointer_capture(ev.pointer_id());
                         return;
@@ -609,12 +611,12 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // through the SAME `history::after_local_edit` rebind path the commit uses (via
             // `refresh_tactical_lane`), so the previewed line and the committed line are packed
             // by one function rather than two that must agree.
-            if editor_ops::tactical_vertex_drag_active() {
+            if tactical_graphics_authoring::tactical_vertex_drag_active() {
                 if vertex_pointer.get() != Some(ev.pointer_id()) {
                     return;
                 }
                 if let Some(c) = world.filter(|c| c[0].is_finite() && c[1].is_finite()) {
-                    editor_ops::tactical_vertex_drag_move(c[0], c[1]);
+                    tactical_graphics_authoring::tactical_vertex_drag_move(c[0], c[1]);
                     mission_history::refresh_tactical_lane();
                 }
                 return;
@@ -624,7 +626,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // the cursor's world point so the operator sees where it will land (the drop
             // commits at pointerup). Mutually exclusive with a map drag/marquee (`left` is
             // None during a palette place), so this returns before the gesture machine.
-            if editor_ops::has_pending() {
+            if armed_placement::has_pending() {
                 if let Some(c) = world.filter(|c| c[0].is_finite() && c[1].is_finite()) {
                     if let Some(e) = engine.borrow_mut().as_mut() {
                         e.set_place_preview(c[0] as f32, c[1] as f32);
@@ -651,7 +653,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 let prev = hover_state.get();
                 if hover_suppressed(
                     gesture_active,
-                    editor_ops::has_pending(),
+                    armed_placement::has_pending(),
                     tool_mode.get_untracked().captures_points(),
                 ) {
                     // Drop the claim rather than freeze it: a drag that began on a glyph
@@ -1046,7 +1048,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // declines when the provisional position was never set), because a click on a vertex
             // is a selection and filing an identity edit would make the next Ctrl+Z appear to do
             // nothing.
-            if editor_ops::tactical_vertex_drag_active() {
+            if tactical_graphics_authoring::tactical_vertex_drag_active() {
                 if vertex_pointer.get() != Some(ev.pointer_id()) {
                     return;
                 }
@@ -1054,7 +1056,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 if container.has_pointer_capture(ev.pointer_id()) {
                     let _ = container.release_pointer_capture(ev.pointer_id());
                 }
-                if !editor_ops::commit_tactical_vertex_drag() {
+                if !tactical_graphics_authoring::commit_tactical_vertex_drag() {
                     // Nothing was written, so `after_local_edit`'s rebind never runs — put the
                     // lane back on committed truth by hand, or the preview would stay on screen.
                     mission_history::refresh_tactical_lane();
@@ -1072,7 +1074,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             //   * off-canvas LMB keeps the arm (arming click's own release) — Esc/RMB cancel.
             // The host still stops `pointerdown` only, so a release over a dock bubbles here;
             // the chrome insets decide Place vs KeepArmed.
-            if editor_ops::has_pending() {
+            if armed_placement::has_pending() {
                 // T-723 — clear ANY stranded left gesture before deciding (Pending → phantom
                 // Move; Ruler → phantom vertex; LoS capture under the same LG::Ruler arm →
                 // phantom observer/target). Belt-and-braces with the pointerdown skip.
@@ -1084,7 +1086,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     // keep armed; pan_px cleanup runs next
                 } else if button == 2 {
                     // RMB — Eden stamp-mode cancel
-                    editor_ops::cancel_pending();
+                    armed_placement::cancel_pending();
                     if let Some(e) = engine.borrow_mut().as_mut() {
                         e.clear_place_preview();
                     }
@@ -1142,9 +1144,9 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             let alt_empty = ev.alt_key();
                             let c = world_ok.expect("Place implies finite world");
                             if ctrl_multi {
-                                editor_ops::place_at_keep(c[0], c[1], alt_empty);
+                                armed_placement::place_at_keep(c[0], c[1], alt_empty);
                             } else {
-                                editor_ops::place_at_alt(c[0], c[1], alt_empty);
+                                armed_placement::place_at_alt(c[0], c[1], alt_empty);
                             }
                         }
                         armed_place::ArmedUp::KeepArmed => {
@@ -1358,14 +1360,16 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         // a click changes the selection, not the document — T-159.21's rule, and
                         // the reason a selection click files no undo step.
                         if hit.is_some() {
-                            if editor_ops::clear_tactical_selection() {
+                            if tactical_graphics_authoring::clear_tactical_selection() {
                                 mission_history::refresh_tactical_lane();
                             }
                         } else if !additive {
                             let w = p.cam.unproject_xy(p.start_x, p.start_y);
                             let w2 = p.cam.unproject_xy(p.start_x + TG_PICK_PX, p.start_y);
                             let tol = (w2[0] - w[0]).hypot(w2[1] - w[1]);
-                            editor_ops::select_tactical_graphic_at(w[0], w[1], tol);
+                            tactical_graphics_authoring::select_tactical_graphic_at(
+                                w[0], w[1], tol,
+                            );
                             mission_history::refresh_tactical_lane();
                         }
                         {
@@ -1433,7 +1437,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     // regroup target under the drop.
                     let single_comment_drag = ids.len() == 1
                         && doc.borrow().as_ref().is_some_and(|c| {
-                            editor_ops::comment_details(c)
+                            website_map_engine::data::store::operations::entity::comment_details(c)
                                 .iter()
                                 .any(|d| d.id == ids[0])
                         });
@@ -1450,7 +1454,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                 // `regroup_slot_onto` runs the shared dirty tail itself
                                 // (via `refile_slot`), so this branch must NOT also call
                                 // `after_local_edit` — it only drops the stale drag preview.
-                                let ok = editor_ops::regroup_slot_onto(&ids[0], &tid);
+                                let ok = engine_ops::regroup_slot_onto(&ids[0], &tid);
                                 if ok {
                                     if let Some(e) = engine.borrow_mut().as_mut() {
                                         crate::editor::tools::select_tool::clear_drag_preview(
@@ -1483,7 +1487,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             .as_ref()
                             .map(|c| {
                                 let members: std::collections::HashSet<String> =
-                                    editor_ops::comment_details(c)
+                                    website_map_engine::data::store::operations::entity::comment_details(c)
                                         .into_iter()
                                         .map(|d| d.id)
                                         .collect();
@@ -1795,8 +1799,8 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // over a half-drawn control measure would be the T-716 live-but-inert shape.
             // `complete_tactical_draw` declines (and keeps the draft) below the kind's vertex
             // floor, so a premature right-click costs the operator nothing.
-            if editor_ops::tactical_draw_armed() {
-                editor_ops::complete_tactical_draw();
+            if tactical_graphics_authoring::tactical_draw_armed() {
+                tactical_graphics_authoring::complete_tactical_draw();
                 return;
             }
             let rect = container.get_bounding_client_rect();

@@ -1,4 +1,5 @@
 use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
+use website_map_engine::editing::hosted_commands as engine_ops;
 
 /// The editor page region (comments stripped, string literals blanked). The `#[cfg(wasm32)]`
 /// blocks the pointer/dblclick handlers live in are KEPT by the scrubber (it decides only
@@ -116,7 +117,7 @@ fn asset_picker_is_an_ungated_overlay_that_arms_a_place() {
     let region = live_code(include_str!("../canvas/overlays.rs"));
     let comp = only_body(&region, "fn AssetPickerOverlay(");
     assert!(
-        comp.contains("editor_ops::begin_place(payload")
+        comp.contains("armed_placement::begin_place(payload")
             && comp.contains("editor_ops::close_asset_picker()"),
         "PLACE-001/PLACE-003: choosing a picker row must arm begin_place then close (the next \
          canvas click lands it)"
@@ -222,7 +223,7 @@ fn the_comment_editor_is_ungated_and_authors_every_comment_field() {
     // A comment must never be routed into the SLOT surfaces (the T-716 live-but-inert trap).
     assert!(
         !comp.contains("editor_ops::open_attributes(")
-            && !comp.contains("editor_ops::select_slot("),
+            && !comp.contains("entity_selection::select_slot("),
         "T-651: a comment id must not enter the slot selection / Attributes lanes"
     );
 }
@@ -242,7 +243,7 @@ fn ctrl_state_machine_multi_place_when_armed_regroup_when_not() {
     // (1) The place branch is armed-gated and returns, so the drag branch below only ever runs
     // with NO pending — that mutual exclusion is the resolution.
     assert!(
-        up.contains("editor_ops::has_pending()"),
+        up.contains("armed_placement::has_pending()"),
         "the place branch must gate on has_pending() (armed)"
     );
 
@@ -252,14 +253,15 @@ fn ctrl_state_machine_multi_place_when_armed_regroup_when_not() {
         "PLACE-004: the armed branch must read Ctrl/Cmd as the multi-place modifier"
     );
     assert!(
-        up.contains("editor_ops::place_at_keep(") && up.contains("editor_ops::place_at_alt("),
+        up.contains("armed_placement::place_at_keep(")
+            && up.contains("armed_placement::place_at_alt("),
         "PLACE-004: Ctrl must route to place_at_keep (keep the arm), else place_at_alt"
     );
 
     // (3) Unarmed + Ctrl + single character dropped onto another → regroup, and the positional
     // move is skipped.
     assert!(
-        up.contains("editor_ops::regroup_slot_onto(")
+        up.contains("engine_ops::regroup_slot_onto(")
             && up.contains("ids.len() == 1")
             && up.contains("!engine_ops::is_vehicle_id(&ids[0])"),
         "CONN-GROUP-001: an unarmed Ctrl-drag of a SINGLE character onto another must regroup"

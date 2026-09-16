@@ -8,10 +8,15 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 
+#[cfg(target_arch = "wasm32")]
+use crate::editor::panels::outliner;
 use crate::editor::panels::outliner::{
     flatten_visible, FlatRow, LayerRow, NodeKind, OutlinerNode, VIRTUAL_SLOT_THRESHOLD,
 };
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::entity_selection;
 use crate::v2::core::ui::MaterialIcon;
+use website_map_engine::editing::hosted_commands as engine_ops;
 
 /* ───────────────────────── T-666 — folder-click selection rules ───────────────────────── */
 
@@ -470,7 +475,7 @@ fn layer_flag_toggles(
                 ev.stop_propagation();
                 if !hidden_inherited {
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor::state::operations::set_layer_hidden(&eye_id, !hidden);
+                    engine_ops::set_layer_hidden(&eye_id, !hidden);
                     #[cfg(not(target_arch = "wasm32"))]
                     let _ = &eye_id;
                 }
@@ -506,7 +511,7 @@ fn layer_flag_toggles(
                 ev.stop_propagation();
                 if !locked_inherited {
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor::state::operations::set_layer_locked(&lock_id, !locked);
+                    engine_ops::set_layer_locked(&lock_id, !locked);
                     #[cfg(not(target_arch = "wasm32"))]
                     let _ = &lock_id;
                 }
@@ -602,7 +607,7 @@ fn folder_row_actions(
                         .and_then(|w| w.confirm_with_message(&msg).ok())
                         .unwrap_or(false);
                     if ok {
-                        let _ = crate::editor::state::operations::delete_layer(&del_id);
+                        let _ = outliner::delete_layer(&del_id);
                     }
                 }
                 #[cfg(not(target_arch = "wasm32"))]
@@ -654,7 +659,7 @@ fn folder_row_actions(
 ///     the arm that resolves it (T-784); the selection it lands in is the one `save_composition`
 ///     reads, which is what makes a note composable with entities.
 ///   * `Slot` — does NOT route. A slot row selects through the Outliner's own
-///     `editor_ops::select_slot`, which needs no router, cannot fail, and deliberately does not move
+///     `entity_selection::select_slot`, which needs no router, cannot fail, and deliberately does not move
 ///     the camera (React: "selecting a slot selects it globally, no auto camera move"). Routing it
 ///     would make the core selection path depend on a probe registered at mount and fly the camera
 ///     on every outliner click — two regressions to buy a uniformity nothing needs.
@@ -760,7 +765,7 @@ fn comment_row(
                     &authoring.nodes.get_untracked(),
                 );
                 crate::editor::panels::outliner_drag::begin_layer_comment_drag(drag);
-                crate::editor::state::operations::begin_layer_comment_drag(id_drag.clone());
+                engine_ops::begin_layer_comment_drag(id_drag.clone());
             }
             #[cfg(not(target_arch = "wasm32"))]
             let _ = &id_drag;
@@ -875,7 +880,7 @@ fn single_row(
                             #[cfg(target_arch = "wasm32")]
                             {
                                 if !crate::editor::panels::outliner_drag::complete_multi_refile_onto_squad(&dest) {
-                                    crate::editor::state::operations::complete_refile_onto_squad(dest.clone());
+                                    engine_ops::complete_refile_onto_squad(dest.clone());
                                 }
                             }
                             #[cfg(not(target_arch = "wasm32"))]
@@ -982,7 +987,7 @@ fn single_row(
                     move |text: String| {
                         #[cfg(target_arch = "wasm32")]
                         {
-                            let _ = crate::editor::state::operations::rename_layer(&id, &text);
+                            let _ = engine_ops::rename_layer(&id, &text);
                         }
                         #[cfg(not(target_arch = "wasm32"))]
                         let _ = (&id, &text);
@@ -1044,12 +1049,12 @@ fn single_row(
             let click = move |ev: web_sys::MouseEvent| {
                 #[cfg(target_arch = "wasm32")]
                 {
-                    crate::editor::state::operations::set_active_layer(Some(id_click.clone()));
+                    outliner::set_active_layer(Some(id_click.clone()));
                     if authoring_on {
                         if ev.alt_key() || ev.shift_key() {
-                            crate::editor::state::operations::select_layer_descendants(&id_click);
+                            entity_selection::select_layer_descendants(&id_click);
                         } else {
-                            crate::editor::state::operations::select_layer_children(&id_click);
+                            entity_selection::select_layer_children(&id_click);
                         }
                     }
                 }
@@ -1148,7 +1153,7 @@ fn single_row(
                                 // root dropzone still completes through
                                 // `complete_layer_drop_onto_root`, which reads only that latch.
                                 // Whichever drop claims the release clears both.
-                                crate::editor::state::operations::begin_layer_drag(id_down.clone());
+                                engine_ops::begin_layer_drag(id_down.clone());
                             }
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = drag;
@@ -1176,7 +1181,7 @@ fn single_row(
                                     |id| node_descendant_ids(&nodes_now, id),
                                 );
                                 if !claimed {
-                                    let _ = crate::editor::state::operations::complete_layer_drop_onto_folder(id_up.clone());
+                                    let _ = engine_ops::complete_layer_drop_onto_folder(id_up.clone());
                                 }
                             }
                             #[cfg(not(target_arch = "wasm32"))]
@@ -1236,7 +1241,7 @@ fn single_row(
                     class=move || format!("{}{dim}", if is_sel() { ROW_ACTIVE } else { ROW })
                     on:click=move |_| {
                         #[cfg(target_arch = "wasm32")]
-                        crate::editor::state::operations::select_slot(id.clone());
+                        entity_selection::select_slot(id.clone());
                     }
                     // T-159.26 A1 — outliner activate (native dblclick) opens Attributes,
                     // the SEL-ORBAT-DBL-001 contract.
@@ -1261,7 +1266,7 @@ fn single_row(
                                     &drag_nodes.get_untracked(),
                                 );
                                 crate::editor::panels::outliner_drag::begin_refile(drag);
-                                crate::editor::state::operations::begin_refile(id_refile.clone());
+                                engine_ops::begin_refile(id_refile.clone());
                             }
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &id_refile;
@@ -1276,7 +1281,7 @@ fn single_row(
                                     &drag_nodes.get_untracked(),
                                 );
                                 crate::editor::panels::outliner_drag::begin_layer_slot_drag(drag);
-                                crate::editor::state::operations::begin_layer_slot_drag(id_layer_refile.clone());
+                                engine_ops::begin_layer_slot_drag(id_layer_refile.clone());
                             }
                             #[cfg(not(target_arch = "wasm32"))]
                             let _ = &id_layer_refile;
@@ -1360,7 +1365,7 @@ fn placed_vehicle_rows(authoring: bool, selected: RwSignal<Vec<String>>) -> AnyV
                         on:click=move |_| {
                             // Same single-click contract a slot row has: select through the
                             // kind-agnostic `select_slot` (sets selection + engine tint).
-                            crate::editor::state::operations::select_slot(id_click.clone());
+                            entity_selection::select_slot(id_click.clone());
                         }
                         on:dblclick=move |_| {
                             // SEL-ORBAT-DBL-001 — activate opens Attributes, exactly like a slot.
@@ -1514,7 +1519,7 @@ pub(crate) fn virtual_tree(
             // LAYER-CREATE-001 — a create just happened → open that new folder's inline rename.
             // Consumed once (the ops latch clears on read), so a later flatten won't re-arm it.
             #[cfg(target_arch = "wasm32")]
-            if let Some(new_id) = crate::editor::state::operations::take_rename_armed() {
+            if let Some(new_id) = engine_ops::take_rename_armed() {
                 // Seed the buffer with the just-minted "New Layer N" name so a blur with no typing
                 // keeps it (rename rejects a blank), and the caret lands on real text to overwrite.
                 let seed = ns

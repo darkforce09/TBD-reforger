@@ -1,13 +1,24 @@
-//! Role: zone draw.
-//! Position: `editor/state/operations/entity` in the frontend editor adapter.
-//! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
-//! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
+//! Role: the multi-click zone/trigger draw — arm a kind and shape, collect the ring or the
+//! centre-and-radius, and commit the finished geometry as one authored row.
+//! Position: `editor/state/armed_placement` in the frontend editor shell.
+//! Signals & state: the draft rides the armed value on the installed editor context, and every
+//! vertex nudges the reactive document tick so the dock's live hint re-reads.
+//! Invariants: the draft lives on the armed value rather than in a reading of its own, because "is
+//! a draw in flight" is what routes a map release to the draw instead of the select machine, and
+//! re-deriving that from a second source is how the two get out of step. Nothing is written to the
+//! document until the shape closes, so an abandoned draw leaves no row and no undo step. The kind
+//! is taken from the schema's closed enum by whoever arms the draw — never typed.
 
-use super::*;
+use super::Pending;
+use crate::editor::eden_chrome::{
+    circle_from_clicks, polygon_flat, polygon_is_committable, zone_types, ZoneShape,
+};
+use crate::editor::panels::zones_panel::DrawTarget;
+use crate::editor::state::operations::context::{bump_doc_tick, ZoneDraft, OPS_CTX};
 use website_map_engine::data::store::operations::entity::ZoneDrawStep;
-use website_map_engine::editing::hosted_commands::{commit_document_edit, zone_rows};
+use website_map_engine::editing::hosted_commands as engine_ops;
 
-/// Is a zone draw in flight?.
+/// Is a zone draw in flight?
 #[must_use]
 pub fn zone_draw_armed() -> bool {
     OPS_CTX.with(|c| {
@@ -31,7 +42,7 @@ pub fn zone_draft() -> Option<ZoneDraft> {
     })
 }
 
-/// Begin zone draw using the supplied domain data.
+/// Arm a draw that MINTS a new row. Refuses a kind the collection's schema enum does not carry.
 pub fn begin_zone_draw(kind: &str, shape: ZoneShape, collection: DrawTarget) -> bool {
     let valid = website_map_engine::data::store::operations::entity::zone_draft_kind_is_valid(
         kind, collection, zone_types,
@@ -56,15 +67,15 @@ pub fn begin_zone_draw(kind: &str, shape: ZoneShape, collection: DrawTarget) -> 
     })
 }
 
-/// Begin zone reshape using the supplied domain data.
+/// Arm a draw that RESHAPES an existing row, keeping the kind that row already carries.
 pub fn begin_zone_reshape(row_id: &str, shape: ZoneShape, collection: DrawTarget) -> bool {
     let kind = match collection {
-        DrawTarget::Zone => zone_rows()
+        DrawTarget::Zone => engine_ops::zone_rows()
             .into_iter()
             .find(|r| r.id == row_id)
             .map(|r| r.kind),
 
-        DrawTarget::Trigger => trigger_rows()
+        DrawTarget::Trigger => engine_ops::trigger_rows()
             .into_iter()
             .find(|r| r.id == row_id)
             .map(|r| r.activation),
@@ -89,7 +100,8 @@ pub fn begin_zone_reshape(row_id: &str, shape: ZoneShape, collection: DrawTarget
     })
 }
 
-/// Abandon the in-flight draw without writing anything. The explicit counterpart to [`cancel_pending`], which a zone draw deliberately survives. Returns whether a draw was actually abandoned — `false` when nothing was in flight (or the ops context is not up).
+/// Abandon the in-flight draw without writing anything — the explicit counterpart a zone draw needs
+/// because it deliberately survives the ordinary disarm. `false` when nothing was in flight.
 pub fn cancel_zone_draw() -> bool {
     let cleared = OPS_CTX.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
@@ -107,7 +119,7 @@ pub fn cancel_zone_draw() -> bool {
     cleared
 }
 
-/// Drop the last polygon vertex (the Undo-vertex control). Returns the remaining count.
+/// Drop the last polygon vertex (the undo-vertex control). Returns the remaining count.
 pub fn zone_draw_pop_vertex() -> usize {
     OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -122,8 +134,8 @@ pub fn zone_draw_pop_vertex() -> usize {
     })
 }
 
-/// One canvas release while a zone draw is armed.
-pub(in crate::editor::state::operations) fn advance_zone_draw(x: f64, z: f64) -> bool {
+/// One canvas release while a zone draw is armed: take a vertex, or close a circle and commit it.
+pub(crate) fn advance_zone_draw(x: f64, z: f64) -> bool {
     let step = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let ctx = guard.as_ref()?;
@@ -151,17 +163,23 @@ pub(in crate::editor::state::operations) fn advance_zone_draw(x: f64, z: f64) ->
             collection,
         }) => match (collection, target) {
             (DrawTarget::Zone, Some(id)) => {
-                commit_document_edit(|core| core.set_zone_circle(&id, cx, cz, r))
+                engine_ops::commit_document_edit(|core| core.set_zone_circle(&id, cx, cz, r))
             }
-            (DrawTarget::Zone, None) => write_row(DrawTarget::Zone, |core, id| {
-                core.add_circle_zone(id, &kind, cx, cz, r);
-            }),
+            (DrawTarget::Zone, None) => {
+                engine_ops::add_authored_row(DrawTarget::Zone, |core, id| {
+                    core.add_circle_zone(id, &kind, cx, cz, r);
+                })
+                .is_some()
+            }
             (DrawTarget::Trigger, Some(id)) => {
-                commit_document_edit(|core| core.set_trigger_circle(&id, cx, cz, r))
+                engine_ops::commit_document_edit(|core| core.set_trigger_circle(&id, cx, cz, r))
             }
-            (DrawTarget::Trigger, None) => write_row(DrawTarget::Trigger, |core, id| {
-                core.add_circle_trigger(id, &kind, cx, cz, r);
-            }),
+            (DrawTarget::Trigger, None) => {
+                engine_ops::add_authored_row(DrawTarget::Trigger, |core, id| {
+                    core.add_circle_trigger(id, &kind, cx, cz, r);
+                })
+                .is_some()
+            }
         },
 
         Some(ZoneDrawStep::Drawing) | None => {
@@ -171,7 +189,8 @@ pub(in crate::editor::state::operations) fn advance_zone_draw(x: f64, z: f64) ->
     }
 }
 
-/// Close the in-flight ring. Refuses below three vertices — `$defs/polygon` is `minItems: 3` and a two-vertex ring is a document the schema rejects.
+/// Close the in-flight ring. Refuses below three vertices — `$defs/polygon` is `minItems: 3`, and a
+/// two-vertex ring is a document the schema rejects.
 pub fn close_zone_polygon() -> bool {
     let taken = OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -194,73 +213,20 @@ pub fn close_zone_polygon() -> bool {
     let flat = polygon_flat(&commit.ring);
     match (commit.collection, commit.target) {
         (DrawTarget::Zone, Some(id)) => {
-            commit_document_edit(|core| core.set_zone_polygon(&id, &flat))
+            engine_ops::commit_document_edit(|core| core.set_zone_polygon(&id, &flat))
         }
-        (DrawTarget::Zone, None) => write_row(DrawTarget::Zone, |core, id| {
-            core.add_polygon_zone(id, &kind, &flat)
-        }),
+        (DrawTarget::Zone, None) => engine_ops::add_authored_row(DrawTarget::Zone, |core, id| {
+            core.add_polygon_zone(id, &kind, &flat);
+        })
+        .is_some(),
         (DrawTarget::Trigger, Some(id)) => {
-            commit_document_edit(|core| core.set_trigger_polygon(&id, &flat))
+            engine_ops::commit_document_edit(|core| core.set_trigger_polygon(&id, &flat))
         }
-        (DrawTarget::Trigger, None) => write_row(DrawTarget::Trigger, |core, id| {
-            core.add_polygon_trigger(id, &kind, &flat)
-        }),
+        (DrawTarget::Trigger, None) => {
+            engine_ops::add_authored_row(DrawTarget::Trigger, |core, id| {
+                core.add_polygon_trigger(id, &kind, &flat);
+            })
+            .is_some()
+        }
     }
-}
-
-/// Write row using the supplied domain data.
-pub(in crate::editor::state::operations) fn write_row(
-    collection: DrawTarget,
-    f: impl FnOnce(&MissionDocCore, &str),
-) -> bool {
-    write_row_returning_id(collection, f).is_some()
-}
-
-/// Write row returning id using the supplied domain data.
-pub(in crate::editor::state::operations) fn write_row_returning_id(
-    collection: DrawTarget,
-    f: impl FnOnce(&MissionDocCore, &str),
-) -> Option<String> {
-    let id = OPS_CTX.with(|c| {
-        let guard = c.borrow();
-        let ctx = guard.as_ref()?;
-        let d = ctx.doc.borrow();
-        let core = d.as_ref()?;
-        website_map_engine::data::store::operations::entity::write_row_returning_id(
-            core, collection, f,
-        )
-    });
-    if id.is_some() {
-        mission_history::after_local_edit();
-    }
-    id
-}
-
-/// Author one boundary zone covering the whole terrain, sized from the mission's own map.
-///
-/// Every mission wants a play area, and the only other way to get one is to walk a 12.8 km ring
-/// vertex by vertex through [`begin_zone_draw`], on a map where a pixel is metres. The ring, the
-/// zone type and the label are the dock's vocabulary — the schema enum and the panel's own
-/// terrain rectangle — so they are resolved here and handed to the document already decided.
-pub fn add_whole_terrain_zone() -> Option<String> {
-    use crate::editor::panels::zones_panel;
-
-    let (terrain, bounds) = OPS_CTX.with(|c| {
-        let guard = c.borrow();
-        let ctx = guard.as_ref()?;
-        let d = ctx.doc.borrow();
-        let core = d.as_ref()?;
-        Some((terrain_key_of(core), terrain_bounds_of(core)))
-    })?;
-    let ring = zones_panel::terrain_rect_ring(&terrain, bounds)?;
-
-    let kind = zones_panel::whole_terrain_zone_type()?;
-    write_row_returning_id(DrawTarget::Zone, |core, id| {
-        core.add_polygon_zone_labelled(
-            id,
-            &kind,
-            &ring,
-            Some(zones_panel::WHOLE_TERRAIN_ZONE_LABEL),
-        );
-    })
 }

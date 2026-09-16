@@ -24,7 +24,6 @@ use crate::v2::core::ui::MaterialIcon;
 /// same signature, exactly as [`placed_vehicles_panel`] does.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<String>>) -> AnyView {
-    use crate::editor::state::operations as ops;
     use website_map_engine::editing::hosted_commands as engine_ops;
 
     // The type the next draw will carry. Seeded from the schema, not typed here; `boundary` is the
@@ -43,7 +42,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
         // T-079 — the zone panel arms the SAME draw tool as the trigger panel, targeting the ZONE
         // collection. `begin_zone_draw` takes the target so the trigger panel is a second consumer of
         // the identical call (see [`DrawTarget`]).
-        ops::begin_zone_draw(&kind, shape, DrawTarget::Zone);
+        armed_placement::begin_zone_draw(&kind, shape, DrawTarget::Zone);
         doc_tick.update(|n| *n = n.wrapping_add(1));
     };
 
@@ -64,7 +63,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
     // the absent draft block is the honest result rather than a silently armed tool.
     let arm_tactical = move || {
         let kind = tactical_kind.get_untracked();
-        ops::begin_tactical_draw(&kind);
+        tactical_graphics_authoring::begin_tactical_draw(&kind);
         doc_tick.update(|n| *n = n.wrapping_add(1));
     };
 
@@ -97,7 +96,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
             title="Author one boundary zone covering the whole terrain, sized from the mission's map"
             class="mt-2 w-full rounded-md border border-primary/40 bg-primary/10 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-primary/20"
             on:click=move |_| {
-                if let Some(id) = ops::add_whole_terrain_zone() {
+                if let Some(id) = add_whole_terrain_zone() {
                     selected.set(Some(id));
                 }
                 doc_tick.update(|n| *n = n.wrapping_add(1));
@@ -147,7 +146,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
         // ── Live draw state ────────────────────────────────────────────────────────────────
         {move || {
             let _ = doc_tick.get();
-            let Some(d) = ops::zone_draft() else {
+            let Some(d) = armed_placement::zone_draft() else {
                 return ().into_any();
             };
             let is_poly = d.shape == ZoneShape::Polygon;
@@ -189,7 +188,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
                                         disabled=!can_close
                                         class="rounded-md bg-primary/25 px-2 py-1 text-label-sm text-on-surface transition-colors hover:bg-primary/40 disabled:opacity-30 disabled:hover:bg-primary/25"
                                         on:click=move |_| {
-                                            ops::close_zone_polygon();
+                                            armed_placement::close_zone_polygon();
                                             doc_tick.update(|n| *n = n.wrapping_add(1));
                                         }
                                     >
@@ -200,7 +199,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
                                         disabled=n == 0
                                         class="rounded-md px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 disabled:opacity-30"
                                         on:click=move |_| {
-                                            ops::zone_draw_pop_vertex();
+                                            armed_placement::zone_draw_pop_vertex();
                                             doc_tick.update(|n| *n = n.wrapping_add(1));
                                         }
                                     >
@@ -212,7 +211,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
                             type="button"
                             class="rounded-md px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10"
                             on:click=move |_| {
-                                ops::cancel_zone_draw();
+                                armed_placement::cancel_zone_draw();
                                 doc_tick.update(|n| *n = n.wrapping_add(1));
                             }
                         >
@@ -321,7 +320,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
                 <span class="font-mono text-code-md text-outline">
                     {move || {
                         let _ = doc_tick.get();
-                        ops::tactical_graphic_count()
+                        tactical_graphics_authoring::tactical_graphic_count()
                     }}
                 </span>
             </div>
@@ -365,11 +364,11 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
             // tactical draw is as visible as an armed zone draw and cannot be silently in flight.
             {move || {
                 let _ = doc_tick.get();
-                let Some(d) = ops::tactical_draft() else {
+                let Some(d) = tactical_graphics_authoring::tactical_draft() else {
                     return ().into_any();
                 };
                 let n = d.verts.len();
-                let floor = ops::tactical_min_points(&d.kind).unwrap_or(2);
+                let floor = tactical_graphics_authoring::tactical_min_points(&d.kind).unwrap_or(2);
                 let hint = if n < floor {
                     format!("{n} of {floor} vertices — {} needs at least {floor}.", humanize_token(&d.kind))
                 } else {
@@ -390,7 +389,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
                                 disabled=n < floor
                                 class="rounded-md bg-primary/25 px-2 py-1 text-label-sm text-on-surface transition-colors hover:bg-primary/40 disabled:opacity-30 disabled:hover:bg-primary/25"
                                 on:click=move |_| {
-                                    ops::complete_tactical_draw();
+                                    tactical_graphics_authoring::complete_tactical_draw();
                                     doc_tick.update(|n| *n = n.wrapping_add(1));
                                 }
                             >
@@ -401,7 +400,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
                                 disabled=n == 0
                                 class="rounded-md px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 disabled:opacity-30"
                                 on:click=move |_| {
-                                    ops::tactical_draw_pop_vertex();
+                                    tactical_graphics_authoring::tactical_draw_pop_vertex();
                                     doc_tick.update(|n| *n = n.wrapping_add(1));
                                 }
                             >
@@ -411,7 +410,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
                                 type="button"
                                 class="rounded-md px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10"
                                 on:click=move |_| {
-                                    ops::cancel_tactical_draw();
+                                    tactical_graphics_authoring::cancel_tactical_draw();
                                     doc_tick.update(|n| *n = n.wrapping_add(1));
                                 }
                             >
@@ -435,7 +434,6 @@ fn zone_attributes(
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<String>>,
 ) -> AnyView {
-    use crate::editor::state::operations as ops;
     use website_map_engine::editing::hosted_commands as engine_ops;
 
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
@@ -538,7 +536,7 @@ fn zone_attributes(
                             title="Redraw this zone as a circle — click the centre, then the rim"
                             class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
                             on:click=move |_| {
-                                ops::begin_zone_reshape(&a, ZoneShape::Circle, DrawTarget::Zone);
+                                armed_placement::begin_zone_reshape(&a, ZoneShape::Circle, DrawTarget::Zone);
                                 bump();
                             }
                         >
@@ -549,7 +547,7 @@ fn zone_attributes(
                             title="Redraw this zone as a polygon — click each vertex, then Close"
                             class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
                             on:click=move |_| {
-                                ops::begin_zone_reshape(&b, ZoneShape::Polygon, DrawTarget::Zone);
+                                armed_placement::begin_zone_reshape(&b, ZoneShape::Polygon, DrawTarget::Zone);
                                 bump();
                             }
                         >
@@ -595,7 +593,6 @@ fn zone_rule_control(
     rules: serde_json::Value,
     doc_tick: RwSignal<u64>,
 ) -> AnyView {
-    use crate::editor::state::operations as ops;
     use website_map_engine::editing::hosted_commands as engine_ops;
 
     let current = rules.get(&f.key).cloned();
@@ -1171,6 +1168,10 @@ pub fn terrain_rect_ring(terrain: &str, bounds: [f64; 4]) -> Option<Vec<f64>> {
     Some(polygon_flat(&terrain_rect_corners(bounds)))
 }
 
+#[cfg(target_arch = "wasm32")]
+use crate::editor::canvas::tactical_graphics_authoring;
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::armed_placement;
 /// Which shape a zone draw is building. The vocabulary is the document's, so the panel and the
 /// authored row can never disagree about what a draw is producing.
 pub use website_map_engine::data::store::operations::zones::ZoneShape;
@@ -1197,6 +1198,29 @@ where
     let (x1, y1) = project(a.0, a.1);
     let (x2, y2) = project(b.0, b.1);
     ProjectedOwnerLine { x1, y1, x2, y2 }
+}
+
+/// Author one boundary zone covering the whole terrain, sized from the mission's own map.
+///
+/// Every mission wants a play area, and the only other way to get one is to walk a 12.8 km ring
+/// vertex by vertex through the draw tool, on a map where a pixel is metres. The ring, the zone
+/// type and the label are this panel's vocabulary — the schema enum and the panel's own terrain
+/// rectangle — so they are resolved here and handed to the document already decided.
+#[cfg(target_arch = "wasm32")]
+#[must_use]
+pub fn add_whole_terrain_zone() -> Option<String> {
+    use website_map_engine::data::store::operations::entity::{terrain_bounds_of, terrain_key_of};
+    use website_map_engine::editing::hosted_commands as engine_ops;
+
+    let (terrain, bounds) = website_map_engine::editing::host::with_doc(|core| {
+        (terrain_key_of(core), terrain_bounds_of(core))
+    })?;
+    let ring = terrain_rect_ring(&terrain, bounds)?;
+
+    let kind = whole_terrain_zone_type()?;
+    engine_ops::add_authored_row(DrawTarget::Zone, |core, id| {
+        core.add_polygon_zone_labelled(id, &kind, &ring, Some(WHOLE_TERRAIN_ZONE_LABEL));
+    })
 }
 
 #[cfg(test)]
@@ -1583,8 +1607,8 @@ mod tests {
     fn t792_escape_arm_cancels_the_zone_draw() {
         let ed = editor_live_from_page();
         assert!(
-            ed.contains("editor_ops::cancel_zone_draw()"),
-            "T-792: the editor keydown must call editor_ops::cancel_zone_draw() (the ONE cancel a \
+            ed.contains("armed_placement::cancel_zone_draw()"),
+            "T-792: the editor keydown must call armed_placement::cancel_zone_draw() (the ONE cancel a \
              multi-click draw honours) — cancel_pending alone leaves the draft armed"
         );
         // It rides the SAME shared keydown Escape seam as the place/connect/measure cancels — not a
@@ -1592,8 +1616,8 @@ mod tests {
         // keydown dispatch and the sibling place cancel it sits beside.
         assert!(
             ed.contains("code().as_str()")
-                && ed.contains("editor_ops::has_pending()")
-                && ed.contains("editor_ops::cancel_zone_draw()"),
+                && ed.contains("armed_placement::has_pending()")
+                && ed.contains("armed_placement::cancel_zone_draw()"),
             "T-792: the zone-draw cancel must live in the ONE shared keydown Escape arm, beside the \
              armed-place (has_pending) cancel — no second window keydown listener"
         );
@@ -1925,7 +1949,9 @@ mod tests {
     #[test]
     fn whole_terrain_affordance_is_wired() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
-        let ops = live_code(crate::v2::core::test_support::editor_operations::ENTITY);
+        // The command is this panel's own: the ring, the type and the label are the panel's
+        // vocabulary, so the haystack is the panel's production half.
+        let ops = live_code(include_str!("zones_panel.rs"));
         let body = only_body(&ops, "pub fn add_whole_terrain_zone() -> Option<String>");
 
         // It reads the LIVE terrain off the document — both halves, so the world guard has two
@@ -1937,7 +1963,7 @@ mod tests {
         );
         // The rect is built through the pure, world-guarded helper here — not open-coded.
         assert!(
-            body.contains("zones_panel::terrain_rect_ring("),
+            body.contains("terrain_rect_ring("),
             "T-702: the ring must come from terrain_rect_ring (which refuses bounds that are not \
              this terrain), not from four corners spelled in the command"
         );
@@ -1955,8 +1981,7 @@ mod tests {
         );
         // The label and the type are the shared, schema-checked values — not second literals.
         assert!(
-            body.contains("zones_panel::WHOLE_TERRAIN_ZONE_LABEL")
-                && body.contains("zones_panel::whole_terrain_zone_type()"),
+            body.contains("WHOLE_TERRAIN_ZONE_LABEL") && body.contains("whole_terrain_zone_type()"),
             "T-702: label and type must be the shared constants, not re-spelled in the command"
         );
 
@@ -1984,7 +2009,7 @@ mod tests {
         let panel = live_code(wasm_half);
         let panel_copy = live_source(wasm_half);
         assert!(
-            panel.contains("ops::add_whole_terrain_zone()"),
+            panel.contains("add_whole_terrain_zone()"),
             "T-702: the Zones panel must CALL the command (the T-582 no-caller defect must not recur)"
         );
         assert!(
@@ -2059,7 +2084,7 @@ mod t946_86_tactical_trigger {
     fn the_panel_arms_the_tactical_draw() {
         let src = live_calls();
         assert!(
-            src.contains("ops::begin_tactical_draw("),
+            src.contains("tactical_graphics_authoring::begin_tactical_draw("),
             "T-946.86 (.84): a production control must call begin_tactical_draw — the wave-255 \
              state was a complete draw tool with no way to start it"
         );
@@ -2095,10 +2120,10 @@ mod t946_86_tactical_trigger {
     fn an_armed_draw_can_be_seen_finished_and_abandoned() {
         let src = live_calls();
         for needle in [
-            "ops::tactical_draft()",
-            "ops::complete_tactical_draw()",
-            "ops::tactical_draw_pop_vertex()",
-            "ops::cancel_tactical_draw()",
+            "tactical_graphics_authoring::tactical_draft()",
+            "tactical_graphics_authoring::complete_tactical_draw()",
+            "tactical_graphics_authoring::tactical_draw_pop_vertex()",
+            "tactical_graphics_authoring::cancel_tactical_draw()",
         ] {
             assert!(
                 src.contains(needle),

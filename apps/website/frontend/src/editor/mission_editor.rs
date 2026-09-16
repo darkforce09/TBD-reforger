@@ -975,7 +975,7 @@ type SubjectResolver = std::rc::Rc<dyn Fn(&str) -> Option<(RouteTarget, f64, f64
 /// the key — the same courtesy the editor keydown's Escape arm extends.
 #[cfg(target_arch = "wasm32")]
 fn arrange_chord(kind: top_strip::ArrangeKind) -> bool {
-    if editor_ops::selection_len() < top_strip::ARRANGE_MIN_SELECTION {
+    if website_map_engine::editing::host::selection_len() < top_strip::ARRANGE_MIN_SELECTION {
         return false;
     }
     top_strip::run_arrange(kind);
@@ -1418,7 +1418,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         match fetch_compat_cold(auth).await {
                             Ok((feed, cargo)) => {
                                 registry_session::store_compat(feed.clone(), cargo.clone());
-                                editor_ops::set_cargo_defaults(cargo);
+                                engine_ops::set_cargo_defaults(cargo);
                                 compat.set(feed);
                             }
                             Err(_) => {
@@ -1432,7 +1432,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     }
                 });
             } else if let Some((feed, cargo)) = registry_session::cached_compat() {
-                editor_ops::set_cargo_defaults(cargo);
+                engine_ops::set_cargo_defaults(cargo);
                 compat.set(feed);
             }
         }
@@ -1732,7 +1732,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // (the closure OWNS the rect, so the button hands over nothing).
                     select_all: Box::new(move || {
                         let rect = container.get_bounding_client_rect();
-                        editor_ops::select_all_in_view(rect.width(), rect.height());
+                        entity_selection::select_all_in_view(rect.width(), rect.height());
                     }),
                     widget_digit: Box::new(move || widget_variant.get().to_digit()),
                     widget_is_rotate: Box::new(move || widget_variant.get().is_rotate()),
@@ -2613,7 +2613,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // T-159.22 — a cancelled pointer drops an armed place, like every other
                     // in-flight gesture below (pointercancel is never a commit).
                     // T-768 — same for an armed connect (never a commit on cancel).
-                    editor_ops::cancel_pending();
+                    armed_placement::cancel_pending();
                     engine_ops::cancel_connect();
                     if pan_px.get().is_some() {
                         pan_px.set(None);
@@ -3171,6 +3171,10 @@ mod t628_boot_progress;
 #[path = "mission_editor_tests/t631_boot_failure_state.rs"]
 mod t631_boot_failure_state;
 
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::armed_placement;
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::entity_selection;
 /// Exercise the graphics crate's satellite arithmetic directly from native UI regression tests.
 #[cfg(all(test, not(target_arch = "wasm32")))]
 use website_map_engine::world::terrain::satellite::streamer as tbd_sat_pure;
@@ -3691,7 +3695,7 @@ mod t939_4_arrange_chords {
              Body:\n{body}"
         );
         assert!(
-            body.contains("editor_ops::selection_len()"),
+            body.contains("website_map_engine::editing::host::selection_len()"),
             "T-939.4: the floor must be measured against the LIVE selection, not a mirror that can \
              go stale between a click and a keypress. Body:\n{body}"
         );

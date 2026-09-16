@@ -43,6 +43,7 @@ use wasm_bindgen::JsCast;
 use website_map_engine::frame::engine::RenderEngine;
 use website_map_engine::overlay::lanes::role_id;
 
+use crate::editor::canvas::tactical_graphics_authoring;
 use crate::editor::state::doc_host::DocHandle;
 use selection::SelectionHandle;
 use website_map_engine::frame::EngineHandle;
@@ -296,7 +297,7 @@ pub fn refresh_hud() {
 /// The universe is [`crate::editor::mission_editor::selectable_ids`], read from the POST-change document:
 /// slots off `slots_json` (hidden rows included — `materialize()` drops T-665 / T-701 hidden slots
 /// and would deselect a slot for being invisible rather than for being gone, which is what made
-/// `editor_ops::toggle_hidden` unable to toggle back), plus the vehicle / entity / comment key sets
+/// `engine_ops::toggle_hidden` unable to toggle back), plus the vehicle / entity / comment key sets
 /// off `small_maps_json`. Reading it from the settled document is what keeps the guarantee this
 /// prune exists for: a row deleted or undone away is out of its map before this runs, so its id
 /// still falls out and Delete can never act on it.
@@ -629,15 +630,18 @@ fn upload_squad_links(e: &mut RenderEngine, doc: &MissionDocCore, soa: &SlotSoa)
 /// right one to squat and what the next zone-ring slice has to do about it.
 ///
 /// `doc` is the single source of geometry; the in-flight VERTEX DRAG is then laid over it by
-/// `editor_ops::apply_tactical_drag_preview`. The drag deliberately writes nothing to the document
+/// `tactical_graphics_authoring::apply_tactical_drag_preview`. The drag deliberately writes nothing to the document
 /// until pointerup (one gesture, one undo step), so the committed rows alone would draw the vertex
 /// at its old position for the whole drag — the same reason `vehicles_bind_symbology` above is
 /// re-bound here after a mixed drag re-packed its lane.
 fn upload_tactical_graphics(e: &mut RenderEngine, doc: &MissionDocCore) {
     use crate::editor::canvas::tactical_graphics as tg;
     let mut rows = tg::live_tactical_graphics(doc);
-    editor_ops::apply_tactical_drag_preview(&mut rows);
-    let verts = tg::tactical_lane_verts(&rows, editor_ops::selected_tactical_graphic().as_deref());
+    tactical_graphics_authoring::apply_tactical_drag_preview(&mut rows);
+    let verts = tg::tactical_lane_verts(
+        &rows,
+        tactical_graphics_authoring::selected_tactical_graphic().as_deref(),
+    );
     e.upload_hairline_segments(
         role_id::MISSION_ZONES,
         &verts,

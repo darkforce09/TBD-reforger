@@ -1,4 +1,5 @@
 use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
+use website_map_engine::editing::hosted_commands as engine_ops;
 
 const HIST: &str = include_str!("../state/history.rs");
 

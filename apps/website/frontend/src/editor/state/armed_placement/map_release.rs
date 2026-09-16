@@ -1,24 +1,37 @@
-//! Role: placement.
-//! Position: `editor/state/operations/entity` in the frontend editor adapter.
-//! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
-//! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
+//! Role: the canvas release that commits an armed place — resolve the folder, commit the entity
+//! under the active side, select it, and run the shared post-change tail.
+//! Position: `editor/state/armed_placement` in the frontend editor shell.
+//! Signals & state: the armed value and the active side on the installed editor context, plus the
+//! render engine handle the vehicle lane is rebound through.
+//! Invariants: the armed value is TAKEN before the document opens, so a release commits at most
+//! once. The folder a new entity is filed under is resolved by the host and handed to the document
+//! already decided, which keeps the folder mint part of the same undoable act as the place it
+//! serves. A release while a zone draw is in flight advances the draw instead — a draw owns the map
+//! until it closes or is abandoned.
 
-use super::*;
+use super::zone_draw::{advance_zone_draw, zone_draw_armed};
+use super::Pending;
+use crate::editor::panels::outliner;
+use crate::editor::state::history as mission_history;
+use crate::editor::state::operations::context::{place_with_crew, OPS_CTX};
+use leptos::prelude::GetUntracked;
+use outliner::ensure_active_layer;
 use website_map_engine::data::store::operations::entity::ArmedPlacement;
-use website_map_engine::editing::hosted_commands::slot_attributes::read_attrs;
 
-/// Commit an armed place at a **world** position, then select it and run the shared post-change tail. Returns `false` when nothing was armed.
+/// Commit an armed place at a WORLD position, then select it and run the shared post-change tail.
+/// `false` when nothing was armed.
 #[allow(dead_code)]
 pub fn place_at(x: f64, y: f64) -> bool {
     place_at_impl(x, y, false, false)
 }
 
-/// Place at alt using the supplied domain data.
+/// Commit an armed place, with `alt_empty` asking a vehicle to spawn without its crew.
 pub fn place_at_alt(x: f64, y: f64, alt_empty: bool) -> bool {
     place_at_impl(x, y, alt_empty, false)
 }
 
-/// Place at keep using the supplied domain data.
+/// Commit an armed place and RE-ARM the same value, so a palette leaf can be stamped repeatedly
+/// without going back to the palette between drops.
 pub fn place_at_keep(x: f64, y: f64, alt_empty: bool) -> bool {
     let snapshot = OPS_CTX.with(|c| {
         c.borrow()
@@ -38,8 +51,9 @@ pub fn place_at_keep(x: f64, y: f64, alt_empty: bool) -> bool {
     placed
 }
 
-/// Rebind vehicle lane after place using the supplied domain data.
-pub(in crate::editor::state::operations) fn rebind_vehicle_lane_after_place() {
+/// Rebind the vehicle symbology lane after a place that added one, so the new glyph appears in the
+/// same frame the document changed in.
+pub(crate) fn rebind_vehicle_lane_after_place() {
     let (vxy, valiases, vtints, vheadings) = mission_history::vehicle_lane_fields();
     OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -55,7 +69,7 @@ pub(in crate::editor::state::operations) fn rebind_vehicle_lane_after_place() {
     });
 }
 
-/// The armed value as the engine's placement machine takes it. The host's arm carries the zone
+/// The armed value as the document's placement machine takes it. The host's arm carries the zone
 /// DRAFT, which the draw machine owns and the release path never commits.
 fn armed_placement(pending: Pending) -> ArmedPlacement {
     match pending {
@@ -68,13 +82,10 @@ fn armed_placement(pending: Pending) -> ArmedPlacement {
     }
 }
 
-/// Place at impl using the supplied domain data.
-pub(in crate::editor::state::operations) fn place_at_impl(
-    x: f64,
-    y: f64,
-    alt_empty: bool,
-    keep: bool,
-) -> bool {
+/// One canvas release: advance an in-flight zone draw, or commit whatever is armed.
+fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
+    // The re-arm is the CALLER's, after the commit reports success: a release that placed nothing
+    // must not leave a value armed that the operator believes they dropped.
     let _ = keep;
 
     if zone_draw_armed() {
@@ -97,7 +108,7 @@ pub(in crate::editor::state::operations) fn place_at_impl(
             place_with_crew(),
             alt_empty,
             &ctx.next_id,
-            |core| ensure_layer(ctx, core),
+            ensure_active_layer,
         )?;
         if let Some(ids) = placed.selection.clone() {
             *ctx.selection.borrow_mut() = ids;
@@ -118,17 +129,4 @@ pub(in crate::editor::state::operations) fn place_at_impl(
         crate::editor::panels::dock_right::record_placed(asset_id, label);
     }
     true
-}
-
-/// Returns `false` (no-op) when the target has no squad (an unfiled slot, or the target vanished), or already shares the dragged slot's squad — `move_slot_to_squad` is itself a no-op on same-squad, but declining here keeps the caller from firing the dirty tail for nothing.
-pub fn regroup_slot_onto(slot_id: &str, target_id: &str) -> bool {
-    if slot_id == target_id {
-        return false;
-    }
-    let dest_squad = read_attrs(target_id).map(|a| a.squad).unwrap_or_default();
-    let src_squad = read_attrs(slot_id).map(|a| a.squad).unwrap_or_default();
-    if dest_squad.is_empty() || dest_squad == src_squad {
-        return false;
-    }
-    refile_slot(slot_id.to_string(), dest_squad)
 }

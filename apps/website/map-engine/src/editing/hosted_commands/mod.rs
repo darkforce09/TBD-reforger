@@ -46,6 +46,15 @@ pub mod composition_library;
 /// Move a whole selection into another faction's squad, and put it back.
 pub mod squad_reassignment;
 
+/// The editor's folder tree: create, rename, delete, reparent, refile, hide and lock.
+pub mod editor_layers;
+
+/// The authored triggers and the owner edge that ties one to a placed entity.
+pub mod map_triggers;
+
+/// The loadouts placed slots carry: read, seed, buffer, and commit a planned set of writes.
+pub mod slot_loadouts;
+
 pub use slot_attributes::{
     AttrDiff, SlotAttrs, attrs_locked_count, attrs_multi_ids, attrs_update_position,
     attrs_update_position_multi, attrs_update_slot, attrs_update_slot_multi, read_attrs,
@@ -66,14 +75,34 @@ pub use squad_reassignment::{ReassignTarget, reassign_rows, reassign_slots, rest
 
 pub use document_edit::commit_document_edit;
 
-pub use document_search::{DocEntity, document_entities};
+pub use document_search::{DocEntity, document_entities, selection_entities};
 
 pub use entity_clipboard::{copy_selection, delete_selection, paste_at_cursor};
 
 pub use orbat_roster::{
-    OrbatManagerSnapshot, census_input, orbat_add_slot, orbat_add_squad, orbat_add_vehicle,
-    orbat_apply_faction, orbat_manager_snapshot, orbat_remove_slot, orbat_remove_squad,
-    orbat_rename_squad, orbat_set_leader,
+    OrbatManagerSnapshot, begin_refile, cancel_refile, census_input, complete_refile_onto_squad,
+    faction_doc_from_side, orbat_add_slot, orbat_add_squad, orbat_add_vehicle, orbat_apply_faction,
+    orbat_manager_snapshot, orbat_remove_slot, orbat_remove_squad, orbat_rename_squad,
+    orbat_set_leader, orbat_update_slot_fields, refile_slot, regroup_slot_onto,
+};
+
+pub use editor_layers::{
+    begin_layer_comment_drag, begin_layer_drag, begin_layer_slot_drag, cancel_layer_drag,
+    complete_layer_drop_onto_folder, complete_layer_drop_onto_root, create_layer, delete_layer,
+    hide_selection, refile_slot_to_layer, rename_layer, reparent_layer, set_layer_hidden,
+    set_layer_locked, set_selection_hidden, show_all_hidden, show_selection, take_rename_armed,
+    toggle_hidden,
+};
+
+pub use map_triggers::{
+    TRIGGER_ACTIVATIONS, TriggerRow, delete_trigger, owner_line_world, set_trigger_activation,
+    set_trigger_name, set_trigger_owner, set_trigger_rule, trigger_count, trigger_rows,
+};
+
+pub use slot_loadouts::{
+    BufferedLoadout, CargoRow, LoadoutWrite, commit_loadout_writes, copy_loadouts_from_selection,
+    loadout_buffer, loadout_buffer_len, next_apply_seed, read_loadout, seed_slot_cargo,
+    selection_slot_targets, set_cargo_defaults,
 };
 
 pub use placed_vehicles::{
@@ -94,8 +123,8 @@ pub use map_markers::{
 };
 
 pub use zone_authoring::{
-    ZoneRow, delete_zone, set_zone_faction, set_zone_kind, set_zone_label, set_zone_rule,
-    zone_count, zone_rows,
+    ZoneRow, add_authored_row, delete_zone, set_zone_faction, set_zone_kind, set_zone_label,
+    set_zone_rule, zone_count, zone_rows,
 };
 
 pub use map_comments::{

@@ -66,8 +66,9 @@ pub fn cancel_layer_drag() {
     // Every completion/cancellation must consume all of them before a later click can see one.
     #[cfg(target_arch = "wasm32")]
     {
-        crate::editor::state::operations::cancel_layer_drag();
-        crate::editor::state::operations::cancel_refile();
+        use website_map_engine::editing::hosted_commands as engine_ops;
+        engine_ops::cancel_layer_drag();
+        engine_ops::cancel_refile();
     }
 }
 
@@ -129,12 +130,12 @@ pub fn complete_multi_drop_onto_folder(
                 // drop as well, so `plan_drop`'s refusal is the affordance, not the only guard).
                 LayerDrag::Folder(_) => {
                     if id != dest_folder_id {
-                        ops::reparent_layer(id, Some(dest_folder_id.to_string()));
+                        engine_ops::reparent_layer(id, Some(dest_folder_id.to_string()));
                     }
                 }
                 // A slot / comment REFILES into it — same latch, different mutator (T-651).
                 LayerDrag::Slot(_) => {
-                    ops::refile_slot_to_layer(id, dest_folder_id);
+                    engine_ops::refile_slot_to_layer(id, dest_folder_id);
                 }
                 LayerDrag::Comment(_) => {
                     engine_ops::refile_comment_to_layer(id, dest_folder_id);
@@ -163,6 +164,7 @@ pub fn complete_multi_drop_onto_folder(
 #[cfg(target_arch = "wasm32")]
 pub fn complete_multi_refile_onto_squad(dest_squad_id: &str) -> bool {
     use crate::editor::state::operations as ops;
+    use website_map_engine::editing::hosted_commands as engine_ops;
 
     let Some(drag) = PENDING_DRAG.with(|p| p.borrow_mut().take()) else {
         return false;
@@ -182,7 +184,7 @@ pub fn complete_multi_refile_onto_squad(dest_squad_id: &str) -> bool {
     let ids = set.ids.clone();
     ops::with_batch("orbat-multi-refile", || {
         for id in &ids {
-            ops::refile_slot(id.clone(), dest_squad_id.to_string());
+            engine_ops::refile_slot(id.clone(), dest_squad_id.to_string());
         }
     });
     true

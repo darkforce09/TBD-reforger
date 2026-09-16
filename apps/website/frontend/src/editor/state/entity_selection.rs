@@ -1,30 +1,39 @@
-//! Role: selection index.
-//! Position: `editor/state/operations/entity` in the frontend editor adapter.
-//! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
-//! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
+//! Role: the editor's selected entities — replacing the set, selecting a folder's rows, selecting
+//! everything in view, and framing the selection with the camera.
+//! Position: `editor/state` in the frontend editor shell.
+//! Signals & state: the selected-id set on the installed editor context, the render engine handle
+//! whose tint and camera it drives, and the dock mirrors the shared refresh pushes.
+//! Invariants: one write of the set, then the renderer, then the mirrors — in that order, from one
+//! place, so a tint and a dock row can never disagree about what is selected. Selection is never
+//! document state: nothing here mints an undo step, and a selection over ids the document no longer
+//! holds is pruned by the post-change tail rather than defended against here.
 
-use super::*;
+use crate::editor::state::history as mission_history;
+use crate::editor::state::operations::context::OPS_CTX;
+use website_map_engine::data::store::operations::projections::layer_rows;
 use website_map_engine::editing::hosted_commands::vehicle_points;
 use website_map_engine::editing::tools::selection;
 
-/// Derived from the document index rather than re-read per kind, so the selection filter's chips and the search's rows can never disagree about what an entity's type or faction is. Selection order is not preserved (the document order is): the chips are counts and id sets, and nothing downstream reads a selection as a sequence.
-#[must_use]
-pub fn selection_entities() -> Vec<crate::editor::panels::dock_left::DocEntity> {
-    OPS_CTX
-        .with(|c| {
-            let guard = c.borrow();
-            let ctx = guard.as_ref()?;
-            let sel = ctx.selection.borrow().clone();
-            let d = ctx.doc.borrow();
-            let core = d.as_ref()?;
-            Some(
-                website_map_engine::data::store::operations::entity::selection_entities(core, &sel),
-            )
-        })
-        .unwrap_or_default()
+/// Replace the selected ids, rebind the renderer's tint, and refresh the mirrors.
+pub fn set_slot_selection(ids: Vec<String>) {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return;
+        };
+        *ctx.selection.borrow_mut() = ids;
+        let ids = ctx.selection.borrow().clone();
+        let mut eng = ctx.engine.borrow_mut();
+        if let Some(e) = eng.as_mut() {
+            e.set_selection(ids);
+        }
+    });
+    mission_history::refresh_selection();
 }
 
-/// Set selection ids using the supplied domain data.
+/// Replace the selection with an explicit id list. An empty list is refused rather than treated as
+/// "clear" — clearing is its own gesture, and a caller handing over nothing has usually resolved
+/// nothing. Returns how many ids were selected.
 pub fn set_selection_ids(ids: Vec<String>) -> usize {
     if ids.is_empty() {
         return 0;
@@ -61,9 +70,48 @@ pub fn select_slot(id: String) {
     mission_history::refresh_selection();
 }
 
-/// Select every slot and vehicle inside the current view. `vehicle_points()` is resolved BEFORE the
-/// context borrow opens, because it opens its own. Returns whether it acted, so the keydown arm can
-/// `prevent_default` — the browser's own Select All would otherwise blue-wash the editor chrome.
+/// Select a folder's DIRECT slot children, replacing the selection.
+pub fn select_layer_children(layer_id: &str) {
+    let ids = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        Some(
+            crate::editor::panels::outliner_tree::layer_direct_slot_children(
+                &layer_rows(core),
+                layer_id,
+            ),
+        )
+    });
+    if let Some(ids) = ids {
+        set_slot_selection(ids);
+    }
+}
+
+/// Select every slot in a folder's whole subtree, replacing the selection.
+pub fn select_layer_descendants(layer_id: &str) {
+    let ids = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        Some(
+            crate::editor::panels::outliner_tree::layer_descendant_slots(
+                &layer_rows(core),
+                layer_id,
+            ),
+        )
+    });
+    if let Some(ids) = ids {
+        set_slot_selection(ids);
+    }
+}
+
+/// Select every slot and vehicle inside the current view. The vehicle points are resolved BEFORE
+/// the context borrow opens, because that read opens its own. Returns whether it acted, so the
+/// keydown arm can `prevent_default` — the browser's own Select All would otherwise blue-wash the
+/// editor chrome.
 pub fn select_all_in_view(viewport_w: f64, viewport_h: f64) -> bool {
     if !(viewport_w > 0.0 && viewport_h > 0.0) {
         return false;

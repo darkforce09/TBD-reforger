@@ -26,6 +26,9 @@ use crate::editor::state::operations as editor_ops;
 use website_map_engine::editing::hosted_commands as engine_ops;
 
 use super::gestures::{make_sync_los, make_sync_ruler, EditorGestureContext};
+use crate::editor::canvas::tactical_graphics_authoring;
+use crate::editor::state::armed_placement;
+use crate::editor::state::entity_selection;
 
 /// Attach the editor keydown closure to the window. The local `let` belt below mirrors the
 /// page's `on_load` environment name-for-name (the T-934.13 idiom), so the moved block — its
@@ -108,8 +111,8 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                             // T-723 — Esc disarms an armed place BEFORE the measure-tool seam.
                             // `cancel_pending` was unreachable from the keyboard; Eden stamp
                             // cancel is Esc (and RMB on pointerup). Clear the ghost with the arm.
-                            let place_acted = if editor_ops::has_pending() {
-                                editor_ops::cancel_pending();
+                            let place_acted = if armed_placement::has_pending() {
+                                armed_placement::cancel_pending();
                                 if let Some(e) = engine.borrow_mut().as_mut() {
                                     e.clear_place_preview();
                                 }
@@ -136,7 +139,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                             // when it DOES act, feeding it to the `||` below prevents the
                             // browser default and stops any lower Esc layer (dialog/menu/tab)
                             // consuming the SAME press (one-Esc-one-layer, T-813/T-814).
-                            let zone_draw_acted = editor_ops::cancel_zone_draw();
+                            let zone_draw_acted = armed_placement::cancel_zone_draw();
                             // T-936.7 — a tactical draw and a tactical vertex drag both honour
                             // Esc, and both need this explicit arm for the SAME reason
                             // `cancel_zone_draw` does: neither rides `Pending`, so
@@ -149,8 +152,9 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                             // so the lane has to be put back on committed truth by hand: the
                             // drag never wrote to the document, so no `after_local_edit` rebind
                             // is coming.
-                            let tg_draw_acted = editor_ops::cancel_tactical_draw();
-                            let tg_drag_acted = editor_ops::cancel_tactical_vertex_drag();
+                            let tg_draw_acted = tactical_graphics_authoring::cancel_tactical_draw();
+                            let tg_drag_acted =
+                                tactical_graphics_authoring::cancel_tactical_vertex_drag();
                             if tg_drag_acted {
                                 mission_history::refresh_tactical_lane();
                             }
@@ -296,7 +300,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                     // stops the browser's own Select All blue-washing the editor chrome.
                     "KeyA" if modk && !ev.alt_key() && !ev.shift_key() => {
                         let rect = container.get_bounding_client_rect();
-                        editor_ops::select_all_in_view(rect.width(), rect.height())
+                        entity_selection::select_all_in_view(rect.width(), rect.height())
                     }
                     // T-635 — Ctrl/Cmd+Alt+D toggles the telemetry HUD (default hidden).
                     // Behind the same `in_editable_field()` guard at the top of this closure,
@@ -308,7 +312,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                         debug_hud_shown.set(!debug_hud_shown.get_untracked());
                         true
                     }
-                    "Space" if !modk => editor_ops::center_on_selection(),
+                    "Space" if !modk => entity_selection::center_on_selection(),
                     // T-662 — Delete still removes the selection. Backspace is NO LONGER an
                     // alias for Delete; it toggles the Eden chrome (hide/show interface), so
                     // the two keys are now split arms. Backspace always "acts" (it flips the
@@ -377,7 +381,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                         match armed.filter(|id| engine_ops::connection_exists(id)) {
                             Some(id) => engine_ops::delete_connection(&id),
                             None => {
-                                editor_ops::delete_selected_tactical_graphic()
+                                tactical_graphics_authoring::delete_selected_tactical_graphic()
                                     || editor_ops::delete_selection()
                             }
                         }

@@ -20,6 +20,8 @@ use crate::editor::layout::{DOCK_R, STUB_PX};
 use crate::editor::panels::dock_left::collapse_chevron;
 use crate::editor::panels::outliner_tree::{chevron_or_spacer, guide_spans, PALETTE_LEAF};
 use crate::editor::panels::zones_panel::zones_panel;
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::armed_placement;
 use crate::v2::core::api::dto::RegistryItem;
 use crate::v2::core::ui::MaterialIcon;
 
@@ -208,13 +210,13 @@ fn palette_rows(
                             #[cfg(target_arch = "wasm32")]
                             match kind {
                                 PaletteKind::Character => {
-                                    editor_ops::begin_place(payload.clone())
+                                    armed_placement::begin_place(payload.clone())
                                 }
                                 PaletteKind::Vehicle => {
-                                    editor_ops::begin_place_vehicle(payload.clone())
+                                    armed_placement::begin_place_vehicle(payload.clone())
                                 }
                                 PaletteKind::Object => {
-                                    editor_ops::begin_place_object(payload.clone())
+                                    armed_placement::begin_place_object(payload.clone())
                                 }
                                 // T-650 — compositions are not catalog leaves; they arm from the
                                 // `compositions_panel` list, not from a `palette_rows` payload. This
@@ -1119,9 +1121,9 @@ fn arm_favourite_place(
     payload: crate::editor::arsenal::asset_catalog::PlacePayload,
 ) {
     match palette {
-        CatalogPalette::Character => editor_ops::begin_place(payload),
-        CatalogPalette::Vehicle => editor_ops::begin_place_vehicle(payload),
-        CatalogPalette::Object => editor_ops::begin_place_object(payload),
+        CatalogPalette::Character => armed_placement::begin_place(payload),
+        CatalogPalette::Vehicle => armed_placement::begin_place_vehicle(payload),
+        CatalogPalette::Object => armed_placement::begin_place_object(payload),
     }
 }
 
@@ -1574,7 +1576,7 @@ pub(crate) fn route_select_zone(zone_id: &str) -> bool {
 ///
 /// T-215 — the **Vehicles** tab is a real palette off the same `/registry` fetch (`vehicle_catalog`,
 /// built by `asset_catalog::build_vehicle_catalog_tree`), not the T-070 placeholder it was. Its
-/// leaves arm `editor_ops::begin_place_vehicle`, so a release on the canvas writes a `vehiclesById`
+/// leaves arm `armed_placement::begin_place_vehicle`, so a release on the canvas writes a `vehiclesById`
 /// row at that world point.
 ///
 /// T-638 — `collapsed` collapses this dock to the [`STUB_PX`]-square stub in its outer top-RIGHT
@@ -2289,7 +2291,6 @@ pub(crate) fn compositions_panel(
     editing: RwSignal<Option<String>>,
 ) -> AnyView {
     use crate::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
-    use crate::editor::state::operations as ops;
 
     // The inline save form's open state + field buffers. Opening seeds no defaults; a blank title
     // reads "Untitled" on save so the row is always addressable.
@@ -2338,7 +2339,7 @@ pub(crate) fn compositions_panel(
         // (the F-30 "the hint keeps promising the thing that never happens" report).
         {move || {
             let _ = doc_tick.get();
-            let Some(armed) = ops::armed_composition_id() else {
+            let Some(armed) = armed_placement::armed_composition_id() else {
                 return ().into_any();
             };
             // The row's title for the readout; fall back to the id if the row was deleted out from
@@ -2371,7 +2372,7 @@ pub(crate) fn compositions_panel(
         // ── Save affordance (shown only when a selection exists) ──────────────────────────────
         {move || {
             let _ = doc_tick.get();
-            if ops::selection_len() == 0 {
+            if website_map_engine::editing::host::selection_len() == 0 {
                 // No selection → the affordance is not offered; make that explicit rather than
                 // showing a button that no-ops.
                 return view! {
@@ -2457,7 +2458,7 @@ pub(crate) fn compositions_panel(
                         class="mt-3 w-full rounded-md border border-primary/40 px-2 py-1.5 text-label-sm text-primary transition-colors hover:bg-primary/15"
                         on:click=move |_| save_open.set(true)
                     >
-                        {move || format!("Save composition… ({} selected)", ops::selection_len())}
+                        {move || format!("Save composition… ({} selected)", website_map_engine::editing::host::selection_len())}
                     </button>
                 }
                     .into_any()
@@ -2639,7 +2640,7 @@ fn composition_row_view(
                                 title="Click to arm, then click the map to place"
                                 class=format!("{row} flex-1")
                                 on:pointerdown=move |_| {
-                                    ops::begin_place_composition(arm_id.clone());
+                                    armed_placement::begin_place_composition(arm_id.clone());
                                 }
                             >
                                 <MaterialIcon name="dashboard_customize" class="block text-sm" />
@@ -2699,7 +2700,7 @@ pub(crate) fn compositions_panel(
 // ── T-079 — the Triggers palette (RIGHT-MODE-003 + CONN-TRG-OWNER-001) ────────────────────────────
 //
 // The Triggers tab authors trigger AREAS as a SECOND CONSUMER of the shipped zone draw tool: the
-// draw controls call `editor_ops::begin_zone_draw(&activation, shape, DrawTarget::Trigger)` and the
+// draw controls call `armed_placement::begin_zone_draw(&activation, shape, DrawTarget::Trigger)` and the
 // reshape buttons `begin_zone_reshape(&id, shape, DrawTarget::Trigger)` — the SAME calls the Zones
 // panel makes with `DrawTarget::Zone`, so the whole geometry state machine is shared, not forked
 // (the ticket's constraint). The panel adds only the trigger-specific surface:
@@ -2721,11 +2722,10 @@ pub(crate) fn triggers_panel(
 ) -> AnyView {
     use crate::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
     use crate::editor::panels::zones_panel::{humanize_token, DrawTarget, ZoneShape};
-    use crate::editor::state::operations as ops;
 
     // The activation the NEXT draw will carry, seeded to the first of the three (presence).
     let draw_activation = RwSignal::new(
-        ops::TRIGGER_ACTIVATIONS
+        engine_ops::TRIGGER_ACTIVATIONS
             .first()
             .copied()
             .unwrap_or("presence")
@@ -2735,7 +2735,7 @@ pub(crate) fn triggers_panel(
     let arm = move |shape: ZoneShape| {
         let activation = draw_activation.get_untracked();
         // SECOND CONSUMER: identical call to the Zones panel's `arm`, targeting triggers.
-        ops::begin_zone_draw(&activation, shape, DrawTarget::Trigger);
+        armed_placement::begin_zone_draw(&activation, shape, DrawTarget::Trigger);
         doc_tick.update(|n| *n = n.wrapping_add(1));
     };
 
@@ -2745,7 +2745,7 @@ pub(crate) fn triggers_panel(
             <span class="font-mono text-code-md text-outline">
                 {move || {
                     let _ = doc_tick.get();
-                    ops::trigger_count()
+                    engine_ops::trigger_count()
                 }}
             </span>
         </div>
@@ -2762,7 +2762,7 @@ pub(crate) fn triggers_panel(
             class="mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
             on:change=move |ev| draw_activation.set(event_target_value(&ev))
         >
-            {ops::TRIGGER_ACTIVATIONS
+            {engine_ops::TRIGGER_ACTIVATIONS
                 .iter()
                 .map(|a| {
                     let a = (*a).to_string();
@@ -2795,7 +2795,7 @@ pub(crate) fn triggers_panel(
         // ── Live draw state (shared draft; shown only for a TRIGGER draw) ─────────────────────
         {move || {
             let _ = doc_tick.get();
-            let Some(d) = ops::zone_draft() else {
+            let Some(d) = armed_placement::zone_draft() else {
                 return ().into_any();
             };
             // The draft is shared with the Zones tool; only render the trigger-flavoured hint when
@@ -2839,7 +2839,7 @@ pub(crate) fn triggers_panel(
                                         disabled=!can_close
                                         class="rounded-md bg-primary/25 px-2 py-1 text-label-sm text-on-surface transition-colors hover:bg-primary/40 disabled:opacity-30 disabled:hover:bg-primary/25"
                                         on:click=move |_| {
-                                            ops::close_zone_polygon();
+                                            armed_placement::close_zone_polygon();
                                             doc_tick.update(|n| *n = n.wrapping_add(1));
                                         }
                                     >
@@ -2850,7 +2850,7 @@ pub(crate) fn triggers_panel(
                                         disabled=n == 0
                                         class="rounded-md px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 disabled:opacity-30"
                                         on:click=move |_| {
-                                            ops::zone_draw_pop_vertex();
+                                            armed_placement::zone_draw_pop_vertex();
                                             doc_tick.update(|n| *n = n.wrapping_add(1));
                                         }
                                     >
@@ -2862,7 +2862,7 @@ pub(crate) fn triggers_panel(
                             type="button"
                             class="rounded-md px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10"
                             on:click=move |_| {
-                                ops::cancel_zone_draw();
+                                armed_placement::cancel_zone_draw();
                                 doc_tick.update(|n| *n = n.wrapping_add(1));
                             }
                         >
@@ -2877,7 +2877,7 @@ pub(crate) fn triggers_panel(
         // ── Authored triggers ────────────────────────────────────────────────────────────────
         {move || {
             let _ = doc_tick.get();
-            let rows = ops::trigger_rows();
+            let rows = engine_ops::trigger_rows();
             if rows.is_empty() {
                 return view! {
                     <p class="mt-3 text-label-sm normal-case text-outline">
@@ -2942,7 +2942,7 @@ pub(crate) fn triggers_panel(
             let Some(id) = selected.get() else {
                 return ().into_any();
             };
-            let Some(t) = ops::trigger_rows().into_iter().find(|r| r.id == id) else {
+            let Some(t) = engine_ops::trigger_rows().into_iter().find(|r| r.id == id) else {
                 // Deleted underneath us (undo, or a reload that dropped it).
                 return ().into_any();
             };
@@ -2964,12 +2964,11 @@ pub(crate) fn triggers_panel(
 /// `zone_attributes` twin, with the owner picker + activation in place of zone label/faction/type.
 #[cfg(target_arch = "wasm32")]
 fn trigger_attributes(
-    t: editor_ops::TriggerRow,
+    t: engine_ops::TriggerRow,
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<String>>,
 ) -> AnyView {
     use crate::editor::panels::zones_panel::{humanize_token, DrawTarget, ZoneShape};
-    use crate::editor::state::operations as ops;
 
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
     let tid = t.id.clone();
@@ -3005,7 +3004,7 @@ fn trigger_attributes(
                 on:change=move |ev| {
                     let v = event_target_value(&ev);
                     let next = (!v.trim().is_empty()).then_some(v);
-                    ops::set_trigger_name(&id_name, next);
+                    engine_ops::set_trigger_name(&id_name, next);
                     bump();
                 }
             />
@@ -3015,13 +3014,13 @@ fn trigger_attributes(
                 aria-label="Trigger activation"
                 class=input_class
                 on:change=move |ev| {
-                    ops::set_trigger_activation(&id_activation, &event_target_value(&ev));
+                    engine_ops::set_trigger_activation(&id_activation, &event_target_value(&ev));
                     bump();
                 }
             >
                 {
                     let current = t.activation.clone();
-                    ops::TRIGGER_ACTIVATIONS
+                    engine_ops::TRIGGER_ACTIVATIONS
                         .iter()
                         .map(|a| {
                             let a = (*a).to_string();
@@ -3042,7 +3041,7 @@ fn trigger_attributes(
                     let v = event_target_value(&ev);
                     // The empty option is "unowned" → clear; any other value is a placed entity id.
                     let next = (!v.is_empty()).then_some(v);
-                    ops::set_trigger_owner(&id_owner, next);
+                    engine_ops::set_trigger_owner(&id_owner, next);
                     bump();
                 }
             >
@@ -3084,7 +3083,7 @@ fn trigger_attributes(
                             title="Redraw this trigger as a circle — click the centre, then the rim"
                             class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
                             on:click=move |_| {
-                                ops::begin_zone_reshape(&a, ZoneShape::Circle, DrawTarget::Trigger);
+                                armed_placement::begin_zone_reshape(&a, ZoneShape::Circle, DrawTarget::Trigger);
                                 bump();
                             }
                         >
@@ -3095,7 +3094,7 @@ fn trigger_attributes(
                             title="Redraw this trigger as a polygon — click each vertex, then Close"
                             class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
                             on:click=move |_| {
-                                ops::begin_zone_reshape(&b, ZoneShape::Polygon, DrawTarget::Trigger);
+                                armed_placement::begin_zone_reshape(&b, ZoneShape::Polygon, DrawTarget::Trigger);
                                 bump();
                             }
                         >
@@ -3118,7 +3117,7 @@ fn trigger_attributes(
                 type="button"
                 class="mt-3 w-full rounded-md border border-error/40 px-2 py-1.5 text-label-sm text-error transition-colors hover:bg-error/15"
                 on:click=move |_| {
-                    ops::delete_trigger(&id_delete);
+                    engine_ops::delete_trigger(&id_delete);
                     selected.set(None);
                     bump();
                 }
@@ -3144,7 +3143,6 @@ fn trigger_rule_control(
     doc_tick: RwSignal<u64>,
 ) -> AnyView {
     use crate::editor::panels::zones_panel::{humanize_key, humanize_token, ZoneRuleKind};
-    use crate::editor::state::operations as ops;
 
     let current = rules.get(&f.key).cloned();
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
@@ -3167,7 +3165,7 @@ fn trigger_rule_control(
                         prop:indeterminate=checked.is_none()
                         on:change=move |ev| {
                             let on = event_target_checked(&ev);
-                            ops::set_trigger_rule(&trigger_id, &k, Some(serde_json::Value::Bool(on)));
+                            engine_ops::set_trigger_rule(&trigger_id, &k, Some(serde_json::Value::Bool(on)));
                             bump();
                         }
                     />
@@ -3194,7 +3192,7 @@ fn trigger_rule_control(
                         on:change=move |ev| {
                             let v = event_target_value(&ev);
                             let next = (!v.is_empty()).then(|| serde_json::Value::String(v));
-                            ops::set_trigger_rule(&trigger_id, &k, next);
+                            engine_ops::set_trigger_rule(&trigger_id, &k, next);
                             bump();
                         }
                     >
@@ -3258,7 +3256,7 @@ fn trigger_rule_control(
                                     .map(serde_json::Value::Number)
                             };
                             if next.is_some() || raw.trim().is_empty() {
-                                ops::set_trigger_rule(&trigger_id, &k, next);
+                                engine_ops::set_trigger_rule(&trigger_id, &k, next);
                                 bump();
                             }
                         }
@@ -3288,7 +3286,7 @@ fn trigger_rule_control(
                             let v = event_target_value(&ev);
                             let next = (!v.trim().is_empty())
                                 .then(|| serde_json::Value::String(v.trim().to_string()));
-                            ops::set_trigger_rule(&trigger_id, &k, next);
+                            engine_ops::set_trigger_rule(&trigger_id, &k, next);
                             bump();
                         }
                     />
@@ -3316,7 +3314,6 @@ fn trigger_rule_control(
 #[cfg(target_arch = "wasm32")]
 #[component]
 fn TriggerOwnerLine(selected: RwSignal<Option<String>>, doc_tick: RwSignal<u64>) -> impl IntoView {
-    use crate::editor::state::operations as ops;
     use leptos::portal::Portal;
 
     // Pan/zoom heartbeat. `mission_editor` threads its `cursor`/`debug_hud` heartbeats into the ruler
@@ -3370,7 +3367,7 @@ fn TriggerOwnerLine(selected: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
         let _ = doc_tick.get();
         let _ = tick.get();
         let sel = selected.get();
-        let (world_a, world_b) = ops::owner_line_world(sel.as_deref())?;
+        let (world_a, world_b) = engine_ops::owner_line_world(sel.as_deref())?;
         let (tx, ty, zoom) = website_map_engine::streaming::host::camera_snapshot()?;
         let win = web_sys::window()?;
         let vw = win.inner_width().ok().and_then(|v| v.as_f64())?;
@@ -3793,7 +3790,6 @@ pub(crate) fn markers_panel(
 ) -> AnyView {
     use crate::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
     use crate::editor::panels::zones_panel::humanize_token;
-    use crate::editor::state::operations as ops;
 
     let icon_search = RwSignal::new(String::new());
 
@@ -3872,7 +3868,7 @@ pub(crate) fn markers_panel(
                                         // contract — the chrome host stops propagation here and the
                                         // map container's `pointerup` commits the drop.
                                         on:pointerdown=move |_| {
-                                            ops::begin_place_marker(armed.clone());
+                                            armed_placement::begin_place_marker(armed.clone());
                                             doc_tick.update(|n| *n = n.wrapping_add(1));
                                         }
                                     >
@@ -3891,7 +3887,7 @@ pub(crate) fn markers_panel(
         // ── Armed state (T-723 KeepArmed: Esc/RMB cancel; off-canvas LMB keeps the arm) ───────
         {move || {
             let _ = doc_tick.get();
-            let Some(icon) = ops::armed_marker_icon() else {
+            let Some(icon) = armed_placement::armed_marker_icon() else {
                 return ().into_any();
             };
             view! {
@@ -3991,12 +3987,11 @@ pub(crate) fn markers_panel(
 /// are the ones the closed `{x, z, icon, label}` shape can carry today.
 #[cfg(target_arch = "wasm32")]
 fn marker_attributes(
-    m: editor_ops::MarkerRow,
+    m: engine_ops::MarkerRow,
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<(String, String)>>,
 ) -> AnyView {
     use crate::editor::panels::zones_panel::humanize_token;
-    use crate::editor::state::operations as ops;
 
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
     let faction = m.faction_id.clone();
@@ -4223,7 +4218,7 @@ mod tests {
     fn vehicles_tab_places_instead_of_promising() {
         const SRC: &str = include_str!("dock_right.rs");
         let stub = |what: &str, ticket: &str| format!("{what} placement {} {ticket}.", "lands in");
-        let arm = |f: &str| format!("editor_ops::{f}{}", "(payload.clone())");
+        let arm = |f: &str| format!("armed_placement::{f}{}", "(payload.clone())");
 
         assert!(
             !SRC.contains(&stub("Vehicle", "T-070")),
@@ -4479,7 +4474,7 @@ mod tests {
         // The library mutators are the engine's, aliased `engine_ops`; the arm is still the
         // frontend's, aliased `ops`. Both read `<alias>::<fn>(`.
         let call = |f: &str| format!("engine_ops::{f}(");
-        let arm_call = |f: &str| format!("ops::{f}(");
+        let arm_call = |f: &str| format!("armed_placement::{f}(");
 
         // The tab strip renders a Compositions tab at index 4.
         assert!(
@@ -4784,7 +4779,7 @@ mod tests {
         // The panel actually RENDERS an armed hint gated on the live arm (not just static copy).
         // `live_code` here too: the block is documented in prose right above it, and it BLANKS the
         // `"composition"` literal this test uses to assemble the needle — so the scrubbed haystack
-        // cannot contain this assertion's own text, only the real `ops::armed_composition_id()` call
+        // cannot contain this assertion's own text, only the real `armed_placement::armed_composition_id()` call
         // in the panel. Whole-file (not `only_body`): `compositions_panel` has a wasm def AND a
         // native stub, which `only_body` rejects as a shadow pair by design.
         let dock = live_code(include_str!("dock_right.rs"));
@@ -4902,7 +4897,8 @@ mod tests {
         // T-934.7 — the ops module was split; the no-forked-draw absence pins scan every submodule.
         let ops = [
             include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
-            include_str!("../state/operations/cargo.rs"),
+            include_str!("../arsenal/loadout_commands.rs"),
+            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
             include_str!(
                 "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
             ),
@@ -6022,7 +6018,8 @@ mod tests {
         // every submodule so the file-wide claims keep their whole-module meaning.
         let ops_all = [
             include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
-            include_str!("../state/operations/cargo.rs"),
+            include_str!("../arsenal/loadout_commands.rs"),
+            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
             include_str!(
                 "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
             ),

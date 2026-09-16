@@ -3,52 +3,33 @@
 //! Signals & state: compile-time source text only.
 //! Invariants: include each production shard once and keep domain and adapter sources distinct.
 
-/// The live entity operation surface: the frontend adapter shards that still carry host state, and
-/// the map-engine hosted commands the rest of them became.
+/// The live entity operation surface: the frontend shards that carry host state — the armed
+/// placement and the entity selection — and the map-engine hosted commands the rest of them
+/// became.
 pub(crate) const ENTITY: &str = concat!(
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/mod.rs"
+        "/src/editor/state/armed_placement/mod.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/layers.rs"
+        "/src/editor/state/armed_placement/palette_arming.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/layer_drag.rs"
+        "/src/editor/state/armed_placement/map_release.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/arming.rs"
+        "/src/editor/state/armed_placement/zone_draw.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/refile.rs"
-    )),
-    "\n",
-    include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/placement.rs"
-    )),
-    "\n",
-    include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/zone_draw.rs"
-    )),
-    "\n",
-    include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/triggers.rs"
-    )),
-    "\n",
-    include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/operations/entity/selection_index.rs"
+        "/src/editor/state/entity_selection.rs"
     )),
     "\n",
     include_str!(concat!(
@@ -94,6 +75,16 @@ pub(crate) const ENTITY: &str = concat!(
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../map-engine/src/editing/hosted_commands/map_comments.rs"
+    )),
+    "\n",
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/editing/hosted_commands/editor_layers.rs"
+    )),
+    "\n",
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../map-engine/src/editing/hosted_commands/map_triggers.rs"
     )),
     "\n",
 );

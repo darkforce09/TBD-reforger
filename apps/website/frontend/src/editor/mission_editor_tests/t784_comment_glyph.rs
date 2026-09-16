@@ -264,7 +264,8 @@ fn a_comment_composes_and_the_reconcile_is_still_the_one_writers_job() {
     let ops = live_code(
         &[
             include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
-            include_str!("../state/operations/cargo.rs"),
+            include_str!("../arsenal/loadout_commands.rs"),
+            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
             include_str!(
                 "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
             ),

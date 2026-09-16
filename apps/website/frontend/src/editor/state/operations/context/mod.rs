@@ -4,7 +4,7 @@
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 thread_local! {
-    pub(super) static OPS_CTX: RefCell<Option<OpsCtx>> = const { RefCell::new(None) };
+    pub(crate) static OPS_CTX: RefCell<Option<OpsCtx>> = const { RefCell::new(None) };
 
     static PLACE_WITH_CREW: Cell<bool> = const { Cell::new(true) };
 }
@@ -26,8 +26,6 @@ thread_local! {
     static CONNECTION_SELECTION: RefCell<Option<RwSignal<Option<String>>>> =
         const { RefCell::new(None) };
 }
-#[allow(unused_imports)]
-use super::{cargo::*, entity::*};
 use crate::editor::arsenal::asset_catalog::PlacePayload;
 use crate::editor::mission_editor::AssetPickerState;
 use crate::editor::panels::outliner::build_outliner_with_comments;
@@ -35,6 +33,7 @@ use crate::editor::panels::outliner::OutlinerNode;
 use crate::editor::state::doc_host::DocHandle;
 use crate::editor::state::history as mission_history;
 use selection::SelectionHandle;
+use website_map_engine::data::store::operations::entity::{comment_rows, connection_id_in_doc};
 use website_map_engine::editing::tools::selection;
 use website_map_engine::frame::EngineHandle;
 
@@ -66,7 +65,7 @@ pub use registration::{
 };
 
 /// Expose registration :: {  ops ctx ,  pending } at this domain boundary.
-pub(super) use registration::{OpsCtx, Pending};
+pub(crate) use registration::{OpsCtx, Pending};
 mod environment;
 
 /// Expose environment :: { read env , read env value , read title , set title , slots json , update environment , } at this domain boundary.
@@ -80,7 +79,7 @@ pub use attributes::{close_attributes, open_arsenal, open_attributes};
 mod refresh;
 
 /// Expose refresh :: bump doc tick at this domain boundary.
-pub(super) use refresh::bump_doc_tick;
+pub(crate) use refresh::bump_doc_tick;
 
 /// Expose refresh :: { close connections panel , open connections panel , refresh docks , refresh selection mirrors , seed new mission template , set connection selection signal , set connections panel signal , } at this domain boundary.
 pub use refresh::{

@@ -62,7 +62,7 @@ fn escape_arm_cancels_pending_connect() {
         "T-768: Esc arm must call cancel_connect() — Hollow: delete it → RED."
     );
     // Esc cancel sits with place cancel, before measure .escape() calls.
-    let place_cancel = ["editor_ops", "::", "cancel_pending()"].concat();
+    let place_cancel = ["armed_placement", "::", "cancel_pending()"].concat();
     let place_at = code.find(&place_cancel).expect("place cancel in Esc arm");
     let connect_at = code.find(&cancel).expect("connect cancel present");
     let ruler = format!("{}{}", "ruler.borrow_mut().", "escape()");

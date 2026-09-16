@@ -993,7 +993,7 @@ pub fn plan_remove(targets: &[String]) -> Vec<LoadoutWrite> {
 /// document acknowledged the write.**
 ///
 /// T-770 gave `MissionDocCore::update_slot_loadout` a `bool` return and taught the *batch* path to
-/// count it. The *single* path — `editor_ops::set_loadout`, the one every Arsenal pick and every
+/// count it. The *single* path — `loadout_commands::set_loadout`, the one every Arsenal pick and every
 /// cargo edit goes through — kept a hardcoded `true` directly under the mutator call and threw the
 /// answer away. The consequence was not cosmetic: `mission_history::after_local_edit` fired whenever
 /// the ops context and the document merely existed, so a pick against a slot id the mission no

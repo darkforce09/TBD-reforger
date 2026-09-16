@@ -7,6 +7,14 @@
 // (mission_commands.rs before the T-934.6 rename; audit's editor gesture commands land as
 // `commands.rs` in the B2 phase.)
 pub mod commands_hotkeys;
+// The in-flight placement: what the operator picked up from a palette and has not yet dropped on
+// the map, and the release that commits it. Reaches the live document, so wasm32-only.
+#[cfg(target_arch = "wasm32")]
+pub mod armed_placement;
+// The selected entities: the id set, the renderer tint bound to it, the dock mirrors and the camera
+// move that frames it. Reaches the live document and the render engine, so wasm32-only.
+#[cfg(target_arch = "wasm32")]
+pub mod entity_selection;
 // T-159.16 MissionDoc host — all content is wasm32-only (links map-engine-core `doc`).
 #[cfg(target_arch = "wasm32")]
 pub mod doc_host;

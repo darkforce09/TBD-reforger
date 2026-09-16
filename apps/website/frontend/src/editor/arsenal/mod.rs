@@ -2,7 +2,7 @@
 //! port, T-159.27 → T-167). A doc-backed loadout editor: the 14 loadout rows (incl. the compat
 //! `edge` rows optic/magazine keyed off the picked weapon), the **attachment set** each weapon
 //! accepts (T-197), a clickable **SVG paper-doll**, an honest **weight** readout, and per-row
-//! **compat validation** — persisted on the slot via `editor_ops::set_loadout` (one undo step per
+//! **compat validation** — persisted on the slot via `loadout_commands::set_loadout` (one undo step per
 //! pick) as the canonical `SlotLoadoutV2` shape (the same `picksToLoadout` output the mod equip
 //! reads), so a pick round-trips through Save/Export.
 //!
@@ -13,7 +13,7 @@
 //!
 //! # Persistence — there is no Save button here, and that is the design (T-503)
 //!
-//! Every pick and every cargo edit calls [`crate::editor::state::operations::set_loadout`] the moment it happens.
+//! Every pick and every cargo edit calls [`loadout_commands::set_loadout`] the moment it happens.
 //! Nothing stages. T-503 asked whether that is a bug — whether the Arsenal should grow an explicit
 //! Save with a dirty indicator and a discard path — and the answer from the rest of the SPA is no,
 //! twice over:
@@ -37,7 +37,7 @@
 //!   made in this paragraph.) Line cites are otherwise omitted on purpose: five drifted during the
 //!   127–141 remediation run, and a file+symbol survives edits that a number does not.
 //!   The Arsenal's `set_loadout`
-//!   (`editor_ops.rs:46`) is one of them. Its own siblings in this very modal are the clearest
+//!   (`loadout_commands.rs:19`) is one of them. Its own siblings in this very modal are the clearest
 //!   case: Transform X/Y/Z/rotation (`attributes.rs:265`) and Identity role/tag/stance
 //!   (`attributes.rs:335`) commit on blur/Enter with no Save of their own — `attributes.rs:7` states
 //!   the contract in as many words ("rebind + persist + one undo step per commit"). Same for the
@@ -76,6 +76,11 @@ pub mod loadout;
 // paper-doll); `ArsenalTab` below is the only caller.
 mod panels;
 
+// The Arsenal's writes to the mission document: one slot's loadout, the buffer applied across a
+// selection, and the strip. Reaches the live document, so wasm32-only.
+#[cfg(target_arch = "wasm32")]
+pub mod loadout_commands;
+
 // The whole public loadout surface re-exports, used-or-not: `crate::editor::arsenal::X` is the
 // documented path (operations/cargo.rs cites `arsenal::buffer_draw` / `arsenal::stripped_loadout`
 // by that name), and a bin crate lints a re-export nothing consumes yet as unused.
@@ -100,6 +105,7 @@ use crate::editor::arsenal::arsenal_rules::{
     self as rules, format_loadout_weight, index_by_name, loadout_weight, row_options, CompatFeed,
 };
 use crate::v2::core::api::dto::RegistryItem;
+use website_map_engine::editing::hosted_commands as engine_ops;
 
 const CONTROL: &str = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60";
 
@@ -151,7 +157,7 @@ fn mission_has_unsaved_work() -> bool {
 #[component]
 pub fn ArsenalTab(
     slot_id: String,
-    /// The slot's current `loadout` JSON (from `editor_ops::read_loadout`).
+    /// The slot's current `loadout` JSON (from `engine_ops::read_loadout`).
     loadout_json: Option<String>,
     /// The flat registry gear rows, `None` while loading.
     registry: RwSignal<Option<Vec<RegistryItem>>>,
@@ -163,7 +169,7 @@ pub fn ArsenalTab(
     // the character has `character_default_cargo` defaults; returns the seeded JSON
     // so this render uses it without a re-read.
     #[cfg(target_arch = "wasm32")]
-    let loadout_json = crate::editor::state::operations::seed_slot_cargo(&slot_id).or(loadout_json);
+    let loadout_json = engine_ops::seed_slot_cargo(&slot_id).or(loadout_json);
     // T-504 — the slot's character prefab, read once: it cannot change while the modal is open, and
     // it keys the kit-default evidence the undeliverable-cargo rule needs.
     let asset_id = StoredValue::new(slot_asset_id(&slot_id));
@@ -205,10 +211,8 @@ pub fn ArsenalTab(
                 .collect();
             let rows = cargo.get_untracked();
             let rows = cargo_present.get_untracked().then_some(rows.as_slice());
-            let took = crate::editor::state::operations::set_loadout(
-                &id.get_value(),
-                picks_to_loadout(map, &names, rows),
-            );
+            let took =
+                loadout_commands::set_loadout(&id.get_value(), picks_to_loadout(map, &names, rows));
             // Set on every persist, not only on a refusal: a later pick that DOES land must clear
             // the warning, or the panel starts lying in the other direction.
             persist_refused.set(!took);
@@ -279,8 +283,8 @@ pub fn ArsenalTab(
                     //
                     // The three `set`s are signal writes and commit nothing; the single `persist`
                     // that follows is the only document mutation, and `persist` is one
-                    // `editor_ops::set_loadout` is **at most one** `mission_history::after_local_edit`
-                    // (`editor_ops.rs:62`) is at most one undo step. So Ctrl+Z after an import
+                    // `loadout_commands::set_loadout` is **at most one** `mission_history::after_local_edit`
+                    // (`loadout_commands.rs:23`) is at most one undo step. So Ctrl+Z after an import
                     // restores the whole loadout the author had before it — not the last wear row
                     // of it. "At most" since T-779: the tail is gated on the document having taken
                     // the write, so an import applied over an entity that is no longer in the
@@ -402,7 +406,7 @@ pub fn ArsenalTab(
                     let resync_open_slot = move || {
                         #[cfg(target_arch = "wasm32")]
                         {
-                            let lo = crate::editor::state::operations::read_loadout(&id.get_value());
+                            let lo = engine_ops::read_loadout(&id.get_value());
                             picks.set(loadout_to_picks(lo.as_deref()));
                             let (rows, present) = rules::cargo_from_loadout(lo.as_deref());
                             cargo.set(rows);
@@ -413,12 +417,12 @@ pub fn ArsenalTab(
                     let copy_loadouts = move |_| {
                         #[cfg(target_arch = "wasm32")]
                         {
-                            let n = crate::editor::state::operations::copy_loadouts_from_selection();
+                            let n = engine_ops::copy_loadouts_from_selection();
                             buffer_refusals.set(Vec::new());
                             buffer_status.set(if n == 0 {
                                 "Nothing to copy — select the soldiers to copy from first. The buffer is unchanged.".to_string()
                             } else {
-                                copy_receipt(&crate::editor::state::operations::loadout_buffer())
+                                copy_receipt(&engine_ops::loadout_buffer())
                             });
                             buffer_epoch.update(|e| *e = e.wrapping_add(1));
                         }
@@ -432,8 +436,8 @@ pub fn ArsenalTab(
                         #[cfg(target_arch = "wasm32")]
                         {
                             let its = items.get_value();
-                            let buffered = crate::editor::state::operations::loadout_buffer_len();
-                            match crate::editor::state::operations::apply_loadout_buffer_to_selection(
+                            let buffered = engine_ops::loadout_buffer_len();
+                            match loadout_commands::apply_loadout_buffer_to_selection(
                                 &its,
                                 &compat.get_untracked(),
                             ) {
@@ -475,7 +479,7 @@ pub fn ArsenalTab(
                         #[cfg(target_arch = "wasm32")]
                         {
                             let (planned, commits) =
-                                crate::editor::state::operations::remove_all_loadouts_from_selection();
+                                loadout_commands::remove_all_loadouts_from_selection();
                             resync_open_slot();
                             buffer_refusals.set(Vec::new());
                             buffer_status.set(if planned == 0 {
@@ -874,7 +878,7 @@ pub fn ArsenalTab(
                                     buffer_epoch.track();
                                     #[cfg(target_arch = "wasm32")]
                                     {
-                                        crate::editor::state::operations::loadout_buffer_len() == 0
+                                        engine_ops::loadout_buffer_len() == 0
                                     }
                                     #[cfg(not(target_arch = "wasm32"))]
                                     {
@@ -904,7 +908,7 @@ pub fn ArsenalTab(
                                 {move || {
                                     buffer_epoch.track();
                                     #[cfg(target_arch = "wasm32")]
-                                    let n = crate::editor::state::operations::loadout_buffer_len();
+                                    let n = engine_ops::loadout_buffer_len();
                                     #[cfg(not(target_arch = "wasm32"))]
                                     let n = 0usize;
                                     format!("{n} buffered")
@@ -1270,7 +1274,10 @@ mod tests {
                     include_str!(
                         "../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"
                     ),
-                    include_str!("../state/operations/cargo.rs"),
+                    include_str!("loadout_commands.rs"),
+                    include_str!(
+                        "../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"
+                    ),
                     include_str!(
                         "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
                     ),
@@ -1462,7 +1469,8 @@ mod tests {
                 include_str!(
                     "../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"
                 ),
-                include_str!("../state/operations/cargo.rs"),
+                include_str!("loadout_commands.rs"),
+                include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
                 include_str!(
                     "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
                 ),
@@ -1479,11 +1487,10 @@ mod tests {
             .concat()
         }
 
-        /// `operations/cargo.rs` alone — the file `set_loadout` now lives in, so the computed
-        /// line numbers below are REAL lines of that file (the `editor_ops.rs:` cite prefix is
-        /// the historical name the arsenal docs kept across the T-934.6/.7 moves).
+        /// `loadout_commands.rs` alone — the file `set_loadout` lives in, so the computed line
+        /// numbers below are REAL lines of that file.
         fn cargo_src() -> &'static str {
-            include_str!("../state/operations/cargo.rs")
+            include_str!("loadout_commands.rs")
         }
 
         fn arsenal_production_src() -> String {
@@ -1569,8 +1576,8 @@ mod tests {
             // include_str!(arsenal.rs) would otherwise false-fail on its own commentary.
             let arsenal = arsenal_production_src();
             let (set_line, tail_line) = live_set_loadout_lines(ops);
-            let set_cite = format!("editor_ops.rs:{set_line}");
-            let tail_cite = format!("editor_ops.rs:{tail_line}");
+            let set_cite = format!("loadout_commands.rs:{set_line}");
+            let tail_cite = format!("loadout_commands.rs:{tail_line}");
             assert!(
                 arsenal.contains(&set_cite),
                 "T-739: arsenal module docs must cite live set_loadout at {set_cite}"
@@ -1594,7 +1601,7 @@ mod tests {
     /* ═══════════ T-779 — the single write path must not fake its acknowledgement ═══════════ */
 
     /// T-770 gave `MissionDocCore::update_slot_loadout` a `bool` and taught the BATCH path
-    /// ([`commit_writes`]) to count it. The frontend half never landed: `editor_ops::set_loadout`
+    /// ([`commit_writes`]) to count it. The frontend half never landed: `loadout_commands::set_loadout`
     /// called the mutator as a statement and hardcoded `true` for `did`, so the history tail fired
     /// whenever `OPS_CTX` and the document merely existed. A pick against a slot id the mission no
     /// longer held dirtied the mission and minted an undo step over a document that had not
@@ -1634,7 +1641,10 @@ mod tests {
                     include_str!(
                         "../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"
                     ),
-                    include_str!("../state/operations/cargo.rs"),
+                    include_str!("loadout_commands.rs"),
+                    include_str!(
+                        "../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"
+                    ),
                     include_str!(
                         "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
                     ),
@@ -1743,7 +1753,7 @@ mod tests {
             // The commit must CAPTURE the answer rather than call and forget. Checked structurally
             // (is the call bound to something?) and not by matching one formatting of one line.
             let call_at = tab
-                .find("crate::editor::state::operations::set_loadout(")
+                .find("loadout_commands::set_loadout(")
                 .expect("T-779: the Arsenal must still reach set_loadout on a live path");
             let before = &tab[..call_at];
             assert!(

@@ -619,7 +619,7 @@ const MENUS: [(&str, &[MenuItem]); 6] = [
 fn selection_count() -> usize {
     #[cfg(target_arch = "wasm32")]
     {
-        crate::editor::state::operations::selection_len()
+        website_map_engine::editing::host::selection_len()
     }
     #[cfg(not(target_arch = "wasm32"))]
     {

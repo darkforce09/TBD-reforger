@@ -19,10 +19,14 @@ use std::collections::{HashMap, HashSet};
 use leptos::prelude::*;
 use website_map_engine::data::scenario::slot_line::format_slot_line;
 
+#[cfg(target_arch = "wasm32")]
+use crate::editor::panels::outliner;
 use crate::editor::panels::outliner::{
     filter_orbat_squads_by_side_key, flatten_visible, FlatRow, NodeKind, OutlinerNode,
     ORBAT_MANAGER_DIALOG_CLASS, ORBAT_MANAGER_EMPTY, VIRTUAL_SLOT_THRESHOLD,
 };
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::entity_selection;
 use crate::v2::core::api::dto::{FactionDoc, RegistryItem, UserFaction};
 use crate::v2::core::ui::MaterialIcon;
 #[cfg(target_arch = "wasm32")]
@@ -89,7 +93,7 @@ impl SaveFromSideRefusal {
 /// (`apps/website/api/src/handlers/factions.rs::update_faction`), and [`FactionDoc`]'s
 /// `skip_serializing_if = "Option::is_none"` omits an absent key instead of nulling it. So a field
 /// this function does not carry over from `stored` is **deleted from the library**. Before this
-/// existed the button PUT [`crate::editor::state::operations::faction_doc_from_side`]'s output raw, taking only
+/// existed the button PUT [`engine_ops::faction_doc_from_side`]'s output raw, taking only
 /// `name` from the stored row — which destroyed the emblem and every vehicle label on every press.
 ///
 /// The line is drawn in one place: **derive every field the ORBAT can express; preserve the ones it
@@ -477,7 +481,7 @@ pub fn OrbatManagerDialog(
                                 match engine_ops::orbat_apply_faction(
                                     side,
                                     uf.doc,
-                                    crate::editor::state::operations::ensure_active_layer,
+                                    outliner::ensure_active_layer,
                                 ) {
                                     Ok(()) => status.set("Template applied.".into()),
                                     Err(msg) => {
@@ -505,7 +509,7 @@ pub fn OrbatManagerDialog(
                             }
                             #[cfg(target_arch = "wasm32")]
                             {
-                                let Some(derived) = crate::editor::state::operations::faction_doc_from_side(&side)
+                                let Some(derived) = engine_ops::faction_doc_from_side(&side)
                                 else {
                                     status.set("Could not read this side's ORBAT.".into());
                                     return;
@@ -594,7 +598,7 @@ pub fn OrbatManagerDialog(
                                 // two is correct here rather than destructive. The `None` arm now
                                 // also covers a doc whose own JSON will not parse, which used to
                                 // create an empty faction and report success.
-                                let Some(mut doc) = crate::editor::state::operations::faction_doc_from_side(&side)
+                                let Some(mut doc) = engine_ops::faction_doc_from_side(&side)
                                 else {
                                     status.set("Could not read this side's ORBAT.".into());
                                     return;
@@ -1032,7 +1036,7 @@ fn stitch_row(
                             #[cfg(target_arch = "wasm32")]
                             {
                                 if !crate::editor::panels::outliner_drag::complete_multi_refile_onto_squad(&id_drop) {
-                                    crate::editor::state::operations::complete_refile_onto_squad(id_drop.clone());
+                                    engine_ops::complete_refile_onto_squad(id_drop.clone());
                                 }
                             }
                         }
@@ -1140,7 +1144,7 @@ fn stitch_row(
                                     engine_ops::orbat_add_slot(
                                         id_add.clone(),
                                         "Rifleman".into(),
-                                        crate::editor::state::operations::ensure_active_layer,
+                                        outliner::ensure_active_layer,
                                     );
                                 }
                             >
@@ -1322,7 +1326,7 @@ fn stitch_row(
                         }
                         on:click=move |_| {
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor::state::operations::select_slot(id_sel.clone());
+                            entity_selection::select_slot(id_sel.clone());
                         }
                         on:dblclick=move |_| {
                             #[cfg(target_arch = "wasm32")]
@@ -1339,7 +1343,7 @@ fn stitch_row(
                                     &nodes.get_untracked(),
                                 );
                                 crate::editor::panels::outliner_drag::begin_refile(drag);
-                                crate::editor::state::operations::begin_refile(id_refile.clone());
+                                engine_ops::begin_refile(id_refile.clone());
                             }
                         }
                     >
@@ -1447,7 +1451,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
                         #[cfg(target_arch = "wasm32")]
                         {
                             let r = role.get_untracked();
-                            crate::editor::state::operations::orbat_update_slot_fields(
+                            engine_ops::orbat_update_slot_fields(
                                 id_role.clone(),
                                 Some(r),
                                 None,
@@ -1470,7 +1474,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
                             #[cfg(target_arch = "wasm32")]
                             {
                                 let c = callsign.get_untracked();
-                                crate::editor::state::operations::orbat_update_slot_fields(
+                                engine_ops::orbat_update_slot_fields(
                                     id_cs.clone(),
                                     None,
                                     None,
@@ -1492,7 +1496,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
                             #[cfg(target_arch = "wasm32")]
                             {
                                 let r = rank.get_untracked();
-                                crate::editor::state::operations::orbat_update_slot_fields(
+                                engine_ops::orbat_update_slot_fields(
                                     id_rank.clone(),
                                     None,
                                     None,
@@ -1537,7 +1541,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
                     engine_ops::orbat_add_slot(
                         squad_for_add.clone(),
                         "Rifleman".into(),
-                        crate::editor::state::operations::ensure_active_layer,
+                        outliner::ensure_active_layer,
                     );
                 }
             >
@@ -1840,7 +1844,7 @@ mod tests {
         }
     }
 
-    /// What `editor_ops::faction_doc_from_side` can see: no emblem, no labels — ever.
+    /// What `engine_ops::faction_doc_from_side` can see: no emblem, no labels — ever.
     fn derived_from_side() -> FactionDoc {
         FactionDoc {
             side: "BLUFOR".into(),

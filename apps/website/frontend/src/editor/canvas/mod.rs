@@ -21,4 +21,9 @@ pub mod render_sync;
 // inside the wasm-only gesture and history modules that call it.
 pub mod gizmo_z;
 pub mod tactical_graphics;
+// The authoring half of the same lane: arm a draw, take and drop vertices, drag an authored vertex,
+// delete a finished graphic. Reaches the live document, so wasm32-only — unlike the belt above it,
+// which stays native-testable.
+#[cfg(target_arch = "wasm32")]
+pub mod tactical_graphics_authoring;
 pub mod viewport;

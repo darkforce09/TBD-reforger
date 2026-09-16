@@ -9,7 +9,8 @@
 
 #![cfg(target_arch = "wasm32")]
 
-use super::entity::ensure_active_layer;
+use crate::editor::panels::outliner;
+use outliner::ensure_active_layer;
 pub use website_map_engine::editing::batch::with_batch;
 use website_map_engine::editing::hosted_commands::{entity_clipboard, selection_transform};
 use website_map_engine::editing::tools::placement::{needs_confirm, AlignEdge};
@@ -47,7 +48,7 @@ pub fn confirm_bulk(n: usize, verb: &str) -> bool {
 }
 
 /// Confirm for bulk ops that are still N undo steps (loadout apply/remove — no atomic batch yet).
-pub(super) fn confirm_bulk_n_step(n: usize, verb: &str) -> bool {
+pub fn confirm_bulk_n_step(n: usize, verb: &str) -> bool {
     if !needs_confirm(n) {
         return true;
     }

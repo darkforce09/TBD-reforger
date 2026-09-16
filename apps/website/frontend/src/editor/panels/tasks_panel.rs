@@ -26,6 +26,7 @@ use website_map_engine::data::scenario::tasks::TIERS;
 #[cfg(target_arch = "wasm32")]
 use super::env::read_flow_seconds;
 use super::env::FLOW_DEFAULT_TIMELIMIT_S;
+use website_map_engine::editing::hosted_commands as engine_ops;
 
 /// The reader chain for `meta.environment.tasks`, end to end.
 pub const TASKS_READERS: &[(&str, &str)] = &[
@@ -293,7 +294,7 @@ fn commit(tasks: Option<&[Value]>) {
 
 #[cfg(target_arch = "wasm32")]
 fn trigger_options() -> Vec<(String, String)> {
-    let mut rows: Vec<(String, String)> = crate::editor::state::operations::trigger_rows()
+    let mut rows: Vec<(String, String)> = engine_ops::trigger_rows()
         .into_iter()
         .map(|r| {
             let label = r.name.unwrap_or_else(|| r.id.clone());

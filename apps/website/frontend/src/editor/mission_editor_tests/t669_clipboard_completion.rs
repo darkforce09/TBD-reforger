@@ -4,6 +4,7 @@
 /// module's own pins had to hand-check.
 use crate::editor::panels::help_modal::keymap_census::keydown_arms;
 use std::collections::BTreeSet;
+use website_map_engine::editing::hosted_commands as engine_ops;
 
 /// Needles assembled so the arm LITERAL never appears verbatim in this test's own source.
 fn key(k: &str) -> String {

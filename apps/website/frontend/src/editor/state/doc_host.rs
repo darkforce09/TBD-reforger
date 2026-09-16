@@ -15,6 +15,7 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
+use crate::editor::panels::outliner;
 use wasm_bindgen::prelude::*;
 use website_map_engine::data::store::MissionDocCore;
 
@@ -146,7 +147,7 @@ pub fn register_mission_doc(doc: DocHandle, ver: Rc<Cell<u32>>) {
     // T-169 smoke hook — bulk-add N slots so the virtual-outliner gate can exceed the window
     // threshold. `FnMut(f64)`, not the read-only `FnMut() -> JsValue` shape of the others.
     let seed_slots = Closure::wrap(Box::new(move |n: f64| {
-        crate::editor::state::operations::debug_seed_slots(n.max(0.0) as u32);
+        debug_seed_slots(n.max(0.0) as u32);
     }) as Box<dyn FnMut(f64)>);
 
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("slot_count"), slot_count.as_ref());
@@ -167,4 +168,35 @@ pub fn register_mission_doc(doc: DocHandle, ver: Rc<Cell<u32>>) {
     encode_hex.forget();
     change_version.forget();
     roundtrip.forget();
+}
+
+/// Seed `n` placeholder slots under the Outliner's active folder — the smoke hook that lets a gate
+/// push the tree past its virtualisation threshold.
+///
+/// The id minter and the folder are both HOST state: the minter is the editor context's own
+/// counter (every mint still proves uniqueness against the live document), and which folder is
+/// active is the tree's focus. That is why the seed is assembled here and the document is handed a
+/// folder id it does not have to go looking for.
+fn debug_seed_slots(n: u32) {
+    use crate::editor::state::operations::context::OPS_CTX;
+    use outliner::ensure_active_layer;
+
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return;
+        };
+        let layer_id = ensure_active_layer(core);
+        website_map_engine::data::store::operations::entity::seed_debug_slots(
+            core,
+            &ctx.next_id,
+            &layer_id,
+            n,
+        );
+    });
+    crate::editor::state::history::after_local_edit();
 }

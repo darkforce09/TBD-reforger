@@ -126,7 +126,7 @@ pub(in crate::editor::state::operations) fn reconcile_connection_selection(ctx: 
 }
 
 /// Nudge the reactive doc tick so the Zones panel re-reads mid-draw. Cheaper and safer than `after_local_edit`, which schedules a persist for a document that has not changed yet.
-pub(in crate::editor::state::operations) fn bump_doc_tick() {
+pub(crate) fn bump_doc_tick() {
     OPS_CTX.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             let n = ctx.doc_tick.get_untracked();

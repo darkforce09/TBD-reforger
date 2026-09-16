@@ -258,7 +258,8 @@ fn an_edge_selection_and_an_entity_selection_cannot_coexist() {
     let ops = live_code(
         &[
             include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
-            include_str!("../state/operations/cargo.rs"),
+            include_str!("../arsenal/loadout_commands.rs"),
+            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
             include_str!(
                 "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
             ),
@@ -435,7 +436,8 @@ fn connection_pins_are_load_bearing() {
     let ops = live_code(
         &[
             include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
-            include_str!("../state/operations/cargo.rs"),
+            include_str!("../arsenal/loadout_commands.rs"),
+            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
             include_str!(
                 "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
             ),

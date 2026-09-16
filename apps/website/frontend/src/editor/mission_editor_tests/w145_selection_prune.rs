@@ -1,5 +1,6 @@
 use super::selectable_ids;
 use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
+use website_map_engine::editing::hosted_commands as engine_ops;
 
 /// Two slots, one of them carrying T-701 `editorHidden` — the row `materialize()` drops and the
 /// raw key map keeps.
@@ -87,7 +88,7 @@ fn an_id_the_document_no_longer_holds_still_falls_out() {
 /// 144 already established (`eden_dock_right::both_id_minters_prove_uniqueness_against_hidden_
 /// slots_too`) that an id universe must not be built from it. Here the consequence of getting it
 /// wrong is the other way round from the minters': an SoA-sourced prune deselects a slot for
-/// being invisible, which makes `editor_ops::toggle_hidden` unable to toggle back and
+/// being invisible, which makes `engine_ops::toggle_hidden` unable to toggle back and
 /// `show_selection` unreachable — the hide runs `after_local_edit`, the prune removes the rows
 /// it just hid, and the selection the Show verb needs is gone.
 #[test]

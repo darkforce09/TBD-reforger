@@ -9,6 +9,8 @@
 
 use crate::data::store::MissionDocCore;
 use crate::data::store::operations::entity as entity_ops;
+use crate::data::store::operations::zones::DrawTarget;
+use crate::editing::history::after_local_edit;
 use crate::editing::host::with_doc;
 
 use super::document_edit::commit_document_edit;
@@ -64,4 +66,20 @@ pub fn set_zone_rule(id: &str, key: &str, value: Option<serde_json::Value>) -> b
 /// Delete a zone.
 pub fn delete_zone(id: &str) -> bool {
     commit_document_edit(|core| core.remove_zone(id))
+}
+
+/// Mint one authored row in `collection` and let `write` fill it, then take the post-change tail.
+/// Returns the new row's id, or `None` when no document is hosted.
+///
+/// The geometry crosses in already decided: a ring or a centre-and-radius is the product of a draw
+/// gesture the host ran, and the id is the only thing the document has to contribute.
+pub fn add_authored_row(
+    collection: DrawTarget,
+    write: impl FnOnce(&MissionDocCore, &str),
+) -> Option<String> {
+    let id = with_doc(|core| entity_ops::write_row_returning_id(core, collection, write)).flatten();
+    if id.is_some() {
+        after_local_edit();
+    }
+    id
 }

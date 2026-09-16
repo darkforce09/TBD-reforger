@@ -35,7 +35,11 @@ use leptos::prelude::*;
 
 // T-939.4 — the Arrange rows are the TOP STRIP's list. This module renders and dispatches them; it
 // does not own, copy or re-order them. See `top_strip::ARRANGE`.
+#[cfg(target_arch = "wasm32")]
+use crate::editor::panels::outliner;
 use crate::editor::panels::top_strip::{ArrangeKind, ARRANGE, ARRANGE_MIN_SELECTION};
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::entity_selection;
 
 /// T-672 (`CONN-START-001`) — the three relations Eden's `Connect ▸` submenu can make, as menu-row
 /// payload. Carried INSIDE [`ContextItem::ConnectStart`] rather than as three flat variants so the
@@ -914,7 +918,7 @@ pub fn open(x: f64, y: f64, target: MenuTarget) {
     if let Some(id) = target.retarget_to.clone() {
         // Replace the selection with the hit entity — identical to a left-click on an unselected
         // object, so the map tint and SEL readout follow the menu's target.
-        crate::editor::state::operations::select_slot(id);
+        entity_selection::select_slot(id);
     }
     // T-672 — snapshot the armed connect HERE, at open, the same rule `world` follows. The Connect
     // submenu shows one of two faces off this value; reading it at click time instead would let a
@@ -986,7 +990,7 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         // acceptable for this slice (teleport-to-arbitrary-point has no editor API and is not one of
         // the six unblocked features).
         ContextItem::GoHere => {
-            crate::editor::state::operations::center_on_selection();
+            entity_selection::center_on_selection();
         }
         // Attributes / arsenal open on the single target id (the retarget already made it the
         // selection, so `target_ids[0]` is that entity).
@@ -1007,11 +1011,7 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         // supply one) this is a no-op rather than a guess at the map centre.
         ContextItem::PlaceComment => {
             if let Some((x, z)) = world {
-                let _ = engine_ops::place_comment(
-                    x,
-                    z,
-                    crate::editor::state::operations::ensure_active_layer,
-                );
+                let _ = engine_ops::place_comment(x, z, outliner::ensure_active_layer);
             }
         }
         // T-672 (`CONN-START-001`, act 1) — arm a connect FROM this entity. `target_ids[0]` is the

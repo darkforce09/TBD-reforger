@@ -509,6 +509,87 @@ pub fn flatten_visible(
     out
 }
 
+/// The folder a new entity is filed under when the tree has one focused, and the gestures that
+/// move that focus. Wasm-only because they reach the live mission document; the tree vocabulary
+/// above them is pure and native-testable, which is why the two halves share this module rather
+/// than a wrapper somewhere else.
+#[cfg(target_arch = "wasm32")]
+mod active_folder {
+    use super::{DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME};
+    use crate::editor::state::operations::context::{OpsCtx, OPS_CTX};
+    use leptos::prelude::{GetUntracked, Set};
+    use website_map_engine::data::store::MissionDocCore;
+    use website_map_engine::editing::hosted_commands as engine_ops;
+
+    /// Focus a folder, or clear the focus. A focused folder is the drop target for the next place.
+    pub fn set_active_layer(id: Option<String>) {
+        OPS_CTX.with(|c| {
+            if let Some(ctx) = c.borrow().as_ref() {
+                ctx.active_layer.set(id);
+            }
+        });
+    }
+
+    /// Resolve the folder a new entity is filed under against one context: the focused folder when
+    /// one is set and still live, otherwise the default folder, minted under the LOCAL origin so
+    /// the mint is part of the same undoable act as the place it serves. A focus pointing at a
+    /// folder the document no longer holds is cleared as it is resolved.
+    fn ensure_layer(ctx: &OpsCtx, core: &MissionDocCore) -> String {
+        let ensured = website_map_engine::data::store::operations::entity::ensure_layer(
+            core,
+            ctx.active_layer.get_untracked(),
+            DEFAULT_LAYER_ID,
+            DEFAULT_LAYER_NAME,
+        );
+        if ensured.active_layer_was_stale {
+            ctx.active_layer.set(None);
+        }
+        ensured.layer_id
+    }
+
+    /// Resolve the folder a new entity is filed under without a context in hand. This is the form
+    /// the engine's hosted commands take, which is why the folder id crosses the wall as an answer
+    /// rather than the engine reaching for the tree's focus itself.
+    pub fn ensure_active_layer(core: &MissionDocCore) -> String {
+        OPS_CTX
+            .with(|c| c.borrow().as_ref().map(|ctx| ensure_layer(ctx, core)))
+            .unwrap_or_else(|| DEFAULT_LAYER_ID.to_string())
+    }
+
+    /// Create a folder as a child of the focused folder (a root when none is focused), auto-named,
+    /// with its inline rename armed, and focus it. Returns the new folder's id.
+    pub fn create_layer() -> Option<String> {
+        let active = OPS_CTX.with(|c| {
+            c.borrow()
+                .as_ref()
+                .and_then(|ctx| ctx.active_layer.get_untracked())
+        });
+        let created = engine_ops::create_layer(active)?;
+        set_active_layer(Some(created.clone()));
+        Some(created)
+    }
+
+    /// Delete a folder and its whole subtree, dropping the focus when it was the focused folder —
+    /// a focus on a folder that no longer exists would file the next place into nothing.
+    pub fn delete_layer(id: &str) -> bool {
+        let did = engine_ops::delete_layer(id);
+        if did {
+            let focused = OPS_CTX.with(|c| {
+                c.borrow()
+                    .as_ref()
+                    .and_then(|ctx| ctx.active_layer.get_untracked())
+            });
+            if focused.as_deref() == Some(id) {
+                set_active_layer(None);
+            }
+        }
+        did
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+pub use active_folder::{create_layer, delete_layer, ensure_active_layer, set_active_layer};
+
 #[cfg(test)]
 mod tests {
     use super::*;

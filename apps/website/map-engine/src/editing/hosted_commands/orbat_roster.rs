@@ -136,3 +136,76 @@ pub fn orbat_add_vehicle(squad_id: String, resource_name: &str) -> Option<String
     }
     id
 }
+
+/// The live side projection of a faction, derived from the document's own squads and slots. A save
+/// caller must combine it with the stored library through `merge_faction_doc_from_side` to retain
+/// library-only fields and vehicle labels.
+#[must_use]
+pub fn faction_doc_from_side(side: &str) -> Option<FactionDoc> {
+    with_doc(|core| entity_ops::faction_doc_from_side_core(core, side)).flatten()
+}
+
+/// Patch a slot's inspector fields: role and tag through the slot record, callsign and rank through
+/// its identity. `false` when nothing changed, which runs no tail.
+pub fn orbat_update_slot_fields(
+    slot_id: String,
+    role: Option<String>,
+    tag: Option<String>,
+    callsign: Option<String>,
+    rank: Option<String>,
+) -> bool {
+    let did = with_doc(|core| {
+        entity_ops::orbat_update_slot_fields(core, slot_id, role, tag, callsign, rank)
+    })
+    .unwrap_or(false);
+    if did {
+        after_local_edit();
+    }
+    did
+}
+
+/// Arm a slot for a pointer-drag refile into another squad.
+pub fn begin_refile(slot_id: String) {
+    entity_ops::begin_refile(slot_id);
+}
+
+/// Clear an armed refile without mutating the document — a drop outside any squad row.
+pub fn cancel_refile() {
+    entity_ops::cancel_refile();
+}
+
+/// Complete an armed refile onto a squad. `false` when nothing was armed.
+pub fn complete_refile_onto_squad(dest_squad_id: String) -> bool {
+    let did = with_doc(|core| entity_ops::complete_refile_onto_squad(core, &dest_squad_id))
+        .unwrap_or(false);
+    if did {
+        after_local_edit();
+    }
+    did
+}
+
+/// Move one slot into another squad. Squad membership is the document's own link, so this is one
+/// transaction and one undo step.
+pub fn refile_slot(slot_id: String, dest_squad_id: String) -> bool {
+    commit_document_edit(|core| entity_ops::refile_slot(core, &slot_id, &dest_squad_id))
+}
+
+/// Drop one slot onto another so it joins that slot's squad. Refused — with no tail — when the
+/// target is the dragged slot itself, when the target has no squad (an unfiled slot, or a target
+/// that has gone), or when the two already share a squad: a same-squad move is a no-op at the
+/// document, and declining here keeps the caller from firing a dirty tail for nothing.
+pub fn regroup_slot_onto(slot_id: &str, target_id: &str) -> bool {
+    if slot_id == target_id {
+        return false;
+    }
+    let dest_squad = super::slot_attributes::read_attrs(target_id)
+        .map(|a| a.squad)
+        .unwrap_or_default();
+    let src_squad = super::slot_attributes::read_attrs(slot_id)
+        .map(|a| a.squad)
+        .unwrap_or_default();
+    if dest_squad.is_empty() || dest_squad == src_squad {
+        return false;
+    }
+    refile_slot(slot_id.to_string(), dest_squad)
+}

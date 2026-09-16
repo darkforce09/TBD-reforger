@@ -31,37 +31,7 @@
 // submodule so the `mission_history::…` guard needles stay stable across the move.
 
 pub mod batch;
-pub mod cargo;
 pub mod context;
-pub mod entity;
-// T-936.7 — the `tacticalGraphics[]` mutators (draw / select / vertex drag / delete). Its own
-// module rather than more of `entity.rs` because a control measure is not an entity: it has no
-// slot id, no layer, no squad and no SoA row, and `entity.rs` is contested by five other tickets.
-pub mod tactical_graphics;
 
 pub use batch::*;
-pub use cargo::*;
 pub use context::*;
-pub use entity::{
-    add_whole_terrain_zone, armed_composition_id, armed_marker_icon, begin_layer_comment_drag,
-    begin_layer_drag, begin_layer_slot_drag, begin_place, begin_place_composition,
-    begin_place_marker, begin_place_object, begin_place_vehicle, begin_refile, begin_zone_draw,
-    begin_zone_reshape, cancel_layer_drag, cancel_pending, cancel_refile, cancel_zone_draw,
-    center_on_selection, close_zone_polygon, comment_details, complete_layer_drop_onto_folder,
-    complete_layer_drop_onto_root, complete_refile_onto_squad, create_layer, debug_seed_slots,
-    delete_layer, delete_trigger, ensure_active_layer, faction_doc_from_side, has_pending,
-    hide_selection, orbat_update_slot_fields, owner_line_world, place_at, place_at_alt,
-    place_at_keep, refile_slot, refile_slot_to_layer, regroup_slot_onto, rename_layer,
-    reparent_layer, select_all_in_view, select_layer_children, select_layer_descendants,
-    select_slot, selection_entities, selection_len, set_active_layer, set_layer_hidden,
-    set_layer_locked, set_selection_ids, set_trigger_activation, set_trigger_name,
-    set_trigger_owner, set_trigger_rule, show_all_hidden, show_selection, slot_hidden_rows,
-    take_rename_armed, toggle_hidden, trigger_count, trigger_rows, zone_draft, zone_draw_armed,
-    zone_draw_pop_vertex, MarkerRow, TriggerRow, TRIGGER_ACTIVATIONS,
-};
-// A GLOB, like `batch`/`cargo`/`context` above and unlike the hand-listed `entity`. The named form
-// warns on every item the wasm bin does not yet call (`begin_tactical_draw`, `tactical_draft`,
-// `tactical_draw_pop_vertex`, … — the draw tool's API, which has no arming affordance until a
-// `panels/` surface grows one), and a `#[allow]` on a `pub use` would suppress a real signal rather
-// than the false one.
-pub use tactical_graphics::*;

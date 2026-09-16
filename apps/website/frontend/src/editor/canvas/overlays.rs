@@ -249,6 +249,10 @@ pub(crate) fn take_z_drag(drag: &mut Option<ZDrag>, pointer_id: i32) -> Option<Z
 }
 
 #[cfg(target_arch = "wasm32")]
+use crate::editor::panels::outliner;
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::armed_placement;
+#[cfg(target_arch = "wasm32")]
 use crate::editor::state::hydrate as mission_hydrate;
 #[cfg(target_arch = "wasm32")]
 use crate::editor::state::operations as editor_ops;
@@ -612,7 +616,7 @@ pub(crate) fn AssetPickerOverlay(
                             // places. `editor_ops` is wasm-only, so the arm is gated.
                             #[cfg(target_arch = "wasm32")]
                             {
-                                editor_ops::begin_place(payload.clone());
+                                armed_placement::begin_place(payload.clone());
                                 editor_ops::close_asset_picker();
                             }
                             #[cfg(not(target_arch = "wasm32"))]
@@ -842,7 +846,7 @@ pub(crate) fn CommentEditorOverlay(
                                 engine_ops::duplicate_comment(
                                     &id_dup,
                                     COMMENT_COPY_OFFSET_M,
-                                    editor_ops::ensure_active_layer,
+                                    outliner::ensure_active_layer,
                                 )
                             {
                                 editor_ops::open_comment_editor(new_id);

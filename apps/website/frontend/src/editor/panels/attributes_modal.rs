@@ -530,7 +530,7 @@ fn modal_view(
                             .into_any(),
                         2 => states_tab().into_any(),
                         _ => {
-                            let loadout = crate::editor::state::operations::read_loadout(&slot_id.get_value());
+                            let loadout = engine_ops::read_loadout(&slot_id.get_value());
                             view! {
                                 // T-649 / T-771 — HONESTY BANNER. Inverting the `open_arsenal` guard
                                 // is what stops the context menu's "Edit Loadout..." row being
@@ -3154,7 +3154,8 @@ mod tests {
         // every submodule so these file-wide absence pins keep their whole-module meaning.
         let ops_raw = [
             include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
-            include_str!("../state/operations/cargo.rs"),
+            include_str!("../arsenal/loadout_commands.rs"),
+            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
             include_str!(
                 "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
             ),

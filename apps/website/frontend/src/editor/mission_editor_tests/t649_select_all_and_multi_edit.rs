@@ -82,7 +82,7 @@ fn ctrl_a_hands_the_container_rect_to_select_all_in_view() {
     let arms = keydown_arms(include_str!("../canvas/commands.rs"));
     assert!(
         arms.contains("container.get_bounding_client_rect()")
-            && arms.contains("editor_ops::select_all_in_view(rect.width(), rect.height())"),
+            && arms.contains("entity_selection::select_all_in_view(rect.width(), rect.height())"),
         "SEL-ALL-001: the Ctrl+A arm must pass the live container CSS size to select_all_in_view"
     );
     // The closure has to capture the container for that to be possible.
@@ -158,7 +158,8 @@ fn multi_selection_no_longer_suppresses_the_attributes_modal() {
     let ops = live_code(
         &[
             include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
-            include_str!("../state/operations/cargo.rs"),
+            include_str!("../arsenal/loadout_commands.rs"),
+            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_loadouts.rs"),
             include_str!(
                 "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
             ),
@@ -472,7 +473,7 @@ fn t788_plain_click_inside_a_multi_selection_does_not_collapse_it() {
         "F-27: exactly one apply_click call in the click arm, and it is the guarded one"
     );
     // The OUTLINER half of the same defect: the tree/ORBAT rows route their single click
-    // through `editor_ops::select_slot` and their dblclick through `open_attributes`, so the
+    // through `entity_selection::select_slot` and their dblclick through `open_attributes`, so the
     // unconditional `= vec![id]` replace in select_slot collapsed SEL9→SEL1 before activate
     // fired and the modal could only ever open single-edit from a row. Same guard, same
     // outside-click-still-replaces Eden semantics (the contract context_menu::open documents).

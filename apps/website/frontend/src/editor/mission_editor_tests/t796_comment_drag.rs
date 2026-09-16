@@ -1,5 +1,6 @@
 use super::{comment_drag_lane_xy, comment_points, dragged_comment_points};
 use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
+use website_map_engine::editing::hosted_commands as engine_ops;
 
 /// Two notes; a hydrated mission whose ids were NOT minted with the `cmt-` prefix, to prove
 /// membership is asked of the document, never of the id text.

@@ -16,8 +16,6 @@
 //! positions, persisted). Both halves fly the camera through the ONE existing mover; neither is a
 //! document edit. See the `T-696` section at the foot of this file.
 #![allow(dead_code)]
-#[cfg(target_arch = "wasm32")]
-use crate::editor::state::operations as editor_ops;
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 pub use website_map_engine::data::store::operations::document_index::DocEntity;
@@ -51,9 +49,14 @@ const TAB_LABEL_PLACES: &str = "Locations";
 const UPPERCASE_LABEL_ADVANCE_PX: f64 = 8.5;
 /// T-637 — a tab cell's horizontal padding (`px-1.5` ⇒ 6 px each side).
 const TAB_LABEL_PAD_PX: f64 = 12.0;
+#[cfg(target_arch = "wasm32")]
+use crate::editor::panels::outliner;
 use crate::editor::panels::outliner::OutlinerNode;
 use crate::editor::panels::outliner_tree::virtual_tree;
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::entity_selection;
 use crate::v2::core::ui::MaterialIcon;
+use website_map_engine::editing::hosted_commands as engine_ops;
 
 /// T-638 — the collapse/expand chevron shared by both docks. `outward_icon` is the glyph shown while
 /// EXPANDED (points out of the dock — `chevron_left` for the left dock, `chevron_right` for the
@@ -703,7 +706,7 @@ pub fn DockLeft(
                         ev.stop_propagation();
                         #[cfg(target_arch = "wasm32")]
                         {
-                            let _ = editor_ops::complete_layer_drop_onto_root();
+                            let _ = engine_ops::complete_layer_drop_onto_root();
                         }
                         #[cfg(not(target_arch = "wasm32"))]
                         let _ = &ev;
@@ -753,7 +756,7 @@ pub fn DockLeft(
                                         ev.stop_propagation();
                                         #[cfg(target_arch = "wasm32")]
                                         {
-                                            let _ = editor_ops::create_layer();
+                                            let _ = outliner::create_layer();
                                         }
                                         #[cfg(not(target_arch = "wasm32"))]
                                         let _ = &ev;
@@ -875,7 +878,7 @@ pub fn DockLeft(
                                 class="mt-1 min-h-0 flex-1 overflow-y-auto"
                                 on:pointerup=move |_| {
                                     #[cfg(target_arch = "wasm32")]
-                                    editor_ops::cancel_layer_drag();
+                                    engine_ops::cancel_layer_drag();
                                 }
                             >
                                 {virtual_tree(
@@ -950,7 +953,7 @@ pub fn DockLeft(
 //
 // **THE CAMERA.** Flying to a place must not be a SECOND camera mover. The one mover is
 // `RenderEngine::set_view` followed by `on_camera_changed` and a viewport flush — the path
-// `editor_ops::center_on_selection` (Space), the validation panel's finding jump, and the
+// `entity_selection::center_on_selection` (Space), the validation panel's finding jump, and the
 // initial view all take. T-762 promotes that sequence as `world_assets::fly_to` on the same
 // `RENDER_CTX` seam as `camera_snapshot` / `apply_grid`. [`fly_to`] here only resolves the
 // optional zoom (bookmark carries one; a named location keeps the live zoom) and forwards.
@@ -1059,7 +1062,7 @@ fn keep_matching(node: &OutlinerNode, query: &str) -> Option<OutlinerNode> {
 // ── T-803 (O-9) — name the drop target the author is placing into ─────────────────────────────────
 //
 // Which layer receives the next placement was set by clicking an outliner Folder row
-// (`editor_ops::set_active_layer`) and its ONLY indication was a hover tooltip — no persistent,
+// (`outliner::set_active_layer`) and its ONLY indication was a hover tooltip — no persistent,
 // on-screen statement of the destination. The author placed into a guess; comments compounded it
 // (both units and comments resolve their layer through `editor_ops::ensure_layer`). These two helpers
 // resolve the destination the SAME way `ensure_layer` does, so the header strip below names the layer
@@ -1361,7 +1364,7 @@ pub fn live_camera() -> Option<(f64, f64, f64)> {
 ///
 /// This is NOT a second camera mover. It resolves zoom then forwards to `world_assets::fly_to`,
 /// which runs `set_view` → `on_camera_changed` → `flush_viewport` on the registered `RENDER_CTX`
-/// (same sequence as `editor_ops::center_on_selection` / the T-166 smoke hook body). A no-op
+/// (same sequence as `entity_selection::center_on_selection` / the T-166 smoke hook body). A no-op
 /// before the engine mounts.
 #[allow(unused_variables)]
 pub fn fly_to(x: f64, y: f64, zoom: Option<f64>) {
@@ -1683,7 +1686,7 @@ pub fn selection_facets(rows: &[DocEntity]) -> Vec<SelectionFacet> {
 pub fn apply_selection(ids: Vec<String>) -> bool {
     #[cfg(target_arch = "wasm32")]
     {
-        editor_ops::set_selection_ids(ids) > 0
+        entity_selection::set_selection_ids(ids) > 0
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -1710,7 +1713,7 @@ pub fn document_rows() -> Vec<DocEntity> {
 pub fn selection_rows() -> Vec<DocEntity> {
     #[cfg(target_arch = "wasm32")]
     {
-        editor_ops::selection_entities()
+        engine_ops::selection_entities()
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -2849,7 +2852,7 @@ mod t697_document_search {
             "T-655/T-697: a hit must select through the ONE registered router"
         );
         assert!(
-            !code.contains("editor_ops::select_slot("),
+            !code.contains("entity_selection::select_slot("),
             "T-697: a second click-to-select path is how the two drift apart"
         );
         assert!(
@@ -2986,7 +2989,7 @@ mod t697_document_search {
         let dock = dock_code();
         let apply = only_body(&dock, "pub fn apply_selection");
         assert!(
-            apply.contains("editor_ops::set_selection_ids("),
+            apply.contains("entity_selection::set_selection_ids("),
             "T-697: the chip must apply through the one seam"
         );
     }

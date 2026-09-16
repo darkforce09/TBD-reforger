@@ -558,13 +558,13 @@ mod tests {
     }
 
     /// T-503 Class-R: every cargo mutation in the panel must commit through `on_change`, and the
-    /// commit must reach `editor_ops::set_loadout`. Staging — a mutation that updates the local
+    /// commit must reach `loadout_commands::set_loadout`. Staging — a mutation that updates the local
     /// signal and waits for a Save button — goes red here.
     ///
     /// RED (staging): delete the `on_change(&items.get_value());` after the qty `+` handler in
     /// `cargo_panel` → "every cargo mutation must commit: 4 `cargo.update(` vs 3 `on_change(`".
-    /// RED (decoy, `if true == false`): move `crate::editor::state::operations::set_loadout(…)` inside
-    /// `if true == false { … }` → "ArsenalTab must reach editor_ops::set_loadout".
+    /// RED (decoy, `if true == false`): move `loadout_commands::set_loadout(…)` inside
+    /// `if true == false { … }` → "ArsenalTab must reach loadout_commands::set_loadout".
     /// RED (decoy, `#[cfg(any())]`): park the call in an `#[cfg(any())] fn dead_persist() { … }`
     /// → same failure.
     /// RED (decoy, `loop { break; … }`): park the call after a bare `break;` → same failure.
@@ -585,8 +585,8 @@ mod tests {
 
         let tab = fn_body(&live, "pub fn ArsenalTab(");
         assert!(
-            tab.contains("crate::editor::state::operations::set_loadout("),
-            "ArsenalTab must reach editor_ops::set_loadout on a live path"
+            tab.contains("loadout_commands::set_loadout("),
+            "ArsenalTab must reach loadout_commands::set_loadout on a live path"
         );
         assert!(
             tab.contains("persist(&picks.get_untracked(), items)"),

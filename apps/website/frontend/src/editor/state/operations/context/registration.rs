@@ -6,48 +6,48 @@
 use super::*;
 
 /// Domain representation of ops ctx.
-pub(in crate::editor::state::operations) struct OpsCtx {
+pub(crate) struct OpsCtx {
     /// Doc.
-    pub(in crate::editor::state::operations) doc: DocHandle,
+    pub(crate) doc: DocHandle,
 
     /// Engine.
-    pub(in crate::editor::state::operations) engine: EngineHandle,
+    pub(crate) engine: EngineHandle,
 
     /// Selection.
-    pub(in crate::editor::state::operations) selection: SelectionHandle,
+    pub(crate) selection: SelectionHandle,
 
     /// Active layer.
-    pub(in crate::editor::state::operations) active_layer: RwSignal<Option<String>>,
+    pub(crate) active_layer: RwSignal<Option<String>>,
 
     /// Active side.
-    pub(in crate::editor::state::operations) active_side: RwSignal<String>,
+    pub(crate) active_side: RwSignal<String>,
 
     /// Objects mode.
-    pub(in crate::editor::state::operations) objects_mode: RwSignal<bool>,
+    pub(crate) objects_mode: RwSignal<bool>,
 
     /// Dock mirrors — `MissionDocCore` has no change subscription, so these are pushed from [`refresh_docks`] at every mutation site, like the OBJ/SEL readouts.
-    pub(in crate::editor::state::operations) outliner_nodes: RwSignal<Vec<OutlinerNode>>,
+    pub(crate) outliner_nodes: RwSignal<Vec<OutlinerNode>>,
 
     /// Orbat nodes.
-    pub(in crate::editor::state::operations) orbat_nodes: RwSignal<Vec<OutlinerNode>>,
+    pub(crate) orbat_nodes: RwSignal<Vec<OutlinerNode>>,
 
     /// Selected ids.
-    pub(in crate::editor::state::operations) selected_ids: RwSignal<Vec<String>>,
+    pub(crate) selected_ids: RwSignal<Vec<String>>,
 
     /// Attrs open.
-    pub(in crate::editor::state::operations) attrs_open: RwSignal<Option<String>>,
+    pub(crate) attrs_open: RwSignal<Option<String>>,
 
     /// Attrs tab.
-    pub(in crate::editor::state::operations) attrs_tab: RwSignal<usize>,
+    pub(crate) attrs_tab: RwSignal<usize>,
 
     /// Doc tick.
-    pub(in crate::editor::state::operations) doc_tick: RwSignal<u64>,
+    pub(crate) doc_tick: RwSignal<u64>,
 
     /// The in-flight palette drag: `Some` between a leaf `pointerdown` and the canvas `pointerup`.
-    pub(in crate::editor::state::operations) pending: RefCell<Option<Pending>>,
+    pub(crate) pending: RefCell<Option<Pending>>,
 
     /// Monotonic minter for placed-slot ids; [`mint_id`] still proves uniqueness against the doc.
-    pub(in crate::editor::state::operations) next_id: Cell<u32>,
+    pub(crate) next_id: Cell<u32>,
 }
 
 /// Expose website mission core :: doc :: operations :: entity ::  zone draft at this domain boundary.
@@ -55,7 +55,7 @@ pub use website_map_engine::data::store::operations::entity::ZoneDraft;
 
 /// The discriminant lives here, on the armed value, rather than on a separate "current tab" signal: the tab can change (or the dock can unmount) between the leaf's `pointerdown` and the canvas's `pointerup`, and a place must commit the entity the operator actually picked up.
 #[derive(Clone, Debug, PartialEq)]
-pub(in crate::editor::state::operations) enum Pending {
+pub(crate) enum Pending {
     /// Domain representation of character.
     Character(PlacePayload),
 

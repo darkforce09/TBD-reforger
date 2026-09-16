@@ -22,6 +22,8 @@
 use leptos::prelude::*;
 use serde_json::{Map, Value};
 
+#[cfg(target_arch = "wasm32")]
+use crate::editor::state::armed_placement;
 use website_map_engine::data::scenario::audio::validate;
 use website_map_engine::data::scenario::audio::MUSIC_EVENTS;
 
@@ -373,7 +375,7 @@ fn commit(block: Option<&Value>) {
 /// Arms the existing marker placement gesture. No new code in gestures.rs.
 #[cfg(target_arch = "wasm32")]
 pub fn arm_place_on_map() {
-    crate::editor::state::operations::begin_place_marker(PLACE_MARKER_ICON.to_string());
+    armed_placement::begin_place_marker(PLACE_MARKER_ICON.to_string());
 }
 
 #[cfg(not(target_arch = "wasm32"))]
