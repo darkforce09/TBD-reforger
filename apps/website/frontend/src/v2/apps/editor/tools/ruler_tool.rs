@@ -525,7 +525,7 @@ mod t778_seam_lifecycle {
         use crate::v2::core::test_support::class_r_scrub::{live_code, only_body, only_item};
         let src = live_code(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/world_assets/mod.rs"
+            "/src/v2/apps/editor/bridge/world_assets.rs"
         )));
 
         let body = only_body(&src, "pub fn register_render_ctx(");

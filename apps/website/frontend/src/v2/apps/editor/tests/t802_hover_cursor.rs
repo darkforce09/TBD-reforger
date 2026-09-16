@@ -24,7 +24,7 @@ fn hover_block() -> String {
     let anchor = format!("pub(crate) const HOVER_CURSOR_{}", "PICKABLE");
     let raw = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/pointer_hover.rs"
+        "/src/v2/apps/editor/bridge/pointer_hover.rs"
     ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])

@@ -1,6 +1,6 @@
 //! Role: authoring the control measures — arm a multi-click draw, take and drop vertices, select
 //! and drag an authored vertex, and delete a finished graphic.
-//! Position: `editor/canvas` in the frontend editor shell.
+//! Position: `editor/bridge` in the frontend editor shell.
 //! Signals & state: the draw arm, the selection and the in-flight vertex drag are the document
 //! operations' own process state; this module reads and writes the `tacticalGraphics` environment
 //! key and nudges the reactive document tick every gesture the canvas must repaint for.

@@ -8,7 +8,7 @@ fn mark_registry_fetch_failed_writes_all_three_signals() {
     // Body pin + behavioural flip.
     let src = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/viewport.rs"
+        "/src/v2/apps/editor/bridge/viewport.rs"
     )));
     let body = only_body(&src, "fn mark_registry_fetch_failed(");
     let failed_set = format!("{}{}", "registry_failed.", "set(true)");

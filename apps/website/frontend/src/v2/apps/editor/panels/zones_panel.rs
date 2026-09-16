@@ -1171,7 +1171,7 @@ pub fn terrain_rect_ring(terrain: &str, bounds: [f64; 4]) -> Option<Vec<f64>> {
 }
 
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::canvas::tactical_graphics_authoring;
+use crate::v2::apps::editor::bridge::tactical_graphics_authoring;
 #[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::state::armed_placement;
 /// Which shape a zone draw is building. The vocabulary is the document's, so the panel and the

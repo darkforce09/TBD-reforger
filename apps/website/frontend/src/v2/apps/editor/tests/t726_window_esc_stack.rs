@@ -8,12 +8,12 @@ fn gate_needles() -> (String, String, String) {
     )
 }
 
-/// The overlay components live in `editor/canvas/overlays.rs` (T-934.11). That file carries no
+/// The overlay components live in `editor/bridge/overlays.rs` (T-934.11). That file carries no
 /// `#[cfg(test)]`, so `live_code` scrubs it whole.
 fn overlays_region() -> String {
     live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/overlays.rs"
+        "/src/v2/apps/editor/bridge/overlays.rs"
     )))
 }
 

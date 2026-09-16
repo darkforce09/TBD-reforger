@@ -26,7 +26,7 @@ use crate::v2::apps::editor::state::undo_grouped_gestures;
 use website_map_engine::editing::hosted_commands as engine_ops;
 
 use super::gestures::{make_sync_los, make_sync_ruler, EditorGestureContext};
-use crate::v2::apps::editor::canvas::tactical_graphics_authoring;
+use crate::v2::apps::editor::bridge::tactical_graphics_authoring;
 use crate::v2::apps::editor::state::armed_placement;
 use crate::v2::apps::editor::state::entity_selection;
 

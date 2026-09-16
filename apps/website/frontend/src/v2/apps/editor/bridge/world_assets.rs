@@ -1,7 +1,10 @@
 //! Role: connect editor preferences and owner cleanup to the graphics asset host.
-//! Position: `editor/world_assets` in the frontend editor adapter.
+//! Position: `editor/bridge` in the frontend editor adapter. All asset fetching, residency,
+//! geometry and upload work lives in the engines; what sits here is the preference feed and the
+//! registration.
 //! Signals & state: live preference readers and the mounted engine/host pair.
-//! Invariants: cleanup clears only the same pair of Rc handles it registered.
+//! Invariants: cleanup clears only the same pair of Rc handles it registered, so stale cleanup
+//! cannot clear a newer mount.
 
 #![cfg(target_arch = "wasm32")]
 use std::rc::Rc;

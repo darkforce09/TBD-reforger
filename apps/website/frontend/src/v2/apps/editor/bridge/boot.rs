@@ -1,5 +1,5 @@
 //! Role: boot.
-//! Position: `editor/canvas` in the frontend editor adapter.
+//! Position: `editor/bridge` in the frontend editor adapter.
 //! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 

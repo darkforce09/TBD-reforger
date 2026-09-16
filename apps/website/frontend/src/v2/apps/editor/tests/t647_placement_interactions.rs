@@ -120,13 +120,13 @@ fn asset_picker_is_an_ungated_overlay_that_arms_a_place() {
         "PLACE-003: the picker must mount beside the ungated dialogs (no chrome_hidden gate \
          between the context menu and it)"
     );
-    // The picker component arms the same place a DockRight leaf does. T-934.11 moved its
-    // definition to `editor/canvas/overlays.rs` (the page still mounts it bare through the
+    // The picker component arms the same place a DockRight leaf does. Its definition lives in
+    // `editor/bridge/overlays.rs` (the page still mounts it bare through the
     // `mission_editor` re-export, which is what the mount pins above ride). That file carries no
     // `#[cfg(test)]`, so `live_code` scrubs it whole — no anchor gymnastics needed.
     let region = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/overlays.rs"
+        "/src/v2/apps/editor/bridge/overlays.rs"
     )));
     let comp = only_body(&region, "fn AssetPickerOverlay(");
     assert!(
@@ -216,11 +216,11 @@ fn the_comment_editor_is_ungated_and_authors_every_comment_field() {
         mount > ctx_menu && !ed[ctx_menu..mount].contains("(!chrome_hidden.get()).then("),
         "T-651: the comment editor must mount beside the ungated dialogs"
     );
-    // The component definition lives in `editor/canvas/overlays.rs` (T-934.11); scrub that file
+    // The component definition lives in `editor/bridge/overlays.rs` (T-934.11); scrub that file
     // whole, exactly as the picker pin above does.
     let region = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/overlays.rs"
+        "/src/v2/apps/editor/bridge/overlays.rs"
     )));
     let comp = only_body(&region, "fn CommentEditorOverlay(");
     for op in [

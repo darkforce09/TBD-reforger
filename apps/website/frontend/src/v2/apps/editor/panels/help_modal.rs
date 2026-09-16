@@ -693,7 +693,7 @@ pub(crate) mod keymap_census {
                 "overlays.rs",
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/src/v2/apps/editor/canvas/overlays.rs"
+                    "/src/v2/apps/editor/bridge/overlays.rs"
                 )),
                 3,
             ),

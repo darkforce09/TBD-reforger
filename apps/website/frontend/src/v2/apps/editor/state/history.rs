@@ -43,7 +43,7 @@ use wasm_bindgen::JsCast;
 use website_map_engine::frame::engine::RenderEngine;
 use website_map_engine::overlay::lanes::role_id;
 
-use crate::v2::apps::editor::canvas::tactical_graphics_authoring;
+use crate::v2::apps::editor::bridge::tactical_graphics_authoring;
 use crate::v2::apps::editor::state::doc_host::DocHandle;
 use selection::SelectionHandle;
 use website_map_engine::frame::EngineHandle;
@@ -641,7 +641,7 @@ fn upload_squad_links(e: &mut RenderEngine, doc: &MissionDocCore, soa: &SlotSoa)
 /// at its old position for the whole drag — the same reason `vehicles_bind_symbology` above is
 /// re-bound here after a mixed drag re-packed its lane.
 fn upload_tactical_graphics(e: &mut RenderEngine, doc: &MissionDocCore) {
-    use crate::v2::apps::editor::canvas::tactical_graphics as tg;
+    use crate::v2::apps::editor::bridge::tactical_graphics as tg;
     let mut rows = tg::live_tactical_graphics(doc);
     tactical_graphics_authoring::apply_tactical_drag_preview(&mut rows);
     let verts = tg::tactical_lane_verts(

@@ -18,8 +18,10 @@
 /// The loadout editor: the per-slot loadout rows and their compatibility rules, the asset
 /// catalog behind the pickers, and the 3D paper doll that previews the result.
 pub mod arsenal;
-/// The map canvas: the boot machine, the viewport and frame-timing belt, the pointer and keyboard
-/// gesture closures, the floating overlays, and the pure helper belt that feeds the renderer.
+/// The frontend's side of the engine seam: the canvas mount and its boot machine, the viewport and
+/// frame-timing belt, the floating overlays, the tactical-graphics belt and the map-asset host.
+pub mod bridge;
+/// The canvas input nest: the pointer and keyboard gesture closures over the map surface.
 pub mod canvas;
 /// The docked chrome's single import path — re-exports the panel components under [`panels`] so
 /// consumers name one module rather than tracking which panel file holds which component.
@@ -44,10 +46,6 @@ pub mod state;
 /// Each tool's state machine, geometry and verdicts live in `website_map_engine::editing::tools`;
 /// what sits here is the DOM overlay and the pointer routing that drive them.
 pub mod tools;
-/// The map-asset host: fetches terrain and imagery bytes and hands them to the engine's streaming
-/// host. Reaches `fetch` and a live engine handle, so it compiles on wasm only.
-#[cfg(target_arch = "wasm32")]
-pub mod world_assets;
 /// Per-user world-layer visibility and basemap preferences, persisted to local storage. The wasm
 /// host applies them to the chunk residency and the engine on each settle.
 pub mod world_layer_prefs;

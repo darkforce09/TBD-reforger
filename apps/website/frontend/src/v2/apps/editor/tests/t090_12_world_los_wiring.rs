@@ -23,7 +23,7 @@ fn editor_live() -> String {
     ))));
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/viewport.rs"
+        "/src/v2/apps/editor/bridge/viewport.rs"
     ))));
     src
 }

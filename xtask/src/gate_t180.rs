@@ -95,7 +95,7 @@ const EDITOR_OPS: &str = "apps/website/frontend/src/v2/apps/editor/state/editor_
 // ban.
 const EDITOR_OPS_SPLIT: &[&str] = &[
     "apps/website/frontend/src/v2/apps/editor/arsenal/loadout_commands.rs",
-    "apps/website/frontend/src/v2/apps/editor/canvas/tactical_graphics_authoring.rs",
+    "apps/website/frontend/src/v2/apps/editor/bridge/tactical_graphics_authoring.rs",
     "apps/website/frontend/src/v2/apps/editor/state/armed_placement/map_release.rs",
     "apps/website/frontend/src/v2/apps/editor/state/armed_placement/mod.rs",
     "apps/website/frontend/src/v2/apps/editor/state/armed_placement/palette_arming.rs",

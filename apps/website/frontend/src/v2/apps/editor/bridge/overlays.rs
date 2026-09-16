@@ -86,7 +86,7 @@ pub(crate) fn read_z_drag_readout() -> Option<String> {
  * only because the suite's test COUNT did not move when seven pins were added.
  *
  * `overlays` is ungated (see the module note above), so the pins at the bottom of this file both
- * run and can `include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/v2/apps/editor/canvas/gestures.rs"))` — same directory — to scrub the live gesture source.
+ * run and can `include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/v2/apps/editor/canvas/gestures.rs"))` — a crate-anchored path, so it survives either file moving — to scrub the live gesture source.
  */
 
 /// T-946.86 (.82) — the Z-arm gesture's ONE piece of arithmetic: cursor travel in CSS pixels →
@@ -98,7 +98,7 @@ pub(crate) fn read_z_drag_readout() -> Option<String> {
 /// would be worse than untidy, because a preview that disagrees with its own commit shows the
 /// operator one number and stores another.
 ///
-/// The math itself belongs to `canvas/gizmo_z.rs` and is not restated: [`gizmo_z::dy_to_elevation`]
+/// The math itself belongs to `bridge/gizmo_z.rs` and is not restated: [`gizmo_z::dy_to_elevation`]
 /// inverts the screen axis (up is +Z) and [`gizmo_z::snap_elevation`] quantises. This function
 /// only guards the divisor — a non-finite or non-positive `scale` (a degenerate camera) would make
 /// `-dy / scale` infinite, and an infinite elevation reaches the document as a `null` that the
@@ -114,11 +114,11 @@ pub(crate) fn z_drag_elevation_delta(py: f64, start_y: f64, scale: f64, step: f6
     } else {
         1.0
     };
-    let raw = crate::v2::apps::editor::canvas::gizmo_z::dy_to_elevation(py - start_y, scale);
+    let raw = crate::v2::apps::editor::bridge::gizmo_z::dy_to_elevation(py - start_y, scale);
     if !raw.is_finite() {
         return 0.0;
     }
-    crate::v2::apps::editor::canvas::gizmo_z::snap_elevation(raw, step)
+    crate::v2::apps::editor::bridge::gizmo_z::snap_elevation(raw, step)
 }
 
 /// T-946.86 (.82) — the translate-ladder rung, in metres, that [`z_drag_elevation_delta`] snaps to.
@@ -436,13 +436,13 @@ pub(crate) fn TransformWidgetOverlay(
                             // Z axis arrow (vertical, slightly thicker/styled if needed, but per prompt just "vertical axis arrow")
                             // We use the new Z_ARM_LENGTH from gizmo_z
                             <line x1=move || format!("{cx:.1}") y1=move || format!("{cy:.1}")
-                                  x2=move || format!("{cx:.1}") y2=move || format!("{:.1}", cy - crate::v2::apps::editor::canvas::gizmo_z::Z_ARM_LENGTH)
+                                  x2=move || format!("{cx:.1}") y2=move || format!("{:.1}", cy - crate::v2::apps::editor::bridge::gizmo_z::Z_ARM_LENGTH)
                                   class="stroke-primary" stroke-width="2" />
                             <polygon
                                 points=move || format!(
                                     "{x0:.1},{y0:.1} {x1:.1},{y1:.1} {x2:.1},{y1:.1}",
-                                    x0 = cx, y0 = cy - crate::v2::apps::editor::canvas::gizmo_z::Z_ARM_LENGTH,
-                                    x1 = cx - HEAD * 0.7, y1 = cy - crate::v2::apps::editor::canvas::gizmo_z::Z_ARM_LENGTH + HEAD,
+                                    x0 = cx, y0 = cy - crate::v2::apps::editor::bridge::gizmo_z::Z_ARM_LENGTH,
+                                    x1 = cx - HEAD * 0.7, y1 = cy - crate::v2::apps::editor::bridge::gizmo_z::Z_ARM_LENGTH + HEAD,
                                     x2 = cx + HEAD * 0.7)
                                 class="fill-primary" />
                             // T-946.86 (.82) — a TRACKING closure, not a bare expression. As a bare
@@ -451,8 +451,8 @@ pub(crate) fn TransformWidgetOverlay(
                             // it was born with (empty). `read_z_drag_readout` subscribes to the
                             // generation signal, so each `set_z_drag_readout` re-runs this.
                             {move || {
-                                crate::v2::apps::editor::canvas::overlays::read_z_drag_readout().map(|text| view! {
-                                    <text x=move || format!("{:.1}", cx + 15.0) y=move || format!("{:.1}", cy - crate::v2::apps::editor::canvas::gizmo_z::Z_ARM_LENGTH * 0.5) class="fill-primary font-mono text-[11px]">
+                                crate::v2::apps::editor::bridge::overlays::read_z_drag_readout().map(|text| view! {
+                                    <text x=move || format!("{:.1}", cx + 15.0) y=move || format!("{:.1}", cy - crate::v2::apps::editor::bridge::gizmo_z::Z_ARM_LENGTH * 0.5) class="fill-primary font-mono text-[11px]">
                                         {text}
                                     </text>
                                 })
@@ -1282,7 +1282,7 @@ pub(crate) fn ConflictDialog(
 //    is why the `z_drag_elevation_delta` helper it exercises lives in this file too.
 #[cfg(test)]
 mod t946_86_z_arm {
-    use crate::v2::apps::editor::canvas::overlays::z_drag_elevation_delta;
+    use crate::v2::apps::editor::bridge::overlays::z_drag_elevation_delta;
     use crate::v2::core::test_support::class_r_scrub::live_code;
 
     /// The GESTURE file's LIVE source — comments stripped, string/char literals blanked, test modules

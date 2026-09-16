@@ -38,9 +38,9 @@ use crate::v2::apps::editor::mission_editor::{
 // T-936.7 — the tactical-graphics pick tolerances. Straight from the sibling canvas module rather
 // than through `mission_editor`'s re-export hub: that hub is `mission_editor.rs`, which T-190 owns
 // this wave, and a new `pub(crate) use` line there would be a cross-slice edit for two constants.
-use crate::v2::apps::editor::canvas::overlays as ov;
-use crate::v2::apps::editor::canvas::tactical_graphics::{TG_PICK_PX, TG_VERTEX_PICK_PX};
-use crate::v2::apps::editor::canvas::tactical_graphics_authoring;
+use crate::v2::apps::editor::bridge::overlays as ov;
+use crate::v2::apps::editor::bridge::tactical_graphics::{TG_PICK_PX, TG_VERTEX_PICK_PX};
+use crate::v2::apps::editor::bridge::tactical_graphics_authoring;
 use crate::v2::apps::editor::state::armed_placement;
 use crate::v2::apps::editor::state::editor_context;
 use crate::v2::apps::editor::state::history as mission_history;
@@ -593,8 +593,8 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 // The chip shows the ANCHOR slot's resulting height — one number, in the same
                 // units the Attributes tab shows, rather than a delta the operator would have to
                 // add to a value that is not on screen.
-                crate::v2::apps::editor::canvas::overlays::set_z_drag_readout(Some(
-                    crate::v2::apps::editor::canvas::gizmo_z::format_height_readout(
+                crate::v2::apps::editor::bridge::overlays::set_z_drag_readout(Some(
+                    crate::v2::apps::editor::bridge::gizmo_z::format_height_readout(
                         arm.height(delta),
                     ),
                 ));
@@ -753,7 +753,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                 .map(|(wx, wy)| p.cam.project([wx, wy, 0.0]))
                                 .filter(|pv| pv[0].is_finite() && pv[1].is_finite())
                             {
-                                z_arm_hit = crate::v2::apps::editor::canvas::gizmo_z::hit_z_arm(
+                                z_arm_hit = crate::v2::apps::editor::bridge::gizmo_z::hit_z_arm(
                                     p.start_x, p.start_y, pv[0], pv[1], 1.0,
                                 );
                             }

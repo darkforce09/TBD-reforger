@@ -3,7 +3,7 @@
 //! **Role:** holds the four pure numbers an elevation drag is made of — where the arm's shaft
 //! sits relative to the gizmo centre, whether a press landed on that shaft, what a vertical
 //! cursor travel is worth in metres of height, and how that height quantises and reads out.
-//! **Position:** the leaf of the canvas belt. `canvas/overlays.rs` draws the arm from
+//! **Position:** the leaf of the canvas belt. `bridge/overlays.rs` draws the arm from
 //! [`Z_ARM_LENGTH`] and turns a drag into snapped metres through [`dy_to_elevation`] and
 //! [`snap_elevation`]; `canvas/gestures.rs` calls [`hit_z_arm`] on pointerdown to decide that a
 //! press owns Z rather than XY, and [`format_height_readout`] to label the drag on screen.

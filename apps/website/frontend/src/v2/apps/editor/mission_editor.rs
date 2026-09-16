@@ -22,7 +22,7 @@
 //! Toolbelt, doc host) lands across T-159.16–.22. Route is `chromeless` + `full_bleed` (AppLayout
 //! hides the platform nav). Verified by GPU readback (not DOM diff) as the map lane grows.
 #![allow(dead_code)]
-use crate::v2::apps::editor::canvas::boot::boot_progress::BootSegView;
+use crate::v2::apps::editor::bridge::boot::boot_progress::BootSegView;
 use leptos::prelude::*;
 use website_map_engine::editing::tools::line_of_sight::capture::{
     LosMode, LosState, ViewshedState,
@@ -49,15 +49,15 @@ use website_map_engine::editing::hosted_commands as engine_ops;
 
 // The pure helper belt this page is written against: the connection, comment and marker lane
 // feeds, route resolution, the selection universe and the crew-hide SoA filter all live in the map
-// engine, and the tab-local hover state machine lives in `editor::canvas::pointer_hover`.
+// engine, and the tab-local hover state machine lives in `editor::bridge::pointer_hover`.
 // Re-exported `pub(crate)` under the SAME names so the page's bare call sites, the
 // `mission_editor::…` paths (`state/history.rs`, the panel test modules) and the evacuated pins'
 // `use super::…` imports all keep their exact spelling. The cfg split mirrors the consumers:
 // nothing in the native non-test build reads these through here.
-// (T-934.13: the gesture closures moved to `canvas/gestures.rs` but still consume these through
+// (T-934.13: the gesture closures live in `canvas/gestures.rs` and still consume these through
 // THIS re-export surface — one hub, so the wasm half of this list stays load-bearing.)
 #[cfg(any(test, target_arch = "wasm32"))]
-pub(crate) use crate::v2::apps::editor::canvas::pointer_hover::{
+pub(crate) use crate::v2::apps::editor::bridge::pointer_hover::{
     hover_cursor_css, hover_due, hover_next, hover_suppressed, HoverState,
 };
 #[cfg(any(test, target_arch = "wasm32"))]
@@ -89,8 +89,8 @@ pub(crate) use website_map_engine::editing::lanes::connections::CONN_PICK_PX;
 pub(crate) use website_map_engine::editing::selection_universe::map_render_slot_soa;
 
 // T-934.11 — the floating overlay/dialog components (transform widget + mode hint + snap readout,
-// asset picker, comment editor, Connections panel, conflict dialog) moved to
-// `editor::canvas::overlays`, together with `AssetPickerState`, `ConflictInfo` and the T-648
+// asset picker, comment editor, Connections panel, conflict dialog) live in
+// `editor::bridge::overlays`, together with `AssetPickerState`, `ConflictInfo` and the T-648
 // widget-pivot registry. Re-exported under the SAME names so the page's bare mounts
 // (`<TransformWidgetOverlay …/>`), the wasm block's `register_widget_pivot(` call, and the
 // `crate::v2::apps::editor::mission_editor::{AssetPickerState, ConflictInfo}` paths in
@@ -100,21 +100,21 @@ pub(crate) use website_map_engine::editing::selection_universe::map_render_slot_
 // (The `read_widget_pivot()` reader moved with the pointer closures — T-934.13 — and reads it
 // through this re-export, like the helper belt above.)
 #[cfg(target_arch = "wasm32")]
-pub(crate) use crate::v2::apps::editor::canvas::overlays::{
+pub(crate) use crate::v2::apps::editor::bridge::overlays::{
     read_widget_pivot, register_widget_pivot,
 };
-pub(crate) use crate::v2::apps::editor::canvas::overlays::{
+pub(crate) use crate::v2::apps::editor::bridge::overlays::{
     AssetPickerOverlay, CommentEditorOverlay, ConflictDialog, ConnectionsPanelOverlay, SnapReadout,
     TransformWidgetOverlay, WidgetModeHint,
 };
-pub use crate::v2::apps::editor::canvas::overlays::{AssetPickerState, ConflictInfo};
+pub use crate::v2::apps::editor::bridge::overlays::{AssetPickerState, ConflictInfo};
 
 // T-934.12 — the boot machine (`BootPhase` + `BOOT_HANDOVER_MS` + the `boot_progress` arithmetic
-// + `hand_over`) moved to `editor::canvas::boot`, and the viewport/frame-timing belt
+// + `hand_over`) lives in `editor::bridge::boot`, and the viewport/frame-timing belt
 // (`device_size`, `start_raf`, the `__selfChecks`/`__editorCam`/`__wgpuSlotStats` registrars,
-// `mark_registry_fetch_failed`, the T-245 `registry_session` cache) moved to
-// `editor::canvas::viewport`. Re-exported under the SAME names so the page's bare call sites,
-// the `crate::v2::apps::editor::mission_editor::boot_progress::…` paths in `world_assets/*` +
+// `mark_registry_fetch_failed`, the T-245 `registry_session` cache) in
+// `editor::bridge::viewport`. Re-exported under the SAME names so the page's bare call sites,
+// the `crate::v2::apps::editor::mission_editor::boot_progress::…` paths in
 // `state/hydrate.rs`, and the evacuated pins' `super::…` imports (`t628_boot_progress`,
 // `t631_boot_failure_state`, `t245_registry_session`, `t750_registry_fetch_failure_signal`) all
 // keep their exact spelling. The `pub use` keeps `boot_progress` on the exact module path
@@ -123,18 +123,18 @@ pub use crate::v2::apps::editor::canvas::overlays::{AssetPickerState, ConflictIn
 // `fetch_compat_cold`) did NOT move: `t427_cold_registry_path` + `t573_mixed_drag_preview` pin
 // their literals (and anchor scrubs) against THIS file, and they are the page mount's own cold
 // path, not viewport plumbing.
-pub use crate::v2::apps::editor::canvas::boot::boot_progress;
+pub use crate::v2::apps::editor::bridge::boot::boot_progress;
 #[cfg(target_arch = "wasm32")]
-pub(crate) use crate::v2::apps::editor::canvas::boot::hand_over;
-pub(crate) use crate::v2::apps::editor::canvas::boot::BootPhase;
+pub(crate) use crate::v2::apps::editor::bridge::boot::hand_over;
+pub(crate) use crate::v2::apps::editor::bridge::boot::BootPhase;
 #[cfg(target_arch = "wasm32")]
-pub(crate) use crate::v2::apps::editor::canvas::viewport::{
+pub(crate) use crate::v2::apps::editor::bridge::viewport::{
     device_size, register_editor_cam, register_self_checks, register_slot_stats, start_raf,
 };
 // The cfg split mirrors the consumers (the T-934.10 idiom): the wasm mount effect and the
 // evacuated native pins read these through here; the native non-test build reads neither.
 #[cfg(any(test, target_arch = "wasm32"))]
-pub(crate) use crate::v2::apps::editor::canvas::viewport::{
+pub(crate) use crate::v2::apps::editor::bridge::viewport::{
     mark_registry_fetch_failed, registry_session,
 };
 
@@ -880,7 +880,7 @@ pub(crate) fn with_editor_toolbar_dispatch(f: impl FnOnce(&EditorToolbarDispatch
  *
  * The connection lane, the comment lane and its picks, the marker lane parse, the route
  * resolution, the selection universe and the crew-hide SoA filter are all pure functions in the
- * map engine, and the hover state machine is a pure function in `canvas::pointer_hover`; both are
+ * map engine, and the hover state machine is a pure function in `bridge::pointer_hover`; both are
  * re-exported above under the names this page calls them by. What remains below are the wrappers
  * that bind those helpers to the live document and DOM — each one reads the installed
  * EDITOR_CONTEXT or the browser, which is the line the split is drawn on.
@@ -2430,7 +2430,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             register_slot_stats(engine.clone());
                             // T-173 P6 — let the Mission Settings render-pref controls reach the
                             // live engine + host.
-                            crate::v2::apps::editor::world_assets::register_render_ctx(
+                            crate::v2::apps::editor::bridge::world_assets::register_render_ctx(
                                 engine.clone(),
                                 map_host.clone(),
                             );
@@ -2497,7 +2497,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // T-628 — the bootstrap folds the DEM's, the satellite's and the
                                 // world's real measurements into the same one bar through this
                                 // reporter, and closes all three of its segments before it returns.
-                                let boot_fut = crate::v2::apps::editor::world_assets::bootstrap(
+                                let boot_fut = crate::v2::apps::editor::bridge::world_assets::bootstrap(
                                     engine.clone(),
                                     terrain,
                                     host,
@@ -3148,7 +3148,7 @@ pub fn MissionEditorPage() -> impl IntoView {
 // treat the FIRST literal `#[cfg(test)]` as "everything after this is test fixture" — a test-gated
 // import up top would truncate every scrub of this file to nothing.
 #[cfg(test)]
-pub(crate) use crate::v2::apps::editor::canvas::pointer_hover::{
+pub(crate) use crate::v2::apps::editor::bridge::pointer_hover::{
     HOVER_CURSOR_PICKABLE, HOVER_CURSOR_PLAIN, HOVER_RELEASE_PX, HOVER_THROTTLE_MS,
 };
 #[cfg(test)]
@@ -3163,7 +3163,7 @@ pub(crate) use website_map_engine::editing::selection_universe::{
 // T-934.12 — same discipline: only `t628_boot_progress` still reaches this constant through
 // `super::…` (its one shipping consumer, `hand_over`, moved to `canvas/boot.rs` with it).
 #[cfg(test)]
-pub(crate) use crate::v2::apps::editor::canvas::boot::BOOT_HANDOVER_MS;
+pub(crate) use crate::v2::apps::editor::bridge::boot::BOOT_HANDOVER_MS;
 
 #[cfg(test)]
 #[path = "tests/t245_registry_session.rs"]
