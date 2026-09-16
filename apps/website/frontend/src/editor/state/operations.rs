@@ -30,28 +30,17 @@
 // NOTE (T-934.6): the `use crate::editor::state::history as mission_history;` alias lives in each
 // submodule so the `mission_history::…` guard needles stay stable across the move.
 
-pub mod attrs;
 pub mod batch;
 pub mod cargo;
-pub mod compositions;
 pub mod context;
 pub mod entity;
-// T-939.2 — the Attributes modal's batch faction / squad reassign. Its own module rather than more
-// of `entity.rs` for the reason `tactical_graphics` gives below — `entity.rs` is contested — and
-// because this is the one mutator that must never take `entity::refile_slot`'s core path: refile
-// GCs an emptied source squad (row, `faction.squadIds` place, attached vehicles), and a batch
-// reassign must not.
-pub mod reassign;
 // T-936.7 — the `tacticalGraphics[]` mutators (draw / select / vertex drag / delete). Its own
 // module rather than more of `entity.rs` because a control measure is not an entity: it has no
 // slot id, no layer, no squad and no SoA row, and `entity.rs` is contested by five other tickets.
 pub mod tactical_graphics;
-pub mod transform;
 
-pub use attrs::*;
 pub use batch::*;
 pub use cargo::*;
-pub use compositions::*;
 pub use context::*;
 pub use entity::{
     add_whole_terrain_zone, arm_connect, armed_composition_id, armed_marker_icon, assign_crew_seat,
@@ -84,15 +73,9 @@ pub use entity::{
     OwnerOption, PlacedSlotChoice, TriggerRow, VehicleCargoRow, VehicleRow, ZoneRow,
     TRIGGER_ACTIVATIONS,
 };
-pub use reassign::*;
-// T-936.7 — a GLOB, like `attrs`/`batch`/`cargo`/`compositions`/`context` above and unlike the
-// hand-listed `entity`/`transform` below. The named form warns on every item the wasm bin does not
-// yet call (`begin_tactical_draw`, `tactical_draft`, `tactical_draw_pop_vertex`, … — the draw
-// tool's API, which has no arming affordance until a `panels/` surface grows one), and a
-// `#[allow]` on a `pub use` would suppress a real signal rather than the false one.
+// A GLOB, like `batch`/`cargo`/`context` above and unlike the hand-listed `entity`. The named form
+// warns on every item the wasm bin does not yet call (`begin_tactical_draw`, `tactical_draft`,
+// `tactical_draw_pop_vertex`, … — the draw tool's API, which has no arming affordance until a
+// `panels/` surface grows one), and a `#[allow]` on a `pub use` would suppress a real signal rather
+// than the false one.
 pub use tactical_graphics::*;
-pub use transform::{
-    apply_pattern_to_selection, orient_selection, rotate_selection_to_face, space_selection,
-};
-pub mod slot_ids;
-pub use slot_ids::*;

@@ -141,6 +141,20 @@ pub fn close_comment_editor() {
     });
 }
 
+/// Drop an armed composition place that names `id`, after that composition has been removed from
+/// the library. Scoped to the one id so a different arm survives the delete, and silent when
+/// nothing is armed — the arm is host state, not document state, so nothing about it is undoable.
+pub fn cancel_armed_composition(id: &str) {
+    OPS_CTX.with(|c| {
+        if let Some(ctx) = c.borrow().as_ref() {
+            let armed = matches!(&*ctx.pending.borrow(), Some(Pending::Composition(p)) if p == id);
+            if armed {
+                *ctx.pending.borrow_mut() = None;
+            }
+        }
+    });
+}
+
 /// Install the ops context (once, from `on_load`, after the doc is seeded).
 #[allow(clippy::too_many_arguments)]
 pub fn set_ctx(

@@ -27,7 +27,7 @@ thread_local! {
         const { RefCell::new(None) };
 }
 #[allow(unused_imports)]
-use super::{attrs::*, cargo::*, compositions::*, entity::*, transform::*};
+use super::{cargo::*, entity::*};
 use crate::editor::arsenal::asset_catalog::PlacePayload;
 use crate::editor::mission_editor::AssetPickerState;
 use crate::editor::panels::outliner::build_outliner_with_comments;
@@ -58,11 +58,11 @@ pub(super) use website_map_engine::data::store::operations::projections::squad_r
 
 mod registration;
 
-/// Expose registration :: { close asset picker , close comment editor , open asset picker , open comment editor , place with crew , set asset picker signal , set comment editor signal , set ctx , set place with crew ,  zone draft , } at this domain boundary.
+/// Expose registration :: { cancel armed composition , close asset picker , close comment editor , open asset picker , open comment editor , place with crew , set asset picker signal , set comment editor signal , set ctx , set place with crew ,  zone draft , } at this domain boundary.
 pub use registration::{
-    close_asset_picker, close_comment_editor, open_asset_picker, open_comment_editor,
-    place_with_crew, set_asset_picker_signal, set_comment_editor_signal, set_ctx,
-    set_place_with_crew, ZoneDraft,
+    cancel_armed_composition, close_asset_picker, close_comment_editor, open_asset_picker,
+    open_comment_editor, place_with_crew, set_asset_picker_signal, set_comment_editor_signal,
+    set_ctx, set_place_with_crew, ZoneDraft,
 };
 
 /// Expose registration :: {  ops ctx ,  pending } at this domain boundary.

@@ -94,9 +94,9 @@ pub(crate) fn read_z_drag_readout() -> Option<String> {
 ///
 /// Pure and at file scope so the preview (`onpointermove`) and the commit (`onpointerup`) call the
 /// SAME function. Two copies of "pixels to metres" is the third-vocabulary defect class the
-/// `keep_z_rows`/`slot_z` note in `state/operations/attrs.rs` names — here it would be worse than
-/// untidy, because a preview that disagrees with its own commit shows the operator one number and
-/// stores another.
+/// `keep_z_rows`/`slot_z` pair in the engine's `data::store::operations::attrs` names — here it
+/// would be worse than untidy, because a preview that disagrees with its own commit shows the
+/// operator one number and stores another.
 ///
 /// The math itself belongs to `canvas/gizmo_z.rs` and is not restated: [`gizmo_z::dy_to_elevation`]
 /// inverts the screen axis (up is +Z) and [`gizmo_z::snap_elevation`] quantises. This function
@@ -659,7 +659,7 @@ pub(crate) fn AssetPickerOverlay(
 /// in the Outliner; renders no DOM while closed.
 ///
 /// **Why its own overlay and not the Attributes modal.** Attributes reads the slot SoA
-/// (`editor_ops::read_attrs`), and a comment is not in it — a comment never reaches `materialize`
+/// (`hosted_commands::read_attrs`), and a comment is not in it — a comment never reaches `materialize`
 /// at all, which is the same property that keeps it out of the render and off the compiled mission.
 /// Pointing Attributes at a comment id would open a dialog with every field blank and every write a
 /// no-op: the T-716 "live-but-inert" failure this codebase already names.

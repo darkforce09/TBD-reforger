@@ -459,7 +459,7 @@ fn shift_rotate_arm_promotes_and_commits_through_the_field_write() {
         "XFORM-SHIFT-001: a Shift-held drag on a selected entity must open LG::Rotate"
     );
     assert!(
-        ed.contains("editor_ops::rotate_selection_to_face("),
+        ed.contains("selection_transform::rotate_selection_to_face("),
         "the LG::Rotate commit must call rotate_selection_to_face"
     );
     // Isolate the pointerup LG::Rotate arm and prove it commits rotation, NOT a translate.

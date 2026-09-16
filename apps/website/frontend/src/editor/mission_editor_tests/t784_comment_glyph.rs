@@ -263,16 +263,20 @@ fn a_comment_composes_and_the_reconcile_is_still_the_one_writers_job() {
     // absence / uniqueness assertions keep their whole-module meaning.
     let ops = live_code(
         &[
-            include_str!("../state/operations/attrs.rs"),
+            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
             include_str!("../state/operations/cargo.rs"),
-            include_str!("../state/operations/compositions.rs"),
+            include_str!(
+                "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
+            ),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/../map-engine/src/data/store/operations/compositions.rs"
             )),
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
-            include_str!("../state/operations/transform.rs"),
+            include_str!(
+                "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
+            ),
         ]
         .concat(),
     );

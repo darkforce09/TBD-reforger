@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use website_map_engine::data::store::MissionDocCore;
 
 #[allow(unused_imports)]
-use super::{attrs::*, compositions::*, context::*, entity::*, transform::*};
+use super::{batch::confirm_bulk_n_step, context::*, entity::*};
 
 /// Read a slot's embedded `loadout` JSON (Arsenal picks) from `slots_json`. `None` when unset.
 pub fn read_loadout(id: &str) -> Option<String> {
@@ -104,7 +104,9 @@ pub fn copy_loadouts_from_selection() -> usize {
         let Some(core) = d.as_ref() else {
             return 0;
         };
-        website_map_engine::data::store::operations::cargo::buffer_loadouts_from_selection(core, sel)
+        website_map_engine::data::store::operations::cargo::buffer_loadouts_from_selection(
+            core, sel,
+        )
     })
 }
 

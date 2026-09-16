@@ -17,6 +17,10 @@ pub mod host;
 /// The decidable half of the editor's commands: export bytes, report wording, selection digests.
 pub mod commands;
 
+/// The editor's commands that run against the installed host: they open the hosted document,
+/// commit, and run the post-change tail.
+pub mod hosted_commands;
+
 /// Join spatial queries to document identifiers under a frozen camera.
 pub mod picking;
 

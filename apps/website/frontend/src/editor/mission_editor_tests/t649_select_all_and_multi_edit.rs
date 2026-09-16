@@ -157,16 +157,20 @@ fn multi_selection_no_longer_suppresses_the_attributes_modal() {
     // absence / uniqueness assertions keep their whole-module meaning.
     let ops = live_code(
         &[
-            include_str!("../state/operations/attrs.rs"),
+            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
             include_str!("../state/operations/cargo.rs"),
-            include_str!("../state/operations/compositions.rs"),
+            include_str!(
+                "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
+            ),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/../map-engine/src/data/store/operations/compositions.rs"
             )),
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
-            include_str!("../state/operations/transform.rs"),
+            include_str!(
+                "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
+            ),
         ]
         .concat(),
     );
@@ -297,7 +301,9 @@ fn multi_edit_commits_fan_out_to_every_selected_id() {
     let ops = live_code(include_str!(
         "../../../../map-engine/src/data/store/operations/attrs.rs"
     ));
-    let host = live_code(include_str!("../state/operations/attrs.rs"));
+    let host = live_code(include_str!(
+        "../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+    ));
     // T-732 — position multi is ONE LOCAL txn via update_entity_transforms (not N×
     // update_slot_position). F-26 (T-788) — identity multi is now ATOMIC too, via
     // `update_slots_attr_batch` (one txn, one undo step); the per-id fan-out moved INTO the core.
@@ -409,13 +415,11 @@ fn assert_after_local_edit_outside_ids_loop(fn_name: &str, src: &str, host: &str
          after_local_edit() inside `for id in ids`"
     );
     assert!(
-        host.find(
-            "website_map_engine::data::store::operations::attrs::attrs_update_position_multi("
-        )
-        .expect("adapter calls the domain operation")
+        host.find("attrs::attrs_update_position_multi(")
+            .expect("the hosted command calls the domain operation")
             < host
                 .find("after_local_edit()")
-                .expect("adapter refreshes after the call"),
+                .expect("the hosted command refreshes after the call"),
         "{fn_name} must fire the history/persist tail after the fan-out loop closes"
     );
 }

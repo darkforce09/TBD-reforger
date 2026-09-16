@@ -525,13 +525,13 @@ pub fn StatusBar(
 ) -> impl IntoView {
     // Exactly-one-selected → that slot's x/y/z from the doc. Recomputes on selection change AND
     // on the post-mutation selected_ids re-set (drag commit), so it never shows a stale position.
-    // (`editor_ops` is wasm-only; the native view shell always renders CUR.)
+    // (The native view shell hosts no document, so it always renders CUR.)
     let sel_xyz = Memo::new(move |_| -> Option<(f64, f64, f64)> {
         let ids = selected_ids.get();
         if ids.len() == 1 {
             #[cfg(target_arch = "wasm32")]
             {
-                return crate::editor::state::operations::read_attrs(&ids[0])
+                return website_map_engine::editing::hosted_commands::read_attrs(&ids[0])
                     .map(|a| (a.x, a.y, a.z));
             }
         }
@@ -2054,8 +2054,7 @@ mod t670_scale_readout {
         let between = &push[bind_at + bind.len()..call_at];
         let squeezed: String = between.split_whitespace().collect::<Vec<_>>().join(" ");
         assert_eq!(
-            squeezed,
-            "let interval =",
+            squeezed, "let interval =",
             "T-670/T-755: bind and ladder call must be adjacent (`let interval =` only between);              got {squeezed:?}"
         );
         let before = &push[..bind_at];

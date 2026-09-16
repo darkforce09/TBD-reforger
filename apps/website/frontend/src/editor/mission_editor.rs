@@ -420,7 +420,7 @@ pub mod armed_place {
 /// compiles a test placed beside `drag_delta`; the ticket says "the quantiser goes beside
 /// `drag_delta`" as a locality hint, and this is the nearest home whose behaviour a native test can
 /// actually execute rather than only source-pin). The wasm gesture code in this same file calls
-/// straight into here; the eventual commit still rides the existing `editor_ops::attrs_update_position`
+/// straight into here; the eventual commit still rides the existing `hosted_commands::attrs_update_position`
 /// field write (T-648 "a GESTURE on an existing field"), which is what this module deliberately does
 /// NOT do — it only decides the numbers.
 pub mod transform {

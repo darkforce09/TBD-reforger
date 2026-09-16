@@ -9,6 +9,8 @@
 use crate::editor::state::operations as editor_ops;
 use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
+use website_map_engine::editing::hosted_commands as engine_ops;
+#[cfg(target_arch = "wasm32")]
 use website_map_engine::editing::tools::selection;
 
 use serde::{Deserialize, Serialize};
@@ -1418,8 +1420,7 @@ const TAB_CELL_ON: &str = "flex size-5 shrink-0 items-center justify-center roun
 const TAB_CELL_OFF: &str = "flex size-5 shrink-0 items-center justify-center rounded border-b-2 border-transparent text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface";
 /// T-637 — the Manage verb's cell: the same box as a tab, in the primary tint (it is the strip's one
 /// verb, not an eighth tab).
-const TAB_CELL_VERB: &str =
-    "flex size-5 shrink-0 items-center justify-center rounded text-primary transition-colors hover:bg-primary/15";
+const TAB_CELL_VERB: &str = "flex size-5 shrink-0 items-center justify-center rounded text-primary transition-colors hover:bg-primary/15";
 /// T-809 — the Favourites|History subtab pair's selected pill (a text pill, not a glyph cell: two
 /// words fit inside the tab body where the glyph strip above does not have the room).
 const SUBTAB_ON: &str = "rounded px-2 py-0.5 text-label-sm font-medium text-primary bg-primary/15";
@@ -2303,7 +2304,7 @@ pub(crate) fn compositions_panel(
             <span class="font-mono text-code-md text-outline">
                 {move || {
                     let _ = doc_tick.get();
-                    ops::composition_count()
+                    engine_ops::composition_count()
                 }}
             </span>
         </div>
@@ -2343,7 +2344,7 @@ pub(crate) fn compositions_panel(
             // The row's title for the readout; fall back to the id if the row was deleted out from
             // under a live arm (an edge, but a deleted row still leaves a stale `Pending`). Never an
             // invented placeholder — an untitled row already reads "Untitled" everywhere else.
-            let label = ops::composition_rows()
+            let label = engine_ops::composition_rows()
                 .into_iter()
                 .find(|r| r.id == armed)
                 .map(|r| {
@@ -2429,7 +2430,7 @@ pub(crate) fn compositions_panel(
                                         .and_then(|s| s.user.get_untracked().map(|u| u.username))
                                         .filter(|u| !u.is_empty())
                                         .unwrap_or_else(|| "You".to_string());
-                                    let _ = ops::save_composition(title, category, author);
+                                    let _ = engine_ops::save_composition(title, category, author);
                                     save_open.set(false);
                                     save_title.set(String::new());
                                     save_category.set(String::new());
@@ -2466,7 +2467,7 @@ pub(crate) fn compositions_panel(
         // ── The saved compositions, grouped by category ───────────────────────────────────────
         {move || {
             let _ = doc_tick.get();
-            let rows = ops::composition_rows();
+            let rows = engine_ops::composition_rows();
             if rows.is_empty() {
                 return view! {
                     <p class="mt-3 text-label-sm normal-case text-outline">
@@ -2477,7 +2478,7 @@ pub(crate) fn compositions_panel(
             }
             // `composition_rows` is sorted by (category, title), so a run of equal categories is
             // contiguous — group by walking and emitting a heading when the category changes.
-            let mut groups: Vec<(String, Vec<editor_ops::CompositionRow>)> = Vec::new();
+            let mut groups: Vec<(String, Vec<engine_ops::CompositionRow>)> = Vec::new();
             for r in rows {
                 match groups.last_mut() {
                     Some((cat, list)) if *cat == r.category => list.push(r),
@@ -2521,7 +2522,7 @@ pub(crate) fn compositions_panel(
 /// When `editing == this id`, the row swaps to inline title + category inputs (the T-666 idiom).
 #[cfg(target_arch = "wasm32")]
 fn composition_row_view(
-    c: editor_ops::CompositionRow,
+    c: engine_ops::CompositionRow,
     doc_tick: RwSignal<u64>,
     editing: RwSignal<Option<String>>,
     row: &'static str,
@@ -2600,12 +2601,12 @@ fn composition_row_view(
                                     on:click=move |_| {
                                         let t = edit_title.get_untracked();
                                         let t = if t.trim().is_empty() { "Untitled".to_string() } else { t };
-                                        ops::rename_composition(save_id.clone(), t);
-                                        ops::recategorize_composition(
+                                        engine_ops::rename_composition(save_id.clone(), t);
+                                        engine_ops::recategorize_composition(
                                             save_id.clone(),
                                             edit_category.get_untracked(),
                                         );
-                                        ops::set_composition_author(
+                                        engine_ops::set_composition_author(
                                             save_id.clone(),
                                             edit_author.get_untracked(),
                                         );
@@ -2667,7 +2668,9 @@ fn composition_row_view(
                                 title="Delete"
                                 class="shrink-0 rounded-md p-1 text-error opacity-0 transition-opacity hover:bg-error/15 group-hover:opacity-100"
                                 on:click=move |_| {
-                                    ops::delete_composition(del_id.clone());
+                                    if engine_ops::delete_composition(&del_id) {
+                                        ops::cancel_armed_composition(&del_id);
+                                    }
                                     bump();
                                 }
                             >
@@ -4473,8 +4476,10 @@ mod tests {
         use crate::v2::core::test_support::class_r_scrub::live_source;
         let src = live_source(include_str!("dock_right.rs"));
         let src = src.as_str();
-        // The panel aliases `use crate::editor::state::operations as ops`, so the calls read `ops::<fn>(`.
-        let call = |f: &str| format!("ops::{f}(");
+        // The library mutators are the engine's, aliased `engine_ops`; the arm is still the
+        // frontend's, aliased `ops`. Both read `<alias>::<fn>(`.
+        let call = |f: &str| format!("engine_ops::{f}(");
+        let arm_call = |f: &str| format!("ops::{f}(");
 
         // The tab strip renders a Compositions tab at index 4.
         assert!(
@@ -4493,7 +4498,7 @@ mod tests {
         );
         // PLACE (COMP-PLACE-001): a row press ARMS via the T-647 arm seam.
         assert!(
-            src.contains(&call("begin_place_composition")),
+            src.contains(&arm_call("begin_place_composition")),
             "a composition row must arm the place"
         );
         // EDIT (COMP-EDIT-001) + the three ATTR-FIELD-COMP-* metadata fields, inline.
@@ -4509,13 +4514,15 @@ mod tests {
             );
         }
 
-        // The editor-ops seam actually exposes those functions AND the place reaches the core
-        // one-undo-step mutator (the claim the store round-trip test rests on). Scrubbed the same
-        // way (T-791): `editor_ops.rs` documents these `pub fn`s in prose right above them.
-        // T-934.7 — the save lives in operations/compositions.rs, the arm + place in entity.rs.
+        // The seam actually exposes those functions AND the place reaches the core one-undo-step
+        // mutator (the claim the store round-trip test rests on). Scrubbed the same way (T-791):
+        // these `pub fn`s are documented in prose right above them. The save lives in the engine's
+        // composition library, the arm + place in the entity operations.
         let ops = live_source(
             &[
-                include_str!("../state/operations/compositions.rs"),
+                include_str!(
+                    "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
+                ),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
                     "/../map-engine/src/data/store/operations/compositions.rs"
@@ -4555,10 +4562,12 @@ mod tests {
     fn a_composition_captures_comments_and_authored_elevation() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
-        // T-934.7 — capture_selection_entities lives in operations/compositions.rs and
-        // mint_ids in operations/entity.rs; the haystack is their concatenation.
+        // `capture_selection_entities` lives in the engine's composition operations and `mint_ids`
+        // in its entity operations; the haystack is their concatenation with the hosted library.
         let ops_all = [
-            include_str!("../state/operations/compositions.rs"),
+            include_str!(
+                "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
+            ),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/../map-engine/src/data/store/operations/compositions.rs"
@@ -4892,16 +4901,20 @@ mod tests {
         let zones_src = include_str!("zones_panel.rs");
         // T-934.7 — the ops module was split; the no-forked-draw absence pins scan every submodule.
         let ops = [
-            include_str!("../state/operations/attrs.rs"),
+            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
             include_str!("../state/operations/cargo.rs"),
-            include_str!("../state/operations/compositions.rs"),
+            include_str!(
+                "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
+            ),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/../map-engine/src/data/store/operations/compositions.rs"
             )),
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
-            include_str!("../state/operations/transform.rs"),
+            include_str!(
+                "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
+            ),
         ]
         .concat();
 
@@ -6001,9 +6014,11 @@ mod tests {
         // T-934.7 — the ops module was split; the marker pins and the root-map absence scan
         // every submodule so the file-wide claims keep their whole-module meaning.
         let ops_all = [
-            include_str!("../state/operations/attrs.rs"),
+            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
             include_str!("../state/operations/cargo.rs"),
-            include_str!("../state/operations/compositions.rs"),
+            include_str!(
+                "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
+            ),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/../map-engine/src/data/store/operations/compositions.rs"
@@ -6011,7 +6026,9 @@ mod tests {
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
             crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY,
-            include_str!("../state/operations/transform.rs"),
+            include_str!(
+                "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
+            ),
         ]
         .concat();
         #[allow(non_snake_case)]

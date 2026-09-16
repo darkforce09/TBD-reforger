@@ -5,6 +5,7 @@
 
 use super::*;
 use website_map_engine::data::store::operations::entity::ArmedPlacement;
+use website_map_engine::editing::hosted_commands::slot_attributes::read_attrs;
 
 /// Commit an armed place at a **world** position, then select it and run the shared post-change tail. Returns `false` when nothing was armed.
 #[allow(dead_code)]
@@ -87,18 +88,17 @@ pub(in crate::editor::state::operations) fn place_at_impl(
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
         let side = ctx.active_side.get_untracked();
-        let placed =
-            website_map_engine::data::store::operations::entity::commit_armed_placement(
-                core,
-                armed_placement(pending),
-                &side,
-                x,
-                y,
-                place_with_crew(),
-                alt_empty,
-                &ctx.next_id,
-                |core| ensure_layer(ctx, core),
-            )?;
+        let placed = website_map_engine::data::store::operations::entity::commit_armed_placement(
+            core,
+            armed_placement(pending),
+            &side,
+            x,
+            y,
+            place_with_crew(),
+            alt_empty,
+            &ctx.next_id,
+            |core| ensure_layer(ctx, core),
+        )?;
         if let Some(ids) = placed.selection.clone() {
             *ctx.selection.borrow_mut() = ids;
         }

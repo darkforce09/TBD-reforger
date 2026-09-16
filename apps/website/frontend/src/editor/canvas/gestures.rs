@@ -42,6 +42,8 @@ use crate::editor::canvas::overlays as ov;
 use crate::editor::canvas::tactical_graphics::{TG_PICK_PX, TG_VERTEX_PICK_PX};
 use crate::editor::state::history as mission_history;
 use crate::editor::state::operations as editor_ops;
+use website_map_engine::data::store::operations::attrs;
+use website_map_engine::editing::hosted_commands::selection_transform;
 
 /// Every handle the six gesture closures capture, bundled so the page hands them over in one
 /// `attach_canvas_gestures(&ctx)` call. `Rc`/element handles clone (shared ownership with the
@@ -1561,14 +1563,14 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             // deltas stand in for the coordinates, since it only asks WHICH
                             // fields are written), so it answers `Some` for every drag.
                             let z_rows = (!slot_ids.is_empty())
-                                .then(|| editor_ops::keep_z_rows(core, Some(dx), Some(dy), None))
+                                .then(|| attrs::keep_z_rows(core, Some(dx), Some(dy), None))
                                 .flatten();
                             let zs: Vec<f64> = slot_ids
                                 .iter()
                                 .map(|id| {
                                     z_rows
                                         .as_ref()
-                                        .and_then(|rows| editor_ops::slot_z(rows, id))
+                                        .and_then(|rows| attrs::slot_z(rows, id))
                                         .unwrap_or(0.0)
                                 })
                                 .collect();
@@ -1744,7 +1746,8 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     let aim = cam.unproject_xy(up_x, up_y);
                     if aim[0].is_finite() && aim[1].is_finite() {
                         let rung = snap.get_untracked().effective_rotate_rung();
-                        let acted = editor_ops::rotate_selection_to_face(aim[0], aim[1], rung);
+                        let acted =
+                            selection_transform::rotate_selection_to_face(aim[0], aim[1], rung);
                         if acted {
                             // A rotate changes the doc but not the selection; keep the tint
                             // lane in sync (glyphs re-bind off the history tail) and refresh

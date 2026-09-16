@@ -4,7 +4,7 @@
 //! (X/Y/Z/Rotation NumberFields committing on blur/Enter via `update_slot_position`, plus a Stance
 //! select), **Identity** (Role/Tag TextFields + readonly Squad), **States** (trait stub), and
 //! **Arsenal** (live loadout editor — T-068.10 / T-180.9; `open_arsenal` selects tab index 3).
-//! Commits run `editor_ops::attrs_update_*` → `after_local_edit` (rebind + persist + one undo
+//! Commits run `engine_ops::attrs_update_*` → `after_local_edit` (rebind + persist + one undo
 //! step per commit — A4).
 //!
 //! The field values re-read from the doc on every `doc_ver` bump, so an undo while the modal is
@@ -28,7 +28,7 @@
 //!     input. Untouched fields are passed as `None` and the core leaves those columns alone, so a
 //!     stance multi-edit can never also stamp one slot's X onto the rest.
 //!
-//! `editor_ops::read_attrs_diff` owns the "do they differ" half; the checkbox + disable half is
+//! `engine_ops::read_attrs_diff` owns the "do they differ" half; the checkbox + disable half is
 //! here.
 //!
 //! **T-700 (3DEN-PLACE-013) — the numeric nudge.** Every `number_field` now moves by PageUp /
@@ -42,8 +42,8 @@
 use leptos::prelude::*;
 #[cfg(any(test, target_arch = "wasm32"))]
 pub use website_map_engine::data::store::operations::reassign::faction_label;
-#[cfg(any(test, target_arch = "wasm32"))]
-pub use website_map_engine::data::store::operations::reassign::plan_reassign;
+#[cfg(target_arch = "wasm32")]
+use website_map_engine::editing::hosted_commands as engine_ops;
 
 const CONTROL: &str = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60";
 /// T-649 — added to a field that is disabled because its values differ and its checkbox is
@@ -243,8 +243,9 @@ fn field_label(label: &'static str, gate: Gate) -> impl IntoView {
 /// T-741 — Attributes multi-edit header copy (wave-112 NIT-4).
 ///
 /// Counts the **slot** subset the modal will write — never the full Ctrl+A selection — and says
-/// explicitly when vehicles were excluded because [`crate::editor::state::operations::attrs_multi_ids`] drops
-/// non-slot ids (vehicles carry none of the SoA columns multi-edit stamps).
+/// explicitly when vehicles were excluded because
+/// [`website_map_engine::editing::hosted_commands::attrs_multi_ids`] drops non-slot ids (vehicles
+/// carry none of the SoA columns multi-edit stamps).
 #[must_use]
 pub(crate) fn attrs_multi_subtitle(slot_n: usize, selection_n: usize) -> String {
     let base = format!("{slot_n} slots selected · multi-edit");
@@ -305,8 +306,7 @@ pub fn AttributesModal(
     // are; on native (the pin build) the component renders nothing, so nothing needs it there. One
     // entry per edited id (single-edit is one entry); vehicles are excluded upstream, so all slots.
     #[cfg(target_arch = "wasm32")]
-    let snapshot: StoredValue<Vec<crate::editor::state::operations::SlotAttrs>> =
-        StoredValue::new(Vec::new());
+    let snapshot: StoredValue<Vec<engine_ops::SlotAttrs>> = StoredValue::new(Vec::new());
     // The `opts` re-arm runs on both targets (native-safe); the snapshot capture is wasm-only.
     Effect::new(move |_| {
         let open = attrs_open.get();
@@ -320,12 +320,12 @@ pub fn AttributesModal(
             let snap = open
                 .as_deref()
                 .map(|id| {
-                    let mut ids = crate::editor::state::operations::attrs_multi_ids(id);
+                    let mut ids = engine_ops::attrs_multi_ids(id);
                     if ids.is_empty() {
                         ids = vec![id.to_string()];
                     }
                     ids.iter()
-                        .filter_map(|i| crate::editor::state::operations::read_attrs(i))
+                        .filter_map(|i| engine_ops::read_attrs(i))
                         .collect::<Vec<_>>()
                 })
                 .unwrap_or_default();
@@ -343,15 +343,15 @@ pub fn AttributesModal(
         let _ = (&id, registry_items, compat, attrs_tab, opts);
         #[cfg(target_arch = "wasm32")]
         {
-            match crate::editor::state::operations::read_attrs(&id) {
+            match engine_ops::read_attrs(&id) {
                 Some(attrs) => {
                     // T-649 — the multi-edit target set (empty ⇒ the untouched single-slot modal)
                     // and which of its fields disagree. Both re-read per render, so a selection or
                     // doc change while the modal is open is reflected immediately.
-                    let multi = crate::editor::state::operations::attrs_multi_ids(&id);
+                    let multi = engine_ops::attrs_multi_ids(&id);
                     // T-741 — full selection length (may include vehicles Ctrl+A picked up).
-                    let selection_n = crate::editor::state::operations::attrs_selection_len();
-                    let diff = crate::editor::state::operations::read_attrs_diff(&multi);
+                    let selection_n = website_map_engine::editing::host::selection_len();
+                    let diff = engine_ops::read_attrs_diff(&multi);
                     Some(modal_view(
                         attrs,
                         multi,
@@ -395,14 +395,14 @@ pub fn AttributesModal(
 #[cfg(target_arch = "wasm32")]
 #[allow(clippy::too_many_arguments)]
 fn modal_view(
-    attrs: crate::editor::state::operations::SlotAttrs,
+    attrs: engine_ops::SlotAttrs,
     multi: Vec<String>,
     selection_n: usize,
-    diff: crate::editor::state::operations::AttrDiff,
+    diff: engine_ops::AttrDiff,
     opts: MultiOpts,
     // T-810 (F-23 b) — the pre-open snapshot the Revert button restores. Captured on open (see
     // `AttributesModal`), one entry per edited slot.
-    snapshot: StoredValue<Vec<crate::editor::state::operations::SlotAttrs>>,
+    snapshot: StoredValue<Vec<engine_ops::SlotAttrs>>,
     registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
     compat: RwSignal<crate::editor::arsenal::arsenal_rules::CompatFeed>,
     tab: RwSignal<usize>,
@@ -421,7 +421,7 @@ fn modal_view(
     // the Transform tab's disabled state and the core's refusal are answers to the same question.
     // Re-asked on every `doc_tick` like every other value here, so unlocking the layer in the
     // Outliner re-enables the fields without closing the modal.
-    let locked_n = crate::editor::state::operations::attrs_locked_count(&targets.get_value());
+    let locked_n = engine_ops::attrs_locked_count(&targets.get_value());
     let attrs = StoredValue::new(attrs);
     let subtitle = {
         let a = attrs.get_value();
@@ -971,7 +971,7 @@ fn field_display(value: f64) -> String {
 ///     into the document; the core filters them per-axis, but a refused write still fires
 ///     `after_local_edit()` at the caller, so the mission goes dirty for a number that never landed.
 ///   * an UNCHANGED value writes nothing — the T-775 defect itself. Nothing downstream asks "did
-///     anything change": `editor_ops::attrs_update_position` writes `position` and calls
+///     anything change": `engine_ops::attrs_update_position` writes `position` and calls
 ///     `after_local_edit()` on any non-refused slot, so a focus/blur on an untouched coordinate
 ///     dirties the mission, arms a persist and mints an undo step for an edit the operator never
 ///     made. The comparison is against the EXACT settled value, never the rounded presentation
@@ -1059,7 +1059,7 @@ fn number_field(
             // each of its three rules) lives in [`should_commit`], which is native and therefore
             // actually tested; this is the wire. wave-127 F-2 removed one of the reasons the skip
             // used to carry — an x/y commit no longer flattens a manually authored Z, because
-            // `editor_ops::attrs_update_position` now passes the slot's current z back in — but the
+            // `engine_ops::attrs_update_position` now passes the slot's current z back in — but the
             // dirty mission, the armed persist and the undo step for an untouched number remain.
             if should_commit(gate.differs(), n, value) {
                 on_commit(n);
@@ -1175,7 +1175,7 @@ fn number_field(
 ///
 /// **T-785 — why this is NOT a per-keystroke commit any more.** It used to be
 /// `on:input=move |ev| on_change(...)`, one commit per character. Each commit runs
-/// `editor_ops::attrs_update_*` → `after_local_edit()`, which bumps `doc_tick`; the whole
+/// `engine_ops::attrs_update_*` → `after_local_edit()`, which bumps `doc_tick`; the whole
 /// `AttributesModal` body re-reads on every `doc_tick` (see [`AttributesModal`]) and Leptos
 /// therefore RE-CREATED this very `<input>` between keystrokes. The DOM node the operator was
 /// typing into was destroyed after character one, focus fell to `<body>`, and every following
@@ -1321,9 +1321,9 @@ fn commit_position(
 ) {
     let ids = targets.get_value();
     if ids.len() > 1 {
-        crate::editor::state::operations::attrs_update_position_multi(&ids, x, y, z, rotation);
+        engine_ops::attrs_update_position_multi(&ids, x, y, z, rotation);
     } else if let Some(id) = ids.first() {
-        crate::editor::state::operations::attrs_update_position(id, x, y, z, rotation);
+        engine_ops::attrs_update_position(id, x, y, z, rotation);
     }
 }
 
@@ -1344,23 +1344,9 @@ fn commit_slot(
 ) {
     let ids = targets.get_value();
     if ids.len() > 1 {
-        crate::editor::state::operations::attrs_update_slot_multi(
-            &ids,
-            role,
-            tag,
-            stance,
-            asset_id,
-            description,
-        );
+        engine_ops::attrs_update_slot_multi(&ids, role, tag, stance, asset_id, description);
     } else if let Some(id) = ids.first() {
-        crate::editor::state::operations::attrs_update_slot(
-            id,
-            role,
-            tag,
-            stance,
-            asset_id,
-            description,
-        );
+        engine_ops::attrs_update_slot(id, role, tag, stance, asset_id, description);
     }
 }
 
@@ -1391,16 +1377,16 @@ fn commit_slot(
 /// all changed slots. Each destination comes from its own snapshot, including mixed factions;
 /// the membership operation leaves authored squads and vehicles in place.
 #[cfg(target_arch = "wasm32")]
-fn revert_to_snapshot(snapshot: StoredValue<Vec<crate::editor::state::operations::SlotAttrs>>) {
+fn revert_to_snapshot(snapshot: StoredValue<Vec<engine_ops::SlotAttrs>>) {
     for snap in snapshot.get_value() {
-        crate::editor::state::operations::attrs_update_position(
+        engine_ops::attrs_update_position(
             &snap.id,
             Some(snap.x),
             Some(snap.y),
             Some(snap.z),
             Some(snap.rotation),
         );
-        crate::editor::state::operations::attrs_update_slot(
+        engine_ops::attrs_update_slot(
             &snap.id,
             Some(snap.role.clone()),
             Some(snap.tag.clone()),
@@ -1409,15 +1395,15 @@ fn revert_to_snapshot(snapshot: StoredValue<Vec<crate::editor::state::operations
             Some(snap.description.clone()),
         );
     }
-    crate::editor::state::operations::restore_slot_squads(&snapshot.get_value());
+    engine_ops::restore_slot_squads(&snapshot.get_value());
 }
 
 #[cfg(target_arch = "wasm32")]
 fn transform_tab(
     targets: StoredValue<Vec<String>>,
-    attrs: StoredValue<crate::editor::state::operations::SlotAttrs>,
+    attrs: StoredValue<engine_ops::SlotAttrs>,
     is_multi: bool,
-    diff: crate::editor::state::operations::AttrDiff,
+    diff: engine_ops::AttrDiff,
     opts: MultiOpts,
     // T-082 (wave-102 F-7) — how many of `targets` sit on a transform-locked layer.
     locked_n: usize,
@@ -1863,9 +1849,9 @@ fn type_picker(
 #[cfg(target_arch = "wasm32")]
 fn identity_tab(
     targets: StoredValue<Vec<String>>,
-    attrs: StoredValue<crate::editor::state::operations::SlotAttrs>,
+    attrs: StoredValue<engine_ops::SlotAttrs>,
     is_multi: bool,
-    diff: crate::editor::state::operations::AttrDiff,
+    diff: engine_ops::AttrDiff,
     opts: MultiOpts,
     // T-810 (F-23 a) — the live catalog source for the TYPE picker.
     registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
@@ -1960,7 +1946,7 @@ fn identity_tab(
 /// were the group's is the defect this replaces, one layer down.
 #[cfg(target_arch = "wasm32")]
 fn reassign_picker(targets: StoredValue<Vec<String>>) -> impl IntoView {
-    use crate::editor::state::operations as ops;
+    use website_map_engine::editing::hosted_commands as ops;
 
     let (factions, squads) = ops::reassign_rows();
     // Deterministic faction order, the same `id` sort `build_orbat` uses, so the dropdown and the
@@ -2286,9 +2272,7 @@ mod tests {
         let src = attrs_src();
         let modal = only_body(&src, "fn modal_view(");
         assert!(
-            modal.contains(
-                "crate::editor::state::operations::attrs_locked_count(&targets.get_value())"
-            ),
+            modal.contains("engine_ops::attrs_locked_count(&targets.get_value())"),
             "the modal must ask the core over the same id set the commits fan out to"
         );
         let transform = only_body(&src, "fn transform_tab(");
@@ -2436,7 +2420,9 @@ mod tests {
     /// RED: strip `!raw_slot_rows(core).contains_key(id) → false`.
     #[test]
     fn attrs_update_slot_noops_when_all_none_or_id_missing() {
-        let ops = live_code(include_str!("../state/operations/attrs.rs"));
+        let ops = live_code(include_str!(
+            "../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+        ));
         let body = only_body(&ops, "pub fn attrs_update_slot(");
 
         // (1) five-field all-None early `return` before `let did`
@@ -2740,7 +2726,7 @@ mod tests {
     ///     presentation. Seeding from the display is what made T-700's PageUp on `412.37` commit
     ///     `413` instead of `413.37`: the nudge inherited a rounding it never performed.
     ///   * BLUR skips `on_commit` when the parsed draft still equals the settled value. Nothing
-    ///     downstream will do this for it — `editor_ops::attrs_update_position` writes and calls
+    ///     downstream will do this for it — `engine_ops::attrs_update_position` writes and calls
     ///     `after_local_edit()` on every non-refused slot, so without this an idle click dirties the
     ///     mission and mints an undo step for a number nobody touched. (It also used to flatten a
     ///     manually authored Z; that is fixed at the caller now — wave-127 F-2, pinned below.)
@@ -3170,9 +3156,11 @@ mod tests {
         // T-934.7 — the ops module was split; both the scrubbed and the RAW haystacks concatenate
         // every submodule so these file-wide absence pins keep their whole-module meaning.
         let ops_raw = [
-            include_str!("../state/operations/attrs.rs"),
+            include_str!("../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"),
             include_str!("../state/operations/cargo.rs"),
-            include_str!("../state/operations/compositions.rs"),
+            include_str!(
+                "../../../../map-engine/src/editing/hosted_commands/composition_library.rs"
+            ),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/../map-engine/src/data/store/operations/compositions.rs"
@@ -3180,7 +3168,9 @@ mod tests {
             crate::v2::core::test_support::editor_operations::CONTEXT,
             crate::v2::core::test_support::editor_operations::ENTITY,
             crate::v2::core::test_support::editor_operations::DOMAIN_ENTITY,
-            include_str!("../state/operations/transform.rs"),
+            include_str!(
+                "../../../../map-engine/src/editing/hosted_commands/selection_transform.rs"
+            ),
         ]
         .concat();
         let ops = live_code(&ops_raw);
@@ -3318,7 +3308,7 @@ mod tests {
     /// satisfy this (literals blanked; the call shape is what remains).
     ///
     /// Wave-137 F1: also pin value *flow* through `AttributesModal` — a dead
-    /// `let _ = attrs_selection_len()` (hollow B) or binding `selection_n` then passing
+    /// `let _ = selection_len()` (hollow B) or binding `selection_n` then passing
     /// `multi.len()` / `multi_n` into `modal_view` (hollow B2) must go RED.
     #[test]
     fn modal_view_routes_multi_subtitle_through_the_honesty_helper() {
@@ -3329,12 +3319,10 @@ mod tests {
             "modal_view must format the multi header via attrs_multi_subtitle(multi_n, selection_n); body was:\n{body}"
         );
         let host = only_body(&src, "pub fn AttributesModal(");
-        // (1) Assignment, not a dead call — hollow B (`let _ = attrs_selection_len(); let selection_n = multi.len()`) RED.
+        // (1) Assignment, not a dead call — hollow B (`let _ = selection_len(); let selection_n = multi.len()`) RED.
         assert!(
-            host.contains(
-                "let selection_n = crate::editor::state::operations::attrs_selection_len()"
-            ),
-            "AttributesModal must bind `let selection_n = crate::editor::state::operations::attrs_selection_len()` (not a discarded call); body was:\n{host}"
+            host.contains("let selection_n = website_map_engine::editing::host::selection_len()"),
+            "AttributesModal must bind `let selection_n = website_map_engine::editing::host::selection_len()` (not a discarded call); body was:\n{host}"
         );
         // (2) That binding must be the modal_view selection-length argument — hollow B2
         // (`modal_view(..., multi.len(), ...)` while keeping the binding) RED.
@@ -3370,16 +3358,19 @@ mod tests {
     /// `attrs_multi_ids` still filters to SoA slot ids — the subset the header is honest about.
     #[test]
     fn attrs_multi_ids_still_filters_selection_to_slot_soa() {
-        let ops = live_code(include_str!("../state/operations/attrs.rs"));
+        let ops = live_code(include_str!(
+            "../../../../map-engine/src/editing/hosted_commands/slot_attributes.rs"
+        ));
         let body = only_body(&ops, "pub fn attrs_multi_ids(open_id: &str) -> Vec<String>");
         assert!(
             body.contains("soa.ids.iter().any(|r| r == s)"),
             "attrs_multi_ids must keep filtering to slot SoA ids; body was:\n{body}"
         );
-        let sel = only_body(&ops, "pub fn attrs_selection_len() -> usize");
+        let host = live_code(include_str!("../../../../map-engine/src/editing/host.rs"));
+        let sel = only_body(&host, "pub fn selection_len() -> usize");
         assert!(
-            sel.contains("ctx.selection.borrow().len()"),
-            "attrs_selection_len must read the live selection length; body was:\n{sel}"
+            sel.contains("selection.borrow().len()"),
+            "selection_len must read the live selection length; body was:\n{sel}"
         );
     }
 }
@@ -3741,13 +3732,14 @@ mod t810_type_picker_revert_axes {
 ///
 /// Pinned two ways, on purpose:
 ///
-///   * the **decision** ([`super::plan_reassign`], [`super::faction_label`]) is pure and native, so
+///   * the **decision** (the engine's `plan_reassign`, [`super::faction_label`]) is pure and
+///     native, so
 ///     these tests CALL it — the `axis_chip_class` / `nudge_step` precedent. The refusal reasons are
 ///     user-visible copy, and a sentence only a source pin ever reads is a sentence nobody has
 ///     proved the modal can produce;
 ///   * the **wiring** is a `view!` tree over `web_sys` nodes that `cargo test` cannot instantiate,
 ///     so it is pinned against the SCRUBBED live source of the two files that carry it — this one
-///     and `state/operations/reassign.rs`.
+///     and the engine's `editing/hosted_commands/squad_reassignment.rs`.
 ///
 /// The doc-level behaviour — the emptied source squad keeping its row, its attached vehicles and
 /// its place in `faction.squadIds`, and the derived side key following the move — is native and
@@ -3757,11 +3749,13 @@ mod t810_type_picker_revert_axes {
 /// `the_default_move_slot_to_squad_still_garbage_collects_an_emptied_source`).
 #[cfg(test)]
 mod t939_2_batch_reassign {
-    use super::{faction_label, plan_reassign};
+    use super::faction_label;
     use crate::editor::panels::outliner::{FactionRow, SquadRow};
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
+    use website_map_engine::data::store::operations::reassign::plan_reassign;
 
-    const REASSIGN_RS: &str = include_str!("../state/operations/reassign.rs");
+    const REASSIGN_RS: &str =
+        include_str!("../../../../map-engine/src/editing/hosted_commands/squad_reassignment.rs");
 
     /// Two factions, three squads: Alpha and Charlie under BLUFOR, Bravo under OPFOR. Bravo is the
     /// cross-faction pick; `faction-EMPTY` is the faction with nowhere to put anyone.
@@ -3965,7 +3959,9 @@ mod t939_2_batch_reassign {
     #[test]
     fn the_batch_uses_the_keep_source_core_path_not_the_garbage_collecting_one() {
         let ops = live_code(concat!(
-            include_str!("../state/operations/reassign.rs"),
+            include_str!(
+                "../../../../map-engine/src/editing/hosted_commands/squad_reassignment.rs"
+            ),
             include_str!("../../../../map-engine/src/data/store/operations/reassign.rs")
         ));
         assert!(

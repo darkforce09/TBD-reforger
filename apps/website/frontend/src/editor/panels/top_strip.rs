@@ -67,8 +67,7 @@ const ACTION_SECONDARY: &str = "shrink-0 rounded border border-outline-variant/4
 /// the count `<span>` itself (`text-error-alert` / `-tactical-yellow` / muted), and the open/hover
 /// STATE is composed at the call site with [`TOGGLED_PLATE`] / [`HOVER_FILL`], exactly as the row-2
 /// toggle buttons do, so "this dropdown is open" reads the same here as everywhere in the strip.
-const VALIDATION_CHIP: &str =
-    "flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-on-surface-variant transition-colors";
+const VALIDATION_CHIP: &str = "flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-on-surface-variant transition-colors";
 
 /// T-634 — one dropdown-row recipe, shared by the menu-bar dropdowns and the demoted-export menu, so
 /// the demotion lands INSIDE the T-668 menu vocabulary instead of inventing a second dropdown
@@ -427,18 +426,22 @@ fn run_arrange_action(action: MenuAction) {
     #[cfg(target_arch = "wasm32")]
     {
         use crate::editor::state::operations as ops;
+        use website_map_engine::editing::hosted_commands::selection_transform;
+        // Align is the one that must undo as a single step, so it goes through the host's undo
+        // grouping; the other three commit as the engine already batches them. All four are
+        // handed the host's bulk confirmation, which the engine calls before it commits.
         match action {
             MenuAction::Pattern(kind) => {
-                ops::apply_pattern_to_selection(kind);
+                selection_transform::apply_pattern_to_selection(kind, ops::confirm_bulk);
             }
             MenuAction::Align(edge) => {
                 ops::align_selection(edge);
             }
             MenuAction::Space(axis) => {
-                ops::space_selection(axis);
+                selection_transform::space_selection(axis, ops::confirm_bulk);
             }
             MenuAction::Orient(cmd) => {
-                ops::orient_selection(cmd);
+                selection_transform::orient_selection(cmd, ops::confirm_bulk);
             }
             // Not a placement action — `run_action` only routes the four here, and `ArrangeKind`
             // cannot name anything else, so this arm is unreachable in practice.
@@ -4057,7 +4060,8 @@ mod t634_two_rows_and_a_hierarchy {
         );
         let b = body();
         assert_eq!(
-            b.matches("cn(&[BTN_ICON, HOVER_FILL, DISABLED_GLYPH])").count(),
+            b.matches("cn(&[BTN_ICON, HOVER_FILL, DISABLED_GLYPH])")
+                .count(),
             4,
             "T-634: all four tool glyphs (History · Undo · Redo · the settings gear) take the same \
              recipe and the same T-668 state pair"
@@ -4111,8 +4115,7 @@ mod t634_two_rows_and_a_hierarchy {
                     Some(super::MenuAction::Save) | Some(super::MenuAction::Settings)
                 );
                 assert_eq!(
-                    promises_dialog,
-                    opens_dialog,
+                    promises_dialog, opens_dialog,
                     "T-668/T-634: `{}` (menu `{menu}`) — the `…` suffix and \"a dialog follows\" \
                      must agree exactly. Save Version and Mission Settings put a dialog in front of \
                      the operator; every other row acts, downloads or toggles.",

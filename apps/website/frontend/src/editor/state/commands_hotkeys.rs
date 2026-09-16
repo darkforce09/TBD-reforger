@@ -215,9 +215,10 @@ mod imp {
     /// there is no editor context yet.
     ///
     /// Separate from [`snapshot`] because `Snap` is a VALUE snapshot (JSON strings) and
-    /// [`crate::editor::state::operations::duplicate_slot_ids`] takes the `MissionDocCore` itself —
-    /// it needs `doc.slot_exists`, which the JSON alone cannot answer. Same one-borrow discipline
-    /// as `snapshot`: one `EDITOR_CTX` borrow, released before the caller does anything else.
+    /// [`website_map_engine::data::store::operations::slot_ids::duplicate_slot_ids`] takes the
+    /// `MissionDocCore` itself — it needs `doc.slot_exists`, which the JSON alone cannot answer.
+    /// Same one-borrow discipline as `snapshot`: one `EDITOR_CTX` borrow, released before the
+    /// caller does anything else.
     fn live_duplicate_slot_ids() -> Vec<(String, String)> {
         EDITOR_CTX.with(|c| {
             let ctx = c.borrow();
@@ -228,7 +229,7 @@ mod imp {
             let Some(core) = doc.as_ref() else {
                 return Vec::new();
             };
-            crate::editor::state::operations::duplicate_slot_ids(core)
+            website_map_engine::data::store::operations::slot_ids::duplicate_slot_ids(core)
         })
     }
 
@@ -494,12 +495,12 @@ mod imp {
         // DIVERGENCE, DELIBERATE AND UNRESOLVED (see the slice report): the UPLOAD path has a
         // private near-twin, `check_duplicate_slot_ids_in_payload` in `library/mission_library.rs`
         // (defined :1519, called :1565), which reads `payload.editor.squads[]` JSON. The two do
-        // NOT agree — `state/operations/slot_ids.rs:32` gates each id on `doc.slot_exists(id)` and
-        // the library version does not, so a payload carrying a DANGLING duplicate id is refused
-        // on upload and passes here. Collapsing them onto this function is the right repair;
-        // `mission_library.rs` is outside T-946.86's owns, so the divergence is recorded rather
-        // than silently halved. Do not "fix" one side alone — that would make them disagree in a
-        // NEW way without anything failing.
+        // NOT agree — the engine's `data::store::operations::slot_ids` gates each id on
+        // `doc.slot_exists(id)` and the library version does not, so a payload carrying a
+        // DANGLING duplicate id is refused on upload and passes here. Collapsing them onto this
+        // function is the right repair; `mission_library.rs` is outside T-946.86's owns, so the
+        // divergence is recorded rather than silently halved. Do not "fix" one side alone — that
+        // would make them disagree in a NEW way without anything failing.
         let dups = live_duplicate_slot_ids();
         if !dups.is_empty() {
             let (head, rows) = super::duplicate_slot_id_report(&dups);
@@ -1474,7 +1475,7 @@ mod t946_86_duplicate_guard {
     fn the_check_routes_through_the_shared_operation() {
         let src = live();
         assert!(
-            src.contains("operations::duplicate_slot_ids(core)"),
+            src.contains("slot_ids::duplicate_slot_ids(core)"),
             "T-946.86 (.85): the doc-side guard must call the shared `duplicate_slot_ids`, not a \
              locally re-implemented scan"
         );

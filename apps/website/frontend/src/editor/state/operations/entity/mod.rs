@@ -12,7 +12,7 @@ thread_local! {
     static PENDING_CONNECT: RefCell<Option<(String, String)>> = const { RefCell::new(None) };
 }
 #[allow(unused_imports)]
-use super::{attrs::*, cargo::*, compositions::*, context::*, transform::*};
+use super::{cargo::*, context::*};
 use crate::editor::arsenal::asset_catalog::PlacePayload;
 use crate::editor::eden_chrome::{
     circle_from_clicks, polygon_flat, polygon_is_committable, zone_types, ZoneShape,
