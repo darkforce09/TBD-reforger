@@ -80,3 +80,25 @@ relative `CARGO_TARGET_DIR` resolves below the repo root.
 
 **Always run cargo from the repo root.** If a command needs another cwd, use a subshell so it
 cannot leak: `( cd sub && ... )`. Check `df -h .` occasionally; under ~10G free, stop and say so.
+
+## The class_r_scrub truncation trap — this WILL bite you
+
+`class_r_scrub::live_code()` (`v2/core/test_support/class_r_scrub/scrub.rs`, `cut_test_module`)
+blanks a file from its **first** `#[cfg(test)]` to EOF. So in any frontend file that a Class-R
+scrub or the keymap census reads, a test-module declaration placed near the top blanks the entire
+production body below it, and every pin that scrubs that file goes red at once.
+
+**Put `#[cfg(test)] #[path = "tests/<file>.rs"] mod …;` declarations at the BOTTOM of the file,
+below any existing test modules.** Adding one at the top of `state/commands_hotkeys.rs` turned
+seven unrelated pins red until it was moved down.
+
+## Scope discipline
+
+Sweeps, audits and fix-ups are scoped to **the files your brief names**, not the repo. If you
+find a real defect outside your brief — a broken doc link, a stale pin, a dead citation in
+another crate — **report it in your final message and leave it alone**. Someone owns it; it is
+not you. Fixing it costs a rerun of suites your brief never needed.
+
+Run **only** the verification your brief lists, **once**, at the end. Do not add clippy, fmt, or
+cross-crate `cargo check` passes on your own initiative — the gate above you already covers them,
+and every extra cargo invocation is minutes of wall clock on a locked target dir.

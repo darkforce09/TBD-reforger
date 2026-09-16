@@ -163,7 +163,7 @@ pub fn count_noun(n: usize, singular: &str, plural: &str) -> String {
 
 /// T-698 — the six-figure grid reference of a world position, in the map furniture's own format.
 ///
-/// **Both halves come from [`crate::editor::panels::toolbelt::grid_ref_3digit`]** — the T-667 formatter whose
+/// **Both halves come from [`crate::camera::grid_reference::grid_ref_3digit`]** — the T-667 formatter whose
 /// output is literally the text printed on the map-pane edge labels. Do not re-derive the rule here:
 /// a second convention that disagreed with the on-screen labels would be the confident-wrong-answer
 /// defect this exporter exists to avoid. Separator is one space (`mortar.rs`'s "012 020").
