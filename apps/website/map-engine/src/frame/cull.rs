@@ -117,15 +117,23 @@ impl RenderEngine {
 #[wasm_bindgen]
 impl RenderEngine {
     /// Collect indirect icons.
-    pub(crate) fn collect_indirect_icons(&self) -> Vec<IndirectDraw<'_>> {
+    ///
+    /// T-0xx Phase 2C §R1: an out-param rather than a return, so this reads like its two
+    /// siblings in `frame/encode.rs`. Unlike them, `out` cannot be a `RenderEngine` field:
+    /// `IndirectDraw<'a>` carries `&'a wgpu::Buffer` handles borrowed out of `self.icon_cull`,
+    /// and a struct cannot hold a borrow of itself. What the shape does buy is the `reserve`
+    /// below — one growth instead of up to three — and a call site where all three of the
+    /// frame's tables are filled the same way.
+    pub(crate) fn collect_indirect_icons<'a>(&'a self, out: &mut Vec<IndirectDraw<'a>>) {
+        out.clear();
         let Some(cull) = self.icon_cull.as_ref() else {
-            return Vec::new();
+            return;
         };
         if self.icon_pipeline_storage32.is_none() {
-            return Vec::new();
+            return;
         }
         if !self.compute_cull_trees {
-            return Vec::new();
+            return;
         }
         const ROLES: [LaneRole; 9] = [
             LaneRole::WorldTrees,
@@ -138,7 +146,7 @@ impl RenderEngine {
             LaneRole::SlotDrag,
             LaneRole::Clusters,
         ];
-        let mut out = Vec::new();
+        out.reserve(ROLES.len());
         for role in ROLES {
             let Some((dst, indirect)) = cull.lane_draw(role as u32) else {
                 continue;
@@ -164,7 +172,6 @@ impl RenderEngine {
             });
         }
         out.sort_by_key(|d| d.lane);
-        out
     }
 }
 

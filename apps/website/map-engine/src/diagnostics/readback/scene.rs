@@ -4,6 +4,7 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::frame::bindings;
+use crate::frame::encode::bind_group_table;
 use crate::frame::encode::pipeline_table;
 use crate::frame::engine::RenderEngine;
 use crate::frame::pipelines::building::create_building_pipeline;
@@ -198,7 +199,14 @@ impl RenderEngine {
         // T-0xx Phase 1D: the readback path draws the SAME batch list through the same
         // renderer entry point, with its own offscreen pipelines and its own camera bind
         // group. That it can do so by swapping two tables is the point of the packet.
-        let pipelines = pipeline_table(
+        // T-0xx Phase 2C §R1: the live path refills `RenderEngine`'s persistent tables; this
+        // one deliberately does not. The probe draws with its OWN offscreen pipelines and its
+        // OWN camera bind group, so writing them into the engine's tables would leave the next
+        // real frame bound to an offscreen target. It also runs once per probe rather than 60
+        // times a second, which is why two local allocations here are not the rule-1 case.
+        // `&self` makes that structural rather than a matter of discipline.
+        let mut pipelines = Vec::new();
+        pipeline_table(
             quad,
             textured,
             forest_density,
@@ -208,8 +216,17 @@ impl RenderEngine {
             icon,
             text,
             None,
+            &mut pipelines,
         );
-        let bind_groups = self.bind_group_table(bind_group);
+        let mut bind_groups = Vec::new();
+        bind_group_table(
+            bind_group,
+            self.glyph_atlas.as_ref(),
+            self.text_atlas.as_ref(),
+            self.slot_atlas.as_ref(),
+            &self.tex_lanes,
+            &mut bind_groups,
+        );
         let mvp = self.camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
         let packet = crate::frame::FramePacket {
             camera: crate::frame::CameraUniform::new(mvp),

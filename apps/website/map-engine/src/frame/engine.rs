@@ -197,6 +197,18 @@ pub struct RenderEngine {
     /// Batches.
     pub(crate) batches: Vec<DrawBatch>,
 
+    /// The frame packet's pipeline table — nine slots, refilled by `frame/encode.rs`.
+    ///
+    /// T-0xx Phase 2C §R1. Fixed-size and scene-independent, so this is not rule 1's expensive
+    /// case — `batches` above is. It is here because `frame/encode.rs` is the module that sets
+    /// the packet-building pattern, and a per-frame `Vec::with_capacity` sitting inside the
+    /// canonical rule-1 module is how the rule stops being real.
+    pub(crate) frame_pipelines: Vec<wgpu::RenderPipeline>,
+
+    /// The frame packet's sparse bind-group table — `bindings::BIND_SLOTS` slots, refilled by
+    /// `frame/encode.rs`. Persistent for the same reason as `frame_pipelines`.
+    pub(crate) frame_bind_groups: Vec<Option<wgpu::BindGroup>>,
+
     /// The texture bookkeeping for every live `DrawPayload::TexturedRect` lane.
     ///
     /// T-0xx Phase 1D: a batch carries a `BindGroupId`, not a texture. The handle to destroy,

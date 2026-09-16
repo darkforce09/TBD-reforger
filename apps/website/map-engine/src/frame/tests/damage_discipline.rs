@@ -1,9 +1,11 @@
-//! Role: the rule-3 pin — proof that this renderer is still damage-driven.
+//! Role: the rules 3 and 1 pins — proof that this renderer is still damage-driven, and that
+//! nothing in the frame path allocates per frame.
 //! Position: `frame/tests` in the map engine.
 //! Signals & state: the source text of `frame/{lifecycle,encode,engine}.rs`, read at compile
 //! time. Nothing here touches a GPU.
 //! Invariants: `render()` refuses an undamaged frame; every lane mutation marks damage; the
-//! packet reads the engine's persistent batch list rather than a per-frame rebuild.
+//! packet reads the engine's persistent batch list rather than a per-frame rebuild; and the
+//! packet's two lookup tables are engine fields that are cleared and refilled, never rebuilt.
 //!
 //! ── WHY A SOURCE PIN AND NOT A BEHAVIOURAL TEST ──────────────────────────────────────────
 //!
@@ -176,6 +178,58 @@ fn the_packet_reads_the_persistent_batch_list() {
         assert!(
             !enc.contains(rebuild),
             "rule 3: encode_main_pass must not build a batch list — it has one. Found \
+             `{rebuild}`:\n{enc}"
+        );
+    }
+}
+
+/// RULE 1, THE PART THAT IS NOT `batches` — the two lookup tables the packet indexes.
+///
+/// `pipeline_table` and `bind_group_table` were rebuilt every frame from Phase 1 until 2C §R1:
+/// a `Vec::with_capacity(9)` and a `vec![None; 100]`, plus roughly twenty `Arc` bumps, at
+/// 60 Hz. Both are fixed-size and scene-independent, so this was never the expensive half of
+/// rule 1 — `the_packet_reads_the_persistent_batch_list` above covers that one. It is pinned
+/// because `frame/encode.rs` is the module every later packet-building belt will copy, and the
+/// canonical rule-1 violation living inside the canonical rule-1 module is how the rule stops
+/// meaning anything.
+///
+/// `indirect` is deliberately absent from this pin. `IndirectDraw<'a>` borrows two
+/// `wgpu::Buffer` handles out of `self.icon_cull`, so a `RenderEngine` field of that type would
+/// make the struct self-referential — it stays a local because safe Rust leaves no alternative,
+/// and asserting otherwise here would be asserting something false.
+#[test]
+fn the_packets_lookup_tables_are_refilled_not_rebuilt() {
+    for field in [
+        "pub(crate) frame_pipelines: Vec<wgpu::RenderPipeline>",
+        "pub(crate) frame_bind_groups: Vec<Option<wgpu::BindGroup>>",
+    ] {
+        assert!(
+            SRC.contains(field),
+            "rule 1: the packet's lookup tables must be engine fields, not per-frame locals. \
+             Missing `{field}`"
+        );
+    }
+
+    let enc = body("fn encode_main_pass");
+    for borrow in [
+        "pipelines: &self.frame_pipelines,",
+        "bind_groups: &self.frame_bind_groups,",
+    ] {
+        assert!(
+            enc.contains(borrow),
+            "rule 1: the packet must borrow the persistent table, not a local. Missing \
+             `{borrow}`:\n{enc}"
+        );
+    }
+    for rebuild in [
+        "let pipelines =",
+        "let bind_groups =",
+        "vec![None;",
+        "Vec::with_capacity",
+    ] {
+        assert!(
+            !enc.contains(rebuild),
+            "rule 1: encode_main_pass must not build a lookup table per frame. Found \
              `{rebuild}`:\n{enc}"
         );
     }

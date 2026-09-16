@@ -393,6 +393,10 @@ impl RenderEngine {
             slot_atlas: None,
             slot_bridge: SlotGpuBridge::default(),
             batches: vec![calibration_batch],
+            // T-0xx Phase 2C §R1: sized once here so the first frame is the only one that can
+            // allocate them. `encode_main_pass` clears and refills; it never reallocates.
+            frame_pipelines: Vec::with_capacity(bindings::PIPELINE_SLOTS),
+            frame_bind_groups: vec![None; bindings::BIND_SLOTS],
             tex_lanes: Vec::new(),
             pending: [None, None],
             clear_color: CLEAR_COLOR,
