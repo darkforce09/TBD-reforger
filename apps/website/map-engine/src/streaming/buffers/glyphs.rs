@@ -5,23 +5,23 @@
 
 use crate::core::culling::lod::INSTANCE_BUDGET;
 use crate::core::culling::lod::class_visible;
-use crate::environment::classify::class_code;
+use crate::world::environment::classify::class_code;
 
+use crate::overlay::symbology::labels::glyph_math::BADGE_SIZE_MIN_PX;
+use crate::overlay::symbology::labels::glyph_math::DEFAULT_BASE_SIZE_PX;
+use crate::overlay::symbology::labels::glyph_math::GLYPH_SIZE_MIN_PX;
+use crate::overlay::symbology::labels::glyph_math::badge_size_meters;
+use crate::overlay::symbology::labels::glyph_math::deck_angle_for_rotation_deg;
+use crate::overlay::symbology::labels::glyph_math::glyph_size_meters;
+use crate::overlay::symbology::labels::glyph_math::hex_to_rgba;
+use crate::overlay::symbology::labels::glyph_math::landmark_glyph_icon_key;
+use crate::overlay::symbology::labels::glyph_math::pack_icon_instance;
+use crate::overlay::symbology::labels::glyph_math::pack_rgba_u32;
+use crate::overlay::symbology::labels::glyph_math::size_with_min_px;
 use crate::streaming::scheduler::state::GlyphPrefabInfo;
 use crate::streaming::scheduler::state::WorldResidency;
-use crate::symbology::labels::glyph_math::BADGE_SIZE_MIN_PX;
-use crate::symbology::labels::glyph_math::DEFAULT_BASE_SIZE_PX;
-use crate::symbology::labels::glyph_math::GLYPH_SIZE_MIN_PX;
-use crate::symbology::labels::glyph_math::badge_size_meters;
-use crate::symbology::labels::glyph_math::deck_angle_for_rotation_deg;
-use crate::symbology::labels::glyph_math::glyph_size_meters;
-use crate::symbology::labels::glyph_math::hex_to_rgba;
-use crate::symbology::labels::glyph_math::landmark_glyph_icon_key;
-use crate::symbology::labels::glyph_math::pack_icon_instance;
-use crate::symbology::labels::glyph_math::pack_rgba_u32;
-use crate::symbology::labels::glyph_math::size_with_min_px;
-use crate::terrain::roads::airfield::is_airfield_structure_class;
-use crate::terrain::roads::airfield::point_in_bbox;
+use crate::world::terrain::roads::airfield::is_airfield_structure_class;
+use crate::world::terrain::roads::airfield::point_in_bbox;
 
 impl WorldResidency {
     /// Rebuild glyph lookup from prefabs.

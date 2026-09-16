@@ -2066,7 +2066,7 @@ mod t670_scale_readout {
         // adjustment line between them goes RED; no `let zoom` / `zoom =` rebind before the bind so
         // an upstream re-based zoom goes RED.
         let dem = live_code(include_str!(
-            "../../../../map-engine/src/terrain/relief/host.rs"
+            "../../../../map-engine/src/world/terrain/relief/host.rs"
         ));
         let push = only_body(&dem, &format!("fn {}", "push_contours("));
         let bind = format!("let m_per_px = 2.0_f64.{}(-zoom);", "powf");

@@ -3,9 +3,9 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::environment::buildings::obb::BuildingPrefabInfo;
-use crate::environment::buildings::obb::FencePrefabInfo;
-use crate::environment::buildings::prefab::PrefabEntry;
+use crate::world::environment::buildings::obb::BuildingPrefabInfo;
+use crate::world::environment::buildings::obb::FencePrefabInfo;
+use crate::world::environment::buildings::prefab::PrefabEntry;
 
 use crate::spatial::indexing::world::WorldSpatialIndex;
 use crate::streaming::loaders::chunk::WorldChunk;

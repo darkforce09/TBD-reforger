@@ -3,17 +3,17 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::environment::vegetation::mass::ForestMassGeometry;
 use crate::renderers::primitives::triangulate::triangulate_region_rings;
 use crate::renderers::primitives::triangulate::triangulate_ring_buffer;
+use crate::world::environment::vegetation::mass::ForestMassGeometry;
 
 /// Re-export `website_graphics_engine::draw::compose::HairlineGpu`.
 // T-0xx Phase 1D: the buffer shapes and the two ring→segment loops moved to
 // `website-graphics-engine` (`draw::compose`) and are re-exported here at their former path.
-// Four `pub use crate::terrain::{roads,water}::mesh::*` re-exports were DELETED rather than
+// Four `pub use crate::world::terrain::{roads,water}::mesh::*` re-exports were DELETED rather than
 // moved — they were a shortcut that let a caller reach road and sea meshing through the
 // renderer, which is the exact coupling the split exists to remove. Their callers name
-// `crate::terrain::…` directly now.
+// `crate::world::terrain::…` directly now.
 pub use website_graphics_engine::draw::compose::HairlineGpu;
 
 /// Re-export `website_graphics_engine::draw::compose::PolyMeshGpu`.
@@ -41,7 +41,7 @@ pub fn compose_contour_hairlines(segments: &[f32], rgba: [u8; 4]) -> HairlineGpu
 /// no business re-deriving that.
 #[must_use]
 pub fn compose_two_tone_contours(
-    rings: &[crate::terrain::relief::contours::ContourRing],
+    rings: &[crate::world::terrain::relief::contours::ContourRing],
     summit_idx: &[usize],
     base_rgba: [u8; 4],
     summit_rgba: [u8; 4],

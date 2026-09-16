@@ -5,13 +5,13 @@
 
 use std::collections::HashMap;
 
-use crate::environment::classify::NO_CLASS;
-use crate::formats::archives::codec::BinaryError;
-use crate::formats::containers::header::ContainerHeader;
-use crate::formats::containers::tbdc::TbdcHeader;
-use crate::formats::pod::instance::ObjectInstancePod;
-use crate::formats::pod::instance::instances_from_bytes;
+use crate::io::archives::codec::BinaryError;
+use crate::io::containers::header::ContainerHeader;
+use crate::io::containers::tbdc::TbdcHeader;
+use crate::io::pod::instance::ObjectInstancePod;
+use crate::io::pod::instance::instances_from_bytes;
 use crate::streaming::loaders::chunk::WorldChunk;
+use crate::world::environment::classify::NO_CLASS;
 
 const CX_PLACEHOLDER: &str = "{cx}";
 

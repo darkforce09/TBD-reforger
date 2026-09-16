@@ -10,9 +10,5 @@ pub mod bvh;
 /// Indexing.
 pub mod indexing;
 
-/// Terrain los.
-pub mod terrain_los;
-
-/// World los.
-#[cfg(feature = "streaming")]
-pub mod world_los;
+/// Line of sight — three layers, adjacent and deliberately not merged. See `los/mod.rs`.
+pub mod los;

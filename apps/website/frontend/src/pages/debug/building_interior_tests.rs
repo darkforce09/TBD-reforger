@@ -6,13 +6,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::*;
-use website_map_engine::architecture::compound::assembly::PlacementSource;
-use website_map_engine::architecture::compound::doors::DoorRecord;
-use website_map_engine::architecture::compound::doors::DoorState;
-use website_map_engine::architecture::compound::instances::InstanceRecord;
-use website_map_engine::architecture::compound::instances::LocalTransform;
 use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
 use website_map_engine::spatial::bvh::traversal::Bvh;
+use website_map_engine::world::architecture::compound::assembly::PlacementSource;
+use website_map_engine::world::architecture::compound::doors::DoorRecord;
+use website_map_engine::world::architecture::compound::doors::DoorState;
+use website_map_engine::world::architecture::compound::instances::InstanceRecord;
+use website_map_engine::world::architecture::compound::instances::LocalTransform;
 
 fn farmhouse() -> BuildingBlueprint {
     serde_json::from_str(include_str!(
@@ -176,7 +176,7 @@ fn strip_centroid(packed: &[f32]) -> [f32; 2] {
 /// The native `role_id` mirror above must equal the render crate's table, value for value.
 #[test]
 fn lane_ids_match_the_render_crate() {
-    const SRC: &str = include_str!("../../../../map-engine/src/core/pipeline/roles.rs");
+    const SRC: &str = include_str!("../../../../map-engine/src/overlay/lanes.rs");
     for (name, value) in [
         ("LANDCOVER", role_id::LANDCOVER),
         ("CONTOURS", role_id::CONTOURS),

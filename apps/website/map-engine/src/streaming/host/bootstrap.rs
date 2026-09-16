@@ -27,7 +27,7 @@ pub async fn bootstrap(
         BootSeg::World,
         WORLD_INIT_FILES
             + WORLD_LABEL_FILES
-            + crate::environment::vegetation::loader::planned_density_bins(),
+            + crate::world::environment::vegetation::loader::planned_density_bins(),
     ));
     let mut mh = MapHost::new(preferences);
     mh.terrain = terrain.clone();
@@ -62,7 +62,7 @@ pub async fn bootstrap(
     let sat_fut = async {
         let out = async {
             let (url, tw, th) = sat_url_from(manifest.as_ref()?, &base)?;
-            crate::terrain::satellite::quadtree::load_satellite(
+            crate::world::terrain::satellite::quadtree::load_satellite(
                 engine.clone(),
                 &base,
                 &url,

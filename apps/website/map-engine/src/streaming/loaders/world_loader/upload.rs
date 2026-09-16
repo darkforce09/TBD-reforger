@@ -13,19 +13,19 @@ impl WorldHost {
     pub fn upload_airfield_apron(
         &self,
         engine: &EngineHandle,
-        grid: &crate::terrain::dem::grid::DemVectorGrid,
+        grid: &crate::world::terrain::dem::grid::DemVectorGrid,
         visible: bool,
     ) {
         let Some(bbox) = self.residency.airfield_bbox() else {
             return;
         };
-        let mesh = crate::terrain::roads::airfield::build_airfield_apron_mesh(grid, bbox);
+        let mesh = crate::world::terrain::roads::airfield::build_airfield_apron_mesh(grid, bbox);
         if mesh.polygon_count == 0 {
             return;
         }
         if let Some(e) = engine.borrow_mut().as_mut() {
             e.upload_polygon_mesh(
-                crate::core::pipeline::draw_order::role_id::AIRFIELD_APRON,
+                crate::overlay::lanes::role_id::AIRFIELD_APRON,
                 &mesh.positions,
                 &mesh.colors,
                 &mesh.indices,

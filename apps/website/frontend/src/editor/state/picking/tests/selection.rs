@@ -152,7 +152,7 @@ fn mix_test_soa(rows: &[(&str, f32, f32)]) -> SlotSoa {
 fn refile_merge_two_link_segments() {
     use std::collections::HashMap;
     use website_map_engine::data::store::place_character_under_side;
-    use website_map_engine::symbology::links::squad_links::build_squad_link_segments;
+    use website_map_engine::overlay::symbology::links::squad_links::build_squad_link_segments;
 
     let doc = MissionDocCore::new();
     doc.add_editor_layer("lyr", "Layer 1", None);

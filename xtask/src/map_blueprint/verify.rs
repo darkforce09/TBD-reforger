@@ -24,11 +24,11 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result, bail};
 use serde::Deserialize;
-use website_map_engine::architecture::compound::assembly::PlacementSource;
-use website_map_engine::architecture::compound::instances::InstanceKind;
-use website_map_engine::architecture::compound::instances::InstanceRecord;
-use website_map_engine::architecture::compound::instances::InstancesFile;
-use website_map_engine::architecture::compound::transform::Rigid;
+use website_map_engine::world::architecture::compound::assembly::PlacementSource;
+use website_map_engine::world::architecture::compound::instances::InstanceKind;
+use website_map_engine::world::architecture::compound::instances::InstanceRecord;
+use website_map_engine::world::architecture::compound::instances::InstancesFile;
+use website_map_engine::world::architecture::compound::transform::Rigid;
 
 pub const POS_TOL_M: f64 = 0.02;
 pub const YAW_TOL_DEG: f64 = 1.0;
@@ -525,8 +525,8 @@ pub fn run_instances_verify(args: &[String]) -> Result<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use website_map_engine::architecture::compound::assembly::CoverTier;
-    use website_map_engine::architecture::compound::instances::LocalTransform;
+    use website_map_engine::world::architecture::compound::assembly::CoverTier;
+    use website_map_engine::world::architecture::compound::instances::LocalTransform;
 
     fn inst(
         id: &str,

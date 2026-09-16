@@ -5,13 +5,13 @@
 
 use crate::core::context::state::RenderEngine;
 use crate::core::pipeline::bindings;
-use crate::core::pipeline::draw_order::LaneRole;
-use crate::core::pipeline::draw_order::lane_id;
-use crate::core::pipeline::draw_order::lane_role_from_u32;
 use crate::diagnostics::timing::gpu::perf_now_ms;
+use crate::overlay::lanes::LaneRole;
+use crate::overlay::lanes::lane_id;
+use crate::overlay::lanes::lane_role_from_u32;
+use crate::overlay::symbology::instances::symbols::SLOT_ICON_STRIDE;
 use crate::renderers::batching::scene::ANCHOR;
-use crate::symbology::instances::symbols::SLOT_ICON_STRIDE;
-use crate::terrain::satellite::textures::TexLane;
+use crate::world::terrain::satellite::textures::TexLane;
 use wasm_bindgen::prelude::*;
 use website_graphics_engine::frame::packet;
 use website_graphics_engine::frame::present;
@@ -195,14 +195,15 @@ impl RenderEngine {
         if !self.slot_bridge.atlas_ready {
             return;
         }
-        let tint = crate::symbology::instances::packing::pack_rgba_u32([173, 198, 255, 140]);
+        let tint =
+            crate::overlay::symbology::instances::packing::pack_rgba_u32([173, 198, 255, 140]);
         let mut b = Vec::with_capacity(SLOT_ICON_STRIDE);
-        crate::symbology::instances::packing::pack_icon_instance(
+        crate::overlay::symbology::instances::packing::pack_icon_instance(
             &mut b,
             world_x,
             world_y,
-            crate::symbology::instances::symbols::SLOT_RING_PX,
-            crate::symbology::instances::symbols::SLOT_GLYPH_RING,
+            crate::overlay::symbology::instances::symbols::SLOT_RING_PX,
+            crate::overlay::symbology::instances::symbols::SLOT_GLYPH_RING,
             tint,
         );
         self.upload_slot_role_lane(LaneRole::SlotPlacePreview, &b, true);

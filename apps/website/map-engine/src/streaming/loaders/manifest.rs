@@ -7,9 +7,9 @@ use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
-use crate::formats::containers::header::CONTAINER_VERSION;
-use crate::formats::pod::instance::POD_BYTES;
-use crate::formats::pod::instance::POD_NAME;
+use crate::io::containers::header::CONTAINER_VERSION;
+use crate::io::pod::instance::POD_BYTES;
+use crate::io::pod::instance::POD_NAME;
 
 /// Default chunk edge in meters when the manifest omits `chunkSizeM` (`DEFAULT_CHUNK_SIZE_M`).
 pub const DEFAULT_CHUNK_SIZE_M: f64 = 512.0;

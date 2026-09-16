@@ -37,7 +37,7 @@ pub fn fly_to(x: f64, y: f64, zoom: f64) {
 
 /// With occluder.
 pub fn with_occluder<R>(
-    f: impl FnOnce(&crate::spatial::world_los::state::WorldOccluder) -> R,
+    f: impl FnOnce(&crate::spatial::los::world::state::WorldOccluder) -> R,
 ) -> Option<R> {
     RENDER_CTX.with(|c| {
         let ctx = c.borrow();
@@ -62,7 +62,7 @@ pub fn with_occluder_host<R>(f: impl FnOnce(&OccluderHost) -> R) -> Option<R> {
 /// With water mask.
 #[allow(dead_code)]
 pub fn with_water_mask<R>(
-    f: impl FnOnce(&crate::terrain::water::vectors::WaterMask) -> R,
+    f: impl FnOnce(&crate::world::terrain::water::vectors::WaterMask) -> R,
 ) -> Option<R> {
     RENDER_CTX.with(|c| {
         let ctx = c.borrow();
@@ -89,7 +89,7 @@ pub fn is_known_dry_land(x: f64, z: f64) -> bool {
 
 /// Named locations.
 #[must_use]
-pub fn named_locations() -> Vec<crate::symbology::labels::importance::LocationLabel> {
+pub fn named_locations() -> Vec<crate::overlay::symbology::labels::importance::LocationLabel> {
     RENDER_CTX.with(|c| {
         c.borrow()
             .as_ref()

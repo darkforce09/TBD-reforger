@@ -86,7 +86,7 @@ impl WorldHost {
 impl WorldHost {
     /// Occluder.
     #[must_use]
-    pub fn occluder(&self) -> &crate::spatial::world_los::state::WorldOccluder {
+    pub fn occluder(&self) -> &crate::spatial::los::world::state::WorldOccluder {
         self.occluder.occluder()
     }
 }
@@ -102,7 +102,7 @@ impl WorldHost {
 impl WorldHost {
     /// Road segments clone.
     #[must_use]
-    pub fn road_segments_clone(&self) -> Vec<crate::terrain::roads::network::RoadSegment> {
+    pub fn road_segments_clone(&self) -> Vec<crate::world::terrain::roads::network::RoadSegment> {
         self.store.roads.clone()
     }
 }

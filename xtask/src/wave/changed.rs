@@ -658,7 +658,7 @@ mod tests {
         assert!(
             wasm_scope_touched(
                 &root,
-                ["apps/website/map-engine/src/formats/density/tbdd.rs"].into_iter()
+                ["apps/website/map-engine/src/io/density/tbdd.rs"].into_iter()
             ),
             "a map-engine-core source change must put the SPA in scope"
         );

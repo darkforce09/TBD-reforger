@@ -5,19 +5,19 @@
 
 use crate::core::culling::lod::class_visible;
 
-use crate::environment::classify::class_code;
+use crate::world::environment::classify::class_code;
 
 use crate::streaming::buffers::revision::norm;
 
 use super::*;
 
-use crate::symbology::labels::glyph_math::BUILDING_CLASSES;
+use crate::overlay::symbology::labels::glyph_math::BUILDING_CLASSES;
 
-use crate::symbology::labels::glyph_math::badge_icon_key;
+use crate::overlay::symbology::labels::glyph_math::badge_icon_key;
 
-use crate::symbology::labels::glyph_math::building_icon_key;
+use crate::overlay::symbology::labels::glyph_math::building_icon_key;
 
-use crate::symbology::labels::glyph_math::landmark_glyph_icon_key;
+use crate::overlay::symbology::labels::glyph_math::landmark_glyph_icon_key;
 
 use std::collections::{HashMap, HashSet};
 
@@ -209,7 +209,7 @@ fn oracle_landmark_glyph_count_for_chunk(
 }
 
 fn badge_glyph_indices(buf: &[u8]) -> Vec<u16> {
-    let stride = crate::symbology::labels::glyph_math::ICON_INSTANCE_STRIDE;
+    let stride = crate::overlay::symbology::labels::glyph_math::ICON_INSTANCE_STRIDE;
     buf.chunks(stride)
         .map(|chunk| u16::from_le_bytes(chunk[14..16].try_into().unwrap()))
         .collect()

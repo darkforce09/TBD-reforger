@@ -3,10 +3,10 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::environment::buildings::prefab::PrefabRow;
-use crate::environment::buildings::prefab::build_prefab_maps;
-use crate::environment::buildings::prefab::narrow_prefab_rows;
 use crate::streaming::loaders::chunk::*;
+use crate::world::environment::buildings::prefab::PrefabRow;
+use crate::world::environment::buildings::prefab::build_prefab_maps;
+use crate::world::environment::buildings::prefab::narrow_prefab_rows;
 use serde_json::{Value, json};
 use std::fs;
 

@@ -5,8 +5,8 @@
 
 use crate::core::context::state::RenderEngine;
 use crate::core::pipeline::bindings;
-use crate::core::pipeline::draw_order::LaneRole;
-use crate::core::pipeline::draw_order::lane_id;
+use crate::overlay::lanes::LaneRole;
+use crate::overlay::lanes::lane_id;
 use wasm_bindgen::prelude::*;
 use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer, TextRun};
 

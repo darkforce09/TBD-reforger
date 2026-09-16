@@ -9,7 +9,7 @@ use super::*;
 pub type HostHandle = Rc<RefCell<Option<MapHost>>>;
 
 /// Dem grid handle.
-pub type DemGridHandle = Rc<RefCell<Option<Rc<crate::terrain::dem::grid::DemVectorGrid>>>>;
+pub type DemGridHandle = Rc<RefCell<Option<Rc<crate::world::terrain::dem::grid::DemVectorGrid>>>>;
 
 /// New dem grid handle.
 pub fn new_dem_grid_handle() -> DemGridHandle {
@@ -43,10 +43,10 @@ pub struct MapHost {
     pub(super) terrain: String,
 
     /// Labels.
-    pub(super) labels: crate::environment::locations::loader::LabelHost,
+    pub(super) labels: crate::world::environment::locations::loader::LabelHost,
 
     /// Water.
-    pub(super) water: crate::terrain::water::loader::WaterHost,
+    pub(super) water: crate::world::terrain::water::loader::WaterHost,
 }
 
 impl MapHost {
@@ -63,8 +63,8 @@ impl MapHost {
             settle_timer: Rc::new(Cell::new(None)),
             settle_deadline: Rc::new(Cell::new(0.0)),
             terrain: String::new(),
-            labels: crate::environment::locations::loader::LabelHost::new(),
-            water: crate::terrain::water::loader::WaterHost::new(),
+            labels: crate::world::environment::locations::loader::LabelHost::new(),
+            water: crate::world::terrain::water::loader::WaterHost::new(),
         }
     }
 }

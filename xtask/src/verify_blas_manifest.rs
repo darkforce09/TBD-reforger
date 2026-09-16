@@ -21,8 +21,8 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use serde_json::Value;
 use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
-use website_map_engine::spatial::world_los::descriptor::BlasManifest;
-use website_map_engine::spatial::world_los::descriptor::PrefabDescriptor;
+use website_map_engine::spatial::los::world::descriptor::BlasManifest;
+use website_map_engine::spatial::los::world::descriptor::PrefabDescriptor;
 
 const TERRAIN: &str = "everon";
 const FARMHOUSE_SLUG: &str = "FarmHouse_E_1L01_Wood";

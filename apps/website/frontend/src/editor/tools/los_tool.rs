@@ -54,9 +54,9 @@ use leptos::prelude::*;
 
 use crate::editor::tools::ruler_tool::install_seam;
 
-use website_map_engine::spatial::terrain_los::sampler::ProfileSample;
-use website_map_engine::spatial::terrain_los::viewshed::Viewshed;
-use website_map_engine::spatial::terrain_los::viewshed::Visibility;
+use website_map_engine::spatial::los::terrain::sampler::ProfileSample;
+use website_map_engine::spatial::los::terrain::viewshed::Viewshed;
+use website_map_engine::spatial::los::terrain::viewshed::Visibility;
 
 // ── Decision 1 — eye-height constants (named, adjustable later) ──────────────────────────────────
 
@@ -797,7 +797,7 @@ pub fn read_registered_viewshed() -> ViewshedState {
 /// T-644 default sight radius (metres), re-exported at the tool surface so the toolbar/overlay and
 /// the compute agree on one number. Mirrors the core's `VIEWSHED_DEFAULT_RADIUS_M`.
 pub const VIEWSHED_RADIUS_M: f64 =
-    website_map_engine::spatial::terrain_los::viewshed::VIEWSHED_DEFAULT_RADIUS_M;
+    website_map_engine::spatial::los::terrain::viewshed::VIEWSHED_DEFAULT_RADIUS_M;
 
 /// Compute the viewshed raster for an observer at world `(x, y)` using the registered DEM sampler
 /// (the SAME 8 m grid the ruler Z / LoS profile read). Returns `None` when no sampler is registered
@@ -814,7 +814,7 @@ pub fn compute_viewshed_for(obs_x: f64, obs_y: f64) -> Option<Viewshed> {
     let sampler = read_registered_sampler()?;
     let observer_ground_m = sampler(obs_x, obs_y);
     let manifest = everon_manifest();
-    let params = website_map_engine::spatial::terrain_los::viewshed::ViewshedParams {
+    let params = website_map_engine::spatial::los::terrain::viewshed::ViewshedParams {
         obs_x,
         obs_y,
         observer_ground_m,
@@ -823,7 +823,7 @@ pub fn compute_viewshed_for(obs_x: f64, obs_y: f64) -> Option<Viewshed> {
         cell_m: PROFILE_STEP_M,
     };
     Some(
-        website_map_engine::spatial::terrain_los::viewshed::compute_viewshed(
+        website_map_engine::spatial::los::terrain::viewshed::compute_viewshed(
             &manifest,
             params,
             move |x, y| sampler(x, y),
@@ -1233,7 +1233,7 @@ fn build_profile(shot: &LosShot) -> Vec<ProfileSample> {
         return Vec::new();
     };
     let manifest = everon_manifest();
-    website_map_engine::spatial::terrain_los::sampler::sample_segment(
+    website_map_engine::spatial::los::terrain::sampler::sample_segment(
         &manifest,
         (shot.obs_x, shot.obs_y),
         (shot.tgt_x, shot.tgt_y),
@@ -1250,8 +1250,8 @@ fn build_profile(shot: &LosShot) -> Vec<ProfileSample> {
 /// `pub(crate)` since T-938.5: `viewshed_scheduler` builds the same `ViewshedParams`
 /// [`compute_viewshed_for`] does and must bound its job to the SAME manifest.
 #[must_use]
-pub(crate) fn everon_manifest() -> website_map_engine::terrain::dem::manifest::DemManifest {
-    website_map_engine::terrain::dem::manifest::DemManifest {
+pub(crate) fn everon_manifest() -> website_map_engine::world::terrain::dem::manifest::DemManifest {
+    website_map_engine::world::terrain::dem::manifest::DemManifest {
         min_x: 0.0,
         min_y: 0.0,
         max_x: 12_800.0,
@@ -1281,10 +1281,13 @@ mod tests {
     /// fails with the hidden bytes at offset 0.
     #[test]
     fn encoder_flips_rows_so_north_is_texture_row_zero() {
-        let mut vs = website_map_engine::spatial::terrain_los::viewshed::Viewshed {
+        let mut vs = website_map_engine::spatial::los::terrain::viewshed::Viewshed {
             cols: 3,
             rows: 2,
-            cells: vec![website_map_engine::spatial::terrain_los::viewshed::Visibility::Visible; 6],
+            cells: vec![
+                website_map_engine::spatial::los::terrain::viewshed::Visibility::Visible;
+                6
+            ],
             min_x: 0.0,
             min_y: 0.0,
             max_x: 16.0,
@@ -1293,7 +1296,7 @@ mod tests {
             obs_y: 0.0,
         };
         // South-west corner of the WORLD raster (row 0 = min_y).
-        vs.cells[0] = website_map_engine::spatial::terrain_los::viewshed::Visibility::Hidden;
+        vs.cells[0] = website_map_engine::spatial::los::terrain::viewshed::Visibility::Hidden;
         let rgba = encode_viewshed_rgba(&vs);
         let px = |r: usize, c: usize| &rgba[(r * vs.cols + c) * 4..(r * vs.cols + c) * 4 + 4];
         assert_eq!(
@@ -1765,8 +1768,8 @@ mod tests {
 
     // ── T-644 — viewshed palette (the colour language) + encoder ─────────────────────────────────
 
-    use website_map_engine::spatial::terrain_los::viewshed::Viewshed;
-    use website_map_engine::spatial::terrain_los::viewshed::Visibility;
+    use website_map_engine::spatial::los::terrain::viewshed::Viewshed;
+    use website_map_engine::spatial::los::terrain::viewshed::Visibility;
 
     /// PALETTE CONSTANTS PIN (the ticket's required "palette constants + rationale pin"). The colour
     /// language is a contract, so pin the exact bytes: HIDDEN is a desaturated dark near-neutral at
@@ -1813,7 +1816,7 @@ mod tests {
     /// the viewshed alpha rationale to be re-derived against the new contour alpha.
     #[test]
     fn viewshed_rationale_cites_live_contour_rgba() {
-        let dem_vectors = include_str!("../../../../map-engine/src/terrain/relief/host.rs");
+        let dem_vectors = include_str!("../../../../map-engine/src/world/terrain/relief/host.rs");
         assert!(
             dem_vectors.contains("[188, 150, 100, 235]"),
             "T-644 rationale cites CONTOUR_RGBA = [188,150,100,235]; dem_vectors.rs must still define \

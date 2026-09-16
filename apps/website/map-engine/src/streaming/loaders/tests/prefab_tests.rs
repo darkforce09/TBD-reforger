@@ -3,14 +3,14 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::environment::buildings::prefab::inventory_to_archive;
-use crate::environment::buildings::prefab::row_to_archive;
-use crate::formats::archives::codec::to_bytes;
-use crate::formats::archives::prefabs::PrefabCatalogArchive;
-use crate::formats::archives::prefabs::TypeInventory;
-use crate::formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use crate::io::archives::codec::to_bytes;
+use crate::io::archives::prefabs::PrefabCatalogArchive;
+use crate::io::archives::prefabs::TypeInventory;
+use crate::io::archives::version::ARCHIVE_SCHEMA_VERSION;
 use crate::streaming::loaders::prefab::*;
 use crate::streaming::scheduler::state::WorldResidency;
+use crate::world::environment::buildings::prefab::inventory_to_archive;
+use crate::world::environment::buildings::prefab::row_to_archive;
 use flate2::Compression;
 use flate2::write::GzEncoder;
 use std::io::Write;

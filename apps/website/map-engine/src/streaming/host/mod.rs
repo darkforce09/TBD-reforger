@@ -14,12 +14,12 @@ thread_local! {
     static CAMERA_GESTURE: Cell<bool> = const { Cell::new(false) };
 }
 use crate::core::context::handles::EngineHandle;
-use crate::environment::vegetation::loader::ForestMassHost;
 use crate::streaming::bridge::progress::ProgressFn;
 use crate::streaming::bridge::statistics::BridgeHandle;
 use crate::streaming::bridge::statistics::new_bridge;
 use crate::streaming::bridge::statistics::publish;
 use crate::streaming::bridge::statistics::publish_engine;
+use crate::world::environment::vegetation::loader::ForestMassHost;
 
 /// Re-export `crate::streaming::loaders::fetch::fetch_bytes`.
 pub use crate::streaming::loaders::fetch::fetch_bytes;
@@ -34,9 +34,9 @@ use crate::streaming::loaders::world_loader::WorldHost;
 
 /// Re-export `crate::streaming::memory::budget::hud_suffixasmemory_hud_suffix`.
 pub use crate::streaming::memory::budget::hud_suffix as memory_hud_suffix;
-use crate::terrain::dem::png::decode_png_to_meters;
-use crate::terrain::relief::hillshade::build_hillshade_image;
-use crate::terrain::relief::host::DemVectors;
+use crate::world::terrain::dem::png::decode_png_to_meters;
+use crate::world::terrain::relief::hillshade::build_hillshade_image;
+use crate::world::terrain::relief::host::DemVectors;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use wasm_bindgen::JsCast;

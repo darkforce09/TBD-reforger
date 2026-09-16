@@ -34,20 +34,20 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use website_map_engine::environment::buildings::prefab::catalog_from_bytes;
-use website_map_engine::environment::buildings::prefab::inventory_from_bytes;
-use website_map_engine::environment::buildings::prefab::inventory_to_archive;
-use website_map_engine::environment::buildings::prefab::narrow_prefab_rows;
-use website_map_engine::environment::buildings::prefab::row_to_archive;
-use website_map_engine::environment::vegetation::regions::parse_regions_payload;
-use website_map_engine::environment::vegetation::regions::region_to_archive;
-use website_map_engine::environment::vegetation::regions::regions_from_bytes;
-use website_map_engine::formats::archives::codec::access_checked;
-use website_map_engine::formats::archives::codec::to_bytes;
-use website_map_engine::formats::archives::forest::ForestRegionsArchive;
-use website_map_engine::formats::archives::prefabs::PrefabCatalogArchive;
-use website_map_engine::formats::archives::prefabs::TypeInventory;
-use website_map_engine::formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use website_map_engine::world::environment::buildings::prefab::catalog_from_bytes;
+use website_map_engine::world::environment::buildings::prefab::inventory_from_bytes;
+use website_map_engine::world::environment::buildings::prefab::inventory_to_archive;
+use website_map_engine::world::environment::buildings::prefab::narrow_prefab_rows;
+use website_map_engine::world::environment::buildings::prefab::row_to_archive;
+use website_map_engine::world::environment::vegetation::regions::parse_regions_payload;
+use website_map_engine::world::environment::vegetation::regions::region_to_archive;
+use website_map_engine::world::environment::vegetation::regions::regions_from_bytes;
+use website_map_engine::io::archives::codec::access_checked;
+use website_map_engine::io::archives::codec::to_bytes;
+use website_map_engine::io::archives::forest::ForestRegionsArchive;
+use website_map_engine::io::archives::prefabs::PrefabCatalogArchive;
+use website_map_engine::io::archives::prefabs::TypeInventory;
+use website_map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
 use website_map_engine::streaming::loaders::store::bytes_to_json;
 
 /// The gz-JSON prefab catalogue, relative to a terrain directory.

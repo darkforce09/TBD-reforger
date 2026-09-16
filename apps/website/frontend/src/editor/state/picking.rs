@@ -6,8 +6,8 @@
 use website_map_engine::camera::ortho::state::OrthoCamera;
 use website_map_engine::data::store::MissionDocCore;
 use website_map_engine::data::store::SlotSoa;
+use website_map_engine::overlay::symbology::links::squad_links::SquadLinkInput;
 use website_map_engine::spatial::indexing::picking as spatial;
-use website_map_engine::symbology::links::squad_links::SquadLinkInput;
 
 fn world_query(cam: &OrthoCamera, px: f64, py: f64) -> ([f64; 2], f64) {
     let c = cam.unproject_xy(px, py);

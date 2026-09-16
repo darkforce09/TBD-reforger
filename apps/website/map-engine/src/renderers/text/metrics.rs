@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::environment::locations::peaks::height_label_min_sep_m;
+use crate::world::environment::locations::peaks::height_label_min_sep_m;
 
 /// Re-export `website_graphics_engine::text::metrics::TEXT_GLYPH_ADVANCE_RATIO`.
 // T-0xx Phase 1D: the cell metrics moved to `website-graphics-engine`. Re-exported at their

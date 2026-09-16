@@ -4,10 +4,10 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::core::culling::lod::class_visible;
-use crate::environment::buildings::footprint::building_visible;
 use crate::streaming::scheduler::chunk_math::Bbox;
 use crate::streaming::scheduler::state::WorldResidency;
-use crate::terrain::roads::airfield::compute_airfield_bbox;
+use crate::world::environment::buildings::footprint::building_visible;
+use crate::world::terrain::roads::airfield::compute_airfield_bbox;
 
 impl WorldResidency {
     /// Register atlas icon keys in UV-table order (must match `upload_glyph_atlas` UV order). Rebuilds the glyph prefab lookup when prefabs are already loaded.
@@ -69,7 +69,7 @@ impl WorldResidency {
     /// Set airfield bbox from runway segments (call after roads load).
     pub fn set_airfield_bbox_from_runways(
         &mut self,
-        runways: &[crate::terrain::roads::network::RoadSegment],
+        runways: &[crate::world::terrain::roads::network::RoadSegment],
     ) {
         self.airfield_bbox = compute_airfield_bbox(runways);
         self.rebuild_glyph_buffers();

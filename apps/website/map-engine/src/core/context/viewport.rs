@@ -116,7 +116,7 @@ impl RenderEngine {
         let zoom = self.zoom();
         #[allow(clippy::cast_possible_truncation)]
         let n = self.slot_bridge.last_ids.len() as u32;
-        let cm = crate::symbology::instances::symbols::cluster_mode(n, zoom);
+        let cm = crate::overlay::symbology::instances::symbols::cluster_mode(n, zoom);
         let mode_changed = cm != self.slot_bridge.last_cluster_mode;
         if mode_changed {
             self.slot_bridge.last_cluster_mode = cm;

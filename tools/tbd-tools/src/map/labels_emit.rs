@@ -27,18 +27,18 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use website_map_engine::environment::locations::route_labels::parse_road_names_json;
-use website_map_engine::environment::locations::route_labels::road_names_to_archive;
-use website_map_engine::environment::locations::towns::height_labels_to_archive;
-use website_map_engine::environment::locations::towns::parse_height_labels_json;
-use website_map_engine::environment::locations::towns::parse_locations_json;
-use website_map_engine::environment::locations::towns::towns_to_archive;
-use website_map_engine::formats::archives::codec::access_checked;
-use website_map_engine::formats::archives::codec::to_bytes;
-use website_map_engine::formats::archives::labels::MapLabelsArchive;
-use website_map_engine::formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use website_map_engine::world::environment::locations::route_labels::parse_road_names_json;
+use website_map_engine::world::environment::locations::route_labels::road_names_to_archive;
+use website_map_engine::world::environment::locations::towns::height_labels_to_archive;
+use website_map_engine::world::environment::locations::towns::parse_height_labels_json;
+use website_map_engine::world::environment::locations::towns::parse_locations_json;
+use website_map_engine::world::environment::locations::towns::towns_to_archive;
+use website_map_engine::io::archives::codec::access_checked;
+use website_map_engine::io::archives::codec::to_bytes;
+use website_map_engine::io::archives::labels::MapLabelsArchive;
+use website_map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
 use website_map_engine::streaming::loaders::store::bytes_to_json;
-use website_map_engine::terrain::roads::network::parse_roads_payload;
+use website_map_engine::world::terrain::roads::network::parse_roads_payload;
 
 use crate::serve::repo_root;
 
@@ -164,14 +164,14 @@ pub fn emit_map_labels(terrain: &str) -> Result<u8> {
 
 #[cfg(test)]
 mod tests {
-    use website_map_engine::environment::locations::route_labels::build_road_label_draw_set_from_archive;
-    use website_map_engine::environment::locations::route_labels::parse_road_names_json;
-    use website_map_engine::environment::locations::route_labels::road_names_from_archive;
-    use website_map_engine::environment::locations::route_placement::build_road_label_draw_set;
-    use website_map_engine::environment::locations::towns::height_labels_from_archive;
-    use website_map_engine::environment::locations::towns::locations_to_label_specs;
-    use website_map_engine::environment::locations::towns::towns_from_archive;
-    use website_map_engine::terrain::roads::network::RoadSegment;
+    use website_map_engine::world::environment::locations::route_labels::build_road_label_draw_set_from_archive;
+    use website_map_engine::world::environment::locations::route_labels::parse_road_names_json;
+    use website_map_engine::world::environment::locations::route_labels::road_names_from_archive;
+    use website_map_engine::world::environment::locations::route_placement::build_road_label_draw_set;
+    use website_map_engine::world::environment::locations::towns::height_labels_from_archive;
+    use website_map_engine::world::environment::locations::towns::locations_to_label_specs;
+    use website_map_engine::world::environment::locations::towns::towns_from_archive;
+    use website_map_engine::world::terrain::roads::network::RoadSegment;
 
     use super::*;
 

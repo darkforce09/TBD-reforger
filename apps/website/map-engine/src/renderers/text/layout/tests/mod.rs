@@ -5,7 +5,7 @@
 
 use super::*;
 
-use crate::symbology::labels::declutter::LabelSpec;
+use crate::overlay::symbology::labels::declutter::LabelSpec;
 
 // T-0xx Phase 2B (Kind A): the three shader-scrub cases that used to sit below
 // (`g1_text_uniforms_is_16_bytes_no_vec3`, `g1_vs_text_has_v_flip`,

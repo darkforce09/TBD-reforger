@@ -10,7 +10,7 @@
 //     `draw::instances`: byte layouts named for their shape, with no subject in them;
 //   * the anchor and the synthetic scenes measured against it → `crate::world::scene`: every
 //     one of them encodes a specific 12.8 km world, which the renderer must never learn;
-//   * the marker glyph vocabulary and its atlas → `crate::symbology::markers`: its alias
+//   * the marker glyph vocabulary and its atlas → `crate::overlay::symbology::markers`: its alias
 //     table is `mission.schema.json` `$defs/marker.icon`.
 //
 // The first two halves are re-exported here at their former path so every call site in this

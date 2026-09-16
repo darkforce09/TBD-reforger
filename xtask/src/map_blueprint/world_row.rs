@@ -12,8 +12,8 @@ use std::path::Path;
 
 use anyhow::{Context, Result, bail};
 use serde_json::Value;
-use website_map_engine::architecture::compound::instances::InstancesFile;
-use website_map_engine::architecture::compound::transform::Rigid;
+use website_map_engine::world::architecture::compound::instances::InstancesFile;
+use website_map_engine::world::architecture::compound::transform::Rigid;
 
 use super::verify::{POS_TOL_M, ReconFile, Report};
 

@@ -6,15 +6,15 @@
 use std::fs;
 use std::path::PathBuf;
 
-use crate::environment::buildings::prefab::build_prefab_maps;
-use crate::environment::buildings::prefab::narrow_prefab_rows;
-use crate::formats::containers::header::HEADER_BYTES;
-use crate::formats::pod::instance::POD_BYTES;
+use crate::io::containers::header::HEADER_BYTES;
+use crate::io::pod::instance::POD_BYTES;
 use crate::streaming::loaders::chunk::parse_chunk;
 use crate::streaming::loaders::chunk_bin::*;
 use crate::streaming::loaders::store::bytes_to_json;
 use crate::streaming::scheduler::state::IngestOutcome;
 use crate::streaming::scheduler::state::WorldResidency;
+use crate::world::environment::buildings::prefab::build_prefab_maps;
+use crate::world::environment::buildings::prefab::narrow_prefab_rows;
 
 const EVERON_CHUNKS: usize = 315;
 

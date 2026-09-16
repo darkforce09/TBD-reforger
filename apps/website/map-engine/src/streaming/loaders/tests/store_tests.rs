@@ -59,11 +59,11 @@ fn manifest_gate() {
     ));
 }
 
-use crate::environment::locations::route_placement::road_class_code;
-use crate::formats::archives::codec::to_bytes;
-use crate::formats::archives::roads::RoadNetworkArchive;
-use crate::formats::archives::roads::RoadSegmentArchive;
-use crate::formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use crate::io::archives::codec::to_bytes;
+use crate::io::archives::roads::RoadNetworkArchive;
+use crate::io::archives::roads::RoadSegmentArchive;
+use crate::io::archives::version::ARCHIVE_SCHEMA_VERSION;
+use crate::world::environment::locations::route_placement::road_class_code;
 
 fn roads_json() -> &'static str {
     r#"{ "roadSegments": [
@@ -227,9 +227,8 @@ fn full_island_census_matches_pinned_inventory() {
     bins.sort();
     assert_eq!(bins.len(), 625);
     for f in bins.iter().take(3) {
-        let grid =
-            crate::formats::density::tbdd::decode_tbdd(&read(&objects.join("density").join(f)))
-                .unwrap_or_else(|e| panic!("{f}: {e}"));
+        let grid = crate::io::density::tbdd::decode_tbdd(&read(&objects.join("density").join(f)))
+            .unwrap_or_else(|e| panic!("{f}: {e}"));
         assert!(grid.cols > 0 && grid.rows > 0, "{f}: empty grid");
     }
 }

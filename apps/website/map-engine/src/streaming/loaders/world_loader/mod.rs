@@ -4,7 +4,6 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::core::context::handles::EngineHandle;
-use crate::environment::vegetation::regions::regions_from_bytes;
 use crate::renderers::primitives::compose::LandcoverInput;
 use crate::renderers::primitives::compose::PolyMeshGpu;
 use crate::renderers::primitives::compose::compose_landcover_mesh;
@@ -19,10 +18,11 @@ use crate::streaming::loaders::manifest::parse_manifest_binary;
 use crate::streaming::loaders::occluder_loader::OccluderHost;
 use crate::streaming::loaders::store::WorldStore;
 use crate::streaming::scheduler::state::WorldResidency;
-use crate::terrain::roads::mesh::RoadInput;
-use crate::terrain::roads::mesh::RoadMeshGpu;
-use crate::terrain::roads::mesh::compose_roads_mesh;
-use crate::terrain::roads::styling::road_class_signature;
+use crate::world::environment::vegetation::regions::regions_from_bytes;
+use crate::world::terrain::roads::mesh::RoadInput;
+use crate::world::terrain::roads::mesh::RoadMeshGpu;
+use crate::world::terrain::roads::mesh::compose_roads_mesh;
+use crate::world::terrain::roads::styling::road_class_signature;
 use std::collections::VecDeque;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;

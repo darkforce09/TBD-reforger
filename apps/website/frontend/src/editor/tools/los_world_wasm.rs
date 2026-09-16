@@ -8,12 +8,12 @@ use std::cell::{Cell, RefCell};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
-use website_map_engine::architecture::los::walker::Owner;
 use website_map_engine::core::context::state::RenderEngine;
 use website_map_engine::spatial::bvh::surface::SurfaceKind;
-use website_map_engine::spatial::terrain_los::viewshed::Viewshed;
-use website_map_engine::spatial::world_los::coverage_1::WorldLos;
-use website_map_engine::spatial::world_los::coverage_1::WorldVerdict;
+use website_map_engine::spatial::los::interior::walker::Owner;
+use website_map_engine::spatial::los::terrain::viewshed::Viewshed;
+use website_map_engine::spatial::los::world::coverage_1::WorldLos;
+use website_map_engine::spatial::los::world::coverage_1::WorldVerdict;
 
 use super::los_tool::{
     pack_rgba_256, read_registered_sampler, read_registered_viewshed, LosShot,

@@ -1627,7 +1627,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 crate::editor::tools::los_tool::register_los_sampler(std::rc::Rc::new(
                     move |x: f64, y: f64| {
                         dem_grid.borrow().as_ref().and_then(|g| {
-                            website_map_engine::terrain::dem::grid::sample_grid_meters(g, x, y)
+                            website_map_engine::world::terrain::dem::grid::sample_grid_meters(g, x, y)
                         })
                     },
                 ));
@@ -2353,7 +2353,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                                               // add the per-icon marker glyph shapes `markers_bind` selects.
                             {
                                 let (rgba, width, height, uv) =
-                                    website_map_engine::symbology::markers::build_marker_slot_atlas();
+                                    website_map_engine::overlay::symbology::markers::build_marker_slot_atlas();
                                 if let Err(e) = eng.ensure_slot_atlas(&rgba, width, height, &uv) {
                                     leptos::logging::error!("ensure_slot_atlas: {e:?}");
                                 }
@@ -2389,7 +2389,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             if let (Some(soa), Some(e)) =
                                 (soa.as_ref(), engine.borrow_mut().as_mut())
                             {
-                                let tints = website_map_engine::symbology::roles::classify::side_tints_rgba_bytes(
+                                let tints = website_map_engine::overlay::symbology::roles::classify::side_tints_rgba_bytes(
                                     &soa.side_keys,
                                 );
                                 e.slots_bind_symbology(
@@ -3162,7 +3162,7 @@ mod t631_boot_failure_state;
 
 /// Exercise the graphics crate's satellite arithmetic directly from native UI regression tests.
 #[cfg(all(test, not(target_arch = "wasm32")))]
-use website_map_engine::terrain::satellite::streamer as tbd_sat_pure;
+use website_map_engine::world::terrain::satellite::streamer as tbd_sat_pure;
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 #[path = "mission_editor_tests/t629_satellite_resolution.rs"]

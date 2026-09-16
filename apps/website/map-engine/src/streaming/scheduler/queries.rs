@@ -3,10 +3,10 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::environment::buildings::prefab::PrefabRow;
 use crate::streaming::loaders::chunk::WorldChunk;
 use crate::streaming::scheduler::chunk_math::TerrainSizeM;
 use crate::streaming::scheduler::state::WorldResidency;
+use crate::world::environment::buildings::prefab::PrefabRow;
 
 impl WorldResidency {
     /// Pick nearest world instance id `"{chunkId}:{row}"` within `radius_m`, optional class mask.

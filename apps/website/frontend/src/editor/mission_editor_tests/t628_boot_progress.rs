@@ -491,23 +491,23 @@ fn the_caption_reports_bytes_for_bytes_and_files_for_files() {
 fn the_satellite_fetch_is_bounded_concurrent_ordered_and_fails_fast() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let src = live_code(concat!(
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/mod.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/mod.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/selection.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/selection.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/preview.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/preview.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/decode.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/decode.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/retry.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/retry.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/downloads.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/downloads.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/upload.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/upload.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/bootstrap.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/bootstrap.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/basemap.rs")
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/basemap.rs")
     ));
     let body = only_body(&src, "async fn fetch_tiles(");
 
@@ -725,7 +725,7 @@ fn every_world_batch_declares_its_files_before_it_fetches_them() {
     // The forest host may only count a bin it actually landed; counting attempts would let a
     // retried bin advance a unit that was already declared and spent.
     let forest = live_code(include_str!(
-        "../../../../map-engine/src/environment/vegetation/loader.rs"
+        "../../../../map-engine/src/world/environment/vegetation/loader.rs"
     ));
     let upload = only_body(&forest, "async fn boot_upload(");
     let done_at = upload

@@ -11,10 +11,12 @@ use crate::core::context::state::INITIAL_TARGET;
 use crate::core::context::state::INITIAL_ZOOM;
 use crate::core::context::state::RenderEngine;
 use crate::core::pipeline::bindings;
-use crate::core::pipeline::draw_order::LaneRole;
-use crate::core::pipeline::draw_order::lane_id;
 use crate::diagnostics::timing::gpu::GpuTimer;
+use crate::overlay::lanes::LaneRole;
+use crate::overlay::lanes::lane_id;
 
+use crate::overlay::symbology::instances::bridge_1::SlotGpuBridge;
+use crate::overlay::symbology::instances::lanes::ICON_UNIFORM_BYTES;
 use crate::renderers::batching::scene::UNIT_QUAD;
 use crate::renderers::engine::lifecycle::TEXT_UNIFORM_BYTES;
 use crate::renderers::pipelines::building::create_building_pipeline;
@@ -27,8 +29,6 @@ use crate::renderers::pipelines::textured::create_forest_density_pipeline;
 use crate::renderers::pipelines::textured::create_textured_pipeline;
 use crate::renderers::pipelines::vector::create_line_pipeline;
 use crate::renderers::pipelines::vector::create_polygon_pipeline;
-use crate::symbology::instances::bridge_1::SlotGpuBridge;
-use crate::symbology::instances::lanes::ICON_UNIFORM_BYTES;
 use wasm_bindgen::prelude::*;
 use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 

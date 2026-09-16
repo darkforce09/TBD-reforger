@@ -12,8 +12,5 @@ pub use website_graphics_engine::frame::damage;
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub mod bindings;
 
-/// Draw order.
-pub mod draw_order;
-
-/// Stable vector and texture upload identifiers.
-pub mod roles;
+// T-0xx Phase 2B: `draw_order.rs` and `roles.rs` left together for `overlay/lanes.rs`. The
+// names they carry are cartographic, not mechanical — see that file's header.

@@ -12,14 +12,14 @@
 //! renders identically to the committed v1 file at every mip" into a property of the code.
 
 use anyhow::{Result, bail};
-use website_map_engine::formats::archives::codec::access_checked;
-use website_map_engine::formats::archives::codec::to_bytes;
-use website_map_engine::formats::archives::satellite::SatLevel;
-use website_map_engine::formats::archives::satellite::SatTile;
-use website_map_engine::formats::archives::satellite::TbdSatIndexV2;
-use website_map_engine::formats::containers::header::ContainerHeader;
-use website_map_engine::formats::containers::header::HEADER_BYTES;
-use website_map_engine::formats::containers::tbds::TbdsHeader;
+use website_map_engine::io::archives::codec::access_checked;
+use website_map_engine::io::archives::codec::to_bytes;
+use website_map_engine::io::archives::satellite::SatLevel;
+use website_map_engine::io::archives::satellite::SatTile;
+use website_map_engine::io::archives::satellite::TbdSatIndexV2;
+use website_map_engine::io::containers::header::ContainerHeader;
+use website_map_engine::io::containers::header::HEADER_BYTES;
+use website_map_engine::io::containers::tbds::TbdsHeader;
 
 use super::img;
 

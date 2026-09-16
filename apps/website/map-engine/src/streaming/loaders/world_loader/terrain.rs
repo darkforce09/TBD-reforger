@@ -43,13 +43,13 @@ impl WorldHost {
         let vis = mesh.segment_count > 0;
         if let Some(e) = engine.borrow_mut().as_mut() {
             e.upload_strip_tris(
-                crate::core::pipeline::draw_order::role_id::ROADS_CASING,
+                crate::overlay::lanes::role_id::ROADS_CASING,
                 &mesh.casing,
                 mesh.segment_count,
                 vis,
             );
             e.upload_strip_tris(
-                crate::core::pipeline::draw_order::role_id::ROADS,
+                crate::overlay::lanes::role_id::ROADS,
                 &mesh.centerline,
                 mesh.segment_count,
                 vis,
@@ -73,7 +73,7 @@ impl WorldHost {
         if !vis {
             self.landcover_shown = false;
             if let Some(e) = engine.borrow_mut().as_mut() {
-                e.clear_vector_lane(crate::core::pipeline::draw_order::role_id::LANDCOVER);
+                e.clear_vector_lane(crate::overlay::lanes::role_id::LANDCOVER);
             }
             return true;
         }
@@ -98,7 +98,7 @@ impl WorldHost {
         {
             if mesh.polygon_count > 0 {
                 e.upload_polygon_mesh(
-                    crate::core::pipeline::draw_order::role_id::LANDCOVER,
+                    crate::overlay::lanes::role_id::LANDCOVER,
                     &mesh.positions,
                     &mesh.colors,
                     &mesh.indices,
@@ -106,7 +106,7 @@ impl WorldHost {
                     true,
                 );
             } else {
-                e.clear_vector_lane(crate::core::pipeline::draw_order::role_id::LANDCOVER);
+                e.clear_vector_lane(crate::overlay::lanes::role_id::LANDCOVER);
             }
         }
         true

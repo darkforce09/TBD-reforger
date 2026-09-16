@@ -7,9 +7,9 @@ use std::collections::HashMap;
 
 use serde_json::Value;
 
-use crate::environment::buildings::prefab::PrefabEntry;
-use crate::environment::classify::NO_CLASS;
-use crate::environment::classify::narrow_instance_row_v2;
+use crate::world::environment::buildings::prefab::PrefabEntry;
+use crate::world::environment::classify::NO_CLASS;
+use crate::world::environment::classify::narrow_instance_row_v2;
 
 /// SoA for one parsed chunk. Numeric columns are **truncated to `count`** — the JS master arrays are allocated at `instances.length` but only `[0, count)` is ever read, so the truncated form is the faithful byte-comparable one. `positions` is `[x0,y0,x1,y1,…]`.
 #[derive(Default, Clone)]

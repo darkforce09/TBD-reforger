@@ -3,13 +3,13 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::environment::buildings::footprint::fill_color;
-use crate::environment::classify::class_code;
 use crate::streaming::scheduler::state::WorldResidency;
-use crate::terrain::roads::cartographic_strip::compose_bridge_rail_strips;
-use crate::terrain::roads::cartographic_strip::compose_fence_strip;
-use crate::terrain::roads::cartographic_strip::compose_pier_strip;
-use crate::terrain::roads::cartographic_strip::pack_cartographic_strips;
+use crate::world::environment::buildings::footprint::fill_color;
+use crate::world::environment::classify::class_code;
+use crate::world::terrain::roads::cartographic_strip::compose_bridge_rail_strips;
+use crate::world::terrain::roads::cartographic_strip::compose_fence_strip;
+use crate::world::terrain::roads::cartographic_strip::compose_pier_strip;
+use crate::world::terrain::roads::cartographic_strip::pack_cartographic_strips;
 
 impl WorldResidency {
     /// Rebuild strip buffers.
@@ -23,9 +23,9 @@ impl WorldResidency {
         let z = self.deck_zoom;
         let mut ids = self.pinned_ids.clone();
         ids.sort();
-        let mut pier_v: Vec<crate::terrain::roads::styling::StripVertex> = Vec::new();
-        let mut rail_v: Vec<crate::terrain::roads::styling::StripVertex> = Vec::new();
-        let mut fence_v: Vec<crate::terrain::roads::styling::StripVertex> = Vec::new();
+        let mut pier_v: Vec<crate::world::terrain::roads::styling::StripVertex> = Vec::new();
+        let mut rail_v: Vec<crate::world::terrain::roads::styling::StripVertex> = Vec::new();
+        let mut fence_v: Vec<crate::world::terrain::roads::styling::StripVertex> = Vec::new();
 
         let piers_on = self.piers_visible();
         let rails_on = self.buildings_visible();

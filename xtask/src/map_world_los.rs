@@ -22,18 +22,18 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
 use serde_json::Value;
-use website_map_engine::environment::buildings::prefab::build_prefab_maps;
-use website_map_engine::environment::buildings::prefab::narrow_prefab_rows;
 use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
-use website_map_engine::spatial::world_los::coverage_1::BlockPolicy;
-use website_map_engine::spatial::world_los::coverage_1::WorldVerdict;
-use website_map_engine::spatial::world_los::descriptor::PrefabDescriptor;
-use website_map_engine::spatial::world_los::state::WorldOccluder;
+use website_map_engine::spatial::los::world::coverage_1::BlockPolicy;
+use website_map_engine::spatial::los::world::coverage_1::WorldVerdict;
+use website_map_engine::spatial::los::world::descriptor::PrefabDescriptor;
+use website_map_engine::spatial::los::world::state::WorldOccluder;
 use website_map_engine::streaming::loaders::chunk::parse_chunk;
 use website_map_engine::streaming::loaders::chunk_bin::parse_chunk_bin_for;
 use website_map_engine::streaming::scheduler::chunk_math::TerrainSizeM;
-use website_map_engine::terrain::dem::manifest::DemManifest;
-use website_map_engine::terrain::dem::sampling::sample_elevation_meters;
+use website_map_engine::world::environment::buildings::prefab::build_prefab_maps;
+use website_map_engine::world::environment::buildings::prefab::narrow_prefab_rows;
+use website_map_engine::world::terrain::dem::manifest::DemManifest;
+use website_map_engine::world::terrain::dem::sampling::sample_elevation_meters;
 
 /// Everon: 12 800 m square, 512 m chunks.
 pub const TERRAIN_M: f64 = 12_800.0;

@@ -527,7 +527,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         // T-172 B2 — DEM-fed Z beside X/Y; None (em-dash) until the grid
                         // publishes or when the point is outside DEM coverage.
                         let z = dem_grid.borrow().as_ref().and_then(|g| {
-                            website_map_engine::terrain::dem::grid::sample_grid_meters(
+                            website_map_engine::world::terrain::dem::grid::sample_grid_meters(
                                 g, c[0], c[1],
                             )
                         });
@@ -1658,7 +1658,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         let w = cam.unproject_xy(start_x, start_y);
                         if w[0].is_finite() && w[1].is_finite() {
                             let z = dem_grid.borrow().as_ref().and_then(|g| {
-                                website_map_engine::terrain::dem::grid::sample_grid_meters(
+                                website_map_engine::world::terrain::dem::grid::sample_grid_meters(
                                     g, w[0], w[1],
                                 )
                             });

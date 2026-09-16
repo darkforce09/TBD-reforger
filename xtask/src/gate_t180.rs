@@ -168,7 +168,7 @@ const ORBAT_RS: &str =
     "apps/website/map-engine/src/data/scenario/ast/factions/orbat_slot_template.rs";
 const ORBAT_MGR: &str = "apps/website/frontend/src/pages/operations/orbat_manager.rs";
 const EDEN_CHROME: &str = "apps/website/frontend/src/editor/eden_chrome.rs";
-const SLOTS_GPU: &str = "apps/website/map-engine/src/symbology/roles/classify.rs";
+const SLOTS_GPU: &str = "apps/website/map-engine/src/overlay/symbology/roles/classify.rs";
 
 /// One `ban`: message, ERE pattern, `-i`?, targets, and the `ok` line printed when it holds.
 #[rustfmt::skip]

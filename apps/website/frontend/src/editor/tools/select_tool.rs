@@ -23,10 +23,10 @@ use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use website_map_engine::camera::ortho::state::OrthoCamera;
 use website_map_engine::core::context::state::RenderEngine;
-use website_map_engine::core::pipeline::draw_order::role_id;
 use website_map_engine::data::store::SlotSoa;
+use website_map_engine::overlay::lanes::role_id;
+use website_map_engine::overlay::symbology::links::squad_links::pack_squad_link_drag_preview;
 use website_map_engine::spatial::indexing::point_index::PointIndex;
-use website_map_engine::symbology::links::squad_links::pack_squad_link_drag_preview;
 
 use crate::editor::state::doc_host::DocHandle;
 
@@ -292,7 +292,7 @@ pub fn push_drag_preview(
     e.set_drag(ids.to_vec(), dx as f32, dy as f32);
     bind_vehicle_preview_lane(
         e,
-        &website_map_engine::symbology::instances::drag::pack_vehicle_drag_preview(
+        &website_map_engine::overlay::symbology::instances::drag::pack_vehicle_drag_preview(
             ids,
             vehicle_points,
             dx,
@@ -316,7 +316,7 @@ pub fn clear_drag_preview(e: &mut RenderEngine, vehicle_points: &[(String, f64, 
     e.set_drag(Vec::new(), 0.0, 0.0);
     bind_vehicle_preview_lane(
         e,
-        &website_map_engine::symbology::instances::drag::pack_vehicle_drag_preview(
+        &website_map_engine::overlay::symbology::instances::drag::pack_vehicle_drag_preview(
             &[],
             vehicle_points,
             0.0,

@@ -4,12 +4,12 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 #[cfg(test)]
-use crate::environment::buildings::obb::building_prefab_lookup;
+use crate::world::environment::buildings::obb::building_prefab_lookup;
 #[cfg(test)]
-use crate::environment::buildings::obb::fence_prefab_lookup;
+use crate::world::environment::buildings::obb::fence_prefab_lookup;
 
 #[cfg(test)]
-use crate::environment::buildings::prefab::narrow_prefab_rows;
+use crate::world::environment::buildings::prefab::narrow_prefab_rows;
 
 /// Re-export `crate::streaming::scheduler::viewport::DRAW_CULL_MARGIN_M`.
 pub use crate::streaming::scheduler::viewport::DRAW_CULL_MARGIN_M;

@@ -25,12 +25,6 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
-use website_map_engine::architecture::compound::assembly::CompoundBuilding;
-use website_map_engine::architecture::compound::doors::DoorState;
-use website_map_engine::architecture::compound::instances::InstanceKind;
-use website_map_engine::architecture::compound::instances::InstanceRecord;
-use website_map_engine::architecture::compound::instances::InstancesFile;
-use website_map_engine::architecture::los::walker::Owner;
 use website_map_engine::spatial::bvh::node::dot;
 use website_map_engine::spatial::bvh::node::sub;
 use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
@@ -39,6 +33,12 @@ use website_map_engine::spatial::bvh::sidecar::lift_verts;
 use website_map_engine::spatial::bvh::sidecar::quantize_verts;
 use website_map_engine::spatial::bvh::surface::SurfaceKind;
 use website_map_engine::spatial::bvh::traversal::Bvh;
+use website_map_engine::spatial::los::interior::walker::Owner;
+use website_map_engine::world::architecture::compound::assembly::CompoundBuilding;
+use website_map_engine::world::architecture::compound::doors::DoorState;
+use website_map_engine::world::architecture::compound::instances::InstanceKind;
+use website_map_engine::world::architecture::compound::instances::InstanceRecord;
+use website_map_engine::world::architecture::compound::instances::InstancesFile;
 
 use super::xob;
 use crate::map_parity_report::ParityFile;

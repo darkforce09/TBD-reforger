@@ -3,20 +3,20 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::environment::locations::peaks::HeightLabel;
-use crate::environment::locations::peaks::declutter_height_labels;
-use crate::environment::locations::route_placement::RoadLabelPlacement;
-use crate::environment::locations::towns::locations_to_label_specs;
+use crate::overlay::symbology::labels::declutter::LabelSpec;
+use crate::overlay::symbology::labels::glyph_math::pack_icon_instance;
+use crate::overlay::symbology::labels::glyph_math::pack_rgba_u32;
+use crate::overlay::symbology::labels::importance::LocationLabel;
+use crate::overlay::symbology::labels::importance::declutter_town_labels;
+use crate::overlay::symbology::labels::importance::town_label_fade_alpha;
 use crate::renderers::text::metrics::TEXT_GLYPH_ADVANCE_RATIO;
 use crate::renderers::text::metrics::TextGlyphInstance;
 use crate::renderers::text::metrics::glyph_index_for_char;
 use crate::renderers::text::metrics::text_char_meters;
-use crate::symbology::labels::declutter::LabelSpec;
-use crate::symbology::labels::glyph_math::pack_icon_instance;
-use crate::symbology::labels::glyph_math::pack_rgba_u32;
-use crate::symbology::labels::importance::LocationLabel;
-use crate::symbology::labels::importance::declutter_town_labels;
-use crate::symbology::labels::importance::town_label_fade_alpha;
+use crate::world::environment::locations::peaks::HeightLabel;
+use crate::world::environment::locations::peaks::declutter_height_labels;
+use crate::world::environment::locations::route_placement::RoadLabelPlacement;
+use crate::world::environment::locations::towns::locations_to_label_specs;
 use website_graphics_engine::text::layout::GlyphSpec;
 
 /// Re-export `website_graphics_engine::text::layout::pack_text_icon_bytes`.
@@ -53,7 +53,7 @@ pub fn pack_label_glyphs(
     deck_zoom: f64,
     char_m: f32,
 ) -> Vec<TextGlyphInstance> {
-    let drawn = crate::symbology::labels::declutter::declutter(labels, deck_zoom);
+    let drawn = crate::overlay::symbology::labels::declutter::declutter(labels, deck_zoom);
     glyphs_from_specs(&drawn, char_m, pack_rgba_u32([220, 220, 215, 230]))
 }
 
@@ -66,7 +66,7 @@ pub fn pack_height_label_glyphs(
 ) -> Vec<TextGlyphInstance> {
     let drawn = declutter_height_labels(labels, deck_zoom);
     let specs: Vec<LabelSpec> =
-        crate::environment::locations::peaks::height_labels_to_specs(&drawn);
+        crate::world::environment::locations::peaks::height_labels_to_specs(&drawn);
     let kept = website_graphics_engine::text::layout::declutter_specs_by_width(
         &to_glyph_specs(&specs, char_m),
         char_m,

@@ -20,13 +20,13 @@ use tbd_tools::forest::{
 };
 use tbd_tools::geometry::{cell_of, check_anchors, chunk_key};
 use tbd_tools::world::binary_emit::{class_code_table, pods_from_rows, write_chunk_bin};
-use website_map_engine::environment::buildings::prefab::build_prefab_maps;
-use website_map_engine::environment::buildings::prefab::narrow_prefab_rows;
-use website_map_engine::formats::containers::header::CONTAINER_VERSION;
-use website_map_engine::formats::containers::header::HEADER_BYTES;
-use website_map_engine::formats::pod::instance::POD_BYTES;
+use website_map_engine::io::containers::header::CONTAINER_VERSION;
+use website_map_engine::io::containers::header::HEADER_BYTES;
+use website_map_engine::io::pod::instance::POD_BYTES;
 use website_map_engine::streaming::loaders::chunk::parse_chunk;
 use website_map_engine::streaming::loaders::chunk_bin::parse_chunk_bin_for;
+use website_map_engine::world::environment::buildings::prefab::build_prefab_maps;
+use website_map_engine::world::environment::buildings::prefab::narrow_prefab_rows;
 
 fn read_json(p: &PathBuf) -> Result<Value> {
     let raw = fs::read_to_string(p).with_context(|| format!("read {}", p.display()))?;
@@ -816,7 +816,7 @@ pub fn map_object_golden() -> Result<u8> {
         let (r_grid, r_size) = accumulate_corners(pos("rockPositions").into_iter(), world);
         let t_slice = slice_chunk_corners(&t_grid, t_size, ccx, ccy);
         let r_slice = slice_chunk_corners(&r_grid, r_size, ccx, ccy);
-        let rebuilt = website_map_engine::formats::density::tbdd::encode_tbdd(
+        let rebuilt = website_map_engine::io::density::tbdd::encode_tbdd(
             DENSITY_CELL_M,
             DENSITY_COLS,
             DENSITY_ROWS,
@@ -835,7 +835,7 @@ pub fn map_object_golden() -> Result<u8> {
         if rebuilt != density_bin {
             errs.push("encode(fixture) != committed density-fixture.bin".into());
         }
-        match website_map_engine::formats::density::tbdd::decode_tbdd(&density_bin) {
+        match website_map_engine::io::density::tbdd::decode_tbdd(&density_bin) {
             Ok(dec) => {
                 if dec.version != TBDD_VERSION
                     || dec.cell_m != DENSITY_CELL_M

@@ -82,7 +82,7 @@ pub(super) async fn load_dem_and_hillshade(
     report: &dyn Fn(crate::streaming::bridge::progress::BootEvent),
 ) -> Option<(Vec<f32>, u32, u32, u32, u32)> {
     use crate::streaming::bridge::progress::BootSeg;
-    let dem = match crate::terrain::dem::loader::load_declared_raw(
+    let dem = match crate::world::terrain::dem::loader::load_declared_raw(
         base,
         manifest.dem.raw.as_ref(),
         report,

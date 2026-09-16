@@ -46,13 +46,13 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use website_map_engine::architecture::los::wash::LevelWash;
-use website_map_engine::architecture::los::wash::WashJob;
-use website_map_engine::architecture::los::wash::WashParams;
-use website_map_engine::spatial::terrain_los::scheduler::ViewshedJob;
-use website_map_engine::spatial::terrain_los::viewshed::Viewshed;
-use website_map_engine::spatial::terrain_los::viewshed::ViewshedCapRefused;
-use website_map_engine::spatial::terrain_los::viewshed::ViewshedParams;
+use website_map_engine::spatial::los::interior::wash::LevelWash;
+use website_map_engine::spatial::los::interior::wash::WashJob;
+use website_map_engine::spatial::los::interior::wash::WashParams;
+use website_map_engine::spatial::los::terrain::scheduler::ViewshedJob;
+use website_map_engine::spatial::los::terrain::viewshed::Viewshed;
+use website_map_engine::spatial::los::terrain::viewshed::ViewshedCapRefused;
+use website_map_engine::spatial::los::terrain::viewshed::ViewshedParams;
 
 use super::los_tool;
 
@@ -341,10 +341,10 @@ pub fn take_wash() -> Option<LevelWash> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use website_map_engine::architecture::los::wash::wash_band;
-    use website_map_engine::architecture::los::wash::MAX_WASH_RADIUS_M;
-    use website_map_engine::architecture::los::wash::WASH_BATCH_CELLS;
-    use website_map_engine::spatial::terrain_los::viewshed::Visibility;
+    use website_map_engine::spatial::los::interior::wash::wash_band;
+    use website_map_engine::spatial::los::interior::wash::MAX_WASH_RADIUS_M;
+    use website_map_engine::spatial::los::interior::wash::WASH_BATCH_CELLS;
+    use website_map_engine::spatial::los::terrain::viewshed::Visibility;
 
     /// A blocker that hides everything east of the observer (so a wash has all three classes) and
     /// costs ~100 µs a call. The COST is the point: the scheduler's budget is only observable when a

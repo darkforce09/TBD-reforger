@@ -5,9 +5,9 @@
 
 use crate::core::culling::lod::INSTANCE_BUDGET;
 
-use crate::environment::vegetation::canopy::exact_tree_count;
+use crate::world::environment::vegetation::canopy::exact_tree_count;
 
-use crate::environment::vegetation::canopy::visible_tree_count;
+use crate::world::environment::vegetation::canopy::visible_tree_count;
 
 use crate::streaming::scheduler::chunk_math::Bbox;
 

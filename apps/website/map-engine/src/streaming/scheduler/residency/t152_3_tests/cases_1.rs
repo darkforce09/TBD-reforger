@@ -3,11 +3,11 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::environment::buildings::footprint::BRIDGE_CASING_RGBA;
+use crate::world::environment::buildings::footprint::BRIDGE_CASING_RGBA;
 
-use crate::environment::buildings::footprint::BRIDGE_DECK_RGBA;
+use crate::world::environment::buildings::footprint::BRIDGE_DECK_RGBA;
 
-use crate::environment::buildings::obb::obb_corners;
+use crate::world::environment::buildings::obb::obb_corners;
 
 use super::*;
 
@@ -237,7 +237,7 @@ fn t152_21_fill_deemphasis_handoff() {
 
 #[test]
 fn g1_building_icon_key_covers_normative_classes() {
-    use crate::symbology::labels::glyph_math::building_icon_key;
+    use crate::overlay::symbology::labels::glyph_math::building_icon_key;
     for &cls in BUILDING_CLASSES {
         let key = building_icon_key(cls).expect(cls);
         assert_eq!(key, format!("building-{cls}"));
@@ -264,9 +264,10 @@ fn t152_15_g2_orientation_parity_all_prefabs() {
     let mut worst = 0.0f64;
     for (hx, hy) in &samples {
         for yaw in [0.0f64, 37.0, 90.0, 123.0] {
-            let [p0, p1] = crate::terrain::roads::cartographic_strip::obb_long_axis_endpoints(
-                0.0, 0.0, *hx, *hy, yaw,
-            );
+            let [p0, p1] =
+                crate::world::terrain::roads::cartographic_strip::obb_long_axis_endpoints(
+                    0.0, 0.0, *hx, *hy, yaw,
+                );
             let strip_ang = (p1[1] - p0[1]).atan2(p1[0] - p0[0]).to_degrees();
             let c = obb_corners(0.0, 0.0, *hx, *hy, yaw);
             let (e0x, e0y) = (c[1][0] - c[0][0], c[1][1] - c[0][1]);

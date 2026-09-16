@@ -10,10 +10,6 @@
 //! `rkyv` and `flate2` into the server's tree. The gate is what makes
 //! `cargo tree -p website-api | rg -i 'wgpu|png|rkyv|flate2'` come back empty.
 
-/// Architecture.
-#[cfg(feature = "io")]
-pub mod architecture;
-
 /// Camera.
 pub mod camera;
 
@@ -34,20 +30,20 @@ pub mod diagnostics;
 #[cfg(feature = "render")]
 pub mod doll;
 
-/// Environment.
-#[cfg(feature = "world")]
-pub mod environment;
-
-/// Formats.
+/// On-disk formats: archives, containers, density grids and the POD layouts.
 #[cfg(feature = "io")]
-pub mod formats;
+pub mod io;
+
+/// Cartographic overlay: the named lanes and the symbology drawn in them.
+#[cfg(feature = "world")]
+pub mod overlay;
 
 /// Renderers.
 #[cfg(feature = "io")]
 pub mod renderers;
 
 /// Spatial.
-// `bvh` alone is not enough: `spatial/terrain_los` reads `crate::terrain::dem`. `world` implies `bvh`.
+// `bvh` alone is not enough: `spatial/terrain_los` reads `crate::world::terrain::dem`. `world` implies `bvh`.
 #[cfg(feature = "world")]
 pub mod spatial;
 
@@ -55,16 +51,8 @@ pub mod spatial;
 #[cfg(feature = "io")]
 pub mod streaming;
 
-/// Symbology.
+/// The static world: terrain, environment and architecture — streamed, never authored.
 #[cfg(feature = "world")]
-pub mod symbology;
-
-/// Terrain.
-#[cfg(feature = "world")]
-pub mod terrain;
-
-/// World.
-#[cfg(feature = "streaming")]
 pub mod world;
 
 #[cfg(test)]

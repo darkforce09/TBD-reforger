@@ -5,16 +5,16 @@
 
 use crate::core::culling::lod::INSTANCE_BUDGET;
 use crate::core::culling::lod::class_visible;
-use crate::environment::buildings::footprint::building_visible;
-use crate::environment::vegetation::canopy::exact_tree_count;
-use crate::environment::vegetation::canopy::heatmap_trees;
-use crate::environment::vegetation::canopy::visible_tree_count;
+use crate::overlay::symbology::labels::glyph_math::landmark_glyph_icon_key;
 use crate::streaming::scheduler::chunk_math::Bbox;
 use crate::streaming::scheduler::chunk_math::chunk_ids_for_rect;
 use crate::streaming::scheduler::chunk_math::chunk_rect_for_bbox;
 use crate::streaming::scheduler::state::WorldResidency;
 use crate::streaming::scheduler::viewport::DRAW_CULL_MARGIN_M;
-use crate::symbology::labels::glyph_math::landmark_glyph_icon_key;
+use crate::world::environment::buildings::footprint::building_visible;
+use crate::world::environment::vegetation::canopy::exact_tree_count;
+use crate::world::environment::vegetation::canopy::heatmap_trees;
+use crate::world::environment::vegetation::canopy::visible_tree_count;
 
 /// Deinterleave.
 pub(crate) fn deinterleave(positions: &[f32], count: u32) -> (Vec<f32>, Vec<f32>) {

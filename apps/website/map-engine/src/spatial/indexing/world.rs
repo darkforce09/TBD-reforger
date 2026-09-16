@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 use crate::spatial::indexing::point_index::PointIndex;
 
-use crate::environment::classify::NO_CLASS;
+use crate::world::environment::classify::NO_CLASS;
 
 const INDEX_CELL_M: f64 = 256.0;
 

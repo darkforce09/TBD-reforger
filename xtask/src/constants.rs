@@ -26,8 +26,6 @@ pub const EXEMPT_SCAN_PREFIXES: &[&str] = &[
     ".stitch-backup-exports/",
 ];
 
-pub const STATUS_MARKER_START: &str = "<!-- ticket-sync:status:start -->";
-pub const STATUS_MARKER_END: &str = "<!-- ticket-sync:status:end -->";
 pub const NEXT_MARKER_START: &str = "<!-- ticket-sync:next:start -->";
 pub const NEXT_MARKER_END: &str = "<!-- ticket-sync:next:end -->";
 

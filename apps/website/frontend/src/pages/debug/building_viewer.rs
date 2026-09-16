@@ -60,17 +60,17 @@
 use std::sync::Arc;
 
 use leptos::prelude::*;
-use website_map_engine::architecture::blueprint::attribution_1::LosHitKind;
-use website_map_engine::architecture::blueprint::attribution_1::LosResult;
-use website_map_engine::architecture::blueprint::structure::BuildingBlueprint;
-use website_map_engine::architecture::compound::assembly::CompoundBuilding;
-use website_map_engine::architecture::los::wash::level_wash;
-use website_map_engine::architecture::los::wash::level_wash_compound;
-use website_map_engine::architecture::los::wash::LevelWash;
-use website_map_engine::architecture::los::wash::WashParams;
-use website_map_engine::architecture::section::cutter::building_drawing;
-use website_map_engine::architecture::section::cutter::BuildingDrawing;
 use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
+use website_map_engine::spatial::los::interior::wash::level_wash;
+use website_map_engine::spatial::los::interior::wash::level_wash_compound;
+use website_map_engine::spatial::los::interior::wash::LevelWash;
+use website_map_engine::spatial::los::interior::wash::WashParams;
+use website_map_engine::world::architecture::blueprint::attribution_1::LosHitKind;
+use website_map_engine::world::architecture::blueprint::attribution_1::LosResult;
+use website_map_engine::world::architecture::blueprint::structure::BuildingBlueprint;
+use website_map_engine::world::architecture::compound::assembly::CompoundBuilding;
+use website_map_engine::world::architecture::section::cutter::building_drawing;
+use website_map_engine::world::architecture::section::cutter::BuildingDrawing;
 
 use super::building_interior::LevelCuts;
 
@@ -139,19 +139,19 @@ impl ViewFloor {
 pub mod geom {
     use super::ViewFloor;
     use crate::editor::tools::los_tool::{pack_rgba_256, ViewshedTexture};
-    use website_map_engine::architecture::blueprint::structure::BuildingBlueprint;
-    use website_map_engine::architecture::blueprint::structure::BuildingLevel;
-    use website_map_engine::architecture::los::wash::LevelWash;
-    use website_map_engine::architecture::section::cutter::through_voids;
-    use website_map_engine::architecture::section::cutter::BuildingDrawing;
-    use website_map_engine::architecture::section::cutter::HeightField;
-    use website_map_engine::architecture::section::cutter::FLOOR_WINDOW_M;
-    use website_map_engine::architecture::section::cutter::PIT_DEPTH_M;
-    use website_map_engine::architecture::section::cutter::PLAN_CELL_M;
     use website_map_engine::renderers::primitives::triangulate::triangulate_simple;
-    use website_map_engine::spatial::terrain_los::viewshed::Visibility;
-    use website_map_engine::terrain::roads::styling::expand_polyline_strip;
-    use website_map_engine::terrain::roads::styling::StripVertex;
+    use website_map_engine::spatial::los::interior::wash::LevelWash;
+    use website_map_engine::spatial::los::terrain::viewshed::Visibility;
+    use website_map_engine::world::architecture::blueprint::structure::BuildingBlueprint;
+    use website_map_engine::world::architecture::blueprint::structure::BuildingLevel;
+    use website_map_engine::world::architecture::section::cutter::through_voids;
+    use website_map_engine::world::architecture::section::cutter::BuildingDrawing;
+    use website_map_engine::world::architecture::section::cutter::HeightField;
+    use website_map_engine::world::architecture::section::cutter::FLOOR_WINDOW_M;
+    use website_map_engine::world::architecture::section::cutter::PIT_DEPTH_M;
+    use website_map_engine::world::architecture::section::cutter::PLAN_CELL_M;
+    use website_map_engine::world::terrain::roads::styling::expand_polyline_strip;
+    use website_map_engine::world::terrain::roads::styling::StripVertex;
 
     /// The building is placed at the engine's world anchor so f32 lane coords stay tiny.
     pub const ANCHOR: [f64; 2] = [6400.0, 6400.0];
@@ -891,11 +891,11 @@ pub mod geom {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use website_map_engine::architecture::los::wash::level_washes;
-        use website_map_engine::architecture::los::wash::WashParams;
-        use website_map_engine::architecture::section::cutter::building_drawing;
         use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
         use website_map_engine::spatial::bvh::traversal::Bvh;
+        use website_map_engine::spatial::los::interior::wash::level_washes;
+        use website_map_engine::spatial::los::interior::wash::WashParams;
+        use website_map_engine::world::architecture::section::cutter::building_drawing;
 
         fn farmhouse() -> BuildingBlueprint {
             serde_json::from_str(include_str!(
@@ -997,7 +997,7 @@ pub mod geom {
         /// plates still land on the floor lane.
         #[test]
         fn level_view_paints_plate_grid_verbatim() {
-            use website_map_engine::architecture::blueprint::footprint::PlateGrid;
+            use website_map_engine::world::architecture::blueprint::footprint::PlateGrid;
             let mut bp = farmhouse();
             bp.levels[0].plate = Some(PlateGrid {
                 origin: [-2.0, -2.0],
@@ -1026,7 +1026,7 @@ pub mod geom {
         /// floorPolygons rings (outer + holes) draw as closed hairline loops over the plate.
         #[test]
         fn floor_rings_draw_closed_hairline_loops() {
-            use website_map_engine::architecture::blueprint::structure::FloorPolygon;
+            use website_map_engine::world::architecture::blueprint::structure::FloorPolygon;
             let bp = farmhouse();
             let base = build_static_lanes(&bp, None, ViewFloor::Level(0));
             let mut bp = farmhouse();
@@ -1064,7 +1064,7 @@ pub mod geom {
         /// on the floor lane, ramping dark→light with height; nulls skip; ghosts unaffected.
         #[test]
         fn roof_view_paints_the_heightfield() {
-            use website_map_engine::architecture::blueprint::footprint::RoofGrid;
+            use website_map_engine::world::architecture::blueprint::footprint::RoofGrid;
             let mut bp = farmhouse();
             let base = build_static_lanes(&bp, None, ViewFloor::Roof);
             bp.roof = Some(RoofGrid {
@@ -1132,12 +1132,12 @@ pub mod geom {
         /// One-level 10 × 10 m box room (band [0, 3]) with a single window hole in the south
         /// wall (x ∈ [-1, 1], y ∈ [1, 2]): the blueprint names it, the 0.2 m slab mesh HAS it.
         fn box_room() -> (BuildingBlueprint, BvhSidecar) {
-            use website_map_engine::architecture::blueprint::footprint::OverallFootprint;
-            use website_map_engine::architecture::blueprint::footprint::VerticalProfile;
-            use website_map_engine::architecture::blueprint::structure::BBox2D;
-            use website_map_engine::architecture::blueprint::structure::BuildingWall;
-            use website_map_engine::architecture::blueprint::structure::BuildingWindow;
             use website_map_engine::spatial::bvh::traversal::Bvh;
+            use website_map_engine::world::architecture::blueprint::footprint::OverallFootprint;
+            use website_map_engine::world::architecture::blueprint::footprint::VerticalProfile;
+            use website_map_engine::world::architecture::blueprint::structure::BBox2D;
+            use website_map_engine::world::architecture::blueprint::structure::BuildingWall;
+            use website_map_engine::world::architecture::blueprint::structure::BuildingWindow;
             let wall = |id: &str, start: [f64; 2], end: [f64; 2]| BuildingWall {
                 id: id.into(),
                 start,
@@ -2000,16 +2000,16 @@ mod live {
     use std::sync::Arc;
     use wasm_bindgen::prelude::*;
     use wasm_bindgen::JsCast;
-    use website_map_engine::architecture::blueprint::attribution_1::LosResult;
-    use website_map_engine::architecture::blueprint::structure::BuildingBlueprint;
-    use website_map_engine::architecture::compound::assembly::CompoundBuilding;
-    use website_map_engine::architecture::compound::instances::InstancesFile;
-    use website_map_engine::architecture::los::wash::LevelWash;
-    use website_map_engine::architecture::section::cutter::BuildingDrawing;
     use website_map_engine::core::context::state::RenderEngine;
-    use website_map_engine::core::pipeline::draw_order::role_id;
+    use website_map_engine::overlay::lanes::role_id;
     use website_map_engine::renderers::engine::RafPump;
     use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
+    use website_map_engine::spatial::los::interior::wash::LevelWash;
+    use website_map_engine::world::architecture::blueprint::attribution_1::LosResult;
+    use website_map_engine::world::architecture::blueprint::structure::BuildingBlueprint;
+    use website_map_engine::world::architecture::compound::assembly::CompoundBuilding;
+    use website_map_engine::world::architecture::compound::instances::InstancesFile;
+    use website_map_engine::world::architecture::section::cutter::BuildingDrawing;
 
     type EngineHandle = Rc<RefCell<Option<RenderEngine>>>;
 
@@ -2346,7 +2346,7 @@ mod live {
                                 for id in ids {
                                     c.set_door(
                                         &id,
-                                        website_map_engine::architecture::compound::doors::DoorState::OPEN,
+                                        website_map_engine::world::architecture::compound::doors::DoorState::OPEN,
                                     );
                                 }
                             }

@@ -121,8 +121,8 @@ impl WorldResidency {
     /// Tree glyph count.
     #[must_use]
     pub fn tree_glyph_count(&self) -> u32 {
-        (self.tree_glyph_buf.len() / crate::symbology::labels::glyph_math::ICON_INSTANCE_STRIDE)
-            as u32
+        (self.tree_glyph_buf.len()
+            / crate::overlay::symbology::labels::glyph_math::ICON_INSTANCE_STRIDE) as u32
     }
 }
 
@@ -130,8 +130,8 @@ impl WorldResidency {
     /// Prop glyph count.
     #[must_use]
     pub fn prop_glyph_count(&self) -> u32 {
-        (self.prop_glyph_buf.len() / crate::symbology::labels::glyph_math::ICON_INSTANCE_STRIDE)
-            as u32
+        (self.prop_glyph_buf.len()
+            / crate::overlay::symbology::labels::glyph_math::ICON_INSTANCE_STRIDE) as u32
     }
 }
 
@@ -139,8 +139,8 @@ impl WorldResidency {
     /// Badge glyph count.
     #[must_use]
     pub fn badge_glyph_count(&self) -> u32 {
-        (self.badge_glyph_buf.len() / crate::symbology::labels::glyph_math::ICON_INSTANCE_STRIDE)
-            as u32
+        (self.badge_glyph_buf.len()
+            / crate::overlay::symbology::labels::glyph_math::ICON_INSTANCE_STRIDE) as u32
     }
 }
 

@@ -4,14 +4,14 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::renderers::primitives::compose::*;
-// T-0xx Phase 1D: `compose.rs` dropped its four `pub use crate::terrain::{roads,water}::mesh`
+// T-0xx Phase 1D: `compose.rs` dropped its four `pub use crate::world::terrain::{roads,water}::mesh`
 // re-exports, so the road and sea cases below name their own module directly.
-use crate::terrain::dem::grid::DemVectorGrid;
-use crate::terrain::relief::sea_band::SeaBandGeometry;
-use crate::terrain::relief::sea_band::build_sea_band_geometry;
-use crate::terrain::roads::mesh::RoadInput;
-use crate::terrain::roads::mesh::compose_roads_mesh;
-use crate::terrain::water::mesh::compose_sea_mesh;
+use crate::world::terrain::dem::grid::DemVectorGrid;
+use crate::world::terrain::relief::sea_band::SeaBandGeometry;
+use crate::world::terrain::relief::sea_band::build_sea_band_geometry;
+use crate::world::terrain::roads::mesh::RoadInput;
+use crate::world::terrain::roads::mesh::compose_roads_mesh;
+use crate::world::terrain::water::mesh::compose_sea_mesh;
 
 #[test]
 fn roads_gated_by_zoom() {
@@ -69,7 +69,7 @@ fn retint_fill_alpha_sets_every_fourth_only() {
 
 #[test]
 fn two_tone_contours_split_colour_by_summit_index() {
-    use crate::terrain::relief::contours::ContourRing;
+    use crate::world::terrain::relief::contours::ContourRing;
 
     const BASE: [u8; 4] = [188, 150, 100, 235];
     const SUMMIT: [u8; 4] = [174, 145, 123, 235];

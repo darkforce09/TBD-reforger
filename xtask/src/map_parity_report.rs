@@ -16,8 +16,8 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use website_map_engine::architecture::blueprint::structure::BuildingBlueprint;
 use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
+use website_map_engine::world::architecture::blueprint::structure::BuildingBlueprint;
 
 #[derive(serde::Deserialize)]
 pub(crate) struct ParityFile {

@@ -5,13 +5,13 @@
 
 use crate::camera::ortho::state::OrthoCamera;
 use crate::diagnostics::timing::gpu::GpuTimer;
+use crate::overlay::symbology::atlas::gpu::GlyphAtlasGpu;
+use crate::overlay::symbology::instances::bridge_1::SlotAtlasGpu;
+use crate::overlay::symbology::instances::bridge_1::SlotGpuBridge;
 use crate::renderers::batching::scene::QuadInstance;
 use crate::renderers::text::lanes::TextAtlasGpu;
-use crate::symbology::atlas::gpu::GlyphAtlasGpu;
-use crate::symbology::instances::bridge_1::SlotAtlasGpu;
-use crate::symbology::instances::bridge_1::SlotGpuBridge;
-use crate::terrain::satellite::textures::PendingTex;
-use crate::terrain::satellite::textures::TexLane;
+use crate::world::terrain::satellite::textures::PendingTex;
+use crate::world::terrain::satellite::textures::TexLane;
 use wasm_bindgen::prelude::*;
 use website_graphics_engine::frame::DrawBatch;
 use website_graphics_engine::frame::LaneId;

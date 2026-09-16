@@ -41,15 +41,15 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 use serde_json::Value;
 
-use website_map_engine::formats::archives::codec::access_checked;
-use website_map_engine::formats::archives::codec::to_bytes;
-use website_map_engine::formats::archives::version::ARCHIVE_SCHEMA_VERSION;
-use website_map_engine::formats::archives::water::WaterBody;
-use website_map_engine::formats::archives::water::WaterLine;
-use website_map_engine::formats::archives::water::WaterVectorsArchive;
-use website_map_engine::formats::containers::header::ContainerHeader;
-use website_map_engine::formats::containers::tbdb::TbdbHeader;
-use website_map_engine::terrain::water::vectors::downsample_index;
+use website_map_engine::io::archives::codec::access_checked;
+use website_map_engine::io::archives::codec::to_bytes;
+use website_map_engine::io::archives::version::ARCHIVE_SCHEMA_VERSION;
+use website_map_engine::io::archives::water::WaterBody;
+use website_map_engine::io::archives::water::WaterLine;
+use website_map_engine::io::archives::water::WaterVectorsArchive;
+use website_map_engine::io::containers::header::ContainerHeader;
+use website_map_engine::io::containers::tbdb::TbdbHeader;
+use website_map_engine::world::terrain::water::vectors::downsample_index;
 
 use crate::serve::repo_root;
 
@@ -614,10 +614,10 @@ pub fn emit_water(terrain: &str) -> Result<u8> {
 
 #[cfg(test)]
 mod tests {
-    use website_map_engine::terrain::water::vectors::Bathymetry;
-    use website_map_engine::terrain::water::vectors::WaterAt;
-    use website_map_engine::terrain::water::vectors::WaterMask;
-    use website_map_engine::terrain::water::vectors::WaterVectors;
+    use website_map_engine::world::terrain::water::vectors::Bathymetry;
+    use website_map_engine::world::terrain::water::vectors::WaterAt;
+    use website_map_engine::world::terrain::water::vectors::WaterMask;
+    use website_map_engine::world::terrain::water::vectors::WaterVectors;
 
     use super::*;
 

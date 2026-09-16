@@ -9,8 +9,8 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use serde_json::{Map, Value, json};
-use website_map_engine::formats::containers::tbde::TbdeHeader;
-use website_map_engine::terrain::dem::raw as dem_raw;
+use website_map_engine::io::containers::tbde::TbdeHeader;
+use website_map_engine::world::terrain::dem::raw as dem_raw;
 
 use super::build::CHUNK_SIZE_M;
 use super::classify::{Classifier, Rules, load_rules};
@@ -759,7 +759,7 @@ pub fn validate_export_artifacts() -> Result<u8> {
                         continue;
                     }
                     let buf = std::fs::read(&p)?;
-                    let Ok(dec) = website_map_engine::formats::density::tbdd::decode_tbdd(&buf)
+                    let Ok(dec) = website_map_engine::io::density::tbdd::decode_tbdd(&buf)
                     else {
                         d_errs += 1;
                         continue;
@@ -1388,9 +1388,9 @@ pub fn catalog_sap_cells(terrain: &str) -> Result<u8> {
 mod elevation_dem_tests {
     use std::path::PathBuf;
 
-    use website_map_engine::formats::containers::header::HEADER_BYTES;
-    use website_map_engine::terrain::dem::png::decode_png_gray16;
-    use website_map_engine::terrain::dem::raw::RawDem;
+    use website_map_engine::io::containers::header::HEADER_BYTES;
+    use website_map_engine::world::terrain::dem::png::decode_png_gray16;
+    use website_map_engine::world::terrain::dem::raw::RawDem;
 
     use super::*;
 
@@ -1566,7 +1566,7 @@ mod elevation_dem_tests {
     /// vanishing into an ignore count.
     #[test]
     fn everon_elevation_dem_matches_the_shipped_png() {
-        use website_map_engine::terrain::dem::sampling::uint16_to_meters;
+        use website_map_engine::world::terrain::dem::sampling::uint16_to_meters;
 
         let root = repo_root();
         let png = root.join("packages/map-assets/everon/dem/everon-dem-16bit.png");

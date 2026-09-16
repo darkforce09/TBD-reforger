@@ -7,18 +7,18 @@ use std::collections::HashMap;
 
 use serde_json::Value;
 
-use crate::environment::buildings::obb::BuildingPrefabInfo;
-use crate::environment::buildings::obb::FencePrefabInfo;
-use crate::environment::buildings::obb::building_prefab_lookup;
-use crate::environment::buildings::obb::fence_prefab_lookup;
-use crate::environment::buildings::prefab::PrefabCatalog;
-use crate::environment::buildings::prefab::PrefabEntry;
-use crate::environment::buildings::prefab::PrefabRow;
-use crate::environment::buildings::prefab::build_prefab_maps;
-use crate::environment::buildings::prefab::catalog_from_bytes;
-use crate::environment::buildings::prefab::narrow_prefab_rows;
 use crate::streaming::loaders::store::WorldError;
 use crate::streaming::loaders::store::bytes_to_json;
+use crate::world::environment::buildings::obb::BuildingPrefabInfo;
+use crate::world::environment::buildings::obb::FencePrefabInfo;
+use crate::world::environment::buildings::obb::building_prefab_lookup;
+use crate::world::environment::buildings::obb::fence_prefab_lookup;
+use crate::world::environment::buildings::prefab::PrefabCatalog;
+use crate::world::environment::buildings::prefab::PrefabEntry;
+use crate::world::environment::buildings::prefab::PrefabRow;
+use crate::world::environment::buildings::prefab::build_prefab_maps;
+use crate::world::environment::buildings::prefab::catalog_from_bytes;
+use crate::world::environment::buildings::prefab::narrow_prefab_rows;
 
 #[must_use]
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]

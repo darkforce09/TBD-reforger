@@ -74,16 +74,16 @@ mod live {
     use std::rc::Rc;
     use wasm_bindgen::prelude::*;
     use wasm_bindgen::JsCast;
-    use website_map_engine::architecture::section::cutter::section_at;
     use website_map_engine::core::context::state::RenderEngine;
-    use website_map_engine::core::pipeline::draw_order::role_id;
+    use website_map_engine::overlay::lanes::role_id;
     use website_map_engine::renderers::engine::RafPump;
-    use website_map_engine::spatial::world_los::coverage_1::WorldVerdict;
-    use website_map_engine::spatial::world_los::state::WorldOccluder;
+    use website_map_engine::spatial::los::world::coverage_1::WorldVerdict;
+    use website_map_engine::spatial::los::world::state::WorldOccluder;
     use website_map_engine::streaming::loaders::fetch::fetch_bytes;
     use website_map_engine::streaming::loaders::fetch::fetch_text;
     use website_map_engine::streaming::loaders::occluder_loader::OccluderHost;
     use website_map_engine::streaming::scheduler::state::WorldResidency;
+    use website_map_engine::world::architecture::section::cutter::section_at;
 
     type EngineHandle = Rc<RefCell<Option<RenderEngine>>>;
 

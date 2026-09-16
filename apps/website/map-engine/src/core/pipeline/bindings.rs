@@ -13,7 +13,7 @@
 //! at upload time in `renderers/text/lanes.rs`, so the routing IS the payload and there is
 //! nothing left to ask.
 
-use crate::core::pipeline::draw_order::LaneRole;
+use crate::overlay::lanes::LaneRole;
 use website_graphics_engine::frame::{BindGroupId, LaneId, PipelineId};
 
 /// `vs_quad` — axis-aligned coloured quads.

@@ -118,23 +118,23 @@ fn an_unknown_limit_yields_no_level_at_all() {
 fn no_call_site_may_guess_a_texture_limit() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let src = live_code(concat!(
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/mod.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/mod.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/selection.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/selection.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/preview.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/preview.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/decode.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/decode.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/retry.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/retry.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/downloads.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/downloads.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/upload.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/upload.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/bootstrap.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/bootstrap.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/basemap.rs")
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/basemap.rs")
     ));
 
     assert!(
@@ -195,23 +195,23 @@ fn no_call_site_may_guess_a_texture_limit() {
 fn a_downscaled_basemap_warns_and_a_stuck_placeholder_warns() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let src = live_code(concat!(
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/mod.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/mod.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/selection.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/selection.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/preview.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/preview.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/decode.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/decode.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/retry.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/retry.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/downloads.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/downloads.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/upload.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/upload.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/bootstrap.rs"),
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/bootstrap.rs"),
         "\n",
-        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/basemap.rs")
+        include_str!("../../../../map-engine/src/world/terrain/satellite/quadtree/basemap.rs")
     ));
 
     let report = only_body(&src, "fn report_chosen_level(");

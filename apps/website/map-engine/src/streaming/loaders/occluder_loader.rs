@@ -7,11 +7,11 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::spatial::bvh::sidecar::BvhSidecar;
-use crate::spatial::world_los::descriptor::ArchiveBoot;
-use crate::spatial::world_los::descriptor::BlasManifest;
-use crate::spatial::world_los::descriptor::BuildingArchiveBytes;
-use crate::spatial::world_los::descriptor::PrefabDescriptor;
-use crate::spatial::world_los::state::WorldOccluder;
+use crate::spatial::los::world::descriptor::ArchiveBoot;
+use crate::spatial::los::world::descriptor::BlasManifest;
+use crate::spatial::los::world::descriptor::BuildingArchiveBytes;
+use crate::spatial::los::world::descriptor::PrefabDescriptor;
+use crate::spatial::los::world::state::WorldOccluder;
 use crate::streaming::loaders::manifest::parse_manifest_binary;
 use crate::streaming::scheduler::chunk_math::TerrainSizeM;
 use crate::streaming::scheduler::state::ResidencyEvent;
