@@ -1,6 +1,6 @@
 # C — move the operations that belong in the engine into `data/store/operations/`
 
-**Purely additive. Delete nothing.** C adds; [D](D_operations_delete_adapters.md) removes.
+**Purely additive. Delete nothing.** C adds; [3A-D](3A-D_operations_delete_adapters.md) removes.
 Splitting it this way keeps each commit bisectable and keeps the frontend compiling throughout.
 
 Source: `apps/website/frontend/src/editor/state/operations/` — 29 files, 4,320 LOC, untouched so

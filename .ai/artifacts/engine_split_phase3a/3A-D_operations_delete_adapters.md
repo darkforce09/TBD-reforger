@@ -1,6 +1,6 @@
 # D — delete the adapters and unwind the façade
 
-**Requires [C](C_operations_move_engine_side.md) to have landed.** The adapters cannot go until
+**Requires [3A-C](3A-C_operations_move_engine_side.md) to have landed.** The adapters cannot go until
 what they adapt lives engine-side.
 
 This is the riskiest brief in Phase 3A, not because the logic is hard but because the blast radius
