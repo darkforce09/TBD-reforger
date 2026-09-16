@@ -18,7 +18,12 @@ pub mod architecture;
 pub mod environment;
 
 /// Composed CPU meshes for the static world — contours, forest, land cover. Zero GPU.
-#[cfg(feature = "streaming")]
+// Gated at `io`, which is the gate `renderers/` carried before Phase 2B.1 moved
+// `primitives/compose.rs` here: `frontend/Cargo.toml:32` takes `world` + `io` with no
+// streaming and calls `mesh::triangulate::triangulate_simple` from the building viewer.
+// A narrower gate here compiles under `cargo build -p website-frontend -p xtask`, where
+// feature unification hides it, and fails on `-p website-frontend` alone.
+#[cfg(feature = "io")]
 pub mod mesh;
 
 /// The scene anchor and the synthetic instance scenes measured against it.
