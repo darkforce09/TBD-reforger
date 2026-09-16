@@ -63,7 +63,7 @@ pub(crate) struct EditorGestureContext {
     pub(crate) map_host: website_map_engine::streaming::host::HostHandle,
     pub(crate) dem_grid: website_map_engine::streaming::host::DemGridHandle,
     /// T-642 — the persistent ruler polyline (session-local overlay state, NOT the Y.Doc).
-    pub(crate) ruler: Rc<RefCell<crate::editor::tools::ruler_tool::RulerChain>>,
+    pub(crate) ruler: Rc<RefCell<website_map_engine::editing::tools::ruler::RulerChain>>,
     /// T-643 — the LoS two-click capture (peer of the ruler chain).
     pub(crate) los: Rc<RefCell<LosState>>,
     /// T-644 — the viewshed observer + raster (the GPU wash lane's session state).
@@ -75,7 +75,7 @@ pub(crate) struct EditorGestureContext {
     /// T-159.21 — the CUR read-out world point (fed by the pointer-move unproject).
     pub(crate) cursor: RwSignal<Option<(f64, f64, Option<f64>)>>,
     /// T-642/T-643 — the active editor tool (Select ⇆ Ruler ⇆ LoS).
-    pub(crate) tool_mode: RwSignal<crate::editor::tools::ruler_tool::EditorTool>,
+    pub(crate) tool_mode: RwSignal<website_map_engine::editing::tools::ruler::EditorTool>,
     /// T-644 — the LoS sub-mode (Ray ⇆ Viewshed).
     pub(crate) los_mode: RwSignal<LosMode>,
     /// T-648 — the snap-grid state (the rotate commit reads the effective rotation rung).
@@ -448,7 +448,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                     // so the existing Pending path is byte-for-byte unchanged there.
                     left_pointer.set(Some(ev.pointer_id()));
                     *left.borrow_mut() = Some(
-                        if crate::editor::tools::ruler_tool::should_begin_ruler(
+                        if website_map_engine::editing::tools::ruler::should_begin_ruler(
                             tool_mode.get_untracked(),
                             ev.button(),
                         ) {

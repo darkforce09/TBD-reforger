@@ -4,6 +4,9 @@
 //! Invariants: a tool here holds phase and geometry — armed, active, committed — and never a
 //! pointer event, a reactive signal, or an element handle. Hosts inject transports and clocks.
 
+/// The ruler: a session-local polyline and what it measures.
+pub mod ruler;
+
 /// Selection: the left-button gesture model, picking, marquee and drag previews.
 pub mod selection;
 

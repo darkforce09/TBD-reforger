@@ -426,13 +426,13 @@ fn fmt_coord_eden(v: Option<f64>) -> String {
 pub fn ModeToolbar(
     /// The active editor tool (shared with the map pointer handlers). Reading it tints the active
     /// button; the buttons set it.
-    tool_mode: RwSignal<crate::editor::tools::ruler_tool::EditorTool>,
+    tool_mode: RwSignal<website_map_engine::editing::tools::ruler::EditorTool>,
     /// T-644 — the LoS sub-mode (Ray ⇆ Viewshed). Read here to reflect the active sub-mode in the LoS
     /// button's title/label and toggled by a re-click of the LoS button while LoS is already active;
     /// the map pointer commit reads the SAME signal to route a click. Shared with `mission_editor`.
     los_mode: RwSignal<LosMode>,
 ) -> impl IntoView {
-    use crate::editor::tools::ruler_tool::EditorTool;
+    use website_map_engine::editing::tools::ruler::EditorTool;
     // T-668 — the current mode wears TOGGLED_PLATE (plate + 1px dark top border); a live-but-not-
     // current mode wears HOVER_FILL. Same one state language as every other toggle in the chrome, so
     // the active tool reads the same as an open menu or a selected tree row — and can never be
@@ -936,7 +936,7 @@ pub fn BottomToolbelt(
     // the live mount in `mission_editor` shares the real signal with the pointer handlers. A caller
     // reaching for this compat symbol gets a self-contained, if inert, toggle. `ruler_status` is
     // optional on `StatusBar`, so the shim omits it (no ruler wiring on the compat path).
-    let tool_mode = RwSignal::new(crate::editor::tools::ruler_tool::EditorTool::Select);
+    let tool_mode = RwSignal::new(website_map_engine::editing::tools::ruler::EditorTool::Select);
     // T-644 — the shim owns a local `los_mode` (default Ray) purely so `ModeToolbar` compiles on the
     // compat path; the live mount in `mission_editor` shares the real signal with the pointer commit.
     let los_mode = RwSignal::new(LosMode::default());

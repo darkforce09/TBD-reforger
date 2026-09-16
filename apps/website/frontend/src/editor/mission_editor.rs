@@ -1031,7 +1031,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     // branch on it to choose the point-capture gesture (Ruler AND LoS share `LG::Ruler`) vs the
     // Select machine, and the commit site routes a captured click by `is_ruler()`/`is_los()`. Default
     // Select.
-    let tool_mode = RwSignal::new(crate::editor::tools::ruler_tool::EditorTool::Select);
+    let tool_mode = RwSignal::new(website_map_engine::editing::tools::ruler::EditorTool::Select);
     // T-644 — the LoS SUB-MODE (Ray ⇆ Viewshed). The `ModeToolbar` LoS button reads it (to reflect
     // the active sub-mode in its title/label) and toggles it on a re-click while LoS is already
     // active; the wasm pointer commit reads `get_untracked()` to route a captured LoS click to the
@@ -1521,8 +1521,8 @@ pub fn MissionEditorPage() -> impl IntoView {
             // both the pointer handlers (which mutate it) and the `RulerOverlay`'s `read_chain`
             // closure (which clones it to project) share one source of truth without touching
             // reactive-owner state a route change could dispose.
-            let ruler: Rc<RefCell<crate::editor::tools::ruler_tool::RulerChain>> = Rc::new(
-                RefCell::new(crate::editor::tools::ruler_tool::RulerChain::new()),
+            let ruler: Rc<RefCell<website_map_engine::editing::tools::ruler::RulerChain>> = Rc::new(
+                RefCell::new(website_map_engine::editing::tools::ruler::RulerChain::new()),
             );
             // Push the chain's current summary onto the reactive surface (status bar + repaint tick).
             // One helper so every mutation site (click / Esc / dbl-click / tool-switch clear) updates
