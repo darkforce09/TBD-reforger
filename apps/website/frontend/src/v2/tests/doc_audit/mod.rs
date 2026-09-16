@@ -164,7 +164,150 @@ fn is_word(c: char) -> bool {
     c.is_alphanumeric() || c == '_'
 }
 
+/// What a masking pass replaces with spaces.
+#[derive(Clone, Copy)]
+enum Blanked {
+    /// Comments and literals both. The item, attribute and inline-module rules read this view, so
+    /// that Rust source quoted inside a fixture string, or shown inside a block comment, is never
+    /// mistaken for a declaration.
+    CommentsAndLiterals,
+    /// Literals only, with comments left as written. The doc-comment and ticket/wave rules read
+    /// this view, because both ask a question about comment text and neither may be answered by
+    /// text that merely sits inside a string.
+    LiteralsOnly,
+}
+
+/// A same-length copy of `text` with the spans `blanked` names replaced by spaces.
+///
+/// Newlines survive the blanking, so the copy holds the same lines, in the same order, at the same
+/// numbers as the original: a rule is applied to a line of the copy and reported against the line
+/// of the file on disk. Block comments nest, as rustc allows.
+fn masked(text: &str, blanked: Blanked) -> String {
+    /// A space for every character but a newline, which is kept so line numbers survive.
+    fn blank(c: char) -> char {
+        if c == '\n' {
+            c
+        } else {
+            ' '
+        }
+    }
+    let keep_comments = matches!(blanked, Blanked::LiteralsOnly);
+    let chars: Vec<char> = text.chars().collect();
+    let mut out = String::with_capacity(text.len());
+    let mut i = 0usize;
+    while i < chars.len() {
+        // `// …`, to the end of the line.
+        if chars[i] == '/' && chars.get(i + 1) == Some(&'/') {
+            while i < chars.len() && chars[i] != '\n' {
+                out.push(if keep_comments {
+                    chars[i]
+                } else {
+                    blank(chars[i])
+                });
+                i += 1;
+            }
+            continue;
+        }
+        // `/* … */`, counting nested pairs.
+        if chars[i] == '/' && chars.get(i + 1) == Some(&'*') {
+            let mut depth = 0usize;
+            while i < chars.len() {
+                let opens = chars[i] == '/' && chars.get(i + 1) == Some(&'*');
+                let closes = chars[i] == '*' && chars.get(i + 1) == Some(&'/');
+                if opens {
+                    depth += 1;
+                } else if closes {
+                    depth -= 1;
+                }
+                let width = if opens || closes { 2 } else { 1 };
+                for c in &chars[i..(i + width).min(chars.len())] {
+                    out.push(if keep_comments { *c } else { blank(*c) });
+                }
+                i += width;
+                if closes && depth == 0 {
+                    break;
+                }
+            }
+            continue;
+        }
+        if let Some(end) = literal_span(&chars, i) {
+            for c in &chars[i..end] {
+                out.push(blank(*c));
+            }
+            i = end;
+            continue;
+        }
+        out.push(chars[i]);
+        i += 1;
+    }
+    assert_eq!(
+        out.chars().count(),
+        chars.len(),
+        "the audit's mask lost alignment with the source, so no finding it produces can be \
+         trusted to name the right line"
+    );
+    out
+}
+
+/// End index (exclusive) of the string or character literal that starts at `i`, if one starts
+/// there.
+///
+/// Raw literals of any hash count, `\` escapes and literals spanning several lines are all
+/// handled. A lifetime (`'a`) is deliberately not a literal: it has no closing quote, and blanking
+/// from one would swallow the code after it. An unterminated literal runs to the end of the text.
+fn literal_span(chars: &[char], i: usize) -> Option<usize> {
+    // `r"…"` / `r#"…"#` / `r##"…"##`
+    if chars[i] == 'r' && (i == 0 || !is_word(chars[i - 1])) {
+        let mut j = i + 1;
+        let mut hashes = 0usize;
+        while chars.get(j) == Some(&'#') {
+            hashes += 1;
+            j += 1;
+        }
+        if chars.get(j) == Some(&'"') {
+            let mut k = j + 1;
+            while k < chars.len() {
+                if chars[k] == '"' && (1..=hashes).all(|h| chars.get(k + h) == Some(&'#')) {
+                    return Some((k + hashes + 1).min(chars.len()));
+                }
+                k += 1;
+            }
+            return Some(chars.len());
+        }
+    }
+    if chars[i] == '"' {
+        return Some(past_closing_quote(chars, i + 1, '"'));
+    }
+    // `'c'` and `'\n'`, but not the lifetime `'a`, which carries no closing quote.
+    if chars[i] == '\'' && (chars.get(i + 1) == Some(&'\\') || chars.get(i + 2) == Some(&'\'')) {
+        return Some(past_closing_quote(chars, i + 1, '\''));
+    }
+    None
+}
+
+/// Index just past the first unescaped `quote` at or after `from`, or the end of `chars`.
+fn past_closing_quote(chars: &[char], from: usize, quote: char) -> usize {
+    let mut k = from;
+    while k < chars.len() {
+        if chars[k] == '\\' {
+            k += 2;
+            continue;
+        }
+        if chars[k] == quote {
+            return (k + 1).min(chars.len());
+        }
+        k += 1;
+    }
+    chars.len()
+}
+
 /// Every audit finding for the file at `rel`, whose source is `text`.
+///
+/// Each rule reads the view of the source that answers its question. The header and size rules
+/// read the file as written; the item, attribute and inline-module rules read it with comments and
+/// literals blanked, so that quoted Rust source is not audited as if it were code; the doc-comment
+/// and ticket/wave rules read it with only literals blanked, so a real comment still answers them
+/// and a quoted one never does.
 ///
 /// `exempt` is true when a live grandfather row covers the file. It suppresses the size rule,
 /// the inline-test-module rule and the ticket/wave rule. The `//!` header rule and the
@@ -172,6 +315,15 @@ fn is_word(c: char) -> bool {
 fn findings(rel: &str, text: &str, exempt: bool) -> Vec<String> {
     let mut bad: Vec<String> = Vec::new();
     let lines: Vec<&str> = text.lines().collect();
+    let code_text = masked(text, Blanked::CommentsAndLiterals);
+    let unquoted_text = masked(text, Blanked::LiteralsOnly);
+    let code: Vec<&str> = code_text.lines().collect();
+    let unquoted: Vec<&str> = unquoted_text.lines().collect();
+    assert_eq!(
+        (code.len(), unquoted.len()),
+        (lines.len(), lines.len()),
+        "{rel}: the masked views hold a different number of lines from the source"
+    );
 
     match lines.iter().find(|l| !l.trim().is_empty()) {
         Some(first) if first.trim_start().starts_with("//!") => {}
@@ -184,24 +336,24 @@ fn findings(rel: &str, text: &str, exempt: bool) -> Vec<String> {
             lines.len()
         ));
     }
-    for (i, line) in lines.iter().enumerate() {
+    for (i, line) in code.iter().enumerate() {
         if needs_doc(line) {
             let mut k = i;
-            while k > 0 && is_attribute(lines[k - 1]) {
+            while k > 0 && is_attribute(code[k - 1]) {
                 k -= 1;
             }
-            if k == 0 || !is_doc(lines[k - 1]) {
+            if k == 0 || !is_doc(unquoted[k - 1]) {
                 bad.push(format!("{rel}:{}: item is undocumented", i + 1));
             }
         }
         if !exempt && line.trim_start().starts_with("#[cfg(test)]") {
-            if let Some(next) = lines[i + 1..].iter().find(|l| !l.trim().is_empty()) {
+            if let Some(next) = code[i + 1..].iter().find(|l| !l.trim().is_empty()) {
                 if is_inline_mod(next) {
                     bad.push(format!("{rel}:{}: inline test module", i + 1));
                 }
             }
         }
-        if !exempt && names_ticket_or_wave(line) {
+        if !exempt && names_ticket_or_wave(unquoted[i]) {
             bad.push(format!("{rel}:{}: comment names a ticket or wave", i + 1));
         }
     }
@@ -471,4 +623,176 @@ fn the_clock_reads_a_ten_character_civil_date() {
     let today = today_ymd();
     assert_eq!(today.len(), 10, "{today}");
     assert!(expires_ok(&today, &today), "{today}");
+}
+
+/* ── the rules read code, not the Rust source quoted inside literals and comments ── */
+
+/// Fixture whose only `pub fn` declarations sit inside string literals, one of each shape this
+/// tree writes: a plain literal, a raw literal with hashes, and a literal spanning lines.
+fn text_whose_only_items_are_quoted() -> &'static str {
+    r##"//! Fixture header.
+const PLAIN: &str = "pub fn mount_plain() {}";
+const RAW: &str = r#"pub fn mount_raw() {}"#;
+const SPANNING: &str = "
+pub fn mount_spanning() {}
+";
+"##
+}
+
+/// Fixture that quotes an inline test module inside a raw literal, the way a source-inspection
+/// pin holds the shape it is testing for.
+fn text_quoting_an_inline_test_module() -> &'static str {
+    r##"//! Fixture header.
+const FIXTURE: &str = r#"
+#[cfg(test)]
+mod tests {}
+"#;
+"##
+}
+
+#[test]
+fn a_public_item_inside_a_literal_is_not_an_undocumented_item() {
+    let bad = audit_one(
+        FIXTURE_PATH,
+        text_whose_only_items_are_quoted(),
+        &[],
+        FIXTURE_TODAY,
+    );
+    assert!(bad.is_empty(), "{bad:#?}");
+}
+
+#[test]
+fn a_public_item_in_real_code_is_still_an_undocumented_item() {
+    let bad = audit_one(
+        FIXTURE_PATH,
+        "//! Fixture header.\npub fn mount_workspace() {}\n",
+        &[],
+        FIXTURE_TODAY,
+    );
+    assert_eq!(bad.len(), 1, "{bad:#?}");
+    assert!(bad[0].contains(":2: item is undocumented"), "{bad:#?}");
+}
+
+#[test]
+fn an_inline_test_module_counts_in_code_and_never_inside_a_literal() {
+    let quoted = audit_one(
+        FIXTURE_PATH,
+        text_quoting_an_inline_test_module(),
+        &[],
+        FIXTURE_TODAY,
+    );
+    assert!(quoted.is_empty(), "{quoted:#?}");
+
+    let live = audit_one(
+        FIXTURE_PATH,
+        "//! Fixture header.\n#[cfg(test)]\nmod tests {}\n",
+        &[],
+        FIXTURE_TODAY,
+    );
+    assert_eq!(live.len(), 1, "{live:#?}");
+    assert!(live[0].contains(":2: inline test module"), "{live:#?}");
+}
+
+#[test]
+fn a_ticket_name_counts_in_a_comment_and_never_inside_a_literal() {
+    let commented = audit_one(
+        FIXTURE_PATH,
+        "//! Fixture header.\n// Behaviour pinned by t-123.\n",
+        &[],
+        FIXTURE_TODAY,
+    );
+    assert_eq!(commented.len(), 1, "{commented:#?}");
+    assert!(
+        commented[0].contains(":2: comment names a ticket or wave"),
+        "{commented:#?}"
+    );
+
+    let quoted = audit_one(
+        FIXTURE_PATH,
+        "//! Fixture header.\nconst NOTE: &str = \"// Behaviour pinned by t-123.\";\n",
+        &[],
+        FIXTURE_TODAY,
+    );
+    assert!(quoted.is_empty(), "{quoted:#?}");
+}
+
+#[test]
+fn an_escaped_quote_does_not_desynchronise_the_mask() {
+    let bad = audit_one(
+        FIXTURE_PATH,
+        "//! Fixture header.\n\
+         const ESCAPED: &str = \"quoting \\\"pub fn ghost() {}\\\" mid-literal\";\n\
+         pub fn mount_workspace() {}\n",
+        &[],
+        FIXTURE_TODAY,
+    );
+    assert_eq!(bad.len(), 1, "{bad:#?}");
+    assert!(bad[0].contains(":3: item is undocumented"), "{bad:#?}");
+}
+
+#[test]
+fn a_block_comment_hides_its_contents_and_closes_where_it_ends() {
+    let flat = audit_one(
+        FIXTURE_PATH,
+        "//! Fixture header.\n\
+         /* pub fn commented_out() {}\n\
+         pub fn also_commented_out() {}\n\
+         */\n\
+         pub fn mount_workspace() {}\n",
+        &[],
+        FIXTURE_TODAY,
+    );
+    assert_eq!(flat.len(), 1, "{flat:#?}");
+    assert!(flat[0].contains(":5: item is undocumented"), "{flat:#?}");
+
+    let nested = audit_one(
+        FIXTURE_PATH,
+        "//! Fixture header.\n\
+         /* outer /* inner */ still inside the outer comment\n\
+         pub fn still_commented_out() {}\n\
+         */\n\
+         pub fn mount_workspace() {}\n",
+        &[],
+        FIXTURE_TODAY,
+    );
+    assert_eq!(nested.len(), 1, "{nested:#?}");
+    assert!(
+        nested[0].contains(":5: item is undocumented"),
+        "{nested:#?}"
+    );
+}
+
+#[test]
+fn a_character_literal_is_masked_and_a_lifetime_is_not() {
+    let quote_char = audit_one(
+        FIXTURE_PATH,
+        "//! Fixture header.\n\
+         /// Documented.\n\
+         pub fn opening_quote() -> char {\n\
+         '\"'\n\
+         }\n\
+         pub fn mount_workspace() {}\n",
+        &[],
+        FIXTURE_TODAY,
+    );
+    assert_eq!(quote_char.len(), 1, "{quote_char:#?}");
+    assert!(
+        quote_char[0].contains(":6: item is undocumented"),
+        "{quote_char:#?}"
+    );
+
+    let lifetime = audit_one(
+        FIXTURE_PATH,
+        "//! Fixture header.\n\
+         /// Documented.\n\
+         pub struct Borrowed<'a>(&'a str);\n\
+         pub fn mount_workspace() {}\n",
+        &[],
+        FIXTURE_TODAY,
+    );
+    assert_eq!(lifetime.len(), 1, "{lifetime:#?}");
+    assert!(
+        lifetime[0].contains(":4: item is undocumented"),
+        "{lifetime:#?}"
+    );
 }
