@@ -5,8 +5,6 @@
 
 use crate::renderers::text::font::FONT_16X32;
 
-use crate::renderers::text::packing::declutter_specs_by_width;
-
 use super::*;
 
 #[test]
@@ -32,38 +30,10 @@ fn pack_three_digits() {
     assert!((g[2].x - g[1].x - advance).abs() < 1e-4);
 }
 
-#[test]
-fn width_declutter_drops_overlapping_long_names() {
-    let a = LabelSpec {
-        id: 0,
-        x: 0,
-        y: 0,
-        importance: 332,
-        text: "Mountains West Ridge 02 - 332 m".into(),
-    };
-    let b = LabelSpec {
-        id: 1,
-        x: 100,
-        y: 0,
-        importance: 130,
-        text: "Mountains West Ridge 01 - 130 m".into(),
-    };
-    let kept = declutter_specs_by_width(&[a.clone(), b.clone()], 10.0);
-    assert_eq!(kept.len(), 1, "overlapping long names collapse to one");
-    assert_eq!(
-        kept[0].text, a.text,
-        "higher-priority (first) label survives"
-    );
-
-    let far = LabelSpec {
-        x: 2000,
-        ..b.clone()
-    };
-    assert_eq!(declutter_specs_by_width(&[a.clone(), far], 10.0).len(), 2);
-
-    let below = LabelSpec { y: 500, ..b };
-    assert_eq!(declutter_specs_by_width(&[a, below], 10.0).len(), 2);
-}
+// T-0xx Phase 1D: `width_declutter_drops_overlapping_long_names` moved to
+// `website-graphics-engine` with `declutter_specs_by_width` — a width overlap between two
+// boxes is geometry, and the `LabelSpec` importance column it was written against plays no
+// part in it. See `graphics-engine/src/text/tests/layout_tests.rs`.
 
 #[test]
 fn atlas_size() {

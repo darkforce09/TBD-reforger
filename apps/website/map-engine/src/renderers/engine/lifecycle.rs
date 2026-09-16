@@ -14,8 +14,11 @@ use crate::renderers::batching::scene::ANCHOR;
 use crate::symbology::instances::symbols::SLOT_ICON_STRIDE;
 use wasm_bindgen::prelude::*;
 
-/// Canonical text uniform bytes value.
-pub(crate) const TEXT_UNIFORM_BYTES: u64 = 16;
+/// Re-export `website_graphics_engine::text::gpu::TEXT_UNIFORM_BYTES`.
+// T-0xx Phase 1D: the size of the text atlas's uniform block is the renderer's, and it moved
+// with the block. Re-exported here so the bind-group layout in `core/context/device_2.rs`
+// keeps its spelling.
+pub(crate) use website_graphics_engine::text::gpu::TEXT_UNIFORM_BYTES;
 
 #[wasm_bindgen]
 impl RenderEngine {

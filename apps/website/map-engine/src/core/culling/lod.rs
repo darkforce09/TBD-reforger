@@ -4,7 +4,10 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 /// Glyph size anchor: displayPx = baseSizePx * 2^(deckZoom − REF_ZOOM).
-pub const REF_ZOOM: f64 = 3.0;
+// T-0xx Phase 1D: moved alone to `website-graphics-engine` (`text::scale`) and re-exported
+// here. Every other constant in this file switches on a world class name and stays; this one
+// is the anchor the renderer's own glyph sizing is measured against, so it had to cross.
+pub use website_graphics_engine::text::scale::REF_ZOOM;
 
 /// deckZoom ≥ 0 → individual tree glyphs (below: hidden; forest mass only).
 pub const TREE_GLYPH_MIN_ZOOM: f64 = 0.0;

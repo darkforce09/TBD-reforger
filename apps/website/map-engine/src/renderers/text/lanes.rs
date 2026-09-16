@@ -7,37 +7,16 @@ use crate::core::context::state::RenderEngine;
 use crate::core::pipeline::draw_order::LaneRole;
 use crate::renderers::batching::batch::Batch;
 use crate::renderers::batching::batch::BatchPayload;
-use crate::renderers::engine::lifecycle::TEXT_UNIFORM_BYTES;
 use wasm_bindgen::prelude::*;
 
-/// Text uniform bytes.
-pub(crate) fn text_uniform_bytes() -> [u8; TEXT_UNIFORM_BYTES as usize] {
-    let mut u_bytes = [0u8; TEXT_UNIFORM_BYTES as usize];
-    u_bytes[0..4].copy_from_slice(&1.0_f32.to_le_bytes());
-    #[allow(clippy::cast_precision_loss)]
-    let (cols, rows) = (
-        crate::renderers::text::atlas::TEXT_ATLAS_COLS as f32,
-        crate::renderers::text::atlas::TEXT_ATLAS_ROWS as f32,
-    );
-    u_bytes[4..8].copy_from_slice(&cols.to_le_bytes());
-    u_bytes[8..12].copy_from_slice(&rows.to_le_bytes());
-    u_bytes
-}
+/// Re-export `website_graphics_engine::text::gpu::text_uniform_bytes`.
+// T-0xx Phase 1D: the atlas texture/uniform/bind-group build moved to
+// `website-graphics-engine` (`text::gpu`). The `impl RenderEngine` blocks below stay — they
+// are `#[wasm_bindgen]` exports on a type this crate defines, and E0116 is symmetric.
+pub(crate) use website_graphics_engine::text::gpu::text_uniform_bytes;
 
-/// Text atlas gpu.
-pub(crate) struct TextAtlasGpu {
-    /// Texture.
-    pub(crate) texture: wgpu::Texture,
-
-    /// Uniform buf.
-    pub(crate) uniform_buf: wgpu::Buffer,
-
-    /// Bind group.
-    pub(crate) bind_group: wgpu::BindGroup,
-
-    /// Bytes.
-    pub(crate) bytes: u64,
-}
+/// Re-export `website_graphics_engine::text::gpu::TextAtlasGpu`.
+pub(crate) use website_graphics_engine::text::gpu::TextAtlasGpu;
 
 #[wasm_bindgen]
 impl RenderEngine {
@@ -60,79 +39,21 @@ impl RenderEngine {
         width: u32,
         height: u32,
     ) -> Result<(), JsError> {
-        let expected = (width as usize)
-            .checked_mul(height as usize)
-            .and_then(|n| n.checked_mul(4))
-            .unwrap_or(0);
-        if rgba.len() != expected {
-            return Err(JsError::new("text-atlas-rgba-size"));
-        }
-        use wgpu::util::DeviceExt;
-        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("text-atlas"),
-            size: wgpu::Extent3d {
-                width,
-                height,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8Unorm,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        });
-        self.queue.write_texture(
-            texture.as_image_copy(),
+        let atlas = website_graphics_engine::text::gpu::create_text_atlas(
+            &self.device,
+            &self.queue,
+            &self.text_bind_group_layout,
+            &self.icon_sampler,
             rgba,
-            wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(width * 4),
-                rows_per_image: Some(height),
-            },
-            wgpu::Extent3d {
-                width,
-                height,
-                depth_or_array_layers: 1,
-            },
-        );
-        let u_bytes = text_uniform_bytes();
-        let uniform_buf = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("text-uniforms"),
-                contents: &u_bytes,
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            });
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("text-atlas"),
-            layout: &self.text_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&self.icon_sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: uniform_buf.as_entire_binding(),
-                },
-            ],
-        });
+            width,
+            height,
+        )
+        .map_err(|e| JsError::new(&e))?;
         if let Some(old) = self.text_atlas.take() {
             old.texture.destroy();
             old.uniform_buf.destroy();
         }
-        self.text_atlas = Some(TextAtlasGpu {
-            texture,
-            uniform_buf,
-            bind_group,
-            bytes: expected as u64,
-        });
+        self.text_atlas = Some(atlas);
         Ok(())
     }
 }

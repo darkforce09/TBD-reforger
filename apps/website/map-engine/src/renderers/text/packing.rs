@@ -17,6 +17,34 @@ use crate::symbology::labels::glyph_math::pack_rgba_u32;
 use crate::symbology::labels::importance::LocationLabel;
 use crate::symbology::labels::importance::declutter_town_labels;
 use crate::symbology::labels::importance::town_label_fade_alpha;
+use website_graphics_engine::text::layout::GlyphSpec;
+
+/// Re-export `website_graphics_engine::text::layout::pack_text_icon_bytes`.
+// T-0xx Phase 1D: the three subject-free halves of this module — laying characters out along a
+// row, dropping width-overlapping boxes, and packing 20 B instances — moved to
+// `website-graphics-engine`. Re-exported at their former path; everything below stays because
+// it names a peak, a town, a road or a declutter importance.
+pub use website_graphics_engine::text::layout::pack_text_icon_bytes;
+
+/// Re-export `website_graphics_engine::text::layout::pack_text_icon_bytes_tint`.
+pub use website_graphics_engine::text::layout::pack_text_icon_bytes_tint;
+
+/// A decluttered label, as the renderer wants it: an anchor, characters and a cell size.
+///
+/// The importance column is dropped on purpose — it decided which labels reach here, and the
+/// renderer must not be able to consult it afterwards.
+fn to_glyph_specs(specs: &[LabelSpec], char_m: f32) -> Vec<GlyphSpec> {
+    specs
+        .iter()
+        .map(|s| GlyphSpec {
+            id: s.id,
+            x: s.x,
+            y: s.y,
+            text: s.text.clone(),
+            size_m: char_m,
+        })
+        .collect()
+}
 
 /// Pack decluttered labels into monospaced glyph instances.
 #[must_use]
@@ -39,29 +67,15 @@ pub fn pack_height_label_glyphs(
     let drawn = declutter_height_labels(labels, deck_zoom);
     let specs: Vec<LabelSpec> =
         crate::environment::locations::peaks::height_labels_to_specs(&drawn);
-    let kept = declutter_specs_by_width(&specs, char_m);
-    glyphs_from_specs(&kept, char_m, pack_rgba_u32([220, 220, 215, 230]))
-}
-
-/// Declutter specs by width.
-pub(crate) fn declutter_specs_by_width(specs: &[LabelSpec], char_m: f32) -> Vec<LabelSpec> {
-    let advance = char_m * TEXT_GLYPH_ADVANCE_RATIO;
-    let half_h = char_m;
-    let mut kept: Vec<(f32, f32, f32)> = Vec::new();
-    let mut out = Vec::new();
-    for s in specs {
-        let half_w = s.text.chars().count() as f32 * advance * 0.5;
-        let sx = s.x as f32;
-        let sy = s.y as f32;
-        let overlaps = kept.iter().any(|&(kx, ky, kw)| {
-            (sx - kx).abs() < half_w + kw + advance && (sy - ky).abs() < half_h
-        });
-        if !overlaps {
-            kept.push((sx, sy, half_w));
-            out.push(s.clone());
-        }
-    }
-    out
+    let kept = website_graphics_engine::text::layout::declutter_specs_by_width(
+        &to_glyph_specs(&specs, char_m),
+        char_m,
+    );
+    website_graphics_engine::text::layout::glyphs_from_specs(
+        &kept,
+        char_m,
+        pack_rgba_u32([220, 220, 215, 230]),
+    )
 }
 
 /// Pack town label glyphs.
@@ -103,29 +117,19 @@ pub fn pack_road_label_bytes(placements: &[RoadLabelPlacement], deck_zoom: f64) 
 }
 
 /// Glyphs from specs.
+///
+/// The `LabelSpec` adapter over the renderer's `glyphs_from_specs`: the caller keeps the
+/// importance column, the renderer never sees it.
 pub(crate) fn glyphs_from_specs(
     specs: &[LabelSpec],
     char_m: f32,
-    _tint: u32,
+    tint: u32,
 ) -> Vec<TextGlyphInstance> {
-    let mut out = Vec::new();
-    let half = char_m * 0.5;
-    let advance = char_m * TEXT_GLYPH_ADVANCE_RATIO;
-    for lab in specs {
-        let chars: Vec<char> = lab.text.chars().collect();
-        let n = chars.len() as f32;
-        let y = lab.y as f32;
-        for (i, ch) in chars.into_iter().enumerate() {
-            let glyph = glyph_index_for_char(ch);
-            out.push(TextGlyphInstance {
-                x: lab.x as f32 + ((i as f32) - (n - 1.0) * 0.5) * advance,
-                y,
-                half_m: half,
-                glyph,
-            });
-        }
-    }
-    out
+    website_graphics_engine::text::layout::glyphs_from_specs(
+        &to_glyph_specs(specs, char_m),
+        char_m,
+        tint,
+    )
 }
 
 /// Pack town label bytes.
@@ -137,27 +141,4 @@ pub fn pack_town_label_bytes(locations: &[LocationLabel], deck_zoom: f64) -> Vec
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let alpha = (BASE_ALPHA * town_label_fade_alpha(deck_zoom)).round() as u8;
     pack_text_icon_bytes_tint(&glyphs, deck_zoom, pack_rgba_u32([232, 228, 220, alpha]))
-}
-
-/// Pack glyph instances into 20 B icon instances for the text atlas lane (WORLD coords).
-#[must_use]
-pub fn pack_text_icon_bytes(glyphs: &[TextGlyphInstance], deck_zoom: f64) -> Vec<u8> {
-    pack_text_icon_bytes_tint(glyphs, deck_zoom, pack_rgba_u32([220, 220, 215, 230]))
-}
-
-/// Height labels use the default tint; town labels pass cartographic `#e8e4dc` @ α0.92.
-#[must_use]
-pub fn pack_text_icon_bytes_tint(
-    glyphs: &[TextGlyphInstance],
-    deck_zoom: f64,
-    tint: u32,
-) -> Vec<u8> {
-    let char_m = text_char_meters(deck_zoom);
-    let mut out = Vec::with_capacity(glyphs.len() * 20);
-    for g in glyphs {
-        let size = g.half_m * 2.0;
-        pack_icon_instance(&mut out, g.x, g.y, size, 0.0, g.glyph, tint);
-    }
-    let _ = char_m;
-    out
 }
