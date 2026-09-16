@@ -109,7 +109,7 @@ impl RenderEngine {
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("quad-instanced"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("../../shaders/shader.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(website_graphics_engine::shaders::SHADER_WGSL.into()),
         });
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("camera-uniform"),

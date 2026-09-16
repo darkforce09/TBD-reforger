@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::renderers::primitives::triangulate::*;
+use crate::draw::triangulate::*;
 
 fn assert_area_conserved(expected: f64, mesh: &TriMesh) {
     let ta = triangle_area_sum(mesh);

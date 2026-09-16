@@ -491,23 +491,23 @@ fn the_caption_reports_bytes_for_bytes_and_files_for_files() {
 fn the_satellite_fetch_is_bounded_concurrent_ordered_and_fails_fast() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let src = live_code(concat!(
-        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/mod.rs"),
+        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/mod.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/selection.rs"),
+        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/selection.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/preview.rs"),
+        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/preview.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/decode.rs"),
+        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/decode.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/retry.rs"),
+        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/retry.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/downloads.rs"),
+        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/downloads.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/upload.rs"),
+        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/upload.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/bootstrap.rs"),
+        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/bootstrap.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/terrain/satellite/quadtree/basemap.rs")
+        include_str!("../../../../map-engine/src/terrain/satellite/quadtree/basemap.rs")
     ));
     let body = only_body(&src, "async fn fetch_tiles(");
 
@@ -598,19 +598,19 @@ fn the_overlay_draws_one_measured_bar_and_no_sweep_anywhere() {
 fn the_terrain_dem_is_streamed_against_its_content_length() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let src = live_code(concat!(
-        include_str!("../../../../graphics-engine/src/streaming/host/mod.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/mod.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/queries.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/queries.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/state.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/state.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/preferences.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/preferences.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/viewport.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/viewport.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/bootstrap.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/bootstrap.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/terrain.rs")
+        include_str!("../../../../map-engine/src/streaming/host/terrain.rs")
     ));
     let body = only_body(&src, "async fn load_dem_and_hillshade(");
     assert!(
@@ -624,7 +624,7 @@ fn the_terrain_dem_is_streamed_against_its_content_length() {
     );
 
     let fetch = live_code(include_str!(
-        "../../../../graphics-engine/src/streaming/loaders/fetch.rs"
+        "../../../../map-engine/src/streaming/loaders/fetch.rs"
     ));
     let streamed = only_body(&fetch, "pub async fn fetch_bytes_streamed(");
     // `live_code` blanks string literals, so the header NAME cannot be the needle — the shape
@@ -658,23 +658,23 @@ fn the_terrain_dem_is_streamed_against_its_content_length() {
 fn every_world_batch_declares_its_files_before_it_fetches_them() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let world = live_code(concat!(
-        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/mod.rs"),
+        include_str!("../../../../map-engine/src/streaming/loaders/world_loader/mod.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/viewport.rs"),
+        include_str!("../../../../map-engine/src/streaming/loaders/world_loader/viewport.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/atlas.rs"),
+        include_str!("../../../../map-engine/src/streaming/loaders/world_loader/atlas.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/state.rs"),
+        include_str!("../../../../map-engine/src/streaming/loaders/world_loader/state.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/metrics.rs"),
+        include_str!("../../../../map-engine/src/streaming/loaders/world_loader/metrics.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/bootstrap.rs"),
+        include_str!("../../../../map-engine/src/streaming/loaders/world_loader/bootstrap.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/upload.rs"),
+        include_str!("../../../../map-engine/src/streaming/loaders/world_loader/upload.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/terrain.rs"),
+        include_str!("../../../../map-engine/src/streaming/loaders/world_loader/terrain.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/loaders/world_loader/ingest.rs")
+        include_str!("../../../../map-engine/src/streaming/loaders/world_loader/ingest.rs")
     ));
     let queue = only_body(&world, "async fn fetch_and_queue(");
     let declare = queue
@@ -694,19 +694,19 @@ fn every_world_batch_declares_its_files_before_it_fetches_them() {
     );
 
     let boot = live_code(concat!(
-        include_str!("../../../../graphics-engine/src/streaming/host/mod.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/mod.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/queries.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/queries.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/state.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/state.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/preferences.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/preferences.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/viewport.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/viewport.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/bootstrap.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/bootstrap.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/terrain.rs")
+        include_str!("../../../../map-engine/src/streaming/host/terrain.rs")
     ));
     let bootstrap = only_body(&boot, "pub async fn bootstrap(");
     let plan = bootstrap
@@ -725,7 +725,7 @@ fn every_world_batch_declares_its_files_before_it_fetches_them() {
     // The forest host may only count a bin it actually landed; counting attempts would let a
     // retried bin advance a unit that was already declared and spent.
     let forest = live_code(include_str!(
-        "../../../../graphics-engine/src/environment/vegetation/loader.rs"
+        "../../../../map-engine/src/environment/vegetation/loader.rs"
     ));
     let upload = only_body(&forest, "async fn boot_upload(");
     let done_at = upload
@@ -748,19 +748,19 @@ fn every_world_batch_declares_its_files_before_it_fetches_them() {
 fn every_segment_is_closed_and_the_overlay_waits_for_a_full_bar() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let boot = live_code(concat!(
-        include_str!("../../../../graphics-engine/src/streaming/host/mod.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/mod.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/queries.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/queries.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/state.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/state.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/preferences.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/preferences.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/viewport.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/viewport.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/bootstrap.rs"),
+        include_str!("../../../../map-engine/src/streaming/host/bootstrap.rs"),
         "\n",
-        include_str!("../../../../graphics-engine/src/streaming/host/terrain.rs")
+        include_str!("../../../../map-engine/src/streaming/host/terrain.rs")
     ));
     let bootstrap = only_body(&boot, "pub async fn bootstrap(");
     for seg in ["BootSeg::Terrain", "BootSeg::Satellite", "BootSeg::World"] {

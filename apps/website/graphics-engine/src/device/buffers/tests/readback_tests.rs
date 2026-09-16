@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::buffers::readback::ReadbackLane;
+use crate::device::buffers::readback::ReadbackLane;
 
 #[test]
 fn a_second_claim_while_one_is_outstanding_is_refused() {

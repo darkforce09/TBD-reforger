@@ -4,15 +4,17 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 /// Compute.
+// T-0xx Phase 1C: moved to `website-graphics-engine`. Re-exported at its former path so
+// every call site in this crate keeps its spelling — the move is a relocation, not a rename.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
-pub mod compute;
+pub use website_graphics_engine::draw::cull::compute;
 
 /// Lod.
 #[cfg(feature = "streaming")]
 pub mod lod;
 
 /// Oracle.
-pub mod oracle;
+pub use website_graphics_engine::draw::cull::oracle;
 
 /// Engine.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]

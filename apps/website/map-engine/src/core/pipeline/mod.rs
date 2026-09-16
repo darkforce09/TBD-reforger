@@ -4,7 +4,9 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 /// Damage.
-pub mod damage;
+// T-0xx Phase 1C: moved to `website-graphics-engine`. Re-exported at its former path so
+// every call site in this crate keeps its spelling — the move is a relocation, not a rename.
+pub use website_graphics_engine::frame::damage;
 
 /// Draw order.
 pub mod draw_order;

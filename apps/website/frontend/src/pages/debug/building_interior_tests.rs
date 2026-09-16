@@ -176,7 +176,7 @@ fn strip_centroid(packed: &[f32]) -> [f32; 2] {
 /// The native `role_id` mirror above must equal the render crate's table, value for value.
 #[test]
 fn lane_ids_match_the_render_crate() {
-    const SRC: &str = include_str!("../../../../graphics-engine/src/core/pipeline/roles.rs");
+    const SRC: &str = include_str!("../../../../map-engine/src/core/pipeline/roles.rs");
     for (name, value) in [
         ("LANDCOVER", role_id::LANDCOVER),
         ("CONTOURS", role_id::CONTOURS),

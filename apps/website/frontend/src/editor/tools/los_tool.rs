@@ -1816,7 +1816,7 @@ mod tests {
     /// the viewshed alpha rationale to be re-derived against the new contour alpha.
     #[test]
     fn viewshed_rationale_cites_live_contour_rgba() {
-        let dem_vectors = include_str!("../../../../graphics-engine/src/terrain/relief/host.rs");
+        let dem_vectors = include_str!("../../../../map-engine/src/terrain/relief/host.rs");
         assert!(
             dem_vectors.contains("[188, 150, 100, 235]"),
             "T-644 rationale cites CONTOUR_RGBA = [188,150,100,235]; dem_vectors.rs must still define \

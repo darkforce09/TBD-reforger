@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::buffers::pool::*;
+use crate::device::buffers::pool::*;
 
 #[test]
 fn equal_size_uploads_allocate_once() {

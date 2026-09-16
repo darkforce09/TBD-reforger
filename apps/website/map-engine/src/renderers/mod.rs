@@ -11,7 +11,9 @@ pub mod batching;
 pub mod engine;
 
 /// Pipelines.
-pub mod pipelines;
+// T-0xx Phase 1C: moved to `website-graphics-engine`. Re-exported at its former path so
+// every call site in this crate keeps its spelling — the move is a relocation, not a rename.
+pub use website_graphics_engine::pipeline as pipelines;
 
 /// Primitives.
 pub mod primitives;

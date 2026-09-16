@@ -7,7 +7,7 @@ use super::*;
 
 use crate::symbology::labels::declutter::LabelSpec;
 
-const SHADER_SRC: &str = include_str!("../../../../shaders/shader.wgsl");
+const SHADER_SRC: &str = website_graphics_engine::shaders::SHADER_WGSL;
 
 fn text_uniforms_block() -> &'static str {
     let start = SHADER_SRC

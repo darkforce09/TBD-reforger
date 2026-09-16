@@ -1,5 +1,5 @@
 //! Role: packing.
-//! Position: `symbology/instances` in the graphics engine.
+//! Position: `text` in the graphics engine.
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
@@ -43,7 +43,7 @@ pub fn pack_icon_instance_yaw(
 }
 
 /// Wrap deg 180.
-pub(crate) fn wrap_deg_180(angle_deg: f64) -> f64 {
+pub fn wrap_deg_180(angle_deg: f64) -> f64 {
     let w = angle_deg % 360.0;
     if w > 180.0 {
         w - 360.0

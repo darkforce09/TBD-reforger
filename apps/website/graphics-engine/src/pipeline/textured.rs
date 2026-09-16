@@ -1,10 +1,10 @@
 //! Role: textured.
-//! Position: `renderers/pipelines` in the graphics engine.
+//! Position: `pipeline` in the graphics engine.
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 /// Create textured pipeline.
-pub(crate) fn create_textured_pipeline(
+pub fn create_textured_pipeline(
     device: &wgpu::Device,
     layout: &wgpu::PipelineLayout,
     shader: &wgpu::ShaderModule,
@@ -21,7 +21,7 @@ pub(crate) fn create_textured_pipeline(
 }
 
 /// Create forest density pipeline.
-pub(crate) fn create_forest_density_pipeline(
+pub fn create_forest_density_pipeline(
     device: &wgpu::Device,
     layout: &wgpu::PipelineLayout,
     shader: &wgpu::ShaderModule,
@@ -38,7 +38,7 @@ pub(crate) fn create_forest_density_pipeline(
 }
 
 /// Create textured pipeline with fs.
-pub(crate) fn create_textured_pipeline_with_fs(
+pub fn create_textured_pipeline_with_fs(
     device: &wgpu::Device,
     layout: &wgpu::PipelineLayout,
     shader: &wgpu::ShaderModule,

@@ -10,11 +10,9 @@ description = "Pure GPU renderer: device, pipelines, shaders, draw and text batc
 [lib]
 crate-type = ["rlib"]
 
-[features]
-default = []
-# Mirrors `website-map-engine`'s `render`: gates the wasm-only wgpu surface so a native
-# build compiles the geometry and packing halves with no GPU crate at all.
-render = []
+# No features. `wgpu` is already a `cfg(target_arch = "wasm32")` dependency, so the browser
+# half is gated by the target, not by a flag. A crate that is only a renderer has no use for
+# a `render` feature — the map engine keeps one to decide whether to depend on this crate at all.
 
 [dependencies]
 bytemuck = { version = "1", features = ["derive", "min_const_generics"] }

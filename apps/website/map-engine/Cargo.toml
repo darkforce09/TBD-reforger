@@ -19,6 +19,9 @@ streaming = ["formats", "dep:flate2"]
 bvh = []
 
 [dependencies]
+# The pure renderer this crate was carved out of (T-0xx Phase 1). The arrow points ONE way:
+# map-engine speaks graphics' frame vocabulary; graphics never learns a map noun.
+website-graphics-engine = { path = "../graphics-engine" }
 bytemuck = { version = "1", features = ["derive", "min_const_generics"] }
 earcutr = "0.5.0"
 png = { version = "0.17", optional = true }

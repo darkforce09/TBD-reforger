@@ -1,10 +1,10 @@
 //! Role: icon.
-//! Position: `renderers/pipelines` in the graphics engine.
+//! Position: `pipeline` in the graphics engine.
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 /// icon-instanced pipeline — unit quad + 20 B `IconInstance`, samples group-2 atlas.
-pub(crate) fn create_icon_pipeline(
+pub fn create_icon_pipeline(
     device: &wgpu::Device,
     layout: &wgpu::PipelineLayout,
     shader: &wgpu::ShaderModule,
@@ -78,7 +78,7 @@ pub(crate) fn create_icon_pipeline(
 }
 
 /// Icon pipeline for compute-culled VERTEX|STORAGE instances (32 B `IconStorage` stride).
-pub(crate) fn create_icon_pipeline_storage32(
+pub fn create_icon_pipeline_storage32(
     device: &wgpu::Device,
     layout: &wgpu::PipelineLayout,
     shader: &wgpu::ShaderModule,

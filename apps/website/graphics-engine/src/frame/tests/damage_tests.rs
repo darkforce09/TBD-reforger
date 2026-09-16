@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::pipeline::damage::*;
+use crate::frame::damage::*;
 
 #[test]
 fn class_r_clean_second_frame_skips() {

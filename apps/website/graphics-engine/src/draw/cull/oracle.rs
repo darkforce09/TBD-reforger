@@ -1,5 +1,5 @@
 //! Role: oracle.
-//! Position: `core/culling` in the graphics engine.
+//! Position: `draw/cull` in the graphics engine.
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 

@@ -38,18 +38,12 @@ const ENGINE: &str = concat!(
     "\n",
     include_str!("../../../../renderers/batching/batch.rs"),
     "\n",
-    include_str!("../../../../renderers/pipelines/quad.rs"),
-    "\n",
-    include_str!("../../../../renderers/pipelines/textured.rs"),
-    "\n",
-    include_str!("../../../../renderers/pipelines/vector.rs"),
-    "\n",
-    include_str!("../../../../renderers/pipelines/text.rs"),
-    "\n",
-    include_str!("../../../../renderers/pipelines/icon.rs"),
-    "\n",
-    include_str!("../../../../renderers/pipelines/building.rs"),
-    "\n",
+    // T-0xx Phase 1C: the six `renderers/pipelines/*.rs` members left for
+    // `website-graphics-engine`. They held free `create_*_pipeline` fns, never an
+    // `impl RenderEngine` body, so no `body(sig)` lookup below resolved into them —
+    // proven by running this suite with them removed. A cross-crate `include_str!`
+    // would have kept the bytes at the cost of making this crate's tests break on the
+    // renderer's internal layout, which is the coupling the split exists to remove.
     include_str!("../../../../renderers/batching/encoder.rs"),
     "\n",
     include_str!("../../../culling/engine.rs"),

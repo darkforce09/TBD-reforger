@@ -1,10 +1,10 @@
 //! Role: atlas.
-//! Position: `renderers/text` in the graphics engine.
+//! Position: `text` in the graphics engine.
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::renderers::text::font::FONT_16X32;
-use crate::renderers::text::font::FONT_GLYPH_W;
+use crate::text::font::FONT_16X32;
+use crate::text::font::FONT_GLYPH_W;
 
 /// Atlas grid columns (glyph index → cell: `col = glyph % COLS`).
 pub const TEXT_ATLAS_COLS: u32 = 16;
@@ -24,7 +24,7 @@ pub const TEXT_HALO_PX: u32 = 2;
 /// Glyph ink color (warm off-white; lanes modulate via instance tint).
 pub const TEXT_INK_RGBA: [u8; 4] = [240, 240, 230, 255];
 
-/// Halo color — near-black blue-grey so labels read over any terrain.
+/// Halo color — near-black blue-grey so glyphs stay legible over any background.
 pub const TEXT_HALO_RGBA: [u8; 4] = [16, 21, 29, 255];
 
 /// The atlas is authored y-down (`bake_ascii_atlas_rgba` paints cell row 0 at the texture top), while quad `unit.y = 1` is the world/screen **top** of the glyph. Correct sampling therefore flips V: `uv = mix((u0,v0), (u1,v1), (unit_x, 1 − unit_y))` — the same convention as `vs_textured` ("North-up: unit.y=1 → v=0 (texture top)").

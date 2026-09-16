@@ -1,11 +1,11 @@
 //! Role: compute.
-//! Position: `core/culling` in the graphics engine.
+//! Position: `draw/cull` in the graphics engine.
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::culling::oracle::ICON_STRIDE;
-use crate::core::culling::oracle::cpu_count_for_encode;
-use crate::core::culling::oracle::pack_icon_storage32;
+use crate::draw::cull::oracle::ICON_STRIDE;
+use crate::draw::cull::oracle::cpu_count_for_encode;
+use crate::draw::cull::oracle::pack_icon_storage32;
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;

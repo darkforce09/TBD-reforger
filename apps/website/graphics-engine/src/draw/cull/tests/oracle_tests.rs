@@ -3,7 +3,7 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::core::culling::oracle::*;
+use crate::draw::cull::oracle::*;
 
 fn pack_one(x: f32, y: f32, size: f32) -> [u8; 20] {
     let mut b = [0u8; 20];

@@ -1,10 +1,10 @@
 //! Role: vector.
-//! Position: `renderers/pipelines` in the graphics engine.
+//! Position: `pipeline` in the graphics engine.
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 /// Create line pipeline.
-pub(crate) fn create_line_pipeline(
+pub fn create_line_pipeline(
     device: &wgpu::Device,
     layout: &wgpu::PipelineLayout,
     shader: &wgpu::ShaderModule,
@@ -45,7 +45,7 @@ pub(crate) fn create_line_pipeline(
 }
 
 /// polygon-fill pipeline — same vertex layout as the hairline polyline (`LineVertex` 24 B) but drawn as an **indexed triangle list** with alpha blending (sea/landcover/forest/roads).
-pub(crate) fn create_polygon_pipeline(
+pub fn create_polygon_pipeline(
     device: &wgpu::Device,
     layout: &wgpu::PipelineLayout,
     shader: &wgpu::ShaderModule,

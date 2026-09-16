@@ -129,7 +129,7 @@ fn stress_chunk_first_instances_pinned() {
 
 #[test]
 fn shader_uv_table_tracks_atlas_glyph_count() {
-    let src = include_str!("../../../shaders/shader.wgsl");
+    let src = website_graphics_engine::shaders::SHADER_WGSL;
     let arr = format!("array<vec4<f32>, {ATLAS_GLYPH_COUNT}>");
     assert!(
         src.contains(&arr),

@@ -2067,19 +2067,19 @@ mod tests {
     fn fly_to_and_named_locations_bodies_are_live() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let src = live_code(concat!(
-            include_str!("../../../../graphics-engine/src/streaming/host/mod.rs"),
+            include_str!("../../../../map-engine/src/streaming/host/mod.rs"),
             "\n",
-            include_str!("../../../../graphics-engine/src/streaming/host/queries.rs"),
+            include_str!("../../../../map-engine/src/streaming/host/queries.rs"),
             "\n",
-            include_str!("../../../../graphics-engine/src/streaming/host/state.rs"),
+            include_str!("../../../../map-engine/src/streaming/host/state.rs"),
             "\n",
-            include_str!("../../../../graphics-engine/src/streaming/host/preferences.rs"),
+            include_str!("../../../../map-engine/src/streaming/host/preferences.rs"),
             "\n",
-            include_str!("../../../../graphics-engine/src/streaming/host/viewport.rs"),
+            include_str!("../../../../map-engine/src/streaming/host/viewport.rs"),
             "\n",
-            include_str!("../../../../graphics-engine/src/streaming/host/bootstrap.rs"),
+            include_str!("../../../../map-engine/src/streaming/host/bootstrap.rs"),
             "\n",
-            include_str!("../../../../graphics-engine/src/streaming/host/terrain.rs")
+            include_str!("../../../../map-engine/src/streaming/host/terrain.rs")
         ));
         let fly = only_body(&src, "pub fn fly_to");
         let render = format!("{}{}", "RENDER", "_CTX");
