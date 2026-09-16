@@ -20,5 +20,8 @@ pub mod commands;
 /// Join spatial queries to document identifiers under a frozen camera.
 pub mod picking;
 
+/// The decidable half of local draft persistence: record keys, blob verdicts, merge policy.
+pub mod persist;
+
 /// Headless interactive map tools: their state machines, geometry, and verdicts.
 pub mod tools;

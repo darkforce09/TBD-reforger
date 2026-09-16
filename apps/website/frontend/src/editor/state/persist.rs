@@ -58,7 +58,7 @@
 //!
 //! **The owner is captured before the session is cleared, and that ordering is the fix, not a
 //! detail.** [`current_owner`] reads `localStorage["tbd-auth"]`, and sign-out clears both the signals
-//! and that blob; resolve the token afterwards and it is [`ANON_OWNER`], so the purge would delete a
+//! and that blob; resolve the token afterwards and it is the anonymous namespace, so the purge would delete a
 //! signed-out visitor's drafts and leave the departing account's exactly where they were — the
 //! inverse of the intent, and silent. `clear_session` therefore reads `discord_id` out of the session
 //! signal first and passes it in.
@@ -80,7 +80,7 @@
 //!
 //! [`MissionDocCore::has_content`] — the predicate that defines what content *means* here (faction /
 //! slot / objective / vehicle / marker) — existed the whole time with exactly one call site,
-//! `mission_hydrate::classify_local`, and none on any write path. [`blob_has_content`] now consults it
+//! `mission_hydrate::classify_local`, and none on any write path. [`restores_to_authored_content`] consults it
 //! on every write, by replaying the blob into a throwaway core the same way the boot seam replays a
 //! restore. That also closes two losses no length test can see: a **content-empty but byte-fat** blob
 //! (a core with only `meta` seeded is ~124 bytes and content-empty), and a **corrupt or truncated**
@@ -151,6 +151,11 @@ use leptos::task::spawn_local;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use website_map_engine::data::store::MissionDocCore;
+use website_map_engine::editing::persist::record_key::{
+    owner_prefix, owner_token_or_anonymous, scoped_key, split_scoped_key,
+};
+use website_map_engine::editing::persist::stored_blob::restores_to_authored_content;
+use website_map_engine::editing::persist::{merge_policy, record_read_retry, slot_fingerprint};
 
 use crate::editor::state::doc_host::DocHandle;
 use crate::editor::state::save_status::{self, IDLE_DEBOUNCE_MS, UNREADABLE_RETRY_LIMIT};
@@ -167,13 +172,6 @@ const DEBOUNCE_MS: i32 = IDLE_DEBOUNCE_MS;
 
 /* ─────────────────────── T-221 — per-account record scoping ─────────────────────── */
 
-/// The owner token used when nobody is signed in.
-///
-/// Signed-out editing is a real state, not a defect: `/missions/:id/edit` carries no auth guard and
-/// the whole editor smoke suite drives it logged out. Those records get their own namespace rather
-/// than the bare legacy key, so after this change the store has exactly one key shape.
-const ANON_OWNER: &str = "anon";
-
 /// The account a record belongs to — the Discord id out of `localStorage["tbd-auth"]`.
 ///
 /// **Why `discord_id`.** It is the identity the *server* keys on, and the bug is about server
@@ -187,8 +185,8 @@ const ANON_OWNER: &str = "anon";
 ///
 /// Read as a loose `serde_json::Value` rather than through `auth::from_persist_json`. That parse is
 /// strict over the whole `User` struct, so a single added or renamed backend field would make it
-/// return `None`, silently demote a signed-in user to [`ANON_OWNER`], and lose them their work.
-/// Exactly one string is needed here and exactly that string is allowed to fail.
+/// return `None`, silently demote a signed-in user to the anonymous namespace, and lose them their
+/// work. Exactly one string is needed here and exactly that string is allowed to fail.
 fn current_owner() -> Option<String> {
     let storage = web_sys::window()?.local_storage().ok()??;
     let raw = storage
@@ -213,46 +211,12 @@ fn current_owner() -> Option<String> {
 /// this one — because any other choice makes "is a backup on record?" and "can a restore read it?"
 /// two different questions, and the whole hazard is a `has()` that answers for a document the reader
 /// cannot legitimately have.
+///
+/// The session is this module's to read; the namespace a signed-out author lands in belongs to the
+/// engine's key space, which is why the fallback is applied there and not here.
 #[must_use]
 pub fn owner_token() -> String {
-    current_owner().unwrap_or_else(|| ANON_OWNER.to_string())
-}
-
-/// The physical key prefix owning `owner`. Every key under it belongs to that account and to no
-/// other, which is what makes [`purge_owner`] a prefix scan rather than a guess.
-///
-/// The length prefix is not decoration: it makes the mapping `(owner, logical) → key` **injective**
-/// for arbitrary owner bytes. A plain `{owner}|{logical}` join collides the moment an id contains
-/// the separator, and a `discord_id` is whatever the backend sends, not a shape this module gets to
-/// assume. With the length in front, the owner segment is read by count and can hold anything.
-fn owner_prefix(owner: &str) -> String {
-    format!("u{}:{owner}|", owner.len())
-}
-
-/// The IndexedDB key for one caller-facing (logical) key under one account.
-///
-/// Callers never see this. `mission_editor` still asks for `<id>`, `mission_hydrate` still asks for
-/// `<id>::pre-adopt` / `<id>::pre-restore`, and the account is applied here — which is precisely why
-/// all three T-191 record kinds are scoped by this one change and none of them needed to move.
-fn scoped_key(owner: &str, logical: &str) -> String {
-    format!("{}{logical}", owner_prefix(owner))
-}
-
-/// Parse a physical key back into `(owner, logical)`, or `None` when it carries no owner at all —
-/// i.e. when it is a record written before this change. That `None` is the *only* orphan test in
-/// this module, so it has to be exact rather than a prefix guess: read `u`, the decimal length, `:`,
-/// exactly that many bytes of owner, then `|`. `str::get` returns `None` on a non-boundary index, so
-/// a multi-byte owner can never be sliced apart.
-fn split_scoped(key: &str) -> Option<(&str, &str)> {
-    let rest = key.strip_prefix('u')?;
-    let (len_digits, rest) = rest.split_once(':')?;
-    if len_digits.is_empty() || !len_digits.bytes().all(|b| b.is_ascii_digit()) {
-        return None; // `+3` / `` / `0x2` are not the canonical form this module writes
-    }
-    let len: usize = len_digits.parse().ok()?;
-    let owner = rest.get(..len)?;
-    let logical = rest.get(len..)?.strip_prefix('|')?;
-    Some((owner, logical))
+    owner_token_or_anonymous(current_owner().as_deref())
 }
 
 thread_local! {
@@ -311,7 +275,7 @@ async fn note_unreadable(physical_key: &str) -> Option<Vec<u8>> {
         u.borrow_mut().insert(physical_key.to_string());
     });
     for attempt in 1u8..=UNREADABLE_RETRY_LIMIT {
-        sleep_ms(unreadable_backoff_ms(attempt)).await;
+        sleep_ms(record_read_retry::backoff_before_attempt_ms(attempt)).await;
         match read_raw(physical_key).await {
             RecordRead::Hit(bytes) => {
                 UNREADABLE.with(|u| {
@@ -333,10 +297,6 @@ async fn note_unreadable(physical_key: &str) -> Option<Vec<u8>> {
     }
     save_status::report_unreadable(UNREADABLE_RETRY_LIMIT);
     None
-}
-
-fn unreadable_backoff_ms(attempt: u8) -> i32 {
-    80 * (1_i32 << u32::from(attempt.saturating_sub(1)))
 }
 
 /// wasm `setTimeout` as a future — the backoff for [`note_unreadable`].
@@ -637,7 +597,7 @@ async fn evict_foreign_records() {
     let strangers: BTreeSet<String> = all_keys()
         .await
         .iter()
-        .filter_map(|k| split_scoped(k).map(|(owner, _)| owner.to_string()))
+        .filter_map(|k| split_scoped_key(k).map(|(owner, _)| owner.to_string()))
         .filter(|owner| *owner != me)
         .collect();
     if strangers.is_empty() {
@@ -658,7 +618,7 @@ async fn orphan_keys() -> Vec<String> {
     all_keys()
         .await
         .into_iter()
-        .filter(|k| split_scoped(k).is_none())
+        .filter(|k| split_scoped_key(k).is_none())
         .collect()
 }
 
@@ -695,94 +655,6 @@ async fn adopt_orphans(owner: &str) -> (usize, usize) {
     (adopted, skipped)
 }
 
-/* ───────────── T-374 — the content test the write path was missing ───────────── */
-
-/// Read the leading unsigned var-int of a Yjs v1 update stream: the **number of client blocks**.
-///
-/// `encode_state_as_update_v1` writes `varint(num_clients)`, then that many per-client struct
-/// blocks, then the delete set. `num_clients == 0` therefore means the stream carries no structs at
-/// all — a document with literally nothing in it, not even `meta`. Returns `None` when the leading
-/// var-int is malformed (an unterminated continuation run), which is itself grounds to refuse.
-///
-/// This exists as an O(1) tier in front of [`blob_has_content`] so that the *reported* T-374 blob —
-/// the two bytes `[0, 0]` — is rejected without decoding anything at all.
-fn update_client_count(bytes: &[u8]) -> Option<u64> {
-    let mut n: u64 = 0;
-    let mut shift = 0u32;
-    for (i, b) in bytes.iter().enumerate() {
-        // A u64 var-int is at most 10 bytes; past that the stream is not a v1 update header.
-        if i >= 10 {
-            return None;
-        }
-        n |= u64::from(b & 0x7f) << shift;
-        if b & 0x80 == 0 {
-            return Some(n);
-        }
-        shift += 7;
-    }
-    None
-}
-
-/// Would this blob restore to a document that holds authored content?
-///
-/// # Why the byte test this replaces was not a test at all
-///
-/// The guard in [`run_save`] was `bytes.is_empty()`, with the comment "never overwrite a good record
-/// with an empty/truncated blob", and the module header above promised an "empty-blob skip". A
-/// **byte** test cannot keep a **content** promise. [`MissionDocCore::encode_state`] is
-/// `encode_state_as_update_v1(&StateVector::default())`, which writes a var-int client count and
-/// then the delete set — so an empty document encodes to `[0, 0]`: **two bytes, non-empty, and the
-/// old guard waved it through onto the record**. `get_bytes` only ever yields `Vec::new()` when the
-/// doc `Option` is `None`, and `is_cancelled` already catches exactly that, so the byte test was
-/// dead for its stated purpose and live only as reassurance.
-///
-/// # Why this decodes rather than inspecting bytes
-///
-/// The question that matters is "would restoring these bytes produce a document with content", and
-/// the sound way to answer it is to *do the restore* — the identical `MissionDocCore::new()` +
-/// `apply_update` the boot seam runs (`mission_editor.rs` step 1) — and then ask
-/// [`MissionDocCore::has_content`], the predicate that already encodes what "content" means
-/// (faction / slot / objective / vehicle / marker) and that until now had exactly one call site
-/// (`mission_hydrate::classify_local`), none of them on a write path.
-///
-/// Two classes of loss this closes that no byte-level test can see:
-///   * **content-empty but byte-fat.** A core with only `meta` seeded encodes to ~124 bytes and
-///     `has_content()` is false. Any threshold on length is a guess; this is not.
-///   * **corrupt / truncated.** A blob that fails `apply_update` is unrestorable, and the old guard
-///     wrote it cheerfully over a good record. A blob that cannot be replayed is not a backup.
-///
-/// The decode is O(document) and runs on the write path, so the hot caller avoids it: see
-/// [`PendingSave::content_probe`], which lets a caller holding the live core answer in O(1).
-///
-/// `pub` because the same byte test is wrong in three more places that this slice does not own, and
-/// none of them should have to copy this logic or reach in and re-export it: `mission_hydrate`'s
-/// `snapshot_local` (banks a content-empty doc as a "backup"), `has_snapshot` (reports `true` for
-/// one), and `restore_snapshot` (would restore one over the live document). This is not the
-/// uncalled-`pub` the T-338 note above scolds — [`run_save`] and the `__missionPersist` bridge both
-/// call it in this file today. `snapshot_local` holds the live core and should prefer
-/// `has_content()` directly (O(1)); the other two only have bytes, and this is their test.
-#[must_use]
-pub fn blob_has_content(bytes: &[u8]) -> bool {
-    if bytes.is_empty() {
-        return false;
-    }
-    match update_client_count(bytes) {
-        // No client blocks ⇒ no structs ⇒ nothing in the document. The reported `[0, 0]` blob.
-        Some(0) | None => return false,
-        Some(_) => {}
-    }
-    let probe = MissionDocCore::new();
-    // INIT, for the reason every other replay in this codebase uses it: a LOCAL apply pushes an undo
-    // step and yrs keeps deleted blocks alive for as long as the stack item lives. This core is
-    // dropped at the end of the function and should cost one document, not two.
-    probe.set_origin_init(true);
-    if probe.apply_update(bytes).is_err() {
-        return false;
-    }
-    probe.set_origin_init(false);
-    probe.has_content()
-}
-
 /* ─────────────────────── debounced + serialized writer ─────────────────────── */
 
 type GetBytes = Box<dyn Fn() -> Vec<u8>>;
@@ -807,7 +679,7 @@ struct PendingSave {
     /// as `get_bytes`, with no `.await` between**: wasm is single-threaded, so nothing can mutate
     /// the document between the encode and the probe, and the two therefore describe one state.
     ///
-    /// `None` → [`blob_has_content`] decodes the blob. That is the correct fallback and not a
+    /// `None` → [`restores_to_authored_content`] decodes the blob. That is the correct fallback and not a
     /// degraded one: it tests the bytes themselves, so it also catches a corrupt blob, which a live
     /// probe by construction cannot. It costs one document decode, which is why the per-edit writer
     /// supplies a probe and the once-per-boot writer does not have to.
@@ -902,38 +774,24 @@ fn now_ms() -> f64 {
 
 /// Apply a stored blob into the live document for `mission_id`, and report whether it landed.
 ///
-/// **This is the whole of the merge, and it is `MissionDocCore::apply_update` — a CRDT union, never
-/// a JSON diff.** Two tabs that both restored from one record author under *different* client ids
-/// (`MissionDocCore::new()` mints a fresh 53-bit id per document), so the collision guard at
-/// `store.rs:483-503` does not fire on a sibling's blob: it fires only when `my_clock != 0 &&
-/// claimed > my_clock`, i.e. when an update claims **our own** id has progressed past the last
-/// clock we issued. Read `store.rs:462-478` for the two cases it deliberately lets through — the
-/// `my_clock == 0` fresh-restore, and a peer echoing our own already-integrated blocks back, "normal,
-/// idempotent traffic in any sync transport". Replaying *this* tab's own earlier blob is the second
-/// of those: its blocks sit inside a clock range we have already issued, so yrs discards them as
-/// already-seen. That is why the stamp exists — the replay is harmless but costs an O(document)
-/// decode to learn nothing, and [`tab_lock::decide_save`] answers `WriteThrough` to skip it.
+/// The document a merge targets is this tab's to know — it is installed by [`register_tab_sync`]
+/// and dies with the tab — so the lookup and the id match sit here. The apply itself is
+/// [`merge_policy::apply_update_into_document`]: a CRDT union, never a field-wise diff. Two tabs
+/// that both restored from one record author under different client ids, so a sibling's blocks
+/// integrate rather than collide, and a replay of this tab's own earlier blob is discarded as
+/// already-seen — harmless, but an O(document) decode that learns nothing, which is what the write
+/// stamp exists to let [`tab_lock::decide_save`] skip.
 ///
-/// `apply_update` always transacts under `INIT_ORIGIN` regardless of the core's mode, so a merge is
-/// **not** an undo step — Ctrl+Z after a sibling's edits arrive undoes the operator's own last
-/// action, not the sync. The HUD mirrors and the render SoA are rebound afterwards for the reason
-/// the boot restore rebinds them: the document changed underneath the counters.
+/// The HUD mirrors and the render SoA are rebound afterwards for the reason the boot restore
+/// rebinds them: the document changed underneath the counters. A merge is not an undo step, so
+/// Ctrl+Z after a sibling's edits arrive undoes the operator's own last action, not the sync.
 ///
 /// No `.await` while the `RefCell` is borrowed — the engine task shares this `Rc`.
 fn merge_stored(mission_id: &str, stored: &[u8]) -> bool {
     let Some((owner_id, doc)) = MERGE_DOC.with(|d| d.borrow().clone()) else {
         return false;
     };
-    if owner_id != mission_id {
-        return false;
-    }
-    let applied = {
-        let guard = doc.borrow();
-        let Some(core) = guard.as_ref() else {
-            return false;
-        };
-        core.apply_update(stored).is_ok()
-    };
+    let applied = merge_policy::apply_update_into_document(&doc, &owner_id, mission_id, stored);
     if applied {
         crate::editor::state::history::refresh_hud();
         crate::editor::state::history::rebind_engine_from_doc();
@@ -943,18 +801,23 @@ fn merge_stored(mission_id: &str, stored: &[u8]) -> bool {
 
 /// Read the record at `key`, merge it into the live document, and hand back the bytes to write.
 ///
-/// Returns `bytes` unchanged when there is nothing to merge — no record, an unreadable one, a
-/// record byte-identical to what we are about to write, or a blob the CRDT refuses. Otherwise it
-/// **re-encodes**, because after the merge the document is the union and the pre-merge encode is
-/// no longer what it holds. That re-encode is the difference between "we looked" and "we merged".
+/// The transport is this module's half of [`merge_policy::merge_before_write`]: the record read is
+/// supplied as a closure so the engine owns the ORDER — read late, merge, re-encode — without
+/// naming a store. An unreadable record reads the same as an absent one here, because both mean
+/// "there is nothing this write can be shown to be losing".
 async fn merge_before_write(id: &str, key: &str, bytes: Vec<u8>, get_bytes: &GetBytes) -> Vec<u8> {
-    let RecordRead::Hit(stored) = read_raw(key).await else {
-        return bytes;
-    };
-    if stored == bytes || !merge_stored(id, &stored) {
-        return bytes;
-    }
-    get_bytes()
+    merge_policy::merge_before_write(
+        bytes,
+        || async move {
+            match read_raw(key).await {
+                RecordRead::Hit(stored) => Some(stored),
+                RecordRead::Miss | RecordRead::Failed => None,
+            }
+        },
+        &|stored| merge_stored(id, stored),
+        &**get_bytes,
+    )
+    .await
 }
 
 /// A peer tab announced it just wrote the shared record — pull it into this document.
@@ -1065,7 +928,7 @@ async fn run_save(id: &str, pending: PendingSave) {
     // and the probe are read with no `.await` between them, so they describe one document state.
     let has_content = match &pending.content_probe {
         Some(probe) => !bytes.is_empty() && probe(),
-        None => blob_has_content(&bytes),
+        None => restores_to_authored_content(&bytes),
     };
     if !has_content {
         BLOCKED_EMPTY.with(|c| c.set(c.get().saturating_add(1)));
@@ -1342,44 +1205,6 @@ where
     )
 }
 
-/// A canonical, order-independent fingerprint of the materialized slots — the SEMANTIC Class R
-/// oracle. Rows are keyed by slot id and sorted, floats compared bit-exactly (`f32::to_bits`), and
-/// every interned `*_idx` is resolved to its string (so the arbitrary materialize row order / dict
-/// first-seen order can't perturb the digest). Two docs with the same slot data ⇒ identical digest.
-///
-/// This is what the persist smoke compares across reload (cold vs warm), NOT the encode bytes:
-/// `yrs`'s `encode_state_as_update_v1` is deterministic for the SAME doc but NOT byte-identical
-/// between a doc and a fresh peer that replayed its update (only the *materialization* is equal — the
-/// exact reason the core's `encode_decode_roundtrip_is_stable` test asserts materialization equality,
-/// never `b.encode_state()==bytes`). A byte compare would be a false negative; this digest is sound.
-fn slots_digest(core: &MissionDocCore) -> String {
-    let soa = core.materialize();
-    let get = |dict: &[String], idx: u32| {
-        dict.get(idx as usize)
-            .map_or("", String::as_str)
-            .to_string()
-    };
-    let mut rows: Vec<String> = (0..soa.ids.len())
-        .map(|i| {
-            format!(
-                "{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
-                soa.ids[i],
-                soa.xs[i].to_bits(),
-                soa.ys[i].to_bits(),
-                soa.zs[i].to_bits(),
-                soa.rotations[i].to_bits(),
-                soa.stance[i],
-                get(&soa.roles, soa.role_idx[i]),
-                get(&soa.tags, soa.tag_idx[i]),
-                get(&soa.squads, soa.squad_idx[i]),
-                get(&soa.layers, soa.layer_idx[i]),
-            )
-        })
-        .collect();
-    rows.sort(); // canonical: each row is `id|…`, ids are unique → sort orders by id
-    rows.join("\n")
-}
-
 /// T-159.19 — schedule an **edit-driven** persist after a mutator (the first real doc change; the
 /// S8 hook .17/.18 deferred). Re-arms the SAME debounced + serialized writer the boot seam uses
 /// (`mission_editor.rs` initial persist): `get_bytes` reads `encode_state()` at write time, the
@@ -1530,7 +1355,11 @@ pub fn register_mission_persist(
     let digest_fn = {
         let doc = doc.clone();
         Closure::wrap(Box::new(move || -> JsValue {
-            let digest = doc.borrow().as_ref().map(slots_digest).unwrap_or_default();
+            let digest = doc
+                .borrow()
+                .as_ref()
+                .map(slot_fingerprint::slots_digest)
+                .unwrap_or_default();
             JsValue::from_str(&digest)
         }) as Box<dyn FnMut() -> JsValue>)
     };
@@ -1600,7 +1429,7 @@ pub fn register_mission_persist(
             bytes.is_empty(),
             fresh.has_content(),
             !bytes.is_empty(),
-            blob_has_content(&bytes)
+            restores_to_authored_content(&bytes)
         ))
     }) as Box<dyn FnMut() -> JsValue>);
     // T-374 — the content predicate, over the record on disk for this mission. Answers "is what is
@@ -1616,7 +1445,7 @@ pub fn register_mission_persist(
                     r#"{{"present":{},"bytes":{},"hasContent":{}}}"#,
                     stored.is_some(),
                     stored.as_ref().map_or(0, Vec::len),
-                    stored.as_deref().is_some_and(blob_has_content)
+                    stored.as_deref().is_some_and(restores_to_authored_content)
                 )))
             })
             .into()
