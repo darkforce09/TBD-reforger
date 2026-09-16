@@ -9,27 +9,27 @@
 pub(crate) const ENTITY: &str = concat!(
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/armed_placement/mod.rs"
+        "/src/v2/apps/editor/state/armed_placement/mod.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/armed_placement/palette_arming.rs"
+        "/src/v2/apps/editor/state/armed_placement/palette_arming.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/armed_placement/map_release.rs"
+        "/src/v2/apps/editor/state/armed_placement/map_release.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/armed_placement/zone_draw.rs"
+        "/src/v2/apps/editor/state/armed_placement/zone_draw.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/entity_selection.rs"
+        "/src/v2/apps/editor/state/entity_selection.rs"
     )),
     "\n",
     include_str!(concat!(
@@ -94,27 +94,27 @@ pub(crate) const ENTITY: &str = concat!(
 pub(crate) const CONTEXT: &str = concat!(
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/editor_context/mod.rs"
+        "/src/v2/apps/editor/state/editor_context/mod.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/editor_context/installation.rs"
+        "/src/v2/apps/editor/state/editor_context/installation.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/editor_context/document_fields.rs"
+        "/src/v2/apps/editor/state/editor_context/document_fields.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/editor_context/attributes_modal.rs"
+        "/src/v2/apps/editor/state/editor_context/attributes_modal.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/editor/state/editor_context/dock_mirrors.rs"
+        "/src/v2/apps/editor/state/editor_context/dock_mirrors.rs"
     )),
     "\n",
 );

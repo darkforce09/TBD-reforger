@@ -15,7 +15,7 @@ use leptos::prelude::*;
 
 use super::icons::MaterialIcon;
 use super::page_header::cn;
-use crate::editor::layout::{DISABLED_GLYPH, HOVER_FILL};
+use crate::v2::apps::editor::layout::{DISABLED_GLYPH, HOVER_FILL};
 
 /// The field's own box.
 ///

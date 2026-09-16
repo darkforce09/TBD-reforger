@@ -308,7 +308,7 @@ pub(super) fn upload_panel(
                                                     data-testid="mission-upload-size"
                                                     class="font-mono text-label-md text-on-surface-variant"
                                                 >
-                                                    {format!("{} / 8.4 MB", crate::editor::mission_size::format_bytes(sz))}
+                                                    {format!("{} / 8.4 MB", crate::v2::apps::editor::mission_size::format_bytes(sz))}
                                                 </span>
                                             }
                                         })

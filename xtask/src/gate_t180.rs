@@ -87,26 +87,26 @@ use tbd_gate::{NotRun, Pattern, Verdict, gate};
 // relative path. Reproduced by joining onto `repo_root` to read and stripping back for the message,
 // rather than mutating this process's cwd — tests run in parallel threads.
 #[cfg(test)]
-const EDITOR_OPS: &str = "apps/website/frontend/src/editor/state/editor_context/mod.rs";
+const EDITOR_OPS: &str = "apps/website/frontend/src/v2/apps/editor/state/editor_context/mod.rs";
 // The place path spans two crates: the document mutations in the map engine
 // (`data/store/operations` and the hosted commands that drive them) and the host half in the
 // frontend that arms a placement and commits it. Both sides are scanned together, and the scratch
 // fixtures perturb one of each, so moving a mutation across the crate boundary cannot bypass the
 // ban.
 const EDITOR_OPS_SPLIT: &[&str] = &[
-    "apps/website/frontend/src/editor/arsenal/loadout_commands.rs",
-    "apps/website/frontend/src/editor/canvas/tactical_graphics_authoring.rs",
-    "apps/website/frontend/src/editor/state/armed_placement/map_release.rs",
-    "apps/website/frontend/src/editor/state/armed_placement/mod.rs",
-    "apps/website/frontend/src/editor/state/armed_placement/palette_arming.rs",
-    "apps/website/frontend/src/editor/state/armed_placement/zone_draw.rs",
-    "apps/website/frontend/src/editor/state/editor_context/attributes_modal.rs",
-    "apps/website/frontend/src/editor/state/editor_context/dock_mirrors.rs",
-    "apps/website/frontend/src/editor/state/editor_context/document_fields.rs",
-    "apps/website/frontend/src/editor/state/editor_context/installation.rs",
-    "apps/website/frontend/src/editor/state/editor_context/mod.rs",
-    "apps/website/frontend/src/editor/state/entity_selection.rs",
-    "apps/website/frontend/src/editor/state/undo_grouped_gestures.rs",
+    "apps/website/frontend/src/v2/apps/editor/arsenal/loadout_commands.rs",
+    "apps/website/frontend/src/v2/apps/editor/canvas/tactical_graphics_authoring.rs",
+    "apps/website/frontend/src/v2/apps/editor/state/armed_placement/map_release.rs",
+    "apps/website/frontend/src/v2/apps/editor/state/armed_placement/mod.rs",
+    "apps/website/frontend/src/v2/apps/editor/state/armed_placement/palette_arming.rs",
+    "apps/website/frontend/src/v2/apps/editor/state/armed_placement/zone_draw.rs",
+    "apps/website/frontend/src/v2/apps/editor/state/editor_context/attributes_modal.rs",
+    "apps/website/frontend/src/v2/apps/editor/state/editor_context/dock_mirrors.rs",
+    "apps/website/frontend/src/v2/apps/editor/state/editor_context/document_fields.rs",
+    "apps/website/frontend/src/v2/apps/editor/state/editor_context/installation.rs",
+    "apps/website/frontend/src/v2/apps/editor/state/editor_context/mod.rs",
+    "apps/website/frontend/src/v2/apps/editor/state/entity_selection.rs",
+    "apps/website/frontend/src/v2/apps/editor/state/undo_grouped_gestures.rs",
     "apps/website/map-engine/src/data/store/operations/apply_faction/apply.rs",
     "apps/website/map-engine/src/data/store/operations/apply_faction/authorship.rs",
     "apps/website/map-engine/src/data/store/operations/apply_faction/library.rs",
@@ -169,7 +169,7 @@ const EDITOR_OPS_SPLIT: &[&str] = &[
 const ORBAT_RS: &str =
     "apps/website/map-engine/src/data/scenario/ast/factions/orbat_slot_template.rs";
 const ORBAT_MGR: &str = "apps/website/frontend/src/pages/operations/orbat_manager.rs";
-const EDEN_CHROME: &str = "apps/website/frontend/src/editor/eden_chrome.rs";
+const EDEN_CHROME: &str = "apps/website/frontend/src/v2/apps/editor/eden_chrome.rs";
 const SLOTS_GPU: &str = "apps/website/map-engine/src/overlay/symbology/roles/classify.rs";
 
 /// One `ban`: message, ERE pattern, `-i`?, targets, and the `ok` line printed when it holds.
@@ -576,7 +576,7 @@ mod tests {
         );
         red_append(
             "ban1-host",
-            "apps/website/frontend/src/editor/state/armed_placement/map_release.rs",
+            "apps/website/frontend/src/v2/apps/editor/state/armed_placement/map_release.rs",
             "\nensure_default_squad\n",
             BANS[0].0,
         );

@@ -11,3 +11,6 @@
 //! **Invariants:** a workspace imports from `core` and from the engine crates, never from
 //! `pages` and never from a sibling workspace. Modules appear here as each workspace lands, and
 //! a `pub mod` line carries the same `cfg` gate as the code it declares.
+
+/// The scenario creator: the 2D/3D CAD workspace that authors a mission document.
+pub mod editor;

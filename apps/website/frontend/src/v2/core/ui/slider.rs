@@ -16,7 +16,7 @@
 use leptos::prelude::*;
 
 use super::page_header::cn;
-use crate::editor::layout::{DISABLED_GLYPH, HOVER_FILL};
+use crate::v2::apps::editor::layout::{DISABLED_GLYPH, HOVER_FILL};
 
 /// The element box. Transparent on purpose: the visible rail is the track pseudo-element,
 /// which leaves the box itself free to carry the hover fill without painting a second rail.

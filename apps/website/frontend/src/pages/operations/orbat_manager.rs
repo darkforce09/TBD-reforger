@@ -20,13 +20,13 @@ use leptos::prelude::*;
 use website_map_engine::data::scenario::slot_line::format_slot_line;
 
 #[cfg(target_arch = "wasm32")]
-use crate::editor::panels::outliner;
-use crate::editor::panels::outliner::{
+use crate::v2::apps::editor::panels::outliner;
+use crate::v2::apps::editor::panels::outliner::{
     filter_orbat_squads_by_side_key, flatten_visible, FlatRow, NodeKind, OutlinerNode,
     ORBAT_MANAGER_DIALOG_CLASS, ORBAT_MANAGER_EMPTY, VIRTUAL_SLOT_THRESHOLD,
 };
 #[cfg(target_arch = "wasm32")]
-use crate::editor::state::entity_selection;
+use crate::v2::apps::editor::state::entity_selection;
 use crate::v2::core::api::dto::{FactionDoc, RegistryItem, UserFaction};
 use crate::v2::core::ui::MaterialIcon;
 #[cfg(target_arch = "wasm32")]
@@ -267,11 +267,11 @@ pub fn OrbatManagerDialog(
     on_cleanup(move || {
         esc.remove();
         crate::v2::core::ui::modal_stack::unregister(modal_id);
-        crate::editor::panels::outliner_drag::cancel_layer_drag();
+        crate::v2::apps::editor::panels::outliner_drag::cancel_layer_drag();
     });
     Effect::new(move |_| {
         if !open.get() {
-            crate::editor::panels::outliner_drag::cancel_layer_drag();
+            crate::v2::apps::editor::panels::outliner_drag::cancel_layer_drag();
         }
     });
 
@@ -376,7 +376,7 @@ pub fn OrbatManagerDialog(
                 on:click=move |ev| ev.stop_propagation()
                 on:pointerup=move |_| {
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor::panels::outliner_drag::cancel_layer_drag();
+                    crate::v2::apps::editor::panels::outliner_drag::cancel_layer_drag();
                 }
             >
                 // Header
@@ -810,8 +810,8 @@ struct SlotDetail {
 
 #[derive(Clone, Debug, Default)]
 struct Snap {
-    factions: Vec<crate::editor::panels::outliner::FactionRow>,
-    squads: Vec<crate::editor::panels::outliner::SquadRow>,
+    factions: Vec<crate::v2::apps::editor::panels::outliner::FactionRow>,
+    squads: Vec<crate::v2::apps::editor::panels::outliner::SquadRow>,
     slots: Vec<SlotDetail>,
 }
 
@@ -846,10 +846,10 @@ fn read_snapshot() -> Snap {
     }
 }
 
-fn slot_rows_from(snap: &Snap) -> Vec<crate::editor::panels::outliner::SlotRow> {
+fn slot_rows_from(snap: &Snap) -> Vec<crate::v2::apps::editor::panels::outliner::SlotRow> {
     snap.slots
         .iter()
-        .map(|s| crate::editor::panels::outliner::SlotRow {
+        .map(|s| crate::v2::apps::editor::panels::outliner::SlotRow {
             id: s.id.clone(),
             role: s.role.clone(),
         })
@@ -1035,7 +1035,7 @@ fn stitch_row(
                             ev.stop_propagation();
                             #[cfg(target_arch = "wasm32")]
                             {
-                                if !crate::editor::panels::outliner_drag::complete_multi_refile_onto_squad(&id_drop) {
+                                if !crate::v2::apps::editor::panels::outliner_drag::complete_multi_refile_onto_squad(&id_drop) {
                                     engine_ops::complete_refile_onto_squad(id_drop.clone());
                                 }
                             }
@@ -1239,7 +1239,7 @@ fn stitch_row(
                                             )
                                             .is_some()
                                             {
-                                                crate::editor::panels::dock_right::record_placed(
+                                                crate::v2::apps::editor::panels::dock_right::record_placed(
                                                     resource.clone(),
                                                     resource,
                                                 );
@@ -1330,19 +1330,19 @@ fn stitch_row(
                         }
                         on:dblclick=move |_| {
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor::state::editor_context::open_attributes(id_dbl.clone());
+                            crate::v2::apps::editor::state::editor_context::open_attributes(id_dbl.clone());
                         }
                         on:pointerdown=move |_| {
                             #[cfg(target_arch = "wasm32")]
                             {
                                 // This mounted manager has its own rows; the legacy outliner
                                 // ORBAT branch does not handle these pointer events.
-                                let drag = crate::editor::panels::outliner_tree::drag_set_for(
+                                let drag = crate::v2::apps::editor::panels::outliner_tree::drag_set_for(
                                     &id_refile,
                                     &selected.get_untracked(),
                                     &nodes.get_untracked(),
                                 );
-                                crate::editor::panels::outliner_drag::begin_refile(drag);
+                                crate::v2::apps::editor::panels::outliner_drag::begin_refile(drag);
                                 engine_ops::begin_refile(id_refile.clone());
                             }
                         }
@@ -1521,7 +1521,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
                 class="flex w-full items-center justify-center gap-2 rounded border border-outline-variant bg-surface-container py-2 font-label-md text-on-surface hover:border-primary hover:bg-surface-variant"
                 on:click=move |_| {
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor::state::editor_context::open_arsenal(id_ars.clone());
+                    crate::v2::apps::editor::state::editor_context::open_arsenal(id_ars.clone());
                 }
             >
                 <MaterialIcon name="backpack" class="text-[18px]" />
@@ -1714,7 +1714,7 @@ mod tests {
         );
         let hist = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/editor/state/history.rs"
+            "/src/v2/apps/editor/state/history.rs"
         ));
         assert!(
             hist.contains("vehicles_bind"),
@@ -1789,7 +1789,7 @@ mod tests {
         );
         let attrs = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/editor/panels/attributes_modal.rs"
+            "/src/v2/apps/editor/panels/attributes_modal.rs"
         ));
         assert!(
             attrs.contains(r#"["Transform", "Identity", "States", "Arsenal"]"#),
@@ -2040,7 +2040,7 @@ mod tests {
         );
         let context = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/editor/state/editor_context/mod.rs"
+            "/src/v2/apps/editor/state/editor_context/mod.rs"
         ));
         assert!(
             context.contains("#![cfg(target_arch = \"wasm32\")]"),

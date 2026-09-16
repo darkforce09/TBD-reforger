@@ -9,7 +9,7 @@
 /// stated: the thing under test is a `navigator.clipboard` promise, which does not exist in a
 /// native `cargo test` process at all, and granting a headless browser clipboard permission
 /// would test the browser rather than the button. What can be pinned without a browser is
-/// *which path the button takes* — and since [`crate::editor::state::commands_hotkeys::write_clipboard`]'s
+/// *which path the button takes* — and since [`crate::v2::apps::editor::state::commands_hotkeys::write_clipboard`]'s
 /// await-then-report contract is pinned in turn by
 /// `class_r_write_clipboard_toasts_only_on_the_resolve_arm`, the two together say: this button
 /// reaches the one helper, and that helper only claims success after the promise resolved.
@@ -25,7 +25,7 @@ fn class_r_copy_address_routes_through_the_awaited_clipboard_helper() {
     let body = only_body(&production, "let copy_address = move |_|");
 
     assert!(
-        body.contains("crate::editor::state::commands_hotkeys::write_clipboard("),
+        body.contains("crate::v2::apps::editor::state::commands_hotkeys::write_clipboard("),
         "the Copy button must copy through the one awaited clipboard helper; got:\n{body}"
     );
     // The two halves of the original defect, each forbidden on its own so that re-introducing

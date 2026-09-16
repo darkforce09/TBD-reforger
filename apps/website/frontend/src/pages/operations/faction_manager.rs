@@ -3,7 +3,7 @@
 //! + a vehicle pool, wired to the live `/api/v1/factions` CRUD (owner-scoped, contract-validated).
 //!
 //! The character/vehicle pickers reuse the flat `/registry` (kind-filtered, abstract/variant
-//! dropped); per-role loadout reuses the Arsenal serialization ([`crate::editor::arsenal::picks_to_loadout`])
+//! dropped); per-role loadout reuses the Arsenal serialization ([`crate::v2::apps::editor::arsenal::picks_to_loadout`])
 //! in **kind-only, no-compat** mode — the same `SlotLoadoutV2` shape a slot writes.
 #![allow(dead_code)]
 use leptos::prelude::*;

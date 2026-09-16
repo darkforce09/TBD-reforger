@@ -290,7 +290,7 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 ///
 /// But the dependency graph is not the whole input set, and the wave-255 verify caught the hole:
 /// the suite compiles files from OUTSIDE that graph, through `include_str!` —
-/// `packages/tbd-schema/schema/mission.schema.json` (`editor/panels/zones_panel.rs`),
+/// `packages/tbd-schema/schema/mission.schema.json` (`v2/apps/editor/panels/zones_panel.rs`),
 /// `loadout-export.schema.json` (`arsenal/`), `apps/website/api/src/app.rs` (four `pages/` census
 /// tests), `apps/mod/tbd-framework/Data/registry.json` (`arsenal/asset_catalog.rs`). Wave 255 itself
 /// changed `mission.schema.json`; a slice whose diff was only that file would have printed
@@ -602,7 +602,12 @@ pub fn include_inputs_under(dirs: &[String]) -> Vec<PathBuf> {
                     out.push(cand);
                 }
             }
-            if flat.contains(r#"concat!(env!("CARGO_MANIFEST_DIR")"#) {
+            // Asked of the regex, not of a fixed substring: rustfmt breaks a long
+            // `include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "…"))` across lines, and the
+            // flattened text then carries runs of spaces the substring form cannot absorb. A file
+            // whose every anchored pin is wrapped would drop out of the frontend's input set
+            // entirely, which reads as "frontend untouched" and silently skips the suite.
+            if re_manifest.is_match(&flat) {
                 if let Some(md) = owning_package_dir(&consumer.display().to_string()) {
                     let manifest_dir = realpath_m(Path::new(&md));
                     for c in re_manifest.captures_iter(&flat) {
@@ -680,7 +685,7 @@ mod tests {
     /// `frontend_tests_changed` originally scoped itself on `wasm_scope_touched` alone. But the
     /// suite compiles files from outside that graph through `include_str!`, and wave 255 itself
     /// changed one of them — `packages/tbd-schema/schema/mission.schema.json`, compiled by
-    /// `editor/panels/zones_panel.rs` and asserted over by
+    /// `v2/apps/editor/panels/zones_panel.rs` and asserted over by
     /// `zone_rule_fields_cover_the_whole_vocabulary`, which is documented to fail loudly on a new
     /// `$defs/zoneRules` key. A slice whose diff was only that file would have printed "frontend
     /// untouched", skipped the suite, and reported PASS over the one test that would have caught it.

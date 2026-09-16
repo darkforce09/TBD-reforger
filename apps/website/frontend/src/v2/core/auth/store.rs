@@ -102,7 +102,7 @@ impl AuthStore {
 
         #[cfg(target_arch = "wasm32")]
         if let Some(owner) = departing {
-            crate::editor::state::hydrate::purge_local_documents(&owner);
+            crate::v2::apps::editor::state::hydrate::purge_local_documents(&owner);
         }
     }
 

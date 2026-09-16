@@ -7,10 +7,6 @@
 mod app_routes;
 // T-934.2/.3 — standard application pages (pages/{public,operations,admin}/…).
 mod pages;
-// T-934.4–.6 — the Mission Creator nest: library, tools, world assets, eden chrome
-// panels, editor state, arsenal, and the editor page itself. Per-module provenance
-// comments live in the folder mod.rs files.
-mod editor;
 mod router;
 // The domain-driven tree the frontend is being reorganised into (see `v2/README.md`).
 mod v2;
