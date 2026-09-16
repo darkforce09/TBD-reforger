@@ -1,58 +1,15 @@
-//! Role: batch.
+//! Role: the gestures that must collapse into ONE undo step, and the host clock the grouping needs.
 //! Position: `editor/state/operations` in the frontend editor adapter.
-//! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
-//! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
+//! Signals & state: none of its own; the grouping is the engine's, over the hosted document.
+//! Invariants: a gesture the operator experienced as one act undoes as one act — a delete that
+//! spans comments, a connection cascade and slots, a paste that mints a layer first, an align
+//! that moves many rows.
 
 #![cfg(target_arch = "wasm32")]
 
-use super::context::OPS_CTX;
 use super::{entity, transform};
+pub use website_map_engine::editing::batch::with_batch;
 use website_map_engine::editing::tools::placement::AlignEdge;
-
-/// Run `f` inside one undo group labelled `label` (the label is for call-site intent; yrs stack items carry no per-item meta here).
-pub fn with_batch<F, R>(label: &str, f: F) -> R
-where
-    F: FnOnce() -> R,
-{
-    let _ = label;
-    begin_group();
-    struct EndOnDrop;
-    impl Drop for EndOnDrop {
-        fn drop(&mut self) {
-            end_group();
-        }
-    }
-    let _guard = EndOnDrop;
-    f()
-}
-
-fn begin_group() {
-    OPS_CTX.with(|c| {
-        let guard = c.borrow();
-        let Some(ctx) = guard.as_ref() else {
-            return;
-        };
-        let d = ctx.doc.borrow();
-        let Some(core) = d.as_ref() else {
-            return;
-        };
-        core.begin_group();
-    });
-}
-
-fn end_group() {
-    OPS_CTX.with(|c| {
-        let guard = c.borrow();
-        let Some(ctx) = guard.as_ref() else {
-            return;
-        };
-        let mut d = ctx.doc.borrow_mut();
-        let Some(core) = d.as_mut() else {
-            return;
-        };
-        core.end_group();
-    });
-}
 
 /// Facade wrapper — multi-txn delete (comments + connection cascade + slots) is one Ctrl+Z.
 pub fn delete_selection() -> bool {

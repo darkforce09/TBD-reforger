@@ -3,7 +3,9 @@
 //! Signals & state: explicit data inputs; no UI or graphics state.
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
-/// It lives here beside [`ZoneShape`] — the pure, native-tested home — for the same reason `ZoneShape` does: `editor_ops` (wasm-only) branches on it, and keeping it here is what lets a native `cargo test -p website-frontend` prove any pure logic that reads it.
+/// Which authored collection a draw is building into. It lives beside [`ZoneShape`] — the pure,
+/// native-tested home — because a wasm-only host branches on it, and keeping it here is what lets
+/// a native `cargo test` prove any logic that reads it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DrawTarget {
     /// Domain representation of zone.
@@ -22,4 +24,14 @@ impl DrawTarget {
             Self::Trigger => "trigger",
         }
     }
+}
+
+/// Which shape a zone draw is building.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ZoneShape {
+    /// A centre and a radius, set by two clicks.
+    Circle,
+
+    /// A ring, one vertex per click.
+    Polygon,
 }

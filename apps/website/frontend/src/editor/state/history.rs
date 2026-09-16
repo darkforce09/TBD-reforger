@@ -128,6 +128,14 @@ pub fn set_ctx(
             restore_settled,
         });
     });
+    // The engine drives the document's undo stack; everything that FOLLOWS a committed edit —
+    // the selection prune, the lane rebind, the version bump, the unsaved flag, the persist and
+    // the readouts — is this host's, in this order, and is handed over as one hook.
+    website_map_engine::editing::history::install_host(
+        website_map_engine::editing::history::HistoryHost {
+            after_document_change: after_local_edit,
+        },
+    );
 }
 
 /// A clone of the live doc handle (the same `Rc` the IDB restore swaps into). For the conflict
@@ -235,44 +243,22 @@ pub fn unregister_unload_guard() {
 
 /// Undo the last LOCAL transaction; `true` if anything was undone. No-op (and `false`) on an empty
 /// stack, so callers can fire it unconditionally.
+///
+/// The step itself is the engine's — one document, one stack — and the tail it runs on the way out
+/// is [`after_local_edit`], installed as this host's `after_document_change`.
 pub fn undo() -> bool {
-    HISTORY_CTX.with(|c| {
-        let guard = c.borrow();
-        let Some(ctx) = guard.as_ref() else {
-            return false;
-        };
-        // Scoped: `undo` needs `&mut`, `after_doc_change` needs `&` — the RefMut must be gone first.
-        let did = {
-            let mut d = ctx.doc.borrow_mut();
-            d.as_mut().is_some_and(MissionDocCore::undo)
-        };
-        if did {
-            after_doc_change(ctx);
-        }
-        did
-    })
+    website_map_engine::editing::history::undo()
 }
 
 /// Redo the last undone transaction; `true` if anything was redone.
 pub fn redo() -> bool {
-    HISTORY_CTX.with(|c| {
-        let guard = c.borrow();
-        let Some(ctx) = guard.as_ref() else {
-            return false;
-        };
-        let did = {
-            let mut d = ctx.doc.borrow_mut();
-            d.as_mut().is_some_and(MissionDocCore::redo)
-        };
-        if did {
-            after_doc_change(ctx);
-        }
-        did
-    })
+    website_map_engine::editing::history::redo()
 }
 
-/// Run the post-mutation sequence after a mutator the caller already committed (the T-159.19 drag
-/// commit). Same path undo/redo take — see [`after_doc_change`].
+/// Everything that follows a committed edit, in the order this host needs it: prune the selection
+/// against the settled document, rebind the render lanes, bump the version, mark the work unsaved,
+/// schedule a persist, refresh the readouts. Installed as the engine's `after_document_change`, so
+/// an undo and a redo run exactly this too — see [`after_doc_change`].
 pub fn after_local_edit() {
     HISTORY_CTX.with(|c| {
         let guard = c.borrow();

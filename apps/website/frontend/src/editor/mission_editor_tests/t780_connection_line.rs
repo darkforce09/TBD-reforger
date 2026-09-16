@@ -350,13 +350,25 @@ fn every_history_path_reaches_the_doc_tick_the_lane_binds_on() {
     let docks = ["editor_ops", "::", "refresh_docks()"].concat();
     let tail = ["after_doc", "_change(ctx)"].concat();
 
+    // Undo and redo step the document's own stack in the engine, and the tail they run on the way
+    // out is whatever this host installed as `after_document_change`. So the pin follows the
+    // install: it must be `after_local_edit`, whose body is the tail below.
+    let drive = ["editing", "::history::"].concat();
     for (name, marker) in [("undo", "pub fn undo"), ("redo", "pub fn redo")] {
         assert!(
-            only_body(&hist, marker).contains(&tail),
-            "T-780: {name} must run after_doc_change, or the lane never re-reads the document"
+            only_body(&hist, marker).contains(&drive),
+            "T-780: {name} must go through the engine's undo drive, which runs the installed tail"
         );
     }
+    assert!(
+        only_body(&hist, "pub fn set_ctx").contains("after_document_change: after_local_edit"),
+        "T-780: the installed tail must be after_local_edit, or undo/redo re-read nothing"
+    );
     for (name, marker) in [
+        (
+            "after_local_edit (the installed tail)",
+            "pub fn after_local_edit",
+        ),
         ("after_doc_change (edit/undo/redo)", "fn after_doc_change"),
         ("refresh_hud (mount seed / hydrate)", "pub fn refresh_hud"),
         (
@@ -365,7 +377,7 @@ fn every_history_path_reaches_the_doc_tick_the_lane_binds_on() {
         ),
     ] {
         assert!(
-            only_body(&hist, marker).contains(&signals),
+            only_body(&hist, marker).contains(&signals) || only_body(&hist, marker).contains(&tail),
             "T-780: {name} must reach refresh_signals — it is the only route to doc_tick"
         );
     }

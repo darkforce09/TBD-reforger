@@ -1935,6 +1935,10 @@ pub fn MissionEditorPage() -> impl IntoView {
             // gate ask the same question ("has the document settled?"), so a second flag would only be
             // a second thing to keep in sync.
             let restore_settled = Rc::new(Cell::new(false));
+            // The engine's editing host: the document handle and the selected-id set, installed
+            // once and reached by every command that mutates the document. The two context
+            // registrations below carry the presentation halves the engine does not model.
+            website_map_engine::editing::host::install(doc.clone(), selection.clone());
             mission_history::set_ctx(
                 doc.clone(),
                 engine.clone(),

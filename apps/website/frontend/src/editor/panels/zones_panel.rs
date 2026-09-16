@@ -1166,12 +1166,9 @@ pub fn terrain_rect_ring(terrain: &str, bounds: [f64; 4]) -> Option<Vec<f64>> {
     Some(polygon_flat(&terrain_rect_corners(bounds)))
 }
 
-/// Which shape a zone draw is building.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ZoneShape {
-    Circle,
-    Polygon,
-}
+/// Which shape a zone draw is building. The vocabulary is the document's, so the panel and the
+/// authored row can never disagree about what a draw is producing.
+pub use website_map_engine::data::store::operations::zones::ZoneShape;
 
 /// T-079 (CONN-TRG-OWNER-001) — the owner-link line's SCREEN geometry: the projected endpoints
 /// (trigger centre → owner) ready for one `<line>`. Pure so a native `cargo test` proves the

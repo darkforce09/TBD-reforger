@@ -5,6 +5,15 @@
 //! inject transports and confirmations as closures, and every state machine is driven by explicit
 //! world coordinates.
 
+/// Group a multi-transaction edit into one undo step.
+pub mod batch;
+
+/// The undo drive over the hosted document's own stack.
+pub mod history;
+
+/// The live authored document and the borrow chain every editing command reaches it by.
+pub mod host;
+
 /// The decidable half of the editor's commands: export bytes, report wording, selection digests.
 pub mod commands;
 
