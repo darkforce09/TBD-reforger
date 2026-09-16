@@ -7,14 +7,14 @@ use crate::frame::engine::RenderEngine;
 
 use wasm_bindgen::prelude::*;
 
-/// Re-export `website_graphics_engine::frame::GlyphAtlasGpu`.
+/// Re-export `crate::frame::GlyphAtlasGpu`.
 // T-0xx Phase 2B (Kind A): the cell-atlas texture/uniform/bind-group build lives in
 // `website-graphics-engine`, and moved inside it from `text::gpu` to `frame::atlas` — a live
 // atlas is a GPU handle, and its bind group is what an icon batch's `BindGroupId` resolves
 // to. `upload_glyph_atlas` itself stays: it is a `#[wasm_bindgen]` export on this crate's own
 // type, and its uniform block is packed by `Self::pack_icon_uniforms`, whose UV table is
 // symbology's cell layout.
-pub(crate) use website_graphics_engine::frame::GlyphAtlasGpu;
+pub(crate) use crate::frame::GlyphAtlasGpu;
 
 #[wasm_bindgen]
 impl RenderEngine {
@@ -36,7 +36,7 @@ impl RenderEngine {
             )));
         }
         let u_bytes = Self::pack_icon_uniforms(uv, 0.0, 0.0, 1.0);
-        let atlas = website_graphics_engine::frame::create_glyph_atlas(
+        let atlas = crate::frame::create_glyph_atlas(
             &self.device,
             &self.queue,
             &self.icon_bind_group_layout,

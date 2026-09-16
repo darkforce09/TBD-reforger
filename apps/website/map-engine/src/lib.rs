@@ -19,7 +19,17 @@ pub mod camera;
 pub mod data;
 
 /// Frame: the engine, its GPU resources, and the belts that build a frame packet.
-#[cfg(feature = "render")]
+// T-0xx Phase 2C: gated on `world`, not `render`, and the widening is what makes gate rule 3a
+// implementable at all. `frame/mod.rs` is now this crate's ONE naming of the renderer's frame
+// vocabulary, and everything else reaches that vocabulary through `crate::frame::…` —
+// but `overlay/lanes.rs` is `cfg(feature = "streaming")` and `lane_id` returns a `LaneId`, so
+// a chokepoint that only existed under `render` would have had to grant it an exception on its
+// first day. `world` is the exact tier that turns `dep:website-graphics-engine` on, so it is
+// the honest condition for a module whose ungated half is nothing but re-exports of that
+// crate. Everything inside `frame/` that touches a GPU keeps its own
+// `all(target_arch = "wasm32", feature = "render")`, so no code compiles here that did not
+// compile before.
+#[cfg(feature = "world")]
 pub mod frame;
 
 /// Diagnostics.

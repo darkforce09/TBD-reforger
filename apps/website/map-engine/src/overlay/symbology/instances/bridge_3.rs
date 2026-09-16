@@ -8,11 +8,11 @@ use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 
+use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer, LaneId};
 use crate::overlay::symbology::instances::lanes::ICON_DRAG_OFF;
 use crate::overlay::symbology::instances::symbols::SLOT_ICON_STRIDE;
 use crate::overlay::symbology::roles::classify::SIDE_BLUFOR_RGBA;
 use wasm_bindgen::prelude::*;
-use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer, LaneId};
 
 #[wasm_bindgen]
 impl RenderEngine {

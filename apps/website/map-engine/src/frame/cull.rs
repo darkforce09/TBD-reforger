@@ -9,13 +9,13 @@
 //! `spatial/` for exactly that reason — `spatial/` answers questions about the world, and
 //! nothing here does.
 
+use crate::frame::IndirectDraw;
 use crate::frame::bindings;
 use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 use crate::world::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
-use website_graphics_engine::frame::IndirectDraw;
 
 #[wasm_bindgen]
 impl RenderEngine {

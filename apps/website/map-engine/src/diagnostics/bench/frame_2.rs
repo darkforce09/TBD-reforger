@@ -3,11 +3,11 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
+use crate::frame::DrawPayload;
 use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 use wasm_bindgen::prelude::*;
-use website_graphics_engine::frame::DrawPayload;
 
 #[wasm_bindgen]
 impl RenderEngine {

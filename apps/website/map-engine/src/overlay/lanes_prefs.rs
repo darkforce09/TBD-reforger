@@ -15,9 +15,9 @@ use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 use crate::overlay::lanes::tex_lane_role_from_u32;
 
+use crate::frame::{DrawBatch, DrawPayload};
 use wasm_bindgen::prelude::*;
 use website_graphics_engine::draw::lines;
-use website_graphics_engine::frame::{DrawBatch, DrawPayload};
 
 #[wasm_bindgen]
 impl RenderEngine {

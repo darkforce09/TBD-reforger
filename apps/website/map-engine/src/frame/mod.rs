@@ -3,8 +3,10 @@
 //! Signals & state: the engine object itself — its GPU resources, its persistent batch list,
 //! and the belts that refill them.
 //! Invariants: this is the module that speaks `website_graphics_engine`'s frame vocabulary.
-//! Gate rule 3a (Phase 2C) will pin that naming here; nothing outside `frame/` should reach
-//! a graphics type except through `crate::layout`'s POD contract.
+//! Gate rule 3a pins that naming to THIS FILE — not merely to this directory. Every other
+//! module in the crate, `frame/`'s own submodules included, reaches the vocabulary through
+//! `crate::frame::…`; the one other legitimate door to the renderer is `graphics_engine::layout`,
+//! the POD/bit-packing ABI, which belts import directly beside their data (§2C.1 Kind B).
 //!
 //! T-0xx Phase 2B.1: `core/` and `renderers/` are gone and this is where most of them landed.
 //! `core/context/state.rs` is `engine.rs`, `device_{1,2}.rs` are `boot.rs`,
@@ -64,8 +66,64 @@ pub use website_graphics_engine::device::buffers;
 // `RenderEngine` crossing, which is what would let this line go.
 pub use website_graphics_engine::pipeline as pipelines;
 
+// ── THE PACKET VOCABULARY ────────────────────────────────────────────────────────────────────
+//
+// T-0xx Phase 2C, §2C.1 Kind C. Everything the renderer's `frame` module publishes that this
+// crate consumes, enumerated. **The eight `pub use` lines below are the only places in
+// `website-map-engine` that spell the path they spell** — gate rule 3a in
+// `xtask/src/gate_engine_layers.rs` pins that in both directions, at exactly eight, so a ninth
+// import is a diff to this list and a lost one is a stale pin. The 38 call sites that used to
+// spell it for themselves now read `use crate::frame::DrawBatch;`. (The pin counts the
+// re-exports and not this prose on purpose: a gate that fails on a typo fix in a comment is a
+// gate that gets suppressed.)
+//
+// Enumerated and never a glob, because the value of the chokepoint is not the indirection —
+// re-exports cost nothing at runtime and a glob would compile identically. The value is that
+// the crate's entire graphics interface is a list you can read in one screen, and that widening
+// it is a diff to this file rather than an import somewhere in `world/` nobody reviews.
+//
+// The split into two groups is graphics-engine's own: `camera.rs`, `damage.rs` and `ids.rs` are
+// ungated there because they are arithmetic and newtypes, while `atlas`, `batch`, `buffers`,
+// `packet`, `present` and `text` name `wgpu` types and are `cfg(target_arch = "wasm32")`. This
+// mirror gates on the target for the same reason and NOT on `render`: the condition is whether
+// the item exists, and `render` is a question about whether this crate draws.
+//
+// `IndexedMesh` and `VertexStream` are in the list without a `use` site today on purpose. They
+// are what `draw::polygons::upload_*` and `draw::lines::upload_*` hand back and what
+// `DrawPayload::{Indexed, Lines}` carry — part of the vocabulary this crate speaks whether or
+// not a belt happens to need the name spelled. Leaving them out would make the list a census of
+// current imports rather than a statement of the interface.
+
 /// Damage tracking — which frames need submitting at all.
 pub use website_graphics_engine::frame::damage;
+
+/// Ordered-insert and removal over a persistent `Vec<DrawBatch>` (rule 1's real case).
+#[cfg(target_arch = "wasm32")]
+pub use website_graphics_engine::frame::packet;
+
+/// Swapchain acquire, submit and present.
+#[cfg(target_arch = "wasm32")]
+pub use website_graphics_engine::frame::present;
+
+/// The group-0 camera block every draw binds.
+pub use website_graphics_engine::frame::CameraUniform;
+
+/// The three opaque ids a batch travels with — lane, pipeline, bind group.
+pub use website_graphics_engine::frame::{BindGroupId, LaneId, PipelineId};
+
+/// One frame's complete draw list, and the draws in it.
+#[cfg(target_arch = "wasm32")]
+pub use website_graphics_engine::frame::{DrawBatch, DrawPayload, FramePacket, IndirectDraw};
+
+/// The buffer handles and ranges a payload carries. Rule 2: handles and ranges, never geometry.
+#[cfg(target_arch = "wasm32")]
+pub use website_graphics_engine::frame::{IndexedMesh, InstanceBuffer, VertexStream};
+
+/// A run of packed glyph instances, and the two cell atlases a run can index.
+#[cfg(target_arch = "wasm32")]
+pub use website_graphics_engine::frame::{
+    GlyphAtlasGpu, TextAtlasGpu, TextRun, create_glyph_atlas, create_text_atlas,
+};
 
 /// The CPU frustum oracle for packed sprite instances.
 pub use website_graphics_engine::draw::cull::oracle;

@@ -5,10 +5,10 @@
 
 use crate::frame::bindings;
 use crate::frame::engine::RenderEngine;
+use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer, TextRun};
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 use wasm_bindgen::prelude::*;
-use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer, TextRun};
 
 /// Re-export `website_graphics_engine::layout::pack::text_uniform_bytes`.
 // T-0xx Phase 2B (Kind A): the `TextUniforms` block is bytes, so it sits in graphics-engine's
@@ -19,8 +19,8 @@ use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer, Tex
 // E0116 is symmetric.
 pub(crate) use website_graphics_engine::layout::pack::text_uniform_bytes;
 
-/// Re-export `website_graphics_engine::frame::TextAtlasGpu`.
-pub(crate) use website_graphics_engine::frame::TextAtlasGpu;
+/// Re-export `crate::frame::TextAtlasGpu`.
+pub(crate) use crate::frame::TextAtlasGpu;
 
 #[wasm_bindgen]
 impl RenderEngine {
@@ -43,7 +43,7 @@ impl RenderEngine {
         width: u32,
         height: u32,
     ) -> Result<(), JsError> {
-        let atlas = website_graphics_engine::frame::create_text_atlas(
+        let atlas = crate::frame::create_text_atlas(
             &self.device,
             &self.queue,
             &self.text_bind_group_layout,

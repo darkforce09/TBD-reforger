@@ -8,9 +8,9 @@ use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 
+use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 use crate::world::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
-use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 
 /// Canonical icon uv bytes value.
 pub(crate) const ICON_UV_BYTES: usize = website_graphics_engine::layout::ATLAS_GLYPH_COUNT * 16;

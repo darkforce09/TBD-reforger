@@ -8,11 +8,11 @@ use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 
+use crate::frame::{DrawBatch, DrawPayload};
 use crate::world::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
 use website_graphics_engine::draw::geometry::LineVertex;
 use website_graphics_engine::draw::{lines, polygons};
-use website_graphics_engine::frame::{DrawBatch, DrawPayload};
 
 #[wasm_bindgen]
 impl RenderEngine {

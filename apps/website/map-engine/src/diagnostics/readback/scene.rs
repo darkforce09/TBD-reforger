@@ -211,8 +211,8 @@ impl RenderEngine {
         );
         let bind_groups = self.bind_group_table(bind_group);
         let mvp = self.camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
-        let packet = website_graphics_engine::frame::FramePacket {
-            camera: website_graphics_engine::frame::CameraUniform::new(mvp),
+        let packet = crate::frame::FramePacket {
+            camera: crate::frame::CameraUniform::new(mvp),
             clear: self.clear_color,
             batches: &self.batches,
             text: &[],

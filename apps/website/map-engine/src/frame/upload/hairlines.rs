@@ -9,12 +9,12 @@ use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 use crate::overlay::lanes::lane_role_from_u32;
 
+use crate::frame::{DrawBatch, DrawPayload};
 use crate::world::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
 use website_graphics_engine::draw::lines;
-use website_graphics_engine::frame::{DrawBatch, DrawPayload};
 
-// T-0xx Phase 1D: `LineLane` is gone — it is `website_graphics_engine::frame::VertexStream`,
+// T-0xx Phase 1D: `LineLane` is gone — it is `crate::frame::VertexStream`,
 // and the loop that filled it is `draw::lines::upload_hairlines`. `ANCHOR` could not cross,
 // so it is an argument there.
 

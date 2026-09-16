@@ -6,6 +6,9 @@
 use crate::diagnostics::timing::gpu::perf_now_ms;
 use crate::frame::bindings;
 use crate::frame::engine::RenderEngine;
+use crate::frame::packet;
+use crate::frame::present;
+use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer, TextRun};
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 use crate::overlay::lanes::lane_role_from_u32;
@@ -13,9 +16,6 @@ use crate::overlay::symbology::instances::symbols::SLOT_ICON_STRIDE;
 use crate::world::scene::ANCHOR;
 use crate::world::terrain::satellite::textures::TexLane;
 use wasm_bindgen::prelude::*;
-use website_graphics_engine::frame::packet;
-use website_graphics_engine::frame::present;
-use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 
 /// Re-export `website_graphics_engine::layout::pack::TEXT_UNIFORM_BYTES`.
 // T-0xx Phase 2B (Kind A): the size of the text atlas's uniform block is byte layout, not a
@@ -130,7 +130,7 @@ impl RenderEngine {
 impl RenderEngine {
     /// Upsert lane.
     ///
-    /// T-0xx Phase 1D: the ordered insert is `website_graphics_engine::frame::packet::upsert`
+    /// T-0xx Phase 1D: the ordered insert is `crate::frame::packet::upsert`
     /// over `Vec<DrawBatch>` keyed by `LaneId`. Marking the frame damaged stays — damage is
     /// about whether THIS engine needs to redraw, not about the draw list's shape.
     pub(crate) fn upsert_lane(&mut self, role: LaneRole, batch: DrawBatch) {
@@ -271,7 +271,7 @@ impl RenderEngine {
                 payload: DrawPayload::SpritesWithText {
                     sprites: InstanceBuffer::whole(icons, STRIDE_U32, icon_count),
                     atlas: bindings::sprite_atlas_for(LaneRole::MissionMarkers),
-                    text: captions.map(|(buf, count)| website_graphics_engine::frame::TextRun {
+                    text: captions.map(|(buf, count)| TextRun {
                         lane,
                         glyphs: InstanceBuffer::whole(buf, STRIDE_U32, count),
                         atlas: bindings::BIND_TEXT_ATLAS,

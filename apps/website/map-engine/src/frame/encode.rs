@@ -3,13 +3,13 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
+use crate::frame::FramePacket;
 use crate::frame::bindings;
 use crate::frame::engine::RenderEngine;
 use crate::world::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
-use website_graphics_engine::frame::FramePacket;
 
-/// The pipelines a frame packet addresses by [`website_graphics_engine::frame::PipelineId`].
+/// The pipelines a frame packet addresses by [`crate::frame::PipelineId`].
 ///
 /// T-0xx Phase 1D: `draw_batches` used to take nine `&RenderPipeline` arguments and choose
 /// between them by matching on the lane. The choice is now made where a lane means something
@@ -120,7 +120,7 @@ impl RenderEngine {
         // a packet carrying a default camera would be a lie.
         let mvp = self.camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
         let packet = FramePacket {
-            camera: website_graphics_engine::frame::CameraUniform::new(mvp),
+            camera: crate::frame::CameraUniform::new(mvp),
             clear: self.clear_color,
             batches: &self.batches,
             text: &[],

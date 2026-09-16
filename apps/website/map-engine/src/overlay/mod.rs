@@ -7,7 +7,7 @@
 //! T-0xx Phase 2B: `symbology/` moved here whole, and `core/pipeline/{draw_order,roles}.rs`
 //! folded into `lanes.rs` beside it. The 48 lane identities are cartography — `Sea`,
 //! `Contours`, `RoadsCasing`, `Landcover`, `AirfieldApron` — and they belong with the map they
-//! name. The renderer keeps only the opaque `website_graphics_engine::frame::LaneId`.
+//! name. The renderer keeps only the opaque `crate::frame::LaneId`.
 
 /// The 48 named lane identities, their paint order, and the two public id namespaces.
 #[cfg(feature = "streaming")]

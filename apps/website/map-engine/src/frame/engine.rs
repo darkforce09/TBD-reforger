@@ -12,6 +12,8 @@
 
 use crate::camera::ortho::state::OrthoCamera;
 use crate::diagnostics::timing::gpu::GpuTimer;
+use crate::frame::DrawBatch;
+use crate::frame::LaneId;
 use crate::frame::upload::text::TextAtlasGpu;
 use crate::overlay::symbology::atlas::gpu::GlyphAtlasGpu;
 use crate::overlay::symbology::instances::bridge_1::SlotAtlasGpu;
@@ -19,8 +21,6 @@ use crate::overlay::symbology::instances::bridge_1::SlotGpuBridge;
 use crate::world::terrain::satellite::textures::PendingTex;
 use crate::world::terrain::satellite::textures::TexLane;
 use wasm_bindgen::prelude::*;
-use website_graphics_engine::frame::DrawBatch;
-use website_graphics_engine::frame::LaneId;
 use website_graphics_engine::layout::QuadInstance;
 
 /// Background clear — (51, 68, 85, 255)/255. The f64→f32→unorm8 chain error (< 1.2e-7) is four orders of magnitude under the unorm8 rounding margin (1/510 ≈ 2e-3), so readback bytes are forced exactly (plan §S4 margin argument).

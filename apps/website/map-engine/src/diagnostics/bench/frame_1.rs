@@ -11,9 +11,9 @@ use crate::frame::engine::RenderEngine;
 use crate::overlay::lanes::LaneRole;
 use crate::overlay::lanes::lane_id;
 
+use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 use crate::world::scene::ANCHOR;
 use wasm_bindgen::prelude::*;
-use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 use website_graphics_engine::layout::CHUNK_CAPACITY;
 
 #[wasm_bindgen]

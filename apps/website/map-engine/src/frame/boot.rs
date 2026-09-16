@@ -32,10 +32,10 @@ use crate::frame::pipelines::textured::create_forest_density_pipeline;
 use crate::frame::pipelines::textured::create_textured_pipeline;
 use crate::frame::pipelines::vector::create_line_pipeline;
 use crate::frame::pipelines::vector::create_polygon_pipeline;
+use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 use crate::overlay::symbology::instances::bridge_1::SlotGpuBridge;
 use crate::overlay::symbology::instances::lanes::ICON_UNIFORM_BYTES;
 use wasm_bindgen::prelude::*;
-use website_graphics_engine::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 use website_graphics_engine::layout::UNIT_QUAD;
 
 #[wasm_bindgen]
