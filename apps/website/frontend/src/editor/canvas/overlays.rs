@@ -23,6 +23,7 @@
 #![allow(dead_code)]
 
 use leptos::prelude::*;
+#[cfg(target_arch = "wasm32")]
 use website_map_engine::editing::tools::selection;
 
 use crate::editor::mission_editor::transform;

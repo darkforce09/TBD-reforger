@@ -24,6 +24,7 @@
 use leptos::prelude::*;
 use website_map_engine::camera::ortho::state::OrthoCamera;
 use website_map_engine::editing::tools::line_of_sight::capture::LosMode;
+#[cfg(target_arch = "wasm32")]
 use website_map_engine::editing::tools::selection;
 
 use crate::editor::layout::{HOVER_FILL, TOGGLED_PLATE};
@@ -56,12 +57,7 @@ pub fn m_per_px(deck_zoom: f64) -> f64 {
     }
 }
 
-/// The drawn grid's line spacing in world metres — the procedural 1 km grid
-/// (`map_engine_render::lanes::grid_lines`, `GRID_STEP = 1000`). Grid-reference labels enumerate
-/// lines at world multiples of this, so a label can never drift off the line it names. The
-/// `labels_match_grid_lines` test pins this against the live `grid_lines` output (not a private
-/// const copy) so a future re-space of the grid fails here rather than silently mislabelling.
-pub const GRID_STEP_M: f64 = 1000.0;
+pub use website_map_engine::camera::grid_reference::GRID_STEP_M;
 
 /// Everon terrain span (metres, square). The grid is drawn only over `[0, TERRAIN_SPAN_M]`
 /// (`lanes::grid_lines` loops `x = 0..width`), so grid references outside it do not exist — the
@@ -202,37 +198,10 @@ pub fn pick_scale_bar(m_per_px: f64) -> ScaleBarSpec {
     }
 }
 
-/// Arma grid reference for a world coordinate: 3-digit **hundreds-of-metres**, wrapping every
-/// 100 km (`floor(m / 100) mod 1000`, zero-padded). E.g. `6400 m → 064`, `12000 m → 120`,
-/// `0 m → 000`. This is the six-figure military-grid half a single axis contributes (the
-/// `mortar.rs` "012 020" convention). Negative or non-finite ⇒ `000` (off-terrain guard).
-#[must_use]
-pub fn grid_ref_3digit(world_m: f64) -> String {
-    if !world_m.is_finite() || world_m < 0.0 {
-        return "000".to_string();
-    }
-    let hundreds = (world_m / 100.0).floor() as i64;
-    let wrapped = hundreds.rem_euclid(1000);
-    format!("{wrapped:03}")
-}
-
-/// The world coordinates of grid lines (multiples of [`GRID_STEP_M`]) within `[lo, hi]` world
-/// metres, inclusive — the eastings/northings whose lines cross a map-pane edge. `lo`/`hi` are the
-/// visible world span of that edge; the returned values are exactly the drawn line positions, so
-/// labelling them can never drift from the grid.
-#[must_use]
-pub fn grid_lines_in_range(lo: f64, hi: f64) -> Vec<f64> {
-    let (lo, hi) = if lo <= hi { (lo, hi) } else { (hi, lo) };
-    if !lo.is_finite() || !hi.is_finite() {
-        return Vec::new();
-    }
-    let first_k = (lo / GRID_STEP_M).ceil() as i64;
-    let last_k = (hi / GRID_STEP_M).floor() as i64;
-    if last_k < first_k {
-        return Vec::new();
-    }
-    (first_k..=last_k).map(|k| k as f64 * GRID_STEP_M).collect()
-}
+/// The grid reference and the line enumeration are the map furniture's, and they live with the
+/// camera that draws it. Named here so the pane's edge labels and every other reader of a grid
+/// square resolve to one implementation.
+pub use website_map_engine::camera::grid_reference::{grid_lines_in_range, grid_ref_3digit};
 
 /// One edge grid-reference label: the CSS-pixel position along the anchoring edge and the 3-digit
 /// text. For an easting (top edge) `pos_px` is the screen X of the vertical grid line; for a

@@ -5,6 +5,9 @@
 //! inject transports and confirmations as closures, and every state machine is driven by explicit
 //! world coordinates.
 
+/// The decidable half of the editor's commands: export bytes, report wording, selection digests.
+pub mod commands;
+
 /// Join spatial queries to document identifiers under a frozen camera.
 pub mod picking;
 

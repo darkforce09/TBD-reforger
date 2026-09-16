@@ -3,6 +3,9 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
+/// The grid reference printed on a map pane's edge labels.
+pub mod grid_reference;
+
 /// Math.
 pub mod math;
 
