@@ -662,10 +662,7 @@ mod tests {
             "a map-engine-core source change must put the SPA in scope"
         );
         assert!(
-            wasm_scope_touched(
-                &root,
-                ["apps/website/map-engine/Cargo.toml"].into_iter()
-            ),
+            wasm_scope_touched(&root, ["apps/website/map-engine/Cargo.toml"].into_iter()),
             "and so must its manifest — wave 237 made a dependency unconditional there"
         );
         // Something the SPA genuinely does not compile stays out.
@@ -731,13 +728,18 @@ mod tests {
 
     #[test]
     fn join_rel_resolves_dotdot_and_refuses_to_climb_out() {
+        // The subjects are real `path = "../…"` values out of the website manifests. The engine
+        // split renamed that crate, and 4057d82b9 rewrote the EXPECTED halves here without the
+        // inputs — leaving `../graphics-engine` asserted to resolve to `map-engine`, which no path
+        // join could ever do. Both halves now say the same thing, so the test is about `..`
+        // resolution again rather than about a crate name.
         assert_eq!(
-            join_rel("apps/website/frontend", "../graphics-engine").as_deref(),
+            join_rel("apps/website/frontend", "../map-engine").as_deref(),
             Some("apps/website/map-engine")
         );
         assert_eq!(
             join_rel("apps/website/mission-core", "../graphics-engine").as_deref(),
-            Some("apps/website/map-engine")
+            Some("apps/website/graphics-engine")
         );
         assert_eq!(
             join_rel("crates", "../../elsewhere"),

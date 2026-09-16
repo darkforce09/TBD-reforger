@@ -22,6 +22,7 @@ mod gate_bootstrap_staging_server;
 mod gate_crf_leak;
 mod gate_debug_direct_join;
 mod gate_deploy_website;
+mod gate_engine_layers;
 mod gate_export_terrain;
 mod gate_fetch_vanilla_api;
 mod gate_fetch_vanilla_source;
@@ -669,6 +670,12 @@ enum VerifyCmd {
     /// T-468: CI schema parity + hollow recipe tripwire
     #[command(name = "t468")]
     T468,
+    /// ENGINE_SPLIT_PROGRAM §5 rules 1-2: apps/website/graphics-engine may not import
+    /// website_map_engine, and may not declare a type/fn/mod name containing terrain,
+    /// symbology, mission, orbat or arma. (§5 spells it `verify-engine-layers`; every sibling
+    /// here is `verify <name>`, and the `verify-engine-layers` task row aliases both.)
+    #[command(name = "engine-layers")]
+    EngineLayers,
 }
 
 #[derive(Subcommand, Debug)]
@@ -1299,6 +1306,9 @@ fn run() -> Result<u8> {
                 VerifyCmd::NoPython => gate_no_python::verify_no_python()?,
                 VerifyCmd::T456 => gate_t456::verify_t456(&find_repo_root()?)?,
                 VerifyCmd::T468 => gate_t468::verify_t468(&find_repo_root()?)?,
+                VerifyCmd::EngineLayers => {
+                    gate_engine_layers::verify_engine_layers(&find_repo_root()?)?
+                }
             };
             Ok(code)
         }

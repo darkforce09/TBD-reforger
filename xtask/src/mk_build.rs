@@ -275,6 +275,13 @@ pub(crate) fn rust_clippy() -> Vec<Step> {
 pub(crate) fn rust_sqlx_prepare() -> Vec<Step> {
     vec![Step::new(&["cargo", "sqlx", "prepare"]).cd(WEB)]
 }
+/// Fmt / clippy / test for the engine crates.
+///
+/// `website-graphics-engine` was added to every step when the engine split created it: the crate
+/// reached CI only as a transitive dependency of the frontend, so nothing fmt-checked it, nothing
+/// clippied it and its tests never ran. Kept in lockstep with the `wasm-ci` row in
+/// [`crate::mk_ci_tasks`] — the two are the same lane spelled twice, and `mk_build_tests` pins the
+/// wasm32 line's echo against drift.
 pub(crate) fn wasm_ci() -> Vec<Step> {
     vec![
         Step::new(&[
@@ -285,6 +292,8 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
             "website-mission-core",
             "-p",
             "website-map-engine",
+            "-p",
+            "website-graphics-engine",
         ]),
         Step::new(&[
             "cargo",
@@ -293,6 +302,8 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
             "website-mission-core",
             "-p",
             "website-map-engine",
+            "-p",
+            "website-graphics-engine",
             "--all-targets",
             "--all-features",
             "--",
@@ -304,6 +315,8 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
             "clippy",
             "-p",
             "website-map-engine",
+            "-p",
+            "website-graphics-engine",
             "--target",
             "wasm32-unknown-unknown",
             "--",
@@ -322,6 +335,13 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
             "test",
             "-p",
             "website-map-engine",
+            "--all-features",
+        ]),
+        Step::new(&[
+            "cargo",
+            "test",
+            "-p",
+            "website-graphics-engine",
             "--all-features",
         ]),
     ]

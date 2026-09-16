@@ -220,7 +220,7 @@ jobs:
   # Needs cargo (two of the three are xtask) but no database, no LFS and no wasm target, so it is a
   # cheap job that fails fast and early rather than riding on the back of the 25-minute API job.
   language-gates:
-    name: language gates (no-python / no-node / no-shell / ci-shell)
+    name: language gates (no-python / no-node / no-shell / ci-shell / engine-layers)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -242,6 +242,16 @@ jobs:
         run: cargo xtask verify no-shell
       - name: "verify-ci-shell (T-901 — GitHub Actions run: blocks)"
         run: cargo xtask verify ci-shell
+      # ENGINE_SPLIT_PROGRAM §5 rules 1-2, phase 1F. The engine split gave
+      # apps/website/graphics-engine a one-way dependency arrow (map-engine -> graphics-engine)
+      # and NOTHING in the compiler enforces it: a dep line pointing back would still build, and
+      # the 50k lines of map domain that phase 1 moved out would start seeping back a type at a
+      # time. §5 is blunt about why this needs a gate rather than a convention — "one 99k crate
+      # rots without enforcement". It runs here, not on the 25-minute API job, for the same reason
+      # the language gates do: it reads the working tree, needs no DB/LFS/wasm target, and takes
+      # seconds. Rules 3-6 police trees phases 2 and 3 have not built yet.
+      - name: verify-engine-layers (ENGINE_SPLIT_PROGRAM §5 rules 1-2)
+        run: cargo xtask verify engine-layers
       # T-853. The registry is the source of truth for the whole ticket pipeline and NOTHING
       # validated it on push — `grep -rn 'ticket check' .github/` returned empty, so a malformed
       # 1.5 MB registry.json could reach main and only surface when the next agent tried to read

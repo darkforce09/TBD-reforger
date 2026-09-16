@@ -60,6 +60,11 @@ pub static TASKS: &[Task] = &[
             Step::Task("verify-no-node"),
             Step::Task("verify-no-shell"),
             Step::Task("verify-ci-shell"),
+            // Grouped with the language gates rather than the build lanes: like them it is a
+            // seconds-long source scan, and it guards a wall (map-engine -> graphics-engine, one
+            // way) that nothing in the compiler enforces. ENGINE_SPLIT_PROGRAM §5 requires it here
+            // and in ci.yml — a rule nobody is stopped by is not a rule.
+            Step::Task("verify-engine-layers"),
             Step::Task("rust-ci"),
             Step::Task("verify-coding-standards"),
             Step::Task("ci-local-leptos"),
@@ -309,6 +314,17 @@ pub static TASKS: &[Task] = &[
         steps: &[xt!("cargo xtask verify no-node", false, verify_no_node)],
     },
     Task {
+        name: "verify-engine-layers",
+        help: "ENGINE_SPLIT_PROGRAM §5 rules 1-2 — graphics-engine imports no map engine, declares no map noun",
+        group: "verify",
+        lane: Lane::Alias,
+        steps: &[xt!(
+            "cargo xtask verify engine-layers",
+            false,
+            x_engine_layers
+        )],
+    },
+    Task {
         name: "verify-no-shell",
         help: "T-904 hard zero — no tracked shell/Make/Python/Node-script paths (no inventory)",
         group: "verify",
@@ -428,16 +444,24 @@ pub static TASKS: &[Task] = &[
         help: "Fmt + clippy + test the map-engine core/render crates (T-145/T-151; T-418 dropped map-engine-wasm)",
         group: "build",
         lane: Lane::Borrowed("T-895"),
+        // The engine split created `website-graphics-engine` and this lane did not learn about it,
+        // so 54 files of renderer compiled in CI only as a transitive dependency of the frontend:
+        // never fmt-checked, never clippied, and its 41 tests never run. A crate the pipeline does
+        // not name is a crate the pipeline does not gate — it is added to all four steps, wasm32
+        // included, because the browser half is where it actually ships.
         steps: &[
-            sh!("cargo fmt --check -p website-mission-core -p website-map-engine"),
             sh!(
-                "cargo clippy -p website-mission-core -p website-map-engine --all-targets --all-features -- -D warnings"
+                "cargo fmt --check -p website-mission-core -p website-map-engine -p website-graphics-engine"
             ),
             sh!(
-                "cargo clippy -p website-map-engine --target wasm32-unknown-unknown -- -D warnings"
+                "cargo clippy -p website-mission-core -p website-map-engine -p website-graphics-engine --all-targets --all-features -- -D warnings"
+            ),
+            sh!(
+                "cargo clippy -p website-map-engine -p website-graphics-engine --target wasm32-unknown-unknown -- -D warnings"
             ),
             sh!("cargo test -p website-mission-core --all-features"),
             sh!("cargo test -p website-map-engine --all-features"),
+            sh!("cargo test -p website-graphics-engine --all-features"),
         ],
     },
     Task {
@@ -515,6 +539,9 @@ fn x_no_select_star() -> anyhow::Result<u8> {
 }
 fn x_route_tags() -> anyhow::Result<u8> {
     crate::gate_route_tags::verify_route_tags(&find_repo_root()?)
+}
+fn x_engine_layers() -> anyhow::Result<u8> {
+    crate::gate_engine_layers::verify_engine_layers(&find_repo_root()?)
 }
 fn x_t438() -> anyhow::Result<u8> {
     crate::gate_t438::verify_t438(&find_repo_root()?)
