@@ -2216,7 +2216,7 @@ mod tests {
     fn the_exporter_grid_ref_is_the_map_furnitures_own_label_text() {
         use crate::editor::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
         use crate::editor::panels::toolbelt::{edge_eastings, edge_northings, GRID_STEP_M};
-        use website_graphics_engine::camera::ortho::state::OrthoCamera;
+        use website_map_engine::camera::ortho::state::OrthoCamera;
 
         let (w, h) = (1600.0_f64, 900.0_f64);
         let mut cam = OrthoCamera::new(w, h, 6400.0, 6400.0, -2.0);

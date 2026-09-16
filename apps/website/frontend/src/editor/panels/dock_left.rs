@@ -1348,7 +1348,7 @@ pub fn save_bookmarks(bm: &Bookmarks) {
 pub fn live_camera() -> Option<(f64, f64, f64)> {
     #[cfg(target_arch = "wasm32")]
     {
-        website_graphics_engine::streaming::host::camera_snapshot()
+        website_map_engine::streaming::host::camera_snapshot()
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -1370,7 +1370,7 @@ pub fn fly_to(x: f64, y: f64, zoom: Option<f64>) {
         let Some(z) = zoom.or_else(|| live_camera().map(|(_, _, z)| z)) else {
             return; // no engine yet — nothing to fly.
         };
-        website_graphics_engine::streaming::host::fly_to(x, y, z);
+        website_map_engine::streaming::host::fly_to(x, y, z);
     }
 }
 
@@ -1380,7 +1380,7 @@ pub fn fly_to(x: f64, y: f64, zoom: Option<f64>) {
 fn load_named_places() -> Vec<NamedPlace> {
     #[cfg(target_arch = "wasm32")]
     {
-        let mut out: Vec<NamedPlace> = website_graphics_engine::streaming::host::named_locations()
+        let mut out: Vec<NamedPlace> = website_map_engine::streaming::host::named_locations()
             .into_iter()
             .filter(|l| !l.name.trim().is_empty())
             .map(|l| NamedPlace {
@@ -2036,7 +2036,7 @@ mod tests {
             "the index must read world_assets::named_locations, not re-fetch locations.json"
         );
         assert!(
-            code.contains("website_graphics_engine::streaming::host::fly_to"),
+            code.contains("website_map_engine::streaming::host::fly_to"),
             "fly-to must call the world_assets::fly_to RENDER_CTX seam"
         );
         // Delete-prod RED: production must not couple to the smoke-hook name.

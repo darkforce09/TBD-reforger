@@ -21,11 +21,11 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use wasm_bindgen::prelude::*;
-use website_graphics_engine::camera::ortho::state::OrthoCamera;
-use website_graphics_engine::core::context::state::RenderEngine;
-use website_graphics_engine::core::pipeline::draw_order::role_id;
-use website_graphics_engine::spatial::indexing::point_index::PointIndex;
-use website_graphics_engine::symbology::links::squad_links::pack_squad_link_drag_preview;
+use website_map_engine::camera::ortho::state::OrthoCamera;
+use website_map_engine::core::context::state::RenderEngine;
+use website_map_engine::core::pipeline::draw_order::role_id;
+use website_map_engine::spatial::indexing::point_index::PointIndex;
+use website_map_engine::symbology::links::squad_links::pack_squad_link_drag_preview;
 use website_mission_core::doc::SlotSoa;
 
 use crate::editor::state::doc_host::DocHandle;
@@ -56,7 +56,7 @@ pub type SelectionHandle = Rc<RefCell<Vec<String>>>;
 
 /// A leaked `Option<RenderEngine>` handle, exactly the one `mission_editor.rs` owns. `pub` since
 /// T-159.21 so `mission_history` names the same alias instead of redeclaring a twin.
-pub use website_graphics_engine::core::context::handles::EngineHandle;
+pub use website_map_engine::core::context::handles::EngineHandle;
 
 /// The pending LMB gesture: the press point (CSS px, container-local) + a **frozen** ortho camera
 /// copied at pointer-down. A sub-threshold release unprojects against `cam` (never the live engine).
@@ -292,7 +292,7 @@ pub fn push_drag_preview(
     e.set_drag(ids.to_vec(), dx as f32, dy as f32);
     bind_vehicle_preview_lane(
         e,
-        &website_graphics_engine::symbology::instances::drag::pack_vehicle_drag_preview(
+        &website_map_engine::symbology::instances::drag::pack_vehicle_drag_preview(
             ids,
             vehicle_points,
             dx,
@@ -316,7 +316,7 @@ pub fn clear_drag_preview(e: &mut RenderEngine, vehicle_points: &[(String, f64, 
     e.set_drag(Vec::new(), 0.0, 0.0);
     bind_vehicle_preview_lane(
         e,
-        &website_graphics_engine::symbology::instances::drag::pack_vehicle_drag_preview(
+        &website_map_engine::symbology::instances::drag::pack_vehicle_drag_preview(
             &[],
             vehicle_points,
             0.0,

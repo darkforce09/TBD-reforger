@@ -157,7 +157,7 @@ pub fn fmt_changed(ctx: &Ctx, base: &str) -> i32 {
 ///
 /// T-946 — THE PATH PREFIX WAS NEVER THE RIGHT QUESTION. `wasm_changed` and the `trunk build` step
 /// both asked "did anything under `apps/website/frontend/` change", but the SPA compiles half the
-/// engine into its own wasm binary. Wave 237 changed `apps/website/graphics-engine` — a rewritten
+/// engine into its own wasm binary. Wave 237 changed `apps/website/map-engine` — a rewritten
 /// `geometry/tbdd.rs` and a dependency that stopped being optional — touched no frontend path, and
 /// the gate printed `wasm32 (frontend) PASS` alongside `trunk build SKIP (frontend untouched this
 /// wave)`. Neither had compiled a line of it. `Runner::run` discards a passing step's output, so
@@ -165,7 +165,7 @@ pub fn fmt_changed(ctx: &Ctx, base: &str) -> i32 {
 ///
 /// The scope is DERIVED, not listed, because a hand-kept list is the same bug with a slower fuse:
 /// walk `path = "…"` dependencies out of `apps/website/frontend/Cargo.toml` and keep walking. Today
-/// that reaches `apps/website/mission-core` and `apps/website/graphics-engine`; when it reaches more, this
+/// that reaches `apps/website/mission-core` and `apps/website/map-engine`; when it reaches more, this
 /// follows without an edit. A crate that cannot be read contributes nothing rather than silently
 /// narrowing the scope — the caller treats an empty walk as "check anyway", never as "skip".
 pub fn wasm_scope_prefixes(root: &Path) -> Vec<String> {
@@ -634,7 +634,7 @@ mod tests {
 
     /// T-946 — the wasm scope reaches the engine crates the SPA compiles, not just its own path.
     ///
-    /// Wave 237 changed `apps/website/graphics-engine` only, and the gate printed
+    /// Wave 237 changed `apps/website/map-engine` only, and the gate printed
     /// `wasm32 (frontend) PASS` next to `trunk build SKIP (frontend untouched this wave)` — a
     /// success reported over code neither step had compiled. The scope is derived from
     /// `path = "…"` dependencies, so it follows the graph instead of a hand-kept list.
@@ -647,7 +647,7 @@ mod tests {
             scope.iter().any(|d| d == FRONTEND_DIR),
             "the frontend itself is always in scope: {scope:?}"
         );
-        for engine in ["apps/website/graphics-engine", "apps/website/mission-core"] {
+        for engine in ["apps/website/map-engine", "apps/website/mission-core"] {
             assert!(
                 scope.iter().any(|d| d == engine),
                 "{engine} is compiled into the SPA's wasm and must be in scope: {scope:?}"
@@ -657,14 +657,14 @@ mod tests {
         assert!(
             wasm_scope_touched(
                 &root,
-                ["apps/website/graphics-engine/src/formats/density/tbdd.rs"].into_iter()
+                ["apps/website/map-engine/src/formats/density/tbdd.rs"].into_iter()
             ),
             "a map-engine-core source change must put the SPA in scope"
         );
         assert!(
             wasm_scope_touched(
                 &root,
-                ["apps/website/graphics-engine/Cargo.toml"].into_iter()
+                ["apps/website/map-engine/Cargo.toml"].into_iter()
             ),
             "and so must its manifest — wave 237 made a dependency unconditional there"
         );
@@ -733,11 +733,11 @@ mod tests {
     fn join_rel_resolves_dotdot_and_refuses_to_climb_out() {
         assert_eq!(
             join_rel("apps/website/frontend", "../graphics-engine").as_deref(),
-            Some("apps/website/graphics-engine")
+            Some("apps/website/map-engine")
         );
         assert_eq!(
             join_rel("apps/website/mission-core", "../graphics-engine").as_deref(),
-            Some("apps/website/graphics-engine")
+            Some("apps/website/map-engine")
         );
         assert_eq!(
             join_rel("crates", "../../elsewhere"),

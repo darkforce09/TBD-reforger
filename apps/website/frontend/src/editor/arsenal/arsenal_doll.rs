@@ -27,7 +27,7 @@ const CALLOUT_DX: f64 = 52.0; // chip offset from the anchor (up-right)
 const CALLOUT_DY: f64 = -44.0;
 
 type EngineHandle =
-    Rc<RefCell<Option<website_graphics_engine::doll::renderer::lifecycle_1::DollEngine>>>;
+    Rc<RefCell<Option<website_map_engine::doll::renderer::lifecycle_1::DollEngine>>>;
 
 /// Region label for tooltips/callout — `LOADOUT_ROWS` carries the display labels.
 fn region_label(key: &str) -> &'static str {
@@ -96,7 +96,7 @@ pub fn ArsenalDoll(
             let engine = engine.clone();
             let disposed = disposed.clone();
             leptos::task::spawn_local(async move {
-                match website_graphics_engine::doll::renderer::lifecycle_1::DollEngine::create(
+                match website_map_engine::doll::renderer::lifecycle_1::DollEngine::create(
                     canvas.clone(),
                     force_webgl,
                 )

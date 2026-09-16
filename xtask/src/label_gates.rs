@@ -9,14 +9,14 @@ use anyhow::{Context, Result};
 use serde_json::Value;
 
 use crate::root::find_repo_root as repo_root;
-use website_graphics_engine::environment::locations::peaks::HeightLabel;
-use website_graphics_engine::environment::locations::peaks::HeightLabelKind;
-use website_graphics_engine::environment::locations::peaks::PEAK_MIN_VALUE_M;
-use website_graphics_engine::environment::locations::peaks::declutter_height_labels;
-use website_graphics_engine::environment::locations::peaks::height_label_min_sep_m;
-use website_graphics_engine::terrain::dem::manifest::DemManifest;
-use website_graphics_engine::terrain::dem::png::decode_png_to_meters;
-use website_graphics_engine::terrain::dem::sampling::sample_elevation_from_meters_cache;
+use website_map_engine::environment::locations::peaks::HeightLabel;
+use website_map_engine::environment::locations::peaks::HeightLabelKind;
+use website_map_engine::environment::locations::peaks::PEAK_MIN_VALUE_M;
+use website_map_engine::environment::locations::peaks::declutter_height_labels;
+use website_map_engine::environment::locations::peaks::height_label_min_sep_m;
+use website_map_engine::terrain::dem::manifest::DemManifest;
+use website_map_engine::terrain::dem::png::decode_png_to_meters;
+use website_map_engine::terrain::dem::sampling::sample_elevation_from_meters_cache;
 
 const PEAK_LABEL_MAX: usize = 48;
 
@@ -462,10 +462,10 @@ pub fn locations(terrain: &str) -> Result<u8> {
 /* ─────────── town labels (T-152.8/.17 — native rebuild on core importance_declutter) ─────────── */
 
 pub fn town_labels(terrain: &str, deck_zoom: f64) -> Result<u8> {
-    use website_graphics_engine::symbology::labels::importance::LocationLabel;
-    use website_graphics_engine::symbology::labels::importance::declutter_town_labels;
-    use website_graphics_engine::symbology::labels::importance::town_declutter_invariant_holds;
-    use website_graphics_engine::symbology::labels::importance::town_label_fade_alpha;
+    use website_map_engine::symbology::labels::importance::LocationLabel;
+    use website_map_engine::symbology::labels::importance::declutter_town_labels;
+    use website_map_engine::symbology::labels::importance::town_declutter_invariant_holds;
+    use website_map_engine::symbology::labels::importance::town_label_fade_alpha;
     let root = repo_root()?;
     let loc_path = root
         .join("packages/map-assets")
@@ -621,14 +621,14 @@ pub fn town_labels(terrain: &str, deck_zoom: f64) -> Result<u8> {
 /* ─────────── road names (T-152.9 — native rebuild on core road_labels) ─────────── */
 
 pub fn road_names(terrain: &str, deck_zoom: f64) -> Result<u8> {
-    use website_graphics_engine::environment::locations::route_geometry::perpendicular_dist_to_polyline;
-    use website_graphics_engine::environment::locations::route_geometry::road_declutter_min_dist_m;
-    use website_graphics_engine::environment::locations::route_labels::parse_road_names_json;
-    use website_graphics_engine::environment::locations::route_placement::ROAD_NAME_MAX_ON_SCREEN;
-    use website_graphics_engine::environment::locations::route_placement::ROAD_NAME_PERP_TOL_M;
-    use website_graphics_engine::environment::locations::route_placement::declutter_road_labels;
-    use website_graphics_engine::environment::locations::route_placement::place_road_labels;
-    use website_graphics_engine::environment::locations::route_placement::road_declutter_invariant_holds;
+    use website_map_engine::environment::locations::route_geometry::perpendicular_dist_to_polyline;
+    use website_map_engine::environment::locations::route_geometry::road_declutter_min_dist_m;
+    use website_map_engine::environment::locations::route_labels::parse_road_names_json;
+    use website_map_engine::environment::locations::route_placement::ROAD_NAME_MAX_ON_SCREEN;
+    use website_map_engine::environment::locations::route_placement::ROAD_NAME_PERP_TOL_M;
+    use website_map_engine::environment::locations::route_placement::declutter_road_labels;
+    use website_map_engine::environment::locations::route_placement::place_road_labels;
+    use website_map_engine::environment::locations::route_placement::road_declutter_invariant_holds;
     let root = repo_root()?;
     let base = root.join("packages/map-assets").join(terrain);
     let names_path = base.join("road-names.json");
@@ -643,7 +643,7 @@ pub fn road_names(terrain: &str, deck_zoom: f64) -> Result<u8> {
     let names =
         parse_road_names_json(&names_raw).map_err(|e| anyhow::anyhow!("road-names: {e}"))?;
     let gz = fs::read(&roads_path)?;
-    let mut store = website_graphics_engine::streaming::loaders::store::WorldStore::new();
+    let mut store = website_map_engine::streaming::loaders::store::WorldStore::new();
     let seg_count = store
         .load_roads_gz(&gz)
         .map_err(|e| anyhow::anyhow!("roads.json.gz: {e}"))?;
@@ -687,7 +687,7 @@ pub fn road_names(terrain: &str, deck_zoom: f64) -> Result<u8> {
     // G5 — placement within perpendicular tolerance of its own segment.
     let by_id: std::collections::HashMap<
         &str,
-        &website_graphics_engine::terrain::roads::network::RoadSegment,
+        &website_map_engine::terrain::roads::network::RoadSegment,
     > = store.roads.iter().map(|s| (s.id.as_str(), s)).collect();
     let mut perp_bad = 0usize;
     for l in &drawn {
@@ -811,9 +811,9 @@ fn js_fixed3(x: f64) -> String {
 }
 
 pub fn terrain_alignment(terrain: &str, strict: bool) -> Result<u8> {
-    use website_graphics_engine::terrain::dem::manifest::DemManifest;
-    use website_graphics_engine::terrain::dem::sampling::sample_elevation_meters;
-    use website_graphics_engine::terrain::dem::sampling::world_to_pixel;
+    use website_map_engine::terrain::dem::manifest::DemManifest;
+    use website_map_engine::terrain::dem::sampling::sample_elevation_meters;
+    use website_map_engine::terrain::dem::sampling::world_to_pixel;
     const MIN_ANCHORS_STRICT: usize = 10;
     let root = repo_root()?;
     let base = root.join("packages/map-assets").join(terrain);

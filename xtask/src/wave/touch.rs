@@ -349,7 +349,7 @@ pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
             // `clippy (changed crates) PASS` / `SLICE GATE: PASS` without features, and
             // `error: useless use of format!` with them. The adversarial verifier found this; the
             // gate did not.
-            engine @ ("website-mission-core" | "website-graphics-engine") => host::v(&[
+            engine @ ("website-mission-core" | "website-map-engine") => host::v(&[
                 "cargo",
                 "clippy",
                 "-p",

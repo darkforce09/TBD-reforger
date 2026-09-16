@@ -5,9 +5,9 @@
 
 #![cfg(target_arch = "wasm32")]
 use std::rc::Rc;
-use website_graphics_engine::core::context::handles::EngineHandle;
-/// Re-export `website_graphics_engine::streaming::host::*`.
-pub use website_graphics_engine::streaming::host::*;
+use website_map_engine::core::context::handles::EngineHandle;
+/// Re-export `website_map_engine::streaming::host::*`.
+pub use website_map_engine::streaming::host::*;
 
 impl crate::editor::panels::validation_panel::SeamRegistration for (EngineHandle, HostHandle) {
     fn is_same_registration(&self, live: &Self) -> bool {
@@ -26,9 +26,9 @@ pub async fn bootstrap(
     terrain: String,
     host: HostHandle,
     dem_out: DemGridHandle,
-    report: website_graphics_engine::streaming::bridge::progress::ProgressFn,
+    report: website_map_engine::streaming::bridge::progress::ProgressFn,
 ) {
-    use website_graphics_engine::streaming::bridge::host_preferences::{
+    use website_map_engine::streaming::bridge::host_preferences::{
         HostPreferences, RenderPreferences,
     };
     let preferences = HostPreferences {
@@ -43,7 +43,7 @@ pub async fn bootstrap(
             }
         },
     };
-    website_graphics_engine::streaming::host::bootstrap(
+    website_map_engine::streaming::host::bootstrap(
         engine,
         terrain,
         host,

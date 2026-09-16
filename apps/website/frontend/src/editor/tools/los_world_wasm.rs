@@ -8,12 +8,12 @@ use std::cell::{Cell, RefCell};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
-use website_graphics_engine::architecture::los::walker::Owner;
-use website_graphics_engine::core::context::state::RenderEngine;
-use website_graphics_engine::spatial::bvh::surface::SurfaceKind;
-use website_graphics_engine::spatial::terrain_los::viewshed::Viewshed;
-use website_graphics_engine::spatial::world_los::coverage_1::WorldLos;
-use website_graphics_engine::spatial::world_los::coverage_1::WorldVerdict;
+use website_map_engine::architecture::los::walker::Owner;
+use website_map_engine::core::context::state::RenderEngine;
+use website_map_engine::spatial::bvh::surface::SurfaceKind;
+use website_map_engine::spatial::terrain_los::viewshed::Viewshed;
+use website_map_engine::spatial::world_los::coverage_1::WorldLos;
+use website_map_engine::spatial::world_los::coverage_1::WorldVerdict;
 
 use super::los_tool::{
     pack_rgba_256, read_registered_sampler, read_registered_viewshed, LosShot,
@@ -23,8 +23,8 @@ use super::los_world::{
     encode_viewshed_rgba_merged, map_to_engine, ObjectCell, ObjectPass, ObjectVerdict,
     OBJECT_PASS_BUDGET_MS, OBJECT_UPLOAD_INTERVAL_MS,
 };
-use website_graphics_engine::streaming::host::with_occluder;
-use website_graphics_engine::streaming::host::with_occluder_host;
+use website_map_engine::streaming::host::with_occluder;
+use website_map_engine::streaming::host::with_occluder_host;
 
 /// The live wash: the pass, the raster it runs over (cloned once at start), the observer eye.
 struct Wash {

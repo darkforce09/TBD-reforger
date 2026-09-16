@@ -6,13 +6,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::*;
-use website_graphics_engine::architecture::compound::assembly::PlacementSource;
-use website_graphics_engine::architecture::compound::doors::DoorRecord;
-use website_graphics_engine::architecture::compound::doors::DoorState;
-use website_graphics_engine::architecture::compound::instances::InstanceRecord;
-use website_graphics_engine::architecture::compound::instances::LocalTransform;
-use website_graphics_engine::spatial::bvh::sidecar::BvhSidecar;
-use website_graphics_engine::spatial::bvh::traversal::Bvh;
+use website_map_engine::architecture::compound::assembly::PlacementSource;
+use website_map_engine::architecture::compound::doors::DoorRecord;
+use website_map_engine::architecture::compound::doors::DoorState;
+use website_map_engine::architecture::compound::instances::InstanceRecord;
+use website_map_engine::architecture::compound::instances::LocalTransform;
+use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
+use website_map_engine::spatial::bvh::traversal::Bvh;
 
 fn farmhouse() -> BuildingBlueprint {
     serde_json::from_str(include_str!(

@@ -3,7 +3,7 @@ use super::boot_progress::{
     PLANNED_SATELLITE_BYTES, PLANNED_TERRAIN_BYTES, PLANNED_WORLD_BYTES,
 };
 use super::BOOT_HANDOVER_MS;
-use website_graphics_engine::streaming::bridge::progress::{
+use website_map_engine::streaming::bridge::progress::{
     split_range, Ordered, SAT_CHUNK_BYTES, SAT_FETCH_CONCURRENCY, STREAM_REPORT_BYTES,
 };
 

@@ -396,8 +396,8 @@ fn layer_policy_keeps_fire_records_and_drops_physics_shells() {
     use crate::map_blueprint::batch::{LayerPolicy, decode_asset};
     use crate::map_blueprint::xob_nodes::XobNode;
     use crate::map_blueprint::xob_nodes::tests::{synth_head, wrap_xob};
-    use website_graphics_engine::spatial::bvh::sidecar::BvhSidecar;
-    use website_graphics_engine::spatial::bvh::surface::SurfaceKind;
+    use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
+    use website_map_engine::spatial::bvh::surface::SurfaceKind;
     let none = 0xFFFFu16;
     let rec = |name_idx: u32| XobNode {
         name_idx,

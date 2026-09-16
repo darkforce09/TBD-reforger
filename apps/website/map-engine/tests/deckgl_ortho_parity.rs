@@ -1,10 +1,10 @@
 //! Role: deckgl ortho parity.
-//! Position: `apps/website/graphics-engine/tests` in the graphics engine.
+//! Position: `apps/website/map-engine/tests` in the graphics engine.
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use serde_json::Value;
-use website_graphics_engine::camera::ortho::state::OrthoCamera;
+use website_map_engine::camera::ortho::state::OrthoCamera;
 
 fn ulp_distance(a: f64, b: f64) -> u64 {
     #[allow(clippy::float_cmp)]

@@ -19,7 +19,7 @@ on:
     paths:
       - "apps/website/frontend/**"
       - "tools/tbd-tools/**"
-      - "apps/website/graphics-engine/**"
+      - "apps/website/map-engine/**"
       - "apps/website/mission-core/**"
       - ".github/workflows/editor-gates.yml"
 

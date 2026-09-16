@@ -429,15 +429,15 @@ pub static TASKS: &[Task] = &[
         group: "build",
         lane: Lane::Borrowed("T-895"),
         steps: &[
-            sh!("cargo fmt --check -p website-mission-core -p website-graphics-engine"),
+            sh!("cargo fmt --check -p website-mission-core -p website-map-engine"),
             sh!(
-                "cargo clippy -p website-mission-core -p website-graphics-engine --all-targets --all-features -- -D warnings"
+                "cargo clippy -p website-mission-core -p website-map-engine --all-targets --all-features -- -D warnings"
             ),
             sh!(
-                "cargo clippy -p website-graphics-engine --target wasm32-unknown-unknown -- -D warnings"
+                "cargo clippy -p website-map-engine --target wasm32-unknown-unknown -- -D warnings"
             ),
             sh!("cargo test -p website-mission-core --all-features"),
-            sh!("cargo test -p website-graphics-engine --all-features"),
+            sh!("cargo test -p website-map-engine --all-features"),
         ],
     },
     Task {

@@ -31,7 +31,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use leptos::prelude::{GetUntracked, RwSignal, Set};
-use website_graphics_engine::symbology::links::squad_links::build_squad_link_segments;
+use website_map_engine::symbology::links::squad_links::build_squad_link_segments;
 use website_mission_core::doc::MissionDocCore;
 use website_mission_core::doc::SlotSoa;
 // T-596 — `role_id::SQUAD_LINKS` is imported, not a hand-copied `const ROLE_SQUAD_LINKS: u32 = 9`:
@@ -39,12 +39,12 @@ use website_mission_core::doc::SlotSoa;
 // squad-leader hairlines into whatever lane 9 became rather than failing the build.
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use website_graphics_engine::core::context::state::RenderEngine;
-use website_graphics_engine::core::pipeline::draw_order::role_id;
+use website_map_engine::core::context::state::RenderEngine;
+use website_map_engine::core::pipeline::draw_order::role_id;
 
 use crate::editor::state::doc_host::DocHandle;
 use crate::editor::tools::select_tool::SelectionHandle;
-use website_graphics_engine::core::context::handles::EngineHandle;
+use website_map_engine::core::context::handles::EngineHandle;
 
 /// Everything a history command needs, shared from `mission_editor::on_load`. `doc` is the same
 /// `Rc` the IDB restore swaps into, so undo/redo always see the live document. The four signals are
@@ -364,7 +364,7 @@ pub fn rebind_engine_from_doc() {
         prune_selection(ctx);
         let ids = ctx.selection.borrow().clone();
         if let Some(e) = ctx.engine.borrow_mut().as_mut() {
-            let tints = website_graphics_engine::symbology::roles::classify::side_tints_rgba_bytes(
+            let tints = website_map_engine::symbology::roles::classify::side_tints_rgba_bytes(
                 &soa.side_keys,
             );
             e.slots_bind_symbology(
@@ -446,7 +446,7 @@ fn after_doc_change(ctx: &HistoryCtx) {
     let ids = ctx.selection.borrow().clone();
     if let Some(e) = ctx.engine.borrow_mut().as_mut() {
         e.set_drag(Vec::new(), 0.0, 0.0); // clear any live drag overlay
-        let tints = website_graphics_engine::symbology::roles::classify::side_tints_rgba_bytes(
+        let tints = website_map_engine::symbology::roles::classify::side_tints_rgba_bytes(
             &soa.side_keys,
         );
         e.slots_bind_symbology(
@@ -598,7 +598,7 @@ pub(crate) fn vehicle_lane_fields() -> (Vec<f32>, Vec<String>, Vec<u8>, Vec<f32>
             .strip_prefix("faction-")
             .unwrap_or(&r.faction_id);
         tints.extend_from_slice(
-            &website_graphics_engine::symbology::roles::classify::side_rgba(side),
+            &website_map_engine::symbology::roles::classify::side_rgba(side),
         );
         aliases.push(r.resource_name);
     }

@@ -339,7 +339,7 @@ pub(crate) fn TransformWidgetOverlay(
         let (wx, wy) = read_widget_pivot()?;
         #[cfg(target_arch = "wasm32")]
         {
-            let (tx, ty, zoom) = website_graphics_engine::streaming::host::camera_snapshot()?;
+            let (tx, ty, zoom) = website_map_engine::streaming::host::camera_snapshot()?;
             let win = web_sys::window()?;
             let vw = win
                 .inner_width()

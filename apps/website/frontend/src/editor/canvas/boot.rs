@@ -45,13 +45,13 @@ pub(crate) const BOOT_HANDOVER_MS: i32 = 220;
 
 /// Boot progress.
 pub mod boot_progress {
-    /// Re-export `website_graphics_engine::streaming::bridge::progress::BootEvent`.
-    pub use website_graphics_engine::streaming::bridge::progress::BootEvent;
-    /// Re-export `website_graphics_engine::streaming::bridge::progress::BootSeg`.
-    pub use website_graphics_engine::streaming::bridge::progress::BootSeg;
-    /// Re-export `website_graphics_engine::streaming::bridge::progress::ProgressFn`.
+    /// Re-export `website_map_engine::streaming::bridge::progress::BootEvent`.
+    pub use website_map_engine::streaming::bridge::progress::BootEvent;
+    /// Re-export `website_map_engine::streaming::bridge::progress::BootSeg`.
+    pub use website_map_engine::streaming::bridge::progress::BootSeg;
+    /// Re-export `website_map_engine::streaming::bridge::progress::ProgressFn`.
     #[cfg(target_arch = "wasm32")]
-    pub use website_graphics_engine::streaming::bridge::progress::ProgressFn;
+    pub use website_map_engine::streaming::bridge::progress::ProgressFn;
 
     pub trait BootSegView {
         /// Stable ordering used to select the visible loading caption.

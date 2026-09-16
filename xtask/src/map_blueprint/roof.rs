@@ -8,7 +8,7 @@
 //!   guarantees silhouette-straddling cells fail, and truncated edge blocks can never pass);
 //! - surfaces below `floors[0] + roof_min_above_floor_m` (stoops, terraces) are dropped.
 
-use website_graphics_engine::architecture::blueprint::footprint::RoofGrid;
+use website_map_engine::architecture::blueprint::footprint::RoofGrid;
 
 use super::march::r2;
 use super::params::Params;

@@ -317,7 +317,7 @@ pub(crate) fn marker_lane_fields(
             .unwrap_or("");
         let side = faction.strip_prefix("faction-").unwrap_or(faction);
         tints.extend_from_slice(
-            &website_graphics_engine::symbology::roles::classify::side_rgba(side),
+            &website_map_engine::symbology::roles::classify::side_rgba(side),
         );
         let str_field = |k: &str| {
             r.get(k)

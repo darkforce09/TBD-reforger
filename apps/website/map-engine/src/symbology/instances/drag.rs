@@ -85,7 +85,7 @@ pub fn pack_drag_overlay(drag_ids: &[String], ids: &[String], xy: &[f32]) -> (Ve
 /// Offset only selected vehicles while preserving parked vehicles and ignoring other entity IDs.
 ///
 /// ```
-/// use website_graphics_engine::symbology::instances::drag::pack_vehicle_drag_preview;
+/// use website_map_engine::symbology::instances::drag::pack_vehicle_drag_preview;
 ///
 /// let points = vec![
 /// ("v-parked".to_string(), 10.0, 20.0),

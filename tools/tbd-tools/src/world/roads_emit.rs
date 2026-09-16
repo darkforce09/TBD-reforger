@@ -34,15 +34,15 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use website_graphics_engine::environment::locations::route_placement::road_class_code;
-use website_graphics_engine::formats::archives::codec::access_checked;
-use website_graphics_engine::formats::archives::codec::to_bytes;
-use website_graphics_engine::formats::archives::roads::RoadNetworkArchive;
-use website_graphics_engine::formats::archives::roads::RoadSegmentArchive;
-use website_graphics_engine::formats::archives::version::ARCHIVE_SCHEMA_VERSION;
-use website_graphics_engine::streaming::loaders::store::bytes_to_json;
-use website_graphics_engine::terrain::roads::network::RoadSegment;
-use website_graphics_engine::terrain::roads::network::parse_roads_payload;
+use website_map_engine::environment::locations::route_placement::road_class_code;
+use website_map_engine::formats::archives::codec::access_checked;
+use website_map_engine::formats::archives::codec::to_bytes;
+use website_map_engine::formats::archives::roads::RoadNetworkArchive;
+use website_map_engine::formats::archives::roads::RoadSegmentArchive;
+use website_map_engine::formats::archives::version::ARCHIVE_SCHEMA_VERSION;
+use website_map_engine::streaming::loaders::store::bytes_to_json;
+use website_map_engine::terrain::roads::network::RoadSegment;
+use website_map_engine::terrain::roads::network::parse_roads_payload;
 
 use crate::serve::repo_root;
 
@@ -181,8 +181,8 @@ pub fn emit_road_network_cli(terrain: &str, out_base: Option<&Path>) -> Result<u
 mod tests {
     use std::collections::BTreeMap;
 
-    use website_graphics_engine::streaming::loaders::store::WorldError;
-    use website_graphics_engine::streaming::loaders::store::WorldStore;
+    use website_map_engine::streaming::loaders::store::WorldError;
+    use website_map_engine::streaming::loaders::store::WorldStore;
 
     use super::*;
 

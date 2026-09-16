@@ -309,7 +309,7 @@ fn only_kind_and_limit_select_rows() {
 /// record of `FarmHouse_E_1L01_Wood.instances.json` is in the descriptor unchanged.
 #[test]
 fn committed_farmhouse_descriptor_reproduces_the_t090_11_instances() {
-    use website_graphics_engine::architecture::compound::instances::InstancesFile;
+    use website_map_engine::architecture::compound::instances::InstancesFile;
     let root = crate::root::test_repo_root();
     let prefabs = root.join("packages/map-assets/everon/prefabs");
     let manifest: BlasManifest =

@@ -34,7 +34,7 @@ pub(crate) fn device_size(css_w: f64, css_h: f64, dpr: f64) -> (u32, u32) {
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn start_raf(
     engine: std::rc::Rc<
-        std::cell::RefCell<Option<website_graphics_engine::core::context::state::RenderEngine>>,
+        std::cell::RefCell<Option<website_map_engine::core::context::state::RenderEngine>>,
     >,
     disposed: std::sync::Arc<std::sync::atomic::AtomicBool>,
     debug_hud: RwSignal<String>,
@@ -128,7 +128,7 @@ pub(crate) fn start_raf(
                         "z {:.2} · c{chunks} · glyph {glyphs} · {fps:.0} FPS · rf {rf_ms:.2}ms ({rf_eq:.0} eq){}{}",
                         e.zoom(),
                         crate::editor::tools::los_world_wasm::hud_suffix(),
-                        website_graphics_engine::streaming::memory::budget::hud_suffix()
+                        website_map_engine::streaming::memory::budget::hud_suffix()
                     ));
                     frames = 0;
                     last_sample = now;
@@ -155,7 +155,7 @@ pub(crate) fn start_raf(
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_self_checks(
     engine: std::rc::Rc<
-        std::cell::RefCell<Option<website_graphics_engine::core::context::state::RenderEngine>>,
+        std::cell::RefCell<Option<website_map_engine::core::context::state::RenderEngine>>,
     >,
 ) {
     use wasm_bindgen::prelude::*;
@@ -227,9 +227,9 @@ pub(crate) fn register_self_checks(
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_editor_cam(
     engine: std::rc::Rc<
-        std::cell::RefCell<Option<website_graphics_engine::core::context::state::RenderEngine>>,
+        std::cell::RefCell<Option<website_map_engine::core::context::state::RenderEngine>>,
     >,
-    map_host: website_graphics_engine::streaming::host::HostHandle,
+    map_host: website_map_engine::streaming::host::HostHandle,
 ) {
     use wasm_bindgen::prelude::*;
 
@@ -261,7 +261,7 @@ pub(crate) fn register_editor_cam(
                 e.on_camera_changed(); // T-172 H5
             }
             // Immediate flush so smoke_fullmap A_trees_on does not race the 120 ms debounce.
-            website_graphics_engine::streaming::host::flush_viewport(
+            website_map_engine::streaming::host::flush_viewport(
                 map_host.clone(),
                 engine.clone(),
             );
@@ -281,7 +281,7 @@ pub(crate) fn register_editor_cam(
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_slot_stats(
     engine: std::rc::Rc<
-        std::cell::RefCell<Option<website_graphics_engine::core::context::state::RenderEngine>>,
+        std::cell::RefCell<Option<website_map_engine::core::context::state::RenderEngine>>,
     >,
 ) {
     use wasm_bindgen::prelude::*;

@@ -87,7 +87,7 @@ pub fn run(args: &[String]) -> Result<u8> {
             matched += 1;
             let text = fs::read_to_string(&path)?;
             match serde_json::from_str::<
-                website_graphics_engine::architecture::blueprint::structure::BuildingBlueprint,
+                website_map_engine::architecture::blueprint::structure::BuildingBlueprint,
             >(&text)
             {
                 Ok(bp) => {

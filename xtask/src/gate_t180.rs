@@ -166,7 +166,7 @@ const EDITOR_OPS_SPLIT: &[&str] = &[
 const ORBAT_RS: &str = "apps/website/mission-core/src/mission/ast/factions/orbat_slot_template.rs";
 const ORBAT_MGR: &str = "apps/website/frontend/src/pages/operations/orbat_manager.rs";
 const EDEN_CHROME: &str = "apps/website/frontend/src/editor/eden_chrome.rs";
-const SLOTS_GPU: &str = "apps/website/graphics-engine/src/symbology/roles/classify.rs";
+const SLOTS_GPU: &str = "apps/website/map-engine/src/symbology/roles/classify.rs";
 
 /// One `ban`: message, ERE pattern, `-i`?, targets, and the `ok` line printed when it holds.
 #[rustfmt::skip]
@@ -196,8 +196,8 @@ const PINS: &[(&str, &str)] = &[
     ("SIDE_INDFOR_RGBA pin missing", r"SIDE_INDFOR_RGBA: \[u8; 4\] = \[34, 197, 94, 255\]"),
 ];
 
-const MEC: &str = "website-graphics-engine";
-const MER: &str = "website-graphics-engine";
+const MEC: &str = "website-map-engine";
+const MER: &str = "website-map-engine";
 const FE: &str = "website-frontend";
 /// One argv element, not two — and bash's `$*` re-joins it with a space, so the failure text reads
 /// `--features doc mission`. Reproduced by [`shown`].

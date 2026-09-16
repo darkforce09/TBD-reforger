@@ -156,8 +156,8 @@ pub fn slice_chunk_corners(grid: &[u32], size: usize, cx: usize, cy: usize) -> V
 #[cfg(test)]
 mod tests {
     use super::*;
-    use website_graphics_engine::formats::density::tbdd::decode_tbdd;
-    use website_graphics_engine::formats::density::tbdd::encode_tbdd;
+    use website_map_engine::formats::density::tbdd::decode_tbdd;
+    use website_map_engine::formats::density::tbdd::encode_tbdd;
 
     /// The 625 committed everon density tiles (`objects/density/*.bin`), sorted.
     ///

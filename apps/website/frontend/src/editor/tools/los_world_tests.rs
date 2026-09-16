@@ -3,8 +3,8 @@
 
 use std::cell::Cell;
 
-use website_graphics_engine::spatial::terrain_los::viewshed::Viewshed;
-use website_graphics_engine::spatial::terrain_los::viewshed::Visibility;
+use website_map_engine::spatial::terrain_los::viewshed::Viewshed;
+use website_map_engine::spatial::terrain_los::viewshed::Visibility;
 
 use super::*;
 use crate::editor::tools::los_tool::{world_key, LosVerdict};

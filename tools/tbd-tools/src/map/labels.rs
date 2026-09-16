@@ -8,14 +8,14 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use serde_json::{Map, Value, json};
-use website_graphics_engine::environment::locations::peaks::HeightLabel;
-use website_graphics_engine::environment::locations::peaks::HeightLabelKind;
-use website_graphics_engine::environment::locations::peaks::PEAK_MIN_VALUE_M;
-use website_graphics_engine::environment::locations::peaks::declutter_height_labels;
-use website_graphics_engine::environment::locations::peaks::find_peaks;
-use website_graphics_engine::terrain::dem::manifest::DemManifest;
-use website_graphics_engine::terrain::dem::png::decode_png_to_meters;
-use website_graphics_engine::terrain::dem::sampling::sample_elevation_from_meters_cache;
+use website_map_engine::environment::locations::peaks::HeightLabel;
+use website_map_engine::environment::locations::peaks::HeightLabelKind;
+use website_map_engine::environment::locations::peaks::PEAK_MIN_VALUE_M;
+use website_map_engine::environment::locations::peaks::declutter_height_labels;
+use website_map_engine::environment::locations::peaks::find_peaks;
+use website_map_engine::terrain::dem::manifest::DemManifest;
+use website_map_engine::terrain::dem::png::decode_png_to_meters;
+use website_map_engine::terrain::dem::sampling::sample_elevation_from_meters_cache;
 
 use crate::serve::repo_root;
 use crate::world::jsval::{js_math_round, js_num};

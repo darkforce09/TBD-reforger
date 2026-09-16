@@ -9,8 +9,8 @@
 //! has not reached keeps its terrain colour, a verdict a proxy box decided reads "provisional".
 //! Nothing here ever reads clear because geometry was missing.
 
-use website_graphics_engine::spatial::terrain_los::viewshed::Viewshed;
-use website_graphics_engine::spatial::terrain_los::viewshed::Visibility;
+use website_map_engine::spatial::terrain_los::viewshed::Viewshed;
+use website_map_engine::spatial::terrain_los::viewshed::Visibility;
 
 use super::los_tool::{
     format_distance, LosVerdict, ProjectedShot, EYE_HEIGHT_TARGET_M, VIEWSHED_HIDDEN_RGBA,

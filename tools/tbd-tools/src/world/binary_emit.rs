@@ -39,14 +39,14 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use serde_json::Value;
 
-use website_graphics_engine::environment::buildings::prefab::build_prefab_maps;
-use website_graphics_engine::environment::buildings::prefab::narrow_prefab_rows;
-use website_graphics_engine::environment::classify::NO_CLASS;
-use website_graphics_engine::environment::classify::narrow_instance_row_v2;
-use website_graphics_engine::formats::containers::header::ContainerHeader;
-use website_graphics_engine::formats::containers::tbdc::TbdcHeader;
-use website_graphics_engine::formats::pod::instance::ObjectInstancePod;
-use website_graphics_engine::formats::pod::instance::instances_to_bytes;
+use website_map_engine::environment::buildings::prefab::build_prefab_maps;
+use website_map_engine::environment::buildings::prefab::narrow_prefab_rows;
+use website_map_engine::environment::classify::NO_CLASS;
+use website_map_engine::environment::classify::narrow_instance_row_v2;
+use website_map_engine::formats::containers::header::ContainerHeader;
+use website_map_engine::formats::containers::tbdc::TbdcHeader;
+use website_map_engine::formats::pod::instance::ObjectInstancePod;
+use website_map_engine::formats::pod::instance::instances_to_bytes;
 
 /// Prefab id (`pid.to_bits()`, the loader's key) → render-class code, for the prefab catalogue
 /// document `build-objects` is about to write.
@@ -119,10 +119,10 @@ mod tests {
     use std::path::PathBuf;
 
     use serde_json::json;
-    use website_graphics_engine::formats::containers::header::HEADER_BYTES;
-    use website_graphics_engine::formats::pod::instance::POD_BYTES;
-    use website_graphics_engine::streaming::loaders::chunk::parse_chunk;
-    use website_graphics_engine::streaming::loaders::store::bytes_to_json;
+    use website_map_engine::formats::containers::header::HEADER_BYTES;
+    use website_map_engine::formats::pod::instance::POD_BYTES;
+    use website_map_engine::streaming::loaders::chunk::parse_chunk;
+    use website_map_engine::streaming::loaders::store::bytes_to_json;
 
     use super::*;
     use crate::serve::repo_root;

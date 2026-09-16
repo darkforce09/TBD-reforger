@@ -5,45 +5,25 @@ edition = "2024"
 rust-version = "1.95"
 license = "UNLICENSED"
 publish = false
-description = "Map graphics, spatial computation, terrain formats, and asset streaming."
+description = "Pure GPU renderer: device, pipelines, shaders, draw and text batching. Knows no map nouns."
 
 [lib]
 crate-type = ["rlib"]
 
 [features]
-default = ["render", "terrain", "formats", "streaming"]
-render = ["streaming"]
-terrain = ["bvh", "dep:png"]
-formats = ["terrain", "dep:rkyv", "dep:serde", "serde_json/float_roundtrip", "dep:thiserror"]
-streaming = ["formats", "dep:flate2"]
-bvh = []
+default = []
+# Mirrors `website-map-engine`'s `render`: gates the wasm-only wgpu surface so a native
+# build compiles the geometry and packing halves with no GPU crate at all.
+render = []
 
 [dependencies]
 bytemuck = { version = "1", features = ["derive", "min_const_generics"] }
 earcutr = "0.5.0"
-png = { version = "0.17", optional = true }
-serde = { version = "1", features = ["derive"], optional = true }
-serde_json = { version = "1", optional = true, features = ["preserve_order"] }
-thiserror = { version = "2", optional = true }
-flate2 = { version = "1", optional = true }
-# Validation and endian settings are part of the shared on-disk format.
-rkyv = { version = "0.8.18", optional = true, default-features = false, features = ["std", "bytecheck", "little_endian"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wgpu = { version = "29", default-features = false, features = ["webgpu", "webgl", "wgsl"] }
 wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 web-sys = { version = "0.3", features = [
-    "HtmlCanvasElement", "Window", "ImageBitmap", "Performance", "console",
-    "ImageBitmapOptions", "ColorSpaceConversion", "OffscreenCanvas",
-    "OffscreenCanvasRenderingContext2d", "ImageData", "Blob", "BlobPropertyBag",
-    "Response", "Headers", "ReadableStream", "ReadableStreamDefaultReader",
-    "Location", "UrlSearchParams",
+    "HtmlCanvasElement", "Window", "Performance", "console",
 ] }
-console_error_panic_hook = "0.1"
-futures = "0.3"
-gloo-net = "0.6"
-
-[dev-dependencies]
-serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }

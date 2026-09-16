@@ -1416,7 +1416,7 @@ fn render_prefs_section(env: &crate::v2::core::api::dto::MissionEnv) -> AnyView 
                             let on = event_target_checked(&ev);
                             author_env("showHillshade", on.into());
                             let op = crate::editor::state::operations::read_env().hillshade_opacity;
-                            website_graphics_engine::streaming::host::apply_hillshade(on, op);
+                            website_map_engine::streaming::host::apply_hillshade(on, op);
                         }
                         class="accent-primary"
                     />
@@ -1434,7 +1434,7 @@ fn render_prefs_section(env: &crate::v2::core::api::dto::MissionEnv) -> AnyView 
                             let pct: f64 = event_target_value(&ev).parse().unwrap_or(40.0);
                             let op = (pct / 100.0).clamp(0.0, 1.0);
                             author_env("hillshadeOpacity", op.into());
-                            website_graphics_engine::streaming::host::apply_hillshade(true, op);
+                            website_map_engine::streaming::host::apply_hillshade(true, op);
                         }
                         class="accent-primary"
                     />
@@ -1448,7 +1448,7 @@ fn render_prefs_section(env: &crate::v2::core::api::dto::MissionEnv) -> AnyView 
                         on:change=move |ev| {
                             let on = event_target_checked(&ev);
                             author_env("showGrid", on.into());
-                            website_graphics_engine::streaming::host::apply_grid(on);
+                            website_map_engine::streaming::host::apply_grid(on);
                         }
                         class="accent-primary"
                     />
@@ -1577,7 +1577,7 @@ fn render_editor_prefs_body() -> AnyView {
                                 let mut p = wlp::load_prefs();
                                 p.set(key, checked);
                                 wlp::save_prefs(&p);
-                                website_graphics_engine::streaming::host::refresh_world_layers();
+                                website_map_engine::streaming::host::refresh_world_layers();
                             }
                             class="accent-primary"
                         />
@@ -1604,7 +1604,7 @@ fn render_editor_prefs_body() -> AnyView {
                                     }
                                     on:click=move |_| {
                                         wlp::save_basemap_view(v);
-                                        website_graphics_engine::streaming::host::apply_basemap_view(v);
+                                        website_map_engine::streaming::host::apply_basemap_view(v);
                                         basemap.set(v.to_string());
                                     }
                                 >

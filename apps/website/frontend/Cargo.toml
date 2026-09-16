@@ -24,7 +24,7 @@ serde_json = "1"
 # `blueprint` — building-blueprint structs + 2.5D LOS raycaster for the `/debug/building-viewer`
 # test bench. Standalone feature (serde only, already linked) so the wasm bundle does NOT pull the
 # `world` parser stack (flate2 + serde_json float_roundtrip).
-website-graphics-engine = { path = "../graphics-engine", default-features = false, features = ["terrain", "formats"] }
+website-map-engine = { path = "../map-engine", default-features = false, features = ["terrain", "formats"] }
 gloo-net = "0.6"
 js-sys = "0.3"
 # T-405 — the `<a href>` scheme guard (`url_guard.rs`). Costs the bundle NOTHING: `url` is already
@@ -107,7 +107,7 @@ web-sys = { version = "0.3", features = [
 
 # Rendering and browser asset I/O share the frontend's WebAssembly module.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-website-graphics-engine = { path = "../graphics-engine", features = ["render", "streaming"] }
+website-map-engine = { path = "../map-engine", features = ["render", "streaming"] }
 # T-159.17 yrs IDB persist — the React `yrsPersist.ts` parity (DB `tbd-mission-yrs` / store
 # `doc-state` / whole `encode_state()` blob). `idb` is a wasm-first IndexedDB wrapper; its default
 # features pull `tokio` with ONLY `features=["sync"]` (oneshot), which compiles on
@@ -122,6 +122,6 @@ wasm-bindgen-futures = "0.4"
 
 # Native UI tests call the graphics crate's satellite selection and archive arithmetic.
 [dev-dependencies]
-website-graphics-engine = { path = "../graphics-engine", default-features = false, features = [
+website-map-engine = { path = "../map-engine", default-features = false, features = [
     "streaming",
 ] }

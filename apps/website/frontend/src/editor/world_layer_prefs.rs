@@ -6,8 +6,8 @@
 #![allow(dead_code)]
 
 use serde::{Deserialize, Serialize};
-/// Re-export `website_graphics_engine::streaming::bridge::preferences::WorldLayerPrefs`.
-pub use website_graphics_engine::streaming::bridge::preferences::WorldLayerPrefs;
+/// Re-export `website_map_engine::streaming::bridge::preferences::WorldLayerPrefs`.
+pub use website_map_engine::streaming::bridge::preferences::WorldLayerPrefs;
 
 const EDITOR_PREFS_KEY: &str = "tbd-mc-editor-prefs";
 

@@ -137,7 +137,7 @@ fn echo_matches_make() {
     );
     assert_eq!(
         wasm_ci()[2].echo(),
-        "cargo clippy -p website-graphics-engine --target wasm32-unknown-unknown -- -D warnings"
+        "cargo clippy -p website-map-engine --target wasm32-unknown-unknown -- -D warnings"
     );
     // The quoted psql argument: make echoed the recipe TEXT, quotes included.
     assert_eq!(

@@ -920,7 +920,7 @@ pub(crate) fn hover_hit(
     cache: &mut Option<HoverPoints>,
     tick: u64,
     doc: &mission_doc::DocHandle,
-    cam: &website_graphics_engine::camera::ortho::state::OrthoCamera,
+    cam: &website_map_engine::camera::ortho::state::OrthoCamera,
     px: f64,
     py: f64,
 ) -> bool {
@@ -1457,12 +1457,12 @@ pub fn MissionEditorPage() -> impl IntoView {
             canvas.set_width(dw);
             canvas.set_height(dh);
 
-            let engine: Rc<RefCell<Option<website_graphics_engine::core::context::state::RenderEngine>>> =
+            let engine: Rc<RefCell<Option<website_map_engine::core::context::state::RenderEngine>>> =
                 Rc::new(RefCell::new(None));
             // T-166 — shared map-asset host (camera-settle refresh after wheel/pan).
-            let map_host = website_graphics_engine::streaming::host::new_host_handle();
+            let map_host = website_map_engine::streaming::host::new_host_handle();
             // T-172 B2 — DEM grid handle for the CUR Z sample (published by bootstrap).
-            let dem_grid = website_graphics_engine::streaming::host::new_dem_grid_handle();
+            let dem_grid = website_map_engine::streaming::host::new_dem_grid_handle();
             let disposed = Arc::new(AtomicBool::new(false));
 
             // T-159.16 — MissionDoc host. Built + seeded + bridged synchronously (before the async
@@ -1627,7 +1627,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 crate::editor::tools::los_tool::register_los_sampler(std::rc::Rc::new(
                     move |x: f64, y: f64| {
                         dem_grid.borrow().as_ref().and_then(|g| {
-                            website_graphics_engine::terrain::dem::grid::sample_grid_meters(g, x, y)
+                            website_map_engine::terrain::dem::grid::sample_grid_meters(g, x, y)
                         })
                     },
                 ));
@@ -2328,7 +2328,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let report = report.clone();
                 let (cw, ch) = (rect0.width(), rect0.height());
                 async move {
-                    match website_graphics_engine::core::context::state::RenderEngine::create(canvas, force_webgl).await {
+                    match website_map_engine::core::context::state::RenderEngine::create(canvas, force_webgl).await {
                         Ok(mut eng) => {
                             if disposed.load(Ordering::Relaxed) {
                                 return;
@@ -2353,7 +2353,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                                               // add the per-icon marker glyph shapes `markers_bind` selects.
                             {
                                 let (rgba, width, height, uv) =
-                                    website_graphics_engine::renderers::batching::scene::build_marker_slot_atlas();
+                                    website_map_engine::renderers::batching::scene::build_marker_slot_atlas();
                                 if let Err(e) = eng.ensure_slot_atlas(&rgba, width, height, &uv) {
                                     leptos::logging::error!("ensure_slot_atlas: {e:?}");
                                 }
@@ -2389,7 +2389,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             if let (Some(soa), Some(e)) =
                                 (soa.as_ref(), engine.borrow_mut().as_mut())
                             {
-                                let tints = website_graphics_engine::symbology::roles::classify::side_tints_rgba_bytes(
+                                let tints = website_map_engine::symbology::roles::classify::side_tints_rgba_bytes(
                                     &soa.side_keys,
                                 );
                                 e.slots_bind_symbology(
@@ -3162,7 +3162,7 @@ mod t631_boot_failure_state;
 
 /// Exercise the graphics crate's satellite arithmetic directly from native UI regression tests.
 #[cfg(all(test, not(target_arch = "wasm32")))]
-use website_graphics_engine::terrain::satellite::streamer as tbd_sat_pure;
+use website_map_engine::terrain::satellite::streamer as tbd_sat_pure;
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 #[path = "mission_editor_tests/t629_satellite_resolution.rs"]

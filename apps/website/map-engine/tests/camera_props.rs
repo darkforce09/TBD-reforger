@@ -1,11 +1,11 @@
 //! Role: camera props.
-//! Position: `apps/website/graphics-engine/tests` in the graphics engine.
+//! Position: `apps/website/map-engine/tests` in the graphics engine.
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use website_graphics_engine::camera::ortho::state::MAX_ZOOM;
-use website_graphics_engine::camera::ortho::state::MIN_ZOOM;
-use website_graphics_engine::camera::ortho::state::OrthoCamera;
+use website_map_engine::camera::ortho::state::MAX_ZOOM;
+use website_map_engine::camera::ortho::state::MIN_ZOOM;
+use website_map_engine::camera::ortho::state::OrthoCamera;
 
 struct Lcg(u64);
 

@@ -421,7 +421,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "website-mission-core",
                 "--all-features",
                 "-p",
-                "website-graphics-engine",
+                "website-map-engine",
                 "--all-targets",
                 "--quiet",
                 "--",
@@ -491,7 +491,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "website-mission-core",
                 "--all-features",
                 "-p",
-                "website-graphics-engine",
+                "website-map-engine",
                 "--quiet",
             ],
         )

@@ -6952,7 +6952,7 @@ dependencies = [
  "tokio",
  "tokio-tungstenite",
  "webp",
- "website-graphics-engine",
+ "website-map-engine",
 ]
 
 [[package]]
@@ -8201,12 +8201,24 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "website-graphics-engine",
+ "website-map-engine",
  "website-mission-core",
 ]
 
 [[package]]
 name = "website-graphics-engine"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "earcutr",
+ "js-sys",
+ "wasm-bindgen",
+ "web-sys",
+ "wgpu 29.0.4",
+]
+
+[[package]]
+name = "website-map-engine"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
@@ -9053,7 +9065,7 @@ dependencies = [
  "toml 0.8.23",
  "typify",
  "walkdir",
- "website-graphics-engine",
+ "website-map-engine",
 ]
 
 [[package]]

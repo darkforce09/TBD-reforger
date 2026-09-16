@@ -7,15 +7,15 @@
 use std::path::Path;
 
 use anyhow::{Context, Result, bail};
-use website_graphics_engine::architecture::blueprint::footprint::OverallFootprint;
-use website_graphics_engine::architecture::blueprint::footprint::PlateGrid;
-use website_graphics_engine::architecture::blueprint::footprint::VerticalProfile;
-use website_graphics_engine::architecture::blueprint::structure::BBox2D;
-use website_graphics_engine::architecture::blueprint::structure::BuildingBlueprint;
-use website_graphics_engine::architecture::blueprint::structure::BuildingFurniture;
-use website_graphics_engine::architecture::blueprint::structure::BuildingLevel;
-use website_graphics_engine::architecture::blueprint::structure::BuildingWall;
-use website_graphics_engine::architecture::blueprint::structure::FloorPolygon;
+use website_map_engine::architecture::blueprint::footprint::OverallFootprint;
+use website_map_engine::architecture::blueprint::footprint::PlateGrid;
+use website_map_engine::architecture::blueprint::footprint::VerticalProfile;
+use website_map_engine::architecture::blueprint::structure::BBox2D;
+use website_map_engine::architecture::blueprint::structure::BuildingBlueprint;
+use website_map_engine::architecture::blueprint::structure::BuildingFurniture;
+use website_map_engine::architecture::blueprint::structure::BuildingLevel;
+use website_map_engine::architecture::blueprint::structure::BuildingWall;
+use website_map_engine::architecture::blueprint::structure::FloorPolygon;
 
 use super::march::r2;
 use super::params::Params;

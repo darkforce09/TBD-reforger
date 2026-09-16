@@ -15,6 +15,6 @@ fn map_engine_core_tests_require_doc_feature() {
             && cfg!(feature = "formats")
             && cfg!(feature = "streaming")
             && cfg!(feature = "bvh"),
-        "website-graphics-engine tests require --all-features to include every graphics suite"
+        "website-map-engine tests require --all-features to include every graphics suite"
     );
 }

@@ -40,7 +40,7 @@
 //! `density::sample_corners`.
 
 use serde_json::Value;
-use website_graphics_engine::environment::vegetation::mass::CANOPY_MASS_ISO;
+use website_map_engine::environment::vegetation::mass::CANOPY_MASS_ISO;
 
 use crate::density;
 use crate::forest::js_num;
@@ -1047,7 +1047,7 @@ mod tests {
                     p.display(),
                     bytes.len()
                 );
-                let g = website_graphics_engine::formats::density::tbdd::decode_tbdd(&bytes)
+                let g = website_map_engine::formats::density::tbdd::decode_tbdd(&bytes)
                     .unwrap_or_else(|e| panic!("{}: {e}", p.display()));
                 assert_eq!(
                     (g.cols, g.rows, g.cell_m, g.version),
