@@ -42,6 +42,8 @@ pub enum RowSource {
     },
 }
 
+/// One row of the loadout editor: the pick slot's stable key, the caption beside it, and where
+/// its options come from.
 pub struct LoadoutRow {
     pub key: &'static str,
     pub label: &'static str,
@@ -192,6 +194,12 @@ pub struct CompatGraph {
 }
 
 impl CompatGraph {
+    /// Build the adjacency from the registry's raw compatibility edges.
+    ///
+    /// Every edge is inserted in both directions under its own `edge_type`, which is what makes
+    /// the seed's from/to convention irrelevant to [`CompatGraph::items_for`]. Evidence and
+    /// quantity are dropped here — cargo defaults need them, so they are read separately from the
+    /// same rows by [`cargo_defaults_by_character`].
     pub fn from_edges(edges: &[RegistryCompatEdge]) -> Self {
         let mut by_edge: HashMap<String, HashMap<String, HashSet<String>>> = HashMap::new();
         for e in edges {
@@ -343,6 +351,10 @@ pub fn row_options(
 
 // `Debug` (T-240): a fault is now a *refusal reason* a caller can propagate through a `Result`,
 // and `expect`/`unwrap_err` on that Result needs to be able to print what it refused on.
+/// One loadout row's refusal: the row's key and the sentence shown against it.
+///
+/// `Debug` because a fault is a refusal reason a caller propagates through a `Result`, and
+/// `expect` / `unwrap_err` on that `Result` has to be able to print what it refused on.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RowError {
     pub key: &'static str,
@@ -393,12 +405,14 @@ pub fn validate_loadout(
 
 /* ───────────────────────────── paper-doll region model ───────────────────────────── */
 
+/// Which half of the paper doll a region belongs to: a carried weapon, or worn equipment.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum RegionKind {
     Weapon,
     Wear,
 }
 
+/// One clickable region of the paper doll: the pick key it edits and the half it belongs to.
 pub struct DollRegion {
     pub key: &'static str,
     pub kind: RegionKind,
@@ -530,6 +544,12 @@ pub struct LoadoutWeight {
     pub item_count: u32,
 }
 
+/// Total the picked items' weights against `catalog_by_name`, walking the canonical row order so
+/// the result does not depend on the pick map's iteration order.
+///
+/// An item the catalog has no weight for is counted as unknown rather than as zero, so the
+/// readout can say the total is incomplete instead of quietly understating it. Empty picks
+/// contribute nothing at all.
 pub fn loadout_weight(
     picks: &HashMap<String, String>,
     catalog_by_name: &HashMap<String, &RegistryItem>,
@@ -662,6 +682,12 @@ impl CargoBudget {
     }
 }
 
+/// Sum one container group's `rows` into a [`CargoBudget`] and pair the totals with the picked
+/// `garment`'s capacity.
+///
+/// A row naming an item `idx` does not hold contributes nothing, and an item with no recorded
+/// weight or volume contributes zero on that axis — a missing figure must not inflate a total
+/// that decides whether the operator is over capacity.
 pub fn cargo_budget(
     idx: &HashMap<String, &RegistryItem>,
     garment: Option<&RegistryItem>,

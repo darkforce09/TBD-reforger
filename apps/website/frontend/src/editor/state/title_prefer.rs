@@ -845,6 +845,7 @@ fn adopt_payload(doc: &D, p: &str, row: &R, mode: A) {
     core.apply_row_meta(&t, &row.terrain, non_empty(&row.time_of_day), non_empty(&row.weather), non_empty(&row.briefing));
 }
 mod real {
+    /// The real item, hidden one level down where a column-0 scan would not count it.
     pub fn adopt_payload(doc: &D, p: &str, row: &R, mode: A) {
         core.apply_row_meta(&t, &row.terrain, non_empty(&row.time_of_day), non_empty(&row.weather), None);
     }
@@ -859,6 +860,7 @@ pub use real::adopt_payload;
             "\
 fn adopt_payload(doc: &D) { live(); }
 mod shadow {
+    /// The shadow copy, with nothing on it to mark it as the dead one.
     pub fn adopt_payload(doc: &D) { dead(); }
 }
 ",

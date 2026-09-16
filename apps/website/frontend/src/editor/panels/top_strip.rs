@@ -953,6 +953,11 @@ fn clear_mirror_timer(column: &'static str) {
 
 #[cfg(target_arch = "wasm32")]
 impl RowMirror {
+    /// Build the mirror at component setup, resolving the auth store, the toast sink and the
+    /// mission id from the route.
+    ///
+    /// Setup is the only place these can be resolved: each one reaches through the reactive owner,
+    /// which a plain DOM event handler or a timer callback does not have.
     pub(crate) fn from_route() -> Self {
         use leptos_router::hooks::use_params_map;
         let id = use_params_map()
@@ -1163,6 +1168,15 @@ fn trap_tab_in_dialog(dialog_ref: NodeRef<leptos::html::Div>, ev: &web_sys::Keyb
 #[cfg(not(target_arch = "wasm32"))]
 fn trap_tab_in_dialog(_dialog_ref: NodeRef<leptos::html::Div>, _ev: &web_sys::KeyboardEvent) {}
 
+/// The editor's top command strip: the mission identity row above, and the tool and command
+/// clusters below it.
+///
+/// **Signals & state:** binds the undo and redo availability, the version and export controls and
+/// the environment row to the page's signals, and routes every button through the page's toolbar
+/// dispatch so a click takes the same path as its keyboard chord.
+///
+/// **Invariants:** the strip's two rows together occupy the fixed strip height the layout module
+/// states, so adding a control can never grow the strip and shrink the canvas.
 #[component]
 pub fn TopCommandStrip(
     /// Mission title fallback — the `:id` route param; the doc's `meta.title` wins once read.

@@ -69,6 +69,10 @@ pub fn event_label(event: &str) -> &'static str {
     }
 }
 
+/// The first `prefix-N` identifier, counting from 1, that no row in `existing` already claims.
+///
+/// Callers pool the emitter and cue rows together before calling, so the two lists never mint
+/// the same id and an operator reading a refusal can tell which row it names.
 #[must_use]
 pub fn next_id(prefix: &str, existing: &[Value]) -> String {
     let taken: Vec<String> = existing
@@ -85,6 +89,10 @@ pub fn next_id(prefix: &str, existing: &[Value]) -> String {
     }
 }
 
+/// A fresh emitter row: a free id, the world origin, a placeholder sound, a 25 m radius and
+/// looping on.
+///
+/// `cue_ids` joins `existing` only to widen the pool the id is minted against.
 #[must_use]
 pub fn default_emitter(existing: &[Value], cue_ids: &[Value]) -> Value {
     let mut pool = existing.to_vec();
@@ -99,6 +107,9 @@ pub fn default_emitter(existing: &[Value], cue_ids: &[Value]) -> Value {
     })
 }
 
+/// A fresh music cue row: a free id, the mission-start event and a placeholder track.
+///
+/// `emitter_ids` joins `existing` only to widen the pool the id is minted against.
 #[must_use]
 pub fn default_cue(existing: &[Value], emitter_ids: &[Value]) -> Value {
     let mut pool = existing.to_vec();
@@ -110,11 +121,15 @@ pub fn default_cue(existing: &[Value], emitter_ids: &[Value]) -> Value {
     })
 }
 
+/// The emitter rows inside an authored audio block, or an empty list when the block is absent or
+/// holds no emitter array.
 #[must_use]
 pub fn emitters_from_block(block: Option<&Value>) -> Vec<Value> {
     array_from(block, "emitters")
 }
 
+/// The music cue rows inside an authored audio block, or an empty list when the block is absent
+/// or holds no cue array.
 #[must_use]
 pub fn cues_from_block(block: Option<&Value>) -> Vec<Value> {
     array_from(block, "musicCues")
@@ -139,6 +154,11 @@ pub fn block_from_parts(emitters: &[Value], cues: &[Value]) -> Option<Value> {
     }
 }
 
+/// `emitters` with one default emitter appended, or the schema's refusal clause when the
+/// resulting block would not validate.
+///
+/// Validation runs over the whole block rather than the new row alone, so a duplicate id or a
+/// cross-row rule refuses the addition before it can become an undo step.
 #[must_use]
 pub fn add_emitter(emitters: &[Value], cues: &[Value]) -> Result<Vec<Value>, String> {
     let mut next = emitters.to_vec();
@@ -147,6 +167,8 @@ pub fn add_emitter(emitters: &[Value], cues: &[Value]) -> Result<Vec<Value>, Str
     Ok(next)
 }
 
+/// `cues` with one default music cue appended, or the schema's refusal clause when the resulting
+/// block would not validate.
 #[must_use]
 pub fn add_cue(cues: &[Value], emitters: &[Value]) -> Result<Vec<Value>, String> {
     let mut next = cues.to_vec();
@@ -155,6 +177,9 @@ pub fn add_cue(cues: &[Value], emitters: &[Value]) -> Result<Vec<Value>, String>
     Ok(next)
 }
 
+/// `rows` without the row at `index`, order preserved. An `index` past the end removes nothing.
+///
+/// Deletion is never refused: a block the operator has emptied out is always a legal block.
 #[must_use]
 pub fn remove_at(rows: &[Value], index: usize) -> Vec<Value> {
     rows.iter()
@@ -185,6 +210,16 @@ pub fn xz_from_last_marker(markers: &[(f64, f64)]) -> Option<(f64, f64)> {
     markers.last().copied()
 }
 
+/// `emitters` with one authored field of the row at `index` set from the operator's text, or a
+/// refusal clause explaining why the edit was not taken.
+///
+/// Every field arrives as a string because every editor of it is a text input or a toggle, and
+/// the key decides how that string is read: identifier and sound are required strings, the
+/// trigger reference is an optional one, the position and radius are required numbers, the
+/// vertical offset is an optional one, and the loop flag takes only the two boolean spellings.
+/// An unknown key, a vanished row, an unreadable value and a block that fails the schema all
+/// refuse, and a refusal leaves `emitters` untouched — the caller commits the returned list or
+/// shows the clause, never both.
 pub fn with_emitter_field(
     emitters: &[Value],
     cues: &[Value],
@@ -221,6 +256,10 @@ pub fn with_emitter_field(
     Ok(next)
 }
 
+/// `emitters` with the loop flag of the row at `index` set to `on`.
+///
+/// A named wrapper over the boolean spelling [`with_emitter_field`] expects, so the checkbox's
+/// call site never has to know it.
 pub fn with_emitter_loop(
     emitters: &[Value],
     cues: &[Value],
@@ -246,6 +285,12 @@ fn with_emitter_number(
     with_emitter_field(emitters, cues, index, key, &format!("{n}"))
 }
 
+/// `cues` with one authored field of the row at `index` set from the operator's text, or a
+/// refusal clause explaining why the edit was not taken.
+///
+/// The cue's identifier and track are required strings and its event must be one of the known
+/// music events. Like [`with_emitter_field`], an unknown key, a vanished row, an unreadable value
+/// or a block that fails the schema refuses and leaves `cues` untouched.
 pub fn with_cue_field(
     cues: &[Value],
     emitters: &[Value],
@@ -349,6 +394,10 @@ fn refuse_block(emitters: &[Value], cues: &[Value]) -> Result<(), String> {
     }
 }
 
+/// The environment patch that stores `block`, as the JSON text the update path takes.
+///
+/// `None` patches the key to null rather than omitting it, because omitting a key leaves whatever
+/// was stored before in place — clearing the panel has to actually clear the document.
 #[must_use]
 pub fn env_patch(block: Option<&Value>) -> String {
     match block {
@@ -378,6 +427,11 @@ pub fn arm_place_on_map() {
     armed_placement::begin_place_marker(PLACE_MARKER_ICON.to_string());
 }
 
+/// The Audio panel's native stand-in: an empty view.
+///
+/// Every control here reads and writes the live document through wasm-only paths, so off the
+/// browser target there is nothing to render and the panel renders nothing rather than a shell
+/// that cannot work.
 #[cfg(not(target_arch = "wasm32"))]
 #[must_use]
 pub fn audio_emitters_panel(ctrl: &'static str) -> AnyView {
@@ -385,6 +439,14 @@ pub fn audio_emitters_panel(ctrl: &'static str) -> AnyView {
     ().into_any()
 }
 
+/// The Audio panel: the positional emitter list and the music cue list, built from the document's
+/// current audio block.
+///
+/// **Signals & state:** the lists are read once per build from the document, and every accepted
+/// edit commits the whole rebuilt block in one environment update, which is one undo step. A
+/// refused edit is written to a local refusal signal and shown beside the controls instead; the
+/// document is not touched. `ctrl` is the shared control class the surrounding settings surface
+/// styles its inputs with.
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub fn audio_emitters_panel(ctrl: &'static str) -> AnyView {

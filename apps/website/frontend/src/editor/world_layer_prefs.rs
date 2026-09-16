@@ -17,6 +17,11 @@ const LEGACY_LAYERS_KEY: &str = "tbd-mc-world-layers";
 
 const LEGACY_BASEMAP_KEY: &str = "tbd-mc-basemap-view";
 
+/// What the editor's layer menus need of a [`WorldLayerPrefs`]: the visibility rows to draw, in
+/// display order, and a keyed setter to write one of them back.
+///
+/// An extension trait rather than inherent methods, because the preference struct itself belongs
+/// to the map engine's streaming bridge and carries no menu vocabulary.
 pub trait WorldLayerPrefsView {
     /// Visibility controls in display order, with their storage keys and captions.
     #[must_use]

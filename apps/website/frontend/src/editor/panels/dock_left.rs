@@ -1194,17 +1194,21 @@ impl Bookmarks {
         serde_json::to_string(self).unwrap_or_default()
     }
 
+    /// Is a bookmark already stored under this name? Names are compared through the same
+    /// normalising key the store uses, so two spellings of one name are one bookmark.
     #[must_use]
     pub fn contains(&self, name: &str) -> bool {
         let k = bookmark_key(name);
         self.items.iter().any(|b| bookmark_key(&b.name) == k)
     }
 
+    /// How many bookmarks are stored.
     #[must_use]
     pub fn len(&self) -> usize {
         self.items.len()
     }
 
+    /// True when nothing is bookmarked, which is what the empty-state row renders from.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()

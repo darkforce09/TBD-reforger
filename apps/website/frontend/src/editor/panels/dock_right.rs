@@ -878,11 +878,13 @@ impl Favourites {
         self.items.iter().any(|f| f.asset_id == asset_id)
     }
 
+    /// How many assets are starred.
     #[must_use]
     pub fn len(&self) -> usize {
         self.items.len()
     }
 
+    /// True when nothing is starred, which is what the empty-state row renders from.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()

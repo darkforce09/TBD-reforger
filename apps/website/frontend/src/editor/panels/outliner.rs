@@ -74,6 +74,12 @@ pub enum NodeKind {
     Comment,
 }
 
+/// One row of the Outliner tree: what it is, what it says, what it contains, and the glyph state
+/// its toggles render from.
+///
+/// Built fresh from the document every time the tree is rebuilt, so nothing here is authority —
+/// the document is. In particular the resolved-visibility bit is derived at build time from this
+/// node's ancestors and is never written back.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OutlinerNode {
     pub id: String,

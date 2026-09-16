@@ -394,6 +394,8 @@ pub(crate) const ROW_TOOLS_PX: f64 = 24.0;
 /// each side; at the equalised [`DOCK_PX`] those 24 px are the difference between the tab strip
 /// fitting and the trailing tab clipping, and Eden's own gutter is 8.
 pub(crate) const DOCK_L: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-full flex-col overflow-y-auto border-r border-white/10 p-2";
+/// The right dock's shell classes: [`DOCK_L`]'s recipe mirrored, so the edge border sits on the
+/// leading side and the two docks read as one pair of panels around the canvas.
 pub(crate) const DOCK_R: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-full flex-col overflow-y-auto border-l border-white/10 p-2";
 
 /// The shared icon-button recipe (React TopCommandStrip:148), as T-637 rebuilt it.

@@ -660,14 +660,21 @@ pub use live::{announce_saved, join, leave, read_stamp, register_bridge, write_s
 mod live {
     use super::Stamp;
 
+    /// No channel to join off the browser, so joining a mission does nothing.
     pub fn join(_mission_id: &str) {}
+    /// No channel to leave off the browser, so departing does nothing.
     pub fn leave() {}
+    /// No peers to tell off the browser, so announcing a fresh record does nothing.
     pub fn announce_saved(_at: f64) {}
+    /// No `window` to hang the probe on off the browser, so registering it does nothing.
     pub fn register_bridge() {}
+    /// Always `None`: there is no local storage to have stamped, and the save policy reads a
+    /// missing stamp as "merge", which is the safe verdict.
     #[must_use]
     pub fn read_stamp(_physical_key: &str) -> Option<Stamp> {
         None
     }
+    /// No local storage to stamp off the browser, so recording a write does nothing.
     pub fn write_stamp(_physical_key: &str, _at: f64) {}
 }
 

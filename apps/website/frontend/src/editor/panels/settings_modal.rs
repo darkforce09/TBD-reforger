@@ -1805,6 +1805,8 @@ pub enum DiffState {
 }
 
 impl SettingRow {
+    /// Whether this row's authored value is provably at its default, provably away from it, or
+    /// unanswerable because no default is declared for it in the schema.
     #[must_use]
     pub fn diff_state(&self) -> DiffState {
         match &self.default {

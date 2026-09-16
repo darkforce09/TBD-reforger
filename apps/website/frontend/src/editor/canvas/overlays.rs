@@ -149,6 +149,13 @@ pub(crate) struct ZDrag {
 
 #[cfg(any(target_arch = "wasm32", test))]
 impl ZDrag {
+    /// Snapshot the authored heights of `ids` at the start of a Z drag, or `None` when the
+    /// selection holds no slot or vehicle with a finite `position.z`.
+    ///
+    /// Heights are read from the document's raw JSON rows rather than the render SoA, because the
+    /// rows keep full `f64` precision and still carry entities the renderer omits for being
+    /// hidden. An id that matches neither a slot nor a vehicle is skipped rather than defaulted,
+    /// so nothing the drag cannot move ends up in the commit.
     pub(crate) fn begin(
         core: &website_map_engine::data::store::MissionDocCore,
         ids: &[String],
@@ -188,6 +195,10 @@ impl ZDrag {
         })
     }
 
+    /// The metre height the readout shows for a drag of `delta` metres: the snapshotted height of
+    /// the drag's lead entity — the first slot, else the first vehicle — plus `delta`.
+    ///
+    /// A mixed selection moves rigidly, so one lead height speaks for all of it.
     pub(crate) fn height(&self, delta: f64) -> f64 {
         self.slots
             .first()

@@ -328,11 +328,13 @@ pub(crate) mod registry_session {
         COMPAT.with(|c| c.borrow().is_none())
     }
 
+    /// Clone of the session-cached prefab registry, if this SPA session has already fetched it.
     #[must_use]
     pub fn cached_registry() -> Option<Vec<RegistryItem>> {
         REGISTRY.with(|c| c.borrow().clone())
     }
 
+    /// Adopt `items` as this SPA session's registry, so later mounts of the editor skip the fetch.
     pub fn store_registry(items: Vec<RegistryItem>) {
         REGISTRY.with(|c| *c.borrow_mut() = Some(items));
     }
@@ -347,10 +349,13 @@ pub(crate) mod registry_session {
         })
     }
 
+    /// Adopt an assembled compatibility feed and its cargo seed map as this SPA session's, so
+    /// later mounts of the editor skip both the fetch and the assembly.
     pub fn store_compat(feed: CompatFeed, cargo: HashMap<String, Vec<CargoRow>>) {
         COMPAT.with(|c| *c.borrow_mut() = Some(CachedCompat { feed, cargo }));
     }
 
+    /// Drop both caches, so one test's stored session cannot decide the next test's fetches.
     #[cfg(test)]
     pub fn clear_for_test() {
         REGISTRY.with(|c| *c.borrow_mut() = None);

@@ -7,6 +7,12 @@
 //! to source-scrubbing pins, which could then only ever examine the planner. Do not move the test
 //! module back up, and do not add production items after it.
 
+/// What one Outliner drag carries: the row the pointer went down on, and every id the drop will
+/// move, in render order.
+///
+/// `ids` always contains `anchor`. Pressing a row that is part of the selection drags the whole
+/// selection; pressing one that is not drags that row alone, so an unselected row can never take
+/// the selection with it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DragSet {
     pub anchor: String,
@@ -32,6 +38,7 @@ pub fn plan_drop(
     Some(drag.ids.clone())
 }
 
+/// A drag that is armed and waiting for a drop, tagged with the kind of row that armed it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LayerDrag {
     Folder(DragSet),
@@ -40,26 +47,42 @@ pub enum LayerDrag {
 }
 
 thread_local! {
+    /// The one armed Outliner drag, or `None` when no drag is in flight.
+    ///
+    /// Thread-local rather than a signal because it is latched and consumed inside pointer
+    /// handlers, never rendered: arming it must not schedule a reactive pass over the tree.
     pub static PENDING_DRAG: std::cell::RefCell<Option<LayerDrag>> = const { std::cell::RefCell::new(None) };
 }
 
+/// Arm `drag_set` as a folder drag, replacing whatever was armed before.
 pub fn begin_layer_drag(drag_set: DragSet) {
     PENDING_DRAG.with(|p| *p.borrow_mut() = Some(LayerDrag::Folder(drag_set)));
 }
 
+/// Arm `drag_set` as a slot drag, replacing whatever was armed before.
 pub fn begin_layer_slot_drag(drag_set: DragSet) {
     PENDING_DRAG.with(|p| *p.borrow_mut() = Some(LayerDrag::Slot(drag_set)));
 }
 
+/// Arm `drag_set` as a comment drag, replacing whatever was armed before.
 pub fn begin_layer_comment_drag(drag_set: DragSet) {
     PENDING_DRAG.with(|p| *p.borrow_mut() = Some(LayerDrag::Comment(drag_set)));
 }
 
+/// Arm `drag_set` as a refile — dragging rows out of one folder and into another.
+///
+/// A refile moves the same rows a slot drag does and is latched as one, so the drop path has a
+/// single kind to consume rather than two that behave identically.
 pub fn begin_refile(drag_set: DragSet) {
     // We can also store pending refile here
     PENDING_DRAG.with(|p| *p.borrow_mut() = Some(LayerDrag::Slot(drag_set)));
 }
 
+/// Disarm every latch a row may have armed, so no later click can find a stale drag.
+///
+/// An Outliner row arms this module's latch alongside the engine's own layer-drag and refile
+/// latches, and a cancellation that cleared only one of them would leave a drop armed that the
+/// operator has already abandoned.
 pub fn cancel_layer_drag() {
     PENDING_DRAG.with(|p| *p.borrow_mut() = None);
     // Rows arm the legacy latch alongside the set (including ORBAT's separate refile latch).

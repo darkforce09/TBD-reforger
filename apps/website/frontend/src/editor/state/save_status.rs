@@ -70,18 +70,23 @@ pub fn format_save_error(raw: &str) -> String {
     }
 }
 
+/// Report that the draft is safely on disk.
 pub fn report_saved() {
     report(SaveStatus::Saved);
 }
 
+/// Report that a save is in flight.
 pub fn report_saving() {
     report(SaveStatus::Saving);
 }
 
+/// Report that a save was refused, carrying the reason the chip and toast will name.
 pub fn report_failed(reason: impl Into<String>) {
     report(SaveStatus::Failed(reason.into()));
 }
 
+/// Report that the local backup could not be read back, carrying how many retries have run so
+/// the chip can show the attempt against its limit.
 pub fn report_unreadable(retries: u8) {
     report(SaveStatus::Unreadable(retries));
 }
@@ -91,6 +96,8 @@ pub fn set_retry_handler(handler: impl Fn() + 'static) {
     RETRY.with(|r| *r.borrow_mut() = Some(Box::new(handler)));
 }
 
+/// Run the registered Retry action, if one is registered. A retry with no handler is a no-op
+/// rather than a panic: the chip can outlive the code that armed it.
 pub fn invoke_retry() {
     RETRY.with(|r| {
         if let Some(h) = r.borrow().as_ref() {

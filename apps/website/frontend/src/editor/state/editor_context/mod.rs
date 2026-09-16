@@ -13,6 +13,8 @@
 #![cfg(target_arch = "wasm32")]
 
 thread_local! {
+    /// The one installed editor context, or `None` before the page installs it and after it tears
+    /// it down. Every entry point in this module opens exactly one borrow of it.
     pub(crate) static EDITOR_CONTEXT: RefCell<Option<EditorContext>> = const { RefCell::new(None) };
 
     static PLACE_WITH_CREW: Cell<bool> = const { Cell::new(true) };

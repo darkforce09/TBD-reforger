@@ -275,6 +275,8 @@ pub mod armed_place {
         pub pan: bool,
     }
 
+    /// One input event the sequence runner feeds the machine, in the same vocabulary the
+    /// production pointer handlers work in.
     #[derive(Debug, Clone, Copy)]
     pub enum Ev {
         /// Palette / picker / composition arm.
@@ -735,6 +737,11 @@ pub mod transform {
 #[cfg(target_arch = "wasm32")]
 type ToolbarDispatch = std::rc::Rc<EditorToolbarDispatch>;
 
+/// The toolbar's five invokers, installed by the page and reached by the top strip's buttons.
+///
+/// Each one mirrors a keyboard arm exactly, so a button click and its chord take the same path
+/// and cannot drift apart. Boxed closures rather than free functions because every one of them
+/// captures page-local handles the strip cannot see.
 #[cfg(target_arch = "wasm32")]
 pub(crate) struct EditorToolbarDispatch {
     /// Select the widget variant from its `1`/`2`/`3` digit (mirror of the Digit1/Digit2/Digit3
@@ -980,6 +987,16 @@ fn arrange_chord(kind: top_strip::ArrangeKind) -> bool {
     true
 }
 
+/// The Scenario Creator workspace: the canvas, the docks around it, the top strip and every
+/// overlay that floats over them.
+///
+/// **Signals & state:** owns the page-level signals the docks and the strip bind to, installs the
+/// editor context the panels reach the open mission through, attaches the canvas gestures and
+/// commands, and drives the boot sequence that brings the document and the world up.
+///
+/// **Invariants:** the signals exist on both build targets because the view binds them there, and
+/// every body that touches the live document is gated to the browser target, which has the
+/// renderer and the document handles the host build does not.
 #[component]
 pub fn MissionEditorPage() -> impl IntoView {
     let container_ref = NodeRef::<leptos::html::Div>::new();

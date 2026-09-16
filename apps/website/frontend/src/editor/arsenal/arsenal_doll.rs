@@ -41,6 +41,19 @@ fn set_style(el: &web_sys::HtmlElement, prop: &str, value: &str) {
     let _ = el.style().set_property(prop, value);
 }
 
+/// The arsenal's 3D character preview: a canvas the doll renderer draws into, plus the hover
+/// tooltip and the pinned callout for the active region.
+///
+/// **Signals & state:** reads `picks` and `active_key` to push the per-region state array to the
+/// renderer in rail order, reports region clicks through `on_select` without ever mutating the
+/// loadout itself, resolves item captions through `names`, and sets `unavailable` when the
+/// renderer cannot be created so the caller can swap in the flat paper doll instead.
+///
+/// **Invariants:** every scene, camera, pick and anchor decision belongs to the renderer; this
+/// component only sizes the backing store in device pixels before creation, forwards pointer
+/// deltas as turns and sub-threshold clicks as picks, and positions the tooltip and callout from
+/// the anchor pixels the renderer hands back. Those positions are written to the DOM directly
+/// inside the frame loop, so a moving callout costs no reactive render.
 #[component]
 pub fn ArsenalDoll(
     picks: RwSignal<HashMap<String, String>>,

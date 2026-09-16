@@ -611,6 +611,8 @@ impl MenuTake {
 // Nothing keys a map or set on a `MenuTarget`; the derive existed because the struct happened to be
 // all-`Eq`, and `MenuState` — the value that actually rides an `RwSignal` — was already `PartialEq`
 // alone for exactly the same reason (its `x`/`y` pixels).
+/// Equality is partial because the world point carries floats; nothing keys a map or a set on a
+/// menu target, so a total `Eq` would buy nothing.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MenuTarget {
     /// Which menu to show.

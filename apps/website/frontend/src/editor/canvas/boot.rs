@@ -53,6 +53,11 @@ pub mod boot_progress {
     #[cfg(target_arch = "wasm32")]
     pub use website_map_engine::streaming::bridge::progress::ProgressFn;
 
+    /// What the boot overlay needs of a [`BootSeg`]: its place in the caption order, its slot in
+    /// the progress accumulator, and the words the operator reads while it runs.
+    ///
+    /// An extension trait rather than inherent methods, because the segment enum itself belongs to
+    /// the map engine's streaming bridge and knows nothing about this overlay's wording.
     pub trait BootSegView {
         /// Stable ordering used to select the visible loading caption.
         const ALL: [BootSeg; 4];
