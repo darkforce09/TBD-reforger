@@ -837,7 +837,7 @@ const FOSSIL_ALLOWLIST: &[(&str, &str)] = &[
          wave-close corroboration plus the one-shot migration",
     ),
     (
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionValidator.c",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c",
         "T-181-era lane note in an Enfusion comment; mod scripts are workbench-gated (D5), not \
          agent-editable from a platform slice",
     ),
@@ -1060,12 +1060,18 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
         }
     }
 
+    let claude = root.join("CLAUDE.md");
     let roadmap = root.join("docs/specs/Mission_Creator_Architecture/ROADMAP.md");
-    if roadmap.is_file() {
-        let text = fs::read_to_string(&roadmap).unwrap_or_default();
-        if !text.contains(NEXT_MARKER_START) || !text.contains(NEXT_MARKER_END) {
-            let rel = roadmap.strip_prefix(root).unwrap_or(&roadmap);
-            errors.push(format!("Missing markers in {}", rel.display()));
+    for (p, start, end) in [
+        (&claude as &Path, STATUS_MARKER_START, STATUS_MARKER_END),
+        (&roadmap, NEXT_MARKER_START, NEXT_MARKER_END),
+    ] {
+        if p.is_file() {
+            let text = fs::read_to_string(p).unwrap_or_default();
+            if !text.contains(start) || !text.contains(end) {
+                let rel = p.strip_prefix(root).unwrap_or(p);
+                errors.push(format!("Missing markers in {}", rel.display()));
+            }
         }
     }
 

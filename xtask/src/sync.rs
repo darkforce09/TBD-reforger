@@ -49,6 +49,13 @@ pub fn cmd_sync(root: &Path, registry: &Value) -> Result<()> {
     let queue = generate_queue_json(registry);
     write_json_ascii(&root.join(".ai/tickets/queue.json"), &queue)?;
 
+    let claude = root.join("CLAUDE.md");
+    if claude.is_file() {
+        let text = fs::read_to_string(&claude)?;
+        if text.contains(STATUS_MARKER_START) {
+            inject_status_block(root, registry)?;
+        }
+    }
     let roadmap = root.join("docs/specs/Mission_Creator_Architecture/ROADMAP.md");
     if roadmap.is_file() {
         let text = fs::read_to_string(&roadmap)?;
@@ -430,6 +437,81 @@ fn marker_inner_is_vacuous(inner: &str) -> bool {
     substantive.is_empty()
 }
 
+fn inject_status_block(root: &Path, registry: &Value) -> Result<()> {
+    let all = tickets(registry);
+    refuse_empty_write(
+        "CLAUDE.md status block",
+        all.is_empty(),
+        "registry.tickets missing or empty — refusing status sync (no T-066 fallback)",
+    )?;
+    let mut shipped: Vec<&Value> = all
+        .iter()
+        .filter(|t| opt_str(t, "status") == Some("shipped"))
+        .collect();
+    shipped.sort_by(|a, b| order_or(b, 9999).cmp(&order_or(a, 9999)));
+    // T-383: never invent a hardcoded "T-066" — refuse when nothing is shipped.
+    let latest = match shipped.first() {
+        Some(t) => str_field(t, "id"),
+        None => {
+            bail!(
+                "refusing empty write (CLAUDE.md status block): no shipped tickets — \
+                 refusing hardcoded T-066 fallback"
+            );
+        }
+    };
+
+    let mut lines = vec![format!("**Latest shipped:** **{latest}**"), "".into()];
+
+    let slice_row = all.iter().find(|t| {
+        t.get("active_slice")
+            .map(|v| is_truthy(Some(v)))
+            .unwrap_or(false)
+    });
+    if let Some(slice_row) = slice_row {
+        let slice_id = opt_str(slice_row, "active_slice").unwrap_or("");
+        let slice_read = slice_spec(slice_row);
+        lines.push(format!(
+            "**ACTIVE NOW:** **{}** — {slice_id} ({}). Slice spec: `{slice_read}`.",
+            str_field(slice_row, "id"),
+            opt_str(slice_row, "title").unwrap_or(""),
+        ));
+    } else {
+        let mut ready: Vec<&Value> = all
+            .iter()
+            .filter(|t| opt_str(t, "status") == Some("ready"))
+            .collect();
+        ready.sort_by_key(|t| order_or(t, 9999));
+        if let Some(r) = ready.first() {
+            lines.push(format!(
+                "**ACTIVE NOW:** **{}** — {}",
+                str_field(r, "id"),
+                opt_str(r, "title").unwrap_or(""),
+            ));
+        }
+    }
+    lines.push("".into());
+    lines.push("**Next (by order):**".into());
+    let mut queued: Vec<&Value> = all
+        .iter()
+        .filter(|t| matches!(opt_str(t, "status"), Some("queued" | "ready")) && order_truthy(t))
+        .collect();
+    queued.sort_by_key(|t| order_or(t, 9999));
+    for t in queued.into_iter().take(10) {
+        lines.push(format!(
+            "- **{}** — {} (`{}`)",
+            str_field(t, "id"),
+            opt_str(t, "title").unwrap_or(""),
+            opt_str(t, "status").unwrap_or(""),
+        ));
+    }
+    inject_marker_block(
+        &root.join("CLAUDE.md"),
+        STATUS_MARKER_START,
+        STATUS_MARKER_END,
+        &lines.join("\n"),
+    )
+}
+
 fn inject_next_block(root: &Path, registry: &Value) -> Result<()> {
     let all = tickets(registry);
     refuse_empty_write(
@@ -507,6 +589,18 @@ mod tests {
     }
 
     #[test]
+    fn inject_status_refuses_empty_tickets_no_t066() {
+        let registry = json!({"tickets": []});
+        let err = inject_status_block(&PathBuf::from("/tmp"), &registry)
+            .expect_err("empty tickets must refuse");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("refusing empty write") && msg.contains("T-066"),
+            "expected T-066 refuse, got: {msg}"
+        );
+    }
+
+    #[test]
     fn inject_next_refuses_empty_tickets_bare_heading() {
         let registry = json!({"tickets": []});
         let err = inject_next_block(&PathBuf::from("/tmp"), &registry)
@@ -516,5 +610,21 @@ mod tests {
             msg.contains("refusing empty write") && msg.contains("ROADMAP"),
             "expected ROADMAP refuse, got: {msg}"
         );
+    }
+
+    #[test]
+    fn inject_status_refuses_no_shipped_no_t066_fallback() {
+        let registry = json!({
+            "tickets": [{
+                "id": "T-999",
+                "title": "open",
+                "status": "ready",
+                "order": 1
+            }]
+        });
+        let err = inject_status_block(&PathBuf::from("/tmp"), &registry)
+            .expect_err("no shipped must refuse T-066");
+        let msg = format!("{err:#}");
+        assert!(msg.contains("T-066") || msg.contains("no shipped"), "{msg}");
     }
 }

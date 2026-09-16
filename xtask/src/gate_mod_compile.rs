@@ -274,10 +274,10 @@ fn compile_inner(
     // (`scripts/mod/tbd-staging-server.config.json`). Until 2026-09-12 `apps/mod/tbd-export` was a
     // file-for-file mirror of this tree and the list read `TBD_Export,TBD_Framework` (T-946.23: the
     // Enfusion VFS overlays addons by path, last wins, so the order decided which copy compiled and
-    // a lockstep check policed the rest). tbd-export is now a standalone addon that depends only on
-    // vanilla Reforger and on tbd-emcp; both are Workbench tooling the dedicated server never reads
-    // (`Scripts/WorkbenchGame`, see the help text), so they compile inside Workbench.
-    // Operator decision: this gate is framework-only. tbd-export's five
+    // a lockstep check policed the rest). tbd-export is now a thin addon that DEPENDS on
+    // tbd-framework and on tbd-emcp; both are Workbench tooling the dedicated server never reads
+    // (`Scripts/WorkbenchGame`, see the help text), so they compile inside Workbench, where the
+    // dependency resolves. Operator decision: this gate is framework-only. tbd-export's five
     // `Scripts/Game/TBD/Export/*.c` (the road exporter) are the one thing it could compile and does
     // not — to cover them, symlink `apps/mod/tbd-export` beside the framework link above and append
     // `,TBD_Export` here.
