@@ -22,7 +22,9 @@ It owns UI signals and registers the render context through its lifecycle cleanu
 
 ## Boundaries and features
 
-The crate has no dependency on mission-core, Leptos, or mission document types. Its WebAssembly
+The crate has no dependency on Leptos or on any editor application state. (It had none on
+`website-mission-core` either, until T-0xx Phase 2A folded that crate in — the mission document
+types now live here, under `src/data`.) Its WebAssembly
 platform boundary uses canvas, browser fetch, image decoding, timers, and console APIs. Native
 builds expose the geometry, codecs, and state machines without browser execution.
 

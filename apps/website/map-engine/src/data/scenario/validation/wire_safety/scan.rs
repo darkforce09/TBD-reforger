@@ -1,5 +1,5 @@
 //! Role: scan.
-//! Position: `mission/validation/wire_safety` in the headless mission domain.
+//! Position: `mission/validation/wire_safety` in the map engine's headless mission data domain.
 //! Signals & state: explicit data inputs; no UI or graphics state.
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 

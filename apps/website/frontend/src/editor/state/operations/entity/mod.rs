@@ -1,6 +1,6 @@
 //! Role: Module boundary for editor/state/operations/entity.
 //! Position: `editor/state/operations/entity` in the frontend editor adapter.
-//! Signals & state: host signals, input state, and explicit mission-core calls.
+//! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 thread_local! {

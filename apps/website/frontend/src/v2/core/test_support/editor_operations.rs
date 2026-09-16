@@ -1,5 +1,5 @@
 //! Role: live operation source for structural regression checks.
-//! Position: frontend test support for the mission-core boundary.
+//! Position: frontend test support for the map-engine `data::store` boundary.
 //! Signals & state: compile-time source text only.
 //! Invariants: include each production shard once and keep domain and adapter sources distinct.
 

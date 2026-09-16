@@ -1,5 +1,5 @@
 //! Role: exercise editor operations through the public headless boundary.
-//! Position: mission-core integration tests.
+//! Position: map-engine `data/store` integration tests.
 //! Signals & state: deterministic documents and explicit host-policy callbacks.
 //! Invariants: cancellation is inert; edits retain authored precision and undo behavior.
 

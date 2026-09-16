@@ -1,6 +1,6 @@
 //! Role: place helpers tests.
 //! Position: `editor/tools/tests` in the frontend editor adapter.
-//! Signals & state: host signals, input state, and explicit mission-core calls.
+//! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 use super::*;

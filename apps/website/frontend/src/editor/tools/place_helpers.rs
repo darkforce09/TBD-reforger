@@ -1,6 +1,6 @@
 //! Role: place helpers.
 //! Position: `editor/tools` in the frontend editor adapter.
-//! Signals & state: host signals, input state, and explicit mission-core calls.
+//! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 /// Expose website mission core :: doc :: operations :: placement :: align edge at this domain boundary.

@@ -1,5 +1,5 @@
 //! Role: paste keeps authored z.
-//! Position: `apps/website/mission-core/tests` in the headless mission domain.
+//! Position: `apps/website/map-engine/tests` in the map engine.
 //! Signals & state: explicit data inputs; no UI or graphics state.
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 

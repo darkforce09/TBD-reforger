@@ -1,5 +1,5 @@
 //! Role: Module boundary for doc/operations/entity.
-//! Position: `doc/operations/entity` in the headless mission domain.
+//! Position: `doc/operations/entity` in the map engine's headless mission data domain.
 //! Signals & state: explicit data inputs; no UI or graphics state.
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 

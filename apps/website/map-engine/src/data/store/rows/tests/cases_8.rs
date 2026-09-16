@@ -1,5 +1,5 @@
 //! Role: Domain regression cases.
-//! Position: `doc/store/tests` in the headless mission domain.
+//! Position: `doc/store/tests` in the map engine's headless mission data domain.
 //! Signals & state: explicit data inputs; no UI or graphics state.
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 

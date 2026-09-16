@@ -1,5 +1,5 @@
 //! Role: Module boundary for doc/crdt/id_arrays/mission_doc_tests.
-//! Position: `doc/crdt/id_arrays/mission_doc_tests` in the headless mission domain.
+//! Position: `doc/crdt/id_arrays/mission_doc_tests` in the map engine's headless mission data domain.
 //! Signals & state: explicit data inputs; no UI or graphics state.
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
