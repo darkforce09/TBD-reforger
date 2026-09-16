@@ -15,5 +15,9 @@ pub mod labels;
 /// Links.
 pub mod links;
 
+/// Markers.
+#[cfg(feature = "streaming")]
+pub mod markers;
+
 /// Roles.
 pub mod roles;

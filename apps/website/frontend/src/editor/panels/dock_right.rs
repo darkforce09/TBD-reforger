@@ -3582,7 +3582,7 @@ const CANONICAL_MARKER_GLYPH_COUNT: usize = 11;
 #[cfg(target_arch = "wasm32")]
 const _: () = assert!(
     CANONICAL_MARKER_GLYPH_COUNT
-        == website_map_engine::renderers::batching::scene::MARKER_GLYPH_COUNT,
+        == website_map_engine::symbology::markers::MARKER_GLYPH_COUNT,
     "picker row count must equal scene::MARKER_GLYPH_COUNT (T-790 source of truth)"
 );
 
@@ -3590,7 +3590,7 @@ const _: () = assert!(
 /// its human label, and every schema alias that folds into this family (the search-match set).
 #[cfg(target_arch = "wasm32")]
 struct CanonicalMarkerRow {
-    glyph: website_map_engine::renderers::batching::scene::MarkerGlyph,
+    glyph: website_map_engine::symbology::markers::MarkerGlyph,
     /// The canonical slug written to the document on pick — a closed-enum member.
     slug: &'static str,
     /// `humanize_token(slug)`, the label that takes the row width.
@@ -3609,9 +3609,9 @@ struct CanonicalMarkerRow {
 #[cfg(target_arch = "wasm32")]
 fn canonical_marker_rows(filter: &str) -> Vec<CanonicalMarkerRow> {
     use crate::editor::panels::zones_panel::humanize_token;
-    use website_map_engine::renderers::batching::scene::marker_glyph_for_alias;
-    use website_map_engine::renderers::batching::scene::MarkerGlyph;
-    use website_map_engine::renderers::batching::scene::MARKER_GLYPH_COUNT;
+    use website_map_engine::symbology::markers::marker_glyph_for_alias;
+    use website_map_engine::symbology::markers::MarkerGlyph;
+    use website_map_engine::symbology::markers::MARKER_GLYPH_COUNT;
 
     // The mirrored count and the source-of-truth count must agree — a wasm build fails loudly here
     // if T-790 ever changes the glyph set without this picker following.
@@ -3676,9 +3676,9 @@ fn canonical_marker_rows(filter: &str) -> Vec<CanonicalMarkerRow> {
 /// different SVG primitives, so no two rows (and none vs. the old pin) share a DOM signature.
 #[cfg(target_arch = "wasm32")]
 fn marker_glyph_svg(
-    glyph: website_map_engine::renderers::batching::scene::MarkerGlyph,
+    glyph: website_map_engine::symbology::markers::MarkerGlyph,
 ) -> AnyView {
-    use website_map_engine::renderers::batching::scene::MarkerGlyph;
+    use website_map_engine::symbology::markers::MarkerGlyph;
 
     // 16×16 viewBox; `currentColor` so the shape inherits the row's text colour on hover.
     let inner = match glyph {

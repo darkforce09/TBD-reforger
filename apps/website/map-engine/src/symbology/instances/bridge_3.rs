@@ -164,8 +164,8 @@ impl RenderEngine {
             };
             let glyph = icons
                 .get(i)
-                .map_or(crate::renderers::batching::scene::MarkerGlyph::Disc, |a| {
-                    crate::renderers::batching::scene::marker_glyph_for_alias(a)
+                .map_or(crate::symbology::markers::MarkerGlyph::Disc, |a| {
+                    crate::symbology::markers::marker_glyph_for_alias(a)
                 }) as u16;
             crate::symbology::instances::packing::pack_icon_instance(
                 &mut icon_bytes,
@@ -177,11 +177,8 @@ impl RenderEngine {
             );
         }
 
-        let mut caption_bytes = crate::renderers::batching::scene::pack_marker_caption_bytes(
-            xy,
-            &captions,
-            self.zoom(),
-        );
+        let mut caption_bytes =
+            crate::symbology::markers::pack_marker_caption_bytes(xy, &captions, self.zoom());
         if !caption_bytes.is_empty() {
             let _ = self.ensure_text_atlas();
         }

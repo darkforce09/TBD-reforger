@@ -8,8 +8,10 @@ Bespoke role and vehicle glyphs, side tinting, atlas packing, instance updates, 
 - `instances`
 - `labels`
 - `links`
+- `markers.rs`
 - `mod.rs`
 - `roles`
+- `tests`
 
 ## Boundaries
 

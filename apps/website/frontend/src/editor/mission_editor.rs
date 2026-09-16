@@ -2353,7 +2353,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                                               // add the per-icon marker glyph shapes `markers_bind` selects.
                             {
                                 let (rgba, width, height, uv) =
-                                    website_map_engine::renderers::batching::scene::build_marker_slot_atlas();
+                                    website_map_engine::symbology::markers::build_marker_slot_atlas();
                                 if let Err(e) = eng.ensure_slot_atlas(&rgba, width, height, &uv) {
                                     leptos::logging::error!("ensure_slot_atlas: {e:?}");
                                 }

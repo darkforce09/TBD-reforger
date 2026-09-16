@@ -4,122 +4,41 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::environment::vegetation::mass::ForestMassGeometry;
-use crate::renderers::primitives::triangulate::TriMesh;
 use crate::renderers::primitives::triangulate::triangulate_region_rings;
 use crate::renderers::primitives::triangulate::triangulate_ring_buffer;
 
-/// Re-export `crate::terrain::roads::mesh::RoadInput`.
-pub use crate::terrain::roads::mesh::RoadInput;
+/// Re-export `website_graphics_engine::draw::compose::HairlineGpu`.
+// T-0xx Phase 1D: the buffer shapes and the two ring→segment loops moved to
+// `website-graphics-engine` (`draw::compose`) and are re-exported here at their former path.
+// Four `pub use crate::terrain::{roads,water}::mesh::*` re-exports were DELETED rather than
+// moved — they were a shortcut that let a caller reach road and sea meshing through the
+// renderer, which is the exact coupling the split exists to remove. Their callers name
+// `crate::terrain::…` directly now.
+pub use website_graphics_engine::draw::compose::HairlineGpu;
 
-/// Re-export `crate::terrain::roads::mesh::RoadMeshGpu`.
-pub use crate::terrain::roads::mesh::RoadMeshGpu;
+/// Re-export `website_graphics_engine::draw::compose::PolyMeshGpu`.
+pub use website_graphics_engine::draw::compose::PolyMeshGpu;
 
-/// Re-export `crate::terrain::roads::mesh::compose_roads_mesh`.
-pub use crate::terrain::roads::mesh::compose_roads_mesh;
+/// Re-export `website_graphics_engine::draw::compose::mesh_from_tri`.
+pub use website_graphics_engine::draw::compose::mesh_from_tri;
 
-/// Re-export `crate::terrain::water::mesh::compose_sea_mesh`.
-pub use crate::terrain::water::mesh::compose_sea_mesh;
+/// Re-export `website_graphics_engine::draw::compose::retint_fill_alpha`.
+pub use website_graphics_engine::draw::compose::retint_fill_alpha;
 
-/// Packed polygon fill for a `PolygonFill` lane.
-#[derive(Clone, Debug, Default)]
-pub struct PolyMeshGpu {
-    /// Positions.
-    pub positions: Vec<f32>,
-
-    /// Colors.
-    pub colors: Vec<f32>,
-
-    /// Indices.
-    pub indices: Vec<u32>,
-
-    /// Polygon count.
-    pub polygon_count: u32,
-}
-
-/// Hairline segment list for a `Polyline` LineList lane.
-#[derive(Clone, Debug, Default)]
-pub struct HairlineGpu {
-    /// Flat `[x,y,r,g,b,a]…` — 2 verts per segment.
-    pub verts: Vec<f32>,
-
-    /// Segment count.
-    pub segment_count: u32,
-}
-
-fn u8_rgba_to_f32(c: [u8; 4], layer_alpha: f32) -> [f32; 4] {
-    [
-        f32::from(c[0]) / 255.0,
-        f32::from(c[1]) / 255.0,
-        f32::from(c[2]) / 255.0,
-        (f32::from(c[3]) / 255.0) * layer_alpha,
-    ]
-}
-
-/// Retint fill alpha.
-pub fn retint_fill_alpha(colors: &mut [f32], alpha: f32) {
-    let a = alpha.clamp(0.0, 1.0);
-    for c in colors.chunks_exact_mut(4) {
-        c[3] = a;
-    }
-}
-
-/// Mesh from tri.
-pub(crate) fn mesh_from_tri(mesh: TriMesh, colors_u8: &[u8], layer_alpha: f32) -> PolyMeshGpu {
-    if mesh.indices.is_empty() {
-        return PolyMeshGpu::default();
-    }
-    let n_verts = mesh.positions.len() / 2;
-    let mut colors = Vec::with_capacity(n_verts * 4);
-    for vi in 0..n_verts {
-        let ci = vi * 4;
-        let rgba = if ci + 3 < colors_u8.len() {
-            [
-                colors_u8[ci],
-                colors_u8[ci + 1],
-                colors_u8[ci + 2],
-                colors_u8[ci + 3],
-            ]
-        } else {
-            [255, 255, 255, 255]
-        };
-        let c = u8_rgba_to_f32(rgba, layer_alpha);
-        colors.extend_from_slice(&c);
-    }
-
-    #[allow(clippy::cast_possible_truncation)]
-    let polygon_count = (mesh.indices.len() / 3) as u32;
-    PolyMeshGpu {
-        positions: mesh.positions,
-        colors,
-        indices: mesh.indices,
-        polygon_count,
-    }
-}
+use website_graphics_engine::draw::compose::u8_rgba_to_f32;
 
 /// Contour interleaved `[x0,y0,x1,y1]…` → hairline verts with fixed rgba.
 #[must_use]
 pub fn compose_contour_hairlines(segments: &[f32], rgba: [u8; 4]) -> HairlineGpu {
-    if segments.len() < 4 {
-        return HairlineGpu::default();
-    }
-    let c = u8_rgba_to_f32(rgba, 1.0);
-    let mut verts = Vec::with_capacity(segments.len() / 4 * 12);
-    let mut segment_count = 0_u32;
-    for seg in segments.chunks_exact(4) {
-        for (x, y) in [(seg[0], seg[1]), (seg[2], seg[3])] {
-            verts.push(x);
-            verts.push(y);
-            verts.extend_from_slice(&c);
-        }
-        segment_count += 1;
-    }
-    HairlineGpu {
-        verts,
-        segment_count,
-    }
+    website_graphics_engine::draw::compose::compose_hairlines(segments, rgba)
 }
 
 /// Ownership: contours are the ONLY caller (a two-tone set); [`compose_contour_hairlines`] stays the single-colour path for the forest outline (`forest_mass.rs`), so this is an additive signature — the flat-`Vec<f32>` compose is unchanged.
+///
+/// The adapter half of the split: a `ContourRing` becomes a bare point slice plus its `closed`
+/// flag, which is the only column the renderer's edge loop reads. Its `level` stays here —
+/// it decided which rings exist and which are summits before this call, and the renderer has
+/// no business re-deriving that.
 #[must_use]
 pub fn compose_two_tone_contours(
     rings: &[crate::terrain::relief::contours::ContourRing],
@@ -127,37 +46,15 @@ pub fn compose_two_tone_contours(
     base_rgba: [u8; 4],
     summit_rgba: [u8; 4],
 ) -> HairlineGpu {
-    let base = u8_rgba_to_f32(base_rgba, 1.0);
-    let summit = u8_rgba_to_f32(summit_rgba, 1.0);
-    let mut verts: Vec<f32> = Vec::new();
-    let mut segment_count = 0_u32;
-    for (i, ring) in rings.iter().enumerate() {
-        if ring.points.len() < 2 {
-            continue;
-        }
-        let c = if summit_idx.contains(&i) {
-            &summit
-        } else {
-            &base
-        };
-        let n = ring.points.len();
-
-        let edges = if ring.closed { n } else { n - 1 };
-        for e in 0..edges {
-            let a = ring.points[e];
-            let b = ring.points[(e + 1) % n];
-            for (x, y) in [a, b] {
-                verts.push(x as f32);
-                verts.push(y as f32);
-                verts.extend_from_slice(c);
-            }
-            segment_count += 1;
-        }
-    }
-    HairlineGpu {
-        verts,
-        segment_count,
-    }
+    let points: Vec<&[(f64, f64)]> = rings.iter().map(|r| r.points.as_slice()).collect();
+    let closed: Vec<bool> = rings.iter().map(|r| r.closed).collect();
+    website_graphics_engine::draw::compose::compose_two_tone_hairlines(
+        &points,
+        &closed,
+        summit_idx,
+        base_rgba,
+        summit_rgba,
+    )
 }
 
 /// Contour stroke colour — `contourLayer.ts` `CONTOUR_RGBA`.

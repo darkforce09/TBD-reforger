@@ -39,6 +39,9 @@ pub mod symbology;
 /// Terrain.
 pub mod terrain;
 
+/// World.
+pub mod world;
+
 #[cfg(test)]
 #[path = "tests/feature_gate_tripwire.rs"]
 mod feature_gate_tripwire;

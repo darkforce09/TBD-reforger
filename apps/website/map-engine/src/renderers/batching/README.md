@@ -9,7 +9,6 @@ Draw pipelines, batching, polygon and line composition, glyph atlas layout, and 
 - `lanes.rs`
 - `mod.rs`
 - `scene.rs`
-- `tests`
 
 ## Boundaries
 
