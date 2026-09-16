@@ -149,13 +149,15 @@ fn viewshed_clear_is_idempotent() {
 }
 
 /// Decision-4 pin extended: the viewshed state, like the ray, is session-local overlay state and
-/// must never write the document. Covered by `no_los_doc_writes` above (whole-file scrub), but
-/// asserted here too so a future reader sees the viewshed was in scope for that guarantee.
+/// must never write the document. Covered by `the_line_of_sight_tool_never_writes_the_document`
+/// (the whole-directory source scrub), but asserted here too so a future reader sees the viewshed
+/// is in scope for that guarantee.
 #[test]
 fn viewshed_is_session_local_not_doc() {
     // The state struct holds only overlay data (observer point + raster) — no doc handle, no id.
     // A compile-time proof by construction; this test documents the intent and fails loudly if
-    // someone adds a doc-mutating token to the module (the file scrub in `no_los_doc_writes`).
+    // someone adds a doc-mutating token to the module (the source scrub in
+    // `the_line_of_sight_tool_never_writes_the_document`).
     let st = ViewshedState::default();
     assert!(
         st.is_empty(),

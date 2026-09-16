@@ -1,24 +1,17 @@
 //! Unit tests for [`crate::mk_ci`] (SIZE split — keep `mk_ci.rs` under 600, as `mod_wave` does).
 //!
-//! ── WHAT DIED WITH THE MAKEFILE, AND WHAT REPLACED IT (T-897) ────────────────────────────────
+//! ── EVERY PIN HERE READS A SUBJECT THAT ALWAYS EXISTS ────────────────────────────────────────
 //!
-//! T-896's load-bearing test was `makefile_recipes_match_the_table`: it parsed the root Makefile
-//! and diffed every [`TASKS`] row against the recipe it claimed to reproduce, because `ci-local` /
-//! `test` / `build` carry recipes belonging to T-894/T-895's lanes and a carried copy rots. Three
-//! more (`help_text_matches_the_makefile`, `doc_layout_recipe_message_is_pinned`,
-//! `list_gates_equals_the_makefile_schema_validate_set`) had the same subject.
+//! `ci-local` is the local replay of `ci.yml`, and the way it goes wrong is silent subtraction: a
+//! step is dropped, the composite still exits 0, and the gate it used to run stops running with
+//! nothing going red. [`ci_local_step_set_is_frozen`] freezes the composite's step list by name,
+//! [`list_gates_equals_the_wave_gate_constant`] holds the gate list against the wave gate's own
+//! constant, and [`doc_layout_predicate_reproduces_finds_globs`] pins the doc-layout rule by
+//! BEHAVIOUR rather than by message text.
 //!
-//! T-897 deleted that file. Each of the four was written with an `if !Makefile.exists() { return }`
-//! guard, i.e. each would have gone QUIET rather than red — the exact defect class this program
-//! exists to kill, sitting inside the tests written to prevent it. They are DELETED, not left to
-//! return early, and the properties worth keeping moved to subjects that still exist:
-//!
-//! | retired test | successor |
-//! |---|---|
-//! | `makefile_recipes_match_the_table` | [`ci_local_step_set_is_frozen`] — the composite's step list, by name |
-//! | `list_gates_equals_the_makefile_schema_validate_set` | [`list_gates_equals_the_wave_gate_constant`] (already existed, unguarded) |
-//! | `doc_layout_recipe_message_is_pinned` | [`doc_layout_predicate_reproduces_finds_globs`] — behaviour, not message text |
-//! | `help_text_matches_the_makefile` | nothing needed: `help` renders FROM `TASKS`, so there is no second copy left to drift |
+//! None of them is guarded by an `if !<path>.exists() { return }`, because a pin that returns
+//! early goes QUIET instead of red — the exact defect class this program exists to kill. `help`
+//! renders FROM [`TASKS`], so there is no second copy of the help text left to drift.
 
 use super::*;
 

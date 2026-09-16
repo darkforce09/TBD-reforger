@@ -1848,8 +1848,9 @@ mod tests {
     /// Shipping repacked after EVERY id, which is why a wave could never empty:
     /// `wave_lock::carry_emptied` freezes a pending `[[emptied]]` entry only when one repack sees
     /// a wave whose every ticket has landed, and a per-id repack re-packs the wave smaller before
-    /// the next ship runs (see `numbering_and_carry` in `wave_lock`). The command center now ships
-    /// the wave's ids — each still followed by its own `stamp-sha`, the lifecycle is unchanged —
+    /// the next ship runs (see `two_emptied_waves_pend_ascending_and_open_waves_number_past_both`
+    /// in `wave_lock`). The command center now ships the wave's ids — each still followed by its
+    /// own `stamp-sha`, the lifecycle is unchanged —
     /// and repacks ONCE at the end, where the whole set is visible at the same instant.
     /// T-946 follow-up — the stale lock `--no-repack` leaves must not refuse the NEXT ship, and
     /// nothing else may be waived with it.

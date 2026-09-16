@@ -159,7 +159,7 @@ use website_map_engine::editing::tools::placement::{AlignEdge, Orient, PatternKi
  * [`ARRANGE_ITEMS`] (what the menu bar renders) is BUILT from it in a `const fn`, the context
  * menu's submenu maps over it, and [`arrange_for_code`] is what the keydown looks a keypress up in.
  * A twentieth tool is one row here and appears in all three places; that is the property, and
- * `every_surface_reads_the_same_arrange_list` at the bottom of this file is what keeps it.
+ * the `t939_4_one_arrange_list` pins at the bottom of this file are what keep it.
  */
 
 /// One Arrange command's IDENTITY — an id enum, never a label string.

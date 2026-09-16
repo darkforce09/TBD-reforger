@@ -1129,7 +1129,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             // The two can never fire at once: `has_pending()` gates this branch and the
                             // drag branch runs only when it is false. That mutual exclusion is the whole
                             // reason PLACE-004 and CONN-GROUP-001 are one row — see the pin
-                            // `t647_ctrl_state_machine`.
+                            // `ctrl_state_machine_multi_place_when_armed_regroup_when_not`.
                             //
                             // T-647 PLACE-CREW-001 — Alt on release = place an EMPTY vehicle: the
                             // per-gesture override of the DockRight crew toggle (which is the default).

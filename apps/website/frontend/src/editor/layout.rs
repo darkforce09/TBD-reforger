@@ -58,7 +58,7 @@ pub const STRIP_TOP_PX: f64 = 48.0;
 /// readers outside this file's owns (`eden_chrome`'s re-export shim, `eden_toolbelt`'s grid-ref
 /// overlay) consume the per-side names as bare `f64`s and a rename would not compile there. Stating
 /// the equality as a definition rather than as two coincidentally-equal literals is what makes
-/// `docks_are_equal_width` a structural check instead of a numeric one.
+/// `the_docks_are_one_equalised_width` a structural check instead of a numeric one.
 pub const DOCK_PX: f64 = 240.0;
 
 /// Left dock width — [`DOCK_LEFT_CLASS`] (`w-60`). Expanded value; live inset is [`dock_left_px`]
@@ -461,9 +461,11 @@ pub(crate) const DISABLED_GLYPH: &str = "disabled:opacity-30 disabled:hover:bg-t
 /// Rule (3), the tooltip half, as a documented invariant rather than a class: a control that carries
 /// a `title=` (or `aria-label` used as its tooltip) MUST keep it when `disabled`. In Leptos a static
 /// `title=` attribute is emitted regardless of the `disabled` prop, so the pattern is simply "do not
-/// gate the `title=` on `!disabled`". The `disabled_controls_keep_their_tooltip` pins in the chrome
-/// files check each disabled control still carries its `title`. This const exists so the rule has a
-/// name the pins and future edits can cite; its value is documentation, never rendered.
+/// gate the `title=` on `!disabled`". The chrome files hold that end: `context_menu`'s
+/// `every_disabled_row_in_both_takes_has_a_nonempty_title` and `toolbelt`'s
+/// `tools_keep_their_tooltips` check each disabled control still carries its `title`. This const
+/// exists so the rule has a name the pins and future edits can cite; its value is documentation,
+/// never rendered.
 pub(crate) const DISABLED_KEEPS_TOOLTIP: &str =
     "title stays on a disabled control (tooltip retention — rule 3)";
 
@@ -916,7 +918,7 @@ mod t668_state_vocabulary {
 
     /// Rule (3) — DISABLED dims the glyph and cancels the hover fill, so a dimmed control does not
     /// still light up under the pointer. The tooltip half is a pattern, not a class — its name is
-    /// pinned so the chrome-file `disabled_controls_keep_their_tooltip` pins have a shared referent.
+    /// pinned so the chrome files' tooltip-retention pins have a shared referent.
     #[test]
     fn disabled_glyph_dims_and_cancels_hover() {
         assert!(

@@ -1403,7 +1403,7 @@ fn recently_placed_panel(
 // ── T-637 — the tab strip, as a WIDTH BUDGET ─────────────────────────────────────────────────────
 //
 // The strip's cells and its gaps are consts rather than inline class strings so
-// `t637_the_tab_strip_fits_the_dock` can ADD THEM UP against `eden_layout::DOCK_PX` and fail if the
+// `the_tab_strip_fits_the_dock` can ADD THEM UP against `eden_layout::DOCK_PX` and fail if the
 // next tab would push the trailing cell off the panel. That is the T-632 defect this ticket absorbed:
 // the seventh tab clipped at the window edge, and nothing in the codebase could tell.
 
@@ -5913,8 +5913,8 @@ mod tests {
     /// fragment-assembled where a contiguous spelling here would be its own decoy.
     ///
     /// Perturbation RED: repoint the picker back to `filter_marker_icons` and re-add the `place` pin
-    /// per row — `builds_rows` / `draws_a_glyph_svg` fail; drop `marker_glyph_svg` and the SVG
-    /// presence check fails.
+    /// per row — the `builds_rows` / `draws_svg` needles below fail; drop `marker_glyph_svg` and
+    /// the SVG presence check fails.
     #[test]
     fn picker_rows_draw_glyph_svgs_and_arm_the_canonical_slug() {
         use crate::v2::core::test_support::class_r_scrub::only_body;

@@ -40,8 +40,9 @@ const FK_STATUS_SERVER: &str = "server_statuses_server_id_fkey";
 /// **Not speculative — rehearsed.** All three were created by hand on a scratch database and
 /// driven over HTTP; each returns its 400 (T-576 perturbation evidence). The names follow
 /// `0018`'s `<table>_<column>_fkey` convention, which all 25 of its constraints use; a migration
-/// that names them anything else silently reverts these arms to 500, so `t576_fk_violation`
-/// below pins the convention as the contract rather than a hope.
+/// that names them anything else silently reverts these arms to 500, so
+/// `fk_constant_names_follow_migration_convention` below pins the convention as the contract
+/// rather than a hope.
 const FK_STATUS_MATCH: &str = "server_statuses_current_match_id_fkey";
 const FK_MATCH_EVENT: &str = "matches_event_id_fkey";
 const FK_MATCH_MISSION: &str = "matches_mission_id_fkey";

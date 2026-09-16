@@ -1030,10 +1030,8 @@ mod t636_status_bar {
         );
     }
 
-    /// (T-667) The map-furniture slot is now FILLED with the scale bar. This is the deliberate
-    /// update of the wave-105 do-not-build-early guard (T-636's `reserves_an_empty_t667_furniture_slot`,
-    /// renamed here because it now pins the opposite state): T-667 IS the ticket that guard was
-    /// held for, so the slot's new content is pinned rather than the emptiness silently deleted.
+    /// (T-667) The map-furniture slot is FILLED with the scale bar, and what fills it is pinned
+    /// here rather than left to a reader's assumption.
     ///
     /// The slot keeps its `flex-1` spacer (it still owns the bar's middle and pushes the HUD + OPEN
     /// to the right), gains `justify-center` so the bar sits in the CLEAR CENTRE SPAN the wave-105
@@ -1366,8 +1364,9 @@ mod t642_ruler {
 
     /// (Decision 4 — session-local, NOT doc state) `eden_toolbelt` renders the ruler readout from a
     /// signal only; it must not reach into any document mutation. A light guard that the readout path
-    /// carries no doc-write token (the real no-doc-writes proof is `ruler_tool`'s `no_ruler_doc_writes`
-    /// pin + the compiler: `ruler_tool` never imports a doc mutator).
+    /// carries no doc-write token (the real no-doc-writes proof is the engine's
+    /// `the_ruler_never_writes_the_document` source scrub over `editing::tools::ruler` + the
+    /// compiler: `ruler_tool` never imports a doc mutator).
     #[test]
     fn readout_is_display_only_no_doc_writes() {
         let code = live_code(include_str!("toolbelt.rs"));

@@ -73,7 +73,7 @@
 //! What it does NOT remove: two dead branches and a defeated blank-line filter, documented at
 //! their sites. They are bugs, but they are *this gate's* bugs, and a port whose acceptance
 //! criterion is a byte-for-byte stdout diff is the wrong commit in which to fix them. See
-//! [`seed_pin`], [`wave_pin`] and [`live_recipe_lines`].
+//! [`seed_pin`], [`seed_list_pin`] and [`wave_pin`].
 //!
 //! ── OUTPUT AND STATUS ARE A CONTRACT ─────────────────────────────────────────────────────────
 //!

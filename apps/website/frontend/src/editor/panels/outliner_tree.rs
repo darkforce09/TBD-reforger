@@ -196,9 +196,10 @@ fn folders_holding_slots(nodes: &[OutlinerNode]) -> std::collections::HashSet<St
 // a selected/active row wears [`crate::editor::layout::TOGGLED_PLATE`] (`bg-primary/20 text-primary
 // border-t border-background/60`). These consts are the pre-merged literals of `base + recipe` — the
 // same "the recipe can't be `cn`'d into a `const`" idiom `eden_layout`'s STRIP/DOCK_* use — and
-// `t668_tree_rows_speak_the_vocabulary` pins that each literal still carries its recipe's tokens, so
-// a hand-edit that dropped the top border (making a selected row indistinguishable from a hovered
-// one) fails there. The border is the load-bearing half: before T-668 `ROW_ACTIVE` had none, so a
+// `row_carries_the_hover_fill`, `row_active_carries_the_toggled_plate` and
+// `selected_and_hovered_rows_are_distinct_by_construction` pin that each literal still carries its
+// recipe's tokens, so a hand-edit that dropped the top border (making a selected row
+// indistinguishable from a hovered one) fails there. The border is the load-bearing half: before T-668 `ROW_ACTIVE` had none, so a
 // selected row and a hovered row differed only by tint, not by construction.
 
 // ── T-637 — ONE row geometry, and it is EXPLICIT ─────────────────────────────────────────────────

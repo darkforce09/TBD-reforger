@@ -994,19 +994,14 @@ async fn cors_reflects_allowed_origin_only() {
 
 // ══════════════════════════ §T-235 — servers admin CRUD ══════════════════════════
 //
-// The ticket: no code path anywhere created a `servers` row. `INSERT INTO servers` existed only in
-// three test files, there was no POST/PUT/DELETE route and no seed, so `GET /servers` returned an
-// empty list on any production database forever and the Server Intel page had nothing to render.
+// `servers` rows are created, edited and deleted through `handlers/servers.rs`, whose POST / PUT /
+// DELETE routes are registered in `app::api_routes`. Those routes are what these tests exist to
+// hold: without them `GET /servers` serves an empty list on any production database and the Server
+// Intel page has nothing to render.
 //
-// The constraint at the time: `handlers/servers.rs` was T-235's; `src/app.rs` — where routes are
-// registered — was not. So the handoff was written as executable code (a `servers_crud_registration`
-// router merged in when the probe found the routes unregistered) plus an assert-absent tripwire.
-//
-// T-586 landed the two `.route(...)` entries in `app::api_routes`, the tripwire fired exactly once
-// as designed, and all three pieces — the merge shim, the `servers_crud_registered` probe and the
-// tripwire test — are deleted per its instructions. `boot_servers` now hands every test below the
-// production router, so these assertions additionally cover the request-id / logging / CORS /
-// body-limit / rate-limit chain that the merge deliberately bypassed.
+// `boot_servers` hands every test below the PRODUCTION router, so each assertion additionally
+// crosses the request-id / logging / CORS / body-limit / rate-limit chain that a hand-merged
+// sub-router would bypass.
 
 /// `(app, pool, state)` — mint whatever role tokens a test needs with [`token`].
 ///
@@ -1633,8 +1628,3 @@ async fn servers_write_validation_rejects_at_the_boundary() {
     assert_eq!(after["name"], "T235 Valid Trimmed", "unchanged: {after}");
     assert_eq!(after["port"], 65535, "unchanged: {after}");
 }
-
-// T-586: the tripwire `servers_crud_registration_pending_in_app_rs` lived here and fired, exactly
-// once, as designed. `app.rs` now registers the write routes, so the merge shim, the probe and the
-// tripwire are all deleted per its own failure message, and the lifecycle tests above drive the
-// PRODUCTION router — including the middleware chain the shim used to bypass.

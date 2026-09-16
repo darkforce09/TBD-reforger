@@ -47,7 +47,7 @@ impl RulerChain {
     /// End the chain but KEEP it placed (Decision 3 — the double-click contract). Clears `drawing`
     /// so no further click extends it; the points stay on the map until dismissed. A no-op on an
     /// empty chain. A double-click also fires two `press`es first (the browser emits pointer events
-    /// before `dblclick`); the host de-dupes the coincident final vertex — see `end_dedup_epsilon`.
+    /// before `dblclick`); the host de-dupes the coincident final vertex with [`Self::dedup_tail`].
     pub fn double_click(&mut self) {
         self.drawing = false;
     }

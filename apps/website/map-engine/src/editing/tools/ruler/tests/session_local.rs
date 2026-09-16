@@ -14,6 +14,7 @@ fn the_ruler_never_writes_the_document() {
         include_str!("../chain.rs"),
         include_str!("../host_registry.rs"),
         include_str!("../leg.rs"),
+        include_str!("../mod.rs"),
         include_str!("../projection.rs"),
         include_str!("../tool_mode.rs"),
     ));
@@ -24,6 +25,7 @@ fn the_ruler_never_writes_the_document() {
         "data::store",
         "hydrate",
         "after_local_edit",
+        "editor_ops",
     ] {
         assert!(
             !code.contains(banned),

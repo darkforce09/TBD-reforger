@@ -14,6 +14,7 @@ fn the_line_of_sight_tool_never_writes_the_document() {
     let code = strip_rust_lexical_noise(concat!(
         include_str!("../capture.rs"),
         include_str!("../host_registry.rs"),
+        include_str!("../mod.rs"),
         include_str!("../object_verdict.rs"),
         include_str!("../object_wash.rs"),
         include_str!("../projection.rs"),
@@ -29,6 +30,7 @@ fn the_line_of_sight_tool_never_writes_the_document() {
         "data::store",
         "hydrate",
         "after_local_edit",
+        "editor_ops",
     ] {
         assert!(
             !code.contains(banned),

@@ -1515,3 +1515,9 @@ mod t946_86_duplicate_guard {
         assert!(!head.contains("slot ids"), "{head}");
     }
 }
+
+/// The grid-reference exporter is pinned against the map furniture's own edge labels, which only
+/// the frontend draws — so the pin sits here, on the side of the wall that can read both.
+#[cfg(test)]
+#[path = "tests/exporter_grid_reference.rs"]
+mod exporter_grid_reference_tests;

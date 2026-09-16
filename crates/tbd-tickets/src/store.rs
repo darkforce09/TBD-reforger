@@ -417,7 +417,8 @@ mod tests {
     /// `HAND_EDITED_NOT_CANONICAL` self-tightening pattern, red BOTH ways:
     ///
     /// - **Growth is impossible by rule**: new tickets never quarantine — a
-    ///   post-cutover mint is red in `ticket check` (`check_quarantine_mint`) and the
+    ///   post-cutover mint is red in `ticket check` — the quarantine-mint
+    ///   tripwire, pinned by `quarantine_mint_past_cutover_is_red` — and the
     ///   ops post-image gate refuses new wall summaries outright, so nothing can
     ///   legitimately add a carrier. A count above the pin means somebody hand-minted
     ///   the field.
