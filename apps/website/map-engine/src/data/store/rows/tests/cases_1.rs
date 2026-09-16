@@ -828,18 +828,25 @@ fn mission_editor_move_commit_names_the_atomic_mix_api() {
     let select = strip_rust_lexical_noise(concat!(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../../apps/website/frontend/src/editor/tools/select_tool.rs"
+            "/src/editing/tools/selection/pick.rs"
         )),
-        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/editing/picking.rs"))
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editing/tools/selection/marquee.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/editing/picking.rs"
+        ))
     ));
     assert!(
         select.contains("MissionDocCore::pick_slot_or_vehicle("),
-        "select_tool.rs has no `MissionDocCore::pick_slot_or_vehicle(` call token outside \
+        "the selection tool has no `MissionDocCore::pick_slot_or_vehicle(` call token outside \
              comments/strings — the mixed pick was forked or deleted"
     );
     assert!(
         select.contains("MissionDocCore::marquee_ids_with_vehicles("),
-        "select_tool.rs has no `MissionDocCore::marquee_ids_with_vehicles(` call token outside \
+        "the selection tool has no `MissionDocCore::marquee_ids_with_vehicles(` call token outside \
              comments/strings — the mixed marquee was forked or deleted"
     );
 
