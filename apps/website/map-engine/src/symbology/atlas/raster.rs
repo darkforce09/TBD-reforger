@@ -2,6 +2,23 @@
 //! Position: `symbology/atlas` in the graphics engine.
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
+//!
+//! T-0xx Phase 1D — **this file STAYS, against the engine-split spec's own §1D table.**
+//! That table sends `symbology/atlas/` wholesale to the renderer's `text/`; §2's acceptance
+//! grep (`terrain|symbology|mission|orbat|arma`, case-insensitive, over
+//! `graphics-engine/src`) forbids it, and the two cannot both be satisfied. The grep is the
+//! one wired into CI, so the grep wins.
+//!
+//! It is also the right answer on the merits. The cells this module rasterises are ORBAT
+//! vocabulary, not glyphs: [`SYMBOLOGY_CELL_COUNT`] is 15 because there are ten unit classes,
+//! three vehicle silhouettes and one comment bubble; [`UNIT_CELL_BASE`],
+//! [`VEHICLE_CELL_BASE`] and [`COMMENT_CELL`] are where each block starts;
+//! [`extend_atlas_with_unit_glyphs`] appends them and [`WidenedSlotAtlas`] reports where they
+//! landed. A renderer that held this would know what an infantry section looks like.
+//!
+//! What DID cross is the half that has no vocabulary in it: the texture upload, the uniform
+//! buffer and the bind-group build now live in `website-graphics-engine`'s `text::gpu`, which
+//! takes an already-packed uniform block and never reads a cell index.
 
 /// Slot/cluster atlas dimensions — two 64 px cells side by side (ring | disc), the `slotAtlas.ts` contract the engine's UV table + pipeline were built against.
 pub const SLOT_ATLAS_W: u32 = 128;
