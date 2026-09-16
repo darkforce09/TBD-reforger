@@ -1,4 +1,4 @@
-//! Engine-layer walls — [`ENGINE_SPLIT_PROGRAM.md`] §5 rules **1, 2, 3a, 3b, 4 and 7**.
+//! Engine-layer walls — [`ENGINE_SPLIT_PROGRAM.md`] §5 rules **1, 2, 3a, 3b, 4, 5, 6 and 7**.
 //!
 //! ── WHAT THIS DEFENDS ────────────────────────────────────────────────────────────────────────
 //!
@@ -23,11 +23,42 @@
 //! | 3a | only one enumerated file of `apps/website/map-engine/src` names `website_graphics_engine::frame` | the packet boundary stops being a boundary and becomes 39 scattered imports again |
 //! | 3b | no module of `apps/website/map-engine/src` names `website_graphics_engine::{device, pipeline, shaders, text::gpu, r#loop}` | GPU resource creation drifts back to the caller one convenient import at a time |
 //! | 4 | `apps/website/map-engine/src/data/scenario/**` imports nothing outside itself | the `website-api` build stops being thin |
+//! | 5 | no `web_sys` / `leptos` / `wasm_bindgen` under `apps/website/map-engine/src/editing` | editing logic re-grows a browser and stops being testable without one |
+//! | 6 | `apps/website/frontend/**` may not import `website_graphics_engine` | the frontend starts driving the GPU directly and the middle crate becomes optional |
 //! | 7 | `data/**` names no world module and `world/**` names no document module | the static world and the authored document fuse back into one soup |
 //!
-//! Rules 5 and 6 (no DOM in map-engine, frontend may not import graphics) police a tree that
-//! phase 3 has not built yet. Rule 5 in particular **cannot** hold while `map-engine` is a wasm
-//! crate with `editing/` still in the browser; it lands with phase 3, not before.
+//! ── RULE 5 AND WHY IT IS SCOPED TO ONE DIRECTORY ─────────────────────────────────────────────
+//!
+//! §5 writes rule 5 as "no DOM in map-engine". Taken crate-wide it can never be green and never
+//! could be: `map-engine` is a wasm crate whose `streaming/host`, `diagnostics/readback`,
+//! `doll/renderer` and `frame/*` reach the browser on purpose — 266 sites across 57 files — and
+//! a rule nobody can satisfy gets deleted by whoever hits it first. The program's own acceptance
+//! line is narrower than its prose and is the honest statement of the rule:
+//! `rg 'web_sys|leptos|wasm_bindgen' apps/website/map-engine/src/editing` comes back empty.
+//!
+//! That is the subject here, and it is a **hard zero with no allowlist**. `editing/` is the tree
+//! the editor's decisions live in — tool state machines, the undo drive, the command formatting —
+//! and every one of them must be answerable by `cargo test` with no browser in the room. A host
+//! injects what it alone can supply (a clock, a frame pump, a transport) as a plain function
+//! pointer or closure, which is why the tree needs none of these three names.
+//!
+//! The matcher is the bare word, deliberately, and it is the same question the acceptance line
+//! asks. Outside `editing/` a bare-word matcher would be noise; inside it, a comment that tells
+//! the next reader to reach for `leptos` here is exactly the thing the rule exists to stop.
+//!
+//! ── RULE 6 AND WHY IT MATCHES SYNTAX RATHER THAN THE WORD ────────────────────────────────────
+//!
+//! The frontend reaches the renderer through `website-map-engine` and only through it: the middle
+//! crate owns the frame vocabulary (rule 3a) and the GPU resources (rule 3b), and a frontend that
+//! imported the renderer directly would make both of those walls optional.
+//!
+//! The subject is already zero and the four existing mentions are all prose — three doc comments
+//! and a README, every one spelling the CARGO name (`website-graphics-engine`) while describing
+//! the boundary they respect. A bare-word matcher would turn four correct comments red, which is
+//! how a gate teaches people to delete the comment rather than keep the wall. So the source arm
+//! matches the two shapes that are actually an import — a `website_graphics_engine::` path and an
+//! `extern crate` — and the manifest arm matches the dependency edge, closing the rename hole
+//! exactly as rule 1's does.
 //!
 //! ── RULE 4 AND WHY ITS PIN HAS TWO ROWS ──────────────────────────────────────────────────────
 //!
@@ -196,203 +227,19 @@
 //! is named `verify-engine-layers`, so `cargo xtask ci verify-engine-layers` resolves, the same
 //! way `verify-no-node` aliases `verify no-node`.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use anyhow::Result;
-use tbd_gate::scan::{self, Hit};
-use tbd_gate::{Kind, NotRun, Pattern, Verdict, gate};
+use tbd_gate::scan;
+use tbd_gate::{NotRun, Pattern, gate};
 
-/// The pure crate. Rules 1 and 2 are both scoped to it and nothing else.
-const CRATE_REL: &str = "apps/website/graphics-engine";
+#[path = "gate_engine_layers_rules.rs"]
+mod rules;
+#[path = "gate_engine_layers_scan.rs"]
+mod scanning;
 
-/// Rule 1's Rust spelling — what an `use`/path reference to the map engine looks like in source.
-const MAP_ENGINE_PATH: &str = "website_map_engine";
-/// Rule 1's Cargo spelling — what a dependency edge looks like in the manifest.
-const MAP_ENGINE_PKG: &str = "website-map-engine";
-
-/// The map engine. Rule 3b is scoped to it and nothing else.
-const MAP_CRATE_REL: &str = "apps/website/map-engine";
-
-/// Rule 3a's matcher — the packet vocabulary's path, however it is reached.
-///
-/// `\b` is what keeps a hypothetical `::frames` or `::frame_stats` module from counting as the
-/// frame vocabulary; `::frame::X`, `::frame;` and a bare `::frame` in prose all end on a
-/// boundary and all match. No `use` anchor: `website_graphics_engine::frame::CameraUniform::new`
-/// written inline is the same breach as importing it, and phase 2C found three of exactly that
-/// shape (`diagnostics/readback/scene.rs`, `overlay/lanes.rs`).
-const FRAME_VOCAB_RE: &str = r"website_graphics_engine::frame\b";
-
-/// The enumerated packet boundary — file, exact count, and what the count IS.
-///
-/// One row, and it should stay one row. Read the module docs before adding a second: a new file
-/// naming the frame vocabulary is almost never the right fix, because the thing it wants is
-/// already re-exported from `frame/mod.rs` under `crate::frame::…`. The count is the size of that
-/// re-export list, so a diff here is a deliberate widening of the crate's graphics interface.
-const RULE3A_PIN: &[(&str, usize, &str)] = &[(
-    "apps/website/map-engine/src/frame/mod.rs",
-    8,
-    "the enumerated packet vocabulary (§2C.1 Kind C): damage, packet, present, CameraUniform, \
-     the three ids, the batch/payload/packet/indirect group, the buffer group, the text group",
-)];
-
-/// Rule 3b's matcher — the five graphics modules that own GPU resources.
-///
-/// `\b` after the group is what keeps `::pipeline as pipelines` a hit and a hypothetical
-/// `::pipelines` module from being one; `r#` is literal, so the raw-identifier spelling of the
-/// `loop` module is matched exactly as it is written in source.
-const GPU_MODULE_RE: &str =
-    r"website_graphics_engine::(device|pipeline|shaders|r#loop|text::gpu)\b";
-
-/// The pinned residue of rule 3b — file, exact count, and why it cannot close.
-///
-/// Read the module docs before touching this. The short version: every entry exists because
-/// `RenderEngine` did not cross to `website-graphics-engine` in Phase 1. Adding a row is claiming
-/// a new GPU-resource import is permanent; almost always the right move is to relocate the
-/// construction instead, which is what Phase 2B did to the other twelve.
-const RULE3B_PIN: &[(&str, usize, &str)] = &[
-    (
-        "apps/website/map-engine/src/frame/mod.rs",
-        3,
-        "device::buffers + pipeline aliases at one seam each (3 and 18 call sites), \
-         and the doc line on the r#loop re-export the frontend reaches the pump through",
-    ),
-    (
-        "apps/website/map-engine/src/frame/pump.rs",
-        2,
-        "impl FrameTarget for RenderEngine — E0116 pins the impl to the crate that \
-         defines the type, and #[wasm_bindgen] refuses trait impls",
-    ),
-];
-
-/// Rule 2's declaration matcher. See the module docs for why it is anchored on a keyword.
-const DECL_RE: &str =
-    r"\b(struct|enum|trait|type|fn|const|static|mod)\s+\w*(terrain|symbology|mission|orbat|arma)";
-
-/// The authored document's tree — rules 4 and 7's `data` side.
-const DATA_REL: &str = "apps/website/map-engine/src/data";
-/// The static world's tree — rule 7's `world` side.
-const WORLD_REL: &str = "apps/website/map-engine/src/world";
-/// The authored mission the server links on its own — rule 4's root.
-const SCENARIO_REL: &str = "apps/website/map-engine/src/data/scenario";
-
-// ── RULES 4 AND 7'S MATCHERS ─────────────────────────────────────────────────────────────────
-//
-// All three spell "outside this tree" as the nine top-level modules that are not the tree's own,
-// plus the renderer crate. That is the whole of it written out, because `website-map-engine` has
-// exactly ten top-level modules and an enumeration is cheaper to read — and impossible to widen
-// by accident — than a negation would be. `\b` after each group is what keeps a future
-// `crate::io_util` or `crate::worldgen` from being caught by its prefix rather than by its name.
-//
-// A raw string processes no escapes, so these stay one line each: a `\` continuation inside
-// `r"…"` would put a literal backslash and the next line's indentation into the pattern.
-//
-// ── THE `super::` ARM, AND THE ONE NAME IT CANNOT COVER ──────────────────────────────────────
-//
-// `crate::streaming::x` is not the only way to spell an escape. `use super::super::super::
-// streaming::x;` reaches the same module and a `crate::`-anchored matcher never sees it, which
-// would leave every rule below with a documented one-line bypass. How many `super`s it takes to
-// escape depends on the file's depth, and file depth is not module depth in this repo —
-// `#[path = "tests/cases_1.rs"] mod tests;` is used throughout — so a depth calculation would be
-// unsound, and an unsound gate rule is worse than none.
-//
-// What IS sound is the destination. A `super::` chain of any length that lands on a name which
-// does not exist inside the scanned tree has escaped it, whatever the depth. Every top-level
-// module name was checked against the two trees for collisions; exactly one exists —
-// `data/scenario/compiler/flatten/diagnostics.rs` — so `diagnostics` is the single name left out
-// of the `super::` arm, and `super::diagnostics` from inside `flatten/` stays legal because it
-// is. The `crate::` arm still covers `crate::diagnostics`.
-//
-// The three patterns are written out rather than composed from shared fragments: `concat!` takes
-// literals and not `const` idents, and a `format!` would make them runtime `String`s built in a
-// gate whose whole point is that its matchers are constants a reviewer can read.
-
-/// Rule 4's matcher — everything outside `data/scenario`: the nine sibling modules, the renderer,
-/// the document store, and the `super::` spelling of each. `\b` after `data::store` is what keeps
-/// a hypothetical `data::stored_rows` from matching on the prefix.
-const RULE4_RE: &str = r"crate::(camera|diagnostics|doll|frame|io|overlay|spatial|streaming|world|data::store)\b|website_graphics_engine|\bsuper::(super::)*(store|camera|doll|frame|io|overlay|spatial|streaming|world)\b";
-
-/// Rule 7's `data` side — the authored document may name `crate::data` and nothing else.
-const RULE7_DATA_RE: &str = r"crate::(camera|diagnostics|doll|frame|io|overlay|spatial|streaming|world)\b|website_graphics_engine|\bsuper::(super::)*(camera|doll|frame|io|overlay|spatial|streaming|world)\b";
-
-/// Rule 7's `world` side — the static world may name neither the document nor the CRDT crate.
-///
-/// `yrs::` and not `\byrs\b`: the bare word would match prose ("3 yrs"), and a matcher that fires
-/// on prose gets suppressed. Every real shape is a path — `use yrs::Doc`, `-> yrs::TransactionMut`,
-/// `yrs::Transact::transact` — so the `::` is free precision, not a loophole.
-const RULE7_WORLD_RE: &str = r"crate::data\b|\byrs::|\bsuper::(super::)*data\b";
-
-/// Rule 4's pinned residue — file, exact count, and why it does not reach the `website-api` build.
-///
-/// Read the module docs before adding a row. Both entries are `#[cfg(feature = "store")]` test
-/// code, and `website-api` links the `scenario` feature alone, so neither is compiled by the build
-/// this rule protects. An *ungated* import of the store from `data/scenario/` would satisfy this
-/// pin's count and still be wrong — which is why the pin carries the reason and not just a number.
-const RULE4_PIN: &[(&str, usize, &str)] = &[
-    (
-        "apps/website/map-engine/src/data/scenario/compiler/flatten/tests/mod.rs",
-        1,
-        "cfg(feature = \"store\") — vehicles_from_writer_json_roundtrip builds a real \
-         MissionDocCore and flattens it; website-api compiles neither the cfg nor the test",
-    ),
-    (
-        "apps/website/map-engine/src/data/scenario/compiler/payload/tests/cases_1.rs",
-        1,
-        "cfg(feature = \"store\") — briefing_prose_round_trips_through_the_document_core, \
-         the same pairing from the payload side",
-    ),
-];
-
-const RULE1_HEAD: &str =
-    "==> engine-layers rule 1 — apps/website/graphics-engine must not import website_map_engine";
-const RULE2_HEAD: &str =
-    "==> engine-layers rule 2 — no map noun in a declared name under apps/website/graphics-engine";
-const RULE3A_HEAD: &str = "==> engine-layers rule 3a — only the enumerated packet boundary may \
-     name website_graphics_engine::frame under apps/website/map-engine/src";
-const RULE3B_HEAD: &str = "==> engine-layers rule 3b — no GPU-resource module of \
-     website-graphics-engine named under apps/website/map-engine/src";
-const RULE4_HEAD: &str = "==> engine-layers rule 4 — apps/website/map-engine/src/data/scenario \
-     imports nothing outside itself";
-const RULE7_HEAD: &str = "==> engine-layers rule 7 — the static world and the authored document \
-     share nothing under apps/website/map-engine/src";
-
-const RULE1_TAIL: &[&str] = &[
-    "      The arrow runs map-engine -> graphics-engine and only that way. Compute it in",
-    "      map-engine and hand the result over as a FramePacket / DrawBatch / TextRun",
-    "      (ENGINE_SPLIT_PROGRAM.md §1 \"Dependency direction — non-negotiable\").",
-];
-const RULE2_TAIL: &[&str] = &[
-    "      graphics-engine is a renderer and may name geometry and GPU handles only. A map",
-    "      noun in a declared name means domain logic came back across the wall — move the",
-    "      decision to map-engine and leave the packing here (ENGINE_SPLIT_PROGRAM.md §5 rule 2).",
-];
-const RULE3A_TAIL: &[&str] = &[
-    "      The frame vocabulary is re-exported from map-engine/src/frame/mod.rs, enumerated.",
-    "      Write `use crate::frame::DrawBatch;` — the point of the boundary is that the whole",
-    "      graphics interface reads as one list (ENGINE_SPLIT_PROGRAM.md §5 rule 3a, §2C.1 Kind C).",
-];
-const RULE3B_TAIL: &[&str] = &[
-    "      device / pipeline / shaders / text::gpu / r#loop create and own GPU resources, and",
-    "      that is graphics-engine's job — map-engine receives already-built handles. Relocate",
-    "      the construction; do not add a row to RULE3B_PIN (ENGINE_SPLIT_PROGRAM.md §5 rule 3b).",
-];
-const RULE4_TAIL: &[&str] = &[
-    "      website-api links this crate at the `scenario` feature alone — that is why its tree",
-    "      carries no wgpu, png, rkyv or flate2. One import here drags a whole tier into an HTTP",
-    "      server. Pass the value in as an argument (ENGINE_SPLIT_PROGRAM.md §5 rule 4).",
-];
-const RULE7_TAIL: &[&str] = &[
-    "      world/ is streamed, immutable and never persisted; data/ is authored, undoable and",
-    "      persisted. They share the spatial index and nothing else — a chunk id in data/ or a",
-    "      document handle in world/ fuses them back together (ENGINE_SPLIT_PROGRAM.md §2D).",
-];
-const PROBE_FAIL: &[&str] = &[
-    "FAIL: matcher self-probe returned no match over a subject it must match.",
-    "      The search engine is broken. A check that cannot run is not a pass.",
-];
-const NOTHING_TAIL: &[&str] = &[
-    "      An engine-layer check with no inputs is not a pass: either the crate moved and this",
-    "      gate is scanning a husk, or the walk is broken. Both are red.",
-];
+use rules::*;
+use scanning::{against_pin, is_source, probed, refuse, rel, say, under};
 
 pub fn verify_engine_layers(repo_root: &Path) -> Result<u8> {
     let (code, out) = run(repo_root);
@@ -400,163 +247,6 @@ pub fn verify_engine_layers(repo_root: &Path) -> Result<u8> {
         println!("{line}");
     }
     Ok(code)
-}
-
-/// Push a fixed block. `""` is a deliberate blank line, which `str::lines` would swallow.
-fn say(o: &mut Vec<String>, lines: &[&str]) {
-    o.extend(lines.iter().map(|s| (*s).to_string()));
-}
-
-/// `path:line:text` — [`Hit::rendered`]'s shape, but repo-relative.
-///
-/// `walk_files` is handed absolute roots, so `rendered()` would print this machine's checkout
-/// prefix. Every path in this gate's output names a file a reader has to go and edit, and the
-/// relative form is the one that pastes into an editor and into a test assertion unchanged.
-fn rel(repo_root: &Path, hit: &Hit) -> String {
-    let p = hit.path.strip_prefix(repo_root).unwrap_or(&hit.path);
-    format!("{}:{}:{}", p.display(), hit.line_no, hit.line)
-}
-
-/// Build output is not source.
-///
-/// A stray `apps/website/graphics-engine/src/target-container/` (536 MB of wasm artifacts, one
-/// generated `thiserror` `private.rs` among them) exists in this checkout today, and a gate that
-/// reported on a dependency's generated code would be reporting on code nobody in this repo wrote.
-/// `.gitignore` covers `/target/` and `target-*/` anywhere in the tree, so a pruned directory can
-/// never hold a tracked file — the prune removes noise, not coverage. Only components *below*
-/// `repo_root` are considered, or a checkout that happened to live under `~/target-x` would prune
-/// the entire repository and the gate would go vacuously green.
-fn is_source(repo_root: &Path, path: &Path) -> bool {
-    let rel = path.strip_prefix(repo_root).unwrap_or(path);
-    !rel.components().any(|c| {
-        let n = c.as_os_str().to_string_lossy();
-        n == "target" || n.starts_with("target-")
-    })
-}
-
-/// Group `hits` by repo-relative file and judge them against an enumerated pin.
-///
-/// Returns `(findings, lines)` — findings is what a reader has to go and fix, lines is how tall
-/// the report of it is, and those are different numbers because one finding prints many lines.
-///
-/// Rules 3a and 3b are the same judgement over two different matchers, so they are the same
-/// code. Three ways to fail and all three are load-bearing:
-///
-/// * an **unpinned** file matched at all — the rule's actual subject;
-/// * a **pinned** file whose count moved in either direction — a pin that no longer describes
-///   the tree has quietly stopped meaning what it says, whether it grew or shrank;
-/// * a pinned file that **no longer matches at all**, which never reaches the first loop because
-///   it is not in `per_file` — so the pin is also checked from its own side. This is the arm that
-///   catches a renamed or deleted directory, i.e. the case where "no violations" and "nothing
-///   left to look at" would otherwise be indistinguishable.
-fn against_pin(
-    repo_root: &Path,
-    hits: &[Hit],
-    pin: &[(&str, usize, &str)],
-) -> (usize, Vec<String>) {
-    let mut per_file: std::collections::BTreeMap<String, Vec<String>> =
-        std::collections::BTreeMap::new();
-    for h in hits {
-        let p = h.path.strip_prefix(repo_root).unwrap_or(&h.path);
-        per_file
-            .entry(p.display().to_string())
-            .or_default()
-            .push(rel(repo_root, h));
-    }
-    let mut bad: Vec<String> = Vec::new();
-    let mut findings = 0usize;
-    for (file, lines) in &per_file {
-        match pin.iter().find(|(f, _, _)| f == file) {
-            None => {
-                findings += 1;
-                bad.push(format!("  unpinned file — {} site(s):", lines.len()));
-                bad.extend(lines.iter().map(|l| format!("    {l}")));
-            }
-            Some((_, want, _)) if *want != lines.len() => {
-                findings += 1;
-                bad.push(format!(
-                    "  {file}: pinned at {want} site(s), found {} — update the pin.",
-                    lines.len()
-                ));
-                bad.extend(lines.iter().map(|l| format!("    {l}")));
-            }
-            Some(_) => {}
-        }
-    }
-    for (file, want, _) in pin {
-        if !per_file.contains_key(*file) {
-            findings += 1;
-            bad.push(format!(
-                "  {file}: pinned at {want} site(s), found 0 — the pin is stale, delete the row."
-            ));
-        }
-    }
-    (findings, bad)
-}
-
-/// The subset of `files` sitting under one repo-relative directory.
-///
-/// [`Path::starts_with`] compares whole components, so `src/data` does not capture a sibling
-/// `src/database` — the same property the `\b` gives the matchers, applied to the walk.
-fn under(repo_root: &Path, files: &[PathBuf], rel: &str) -> Vec<PathBuf> {
-    let root = repo_root.join(rel);
-    files
-        .iter()
-        .filter(|p| p.starts_with(&root))
-        .cloned()
-        .collect()
-}
-
-/// Compile a matcher and prove it over subjects whose answers are known, before it judges
-/// anything.
-///
-/// Both lists are load-bearing and the second one more than the first. A matcher that fails to
-/// fire is a gate that passes vacuously; a matcher that fires on the spelling every call site is
-/// *supposed* to use is a rule nobody can satisfy, and an unsatisfiable rule gets deleted. Rules
-/// 1, 2, 3a and 3b spell their probes out inline because they predate this helper and their
-/// refusal strings differ; the three added with rules 4 and 7 share one shape, so they share one
-/// function rather than three more copies of the same nine-line match.
-fn probed(
-    o: &mut Vec<String>,
-    what: &str,
-    re: &str,
-    must: &[&str],
-    must_not: &[&str],
-) -> Result<Pattern, (u8, Vec<String>)> {
-    let p = match Pattern::regex(re) {
-        Ok(p) => p,
-        Err(e) => {
-            let cause = NotRun::ToolError {
-                tool: "regex".into(),
-                status: 2,
-                stderr: e.to_string(),
-            };
-            return Err(refuse(o, what, cause));
-        }
-    };
-    for (subject, want) in must
-        .iter()
-        .map(|s| (s, true))
-        .chain(must_not.iter().map(|s| (s, false)))
-    {
-        match gate::probe_str(&p, subject) {
-            Ok(got) if got == want => {}
-            Ok(_) => {
-                say(o, PROBE_FAIL);
-                return Err((1, std::mem::take(o)));
-            }
-            Err(cause) => return Err(refuse(o, what, cause)),
-        }
-    }
-    Ok(p)
-}
-
-fn refuse(o: &mut Vec<String>, what: &str, cause: NotRun) -> (u8, Vec<String>) {
-    o.push(Verdict::did_not_run(what, Kind::Ban, cause).to_string());
-    say(o, &["", "ENGINE-LAYERS: FAIL (did not run)"]);
-    // 2, not 1: "the wall is breached" and "I never read the crate" are different operator
-    // actions, and phase 2 will move these paths on purpose.
-    (2, std::mem::take(o))
 }
 
 /// The gate proper, writing into a sink so the tests assert on exact bytes instead of scraping
@@ -734,6 +424,55 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
         Err(r) => return r,
     };
 
+    // Rule 5. The negatives are what keep it a rule rather than noise: every legitimate line in
+    // `editing/` is a `crate::` path or a `std::` one, and the two prefix subjects prove the `\b`
+    // — a wall that can be walked through by appending letters to a crate name is not a wall.
+    let dom = match probed(
+        &mut o,
+        "engine-layers rule 5 pattern",
+        DOM_RE,
+        &[
+            "use web_sys::window;",
+            "use leptos::prelude::RwSignal;",
+            "use wasm_bindgen::prelude::*;",
+            "    let _ = wasm_bindgen::JsValue::from_f64(1.0);",
+            "// the host installs its leptos signal here",
+        ],
+        &[
+            "use crate::data::store::MissionDocCore;",
+            "use std::cell::RefCell;",
+            "use web_sysfs::open;",
+            "use leptosaur::prelude::*;",
+        ],
+    ) {
+        Ok(p) => p,
+        Err(r) => return r,
+    };
+
+    // Rule 6. The negatives are the four mentions that exist today — prose spelling the CARGO
+    // name while describing the boundary it respects — plus the map engine, whose name shares a
+    // prefix with nothing here but would be caught by a sloppier alternation.
+    let graphics_import = match probed(
+        &mut o,
+        "engine-layers rule 6 pattern",
+        GRAPHICS_IMPORT_RE,
+        &[
+            "use website_graphics_engine::draw::triangulate;",
+            "    let t = website_graphics_engine::draw::triangulate(&verts);",
+            "extern crate website_graphics_engine;",
+        ],
+        &[
+            "//! loop machinery moved to the renderer's one `RafPump` (`website-graphics-engine`)",
+            "/// this app touches — through the map engine, never by depending on \
+             `website-graphics-engine`",
+            "use website_map_engine::frame::EngineHandle;",
+            "use crate::editor::tools::ruler_tool::install_seam;",
+        ],
+    ) {
+        Ok(p) => p,
+        Err(r) => return r,
+    };
+
     let crate_dir = repo_root.join(CRATE_REL);
     let manifest = crate_dir.join("Cargo.toml");
     let src = crate_dir.join("src");
@@ -770,15 +509,40 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
     let data_files = under(repo_root, &map_sources, DATA_REL);
     let world_files = under(repo_root, &map_sources, WORLD_REL);
     let scenario_files = under(repo_root, &map_sources, SCENARIO_REL);
+    let editing_files = under(repo_root, &map_sources, EDITING_REL);
+
+    // Rule 6's root is a third crate, walked here because no earlier rule reads it. Its manifest
+    // rides the same walk as its sources, exactly as rule 1's does for graphics-engine.
+    let front_dir = repo_root.join(FRONTEND_REL);
+    let root3 = repo_root.to_path_buf();
+    let front_sources = match scan::walk_files(&[&front_dir.join("src")], move |p| {
+        is_source(&root3, p) && p.extension().is_some_and(|e| e == "rs")
+    }) {
+        Ok(f) => f,
+        Err(cause) => return refuse(&mut o, "engine-layers could not walk the frontend", cause),
+    };
+    let front_manifest = match scan::walk_files(&[&front_dir.join("Cargo.toml")], |_| true) {
+        Ok(f) => f,
+        Err(cause) => {
+            return refuse(
+                &mut o,
+                "engine-layers could not read the frontend manifest",
+                cause,
+            );
+        }
+    };
 
     let scanned = format!(
         "  scanned {} .rs file(s) + {CRATE_REL}/Cargo.toml, {} .rs file(s) under \
-         {MAP_CRATE_REL}/src — of those {} under data/ ({} under data/scenario) and {} under world/",
+         {MAP_CRATE_REL}/src — of those {} under data/ ({} under data/scenario), {} under world/ \
+         and {} under editing/ — plus {} .rs file(s) + Cargo.toml under {FRONTEND_REL}",
         sources.len(),
         map_sources.len(),
         data_files.len(),
         scenario_files.len(),
-        world_files.len()
+        world_files.len(),
+        editing_files.len(),
+        front_sources.len()
     );
     for (n, root) in [
         (sources.len(), format!("{CRATE_REL}/src")),
@@ -786,6 +550,9 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
         (data_files.len(), DATA_REL.to_string()),
         (world_files.len(), WORLD_REL.to_string()),
         (scenario_files.len(), SCENARIO_REL.to_string()),
+        (editing_files.len(), EDITING_REL.to_string()),
+        (front_sources.len(), format!("{FRONTEND_REL}/src")),
+        (front_manifest.len(), format!("{FRONTEND_REL}/Cargo.toml")),
     ] {
         if n == 0 {
             o.push(format!(
@@ -907,6 +674,57 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
         say(&mut o, RULE4_TAIL);
     }
 
+    // ── rule 5 ───────────────────────────────────────────────────────────────────────────────
+    //
+    // Hard zero, no allowlist. See the module docs for why the subject is one directory and not
+    // the crate, and why the matcher is the bare word inside it.
+    o.push(RULE5_HEAD.to_string());
+    let dom_hits: Vec<String> = match scan::grep_lines(&dom, &editing_files) {
+        Ok(hits) => hits.iter().map(|h| rel(repo_root, h)).collect(),
+        Err(cause) => return refuse(&mut o, "engine-layers rule 5 scan", cause),
+    };
+    if dom_hits.is_empty() {
+        o.push(format!(
+            "  OK — 0 site(s) across {} .rs file(s) under editing/: the editor's decisions name \
+             no browser, so `cargo test` can answer every one of them.",
+            editing_files.len()
+        ));
+    } else {
+        o.push("FAIL: the browser reached into the engine's editing tree:".to_string());
+        o.extend(dom_hits.iter().map(|h| format!("  {h}")));
+        say(&mut o, RULE5_TAIL);
+    }
+
+    // ── rule 6 ───────────────────────────────────────────────────────────────────────────────
+    o.push(RULE6_HEAD.to_string());
+    let mut direct: Vec<String> = Vec::new();
+    match scan::grep_lines(&graphics_import, &front_sources) {
+        Ok(hits) => direct.extend(hits.iter().map(|h| rel(repo_root, h))),
+        Err(cause) => return refuse(&mut o, "engine-layers rule 6 scan", cause),
+    }
+    // The manifest arm closes rule 1's hole from the other side: a renamed dependency
+    // (`g = { package = "website-graphics-engine" }`) makes every `use g::…` invisible to the
+    // source arm. A `#` line is a comment — naming the renderer in prose is not an edge.
+    match scan::grep_lines(&Pattern::literal(GRAPHICS_PKG), &front_manifest) {
+        Ok(hits) => direct.extend(
+            hits.iter()
+                .filter(|h| !h.line.trim_start().starts_with('#'))
+                .map(|h| rel(repo_root, h)),
+        ),
+        Err(cause) => return refuse(&mut o, "engine-layers rule 6 manifest scan", cause),
+    }
+    if direct.is_empty() {
+        o.push(format!(
+            "  OK — 0 import(s) across {} .rs file(s) and the manifest: the frontend reaches the \
+             renderer through website-map-engine and only through it.",
+            front_sources.len()
+        ));
+    } else {
+        o.push("FAIL: the frontend imports the renderer directly:".to_string());
+        o.extend(direct.iter().map(|d| format!("  {d}")));
+        say(&mut o, RULE6_TAIL);
+    }
+
     // ── rule 7 ───────────────────────────────────────────────────────────────────────────────
     //
     // One rule, two directions, one findings list — a breach in either direction is the same
@@ -946,6 +764,8 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
         && vocab_bad.is_empty()
         && gpu_bad.is_empty()
         && iso_bad.is_empty()
+        && dom_hits.is_empty()
+        && direct.is_empty()
         && wall.is_empty()
     {
         o.push("ENGINE-LAYERS: PASS".to_string());
@@ -954,9 +774,12 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
     o.push(format!(
         "ENGINE-LAYERS: FAIL — {} wall breach(es), {} map-noun declaration(s), \
          {vocab_findings} frame-vocab finding(s), {gpu_findings} GPU-module finding(s), \
-         {iso_findings} scenario-isolation finding(s), {} world/data finding(s)",
+         {iso_findings} scenario-isolation finding(s), {} browser-in-editing site(s), \
+         {} direct-renderer import(s), {} world/data finding(s)",
         breaches.len(),
         nouns.len(),
+        dom_hits.len(),
+        direct.len(),
         wall.len(),
     ));
     (1, o)

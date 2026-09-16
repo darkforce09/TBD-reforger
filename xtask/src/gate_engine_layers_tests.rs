@@ -1,4 +1,4 @@
-//! Tests for [`super`] — the engine-layer walls, §5 rules 1, 2, 3a, 3b, 4 and 7.
+//! Tests for [`super`] — the engine-layer walls, §5 rules 1, 2, 3a, 3b, 4, 5, 6 and 7.
 //!
 //! Split out of `gate_engine_layers.rs` at 2D purely for SIZE-3: rules 4 and 7 brought six more
 //! cases and the single file passed 1000 lines. `#[path]` keeps them one module — `use super::*`
@@ -87,6 +87,41 @@ use crate::streaming::scheduler::state::WorldResidency;
 use crate::spatial::bvh::traversal::Bvh;
 ";
 
+/// Rule 5's root, green: the editor's decisions, named in `crate::` and `std::` terms only.
+const MAP_EDITING: &str = "\
+//! The two-click ray capture.
+
+use crate::data::store::MissionDocCore;
+use std::cell::RefCell;
+
+/// A host supplies its own clock; this module asks for one rather than reaching for a window.
+pub fn step(now: &dyn Fn() -> f64) -> f64 {
+    now()
+}
+";
+
+/// Rule 6's root, green: the frontend reaching the renderer through the map engine, and saying so
+/// in prose — with the CARGO spelling, which is exactly the shape the matcher must not fire on.
+const FRONT_SRC: &str = "\
+//! The canvas mount. The render loop is the renderer's one `RafPump` (`website-graphics-engine`),
+//! reached through the map engine and never by depending on it directly.
+
+use website_map_engine::frame::EngineHandle;
+
+pub fn mount(engine: EngineHandle) {
+    let _ = engine;
+}
+";
+
+/// Rule 6's manifest arm, green: the map engine and no renderer edge.
+const FRONT_MANIFEST: &str = "\
+[package]
+name = \"website-frontend\"
+
+[dependencies]
+website-map-engine = { path = \"../map-engine\" }
+";
+
 struct Repo(PathBuf);
 impl Repo {
     fn new(name: &str) -> Repo {
@@ -112,7 +147,26 @@ impl Repo {
             MAP_SCENARIO_PAYLOAD_TEST,
         );
         r.map("world/terrain/dem/grid.rs", MAP_WORLD);
+        // Rules 5 and 6's roots, seeded on every fixture for the same reason: an absent root is
+        // a hard FAIL, and every other test would trip over it.
+        r.map("editing/tools/line_of_sight/capture.rs", MAP_EDITING);
+        r.front("canvas/mount.rs", FRONT_SRC);
+        r.front_manifest(FRONT_MANIFEST);
         r
+    }
+
+    /// Write a file under the frontend — rule 6's root.
+    fn front(&self, rel: &str, body: &str) {
+        let p = self.0.join("apps/website/frontend/src").join(rel);
+        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+        std::fs::write(p, body).unwrap();
+    }
+
+    /// Write the frontend manifest — rule 6's dependency-edge arm.
+    fn front_manifest(&self, body: &str) {
+        let p = self.0.join("apps/website/frontend/Cargo.toml");
+        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+        std::fs::write(p, body).unwrap();
     }
     /// Write a file under the map engine — rule 3b's root.
     fn map(&self, rel: &str, body: &str) {
@@ -165,9 +219,12 @@ fn a_pure_renderer_passes_and_prose_does_not_trip_it() {
             "  OK — 2 pinned site(s) in 2 file(s), 0 unpinned.",
             "  OK — 0 site(s) in both directions: 4 .rs file(s) under data/ name no world \
                  module, 1 under world/ name neither crate::data nor yrs.",
+            "  OK — 0 site(s) across 1 .rs file(s) under editing/:",
+            "  OK — 0 import(s) across 1 .rs file(s) and the manifest:",
             "  scanned 1 .rs file(s) + apps/website/graphics-engine/Cargo.toml, \
-                 7 .rs file(s) under apps/website/map-engine/src — of those 4 under data/ \
-                 (3 under data/scenario) and 1 under world/",
+                 8 .rs file(s) under apps/website/map-engine/src — of those 4 under data/ \
+                 (3 under data/scenario), 1 under world/ and 1 under editing/ — plus 1 .rs \
+                 file(s) + Cargo.toml under apps/website/frontend",
             "ENGINE-LAYERS: PASS",
         ],
     );
@@ -187,7 +244,7 @@ fn importing_the_map_engine_fails() {
             RULE1_TAIL[0],
             "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), \
                  0 frame-vocab finding(s), 0 GPU-module finding(s), \
-                 0 scenario-isolation finding(s), 0 world/data finding(s)",
+                 0 scenario-isolation finding(s), 0 browser-in-editing site(s), 0 direct-renderer import(s), 0 world/data finding(s)",
         ],
     );
 }
@@ -206,7 +263,7 @@ fn a_dependency_edge_is_a_breach_and_a_comment_is_not() {
             "  apps/website/graphics-engine/Cargo.toml:6:me = { package = \"website-map-engine\" }",
             "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), \
                  0 frame-vocab finding(s), 0 GPU-module finding(s), \
-                 0 scenario-isolation finding(s), 0 world/data finding(s)",
+                 0 scenario-isolation finding(s), 0 browser-in-editing site(s), 0 direct-renderer import(s), 0 world/data finding(s)",
         ],
     );
     r.manifest(&format!(
@@ -232,7 +289,7 @@ fn map_nouns_in_declared_names_fail() {
             RULE2_TAIL[0],
             "ENGINE-LAYERS: FAIL — 0 wall breach(es), 2 map-noun declaration(s), \
                  0 frame-vocab finding(s), 0 GPU-module finding(s), \
-                 0 scenario-isolation finding(s), 0 world/data finding(s)",
+                 0 scenario-isolation finding(s), 0 browser-in-editing site(s), 0 direct-renderer import(s), 0 world/data finding(s)",
         ],
     );
 }
@@ -761,4 +818,146 @@ fn build_output_is_pruned_but_only_below_the_root() {
         &root.join("src/target-gate-frontend/x.rs")
     ));
     assert!(!is_source(root, &root.join("target/debug/x.rs")));
+}
+
+/// RULE 5, RED — each of the three names, each reported with its exact line, and each on a
+/// different shape: an import, a bare path in an expression, and a mention in a comment.
+///
+/// The comment case is the one worth being explicit about. Everywhere else in this gate a prose
+/// hit is a false positive to be designed out; inside `editing/` it is a finding, because a
+/// comment telling the next reader to reach for a signal here is how the browser gets back in.
+#[test]
+fn a_browser_name_inside_the_engines_editing_tree_fails() {
+    let r = Repo::new("rule5-red");
+    r.map(
+        "editing/tools/ruler/chain.rs",
+        "use web_sys::window;\npub fn n() -> f64 { wasm_bindgen::JsValue::TRUE.as_f64().unwrap() }\n\
+         // park the leptos signal here\n",
+    );
+    let all = r.expect(
+        1,
+        &[
+            "FAIL: the browser reached into the engine's editing tree:",
+            "  apps/website/map-engine/src/editing/tools/ruler/chain.rs:1:use web_sys::window;",
+            "  apps/website/map-engine/src/editing/tools/ruler/chain.rs:3:// park the leptos \
+             signal here",
+            RULE5_TAIL[0],
+            "0 direct-renderer import(s)",
+        ],
+    );
+    assert!(
+        all.contains("3 browser-in-editing site(s)"),
+        "every site counts, not just the file:\n{all}"
+    );
+}
+
+/// RULE 5's SCOPE — the rule is `editing/` and nothing else, which is what makes it satisfiable.
+///
+/// `map-engine` is a wasm crate: `streaming/host`, `diagnostics/readback` and `frame/*` all name
+/// these three on purpose. A crate-wide rule 5 could never be green, so this proves the same
+/// tokens outside `editing/` are not the rule's subject.
+#[test]
+fn rule_5_is_scoped_to_editing_and_not_the_whole_crate() {
+    let r = Repo::new("rule5-scope");
+    r.map(
+        "streaming/host.rs",
+        "use wasm_bindgen::prelude::*;\nuse web_sys::window;\n",
+    );
+    r.expect(0, &["ENGINE-LAYERS: PASS"]);
+}
+
+/// RULE 5's ANTI-VACUITY CASE. "No file under `editing/` names a browser" and "there is no
+/// `editing/` any more" are the same sentence to a matcher, and this rule's green state is zero
+/// sites — so the count is the only thing that tells them apart.
+#[test]
+fn an_absent_editing_tree_is_not_a_clean_rule_5() {
+    let r = Repo::new("rule5-empty");
+    std::fs::remove_dir_all(r.0.join("apps/website/map-engine/src/editing")).unwrap();
+    let all = r.expect(
+        1,
+        &[
+            "FAIL: engine-layers walked 0 .rs file(s) under apps/website/map-engine/src/editing",
+            "ENGINE-LAYERS: FAIL (no inputs)",
+        ],
+    );
+    assert!(!all.contains("ENGINE-LAYERS: PASS"), "{all}");
+}
+
+/// RULE 6, RED — both import shapes and the dependency edge, each reported with its line.
+#[test]
+fn the_frontend_importing_the_renderer_fails() {
+    let r = Repo::new("rule6-red");
+    r.front(
+        "canvas/bad.rs",
+        "use website_graphics_engine::draw::triangulate;\n\
+         pub fn t(v: &[f32]) -> Vec<u32> { website_graphics_engine::draw::triangulate(v) }\n",
+    );
+    let all = r.expect(
+        1,
+        &[
+            "FAIL: the frontend imports the renderer directly:",
+            "  apps/website/frontend/src/canvas/bad.rs:1:use website_graphics_engine::draw::\
+             triangulate;",
+            RULE6_TAIL[0],
+        ],
+    );
+    assert!(all.contains("2 direct-renderer import(s)"), "{all}");
+
+    // The manifest arm, which is the one a rename would otherwise walk straight through:
+    // `g = { package = "website-graphics-engine" }` makes every `use g::…` invisible to the
+    // source arm.
+    let r = Repo::new("rule6-manifest");
+    r.front_manifest(
+        "[dependencies]\ng = { path = \"../graphics-engine\", package = \"website-graphics-engine\" }\n",
+    );
+    r.expect(
+        1,
+        &[
+            "FAIL: the frontend imports the renderer directly:",
+            "apps/website/frontend/Cargo.toml:2:g = { path",
+        ],
+    );
+}
+
+/// RULE 6's FALSE POSITIVES — the four mentions that exist in the tree today, every one of them
+/// prose describing the boundary it respects, and every one spelling the CARGO name. A bare-word
+/// matcher would turn all four red, which is how a gate teaches people to delete the comment
+/// rather than keep the wall. A `#` line in the manifest is a comment, not an edge.
+#[test]
+fn rule_6_matches_imports_and_not_the_prose_that_describes_the_wall() {
+    let r = Repo::new("rule6-prose");
+    r.front(
+        "canvas/viewport.rs",
+        "//! loop machinery moved to the renderer's one `RafPump` (`website-graphics-engine`)\n\
+         /// through the map engine, never by depending on `website-graphics-engine`\n\
+         use website_map_engine::frame::EngineHandle;\n",
+    );
+    r.front_manifest(
+        "[dependencies]\n# website-graphics-engine is reached through the map engine\n\
+         website-map-engine = { path = \"../map-engine\" }\n",
+    );
+    r.expect(0, &["ENGINE-LAYERS: PASS"]);
+}
+
+/// RULE 6's ANTI-VACUITY CASE, on both halves of its root: an unwalked frontend and an unreadable
+/// manifest are each "nothing to look at", and neither may read as a clean wall.
+#[test]
+fn an_absent_frontend_is_not_a_clean_rule_6() {
+    let r = Repo::new("rule6-empty");
+    std::fs::remove_file(r.0.join("apps/website/frontend/src/canvas/mount.rs")).unwrap();
+    let all = r.expect(
+        1,
+        &[
+            "FAIL: engine-layers walked 0 .rs file(s) under apps/website/frontend/src",
+            "ENGINE-LAYERS: FAIL (no inputs)",
+        ],
+    );
+    assert!(!all.contains("ENGINE-LAYERS: PASS"), "{all}");
+
+    let r = Repo::new("rule6-no-manifest");
+    std::fs::remove_file(r.0.join("apps/website/frontend/Cargo.toml")).unwrap();
+    let (code, out) = super::run(&r.0);
+    let all = out.join("\n");
+    assert_eq!(code, 2, "{all}");
+    assert!(all.contains("frontend manifest"), "{all}");
 }
