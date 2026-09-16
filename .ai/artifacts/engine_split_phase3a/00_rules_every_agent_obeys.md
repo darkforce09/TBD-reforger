@@ -102,3 +102,20 @@ not you. Fixing it costs a rerun of suites your brief never needed.
 Run **only** the verification your brief lists, **once**, at the end. Do not add clippy, fmt, or
 cross-crate `cargo check` passes on your own initiative — the gate above you already covers them,
 and every extra cargo invocation is minutes of wall clock on a locked target dir.
+
+## `state/operations/` is wasm32-only — the native suites cannot see it
+
+`apps/website/frontend/src/editor/state/operations.rs` carries
+`#![cfg(target_arch = "wasm32")]`, so **`cargo test -p website-frontend` never compiles that
+directory**. Any brief whose primary artifact lives there is committed untypechecked unless you
+also run:
+
+```
+CARGO_TARGET_DIR=target-container cargo check --target wasm32-unknown-unknown -p website-frontend
+CARGO_TARGET_DIR=target-container cargo fmt --all -- --check
+```
+
+These two are part of the verification for every brief touching `state/operations/`, not extras.
+`fmt` matters because `verify-coding-standards` runs it inside `ci-local`, and phase 3A's closing
+gate is `mk ci-local-leptos`. Warning count is a baseline, not a target: 19 warnings on wasm32 is
+the current floor — the same 19 by name.
