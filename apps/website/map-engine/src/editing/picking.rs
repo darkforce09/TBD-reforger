@@ -1,13 +1,13 @@
 //! Role: join spatial queries to document identifiers.
-//! Position: frontend editor input adapter.
+//! Position: `editing` in the map engine.
 //! Signals & state: explicit frozen camera and document projections.
 //! Invariants: square slot hits, circular vehicle hits, slot-first ties and marquee order.
 
-use website_map_engine::camera::ortho::state::OrthoCamera;
-use website_map_engine::data::store::MissionDocCore;
-use website_map_engine::data::store::SlotSoa;
-use website_map_engine::overlay::symbology::links::squad_links::SquadLinkInput;
-use website_map_engine::spatial::indexing::picking as spatial;
+use crate::camera::ortho::state::OrthoCamera;
+use crate::data::store::MissionDocCore;
+use crate::data::store::SlotSoa;
+use crate::overlay::symbology::links::squad_links::SquadLinkInput;
+use crate::spatial::indexing::picking as spatial;
 
 fn world_query(cam: &OrthoCamera, px: f64, py: f64) -> ([f64; 2], f64) {
     let c = cam.unproject_xy(px, py);
@@ -120,5 +120,5 @@ pub fn squad_link_inputs(doc: &MissionDocCore) -> Vec<SquadLinkInput> {
 }
 
 #[cfg(test)]
-#[path = "picking/tests/selection.rs"]
+#[path = "tests/picking_selection.rs"]
 mod tests;

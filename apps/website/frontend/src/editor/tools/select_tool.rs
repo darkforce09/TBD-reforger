@@ -178,7 +178,7 @@ fn d2_to(soa: &SlotSoa, h: u32, qx: f64, qy: f64) -> f64 {
 /// keeps the select_tool call sites stable.
 #[must_use]
 pub fn pick(cam: &OrthoCamera, soa: &SlotSoa, px: f64, py: f64) -> Option<String> {
-    crate::editor::state::picking::pick_slot(cam, soa, px, py)
+    website_map_engine::editing::picking::pick_slot(cam, soa, px, py)
 }
 
 /// T-425 — nearest placed vehicle id under a screen pixel, or `None`.
@@ -194,7 +194,7 @@ pub fn pick_vehicle(
     px: f64,
     py: f64,
 ) -> Option<String> {
-    crate::editor::state::picking::pick_vehicle(cam, points, px, py)
+    website_map_engine::editing::picking::pick_vehicle(cam, points, px, py)
 }
 
 /// T-425 — pick slot or vehicle; when both are in range, the closer world-distance wins.
@@ -206,7 +206,7 @@ pub fn pick_slot_or_vehicle(
     px: f64,
     py: f64,
 ) -> Option<String> {
-    crate::editor::state::picking::pick_slot_or_vehicle(cam, soa, vehicle_points, px, py)
+    website_map_engine::editing::picking::pick_slot_or_vehicle(cam, soa, vehicle_points, px, py)
 }
 
 /// Apply a click to the selection set, matching React `useSelectTool` onPointerUp `pending-left`:
@@ -384,7 +384,7 @@ fn bind_squad_link_preview(e: &mut RenderEngine, drag_ids: &[String], dx: f64, d
     for (i, id) in soa.ids.iter().enumerate() {
         xy_by_slot.insert(id.clone(), (soa.xy[i * 2], soa.xy[i * 2 + 1]));
     }
-    let inputs = crate::editor::state::picking::squad_link_inputs(doc);
+    let inputs = website_map_engine::editing::picking::squad_link_inputs(doc);
     #[allow(clippy::cast_possible_truncation)]
     let verts = pack_squad_link_drag_preview(&inputs, &xy_by_slot, drag_ids, dx as f32, dy as f32);
     #[allow(clippy::cast_possible_truncation)]
@@ -409,7 +409,7 @@ pub fn marquee_ids(
     end_px: f64,
     end_py: f64,
 ) -> Vec<String> {
-    crate::editor::state::picking::marquee_slot_ids(cam, soa, start_wx, start_wy, end_px, end_py)
+    website_map_engine::editing::picking::marquee_slot_ids(cam, soa, start_wx, start_wy, end_px, end_py)
 }
 
 /// T-425 — vehicle ids inside the marquee world AABB (same corners as [`marquee_ids`]).
@@ -424,7 +424,7 @@ pub fn marquee_vehicle_ids(
     end_px: f64,
     end_py: f64,
 ) -> Vec<String> {
-    crate::editor::state::picking::marquee_vehicle_ids(
+    website_map_engine::editing::picking::marquee_vehicle_ids(
         cam, points, start_wx, start_wy, end_px, end_py,
     )
 }
@@ -440,7 +440,7 @@ pub fn marquee_ids_with_vehicles(
     end_px: f64,
     end_py: f64,
 ) -> Vec<String> {
-    crate::editor::state::picking::marquee_ids_with_vehicles(
+    website_map_engine::editing::picking::marquee_ids_with_vehicles(
         cam,
         soa,
         vehicle_points,

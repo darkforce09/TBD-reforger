@@ -830,10 +830,7 @@ fn mission_editor_move_commit_names_the_atomic_mix_api() {
             env!("CARGO_MANIFEST_DIR"),
             "/../../../apps/website/frontend/src/editor/tools/select_tool.rs"
         )),
-        include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../../apps/website/frontend/src/editor/state/picking.rs"
-        ))
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/editing/picking.rs"))
     ));
     assert!(
         select.contains("MissionDocCore::pick_slot_or_vehicle("),

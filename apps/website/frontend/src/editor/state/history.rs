@@ -627,7 +627,7 @@ fn upload_squad_links(e: &mut RenderEngine, doc: &MissionDocCore, soa: &SlotSoa)
         let y = soa.xy[i * 2 + 1];
         xy_by_slot.insert(id.clone(), (x, y));
     }
-    let inputs = crate::editor::state::picking::squad_link_inputs(doc);
+    let inputs = website_map_engine::editing::picking::squad_link_inputs(doc);
     let verts = build_squad_link_segments(&inputs, &xy_by_slot);
     #[allow(clippy::cast_possible_truncation)]
     let segment_count = (verts.len() / 12) as u32;

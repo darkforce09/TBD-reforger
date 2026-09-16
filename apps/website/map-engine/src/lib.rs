@@ -18,6 +18,10 @@ pub mod camera;
 // `scenario` and `store`, and `scenario` is this crate's default — the tier `website-api` links.
 pub mod data;
 
+/// Editing: the live authored document, its undo drive, and the headless tool state machines.
+#[cfg(feature = "editing")]
+pub mod editing;
+
 /// Frame: the engine, its GPU resources, and the belts that build a frame packet.
 // T-0xx Phase 2C: gated on `world`, not `render`, and the widening is what makes gate rule 3a
 // implementable at all. `frame/mod.rs` is now this crate's ONE naming of the renderer's frame
