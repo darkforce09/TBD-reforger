@@ -315,7 +315,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-engine-layers",
-        help: "ENGINE_SPLIT_PROGRAM §5 rules 1-2 — graphics-engine imports no map engine, declares no map noun",
+        help: "ENGINE_SPLIT_PROGRAM §5 rules 1, 2, 3a, 3b — graphics-engine imports no map engine and declares no map noun; map-engine names the frame vocabulary at one enumerated seam and no GPU module at all",
         group: "verify",
         lane: Lane::Alias,
         steps: &[xt!(

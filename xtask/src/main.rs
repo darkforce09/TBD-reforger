@@ -670,9 +670,11 @@ enum VerifyCmd {
     /// T-468: CI schema parity + hollow recipe tripwire
     #[command(name = "t468")]
     T468,
-    /// ENGINE_SPLIT_PROGRAM §5 rules 1-2: apps/website/graphics-engine may not import
+    /// ENGINE_SPLIT_PROGRAM §5 rules 1, 2, 3a and 3b: apps/website/graphics-engine may not import
     /// website_map_engine, and may not declare a type/fn/mod name containing terrain,
-    /// symbology, mission, orbat or arma. (§5 spells it `verify-engine-layers`; every sibling
+    /// symbology, mission, orbat or arma; and under apps/website/map-engine only the enumerated
+    /// packet boundary may name website_graphics_engine::frame, and nothing at all may name its
+    /// device / pipeline / shaders / text::gpu / r#loop. (§5 spells it `verify-engine-layers`; every sibling
     /// here is `verify <name>`, and the `verify-engine-layers` task row aliases both.)
     #[command(name = "engine-layers")]
     EngineLayers,
