@@ -13,13 +13,21 @@ use website_graphics_engine::draw::instances::QuadInstance;
 // `RenderEngine::create` read them. They are Everon measurements, not engine state, and
 // `ANCHOR` — the same 6400 m centre — was already here (Phase 1D).
 
+// All three are read only by the browser render path — `frame/boot.rs` seeds the camera with
+// them and `overlay/symbology/instances/bridge_1.rs` clamps to the bounds — so they carry the
+// same gate their old home in `core/context/state.rs` carried as a whole module. Without it the
+// native build warns three times about facts it has no way to use.
+
 /// The camera target `RenderEngine::create` opens on — the Everon terrain centre.
+#[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub(crate) const INITIAL_TARGET: [f64; 2] = [6400.0, 6400.0];
 
 /// The zoom `RenderEngine::create` opens on.
+#[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub(crate) const INITIAL_ZOOM: f64 = -2.0;
 
 /// Everon's world bounds in meters, `[minX, minY, maxX, maxY]` — the camera's pan clamp.
+#[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub(crate) const EVERON_BOUNDS: [f64; 4] = [0.0, 0.0, 12_800.0, 12_800.0];
 
 /// Scene anchor in world meters — the Everon terrain center. Uploaded geometry is stored relative to this point so f32 coordinates stay small (≤ 6400 m ⇒ error ≪ 1 px at all zoom levels; bound derived in `OrthoCamera::wgpu_clip_matrix` docs).

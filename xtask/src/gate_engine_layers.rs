@@ -1,4 +1,4 @@
-//! Engine-layer walls — [`ENGINE_SPLIT_PROGRAM.md`] §5 rules **1 and 2**, and only those two.
+//! Engine-layer walls — [`ENGINE_SPLIT_PROGRAM.md`] §5 rules **1, 2 and 3b**.
 //!
 //! ── WHAT THIS DEFENDS ────────────────────────────────────────────────────────────────────────
 //!
@@ -20,10 +20,34 @@
 //! |---|------|----------------------|
 //! | 1 | `apps/website/graphics-engine/**` may not import `website_map_engine` | the arrow turns into a cycle and the split is undone by accident |
 //! | 2 | no `terrain` / `symbology` / `mission` / `orbat` / `arma` in a declared name there | "pure renderer" becomes a claim in a README rather than a property of the code |
+//! | 3b | no module of `apps/website/map-engine/src` names `website_graphics_engine::{device, pipeline, shaders, text::gpu, r#loop}` | GPU resource creation drifts back to the caller one convenient import at a time |
 //!
-//! Rules 3–6 (`crate::frame` reach, `data/scenario` isolation, no DOM in map-engine, frontend may
-//! not import graphics) police trees that phases 2 and 3 have not built yet. They land with those
-//! phases; there is nothing for them to read today.
+//! Rules 3a, 4, 5 and 6 (`crate::frame` chokepoint, `data/scenario` isolation, no DOM in
+//! map-engine, frontend may not import graphics) police trees that phases 2C and 3 have not built
+//! yet. They land with those phases.
+//!
+//! ── RULE 3b AND WHY IT IS A PIN, NOT A ZERO ──────────────────────────────────────────────────
+//!
+//! §5 says rule 3b "must read **zero**". Phase 2B closed 12 of the 17 sites it inherited — the
+//! cell-atlas handles moved inside graphics-engine from `text::gpu` to `frame::atlas`, the
+//! `TextUniforms` packing moved to `text::pack` and is reached through `layout`, shader-module
+//! compilation moved to `pipeline::create_map_shader`, and three shader-scrub tests moved to
+//! graphics-engine outright. **Five cannot close, and they all have one cause:** `RenderEngine` is
+//! defined in `website-map-engine` (`frame/engine.rs`) and holds every GPU resource the renderer
+//! owns — 127 `impl RenderEngine` blocks against graphics-engine's zero. While that is true:
+//!
+//! * `impl FrameTarget for RenderEngine` must live in the crate that defines the type (E0116), and
+//!   `#[wasm_bindgen]` refuses trait impls, so `frame/pump.rs` names `r#loop` and `frame/mod.rs`
+//!   documents the re-export it publishes for the frontend — 3 sites;
+//! * `RenderEngine` holds a `LanePool` and the eighteen pipeline-construction call sites build
+//!   against its own shader module and layouts, so `frame/mod.rs` aliases `device::buffers` and
+//!   `pipeline` at one named seam each rather than spelling them 3 and 18 times — 2 sites.
+//!
+//! So the rule is a **pin**, not a threshold: every allowed site is enumerated below with the file
+//! it sits in and the exact count. A new site anywhere fails. An extra site in a pinned file fails.
+//! And a pinned file that drops below its count fails too — the pin is a ratchet, and a stale pin
+//! is a rule that has quietly stopped meaning what it says. Moving `RenderEngine` across is the
+//! only thing that empties this list, and that is an operator decision, not a gate's.
 //!
 //! ── WHY EXIT 2 EXISTS ────────────────────────────────────────────────────────────────────────
 //!
@@ -90,6 +114,38 @@ const MAP_ENGINE_PATH: &str = "website_map_engine";
 /// Rule 1's Cargo spelling — what a dependency edge looks like in the manifest.
 const MAP_ENGINE_PKG: &str = "website-map-engine";
 
+/// The map engine. Rule 3b is scoped to it and nothing else.
+const MAP_CRATE_REL: &str = "apps/website/map-engine";
+
+/// Rule 3b's matcher — the five graphics modules that own GPU resources.
+///
+/// `\b` after the group is what keeps `::pipeline as pipelines` a hit and a hypothetical
+/// `::pipelines` module from being one; `r#` is literal, so the raw-identifier spelling of the
+/// `loop` module is matched exactly as it is written in source.
+const GPU_MODULE_RE: &str =
+    r"website_graphics_engine::(device|pipeline|shaders|r#loop|text::gpu)\b";
+
+/// The pinned residue of rule 3b — file, exact count, and why it cannot close.
+///
+/// Read the module docs before touching this. The short version: every entry exists because
+/// `RenderEngine` did not cross to `website-graphics-engine` in Phase 1. Adding a row is claiming
+/// a new GPU-resource import is permanent; almost always the right move is to relocate the
+/// construction instead, which is what Phase 2B did to the other twelve.
+const RULE3B_PIN: &[(&str, usize, &str)] = &[
+    (
+        "apps/website/map-engine/src/frame/mod.rs",
+        3,
+        "device::buffers + pipeline aliases at one seam each (3 and 18 call sites), \
+         and the doc line on the r#loop re-export the frontend reaches the pump through",
+    ),
+    (
+        "apps/website/map-engine/src/frame/pump.rs",
+        2,
+        "impl FrameTarget for RenderEngine — E0116 pins the impl to the crate that \
+         defines the type, and #[wasm_bindgen] refuses trait impls",
+    ),
+];
+
 /// Rule 2's declaration matcher. See the module docs for why it is anchored on a keyword.
 const DECL_RE: &str =
     r"\b(struct|enum|trait|type|fn|const|static|mod)\s+\w*(terrain|symbology|mission|orbat|arma)";
@@ -98,6 +154,8 @@ const RULE1_HEAD: &str =
     "==> engine-layers rule 1 — apps/website/graphics-engine must not import website_map_engine";
 const RULE2_HEAD: &str =
     "==> engine-layers rule 2 — no map noun in a declared name under apps/website/graphics-engine";
+const RULE3B_HEAD: &str = "==> engine-layers rule 3b — no GPU-resource module of \
+     website-graphics-engine named under apps/website/map-engine/src";
 
 const RULE1_TAIL: &[&str] = &[
     "      The arrow runs map-engine -> graphics-engine and only that way. Compute it in",
@@ -108,6 +166,11 @@ const RULE2_TAIL: &[&str] = &[
     "      graphics-engine is a renderer and may name geometry and GPU handles only. A map",
     "      noun in a declared name means domain logic came back across the wall — move the",
     "      decision to map-engine and leave the packing here (ENGINE_SPLIT_PROGRAM.md §5 rule 2).",
+];
+const RULE3B_TAIL: &[&str] = &[
+    "      device / pipeline / shaders / text::gpu / r#loop create and own GPU resources, and",
+    "      that is graphics-engine's job — map-engine receives already-built handles. Relocate",
+    "      the construction; do not add a row to RULE3B_PIN (ENGINE_SPLIT_PROGRAM.md §5 rule 3b).",
 ];
 const PROBE_FAIL: &[&str] = &[
     "FAIL: matcher self-probe returned no match over a subject it must match.",
@@ -194,6 +257,39 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
         Err(cause) => return refuse(&mut o, "engine-layers self-probe", cause),
     }
 
+    let gpu = match Pattern::regex(GPU_MODULE_RE) {
+        Ok(p) => p,
+        Err(e) => {
+            let cause = NotRun::ToolError {
+                tool: "regex".into(),
+                status: 2,
+                stderr: e.to_string(),
+            };
+            return refuse(&mut o, "engine-layers rule 3b pattern", cause);
+        }
+    };
+    // Two subjects, not one: the positive proves the matcher fires, and `::pipelines` proves the
+    // `\b` is real. A pin that can be widened by adding an `s` is not a pin.
+    match gate::probe_str(
+        &gpu,
+        "use website_graphics_engine::text::gpu::create_text_atlas;",
+    ) {
+        Ok(true) => {}
+        Ok(false) => {
+            say(&mut o, PROBE_FAIL);
+            return (1, o);
+        }
+        Err(cause) => return refuse(&mut o, "engine-layers rule 3b self-probe", cause),
+    }
+    match gate::probe_str(&gpu, "use website_graphics_engine::pipelines::x;") {
+        Ok(false) => {}
+        Ok(true) => {
+            say(&mut o, PROBE_FAIL);
+            return (1, o);
+        }
+        Err(cause) => return refuse(&mut o, "engine-layers rule 3b self-probe", cause),
+    }
+
     let crate_dir = repo_root.join(CRATE_REL);
     let manifest = crate_dir.join("Cargo.toml");
     let src = crate_dir.join("src");
@@ -212,17 +308,34 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
         Err(cause) => return refuse(&mut o, "engine-layers could not read the manifest", cause),
     };
 
+    // Rule 3b's root, added beside the first rather than replacing it — rules 1 and 2 still scan
+    // only graphics-engine, and this gate now has two crates it refuses to run without.
+    let map_src = repo_root.join(MAP_CRATE_REL).join("src");
+    let root2 = repo_root.to_path_buf();
+    let map_sources = match scan::walk_files(&[&map_src], move |p| {
+        is_source(&root2, p) && p.extension().is_some_and(|e| e == "rs")
+    }) {
+        Ok(f) => f,
+        Err(cause) => return refuse(&mut o, "engine-layers could not walk the map engine", cause),
+    };
+
     let scanned = format!(
-        "  scanned {} .rs file(s) + {CRATE_REL}/Cargo.toml",
-        sources.len()
+        "  scanned {} .rs file(s) + {CRATE_REL}/Cargo.toml, {} .rs file(s) under {MAP_CRATE_REL}/src",
+        sources.len(),
+        map_sources.len()
     );
-    if sources.is_empty() {
-        o.push(format!(
-            "FAIL: engine-layers walked 0 .rs file(s) under {CRATE_REL}/src — refusing a vacuous pass."
-        ));
-        say(&mut o, NOTHING_TAIL);
-        o.push("ENGINE-LAYERS: FAIL (no inputs)".to_string());
-        return (1, o);
+    for (n, root) in [
+        (sources.len(), format!("{CRATE_REL}/src")),
+        (map_sources.len(), format!("{MAP_CRATE_REL}/src")),
+    ] {
+        if n == 0 {
+            o.push(format!(
+                "FAIL: engine-layers walked 0 .rs file(s) under {root} — refusing a vacuous pass."
+            ));
+            say(&mut o, NOTHING_TAIL);
+            o.push("ENGINE-LAYERS: FAIL (no inputs)".to_string());
+            return (1, o);
+        }
     }
 
     // ── rule 1 ───────────────────────────────────────────────────────────────────────────────
@@ -267,15 +380,81 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
         say(&mut o, RULE2_TAIL);
     }
 
+    // ── rule 3b ──────────────────────────────────────────────────────────────────────────────
+    o.push(RULE3B_HEAD.to_string());
+    let gpu_hits = match scan::grep_lines(&gpu, &map_sources) {
+        Ok(hits) => hits,
+        Err(cause) => return refuse(&mut o, "engine-layers rule 3b scan", cause),
+    };
+
+    // Count per file, then compare against the pin. Unpinned files are the real violation; a
+    // pinned file whose count moved in EITHER direction is a stale pin, which is its own failure.
+    let mut per_file: std::collections::BTreeMap<String, Vec<String>> =
+        std::collections::BTreeMap::new();
+    for h in &gpu_hits {
+        let p = h.path.strip_prefix(repo_root).unwrap_or(&h.path);
+        per_file
+            .entry(p.display().to_string())
+            .or_default()
+            .push(rel(repo_root, h));
+    }
+    // `gpu_bad` is output lines; `gpu_findings` is problems. One finding can print six lines,
+    // and the summary counter has to say what a reader has to go and fix, not how tall it was.
+    let mut gpu_bad: Vec<String> = Vec::new();
+    let mut gpu_findings = 0usize;
+    for (file, lines) in &per_file {
+        match RULE3B_PIN.iter().find(|(f, _, _)| f == file) {
+            None => {
+                gpu_findings += 1;
+                gpu_bad.push(format!("  unpinned file — {} site(s):", lines.len()));
+                gpu_bad.extend(lines.iter().map(|l| format!("    {l}")));
+            }
+            Some((_, want, _)) if *want != lines.len() => {
+                gpu_findings += 1;
+                gpu_bad.push(format!(
+                    "  {file}: pinned at {want} site(s), found {} — update RULE3B_PIN.",
+                    lines.len()
+                ));
+                gpu_bad.extend(lines.iter().map(|l| format!("    {l}")));
+            }
+            Some(_) => {}
+        }
+    }
+    // A pinned file that no longer exists (or no longer matches at all) never reaches the loop
+    // above, so check the pin from its own side too.
+    for (file, want, _) in RULE3B_PIN {
+        if !per_file.contains_key(*file) {
+            gpu_findings += 1;
+            gpu_bad.push(format!(
+                "  {file}: pinned at {want} site(s), found 0 — the pin is stale, delete the row."
+            ));
+        }
+    }
+    let pinned_total: usize = RULE3B_PIN.iter().map(|(_, n, _)| *n).sum();
+    if gpu_bad.is_empty() {
+        o.push(format!(
+            "  OK — {pinned_total} pinned site(s), 0 unpinned. Every one is `RenderEngine` not \
+             having crossed:"
+        ));
+        for (file, n, why) in RULE3B_PIN {
+            o.push(format!("    {file} ({n}) — {why}"));
+        }
+    } else {
+        o.push("FAIL: GPU-resource modules named inside the map engine:".to_string());
+        o.extend(gpu_bad.iter().cloned());
+        say(&mut o, RULE3B_TAIL);
+    }
+
     o.push(scanned);
-    if breaches.is_empty() && nouns.is_empty() {
+    if breaches.is_empty() && nouns.is_empty() && gpu_bad.is_empty() {
         o.push("ENGINE-LAYERS: PASS".to_string());
         return (0, o);
     }
     o.push(format!(
-        "ENGINE-LAYERS: FAIL — {} wall breach(es), {} map-noun declaration(s)",
+        "ENGINE-LAYERS: FAIL — {} wall breach(es), {} map-noun declaration(s), {} GPU-module finding(s)",
         breaches.len(),
-        nouns.len()
+        nouns.len(),
+        gpu_findings
     ));
     (1, o)
 }
@@ -302,6 +481,20 @@ pub fn pack_batch(b: &DrawBatch) -> u32 {
     const MANIFEST: &str =
         "[package]\nname = \"website-graphics-engine\"\n\n[dependencies]\nbytemuck = \"1\"\n";
 
+    /// The map engine's pinned residue, at exactly the counts [`RULE3B_PIN`] claims — 3 and 2.
+    /// The fixture mirrors the real shape rather than stubbing the pin out, so the pin itself is
+    /// under test: change a count in the table and these fixtures stop matching it.
+    const MAP_FRAME_MOD: &str = "\
+pub use website_graphics_engine::device::buffers;
+pub use website_graphics_engine::pipeline as pipelines;
+/// Re-export `website_graphics_engine::r#loop::{FrameTarget, RafPump}`.
+pub use pump::{FrameTarget, RafPump};
+";
+    const MAP_FRAME_PUMP: &str = "\
+pub use website_graphics_engine::r#loop::FrameTarget;
+pub use website_graphics_engine::r#loop::RafPump;
+";
+
     struct Repo(PathBuf);
     impl Repo {
         fn new(name: &str) -> Repo {
@@ -312,7 +505,15 @@ pub fn pack_batch(b: &DrawBatch) -> u32 {
             let r = Repo(p);
             r.src("draw/mod.rs", CLEAN);
             r.manifest(MANIFEST);
+            r.map("frame/mod.rs", MAP_FRAME_MOD);
+            r.map("frame/pump.rs", MAP_FRAME_PUMP);
             r
+        }
+        /// Write a file under the map engine — rule 3b's root.
+        fn map(&self, rel: &str, body: &str) {
+            let p = self.0.join("apps/website/map-engine/src").join(rel);
+            std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+            std::fs::write(p, body).unwrap();
         }
         fn src(&self, rel: &str, body: &str) {
             let p = self.0.join("apps/website/graphics-engine/src").join(rel);
@@ -349,8 +550,11 @@ pub fn pack_batch(b: &DrawBatch) -> u32 {
             &[
                 RULE1_HEAD,
                 RULE2_HEAD,
+                RULE3B_HEAD,
                 "  OK (none)",
-                "  scanned 1 .rs file(s) + apps/website/graphics-engine/Cargo.toml",
+                "  OK — 5 pinned site(s), 0 unpinned.",
+                "  scanned 1 .rs file(s) + apps/website/graphics-engine/Cargo.toml, \
+                 2 .rs file(s) under apps/website/map-engine/src",
                 "ENGINE-LAYERS: PASS",
             ],
         );
@@ -368,7 +572,7 @@ pub fn pack_batch(b: &DrawBatch) -> u32 {
                 "FAIL: graphics-engine reaches back into the map engine:",
                 "  apps/website/graphics-engine/src/draw/bad.rs:1:use website_map_engine::x;",
                 RULE1_TAIL[0],
-                "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s)",
+                "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), 0 GPU-module finding(s)",
             ],
         );
     }
@@ -385,7 +589,7 @@ pub fn pack_batch(b: &DrawBatch) -> u32 {
             1,
             &[
                 "  apps/website/graphics-engine/Cargo.toml:6:me = { package = \"website-map-engine\" }",
-                "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s)",
+                "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), 0 GPU-module finding(s)",
             ],
         );
         r.manifest(&format!(
@@ -409,7 +613,7 @@ pub fn pack_batch(b: &DrawBatch) -> u32 {
                 "  apps/website/graphics-engine/src/draw/bad.rs:1:pub struct TerrainBlob;",
                 "  apps/website/graphics-engine/src/draw/bad.rs:2:pub fn pack_mission() {}",
                 RULE2_TAIL[0],
-                "ENGINE-LAYERS: FAIL — 0 wall breach(es), 2 map-noun declaration(s)",
+                "ENGINE-LAYERS: FAIL — 0 wall breach(es), 2 map-noun declaration(s), 0 GPU-module finding(s)",
             ],
         );
     }
@@ -464,11 +668,99 @@ pub fn pack_batch(b: &DrawBatch) -> u32 {
         r.expect(
             1,
             &[
-                "FAIL: engine-layers walked 0 .rs file(s)",
+                "FAIL: engine-layers walked 0 .rs file(s) under apps/website/graphics-engine/src",
                 NOTHING_TAIL[0],
                 "ENGINE-LAYERS: FAIL (no inputs)",
             ],
         );
+
+        // Rule 3b's root has the same hole, and it is the one phase 2B reshaped on purpose.
+        let r = Repo::new("empty-map");
+        std::fs::remove_dir_all(r.0.join("apps/website/map-engine/src/frame")).unwrap();
+        std::fs::create_dir_all(r.0.join("apps/website/map-engine/src")).unwrap();
+        r.expect(
+            1,
+            &[
+                "FAIL: engine-layers walked 0 .rs file(s) under apps/website/map-engine/src",
+                "ENGINE-LAYERS: FAIL (no inputs)",
+            ],
+        );
+    }
+
+    /// RULE 3b, RED — a GPU-resource import in a file the pin has never heard of.
+    #[test]
+    fn a_new_gpu_module_import_in_the_map_engine_fails() {
+        let r = Repo::new("rule3b-new");
+        r.map(
+            "overlay/symbology/atlas.rs",
+            "use website_graphics_engine::text::gpu::create_glyph_atlas;\n",
+        );
+        r.expect(
+            1,
+            &[
+                "FAIL: GPU-resource modules named inside the map engine:",
+                "  unpinned file — 1 site(s):",
+                "apps/website/map-engine/src/overlay/symbology/atlas.rs:1:\
+                 use website_graphics_engine::text::gpu::create_glyph_atlas;",
+                RULE3B_TAIL[0],
+                "1 GPU-module finding(s)",
+            ],
+        );
+    }
+
+    /// RULE 3b, THE RATCHET — a pinned file may not grow, and may not shrink either. A pin that
+    /// no longer describes the tree is a rule that has stopped meaning what it says.
+    #[test]
+    fn the_rule_3b_pin_is_a_ratchet_in_both_directions() {
+        let r = Repo::new("rule3b-grow");
+        r.map(
+            "frame/pump.rs",
+            &format!("{MAP_FRAME_PUMP}use website_graphics_engine::device::x;\n"),
+        );
+        r.expect(
+            1,
+            &[
+                "apps/website/map-engine/src/frame/pump.rs: pinned at 2 site(s), found 3",
+                "1 GPU-module finding(s)",
+            ],
+        );
+
+        let r = Repo::new("rule3b-shrink");
+        r.map("frame/pump.rs", "// the impl crossed; nothing to import\n");
+        r.expect(
+            1,
+            &[
+                "apps/website/map-engine/src/frame/pump.rs: pinned at 2 site(s), found 0 — \
+                 the pin is stale, delete the row.",
+                "1 GPU-module finding(s)",
+            ],
+        );
+    }
+
+    /// RULE 3b's matcher, one line at a time. `::pipelines` is the pair that proves the `\b`:
+    /// the pin must not be wideable by appending a letter.
+    #[test]
+    fn rule_3b_matches_the_five_gpu_modules_and_nothing_adjacent() {
+        let p = Pattern::regex(GPU_MODULE_RE).unwrap();
+        for bad in [
+            "pub use website_graphics_engine::device::buffers;",
+            "pub use website_graphics_engine::pipeline as pipelines;",
+            "website_graphics_engine::shaders::SHADER_WGSL",
+            "pub use website_graphics_engine::r#loop::RafPump;",
+            "website_graphics_engine::text::gpu::create_text_atlas(",
+        ] {
+            assert!(p.is_match(bad), "should fail the gate: {bad}");
+        }
+        for ok in [
+            "use website_graphics_engine::pipelines::x;",
+            "use website_graphics_engine::frame::{DrawBatch, TextRun};",
+            "use website_graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;",
+            "use website_graphics_engine::draw::instances::QuadInstance;",
+            "use website_graphics_engine::text::metrics::TextGlyphInstance;",
+            "// the device lives in website_graphics_engine, one crate over",
+        ] {
+            assert!(!p.is_match(ok), "should pass the gate: {ok}");
+        }
     }
 
     /// A missing manifest is `did not run`, not "no dependency edge found".
