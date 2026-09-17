@@ -955,7 +955,7 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
                         {render_shape_section(ctrl, shape)}
                         {render_flow_section(ctrl)}
                         // T-936.1 — the Win conditions card. T-936.1 built, registered and unit-tested it, but
-                        // `panels/settings_modal.rs` was outside that slice's owns, so the one-line mount landed
+                        // `ui/modals/settings_modal.rs` was outside that slice's owns, so the one-line mount landed
                         // here in the wave-243 bookkeeping commit instead. A card that is registered but never
                         // mounted is a mechanism that cannot fire (rule 17), so this is part of the wave, not a
                         // follow-up.

@@ -1225,10 +1225,10 @@ pub fn TopCommandStrip(
     // hide/show cycle (`mission_editor` gates the strip on `chrome_hidden`); seeding from the
     // latch is what makes the card come back the way the operator left it, the way the debug HUD
     // does. Every writer below mirrors back into the latch.
-    let hint_open = RwSignal::new(crate::v2::apps::editor::panels::help_modal::hint_shown());
+    let hint_open = RwSignal::new(crate::v2::apps::editor::ui::modals::help_modal::hint_shown());
     let set_hint = move |v: bool| {
         hint_open.set(v);
-        crate::v2::apps::editor::panels::help_modal::set_hint_shown(v);
+        crate::v2::apps::editor::ui::modals::help_modal::set_hint_shown(v);
     };
     // T-786 O-5 — opening a dialog closes the strip's popovers/help surfaces (the open menu, the
     // export dropdown, and the Controls Hint), so a dialog and a reference card can no longer be up
@@ -2444,7 +2444,7 @@ pub fn TopCommandStrip(
             // T-634 moved it out of row 1 and up to the shell — it is `fixed inset-0`, so it never
             // belonged to a row, and a `fixed` child of a 24 px flex row is a trap for the next
             // edit. The subtree — which is what the gate is — is unchanged.
-            <crate::v2::apps::editor::panels::help_modal::ControlsHint open=hint_open />
+            <crate::v2::apps::editor::ui::modals::help_modal::ControlsHint open=hint_open />
             // Click-away scrim for an open dropdown (below the dropdowns' z-50). T-634 — it now
             // covers the export menu too, so both dropdowns dismiss the same way. T-798 — the
             // validation dropdown joins it: one scrim, every strip popover dismisses on an outside

@@ -1804,7 +1804,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // an "Enter to finish" arm in `commands.rs` would collide with the three other
             // window listeners that claim `Enter` (`keymap_census::SHARED_CHANNELS` exempts only
             // `Escape`) and would additionally fail `every_binding_has_a_help_entry` until
-            // `panels/help_modal.rs` — a file this slice does not own — grew a matching row.
+            // `ui/modals/help_modal.rs` — a file this slice does not own — grew a matching row.
             // Right-click claims no key at all, and the draw is the only state that consumes it.
             //
             // Returning here also SUPPRESSES the context menu for this press, which is correct:

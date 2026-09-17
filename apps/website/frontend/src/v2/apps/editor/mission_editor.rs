@@ -1169,7 +1169,7 @@ pub fn MissionEditorPage() -> impl IntoView {
      *
      * **Why it is not folded into `input/window_keydown.rs`'s keydown**, which would otherwise be its
      * natural home: that file is outside this slice's `owns`. Recorded in the report rather than
-     * widened unilaterally. The census in `panels/help_modal.rs` sees this listener (the file is
+     * widened unilaterally. The census in `ui/modals/help_modal.rs` sees this listener (the file is
      * back in `editor_surface`), so the two collision pins adjudicate these six chords against
      * every other binding in the editor — which is the property that actually matters, and it
      * holds wherever the closure lives.
@@ -2909,7 +2909,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 </div>
                 <div class="pointer-events-auto">
                     <crate::v2::apps::editor::shell::eden_chrome::MissionSettingsDialog open=settings_open doc_tick />
-                    <crate::pages::operations::faction_manager::FactionManagerDialog open=fm_open registry=registry_items />
+                    <crate::v2::apps::editor::ui::modals::faction_manager::FactionManagerDialog open=fm_open registry=registry_items />
                     // T-177 B2 / T-071.0 — ORBAT Manager modal shell (browse/select the live ORBAT
                     // faction → squad → slot tree relocated from the left dock).
                     <crate::v2::apps::editor::shell::eden_chrome::OrbatManagerDialog
@@ -3656,7 +3656,7 @@ mod t930_vehicle_first_paint {
 
 /* ═════════ T-939.4 — the Arrange chords, on the editor's own keydown (the defect, as a test) ════
  *
- * T-645 gave the Arrange tools a menu and no keys. The census in `panels/help_modal.rs` proves it:
+ * T-645 gave the Arrange tools a menu and no keys. The census in `ui/modals/help_modal.rs` proves it:
  * `KeyL` / `KeyT` / `KeyB` / `KeyH` are bound by nothing in the whole editor surface, and `KeyR` /
  * `KeyV` are bound only bare and only under Ctrl/Cmd — so `Alt` + any of the six reaches no arm and
  * the operator's keypress does nothing at all.

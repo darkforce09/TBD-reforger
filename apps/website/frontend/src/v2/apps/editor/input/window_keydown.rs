@@ -19,7 +19,7 @@
 //! typed into a field is a character and never a chord. Undo and redo are reached only through
 //! `document_host::history::undo` / `document_host::history::redo` — this module dispatches the
 //! chord and calls across that boundary, it never steps the document's stack itself. Two
-//! listeners, two disjoint key sets: `panels/help_modal.rs`'s keymap census adjudicates them
+//! listeners, two disjoint key sets: `ui/modals/help_modal.rs`'s keymap census adjudicates them
 //! against every other window keydown in the editor.
 //!
 //! Not here: `shell/document_commands.rs`, which is the save / export / clipboard COMMAND
@@ -374,7 +374,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                     // `orbat_manager`) while `keymap_census::SHARED_CHANNELS` exempts only
                     // `Escape` — so the arm would fail `no_two_listeners_claim_the_same_chord`,
                     // and ANY new code literal here also fails `every_binding_has_a_help_entry`
-                    // until `panels/help_modal.rs` grows a matching `Shortcut` row. The draw is
+                    // until `ui/modals/help_modal.rs` grows a matching `Shortcut` row. The draw is
                     // finished by RIGHT-CLICK on the canvas instead (`pointer_gestures.rs`'s
                     // `oncontextmenu`), which is the ordinary polyline-finish gesture and claims
                     // no key at all. Escape and Delete below are EXISTING bindings whose ACTS

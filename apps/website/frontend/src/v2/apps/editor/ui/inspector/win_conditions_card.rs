@@ -27,7 +27,7 @@
 //! and renders beside it in the Mission Settings dialog. It is MOUNTED, at
 //! `settings_modal.rs`'s `{win_conditions_card(ctrl)}` immediately after the Mission flow section.
 //!
-//! T-936.1 could not land that line itself — `panels/settings_modal.rs` was outside its owned file
+//! T-936.1 could not land that line itself — `ui/modals/settings_modal.rs` was outside its owned file
 //! list — so the mount went in with the wave-243 bookkeeping instead. A card that is built,
 //! registered and tested but never mounted is a mechanism that cannot fire, which is why it landed
 //! in the same wave rather than as a follow-up.

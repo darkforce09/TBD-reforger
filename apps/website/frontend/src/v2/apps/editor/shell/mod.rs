@@ -21,8 +21,8 @@
 /// download, the clipboard write, the toast, the merge report and the smoke bridge the headless
 /// harness drives. What a command decides belongs to `website_map_engine::editing::commands`.
 pub mod document_commands;
-/// The docked chrome's single import path — re-exports the panel components under
-/// [`super::panels`] so consumers name one module rather than tracking which panel file holds
+/// The docked chrome's single import path — re-exports the dialog and panel components under
+/// [`super::ui`] so consumers name one module rather than tracking which surface file holds
 /// which component.
 pub mod eden_chrome;
 /// The server hydrate: the authed `GET /missions/:id`, the local-versus-server conflict prompt,

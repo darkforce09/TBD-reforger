@@ -5630,7 +5630,7 @@ mod tests {
         // own memory, so the recording sits at the call site, not inside the document command.
         let manager = live_code(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/pages/operations/orbat_manager.rs"
+            "/src/v2/apps/editor/ui/modals/orbat_manager.rs"
         )));
         let addv = only_body(&manager, &format!("fn stitch_{}(", "row"));
         let at_add = addv

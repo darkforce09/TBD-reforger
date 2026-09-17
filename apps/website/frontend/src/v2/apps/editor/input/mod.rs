@@ -6,7 +6,7 @@
 //! interactive measure and selection tools.
 //! **Position:** the entry edge of the workspace. It reads the live handles [`super::bridge`]
 //! holds, writes through `website_map_engine::editing`, and flips the host signals under
-//! [`super::bridge::host_state`]; nothing under [`super::panels`] routes events through here.
+//! [`super::bridge::host_state`]; nothing under [`super::ui`] routes events through here.
 //! **Signals & state:** the gesture context bundles the handles and `Copy` signals every closure
 //! captures, so one build hands the same environment to the pointer closures and the keydown
 //! dispatch. Everything the closures own is tab-local; an authored change reaches the document

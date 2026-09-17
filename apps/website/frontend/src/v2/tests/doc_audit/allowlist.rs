@@ -155,28 +155,6 @@ pub(super) const ROWS: &[GrandfatherRow] = &[
         expires: EDITOR_DECOMPOSITION_DUE,
     },
     GrandfatherRow {
-        path: "apps/editor/panels/help_modal.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the editor decomposition splits it into per-surface \
-                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
-                 in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/panels/mod.rs",
-        reason: "The file has comments naming tickets and waves; the editor decomposition \
-                 rewrites that prose in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/panels/settings_modal.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the editor decomposition splits it into per-surface \
-                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
-                 in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
         path: "apps/editor/shell/document_commands.rs",
         reason: "The file is over the line limit, holds inline test modules and has comments \
                  naming tickets and waves; the editor decomposition splits it into per-surface \
@@ -375,6 +353,37 @@ pub(super) const ROWS: &[GrandfatherRow] = &[
     },
     GrandfatherRow {
         path: "apps/editor/ui/inspector/zones_panel.rs",
+        reason: "The file is over the line limit, holds inline test modules and has comments \
+                 naming tickets and waves; the editor decomposition splits it into per-surface \
+                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
+                 in the present tense.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/ui/modals/faction_manager.rs",
+        reason: "The file holds an inline test module and has comments naming tickets and waves; \
+                 the editor decomposition lifts those tests into sibling `tests/` files and \
+                 rewrites that prose in the present tense.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/ui/modals/help_modal.rs",
+        reason: "The file is over the line limit, holds inline test modules and has comments \
+                 naming tickets and waves; the editor decomposition splits it into per-surface \
+                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
+                 in the present tense.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/ui/modals/orbat_manager.rs",
+        reason: "The file is over the line limit, holds inline test modules and has comments \
+                 naming tickets and waves; the editor decomposition splits it into per-surface \
+                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
+                 in the present tense.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/ui/modals/settings_modal.rs",
         reason: "The file is over the line limit, holds inline test modules and has comments \
                  naming tickets and waves; the editor decomposition splits it into per-surface \
                  modules, lifts those tests into sibling `tests/` files and rewrites that prose \

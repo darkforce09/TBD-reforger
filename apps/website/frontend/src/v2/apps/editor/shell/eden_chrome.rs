@@ -30,15 +30,16 @@ pub use crate::v2::apps::editor::shell::layout::{
 };
 
 // The four docked components + the Mission Settings dialog `mission_editor` mounts.
-pub use crate::v2::apps::editor::panels::settings_modal::MissionSettingsDialog;
 pub use crate::v2::apps::editor::ui::docks::dock_left::DockLeft;
 pub use crate::v2::apps::editor::ui::docks::dock_right::DockRight;
 pub use crate::v2::apps::editor::ui::docks::toolbelt::BottomToolbelt;
 pub use crate::v2::apps::editor::ui::docks::top_strip::TopCommandStrip;
+pub use crate::v2::apps::editor::ui::modals::settings_modal::MissionSettingsDialog;
 
-// T-180.7 — Stitch ORBAT Manager (near-fullscreen live graph). Implementation lives in
-// [`crate::pages::operations::orbat_manager`]; re-exported so `mission_editor`'s mount path stays stable.
-pub use crate::pages::operations::orbat_manager::OrbatManagerDialog;
+// The ORBAT Manager (near-fullscreen live graph). Implementation lives in
+// [`crate::v2::apps::editor::ui::modals::orbat_manager`]; re-exported so `mission_editor`'s mount
+// path stays stable.
+pub use crate::v2::apps::editor::ui::modals::orbat_manager::OrbatManagerDialog;
 
 // T-582 — the zone draw tool's PURE predicates. `editor_ops` (the wasm-only doc-mutating half) calls
 // these through `crate::v2::apps::editor::shell::eden_chrome`, so they stay re-exported here; they live in

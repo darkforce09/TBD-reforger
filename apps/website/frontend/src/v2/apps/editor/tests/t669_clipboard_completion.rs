@@ -2,7 +2,7 @@
 /// it now consumes the one in `eden_help::keymap_census`, which also carries the structured
 /// `(code, modifiers)` census that finally makes the Ctrl+V / Ctrl+Shift+V distinction this
 /// module's own pins had to hand-check.
-use crate::v2::apps::editor::panels::help_modal::keymap_census::keydown_arms;
+use crate::v2::apps::editor::ui::modals::help_modal::keymap_census::keydown_arms;
 use crate::v2::core::test_support::class_r_scrub::only_body;
 use std::collections::BTreeSet;
 use website_map_engine::editing::hosted_commands as engine_ops;
@@ -230,7 +230,7 @@ fn both_new_chords_are_documented_in_the_help_table() {
     // the thing under test.
     let help = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/panels/help_modal.rs"
+        "/src/v2/apps/editor/ui/modals/help_modal.rs"
     ));
     for chord in ["Ctrl/Cmd + X", "Ctrl/Cmd + Shift + V"] {
         assert!(
@@ -253,11 +253,11 @@ fn both_new_chords_are_documented_in_the_help_table() {
 /// additionally holds `SHORTCUTS` to the same total, so the circle is closed from the outside.
 #[test]
 fn the_help_blurb_counts_the_bindings_correctly() {
-    let codes: BTreeSet<&str> = crate::v2::apps::editor::panels::help_modal::SHORTCUTS
+    let codes: BTreeSet<&str> = crate::v2::apps::editor::ui::modals::help_modal::SHORTCUTS
         .iter()
         .flat_map(|s| s.codes.iter().copied())
         .collect();
-    let bound = crate::v2::apps::editor::panels::help_modal::keymap_census::all_bound_codes();
+    let bound = crate::v2::apps::editor::ui::modals::help_modal::keymap_census::all_bound_codes();
     assert_eq!(
         codes.len(),
         bound.len(),
@@ -271,7 +271,7 @@ fn the_help_blurb_counts_the_bindings_correctly() {
     assert!(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/panels/help_modal.rs"
+            "/src/v2/apps/editor/ui/modals/help_modal.rs"
         ))
         .contains(&sentence),
         "T-669/T-740: the editor now binds {} distinct key codes ({bound:?}), so \
@@ -283,5 +283,5 @@ fn the_help_blurb_counts_the_bindings_correctly() {
 /// Small-integer spelling. T-703 folded the second copy of this into
 /// `keymap_census::spell`, beside the census the number is derived from.
 fn english(n: usize) -> String {
-    crate::v2::apps::editor::panels::help_modal::keymap_census::spell(n)
+    crate::v2::apps::editor::ui::modals::help_modal::keymap_census::spell(n)
 }

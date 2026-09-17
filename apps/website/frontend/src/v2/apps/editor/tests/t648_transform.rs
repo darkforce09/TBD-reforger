@@ -383,7 +383,7 @@ fn t648_keydown_census() {
     // T-703/T-738: the slicer used to be a private copy right here — one of FOUR. It now lives
     // once, in `eden_help::keymap_census`, beside the structured (code, modifiers) census that
     // detects collisions; `there_is_exactly_one_extractor` keeps it from being copied again.
-    use crate::v2::apps::editor::panels::help_modal::keymap_census::keydown_arms;
+    use crate::v2::apps::editor::ui::modals::help_modal::keymap_census::keydown_arms;
     let this_arms = keydown_arms(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/src/v2/apps/editor/input/window_keydown.rs"

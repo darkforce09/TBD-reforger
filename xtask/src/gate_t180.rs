@@ -169,7 +169,7 @@ const EDITOR_OPS_SPLIT: &[&str] = &[
 ];
 const ORBAT_RS: &str =
     "apps/website/map-engine/src/data/scenario/ast/factions/orbat_slot_template.rs";
-const ORBAT_MGR: &str = "apps/website/frontend/src/pages/operations/orbat_manager.rs";
+const ORBAT_MGR: &str = "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager.rs";
 const EDEN_CHROME: &str = "apps/website/frontend/src/v2/apps/editor/shell/eden_chrome.rs";
 const SLOTS_GPU: &str = "apps/website/map-engine/src/overlay/symbology/roles/classify.rs";
 

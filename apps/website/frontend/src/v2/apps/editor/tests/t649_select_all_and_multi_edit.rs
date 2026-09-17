@@ -1,7 +1,7 @@
 /// T-703/T-738 — THE keydown arm-list extractor, consumed rather than re-copied. This module
 /// carried the raw-text variant of it; the shared one scrubs comments, which is strictly
 /// stronger for the census below (a note that MENTIONS `KeyA` can no longer read as a binding).
-use crate::v2::apps::editor::panels::help_modal::keymap_census::keydown_arms;
+use crate::v2::apps::editor::ui::modals::help_modal::keymap_census::keydown_arms;
 use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 /// Everything after the editor page's own signature — the live editor body — plus the T-934.13

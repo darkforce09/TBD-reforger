@@ -6,7 +6,7 @@
 //! renderer and the pick paths share, the asset host that feeds terrain and imagery in, the hosted
 //! document with its undo drive, and the host signal state the engine's hosted commands read.
 //! **Position:** the only place in the editor that holds a live engine, document or host handle
-//! and hands it to `website_map_engine`. The docked chrome under [`super::panels`] and the
+//! and hands it to `website_map_engine`. The docked chrome under [`super::ui`] and the
 //! interactive tools under [`super::input::tools`] reach the map through [`host_state`] and the
 //! command layers, never through a handle of their own.
 //! **Signals & state:** the boot phase, the frame-timing samples, the widget-pivot registry and

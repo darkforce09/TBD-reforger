@@ -1095,7 +1095,7 @@ fn rule_group_view(group: RuleGroup) -> AnyView {
     .into_any()
 }
 
-/// Why an inert finding row is not a click target — peer of [`crate::v2::apps::editor::panels::settings_modal::inert_settings_row_reason`].
+/// Why an inert finding row is not a click target — peer of [`crate::v2::apps::editor::ui::modals::settings_modal::inert_settings_row_reason`].
 /// Positional findings name nobody; named subjects the probe refuses would be dead clicks.
 #[must_use]
 fn inert_finding_row_reason(f: &PanelFinding) -> String {

@@ -726,7 +726,7 @@ pub(crate) mod keymap_census {
                 "settings_modal.rs",
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/src/v2/apps/editor/panels/settings_modal.rs"
+                    "/src/v2/apps/editor/ui/modals/settings_modal.rs"
                 )),
                 3,
             ),
@@ -734,7 +734,7 @@ pub(crate) mod keymap_census {
                 "faction_manager.rs",
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/src/pages/operations/faction_manager.rs"
+                    "/src/v2/apps/editor/ui/modals/faction_manager.rs"
                 )),
                 1,
             ),
@@ -742,7 +742,7 @@ pub(crate) mod keymap_census {
                 "orbat_manager.rs",
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/src/pages/operations/orbat_manager.rs"
+                    "/src/v2/apps/editor/ui/modals/orbat_manager.rs"
                 )),
                 1,
             ),
@@ -1434,7 +1434,7 @@ pub(crate) mod keymap_census {
         assert_eq!(
             copies,
             vec!["help_modal.rs ×1".to_string()],
-            "T-738/T-776: the keydown-arm extractor must be defined ONCE, in `keymap_census`.              Found: {copies:?}. Consume it (`use crate::v2::apps::editor::panels::help_modal::keymap_census::…`) and widen              it there — a second copy is a second answer to the same question."
+            "T-738/T-776: the keydown-arm extractor must be defined ONCE, in `keymap_census`.              Found: {copies:?}. Consume it (`use crate::v2::apps::editor::ui::modals::help_modal::keymap_census::…`) and widen              it there — a second copy is a second answer to the same question."
         );
     }
 
