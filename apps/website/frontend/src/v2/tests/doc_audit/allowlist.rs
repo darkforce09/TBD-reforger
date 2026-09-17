@@ -52,14 +52,6 @@ pub(super) const ROWS: &[GrandfatherRow] = &[
         expires: DIAGNOSTICS_DECOMPOSITION_DUE,
     },
     GrandfatherRow {
-        path: "apps/editor/arsenal/asset_catalog.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the editor decomposition splits it into per-surface \
-                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
-                 in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
         path: "apps/editor/arsenal/doll.rs",
         reason: "The file has comments naming tickets and waves; the editor decomposition \
                  rewrites that prose in the present tense.",

@@ -1,3 +1,5 @@
+//! Asset catalog object catalog and favorites tests.
+
 use super::fixtures::*;
 use super::*;
 
@@ -51,7 +53,6 @@ fn derive_object_alias_slugs_display_name_and_hits_known_comp() {
     );
 }
 
-/// T-439 Class-R: mod spawn registry must expose the Objects alias set the palette filters on.
 #[test]
 fn t439_mod_registry_exposes_prop_and_comp_aliases() {
     let aliases = mod_object_aliases();
@@ -85,16 +86,10 @@ fn t439_mod_registry_exposes_prop_and_comp_aliases() {
     );
 }
 
-/// T-695 — the favourites resolution helpers, and the one claim their doc comments make: that
-/// `placeable_palette` MIRRORS the three tree builders. The pin compares the two directly —
-/// every leaf the builders offer must be placeable, and every row they reject (`abstract`
-/// vehicles, unregistered object aliases) must not be. A laxer rule here would let a favourite
-/// arm a place the palette itself refuses to offer.
 #[test]
 fn favourite_resolution_mirrors_the_palette_builders() {
     let items = object_items();
 
-    // Lookup is by `resource_name` — the id a leaf and a `PlacePayload` both carry.
     let known = "{7007B975BEC018D9}Prefabs/Props/Military/AmmoBoxes/AmmoBox_50cal_100rnd.et";
     assert_eq!(
         find_catalog_item(&items, known).map(|i| i.display_name.as_str()),
@@ -105,8 +100,6 @@ fn favourite_resolution_mirrors_the_palette_builders() {
         "an id that left the catalogue must resolve to None, not to a neighbour"
     );
 
-    // Objects: the registered crate is placeable; the abstract one and the unregistered one
-    // are not — exactly the rows `build_object_catalog_tree` drops.
     assert_eq!(
         find_catalog_item(&items, known).and_then(placeable_palette),
         Some(CatalogPalette::Object)
@@ -122,7 +115,6 @@ fn favourite_resolution_mirrors_the_palette_builders() {
         );
     }
 
-    // Vehicles: the abstract `*_base.et` template is rejected, the two live variants are not.
     let vehicles = vehicle_items();
     assert_eq!(
         find_catalog_item(
@@ -143,9 +135,6 @@ fn favourite_resolution_mirrors_the_palette_builders() {
         }
     }
 
-    // Characters: every leaf the Factions tree offers for a side must resolve placeable, and
-    // the SIDE filter must NOT be applied here — a favourite spans the whole catalogue, so a
-    // BLUFOR role is live even while another chip is up.
     let chars = golden_items();
     fn leaf_ids(nodes: &[CatalogNode], out: &mut Vec<String>) {
         for n in nodes {
@@ -165,8 +154,6 @@ fn favourite_resolution_mirrors_the_palette_builders() {
             "a Factions leaf must resolve placeable: {id}"
         );
     }
-    // Same rows, OPFOR chip up: still live, because the chip is a view filter, not the
-    // catalogue.
     assert!(build_catalog_tree(&chars, "OPFOR").is_empty());
     for id in &ids {
         assert!(
@@ -177,7 +164,6 @@ fn favourite_resolution_mirrors_the_palette_builders() {
         );
     }
 
-    // `gear_*` rows belong to the Arsenal, not the map — no palette places them.
     for item in chars.iter().filter(|i| i.kind.starts_with("gear")) {
         assert_eq!(placeable_palette(item), None);
     }

@@ -1,8 +1,8 @@
+//! Asset catalog catalog tree and basic filter tests.
+
 use super::fixtures::*;
 use super::*;
 
-/// The exact tree the fixture must yield: NATO (expanded) > US_Army > the 8 character leaves in
-/// `sort_order` order. Pins every ported rule at once.
 #[test]
 fn golden_yields_nato_us_army_and_eight_leaves() {
     let tree = build_catalog_tree(&golden_items(), "BLUFOR");
@@ -40,8 +40,6 @@ fn golden_yields_nato_us_army_and_eight_leaves() {
     );
 }
 
-/// Rule 4 + the payload contract: a leaf's id AND its drop `asset_id` are the full Enfusion
-/// ResourceName, and its `role` is the display name.
 #[test]
 fn leaf_id_and_payload_carry_the_resource_name() {
     let tree = build_catalog_tree(&golden_items(), "BLUFOR");
@@ -59,8 +57,6 @@ fn leaf_id_and_payload_carry_the_resource_name() {
     assert!(rifleman.children.is_empty());
 }
 
-/// Rule 1: the golden's 13 `gear_*` rows must not reach the map palette. Proven by count, so the
-/// test fails if the filter is dropped (21 rows would yield extra folders/leaves).
 #[test]
 fn gear_rows_are_excluded() {
     let items = golden_items();
@@ -71,12 +67,9 @@ fn gear_rows_are_excluded() {
     let tree = build_catalog_tree(&items, "BLUFOR");
     let leaves = tree[0].children[0].children.len();
     assert_eq!(leaves, 8, "only character rows are placed");
-    // The gear categories (NATO/Uniform, NATO/Vest, …) would have added sibling folders.
     assert_eq!(tree[0].children.len(), 1, "no gear folders under NATO");
 }
 
-/// T-172 B9 — search filter: descendant match prunes siblings, folder self-match keeps the
-/// whole subtree, empty query is identity, no match → empty.
 #[test]
 fn filter_catalog_rules() {
     let tree = build_catalog_tree(&golden_items(), "BLUFOR");

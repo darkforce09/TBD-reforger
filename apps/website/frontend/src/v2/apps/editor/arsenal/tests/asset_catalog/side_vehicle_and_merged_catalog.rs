@@ -1,3 +1,5 @@
+//! Asset catalog side vehicle and merged catalog tests.
+
 use super::fixtures::*;
 use super::*;
 
@@ -37,13 +39,10 @@ fn side_filter_excludes_cross_side_characters() {
     let indfor = leaf_labels(&build_catalog_tree(&items, "INDFOR"));
     assert_eq!(indfor, vec!["FIA Rifleman".to_string()]);
 
-    // Empty / unknown side → empty tree (never dump the whole registry).
     assert!(build_catalog_tree(&items, "").is_empty());
     assert!(build_catalog_tree(&items, "CIV").is_empty());
 }
 
-/// T-255 — legacy golden root `NATO/…` matches BLUFOR even when the category omits the side
-/// segment (resource_name still carries `/Factions/BLUFOR/`).
 #[test]
 fn legacy_nato_root_matches_blufor_chip() {
     let items = golden_items();
@@ -112,8 +111,6 @@ fn vehicle_tree_keeps_the_family_folder() {
     );
 }
 
-/// `abstract` rows are templates the engine cannot spawn, and character/gear rows belong to the
-/// other tab. Neither may reach a placeable leaf.
 #[test]
 fn vehicle_tree_excludes_abstract_and_non_vehicle_rows() {
     let tree = build_vehicle_catalog_tree(&vehicle_items());
@@ -145,7 +142,6 @@ fn vehicle_tree_excludes_abstract_and_non_vehicle_rows() {
 fn merged_tree_reaches_a_vehicle_leaf_under_the_nato_subtree() {
     let tree = build_faction_catalog_tree(&merged_items(), "BLUFOR");
 
-    // One faction root, open on first paint.
     assert_eq!(tree.len(), 1, "one faction root for the BLUFOR chip");
     assert_eq!(tree[0].id, "NATO");
     assert!(tree[0].default_expanded, "the faction folder opens");
@@ -160,7 +156,6 @@ fn merged_tree_reaches_a_vehicle_leaf_under_the_nato_subtree() {
         "depth 1 stays folded until the author drills in"
     );
 
-    // The character leaves file directly under US_Army (role segment dropped).
     let char_leaves: Vec<&str> = us_army
         .children
         .iter()
@@ -173,7 +168,6 @@ fn merged_tree_reaches_a_vehicle_leaf_under_the_nato_subtree() {
         "characters file under the faction as display-name leaves"
     );
 
-    // And a `Vehicles` sub-folder sits beside them, holding the vehicle leaves — the whole point.
     let vehicles = us_army
         .children
         .iter()
@@ -191,7 +185,6 @@ fn merged_tree_reaches_a_vehicle_leaf_under_the_nato_subtree() {
         "the placeable vehicles are leaves under NATO — the abstract template is dropped"
     );
 
-    // The leaf's payload carries the real ResourceName so a drop authors the right prefab.
     assert_eq!(
         vehicles.children[0].payload,
         Some(PlacePayload {
@@ -202,8 +195,6 @@ fn merged_tree_reaches_a_vehicle_leaf_under_the_nato_subtree() {
     );
 }
 
-/// The side chips keep filtering the ONE tree: a BLUFOR chip surfaces NATO material only, and the
-/// OPFOR character never leaks into it. (The side filter is what makes the merged tree per-faction.)
 #[test]
 fn merged_tree_is_side_filtered() {
     let blufor = build_faction_catalog_tree(&merged_items(), "BLUFOR");
@@ -231,17 +222,9 @@ fn merged_tree_is_side_filtered() {
         "OPFOR must not surface the NATO subtree"
     );
 
-    // An unknown chip side surfaces nothing (the chip row admits only the three sides).
     assert!(build_faction_catalog_tree(&merged_items(), "CIV").is_empty());
 }
 
-// ── T-810 (F-23) — the Attributes TYPE picker tree: side-AGNOSTIC ────────────────────────────────
-
-/// The picker tree spans EVERY faction, because the Attributes modal is editing a placed slot's
-/// type and is not handed the active-side chip. Where the dock's BLUFOR chip hides the USSR leaf,
-/// the picker shows both — so an OPFOR slot's type is reachable while the BLUFOR chip is up. Same
-/// leaves as the per-side builder, just unfiltered and merged into one tree; the abstract vehicle
-/// template is still dropped (it composes the same per-kind rules).
 #[test]
 fn picker_tree_spans_all_sides_and_still_drops_abstract() {
     let picker = build_picker_catalog_tree(&merged_items());
@@ -258,18 +241,13 @@ fn picker_tree_spans_all_sides_and_still_drops_abstract() {
         ],
         "the picker spans both factions and drops the abstract *_base.et template"
     );
-    // Both faction roots are present in the one tree (the dock's chip picks exactly one).
     assert!(picker.iter().any(|n| n.id == "NATO"), "NATO root present");
     assert!(picker.iter().any(|n| n.id == "USSR"), "USSR root present");
 }
 
-/// A picked leaf carries the canonical `resource_name` as its `payload.asset_id` — the SAME id a
-/// dock drop writes and the id the `ASSET-RESOLVES` validator checks against, which is why picking
-/// clears the finding. The 'rifle' search path the acceptance scripts lands on a real leaf.
 #[test]
 fn picker_leaf_payload_is_the_canonical_resource_name_and_search_reaches_it() {
     let picker = build_picker_catalog_tree(&merged_items());
-    // Typing 'rifle' filters to the two Rifleman leaves across both factions.
     let hits = filter_catalog(&picker, "rifle");
     let mut labels = leaf_labels(&hits);
     labels.sort();
@@ -278,7 +256,6 @@ fn picker_leaf_payload_is_the_canonical_resource_name_and_search_reaches_it() {
         vec!["US Rifleman".to_string(), "USSR Rifleman".to_string()]
     );
 
-    // The US Rifleman leaf's payload id is the full resource_name from the fixture.
     fn find<'a>(nodes: &'a [CatalogNode], label: &str) -> Option<&'a CatalogNode> {
         for n in nodes {
             if n.label == label && n.payload.is_some() {
@@ -298,9 +275,6 @@ fn picker_leaf_payload_is_the_canonical_resource_name_and_search_reaches_it() {
     );
 }
 
-/// `catalog_leaf_count` is the empty-state predicate the picker turns on: it counts placeable
-/// leaves (folders do not count), so a real tree is > 0 and an empty registry is 0 — the case
-/// that must show the T-800 cause+retry surface, not a dead list.
 #[test]
 fn catalog_leaf_count_counts_leaves_not_folders() {
     let picker = build_picker_catalog_tree(&merged_items());
@@ -309,11 +283,8 @@ fn catalog_leaf_count_counts_leaves_not_folders() {
         5,
         "five placeable leaves across both factions; folders are not counted"
     );
-    // An empty registry builds an empty tree with zero leaves — the dev-without-seed case.
     assert_eq!(build_picker_catalog_tree(&[]).len(), 0);
     assert_eq!(catalog_leaf_count(&build_picker_catalog_tree(&[])), 0);
-    // A registry of ONLY an abstract vehicle also yields zero leaves (nothing placeable), so the
-    // picker's empty branch fires even though the registry is non-empty.
     let only_abstract = vec![vehicle_row(
         "{9999999999999999}Prefabs/Vehicles/Wheeled/M998/M998_base.et",
         "M998 base",
@@ -326,25 +297,19 @@ fn catalog_leaf_count_counts_leaves_not_folders() {
     );
 }
 
-/// The search grammar (`class:` / `mod:`) must span the MERGED tree — it runs over the one tree
-/// the chips draw, so a vehicle classname and a mod-root query both reach vehicle leaves that now
-/// live inside the faction. (`filter_catalog` is kind-agnostic; this pins the composition.)
 #[test]
 fn search_spans_the_merged_tree() {
     let tree = build_faction_catalog_tree(&merged_items(), "BLUFOR");
 
-    // `class:` reaches a vehicle leaf by its bare classname, inside the faction tree.
     let by_class = filter_catalog(&tree, "class:M1025_M2");
     assert_eq!(
         leaf_labels(&by_class),
         vec!["M1025 Humvee (M2)".to_string()],
         "a class: query reaches a vehicle leaf in the merged tree"
     );
-    // …and still reaches a character leaf, same grammar, same tree.
     let by_class_char = filter_catalog(&tree, "class:Character_US_Medic");
     assert_eq!(leaf_labels(&by_class_char), vec!["US Medic".to_string()]);
 
-    // A plain label token spans both kinds (Humvee is a vehicle; Medic is a character).
     assert_eq!(
         leaf_labels(&filter_catalog(&tree, "Humvee")),
         vec!["M1025 Humvee (M2)".to_string()]
