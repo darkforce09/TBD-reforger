@@ -1,8 +1,7 @@
 //! Tests for [`super`] — the engine-layer walls, §5 rules 1, 2, 3a, 3b, 4, 5, 6 and 7.
 //!
-//! Split out of `gate_engine_layers.rs` at 2D purely for SIZE-3: rules 4 and 7 brought six more
-//! cases and the single file passed 1000 lines. `#[path]` keeps them one module — `use super::*`
-//! still reaches the private matchers and `run()` — so nothing about what is tested moved.
+//! Engine layer tests cover every dependency and source placement rule.
+//! The module reaches the private matchers and `run()` through `use super::*`.
 
 use std::path::PathBuf;
 

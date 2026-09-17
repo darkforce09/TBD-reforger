@@ -64,7 +64,7 @@
 //! A `1` can ALSO mean "this program could not confirm the server died" — see the STRAY SERVER
 //! block in [`lifecycle`]. That block names the process group and the exact command to run.
 //!
-//! ── FILE LAYOUT (this port is split; SIZE-3 hard-fails above 1000 lines) ──────────────────────
+//! ── FILE LAYOUT (production modules have a 500-line ceiling) ────────────────────────────────
 //!
 //! | file | owns |
 //! |---|---|

@@ -24,10 +24,8 @@
 //!
 //! ── MODULE SPLIT (what each file owns) ───────────────────────────────────────────────────────
 //!
-//! 1889 lines of bash do not fit one Rust module under the 1000-line SIZE-3 ceiling, so the port
-//! is cut at the bash's own seams — the four artefacts it builds (agent, boot verdict, server
-//! config, remote host), each of which the bash already gave its own local-only entry point, plus
-//! two supporting modules split off purely for size and named for what they own.
+//! Staging operations are grouped by the artefacts they build: agent, boot verdict, server
+//! config, and remote host. Supporting modules own the shared configuration and rendering logic.
 //!
 //! | file | bash lines | owns |
 //! |------|-----------|------|

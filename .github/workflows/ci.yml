@@ -220,7 +220,7 @@ jobs:
   # Needs cargo (two of the three are xtask) but no database, no LFS and no wasm target, so it is a
   # cheap job that fails fast and early rather than riding on the back of the 25-minute API job.
   language-gates:
-    name: language gates (no-python / no-node / no-shell / ci-shell / engine-layers)
+    name: language gates (no-python / no-node / no-shell / ci-shell / engine-layers / file-length)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -238,6 +238,8 @@ jobs:
         run: cargo xtask verify no-python
       - name: verify-no-node (T-165.10)
         run: cargo xtask verify no-node
+      - name: verify-file-length (SIZE-3)
+        run: cargo xtask verify file-length
       - name: verify-no-shell (T-621 + T-904 language ban)
         run: cargo xtask verify no-shell
       - name: "verify-ci-shell (T-901 — GitHub Actions run: blocks)"

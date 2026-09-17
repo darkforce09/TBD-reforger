@@ -1,7 +1,6 @@
 //! Launching the engine, waiting for a verdict, and shutting down.
 //!
-//! The log READING this drives lives in [`super::logread`] — split out when this file passed
-//! SIZE-3's 1000-line hard fail. Everything left here needs a live process.
+//! Log reading lives in [`super::logread`]; this module owns operations that need a live process.
 //!
 //! ── NEVER TAIL A POSSIBLY-HANGING STREAM ─────────────────────────────────────────────────────
 //!

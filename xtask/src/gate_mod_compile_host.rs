@@ -1,5 +1,5 @@
 //! Host bridge + process-group cleanup for [`crate::gate_mod_compile`].
-//! Split from the main module to stay under the T-853 600-line soft cap.
+//! Host-side mod compile checks live separately from engine-facing checks.
 
 use std::fs;
 use std::io::{self, Write};

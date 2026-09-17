@@ -1,9 +1,7 @@
 //! `mk_target_dir` — custody of `CARGO_TARGET_DIR`, and the two `make` targets that police it.
 //!
-//! T-853 Phase 3, slice T-895. Split out of [`crate::mk_build`] at a seam with no shared state
-//! (SIZE-1: keep a module under 600 lines): that module owns the *recipes*, this one owns *which
-//! directory they are allowed to write into* — `print-cargo-target-dir`, `verify-cargo-target` and
-//! `reclaim-target-ci`, plus the pin they all read.
+//! This module owns the target directory policy for `print-cargo-target-dir`,
+//! `verify-cargo-target`, and `reclaim-target-ci`, plus the pin they all read.
 //!
 //! ── THE PIN THIS SLICE EXISTS TO PROTECT ─────────────────────────────────────────────────────
 //!

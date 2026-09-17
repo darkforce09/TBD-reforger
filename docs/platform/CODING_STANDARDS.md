@@ -105,7 +105,7 @@ Every rule serves one primary pillar — the *why*. The rule is the *what*; §10
 
 | Pillar | The question it answers | Example rules |
 |--------|-------------------------|---------------|
-| **Scalability** | Workable at 10× size / data / team? | logic in `services/` (GO-1, GO-9), `pages/` layering (TS-2), file-size gate (SIZE-1/3), MC allowlist (SIZE-2) |
+| **Scalability** | Workable at 10× size / data / team? | logic in `services/` (GO-1, GO-9), `pages/` layering (TS-2), file-size gate (SIZE-3), MC allowlist (SIZE-2) |
 | **Readability** | Understandable without archaeology? | Godoc/TSDoc + tags (GO-6/7, TS-5/6, ENF-3), gofmt/editorconfig/Prettier (FMT-1–3), complexity cap (COMP-1) |
 | **Usability** | Correct, predictable contract for the consumer? | error envelope + status table (ERR-1/2/4/5), duplicate-key 409 (GO-5), surfaced FE errors (TS-4/7), DTO fixtures (ENF-4) |
 | **Debuggability** | At 02:00, can we tell *what* and *why* fast? | handled DB errors + `%w` (GO-2/3/4/8), `strict` (TS-1/3), structured logs (LOG-2/3), tests (TEST-1–3), CI gates (CI-1/2) |
@@ -355,23 +355,19 @@ this is precisely why ENF-1/ENF-2 are the only sanctioned **MANUAL** gates.
 
 ## 8. File size & cyclomatic complexity
 
-- **SIZE-1 (Scalability) — Files over **600 lines** emit a WARN.** Advisory tier of the file-length
-  script; it does not fail the build but flags the file for a split. Gate: **CI-SCRIPT**
-  (`cargo xtask verify file-length`, warn band).
+- **SIZE-1 is retired.** The 600-line warning is superseded by the SIZE-3 hard gate.
 - **SIZE-2 (Scalability) — Mission Creator hot-path exemptions live in the allowlist.** The React-era
   `src/features/tactical-map/**` glob is empty (T-159.29.3 deleted that tree). In the Leptos era the
   SIZE-2 list is **empty** — do not invent SIZE-2 rows to hide SIZE-3. File-level exemptions live only
   in [`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml). Gate: **ALLOWLIST**
   (`cargo xtask verify file-length` reads that file).
-- **SIZE-3 (Scalability) — Files over **1000 lines** fail the build unless allowlisted.** Gate:
-  **CI-SCRIPT** (`cargo xtask verify file-length` → exit 1). Standing debt carries an allowlist entry with an
-  `expires` date until its split ticket lands:
-
-  | File | Lines | Split plan |
-  |------|------:|------------|
-  | `pages/admin.tsx` | 1628 | split by admin sub-surface (Personnel / Approvals / Audit) |
-  | `pages/doctrine.tsx` | 1289 | extract the wiki split-pane helpers |
-  | `handlers/events.go` | 1041 | extract ORBAT + registration into `services/` (GO-1) |
+- **SIZE-3 (Scalability) — Production Rust files over 500 raw lines and test Rust files over
+  1000 raw lines fail unless allowlisted.** A file is a test when its path contains a `tests/`
+  component or its basename ends `_tests.rs`. Gate: **CI-SCRIPT**
+  (`cargo xtask verify file-length` → exit 1). The walk covers `xtask`, `tools`, `crates`,
+  `apps/ticketboard/src`, and existing `apps/website/*/{src,tests}` roots. Generated API contracts
+  under `apps/website/api/src/contract/generated/` are excluded. Standing debt carries a dated
+  allowlist row. A row naming a missing or unscanned file fails the gate.
 
 - **COMP-1 (Readability) — Cyclomatic complexity ≤ 15 per function (hard gate).** A function over 15
   independent paths is split into named helpers. Gate: **CI-BLOCK** — Go via golangci **`cyclop`**
@@ -388,18 +384,18 @@ this is precisely why ENF-1/ENF-2 are the only sanctioned **MANUAL** gates.
 Created in **T-125.2** at the repo root. Each entry is normative:
 
 ```yaml
-- rule: SIZE-3            # the Rule ID being excepted
-  path: apps/website/internal/handlers/events.go
-  symbol:                 # OPTIONAL — function/type for fn-level rules
-  reason: pre-existing god-file; split tracked by T-1xx
-  expires: 2026-09-30     # YYYY-MM-DD, or "MC-perf" for permanent hot-path exemptions
+- rule: SIZE-3
+  path: apps/website/api/src/app.rs
+  reason: split routing and application setup by responsibility
+  expires: 2027-01-31     # YYYY-MM-DD; MC-perf is invalid for SIZE-3
 ```
 
 **Opt-out policy (one policy, no ambiguity):**
 - **Function-level** opt-outs (**COMP-1**, **GO-3**) live **inline** (`//nolint` / `eslint-disable`
   with a reason) — never in the allowlist file.
 - **File-level** opt-outs (**SIZE-2**, **SIZE-3** named-debt + MC paths) live **only** in
-  `.coding-standards-allowlist.yaml` with a `reason` and `expires`. A CI-SCRIPT FORBIDS an expired entry.
+  `.coding-standards-allowlist.yaml` with a `reason` and `expires`. SIZE-3 requires a dated expiry;
+  `MC-perf` is accepted only for SIZE-2. Missing paths and expired rows do not exempt.
 
 ---
 
@@ -459,9 +455,9 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **FMT-1** | Re | gofmt clean | CI-BLOCK | `gofmt -l` empty | `test -z "$(gofmt -l apps/website/internal apps/website/cmd)"` | T-125.1 | live |
 | **FMT-2** | Re | `.editorconfig` honored | CI-BLOCK | `editorconfig-checker` | `cargo xtask ci verify-editorconfig` | T-125.5 | live |
 | **FMT-3** | Re | Prettier for TS/TSX/CSS | CI-BLOCK | `prettier --check` | `npm run format:check` | T-125.5 | live |
-| **SIZE-1** | Sc | >600 L ⇒ WARN | CI-SCRIPT | `xtask/src/node_free.rs` (warn band) | `cargo xtask verify file-length` | T-125.4 / T-165.10 | live |
+| **SIZE-1** | Sc | 600-line warning superseded by SIZE-3 | — | — | — | T-125.4 / T-165.10 | retired |
 | **SIZE-2** | Sc | SIZE-2 list empty (Leptos); exemptions only in allowlist | ALLOWLIST | `.coding-standards-allowlist.yaml` (no SIZE-2 rows) | `cargo xtask verify file-length` | T-125.2 | live |
-| **SIZE-3** | Sc | >1000 L ⇒ exit 1 unless allowlisted | CI-SCRIPT | `xtask/src/node_free.rs` | `cargo xtask verify file-length` | T-125.4 / T-165.10 | live |
+| **SIZE-3** | Sc | Production >500 L or test >1000 L ⇒ exit 1 unless allowlisted | CI-SCRIPT | `xtask/src/node_free.rs` | `cargo xtask verify file-length` | T-125.4 / T-165.10 | live |
 | **COMP-1** | Re | Cyclomatic ≤ 15/fn (hard); inline opt-out only | CI-BLOCK | golangci `cyclop` `max-complexity:15` · eslint `complexity:["error",{max:15}]` | `golangci-lint run ./...` · `npm run lint` | T-125.2/.3 | live |
 | **LOG-2** | De | No committed FE `console.log` | CI-BLOCK | eslint `no-console {allow:["warn","error"]}` | `npm run lint` | T-125.3 | live |
 | **LOG-3** | De | 5xx + mutator 4xx log path+status+dur | CI-SCRIPT | `cargo xtask ci verify-coding-standards` | `cargo xtask ci verify-coding-standards` | T-125.4 | live |
@@ -488,9 +484,9 @@ Enforcement artefacts in the repo (T-125.1–.4). Primary workflow:
 | `cargo xtask ci verify-coding-standards` (GO-1/GO-9 handler-import arm) | GO-1, GO-9 | T-125.4 | live |
 | `cargo xtask ci verify-coding-standards` (ERR-4 arm) | ERR-4 | T-125.4 | live |
 | `cargo xtask ci verify-coding-standards` (LOG-3 arm) | LOG-3 | T-125.4 | live |
-| `cargo xtask verify file-length` (T-165.10 port of `verify-file-length.mjs`) | SIZE-1, SIZE-3 | T-125.4 / T-165.10 | live |
+| `cargo xtask verify file-length` | SIZE-3 | T-125.4 / T-165.10 | live |
 | `cargo xtask ci schema-validate` (Enfusion DTO branch; T-165 port of `validate.mjs`) | ENF-4 | T-125.4 / T-165 | live |
-| **`cargo xtask ci verify-coding-standards`** (meta target) | GO-1, GO-9, ERR-4, LOG-3, SIZE-1, SIZE-3 | T-125.4 | live |
+| **`cargo xtask ci verify-coding-standards`** (meta target) | GO-1, GO-9, ERR-4, LOG-3, SIZE-3 | T-125.4 | live |
 | `cargo xtask ci verify-editorconfig` (`editorconfig-checker` + `.editorconfig-checker.json`) | FMT-2 | T-125.5 | live |
 | Prettier + `eslint-config-prettier` (`apps/website/frontend/`) | FMT-3 | T-125.5 | live |
 | [`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml) | SIZE-2, SIZE-3, GO-9 structural | T-125.2/.4 | live |
@@ -517,7 +513,7 @@ cargo xtask verify no-shell                   # LANG-1/3 — shell/Make hard zer
 cd apps/website/api && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo build
 cargo xtask mk wasm-ci                           # map-engine core/wasm/render fmt + clippy -D + tests
 cargo xtask db test-it                           # backend integration tests (fresh sqlx-migrated DB)
-cargo xtask ci verify-coding-standards           # SIZE-1/SIZE-3 + doc layout + no SELECT *
+cargo xtask ci verify-coding-standards           # SIZE-3 + doc layout + no SELECT *
 
 # 2. Leptos SPA (website-frontend / ci-local-leptos)
 cargo fmt -p website-frontend --check
@@ -546,7 +542,7 @@ Cross-link this from [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECK
 | **Leptos** | `cargo fmt -p website-frontend --check`? `cargo clippy -p website-frontend --target wasm32-unknown-unknown`? `cargo test -p website-frontend`? `@contract`/`@model` on cross-boundary types? |
 | **Errors** | `{ error, details? }` only (no other keys)? Right status from the §4 table? Named IT per status class? |
 | **Enfusion** | `enfusion-mcp` consulted? Dev toggles default off? Gates commented? Tags per DOC_STANDARDS §6–§7? Slice assigns `claude-code` to this `.c`? |
-| **Always** | File ≤ 1000 L (or allowlisted) and ≤ 600 L ideally? Function complexity ≤ 15 (or inline opt-out w/ reason)? `cargo xtask ci verify-citations` covers `@route` + `@model`; `cargo xtask ci ci-local` is the full gate — **no commit without `cargo xtask ci ci-local` green** (post T-125.1). Doc-comments updated in the **same commit** (DOC_STANDARDS §1)? |
+| **Always** | Production Rust file ≤ 500 raw lines and test Rust file ≤ 1000 (or allowlisted)? Function complexity ≤ 15 (or inline opt-out w/ reason)? `cargo xtask ci verify-citations` covers `@route` + `@model`; `cargo xtask ci ci-local` is the full gate — **no commit without `cargo xtask ci ci-local` green** (post T-125.1). Doc-comments updated in the **same commit** (DOC_STANDARDS §1)? |
 
 ---
 

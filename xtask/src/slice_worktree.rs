@@ -726,9 +726,7 @@ fn slice_dirs(root: &Path) -> Vec<PathBuf> {
 }
 
 // ── tests ────────────────────────────────────────────────────────────────────────────────────
-// PROPOSED SPLIT (SIZE): this module would move verbatim to `xtask/src/slice_worktree/tests.rs`
-// behind `#[cfg(test)] mod tests;`, leaving the implementation near the 600-line target; T-853
-// scoped this agent to one file, so it is inline. Every test builds its OWN throwaway repo under
+// Every test builds its own throwaway repo under
 // `temp_dir()` and calls `cmd_*` with an explicit `root` — nothing here can reach the real
 // `.ai/artifacts/worktrees/`, because `resolve_root()` is never invoked, so there is no env var to
 // race on and no path to a live slice.

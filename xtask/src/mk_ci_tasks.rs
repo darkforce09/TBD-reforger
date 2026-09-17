@@ -1,7 +1,6 @@
 //! The [`TASKS`] table: one row per Makefile target this lane absorbs (T-896).
 //!
-//! Split from `mk_ci.rs` at the data/behaviour seam so both stay inside the SIZE-1 600-line
-//! guidance — the same shape as `gate_ui_layouts` / `gate_ui_layouts_awk`. Nothing here executes;
+//! This table names CI tasks and their recipes. Nothing here executes;
 //! [`crate::mk_ci::run_task`] is the only interpreter of these rows.
 //!
 //! T-896 diffed every row against the Makefile recipe it reproduced. T-897 deleted that file, so
